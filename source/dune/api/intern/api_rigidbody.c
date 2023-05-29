@@ -146,14 +146,14 @@ static char *api_RigidBodyWorld_path(ApiPtr *UNUSED(ptr))
   return lib_strdup("rigidbody_world");
 }
 
-static void api_RigidBodyWorld_num_solver_iterations_set(PointerRNA *ptr, int value)
+static void api_RigidBodyWorld_num_solver_iter_set(ApiPtr *ptr, int value)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
 
-  rbw->num_solver_iterations = value;
+  rbw->num_solver_iter = value;
 
 #  ifdef WITH_BULLET
-  if (rbw->shared->physics_world) {
+  if (rbw->shared->phys_world) {
     RB_dworld_set_solver_iterations(rbw->shared->physics_world, value);
   }
 #  endif
@@ -1070,7 +1070,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   /* TODO: define and figure out how to implement these. */
 
   /* Dynamics Parameters - Deactivation */
-  prop = api_def_prop(sapi, "use_deactivation", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_deactivation", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_USE_DEACTIVATION);
   api_def_prop_bool_default(prop, true);
   api_def_prop_bool_fns(prop, NULL, "api_RigidBodyOb_activation_state_set");
@@ -1079,65 +1079,65 @@ static void api_def_rigidbody_object(DuneApi *dapi)
       "Enable Deactivation",
       "Enable deactivation of resting rigid bodies (increases performance and stability "
       "but can cause glitches)");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_start_deactivated", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_START_DEACTIVATED);
+  prop = api_def_prop(sapi, "use_start_deactivated", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_START_DEACTIVATED);
   RNA_def_property_ui_text(
       prop, "Start Deactivated", "Deactivate rigid body at the start of the simulation");
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "deactivate_linear_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
-  RNA_def_property_float_sdna(prop, NULL, "lin_sleep_thresh");
-  RNA_def_property_range(
+  prop = api_def_prop(sapi, "deactivate_linear_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
+  api_def_prop_float_stype(prop, NULL, "lin_sleep_thresh");
+  api_def_prop_range(
       prop, FLT_MIN, FLT_MAX); /* range must always be positive (and non-zero) */
-  RNA_def_property_float_default(prop, 0.4f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_linear_sleepThresh_set", NULL);
-  RNA_def_property_ui_text(prop,
-                           "Linear Velocity Deactivation Threshold",
-                           "Linear Velocity below which simulation stops simulating object");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_float_default(prop, 0.4f);l
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_linear_sleepThresh_set", NULL);
+  api_def_prop_ui_text(prop,
+                       "Linear Velocity Deactivation Threshold",
+                       "Linear Velocity below which simulation stops simulating object");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "deactivate_angular_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
-  RNA_def_property_float_sdna(prop, NULL, "ang_sleep_thresh");
-  RNA_def_property_range(
+  prop = api_def_prop(dapi, "deactivate_angular_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
+  api_def_prop_float_stype(prop, NULL, "ang_sleep_thresh");
+  api_def_prop_range(
       prop, FLT_MIN, FLT_MAX); /* range must always be positive (and non-zero) */
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_angular_sleepThresh_set", NULL);
-  RNA_def_property_ui_text(prop,
-                           "Angular Velocity Deactivation Threshold",
-                           "Angular Velocity below which simulation stops simulating object");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_angular_sleepThresh_set", NULL);
+  api_def_prop_ui_text(prop,
+                       "Angular Velocity Deactivation Threshold",
+                       "Angular Velocity below which simulation stops simulating object");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   /* Dynamics Parameters - Damping Parameters */
-  prop = RNA_def_property(srna, "linear_damping", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "lin_damping");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_float_default(prop, 0.04f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_linear_damping_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "linear_damping", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "lin_damping");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_float_default(prop, 0.04f);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_linear_damping_set", NULL);
+  api_def_prop_ui_text(
       prop, "Linear Damping", "Amount of linear velocity that is lost over time");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "angular_damping", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "ang_damping");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_float_default(prop, 0.1f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_angular_damping_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "angular_damping", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "ang_damping");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_float_default(prop, 0.1f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_angular_damping_set", NULL);
+  api_def_prop_ui_text(
       prop, "Angular Damping", "Amount of angular velocity that is lost over time");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   /* Collision Parameters - Surface Parameters */
-  prop = RNA_def_property(srna, "friction", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "friction");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 1, 3);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_friction_set", NULL);
-  RNA_def_property_ui_text(prop, "Friction", "Resistance of object to movement");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "friction", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "friction");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 1, 3);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_friction_set", NULL);
+  api_def_prop_ui_text(prop, "Friction", "Resistance of object to movement");
+  apia_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "restitution", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "restitution");
@@ -1341,165 +1341,165 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Z Angle Spring", "Enable spring on Z rotational axis");
   api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_motor_lin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_LIN);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_use_motor_lin_set");
-  RNA_def_property_ui_text(prop, "Linear Motor", "Enable linear motor");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_motor_lin", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_LIN);
+  apu_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_motor_lin_set");
+  api_def_prop_ui_text(prop, "Linear Motor", "Enable linear motor");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_motor_ang", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_ANG);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_use_motor_ang_set");
-  RNA_def_property_ui_text(prop, "Angular Motor", "Enable angular motor");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_motor_ang", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_ANG);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_motor_ang_set");
+  api_def_prop_ui_text(prop, "Angular Motor", "Enable angular motor");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_x_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_x_lower");
-  RNA_def_property_float_default(prop, -1.0f);
-  RNA_def_property_ui_text(prop, "Lower X Limit", "Lower limit of X axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_x_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "limit_lin_x_lower");
+  api_def_prop_float_default(prop, -1.0f);
+  api_def_prop_ui_text(prop, "Lower X Limit", "Lower limit of X axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_x_upper", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_x_upper");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Upper X Limit", "Upper limit of X axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_x_upper", PROP_FLOAT, PROP_UNIT_LENGTH)
+  api_def_prop_float_stype(prop, NULL, "limit_lin_x_upper");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Upper X Limit", "Upper limit of X axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_y_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_y_lower");
-  RNA_def_property_float_default(prop, -1.0f);
-  RNA_def_property_ui_text(prop, "Lower Y Limit", "Lower limit of Y axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_y_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "limit_lin_y_lower");
+  api_def_prop_float_default(prop, -1.0f);
+  api_def_prop_ui_text(prop, "Lower Y Limit", "Lower limit of Y axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_y_upper", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_y_upper");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Upper Y Limit", "Upper limit of Y axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_y_upper", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "limit_lin_y_upper");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Upper Y Limit", "Upper limit of Y axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_z_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_z_lower");
-  RNA_def_property_float_default(prop, -1.0f);
-  RNA_def_property_ui_text(prop, "Lower Z Limit", "Lower limit of Z axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_z_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "limit_lin_z_lower");
+  api_def_prop_float_default(prop, -1.0f);
+  api_def_prop_ui_text(prop, "Lower Z Limit", "Lower limit of Z axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_lin_z_upper", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "limit_lin_z_upper");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Upper Z Limit", "Upper limit of Z axis translation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_lin_z_upper", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "limit_lin_z_upper");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Upper Z Limit", "Upper limit of Z axis translation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_x_lower", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_x_lower");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, -M_PI_4);
-  RNA_def_property_ui_text(prop, "Lower X Angle Limit", "Lower limit of X axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_ang_x_lower", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limit_ang_x_lower");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, -M_PI_4);
+  api_def_prop_ui_text(prop, "Lower X Angle Limit", "Lower limit of X axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_x_upper", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_x_upper");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, M_PI_4);
-  RNA_def_property_ui_text(prop, "Upper X Angle Limit", "Upper limit of X axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_ang_x_upper", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limit_ang_x_upper");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, M_PI_4);
+  api_def_prop_ui_text(prop, "Upper X Angle Limit", "Upper limit of X axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_y_lower", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_y_lower");
+  prop = api_def_prop(sapi, "limit_ang_y_lower", PROP_FLOAT, PROP_ANGLE);
+  RNA_def_property_float_stype(prop, NULL, "limit_ang_y_lower");
   RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
   RNA_def_property_float_default(prop, -M_PI_4);
   RNA_def_property_ui_text(prop, "Lower Y Angle Limit", "Lower limit of Y axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_y_upper", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_y_upper");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, M_PI_4);
-  RNA_def_property_ui_text(prop, "Upper Y Angle Limit", "Upper limit of Y axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = RNA_def_prop(sapi, "limit_ang_y_upper", PROP_FLOAT, PROP_ANGLE);
+  RNA_def_prop_float_stype(prop, NULL, "limit_ang_y_upper");
+  RNA_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  RNA_def_prop_float_default(prop, M_PI_4);
+  RNA_def_prop_ui_text(prop, "Upper Y Angle Limit", "Upper limit of Y axis rotation");
+  RNA_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_z_lower", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_z_lower");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, -M_PI_4);
-  RNA_def_property_ui_text(prop, "Lower Z Angle Limit", "Lower limit of Z axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_ang_z_lower", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limit_ang_z_lower");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, -M_PI_4);
+  api_def_prop_ui_text(prop, "Lower Z Angle Limit", "Lower limit of Z axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "limit_ang_z_upper", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limit_ang_z_upper");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, M_PI_4);
-  RNA_def_property_ui_text(prop, "Upper Z Angle Limit", "Upper limit of Z axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_ang_z_upper", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limit_ang_z_upper");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, M_PI_4)
+  api_def_prop_ui_text(prop, "Upper Z Angle Limit", "Upper limit of Z axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_x");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_x_set", NULL);
-  RNA_def_property_ui_text(prop, "X Axis Stiffness", "Stiffness on the X axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_x");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_x_set", NULL);
+  api_def_prop_ui_text(prop, "X Axis Stiffness", "Stiffness on the X axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_y");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_y_set", NULL);
-  RNA_def_property_ui_text(prop, "Y Axis Stiffness", "Stiffness on the Y axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_y");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_y_set", NULL);
+  api_def_prop_ui_text(prop, "Y Axis Stiffness", "Stiffness on the Y axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_z", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_z");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_z_set", NULL);
-  RNA_def_property_ui_text(prop, "Z Axis Stiffness", "Stiffness on the Z axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_z", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_z");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_z_set", NULL);
+  api_def_prop_ui_text(prop, "Z Axis Stiffness", "Stiffness on the Z axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_ang_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_ang_x");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_x_set", NULL);
-  RNA_def_property_ui_text(prop, "X Angle Stiffness", "Stiffness on the X rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_ang_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_ang_x");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_x_set", NULL);
+  api_def_prop_ui_text(prop, "X Angle Stiffness", "Stiffness on the X rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_ang_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_ang_y");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_y_set", NULL);
-  RNA_def_property_ui_text(prop, "Y Angle Stiffness", "Stiffness on the Y rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_ang_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_ang_y");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_y_set", NULL);
+  api_def_prop_ui_text(prop, "Y Angle Stiffness", "Stiffness on the Y rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_stiffness_ang_z", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_stiffness_ang_z");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_z_set", NULL);
-  RNA_def_property_ui_text(prop, "Z Angle Stiffness", "Stiffness on the Z rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_stiffness_ang_z", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_stiffness_ang_z");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_stiffness_ang_z_set", NULL);
+  api_def_prop_ui_text(prop, "Z Angle Stiffness", "Stiffness on the Z rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_x");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_x_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping X", "Damping on the X axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_damping_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_x");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_damping_x_set", NULL);
+  api_def_prop_ui_text(prop, "Damping X", "Damping on the X axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_y");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_y_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping Y", "Damping on the Y axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(srna, "spring_damping_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_y");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_y_set", NULL);
+  api_def_prop_ui_text(prop, "Damping Y", "Damping on the Y axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
   prop = RNA_def_property(srna, "spring_damping_z", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "spring_damping_z");
