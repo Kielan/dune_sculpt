@@ -138,12 +138,12 @@ static void api_RigidBodyWorld_reset(Main *UNUSED(main), Scene *UNUSED(scene), A
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
 
-  BKE_rigidbody_cache_reset(rbw);
+  dune_rigidbody_cache_reset(rbw);
 }
 
 static char *api_RigidBodyWorld_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("rigidbody_world");
+  return lib_strdup("rigidbody_world");
 }
 
 static void api_RigidBodyWorld_num_solver_iterations_set(PointerRNA *ptr, int value)
@@ -263,9 +263,9 @@ static void api_RigidBodyOb_disabled_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   /* update kinematic state if necessary - only needed for active bodies */
-  if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_mass(rbo->shared->physics_object, RBO_GET_MASS(rbo));
-    RB_body_set_kinematic_state(rbo->shared->physics_object, !value);
+  if ((rbo->shared->phys_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
+    rbody_set_mass(rbo->shared->phys_object, RBO_GET_MASS(rbo));
+    rbody_set_kinematic_state(rbo->shared->phys_object, !value);
     rbo->flag |= RBO_FLAG_NEEDS_VALIDATE;
   }
 #  endif
@@ -280,7 +280,7 @@ static void api_RigidBodyOb_mass_set(ApiPtr *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need mass update */
   if ((rbo->shared->phys_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_mass(rbo->shared->phys_object, RBO_GET_MASS(rbo));
+    rbody_set_mass(rbo->shared->phys_object, RBO_GET_MASS(rbo));
   }
 #  endif
 }
@@ -292,8 +292,8 @@ static void api_RigidBodyOb_friction_set(ApiPtr *ptr, float value)
   rbo->friction = value;
 
 #  ifdef WITH_BULLET
-  if (rbo->shared->physics_object) {
-    RB_body_set_friction(rbo->shared->physics_object, value);
+  if (rbo->shared->phys_object) {
+    rbody_set_friction(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -305,7 +305,7 @@ static void api_RigidBodyOb_restitution_set(ApiPtr *ptr, float value)
   rbo->restitution = value;
 #  ifdef WITH_BULLET
   if (rbo->shared->physics_object) {
-    RB_body_set_restitution(rbo->shared->physics_object, value);
+    rbody_set_restitution(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -318,7 +318,7 @@ static void api_RigidBodyOb_collision_margin_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   if (rbo->shared->physics_shape) {
-    RB_shape_set_margin(rbo->shared->physics_shape, RBO_GET_MARGIN(rbo));
+    rbody_shape_set_margin(rbo->shared->phys_shape, RBO_GET_MARGIN(rbo));
   }
 #  endif
 }
@@ -347,9 +347,9 @@ static void api_RigidBodyOb_kinematic_state_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   /* update kinematic state if necessary */
-  if (rbo->shared->physics_object) {
-    RB_body_set_mass(rbo->shared->physics_object, RBO_GET_MASS(rbo));
-    RB_body_set_kinematic_state(rbo->shared->physics_object, value);
+  if (rbo->shared->phys_object) {
+    rbody_set_mass(rbo->shared->phys_object, RBO_GET_MASS(rbo));
+    rbody_set_kinematic_state(rbo->shared->phys_object, value);
     rbo->flag |= RBO_FLAG_NEEDS_VALIDATE;
   }
 #  endif
@@ -364,7 +364,7 @@ static void api_RigidBodyOb_activation_state_set(ApiPtr *ptr, bool value)
 #  ifdef WITH_BULLET
   /* update activation state if necessary - only active bodies can be deactivated */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_activation_state(rbo->shared->physics_object, value);
+    rbody_set_activation_state(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -378,7 +378,7 @@ static void api_RigidBodyOb_linear_sleepThresh_set(ApiPtr *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need sleep threshold update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_linear_sleep_thresh(rbo->shared->physics_object, value);
+    rbody_set_linear_sleep_thresh(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -392,7 +392,7 @@ static void api_RigidBodyOb_angular_sleepThresh_set(ApiPtr *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need sleep threshold update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_angular_sleep_thresh(rbo->shared->physics_object, value);
+    rbody_body_set_angular_sleep_thresh(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -406,7 +406,7 @@ static void api_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need damping update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_linear_damping(rbo->shared->physics_object, value);
+    rbody_set_linear_damping(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -420,7 +420,7 @@ static void api_RigidBodyOb_angular_damping_set(ApiPtr *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need damping update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_angular_damping(rbo->shared->physics_object, value);
+    rbody_set_angular_damping(rbo->shared->physics_object, value);
   }
 #  endif
 }
@@ -455,7 +455,7 @@ static void api_RigidBodyCon_enabled_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint) {
-    RB_constraint_set_enabled(rbc->physics_constraint, value);
+    rbody_constraint_set_enabled(rbc->physics_constraint, value);
   }
 #  endif
 }
@@ -477,7 +477,7 @@ static void api_RigidBodyCon_use_breaking_set(ApiPtr *ptr, bool value)
     rbc->flag |= RBC_FLAG_USE_BREAKING;
 #  ifdef WITH_BULLET
     if (rbc->physics_constraint) {
-      RB_constraint_set_breaking_threshold(rbc->physics_constraint, rbc->breaking_threshold);
+      rbody_constraint_set_breaking_threshold(rbc->physics_constraint, rbc->breaking_threshold);
     }
 #  endif
   }
@@ -485,7 +485,7 @@ static void api_RigidBodyCon_use_breaking_set(ApiPtr *ptr, bool value)
     rbc->flag &= ~RBC_FLAG_USE_BREAKING;
 #  ifdef WITH_BULLET
     if (rbc->physics_constraint) {
-      RB_constraint_set_breaking_threshold(rbc->physics_constraint, FLT_MAX);
+      rbody_constraint_set_breaking_threshold(rbc->physics_constraint, FLT_MAX);
     }
 #  endif
   }
@@ -499,28 +499,28 @@ static void api_RigidBodyCon_breaking_threshold_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint && (rbc->flag & RBC_FLAG_USE_BREAKING)) {
-    RB_constraint_set_breaking_threshold(rbc->physics_constraint, value);
+    rbody_constraint_set_breaking_threshold(rbc->physics_constraint, value);
   }
 #  endif
 }
 
-static void api_RigidBodyCon_override_solver_iterations_set(ApiPtr *ptr, bool value)
+static void api_RigidBodyCon_override_solver_iter_set(ApiPtr *ptr, bool value)
 {
   RigidBodyCon *rbc = (RigidBodyCon *)ptr->data;
 
   if (value) {
     rbc->flag |= RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS;
 #  ifdef WITH_BULLET
-    if (rbc->physics_constraint) {
-      RB_constraint_set_solver_iterations(rbc->physics_constraint, rbc->num_solver_iterations);
+    if (rbc->phys_constraint) {
+      rbody_constraint_set_solver_iterations(rbc->physics_constraint, rbc->num_solver_iterations);
     }
 #  endif
   }
   else {
     rbc->flag &= ~RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS;
 #  ifdef WITH_BULLET
-    if (rbc->physics_constraint) {
-      RB_constraint_set_solver_iterations(rbc->physics_constraint, -1);
+    if (rbc->phys_constraint) {
+      rbody_constraint_set_solver_iter(rbc->phys_constraint, -1);
     }
 #  endif
   }
@@ -530,11 +530,11 @@ static void api_RigidBodyCon_num_solver_iterations_set(ApiPtr *ptr, int value)
 {
   RigidBodyCon *rbc = (RigidBodyCon *)ptr->data;
 
-  rbc->num_solver_iterations = value;
+  rbc->num_solver_iter = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint && (rbc->flag & RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS)) {
-    RB_constraint_set_solver_iterations(rbc->physics_constraint, value);
+  if (rbc->phys_constraint && (rbc->flag & RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS)) {
+    rbody_constraint_set_solver_iter(rbc->phys_constraint, value);
   }
 #  endif
 }
@@ -545,13 +545,13 @@ static void api_RigidBodyCon_do_set_spring_stiffness(RigidBodyCon *rbc,
                                                      int flag,
                                                      int axis)
 {
-  if (rbc->physics_constraint && rbc->type == RBC_TYPE_6DOF_SPRING && (rbc->flag & flag)) {
+  if (rbc->phys_constraint && rbc->type == RBC_TYPE_6DOF_SPRING && (rbc->flag & flag)) {
     switch (rbc->spring_type) {
       case RBC_SPRING_TYPE1:
-        RB_constraint_set_stiffness_6dof_spring(rbc->physics_constraint, axis, value);
+        rbody_constraint_set_stiffness_6dof_spring(rbc->physics_constraint, axis, value);
         break;
       case RBC_SPRING_TYPE2:
-        RB_constraint_set_stiffness_6dof_spring2(rbc->physics_constraint, axis, value);
+        rbody_constraint_set_stiffness_6dof_spring2(rbc->physics_constraint, axis, value);
         break;
     }
   }
@@ -587,7 +587,7 @@ static void api_RigidBodyCon_spring_stiffness_z_set(ApiPtr *ptr, float value)
   rbc->spring_stiffness_z = value;
 
 #  ifdef WITH_BULLET
-  rna_RigidBodyCon_do_set_spring_stiffness(rbc, value, RBC_FLAG_USE_SPRING_Z, RB_LIMIT_LIN_Z);
+  api_RigidBodyCon_do_set_spring_stiffness(rbc, value, RBC_FLAG_USE_SPRING_Z, RB_LIMIT_LIN_Z);
 #  endif
 }
 
@@ -756,14 +756,14 @@ static void api_RigidBodyCon_motor_lin_target_velocity_set(ApiPtr *ptr, float va
   rbc->motor_lin_target_velocity = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
-    RB_constraint_set_target_velocity_motor(
+  if (rbc->phys_constraint && rbc->type == RBC_TYPE_MOTOR) {
+    rbody_constraint_set_target_velocity_motor(
         rbc->phys_constraint, value, rbc->motor_ang_target_velocity);
   }
 #  endif
 }
 
-static void api_RigidBodyCon_motor_ang_max_impulse_set(PointerRNA *ptr, float value)
+static void api_RigidBodyCon_motor_ang_max_impulse_set(ApiPtr *ptr, float value)
 {
   RigidBodyCon *rbc = (RigidBodyCon *)ptr->data;
 
@@ -771,7 +771,7 @@ static void api_RigidBodyCon_motor_ang_max_impulse_set(PointerRNA *ptr, float va
 
 #  ifdef WITH_BULLET
   if (rbc->phys_constraint && rbc->type == RBC_TYPE_MOTOR) {
-    RB_constraint_set_max_impulse_motor(
+    rbody_constraint_set_max_impulse_motor(
         rbc->phys_constraint, rbc->motor_lin_max_impulse, value);
   }
 #  endif
@@ -785,7 +785,7 @@ static void api_RigidBodyCon_motor_ang_target_velocity_set(ApiPtr *ptr, float va
 
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
-    RB_constraint_set_target_velocity_motor(
+    rbody_constraint_set_target_velocity_motor(
         rbc->phys_constraint, rbc->motor_lin_target_velocity, value);
   }
 #  endif
@@ -806,7 +806,7 @@ static void api_RigidBodyWorld_convex_sweep_test(RigidBodyWorld *rbw,
   RigidBodyOb *rob = object->rigidbody_object;
 
   if (rbw->shared->physics_world != NULL && rob->shared->phys_object != NULL) {
-    RB_world_convex_sweep_test(rbw->shared->phys_world,
+    rbody_world_convex_sweep_test(rbw->shared->phys_world,
                                rob->shared->phys_object,
                                ray_start,
                                ray_end,
@@ -880,20 +880,20 @@ static void api_def_rigidbody_world(DuneApi *dapi)
 
   /* time scale */
   prop = api_def_prop(sapi, "time_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_stype(prop, NULL, "time_scale");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 10.0f, 1, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Time Scale", "Change the speed of the simulation");
-  RNA_def_property_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_float_stype(prop, NULL, "time_scale");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_range(prop, 0.0f, 10.0f, 1, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Time Scale", "Change the speed of the simulation");
+  api_def_prop_update(prop, NC_SCENE, "api_RigidBodyWorld_reset");
 
   /* timestep */
-  prop = RNA_def_property(srna, "substeps_per_frame", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "substeps_per_frame");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_range(prop, 1, 1000, 1, -1);
-  RNA_def_property_int_default(prop, 10);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "substeps_per_frame", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "substeps_per_frame");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_range(prop, 1, 1000, 1, -1);
+  api_def_prop_int_default(prop, 10);
+  api_def_prop_ui_text(
       prop,
       "Substeps Per Frame",
       "Number of simulation steps taken per frame (higher values are more accurate "
@@ -1004,67 +1004,67 @@ static void api_def_rigidbody_world(DuneApi *dapi)
 static void api_def_rigidbody_object(DuneApi *dapi)
 {
   ApiStruct *sapi;
-  ApuProp *prop;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "RigidBodyObject", NULL);
-  RNA_def_struct_sdna(srna, "RigidBodyOb");
-  RNA_def_struct_ui_text(
-      srna, "Rigid Body Object", "Settings for object participating in Rigid Body Simulation");
-  RNA_def_struct_path_func(srna, "rna_RigidBodyOb_path");
+  sapi = api_def_struct(dapi, "RigidBodyObject", NULL);
+  api_def_struct_stype(sapi, "RigidBodyOb");
+  api_def_struct_ui_text(
+      sapi, "Rigid Body Object", "Settings for object participating in Rigid Body Simulation");
+  api_def_struct_path_fn(sapi, "api_RigidBodyOb_path");
 
   /* Enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_rigidbody_object_type_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_RigidBodyOb_type_set", NULL);
-  RNA_def_property_ui_text(prop, "Type", "Role of object in Rigid Body Simulations");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_rigidbody_object_type_items);
+  api_def_prop_enum_funcs(prop, NULL, "api_RigidBodyOb_type_set", NULL);
+  api_def_prop_ui_text(prop, "Type", "Role of object in Rigid Body Simulations");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "mesh_source", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mesh_source");
-  RNA_def_property_enum_items(prop, rigidbody_mesh_source_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mesh_source", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mesh_source");
+  api_def_prop_enum_items(prop, rigidbody_mesh_source_items);
+  api_def_prop_ui_text(
       prop, "Mesh Source", "Source of the mesh used to create collision shape");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_mesh_source_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_mesh_source_update");
 
   /* booleans */
-  prop = RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", RBO_FLAG_DISABLED);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyOb_disabled_set");
-  RNA_def_property_ui_text(prop, "Enabled", "Rigid Body actively participates to the simulation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "enabled", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", RBO_FLAG_DISABLED);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyOb_disabled_set");
+  api_def_prop_ui_text(prop, "Enabled", "Rigid Body actively participates to the simulation");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "collision_shape", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "shape");
-  RNA_def_property_enum_items(prop, rna_enum_rigidbody_object_shape_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_RigidBodyOb_shape_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "collision_shape", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "shape");
+  api_def_prop_enum_items(prop, rna_enum_rigidbody_object_shape_items);
+  api_def_prop_enum_fns(prop, NULL, "rna_RigidBodyOb_shape_set", NULL);
+  api_def_prop_ui_text(
       prop, "Collision Shape", "Collision Shape of object in Rigid Body Simulations");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_update");
 
-  prop = RNA_def_property(srna, "kinematic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_KINEMATIC);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyOb_kinematic_state_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "kinematic", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_KINEMATIC);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyOb_kinematic_state_set");
+  api_def_prop_ui_text(
       prop, "Kinematic", "Allow rigid body to be controlled by the animation system");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_deform", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_USE_DEFORM);
-  RNA_def_property_ui_text(prop, "Deforming", "Rigid body deforms during simulation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_deform", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_USE_DEFORM);
+  api_def_prop_ui_text(prop, "Deforming", "Rigid body deforms during simulation");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Physics Parameters */
-  prop = RNA_def_property(srna, "mass", PROP_FLOAT, PROP_UNIT_MASS);
-  RNA_def_property_float_sdna(prop, NULL, "mass");
-  RNA_def_property_range(prop, 0.001f, FLT_MAX); /* range must always be positive (and non-zero) */
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_mass_set", NULL);
-  RNA_def_property_ui_text(prop, "Mass", "How much the object 'weighs' irrespective of gravity");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "mass", PROP_FLOAT, PROP_UNIT_MASS);
+  api_def_prop_float_stype(prop, NULL, "mass");
+  api_def_prop_range(prop, 0.001f, FLT_MAX); /* range must always be positive (and non-zero) */
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_mass_set", NULL);
+  api_def_prop_ui_text(prop, "Mass", "How much the object 'weighs' irrespective of gravity");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   /* Dynamics Parameters - Activation */
   /* TODO: define and figure out how to implement these. */
