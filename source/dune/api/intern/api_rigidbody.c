@@ -377,8 +377,8 @@ static void api_RigidBodyOb_linear_sleepThresh_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   /* only active bodies need sleep threshold update */
-  if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    rbody_set_linear_sleep_thresh(rbo->shared->physics_object, value);
+  if ((rbo->shared->phys_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
+    rbody_set_linear_sleep_thresh(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -454,7 +454,7 @@ static void api_RigidBodyCon_enabled_set(ApiPtr *ptr, bool value)
   SET_FLAG_FROM_TEST(rbc->flag, value, RBC_FLAG_ENABLED);
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint) {
+  if (rbc->phys_constraint) {
     rbody_constraint_set_enabled(rbc->physics_constraint, value);
   }
 #  endif
@@ -476,7 +476,7 @@ static void api_RigidBodyCon_use_breaking_set(ApiPtr *ptr, bool value)
   if (value) {
     rbc->flag |= RBC_FLAG_USE_BREAKING;
 #  ifdef WITH_BULLET
-    if (rbc->physics_constraint) {
+    if (rbc->phys_constraint) {
       rbody_constraint_set_breaking_threshold(rbc->physics_constraint, rbc->breaking_threshold);
     }
 #  endif
@@ -484,7 +484,7 @@ static void api_RigidBodyCon_use_breaking_set(ApiPtr *ptr, bool value)
   else {
     rbc->flag &= ~RBC_FLAG_USE_BREAKING;
 #  ifdef WITH_BULLET
-    if (rbc->physics_constraint) {
+    if (rbc->phys_constraint) {
       rbody_constraint_set_breaking_threshold(rbc->physics_constraint, FLT_MAX);
     }
 #  endif
@@ -498,8 +498,8 @@ static void api_RigidBodyCon_breaking_threshold_set(ApiPtr *ptr, float value)
   rbc->breaking_threshold = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint && (rbc->flag & RBC_FLAG_USE_BREAKING)) {
-    rbody_constraint_set_breaking_threshold(rbc->physics_constraint, value);
+  if (rbc->phys_constraint && (rbc->flag & RBC_FLAG_USE_BREAKING)) {
+    rbody_constraint_set_breaking_threshold(rbc->phys_constraint, value);
   }
 #  endif
 }
@@ -512,7 +512,7 @@ static void api_RigidBodyCon_override_solver_iter_set(ApiPtr *ptr, bool value)
     rbc->flag |= RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS;
 #  ifdef WITH_BULLET
     if (rbc->phys_constraint) {
-      rbody_constraint_set_solver_iterations(rbc->physics_constraint, rbc->num_solver_iterations);
+      rbody_constraint_set_solver_iter(rbc->phys_constraint, rbc->num_solver_iter);
     }
 #  endif
   }
@@ -526,14 +526,14 @@ static void api_RigidBodyCon_override_solver_iter_set(ApiPtr *ptr, bool value)
   }
 }
 
-static void api_RigidBodyCon_num_solver_iterations_set(ApiPtr *ptr, int value)
+static void api_RigidBodyCon_num_solver_iter_set(ApiPtr *ptr, int value)
 {
   RigidBodyCon *rbc = (RigidBodyCon *)ptr->data;
 
   rbc->num_solver_iter = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->phys_constraint && (rbc->flag & RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS)) {
+  if (rbc->phys_constraint && (rbc->flag & RBC_FLAG_OVERRIDE_SOLVER_ITER)) {
     rbody_constraint_set_solver_iter(rbc->phys_constraint, value);
   }
 #  endif
@@ -713,21 +713,21 @@ static void api_RigidBodyCon_motor_lin_max_impulse_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
-    RB_constraint_set_max_impulse_motor(
+    rbody_constraint_set_max_impulse_motor(
         rbc->physics_constraint, value, rbc->motor_ang_max_impulse);
   }
 #  endif
 }
 
-static void api_RigidBodyCon_use_motor_lin_set(PointerRNA *ptr, bool value)
+static void api_RigidBodyCon_use_motor_lin_set(ApiPtr *ptr, bool value)
 {
   RigidBodyCon *rbc = (RigidBodyCon *)ptr->data;
 
   SET_FLAG_FROM_TEST(rbc->flag, value, RBC_FLAG_USE_MOTOR_LIN);
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint) {
-    RB_constraint_set_enable_motor(rbc->physics_constraint,
+  if (rbc->phys_constraint) {
+    rbody_constraint_set_enable_motor(rbc->phys_constraint,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_LIN,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_ANG);
   }
@@ -742,7 +742,7 @@ static void api_RigidBodyCon_use_motor_ang_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   if (rbc->phys_constraint) {
-    RB_constraint_set_enable_motor(rbc->physics_constraint,
+    rbody_constraint_set_enable_motor(rbc->phys_constraint,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_LIN,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_ANG);
   }
@@ -784,7 +784,7 @@ static void api_RigidBodyCon_motor_ang_target_velocity_set(ApiPtr *ptr, float va
   rbc->motor_ang_target_velocity = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
+  if (rbc->phys_constraint && rbc->type == RBC_TYPE_MOTOR) {
     rbody_constraint_set_target_velocity_motor(
         rbc->phys_constraint, rbc->motor_lin_target_velocity, value);
   }
@@ -842,7 +842,7 @@ static ApiPtr api_RigidBodyWorld_PointCache_get(ApiPtr *ptr)
 
 static void api_def_rigidbody_world(DuneApi *dapi)
 {
-  ApiStruct *sapu;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   ApiFn *fn;
@@ -1070,16 +1070,16 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   /* TODO: define and figure out how to implement these. */
 
   /* Dynamics Parameters - Deactivation */
-  prop = RNA_def_property(srna, "use_deactivation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_USE_DEACTIVATION);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyOb_activation_state_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_deactivation", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_USE_DEACTIVATION);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyOb_activation_state_set");
+  api_def_prop_ui_text(
       prop,
       "Enable Deactivation",
       "Enable deactivation of resting rigid bodies (increases performance and stability "
       "but can cause glitches)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   prop = RNA_def_property(srna, "use_start_deactivated", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_START_DEACTIVATED);
@@ -1533,41 +1533,41 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Damping Z Angle", "Damping on the Z rotational axis");
   RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "motor_lin_target_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
-  RNA_def_property_float_sdna(prop, NULL, "motor_lin_target_velocity");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -100.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_lin_target_velocity_set", NULL);
-  RNA_def_property_ui_text(prop, "Target Velocity", "Target linear motor velocity");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "motor_lin_target_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
+  api_def_prop_float_stype(prop, NULL, "motor_lin_target_velocity");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -100.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_motor_lin_target_velocity_set", NULL);
+  api_def_prop_ui_text(prop, "Target Velocity", "Target linear motor velocity");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_props(sapi, "motor_lin_max_impulse", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "motor_lin_max_impulse");
-  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
-  RNA_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_prop_float_default(prop, 1.0f);
-  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_lin_max_impulse_set", NULL);
-  RNA_def_prop_ui_text(prop, "Max Impulse", "Maximum linear motor impulse");
-  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_props(sapi, "motor_lin_max_impulse", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "motor_lin_max_impulse");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_motor_lin_max_impulse_set", NULL);
+  api_def_prop_ui_text(prop, "Max Impulse", "Maximum linear motor impulse");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_prop(srna, "motor_ang_target_velocity", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "motor_ang_target_velocity");
-  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_prop_ui_range(prop, -100.0f, 100.0f, 1, 3);
-  RNA_def_prop_float_default(prop, 1.0f);
-  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_target_velocity_set", NULL);
-  RNA_def_prop_ui_text(prop, "Target Velocity", "Target angular motor velocity");
-  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(srna, "motor_ang_target_velocity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "motor_ang_target_velocity");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -100.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_target_velocity_set", NULL);
+  api_def_prop_ui_text(prop, "Target Velocity", "Target angular motor velocity");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_prop(srna, "motor_ang_max_impulse", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "motor_ang_max_impulse");
-  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
-  RNA_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_prop_float_default(prop, 1.0f);
-  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_max_impulse_set", NULL);
-  RNA_def_prop_ui_text(prop, "Max Impulse", "Maximum angular motor impulse");
-  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "motor_ang_max_impulse", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "motor_ang_max_impulse");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyCon_motor_ang_max_impulse_set", NULL);
+  api_def_prop_ui_text(prop, "Max Impulse", "Maximum angular motor impulse");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 }
 
 void api_def_rigidbody(DuneApi *dapi)
