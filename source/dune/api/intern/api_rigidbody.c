@@ -1137,210 +1137,209 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   RNA_def_property_float_default(prop, 0.5f);
   RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_friction_set", NULL);
   RNA_def_property_ui_text(prop, "Friction", "Resistance of object to movement");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "restitution", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "restitution");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 1, 3);
-  RNA_def_property_float_default(prop, 0.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_restitution_set", NULL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "restitution", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "restitution");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 1, 3);
+  api_def_prop_float_default(prop, 0.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_restitution_set", NULL);
+  api_def_prop_ui_text(prop,
                            "Restitution",
                            "Tendency of object to bounce after colliding with another "
                            "(0 = stays still, 1 = perfectly elastic)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Collision Parameters - Sensitivity */
-  prop = RNA_def_property(srna, "use_margin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBO_FLAG_USE_MARGIN);
-  RNA_def_property_boolean_default(prop, false);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_margin", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_USE_MARGIN);
+  api_def_prop_bool_default(prop, false);
+  api_def_prop_ui_text(
       prop,
       "Collision Margin",
       "Use custom collision margin (some shapes will have a visible gap around them)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_reset");
 
-  prop = RNA_def_property(srna, "collision_margin", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "margin");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 3);
-  RNA_def_property_float_default(prop, 0.04f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyOb_collision_margin_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "collision_margin", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_float_stype(prop, NULL, "margin");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 3);
+  api_def_prop_float_default(prop, 0.04f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_collision_margin_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Collision Margin",
       "Threshold of distance near surface where collisions are still considered "
       "(best results when non-zero)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_reset");
 
-  prop = RNA_def_property(srna, "collision_collections", PROP_BOOLEAN, PROP_LAYER_MEMBER);
-  RNA_def_property_boolean_sdna(prop, NULL, "col_groups", 1);
-  RNA_def_property_array(prop, 20);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyOb_collision_collections_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "collision_collections", PROP_BOOLEAN, PROP_LAYER_MEMBER);
+  api_def_prop_bool_stype(prop, NULL, "col_groups", 1);
+  api_def_prop_array(prop, 20);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyOb_collision_collections_set");
+  api_def_prop_ui_text(
       prop, "Collision Collections", "Collision collections rigid body belongs to");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
 }
 
-static void rna_def_rigidbody_constraint(BlenderRNA *brna)
+static void api_def_rigidbody_constraint(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "RigidBodyConstraint", NULL);
-  RNA_def_struct_sdna(srna, "RigidBodyCon");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "RigidBodyConstraint", NULL);
+  api_def_struct_stype(sapi, "RigidBodyCon");
+  api_def_struct_ui_text(sapi,
                          "Rigid Body Constraint",
                          "Constraint influencing Objects inside Rigid Body Simulation");
-  RNA_def_struct_path_func(srna, "rna_RigidBodyCon_path");
+  api_def_struct_path_fn(sapi, "api_RigidBodyCon_path");
 
   /* Enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_rigidbody_constraint_type_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_RigidBodyCon_type_set", NULL);
-  RNA_def_property_ui_text(prop, "Type", "Type of Rigid Body Constraint");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_rigidbody_constraint_type_items);
+  api_def_prop_enum_fns(prop, NULL, "api_RigidBodyCon_type_set", NULL);
+  api_def_prop_ui_text(prop, "Type", "Type of Rigid Body Constraint");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prope_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "spring_type");
-  RNA_def_property_enum_items(prop, rna_enum_rigidbody_constraint_spring_type_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_RigidBodyCon_spring_type_set", NULL);
-  RNA_def_property_ui_text(prop, "Spring Type", "Which implementation of spring to use");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "spring_type");
+  api_def_prop_enum_items(prop, api_enum_rigidbody_constraint_spring_type_items);
+  api_def_prop_enum_fns(prop, NULL, "rna_RigidBodyCon_spring_type_set", NULL);
+  api_def_prop_ui_text(prop, "Spring Type", "Which implementation of spring to use");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_ENABLED);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_enabled_set");
-  RNA_def_property_ui_text(prop, "Enabled", "Enable this constraint");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "enabled", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_ENABL
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_enabled_set");
+  api_def_prop_ui_text(prop, "Enabled", "Enable this constraint");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "disable_collisions", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_DISABLE_COLLISIONS);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_disable_collisions_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "disable_collisions", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_DISABLE_COLLISIONS);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_disable_collisions_set");
+  api_def_prop_ui_text(
       prop, "Disable Collisions", "Disable collisions between constrained rigid bodies");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "object1", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ob1");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Object 1", "First Rigid Body Object to be constrained");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "object1", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "ob1");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "Object 1", "First Rigid Body Object to be constrained");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "object2", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ob2");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Object 2", "Second Rigid Body Object to be constrained");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "object2", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "ob2");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Object 2", "Second Rigid Body Object to be constrained");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Breaking Threshold */
-  prop = RNA_def_property(srna, "use_breaking", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_BREAKING);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_use_breaking_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_breaking", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_BREAKING);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_breaking_set");
+  api_def_prop_ui_text(
       prop, "Breakable", "Constraint can be broken if it receives an impulse above the threshold");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "breaking_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "breaking_threshold");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1000.0f, 100.0, 2);
-  RNA_def_property_float_default(prop, 10.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_breaking_threshold_set", NULL);
-  RNA_def_property_ui_text(prop,
-                           "Breaking Threshold",
-                           "Impulse threshold that must be reached for the constraint to break");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "breaking_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stypes(prop, NULL, "breaking_threshold");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1000.0f, 100.0, 2);
+  api_def_prop_float_default(prop, 10.0f);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyCon_breaking_threshold_set", NULL);
+  api_def_prop_ui_text(prop,
+                       "Breaking Threshold",
+                       "Impulse threshold that must be reached for the constraint to break");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   /* Solver Iterations */
-  prop = RNA_def_property(srna, "use_override_solver_iterations", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyCon_override_solver_iterations_set");
-  RNA_def_property_ui_text(prop,
-                           "Override Solver Iterations",
-                           "Override the number of solver iterations for this constraint");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_override_solver_iterations", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS);
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_override_solver_iterations_set");
+  api_def_prop_ui_text(prop,
+                       "Override Solver Iterations",
+                       "Override the number of solver iterations for this constraint");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "solver_iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "num_solver_iterations");
-  RNA_def_property_range(prop, 1, 1000);
-  RNA_def_property_ui_range(prop, 1, 100, 1, -1);
-  RNA_def_property_int_default(prop, 10);
-  RNA_def_property_int_funcs(prop, NULL, "rna_RigidBodyCon_num_solver_iterations_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "solver_iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "num_solver_iterations");
+  api_def_prop_range(prop, 1, 1000);
+  api_def_prop_ui_range(prop, 1, 100, 1, -1);
+  api_def_prop_int_default(prop, 10);
+  api_def_prop_int_fns(prop, NULL, "api_RigidBodyCon_num_solver_iterations_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Solver Iterations",
       "Number of constraint solver iterations made per simulation step (higher values are more "
       "accurate but slower)");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
-
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset")
   /* Limits */
-  prop = RNA_def_property(srna, "use_limit_lin_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_X);
-  RNA_def_property_ui_text(prop, "X Axis", "Limit translation on X axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_lin_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_X);
+  api_def_prop_ui_text(prop, "X Axis", "Limit translation on X axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_limit_lin_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_Y);
-  RNA_def_property_ui_text(prop, "Y Axis", "Limit translation on Y axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_lin_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_Y);
+  api_def_prop_ui_text(prop, "Y Axis", "Limit translation on Y axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_limit_lin_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_Z);
-  RNA_def_property_ui_text(prop, "Z Axis", "Limit translation on Z axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_lin_z", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_LIN_Z);
+  api_def_prop_ui_text(prop, "Z Axis", "Limit translation on Z axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_limit_ang_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_X);
-  RNA_def_property_ui_text(prop, "X Angle", "Limit rotation around X axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_ang_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_X);
+  api_def_prop_ui_text(prop, "X Angle", "Limit rotation around X axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_limit_ang_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Y);
-  RNA_def_property_ui_text(prop, "Y Angle", "Limit rotation around Y axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_ang_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Y);
+  api_def_prop_ui_text(prop, "Y Angle", "Limit rotation around Y axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_limit_ang_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Z);
-  RNA_def_property_ui_text(prop, "Z Angle", "Limit rotation around Z axis");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_limit_ang_z", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Z);
+  api_def_prop_ui_text(prop, "Z Angle", "Limit rotation around Z axis");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_X);
-  RNA_def_property_ui_text(prop, "X Spring", "Enable spring on X axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_X);
+  api_def_prop_ui_text(prop, "X Spring", "Enable spring on X axis");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_Y);
-  RNA_def_property_ui_text(prop, "Y Spring", "Enable spring on Y axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_Y);
+  api_def_prop_ui_text(prop, "Y Spring", "Enable spring on Y axis");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_Z);
-  RNA_def_property_ui_text(prop, "Z Spring", "Enable spring on Z axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_Z)
+  api_def_prop_ui_text(prop, "Z Spring", "Enable spring on Z axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_ang_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_X);
-  RNA_def_property_ui_text(prop, "X Angle Spring", "Enable spring on X rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_ang_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_X);
+  api_def_prop_ui_text(prop, "X Angle Spring", "Enable spring on X rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_ang_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Y);
-  RNA_def_property_ui_text(prop, "Y Angle Spring", "Enable spring on Y rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_ang_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_type(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Y);
+  api_def_prop_ui_text(prop, "Y Angle Spring", "Enable spring on Y rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "use_spring_ang_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Z);
-  RNA_def_property_ui_text(prop, "Z Angle Spring", "Enable spring on Z rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "use_spring_ang_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Z);
+  api_def_prop_ui_text(prop, "Z Angle Spring", "Enable spring on Z rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
   prop = RNA_def_property(srna, "use_motor_lin", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_LIN);
