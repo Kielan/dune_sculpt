@@ -1517,21 +1517,21 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Damping X Angle", "Damping on the X rotational axis");
   api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_ang_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_ang_y");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_y_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping Y Angle", "Damping on the Y rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_damping_ang_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_ang_y");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_y_set", NULL);
+  api_def_prop_ui_text(prop, "Damping Y Angle", "Damping on the Y rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_ang_z", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_ang_z");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_z_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping Z Angle", "Damping on the Z rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_damping_ang_z", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_ang_z
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_z_set", NULL);
+  api_def_prop_ui_text(prop, "Damping Z Angle", "Damping on the Z rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "motor_lin_target_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
   api_def_prop_float_stype(prop, NULL, "motor_lin_target_velocity");
