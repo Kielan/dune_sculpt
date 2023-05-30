@@ -143,170 +143,170 @@ static void engine_update(RenderEngine *engine, Main *bmain, Depsgraph *depsgrap
   api_param_list_free(&list);
 }
 
-static void engine_render(RenderEngine *engine, Depsgraph *depsgraph)
+static void engine_render(RenderEngine *engine, Graph *graph)
 {
-  extern FunctionRNA rna_RenderEngine_render_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_render_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_render_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_render_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "depsgraph", &graph);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_render_frame_finish(RenderEngine *engine)
 {
-  extern FunctionRNA rna_RenderEngine_render_frame_finish_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_render_frame_finish_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_render_frame_finish_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_render_frame_finish_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void engine_draw(RenderEngine *engine, const struct bContext *context, Depsgraph *depsgraph)
+static void engine_draw(RenderEngine *engine, const struct Cxt *cxt, Graph *graph)
 {
-  extern FunctionRNA rna_RenderEngine_draw_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_draw_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_draw_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_draw_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &context);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &cxt);
+  api_param_set_lookup(&list, "graph", &graph);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
   RNA_parameter_list_free(&list);
 }
 
 static void engine_bake(RenderEngine *engine,
-                        struct Depsgraph *depsgraph,
+                        struct Graph *graph,
                         struct Object *object,
                         const int pass_type,
                         const int pass_filter,
                         const int width,
                         const int height)
 {
-  extern FunctionRNA rna_RenderEngine_bake_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_bake_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApuFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_bake_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_bake_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  RNA_parameter_set_lookup(&list, "object", &object);
-  RNA_parameter_set_lookup(&list, "pass_type", &pass_type);
-  RNA_parameter_set_lookup(&list, "pass_filter", &pass_filter);
-  RNA_parameter_set_lookup(&list, "width", &width);
-  RNA_parameter_set_lookup(&list, "height", &height);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "depsgraph", &graph);
+  api_param_set_lookup(&list, "object", &object);
+  api_param_set_lookup(&list, "pass_type", &pass_type);
+  api_param_set_lookup(&list, "pass_filter", &pass_filter);
+  api_param_set_lookup(&list, "width", &width);
+  api_param_set_lookup(&list, "height", &height);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_view_update(RenderEngine *engine,
-                               const struct bContext *context,
-                               Depsgraph *depsgraph)
+                               const struct Cxt *cxt,
+                               Graph *graph)
 {
-  extern FunctionRNA rna_RenderEngine_view_update_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_view_update_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_view_update_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_view_update_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &context);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &cxt);
+  api_param_set_lookup(&list, "graph", &graph);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_view_draw(RenderEngine *engine,
-                             const struct bContext *context,
-                             Depsgraph *depsgraph)
+                             const struct Cxt *cxt,
+                             Graph *graph)
 {
-  extern FunctionRNA rna_RenderEngine_view_draw_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_view_draw_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_view_draw_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  fn = &api_RenderEngine_view_draw_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &context);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &cxt);
+  api_param_set_lookup(&list, "graph", &graph);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_update_script_node(RenderEngine *engine,
-                                      struct bNodeTree *ntree,
-                                      struct bNode *node)
+                                      struct NodeTree *ntree,
+                                      struct Node *node)
 {
-  extern FunctionRNA rna_RenderEngine_update_script_node_func;
-  PointerRNA ptr, nodeptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_update_script_node_fn;
+  ApiPtr ptr, nodeptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  RNA_pointer_create((ID *)ntree, &RNA_Node, node, &nodeptr);
-  func = &rna_RenderEngine_update_script_node_func;
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
+  api_ptr_create((Id *)ntree, &ApiNode, node, &nodeptr);
+  fn = &api_RenderEngine_update_script_node_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "node", &nodeptr);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "node", &nodeptr);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_update_render_passes(RenderEngine *engine,
                                         struct Scene *scene,
                                         struct ViewLayer *view_layer)
 {
-  extern FunctionRNA rna_RenderEngine_update_render_passes_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_update_render_passes_fn;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_update_render_passes_func;
+  api_ptr_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
+  fn = &api_RenderEngine_update_render_passes_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "scene", &scene);
-  RNA_parameter_set_lookup(&list, "renderlayer", &view_layer);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "scene", &scene)
+  apu_param_set_lookup(&list, "renderlayer", &view_layer);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 /* RenderEngine registration */
 
-static void rna_RenderEngine_unregister(Main *bmain, StructRNA *type)
+static void api_RenderEngine_unregister(Main *main, ApiStruct *type)
 {
-  RenderEngineType *et = RNA_struct_blender_type_get(type);
+  RenderEngineType *et = api_struct_dune_type_get(type);
 
   if (!et) {
     return;
