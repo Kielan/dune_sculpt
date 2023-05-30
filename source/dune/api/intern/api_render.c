@@ -548,29 +548,29 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "render_frame_finish", NULL);
-  RNA_def_function_ui_description(
-      func, "Perform finishing operations after all view layers in a frame were rendered");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  fn = api_def_fn(sapi, "render_frame_finish", NULL);
+  api_def_fn_ui_description(
+      fn, "Perform finishing operations after all view layers in a frame were rendered");
+  apo_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
 
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw render image");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw render image");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "bake", NULL);
-  RNA_def_function_ui_description(func, "Bake passes");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "object", "Object", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "pass_type", rna_enum_bake_pass_type_items, 0, "Pass", "Pass to bake");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "bake", NULL);
+  api_def_fn_ui_description(fn, "Bake passes");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  apu_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "object", "Object", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fb, "pass_type", rna_enum_bake_pass_type_items, 0, "Pass", "Pass to bake");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn,
                      "pass_filter",
                      0,
                      0,
@@ -579,34 +579,34 @@ static void api_def_render_engine(DuneApi *dapi)
                      "Filter to combined, diffuse, glossy and transmission passes",
                      0,
                      INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "width", 0, 0, INT_MAX, "Width", "Image width", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "height", 0, 0, INT_MAX, "Height", "Image height", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "width", 0, 0, INT_MAX, "Width", "Image width", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "height", 0, 0, INT_MAX, "Height", "Image height", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* viewport render callbacks */
-  func = RNA_def_function(srna, "view_update", NULL);
-  RNA_def_function_ui_description(func, "Update on data changes for viewport render");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "view_update", NULL);
+  api_def_fn_ui_description(fn, "Update on data changes for viewport render");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "view_draw", NULL);
-  RNA_def_function_ui_description(func, "Draw viewport render");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "view_draw", NULL);
+  api_def_fn_ui_description(fn, "Draw viewport render");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = apu_def_ptr(fn, "graph", "Depsgraph", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* shader script callbacks */
-  func = RNA_def_function(srna, "update_script_node", NULL);
-  RNA_def_function_ui_description(func, "Compile shader script node");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "node", "Node", "", "");
+  fn = api_def_fn(sapi, "update_script_node", NULL);
+  api_def_fn_ui_description(func, "Compile shader script node");
+  api_def_fn_flag(fn, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "node", "Node", "", "");
   RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
 
   fn = api_def_fn(sapi, "update_render_passes", NULL);
