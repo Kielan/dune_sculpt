@@ -609,32 +609,32 @@ static void rna_def_render_engine(BlenderRNA *brna)
   parm = RNA_def_pointer(func, "node", "Node", "", "");
   RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
 
-  func = RNA_def_function(srna, "update_render_passes", NULL);
-  RNA_def_function_ui_description(func, "Update the render passes that will be generated");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "");
-  parm = RNA_def_pointer(func, "renderlayer", "ViewLayer", "", "");
+  fn = api_def_fn(sapi, "update_render_passes", NULL);
+  api_def_fn_ui_description(fn, "Update the render passes that will be generated");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "scene", "Scene", "", "");
+  parm = api_def_ptr(fn, "renderlayer", "ViewLayer", "", "");
 
   /* tag for redraw */
-  func = RNA_def_function(srna, "tag_redraw", "engine_tag_redraw");
-  RNA_def_function_ui_description(func, "Request redraw for viewport rendering");
+  fn = api_def_fn(sapi, "tag_redraw", "engine_tag_redraw");
+  api_def_fn_ui_description(fn, "Request redraw for viewport rendering");
 
   /* tag for update */
-  func = RNA_def_function(srna, "tag_update", "engine_tag_update");
-  RNA_def_function_ui_description(func, "Request update call for viewport rendering");
+  fn = api_def_fn(sapi, "tag_update", "engine_tag_update");
+  api_def_fn_ui_description(fn, "Request update call for viewport rendering");
 
-  func = RNA_def_function(srna, "begin_result", "RE_engine_begin_result");
-  RNA_def_function_ui_description(
-      func, "Create render result to write linear floating-point render layers and passes");
-  parm = RNA_def_int(func, "x", 0, 0, INT_MAX, "X", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "y", 0, 0, INT_MAX, "Y", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "w", 0, 0, INT_MAX, "Width", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "h", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(
+  fn = api_def_fn(sapi, "begin_result", "render_engine_begin_result");
+  api_def_fn_ui_description(
+      fn, "Create render result to write linear floating-point render layers and passes");
+  parm = api_def_int(fn, "x", 0, 0, INT_MAX, "X", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "y", 0, 0, INT_MAX, "Y", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "w", 0, 0, INT_MAX, "Width", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "h", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(
       func, "layer", NULL, 0, "Layer", "Single layer to get render result for"); /* NULL ok here */
   RNA_def_string(
       func, "view", NULL, 0, "View", "Single view to get render result for"); /* NULL ok here */
