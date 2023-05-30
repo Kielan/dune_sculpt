@@ -112,8 +112,8 @@ static int engine_get_preview_pixel_size(RenderEngine *UNUSED(engine), Scene *sc
 
 static void engine_bind_display_space_shader(RenderEngine *UNUSED(engine), Scene *UNUSED(scene))
 {
-  GPUShader *shader = GPU_shader_get_builtin_shader(GPU_SHADER_2D_IMAGE);
-  GPU_shader_bind(shader);
+  GPUShader *shader = gpu_shader_get_builtin_shader(GPU_SHADER_2D_IMAGE);
+  gpu_shader_bind(shader);
 
   int img_loc = gpu_shader_get_uniform(shader, "image");
 
@@ -191,7 +191,7 @@ static void engine_draw(RenderEngine *engine, const struct Cxt *cxt, Graph *grap
   api_param_set_lookup(&list, "graph", &graph);
   engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_bake(RenderEngine *engine,
@@ -313,42 +313,42 @@ static void api_RenderEngine_unregister(Main *main, ApiStruct *type)
   }
 
   /* Stop all renders in case we were using this one. */
-  ED_render_engine_changed(bmain, false);
-  RE_FreeAllPersistentData();
+  ed_render_engine_changed(main, false);
+  render_FreeAllPersistentData();
 
-  RNA_struct_free_extension(type, &et->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
-  BLI_freelinkN(&R_engines, et);
+  api_struct_free_extension(type, &et->api_ext);
+  api_struct_free(&DUNE_API, type);
+  lib_freelinkn(&R_engines, et);
 }
 
-static StructRNA *rna_RenderEngine_register(Main *bmain,
+static ApiStruct *api_RenderEngine_register(Main *main,
                                             ReportList *reports,
                                             void *data,
                                             const char *identifier,
-                                            StructValidateFunc validate,
-                                            StructCallbackFunc call,
-                                            StructFreeFunc free)
+                                            StructValidateFn validate,
+                                            StructCbFn call,
+                                            StructFreeFn free)
 {
   RenderEngineType *et, dummyet = {NULL};
   RenderEngine dummyengine = {NULL};
-  PointerRNA dummyptr;
-  int have_function[9];
+  ApiPtr dummyptr;
+  int have_fn[9];
 
   /* setup dummy engine & engine type to store static properties in */
   dummyengine.type = &dummyet;
   dummyet.flag |= RE_USE_SHADING_NODES_CUSTOM;
-  RNA_pointer_create(NULL, &RNA_RenderEngine, &dummyengine, &dummyptr);
+  api_ptr_create(NULL, &ApiRenderEngine, &dummyengine, &dummyptr);
 
   /* validate the python class */
-  if (validate(&dummyptr, data, have_function) != 0) {
+  if (validate(&dummyptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummyet.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummyet.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Registering render engine class: '%s' is too long, maximum length is %d",
-                identifier,
+                id,
                 (int)sizeof(dummyet.idname));
     return NULL;
   }
@@ -356,18 +356,18 @@ static StructRNA *rna_RenderEngine_register(Main *bmain,
   /* check if we have registered this engine type before, and remove it */
   for (et = R_engines.first; et; et = et->next) {
     if (STREQ(et->idname, dummyet.idname)) {
-      if (et->rna_ext.srna) {
-        rna_RenderEngine_unregister(bmain, et->rna_ext.srna);
+      if (et->api_ext.sapi) {
+        api_RenderEngine_unregister(bmain, et->rna_ext.srna);
       }
       break;
     }
   }
 
   /* create a new engine type */
-  et = MEM_mallocN(sizeof(RenderEngineType), "python render engine");
+  et = mem_mallocn(sizeof(RenderEngineType), "python render engine");
   memcpy(et, &dummyet, sizeof(dummyet));
 
-  et->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, et->idname, &RNA_RenderEngine);
+  et->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_API, et->idname, &ApiRenderEngine);
   et->rna_ext.data = data;
   et->rna_ext.call = call;
   et->rna_ext.free = free;
@@ -394,45 +394,45 @@ static void **rna_RenderEngine_instance(PointerRNA *ptr)
   return &engine->py_instance;
 }
 
-static StructRNA *rna_RenderEngine_refine(PointerRNA *ptr)
+static ApiStruct *api_RenderEngine_refine(PointerRNA *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
   return (engine->type && engine->type->rna_ext.srna) ? engine->type->rna_ext.srna :
                                                         &RNA_RenderEngine;
 }
 
-static void rna_RenderEngine_tempdir_get(PointerRNA *UNUSED(ptr), char *value)
+static void api_RenderEngine_tempdir_get(PointerRNA *UNUSED(ptr), char *value)
 {
-  BLI_strncpy(value, BKE_tempdir_session(), FILE_MAX);
+  lib_strncpy(value, dune_tempdir_session(), FILE_MAX);
 }
 
-static int rna_RenderEngine_tempdir_length(PointerRNA *UNUSED(ptr))
+static int api_RenderEngine_tempdir_length(PointerRNA *UNUSED(ptr))
 {
-  return strlen(BKE_tempdir_session());
+  return strlen(dune_tempdir_session());
 }
 
-static PointerRNA rna_RenderEngine_render_get(PointerRNA *ptr)
+static ApiPtr api_RenderEngine_render_get(PointerRNA *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
 
   if (engine->re) {
-    RenderData *r = RE_engine_get_render_data(engine->re);
+    RenderData *r = render_engine_get_render_data(engine->re);
 
-    return rna_pointer_inherit_refine(ptr, &RNA_RenderSettings, r);
+    return api_ptr_inherit_refine(ptr, &RNA_RenderSettings, r);
   }
   else {
-    return rna_pointer_inherit_refine(ptr, &RNA_RenderSettings, NULL);
+    return api_ptr_inherit_refine(ptr, &RNA_RenderSettings, NULL);
   }
 }
 
-static PointerRNA rna_RenderEngine_camera_override_get(PointerRNA *ptr)
+static ApiPtr api_RenderEngine_camera_override_get(PointerRNA *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
   /* TODO(sergey): Shouldn't engine point to an evaluated datablocks already? */
   if (engine->re) {
-    Object *cam = RE_GetCamera(engine->re);
-    Object *cam_eval = DEG_get_evaluated_object(engine->depsgraph, cam);
-    return rna_pointer_inherit_refine(ptr, &RNA_Object, cam_eval);
+    Object *cam = render_GetCamera(engine->re);
+    Object *cam_eval = graph_get_evaluated_object(engine->depsgraph, cam);
+    return api_ptr_inherit_refine(ptr, &RNA_Object, cam_eval);
   }
   else {
     return rna_pointer_inherit_refine(ptr, &RNA_Object, engine->camera_override);
