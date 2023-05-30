@@ -533,20 +533,20 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_struct_register_fns(sapi,
                                 "api_RenderEngine_register",
                                 "api_RenderEngine_unregister",
-                                "rna_RenderEngine_instance");
+                                "api_RenderEngine_instance");
 
   /* final render callbacks */
-  func = api_def_function(srna, "update", NULL);
-  RNA_def_function_ui_description(func, "Export scene data for render");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  RNA_def_pointer(func, "data", "BlendData", "", "");
-  RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
+  fn = api_def_fn(sapi, "update", NULL);
+  api_def_fn_ui_description(fn, "Export scene data for render");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  api_def_ptr(fn, "data", "DuneData", "", "");
+  api_def_ptr(fn, "graph", "Graph", "", "");
 
-  func = RNA_def_function(srna, "render", NULL);
-  RNA_def_function_ui_description(func, "Render scene into an image");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  func = api_def_fn(sapi, "render", NULL);
+  api_def_fn_ui_description(fb, "Render scene into an image");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   fn = api_def_fn(sapi, "render_frame_finish", NULL);
   api_def_fn_ui_description(
@@ -558,17 +558,17 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
   parm = api_def_ptr(fn, "context", "Context", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  parm = api_def_ptr(fn, "graph", "Graph", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   fn = api_def_fn(sapi, "bake", NULL);
   api_def_fn_ui_description(fn, "Bake passes");
-  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "graph", "Graph", "", "");
   apu_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "object", "Object", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = api_def_enum(fb, "pass_type", rna_enum_bake_pass_type_items, 0, "Pass", "Pass to bake");
+  parm = api_def_enum(fb, "pass_type", api_enum_bake_pass_type_items, 0, "Pass", "Pass to bake");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_int(fn,
                      "pass_filter",
@@ -635,25 +635,25 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_int(fn, "h", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_string(
-      func, "layer", NULL, 0, "Layer", "Single layer to get render result for"); /* NULL ok here */
-  RNA_def_string(
-      func, "view", NULL, 0, "View", "Single view to get render result for"); /* NULL ok here */
-  parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
-  RNA_def_function_return(func, parm);
+      fn, "layer", NULL, 0, "Layer", "Single layer to get render result for"); /* NULL ok here */
+  api_def_string(
+      fn, "view", NULL, 0, "View", "Single view to get render result for"); /* NULL ok here */
+  parm = api_def_ptr(fn, "result", "RenderResult", "Result", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "update_result", "RE_engine_update_result");
-  RNA_def_function_ui_description(
-      func, "Signal that pixels have been updated and can be redrawn in the user interface");
-  parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "update_result", "RE_engine_update_result");
+  api_def_fn_ui_description(
+      fn, "Signal that pixels have been updated and can be redrawn in the user interface");
+  parm = api_def_pr(fn, "result", "RenderResult", "Result", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "end_result", "RE_engine_end_result");
-  RNA_def_function_ui_description(func,
-                                  "All pixels in the render result have been set and are final");
-  parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(
-      func, "cancel", 0, "Cancel", "Don't mark tile as done, don't merge results unless forced");
+  fn = api_def_fn(sapi, "end_result", "RE_engine_end_result");
+  api_def_fn_ui_description(fn,
+                            l"All pixels in the render result have been set and are final");
+  parm = api_def_ptr(fn, "result", "RenderResult", "Result", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(
+      fn, "cancel", 0, "Cancel", "Don't mark tile as done, don't merge results unless forced");
   RNA_def_boolean(func, "highlight", 0, "Highlight", "Don't mark tile as done yet");
   RNA_def_boolean(
       func, "do_merge_results", 0, "Merge Results", "Merge results even if cancel=true");
