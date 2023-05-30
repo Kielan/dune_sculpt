@@ -452,32 +452,32 @@ static void rna_RenderEngine_engine_frame_set(RenderEngine *engine, int frame, f
 #  endif
 }
 
-static void rna_RenderResult_views_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_RenderResult_views_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   RenderResult *rr = (RenderResult *)ptr->data;
-  rna_iterator_listbase_begin(iter, &rr->views, NULL);
+  api_iter_list_begin(iter, &rr->views, NULL);
 }
 
-static void rna_RenderResult_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_RenderResult_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
   RenderResult *rr = (RenderResult *)ptr->data;
-  rna_iterator_listbase_begin(iter, &rr->layers, NULL);
+  api_iter_list_begin(iter, &rr->layers, NULL);
 }
 
-static void rna_RenderResult_stamp_data_add_field(RenderResult *rr,
+static void api_RenderResult_stamp_data_add_field(RenderResult *rr,
                                                   const char *field,
                                                   const char *value)
 {
-  BKE_render_result_stamp_data(rr, field, value);
+  dune_render_result_stamp_data(rr, field, value);
 }
 
-static void rna_RenderLayer_passes_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_RenderLayer_passes_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
   RenderLayer *rl = (RenderLayer *)ptr->data;
-  rna_iterator_listbase_begin(iter, &rl->passes, NULL);
+  api_iterator_listbase_begin(iter, &rl->passes, NULL);
 }
 
-static int rna_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
 
@@ -487,26 +487,26 @@ static int rna_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_AR
   return length[0] * length[1];
 }
 
-static void rna_RenderPass_rect_get(PointerRNA *ptr, float *values)
+static void api_RenderPass_rect_get(PointerRNA *ptr, float *values)
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
   memcpy(values, rpass->rect, sizeof(float) * rpass->rectx * rpass->recty * rpass->channels);
 }
 
-void rna_RenderPass_rect_set(PointerRNA *ptr, const float *values)
+void api_RenderPass_rect_set(PointerRNA *ptr, const float *values)
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
   memcpy(rpass->rect, values, sizeof(float) * rpass->rectx * rpass->recty * rpass->channels);
 }
 
-static RenderPass *rna_RenderPass_find_by_type(RenderLayer *rl, int passtype, const char *view)
+static RenderPass *api_RenderPass_find_by_type(RenderLayer *rl, int passtype, const char *view)
 {
-  return RE_pass_find_by_type(rl, passtype, view);
+  return render_pass_find_by_type(rl, passtype, view);
 }
 
-static RenderPass *rna_RenderPass_find_by_name(RenderLayer *rl, const char *name, const char *view)
+static RenderPass *api_RenderPass_find_by_name(RenderLayer *rl, const char *name, const char *view)
 {
-  return RE_pass_find_by_name(rl, name, view);
+  return render_pass_find_by_name(rl, name, view);
 }
 
 #else /* RNA_RUNTIME */
