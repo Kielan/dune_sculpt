@@ -691,14 +691,14 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_ptr(fn, "render_pass", "RenderPass", "Index", "Index of pass to get");
   api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "active_view_get", "RE_engine_active_view_get");
-  parm = RNA_def_string(func, "view", NULL, 0, "View", "Single view active");
-  RNA_def_function_return(func, parm);
+  fn = api_def_function(sapi, "active_view_get", "RE_engine_active_view_get");
+  parm = api_def_string(fn, "view", NULL, 0, "View", "Single view active");
+  api_def_fn_return(fb, parm);
 
-  func = RNA_def_function(srna, "active_view_set", "RE_engine_active_view_set");
-  parm = RNA_def_string(
+  fn = api_def_fn(sapi, "active_view_set", "RE_engine_active_view_set");
+  parm = api_def_string(
       func, "view", NULL, 0, "View", "Single view to set as active"); /* NULL ok here */
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   func = RNA_def_function(srna, "camera_shift_x", "RE_engine_get_camera_shift_x");
   parm = RNA_def_pointer(func, "camera", "Object", "", "");
