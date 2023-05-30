@@ -1,33 +1,33 @@
 #include <stdlib.h>
 
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_node.h"
+#include "type_object.h"
+#include "types_scene.h"
 
-#include "BLI_path_util.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_utildefines.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
 #endif
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "BKE_image.h"
-#include "BKE_scene.h"
+#include "dune_image.h"
+#include "dune_scene.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "RE_engine.h"
-#include "RE_pipeline.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
 
-#include "ED_render.h"
+#include "ed_render.h"
 
 /* Deprecated, only provided for API compatibility. */
-const EnumPropertyItem rna_enum_render_pass_type_items[] = {
+const EnumPropItem api_enum_render_pass_type_items[] = {
     {SCE_PASS_COMBINED, "COMBINED", 0, "Combined", ""},
     {SCE_PASS_Z, "Z", 0, "Z", ""},
     {SCE_PASS_SHADOW, "SHADOW", 0, "Shadow", ""},
@@ -56,7 +56,7 @@ const EnumPropertyItem rna_enum_render_pass_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_bake_pass_type_items[] = {
+const EnumPropItem api_enum_bake_pass_type_items[] = {
     {SCE_PASS_COMBINED, "COMBINED", 0, "Combined", ""},
     {SCE_PASS_AO, "AO", 0, "Ambient Occlusion", ""},
     {SCE_PASS_SHADOW, "SHADOW", 0, "Shadow", ""},
@@ -72,21 +72,21 @@ const EnumPropertyItem rna_enum_bake_pass_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_appdir.h"
-#  include "BKE_context.h"
-#  include "BKE_report.h"
+#  include "dune_appdir.h"
+#  include "dune_context.h"
+#  include "dune_report.h"
 
-#  include "GPU_capabilities.h"
-#  include "GPU_shader.h"
-#  include "IMB_colormanagement.h"
+#  include "gpu_capabilities.h"
+#  include "gpu_shader.h"
+#  include "imb_colormanagement.h"
 
-#  include "DEG_depsgraph_query.h"
+#  include "graph_query.h"
 
 /* RenderEngine Callbacks */
 
@@ -102,12 +102,12 @@ static void engine_tag_update(RenderEngine *engine)
 
 static bool engine_support_display_space_shader(RenderEngine *UNUSED(engine), Scene *scene)
 {
-  return IMB_colormanagement_support_glsl_draw(&scene->view_settings);
+  return imb_colormanagement_support_glsl_draw(&scene->view_settings);
 }
 
 static int engine_get_preview_pixel_size(RenderEngine *UNUSED(engine), Scene *scene)
 {
-  return BKE_render_preview_pixel_size(&scene->r);
+  return dune_render_preview_pixel_size(&scene->r);
 }
 
 static void engine_bind_display_space_shader(RenderEngine *UNUSED(engine), Scene *UNUSED(scene))
@@ -115,32 +115,32 @@ static void engine_bind_display_space_shader(RenderEngine *UNUSED(engine), Scene
   GPUShader *shader = GPU_shader_get_builtin_shader(GPU_SHADER_2D_IMAGE);
   GPU_shader_bind(shader);
 
-  int img_loc = GPU_shader_get_uniform(shader, "image");
+  int img_loc = gpu_shader_get_uniform(shader, "image");
 
-  GPU_shader_uniform_int(shader, img_loc, 0);
+  gpu_shader_uniform_int(shader, img_loc, 0);
 }
 
 static void engine_unbind_display_space_shader(RenderEngine *UNUSED(engine))
 {
-  GPU_shader_unbind();
+  gpu_shader_unbind();
 }
 
 static void engine_update(RenderEngine *engine, Main *bmain, Depsgraph *depsgraph)
 {
-  extern FunctionRNA rna_RenderEngine_update_func;
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  extern ApiFn api_RenderEngine_update_func;
+  ApiPtr ptr;
+  ApiParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
-  func = &rna_RenderEngine_update_func;
+  api_ptr_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
+  fb = &api_RenderEngine_update_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "data", &bmain);
-  RNA_parameter_set_lookup(&list, "depsgraph", &depsgraph);
-  engine->type->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "data", main);
+  apu_param_set_lookup(&list, "graph", &graph);
+  engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void engine_render(RenderEngine *engine, Depsgraph *depsgraph)
