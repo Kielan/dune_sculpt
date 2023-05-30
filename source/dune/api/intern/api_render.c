@@ -722,8 +722,8 @@ static void api_def_render_engine(DuneApi *dapi)
                               "Normalized camera model matrix",
                               0.0f,
                               0.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_output(fn, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_output(fn, parm);
 
   fn = api_def_fn(sapi, "use_spherical_stereo", "RE_engine_get_spherical_stereo");
   parm = api_def_ptr(fn, "camera", "Object", "", "");
@@ -731,12 +731,12 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
   api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(sapi, "update_stats", "RE_engine_update_stats");
-  RNA_def_function_ui_description(fn, "Update and signal to redraw render status text");
-  parm = RNA_def_string(fn, "stats", NULL, 0, "Stats", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(fn, "info", NULL, 0, "Info", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_function(sapi, "update_stats", "RE_engine_update_stats");
+  api_def_fn_ui_description(fn, "Update and signal to redraw render status text");
+  parm = api_def_string(fn, "stats", NULL, 0, "Stats", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "info", NULL, 0, "Info", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   fn = api_def_fn(sapi, "frame_set", "rna_RenderEngine_engine_frame_set");
   api_def_fn_ui_description(fn, "Evaluate scene at a different frame (for motion blur)");
@@ -745,15 +745,15 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_float(fn, "subframe", 0.0f, 0.0f, 1.0f, "Subframe", "", 0.0f, 1.0f);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  fn = api_def_fn(srna, "update_progress", "RE_engine_update_progress");
-  api_def_function_ui_description(func, "Update progress percentage of render");
+  fn = api_def_fn(sapi, "update_progress", "RE_engine_update_progress");
+  api_def_fn_ui_description(fn, "Update progress percentage of render");
   parm = api_def_float(
-      func, "progress", 0, 0.0f, 1.0f, "", "Percentage of render that's done", 0.0f, 1.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+      fn, "progress", 0, 0.0f, 1.0f, "", "Percentage of render that's done", 0.0f, 1.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "update_memory_stats", "RE_engine_update_memory_stats");
-  RNA_def_function_ui_description(func, "Update memory usage statistics");
-  RNA_def_float(func,
+  fn = api_def_fn(sapi, "update_memory_stats", "RE_engine_update_memory_stats");
+  api_def_fn_ui_description(fn, "Update memory usage statistics");
+  api_def_float(fn,
                 "memory_used",
                 0,
                 0.0f,
@@ -762,54 +762,54 @@ static void api_def_render_engine(DuneApi *dapi)
                 "Current memory usage in megabytes",
                 0.0f,
                 FLT_MAX);
-  RNA_def_float(
-      func, "memory_peak", 0, 0.0f, FLT_MAX, "", "Peak memory usage in megabytes", 0.0f, FLT_MAX);
+  api_def_float(
+      fn, "memory_peak", 0, 0.0f, FLT_MAX, "", "Peak memory usage in megabytes", 0.0f, FLT_MAX);
 
-  func = RNA_def_function(srna, "report", "RE_engine_report");
-  RNA_def_function_ui_description(func, "Report info, warning or error messages");
-  parm = RNA_def_enum_flag(func, "type", rna_enum_wm_report_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "message", NULL, 0, "Report Message", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "report", "RE_engine_report");
+  api_def_fn_ui_description(fn, "Report info, warning or error messages");
+  parm = api_def_enum_flag(fn, "type", api_enum_wm_report_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "message", NULL, 0, "Report Message", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "error_set", "RE_engine_set_error_message");
-  RNA_def_function_ui_description(func,
-                                  "Set error message displaying after the render is finished");
-  parm = RNA_def_string(func, "message", NULL, 0, "Report Message", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "error_set", "render_engine_set_error_message");
+  api_def_fn_ui_description(fn,
+                            "Set error message displaying after the render is finished");
+  parm = api_def_string(fn, "message", NULL, 0, "Report Message", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "bind_display_space_shader", "engine_bind_display_space_shader");
-  RNA_def_function_ui_description(func,
-                                  "Bind GLSL fragment shader that converts linear colors to "
-                                  "display space colors using scene color management settings");
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = apu_def_fn(sapi, "bind_display_space_shader", "engine_bind_display_space_shader");
+  api_def_fn_ui_description(fn,
+                            "Bind GLSL fragment shader that converts linear colors to "
+                            "display space colors using scene color management settings");
+  parm = api_def_ptr(fn, "scene", "Scene", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(
+  fn = api_def_fn(
       srna, "unbind_display_space_shader", "engine_unbind_display_space_shader");
-  RNA_def_function_ui_description(
-      func, "Unbind GLSL display space shader, must always be called after binding the shader");
+  api_def_fn_ui_description(
+      fn, "Unbind GLSL display space shader, must always be called after binding the shader");
 
-  func = RNA_def_function(
-      srna, "support_display_space_shader", "engine_support_display_space_shader");
-  RNA_def_function_ui_description(func,
-                                  "Test if GLSL display space shader is supported for the "
-                                  "combination of graphics card and scene settings");
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "supported", 0, "Supported", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(
+      sapi, "support_display_space_shader", "engine_support_display_space_shader");
+  api_def_fn_ui_description(fn,
+                            "Test if GLSL display space shader is supported for the "
+                            "combination of graphics card and scene settings");
+  parm = api_def_ptr(fn, "scene", "Scene", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "supported", 0, "Supported", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "get_preview_pixel_size", "engine_get_preview_pixel_size");
-  RNA_def_function_ui_description(func,
-                                  "Get the pixel size that should be used for preview rendering");
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "pixel_size", 0, 1, 8, "Pixel Size", "", 1, 8);
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "get_preview_pixel_size", "engine_get_preview_pixel_size");
+  api_def_fn_ui_description(fn,
+                            "Get the pixel size that should be used for preview rendering");
+  parm = api_def_ptr(fn, "scene", "Scene", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "pixel_size", 0, 1, 8, "Pixel Size", "", 1, 8);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "free_blender_memory", "RE_engine_free_blender_memory");
-  RNA_def_function_ui_description(func, "Free Blender side memory of render engine");
+  fn = api_def_fn(sapi, "free_dune_memory", "render_engine_free_blender_memory");
+  api_def_fn_ui_description(fn, "Free Dune side memory of render engine");
 
   func = RNA_def_function(srna, "tile_highlight_set", "RE_engine_tile_highlight_set");
   RNA_def_function_ui_description(func, "Set highlighted state of the given tile");
