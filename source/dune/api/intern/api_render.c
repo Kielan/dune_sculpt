@@ -511,32 +511,32 @@ static RenderPass *api_RenderPass_find_by_name(RenderLayer *rl, const char *name
 
 #else /* RNA_RUNTIME */
 
-static void rna_def_render_engine(BlenderRNA *brna)
+static void api_def_render_engine(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem render_pass_type_items[] = {
+  static const EnumPropItem render_pass_type_items[] = {
       {SOCK_FLOAT, "VALUE", 0, "Value", ""},
       {SOCK_VECTOR, "VECTOR", 0, "Vector", ""},
       {SOCK_RGBA, "COLOR", 0, "Color", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "RenderEngine", NULL);
-  RNA_def_struct_sdna(srna, "RenderEngine");
-  RNA_def_struct_ui_text(srna, "Render Engine", "Render engine");
-  RNA_def_struct_refine_func(srna, "rna_RenderEngine_refine");
-  RNA_def_struct_register_funcs(srna,
-                                "rna_RenderEngine_register",
-                                "rna_RenderEngine_unregister",
+  sapi = api_def_struct(dapi, "RenderEngine", NUL
+  api_def_struct_stype(sapi, "RenderEngine");
+  api_def_struct_ui_text(sapi, "Render Engine", "Render engine");
+  api_def_struct_refine_fn(sapi, "api_RenderEngine_refine");
+  api_def_struct_register_fns(sapi,
+                                "api_RenderEngine_register",
+                                "api_RenderEngine_unregister",
                                 "rna_RenderEngine_instance");
 
   /* final render callbacks */
-  func = RNA_def_function(srna, "update", NULL);
+  func = api_def_function(srna, "update", NULL);
   RNA_def_function_ui_description(func, "Export scene data for render");
   RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
   RNA_def_pointer(func, "data", "BlendData", "", "");
