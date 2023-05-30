@@ -649,29 +649,29 @@ static void api_def_render_engine(DuneApi *dapi)
 
   fn = api_def_fn(sapi, "end_result", "RE_engine_end_result");
   api_def_fn_ui_description(fn,
-                            l"All pixels in the render result have been set and are final");
+                            "All pixels in the render result have been set and are final");
   parm = api_def_ptr(fn, "result", "RenderResult", "Result", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_bool(
       fn, "cancel", 0, "Cancel", "Don't mark tile as done, don't merge results unless forced");
-  RNA_def_boolean(func, "highlight", 0, "Highlight", "Don't mark tile as done yet");
-  RNA_def_boolean(
-      func, "do_merge_results", 0, "Merge Results", "Merge results even if cancel=true");
+  api_def_bool(fn, "highlight", 0, "Highlight", "Don't mark tile as done yet");
+  api_def_bool(
+      fn, "do_merge_results", 0, "Merge Results", "Merge results even if cancel=true");
 
-  func = RNA_def_function(srna, "add_pass", "RE_engine_add_pass");
-  RNA_def_function_ui_description(func, "Add a pass to the render layer");
-  parm = RNA_def_string(
-      func, "name", NULL, 0, "Name", "Name of the Pass, without view or channel tag");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "channels", 0, 0, INT_MAX, "Channels", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(
-      func, "chan_id", NULL, 0, "Channel IDs", "Channel names, one character per channel");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(
-      func, "layer", NULL, 0, "Layer", "Single layer to add render pass to"); /* NULL ok here */
+  fn = api_def_fn(sapi, "add_pass", "RE_engine_add_pass");
+  api_def_fn_ui_description(fn, "Add a pass to the render layer");
+  parm = api_def_string(
+      fn, "name", NULL, 0, "Name", "Name of the Pass, without view or channel tag");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "channels", 0, 0, INT_MAX, "Channels", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(
+      fn, "chan_id", NULL, 0, "Channel IDs", "Channel names, one character per channel");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(
+      fn, "layer", NULL, 0, "Layer", "Single layer to add render pass to"); /* NULL ok here */
 
-  func = RNA_def_function(srna, "get_result", "RE_engine_get_result");
+  fn = api_def_function(srna, "get_result", "RE_engine_get_result");
   RNA_def_function_ui_description(func, "Get final result for non-pixel operations");
   parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
   RNA_def_function_return(func, parm);
