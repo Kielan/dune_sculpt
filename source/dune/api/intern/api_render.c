@@ -676,20 +676,20 @@ static void rna_def_render_engine(BlenderRNA *brna)
   parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
   RNA_def_function_return(func, parm);
 
-  func = RNA_def_function(srna, "test_break", "RE_engine_test_break");
-  RNA_def_function_ui_description(func,
-                                  "Test if the render operation should been canceled, this is a "
-                                  "fast call that should be used regularly for responsiveness");
-  parm = RNA_def_boolean(func, "do_break", 0, "Break", "");
-  RNA_def_function_return(func, parm);
+  func = api_def_fn(sapi, "test_break", "RE_engine_test_break");
+  api_def_fn_ui_description(fn,
+                            "Test if the render operation should been canceled, this is a "
+                            "fast call that should be used regularly for responsiveness");
+  parm = api_def_bool(fn, "do_break", 0, "Break", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "pass_by_index_get", "RE_engine_pass_by_index_get");
-  parm = RNA_def_string(func, "layer", NULL, 0, "Layer", "Name of render layer to get pass for");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "index", 0, 0, INT_MAX, "Index", "Index of pass to get", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "render_pass", "RenderPass", "Index", "Index of pass to get");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "pass_by_index_get", "RE_engine_pass_by_index_get");
+  parm = api_def_string(fn, "layer", NULL, 0, "Layer", "Name of render layer to get pass for");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "index", 0, 0, INT_MAX, "Index", "Index of pass to get", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "render_pass", "RenderPass", "Index", "Index of pass to get");
+  api_def_fn_return(fn, parm);
 
   func = RNA_def_function(srna, "active_view_get", "RE_engine_active_view_get");
   parm = RNA_def_string(func, "view", NULL, 0, "View", "Single view active");
