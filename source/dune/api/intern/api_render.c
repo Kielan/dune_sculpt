@@ -723,31 +723,31 @@ static void api_def_render_engine(DuneApi *dapi)
                               0.0f,
                               0.0f);
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_output(func, parm);
+  RNA_def_function_output(fn, parm);
 
-  func = RNA_def_function(srna, "use_spherical_stereo", "RE_engine_get_spherical_stereo");
-  parm = RNA_def_pointer(func, "camera", "Object", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "use_spherical_stereo", 0, "Spherical Stereo", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "use_spherical_stereo", "RE_engine_get_spherical_stereo");
+  parm = api_def_ptr(fn, "camera", "Object", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "update_stats", "RE_engine_update_stats");
-  RNA_def_function_ui_description(func, "Update and signal to redraw render status text");
-  parm = RNA_def_string(func, "stats", NULL, 0, "Stats", "");
+  func = RNA_def_function(sapi, "update_stats", "RE_engine_update_stats");
+  RNA_def_function_ui_description(fn, "Update and signal to redraw render status text");
+  parm = RNA_def_string(fn, "stats", NULL, 0, "Stats", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "info", NULL, 0, "Info", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-
-  func = RNA_def_function(srna, "frame_set", "rna_RenderEngine_engine_frame_set");
-  RNA_def_function_ui_description(func, "Evaluate scene at a different frame (for motion blur)");
-  parm = RNA_def_int(func, "frame", 0, INT_MIN, INT_MAX, "Frame", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func, "subframe", 0.0f, 0.0f, 1.0f, "Subframe", "", 0.0f, 1.0f);
+  parm = RNA_def_string(fn, "info", NULL, 0, "Info", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "update_progress", "RE_engine_update_progress");
-  RNA_def_function_ui_description(func, "Update progress percentage of render");
-  parm = RNA_def_float(
+  fn = api_def_fn(sapi, "frame_set", "rna_RenderEngine_engine_frame_set");
+  api_def_fn_ui_description(fn, "Evaluate scene at a different frame (for motion blur)");
+  parm = api_def_int(fn, "frame", 0, INT_MIN, INT_MAX, "Frame", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn, "subframe", 0.0f, 0.0f, 1.0f, "Subframe", "", 0.0f, 1.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+
+  fn = api_def_fn(srna, "update_progress", "RE_engine_update_progress");
+  api_def_function_ui_description(func, "Update progress percentage of render");
+  parm = api_def_float(
       func, "progress", 0, 0.0f, 1.0f, "", "Percentage of render that's done", 0.0f, 1.0f);
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
 
