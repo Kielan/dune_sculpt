@@ -367,85 +367,85 @@ static ApiStruct *api_RenderEngine_register(Main *main,
   et = mem_mallocn(sizeof(RenderEngineType), "python render engine");
   memcpy(et, &dummyet, sizeof(dummyet));
 
-  et->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_API, et->idname, &ApiRenderEngine);
-  et->rna_ext.data = data;
-  et->rna_ext.call = call;
-  et->rna_ext.free = free;
-  RNA_struct_blender_type_set(et->rna_ext.srna, et);
+  et->api_ext.sapi = api_def_struct_ptr(&DUNE_API, et->idname, &ApiRenderEngine);
+  et->api_ext.data = data;
+  et->api_ext.call = call;
+  et->api_ext.free = free;
+  api_struct_dune_type_set(et->api_ext.sapi, et);
 
-  et->update = (have_function[0]) ? engine_update : NULL;
-  et->render = (have_function[1]) ? engine_render : NULL;
-  et->render_frame_finish = (have_function[2]) ? engine_render_frame_finish : NULL;
-  et->draw = (have_function[3]) ? engine_draw : NULL;
-  et->bake = (have_function[4]) ? engine_bake : NULL;
-  et->view_update = (have_function[5]) ? engine_view_update : NULL;
-  et->view_draw = (have_function[6]) ? engine_view_draw : NULL;
-  et->update_script_node = (have_function[7]) ? engine_update_script_node : NULL;
-  et->update_render_passes = (have_function[8]) ? engine_update_render_passes : NULL;
+  et->update = (have_fn[0]) ? engine_update : NULL;
+  et->render = (have_fn[1]) ? engine_render : NULL;
+  et->render_frame_finish = (have_fn[2]) ? engine_render_frame_finish : NULL;
+  et->draw = (have_fn[3]) ? engine_draw : NULL;
+  et->bake = (have_fn[4]) ? engine_bake : NULL;
+  et->view_update = (have_fn[5]) ? engine_view_update : NULL;
+  et->view_draw = (have_fn[6]) ? engine_view_draw : NULL;
+  et->update_script_node = (have_fn[7]) ? engine_update_script_node : NULL;
+  et->update_render_passes = (have_fn[8]) ? engine_update_render_passes : NULL;
 
-  RE_engines_register(et);
+  render_engines_register(et);
 
   return et->rna_ext.srna;
 }
 
-static void **rna_RenderEngine_instance(PointerRNA *ptr)
+static void **api_RenderEngine_instance(ApiPtr *ptr)
 {
   RenderEngine *engine = ptr->data;
   return &engine->py_instance;
 }
 
-static ApiStruct *api_RenderEngine_refine(PointerRNA *ptr)
+static ApiStruct *api_RenderEngine_refine(ApiPtr *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
-  return (engine->type && engine->type->rna_ext.srna) ? engine->type->rna_ext.srna :
-                                                        &RNA_RenderEngine;
+  return (engine->type && engine->type->api_ext.sapi) ? engine->type->api_ext.sapi :
+                                                        &ApiRenderEngine;
 }
 
-static void api_RenderEngine_tempdir_get(PointerRNA *UNUSED(ptr), char *value)
+static void api_RenderEngine_tempdir_get(ApiPtr *UNUSED(ptr), char *value)
 {
   lib_strncpy(value, dune_tempdir_session(), FILE_MAX);
 }
 
-static int api_RenderEngine_tempdir_length(PointerRNA *UNUSED(ptr))
+static int api_RenderEngine_tempdir_length(ApiPtr *UNUSED(ptr))
 {
   return strlen(dune_tempdir_session());
 }
 
-static ApiPtr api_RenderEngine_render_get(PointerRNA *ptr)
+static ApiPtr api_RenderEngine_render_get(ApiPtr *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
 
   if (engine->re) {
     RenderData *r = render_engine_get_render_data(engine->re);
 
-    return api_ptr_inherit_refine(ptr, &RNA_RenderSettings, r);
+    return api_ptr_inherit_refine(ptr, &ApiRenderSettings, r);
   }
   else {
-    return api_ptr_inherit_refine(ptr, &RNA_RenderSettings, NULL);
+    return api_ptr_inherit_refine(ptr, &ApiRenderSettings, NULL);
   }
 }
 
-static ApiPtr api_RenderEngine_camera_override_get(PointerRNA *ptr)
+static ApiPtr api_RenderEngine_camera_override_get(ApiPtr *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
   /* TODO(sergey): Shouldn't engine point to an evaluated datablocks already? */
   if (engine->re) {
     Object *cam = render_GetCamera(engine->re);
-    Object *cam_eval = graph_get_evaluated_object(engine->depsgraph, cam);
-    return api_ptr_inherit_refine(ptr, &RNA_Object, cam_eval);
+    Object *cam_eval = graph_get_evaluated_object(engine->graph, cam);
+    return api_ptr_inherit_refine(ptr, &ApiObject, cam_eval);
   }
   else {
-    return rna_pointer_inherit_refine(ptr, &RNA_Object, engine->camera_override);
+    return api_ptr_inherit_refine(ptr, &ApiObject, engine->camera_override);
   }
 }
 
-static void rna_RenderEngine_engine_frame_set(RenderEngine *engine, int frame, float subframe)
+static void api_RenderEngine_engine_frame_set(RenderEngine *engine, int frame, float subframe)
 {
 #  ifdef WITH_PYTHON
   BPy_BEGIN_ALLOW_THREADS;
 #  endif
 
-  RE_engine_frame_set(engine, frame, subframe);
+  render_engine_frame_set(engine, frame, subframe);
 
 #  ifdef WITH_PYTHON
   BPy_END_ALLOW_THREADS;
@@ -471,7 +471,7 @@ static void api_RenderResult_stamp_data_add_field(RenderResult *rr,
   dune_render_result_stamp_data(rr, field, value);
 }
 
-static void api_RenderLayer_passes_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_RenderLayer_passes_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   RenderLayer *rl = (RenderLayer *)ptr->data;
   api_iterator_listbase_begin(iter, &rl->passes, NULL);
