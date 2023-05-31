@@ -866,21 +866,21 @@ static void api_def_render_engine(DuneApi *dapi)
   prop = RNA_def_property(srna, "use_highlight_tiles", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_HIGHLIGHT_TILES);
 
-  func = RNA_def_function(srna, "register_pass", "RE_engine_register_pass");
-  RNA_def_function_ui_description(
-      func, "Register a render pass that will be part of the render with the current settings");
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "view_layer", "ViewLayer", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "channels", 1, 1, 8, "Channels", "", 1, 4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "chanid", NULL, 8, "Channel IDs", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "type", render_pass_type_items, SOCK_FLOAT, "Type", "");
-  RNA_def_property_enum_native_type(parm, "eNodeSocketDatatype");
+  func = api_def_fn(sapi, "register_pass", "RE_engine_register_pass");
+  RNA_def_fn_ui_description(
+      fn, "Register a render pass that will be part of the render with the current settings");
+  parm = api_def_ptr(fn, "scene", "Scene", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "view_layer", "ViewLayer", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "channels", 1, 1, 8, "Channels", "", 1, 4);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "chanid", NULL, 8, "Channel IDs", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "type", render_pass_type_items, SOCK_FLOAT, "Type", "");
+  api_def_prop_enum_native_type(parm, "eNodeSocketDatatype");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
 
   /* registration */
