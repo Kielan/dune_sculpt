@@ -324,7 +324,7 @@ static void api_RenderEngine_unregister(Main *main, ApiStruct *type)
 static ApiStruct *api_RenderEngine_register(Main *main,
                                             ReportList *reports,
                                             void *data,
-                                            const char *identifier,
+                                            const char *id,
                                             StructValidateFn validate,
                                             StructCbFn call,
                                             StructFreeFn free)
@@ -357,7 +357,7 @@ static ApiStruct *api_RenderEngine_register(Main *main,
   for (et = R_engines.first; et; et = et->next) {
     if (STREQ(et->idname, dummyet.idname)) {
       if (et->api_ext.sapi) {
-        api_RenderEngine_unregister(bmain, et->rna_ext.srna);
+        api_RenderEngine_unregister(bmain, et->api_ext.sapi);
       }
       break;
     }
@@ -385,7 +385,7 @@ static ApiStruct *api_RenderEngine_register(Main *main,
 
   render_engines_register(et);
 
-  return et->rna_ext.srna;
+  return et->api_ext.sapi;
 }
 
 static void **api_RenderEngine_instance(ApiPtr *ptr)
@@ -428,7 +428,7 @@ static ApiPtr api_RenderEngine_render_get(ApiPtr *ptr)
 static ApiPtr api_RenderEngine_camera_override_get(ApiPtr *ptr)
 {
   RenderEngine *engine = (RenderEngine *)ptr->data;
-  /* TODO(sergey): Shouldn't engine point to an evaluated datablocks already? */
+  /* TODO: Shouldn't engine point to an evaluated datablocks already? */
   if (engine->re) {
     Object *cam = render_GetCamera(engine->re);
     Object *cam_eval = graph_get_evaluated_object(engine->graph, cam);
@@ -808,28 +808,28 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_int(fn, "pixel_size", 0, 1, 8, "Pixel Size", "", 1, 8);
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "free_dune_memory", "render_engine_free_blender_memory");
+  fn = api_def_fn(sapi, "free_dune_memory", "render_engine_free_dune_memory");
   api_def_fn_ui_description(fn, "Free Dune side memory of render engine");
 
-  func = RNA_def_function(srna, "tile_highlight_set", "RE_engine_tile_highlight_set");
-  RNA_def_function_ui_description(func, "Set highlighted state of the given tile");
-  parm = RNA_def_int(func, "x", 0, 0, INT_MAX, "X", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "y", 0, 0, INT_MAX, "Y", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "width", 0, 0, INT_MAX, "Width", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "height", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "highlight", 0, "Highlight", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tile_highlight_set", "RE_engine_tile_highlight_set");
+  api_def_fn_ui_description(func, "Set highlighted state of the given tile");
+  parm = api_def_int(fn, "x", 0, 0, INT_MAX, "X", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fb, "y", 0, 0, INT_MAX, "Y", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "width", 0, 0, INT_MAX, "Width", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "height", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "highlight", 0, "Highlight", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "tile_highlight_clear_all", "RE_engine_tile_highlight_clear_all");
-  RNA_def_function_ui_description(func, "Clear highlight from all tiles");
+  fn = api_def_fn(sapi, "tile_highlight_clear_all", "render_engine_tile_highlight_clear_all");
+  api_def_fn_ui_description(fn, "Clear highlight from all tiles");
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_sdna(0);
 
-  prop = RNA_def_property(srna, "is_animation", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_animation", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_ANIMATION);
 
   prop = RNA_def_property(srna, "is_preview", PROP_BOOLEAN, PROP_NONE);
