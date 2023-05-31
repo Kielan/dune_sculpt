@@ -6,22 +6,22 @@
 
 #include "api_internal.h"
 
-#include "DNA_action_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_action_types.h"
+#include "types_armature_types.h"
+#include "types_constraint_types.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
 /* Bone and Group Color Sets */
-const EnumPropertyItem rna_enum_color_sets_items[] = {
+const EnumPropItem api_enum_color_sets_items[] = {
     {0, "DEFAULT", 0, "Default Colors", ""},
     {1, "THEME01", ICON_COLORSET_01_VEC, "01 - Theme Color Set", ""},
     {2, "THEME02", ICON_COLORSET_02_VEC, "02 - Theme Color Set", ""},
@@ -47,10 +47,10 @@ const EnumPropertyItem rna_enum_color_sets_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_ghash.h"
-#  include "BLI_string_utils.h"
+#  include "lib_ghash.h"
+#  include "lib_string_utils.h"
 
 #  include "BIK_api.h"
 #  include "BKE_action.h"
