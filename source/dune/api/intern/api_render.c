@@ -671,12 +671,12 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_string(
       fn, "layer", NULL, 0, "Layer", "Single layer to add render pass to"); /* NULL ok here */
 
-  fn = api_def_function(srna, "get_result", "RE_engine_get_result");
-  RNA_def_function_ui_description(func, "Get final result for non-pixel operations");
-  parm = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "get_result", "RE_engine_get_result");
+  api_def_fn_ui_description(fn, "Get final result for non-pixel operations");
+  parm = api_def_ptr(fn, "result", "RenderResult", "Result", "");
+  api_def_fn_return(fn, parm);
 
-  func = api_def_fn(sapi, "test_break", "RE_engine_test_break");
+  fn = api_def_fn(sapi, "test_break", "RE_engine_test_break");
   api_def_fn_ui_description(fn,
                             "Test if the render operation should been canceled, this is a "
                             "fast call that should be used regularly for responsiveness");
@@ -707,11 +707,11 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_float(fn, "shift_x", 0.0f, 0.0f, FLT_MAX, "Shift X", "", 0.0f, FLT_MAX);
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "camera_model_matrix", "RE_engine_get_camera_model_matrix");
+  fn = api_def_fn(sapi, "camera_model_matrix", "render_engine_get_camera_model_matrix");
   parm = api_def_ptr(fn, "camera", "Object", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
-  parm = api_def_float_matrix(func,
+  parm = api_def_float_matrix(fn,
                               "r_model_matrix",
                               4,
                               4,
@@ -725,20 +725,20 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_fn_output(fn, parm);
 
-  fn = api_def_fn(sapi, "use_spherical_stereo", "RE_engine_get_spherical_stereo");
+  fn = api_def_fn(sapi, "use_spherical_stereo", "render_engine_get_spherical_stereo");
   parm = api_def_ptr(fn, "camera", "Object", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_function(sapi, "update_stats", "RE_engine_update_stats");
+  fn = api_def_fn(sapi, "update_stats", "render_engine_update_stats");
   api_def_fn_ui_description(fn, "Update and signal to redraw render status text");
   parm = api_def_string(fn, "stats", NULL, 0, "Stats", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_string(fn, "info", NULL, 0, "Info", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  fn = api_def_fn(sapi, "frame_set", "rna_RenderEngine_engine_frame_set");
+  fn = api_def_fn(sapi, "frame_set", "api_RenderEngine_engine_frame_set");
   api_def_fn_ui_description(fn, "Evaluate scene at a different frame (for motion blur)");
   parm = api_def_int(fn, "frame", 0, INT_MIN, INT_MAX, "Frame", "", INT_MIN, INT_MAX);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
