@@ -146,24 +146,24 @@ void RNA_api_pose_channel(StructRNA *srna)
                                   "Position in 3d space to evaluate",
                                   -FLT_MAX,
                                   FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return value */
-  parm = RNA_def_float(
-      func, "factor", 0, -FLT_MAX, FLT_MAX, "Factor", "Envelope factor", -FLT_MAX, FLT_MAX);
-  RNA_def_function_return(func, parm);
+  parm = api_def_float(
+      fn, "factor", 0, -FLT_MAX, FLT_MAX, "Factor", "Envelope factor", -FLT_MAX, FLT_MAX);
+  api_def_fn_return(fn, parm);
 
   /* B-Bone segment matrices */
-  func = RNA_def_function(srna, "bbone_segment_matrix", "rna_PoseBone_bbone_segment_matrix");
-  RNA_def_function_ui_description(
-      func, "Retrieve the matrix of the joint between B-Bone segments if available");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_property(func, "matrix_return", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_multi_array(parm, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_ui_text(parm, "", "The resulting matrix in bone local space");
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_int(func, "index", 0, 0, INT_MAX, "", "Index of the segment endpoint", 0, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "rest", false, "", "Return the rest pose matrix");
+  fn = api_def_function(sapi, "bbone_segment_matrix", "rna_PoseBone_bbone_segment_matrix");
+  api_def_function_ui_description(
+      fn, "Retrieve the matrix of the joint between B-Bone segments if available");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = RNA_def_prop(fn, "matrix_return", PROP_FLOAT, PROP_MATRIX);
+  RNA_def_prop_multi_array(parm, 2, api_matrix_dimsize_4x4);
+  RNA_def_prop_ui_text(parm, "", "The resulting matrix in bone local space");
+  RNA_def_function_output(fn, parm);
+  parm = api_def_int(fn, "index", 0, 0, INT_MAX, "", "Index of the segment endpoint", 0, 10000);
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "rest", false, "", "Return the rest pose matrix");
 
   /* B-Bone custom handle positions */
   func = RNA_def_function(srna, "compute_bbone_handles", "rna_PoseBone_compute_bbone_handles");
