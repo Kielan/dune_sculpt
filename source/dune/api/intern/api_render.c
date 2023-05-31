@@ -205,7 +205,7 @@ static void engine_bake(RenderEngine *engine,
   extern ApiFn api_RenderEngine_bake_fn;
   ApiPtr ptr;
   ParamList list;
-  ApuFn *fn;
+  ApiFn *fn;
 
   api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
   fn = &api_RenderEngine_bake_fn;
@@ -474,10 +474,10 @@ static void api_RenderResult_stamp_data_add_field(RenderResult *rr,
 static void api_RenderLayer_passes_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   RenderLayer *rl = (RenderLayer *)ptr->data;
-  api_iterator_listbase_begin(iter, &rl->passes, NULL);
+  api_iter_list_begin(iter, &rl->passes, NULL);
 }
 
-static int api_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_RenderPass_rect_get_length(PointerRNA *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
 
@@ -487,13 +487,13 @@ static int api_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_AR
   return length[0] * length[1];
 }
 
-static void api_RenderPass_rect_get(PointerRNA *ptr, float *values)
+static void api_RenderPass_rect_get(ApiPtr *ptr, float *values)
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
   memcpy(values, rpass->rect, sizeof(float) * rpass->rectx * rpass->recty * rpass->channels);
 }
 
-void api_RenderPass_rect_set(PointerRNA *ptr, const float *values)
+void api_RenderPass_rect_set(ApiPtr *ptr, const float *values)
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
   memcpy(rpass->rect, values, sizeof(float) * rpass->rectx * rpass->recty * rpass->channels);
