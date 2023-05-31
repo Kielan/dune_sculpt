@@ -6,11 +6,11 @@
 
 #include "api_internal.h"
 
-#include "types_action_types.h"
-#include "types_armature_types.h"
-#include "types_constraint_types.h"
-#include "types_object_types.h"
-#include "types_scene_types.h"
+#include "types_action.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_object.h"
+#include "types_scene.h"
 
 #include "lib_math.h"
 
@@ -53,120 +53,120 @@ const EnumPropItem api_enum_color_sets_items[] = {
 #  include "lib_string_utils.h"
 
 #  include "BIK_api.h"
-#  include "BKE_action.h"
-#  include "BKE_armature.h"
+#  include "dune_action.h"
+#  include "dune_armature.h"
 
-#  include "DNA_userdef_types.h"
+#  include "types_userdef.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_constraint.h"
-#  include "BKE_context.h"
-#  include "BKE_global.h"
-#  include "BKE_idprop.h"
+#  include "dune_constraint.h"
+#  include "dune_cxt.h"
+#  include "dune_global.h"
+#  include "dune_idprop.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "ED_armature.h"
-#  include "ED_object.h"
+#  include "ed_armature.h"
+#  include "ed_object.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-static void rna_Pose_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Pose_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   /* XXX when to use this? ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK); */
 
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  wn_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
 }
 
-static void rna_Pose_dependency_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Pose_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(main);
 
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
 }
 
-static void rna_Pose_IK_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_Pose_IK_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   /* XXX when to use this? ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK); */
   Object *ob = (Object *)ptr->owner_id;
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
 
   BIK_clear_data(ob->pose);
 }
 
-static char *rna_Pose_path(PointerRNA *UNUSED(ptr))
+static char *api_Pose_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("pose");
+  return lib_strdup("pose");
 }
 
-static char *rna_PoseBone_path(PointerRNA *ptr)
+static char *api_PoseBone_path(ApiPtr *ptr)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
   char name_esc[sizeof(pchan->name) * 2];
 
-  BLI_str_escape(name_esc, pchan->name, sizeof(name_esc));
-  return BLI_sprintfN("pose.bones[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, pchan->name, sizeof(name_esc));
+  return lib_sprintfN("pose.bones[\"%s\"]", name_esc);
 }
 
 /* Bone groups only. */
 
-static bool rna_bone_group_poll(Object *ob, ReportList *reports)
+static bool api_bone_group_poll(Object *ob, ReportList *reports)
 {
-  if (ID_IS_OVERRIDE_LIBRARY(ob)) {
-    BKE_report(reports, RPT_ERROR, "Cannot edit bone groups for proxies or library overrides");
+  if (ID_IS_OVERRIDE_LIB(ob)) {
+    dune_report(reports, RPT_ERROR, "Cannot edit bone groups for proxies or lib overrides");
     return false;
   }
 
   return true;
 }
 
-static bActionGroup *rna_bone_group_new(ID *id, bPose *pose, ReportList *reports, const char *name)
+static ActionGroup *api_bone_group_new(Id *id, Pose *pose, ReportList *reports, const char *name)
 {
-  if (!rna_bone_group_poll((Object *)id, reports)) {
+  if (!api_bone_group_poll((Object *)id, reports)) {
     return NULL;
   }
 
-  bActionGroup *grp = BKE_pose_add_group(pose, name);
-  WM_main_add_notifier(NC_OBJECT | ND_POSE | NA_ADDED, id);
+  ActionGroup *grp = dune_pose_add_group(pose, name);
+  wm_main_add_notifier(NC_OBJECT | ND_POSE | NA_ADDED, id);
   return grp;
 }
 
-static void rna_bone_group_remove(ID *id, bPose *pose, ReportList *reports, PointerRNA *grp_ptr)
+static void api_bone_group_remove(Id *id, Pose *pose, ReportList *reports, ApiPtr *grp_ptr)
 {
-  if (!rna_bone_group_poll((Object *)id, reports)) {
+  if (!api_bone_group_poll((Object *)id, reports)) {
     return;
   }
 
-  bActionGroup *grp = grp_ptr->data;
-  const int grp_idx = BLI_findindex(&pose->agroups, grp);
+  ActionGroup *grp = grp_ptr->data;
+  const int grp_idx = lib_findindex(&pose->agroups, grp);
 
   if (grp_idx == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Bone group '%s' not found in this object", grp->name);
+    dune_reportf(reports, RPT_ERROR, "Bone group '%s' not found in this object", grp->name);
     return;
   }
 
-  BKE_pose_remove_group(pose, grp, grp_idx + 1);
-  WM_main_add_notifier(NC_OBJECT | ND_POSE | NA_REMOVED, id);
+  dune_pose_remove_group(pose, grp, grp_idx + 1);
+  wm_main_add_notifier(NC_OBJECT | ND_POSE | NA_REMOVED, id);
 }
 
 /* shared for actions groups and bone groups */
 
-void rna_ActionGroup_colorset_set(PointerRNA *ptr, int value)
+void api_ActionGroup_colorset_set(ApiPtr *ptr, int value)
 {
   Object *ob = (Object *)ptr->owner_id;
-  if (!rna_bone_group_poll(ob, NULL)) {
+  if (!api_bone_group_poll(ob, NULL)) {
     return;
   }
 
-  bActionGroup *grp = ptr->data;
+  ActionGroup *grp = ptr->data;
 
   /* ensure only valid values get set */
   if ((value >= -1) && (value < 21)) {
@@ -177,74 +177,74 @@ void rna_ActionGroup_colorset_set(PointerRNA *ptr, int value)
   }
 }
 
-bool rna_ActionGroup_is_custom_colorset_get(PointerRNA *ptr)
+bool api_ActionGroup_is_custom_colorset_get(ApiPtr *ptr)
 {
-  bActionGroup *grp = ptr->data;
+  ActionGroup *grp = ptr->data;
 
   return (grp->customCol < 0);
 }
 
-static void rna_BoneGroup_name_set(PointerRNA *ptr, const char *value)
+static void api_BoneGroup_name_set(ApiPtr *ptr, const char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
-  if (!rna_bone_group_poll(ob, NULL)) {
+  if (!api_bone_group_poll(ob, NULL)) {
     return;
   }
 
-  bActionGroup *agrp = ptr->data;
+  ActionGroup *agrp = ptr->data;
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(agrp->name, value, sizeof(agrp->name));
+  lib_strncpy_utf8(agrp->name, value, sizeof(agrp->name));
 
-  BLI_uniquename(&ob->pose->agroups,
+  lib_uniquename(&ob->pose->agroups,
                  agrp,
-                 CTX_DATA_(BLT_I18NCONTEXT_ID_ARMATURE, "Group"),
+                 CXT_DATA_(LANG_CXT_ID_ARMATURE, "Group"),
                  '.',
-                 offsetof(bActionGroup, name),
+                 offsetof(ActionGroup, name),
                  sizeof(agrp->name));
 }
 
-static IDProperty **rna_PoseBone_idprops(PointerRNA *ptr)
+static IdProp **api_PoseBone_idprops(ApiPtr *ptr)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
   return &pchan->prop;
 }
 
-static void rna_Pose_ik_solver_set(struct PointerRNA *ptr, int value)
+static void api_Pose_ik_solver_set(struct ApiPtr *ptr, int value)
 {
-  bPose *pose = (bPose *)ptr->data;
+  Pose *pose = (Pose *)ptr->data;
 
   if (pose->iksolver != value) {
     /* the solver has changed, must clean any temporary structures */
     BIK_clear_data(pose);
     if (pose->ikparam) {
-      MEM_freeN(pose->ikparam);
+      mem_freen(pose->ikparam);
       pose->ikparam = NULL;
     }
     pose->iksolver = value;
-    BKE_pose_ikparam_init(pose);
+    dune_pose_ikparam_init(pose);
   }
 }
 
-static void rna_Pose_ik_solver_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Pose_ik_solver_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPose *pose = ptr->data;
+  Pose *pose = ptr->data;
 
-  BKE_pose_tag_recalc(bmain, pose); /* checks & sorts pose channels */
-  DEG_relations_tag_update(bmain);
+  dune_pose_tag_recalc(main, pose); /* checks & sorts pose channels */
+  graph_relations_tag_update(main);
 
-  BKE_pose_update_constraint_flags(pose);
+  dune_pose_update_constraint_flags(pose);
 
-  object_test_constraints(bmain, ob);
+  object_test_constraints(main, ob);
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM);
 }
 
 /* rotation - axis-angle */
-static void rna_PoseChannel_rotation_axis_angle_get(PointerRNA *ptr, float *value)
+static void api_PoseChannel_rotation_axis_angle_get(ApiPtr *ptr, float *value)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
 
   /* for now, assume that rotation mode is axis-angle */
   value[0] = pchan->rotAngle;
@@ -252,9 +252,9 @@ static void rna_PoseChannel_rotation_axis_angle_get(PointerRNA *ptr, float *valu
 }
 
 /* rotation - axis-angle */
-static void rna_PoseChannel_rotation_axis_angle_set(PointerRNA *ptr, const float *value)
+static void api_PoseChannel_rotation_axis_angle_set(ApiPtr *ptr, const float *value)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
 
   /* for now, assume that rotation mode is axis-angle */
   pchan->rotAngle = value[0];
@@ -263,25 +263,25 @@ static void rna_PoseChannel_rotation_axis_angle_set(PointerRNA *ptr, const float
   /* TODO: validate axis? */
 }
 
-static void rna_PoseChannel_rotation_mode_set(PointerRNA *ptr, int value)
+static void api_PoseChannel_rotation_mode_set(ApiPtr *ptr, int value)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
 
   /* use API Method for conversions... */
-  BKE_rotMode_change_values(
+  dune_rotMode_change_values(
       pchan->quat, pchan->eul, pchan->rotAxis, &pchan->rotAngle, pchan->rotmode, (short)value);
 
   /* finally, set the new rotation type */
   pchan->rotmode = value;
 }
 
-static float rna_PoseChannel_length_get(PointerRNA *ptr)
+static float api_PoseChannel_length_get(PointerRNA *ptr)
 {
-  bPoseChannel *pchan = ptr->data;
+  PoseChannel *pchan = ptr->data;
   return len_v3v3(pchan->pose_head, pchan->pose_tail);
 }
 
-static void rna_PoseChannel_name_set(PointerRNA *ptr, const char *value)
+static void api_PoseChannel_name_set(PointerRNA *ptr, const char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
   bPoseChannel *pchan = (bPoseChannel *)ptr->data;
