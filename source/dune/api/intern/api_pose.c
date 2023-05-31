@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 #include "DNA_action_types.h"
 #include "DNA_armature_types.h"
