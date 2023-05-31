@@ -3,28 +3,28 @@
 #include <string.h>
 #include <time.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-/* #include "BLI_sys_types.h" */
+/* #include "lib_sys_types.h" */
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_animsys.h"
-#  include "BKE_armature.h"
-#  include "BKE_context.h"
+#  include "dune_animsys.h"
+#  include "dune_armature.h"
+#  include "dune_context.h"
 
-#  include "DNA_action_types.h"
-#  include "DNA_anim_types.h"
+#  include "types_action.h"
+#  include "types_anim.h"
 
-#  include "BLI_ghash.h"
+#  include "lib_ghash.h"
 
-static float rna_PoseBone_do_envelope(bPoseChannel *chan, float vec[3])
+static float api_PoseBone_do_envelope(PoseChannel *chan, float vec[3])
 {
   Bone *bone = chan->bone;
 
@@ -38,11 +38,11 @@ static float rna_PoseBone_do_envelope(bPoseChannel *chan, float vec[3])
                             bone->dist * scale);
 }
 
-static void rna_PoseBone_bbone_segment_matrix(
-    bPoseChannel *pchan, ReportList *reports, float mat_ret[16], int index, bool rest)
+static void api_PoseBone_bbone_segment_matrix(
+    PoseChannel *pchan, ReportList *reports, float mat_ret[16], int index, bool rest)
 {
   if (!pchan->bone || pchan->bone->segments <= 1) {
-    BKE_reportf(reports, RPT_ERROR, "Bone '%s' is not a B-Bone!", pchan->name);
+    dune_reportf(reports, RPT_ERROR, "Bone '%s' is not a B-Bone!", pchan->name);
     return;
   }
   if (pchan->runtime.bbone_segments != pchan->bone->segments) {
@@ -63,7 +63,7 @@ static void rna_PoseBone_bbone_segment_matrix(
   }
 }
 
-static void rna_PoseBone_compute_bbone_handles(bPoseChannel *pchan,
+static void api_PoseBone_compute_bbone_handles(PoseChannel *pchan,
                                                ReportList *reports,
                                                float ret_h1[3],
                                                float *ret_roll1,
@@ -74,36 +74,36 @@ static void rna_PoseBone_compute_bbone_handles(bPoseChannel *pchan,
                                                bool offsets)
 {
   if (!pchan->bone || pchan->bone->segments <= 1) {
-    BKE_reportf(reports, RPT_ERROR, "Bone '%s' is not a B-Bone!", pchan->name);
+    dune_reportf(reports, RPT_ERROR, "Bone '%s' is not a B-Bone!", pchan->name);
     return;
   }
 
-  BBoneSplineParameters params;
+  BBoneSplineParams params;
 
-  BKE_pchan_bbone_spline_params_get(pchan, rest, &params);
-  BKE_pchan_bbone_handles_compute(
+  dune_pchan_bbone_spline_params_get(pchan, rest, &params);
+  dune_pchan_bbone_handles_compute(
       &params, ret_h1, ret_roll1, ret_h2, ret_roll2, ease || offsets, offsets);
 }
 
-static void rna_Pose_apply_pose_from_action(ID *pose_owner,
-                                            bContext *C,
-                                            bAction *action,
+static void api_Pose_apply_pose_from_action(Id *pose_owner,
+                                            Cxt *C,
+                                            Action *action,
                                             const float evaluation_time)
 {
-  BLI_assert(GS(pose_owner->name) == ID_OB);
+  lib_assert(GS(pose_owner->name) == ID_OB);
   Object *pose_owner_ob = (Object *)pose_owner;
 
-  AnimationEvalContext anim_eval_context = {CTX_data_depsgraph_pointer(C), evaluation_time};
-  BKE_pose_apply_action_selected_bones(pose_owner_ob, action, &anim_eval_context);
+  AnimEvalCxt anim_eval_cxt = {cxt_data_graph_ptr(C), evaluation_time};
+  dune_pose_apply_action_selected_bones(pose_owner_ob, action, &anim_eval_cxt);
 
   /* Do NOT tag with ID_RECALC_ANIMATION, as that would overwrite the just-applied pose. */
-  DEG_id_tag_update(pose_owner, ID_RECALC_GEOMETRY);
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, pose_owner);
+  graph_id_tag_update(pose_owner, ID_RECALC_GEOMETRY);
+  wm_event_add_notifier(C, NC_OBJECT | ND_POSE, pose_owner);
 }
 
 #else
 
-void RNA_api_pose(StructRNA *srna)
+void api_pose(StructRNA *srna)
 {
   FunctionRNA *func;
   PropertyRNA *parm;
