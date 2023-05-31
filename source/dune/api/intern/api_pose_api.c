@@ -160,35 +160,35 @@ void RNA_api_pose_channel(StructRNA *srna)
   parm = RNA_def_prop(fn, "matrix_return", PROP_FLOAT, PROP_MATRIX);
   RNA_def_prop_multi_array(parm, 2, api_matrix_dimsize_4x4);
   RNA_def_prop_ui_text(parm, "", "The resulting matrix in bone local space");
-  RNA_def_function_output(fn, parm);
+  RNA_def_fn_output(fn, parm);
   parm = api_def_int(fn, "index", 0, 0, INT_MAX, "", "Index of the segment endpoint", 0, 10000);
   RNA_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_bool(fn, "rest", false, "", "Return the rest pose matrix");
 
   /* B-Bone custom handle positions */
-  func = RNA_def_function(srna, "compute_bbone_handles", "rna_PoseBone_compute_bbone_handles");
-  RNA_def_function_ui_description(
-      func, "Retrieve the vectors and rolls coming from B-Bone custom handles");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_property(func, "handle1", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_array(parm, 3);
-  RNA_def_property_ui_text(
+  fn = api_def_fn(sapi, "compute_bbone_handles", "api_PoseBone_compute_bbone_handles");
+  api_def_fn_ui_description(
+      fn, "Retrieve the vectors and rolls coming from B-Bone custom handles");
+  api_def_fn_flag(fb, FN_USE_REPORTS);
+  parm = api_def_prop(fn, "handle1", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_array(parm, 3);
+  api_def_prop_ui_text(
       parm, "", "The direction vector of the start handle in bone local space");
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float(
-      func, "roll1", 0, -FLT_MAX, FLT_MAX, "", "Roll of the start handle", -FLT_MAX, FLT_MAX);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_property(func, "handle2", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_array(parm, 3);
-  RNA_def_property_ui_text(parm, "", "The direction vector of the end handle in bone local space");
-  RNA_def_function_output(func, parm);
+  api_def_fn_output(fn, parm);
+  parm = api_def_float(
+      fn, "roll1", 0, -FLT_MAX, FLT_MAX, "", "Roll of the start handle", -FLT_MAX, FLT_MAX);
+  api_def_fn_output(func, parm);
+  parm = api_def_prop(fn, "handle2", PROP_FLOAT, PROP_XYZ);
+  RNA_def_prop_array(parm, 3);
+  RNA_def_prop_ui_text(parm, "", "The direction vector of the end handle in bone local space");
+  RNA_def_fn_output(fn, parm);
   parm = RNA_def_float(
       func, "roll2", 0, -FLT_MAX, FLT_MAX, "", "Roll of the end handle", -FLT_MAX, FLT_MAX);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_boolean(func, "rest", false, "", "Return the rest pose state");
-  parm = RNA_def_boolean(func, "ease", false, "", "Apply scale from ease values");
-  parm = RNA_def_boolean(
-      func, "offsets", false, "", "Apply roll and curve offsets from bone properties");
+  RNA_def_function_output(fn, parm);
+  parm = RNA_def_boolean(fn, "rest", false, "", "Return the rest pose state");
+  parm = RNA_def_boolean(fn, "ease", false, "", "Apply scale from ease values");
+  parm = api_def_bool(
+      fn, "offsets", false, "", "Apply roll and curve offsets from bone properties");
 }
 
 #endif
