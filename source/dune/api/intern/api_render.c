@@ -604,10 +604,10 @@ static void api_def_render_engine(DuneApi *dapi)
 
   /* shader script callbacks */
   fn = api_def_fn(sapi, "update_script_node", NULL);
-  api_def_fn_ui_description(func, "Compile shader script node");
-  api_def_fn_flag(fn, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  api_def_fn_ui_description(fn, "Compile shader script node");
+  api_def_fn_flag(fn, FB_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
   parm = api_def_ptr(fn, "node", "Node", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
+  api_def_param_flags(parm, 0, PARM_RNAPTR);
 
   fn = api_def_fn(sapi, "update_render_passes", NULL);
   api_def_fn_ui_description(fn, "Update the render passes that will be generated");
@@ -691,27 +691,27 @@ static void api_def_render_engine(DuneApi *dapi)
   parm = api_def_ptr(fn, "render_pass", "RenderPass", "Index", "Index of pass to get");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_function(sapi, "active_view_get", "RE_engine_active_view_get");
+  fn = api_def_fn(sapi, "active_view_get", "RE_engine_active_view_get");
   parm = api_def_string(fn, "view", NULL, 0, "View", "Single view active");
   api_def_fn_return(fb, parm);
 
   fn = api_def_fn(sapi, "active_view_set", "RE_engine_active_view_set");
   parm = api_def_string(
-      func, "view", NULL, 0, "View", "Single view to set as active"); /* NULL ok here */
+      fn, "view", NULL, 0, "View", "Single view to set as active"); /* NULL ok here */
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "camera_shift_x", "RE_engine_get_camera_shift_x");
-  parm = RNA_def_pointer(func, "camera", "Object", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "use_spherical_stereo", 0, "Spherical Stereo", "");
-  parm = RNA_def_float(func, "shift_x", 0.0f, 0.0f, FLT_MAX, "Shift X", "", 0.0f, FLT_MAX);
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "camera_shift_x", "RE_engine_get_camera_shift_x");
+  parm = api_def_ptr(fn, "camera", "Object", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
+  parm = api_def_float(fn, "shift_x", 0.0f, 0.0f, FLT_MAX, "Shift X", "", 0.0f, FLT_MAX);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "camera_model_matrix", "RE_engine_get_camera_model_matrix");
-  parm = RNA_def_pointer(func, "camera", "Object", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "use_spherical_stereo", 0, "Spherical Stereo", "");
-  parm = RNA_def_float_matrix(func,
+  fn = api_def_fn(sapi, "camera_model_matrix", "RE_engine_get_camera_model_matrix");
+  parm = api_def_ptr(fn, "camera", "Object", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "use_spherical_stereo", 0, "Spherical Stereo", "");
+  parm = api_def_float_matrix(func,
                               "r_model_matrix",
                               4,
                               4,
