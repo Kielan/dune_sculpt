@@ -885,17 +885,17 @@ static void api_def_render_engine(DuneApi *dapi)
 
   /* registration */
 
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
 
-  prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->name");
-  RNA_def_property_flag(prop, PROP_REGISTER);
+  prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->name");
+  api_def_prop_flag(prop, PROP_REGISTER);
 
-  prop = RNA_def_property(srna, "bl_use_preview", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_PREVIEW);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_use_preview", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "type->flag", RE_USE_PREVIEW);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   RNA_def_property_ui_text(
       prop,
       "Use Preview Render",
