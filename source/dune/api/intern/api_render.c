@@ -1173,30 +1173,30 @@ static void rna_def_render_pass(BlenderRNA *brna)
   RNA_def_property_string_sdna(prop, NULL, "chan_id");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "channels", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "channels");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "channels", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_sdna(prop, NULL, "channels");
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "rect", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_multi_array(prop, 2, NULL);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_RenderPass_rect_get_length");
-  RNA_def_property_float_funcs(prop, "rna_RenderPass_rect_get", "rna_RenderPass_rect_set", NULL);
+  prop = api_def_prop(sapi, "rect", PROP_FLOAT, PROP_NONE);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_multi_array(prop, 2, NULL);
+  api_def_prop_dynamic_array_funcs(prop, "rna_RenderPass_rect_get_length");
+  api_def_prop_float_fns(prop, "rna_RenderPass_rect_get", "rna_RenderPass_rect_set", NULL);
 
-  prop = RNA_def_property(srna, "view_id", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "view_id");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(srna, "view_id", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "view_id");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_sdna(1);
 }
 
-void RNA_def_render(BlenderRNA *brna)
+void api_def_render(BlenderRNA *brna)
 {
-  rna_def_render_engine(brna);
-  rna_def_render_result(brna);
-  rna_def_render_view(brna);
-  rna_def_render_layer(brna);
-  rna_def_render_pass(brna);
+  a_def_render_engine(brna);
+  a_def_render_result(brna);
+  a_def_render_view(brna);
+  a_def_render_layer(brna);
+  api_def_render_pass(brna);
 }
 
 #endif /* RNA_RUNTIME */
