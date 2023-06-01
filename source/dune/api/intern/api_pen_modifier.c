@@ -341,23 +341,23 @@ API_PEN_MOD_VGROUP_NAME_SET(Smooth, vgname);
 API_PEN_MOD_VGROUP_NAME_SET(Hook, vgname);
 API_PEN_MOD_VGROUP_NAME_SET(Offset, vgname);
 API_PEN_MOD_VGROUP_NAME_SET(Armature, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(Texture, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(Tint, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(WeightProx, target_vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(WeightProx, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(WeightAngle, target_vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(WeightAngle, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(Lineart, vgname);
-RNA_PEN_MOD_VGROUP_NAME_SET(Shrinkwrap, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Texture, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Tint, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(WeightProx, target_vgname);
+API_PEN_MOD_VGROUP_NAME_SET(WeightProx, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(WeightAngle, target_vgname);
+API_PEN_MOD_VGROUP_NAME_SET(WeightAngle, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Lineart, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Shrinkwrap, vgname);
 
 #  undef API_PEN_MOD_VGROUP_NAME_SET
 
 /* Objects */
 
-static void greasepencil_modifier_object_set(Object *self,
-                                             Object **ob_p,
-                                             int type,
-                                             PointerRNA value)
+static void pen_mod_object_set(Object *self,
+                               Object **ob_p,
+                               int type,
+                               ApiPtr value)
 {
   Object *ob = value.data;
 
@@ -369,33 +369,33 @@ static void greasepencil_modifier_object_set(Object *self,
   }
 }
 
-#  define RNA_GP_MOD_OBJECT_SET(_type, _prop, _obtype) \
-    static void rna_##_type##GpencilModifier_##_prop##_set( \
-        PointerRNA *ptr, PointerRNA value, struct ReportList *UNUSED(reports)) \
+#  define API_PEN_MOD_OBJECT_SET(_type, _prop, _obtype) \
+    static void api_##_type##PenMod_##_prop##_set( \
+        ApiPtr *ptr, ApiPtr value, struct ReportList *UNUSED(reports)) \
     { \
-      _type##GpencilModifierData *tmd = (_type##GpencilModifierData *)ptr->data; \
-      greasepencil_modifier_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
+      _type##PenModData *tmd = (_type##PenModeData *)ptr->data; \
+      pen_mod_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
     }
 
-RNA_GP_MOD_OBJECT_SET(Armature, object, OB_ARMATURE);
-RNA_GP_MOD_OBJECT_SET(Lattice, object, OB_LATTICE);
-RNA_GP_MOD_OBJECT_SET(Mirror, object, OB_EMPTY);
-RNA_GP_MOD_OBJECT_SET(WeightProx, object, OB_EMPTY);
-RNA_GP_MOD_OBJECT_SET(Shrinkwrap, target, OB_MESH);
-RNA_GP_MOD_OBJECT_SET(Shrinkwrap, aux_target, OB_MESH);
+API_PEN_MOD_OBJECT_SET(Armature, object, OB_ARMATURE);
+API_PEN_MOD_OBJECT_SET(Lattice, object, OB_LATTICE);
+API_PEN_MOD_OBJECT_SET(Mirror, object, OB_EMPTY);
+API_PEN_MOD_OBJECT_SET(WeightProx, object, OB_EMPTY);
+API_PEN_MOD_OBJECT_SET(Shrinkwrap, target, OB_MESH);
+API_PEN_MOD_OBJECT_SET(Shrinkwrap, aux_target, OB_MESH);
 
-#  undef RNA_GP_MOD_OBJECT_SET
+#  undef API_PEN_MOD_OBJECT_SET
 
-static void rna_HookGpencilModifier_object_set(PointerRNA *ptr,
+static void api_HookPenMod_object_set(PointerRNA *ptr,
                                                PointerRNA value,
                                                struct ReportList *UNUSED(reports))
 {
-  HookGpencilModifierData *hmd = ptr->data;
+  HookPenModData *hmd = ptr->data;
   Object *ob = (Object *)value.data;
 
   hmd->object = ob;
-  id_lib_extern((ID *)ob);
-  BKE_object_modifier_gpencil_hook_reset(ob, hmd);
+  id_lib_extern((Id *)ob);
+  dune_object_mod_pen_hook_reset(ob, hmd);
 }
 
 static void rna_TintGpencilModifier_object_set(PointerRNA *ptr,
