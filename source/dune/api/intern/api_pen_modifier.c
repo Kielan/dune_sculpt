@@ -2,24 +2,24 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "DNA_armature_types.h"
-#include "DNA_brush_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_armature.h"
+#include "types_brush.h"
+#include "types_cachefile.h"
+#include "types_pen_modifier.h"
+#include "types_pen.h"
+#include "types_mesh.h"
+#include "typed_modifier.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
-#include "BLI_rand.h"
-#include "BLI_string_utils.h"
+#include "lib_math.h"
+#include "lib_rand.h"
+#include "lib_string_utils.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "BKE_animsys.h"
 #include "BKE_data_transfer.h"
