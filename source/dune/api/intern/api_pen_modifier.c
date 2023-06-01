@@ -267,61 +267,61 @@ static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
       return &ApiArmaturePencilMod;
     case eGpenModType_Multiply:
       return &ApiMultiplyPenMod;
-    case eGpencilModifierType_Texture:
-      return &RNA_TextureGpencilModifier;
-    case eGpencilModifierType_Lineart:
-      return &RNA_LineartGpencilModifier;
-    case eGpencilModifierType_Dash:
-      return &RNA_DashGpencilModifierData;
+    case ePenModType_Texture:
+      return &ApiTexturePenMod;
+    case ePenModType_Lineart:
+      return &ApiLineartGpencilModifier;
+    case ePenModType_Dash:
+      return &ApiDashGpencilModifierData;
       /* Default */
-    case eGpencilModifierType_None:
-    case NUM_GREASEPENCIL_MODIFIER_TYPES:
+    case ePenModType_None:
+    case NUM_PEN_MOD_TYPES:
       return &RNA_GpencilModifier;
   }
 
   return &RNA_GpencilModifier;
 }
 
-static void rna_GpencilModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_PenMod_name_set(ApiPtr *ptr, const char *value)
 {
-  GpencilModifierData *gmd = ptr->data;
+  PenModData *gmd = ptr->data;
   char oldname[sizeof(gmd->name)];
 
   /* Make a copy of the old name first. */
-  BLI_strncpy(oldname, gmd->name, sizeof(gmd->name));
+  lib_strncpy(oldname, gmd->name, sizeof(gmd->name));
 
   /* Copy the new name into the name slot. */
-  BLI_strncpy_utf8(gmd->name, value, sizeof(gmd->name));
+  lib_strncpy_utf8(gmd->name, value, sizeof(gmd->name));
 
   /* Make sure the name is truly unique. */
   if (ptr->owner_id) {
     Object *ob = (Object *)ptr->owner_id;
-    BKE_gpencil_modifier_unique_name(&ob->greasepencil_modifiers, gmd);
+    dune_pen_mod_unique_name(&ob->pen_mods, gmd);
   }
 
   /* Fix all the animation data which may link to this. */
-  BKE_animdata_fix_paths_rename_all(NULL, "grease_pencil_modifiers", oldname, gmd->name);
+  dune_animdata_fix_paths_rename_all(NULL, "grease_pencil_modifiers", oldname, gmd->name);
 }
 
-static char *rna_GpencilModifier_path(PointerRNA *ptr)
+static char *api_GpencilModifier_path(PointerRNA *ptr)
 {
-  GpencilModifierData *gmd = ptr->data;
+  PenModData *gmd = ptr->data;
   char name_esc[sizeof(gmd->name) * 2];
 
-  BLI_str_escape(name_esc, gmd->name, sizeof(name_esc));
-  return BLI_sprintfN("grease_pencil_modifiers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, gmd->name, sizeof(name_esc));
+  return lib_sprintfN("grease_pencil_modifiers[\"%s\"]", name_esc);
 }
 
-static void rna_GpencilModifier_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_GpencilModifier_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
 }
 
-static void rna_GpencilModifier_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_PenMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_GpencilModifier_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_PenMod_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
 /* Vertex Groups */
