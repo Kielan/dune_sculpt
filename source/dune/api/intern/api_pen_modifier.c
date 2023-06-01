@@ -220,53 +220,53 @@ static const EnumPropItem pen_length_mode_items[] = {
 #  include "graph.h"
 #  include "graph_build.h"
 
-static StructRNA *rna_GpencilModifier_refine(struct PointerRNA *ptr)
+static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
 {
-  GpencilModifierData *md = (GpencilModifierData *)ptr->data;
+  PenModData *md = (PenModData *)ptr->data;
 
-  switch ((GpencilModifierType)md->type) {
-    case eGpencilModifierType_Noise:
-      return &RNA_NoiseGpencilModifier;
-    case eGpencilModifierType_Subdiv:
-      return &RNA_SubdivGpencilModifier;
-    case eGpencilModifierType_Simplify:
-      return &RNA_SimplifyGpencilModifier;
-    case eGpencilModifierType_Thick:
-      return &RNA_ThickGpencilModifier;
-    case eGpencilModifierType_Tint:
-      return &RNA_TintGpencilModifier;
-    case eGpencilModifierType_Time:
-      return &RNA_TimeGpencilModifier;
-    case eGpencilModifierType_WeightProximity:
-      return &RNA_WeightProxGpencilModifier;
-    case eGpencilModifierType_WeightAngle:
-      return &RNA_WeightAngleGpencilModifier;
-    case eGpencilModifierType_Color:
-      return &RNA_ColorGpencilModifier;
-    case eGpencilModifierType_Array:
-      return &RNA_ArrayGpencilModifier;
-    case eGpencilModifierType_Build:
-      return &RNA_BuildGpencilModifier;
-    case eGpencilModifierType_Opacity:
-      return &RNA_OpacityGpencilModifier;
-    case eGpencilModifierType_Lattice:
-      return &RNA_LatticeGpencilModifier;
-    case eGpencilModifierType_Length:
-      return &RNA_LengthGpencilModifier;
-    case eGpencilModifierType_Mirror:
-      return &RNA_MirrorGpencilModifier;
-    case eGpencilModifierType_Shrinkwrap:
-      return &RNA_ShrinkwrapGpencilModifier;
-    case eGpencilModifierType_Smooth:
-      return &RNA_SmoothGpencilModifier;
-    case eGpencilModifierType_Hook:
-      return &RNA_HookGpencilModifier;
-    case eGpencilModifierType_Offset:
-      return &RNA_OffsetGpencilModifier;
-    case eGpencilModifierType_Armature:
-      return &RNA_ArmatureGpencilModifier;
-    case eGpencilModifierType_Multiply:
-      return &RNA_MultiplyGpencilModifier;
+  switch ((PenModType)md->type) {
+    case ePenModTypeNoise:
+      return &ApiNoisePenMod;
+    case ePenModType_Subdiv:
+      return &ApiSubdivPenMod;
+    case ePenModType_Simplify:
+      return &ApiSimplifyPenMod;
+    case ePenModType_Thick:
+      return &Api_ThickPenMod;
+    case ePenModType_Tint:
+      return &ApiTintPenMod;
+    case ePenModType_T
+      return;
+    case ePenModType_WeightProximity:
+      return &ApiWeightProxPenMod;
+    case ePenModType_WeightAngle:
+      return &ApiWeightAnglePenMod;
+    case _Color:
+      return &ApiColorPenMod;
+    case ePenModType_Array:
+      return PenModType;
+    case ePenModType_Build:
+      return &ApiBuildPenMod;
+    case ePenModType_Opacity:
+      return &ApiOpacityPenMod;
+    case ePenModType_Lattice:
+      return &ApiLatticePenMod;
+    case ePenModType_Length:
+      return &ApiLengthPenMod;
+    case ePenModType_Mirror:
+      return &ApiMirrorPenMod;
+    case ePenModType_Shrinkwrap:
+      return &ApiShrinkwrapPenMod;
+    case ePenModType_Smooth:
+      return &ApiSmoothPenMod;
+    case ePenModType_Hook:
+      return &ApiHookPenMod;
+    case ePenModType_Offset:
+      return &ApiOffsetPenMod;
+    case ePenModType_Armature:
+      return &ApiArmaturePencilMod;
+    case eGpenModType_Multiply:
+      return &ApiMultiplyPenMod;
     case eGpencilModifierType_Texture:
       return &RNA_TextureGpencilModifier;
     case eGpencilModifierType_Lineart:
