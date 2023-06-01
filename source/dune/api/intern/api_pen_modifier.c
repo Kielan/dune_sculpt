@@ -326,31 +326,31 @@ static void rna_GpencilModifier_dependency_update(Main *bmain, Scene *scene, Poi
 
 /* Vertex Groups */
 
-#  define RNA_GP_MOD_VGROUP_NAME_SET(_type, _prop) \
-    static void rna_##_type##GpencilModifier_##_prop##_set(PointerRNA *ptr, const char *value) \
+#  define API_PEN_MOD_VGROUP_NAME_SET(_type, _prop) \
+    static void api_##_type##PenMod_##_prop##_set(PointerRNA *ptr, const char *value) \
     { \
-      _type##GpencilModifierData *tmd = (_type##GpencilModifierData *)ptr->data; \
-      rna_object_vgroup_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
+      _type##PenModData *tmd = (_type##PenModData *)ptr->data; \
+      api_object_vgroup_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
     }
 
-RNA_GP_MOD_VGROUP_NAME_SET(Noise, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Thick, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Opacity, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Lattice, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Smooth, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Hook, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Offset, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Armature, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Texture, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Tint, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(WeightProx, target_vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(WeightProx, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(WeightAngle, target_vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(WeightAngle, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Lineart, vgname);
-RNA_GP_MOD_VGROUP_NAME_SET(Shrinkwrap, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Noise, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Thick, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Opacity, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Lattice, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Smooth, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Hook, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Offset, vgname);
+API_PEN_MOD_VGROUP_NAME_SET(Armature, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(Texture, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(Tint, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(WeightProx, target_vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(WeightProx, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(WeightAngle, target_vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(WeightAngle, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(Lineart, vgname);
+RNA_PEN_MOD_VGROUP_NAME_SET(Shrinkwrap, vgname);
 
-#  undef RNA_GP_MOD_VGROUP_NAME_SET
+#  undef API_PEN_MOD_VGROUP_NAME_SET
 
 /* Objects */
 
