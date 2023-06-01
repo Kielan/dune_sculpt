@@ -1,49 +1,49 @@
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_pointcloud_types.h"
+#include "types_pointcloud.h"
 
-#include "BLI_math_base.h"
-#include "BLI_string.h"
+#include "lib_math_base.h"
+#include "lib_string.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_vector.h"
+#  include "lib_math_vector.h"
 
-#  include "BKE_pointcloud.h"
+#  include "dune_pointcloud.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static PointCloud *rna_pointcloud(PointerRNA *ptr)
+static PointCloud *api_pointcloud(PointerRNA *ptr)
 {
   return (PointCloud *)ptr->owner_id;
 }
 
-static int rna_Point_index_get(PointerRNA *ptr)
+static int api_Point_index_get(ApiPtr *ptr)
 {
-  const PointCloud *pointcloud = rna_pointcloud(ptr);
+  const PointCloud *pointcloud = api_pointcloud(ptr);
   const float(*co)[3] = ptr->data;
   return (int)(co - pointcloud->co);
 }
 
-static void rna_Point_location_get(PointerRNA *ptr, float value[3])
+static void api_Point_location_get(ApiPtr *ptr, float value[3])
 {
   copy_v3_v3(value, (const float *)ptr->data);
 }
 
-static void rna_Point_location_set(PointerRNA *ptr, const float value[3])
+static void api_Point_location_set(PointerRNA *ptr, const float value[3])
 {
   copy_v3_v3((float *)ptr->data, value);
 }
 
-static float rna_Point_radius_get(PointerRNA *ptr)
+static float api_Point_radius_get(PointerRNA *ptr)
 {
   const PointCloud *pointcloud = rna_pointcloud(ptr);
   if (pointcloud->radius == NULL) {
@@ -53,9 +53,9 @@ static float rna_Point_radius_get(PointerRNA *ptr)
   return pointcloud->radius[co - pointcloud->co];
 }
 
-static void rna_Point_radius_set(PointerRNA *ptr, float value)
+static void api_Point_radius_set(ApiPtr *ptr, float value)
 {
-  const PointCloud *pointcloud = rna_pointcloud(ptr);
+  const PointCloud *pointcloud = api_pointcloud(ptr);
   if (pointcloud->radius == NULL) {
     return;
   }
@@ -63,64 +63,64 @@ static void rna_Point_radius_set(PointerRNA *ptr, float value)
   pointcloud->radius[co - pointcloud->co] = value;
 }
 
-static char *rna_Point_path(PointerRNA *ptr)
+static char *api_Point_path(ApiPtr *ptr)
 {
-  return BLI_sprintfN("points[%d]", rna_Point_index_get(ptr));
+  return lib_sprintfn("points[%d]", api_Point_index_get(ptr));
 }
 
-static void rna_PointCloud_update_data(struct Main *UNUSED(bmain),
+static void api_PointCloud_update_data(struct Main *UNUSED(main),
                                        struct Scene *UNUSED(scene),
-                                       PointerRNA *ptr)
+                                       ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   /* cheating way for importers to avoid slow updates */
   if (id->us > 0) {
-    DEG_id_tag_update(id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+    graph_id_tag_update(id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, id);
   }
 }
 
 #else
 
-static void rna_def_point(BlenderRNA *brna)
+static void api_def_point(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Point", NULL);
-  RNA_def_struct_ui_text(srna, "Point", "Point in a point cloud");
-  RNA_def_struct_path_func(srna, "rna_Point_path");
+  sapi = api_def_struct(dapi, "Point", NULL);
+  api_def_struct_ui_text(sapi, "Point", "Point in a point cloud");
+  api_def_struct_path_fn(sapi, "rna_Point_path");
 
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_funcs(prop, "rna_Point_location_get", "rna_Point_location_set", NULL);
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_update(prop, 0, "rna_PointCloud_update_data");
+  prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_fns(prop, "api_Point_location_get", "api_Point_location_set", NULL);
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_update(prop, 0, "api_PointCloud_update_data");
 
-  prop = RNA_def_property(srna, "radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_funcs(prop, "rna_Point_radius_get", "rna_Point_radius_set", NULL);
-  RNA_def_property_ui_text(prop, "Radius", "");
-  RNA_def_property_update(prop, 0, "rna_PointCloud_update_data");
+  prop = api_def_prop(sapi, "radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_fns(prop, "api_Point_radius_get", "api_Point_radius_set", NULL);
+  api_def_prop_ui_text(prop, "Radius", "");
+  api_def_prop_update(prop, 0, "api_PointCloud_update_data");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_Point_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this points");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "api_Point_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this points");
 }
 
-static void rna_def_pointcloud(BlenderRNA *brna)
+static void api_def_pointcloud(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PointCloud", "ID");
-  RNA_def_struct_ui_text(srna, "Point Cloud", "Point cloud data-block");
-  RNA_def_struct_ui_icon(srna, ICON_POINTCLOUD_DATA);
+  srna = apu_def_struct(dapi, "PointCloud", "Id");
+  api_def_struct_ui_text(sapi, "Point Cloud", "Point cloud data-block");
+  api_def_struct_ui_icon(sapi, ICON_POINTCLOUD_DATA);
 
   /* geometry */
   /* TODO: better solution for (*co)[3] parsing issue. */
-  RNA_define_verify_sdna(0);
+  api_define_verify_sdna(0);
   prop = RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_collection_sdna(prop, NULL, "co", "totpoint");
   RNA_def_property_struct_type(prop, "Point");
