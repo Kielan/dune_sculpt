@@ -21,64 +21,64 @@
 
 #include "lang.h"
 
-#include "BKE_animsys.h"
-#include "BKE_data_transfer.h"
-#include "BKE_dynamicpaint.h"
-#include "BKE_effect.h"
-#include "BKE_fluid.h" /* For BKE_fluid_modifier_free & BKE_fluid_modifier_create_type_data */
-#include "BKE_mesh_mapping.h"
-#include "BKE_mesh_remap.h"
-#include "BKE_multires.h"
+#include "dune_animsys.h"
+#include "dune_data_transfer.h"
+#include "dune_dynamicpaint.h"
+#include "dune_effect.h"
+#include "dune_fluid.h" /* For dune_fluid_mod_free & dune_fluid_mod_create_type_data */
+#include "dune_mesh_mapping.h"
+#include "dune_mesh_remap.h"
+#include "dune_multires.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_object_greasepencil_modifier_type_items[] = {
+const EnumPropItem api_enum_object_pen_mod_type_items[] = {
     {0, "", 0, N_("Modify"), ""},
-    {eGpencilModifierType_Texture,
-     "GP_TEXTURE",
+    {ePenModType_Texture,
+     "PEN_TEXTURE",
      ICON_MOD_UVPROJECT,
      "Texture Mapping",
      "Change stroke uv texture values"},
-    {eGpencilModifierType_Time, "GP_TIME", ICON_MOD_TIME, "Time Offset", "Offset keyframes"},
-    {eGpencilModifierType_WeightAngle,
-     "GP_WEIGHT_ANGLE",
+    {ePenModType_Time, "P_TIME", ICON_MOD_TIME, "Time Offset", "Offset keyframes"},
+    {ePenModType_WeightAngle,
+     "PEN_WEIGHT_ANGLE",
      ICON_MOD_VERTEX_WEIGHT,
      "Vertex Weight Angle",
      "Generate Vertex Weights base on stroke angle"},
-    {eGpencilModifierType_WeightProximity,
-     "GP_WEIGHT_PROXIMITY",
+    {ePenModType_WeightProximity,
+     "PEN_WEIGHT_PROXIMITY",
      ICON_MOD_VERTEX_WEIGHT,
      "Vertex Weight Proximity",
      "Generate Vertex Weights base on distance to object"},
     {0, "", 0, N_("Generate"), ""},
-    {eGpencilModifierType_Array,
+    {ePenModType_Array,
      "GP_ARRAY",
      ICON_MOD_ARRAY,
      "Array",
      "Create array of duplicate instances"},
-    {eGpencilModifierType_Build,
+    {ePenModType_Build,
      "GP_BUILD",
      ICON_MOD_BUILD,
      "Build",
      "Create duplication of strokes"},
-    {eGpencilModifierType_Dash,
+    {ePenModType_Dash,
      "GP_DASH",
      ICON_MOD_DASH,
      "Dot Dash",
      "Generate dot-dash styled strokes"},
-    {eGpencilModifierType_Length,
-     "GP_LENGTH",
+    {ePenModType_Length,
+     "PEN_LENGTH",
      ICON_MOD_LENGTH,
      "Length",
      "Extend or shrink strokes"},
-    {eGpencilModifierType_Lineart,
+    {ePenModType_Lineart,
      "GP_LINEART",
      ICON_MOD_LINEART,
      "Line Art",
