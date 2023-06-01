@@ -398,20 +398,20 @@ static void api_HookPenMod_object_set(PointerRNA *ptr,
   dune_object_mod_pen_hook_reset(ob, hmd);
 }
 
-static void rna_TintGpencilModifier_object_set(PointerRNA *ptr,
-                                               PointerRNA value,
-                                               struct ReportList *UNUSED(reports))
+static void api_TintPenMod_object_set(ApiPtr *ptr,
+                                      ApiPtr value,
+                                      struct ReportList *UNUSED(reports))
 {
-  TintGpencilModifierData *hmd = ptr->data;
+  TintPenModData *hmd = ptr->data;
   Object *ob = (Object *)value.data;
 
   hmd->object = ob;
-  id_lib_extern((ID *)ob);
+  id_lib_extern((Id *)ob);
 }
 
-static void rna_TimeModifier_start_frame_set(PointerRNA *ptr, int value)
+static void api_TimeMod_start_frame_set(ApiPtr *ptr, int value)
 {
-  TimeGpencilModifierData *tmd = ptr->data;
+  TimePenModData *tmd = ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
   tmd->sfra = value;
 
@@ -420,9 +420,9 @@ static void rna_TimeModifier_start_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_TimeModifier_end_frame_set(PointerRNA *ptr, int value)
+static void api_TimeMod_end_frame_set(ApiPtr *ptr, int value)
 {
-  TimeGpencilModifierData *tmd = ptr->data;
+  TimePenModData *tmd = ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
   tmd->efra = value;
 
