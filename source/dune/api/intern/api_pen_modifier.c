@@ -59,17 +59,17 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Generate Vertex Weights base on distance to object"},
     {0, "", 0, N_("Generate"), ""},
     {ePenModType_Array,
-     "GP_ARRAY",
+     "PEN_ARRAY",
      ICON_MOD_ARRAY,
      "Array",
      "Create array of duplicate instances"},
     {ePenModType_Build,
-     "GP_BUILD",
+     "PEN_BUILD",
      ICON_MOD_BUILD,
      "Build",
      "Create duplication of strokes"},
     {ePenModType_Dash,
-     "GP_DASH",
+     "PEN_DASH",
      ICON_MOD_DASH,
      "Dot Dash",
      "Generate dot-dash styled strokes"},
@@ -79,17 +79,17 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Length",
      "Extend or shrink strokes"},
     {ePenModType_Lineart,
-     "GP_LINEART",
+     "PEN_LINEART",
      ICON_MOD_LINEART,
      "Line Art",
      "Generate line art strokes from selected source"},
-    {eGpencilModifierType_Mirror,
-     "GP_MIRROR",
+    {ePenModType_Mirror,
+     "PEN_MIRROR",
      ICON_MOD_MIRROR,
      "Mirror",
      "Duplicate strokes like a mirror"},
-    {eGpencilModifierType_Multiply,
-     "GP_MULTIPLY",
+    {ePenModType_Multiply,
+     "PEN_MULTIPLY",
      ICON_GP_MULTIFRAME_EDITING,
      "Multiple Strokes",
      "Produce multiple strokes along one stroke"},
@@ -121,7 +121,7 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Deform strokes using lattice"},
     {ePenModType_Noise, "PEN_NOISE", ICON_MOD_NOISE, "Noise", "Add noise to strokes"},
     {ePenModType_Offset,
-     "GP_OFFSET",
+     "PEN_OFFSET",
      ICON_MOD_OFFSET,
      "Offset",
      "Change stroke location, rotation or scale"},
@@ -130,7 +130,7 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      ICON_MOD_SHRINKWRAP,
      "Shrinkwrap",
      "Project the shape onto another object"},
-    {ePenModType_Smooth, "GP_SMOOTH", ICON_MOD_SMOOTH, "Smooth", "Smooth stroke"},
+    {ePenModType_Smooth, "PEN_SMOOTH", ICON_MOD_SMOOTH, "Smooth", "Smooth stroke"},
     {ePenModType_Thick,
      "PEN_THICK",
      ICON_MOD_THICKNESS,
@@ -160,65 +160,65 @@ static const EnumPropItem mod_modify_color_items[] = {
 };
 
 static const EnumPropItem mod_modify_opacity_items[] = {
-    {GP_MODIFY_COLOR_BOTH, "BOTH", 0, "Stroke & Fill", "Modify fill and stroke colors"},
-    {GP_MODIFY_COLOR_STROKE, "STROKE", 0, "Stroke", "Modify stroke color only"},
-    {GP_MODIFY_COLOR_FILL, "FILL", 0, "Fill", "Modify fill color only"},
-    {GP_MODIFY_COLOR_HARDNESS, "HARDNESS", 0, "Hardness", "Modify stroke hardness"},
+    {PEN_MODIFY_COLOR_BOTH, "BOTH", 0, "Stroke & Fill", "Modify fill and stroke colors"},
+    {PEN_MODIFY_COLOR_STROKE, "STROKE", 0, "Stroke", "Modify stroke color only"},
+    {PEN_MODIFY_COLOR_FILL, "FILL", 0, "Fill", "Modify fill color only"},
+    {PEN_MODIFY_COLOR_HARDNESS, "HARDNESS", 0, "Hardness", "Modify stroke hardness"},
     {0, NULL, 0, NULL, NULL},
 };
 
 static const EnumPropItem mod_penhook_falloff_items[] = {
-    {eGPHook_Falloff_None, "NONE", 0, "No Falloff", ""},
-    {eGPHook_Falloff_Curve, "CURVE", 0, "Curve", ""},
-    {eGPHook_Falloff_Smooth, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", ""},
-    {eGPHook_Falloff_Sphere, "SPHERE", ICON_SPHERECURVE, "Sphere", ""},
-    {eGPHook_Falloff_Root, "ROOT", ICON_ROOTCURVE, "Root", ""},
-    {eGPHook_Falloff_InvSquare, "INVERSE_SQUARE", ICON_ROOTCURVE, "Inverse Square", ""},
-    {eGPHook_Falloff_Sharp, "SHARP", ICON_SHARPCURVE, "Sharp", ""},
-    {eGPHook_Falloff_Linear, "LINEAR", ICON_LINCURVE, "Linear", ""},
-    {eGPHook_Falloff_Const, "CONSTANT", ICON_NOCURVE, "Constant", ""},
+    {ePenHook_Falloff_None, "NONE", 0, "No Falloff", ""},
+    {ePenHook_Falloff_Curve, "CURVE", 0, "Curve", ""},
+    {ePenHook_Falloff_Smooth, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", ""},
+    {ePenHook_Falloff_Sphere, "SPHERE", ICON_SPHERECURVE, "Sphere", ""},
+    {ePenHook_Falloff_Root, "ROOT", ICON_ROOTCURVE, "Root", ""},
+    {ePenHook_Falloff_InvSquare, "INVERSE_SQUARE", ICON_ROOTCURVE, "Inverse Square", ""},
+    {ePenHook_Falloff_Sharp, "SHARP", ICON_SHARPCURVE, "Sharp", ""},
+    {ePenHook_Falloff_Linear, "LINEAR", ICON_LINCURVE, "Linear", ""},
+    {ePenHook_Falloff_Const, "CONSTANT", ICON_NOCURVE, "Constant", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_time_mode_items[] = {
-    {GP_TIME_MODE_NORMAL, "NORMAL", 0, "Regular", "Apply offset in usual animation direction"},
-    {GP_TIME_MODE_REVERSE, "REVERSE", 0, "Reverse", "Apply offset in reverse animation direction"},
-    {GP_TIME_MODE_FIX, "FIX", 0, "Fixed Frame", "Keep frame and do not change with time"},
+static const EnumPropItem api_enum_time_mode_items[] = {
+    {PEN_TIME_MODE_NORMAL, "NORMAL", 0, "Regular", "Apply offset in usual animation direction"},
+    {PEN_TIME_MODE_REVERSE, "REVERSE", 0, "Reverse", "Apply offset in reverse animation direction"},
+    {PEN_TIME_MODE_FIX, "FIX", 0, "Fixed Frame", "Keep frame and do not change with time"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem gpencil_subdivision_type_items[] = {
-    {GP_SUBDIV_CATMULL, "CATMULL_CLARK", 0, "Catmull-Clark", ""},
-    {GP_SUBDIV_SIMPLE, "SIMPLE", 0, "Simple", ""},
+static const EnumPropItem pen_subdivision_type_items[] = {
+    {PEN_SUBDIV_CATMULL, "CATMULL_CLARK", 0, "Catmull-Clark", ""},
+    {PEN_SUBDIV_SIMPLE, "SIMPLE", 0, "Simple", ""},
     {0, NULL, 0, NULL, NULL},
 };
-static const EnumPropertyItem gpencil_tint_type_items[] = {
-    {GP_TINT_UNIFORM, "UNIFORM", 0, "Uniform", ""},
-    {GP_TINT_GRADIENT, "GRADIENT", 0, "Gradient", ""},
+static const EnumPropItem pen_tint_type_items[] = {
+    {PEN_TINT_UNIFORM, "UNIFORM", 0, "Uniform", ""},
+    {PEN_TINT_GRADIENT, "GRADIENT", 0, "Gradient", ""},
     {0, NULL, 0, NULL, NULL},
 };
-static const EnumPropertyItem gpencil_length_mode_items[] = {
-    {GP_LENGTH_RELATIVE, "RELATIVE", 0, "Relative", "Length in ratio to the stroke's length"},
-    {GP_LENGTH_ABSOLUTE, "ABSOLUTE", 0, "Absolute", "Length in geometry space"},
+static const EnumPropItem pen_length_mode_items[] = {
+    {PEN_LENGTH_RELATIVE, "RELATIVE", 0, "Relative", "Length in ratio to the stroke's length"},
+    {PEN_LENGTH_ABSOLUTE, "ABSOLUTE", 0, "Absolute", "Length in geometry space"},
     {0, NULL, 0, NULL, NULL},
 };
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_curve_types.h"
-#  include "DNA_fluid_types.h"
-#  include "DNA_material_types.h"
-#  include "DNA_particle_types.h"
+#  include "types_curve.h"
+#  include "types_fluid.h"
+#  include "types_material.h"
+#  include "types_particle.h"
 
-#  include "BKE_cachefile.h"
-#  include "BKE_context.h"
-#  include "BKE_gpencil.h"
-#  include "BKE_gpencil_modifier.h"
-#  include "BKE_object.h"
+#  include "dune_cachefile.h"
+#  include "dune_context.h"
+#  include "dune_pen.h"
+#  include "dune_pen_mod.h"
+#  include "dune_object.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
 static StructRNA *rna_GpencilModifier_refine(struct PointerRNA *ptr)
 {
