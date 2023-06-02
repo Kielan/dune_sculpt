@@ -871,17 +871,17 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Pass", "Pass index");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "step");
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "step");
+  api_def_prop_range(prop, 1, 100);
+  api_def_prop_ui_text(
       prop, "Step", "Number of frames before recalculate random values again");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_INVERT_MATERIAL);
