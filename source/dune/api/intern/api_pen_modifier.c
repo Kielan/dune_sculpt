@@ -536,11 +536,11 @@ static void api_SubdivPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_SimplifyGpencilModifier_material_set(PointerRNA *ptr,
-                                                     PointerRNA value,
+static void api_SimplifyPenMod_material_set(ApiPtr *ptr,
+                                            ApiPtr value,
                                                      struct ReportList *reports)
 {
-  SimplifyGpencilModifierData *smd = (SimplifyGpencilModifierData *)ptr->data;
+  SimplifyPenModData *smd = (SimplifyGpencilModifierData *)ptr->data;
   Material **ma_target = &smd->material;
 
   api_PenMod_material_set(ptr, value, ma_target, reports);
@@ -596,7 +596,7 @@ static void api_OffsetPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_ColorGpencilModifier_material_set(PointerRNA *ptr,
+static void api_ColorPenMod_material_set(PointerRNA *ptr,
                                                   PointerRNA value,
                                                   struct ReportList *reports)
 {
