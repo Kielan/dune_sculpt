@@ -656,7 +656,7 @@ static void api_HookPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_MultiplyPenMod_material_set(ApiPtr *ptr,
+static void api_MultiplyPenMod_material_set(ApiPtr *ptr,
                                             ApiPtr value,
                                             struct ReportList *reports)
 {
@@ -697,16 +697,16 @@ static void api_Lineart_start_level_set(ApiPtr *ptr, int value)
 
 static void api_Lineart_end_level_set(ApiPtr *ptr, int value)
 {
-  LineartPenModData *lmd = (LineartGpencilModifierData *)ptr->data;
+  LineartPenModData *lmd = (LineartPenModData *)ptr->data;
 
   CLAMP(value, 0, 128);
   lmd->level_end = value;
   lmd->level_start = MIN2(value, lmd->level_start);
 }
 
-static void rna_GpencilDash_segments_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_PenDash_segments_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  DashGpencilModifierData *dmd = (DashGpencilModifierData *)ptr->data;
+  DashGpencilModifierData *dmd = (DashPenModData *)ptr->data;
   rna_iterator_array_begin(
       iter, dmd->segments, sizeof(DashGpencilModifierSegment), dmd->segments_len, false, NULL);
 }
