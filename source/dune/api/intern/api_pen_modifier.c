@@ -683,21 +683,21 @@ static void api_ShrinkwrapPenMod_material_set(ApiPtr *ptr,
   ShrinkwrapPenModData *tmd = (ShrinkwrapPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_Lineart_start_level_set(PointerRNA *ptr, int value)
+static void api_Lineart_start_level_set(ApiPtr *ptr, int value)
 {
-  LineartGpencilModifierData *lmd = (LineartGpencilModifierData *)ptr->data;
+  LineartPenModData *lmd = (LineartPenModData *)ptr->data;
 
   CLAMP(value, 0, 128);
   lmd->level_start = value;
   lmd->level_end = MAX2(value, lmd->level_end);
 }
 
-static void rna_Lineart_end_level_set(PointerRNA *ptr, int value)
+static void api_Lineart_end_level_set(ApiPtr *ptr, int value)
 {
-  LineartGpencilModifierData *lmd = (LineartGpencilModifierData *)ptr->data;
+  LineartPenModData *lmd = (LineartGpencilModifierData *)ptr->data;
 
   CLAMP(value, 0, 128);
   lmd->level_end = value;
