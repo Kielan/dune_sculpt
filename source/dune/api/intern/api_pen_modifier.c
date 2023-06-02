@@ -516,14 +516,14 @@ static void rna_NoiseGpencilModifier_material_set(PointerRNA *ptr,
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_SmoothGpencilModifier_material_set(PointerRNA *ptr,
-                                                   PointerRNA value,
-                                                   struct ReportList *reports)
+static void api_SmoothPenMod_material_set(ApiPtr *ptr,
+                                          ApiPtr value,
+                                          struct ReportList *reports)
 {
-  SmoothGpencilModifierData *smd = (SmoothGpencilModifierData *)ptr->data;
+  SmoothPenModData *smd = (SmoothPenModData *)ptr->data;
   Material **ma_target = &smd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void rna_SubdivGpencilModifier_material_set(PointerRNA *ptr,
