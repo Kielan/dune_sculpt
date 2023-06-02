@@ -898,33 +898,33 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "rna_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
-static void rna_def_modifier_gpencilsmooth(BlenderRNA *brna)
+static void api_def_mod_pensmooth(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SmoothGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Smooth Modifier", "Smooth effect modifier");
-  RNA_def_struct_sdna(srna, "SmoothGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SMOOTH);
+  sapi = api_def_struct(dapi, "SmoothGpencilModifier", "GpencilModifier");
+  api_def_struct_ui_text(sapi, "Smooth Modifier", "Smooth effect modifier");
+  apj_def_struct_sdna(sapi, "SmoothGpencilModifierData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SMOOTH);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  RNA_def_prop_string_stype(prop, NULL, "layername");
   RNA_def_property_ui_text(prop, "Layer", "Layer name");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
