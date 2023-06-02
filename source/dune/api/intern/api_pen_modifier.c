@@ -1025,33 +1025,33 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = api_def_prop(sapi, "curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curve_intensity");
-  RNA_def_property_ui_text(prop, "Curve", "Custom curve to apply effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_ptr_stype(prop, NULL, "curve_intensity");
+  api_def_prop_ui_text(prop, "Curve", "Custom curve to apply effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencilsubdiv(BlenderRNA *brna)
+static void api_def_mod_pensubdiv(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapo;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SubdivGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Subdivision Modifier", "Subdivide Stroke modifier");
-  RNA_def_struct_sdna(srna, "SubdivGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SUBSURF);
+  sapi = api_def_struct(brna, "SubdivGpencilModifier", "GpencilModifier");
+  api_def_struct_ui_text(srna, "Subdivision Modifier", "Subdivide Stroke modifier");
+  api_def_struct_sdna(srna, "SubdivGpencilModifierData");
+  api_def_struct_ui_icon(srna, ICON_MOD_SUBSURF);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
+  prop = api_def_prop(sapi, "material", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
                                  NULL,
                                  "rna_SubdivGpencilModifier_material_set",
                                  NULL,
