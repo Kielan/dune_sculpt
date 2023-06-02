@@ -303,16 +303,16 @@ static void api_PenMod_name_set(ApiPtr *ptr, const char *value)
   dune_animdata_fix_paths_rename_all(NULL, "grease_pencil_modifiers", oldname, gmd->name);
 }
 
-static char *api_GpencilModifier_path(PointerRNA *ptr)
+static char *api_PenMod_path(ApiPtr *ptr)
 {
   PenModData *gmd = ptr->data;
   char name_esc[sizeof(gmd->name) * 2];
 
   lib_str_escape(name_esc, gmd->name, sizeof(name_esc));
-  return lib_sprintfN("grease_pencil_modifiers[\"%s\"]", name_esc);
+  return lib_sprintfN("pen_mods[\"%s\"]", name_esc);
 }
 
-static void api_GpencilModifier_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_PenMod_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
   wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
