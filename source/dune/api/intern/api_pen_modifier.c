@@ -771,24 +771,24 @@ static void api_ShrinkwrapPenMod_face_cull_set(struct ApiPtr *ptr, int value)
 
 #else
 
-static void rna_def_modifier_gpencilnoise(BlenderRNA *brna)
+static void api_def_mod_pennoise(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "NoiseGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Noise Modifier", "Noise effect modifier");
-  RNA_def_struct_sdna(srna, "NoiseGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_NOISE);
+  sapi = api_def_struct(dapi, "NoisePenMod", "PenMod");
+  api_def_struct_ui_text(sapi, "Noise Mod", "Noise effect modifier");
+  api_def_struct_stype(sapi, "NoisePenModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_NOISE);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
   RNA_def_property_flag(prop, PROP_EDITABLE);
   RNA_def_property_pointer_funcs(prop,
                                  NULL,
