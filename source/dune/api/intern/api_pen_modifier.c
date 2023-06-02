@@ -386,9 +386,9 @@ API_PEN_MOD_OBJECT_SET(Shrinkwrap, aux_target, OB_MESH);
 
 #  undef API_PEN_MOD_OBJECT_SET
 
-static void api_HookPenMod_object_set(PointerRNA *ptr,
-                                               PointerRNA value,
-                                               struct ReportList *UNUSED(reports))
+static void api_HookPenMod_object_set(ApiPtr *ptr,
+                                      ApiPtr value,
+                                      struct ReportList *UNUSED(reports))
 {
   HookPenModData *hmd = ptr->data;
   Object *ob = (Object *)value.data;
@@ -506,14 +506,14 @@ static void api_LineartPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_NoiseGpencilModifier_material_set(PointerRNA *ptr,
-                                                  PointerRNA value,
-                                                  struct ReportList *reports)
+static void api_NoisePenMod_material_set(ApiPtr *ptr,
+                                         ApiPtr value,
+                                         struct ReportList *reports)
 {
-  NoiseGpencilModifierData *nmd = (NoiseGpencilModifierData *)ptr->data;
+  NoisePenModData *nmd = (NoiseGpencilModifierData *)ptr->data;
   Material **ma_target = &nmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void api_SmoothPenMod_material_set(ApiPtr *ptr,
