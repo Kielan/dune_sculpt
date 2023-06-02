@@ -1055,32 +1055,32 @@ static void api_def_mod_pensubdiv(DuneApi *dapi)
                                  NULL,
                                  "rna_SubdivGpencilModifier_material_set",
                                  NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(prop, "Material", "Material used for filtering effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+                                 "api_PenMod_material_poll");
+  api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "level", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "level");
-  RNA_def_property_range(prop, 0, 5);
-  RNA_def_property_ui_text(prop, "Level", "Number of subdivisions");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "level", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "level");
+  api_def_prop_range(prop, 0, 5);
+  api_def_prop_ui_text(prop, "Level", "Number of subdivisions")
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "subdivision_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, gpencil_subdivision_type_items);
-  RNA_def_property_ui_text(prop, "Subdivision Type", "Select type of subdivision algorithm");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "subdivision_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, gpencil_subdivision_type_items);
+  api_def_prop_ui_text(prop, "Subdivision Type", "Select type of subdivision algorithm");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SUBDIV_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SUBDIV_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SUBDIV_INVERT_MATERIAL);
