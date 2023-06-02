@@ -475,20 +475,20 @@ bool rna_GpencilModifier_material_poll(PointerRNA *ptr, PointerRNA value)
   return BKE_gpencil_object_material_index_get(ob, ma) != -1;
 }
 
-static void rna_GpencilModifier_material_set(PointerRNA *ptr,
-                                             PointerRNA value,
+static void api_PenMod_material_set(ApiPtr *ptr,
+                                             ApiPtr value,
                                              Material **ma_target,
                                              struct ReportList *reports)
 {
   Object *ob = (Object *)ptr->owner_id;
   Material *ma = (Material *)value.owner_id;
 
-  if (ma == NULL || BKE_gpencil_object_material_index_get(ob, ma) != -1) {
-    id_lib_extern((ID *)ob);
+  if (ma == NULL || dune_pen_object_material_index_get(ob, ma) != -1) {
+    id_lib_extern((Id *)ob);
     *ma_target = ma;
   }
   else {
-    BKE_reportf(
+    dune_reportf(
         reports,
         RPT_ERROR,
         "Cannot assign material '%s', it has to be used by the grease pencil object already",
@@ -496,7 +496,7 @@ static void rna_GpencilModifier_material_set(PointerRNA *ptr,
   }
 }
 
-static void rna_LineartGpencilModifier_material_set(PointerRNA *ptr,
+static void api_LineartPenMod_material_set(PointerRNA *ptr,
                                                     PointerRNA value,
                                                     struct ReportList *reports)
 {
