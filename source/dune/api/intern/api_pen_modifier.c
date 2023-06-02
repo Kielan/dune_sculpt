@@ -711,24 +711,24 @@ static void rna_GpencilDash_segments_begin(CollectionPropertyIterator *iter, Poi
       iter, dmd->segments, sizeof(DashGpencilModifierSegment), dmd->segments_len, false, NULL);
 }
 
-static char *rna_DashGpencilModifierSegment_path(PointerRNA *ptr)
+static char *api_DashPenModSegment_path(PointerRNA *ptr)
 {
-  DashGpencilModifierSegment *ds = (DashGpencilModifierSegment *)ptr->data;
+  DashPenModSegment *ds = (DashGpencilModifierSegment *)ptr->data;
 
-  DashGpencilModifierData *dmd = (DashGpencilModifierData *)ds->dmd;
+  DashPenModData *dmd = (DashGpencilModifierData *)ds->dmd;
 
-  BLI_assert(dmd != NULL);
+  lib_assert(dmd != NULL);
 
-  char name_esc[sizeof(dmd->modifier.name) * 2 + 1];
+  char name_esc[sizeof(dmd->mod.name) * 2 + 1];
 
-  BLI_str_escape(name_esc, dmd->modifier.name, sizeof(name_esc));
+  lib_str_escape(name_esc, dmd->mod.name, sizeof(name_esc));
 
-  return BLI_sprintfN("grease_pencil_modifiers[\"%s\"].segments[\"%s\"]", name_esc, ds->name);
+  return lib_sprintfn("grease_pen_mods[\"%s\"].segments[\"%s\"]", name_esc, ds->name);
 }
 
 static bool dash_segment_name_exists_fn(void *arg, const char *name)
 {
-  const DashGpencilModifierData *dmd = (const DashGpencilModifierData *)arg;
+  const DashPenModData *dmd = (const DashPenModData *)arg;
   for (int i = 0; i < dmd->segments_len; i++) {
     if (STREQ(dmd->segments[i].name, name)) {
       return true;
@@ -737,24 +737,24 @@ static bool dash_segment_name_exists_fn(void *arg, const char *name)
   return false;
 }
 
-static void rna_DashGpencilModifierSegment_name_set(PointerRNA *ptr, const char *value)
+static void api_DashPenModSegment_name_set(ApiPtr *ptr, const char *value)
 {
-  DashGpencilModifierSegment *ds = ptr->data;
+  DashPenModSegment *ds = ptr->data;
 
   char oldname[sizeof(ds->name)];
-  BLI_strncpy(oldname, ds->name, sizeof(ds->name));
+  lib_strncpy(oldname, ds->name, sizeof(ds->name));
 
-  BLI_strncpy_utf8(ds->name, value, sizeof(ds->name));
+  lib_strncpy_utf8(ds->name, value, sizeof(ds->name));
 
-  BLI_assert(ds->dmd != NULL);
-  BLI_uniquename_cb(
+  lib_assert(ds->dmd != NULL);
+  lib_uniquename_cb(
       dash_segment_name_exists_fn, ds->dmd, "Segment", '.', ds->name, sizeof(ds->name));
 
   char prefix[256];
   sprintf(prefix, "grease_pencil_modifiers[\"%s\"].segments", ds->dmd->modifier.name);
 
   /* Fix all the animation data which may link to this. */
-  BKE_animdata_fix_paths_rename_all(NULL, prefix, oldname, ds->name);
+  dune_animdata_fix_paths_rename_all(NULL, prefix, oldname, ds->name);
 }
 
 static int rna_ShrinkwrapGpencilModifier_face_cull_get(PointerRNA *ptr)
