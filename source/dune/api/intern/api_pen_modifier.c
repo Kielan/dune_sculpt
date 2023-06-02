@@ -556,11 +556,11 @@ static void rna_ThickGpencilModifier_material_set(PointerRNA *ptr,
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_WeightProxGpencilModifier_material_set(PointerRNA *ptr,
-                                                       PointerRNA value,
+static void rna_WeightProxPenMod_material_set(ApiPtr *ptr,
+                                                       ApiPtr value,
                                                        struct ReportList *reports)
 {
-  WeightProxGpencilModifierData *tmd = (WeightProxGpencilModifierData *)ptr->data;
+  WeightProxPenModData *tmd = (WeightProxPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
