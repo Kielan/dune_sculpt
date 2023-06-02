@@ -543,30 +543,30 @@ static void rna_SimplifyGpencilModifier_material_set(PointerRNA *ptr,
   SimplifyGpencilModifierData *smd = (SimplifyGpencilModifierData *)ptr->data;
   Material **ma_target = &smd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_ThickGpencilModifier_material_set(PointerRNA *ptr,
-                                                  PointerRNA value,
+static void api_ThickPenMod_material_set(ApuPtr *ptr,
+                                                  ApiPtr value,
                                                   struct ReportList *reports)
 {
-  ThickGpencilModifierData *tmd = (ThickGpencilModifierData *)ptr->data;
+  ThickPenModData *tmd = (ThickPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_WeightProxPenMod_material_set(ApiPtr *ptr,
-                                                       ApiPtr value,
-                                                       struct ReportList *reports)
+static void api_WeightProxPenMod_material_set(ApiPtr *ptr,
+                                              ApiPtr value,
+                                              struct ReportList *reports)
 {
   WeightProxPenModData *tmd = (WeightProxPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_WeightAngleGpencilModifier_material_set(PointerRNA *ptr,
+static void api_WeightAngleGpencilModifier_material_set(PointerRNA *ptr,
                                                         PointerRNA value,
                                                         struct ReportList *reports)
 {
