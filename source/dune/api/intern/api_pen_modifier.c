@@ -825,16 +825,16 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Thickness Factor", "Amount of noise to apply to thickness");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "factor_uvs", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "factor_uvs");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
-  RNA_def_property_ui_text(prop, "UV Factor", "Amount of noise to apply uv rotation");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = RNA_def_prop(sapi, "factor_uvs", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "factor_uvs");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
+  api_def_prop_ui_text(prop, "UV Factor", "Amount of noise to apply uv rotation");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "use_random", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_USE_RANDOM);
-  RNA_def_property_ui_text(prop, "Random", "Use random values over time");
+  prop = api_def_prop(sapi, "use_random", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_USE_RANDOM);
+  api_def_prop_ui_text(prop, "Random", "Use random values over time");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
