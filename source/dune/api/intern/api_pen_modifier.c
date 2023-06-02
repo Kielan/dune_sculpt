@@ -858,18 +858,18 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_CUSTOM_CURVE);
   api_def_property_ui_text(
       prop, "Custom Curve", "Use a custom curve to define noise effect along the strokes");
-  api_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_property_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "curve", PROP_POINTER, PROP_NONE);
-  api_def_property_pointer_sdna(prop, NULL, "curve_intensity");
-  RNA_def_property_ui_text(prop, "Curve", "Custom curve to apply effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = RNA_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curve_intensity");
+  api_def_prop_ui_text(prop, "Curve", "Custom curve to apply effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  RNA_def_property_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "step");
