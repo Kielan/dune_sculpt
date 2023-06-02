@@ -656,31 +656,31 @@ static void api_HookPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_MultiplyPenMod_material_set(PointerRNA *ptr,
-                                                     PointerRNA value,
-                                                     struct ReportList *reports)
+static void rna_MultiplyPenMod_material_set(ApiPtr *ptr,
+                                            ApiPtr value,
+                                            struct ReportList *reports)
 {
-  MultiplyGpencilModifierData *mmd = (MultiplyGpencilModifierData *)ptr->data;
+  MultiplyPenModData *mmd = (MultiplyPenModData *)ptr->data;
   Material **ma_target = &mmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_TextureGpencilModifier_material_set(PointerRNA *ptr,
-                                                    PointerRNA value,
-                                                    struct ReportList *reports)
+static void api_TexturePenMod_material_set(ApiPtr *ptr,
+                                           ApiPtr value,         
+                                           struct ReportList *reports)
 {
-  TextureGpencilModifierData *tmd = (TextureGpencilModifierData *)ptr->data;
+  TexturePenModData *tmd = (TexturePenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  rna_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_ShrinkwrapGpencilModifier_material_set(PointerRNA *ptr,
-                                                       PointerRNA value,
-                                                       struct ReportList *reports)
+static void api_ShrinkwrapPenMod_material_set(ApiPtr *ptr,
+                                              ApiPtr value,
+                                              struct ReportList *reports)
 {
-  ShrinkwrapGpencilModifierData *tmd = (ShrinkwrapGpencilModifierData *)ptr->data;
+  ShrinkwrapPenModData *tmd = (ShrinkwrapPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
