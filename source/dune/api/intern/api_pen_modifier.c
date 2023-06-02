@@ -276,10 +276,10 @@ static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
       /* Default */
     case ePenModType_None:
     case NUM_PEN_MOD_TYPES:
-      return &RNA_GpencilModifier;
+      return &ApiPenMod;
   }
 
-  return &RNA_GpencilModifier;
+  return &ApiPenMod;
 }
 
 static void api_PenMod_name_set(ApiPtr *ptr, const char *value)
