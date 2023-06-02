@@ -924,78 +924,78 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_prop_string_stype(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
                                  NULL,
-                                 "rna_SmoothGpencilModifier_material_set",
+                                 "api_SmoothPenMod_material_set",
                                  NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(prop, "Material", "Material used for filtering effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+                                 "api_PenMod_material_poll");
+  api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgname");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_SmoothGpencilModifier_vgname_set");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "vgname");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_SmoothPenMod_vgname_set");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "factor");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Factor", "Amount of smooth to apply");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "factor");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Factor", "Amount of smooth to apply");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_edit_position", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_MOD_LOCATION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_position", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_LOCATION);
+  api_def_prop_ui_text(
       prop, "Affect Position", "The modifier affects the position of the point");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_edit_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_MOD_STRENGTH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_strength", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_STRENGTH);
+  api_def_prop_ui_text(
       prop, "Affect Strength", "The modifier affects the color strength of the point");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_edit_thickness", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_MOD_THICKNESS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_thickness", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_THICKNESS);
+  api_def_prop_ui_text(
       prop, "Affect Thickness", "The modifier affects the thickness of the point");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_edit_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_MOD_UV);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_uv", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_UV);
+  api_def_prop_ui_text(
       prop, "Affect UV", "The modifier affects the UV rotation factor of the point");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "step");
   api_def_prop_range(prop, 1, 10);
   api_def_prop_ui_text(
       prop, "Step", "Number of times to apply smooth (high numbers can reduce fps)");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYER);
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_INVERT_LAYER);
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", GP_SMOOTH_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_PASS);
@@ -1013,18 +1013,18 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "use_custom_curve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_CUSTOM_CURVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_curve", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_CUSTOM_CURVE);
+  api_def_prop_ui_text(
       prop, "Custom Curve", "Use a custom curve to define smooth effect along the strokes");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "curve", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "curve", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "curve_intensity");
   RNA_def_property_ui_text(prop, "Curve", "Custom curve to apply effect");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
