@@ -606,14 +606,14 @@ static void api_ColorPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void api_ArrayGpencilModifier_material_set(PointerRNA *ptr,
-                                                  PointerRNA value,
-                                                  struct ReportList *reports)
+static void api_ArrayPenMod_material_set(ApiPtr *ptr,
+                                         ApiPtr value,
+                                         struct ReportList *reports)
 {
-  ArrayPenModData *amd = (ArrayGpencilModifierData *)ptr->data;
+  ArrayPenModData *amd = (ArrayPenModData *)ptr->data;
   Material **ma_target = &amd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void api_PenMod_material_set(ApiPtr *ptr,
