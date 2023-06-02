@@ -610,7 +610,7 @@ static void api_ArrayGpencilModifier_material_set(PointerRNA *ptr,
                                                   PointerRNA value,
                                                   struct ReportList *reports)
 {
-  ArrayPenModData *amd = (ArrayGpencilModifierData *)ptr->data;
+  ArrayPenModData *amd = (ArrayPenModData *)ptr->data;
   Material **ma_target = &amd->material;
 
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
