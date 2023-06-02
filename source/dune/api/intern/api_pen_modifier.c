@@ -673,7 +673,7 @@ static void api_TexturePenMod_material_set(ApiPtr *ptr,
   TexturePenModData *tmd = (TexturePenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
-  rna_PenMod_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void api_ShrinkwrapPenMod_material_set(ApiPtr *ptr,
@@ -706,16 +706,16 @@ static void api_Lineart_end_level_set(ApiPtr *ptr, int value)
 
 static void api_PenDash_segments_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  DashGpencilModifierData *dmd = (DashPenModData *)ptr->data;
-  rna_iterator_array_begin(
-      iter, dmd->segments, sizeof(DashGpencilModifierSegment), dmd->segments_len, false, NULL);
+  DashPenModData *dmd = (DashPenModData *)ptr->data;
+  api_iter_array_begin(
+      iter, dmd->segments, sizeof(DashPenModSegment), dmd->segments_len, false, NULL);
 }
 
-static char *api_DashPenModSegment_path(PointerRNA *ptr)
+static char *api_DashPenModSegment_path(ApiPtr *ptr)
 {
-  DashPenModSegment *ds = (DashGpencilModifierSegment *)ptr->data;
+  DashPenModSegment *ds = (DashPenModSegment *)ptr->data;
 
-  DashPenModData *dmd = (DashGpencilModifierData *)ds->dmd;
+  DashPenModData *dmd = (DashPenModData *)ds->dmd;
 
   lib_assert(dmd != NULL);
 
@@ -723,7 +723,7 @@ static char *api_DashPenModSegment_path(PointerRNA *ptr)
 
   lib_str_escape(name_esc, dmd->mod.name, sizeof(name_esc));
 
-  return lib_sprintfn("grease_pen_mods[\"%s\"].segments[\"%s\"]", name_esc, ds->name);
+  return lib_sprintfn("pen_mods[\"%s\"].segments[\"%s\"]", name_esc, ds->name);
 }
 
 static bool dash_segment_name_exists_fn(void *arg, const char *name)
@@ -751,21 +751,21 @@ static void api_DashPenModSegment_name_set(ApiPtr *ptr, const char *value)
       dash_segment_name_exists_fn, ds->dmd, "Segment", '.', ds->name, sizeof(ds->name));
 
   char prefix[256];
-  sprintf(prefix, "grease_pencil_modifiers[\"%s\"].segments", ds->dmd->modifier.name);
+  sprintf(prefix, "pen_mods[\"%s\"].segments", ds->dmd->mod.name);
 
   /* Fix all the animation data which may link to this. */
   dune_animdata_fix_paths_rename_all(NULL, prefix, oldname, ds->name);
 }
 
-static int rna_ShrinkwrapGpencilModifier_face_cull_get(PointerRNA *ptr)
+static int api_ShrinkwrapPenMod_face_cull_get(ApiPtr *ptr)
 {
-  ShrinkwrapGpencilModifierData *swm = (ShrinkwrapGpencilModifierData *)ptr->data;
+   *swm = (ShrinkwrapPenModData *)ptr->data;
   return swm->shrink_opts & MOD_SHRINKWRAP_CULL_TARGET_MASK;
 }
 
-static void rna_ShrinkwrapGpencilModifier_face_cull_set(struct PointerRNA *ptr, int value)
+static void api_ShrinkwrapPenMod_face_cull_set(struct ApiPtr *ptr, int value)
 {
-  ShrinkwrapGpencilModifierData *swm = (ShrinkwrapGpencilModifierData *)ptr->data;
+  ShrinkwrapPenModData *swm = (ShrinkwrapPenModData *)ptr->data;
   swm->shrink_opts = (swm->shrink_opts & ~MOD_SHRINKWRAP_CULL_TARGET_MASK) | value;
 }
 
