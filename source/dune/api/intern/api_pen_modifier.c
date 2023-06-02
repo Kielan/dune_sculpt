@@ -546,9 +546,9 @@ static void api_SimplifyPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void api_ThickPenMod_material_set(ApuPtr *ptr,
-                                                  ApiPtr value,
-                                                  struct ReportList *reports)
+static void api_ThickPenMod_material_set(ApiPtr *ptr,
+                                         ApiPtr value,
+                                         struct ReportList *reports)
 {
   ThickPenModData *tmd = (ThickPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
@@ -566,9 +566,9 @@ static void api_WeightProxPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void api_WeightAnglePenMod_material_set(ApiPtr *ptr,
-                                                        ApiPtr value,
-                                                        struct ReportList *reports)
+static void api_WeightAnglePenMod_material_set(ApiPtr *ptr,   
+                                               ApiPtr value,
+                                               struct ReportList *reports)
 {
   WeightAnglePenModData *tmd = (WeightAnglePenModData *)ptr->data;
   Material **ma_target = &tmd->material;
