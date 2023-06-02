@@ -455,24 +455,24 @@ static void api_PenOpacity_max_set(ApiPtr *ptr, float value)
   }
 }
 
-static void rna_GpencilModifier_opacity_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_PenMod_opacity_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  OpacityGpencilModifierData *md = (OpacityGpencilModifierData *)ptr->data;
+  OpacityPenModData *md = (OpacityGpencilModifierData *)ptr->data;
   if (md->flag & GP_OPACITY_NORMALIZE) {
     if (md->factor > 1.0f) {
       md->factor = 1.0f;
     }
   }
 
-  rna_GpencilModifier_update(bmain, scene, ptr);
+  api_PenMod_update(main, scene, ptr);
 }
 
-bool rna_GpencilModifier_material_poll(PointerRNA *ptr, PointerRNA value)
+bool api_PenMod_material_poll(ApiPtr *ptr, ApiPtr value)
 {
   Object *ob = (Object *)ptr->owner_id;
   Material *ma = (Material *)value.owner_id;
 
-  return BKE_gpencil_object_material_index_get(ob, ma) != -1;
+  return dune_pen_object_material_index_get(ob, ma) != -1;
 }
 
 static void api_PenMod_material_set(ApiPtr *ptr,
