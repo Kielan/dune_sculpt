@@ -974,23 +974,23 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
       prop, "Affect UV", "The modifier affects the UV rotation factor of the point");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "step");
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "step");
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_text(
       prop, "Step", "Number of times to apply smooth (high numbers can reduce fps)");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_MATERIAL);
