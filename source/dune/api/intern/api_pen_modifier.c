@@ -270,9 +270,9 @@ static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
     case ePenModType_Texture:
       return &ApiTexturePenMod;
     case ePenModType_Lineart:
-      return &ApiLineartGpencilModifier;
+      return &ApiLineartPenMod;
     case ePenModType_Dash:
-      return &ApiDashGpencilModifierData;
+      return &ApiDashPenlModData;
       /* Default */
     case ePenModType_None:
     case NUM_PEN_MOD_TYPES:
@@ -431,24 +431,24 @@ static void api_TimeMod_end_frame_set(ApiPtr *ptr, int value)
   }
 }
 
-static void rna_GpencilOpacity_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_PenOpacity_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  OpacityGpencilModifierData *md = (OpacityGpencilModifierData *)ptr->data;
+  OpacityPenModData *md = (OpacityPenModData *)ptr->data;
 
   *min = 0.0f;
   *softmin = 0.0f;
 
-  *softmax = (md->flag & GP_OPACITY_NORMALIZE) ? 1.0f : 2.0f;
+  *softmax = (md->flag & PEN_OPACITY_NORMALIZE) ? 1.0f : 2.0f;
   *max = *softmax;
 }
 
-static void rna_GpencilOpacity_max_set(PointerRNA *ptr, float value)
+static void api_PenOpacity_max_set(ApiPtr *ptr, float value)
 {
-  OpacityGpencilModifierData *md = (OpacityGpencilModifierData *)ptr->data;
+  OpacityPenModData *md = (OpacityPenModData *)ptr->data;
 
   md->factor = value;
-  if (md->flag & GP_OPACITY_NORMALIZE) {
+  if (md->flag & PEN_OPACITY_NORMALIZE) {
     if (md->factor > 1.0f) {
       md->factor = 1.0f;
     }
