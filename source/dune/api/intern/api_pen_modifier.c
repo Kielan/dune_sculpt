@@ -241,7 +241,7 @@ static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
       return &ApiWeightProxPenMod;
     case ePenModType_WeightAngle:
       return &ApiWeightAnglePenMod;
-    case _Color:
+    case ePenModType_Color:
       return &ApiColorPenMod;
     case ePenModType_Array:
       return PenModType;
