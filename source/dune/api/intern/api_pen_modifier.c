@@ -636,14 +636,14 @@ static void api_PenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_MirrorGpencilModifier_material_set(PointerRNA *ptr,
-                                                   PointerRNA value,
-                                                   struct ReportList *reports)
+static void api_MirrorPenMod_material_set(ApiPtr *ptr,
+                                          ApiPtr value,
+                                          struct ReportList *reports)
 {
-  MirrorGpencilModifierData *mmd = (MirrorGpencilModifierData *)ptr->data;
+  MirrorPenModData *mmd = (MirrorPenModData *)ptr->data;
   Material **ma_target = &mmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void rna_HookGpencilModifier_material_set(PointerRNA *ptr,
