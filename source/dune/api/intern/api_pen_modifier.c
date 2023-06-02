@@ -616,24 +616,24 @@ static void rna_ArrayGpencilModifier_material_set(PointerRNA *ptr,
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_OpacityGpencilModifier_material_set(PointerRNA *ptr,
-                                                    PointerRNA value,
+static void api_PenMod_material_set(ApiPtr *ptr,
+                                                    ApiPtr value,
                                                     struct ReportList *reports)
 {
-  OpacityGpencilModifierData *omd = (OpacityGpencilModifierData *)ptr->data;
+  OpacityPenModData *omd = (OpacityPenModData *)ptr->data;
   Material **ma_target = &omd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_LatticeGpencilModifier_material_set(PointerRNA *ptr,
-                                                    PointerRNA value,
+static void api_PenMod_material_set(ApiPtr *ptr,
+                                                    ApiPtr value,
                                                     struct ReportList *reports)
 {
-  LatticeGpencilModifierData *lmd = (LatticeGpencilModifierData *)ptr->data;
+  LatticePenModData *lmd = (LatticePenModData *)ptr->data;
   Material **ma_target = &lmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
 static void rna_MirrorGpencilModifier_material_set(PointerRNA *ptr,
