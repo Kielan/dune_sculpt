@@ -789,12 +789,12 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
-                                 NULL,
-                                 "rna_NoiseGpencilModifier_material_set",
-                                 NULL,
-                                 "api_PenMod_material_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
+                       NULL,
+                       "api_NoisePenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
   api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -805,47 +805,47 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_float_stype(prop, NULL, "factor");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
-  RNA_def_property_ui_text(prop, "Offset Factor", "Amount of noise to apply");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_float_stype(prop, NULL, "factor");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
+  api_def_prop_ui_text(prop, "Offset Factor", "Amount of noise to apply");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "factor_strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "factor_strength");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
-  RNA_def_property_ui_text(prop, "Strength Factor", "Amount of noise to apply to opacity");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "factor_strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "factor_strength");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
+  api_def_prop_ui_text(prop, "Strength Factor", "Amount of noise to apply to opacity");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "factor_thickness", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "factor_thickness");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
-  RNA_def_property_ui_text(prop, "Thickness Factor", "Amount of noise to apply to thickness");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = apo_def_prop(sapi, "factor_thickness", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "factor_thickness");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
+  api_def_prop_ui_text(prop, "Thickness Factor", "Amount of noise to apply to thickness");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_prop(sapi, "factor_uvs", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "factor_uvs", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "factor_uvs");
   api_def_prop_range(prop, 0.0, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
   api_def_prop_ui_text(prop, "UV Factor", "Amount of noise to apply uv rotation");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_random", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_USE_RANDOM);
   api_def_prop_ui_text(prop, "Random", "Use random values over time");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(prop, "Noise Seed", "Random seed");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(prop, "Noise Seed", "Random seed");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "noise_scale");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Noise Scale", "Scale the noise frequency");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_prop_float_stype(prop, NULL, "noise_scale");
+  RNA_def_prop_range(prop, 0.0, 1.0);
+  RNA_def_prop_ui_text(prop, "Noise Scale", "Scale the noise frequency");
+  RNA_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = RNA_def_property(srna, "noise_offset", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "noise_offset");
