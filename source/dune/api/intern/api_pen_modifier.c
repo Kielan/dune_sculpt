@@ -596,21 +596,21 @@ static void api_OffsetPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void api_ColorPenMod_material_set(PointerRNA *ptr,
-                                                  PointerRNA value,
-                                                  struct ReportList *reports)
+static void api_ColorPenMod_material_set(ApiPtr *ptr,
+                                         ApiPtr value,
+                                         struct ReportList *reports)
 {
-  ColorGpencilModifierData *cmd = (ColorGpencilModifierData *)ptr->data;
+  ColorPenModData *cmd = (ColorPenModData *)ptr->data;
   Material **ma_target = &cmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_ArrayGpencilModifier_material_set(PointerRNA *ptr,
+static void api_ArrayGpencilModifier_material_set(PointerRNA *ptr,
                                                   PointerRNA value,
                                                   struct ReportList *reports)
 {
-  ArrayGpencilModifierData *amd = (ArrayGpencilModifierData *)ptr->data;
+  ArrayPenModData *amd = (ArrayGpencilModifierData *)ptr->data;
   Material **ma_target = &amd->material;
 
   rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
@@ -646,17 +646,17 @@ static void api_MirrorPenMod_material_set(ApiPtr *ptr,
   api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_HookGpencilModifier_material_set(PointerRNA *ptr,
-                                                 PointerRNA value,
-                                                 struct ReportList *reports)
+static void api_HookPenMod_material_set(ApiPtr *ptr,
+                                        ApiPtr value,
+                                        struct ReportList *reports)
 {
-  HookGpencilModifierData *hmd = (HookGpencilModifierData *)ptr->data;
+  HookPenModData *hmd = (HookPenModData *)ptr->data;
   Material **ma_target = &hmd->material;
 
-  rna_GpencilModifier_material_set(ptr, value, ma_target, reports);
+  api_PenMod_material_set(ptr, value, ma_target, reports);
 }
 
-static void rna_MultiplyGpencilModifier_material_set(PointerRNA *ptr,
+static void rna_MultiplyPenMod_material_set(PointerRNA *ptr,
                                                      PointerRNA value,
                                                      struct ReportList *reports)
 {
