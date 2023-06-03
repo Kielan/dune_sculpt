@@ -684,8 +684,8 @@ const EnumPropItem *api_node_type_itemf(void *data,
                                         bool (*poll)(void *data, NodeType *),
                                         bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0};
   int totitem = 0, i = 0;
 
   NODE_TYPES_BEGIN (ntype) {
@@ -1005,77 +1005,77 @@ static void api_NodeTree_get_from_context(
   api_param_list_free(&list);
 }
 
-static bool rna_NodeTree_valid_socket_type(bNodeTreeType *ntreetype, bNodeSocketType *socket_type)
+static bool api_NodeTree_valid_socket_type(NodeTreeType *ntreetype, NodeSocketType *socket_type)
 {
-  extern FunctionRNA rna_NodeTree_valid_socket_type_func;
+  extern ApiFn api_NodeTree_valid_socket_type_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool valid;
 
-  RNA_pointer_create(NULL, ntreetype->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_NodeTree_valid_socket_type_func;
+  api_ptr_create(NULL, ntreetype->api_ext.sapi, NULL, &ptr); /* dummy */
+  func = &api_NodeTree_valid_socket_type_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "idname", &socket_type->idname);
-  ntreetype->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "idname", &socket_type->idname);
+  ntreetype->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "valid", &ret);
+  api_param_get_lookup(&list, "valid", &ret);
   valid = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return valid;
 }
 
-static void rna_NodeTree_unregister(Main *UNUSED(bmain), StructRNA *type)
+static void api_NodeTree_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  bNodeTreeType *nt = RNA_struct_blender_type_get(type);
+  NodeTreeType *nt = api_struct_dune_type_get(type);
 
   if (!nt) {
     return;
   }
 
-  RNA_struct_free_extension(type, &nt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &nt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
   ntreeTypeFreeLink(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 }
 
-static StructRNA *rna_NodeTree_register(Main *bmain,
+static ApiStruct *rna_NodeTree_register(Main *main,
                                         ReportList *reports,
                                         void *data,
-                                        const char *identifier,
-                                        StructValidateFunc validate,
-                                        StructCallbackFunc call,
-                                        StructFreeFunc free)
+                                        const char *id,
+                                        StructValidateFn validate,
+                                        StructCbFn call,
+                                        StructFreeFn free)
 {
-  bNodeTreeType *nt, dummynt;
-  bNodeTree dummyntree;
-  PointerRNA dummyptr;
-  int have_function[4];
+  NodeTreeType *nt, dummynt;
+  NodeTree dummyntree;
+  ApiPtr dummyptr;
+  int have_fn[4];
 
   /* setup dummy tree & tree type to store static properties in */
-  memset(&dummynt, 0, sizeof(bNodeTreeType));
-  memset(&dummyntree, 0, sizeof(bNodeTree));
+  memset(&dummynt, 0, sizeof(NodeTreeType));
+  memset(&dummyntree, 0, sizeof(NodeTree));
   dummyntree.typeinfo = &dummynt;
-  RNA_pointer_create(NULL, &RNA_NodeTree, &dummyntree, &dummyptr);
+  api_ptr_create(NULL, &ApiNodeTree, &dummyntree, &dummyptr);
 
   /* validate the python class */
   if (validate(&dummyptr, data, have_function) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummynt.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummynt.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Registering node tree class: '%s' is too long, maximum length is %d",
-                identifier,
+                id,
                 (int)sizeof(dummynt.idname));
     return NULL;
   }
@@ -1083,28 +1083,28 @@ static StructRNA *rna_NodeTree_register(Main *bmain,
   /* check if we have registered this tree type before, and remove it */
   nt = ntreeTypeFind(dummynt.idname);
   if (nt) {
-    rna_NodeTree_unregister(bmain, nt->rna_ext.srna);
+    api_NodeTree_unregister(main, nt->api_ext.sapi);
   }
 
   /* create a new node tree type */
-  nt = MEM_mallocN(sizeof(bNodeTreeType), "node tree type");
+  nt = mem_mallocn(sizeof(NodeTreeType), "node tree type");
   memcpy(nt, &dummynt, sizeof(dummynt));
 
   nt->type = NTREE_CUSTOM;
 
-  nt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, nt->idname, &RNA_NodeTree);
-  nt->rna_ext.data = data;
-  nt->rna_ext.call = call;
-  nt->rna_ext.free = free;
-  RNA_struct_blender_type_set(nt->rna_ext.srna, nt);
+  nt->api_ext.srna = api_def_struct_ptr(&BLENDER_RNA, nt->idname, &RNA_NodeTree);
+  nt->api_ext.data = data;
+  nt->api_ext.call = call;
+  nt->api_ext.free = free;
+  api_struct_dune_type_set(nt->rna_ext.srna, nt);
 
-  RNA_def_struct_ui_text(nt->rna_ext.srna, nt->ui_name, nt->ui_description);
-  RNA_def_struct_ui_icon(nt->rna_ext.srna, nt->ui_icon);
+  api_def_struct_ui_text(nt->rna_ext.srna, nt->ui_name, nt->ui_description);
+  api_def_struct_ui_icon(nt->rna_ext.srna, nt->ui_icon);
 
-  nt->poll = (have_function[0]) ? rna_NodeTree_poll : NULL;
-  nt->update = (have_function[1]) ? rna_NodeTree_update_reg : NULL;
-  nt->get_from_context = (have_function[2]) ? rna_NodeTree_get_from_context : NULL;
-  nt->valid_socket_type = (have_function[3]) ? rna_NodeTree_valid_socket_type : NULL;
+  nt->poll = (have_fn[0]) ? api_NodeTree_poll : NULL;
+  nt->update = (have_fn[1]) ? api_NodeTree_update_reg : NULL;
+  nt->get_from_context = (have_fn[2]) ? api_NodeTree_get_from_context : NULL;
+  nt->valid_socket_type = (have_fn[3]) ? api_NodeTree_valid_socket_type : NULL;
 
   ntreeTypeAdd(nt);
 
