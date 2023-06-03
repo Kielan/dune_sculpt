@@ -1231,29 +1231,29 @@ static void rna_def_effector_weight(BlenderRNA *brna)
 
   /* Flags */
   prop = RNA_def_property(srna, "apply_to_hair_growing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", EFF_WEIGHT_DO_HAIR);
-  RNA_def_property_ui_text(prop, "Use For Growing Hair", "Use force fields when growing hair");
-  RNA_def_property_update(prop, 0, "rna_EffectorWeight_update");
+  RNA_def_prop_bool_style(prop, NULL, "flag", EFF_WEIGHT_DO_HAIR);
+  RNA_def_prop_ui_text(prop, "Use For Growing Hair", "Use force fields when growing hair");
+  RNA_def_prop_update(prop, 0, "rna_EffectorWeight_update");
 
   /* General */
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_pointer_sdna(prop, NULL, "group");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Effector Collection", "Limit effectors to this collection");
-  RNA_def_property_update(prop, 0, "rna_EffectorWeight_dependency_update");
+  prop = api_def_prop(sapi, "collection", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_ptr_stype(prop, NULL, "group");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Effector Collection", "Limit effectors to this collection");
+  api_def_prop_update(prop, 0, "rna_EffectorWeight_dependency_update");
 
-  prop = RNA_def_property(srna, "gravity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "global_gravity");
-  RNA_def_property_range(prop, -200.0f, 200.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
-  RNA_def_property_ui_text(prop, "Gravity", "Global gravity weight");
-  RNA_def_property_update(prop, 0, "rna_EffectorWeight_update");
+  prop = api_def_prop(sapi, "gravity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "global_gravity");
+  api_def_prop_range(prop, -200.0f, 200.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
+  api_def_prop_ui_text(prop, "Gravity", "Global gravity weight");
+  api_def_prop_update(prop, 0, "rna_EffectorWeight_update");
 
   /* Effector weights */
-  prop = RNA_def_property(srna, "all", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "weight[0]");
-  RNA_def_property_range(prop, -200.0f, 200.0f);
+  prop = api_def_prop(sapi, "all", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "weight[0]");
+  api_def_prop_range(prop, -200.0f, 200.0f);
   RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
   RNA_def_property_ui_text(prop, "All", "All effector's weight");
   RNA_def_property_update(prop, 0, "rna_EffectorWeight_update");
