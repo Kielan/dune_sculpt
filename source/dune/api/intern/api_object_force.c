@@ -422,21 +422,21 @@ static char *api_CollisionSettings_path(ApiPtr *UNUSED(ptr))
     return lib_sprintfn("modifiers[\"%s\"].settings", name_esc);
   }
   else {
-    return BLI_strdup("");
+    return lib_strdup("");
   }
 #  else
   /* more reliable */
-  return BLI_strdup("collision");
+  return lib_strdup("collision");
 #  endif
 }
 
-static bool rna_SoftBodySettings_use_edges_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_use_edges_get(ApiPtr *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_EDGES) != 0);
 }
 
-static void rna_SoftBodySettings_use_edges_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_use_edges_set(ApiPtr *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -447,13 +447,13 @@ static void rna_SoftBodySettings_use_edges_set(PointerRNA *ptr, bool value)
   }
 }
 
-static bool rna_SoftBodySettings_use_goal_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_use_goal_get(PointerRNA *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_GOAL) != 0);
 }
 
-static void rna_SoftBodySettings_use_goal_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_use_goal_set(ApiPtr *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -464,7 +464,7 @@ static void rna_SoftBodySettings_use_goal_set(PointerRNA *ptr, bool value)
   }
 }
 
-static bool rna_SoftBodySettings_stiff_quads_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_stiff_quads_get(ApiPtr *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_QUADS) != 0);
