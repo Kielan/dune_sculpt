@@ -90,7 +90,7 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Duplicate strokes like a mirror"},
     {ePenModType_Multiply,
      "PEN_MULTIPLY",
-     ICON_GP_MULTIFRAME_EDITING,
+     ICON_PEN_MULTIFRAME_EDITING,
      "Multiple Strokes",
      "Produce multiple strokes along one stroke"},
     {ePenModType_Simplify,
@@ -1175,18 +1175,18 @@ static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SIMPLIFY_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SIMPLIFY_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "layer_pass");
   RNA_def_property_range(prop, 0, 100);
   RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
