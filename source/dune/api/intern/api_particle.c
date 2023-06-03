@@ -2,17 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DNA_boid_types.h"
-#include "DNA_cloth_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_texture_types.h"
+#include "types_boid.h"
+#include "typed_cloth.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_modifier.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_scene.h"
+#include "types_texture.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
