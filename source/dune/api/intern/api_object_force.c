@@ -1094,48 +1094,48 @@ static void api_def_pointcache_active(DuneApi *dapi)
   RNA_def_property_struct_type(prop, "PointCacheItem");
   RNA_def_property_ui_text(prop, "Point Cache List", "");
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  rna_def_ptcache_point_caches(brna, prop);
+  rna_def_ptcache_point_caches(dapi, prop);
 }
 
-static void rna_def_collision(BlenderRNA *brna)
+static void api_def_collision(DuneApi *dapo)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "CollisionSettings", NULL);
-  RNA_def_struct_sdna(srna, "PartDeflect");
-  RNA_def_struct_path_func(srna, "rna_CollisionSettings_path");
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(dapi, "CollisionSettings", NULL);
+  api_def_struct_sdna(sapi, "PartDeflect");
+  api_def_struct_path_fn(sapi, "api_CollisionSettings_path");
+  api_def_struct_ui_text(
       srna, "Collision Settings", "Collision settings for object in physics simulation");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "deflect", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "deflect", 1);
+  api_def_prop_ui_text(
       prop, "Enabled", "Enable this objects as a collider for physics systems");
-  RNA_def_property_update(prop, 0, "rna_CollisionSettings_dependency_update");
+  api_def_prop_update(prop, 0, "api_CollisionSettings_dependency_update");
 
   /* Particle Interaction */
 
-  prop = RNA_def_property(srna, "damping_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "pdef_damp");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Damping Factor", "Amount of damping during particle collision");
-  RNA_def_property_update(prop, 0, "rna_CollisionSettings_update");
+  prop = api_def_prop(sapi, "damping_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "pdef_damp");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Damping Factor", "Amount of damping during particle collision");
+  api_def_prop_update(prop, 0, "api_CollisionSettings_update");
 
-  prop = RNA_def_property(srna, "damping_random", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "pdef_rdamp");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Random Damping", "Random variation of damping");
-  RNA_def_property_update(prop, 0, "rna_CollisionSettings_update");
+  prop = api_def_prop(sapi, "damping_random", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "pdef_rdamp");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Random Damping", "Random variation of damping");
+  api_def_prop_update(prop, 0, "api_CollisionSettings_update");
 
-  prop = RNA_def_property(srna, "friction_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "pdef_frict");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "friction_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "pdef_frict");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Friction Factor", "Amount of friction during particle collision");
-  RNA_def_property_update(prop, 0, "rna_CollisionSettings_update");
+  RNA_def_prop_update(prop, 0, "rna_CollisionSettings_update");
 
   prop = RNA_def_property(srna, "friction_random", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "pdef_rfrict");
@@ -2067,19 +2067,19 @@ static void rna_def_softbody(BlenderRNA *brna)
 
   /* Flags */
 
-  prop = RNA_def_property(srna, "use_goal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_SoftBodySettings_use_goal_get", "rna_SoftBodySettings_use_goal_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_goal", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_SoftBodySettings_use_goal_get", "rna_SoftBodySettings_use_goal_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Use Goal", "Define forces for vertices to stick to animated position");
-  RNA_def_property_update(prop, 0, "rna_softbody_update");
+  api_def_prop_update(prop, 0, "rna_softbody_update");
 
-  prop = RNA_def_property(srna, "use_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_SoftBodySettings_use_edges_get", "rna_SoftBodySettings_use_edges_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Use Edges", "Use Edges as springs");
+  prop = api_def_prop(sapi, "use_edges", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_SoftBodySettings_use_edges_get", "rna_SoftBodySettings_use_edges_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_ui_text(prop, "Use Edges", "Use Edges as springs");
   RNA_def_property_update(prop, 0, "rna_softbody_update");
 
   prop = RNA_def_property(srna, "use_stiff_quads", PROP_BOOLEAN, PROP_NONE);
