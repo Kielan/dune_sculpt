@@ -99,30 +99,30 @@ static void api_def_palettecolors(DuneApi *dapi, ApiProp *cprop)
   api_def_struct_stype(sapi, "Palette");
   api_def_struct_ui_text(sapi, "Palette Splines", "Collection of palette colors");
 
-  fn = api_def_fn(sapi, "new", "rna_Palette_color_new");
-  api_def_fn_ui_description(func, "Add a new color to the palette");
+  fn = api_def_fn(sapi, "new", "api_Palette_color_new");
+  api_def_fn_ui_description(fn, "Add a new color to the palette");
   parm = api_def_ptr(fn, "color", "PaletteColor", "", "The newly created color");
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Palette_color_remove");
-  RNA_def_function_ui_description(func, "Remove a color from the palette");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "color", "PaletteColor", "", "The color to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(dapi, "remove", "api_Palette_color_remove");
+  api_def_fn_ui_description(fn, "Remove a color from the palette");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "color", "PaletteColor", "", "The color to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "clear", "rna_Palette_color_clear");
-  RNA_def_function_ui_description(func, "Remove all colors from the palette");
+  fn = api_def_fn(sapi, "clear", "api_Palette_color_clear");
+  api_def_fn_ui_description(fn, "Remove all colors from the palette");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "PaletteColor");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_Palette_active_color_get", "rna_Palette_active_color_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Active Palette Color", "");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "PaletteColor");
+  api_def_prop_ptr_fns(
+      prop, "api_Palette_active_color_get", "api_Palette_active_color_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Active Palette Color", "");
 }
 
-static void rna_def_palettecolor(BlenderRNA *brna)
+static void api_def_palettecolor(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
