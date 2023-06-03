@@ -997,15 +997,15 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
   api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", GP_SMOOTH_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SMOOTH_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
   RNA_def_property_int_sdna(prop, NULL, "layer_pass");
