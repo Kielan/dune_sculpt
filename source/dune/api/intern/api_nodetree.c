@@ -529,18 +529,18 @@ static EnumPropertyItem rna_node_geometry_mesh_circle_fill_type_items[] = {
 
 #ifdef RNA_RUNTIME
 
-#  include "BLI_linklist.h"
-#  include "BLI_string.h"
+#  include "lib_linklist.h"
+#  include "lib_string.h"
 
-#  include "BKE_context.h"
-#  include "BKE_idprop.h"
+#  include "dune_context.h"
+#  include "dune_idprop.h"
 
-#  include "BKE_global.h"
+#  include "dune_global.h"
 
-#  include "ED_node.h"
-#  include "ED_render.h"
+#  include "ed_node.h"
+#  include "ed_render.h"
 
-#  include "GPU_material.h"
+#  include "gpu_material.h"
 
 #  include "NOD_common.h"
 #  include "NOD_composite.h"
@@ -549,15 +549,15 @@ static EnumPropertyItem rna_node_geometry_mesh_circle_fill_type_items[] = {
 #  include "NOD_socket.h"
 #  include "NOD_texture.h"
 
-#  include "RE_engine.h"
-#  include "RE_pipeline.h"
+#  include "render_engine.h"
+#  include "render_pipeline.h"
 
-#  include "DNA_scene_types.h"
-#  include "WM_api.h"
+#  include "types_scene.h"
+#  include "wm_api.h"
 
-static void rna_Node_socket_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr);
+static void api_Node_socket_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr);
 
-int rna_node_tree_type_to_enum(bNodeTreeType *typeinfo)
+int api_node_tree_type_to_enum(NodeTreeType *typeinfo)
 {
   int i = 0, result = -1;
   NODE_TREE_TYPES_BEGIN (nt) {
@@ -571,7 +571,7 @@ int rna_node_tree_type_to_enum(bNodeTreeType *typeinfo)
   return result;
 }
 
-int rna_node_tree_idname_to_enum(const char *idname)
+int api_node_tree_idname_to_enum(const char *idname)
 {
   int i = 0, result = -1;
   NODE_TREE_TYPES_BEGIN (nt) {
@@ -585,10 +585,10 @@ int rna_node_tree_idname_to_enum(const char *idname)
   return result;
 }
 
-bNodeTreeType *rna_node_tree_type_from_enum(int value)
+NodeTreeType *api_node_tree_type_from_enum(int value)
 {
   int i = 0;
-  bNodeTreeType *result = NULL;
+  NodeTreeType *result = NULL;
   NODE_TREE_TYPES_BEGIN (nt) {
     if (i == value) {
       result = nt;
@@ -600,12 +600,12 @@ bNodeTreeType *rna_node_tree_type_from_enum(int value)
   return result;
 }
 
-const EnumPropertyItem *rna_node_tree_type_itemf(void *data,
+const EnumPropItem *api_node_tree_type_itemf(void *data,
                                                  bool (*poll)(void *data, bNodeTreeType *),
                                                  bool *r_free)
 {
-  EnumPropertyItem tmp = {0};
-  EnumPropertyItem *item = NULL;
+  EnumPropItem tmp = {0};
+  EnumPropItem *item = NULL;
   int totitem = 0, i = 0;
 
   NODE_TREE_TYPES_BEGIN (nt) {
@@ -615,12 +615,12 @@ const EnumPropertyItem *rna_node_tree_type_itemf(void *data,
     }
 
     tmp.value = i;
-    tmp.identifier = nt->idname;
+    tmp.id = nt->idname;
     tmp.icon = nt->ui_icon;
     tmp.name = nt->ui_name;
     tmp.description = nt->ui_description;
 
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     i++;
   }
@@ -628,16 +628,16 @@ const EnumPropertyItem *rna_node_tree_type_itemf(void *data,
 
   if (totitem == 0) {
     *r_free = false;
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-int rna_node_type_to_enum(bNodeType *typeinfo)
+int api_node_type_to_enum(NodeType *typeinfo)
 {
   int i = 0, result = -1;
   NODE_TYPES_BEGIN (ntype) {
@@ -651,7 +651,7 @@ int rna_node_type_to_enum(bNodeType *typeinfo)
   return result;
 }
 
-int rna_node_idname_to_enum(const char *idname)
+int api_node_idname_to_enum(const char *idname)
 {
   int i = 0, result = -1;
   NODE_TYPES_BEGIN (ntype) {
@@ -665,10 +665,10 @@ int rna_node_idname_to_enum(const char *idname)
   return result;
 }
 
-bNodeType *rna_node_type_from_enum(int value)
+NodeType *api_node_type_from_enum(int value)
 {
   int i = 0;
-  bNodeType *result = NULL;
+  NodeType *result = NULL;
   NODE_TYPES_BEGIN (ntype) {
     if (i == value) {
       result = ntype;
@@ -680,9 +680,9 @@ bNodeType *rna_node_type_from_enum(int value)
   return result;
 }
 
-const EnumPropertyItem *rna_node_type_itemf(void *data,
-                                            bool (*poll)(void *data, bNodeType *),
-                                            bool *r_free)
+const EnumPropItem *api_node_type_itemf(void *data,
+                                        bool (*poll)(void *data, NodeType *),
+                                        bool *r_free)
 {
   EnumPropertyItem *item = NULL;
   EnumPropertyItem tmp = {0};
