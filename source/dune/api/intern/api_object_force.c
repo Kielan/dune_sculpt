@@ -696,7 +696,7 @@ static void rna_FieldSettings_dependency_update(Main *bmain, Scene *scene, Point
   }
 }
 
-static char *rna_FieldSettings_path(PointerRNA *ptr)
+static char *api_FieldSettings_path(ApiPtr *ptr)
 {
   PartDeflect *pd = (PartDeflect *)ptr->data;
 
@@ -707,10 +707,10 @@ static char *rna_FieldSettings_path(PointerRNA *ptr)
     ParticleSettings *part = (ParticleSettings *)ptr->owner_id;
 
     if (part->pd == pd) {
-      return BLI_strdup("force_field_1");
+      return lib_strdup("force_field_1");
     }
     else if (part->pd2 == pd) {
-      return BLI_strdup("force_field_2");
+      return lib_strdup("force_field_2");
     }
   }
   else {
@@ -718,26 +718,26 @@ static char *rna_FieldSettings_path(PointerRNA *ptr)
     Object *ob = (Object *)ptr->owner_id;
 
     if (ob->pd == pd) {
-      return BLI_strdup("field");
+      return lib_strdup("field");
     }
   }
   return NULL;
 }
 
-static void rna_EffectorWeight_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_EffectorWeight_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (id && GS(id->name) == ID_SCE) {
     Scene *scene = (Scene *)id;
     FOREACH_SCENE_OBJECT_BEGIN (scene, ob) {
-      BKE_ptcache_object_reset(scene, ob, PTCACHE_RESET_DEPSGRAPH);
+      dune_ptcache_object_reset(scene, ob, PTCACHE_RESET_DEPSGRAPH);
     }
     FOREACH_SCENE_OBJECT_END;
   }
   else {
-    DEG_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_RESET);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+    graph_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_RESET);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
   }
 }
 
