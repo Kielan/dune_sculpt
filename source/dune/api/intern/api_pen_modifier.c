@@ -510,7 +510,7 @@ static void api_NoisePenMod_material_set(ApiPtr *ptr,
                                          ApiPtr value,
                                          struct ReportList *reports)
 {
-  NoisePenModData *nmd = (NoiseGpencilModifierData *)ptr->data;
+  NoisePenModData *nmd = (NoisePenModData *)ptr->data;
   Material **ma_target = &nmd->material;
 
   api_PenMod_material_set(ptr, value, ma_target, reports);
@@ -883,10 +883,10 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
   api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = api_def_prop(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_PASS);
