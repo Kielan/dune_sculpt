@@ -1057,17 +1057,17 @@ static void rna_def_ptcache_point_caches(BlenderRNA *brna, PropertyRNA *cprop)
 
   /* And define another RNA type for those collection items. */
   srna = RNA_def_struct(brna, "PointCacheItem", NULL);
-  RNA_def_struct_sdna(srna, "PointCache");
-  RNA_def_struct_ui_text(srna, "Point Cache", "Point cache for physics simulations");
-  RNA_def_struct_ui_icon(srna, ICON_PHYSICS);
+  api_def_struct_sdna(srna, "PointCache");
+  api_def_struct_ui_text(sapi, "Point Cache", "Point cache for physics simulations");
+  api_def_struct_ui_icon(sapi, ICON_PHYSICS);
 
-  rna_def_pointcache_common(srna);
+  api_def_pointcache_common(sapi);
 }
 
-static void rna_def_pointcache_active(BlenderRNA *brna)
+static void api_def_pointcache_active(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "PointCache", NULL);
   RNA_def_struct_ui_text(srna, "Active Point Cache", "Active point cache for physics simulations");
