@@ -929,61 +929,61 @@ static void api_def_pointcache_common(ApiStruct *srna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  RNA_def_struct_path_func(srna, "api_PointCache_path");
+  api_def_struct_path_fn(sapi, "api_PointCache_path");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
-  RNA_def_property_int_sdna(prop, NULL, "startframe");
-  RNA_def_property_range(prop, -MAXFRAME, MAXFRAME);
-  RNA_def_property_ui_range(prop, 0, MAXFRAME, 1, 1);
-  RNA_def_property_ui_text(prop, "Start", "Frame on which the simulation starts");
+  prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
+  api_def_prop_int_stype(prop, NULL, "startframe");
+  api_def_prop_range(prop, -MAXFRAME, MAXFRAME);
+  api_def_prop_ui_range(prop, 0, MAXFRAME, 1, 1);
+  api_def_prop_ui_text(prop, "Start", "Frame on which the simulation starts");
 
-  prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_TIME);
-  RNA_def_property_int_sdna(prop, NULL, "endframe");
-  RNA_def_property_range(prop, 1, MAXFRAME);
-  RNA_def_property_ui_text(prop, "End", "Frame on which the simulation stops");
+  prop = api_def_prop(sapi, "frame_end", PROP_INT, PROP_TIME);
+  api_def_prop_int_stype(prop, NULL, "endframe");
+  api_def_prop_range(prop, 1, MAXFRAME);
+  api_def_prop_ui_text(prop, "End", "Frame on which the simulation stops");
 
-  prop = RNA_def_property(srna, "frame_step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "step");
-  RNA_def_property_range(prop, 1, 20);
-  RNA_def_property_int_funcs(prop, NULL, NULL, "rna_PointCache_frame_step_range");
-  RNA_def_property_ui_text(prop, "Cache Step", "Number of frames between cached frames");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_change");
+  prop = api_def_prop(sapi, "frame_step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "step");
+  api_def_prop_range(prop, 1, 20);
+  api_def_prop_int_fns(prop, NULL, NULL, "rna_PointCache_frame_step_range");
+  api_def_prop_ui_text(prop, "Cache Step", "Number of frames between cached frames");
+  api_def_prop_update(prop, NC_OBJECT, "rna_Cache_change");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "index");
-  RNA_def_property_range(prop, -1, 100);
-  RNA_def_property_ui_text(prop, "Cache Index", "Index number of cache files");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
+  prop = api_def_prop(sapo, "index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "index");
+  api_def_prop_range(prop, -1, 100);
+  api_def_prop_ui_text(prop, "Cache Index", "Index number of cache files");
+  api_def_prop_update(prop, NC_OBJECT, "api_Cache_idname_change");
 
-  prop = RNA_def_property(srna, "compression", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, point_cache_compress_items);
-  RNA_def_property_ui_text(prop, "Cache Compression", "Compression method to be used");
+  prop = api_def_prop(sapi, "compression", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, point_cache_compress_items);
+  api_def_prop_ui_text(prop, "Cache Compression", "Compression method to be used");
 
   /* flags */
-  prop = RNA_def_property(srna, "is_baked", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_BAKED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "", "The cache is baked");
+  prop = api_def_prop(sapi, "is_baked", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_type(prop, NULL, "flag", PTCACHE_BAKED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "", "The cache is baked");
 
-  prop = RNA_def_property(srna, "is_baking", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_BAKING);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "", "The cache is being baked");
+  prop = api_def_prop(sapi, "is_baking", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_BAKING);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE)
+  api_def_prop_ui_text(prop, "", "The cache is being baked");
 
-  prop = RNA_def_property(srna, "use_disk_cache", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_DISK_CACHE);
-  RNA_def_property_ui_text(
-      prop, "Disk Cache", "Save cache files to disk (.blend file must be saved first)");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_toggle_disk_cache");
+  prop = api_def_prop(sapi, "use_disk_cache", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_DISK_CACHE);
+  api_def_prop_ui_text(
+      prop, "Disk Cache", "Save cache files to disk (.dune file must be saved first)");
+  api_def_prop_update(prop, NC_OBJECT, "api_Cache_toggle_disk_cache");
 
-  prop = RNA_def_property(srna, "is_outdated", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_OUTDATED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Cache Is Outdated", "");
+  prop = api_def_prop(sapi, "is_outdated", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_OUTDATED);
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_ui_text(prop, "Cache Is Outdated", "");
 
-  prop = RNA_def_property(srna, "is_frame_skip", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_frame_skip", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_FRAMES_SKIPPED);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
   RNA_def_property_ui_text(prop, "", "Some frames were skipped while baking/saving that cache");
