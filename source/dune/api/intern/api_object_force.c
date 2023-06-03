@@ -994,10 +994,10 @@ static void api_def_pointcache_common(ApiStruct *srna)
   api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
   api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "path");
-  RNA_def_property_ui_text(prop, "File Path", "Cache file path");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
+  prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "path");
+  api_def_prop_ui_text(prop, "File Path", "Cache file path");
+  api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
 
   /* removed, see PTCACHE_QUICK_CACHE */
 #  if 0
