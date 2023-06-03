@@ -117,11 +117,11 @@ static void api_Object_hide_set(
   if (view_layer == NULL) {
     view_layer = cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     if (hide) {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Object '%s' can't be hidden because it is not in View Layer '%s'!",
                   ob->id.name + 2,
@@ -137,18 +137,18 @@ static void api_Object_hide_set(
     base->flag &= ~BASE_HIDDEN;
   }
 
-  Scene *scene = CTX_data_scene(C);
-  BKE_layer_collection_sync(scene, view_layer);
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+  Scene *scene = cxt_data_scene(C);
+  dune_layer_collection_sync(scene, view_layer);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  wm_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 }
 
-static bool rna_Object_hide_get(Object *ob, bContext *C, ViewLayer *view_layer)
+static bool api_Object_hide_get(Object *ob, Cxt *C, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     return false;
@@ -157,15 +157,15 @@ static bool rna_Object_hide_get(Object *ob, bContext *C, ViewLayer *view_layer)
   return ((base->flag & BASE_HIDDEN) != 0);
 }
 
-static bool rna_Object_visible_get(Object *ob, bContext *C, ViewLayer *view_layer, View3D *v3d)
+static bool api_Object_visible_get(Object *ob, Cxt *C, ViewLayer *view_layer, View3D *v3d)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
   if (v3d == NULL) {
-    v3d = CTX_wm_view3d(C);
+    v3d = cxt_wm_view3d(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     return false;
@@ -174,12 +174,12 @@ static bool rna_Object_visible_get(Object *ob, bContext *C, ViewLayer *view_laye
   return BASE_VISIBLE(v3d, base);
 }
 
-static bool rna_Object_holdout_get(Object *ob, bContext *C, ViewLayer *view_layer)
+static bool api_Object_holdout_get(Object *ob, Cxt *C, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     return false;
@@ -188,12 +188,12 @@ static bool rna_Object_holdout_get(Object *ob, bContext *C, ViewLayer *view_laye
   return ((base->flag & BASE_HOLDOUT) != 0);
 }
 
-static bool rna_Object_indirect_only_get(Object *ob, bContext *C, ViewLayer *view_layer)
+static bool api_Object_indirect_only_get(Object *ob, Cxt *C, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     return false;
@@ -202,27 +202,27 @@ static bool rna_Object_indirect_only_get(Object *ob, bContext *C, ViewLayer *vie
   return ((base->flag & BASE_INDIRECT_ONLY) != 0);
 }
 
-static Base *rna_Object_local_view_property_helper(bScreen *screen,
-                                                   View3D *v3d,
-                                                   ViewLayer *view_layer,
-                                                   Object *ob,
-                                                   ReportList *reports,
-                                                   Scene **r_scene)
+static Base *api_Object_local_view_prop_helper(Screen *screen,
+                                               View3D *v3d,
+                                               ViewLayer *view_layer,
+                                               Object *ob,
+                                               ReportList *reports,
+                                               Scene **r_scene)
 {
   wmWindow *win = NULL;
   if (v3d->localvd == NULL) {
-    BKE_report(reports, RPT_ERROR, "Viewport not in local view");
+    dune_report(reports, RPT_ERROR, "Viewport not in local view");
     return NULL;
   }
 
   if (view_layer == NULL) {
-    win = ED_screen_window_find(screen, G_MAIN->wm.first);
-    view_layer = WM_window_get_active_view_layer(win);
+    win = ed_screen_window_find(screen, G_MAIN->wm.first);
+    view_layer = wm_window_get_active_view_layer(win);
   }
 
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
   if (base == NULL) {
-    BKE_reportf(
+    dune_reportf(
         reports, RPT_WARNING, "Object %s not in view layer %s", ob->id.name + 2, view_layer->name);
   }
   if (r_scene != NULL && win != NULL) {
@@ -231,42 +231,42 @@ static Base *rna_Object_local_view_property_helper(bScreen *screen,
   return base;
 }
 
-static bool rna_Object_local_view_get(Object *ob, ReportList *reports, View3D *v3d)
+static bool api_Object_local_view_get(Object *ob, ReportList *reports, View3D *v3d)
 {
   if (v3d->localvd == NULL) {
-    BKE_report(reports, RPT_ERROR, "Viewport not in local view");
+    dune_report(reports, RPT_ERROR, "Viewport not in local view");
     return false;
   }
 
   return ((ob->base_local_view_bits & v3d->local_view_uuid) != 0);
 }
 
-static void rna_Object_local_view_set(Object *ob,
+static void api_Object_local_view_set(Object *ob,
                                       ReportList *reports,
-                                      PointerRNA *v3d_ptr,
+                                      ApiPtr *v3d_ptr,
                                       bool state)
 {
-  bScreen *screen = (bScreen *)v3d_ptr->owner_id;
+  Screen *screen = (Screen *)v3d_ptr->owner_id;
   View3D *v3d = v3d_ptr->data;
   Scene *scene;
-  Base *base = rna_Object_local_view_property_helper(screen, v3d, NULL, ob, reports, &scene);
+  Base *base = api_Object_local_view_property_helper(screen, v3d, NULL, ob, reports, &scene);
   if (base == NULL) {
     return; /* Error reported. */
   }
   const short local_view_bits_prev = base->local_view_bits;
   SET_FLAG_FROM_TEST(base->local_view_bits, state, v3d->local_view_uuid);
   if (local_view_bits_prev != base->local_view_bits) {
-    DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
-    ScrArea *area = ED_screen_area_find_with_spacedata(screen, (SpaceLink *)v3d, true);
+    graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+    ScrArea *area = ed_screen_area_find_with_spacedata(screen, (SpaceLink *)v3d, true);
     if (area) {
-      ED_area_tag_redraw(area);
+      ed_area_tag_redraw(area);
     }
   }
 }
 
-static bool rna_Object_visible_in_viewport_get(Object *ob, View3D *v3d)
+static bool api_Object_visible_in_viewport_get(Object *ob, View3D *v3d)
 {
-  return BKE_object_is_visible_in_viewport(v3d, ob);
+  return dune_object_is_visible_in_viewport(v3d, ob);
 }
 
 /* Convert a given matrix from a space to another (using the object and/or a bone as
@@ -406,22 +406,22 @@ static Mesh *rna_Object_to_mesh(Object *object,
     case OB_MESH:
       break;
     default:
-      BKE_report(reports, RPT_ERROR, "Object does not have geometry data");
+      dune_report(reports, RPT_ERROR, "Object does not have geometry data");
       return NULL;
   }
 
-  return BKE_object_to_mesh(depsgraph, object, preserve_all_data_layers);
+  return dune_object_to_mesh(graph, object, preserve_all_data_layers);
 }
 
-static void rna_Object_to_mesh_clear(Object *object)
+static void api_Object_to_mesh_clear(Object *object)
 {
-  BKE_object_to_mesh_clear(object);
+  dune_object_to_mesh_clear(object);
 }
 
 static Curve *rna_Object_to_curve(Object *object,
                                   ReportList *reports,
-                                  Depsgraph *depsgraph,
-                                  bool apply_modifiers)
+                                  Graph *graph,
+                                  bool apply_mods)
 {
   if (!ELEM(object->type, OB_FONT, OB_CURVES_LEGACY)) {
     BKE_report(reports, RPT_ERROR, "Object is not a curve or a text");
