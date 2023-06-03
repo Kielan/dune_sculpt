@@ -1020,18 +1020,18 @@ static void api_def_pointcache_common(ApiStruct *srna)
   prop = RNA_def_property(srna, "use_external", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_EXTERNAL);
   RNA_def_property_ui_text(prop, "External", "Read cache from an external location");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
+  api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
 
-  prop = RNA_def_property(srna, "use_library_path", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", PTCACHE_IGNORE_LIBPATH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "use_library_path", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "flag", PTCACHE_IGNORE_LIBPATH);
+  api_def_prop_ui_text(
       prop,
       "Library Path",
       "Use this file's path for the disk cache when library linked into another file "
       "(for local bakes per scene file, disable this option)");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
+  api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 static void rna_def_ptcache_point_caches(BlenderRNA *brna, PropertyRNA *cprop)
