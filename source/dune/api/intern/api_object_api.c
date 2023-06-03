@@ -271,9 +271,9 @@ static bool api_Object_visible_in_viewport_get(Object *ob, View3D *v3d)
 
 /* Convert a given matrix from a space to another (using the object and/or a bone as
  * reference). */
-static void rna_Object_mat_convert_space(Object *ob,
+static void api_Object_mat_convert_space(Object *ob,
                                          ReportList *reports,
-                                         bPoseChannel *pchan,
+                                         PoseChannel *pchan,
                                          float mat[16],
                                          float mat_ret[16],
                                          int from,
@@ -281,80 +281,80 @@ static void rna_Object_mat_convert_space(Object *ob,
 {
   copy_m4_m4((float(*)[4])mat_ret, (float(*)[4])mat);
 
-  BLI_assert(!ELEM(from, CONSTRAINT_SPACE_OWNLOCAL));
-  BLI_assert(!ELEM(to, CONSTRAINT_SPACE_OWNLOCAL));
+  lib_assert(!ELEM(from, CONSTRAINT_SPACE_OWNLOCAL));
+  lib_assert(!ELEM(to, CONSTRAINT_SPACE_OWNLOCAL));
 
   /* Error in case of invalid from/to values when pchan is NULL */
   if (pchan == NULL) {
     if (ELEM(from, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_PARLOCAL)) {
-      const char *identifier = NULL;
-      RNA_enum_identifier(space_items, from, &identifier);
-      BKE_reportf(reports,
+      const char *id = NULL;
+      api_enum_id(space_items, from, &id);
+      dune_reportf(reports,
                   RPT_ERROR,
                   "'from_space' '%s' is invalid when no pose bone is given!",
-                  identifier);
+                  id);
       return;
     }
     if (ELEM(to, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_PARLOCAL)) {
-      const char *identifier = NULL;
-      RNA_enum_identifier(space_items, to, &identifier);
-      BKE_reportf(reports,
+      const char *id = NULL;
+      api_enum_id(space_items, to, &id);
+      dune_reportf(reports,
                   RPT_ERROR,
                   "'to_space' '%s' is invalid when no pose bone is given!",
-                  identifier);
+                  id);
       return;
     }
   }
   /* These checks are extra security, they should never occur. */
   if (from == CONSTRAINT_SPACE_CUSTOM) {
-    const char *identifier = NULL;
-    RNA_enum_identifier(space_items, from, &identifier);
-    BKE_reportf(reports,
+    const char *id = NULL;
+    api_enum_id(space_items, from, &id);
+    dune_reportf(reports,
                 RPT_ERROR,
                 "'from_space' '%s' is invalid when no custom space is given!",
-                identifier);
+                id);
     return;
   }
   if (to == CONSTRAINT_SPACE_CUSTOM) {
-    const char *identifier = NULL;
-    RNA_enum_identifier(space_items, to, &identifier);
-    BKE_reportf(reports,
+    const char *id = NULL;
+    api_enum_id(space_items, to, &id);
+    dune_reportf(reports,
                 RPT_ERROR,
                 "'to_space' '%s' is invalid when no custom space is given!",
-                identifier);
+                id);
     return;
   }
 
-  BKE_constraint_mat_convertspace(ob, pchan, NULL, (float(*)[4])mat_ret, from, to, false);
+  dune_constraint_mat_convertspace(ob, pchan, NULL, (float(*)[4])mat_ret, from, to, false);
 }
 
-static void rna_Object_calc_matrix_camera(Object *ob,
-                                          Depsgraph *depsgraph,
+static void api_Object_calc_matrix_camera(Object *ob,
+                                          Graph *graph,
                                           float mat_ret[16],
                                           int width,
                                           int height,
                                           float scalex,
                                           float scaley)
 {
-  const Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
+  const Object *ob_eval = graph_get_evaluated_object(graph, ob);
   CameraParams params;
 
   /* setup parameters */
-  BKE_camera_params_init(&params);
-  BKE_camera_params_from_object(&params, ob_eval);
+  dune_camera_params_init(&params);
+  dune_camera_params_from_object(&params, ob_eval);
 
   /* Compute matrix, view-plane, etc. */
-  BKE_camera_params_compute_viewplane(&params, width, height, scalex, scaley);
-  BKE_camera_params_compute_matrix(&params);
+  api_camera_params_compute_viewplane(&params, width, height, scalex, scaley);
+  dune_camera_params_compute_matrix(&params);
 
   copy_m4_m4((float(*)[4])mat_ret, params.winmat);
 }
 
-static void rna_Object_camera_fit_coords(
-    Object *ob, Depsgraph *depsgraph, int num_cos, float *cos, float co_ret[3], float *scale_ret)
+static void api_Object_camera_fit_coords(
+    Object *ob, Graph *depsgraph, int num_cos, float *cos, float co_ret[3], float *scale_ret)
 {
-  BKE_camera_view_frame_fit_to_coords(
-      depsgraph, (const float(*)[3])cos, num_cos / 3, ob, co_ret, scale_ret);
+  dunr_camera_view_frame_fit_to_coords(
+      graph, (const float(*)[3])cos, num_cos / 3, ob, co_ret, scale_ret);
 }
 
 static void rna_Object_crazyspace_eval(Object *object,
