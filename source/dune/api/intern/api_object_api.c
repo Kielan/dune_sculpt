@@ -57,30 +57,30 @@ static const EnumPropItem space_items[] = {
 #  include "dune_report.h"
 #  include "dune_vfont.h"
 
-#  include "ED_object.h"
-#  include "ED_screen.h"
+#  include "ed_object.h"
+#  include "ed_screen.h"
 
-#  include "DNA_curve_types.h"
-#  include "DNA_mesh_types.h"
-#  include "DNA_meshdata_types.h"
-#  include "DNA_scene_types.h"
-#  include "DNA_view3d_types.h"
+#  include "types_curve.h"
+#  include "types_mesh.h"
+#  include "types_meshdata.h"
+#  include "types_scene.h"
+#  include "types_view3d.h"
 
-#  include "DEG_depsgraph_query.h"
+#  include "graph_query.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-static void rna_Object_select_set(
-    Object *ob, bContext *C, ReportList *reports, bool select, ViewLayer *view_layer)
+static void api_Object_select_set(
+    Object *ob, Cxt *C, ReportList *reports, bool select, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     if (select) {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Object '%s' can't be selected because it is not in View Layer '%s'!",
                   ob->id.name + 2,
@@ -89,20 +89,20 @@ static void rna_Object_select_set(
     return;
   }
 
-  ED_object_base_select(base, select ? BA_SELECT : BA_DESELECT);
+  ed_object_base_select(base, select ? BA_SELECT : BA_DESELECT);
 
-  Scene *scene = CTX_data_scene(C);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  WM_main_add_notifier(NC_SCENE | ND_OB_SELECT, scene);
-  ED_outliner_select_sync_from_object_tag(C);
+  Scene *scene = cxt_data_scene(C);
+  graph_id_tag_update(&scene->id, ID_RECALC_SELECT);
+  wm_main_add_notifier(NC_SCENE | ND_OB_SELECT, scene);
+  ed_outliner_select_sync_from_object_tag(C);
 }
 
-static bool rna_Object_select_get(Object *ob, bContext *C, ViewLayer *view_layer)
+static bool api_Object_select_get(Object *ob, Cxt *C, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer =cxt_data_view_layer(C);
   }
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = dune_view_layer_base_find(view_layer, ob);
 
   if (!base) {
     return false;
@@ -111,11 +111,11 @@ static bool rna_Object_select_get(Object *ob, bContext *C, ViewLayer *view_layer
   return ((base->flag & BASE_SELECTED) != 0);
 }
 
-static void rna_Object_hide_set(
-    Object *ob, bContext *C, ReportList *reports, bool hide, ViewLayer *view_layer)
+static void api_Object_hide_set(
+    Object *ob, Cxt *C, ReportList *reports, bool hide, ViewLayer *view_layer)
 {
   if (view_layer == NULL) {
-    view_layer = CTX_data_view_layer(C);
+    view_layer = cxt_data_view_layer(C);
   }
   Base *base = BKE_view_layer_base_find(view_layer, ob);
 
