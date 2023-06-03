@@ -46,7 +46,7 @@ static const EnumPropertyItem part_reactor_from_items[] = {
 };
 #endif
 
-static const EnumPropertyItem part_dist_items[] = {
+static const EnumPropItem part_dist_items[] = {
     {PART_DISTR_JIT, "JIT", 0, "Jittered", ""},
     {PART_DISTR_RAND, "RAND", 0, "Random", ""},
     {PART_DISTR_GRID, "GRID", 0, "Grid", ""},
@@ -54,14 +54,14 @@ static const EnumPropertyItem part_dist_items[] = {
 };
 
 #ifdef RNA_RUNTIME
-static const EnumPropertyItem part_hair_dist_items[] = {
+static const EnumPropItem part_hair_dist_items[] = {
     {PART_DISTR_JIT, "JIT", 0, "Jittered", ""},
     {PART_DISTR_RAND, "RAND", 0, "Random", ""},
     {0, NULL, 0, NULL, NULL},
 };
 #endif
 
-static const EnumPropertyItem part_draw_as_items[] = {
+static const EnumPropItem part_draw_as_items[] = {
     {PART_DRAW_NOT, "NONE", 0, "None", ""},
     {PART_DRAW_REND, "RENDER", 0, "Rendered", ""},
     {PART_DRAW_DOT, "DOT", 0, "Point", ""},
@@ -71,8 +71,8 @@ static const EnumPropertyItem part_draw_as_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem part_hair_draw_as_items[] = {
+#ifdef API_RUNTIME
+static const EnumPrItem part_hair_draw_as_items[] = {
     {PART_DRAW_NOT, "NONE", 0, "None", ""},
     {PART_DRAW_REND, "RENDER", 0, "Rendered", ""},
     {PART_DRAW_PATH, "PATH", 0, "Path", ""},
@@ -80,7 +80,7 @@ static const EnumPropertyItem part_hair_draw_as_items[] = {
 };
 #endif
 
-static const EnumPropertyItem part_ren_as_items[] = {
+static const EnumPropItem part_ren_as_items[] = {
     {PART_DRAW_NOT, "NONE", 0, "None", ""},
     {PART_DRAW_HALO, "HALO", 0, "Halo", ""},
     {PART_DRAW_LINE, "LINE", 0, "Line", ""},
@@ -90,8 +90,8 @@ static const EnumPropertyItem part_ren_as_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem part_hair_ren_as_items[] = {
+#ifdef Api_RUNTIME
+static const EnumPropItem part_hair_ren_as_items[] = {
     {PART_DRAW_NOT, "NONE", 0, "None", ""},
     {PART_DRAW_PATH, "PATH", 0, "Path", ""},
     {PART_DRAW_OB, "OBJECT", 0, "Object", ""},
@@ -100,15 +100,15 @@ static const EnumPropertyItem part_hair_ren_as_items[] = {
 };
 #endif
 
-static const EnumPropertyItem part_type_items[] = {
+static const EnumPropItem part_type_items[] = {
     {PART_EMITTER, "EMITTER", 0, "Emitter", ""},
     /*{PART_REACTOR, "REACTOR", 0, "Reactor", ""}, */
     {PART_HAIR, "HAIR", 0, "Hair", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem part_fluid_type_items[] = {
+#ifdef API_RUNTIME
+static const EnumPropItem part_fluid_type_items[] = {
     {PART_FLUID, "FLUID", 0, "Fluid", ""},
     {PART_FLUID_FLIP, "FLIP", 0, "Liquid", ""},
     {PART_FLUID_SPRAY, "SPRAY", 0, "Spray", ""},
@@ -123,35 +123,35 @@ static const EnumPropertyItem part_fluid_type_items[] = {
 };
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
-#  include "BLI_string_utils.h"
+#  include "lib_math.h"
+#  include "lib_string_utils.h"
 
-#  include "BKE_boids.h"
-#  include "BKE_cloth.h"
-#  include "BKE_colortools.h"
-#  include "BKE_context.h"
-#  include "BKE_deform.h"
-#  include "BKE_effect.h"
-#  include "BKE_material.h"
-#  include "BKE_modifier.h"
-#  include "BKE_particle.h"
-#  include "BKE_pointcache.h"
-#  include "BKE_texture.h"
+#  include "dune_boids.h"
+#  include "dune_cloth.h"
+#  include "dune_colortools.h"
+#  include "dune_context.h"
+#  include "dune_deform.h"
+#  include "dune_effect.h"
+#  include "dune_material.h"
+#  include "dune_modifier.h"
+#  include "dune_particle.h"
+#  include "dune_pointcache.h"
+#  include "dune_texture.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
 /* use for object space hair get/set */
-static void rna_ParticleHairKey_location_object_info(PointerRNA *ptr,
-                                                     ParticleSystemModifierData **psmd_pt,
+static void api_ParticleHairKey_location_object_info(ApiPtr *ptr,
+                                                     ParticleSystemModData **psmd_pt,
                                                      ParticleData **pa_pt)
 {
   HairKey *hkey = (HairKey *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md;
-  ParticleSystemModifierData *psmd = NULL;
+  ModData *md;
+  ParticleSystemModData *psmd = NULL;
   ParticleSystem *psys;
   ParticleData *pa;
   int i;
@@ -173,9 +173,9 @@ static void rna_ParticleHairKey_location_object_info(PointerRNA *ptr,
    * hair-key belongs.
    */
 
-  for (md = ob->modifiers.first; md; md = md->next) {
-    if (md->type == eModifierType_ParticleSystem) {
-      psmd = (ParticleSystemModifierData *)md;
+  for (md = ob->mods.first; md; md = md->next) {
+    if (md->type == eModType_ParticleSystem) {
+      psmd = (ParticleSystemModData *)md;
       if (psmd && psmd->mesh_final && psmd->psys) {
         psys = psmd->psys;
         for (i = 0, pa = psys->particles; i < psys->totpart; i++, pa++) {
@@ -193,20 +193,20 @@ static void rna_ParticleHairKey_location_object_info(PointerRNA *ptr,
   }
 }
 
-static void rna_ParticleHairKey_location_object_get(PointerRNA *ptr, float *values)
+static void api_ParticleHairKey_location_object_get(ApiPtr *ptr, float *values)
 {
   HairKey *hkey = (HairKey *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
-  ParticleSystemModifierData *psmd;
+  ParticleSystemModData *psmd;
   ParticleData *pa;
 
-  rna_ParticleHairKey_location_object_info(ptr, &psmd, &pa);
+  api_ParticleHairKey_location_object_info(ptr, &psmd, &pa);
 
   if (pa) {
     Mesh *hair_mesh = (psmd->psys->flag & PSYS_HAIR_DYNAMICS) ? psmd->psys->hair_out_mesh : NULL;
 
     if (hair_mesh) {
-      MVert *mvert = &hair_mesh->mvert[pa->hair_index + (hkey - pa->hair)];
+      MeshVert *mvert = &hair_mesh->mvert[pa->hair_index + (hkey - pa->hair)];
       copy_v3_v3(values, mvert->co);
     }
     else {
@@ -229,19 +229,19 @@ static void rna_ParticleHairKey_location_object_get(PointerRNA *ptr, float *valu
  * evaluated particle and object to access proper hair matrix. */
 static int hair_key_index_get(const Object *object,
                               /*const*/ HairKey *hair_key,
-                              /*const*/ ParticleSystemModifierData *modifier,
+                              /*const*/ ParticleSystemModData *mod,
                               /*const*/ ParticleData *particle)
 {
   if (ARRAY_HAS_ITEM(hair_key, particle->hair, particle->totkey)) {
     return hair_key - particle->hair;
   }
 
-  const ParticleSystem *particle_system = modifier->psys;
+  const ParticleSystem *particle_system = mod->psys;
   const int particle_index = particle - particle_system->particles;
 
-  const ParticleSystemModifierData *original_modifier = (ParticleSystemModifierData *)
-      BKE_modifier_get_original(object, &modifier->modifier);
-  const ParticleSystem *original_particle_system = original_modifier->psys;
+  const ParticleSystemModData *original_mod = (ParticleSystemModData *)
+      dune_mod_get_original(object, &modifier->modifier);
+  const ParticleSystem *original_particle_system = original_mod->psys;
   const ParticleData *original_particle = &original_particle_system->particles[particle_index];
 
   if (ARRAY_HAS_ITEM(hair_key, original_particle->hair, original_particle->totkey)) {
@@ -259,27 +259,27 @@ static int hair_key_index_get(const Object *object,
  * present. */
 static void hair_key_location_object_set(HairKey *hair_key,
                                          Object *object,
-                                         ParticleSystemModifierData *modifier,
+                                         ParticleSystemModData *mod,
                                          ParticleData *particle,
                                          const float src_co[3])
 {
-  Mesh *hair_mesh = (modifier->psys->flag & PSYS_HAIR_DYNAMICS) ? modifier->psys->hair_out_mesh :
+  Mesh *hair_mesh = (mod->psys->flag & PSYS_HAIR_DYNAMICS) ? mod->psys->hair_out_mesh :
                                                                   NULL;
 
   if (hair_mesh != NULL) {
-    const int hair_key_index = hair_key_index_get(object, hair_key, modifier, particle);
+    const int hair_key_index = hair_key_index_get(object, hair_key, mod, particle);
     if (hair_key_index == -1) {
       return;
     }
 
-    MVert *mvert = &hair_mesh->mvert[particle->hair_index + (hair_key_index)];
+    MeshVert *mvert = &hair_mesh->mvert[particle->hair_index + (hair_key_index)];
     copy_v3_v3(mvert->co, src_co);
     return;
   }
 
   float hairmat[4][4];
   psys_mat_hair_to_object(
-      object, modifier->mesh_final, modifier->psys->part->from, particle, hairmat);
+      object, mod->mesh_final, mod->psys->part->from, particle, hairmat);
 
   float imat[4][4];
   invert_m4_m4(imat, hairmat);
@@ -288,14 +288,14 @@ static void hair_key_location_object_set(HairKey *hair_key,
   mul_m4_v3(imat, hair_key->co);
 }
 
-static void rna_ParticleHairKey_location_object_set(PointerRNA *ptr, const float *values)
+static void api_ParticleHairKey_location_object_set(ApiPtr *ptr, const float *values)
 {
   HairKey *hkey = (HairKey *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
 
-  ParticleSystemModifierData *psmd;
+  ParticleSystemModData *psmd;
   ParticleData *pa;
-  rna_ParticleHairKey_location_object_info(ptr, &psmd, &pa);
+  api_ParticleHairKey_location_object_info(ptr, &psmd, &pa);
 
   if (pa == NULL) {
     zero_v3(hkey->co);
@@ -305,24 +305,24 @@ static void rna_ParticleHairKey_location_object_set(PointerRNA *ptr, const float
   hair_key_location_object_set(hkey, ob, psmd, pa, values);
 }
 
-static void rna_ParticleHairKey_co_object(HairKey *hairkey,
+static void api_ParticleHairKey_co_object(HairKey *hairkey,
                                           Object *object,
-                                          ParticleSystemModifierData *modifier,
+                                          ParticleSystemModData *mod,
                                           ParticleData *particle,
                                           float n_co[3])
 {
 
-  Mesh *hair_mesh = (modifier->psys->flag & PSYS_HAIR_DYNAMICS) ? modifier->psys->hair_out_mesh :
+  Mesh *hair_mesh = (mod->psys->flag & PSYS_HAIR_DYNAMICS) ? mod->psys->hair_out_mesh :
                                                                   NULL;
   if (particle) {
     if (hair_mesh) {
-      MVert *mvert = &hair_mesh->mvert[particle->hair_index + (hairkey - particle->hair)];
+      MeshVert *mvert = &hair_mesh->mvert[particle->hair_index + (hairkey - particle->hair)];
       copy_v3_v3(n_co, mvert->co);
     }
     else {
       float hairmat[4][4];
       psys_mat_hair_to_object(
-          object, modifier->mesh_final, modifier->psys->part->from, particle, hairmat);
+          object, mod->mesh_final, modifier->psys->part->from, particle, hairmat);
       copy_v3_v3(n_co, hairkey->co);
       mul_m4_v3(hairmat, n_co);
     }
