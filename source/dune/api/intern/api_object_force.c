@@ -979,20 +979,20 @@ static void api_def_pointcache_common(ApiStruct *srna)
   api_def_prop_update(prop, NC_OBJECT, "api_Cache_toggle_disk_cache");
 
   prop = api_def_prop(sapi, "is_outdated", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_OUTDATED);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_ui_text(prop, "Cache Is Outdated", "");
+  api_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_OUTDATED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Cache Is Outdated", "");
 
   prop = api_def_prop(sapi, "is_frame_skip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_FRAMES_SKIPPED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "", "Some frames were skipped while baking/saving that cache");
+  api_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_FRAMES_SKIPPED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "", "Some frames were skipped while baking/saving that cache");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_ui_text(prop, "Name", "Cache name");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_ui_text(prop, "Name", "Cache name");
+  api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
+  api_def_struct_name_prop(sapi, prop);
 
   prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_DIRPATH);
   RNA_def_property_string_sdna(prop, NULL, "path");
