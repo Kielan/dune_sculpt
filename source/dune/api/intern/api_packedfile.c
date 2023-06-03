@@ -39,21 +39,21 @@ static int api_PackedImage_data_len(ApiPtr *ptr)
 
 void api_def_packedfile(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PackedFile", NULL);
-  RNA_def_struct_ui_text(srna, "Packed File", "External file packed into the .blend file");
+  srna = api_def_struct(dapi, "PackedFile", NULL);
+  api_def_struct_ui_text(sapi, "Packed File", "External file packed into the .blend file");
 
-  prop = RNA_def_property(srna, "size", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Size", "Size of packed file in bytes");
+  prop = api_def_prop(sapi, "size", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Size", "Size of packed file in bytes");
 
-  prop = RNA_def_property(srna, "data", PROP_STRING, PROP_BYTESTRING);
-  RNA_def_property_string_funcs(
-      prop, "rna_PackedImage_data_get", "rna_PackedImage_data_len", NULL);
-  RNA_def_property_ui_text(prop, "Data", "Raw data (bytes, exact content of the embedded file)");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "data", PROP_STRING, PROP_BYTESTRING);
+  api_def_prop_string_fns(
+      prop, "api_PackedImage_data_get", "rna_PackedImage_data_len", NULL);
+  api_def_prop_ui_text(prop, "Data", "Raw data (bytes, exact content of the embedded file)");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 }
 
 #endif
