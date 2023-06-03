@@ -124,19 +124,19 @@ static void rna_def_palettecolors(DuneApi *dapi, ApiProp *cprop)
 
 static void rna_def_palettecolor(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PaletteColor", NULL);
-  RNA_def_struct_ui_text(srna, "Palette Color", "");
+  sapi = api_def_struct(dapi, "PaletteColor", NULL);
+  api_def_struct_ui_text(sapi, "Palette Color", "");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "rgb");
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Color", "");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "rgb");
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Color", "");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0, 1.0);
@@ -153,8 +153,8 @@ static void rna_def_palettecolor(BlenderRNA *brna)
 
 static void rna_def_palette(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "Palette", "ID");
   RNA_def_struct_ui_text(srna, "Palette", "");
