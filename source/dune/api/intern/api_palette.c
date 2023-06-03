@@ -138,17 +138,17 @@ static void rna_def_palettecolor(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Color", "");
   RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "value");
-  RNA_def_property_ui_text(prop, "Value", "");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "value");
+  api_def_prop_ui_text(prop, "Value", "");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "value");
-  RNA_def_property_ui_text(prop, "Weight", "");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_sdna(prop, NULL, "value");
+  api_def_prop_ui_text(prop, "Weight", "");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 }
 
 static void rna_def_palette(BlenderRNA *brna)
