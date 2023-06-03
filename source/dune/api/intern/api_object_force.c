@@ -874,15 +874,15 @@ static void api_softbody_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr
   WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 }
 
-static void rna_softbody_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_softbody_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
-  rna_softbody_update(bmain, scene, ptr);
+  graph_relations_tag_update(main);
+  api_softbody_update(main, scene, ptr);
 }
 
-static const EnumPropertyItem *rna_Effector_shape_itemf(bContext *UNUSED(C),
-                                                        PointerRNA *ptr,
-                                                        PropertyRNA *UNUSED(prop),
+static const EnumPropertyItem *rna_Effector_shape_itemf(Cxt *UNUSED(C),
+                                                        ApiPtr *ptr,
+                                                        ApiProp *UNUSED(prop),
                                                         bool *UNUSED(r_free))
 {
   Object *ob = NULL;
