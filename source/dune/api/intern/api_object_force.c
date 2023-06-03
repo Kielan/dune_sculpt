@@ -306,10 +306,10 @@ static void rna_Cache_list_begin(CollectionPropertyIterator *iter, PointerRNA *p
   lb.first = cache;
   lb.last = NULL; /* not used by listbase_begin */
 
-  rna_iterator_listbase_begin(iter, &lb, NULL);
+  api_iter_list_begin(iter, &lb, NULL);
 }
-static void rna_Cache_active_point_cache_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_Cache_active_point_cache_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   *min = 0;
   *max = 0;
