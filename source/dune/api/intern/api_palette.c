@@ -1,74 +1,74 @@
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_brush_types.h"
+#  include "types_brush.h"
 
-#  include "BKE_paint.h"
-#  include "BKE_report.h"
-static PaletteColor *rna_Palette_color_new(Palette *palette)
+#  include "dune_paint.h"
+#  include "dune_report.h"
+static PaletteColor *api_Palette_color_new(Palette *palette)
 {
-  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIBRARY(palette)) {
+  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIB(palette)) {
     return NULL;
   }
 
-  PaletteColor *color = BKE_palette_color_add(palette);
+  PaletteColor *color = dune_palette_color_add(palette);
   return color;
 }
 
-static void rna_Palette_color_remove(Palette *palette, ReportList *reports, PointerRNA *color_ptr)
+static void api_Palette_color_remove(Palette *palette, ReportList *reports, ApiPtr *color_ptr)
 {
-  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIBRARY(palette)) {
+  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIB(palette)) {
     return;
   }
 
   PaletteColor *color = color_ptr->data;
 
-  if (BLI_findindex(&palette->colors, color) == -1) {
-    BKE_reportf(
+  if (lib_findindex(&palette->colors, color) == -1) {
+    dune_reportf(
         reports, RPT_ERROR, "Palette '%s' does not contain color given", palette->id.name + 2);
     return;
   }
 
-  BKE_palette_color_remove(palette, color);
+  dune_palette_color_remove(palette, color);
 
-  RNA_POINTER_INVALIDATE(color_ptr);
+  API_PTR_INVALIDATE(color_ptr);
 }
 
-static void rna_Palette_color_clear(Palette *palette)
+static void api_Palette_color_clear(Palette *palette)
 {
-  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIBRARY(palette)) {
+  if (ID_IS_LINKED(palette) || ID_IS_OVERRIDE_LIB(palette)) {
     return;
   }
 
-  BKE_palette_clear(palette);
+  dune_palette_clear(palette);
 }
 
-static PointerRNA rna_Palette_active_color_get(PointerRNA *ptr)
+static ApiPtr api_Palette_active_color_get(ApiPtr *ptr)
 {
   Palette *palette = ptr->data;
   PaletteColor *color;
 
-  color = BLI_findlink(&palette->colors, palette->active_color);
+  color = lib_findlink(&palette->colors, palette->active_color);
 
   if (color) {
-    return rna_pointer_inherit_refine(ptr, &RNA_PaletteColor, color);
+    return api_ptr_inherit_refine(ptr, &ApiPaletteColor, color);
   }
 
-  return rna_pointer_inherit_refine(ptr, NULL, NULL);
+  return api_ptr_inherit_refine(ptr, NULL, NULL);
 }
 
-static void rna_Palette_active_color_set(PointerRNA *ptr,
-                                         PointerRNA value,
+static void api_Palette_active_color_set(ApiPtr *ptr,
+                                         ApiPtr value,
                                          struct ReportList *UNUSED(reports))
 {
   Palette *palette = ptr->data;
@@ -79,14 +79,14 @@ static void rna_Palette_active_color_set(PointerRNA *ptr,
     palette->active_color = -1;
   }
   else {
-    palette->active_color = BLI_findindex(&palette->colors, color);
+    palette->active_color = lib_findindex(&palette->colors, color);
   }
 }
 
 #else
 
 /* palette.colors */
-static void rna_def_palettecolors(BlenderRNA *brna, PropertyRNA *cprop)
+static void rna_def_palettecolors(DuneApi *dapi, ApiProp *cprop)
 {
   StructRNA *srna;
   PropertyRNA *prop;
