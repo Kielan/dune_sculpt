@@ -945,64 +945,64 @@ static bool api_NodeTree_poll(const Cxt *C, NodeTreeType *ntreetype)
   void *ret;
   bool visible;
 
-  api_ptr_create(NULL, ntreetype->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &api_NodeTree_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ntreetype->api_ext.sapi, NULL, &ptr); /* dummy */
+  fn = &api_NodeTree_poll_fn; /* api_struct_find_function(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  ntreetype->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  ntreetype->api_ext.call((Cxt *)C, &ptr, func, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static void rna_NodeTree_update_reg(bNodeTree *ntree)
+static void api_NodeTree_update_reg(NodeTree *ntree)
 {
-  extern FunctionRNA rna_NodeTree_update_func;
+  extern ApiFn api_NodeTree_update_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_id_pointer_create(&ntree->id, &ptr);
-  func = &rna_NodeTree_update_func; /* RNA_struct_find_function(&ptr, "update"); */
+  api_id_ptr_create(&ntree->id, &ptr);
+  fn = &api_NodeTree_update_fn; /* api_struct_find_fn(&ptr, "update"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  ntree->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  ntree->typeinfo->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeTree_get_from_context(
-    const bContext *C, bNodeTreeType *ntreetype, bNodeTree **r_ntree, ID **r_id, ID **r_from)
+static void api_NodeTree_get_from_context(
+    const Cxt *C, NodeTreeType *ntreetype, NodeTree **r_ntree, Id **r_id, Id **r_from)
 {
-  extern FunctionRNA rna_NodeTree_get_from_context_func;
+  extern ApiFn api_NodeTree_get_from_cxt_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret1, *ret2, *ret3;
 
-  RNA_pointer_create(NULL, ntreetype->rna_ext.srna, NULL, &ptr); /* dummy */
-  // RNA_struct_find_function(&ptr, "get_from_context");
-  func = &rna_NodeTree_get_from_context_func;
+  api_ptr_create(NULL, ntreetype->api_ext.sapi, NULL, &ptr); /* dummy */
+  // api_struct_find_fn(&ptr, "get_from_context");
+  fn = &api_NodeTree_get_from_cxt_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  ntreetype->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  ntreetype->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "result_1", &ret1);
-  RNA_parameter_get_lookup(&list, "result_2", &ret2);
-  RNA_parameter_get_lookup(&list, "result_3", &ret3);
-  *r_ntree = *(bNodeTree **)ret1;
-  *r_id = *(ID **)ret2;
-  *r_from = *(ID **)ret3;
+  api_param_get_lookup(&list, "result_1", &ret1);
+  api_param_get_lookup(&list, "result_2", &ret2);
+  api_param_get_lookup(&list, "result_3", &ret3);
+  *r_ntree = *(NodeTree **)ret1;
+  *r_id = *(Id **)ret2;
+  *r_from = *(Id **)ret3;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static bool rna_NodeTree_valid_socket_type(bNodeTreeType *ntreetype, bNodeSocketType *socket_type)
