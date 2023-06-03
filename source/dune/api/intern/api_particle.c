@@ -740,69 +740,69 @@ static void rna_Particle_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static void rna_Particle_reset_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  DEG_relations_tag_update(bmain);
-  rna_Particle_reset(bmain, scene, ptr);
+  graph_relations_tag_update(main);
+  api_Particle_reset(main, scene, ptr);
 }
 
-static void rna_Particle_change_type(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_Particle_change_type(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   ParticleSettings *part = (ParticleSettings *)ptr->owner_id;
 
   /* Iterating over all object is slow, but no better solution exists at the moment. */
-  for (Object *ob = bmain->objects.first; ob; ob = ob->id.next) {
-    LISTBASE_FOREACH (ParticleSystem *, psys, &ob->particlesystem) {
+  for (Object *ob = main->objects.first; ob; ob = ob->id.next) {
+    LIST_FOREACH (ParticleSystem *, psys, &ob->particlesystem) {
       if (psys->part == part) {
         psys_changed_type(ob, psys);
         psys->recalc |= ID_RECALC_PSYS_RESET;
-        DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+        graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
       }
     }
   }
 
-  WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
-  DEG_relations_tag_update(bmain);
+  wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Particle_change_physics_type(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Particle_change_physics_type(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  particle_recalc(bmain, scene, ptr, ID_RECALC_PSYS_RESET | ID_RECALC_PSYS_PHYS);
+  particle_recalc(main, scene, ptr, ID_RECALC_PSYS_RESET | ID_RECALC_PSYS_PHYS);
 
   ParticleSettings *part = (ParticleSettings *)ptr->data;
 
   if (part->phystype == PART_PHYS_BOIDS && part->boids == NULL) {
     BoidState *state;
 
-    part->boids = MEM_callocN(sizeof(BoidSettings), "Boid Settings");
+    part->boids = mem_callocn(sizeof(BoidSettings), "Boid Settings");
     boid_default_settings(part->boids);
 
     state = boid_new_state(part->boids);
-    BLI_addtail(&state->rules, boid_new_rule(eBoidRuleType_Separate));
-    BLI_addtail(&state->rules, boid_new_rule(eBoidRuleType_Flock));
+    lib_addtail(&state->rules, boid_new_rule(eBoidRuleType_Separate));
+    lib_addtail(&state->rules, boid_new_rule(eBoidRuleType_Flock));
 
     ((BoidRule *)state->rules.first)->flag |= BOIDRULE_CURRENT;
 
     state->flag |= BOIDSTATE_CURRENT;
-    BLI_addtail(&part->boids->states, state);
+    lib_addtail(&part->boids->states, state);
   }
   else if (part->phystype == PART_PHYS_FLUID && part->fluid == NULL) {
-    part->fluid = MEM_callocN(sizeof(SPHFluidSettings), "SPH Fluid Settings");
-    BKE_particlesettings_fluid_default_settings(part);
+    part->fluid = mem_callocn(sizeof(SPHFluidSettings), "SPH Fluid Settings");
+    dune_particlesettings_fluid_default_settings(part);
   }
 
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Particle_redo_child(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Particle_redo_child(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  particle_recalc(bmain, scene, ptr, ID_RECALC_PSYS_CHILD);
+  particle_recalc(main, scene, ptr, ID_RECALC_PSYS_CHILD);
 }
 
-static void rna_Particle_cloth_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Particle_cloth_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 }
 
 static ParticleSystem *rna_particle_system_for_target(Object *ob, ParticleTarget *target)
@@ -821,15 +821,15 @@ static ParticleSystem *rna_particle_system_for_target(Object *ob, ParticleTarget
   return NULL;
 }
 
-static void rna_Particle_target_reset(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Particle_target_reset(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  if (ptr->type == &RNA_ParticleTarget) {
+  if (ptr->type == &ApiParticleTarget) {
     Object *ob = (Object *)ptr->owner_id;
     ParticleTarget *pt = (ParticleTarget *)ptr->data;
     ParticleSystem *kpsys = NULL, *psys = rna_particle_system_for_target(ob, pt);
 
     if (ELEM(pt->ob, ob, NULL)) {
-      kpsys = BLI_findlink(&ob->particlesystem, pt->psys - 1);
+      kpsys = lib_findlink(&ob->particlesystem, pt->psys - 1);
 
       if (kpsys) {
         pt->flag |= PTARGET_VALID;
@@ -840,7 +840,7 @@ static void rna_Particle_target_reset(Main *bmain, Scene *UNUSED(scene), Pointer
     }
     else {
       if (pt->ob) {
-        kpsys = BLI_findlink(&pt->ob->particlesystem, pt->psys - 1);
+        kpsys = lib_findlink(&pt->ob->particlesystem, pt->psys - 1);
       }
 
       if (kpsys) {
