@@ -1131,17 +1131,17 @@ static bool rna_NodeTree_check(bNodeTree *ntree, ReportList *reports)
   }
 }
 
-static void rna_NodeTree_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_NodeTree_update(Main bmain, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
 
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
-  WM_main_add_notifier(NC_SCENE | ND_NODES, &ntree->id);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_NODES, &ntree->id);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  ed_node_tree_propagate_change(NULL, bmain, ntree);
 }
 
-static bNode *rna_NodeTree_node_new(bNodeTree *ntree,
+static Node *api_NodeTree_node_new(bNodeTree *ntree,
                                     bContext *C,
                                     ReportList *reports,
                                     const char *type)
