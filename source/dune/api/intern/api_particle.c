@@ -72,7 +72,7 @@ static const EnumPropItem part_draw_as_items[] = {
 };
 
 #ifdef API_RUNTIME
-static const EnumPrItem part_hair_draw_as_items[] = {
+static const EnumPropItem part_hair_draw_as_items[] = {
     {PART_DRAW_NOT, "NONE", 0, "None", ""},
     {PART_DRAW_REND, "RENDER", 0, "Rendered", ""},
     {PART_DRAW_PATH, "PATH", 0, "Path", ""},
@@ -346,20 +346,20 @@ static void rna_ParticleHairKey_co_object_set(ID *id,
 
   /* Mark particle system as edited, so then particle_system_update() does not reset the hair
    * keys from path. This behavior is similar to how particle edit mode sets flags. */
-  ParticleSystemModifierData *orig_modifier = (ParticleSystemModifierData *)
-      BKE_modifier_get_original(object, &modifier->modifier);
-  orig_modifier->psys->flag |= PSYS_EDITED;
+  ParticleSystemModData *orig_mod = (ParticleSystemModData *)
+      dune_mod_get_original(object, &mod->mod);
+  orig_mod->psys->flag |= PSYS_EDITED;
 
-  hair_key_location_object_set(hair_key, object, modifier, particle, co);
+  hair_key_location_object_set(hair_key, object, mod, particle, co);
 
   /* Tag similar to brushes in particle edit mode, so the modifier stack is properly evaluated
    * with the same particle system recalc flags as during combing. */
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_REDO);
+  graph_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_REDO);
 }
 
-static void rna_Particle_uv_on_emitter(ParticleData *particle,
+static void api_Particle_uv_on_emitter(ParticleData *particle,
                                        ReportList *reports,
-                                       ParticleSystemModifierData *modifier,
+                                       ParticleSystemModData *mod,
                                        float r_uv[2])
 {
 #  if 0
@@ -367,8 +367,8 @@ static void rna_Particle_uv_on_emitter(ParticleData *particle,
       psmd, part->from, pa->num, pa->num_dmcache, pa->fuv, pa->foffset, co, nor, 0, 0, sd.orco, 0);
 #  endif
 
-  if (modifier->mesh_final == NULL) {
-    BKE_report(reports, RPT_ERROR, "uv_on_emitter() requires a modifier from an evaluated object");
+  if (mod->mesh_final == NULL) {
+    dune_report(reports, RPT_ERROR, "uv_on_emitter() requires a modifier from an evaluated object");
     return;
   }
 
@@ -376,11 +376,11 @@ static void rna_Particle_uv_on_emitter(ParticleData *particle,
   int num = particle->num_dmcache;
   int from = modifier->psys->part->from;
 
-  if (!CustomData_has_layer(&modifier->mesh_final->ldata, CD_MLOOPUV)) {
-    BKE_report(reports, RPT_ERROR, "Mesh has no UV data");
+  if (!CustomData_has_layer(&mod->mesh_final->ldata, CD_MLOOPUV)) {
+    dune_report(reports, RPT_ERROR, "Mesh has no UV data");
     return;
   }
-  BKE_mesh_tessface_ensure(modifier->mesh_final); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
+  dune_mesh_tessface_ensure(mod->mesh_final); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
 
   if (ELEM(num, DMCACHE_NOTFOUND, DMCACHE_ISCHILD)) {
     if (particle->num < modifier->mesh_final->totface) {
@@ -391,11 +391,11 @@ static void rna_Particle_uv_on_emitter(ParticleData *particle,
   /* get uvco */
   if (r_uv && ELEM(from, PART_FROM_FACE, PART_FROM_VOLUME) &&
       !ELEM(num, DMCACHE_NOTFOUND, DMCACHE_ISCHILD)) {
-    MFace *mface;
-    MTFace *mtface;
+    MeshFace *mface;
+    MeshTextureFace *mtface;
 
-    mface = modifier->mesh_final->mface;
-    mtface = modifier->mesh_final->mtface;
+    mface = mod->mesh_final->mface;
+    mtface = mod->mesh_final->mtface;
 
     if (mface && mtface) {
       mtface += num;
@@ -408,7 +408,7 @@ static void rna_Particle_uv_on_emitter(ParticleData *particle,
   r_uv[1] = 0.0f;
 }
 
-static void rna_ParticleSystem_co_hair(
+static void api_ParticleSystem_co_hair(
     ParticleSystem *particlesystem, Object *object, int particle_no, int step, float n_co[3])
 {
   ParticleSettings *part = NULL;
@@ -466,51 +466,51 @@ static void rna_ParticleSystem_co_hair(
   }
 }
 
-static const EnumPropertyItem *rna_Particle_Material_itemf(bContext *C,
-                                                           PointerRNA *UNUSED(ptr),
-                                                           PropertyRNA *UNUSED(prop),
-                                                           bool *r_free)
+static const EnumPropItem *api_Particle_Material_itemf(Cxt *C,
+                                                       ApiPtr *UNUSED(ptr),
+                                                       ApiProp *UNUSED(prop),
+                                                       bool *r_free)
 {
-  Object *ob = CTX_data_pointer_get(C, "object").data;
+  Object *ob = cxt_data_ptr_get(C, "object").data;
   Material *ma;
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
   int i;
 
   if (ob && ob->totcol > 0) {
     for (i = 1; i <= ob->totcol; i++) {
-      ma = BKE_object_material_get(ob, i);
+      ma = dune_object_material_get(ob, i);
       tmp.value = i;
       tmp.icon = ICON_MATERIAL_DATA;
       if (ma) {
         tmp.name = ma->id.name + 2;
-        tmp.identifier = tmp.name;
+        tmp.id = tmp.name;
       }
       else {
         tmp.name = "Default Material";
-        tmp.identifier = tmp.name;
+        tmp.id = tmp.name;
       }
-      RNA_enum_item_add(&item, &totitem, &tmp);
+      api_enum_item_add(&item, &totitem, &tmp);
     }
   }
   else {
     tmp.value = 1;
     tmp.icon = ICON_MATERIAL_DATA;
     tmp.name = "Default Material";
-    tmp.identifier = tmp.name;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    tmp.id = tmp.name;
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
 /* return < 0 means invalid (no matching tessellated face could be found). */
-static int rna_ParticleSystem_tessfaceidx_on_emitter(ParticleSystem *particlesystem,
-                                                     ParticleSystemModifierData *modifier,
+static int api_ParticleSystem_tessfaceidx_on_emitter(ParticleSystem *particlesystem,
+                                                     ParticleSystemModData *mod,
                                                      ParticleData *particle,
                                                      int particle_no,
                                                      float (**r_fuv)[4])
@@ -522,9 +522,9 @@ static int rna_ParticleSystem_tessfaceidx_on_emitter(ParticleSystem *particlesys
   int totvert;
   int num = -1;
 
-  BKE_mesh_tessface_ensure(modifier->mesh_final); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
-  totface = modifier->mesh_final->totface;
-  totvert = modifier->mesh_final->totvert;
+  dune_mesh_tessface_ensure(mod->mesh_final); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
+  totface = mod->mesh_final->totface;
+  totvert = mod->mesh_final->totvert;
 
   /* 1. check that everything is ok & updated */
   if (!particlesystem || !totface) {
@@ -559,7 +559,7 @@ static int rna_ParticleSystem_tessfaceidx_on_emitter(ParticleSystem *particlesys
     }
     else if (part->from == PART_FROM_VERT) {
       if (num != DMCACHE_NOTFOUND && num < totvert) {
-        MFace *mface = modifier->mesh_final->mface;
+        MeshFace *mface = mod->mesh_final->mface;
 
         *r_fuv = &particle->fuv;
 
@@ -622,21 +622,21 @@ static int rna_ParticleSystem_tessfaceidx_on_emitter(ParticleSystem *particlesys
   return -1;
 }
 
-static void rna_ParticleSystem_uv_on_emitter(ParticleSystem *particlesystem,
+static void api_ParticleSystem_uv_on_emitter(ParticleSystem *particlesystem,
                                              ReportList *reports,
-                                             ParticleSystemModifierData *modifier,
+                                             ParticleSystemModData *mod,
                                              ParticleData *particle,
                                              int particle_no,
                                              int uv_no,
                                              float r_uv[2])
 {
-  if (modifier->mesh_final == NULL) {
-    BKE_report(reports, RPT_ERROR, "Object was not yet evaluated");
+  if (mod->mesh_final == NULL) {
+    dune_report(reports, RPT_ERROR, "Object was not yet evaluated");
     zero_v2(r_uv);
     return;
   }
-  if (!CustomData_has_layer(&modifier->mesh_final->ldata, CD_MLOOPUV)) {
-    BKE_report(reports, RPT_ERROR, "Mesh has no UV data");
+  if (!CustomData_has_layer(&mod->mesh_final->ldata, CD_MLOOPUV)) {
+    dune_report(reports, RPT_ERROR, "Mesh has no UV data");
     zero_v2(r_uv);
     return;
   }
@@ -644,7 +644,7 @@ static void rna_ParticleSystem_uv_on_emitter(ParticleSystem *particlesystem,
   {
     float(*fuv)[4];
     /* Note all sanity checks are done in this helper func. */
-    const int num = rna_ParticleSystem_tessfaceidx_on_emitter(
+    const int num = api_ParticleSystem_tessfaceidx_on_emitter(
         particlesystem, modifier, particle, particle_no, &fuv);
 
     if (num < 0) {
@@ -652,8 +652,8 @@ static void rna_ParticleSystem_uv_on_emitter(ParticleSystem *particlesystem,
       zero_v2(r_uv);
     }
     else {
-      MFace *mface = &modifier->mesh_final->mface[num];
-      MTFace *mtface = (MTFace *)CustomData_get_layer_n(
+      MeshFace *mface = &mod->mesh_final->mface[num];
+      MeshTextureFace *mtface = (MeshTFace *)CustomData_get_layer_n(
           &modifier->mesh_final->fdata, CD_MTFACE, uv_no);
 
       psys_interpolate_uvs(&mtface[num], mface->v4, *fuv, r_uv);
@@ -661,16 +661,16 @@ static void rna_ParticleSystem_uv_on_emitter(ParticleSystem *particlesystem,
   }
 }
 
-static void rna_ParticleSystem_mcol_on_emitter(ParticleSystem *particlesystem,
+static void api_ParticleSystem_mcol_on_emitter(ParticleSystem *particlesystem,
                                                ReportList *reports,
-                                               ParticleSystemModifierData *modifier,
+                                               ParticleSystemModData *mod,
                                                ParticleData *particle,
                                                int particle_no,
                                                int vcol_no,
                                                float r_mcol[3])
 {
-  if (!CustomData_has_layer(&modifier->mesh_final->ldata, CD_MLOOPCOL)) {
-    BKE_report(reports, RPT_ERROR, "Mesh has no VCol data");
+  if (!CustomData_has_layer(&mod->mesh_final->ldata, CD_MLOOPCOL)) {
+    dune_report(reports, RPT_ERROR, "Mesh has no VCol data");
     zero_v3(r_mcol);
     return;
   }
@@ -678,7 +678,7 @@ static void rna_ParticleSystem_mcol_on_emitter(ParticleSystem *particlesystem,
   {
     float(*fuv)[4];
     /* Note all sanity checks are done in this helper func. */
-    const int num = rna_ParticleSystem_tessfaceidx_on_emitter(
+    const int num = api_ParticleSystem_tessfaceidx_on_emitter(
         particlesystem, modifier, particle, particle_no, &fuv);
 
     if (num < 0) {
@@ -686,9 +686,9 @@ static void rna_ParticleSystem_mcol_on_emitter(ParticleSystem *particlesystem,
       zero_v3(r_mcol);
     }
     else {
-      MFace *mface = &modifier->mesh_final->mface[num];
-      MCol *mc = (MCol *)CustomData_get_layer_n(&modifier->mesh_final->fdata, CD_MCOL, vcol_no);
-      MCol mcol;
+      MeshFace *mface = &mod->mesh_final->mface[num];
+      MeshCol *mc = (MeshCol *)CustomData_get_layer_n(&mod->mesh_final->fdata, CD_MCOL, vcol_no);
+      MeshCol mcol;
 
       psys_interpolate_mcol(&mc[num * 4], mface->v4, *fuv, &mcol);
       r_mcol[0] = (float)mcol.b / 255.0f;
@@ -698,31 +698,31 @@ static void rna_ParticleSystem_mcol_on_emitter(ParticleSystem *particlesystem,
   }
 }
 
-static void particle_recalc(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr, short flag)
+static void particle_recalc(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr, short flag)
 {
-  if (ptr->type == &RNA_ParticleSystem) {
+  if (ptr->type == &ApiParticleSystem) {
     Object *ob = (Object *)ptr->owner_id;
     ParticleSystem *psys = (ParticleSystem *)ptr->data;
 
     psys->recalc = flag;
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
   }
   else {
-    DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY | flag);
+    graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY | flag);
   }
 
-  WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
 }
-static void rna_Particle_redo(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Particle_redo(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  particle_recalc(bmain, scene, ptr, ID_RECALC_PSYS_REDO);
+  particle_recalc(main, scene, ptr, ID_RECALC_PSYS_REDO);
 }
 
-static void rna_Particle_redo_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Particle_redo_dependency(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
-  rna_Particle_redo(bmain, scene, ptr);
+  graph_relations_tag_update(main);
+  api_Particle_redo(main, scene, ptr);
 }
 
 static void rna_Particle_redo_count(Main *bmain, Scene *scene, PointerRNA *ptr)
