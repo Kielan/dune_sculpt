@@ -1171,7 +1171,7 @@ static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
   api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SIMPLIFY_INVERT_LAYER);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_LAYER);
   RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
