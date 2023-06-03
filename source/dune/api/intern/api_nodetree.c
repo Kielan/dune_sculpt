@@ -2,56 +2,56 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_text_types.h"
-#include "DNA_texture_types.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_modifier.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_text.h"
+#include "types_texture.h"
 
-#include "BKE_animsys.h"
-#include "BKE_attribute.h"
-#include "BKE_cryptomatte.h"
-#include "BKE_geometry_set.h"
-#include "BKE_image.h"
-#include "BKE_node.h"
-#include "BKE_node_tree_update.h"
-#include "BKE_texture.h"
+#include "dune_animsys.h"
+#include "dune_attribute.h"
+#include "dune_cryptomatte.h"
+#include "dune_geometry_set.h"
+#include "dune_image.h"
+#include "dune_node.h"
+#include "dune_node_tree_update.h"
+#include "dune_texture.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
-#include "rna_internal_types.h"
+#include "api_internal.h"
+#include "api_internal_types.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RE_texture.h"
+#include "render_texture.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-const EnumPropertyItem rna_enum_node_socket_in_out_items[] = {
+const EnumPropItem api_enum_node_socket_in_out_items[] = {
     {SOCK_IN, "IN", 0, "Input", ""}, {SOCK_OUT, "OUT", 0, "Output", ""}, {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem node_socket_data_type_items[] = {
+static const EnumPropItem node_socket_data_type_items[] = {
     {SOCK_FLOAT, "FLOAT", 0, "Float", ""},
     {SOCK_INT, "INT", 0, "Integer", ""},
-    {SOCK_BOOLEAN, "BOOLEAN", 0, "Boolean", ""},
+    {SOCK_BOOL, "BOOL", 0, "Bool", ""},
     {SOCK_VECTOR, "VECTOR", 0, "Vector", ""},
     {SOCK_STRING, "STRING", 0, "String", ""},
     {SOCK_RGBA, "RGBA", 0, "Color", ""},
@@ -64,8 +64,8 @@ static const EnumPropertyItem node_socket_data_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem rna_enum_node_socket_display_shape_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem api_enum_node_socket_display_shape_items[] = {
     {SOCK_DISPLAY_SHAPE_CIRCLE, "CIRCLE", 0, "Circle", ""},
     {SOCK_DISPLAY_SHAPE_SQUARE, "SQUARE", 0, "Square", ""},
     {SOCK_DISPLAY_SHAPE_DIAMOND, "DIAMOND", 0, "Diamond", ""},
@@ -74,11 +74,11 @@ static const EnumPropertyItem rna_enum_node_socket_display_shape_items[] = {
     {SOCK_DISPLAY_SHAPE_DIAMOND_DOT, "DIAMOND_DOT", 0, "Diamond with inner dot", ""},
     {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem node_socket_type_items[] = {
+static const EnumPropItem node_socket_type_items[] = {
     {SOCK_CUSTOM, "CUSTOM", 0, "Custom", ""},
     {SOCK_FLOAT, "VALUE", 0, "Value", ""},
     {SOCK_INT, "INT", 0, "Integer", ""},
-    {SOCK_BOOLEAN, "BOOLEAN", 0, "Boolean", ""},
+    {SOCK_BOOL, "BOOL", 0, "Bool", ""},
     {SOCK_VECTOR, "VECTOR", 0, "Vector", ""},
     {SOCK_STRING, "STRING", 0, "String", ""},
     {SOCK_RGBA, "RGBA", 0, "RGBA", ""},
@@ -92,7 +92,7 @@ static const EnumPropertyItem node_socket_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem node_quality_items[] = {
+static const EnumPropItem node_quality_items[] = {
     {NTREE_QUALITY_HIGH, "HIGH", 0, "High", "High quality"},
     {NTREE_QUALITY_MEDIUM, "MEDIUM", 0, "Medium", "Medium quality"},
     {NTREE_QUALITY_LOW, "LOW", 0, "Low", "Low quality"},
