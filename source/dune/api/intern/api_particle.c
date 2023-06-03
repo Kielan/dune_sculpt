@@ -1076,31 +1076,31 @@ static void api_ParticleSettings_use_roughness_curve_update(Main *main,
     }
   }
 
-  rna_Particle_redo_child(bmain, scene, ptr);
+  api_Particle_redo_child(bmain, scene, ptr);
 }
 
-static void rna_ParticleSettings_use_twist_curve_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ParticleSettings_use_twist_curve_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   ParticleSettings *part = ptr->data;
 
   if (part->child_flag & PART_CHILD_USE_TWIST_CURVE) {
     if (!part->twistcurve) {
-      BKE_particlesettings_twist_curve_init(part);
+      dune_particlesettings_twist_curve_init(part);
     }
   }
 
-  rna_Particle_redo_child(bmain, scene, ptr);
+  api_Particle_redo_child(main, scene, ptr);
 }
 
-static void rna_ParticleSystem_name_set(PointerRNA *ptr, const char *value)
+static void api_ParticleSystem_name_set(ApiPtr *ptr, const char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
   ParticleSystem *part = (ParticleSystem *)ptr->data;
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(part->name, value, sizeof(part->name));
+  lib_strncpy_utf8(part->name, value, sizeof(part->name));
 
-  BLI_uniquename(&ob->particlesystem,
+  lib_uniquename(&ob->particlesystem,
                  part,
                  DATA_("ParticleSystem"),
                  '.',
@@ -1108,27 +1108,27 @@ static void rna_ParticleSystem_name_set(PointerRNA *ptr, const char *value)
                  sizeof(part->name));
 }
 
-static PointerRNA rna_ParticleSystem_active_particle_target_get(PointerRNA *ptr)
+static ApiPtr api_ParticleSystem_active_particle_target_get(ApiPtr *ptr)
 {
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
   ParticleTarget *pt = psys->targets.first;
 
   for (; pt; pt = pt->next) {
     if (pt->flag & PTARGET_CURRENT) {
-      return rna_pointer_inherit_refine(ptr, &RNA_ParticleTarget, pt);
+      return api_ptr_inherit_refine(ptr, &ApiParticleTarget, pt);
     }
   }
-  return rna_pointer_inherit_refine(ptr, &RNA_ParticleTarget, NULL);
+  return api_ptr_inherit_refine(ptr, &ApiParticleTarget, NULL);
 }
-static void rna_ParticleSystem_active_particle_target_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_ParticleSystem_active_particle_target_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
   *min = 0;
   *max = max_ii(0, BLI_listbase_count(&psys->targets) - 1);
 }
 
-static int rna_ParticleSystem_active_particle_target_index_get(PointerRNA *ptr)
+static int rna_ParticleSystem_active_particle_target_index_get(ApiPtr *ptr)
 {
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
   ParticleTarget *pt = psys->targets.first;
@@ -1143,7 +1143,7 @@ static int rna_ParticleSystem_active_particle_target_index_get(PointerRNA *ptr)
   return 0;
 }
 
-static void rna_ParticleSystem_active_particle_target_index_set(struct PointerRNA *ptr, int value)
+static void api_ParticleSystem_active_particle_target_index_set(struct ApiPtr *ptr, int value)
 {
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
   ParticleTarget *pt = psys->targets.first;
@@ -1159,7 +1159,7 @@ static void rna_ParticleSystem_active_particle_target_index_set(struct PointerRN
   }
 }
 
-static void rna_ParticleTarget_name_get(PointerRNA *ptr, char *str)
+static void api_ParticleTarget_name_get(PointerRNA *ptr, char *str)
 {
   ParticleTarget *pt = ptr->data;
 
@@ -1167,11 +1167,11 @@ static void rna_ParticleTarget_name_get(PointerRNA *ptr, char *str)
     ParticleSystem *psys = NULL;
 
     if (pt->ob) {
-      psys = BLI_findlink(&pt->ob->particlesystem, pt->psys - 1);
+      psys = lib_findlink(&pt->ob->particlesystem, pt->psys - 1);
     }
     else {
       Object *ob = (Object *)ptr->owner_id;
-      psys = BLI_findlink(&ob->particlesystem, pt->psys - 1);
+      psys = lib_findlink(&ob->particlesystem, pt->psys - 1);
     }
 
     if (psys) {
