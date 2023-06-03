@@ -287,17 +287,17 @@ static void api_Cache_idname_change(Main *UNUSED(bmain), Scene *UNUSED(scene), P
         dune_ptcache_disk_cache_rename(pid2, old_name, new_name);
       }
 
-      BLI_strncpy(cache->prev_name, cache->name, sizeof(cache->prev_name));
+      lib_strncpy(cache->prev_name, cache->name, sizeof(cache->prev_name));
     }
 
-    BLI_freelistN(&pidlist);
+    lib_freelistn(&pidlist);
   }
 }
 
-static void rna_Cache_list_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Cache_list_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   PointCache *cache = ptr->data;
-  ListBase lb;
+  List lb;
 
   while (cache->prev) {
     cache = cache->prev;
@@ -870,8 +870,8 @@ static void api_softbody_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr
 {
   Object *ob = (Object *)ptr->owner_id;
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 }
 
 static void api_softbody_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
@@ -880,10 +880,10 @@ static void api_softbody_dependency_update(Main *main, Scene *scene, ApiPtr *ptr
   api_softbody_update(main, scene, ptr);
 }
 
-static const EnumPropertyItem *rna_Effector_shape_itemf(Cxt *UNUSED(C),
-                                                        ApiPtr *ptr,
-                                                        ApiProp *UNUSED(prop),
-                                                        bool *UNUSED(r_free))
+static const EnumPropItem *api_Effector_shape_itemf(Cxt *UNUSED(C),
+                                                    ApiPtr *ptr,
+                                                    ApiProp *UNUSED(prop),
+                                                    bool *UNUSED(r_free))
 {
   Object *ob = NULL;
 
@@ -918,18 +918,18 @@ static const EnumPropertyItem *rna_Effector_shape_itemf(Cxt *UNUSED(C),
 
 #else
 
-static void rna_def_pointcache_common(StructRNA *srna)
+static void api_def_pointcache_common(ApiStruct *srna)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  static const EnumPropertyItem point_cache_compress_items[] = {
+  static const EnumPropItem point_cache_compress_items[] = {
       {PTCACHE_COMPRESS_NO, "NO", 0, "None", "No compression"},
       {PTCACHE_COMPRESS_LZO, "LIGHT", 0, "Lite", "Fast but not so effective compression"},
       {PTCACHE_COMPRESS_LZMA, "HEAVY", 0, "Heavy", "Effective but slow compression"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  RNA_def_struct_path_func(srna, "rna_PointCache_path");
+  RNA_def_struct_path_func(srna, "api_PointCache_path");
 
   RNA_define_lib_overridable(true);
 
