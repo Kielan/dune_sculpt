@@ -226,7 +226,7 @@ const EnumPropertyItem rna_enum_node_math_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_vec_math_items[] = {
+const EnumPropItem api_enum_node_vec_math_items[] = {
     {NODE_VECTOR_MATH_ADD, "ADD", 0, "Add", "A + B"},
     {NODE_VECTOR_MATH_SUBTRACT, "SUBTRACT", 0, "Subtract", "A - B"},
     {NODE_VECTOR_MATH_MULTIPLY, "MULTIPLY", 0, "Multiply", "Entry-wise multiply"},
@@ -280,29 +280,29 @@ const EnumPropertyItem rna_enum_node_vec_math_items[] = {
 };
 
 const EnumPropertyItem rna_enum_node_boolean_math_items[] = {
-    {NODE_BOOLEAN_MATH_AND, "AND", 0, "And", "True when both inputs are true"},
-    {NODE_BOOLEAN_MATH_OR, "OR", 0, "Or", "True when at least one input is true"},
-    {NODE_BOOLEAN_MATH_NOT, "NOT", 0, "Not", "Opposite of the input"},
+    {NODE_BOOL_MATH_AND, "AND", 0, "And", "True when both inputs are true"},
+    {NODE_BOOL_MATH_OR, "OR", 0, "Or", "True when at least one input is true"},
+    {NODE_BOOL_MATH_NOT, "NOT", 0, "Not", "Opposite of the input"},
     {0, "", ICON_NONE, NULL, NULL},
-    {NODE_BOOLEAN_MATH_NAND, "NAND", 0, "Not And", "True when at least one input is false"},
-    {NODE_BOOLEAN_MATH_NOR, "NOR", 0, "Nor", "True when both inputs are false"},
-    {NODE_BOOLEAN_MATH_XNOR,
+    {NODE_BOOL_MATH_NAND, "NAND", 0, "Not And", "True when at least one input is false"},
+    {NODE_BOOL_MATH_NOR, "NOR", 0, "Nor", "True when both inputs are false"},
+    {NODE_BOOL_MATH_XNOR,
      "XNOR",
      0,
      "Equal",
      "True when both inputs are equal (exclusive nor)"},
-    {NODE_BOOLEAN_MATH_XOR,
+    {NODE_BOOL_MATH_XOR,
      "XOR",
      0,
      "Not Equal",
      "True when both inputs are different (exclusive or)"},
     {0, "", ICON_NONE, NULL, NULL},
-    {NODE_BOOLEAN_MATH_IMPLY,
+    {NODE_BOOL_MATH_IMPLY,
      "IMPLY",
      0,
      "Imply",
      "True unless the first input is true and the second is false"},
-    {NODE_BOOLEAN_MATH_NIMPLY,
+    {NODE_BOOL_MATH_NIMPLY,
      "NIMPLY",
      0,
      "Subtract",
@@ -310,7 +310,7 @@ const EnumPropertyItem rna_enum_node_boolean_math_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_float_compare_items[] = {
+const EnumPropItem api_enum_node_float_compare_items[] = {
     {NODE_COMPARE_LESS_THAN,
      "LESS_THAN",
      0,
@@ -340,7 +340,7 @@ const EnumPropertyItem rna_enum_node_float_compare_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_compare_operation_items[] = {
+const EnumProptem api_enum_node_compare_op_items[] = {
     {NODE_COMPARE_LESS_THAN,
      "LESS_THAN",
      0,
@@ -376,7 +376,7 @@ const EnumPropertyItem rna_enum_node_compare_operation_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_float_to_int_items[] = {
+const EnumPropItem api_enum_node_float_to_int_items[] = {
     {FN_NODE_FLOAT_TO_INT_ROUND,
      "ROUND",
      0,
@@ -401,7 +401,7 @@ const EnumPropertyItem rna_enum_node_float_to_int_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_map_range_items[] = {
+const EnumPropItem rna_enum_node_map_range_items[] = {
     {NODE_MAP_RANGE_LINEAR,
      "LINEAR",
      0,
@@ -425,7 +425,7 @@ const EnumPropertyItem rna_enum_node_map_range_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_clamp_items[] = {
+const EnumPropItem api_enum_node_clamp_items[] = {
     {NODE_CLAMP_MINMAX, "MINMAX", 0, "Min Max", "Constrain value between min and max"},
     {NODE_CLAMP_RANGE,
      "RANGE",
@@ -435,7 +435,7 @@ const EnumPropertyItem rna_enum_node_clamp_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_node_tex_dimensions_items[] = {
+static const EnumPropItem api_enum_node_tex_dimensions_items[] = {
     {1, "1D", 0, "1D", "Use the scalar value W as input"},
     {2, "2D", 0, "2D", "Use the 2D vector (x, y) as input. The z component is ignored"},
     {3, "3D", 0, "3D", "Use the 3D vector (x, y, z) as input"},
@@ -443,7 +443,7 @@ static const EnumPropertyItem rna_enum_node_tex_dimensions_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_filter_items[] = {
+const EnumPropItem api_enum_node_filter_items[] = {
     {0, "SOFTEN", 0, "Soften", ""},
     {1, "SHARPEN", 0, "Box Sharpen", "An aggressive sharpening filter"},
     {7, "SHARPEN_DIAMOND", 0, "Diamond Sharpen", "A moderate sharpening filter"},
@@ -455,7 +455,7 @@ const EnumPropertyItem rna_enum_node_filter_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_node_geometry_curve_handle_type_items[] = {
+static const EnumPropItem api_node_geometry_curve_handle_type_items[] = {
     {GEO_NODE_CURVE_HANDLE_FREE,
      "FREE",
      ICON_HANDLE_FREE,
@@ -478,20 +478,20 @@ static const EnumPropertyItem rna_node_geometry_curve_handle_type_items[] = {
      "The location is constrained to point in the opposite direction as the other handle"},
     {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem rna_node_geometry_curve_handle_side_items[] = {
+static const EnumPropItem api_node_geometry_curve_handle_side_items[] = {
     {GEO_NODE_CURVE_HANDLE_LEFT, "LEFT", ICON_NONE, "Left", "Use the left handles"},
     {GEO_NODE_CURVE_HANDLE_RIGHT, "RIGHT", ICON_NONE, "Right", "Use the right handles"},
     {0, NULL, 0, NULL, NULL}};
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem node_sampler_type_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem node_sampler_type_items[] = {
     {0, "NEAREST", 0, "Nearest", ""},
     {1, "BILINEAR", 0, "Bilinear", ""},
     {2, "BICUBIC", 0, "Bicubic", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem prop_shader_output_target_items[] = {
+static const EnumPropItem prop_shader_output_target_items[] = {
     {SHD_OUTPUT_ALL,
      "ALL",
      0,
@@ -502,14 +502,14 @@ static const EnumPropertyItem prop_shader_output_target_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem node_cryptomatte_layer_name_items[] = {
+static const EnumPropItem node_cryptomatte_layer_name_items[] = {
     {0, "CryptoObject", 0, "Object", "Use Object layer"},
     {1, "CryptoMaterial", 0, "Material", "Use Material layer"},
     {2, "CryptoAsset", 0, "Asset", "Use Asset layer"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem rna_node_geometry_mesh_circle_fill_type_items[] = {
+static EnumPropItem api_node_geometry_mesh_circle_fill_type_items[] = {
     {GEO_NODE_MESH_CIRCLE_FILL_NONE, "NONE", 0, "None", ""},
     {GEO_NODE_MESH_CIRCLE_FILL_NGON, "NGON", 0, "N-Gon", ""},
     {GEO_NODE_MESH_CIRCLE_FILL_TRIANGLE_FAN, "TRIANGLE_FAN", 0, "Triangles", ""},
@@ -517,7 +517,7 @@ static EnumPropertyItem rna_node_geometry_mesh_circle_fill_type_items[] = {
 };
 #endif
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 
 #endif
 
@@ -527,7 +527,7 @@ static EnumPropertyItem rna_node_geometry_mesh_circle_fill_type_items[] = {
 #undef ITEM_COLOR
 #undef ITEM_BOOLEAN
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  include "lib_linklist.h"
 #  include "lib_string.h"
@@ -700,7 +700,7 @@ const EnumPropItem *api_node_type_itemf(void *data,
     tmp.name = ntype->ui_name;
     tmp.description = ntype->ui_description;
 
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     i++;
   }
@@ -708,16 +708,16 @@ const EnumPropItem *api_node_type_itemf(void *data,
 
   if (totitem == 0) {
     *r_free = false;
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-int rna_node_socket_type_to_enum(bNodeSocketType *typeinfo)
+int api_node_socket_type_to_enum(NodeSocketType *typeinfo)
 {
   int i = 0, result = -1;
   NODE_SOCKET_TYPES_BEGIN (stype) {
@@ -731,7 +731,7 @@ int rna_node_socket_type_to_enum(bNodeSocketType *typeinfo)
   return result;
 }
 
-int rna_node_socket_idname_to_enum(const char *idname)
+int api_node_socket_idname_to_enum(const char *idname)
 {
   int i = 0, result = -1;
   NODE_SOCKET_TYPES_BEGIN (stype) {
@@ -745,10 +745,10 @@ int rna_node_socket_idname_to_enum(const char *idname)
   return result;
 }
 
-bNodeSocketType *rna_node_socket_type_from_enum(int value)
+NodeSocketType *api_node_socket_type_from_enum(int value)
 {
   int i = 0;
-  bNodeSocketType *result = NULL;
+  NodeSocketType *result = NULL;
   NODE_SOCKET_TYPES_BEGIN (stype) {
     if (i == value) {
       result = stype;
@@ -760,14 +760,14 @@ bNodeSocketType *rna_node_socket_type_from_enum(int value)
   return result;
 }
 
-const EnumPropertyItem *rna_node_socket_type_itemf(void *data,
-                                                   bool (*poll)(void *data, bNodeSocketType *),
-                                                   bool *r_free)
+const EnumPropItem *api_node_socket_type_itemf(void *data,
+                                               bool (*poll)(void *data, NodeSocketType *),
+                                               bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0};
   int totitem = 0, i = 0;
-  StructRNA *srna;
+  ApiStruct *sapi;
 
   NODE_SOCKET_TYPES_BEGIN (stype) {
     if (poll && !poll(data, stype)) {
@@ -775,14 +775,14 @@ const EnumPropertyItem *rna_node_socket_type_itemf(void *data,
       continue;
     }
 
-    srna = stype->ext_socket.srna;
+    srna = stype->ext_socket.sapi;
     tmp.value = i;
-    tmp.identifier = stype->idname;
-    tmp.icon = RNA_struct_ui_icon(srna);
+    tmp.id = stype->idname;
+    tmp.icon = api_struct_ui_icon(sapi);
     tmp.name = nodeSocketTypeLabel(stype);
-    tmp.description = RNA_struct_ui_description(srna);
+    tmp.description = api_struct_ui_description(sapi);
 
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     i++;
   }
@@ -790,22 +790,22 @@ const EnumPropertyItem *rna_node_socket_type_itemf(void *data,
 
   if (totitem == 0) {
     *r_free = false;
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static const EnumPropertyItem *rna_node_static_type_itemf(bContext *UNUSED(C),
-                                                          PointerRNA *ptr,
-                                                          PropertyRNA *UNUSED(prop),
-                                                          bool *r_free)
+static const EnumPropItem *api_node_static_type_itemf(Cxt *UNUSED(C),
+                                                      ApiPtr *ptr,
+                                                      ApiProp *UNUSED(prop),
+                                                      bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp;
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp;
   int totitem = 0;
 
   /* hack, don't want to add include path to RNA just for this, since in the future RNA types
@@ -813,109 +813,109 @@ static const EnumPropertyItem *rna_node_static_type_itemf(bContext *UNUSED(C),
    */
 
   tmp.value = NODE_CUSTOM;
-  tmp.identifier = "CUSTOM";
+  tmp.id = "CUSTOM";
   tmp.name = "Custom";
   tmp.description = "Custom Node";
   tmp.icon = ICON_NONE;
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = NODE_CUSTOM_GROUP;
-  tmp.identifier = "CUSTOM GROUP";
+  tmp.id = "CUSTOM GROUP";
   tmp.name = "CustomGroup";
   tmp.description = "Custom Group Node";
   tmp.icon = ICON_NONE;
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = NODE_UNDEFINED;
-  tmp.identifier = "UNDEFINED";
+  tmp.id = "UNDEFINED";
   tmp.name = "UNDEFINED";
   tmp.description = "";
   tmp.icon = ICON_NONE;
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "Node")) { \
-      tmp.value = ID; \
-      tmp.identifier = EnumName; \
+      tmp.value = Id; \
+      tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
 
-  if (RNA_struct_is_a(ptr->type, &RNA_ShaderNode)) {
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+  if (api_struct_is_a(ptr->type, &Api_ShaderNode)) {
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "ShaderNode")) { \
-      tmp.value = ID; \
-      tmp.identifier = EnumName; \
+      tmp.value = Id; \
+      tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
   }
 
-  if (RNA_struct_is_a(ptr->type, &RNA_CompositorNode)) {
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+  if (api_struct_is_a(ptr->type, &ApiCompositorNode)) {
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "CompositorNode")) { \
       tmp.value = ID; \
-      tmp.identifier = EnumName; \
+      tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
   }
 
-  if (RNA_struct_is_a(ptr->type, &RNA_TextureNode)) {
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+  if (api_struct_is_a(ptr->type, &ApiTextureNode)) {
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "TextureNode")) { \
-      tmp.value = ID; \
+      tmp.value = Id; \
       tmp.identifier = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
   }
 
-  if (RNA_struct_is_a(ptr->type, &RNA_GeometryNode)) {
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+  if (api_struct_is_a(ptr->type, &ApiGeometryNode)) {
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "GeometryNode")) { \
-      tmp.value = ID; \
-      tmp.identifier = EnumName; \
+      tmp.value = Id; \
+      tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
   }
 
-  if (RNA_struct_is_a(ptr->type, &RNA_FunctionNode)) {
-#  define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
-    if (STREQ(#Category, "FunctionNode")) { \
+  if (api_struct_is_a(ptr->type, &ApiFnNode)) {
+#  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
+    if (STREQ(#Category, "FnNode")) { \
       tmp.value = ID; \
-      tmp.identifier = EnumName; \
+      tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
       tmp.icon = ICON_NONE; \
-      RNA_enum_item_add(&item, &totitem, &tmp); \
+      api_enum_item_add(&item, &totitem, &tmp); \
     }
 #  include "../../nodes/NOD_static_types.h"
 #  undef DefNode
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -923,30 +923,30 @@ static const EnumPropertyItem *rna_node_static_type_itemf(bContext *UNUSED(C),
 
 /* ******** Node Tree ******** */
 
-static StructRNA *rna_NodeTree_refine(struct PointerRNA *ptr)
+static ApiStruct *api_NodeTree_refine(struct ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
 
-  if (ntree->typeinfo->rna_ext.srna) {
-    return ntree->typeinfo->rna_ext.srna;
+  if (ntree->typeinfo->api_ext.sapi) {
+    return ntree->typeinfo->api_ext.sapi;
   }
   else {
-    return &RNA_NodeTree;
+    return &ApiNodeTree;
   }
 }
 
-static bool rna_NodeTree_poll(const bContext *C, bNodeTreeType *ntreetype)
+static bool api_NodeTree_poll(const Cxt *C, NodeTreeType *ntreetype)
 {
-  extern FunctionRNA rna_NodeTree_poll_func;
+  extern ApiFn api_NodeTree_poll_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, ntreetype->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_NodeTree_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ntreetype->rna_ext.srna, NULL, &ptr); /* dummy */
+  func = &api_NodeTree_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
 
   RNA_parameter_list_create(&list, &ptr, func);
   RNA_parameter_set_lookup(&list, "context", &C);
