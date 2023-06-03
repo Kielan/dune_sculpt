@@ -1135,42 +1135,42 @@ static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "SimplifyGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Simplify Modifier", "Simplify Stroke modifier");
-  RNA_def_struct_sdna(srna, "SimplifyGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SIMPLIFY);
+  sapi = api_def_struct(dapi, "SimplifyPenMod", "PenMod");
+  api_def_struct_ui_text(sapi, "Simplify Modifier", "Simplify Stroke modifier");
+  api_def_struct_stype(sapi, "SimplifyPenModData");
+  api_def_struct_ui_icon(srna, ICON_MOD_SIMPLIFY);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "rna_PenMod_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
                                  NULL,
-                                 "rna_SimplifyGpencilModifier_material_set",
+                                 "api_SimplifyPenMod_material_set",
                                  NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(prop, "Material", "Material used for filtering effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+                                 "api_PenMod_material_poll");
+  api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "factor");
-  RNA_def_property_range(prop, 0, 100.0);
-  RNA_def_property_ui_range(prop, 0, 5.0f, 1.0f, 3);
-  RNA_def_property_ui_text(prop, "Factor", "Factor of Simplify");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "factor");
+  api_def_prop_range(prop, 0, 100.0);
+  api_def_prop_ui_range(prop, 0, 5.0f, 1.0f, 3);
+  api_def_prop_ui_text(prop, "Factor", "Factor of Simplify");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SIMPLIFY_INVERT_LAYER);
   RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
