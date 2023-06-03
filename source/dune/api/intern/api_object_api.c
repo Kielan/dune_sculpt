@@ -418,22 +418,22 @@ static void api_Object_to_mesh_clear(Object *object)
   dune_object_to_mesh_clear(object);
 }
 
-static Curve *rna_Object_to_curve(Object *object,
+static Curve *api_Object_to_curve(Object *object,
                                   ReportList *reports,
                                   Graph *graph,
                                   bool apply_mods)
 {
   if (!ELEM(object->type, OB_FONT, OB_CURVES_LEGACY)) {
-    BKE_report(reports, RPT_ERROR, "Object is not a curve or a text");
+    dune_report(reports, RPT_ERROR, "Object is not a curve or a text");
     return NULL;
   }
 
-  if (depsgraph == NULL) {
-    BKE_report(reports, RPT_ERROR, "Invalid depsgraph");
+  if (graph == NULL) {
+    dune_report(reports, RPT_ERROR, "Invalid depsgraph");
     return NULL;
   }
 
-  return BKE_object_to_curve(object, depsgraph, apply_modifiers);
+  return dune_object_to_curve(object, graph, apply_modifiers);
 }
 
 static void rna_Object_to_curve_clear(Object *object)
@@ -441,39 +441,39 @@ static void rna_Object_to_curve_clear(Object *object)
   BKE_object_to_curve_clear(object);
 }
 
-static PointerRNA rna_Object_shape_key_add(
-    Object *ob, bContext *C, ReportList *reports, const char *name, bool from_mix)
+static ApiPtr api_Object_shape_key_add(
+    Object *ob, Cxt *C, ReportList *reports, const char *name, bool from_mix)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
   KeyBlock *kb = NULL;
 
-  if ((kb = BKE_object_shapekey_insert(bmain, ob, name, from_mix))) {
-    PointerRNA keyptr;
+  if ((kb = dune_object_shapekey_insert(main, ob, name, from_mix))) {
+    ApiPtr keyptr;
 
-    RNA_pointer_create((ID *)BKE_key_from_object(ob), &RNA_ShapeKey, kb, &keyptr);
-    WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
+    api_ptr_create((Id *)dune_key_from_object(ob), &ApiShapeKey, kb, &keyptr);
+    wm_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    DEG_relations_tag_update(bmain);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_relations_tag_update(main);
 
     return keyptr;
   }
   else {
-    BKE_reportf(reports, RPT_ERROR, "Object '%s' does not support shapes", ob->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, "Object '%s' does not support shapes", ob->id.name + 2);
     return PointerRNA_NULL;
   }
 }
 
-static void rna_Object_shape_key_remove(Object *ob,
+static void api_Object_shape_key_remove(Object *ob,
                                         Main *bmain,
                                         ReportList *reports,
                                         PointerRNA *kb_ptr)
 {
   KeyBlock *kb = kb_ptr->data;
-  Key *key = BKE_key_from_object(ob);
+  Key *key = dune_key_from_object(ob);
 
   if ((key == NULL) || BLI_findindex(&key->block, kb) == -1) {
-    BKE_report(reports, RPT_ERROR, "ShapeKey not found");
+    dune_report(reports, RPT_ERROR, "ShapeKey not found");
     return;
   }
 
