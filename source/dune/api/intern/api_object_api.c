@@ -385,16 +385,16 @@ static void api_Object_crazyspace_displacement_to_original(Object *object,
       object, reports, vertex_index, displacement_deformed, r_displacement);
 }
 
-static void rna_Object_crazyspace_eval_clear(Object *object)
+static void api_Object_crazyspace_eval_clear(Object *object)
 {
-  BKE_crazyspace_api_eval_clear(object);
+  dune_crazyspace_api_eval_clear(object);
 }
 
 /* copied from Mesh_getFromObject and adapted to RNA interface */
-static Mesh *rna_Object_to_mesh(Object *object,
+static Mesh *api_Object_to_mesh(Object *object,
                                 ReportList *reports,
                                 bool preserve_all_data_layers,
-                                Depsgraph *depsgraph)
+                                Graph *graph)
 {
   /* TODO(sergey): Make it more re-usable function, de-duplicate with
    * rna_Main_meshes_new_from_object. */
@@ -433,12 +433,12 @@ static Curve *api_Object_to_curve(Object *object,
     return NULL;
   }
 
-  return dune_object_to_curve(object, graph, apply_modifiers);
+  return dune_object_to_curve(object, graph, apply_mods);
 }
 
-static void rna_Object_to_curve_clear(Object *object)
+static void api_Object_to_curve_clear(Object *object)
 {
-  BKE_object_to_curve_clear(object);
+  dune_object_to_curve_clear(object);
 }
 
 static ApiPtr api_Object_shape_key_add(
@@ -460,7 +460,7 @@ static ApiPtr api_Object_shape_key_add(
   }
   else {
     dune_reportf(reports, RPT_ERROR, "Object '%s' does not support shapes", ob->id.name + 2);
-    return PointerRNA_NULL;
+    return ApiPtr_NULL;
   }
 }
 
@@ -477,43 +477,43 @@ static void api_Object_shape_key_remove(Object *ob,
     return;
   }
 
-  if (!BKE_object_shapekey_remove(bmain, ob, kb)) {
-    BKE_report(reports, RPT_ERROR, "Could not remove ShapeKey");
+  if (!dune_object_shapekey_remove(bmain, ob, kb)) {
+    dune_report(reports, RPT_ERROR, "Could not remove ShapeKey");
     return;
   }
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 
-  RNA_POINTER_INVALIDATE(kb_ptr);
+  API_PTR_INVALIDATE(kb_ptr);
 }
 
-static void rna_Object_shape_key_clear(Object *ob, Main *bmain)
+static void api_Object_shape_key_clear(Object *ob, Main *main)
 {
-  BKE_object_shapekey_free(bmain, ob);
+  dune_object_shapekey_free(main, ob);
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
 #  if 0
-static void rna_Mesh_assign_verts_to_group(
-    Object *ob, bDeformGroup *group, int *indices, int totindex, float weight, int assignmode)
+static void api_Mesh_assign_verts_to_group(
+    Object *ob, DeformGroup *group, int *indices, int totindex, float weight, int assignmode)
 {
   if (ob->type != OB_MESH) {
-    BKE_report(reports, RPT_ERROR, "Object should be of mesh type");
+    dune_report(reports, RPT_ERROR, "Object should be of mesh type");
     return;
   }
 
   Mesh *me = (Mesh *)ob->data;
-  int group_index = BLI_findlink(&ob->defbase, group);
+  int group_index = lib_findlink(&ob->defbase, group);
   if (group_index == -1) {
-    BKE_report(reports, RPT_ERROR, "No vertex groups assigned to mesh");
+    dune_report(reports, RPT_ERROR, "No vertex groups assigned to mesh");
     return;
   }
 
   if (assignmode != WEIGHT_REPLACE && assignmode != WEIGHT_ADD && assignmode != WEIGHT_SUBTRACT) {
-    BKE_report(reports, RPT_ERROR, "Bad assignment mode");
+    dune_report(reports, RPT_ERROR, "Bad assignment mode");
     return;
   }
 
@@ -525,7 +525,7 @@ static void rna_Mesh_assign_verts_to_group(
   /* Loop list adding verts to group. */
   for (i = 0; i < totindex; i++) {
     if (i < 0 || i >= me->totvert) {
-      BKE_report(reports, RPT_ERROR, "Bad vertex index in list");
+      dune_report(reports, RPT_ERROR, "Bad vertex index in list");
       return;
     }
 
@@ -541,12 +541,12 @@ static int mesh_looptri_to_poly_index(Mesh *me_eval, const MLoopTri *lt)
   return index_mp_to_orig ? index_mp_to_orig[lt->poly] : lt->poly;
 }
 
-/* TODO(sergey): Make the Python API more clear that evaluation might happen, or require
+/* TODO: Make the Python API more clear that evaluation might happen, or require
  * passing fully evaluated depsgraph. */
 static Object *eval_object_ensure(Object *ob,
-                                  bContext *C,
+                                  Cxt *C,
                                   ReportList *reports,
-                                  PointerRNA *rnaptr_depsgraph)
+                                  ApiPtr *apiptr_graph)
 {
   if (ob->runtime.data_eval == NULL) {
     Object *ob_orig = ob;
