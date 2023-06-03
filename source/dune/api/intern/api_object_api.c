@@ -3,26 +3,26 @@
 #include <string.h>
 #include <time.h>
 
-#include "BLI_kdopbvh.h"
-#include "BLI_utildefines.h"
+#include "lib_kdopbvh.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "DNA_constraint_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "type_constraint.h"
+#include "type_layer.h"
+#include "type_modifier.h"
+#include "type_object.h"
 
-#include "BKE_gpencil_curve.h"
-#include "BKE_layer.h"
+#include "dune_pen_curve.h"
+#include "dune_layer.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "ED_outliner.h"
+#include "ed_outliner.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-static const EnumPropertyItem space_items[] = {
+static const EnumPropItem space_items[] = {
     {CONSTRAINT_SPACE_WORLD, "WORLD", 0, "World Space", "The most global space in Blender"},
     {CONSTRAINT_SPACE_POSE,
      "POSE",
@@ -38,24 +38,24 @@ static const EnumPropertyItem space_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "BKE_bvhutils.h"
-#  include "BKE_constraint.h"
-#  include "BKE_context.h"
-#  include "BKE_crazyspace.h"
-#  include "BKE_customdata.h"
-#  include "BKE_global.h"
-#  include "BKE_layer.h"
-#  include "BKE_main.h"
-#  include "BKE_mball.h"
-#  include "BKE_mesh.h"
-#  include "BKE_modifier.h"
-#  include "BKE_object.h"
-#  include "BKE_report.h"
-#  include "BKE_vfont.h"
+#  include "dune_bvhutils.h"
+#  include "dune_constraint.h"
+#  include "dune_context.h"
+#  include "dune_crazyspace.h"
+#  include "dune_customdata.h"
+#  include "dune_global.h"
+#  include "dune_layer.h"
+#  include "dune_main.h"
+#  include "dune_mball.h"
+#  include "dune_mesh.h"
+#  include "dune_modifier.h"
+#  include "dune_object.h"
+#  include "dune_report.h"
+#  include "dune_vfont.h"
 
 #  include "ED_object.h"
 #  include "ED_screen.h"
