@@ -351,37 +351,37 @@ static void api_Object_calc_matrix_camera(Object *ob,
 }
 
 static void api_Object_camera_fit_coords(
-    Object *ob, Graph *depsgraph, int num_cos, float *cos, float co_ret[3], float *scale_ret)
+    Object *ob, Graph *graph, int num_cos, float *cos, float co_ret[3], float *scale_ret)
 {
-  dunr_camera_view_frame_fit_to_coords(
+  dune_camera_view_frame_fit_to_coords(
       graph, (const float(*)[3])cos, num_cos / 3, ob, co_ret, scale_ret);
 }
 
-static void rna_Object_crazyspace_eval(Object *object,
+static void api_Object_crazyspace_eval(Object *object,
                                        ReportList *reports,
-                                       Depsgraph *depsgraph,
+                                       Graph *graph,
                                        Scene *scene)
 {
-  BKE_crazyspace_api_eval(depsgraph, scene, object, reports);
+  dune_crazyspace_api_eval(graph, scene, object, reports);
 }
 
-static void rna_Object_crazyspace_displacement_to_deformed(Object *object,
+static void api_Object_crazyspace_displacement_to_deformed(Object *object,
                                                            ReportList *reports,
                                                            const int vertex_index,
                                                            float displacement[3],
                                                            float r_displacement_deformed[3])
 {
-  BKE_crazyspace_api_displacement_to_deformed(
+  dune_crazyspace_api_displacement_to_deformed(
       object, reports, vertex_index, displacement, r_displacement_deformed);
 }
 
-static void rna_Object_crazyspace_displacement_to_original(Object *object,
+static void api_Object_crazyspace_displacement_to_original(Object *object,
                                                            ReportList *reports,
                                                            const int vertex_index,
                                                            float displacement_deformed[3],
                                                            float r_displacement[3])
 {
-  BKE_crazyspace_api_displacement_to_original(
+  dune_crazyspace_api_displacement_to_original(
       object, reports, vertex_index, displacement_deformed, r_displacement);
 }
 
