@@ -1,14 +1,14 @@
 #include <stdlib.h>
 
-#include "DNA_cloth_types.h"
-#include "DNA_dynamicpaint_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_pointcache_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
+#include "types_cloth_types.h"
+#include "types_dynamicpaint_types.h"
+#include "types_fluid_types.h"
+#include "types_object_force_types.h"
+#include "types_object_types.h"
+#include "types_particle_types.h"
+#include "types_pointcache_types.h"
+#include "types_rigidbody_types.h"
+#include "types_scene_types.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
