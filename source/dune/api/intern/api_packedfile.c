@@ -1,17 +1,17 @@
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "DNA_packedFile_types.h"
+#include "types_packedFile.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "BKE_packedFile.h"
+#include "dune_packedFile.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-const EnumPropertyItem rna_enum_unpack_method_items[] = {
+const EnumPropItem api_enum_unpack_method_items[] = {
     {PF_REMOVE, "REMOVE", 0, "Remove Pack", ""},
     {PF_USE_LOCAL, "USE_LOCAL", 0, "Use Local File", ""},
     {PF_WRITE_LOCAL, "WRITE_LOCAL", 0, "Write Local File (overwrite existing)", ""},
@@ -20,16 +20,16 @@ const EnumPropertyItem rna_enum_unpack_method_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-static void rna_PackedImage_data_get(PointerRNA *ptr, char *value)
+static void api_PackedImage_data_get(ApiPtr *ptr, char *value)
 {
   PackedFile *pf = (PackedFile *)ptr->data;
   memcpy(value, pf->data, (size_t)pf->size);
   value[pf->size] = '\0';
 }
 
-static int rna_PackedImage_data_len(PointerRNA *ptr)
+static int api_PackedImage_data_len(ApiPtr *ptr)
 {
   PackedFile *pf = (PackedFile *)ptr->data;
   return pf->size; /* No need to include trailing NULL char here! */
@@ -37,7 +37,7 @@ static int rna_PackedImage_data_len(PointerRNA *ptr)
 
 #else
 
-void RNA_def_packedfile(BlenderRNA *brna)
+void api_def_packedfile(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
