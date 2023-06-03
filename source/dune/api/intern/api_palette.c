@@ -168,10 +168,10 @@ static void api_def_palette(DuneApi *dapi)
 void api_def_palette(DuneApi *dapi)
 {
   /* *** Non-Animated *** */
-  RNA_define_animate_sdna(false);
-  rna_def_palettecolor(brna);
-  rna_def_palette(brna);
-  RNA_define_animate_sdna(true);
+  api_define_animate_stype(false);
+  api_def_palettecolor(dapi);
+  api_def_palette(dapi);
+  api_define_animate_stype(true);
 }
 
 #endif
