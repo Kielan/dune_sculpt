@@ -86,22 +86,22 @@ static void api_Palette_active_color_set(ApiPtr *ptr,
 #else
 
 /* palette.colors */
-static void rna_def_palettecolors(DuneApi *dapi, ApiProp *cprop)
+static void api_def_palettecolors(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "PaletteColors");
-  srna = RNA_def_struct(brna, "PaletteColors", NULL);
-  RNA_def_struct_sdna(srna, "Palette");
-  RNA_def_struct_ui_text(srna, "Palette Splines", "Collection of palette colors");
+  api_def_prop_sapi(cprop, "PaletteColors");
+  sapi = api_def_struct(dapi, "PaletteColors", NULL);
+  api_def_struct_stype(sapi, "Palette");
+  api_def_struct_ui_text(sapi, "Palette Splines", "Collection of palette colors");
 
-  func = RNA_def_function(srna, "new", "rna_Palette_color_new");
-  RNA_def_function_ui_description(func, "Add a new color to the palette");
-  parm = RNA_def_pointer(func, "color", "PaletteColor", "", "The newly created color");
+  fn = api_def_fn(sapi, "new", "rna_Palette_color_new");
+  api_def_fn_ui_description(func, "Add a new color to the palette");
+  parm = api_def_ptr(fn, "color", "PaletteColor", "", "The newly created color");
   RNA_def_function_return(func, parm);
 
   func = RNA_def_function(srna, "remove", "rna_Palette_color_remove");
