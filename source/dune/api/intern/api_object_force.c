@@ -198,7 +198,7 @@ static void api_Cache_change(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *p
 
   cache->flag |= PTCACHE_OUTDATED;
 
-  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
+  PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
   graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
 
@@ -233,12 +233,12 @@ static void api_Cache_toggle_disk_cache(Main *UNUSED(main), Scene *UNUSED(scene)
   }
 }
 
-static void rna_Cache_idname_change(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Cache_idname_change(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
     return;
   }
 
@@ -248,20 +248,20 @@ static void rna_Cache_idname_change(Main *UNUSED(bmain), Scene *UNUSED(scene), P
   /* TODO: check for proper characters */
 
   if (cache->flag & PTCACHE_EXTERNAL) {
-    PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+    PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
     if (pid.cache) {
-      BKE_ptcache_load_external(&pid);
+      dune_ptcache_load_external(&pid);
     }
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    WM_main_add_notifier(NC_OBJECT | ND_POINTCACHE, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    wm_main_add_notifier(NC_OBJECT | ND_POINTCACHE, ob);
   }
   else {
-    PTCacheID *pid = NULL, *pid2 = NULL;
-    ListBase pidlist;
+    PTCacheId *pid = NULL, *pid2 = NULL;
+    List pidlist;
 
-    BKE_ptcache_ids_from_object(&pidlist, ob, scene, 0);
+    dune_ptcache_ids_from_object(&pidlist, ob, scene, 0);
 
     for (pid = pidlist.first; pid; pid = pid->next) {
       if (pid->cache == cache) {
@@ -269,22 +269,22 @@ static void rna_Cache_idname_change(Main *UNUSED(bmain), Scene *UNUSED(scene), P
       }
       else if (cache->name[0] != '\0' && STREQ(cache->name, pid->cache->name)) {
         /* TODO: report "name exists" to user. */
-        BLI_strncpy(cache->name, cache->prev_name, sizeof(cache->name));
+        lib_strncpy(cache->name, cache->prev_name, sizeof(cache->name));
         use_new_name = false;
       }
     }
 
     if (use_new_name) {
-      BLI_filename_make_safe(cache->name);
+      lib_filename_make_safe(cache->name);
 
       if (pid2 && cache->flag & PTCACHE_DISK_CACHE) {
         char old_name[80];
         char new_name[80];
 
-        BLI_strncpy(old_name, cache->prev_name, sizeof(old_name));
-        BLI_strncpy(new_name, cache->name, sizeof(new_name));
+        lib_strncpy(old_name, cache->prev_name, sizeof(old_name));
+        lib_strncpy(new_name, cache->name, sizeof(new_name));
 
-        BKE_ptcache_disk_cache_rename(pid2, old_name, new_name);
+        dune_ptcache_disk_cache_rename(pid2, old_name, new_name);
       }
 
       BLI_strncpy(cache->prev_name, cache->name, sizeof(cache->prev_name));
@@ -341,7 +341,7 @@ static int api_Cache_active_point_cache_index_get(ApiPtr *ptr)
   }
 
   PointCache *cache = ptr->data;
-  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
+  PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (pid.cache) {
     num = lib_findindex(pid.ptcaches, cache);
@@ -470,7 +470,7 @@ static bool api_SoftBodySettings_stiff_quads_get(ApiPtr *ptr)
   return (((data->softflag) & OB_SB_QUADS) != 0);
 }
 
-static void rna_SoftBodySettings_stiff_quads_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_stiff_quads_set(ApiPtr *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -481,13 +481,13 @@ static void rna_SoftBodySettings_stiff_quads_set(PointerRNA *ptr, bool value)
   }
 }
 
-static bool rna_SoftBodySettings_self_collision_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_self_collision_get(ApiPtr *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_SELF) != 0);
 }
 
-static void rna_SoftBodySettings_self_collision_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_self_collision_set(ApiPtr *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -498,7 +498,7 @@ static void rna_SoftBodySettings_self_collision_set(PointerRNA *ptr, bool value)
   }
 }
 
-static int rna_SoftBodySettings_new_aero_get(PointerRNA *ptr)
+static int api_SoftBodySettings_new_aero_get(ApiPtr *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (data->softflag & OB_SB_AERO_ANGLE) {
@@ -509,7 +509,7 @@ static int rna_SoftBodySettings_new_aero_get(PointerRNA *ptr)
   }
 }
 
-static void rna_SoftBodySettings_new_aero_set(PointerRNA *ptr, int value)
+static void api_SoftBodySettings_new_aero_set(ApiPtr *ptr, int value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value == 1) {
@@ -520,13 +520,13 @@ static void rna_SoftBodySettings_new_aero_set(PointerRNA *ptr, int value)
   }
 }
 
-static bool rna_SoftBodySettings_face_collision_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_face_collision_get(ApiPtr *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_FACECOLL) != 0);
 }
 
-static void rna_SoftBodySettings_face_collision_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_face_collision_set(PointerRNA *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -537,13 +537,13 @@ static void rna_SoftBodySettings_face_collision_set(PointerRNA *ptr, bool value)
   }
 }
 
-static bool rna_SoftBodySettings_edge_collision_get(PointerRNA *ptr)
+static bool api_SoftBodySettings_edge_collision_get(PointerRNA *ptr)
 {
   Object *data = (Object *)(ptr->owner_id);
   return (((data->softflag) & OB_SB_EDGECOLL) != 0);
 }
 
-static void rna_SoftBodySettings_edge_collision_set(PointerRNA *ptr, bool value)
+static void api_SoftBodySettings_edge_collision_set(PointerRNA *ptr, bool value)
 {
   Object *data = (Object *)(ptr->owner_id);
   if (value) {
@@ -554,54 +554,54 @@ static void rna_SoftBodySettings_edge_collision_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_SoftBodySettings_goal_vgroup_get(PointerRNA *ptr, char *value)
+static void api_SoftBodySettings_goal_vgroup_get(ApiPtr *ptr, char *value)
 {
   SoftBody *sb = (SoftBody *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sb->vertgroup);
+  api_object_vgroup_name_index_get(ptr, value, sb->vertgroup);
 }
 
-static int rna_SoftBodySettings_goal_vgroup_length(PointerRNA *ptr)
+static int api_SoftBodySettings_goal_vgroup_length(ApiPtr *ptr)
 {
   SoftBody *sb = (SoftBody *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sb->vertgroup);
+  return api_object_vgroup_name_index_length(ptr, sb->vertgroup);
 }
 
-static void rna_SoftBodySettings_goal_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_SoftBodySettings_goal_vgroup_set(ApiPtr *ptr, const char *value)
 {
   SoftBody *sb = (SoftBody *)ptr->data;
   rna_object_vgroup_name_index_set(ptr, value, &sb->vertgroup);
 }
 
-static void rna_SoftBodySettings_mass_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_SoftBodySettings_mass_vgroup_set(ApiPtr *ptr, const char *value)
 {
   SoftBody *sb = (SoftBody *)ptr->data;
   rna_object_vgroup_name_set(ptr, value, sb->namedVG_Mass, sizeof(sb->namedVG_Mass));
 }
 
-static void rna_SoftBodySettings_spring_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_SoftBodySettings_spring_vgroup_set(ApiPtr *ptr, const char *value)
 {
   SoftBody *sb = (SoftBody *)ptr->data;
   rna_object_vgroup_name_set(ptr, value, sb->namedVG_Spring_K, sizeof(sb->namedVG_Spring_K));
 }
 
-static char *rna_SoftBodySettings_path(PointerRNA *ptr)
+static char *api_SoftBodySettings_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Softbody);
+  ModData *md = (ModData *)dune_mods_findby_type(ob, eModType_Softbody);
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("modifiers[\"%s\"].settings", name_esc);
 }
 
-static int particle_id_check(PointerRNA *ptr)
+static int particle_id_check(ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   return (GS(id->name) == ID_PA);
 }
 
-static void rna_FieldSettings_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_FieldSettings_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   if (particle_id_check(ptr)) {
     ParticleSettings *part = (ParticleSettings *)ptr->owner_id;
@@ -616,10 +616,10 @@ static void rna_FieldSettings_update(Main *UNUSED(bmain), Scene *UNUSED(scene), 
       part->pd2->tex = NULL;
     }
 
-    DEG_id_tag_update(&part->id,
+    graph_id_tag_update(&part->id,
                       ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION |
                           ID_RECALC_PSYS_RESET);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
   }
   else {
     Object *ob = (Object *)ptr->owner_id;
@@ -630,30 +630,30 @@ static void rna_FieldSettings_update(Main *UNUSED(bmain), Scene *UNUSED(scene), 
     }
 
     /* In the case of specific force-fields that are using the #EffectorData's normal, we need to
-     * rebuild mesh and BVH-tree for #SurfaceModifier to work correctly. */
+     * rebuild mesh and BVH-tree for SurfaceMod to work correctly. */
     if (ELEM(ob->pd->shape, PFIELD_SHAPE_SURFACE, PFIELD_SHAPE_POINTS) ||
         ob->pd->forcefield == PFIELD_GUIDE) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
   }
 }
 
-static void rna_FieldSettings_shape_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_FieldSettings_shape_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   if (!particle_id_check(ptr)) {
     Object *ob = (Object *)ptr->owner_id;
-    ED_object_check_force_modifiers(bmain, scene, ob);
+    ed_object_check_force_mods(main, scene, ob);
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
-    WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+    wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
   }
 }
 
-static void rna_FieldSettings_type_set(PointerRNA *ptr, int value)
+static void api_FieldSettings_type_set(ApiPtr *ptr, int value)
 {
   PartDeflect *part_deflect = (PartDeflect *)ptr->data;
 
@@ -671,28 +671,28 @@ static void rna_FieldSettings_type_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_FieldSettings_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_FieldSettings_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(bmain);
 
   if (particle_id_check(ptr)) {
-    DEG_id_tag_update(ptr->owner_id,
+    graph_id_tag_update(ptr->owner_id,
                       ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION |
                           ID_RECALC_PSYS_RESET);
   }
   else {
     Object *ob = (Object *)ptr->owner_id;
 
-    rna_FieldSettings_shape_update(bmain, scene, ptr);
+    api_FieldSettings_shape_update(main, scene, ptr);
 
     if (ob->type == OB_CURVES_LEGACY && ob->pd->forcefield == PFIELD_GUIDE) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
+      graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
     }
     else {
-      DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
+      graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
     }
 
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
   }
 }
 
@@ -741,18 +741,18 @@ static void api_EffectorWeight_update(Main *UNUSED(bmain), Scene *UNUSED(scene),
   }
 }
 
-static void rna_EffectorWeight_dependency_update(Main *bmain,
+static void api_EffectorWeight_dependency_update(Main *main,
                                                  Scene *UNUSED(scene),
-                                                 PointerRNA *ptr)
+                                                 ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(bmain);
 
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_RESET);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY | ID_RECALC_PSYS_RESET);
 
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
 }
 
-static char *rna_EffectorWeight_path(PointerRNA *ptr)
+static char *api_EffectorWeight_path(ApiPtr *ptr)
 {
   EffectorWeights *ew = (EffectorWeights *)ptr->data;
   /* Check through all possible places the settings can be to find the right one */
@@ -762,62 +762,62 @@ static char *rna_EffectorWeight_path(PointerRNA *ptr)
     ParticleSettings *part = (ParticleSettings *)ptr->owner_id;
 
     if (part->effector_weights == ew) {
-      return BLI_strdup("effector_weights");
+      return lib_strdup("effector_weights");
     }
   }
   else {
-    ID *id = ptr->owner_id;
+    Id *id = ptr->owner_id;
 
     if (id && GS(id->name) == ID_SCE) {
       const Scene *scene = (Scene *)id;
       const RigidBodyWorld *rbw = scene->rigidbody_world;
 
       if (rbw->effector_weights == ew) {
-        return BLI_strdup("rigidbody_world.effector_weights");
+        return lib_strdup("rigidbody_world.effector_weights");
       }
     }
 
     Object *ob = (Object *)id;
-    ModifierData *md;
+    ModData *md;
 
     /* check softbody modifier */
-    md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Softbody);
+    md = (ModData *)dune_mods_findby_type(ob, eModType_Softbody);
     if (md) {
       /* no pointer from modifier data to actual softbody storage, would be good to add */
       if (ob->soft->effector_weights == ew) {
         char name_esc[sizeof(md->name) * 2];
-        BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-        return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", name_esc);
+        lib_str_escape(name_esc, md->name, sizeof(name_esc));
+        return lib_sprintfn("modifiers[\"%s\"].settings.effector_weights", name_esc);
       }
     }
 
     /* check cloth modifier */
-    md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Cloth);
+    md = (ModData *)dune_mods_findby_type(ob, eModType_Cloth);
     if (md) {
-      ClothModifierData *cmd = (ClothModifierData *)md;
+      ClothModData *cmd = (ClothModData *)md;
       if (cmd->sim_parms->effector_weights == ew) {
         char name_esc[sizeof(md->name) * 2];
-        BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-        return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", name_esc);
+        lib_str_escape(name_esc, md->name, sizeof(name_esc));
+        return lib_sprintfn("mods[\"%s\"].settings.effector_weights", name_esc);
       }
     }
 
     /* check fluid modifier */
-    md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
+    md = (ModData *)dune_mods_findby_type(ob, eModType_Fluid);
     if (md) {
-      FluidModifierData *fmd = (FluidModifierData *)md;
+      FluidModData *fmd = (FluidModData *)md;
       if (fmd->type == MOD_FLUID_TYPE_DOMAIN && fmd->domain &&
           fmd->domain->effector_weights == ew) {
         char name_esc[sizeof(md->name) * 2];
-        BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-        return BLI_sprintfN("modifiers[\"%s\"].domain_settings.effector_weights", name_esc);
+        lib_str_escape(name_esc, md->name, sizeof(name_esc));
+        return lib_sprintfn("mods[\"%s\"].domain_settings.effector_weights", name_esc);
       }
     }
 
     /* check dynamic paint modifier */
-    md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_DynamicPaint);
+    md = (ModData *)dune_mods_findby_type(ob, eModifierType_DynamicPaint);
     if (md) {
-      DynamicPaintModifierData *pmd = (DynamicPaintModifierData *)md;
+      DynamicPaintModData *pmd = (DynamicPaintModifierData *)md;
 
       if (pmd->canvas) {
         DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
@@ -827,10 +827,10 @@ static char *rna_EffectorWeight_path(PointerRNA *ptr)
             char name_esc[sizeof(md->name) * 2];
             char name_esc_surface[sizeof(surface->name) * 2];
 
-            BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-            BLI_str_escape(name_esc_surface, surface->name, sizeof(name_esc_surface));
-            return BLI_sprintfN(
-                "modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]"
+            lib_str_escape(name_esc, md->name, sizeof(name_esc));
+            lib_str_escape(name_esc_surface, surface->name, sizeof(name_esc_surface));
+            return lib_sprintfn(
+                "mods[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]"
                 ".effector_weights",
                 name_esc,
                 name_esc_surface);
@@ -842,31 +842,31 @@ static char *rna_EffectorWeight_path(PointerRNA *ptr)
   return NULL;
 }
 
-static void rna_CollisionSettings_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_CollisionSettings_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Collision);
+  ModData *md = dune_mods_findby_type(ob, eModType_Collision);
 
   /* add the modifier if needed */
   if (ob->pd->deflect && !md) {
-    ED_object_modifier_add(NULL, bmain, scene, ob, NULL, eModifierType_Collision);
+    ed_object_mod_add(NULL, main, scene, ob, NULL, eModType_Collision);
   }
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
-static void rna_CollisionSettings_update(Main *UNUSED(bmain),
+static void api_CollisionSettings_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *ptr)
+                                         ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
-static void rna_softbody_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_softbody_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
