@@ -146,26 +146,26 @@ static void api_def_palettecolor(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0, 1.0);
-  api_def_prop_float_sdna(prop, NULL, "value");
+  api_def_prop_float_stype(prop, NULL, "value");
   api_def_prop_ui_text(prop, "Weight", "");
   api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 }
 
-static void rna_def_palette(BlenderRNA *brna)
+static void api_def_palette(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Palette", "ID");
-  RNA_def_struct_ui_text(srna, "Palette", "");
-  RNA_def_struct_ui_icon(srna, ICON_COLOR);
+  srna = api_def_struct(dapi, "Palette", "ID");
+  api_def_struct_ui_text(sapi, "Palette", "");
+  api_def_struct_ui_icon(sapi, ICON_COLOR);
 
-  prop = RNA_def_property(srna, "colors", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "PaletteColor");
-  rna_def_palettecolors(brna, prop);
+  prop = api_def_prop(sapi, "colors", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "PaletteColor");
+  api_def_palettecolors(dapi, prop);
 }
 
-void RNA_def_palette(BlenderRNA *brna)
+void api_def_palette(DuneApi *dapi)
 {
   /* *** Non-Animated *** */
   RNA_define_animate_sdna(false);
