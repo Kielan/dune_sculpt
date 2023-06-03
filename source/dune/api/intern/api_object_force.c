@@ -317,58 +317,58 @@ static void api_Cache_active_point_cache_index_range(
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return;
   }
 
   PointCache *cache = ptr->data;
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (pid.cache) {
-    *max = max_ii(0, BLI_listbase_count(pid.ptcaches) - 1);
+    *max = max_ii(0, lib_list_count(pid.ptcaches) - 1);
   }
 }
 
-static int rna_Cache_active_point_cache_index_get(PointerRNA *ptr)
+static int api_Cache_active_point_cache_index_get(ApiPtr *ptr)
 {
   int num = 0;
 
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return num;
   }
 
   PointCache *cache = ptr->data;
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (pid.cache) {
-    num = BLI_findindex(pid.ptcaches, cache);
+    num = lib_findindex(pid.ptcaches, cache);
   }
 
   return num;
 }
 
-static void rna_Cache_active_point_cache_index_set(struct PointerRNA *ptr, int value)
+static void api_Cache_active_point_cache_index_set(struct ApiPtr *ptr, int value)
 {
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return;
   }
 
   PointCache *cache = ptr->data;
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (pid.cache) {
-    *(pid.cache_ptr) = BLI_findlink(pid.ptcaches, value);
+    *(pid.cache_ptr) = lib_findlink(pid.ptcaches, value);
   }
 }
 
-static void rna_PointCache_frame_step_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_PointCache_frame_step_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   *min = 1;
   *max = 20;
@@ -376,50 +376,50 @@ static void rna_PointCache_frame_step_range(
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return;
   }
 
   PointCache *cache = ptr->data;
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (pid.cache) {
     *max = pid.max_step;
   }
 }
 
-int rna_Cache_info_length(PointerRNA *ptr)
+int api_Cache_info_length(ApiPtr *ptr)
 {
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return 0;
   }
 
   PointCache *cache = (PointCache *)ptr->data;
 
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheId pid = dune_ptcache_id_find(ob, scene, cache);
 
   if (cache->flag & PTCACHE_FLAG_INFO_DIRTY) {
-    BKE_ptcache_update_info(&pid);
+    dune_ptcache_update_info(&pid);
   }
 
   return (int)strlen(cache->info);
 }
 
-static char *rna_CollisionSettings_path(PointerRNA *UNUSED(ptr))
+static char *api_CollisionSettings_path(ApiPtr *UNUSED(ptr))
 {
   /* both methods work ok, but return the shorter path */
 #  if 0
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md = (ModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Collision);
+  ModData *md = (ModData *)dune_mods_findby_type(ob, eModType_Collision);
 
   if (md) {
     char name_esc[sizeof(md->name) * 2];
 
-    BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-    return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
+    lib_str_escape(name_esc, md->name, sizeof(name_esc));
+    return lib_sprintfn("modifiers[\"%s\"].settings", name_esc);
   }
   else {
     return BLI_strdup("");
