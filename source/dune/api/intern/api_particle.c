@@ -853,11 +853,11 @@ static void api_Particle_target_reset(Main *bmain, Scene *UNUSED(scene), Pointer
 
     psys->recalc = ID_RECALC_PSYS_RESET;
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    DEG_relations_tag_update(bmain);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_relations_tag_update(main);
   }
 
-  WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
 }
 
 static void rna_Particle_target_redo(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
@@ -869,41 +869,41 @@ static void rna_Particle_target_redo(Main *UNUSED(bmain), Scene *UNUSED(scene), 
 
     psys->recalc = ID_RECALC_PSYS_REDO;
 
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+    grapg_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
   }
 }
 
-static void rna_Particle_hair_dynamics_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Particle_hair_dynamics_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
 
   if (psys && !psys->clmd) {
-    psys->clmd = (ClothModifierData *)BKE_modifier_new(eModifierType_Cloth);
+    psys->clmd = (ClothModData *)dune_mod_new(eModType_Cloth);
     psys->clmd->sim_parms->goalspring = 0.0f;
     psys->clmd->sim_parms->flags |= CLOTH_SIMSETTINGS_FLAG_RESIST_SPRING_COMPRESS;
     psys->clmd->coll_parms->flags &= ~CLOTH_COLLSETTINGS_FLAG_SELF;
-    rna_Particle_redo(bmain, scene, ptr);
+    api_Particle_redo(bmain, scene, ptr);
   }
   else {
-    WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+    wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
   }
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  DEG_relations_tag_update(bmain);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  graph_relations_tag_update(main);
 }
 
-static PointerRNA rna_particle_settings_get(PointerRNA *ptr)
+static ApiPtr api_particle_settings_get(ApiPtr *ptr)
 {
   ParticleSystem *psys = (ParticleSystem *)ptr->data;
   ParticleSettings *part = psys->part;
 
-  return rna_pointer_inherit_refine(ptr, &RNA_ParticleSettings, part);
+  return api_ptr_inherit_refine(ptr, &ApiParticleSettings, part);
 }
 
-static void rna_particle_settings_set(PointerRNA *ptr,
-                                      PointerRNA value,
+static void api_particle_settings_set(ApiPtr *ptr,
+                                      ApiPtr value,
                                       struct ReportList *UNUSED(reports))
 {
   Object *ob = (Object *)ptr->owner_id;
@@ -925,7 +925,7 @@ static void rna_particle_settings_set(PointerRNA *ptr,
     }
   }
 }
-static void rna_Particle_abspathtime_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Particle_abspathtime_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   float delta = settings->end + settings->lifetime - settings->sta;
@@ -937,9 +937,9 @@ static void rna_Particle_abspathtime_update(Main *bmain, Scene *scene, PointerRN
     settings->path_start = (settings->path_start - settings->sta) / delta;
     settings->path_end = (settings->path_end - settings->sta) / delta;
   }
-  rna_Particle_redo(bmain, scene, ptr);
+  api_Particle_redo(main, scene, ptr);
 }
-static void rna_PartSettings_start_set(struct PointerRNA *ptr, float value)
+static void api_PartSettings_start_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
 
@@ -960,7 +960,7 @@ static void rna_PartSettings_start_set(struct PointerRNA *ptr, float value)
   settings->sta = value;
 }
 
-static void rna_PartSettings_end_set(struct PointerRNA *ptr, float value)
+static void api_PartSettings_end_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
 
@@ -972,45 +972,45 @@ static void rna_PartSettings_end_set(struct PointerRNA *ptr, float value)
   settings->end = value;
 }
 
-static void rna_PartSetings_timestep_set(struct PointerRNA *ptr, float value)
+static void api_PartSetings_timestep_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
 
   settings->timetweak = value / 0.04f;
 }
 
-static float rna_PartSettings_timestep_get(struct PointerRNA *ptr)
+static float api_PartSettings_timestep_get(struct ApiPtr *ptr)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
 
   return settings->timetweak * 0.04f;
 }
 
-static void rna_PartSetting_hairlength_set(struct PointerRNA *ptr, float value)
+static void api_PartSetting_hairlength_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   settings->normfac = value / 4.0f;
 }
 
-static float rna_PartSetting_hairlength_get(struct PointerRNA *ptr)
+static float api_PartSetting_hairlength_get(struct ApiPtr *ptr)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   return settings->normfac * 4.0f;
 }
 
-static void rna_PartSetting_linelentail_set(struct PointerRNA *ptr, float value)
+static void api_PartSetting_linelentail_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   settings->draw_line[0] = value;
 }
 
-static float rna_PartSetting_linelentail_get(struct PointerRNA *ptr)
+static float api_PartSetting_linelentail_get(struct ApiPtr *ptr)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   return settings->draw_line[0];
 }
-static void rna_PartSetting_pathstartend_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_PartSetting_pathstartend_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
 
@@ -1023,19 +1023,19 @@ static void rna_PartSetting_pathstartend_range(
     *max = (settings->draw & PART_ABS_PATH_TIME) ? MAXFRAMEF : 1.0f;
   }
 }
-static void rna_PartSetting_linelenhead_set(struct PointerRNA *ptr, float value)
+static void api_PartSetting_linelenhead_set(struct ApiPtr *ptr, float value)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   settings->draw_line[1] = value;
 }
 
-static float rna_PartSetting_linelenhead_get(struct PointerRNA *ptr)
+static float api_PartSetting_linelenhead_get(struct ApiPtr *ptr)
 {
   ParticleSettings *settings = (ParticleSettings *)ptr->data;
   return settings->draw_line[1];
 }
 
-static int rna_PartSettings_is_fluid_get(PointerRNA *ptr)
+static int api_PartSettings_is_fluid_get(ApiPtr *ptr)
 {
   ParticleSettings *part = ptr->data;
   return (ELEM(part->type,
@@ -1051,28 +1051,28 @@ static int rna_PartSettings_is_fluid_get(PointerRNA *ptr)
                PART_FLUID_SPRAYFOAMBUBBLE));
 }
 
-static void rna_ParticleSettings_use_clump_curve_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ParticleSettings_use_clump_curve_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   ParticleSettings *part = ptr->data;
 
   if (part->child_flag & PART_CHILD_USE_CLUMP_CURVE) {
     if (!part->clumpcurve) {
-      BKE_particlesettings_clump_curve_init(part);
+      dune_particlesettings_clump_curve_init(part);
     }
   }
 
-  rna_Particle_redo_child(bmain, scene, ptr);
+  api_Particle_redo_child(bmain, scene, ptr);
 }
 
-static void rna_ParticleSettings_use_roughness_curve_update(Main *bmain,
+static void api_ParticleSettings_use_roughness_curve_update(Main *main,
                                                             Scene *scene,
-                                                            PointerRNA *ptr)
+                                                            ApiPtr *ptr)
 {
   ParticleSettings *part = ptr->data;
 
   if (part->child_flag & PART_CHILD_USE_ROUGH_CURVE) {
     if (!part->roughcurve) {
-      BKE_particlesettings_rough_curve_init(part);
+      dune_particlesettings_rough_curve_init(part);
     }
   }
 
