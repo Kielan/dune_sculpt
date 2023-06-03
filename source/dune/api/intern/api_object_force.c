@@ -1,24 +1,24 @@
 #include <stdlib.h>
 
-#include "types_cloth_types.h"
-#include "types_dynamicpaint_types.h"
-#include "types_fluid_types.h"
-#include "types_object_force_types.h"
-#include "types_object_types.h"
-#include "types_particle_types.h"
-#include "types_pointcache_types.h"
-#include "types_rigidbody_types.h"
-#include "types_scene_types.h"
+#include "types_cloth.h"
+#include "types_dynamicpaint.h"
+#include "types_fluid.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_pointcache.h"
+#include "types_rigidbody.h"
+#include "types_scene.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-static const EnumPropertyItem effector_shape_items[] = {
+static const EnumPropItem effector_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", "Field originates from the object center"},
     {PFIELD_SHAPE_LINE, "LINE", 0, "Line", "Field originates from the local Z axis of the object"},
     {PFIELD_SHAPE_PLANE,
@@ -39,12 +39,12 @@ static const EnumPropertyItem effector_shape_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_base.h"
+#  include "lib_math_base.h"
 
 /* type specific return values only used from functions */
-static const EnumPropertyItem curve_shape_items[] = {
+static const EnumPropItem curve_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", "Field originates from the object center"},
     {PFIELD_SHAPE_LINE, "LINE", 0, "Line", "Field originates from the local Z axis of the object"},
     {PFIELD_SHAPE_PLANE,
@@ -56,7 +56,7 @@ static const EnumPropertyItem curve_shape_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem empty_shape_items[] = {
+static const EnumPropItem empty_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", "Field originates from the object center"},
     {PFIELD_SHAPE_LINE, "LINE", 0, "Line", "Field originates from the local Z axis of the object"},
     {PFIELD_SHAPE_PLANE,
@@ -67,7 +67,7 @@ static const EnumPropertyItem empty_shape_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem vortex_shape_items[] = {
+static const EnumPropItem vortex_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", ""},
     {PFIELD_SHAPE_PLANE, "PLANE", 0, "Plane", ""},
     {PFIELD_SHAPE_SURFACE, "SURFACE", 0, "Surface", ""},
@@ -75,35 +75,35 @@ static const EnumPropertyItem vortex_shape_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem curve_vortex_shape_items[] = {
+static const EnumPropItem curve_vortex_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", ""},
     {PFIELD_SHAPE_PLANE, "PLANE", 0, "Plane", ""},
     {PFIELD_SHAPE_SURFACE, "SURFACE", 0, "Curve", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem empty_vortex_shape_items[] = {
+static const EnumPropItem empty_vortex_shape_items[] = {
     {PFIELD_SHAPE_POINT, "POINT", 0, "Point", ""},
     {PFIELD_SHAPE_PLANE, "PLANE", 0, "Plane", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "DNA_modifier_types.h"
-#  include "DNA_texture_types.h"
+#  include "types_mod.h"
+#  include "types_texture.h"
 
-#  include "BKE_collection.h"
-#  include "BKE_context.h"
-#  include "BKE_modifier.h"
-#  include "BKE_pointcache.h"
+#  include "dune_collection.h"
+#  include "dune_context.h"
+#  include "dune_modifier.h"
+#  include "dune_pointcache.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "ED_object.h"
+#  include "ed_object.h"
 
-static bool rna_Cache_get_valid_owner_ID(PointerRNA *ptr, Object **ob, Scene **scene)
+static bool api_Cache_get_valid_owner_Id(ApiPtr *ptr, Object **ob, Scene **scene)
 {
   switch (GS(ptr->owner_id->name)) {
     case ID_OB:
@@ -113,7 +113,7 @@ static bool rna_Cache_get_valid_owner_ID(PointerRNA *ptr, Object **ob, Scene **s
       *scene = (Scene *)ptr->owner_id;
       break;
     default:
-      BLI_assert_msg(0,
+      lib_assert_msg(0,
                      "Trying to get PTCacheID from an invalid ID type "
                      "(Only scenes and objects are supported).");
       break;
@@ -122,39 +122,39 @@ static bool rna_Cache_get_valid_owner_ID(PointerRNA *ptr, Object **ob, Scene **s
   return (*ob != NULL || *scene != NULL);
 }
 
-static char *rna_PointCache_path(PointerRNA *ptr)
+static char *api_PointCache_path(ApiPtr *ptr)
 {
-  ModifierData *md;
+  ModData *md;
   Object *ob = (Object *)ptr->owner_id;
   PointCache *cache = ptr->data;
 
-  for (md = ob->modifiers.first; md; md = md->next) {
-    const ModifierTypeInfo *mti = BKE_modifier_get_info(md->type);
+  for (md = ob->mods.first; md; md = md->next) {
+    const ModTypeInfo *mti = dune_mod_get_info(md->type);
 
-    if (!(mti->flags & eModifierTypeFlag_UsesPointCache)) {
+    if (!(mti->flags & eModTypeFlag_UsesPointCache)) {
       continue;
     }
 
     char name_esc[sizeof(md->name) * 2];
-    BLI_str_escape(name_esc, md->name, sizeof(name_esc));
+    lib_str_escape(name_esc, md->name, sizeof(name_esc));
 
     switch (md->type) {
-      case eModifierType_ParticleSystem: {
-        ParticleSystemModifierData *psmd = (ParticleSystemModifierData *)md;
+      case eModType_ParticleSystem: {
+        ParticleSystemModData *psmd = (ParticleSystemModData *)md;
         if (psmd->psys->pointcache == cache) {
-          return BLI_sprintfN("modifiers[\"%s\"].particle_system.point_cache", name_esc);
+          return lib_sprintfn("modifiers[\"%s\"].particle_system.point_cache", name_esc);
         }
         break;
       }
-      case eModifierType_DynamicPaint: {
-        DynamicPaintModifierData *pmd = (DynamicPaintModifierData *)md;
+      case eModType_DynamicPaint: {
+        DynamicPaintModData *pmd = (DynamicPaintModData *)md;
         if (pmd->canvas) {
           DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
           for (; surface; surface = surface->next) {
             if (surface->pointcache == cache) {
               char name_surface_esc[sizeof(surface->name) * 2];
-              BLI_str_escape(name_surface_esc, surface->name, sizeof(name_surface_esc));
-              return BLI_sprintfN(
+              lib_str_escape(name_surface_esc, surface->name, sizeof(name_surface_esc));
+              return lib_sprintfn(
                   "modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"].point_cache",
                   name_esc,
                   name_surface_esc);
@@ -163,34 +163,34 @@ static char *rna_PointCache_path(PointerRNA *ptr)
         }
         break;
       }
-      case eModifierType_Cloth: {
-        ClothModifierData *clmd = (ClothModifierData *)md;
+      case eModType_Cloth: {
+        ClothModData *clmd = (ClothModData *)md;
         if (clmd->point_cache == cache) {
-          return BLI_sprintfN("modifiers[\"%s\"].point_cache", name_esc);
+          return lib_sprintfn("modifiers[\"%s\"].point_cache", name_esc);
         }
         break;
       }
-      case eModifierType_Softbody: {
+      case eModType_Softbody: {
         SoftBody *sb = ob->soft;
         if (sb && sb->shared->pointcache == cache) {
-          return BLI_sprintfN("modifiers[\"%s\"].point_cache", name_esc);
+          return lib_sprintfn("mods[\"%s\"].point_cache", name_esc);
         }
         break;
       }
       default: {
-        return BLI_sprintfN("modifiers[\"%s\"].point_cache", name_esc);
+        return lib_sprintfn("mods[\"%s\"].point_cache", name_esc);
       }
     }
   }
   return NULL;
 }
 
-static void rna_Cache_change(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Cache_change(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return;
   }
 
@@ -198,9 +198,9 @@ static void rna_Cache_change(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
 
   cache->flag |= PTCACHE_OUTDATED;
 
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
 
   if (pid.cache) {
     /* Just make sure this wasn't changed. */
@@ -211,22 +211,22 @@ static void rna_Cache_change(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
   }
 }
 
-static void rna_Cache_toggle_disk_cache(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Cache_toggle_disk_cache(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = NULL;
   Scene *scene = NULL;
 
-  if (!rna_Cache_get_valid_owner_ID(ptr, &ob, &scene)) {
+  if (!api_Cache_get_valid_owner_Id(ptr, &ob, &scene)) {
     return;
   }
 
   PointCache *cache = (PointCache *)ptr->data;
 
-  PTCacheID pid = BKE_ptcache_id_find(ob, scene, cache);
+  PTCacheID pid = dune_ptcache_id_find(ob, scene, cache);
 
   /* smoke can only use disk cache */
   if (pid.cache && pid.type != PTCACHE_TYPE_SMOKE_DOMAIN) {
-    BKE_ptcache_toggle_disk_cache(&pid);
+    dune_ptcache_toggle_disk_cache(&pid);
   }
   else {
     cache->flag ^= PTCACHE_DISK_CACHE;
