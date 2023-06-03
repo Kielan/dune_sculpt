@@ -1017,8 +1017,8 @@ static void api_def_pointcache_common(ApiStruct *srna)
       prop, sizeof(((PointCache *)0)->info) / sizeof(*(((PointCache *)0)->info)));
   RNA_def_property_ui_text(prop, "Cache Info", "Info on current cache status");
 
-  prop = RNA_def_property(srna, "use_external", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_EXTERNAL);
+  prop = api_def_prop(sapi, "use_external", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PTCACHE_EXTERNAL);
   RNA_def_property_ui_text(prop, "External", "Read cache from an external location");
   api_def_prop_update(prop, NC_OBJECT, "rna_Cache_idname_change");
 
