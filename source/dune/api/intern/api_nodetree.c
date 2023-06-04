@@ -1501,14 +1501,14 @@ static void api_NodeTree_inputs_move(NodeTree *ntree, Main *main, int from_index
     }
   }
   else {
-    bNodeSocket *prevsock = BLI_findlink(&ntree->inputs, to_index);
+    NodeSocket *prevsock = lib_findlink(&ntree->inputs, to_index);
     if (prevsock) {
-      BLI_remlink(&ntree->inputs, sock);
-      BLI_insertlinkafter(&ntree->inputs, prevsock, sock);
+      lib_remlink(&ntree->inputs, sock);
+     lib_insertlinkafter(&ntree->inputs, prevsock, sock);
     }
   }
 
-  BKE_ntree_update_tag_interface(ntree);
+  dune_ntree_update_tag_interface(ntree);
 
   ED_node_tree_propagate_change(NULL, bmain, ntree);
   WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
@@ -1523,65 +1523,65 @@ static void rna_NodeTree_outputs_move(bNodeTree *ntree, Main *bmain, int from_in
     return;
   }
 
-  bNodeSocket *sock = BLI_findlink(&ntree->outputs, from_index);
-  if (to_index < from_index) {
-    bNodeSocket *nextsock = BLI_findlink(&ntree->outputs, to_index);
+   NodeSocket *sock = lib_findlink(&ntree->outputs, from_index);
+   if (to_index < from_index) {
+    NodeSocket *nextsock = lib_findlink(&ntree->outputs, to_index);
     if (nextsock) {
-      BLI_remlink(&ntree->outputs, sock);
-      BLI_insertlinkbefore(&ntree->outputs, nextsock, sock);
+      lib_remlink(&ntree->outputs, sock);
+      lib_insertlinkbefore(&ntree->outputs, nextsock, sock);
     }
   }
   else {
-    bNodeSocket *prevsock = BLI_findlink(&ntree->outputs, to_index);
+    NodeSocket *prevsock = lib_findlink(&ntree->outputs, to_index);
     if (prevsock) {
-      BLI_remlink(&ntree->outputs, sock);
-      BLI_insertlinkafter(&ntree->outputs, prevsock, sock);
+      lib_remlink(&ntree->outputs, sock);
+      lib_insertlinkafter(&ntree->outputs, prevsock, sock);
     }
   }
 
-  BKE_ntree_update_tag_interface(ntree);
+  dune_ntree_update_tag_interface(ntree);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_interface_update(bNodeTree *ntree, bContext *C)
+static void api_NodeTree_interface_update(NodeTree *ntree, Cxt *C)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
 
-  BKE_ntree_update_tag_interface(ntree);
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  dune_ntree_update_tag_interface(ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
 }
 
 /* ******** NodeLink ******** */
 
-static bool rna_NodeLink_is_hidden_get(PointerRNA *ptr)
+static bool api_NodeLink_is_hidden_get(ApiPtr *ptr)
 {
-  bNodeLink *link = ptr->data;
+  NodeLink *link = ptr->data;
   return nodeLinkIsHidden(link);
 }
 
 /* ******** Node ******** */
 
-static StructRNA *rna_Node_refine(struct PointerRNA *ptr)
+static ApiStruct *api_Node_refine(struct ApiPtr *ptr)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
 
-  if (node->typeinfo->rna_ext.srna) {
-    return node->typeinfo->rna_ext.srna;
+  if (node->typeinfo->rna_ext.sapi) {
+    return node->typeinfo->api_ext.sapi;
   }
   else {
     return ptr->type;
   }
 }
 
-static char *rna_Node_path(PointerRNA *ptr)
+static char *api_Node_path(ApiPtr *ptr)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
   char name_esc[sizeof(node->name) * 2];
 
-  BLI_str_escape(name_esc, node->name, sizeof(name_esc));
-  return BLI_sprintfN("nodes[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, node->name, sizeof(name_esc));
+  return lib_sprintfn("nodes[\"%s\"]", name_esc);
 }
 
 char *rna_Node_ImageUser_path(PointerRNA *ptr)
