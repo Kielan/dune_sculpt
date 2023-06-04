@@ -904,7 +904,7 @@ static const EnumPropItem *api_node_static_type_itemf(Cxt *UNUSED(C),
   if (api_struct_is_a(ptr->type, &ApiFnNode)) {
 #  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "FnNode")) { \
-      tmp.value = ID; \
+      tmp.value = Id; \
       tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
@@ -1092,14 +1092,14 @@ static ApiStruct *rna_NodeTree_register(Main *main,
 
   nt->type = NTREE_CUSTOM;
 
-  nt->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, nt->idname, &RNA_NodeTree);
+  nt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, nt->idname, &RNA_NodeTree);
   nt->api_ext.data = data;
   nt->api_ext.call = call;
   nt->api_ext.free = free;
   api_struct_dune_type_set(nt->api_ext.sapi, nt);
 
   api_def_struct_ui_text(nt->api_ext.sapi, nt->ui_name, nt->ui_description);
-  api_def_struct_ui_icon(nt->api_ext.sapo, nt->ui_icon);
+  api_def_struct_ui_icon(nt->api_ext.sapi, nt->ui_icon);
 
   nt->poll = (have_fn[0]) ? api_NodeTree_poll : NULL;
   nt->update = (have_fn[1]) ? api_NodeTree_update_reg : NULL;
@@ -1455,35 +1455,35 @@ static void api_NodeTree_socket_remove(NodeTree *ntree,
   }
 }
 
-static void api_NodeTree_inputs_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
+static void api_NodeTree_inputs_clear(NodeTree *ntree, Main *main, ReportList *reports)
 {
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, socket, &ntree->inputs) {
+  LIST_FOREACH_MUTABLE (bNodeSocket *, socket, &ntree->inputs) {
     ntreeRemoveSocketInterface(ntree, socket);
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_outputs_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
+static void api_NodeTree_outputs_clear(NodeTree *ntree, Main *main, ReportList *reports)
 {
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, socket, &ntree->outputs) {
+  LIST_FOREACH_MUTABLE (NodeSocket *, socket, &ntree->outputs) {
     ntreeRemoveSocketInterface(ntree, socket);
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_inputs_move(bNodeTree *ntree, Main *bmain, int from_index, int to_index)
+static void api_NodeTree_inputs_move(NodeTree *ntree, Main *main, int from_index, int to_index)
 {
   if (from_index == to_index) {
     return;
@@ -1492,12 +1492,12 @@ static void rna_NodeTree_inputs_move(bNodeTree *ntree, Main *bmain, int from_ind
     return;
   }
 
-  bNodeSocket *sock = BLI_findlink(&ntree->inputs, from_index);
+  NodeSocket *sock = lib_findlink(&ntree->inputs, from_index);
   if (to_index < from_index) {
-    bNodeSocket *nextsock = BLI_findlink(&ntree->inputs, to_index);
+    NodeSocket *nextsock = lib_findlink(&ntree->inputs, to_index);
     if (nextsock) {
-      BLI_remlink(&ntree->inputs, sock);
-      BLI_insertlinkbefore(&ntree->inputs, nextsock, sock);
+      lib_remlink(&ntree->inputs, sock);
+      lib_insertlinkbefore(&ntree->inputs, nextsock, sock);
     }
   }
   else {
