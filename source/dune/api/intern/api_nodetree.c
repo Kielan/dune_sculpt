@@ -1092,14 +1092,14 @@ static ApiStruct *rna_NodeTree_register(Main *main,
 
   nt->type = NTREE_CUSTOM;
 
-  nt->api_ext.srna = api_def_struct_ptr(&BLENDER_RNA, nt->idname, &RNA_NodeTree);
+  nt->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, nt->idname, &RNA_NodeTree);
   nt->api_ext.data = data;
   nt->api_ext.call = call;
   nt->api_ext.free = free;
-  api_struct_dune_type_set(nt->rna_ext.srna, nt);
+  api_struct_dune_type_set(nt->api_ext.sapi, nt);
 
-  api_def_struct_ui_text(nt->rna_ext.srna, nt->ui_name, nt->ui_description);
-  api_def_struct_ui_icon(nt->rna_ext.srna, nt->ui_icon);
+  api_def_struct_ui_text(nt->api_ext.sapi, nt->ui_name, nt->ui_description);
+  api_def_struct_ui_icon(nt->api_ext.sapo, nt->ui_icon);
 
   nt->poll = (have_fn[0]) ? api_NodeTree_poll : NULL;
   nt->update = (have_fn[1]) ? api_NodeTree_update_reg : NULL;
@@ -1109,9 +1109,9 @@ static ApiStruct *rna_NodeTree_register(Main *main,
   ntreeTypeAdd(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
 static bool api_NodeTree_check(NodeTree *ntree, ReportList *reports)
@@ -1131,7 +1131,7 @@ static bool api_NodeTree_check(NodeTree *ntree, ReportList *reports)
   }
 }
 
-static void api_NodeTree_update(Main bmain, Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_NodeTree_update(Main main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   NodeTree *ntree = (NodeTree *)ptr->owner_id;
 
@@ -1455,7 +1455,7 @@ static void api_NodeTree_socket_remove(NodeTree *ntree,
   }
 }
 
-static void rna_NodeTree_inputs_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
+static void api_NodeTree_inputs_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
 {
   if (!rna_NodeTree_check(ntree, reports)) {
     return;
