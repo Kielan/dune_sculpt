@@ -1584,10 +1584,10 @@ static char *api_Node_path(ApiPtr *ptr)
   return lib_sprintfn("nodes[\"%s\"]", name_esc);
 }
 
-char *rna_Node_ImageUser_path(PointerRNA *ptr)
+char *api_Node_ImageUser_path(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNode *node;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  Node *node;
   char name_esc[sizeof(node->name) * 2];
 
   for (node = ntree->nodes.first; node; node = node->next) {
@@ -1607,29 +1607,29 @@ char *rna_Node_ImageUser_path(PointerRNA *ptr)
       continue;
     }
 
-    BLI_str_escape(name_esc, node->name, sizeof(name_esc));
-    return BLI_sprintfN("nodes[\"%s\"].image_user", name_esc);
+    lib_str_escape(name_esc, node->name, sizeof(name_esc));
+    return lib_sprintfn("nodes[\"%s\"].image_user", name_esc);
   }
 
   return NULL;
 }
 
-static bool rna_Node_poll(bNodeType *ntype, bNodeTree *ntree, const char **UNUSED(r_disabled_hint))
+static bool api_Node_poll(NodeType *ntype, NodeTree *ntree, const char **UNUSED(r_disabled_hint))
 {
-  extern FunctionRNA rna_Node_poll_func;
+  extern ApiFn api_Node_poll_func;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, ntype->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_Node_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ntype->api_ext.sapi, NULL, &ptr); /* dummy */
+  fn = &api_Node_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "node_tree", &ntree);
-  ntype->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  RNA_param_set_lookup(&list, "node_tree", &ntree);
+  ntype->api_ext.call(NULL, &ptr, func, &list);
 
   RNA_parameter_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
