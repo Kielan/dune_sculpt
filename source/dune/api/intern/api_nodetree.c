@@ -99,7 +99,7 @@ static const EnumPropItem node_quality_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem node_chunksize_items[] = {
+static const EnumPropItem node_chunksize_items[] = {
     {NTREE_CHUNKSIZE_32, "32", 0, "32x32", "Chunksize of 32x32"},
     {NTREE_CHUNKSIZE_64, "64", 0, "64x64", "Chunksize of 64x64"},
     {NTREE_CHUNKSIZE_128, "128", 0, "128x128", "Chunksize of 128x128"},
@@ -110,7 +110,7 @@ static const EnumPropertyItem node_chunksize_items[] = {
 };
 #endif
 
-static const EnumPropertyItem rna_enum_execution_mode_items[] = {
+static const EnumPropItem api_enum_execution_mode_items[] = {
     {NTREE_EXECUTION_MODE_TILED,
      "TILED",
      0,
@@ -124,7 +124,7 @@ static const EnumPropertyItem rna_enum_execution_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_mapping_type_items[] = {
+const EnumPropItem api_enum_mapping_type_items[] = {
     {NODE_MAPPING_TYPE_POINT, "POINT", 0, "Point", "Transform a point"},
     {NODE_MAPPING_TYPE_TEXTURE,
      "TEXTURE",
@@ -144,7 +144,7 @@ const EnumPropertyItem rna_enum_mapping_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_vector_rotate_type_items[] = {
+static const EnumPropItem api_enum_vector_rotate_type_items[] = {
     {NODE_VECTOR_ROTATE_TYPE_AXIS,
      "AXIS_ANGLE",
      0,
@@ -157,7 +157,7 @@ static const EnumPropertyItem rna_enum_vector_rotate_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_math_items[] = {
+const EnumPropItem api_enum_node_math_items[] = {
     {0, "", 0, N_("Functions"), ""},
     {NODE_MATH_ADD, "ADD", 0, "Add", "A + B"},
     {NODE_MATH_SUBTRACT, "SUBTRACT", 0, "Subtract", "A - B"},
@@ -279,7 +279,7 @@ const EnumPropItem api_enum_node_vec_math_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_node_boolean_math_items[] = {
+const EnumPropItem api_enum_node_bool_math_items[] = {
     {NODE_BOOL_MATH_AND, "AND", 0, "And", "True when both inputs are true"},
     {NODE_BOOL_MATH_OR, "OR", 0, "Or", "True when at least one input is true"},
     {NODE_BOOL_MATH_NOT, "NOT", 0, "Not", "Opposite of the input"},
@@ -695,7 +695,7 @@ const EnumPropItem *api_node_type_itemf(void *data,
     }
 
     tmp.value = i;
-    tmp.identifier = ntype->idname;
+    tmp.id = ntype->idname;
     tmp.icon = ntype->ui_icon;
     tmp.name = ntype->ui_name;
     tmp.description = ntype->ui_description;
@@ -1103,7 +1103,7 @@ static ApiStruct *rna_NodeTree_register(Main *main,
 
   nt->poll = (have_fn[0]) ? api_NodeTree_poll : NULL;
   nt->update = (have_fn[1]) ? api_NodeTree_update_reg : NULL;
-  nt->get_from_context = (have_fn[2]) ? api_NodeTree_get_from_context : NULL;
+  nt->get_from_context = (have_fn[2]) ? api_NodeTree_get_from_cxt : NULL;
   nt->valid_socket_type = (have_fn[3]) ? api_NodeTree_valid_socket_type : NULL;
 
   ntreeTypeAdd(nt);
@@ -1114,11 +1114,11 @@ static ApiStruct *rna_NodeTree_register(Main *main,
   return nt->rna_ext.srna;
 }
 
-static bool rna_NodeTree_check(bNodeTree *ntree, ReportList *reports)
+static bool api_NodeTree_check(NodeTree *ntree, ReportList *reports)
 {
   if (!ntreeIsRegistered(ntree)) {
     if (reports) {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Node tree '%s' has undefined type %s",
                   ntree->id.name + 2,
@@ -1138,31 +1138,31 @@ static void api_NodeTree_update(Main bmain, Scene *UNUSED(scene), ApiPtr *ptr)
   wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
   wm_main_add_notifier(NC_SCENE | ND_NODES, &ntree->id);
 
-  ed_node_tree_propagate_change(NULL, bmain, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
 }
 
-static Node *api_NodeTree_node_new(bNodeTree *ntree,
-                                    bContext *C,
-                                    ReportList *reports,
-                                    const char *type)
+static Node *api_NodeTree_node_new(NodeTree *ntree,
+                                   Cxt *C,
+                                   ReportList *reports,
+                                   const char *type)
 {
-  bNodeType *ntype;
-  bNode *node;
+  NodeType *ntype;
+  Node *node;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return NULL;
   }
 
   ntype = nodeTypeFind(type);
   if (!ntype) {
-    BKE_reportf(reports, RPT_ERROR, "Node type %s undefined", type);
+    dune_reportf(reports, RPT_ERROR, "Node type %s undefined", type);
     return NULL;
   }
 
   const char *disabled_hint = NULL;
   if (ntype->poll && !ntype->poll(ntype, ntree, &disabled_hint)) {
     if (disabled_hint) {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Cannot add node of type %s to node tree '%s'\n  %s",
                   type,
@@ -1171,7 +1171,7 @@ static Node *api_NodeTree_node_new(bNodeTree *ntree,
       return NULL;
     }
     else {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Cannot add node of type %s to node tree '%s'",
                   type,
@@ -1181,78 +1181,78 @@ static Node *api_NodeTree_node_new(bNodeTree *ntree,
   }
 
   node = nodeAddNode(C, ntree, type);
-  BLI_assert(node && node->typeinfo);
+  lib_assert(node && node->typeinfo);
 
   if (ntree->type == NTREE_TEXTURE) {
     ntreeTexCheckCyclics(ntree);
   }
 
-  Main *bmain = CTX_data_main(C);
-  ED_node_tree_propagate_change(C, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  Main *main = cxt_data_main(C);
+  ed_node_tree_propagate_change(C, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 
   return node;
 }
 
-static void rna_NodeTree_node_remove(bNodeTree *ntree,
-                                     Main *bmain,
+static void api_NodeTree_node_remove(NodeTree *ntree,
+                                     Main *main,
                                      ReportList *reports,
-                                     PointerRNA *node_ptr)
+                                     ApiPtr *node_ptr)
 {
-  bNode *node = node_ptr->data;
+  Node *node = node_ptr->data;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
-  if (BLI_findindex(&ntree->nodes, node) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Unable to locate node '%s' in node tree", node->name);
+  if (lib_findindex(&ntree->nodes, node) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Unable to locate node '%s' in node tree", node->name);
     return;
   }
 
-  nodeRemoveNode(bmain, ntree, node, true);
+  nodeRemoveNode(main, ntree, node, true);
 
-  RNA_POINTER_INVALIDATE(node_ptr);
+  API_PTR_INVALIDATE(node_ptr);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_node_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
+static void api_NodeTree_node_clear(NodeTree *ntree, Main *main, ReportList *reports)
 {
-  bNode *node = ntree->nodes.first;
+  Node *node = ntree->nodes.first;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
   while (node) {
-    bNode *next_node = node->next;
+    Node *next_node = node->next;
 
-    nodeRemoveNode(bmain, ntree, node, true);
+    nodeRemoveNode(main, ntree, node, true);
 
     node = next_node;
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static PointerRNA rna_NodeTree_active_node_get(PointerRNA *ptr)
+static ApiPtr api_NodeTree_active_node_get(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
-  bNode *node = nodeGetActive(ntree);
-  return rna_pointer_inherit_refine(ptr, &RNA_Node, node);
+  NodeTree *ntree = (NodeTree *)ptr->data;
+  Node *node = nodeGetActive(ntree);
+  return api_ptr_inherit_refine(ptr, &ApiNode, node);
 }
 
-static void rna_NodeTree_active_node_set(PointerRNA *ptr,
-                                         const PointerRNA value,
+static void api_NodeTree_active_node_set(ApiPtr *ptr,
+                                         const ApiPtr value,
                                          struct ReportList *UNUSED(reports))
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
-  bNode *node = (bNode *)value.data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
+  Node *node = (Node *)value.data;
 
-  if (node && BLI_findindex(&ntree->nodes, node) != -1) {
+  if (node && lib_findindex(&ntree->nodes, node) != -1) {
     nodeSetActive(ntree, node);
   }
   else {
@@ -1260,12 +1260,12 @@ static void rna_NodeTree_active_node_set(PointerRNA *ptr,
   }
 }
 
-static bNodeLink *rna_NodeTree_link_new(bNodeTree *ntree,
-                                        Main *bmain,
-                                        ReportList *reports,
-                                        bNodeSocket *fromsock,
-                                        bNodeSocket *tosock,
-                                        bool verify_limits)
+static NodeLink *api_NodeTree_link_new(NodeTree *ntree,
+                                       Main *main,
+                                       ReportList *reports,
+                                       NodeSocket *fromsock,
+                                       NodeSocket *tosock,
+                                       bool verify_limits)
 {
   bNodeLink *ret;
   bNode *fromnode = NULL, *tonode = NULL;
