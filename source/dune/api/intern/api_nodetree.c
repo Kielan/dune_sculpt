@@ -1267,10 +1267,10 @@ static NodeLink *api_NodeTree_link_new(NodeTree *ntree,
                                        NodeSocket *tosock,
                                        bool verify_limits)
 {
-  bNodeLink *ret;
-  bNode *fromnode = NULL, *tonode = NULL;
+  NodeLink *ret;
+  Node *fromnode = NULL, *tonode = NULL;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return NULL;
   }
 
@@ -1284,7 +1284,7 @@ static NodeLink *api_NodeTree_link_new(NodeTree *ntree,
   }
 
   if (&fromsock->in_out == &tosock->in_out) {
-    BKE_report(reports, RPT_ERROR, "Same input/output direction of sockets");
+    dune_report(reports, RPT_ERROR, "Same input/output direction of sockets");
     return NULL;
   }
 
@@ -1297,7 +1297,7 @@ static NodeLink *api_NodeTree_link_new(NodeTree *ntree,
       nodeRemSocketLinks(ntree, tosock);
     }
     if (tosock->flag & SOCK_MULTI_INPUT) {
-      LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &ntree->links) {
+      LIST_FOREACH_MUTABLE (NodeLink *, link, &ntree->links) {
         if (link->fromsock == fromsock && link->tosock == tosock) {
           nodeRemLink(ntree, link);
         }
@@ -1313,59 +1313,59 @@ static NodeLink *api_NodeTree_link_new(NodeTree *ntree,
     fromsock->flag &= ~SOCK_HIDDEN;
     tosock->flag &= ~SOCK_HIDDEN;
 
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
-    WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+    ed_node_tree_propagate_change(NULL, main, ntree);
+    wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
   }
   return ret;
 }
 
-static void rna_NodeTree_link_remove(bNodeTree *ntree,
-                                     Main *bmain,
+static void api_NodeTree_link_remove(NodeTree *ntree,
+                                     Main *main,
                                      ReportList *reports,
-                                     PointerRNA *link_ptr)
+                                     ApiPtr *link_ptr)
 {
-  bNodeLink *link = link_ptr->data;
+  NodeLink *link = link_ptr->data;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
-  if (BLI_findindex(&ntree->links, link) == -1) {
-    BKE_report(reports, RPT_ERROR, "Unable to locate link in node tree");
+  if (lib_findindex(&ntree->links, link) == -1) {
+    dune_report(reports, RPT_ERROR, "Unable to locate link in node tree");
     return;
   }
 
   nodeRemLink(ntree, link);
-  RNA_POINTER_INVALIDATE(link_ptr);
+  API_PTR_INVALIDATE(link_ptr);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_link_clear(bNodeTree *ntree, Main *bmain, ReportList *reports)
+static void api_NodeTree_link_clear(NodeTree *ntree, Main *main, ReportList *reports)
 {
-  bNodeLink *link = ntree->links.first;
+  NodeLink *link = ntree->links.first;
 
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
   while (link) {
-    bNodeLink *next_link = link->next;
+    NodeLink *next_link = link->next;
 
     nodeRemLink(ntree, link);
 
     link = next_link;
   }
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static int rna_NodeTree_active_input_get(PointerRNA *ptr)
+static int api_NodeTree_active_input_get(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
   int index = 0;
-  LISTBASE_FOREACH_INDEX (bNodeSocket *, socket, &ntree->inputs, index) {
+  LIST_FOREACH_INDEX (NodeSocket *, socket, &ntree->inputs, index) {
     if (socket->flag & SELECT) {
       return index;
     }
@@ -1373,21 +1373,21 @@ static int rna_NodeTree_active_input_get(PointerRNA *ptr)
   return -1;
 }
 
-static void rna_NodeTree_active_input_set(PointerRNA *ptr, int value)
+static void api_NodeTree_active_input_set(ApiPtr *ptr, int value)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
 
   int index = 0;
-  LISTBASE_FOREACH_INDEX (bNodeSocket *, socket, &ntree->inputs, index) {
+  LIST_FOREACH_INDEX (NodeSocket *, socket, &ntree->inputs, index) {
     SET_FLAG_FROM_TEST(socket->flag, index == value, SELECT);
   }
 }
 
-static int rna_NodeTree_active_output_get(PointerRNA *ptr)
+static int api_NodeTree_active_output_get(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
   int index = 0;
-  LISTBASE_FOREACH_INDEX (bNodeSocket *, socket, &ntree->outputs, index) {
+  LIST_FOREACH_INDEX (NodeSocket *, socket, &ntree->outputs, index) {
     if (socket->flag & SELECT) {
       return index;
     }
@@ -1395,63 +1395,63 @@ static int rna_NodeTree_active_output_get(PointerRNA *ptr)
   return -1;
 }
 
-static void rna_NodeTree_active_output_set(PointerRNA *ptr, int value)
+static void api_NodeTree_active_output_set(ApiPtr *ptr, int value)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->data;
 
   int index = 0;
-  LISTBASE_FOREACH_INDEX (bNodeSocket *, socket, &ntree->outputs, index) {
+  LIST_FOREACH_INDEX (NodeSocket *, socket, &ntree->outputs, index) {
     SET_FLAG_FROM_TEST(socket->flag, index == value, SELECT);
   }
 }
 
-static bNodeSocket *rna_NodeTree_inputs_new(
-    bNodeTree *ntree, Main *bmain, ReportList *reports, const char *type, const char *name)
+static NodeSocket *api_NodeTree_inputs_new(
+    NodeTree *ntree, Main *main, ReportList *reports, const char *type, const char *name)
 {
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return NULL;
   }
 
-  bNodeSocket *sock = ntreeAddSocketInterface(ntree, SOCK_IN, type, name);
+  NodeSocket *sock = ntreeAddSocketInterface(ntree, SOCK_IN, type, name);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  em_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 
   return sock;
 }
 
-static bNodeSocket *rna_NodeTree_outputs_new(
-    bNodeTree *ntree, Main *bmain, ReportList *reports, const char *type, const char *name)
+static NodeSocket *api_NodeTree_outputs_new(
+    NodeTree *ntree, Main *main, ReportList *reports, const char *type, const char *name)
 {
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return NULL;
   }
 
-  bNodeSocket *sock = ntreeAddSocketInterface(ntree, SOCK_OUT, type, name);
+  NodeSocket *sock = ntreeAddSocketInterface(ntree, SOCK_OUT, type, name);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 
   return sock;
 }
 
-static void rna_NodeTree_socket_remove(bNodeTree *ntree,
-                                       Main *bmain,
+static void api_NodeTree_socket_remove(NodeTree *ntree,
+                                       Main *main,
                                        ReportList *reports,
-                                       bNodeSocket *sock)
+                                       NodeSocket *sock)
 {
-  if (!rna_NodeTree_check(ntree, reports)) {
+  if (!api_NodeTree_check(ntree, reports)) {
     return;
   }
 
-  if (BLI_findindex(&ntree->inputs, sock) == -1 && BLI_findindex(&ntree->outputs, sock) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Unable to locate socket '%s' in node", sock->identifier);
+  if (lib_findindex(&ntree->inputs, sock) == -1 && lib_findindex(&ntree->outputs, sock) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Unable to locate socket '%s' in node", sock->id);
   }
   else {
     ntreeRemoveSocketInterface(ntree, sock);
 
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
-    WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+    ed_node_tree_propagate_change(NULL, main, ntree);
+    wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
   }
 }
 
