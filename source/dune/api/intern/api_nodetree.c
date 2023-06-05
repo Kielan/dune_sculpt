@@ -1750,143 +1750,142 @@ static void api_Node_free(ApiPtr *ptr)
   ParamList list;
   ApiFn *fn;
 
-  func = &rna_Node_free_func; /* RNA_struct_find_function(&ptr, "free"); */
+  fn = &api_Node_free_fn; /* api_struct_find_fn(&ptr, "free"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  node->typeinfo->rna_ext.call(NULL, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  node->typeinfo->api_ext.call(NULL, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_draw_buttons(struct uiLayout *layout, bContext *C, PointerRNA *ptr)
+static void api_Node_draw_btns(struct uiLayout *layout, Cxt *C, ApiPtr *ptr)
 {
-  extern FunctionRNA rna_Node_draw_buttons_func;
+  extern ApiFn api_Node_draw_btns_fn;
 
-  bNode *node = (bNode *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  Node *node = (Node *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
-  func = &rna_Node_draw_buttons_func; /* RNA_struct_find_function(&ptr, "draw_buttons"); */
+  fn = &api_Node_draw_btns_fn; /* api_struct_find_fn(&ptr, "draw_btns"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
-  node->typeinfo->rna_ext.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
+  node->typeinfo->api_ext.call(C, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_draw_buttons_ext(struct uiLayout *layout, bContext *C, PointerRNA *ptr)
+static void api_Node_draw_btns_ext(struct uiLayout *layout, Cxt *C, ApiPtr *ptr)
 {
-  extern FunctionRNA rna_Node_draw_buttons_ext_func;
+  extern ApiFn api_Node_draw_btns_ext_fn;
 
-  bNode *node = (bNode *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  Node *node = (Node *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
-  func = &rna_Node_draw_buttons_ext_func; /* RNA_struct_find_function(&ptr, "draw_buttons_ext"); */
+  fn = &api_Node_draw_btns_ext_fn; /* RNA_struct_find_function(&ptr, "draw_buttons_ext"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
-  node->typeinfo->rna_ext.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
+  node->typeinfo->api_ext.call(C, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_draw_label(const bNodeTree *ntree, const bNode *node, char *label, int maxlen)
+static void api_Node_draw_label(const NodeTree *ntree, const Node *node, char *label, int maxlen)
 {
-  extern FunctionRNA rna_Node_draw_label_func;
+  extern ApiFn api_Node_draw_label_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   char *rlabel;
 
-  func = &rna_Node_draw_label_func; /* RNA_struct_find_function(&ptr, "draw_label"); */
+  fn = &api_Node_draw_label_fn; /* api_struct_find_fn(&ptr, "draw_label"); */
 
-  RNA_pointer_create((ID *)&ntree->id, &RNA_Node, (bNode *)node, &ptr);
-  RNA_parameter_list_create(&list, &ptr, func);
-  node->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
+  api_ptr_create((Id *)&ntree->id, &ApiNode, (Node *)node, &ptr);
+  api_param_list_create(&list, &ptr, fn);
+  node->typeinfo->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "label", &ret);
+  api_param_get_lookup(&list, "label", &ret);
   rlabel = (char *)ret;
-  BLI_strncpy(label, rlabel != NULL ? rlabel : "", maxlen);
+  lib_strncpy(label, rlabel != NULL ? rlabel : "", maxlen);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static bool rna_Node_is_registered_node_type(StructRNA *type)
+static bool api_Node_is_registered_node_type(ApiStruct *type)
 {
-  return (RNA_struct_blender_type_get(type) != NULL);
+  return (api_struct_dune_type_get(type) != NULL);
 }
 
-static void rna_Node_is_registered_node_type_runtime(bContext *UNUSED(C),
+static void api_Node_is_registered_node_type_runtime(Cxt *UNUSED(C),
                                                      ReportList *UNUSED(reports),
-                                                     PointerRNA *ptr,
-                                                     ParameterList *parms)
+                                                     ApiPtr *ptr,
+                                                     ParamList *parms)
 {
-  int result = (RNA_struct_blender_type_get(ptr->type) != NULL);
-  RNA_parameter_set_lookup(parms, "result", &result);
+  int result = (api_struct_dune_type_get(ptr->type) != NULL);
+  api_param_set_lookup(parms, "result", &result);
 }
 
-static void rna_Node_unregister(Main *UNUSED(bmain), StructRNA *type)
+static void api_Node_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  bNodeType *nt = RNA_struct_blender_type_get(type);
+  NodeType *nt = api_struct_dune_type_get(type);
 
   if (!nt) {
     return;
   }
 
-  RNA_struct_free_extension(type, &nt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &nt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
   /* this also frees the allocated nt pointer, no MEM_free call needed! */
   nodeUnregisterType(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 }
 
 /* Generic internal registration function.
- * Can be used to implement callbacks for registerable RNA node subtypes.
- */
-static bNodeType *rna_Node_register_base(Main *bmain,
-                                         ReportList *reports,
-                                         StructRNA *basetype,
-                                         void *data,
-                                         const char *identifier,
-                                         StructValidateFunc validate,
-                                         StructCallbackFunc call,
-                                         StructFreeFunc free)
+ * Can used to implement cbs for registerable api node subtype */
+static NodeType *api_Node_register_base(Main *main,
+                                        ReportList *reports,
+                                        ApiStruct *basetype,
+                                        void *data,
+                                        const char *id,
+                                        StructValidateFn validate,
+                                        StructCbFn call,
+                                        StructFreeFn free)
 {
-  bNodeType *nt, dummynt;
-  bNode dummynode;
-  PointerRNA dummyptr;
-  FunctionRNA *func;
-  PropertyRNA *parm;
-  int have_function[10];
+  NodeType *nt, dummynt;
+  Node dummynode;
+  ApiPtr dummyptr;
+  ApiFn *fn;
+  ApiProp *parm;
+  int have_fn[10];
 
   /* setup dummy node & node type to store static properties in */
-  memset(&dummynt, 0, sizeof(bNodeType));
+  memset(&dummynt, 0, sizeof(NodeType));
   /* this does some additional initialization of default values */
-  node_type_base_custom(&dummynt, identifier, "", 0);
+  node_type_base_custom(&dummynt, id, "", 0);
 
-  memset(&dummynode, 0, sizeof(bNode));
+  memset(&dummynode, 0, sizeof(Node));
   dummynode.typeinfo = &dummynt;
-  RNA_pointer_create(NULL, basetype, &dummynode, &dummyptr);
+  api_ptr_create(NULL, basetype, &dummynode, &dummyptr);
 
   /* validate the python class */
-  if (validate(&dummyptr, data, have_function) != 0) {
+  if (validate(&dummyptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummynt.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummynt.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Registering node class: '%s' is too long, maximum length is %d",
-                identifier,
+                id,
                 (int)sizeof(dummynt.idname));
     return NULL;
   }
@@ -1894,13 +1893,13 @@ static bNodeType *rna_Node_register_base(Main *bmain,
   /* check if we have registered this node type before, and remove it */
   nt = nodeTypeFind(dummynt.idname);
   if (nt) {
-    rna_Node_unregister(bmain, nt->rna_ext.srna);
+    api_Node_unregister(main, nt->api_ext.sapi);
   }
 
   /* create a new node type */
-  nt = MEM_mallocN(sizeof(bNodeType), "node type");
+  nt = mem_mallocn(sizeof(NodeType), "node type");
   memcpy(nt, &dummynt, sizeof(dummynt));
-  nt->free_self = (void (*)(bNodeType *))MEM_freeN;
+  nt->free_self = (void (*)(NodeType *))MEM_freeN;
 
   nt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, nt->idname, basetype);
   nt->rna_ext.data = data;
