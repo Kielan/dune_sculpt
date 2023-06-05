@@ -1671,33 +1671,33 @@ static bool rna_Node_poll_instance_default(bNode *node,
                                            const char **disabled_info)
 {
   /* use the basic poll function */
-  return rna_Node_poll(node->typeinfo, ntree, disabled_info);
+  return api_Node_poll(node->typeinfo, ntree, disabled_info);
 }
 
-static void rna_Node_update_reg(bNodeTree *ntree, bNode *node)
+static void api_Node_update_reg(NodeTree *ntree, Node *node)
 {
-  extern FunctionRNA rna_Node_update_func;
+  extern ApiFn api_Node_update_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create((ID *)ntree, node->typeinfo->rna_ext.srna, node, &ptr);
-  func = &rna_Node_update_func; /* RNA_struct_find_function(&ptr, "update"); */
+  api_ptr_create((Id *)ntree, node->typeinfo->api_ext.sapi, node, &ptr);
+  func = &api_Node_update_fn; /* api_struct_find_fn(&ptr, "update"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  node->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  node->typeinfo->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
+static void api_Node_insert_link(NodeTree *ntree, Node *node, NodeLink *link)
 {
-  extern FunctionRNA rna_Node_insert_link_func;
+  extern ApiFn api_Node_insert_link_func;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
   RNA_pointer_create((ID *)ntree, node->typeinfo->rna_ext.srna, node, &ptr);
   func = &rna_Node_insert_link_func;
