@@ -1899,34 +1899,34 @@ static NodeType *api_Node_register_base(Main *main,
   /* create a new node type */
   nt = mem_mallocn(sizeof(NodeType), "node type");
   memcpy(nt, &dummynt, sizeof(dummynt));
-  nt->free_self = (void (*)(NodeType *))MEM_freeN;
+  nt->free_self = (void (*)(NodeType *))mem_freen;
 
-  nt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, nt->idname, basetype);
-  nt->rna_ext.data = data;
-  nt->rna_ext.call = call;
-  nt->rna_ext.free = free;
-  RNA_struct_blender_type_set(nt->rna_ext.srna, nt);
+  nt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, nt->idname, basetype);
+  nt->api_ext.data = data;
+  nt->api_ext.call = call;
+  nt->api_ext.free = free;
+  api_struct_dune_type_set(nt->api_ext.sapi, nt);
 
-  RNA_def_struct_ui_text(nt->rna_ext.srna, nt->ui_name, nt->ui_description);
-  RNA_def_struct_ui_icon(nt->rna_ext.srna, nt->ui_icon);
+  api_def_struct_ui_text(nt->api_ext.sapi, nt->ui_name, nt->ui_description);
+  api_def_struct_ui_icon(nt->api_ext.sapi, nt->ui_icon);
 
-  func = RNA_def_function_runtime(
-      nt->rna_ext.srna, "is_registered_node_type", rna_Node_is_registered_node_type_runtime);
-  RNA_def_function_ui_description(func, "True if a registered node type");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_SELF_TYPE);
-  parm = RNA_def_boolean(func, "result", false, "Result", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn_runtime(
+      nt->api_ext.sapi, "is_registered_node_type", api_Node_is_registered_node_type_runtime);
+  api_def_fn_ui_description(fn, "True if a registered node type");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_SELF_TYPE);
+  parm = api_def_bool(fn, "result", false, "Result", "");
+  api_def_fn_return(fn, parm);
 
   /* XXX bad level call! needed to initialize the basic draw functions ... */
-  ED_init_custom_node_type(nt);
+  ed_init_custom_node_type(nt);
 
-  nt->poll = (have_function[0]) ? rna_Node_poll : NULL;
-  nt->poll_instance = (have_function[1]) ? rna_Node_poll_instance : rna_Node_poll_instance_default;
-  nt->updatefunc = (have_function[2]) ? rna_Node_update_reg : NULL;
-  nt->insert_link = (have_function[3]) ? rna_Node_insert_link : NULL;
-  nt->initfunc_api = (have_function[4]) ? rna_Node_init : NULL;
-  nt->copyfunc_api = (have_function[5]) ? rna_Node_copy : NULL;
-  nt->freefunc_api = (have_function[6]) ? rna_Node_free : NULL;
+  nt->poll = (have_fn[0]) ? api_Node_poll : NULL;
+  nt->poll_instance = (have_fn[1]) ? api_Node_poll_instance : api_Node_poll_instance_default;
+  nt->updatefn = (have_fn[2]) ? api_Node_update_reg : NULL;
+  nt->insert_link = (have_fn[3]) ? api_Node_insert_link : NULL;
+  nt->initfn_api = (have_fn[4]) ? api_Node_init : NULL;
+  nt->copyfn_api = (have_fn[5]) ? api_Node_copy : NULL;
+  nt->freefn_api = (have_function[6]) ? rna_Node_free : NULL;
   nt->draw_buttons = (have_function[7]) ? rna_Node_draw_buttons : NULL;
   nt->draw_buttons_ex = (have_function[8]) ? rna_Node_draw_buttons_ext : NULL;
   nt->labelfunc = (have_function[9]) ? rna_Node_draw_label : NULL;
