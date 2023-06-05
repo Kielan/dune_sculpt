@@ -2047,29 +2047,29 @@ static const EnumPropertyItem *rna_FunctionNodeCompare_type_itemf(bContext *UNUS
   return itemf_function_check(node_socket_data_type_items, compare_type_supported);
 }
 
-static const EnumPropertyItem *rna_FunctionNodeCompare_operation_itemf(bContext *UNUSED(C),
+static const EnumPropertyItem *api_FunctionNodeCompare_operation_itemf(bContext *UNUSED(C),
                                                                        PointerRNA *ptr,
                                                                        PropertyRNA *UNUSED(prop),
                                                                        bool *r_free)
 {
   *r_free = true;
-  bNode *node = ptr->data;
-  NodeFunctionCompare *data = (NodeFunctionCompare *)node->storage;
+  Node *node = ptr->data;
+  NodeFnCompare *data = (NodeFnCompare *)node->storage;
 
   if (ELEM(data->data_type, SOCK_FLOAT, SOCK_INT, SOCK_VECTOR)) {
-    return itemf_function_check(rna_enum_node_compare_operation_items,
-                                compare_main_operation_supported);
+    return itemf_fn_check(api_enum_node_compare_op_items,
+                          compare_main_op_supported);
   }
   else if (data->data_type == SOCK_STRING) {
-    return itemf_function_check(rna_enum_node_compare_operation_items,
-                                compare_string_operation_supported);
+    return itemf_fn_check(api_enum_node_compare_op_items,
+                          compare_string_op_supported);
   }
   else if (data->data_type == SOCK_RGBA) {
-    return itemf_function_check(rna_enum_node_compare_operation_items,
-                                compare_rgba_operation_supported);
+    return itemf_fn_check(api_enum_node_compare_op_items,
+                          compare_rgba_op_supported);
   }
   else {
-    return itemf_function_check(rna_enum_node_compare_operation_items,
+    return itemf_fn_check(rna_enum_node_compare_operation_items,
                                 compare_other_operation_supported);
   }
 }
