@@ -2571,46 +2571,46 @@ static void rna_Node_dimensions_get(PointerRNA *ptr, float *value)
 /* ******** Node Socket ******** */
 
 static void rna_NodeSocket_draw(
-    bContext *C, struct uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, const char *text)
+    bContext *C, struct uiLayout *layout, ApiPtr *ptr, ApiPtr *node_ptr, const char *text)
 {
-  extern FunctionRNA rna_NodeSocket_draw_func;
+  extern ApiFn api_NodeSocket_draw_fn;
 
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  ParaList list;
+  ApiFn *fn;
 
-  func = &rna_NodeSocket_draw_func; /* RNA_struct_find_function(&ptr, "draw"); */
+  fn = &api_NodeSocket_draw_func; /* RNA_struct_find_function(&ptr, "draw"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
-  RNA_parameter_set_lookup(&list, "node", node_ptr);
-  RNA_parameter_set_lookup(&list, "text", &text);
-  sock->typeinfo->ext_socket.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
+  api_param_set_lookup(&list, "node", node_ptr);
+  api_param_set_lookup(&list, "text", &text);
+  sock->typeinfo->ext_socket.call(C, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocket_draw_color(bContext *C,
-                                      PointerRNA *ptr,
-                                      PointerRNA *node_ptr,
+static void api_NodeSocket_draw_color(Cxt *C,
+                                      ApiPtr *ptr,
+                                      ApiPtr *node_ptr,
                                       float *r_color)
 {
-  extern FunctionRNA rna_NodeSocket_draw_color_func;
+  extern ApiFn api_NodeSocket_draw_color_fn;
 
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
 
-  func = &rna_NodeSocket_draw_color_func; /* RNA_struct_find_function(&ptr, "draw_color"); */
+  fn = &api_NodeSocket_draw_color_fn; /* RNA_struct_find_function(&ptr, "draw_color"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "node", node_ptr);
-  sock->typeinfo->ext_socket.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "node", node_ptr);
+  sock->typeinfo->ext_socket.call(C, ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "color", &ret);
+  api_param_get_lookup(&list, "color", &ret);
   copy_v4_v4(r_color, (float *)ret);
 
   RNA_parameter_list_free(&list);
