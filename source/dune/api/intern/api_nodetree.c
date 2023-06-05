@@ -1720,35 +1720,35 @@ static void api_Node_init(const Cxt *C, ApiPtr *ptr)
   fn = &api_Node_init_fn; /* api_struct_find_fn(&ptr, "init"); */
 
   api_param_list_create(&list, ptr, fn);
-  node->typeinfo->api_ext.call((Cxt *)C, ptr, func, &list);
+  node->typeinfo->api_ext.call((Cxt *)C, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_copy(PointerRNA *ptr, const struct bNode *copynode)
+static void api_Node_copy(ApiPtr *ptr, const struct Node *copynode)
 {
-  extern FunctionRNA rna_Node_copy_func;
+  extern ApiFn api_Node_copy_fn;
 
-  bNode *node = (bNode *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  Node *node = (Node *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
-  func = &rna_Node_copy_func; /* RNA_struct_find_function(&ptr, "copy"); */
+  fn = &api_Node_copy_fn; /* api_struct_find_function(&ptr, "copy"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "node", &copynode);
-  node->typeinfo->rna_ext.call(NULL, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "node", &copynode);
+  node->typeinfo->api_ext.call(NULL, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_free(PointerRNA *ptr)
+static void api_Node_free(ApiPtr *ptr)
 {
-  extern FunctionRNA rna_Node_free_func;
+  extern ApiFn api_Node_free_fn;
 
-  bNode *node = (bNode *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  Node *node = (bNode *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
   func = &rna_Node_free_func; /* RNA_struct_find_function(&ptr, "free"); */
 
