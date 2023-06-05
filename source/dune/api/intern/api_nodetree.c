@@ -1510,11 +1510,11 @@ static void api_NodeTree_inputs_move(NodeTree *ntree, Main *main, int from_index
 
   dune_ntree_update_tag_interface(ntree);
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  ed_node_tree_propagate_change(NULL, bmain, ntree);
   WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_NodeTree_outputs_move(bNodeTree *ntree, Main *bmain, int from_index, int to_index)
+static void api_NodeTree_outputs_move(bNodeTree *ntree, Main *bmain, int from_index, int to_index)
 {
   if (from_index == to_index) {
     return;
@@ -1567,7 +1567,7 @@ static ApiStruct *api_Node_refine(struct ApiPtr *ptr)
 {
   Node *node = (Node *)ptr->data;
 
-  if (node->typeinfo->rna_ext.sapi) {
+  if (node->typeinfo->api_ext.sapi) {
     return node->typeinfo->api_ext.sapi;
   }
   else {
@@ -1628,34 +1628,34 @@ static bool api_Node_poll(NodeType *ntype, NodeTree *ntree, const char **UNUSED(
   fn = &api_Node_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
   api_param_list_create(&list, &ptr, fn);
-  RNA_param_set_lookup(&list, "node_tree", &ntree);
-  ntype->api_ext.call(NULL, &ptr, func, &list);
+  api_param_set_lookup(&list, "node_tree", &ntree);
+  ntype->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static bool rna_Node_poll_instance(bNode *node,
-                                   bNodeTree *ntree,
+static bool api_Node_poll_instance(Node *node,
+                                   NodeTree *ntree,
                                    const char **UNUSED(disabled_info))
 {
-  extern FunctionRNA rna_Node_poll_instance_func;
+  extern ApiFn api_Node_poll_instance_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, node->typeinfo->rna_ext.srna, node, &ptr); /* dummy */
-  func = &rna_Node_poll_instance_func; /* RNA_struct_find_function(&ptr, "poll_instance"); */
+  api_ptr_create(NULL, node->typeinfo->rna_ext.srna, node, &ptr); /* dummy */
+  fn = &api_Node_poll_instance_func; /* RNA_struct_find_function(&ptr, "poll_instance"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "node_tree", &ntree);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "node_tree", &ntree);
   node->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
 
   RNA_parameter_get_lookup(&list, "visible", &ret);
