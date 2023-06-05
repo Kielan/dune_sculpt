@@ -1658,16 +1658,16 @@ static bool api_Node_poll_instance(Node *node,
   api_param_set_lookup(&list, "node_tree", &ntree);
   node->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static bool rna_Node_poll_instance_default(bNode *node,
-                                           bNodeTree *ntree,
+static bool api_Node_poll_instance_default(Node *node,
+                                           NodeTree *ntree,
                                            const char **disabled_info)
 {
   /* use the basic poll function */
@@ -1699,28 +1699,28 @@ static void api_Node_insert_link(NodeTree *ntree, Node *node, NodeLink *link)
   ParamList list;
   ApiFn *fn;
 
-  RNA_pointer_create((ID *)ntree, node->typeinfo->rna_ext.srna, node, &ptr);
-  func = &rna_Node_insert_link_func;
+  api_ptr_create((Id *)ntree, node->typeinfo->api_ext.sapi, node, &ptr);
+  fn = &api_Node_insert_link_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "link", &link);
-  node->typeinfo->rna_ext.call(NULL, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "link", &link);
+  node->typeinfo->api_ext.call(NULL, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_Node_init(const bContext *C, PointerRNA *ptr)
+static void api_Node_init(const Cxt *C, ApiPtr *ptr)
 {
-  extern FunctionRNA rna_Node_init_func;
+  extern ApiFn api_Node_init_fn;
 
-  bNode *node = (bNode *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  Node *node = (Node *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
-  func = &rna_Node_init_func; /* RNA_struct_find_function(&ptr, "init"); */
+  fn = &api_Node_init_fn; /* api_struct_find_fn(&ptr, "init"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  node->typeinfo->rna_ext.call((bContext *)C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  node->typeinfo->api_ext.call((Cxt *)C, ptr, func, &list);
 
   RNA_parameter_list_free(&list);
 }
