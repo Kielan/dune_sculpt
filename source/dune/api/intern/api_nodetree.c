@@ -2093,21 +2093,21 @@ static bool accumulate_field_type_supported(const EnumPropertyItem *item)
   return ELEM(item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_INT32);
 }
 
-static const EnumPropertyItem *rna_GeoNodeAccumulateField_type_itemf(bContext *UNUSED(C),
+static const EnumPropItem *rna_GeoNodeAccumulateField_type_itemf(bContext *UNUSED(C),
                                                                      PointerRNA *UNUSED(ptr),
                                                                      PropertyRNA *UNUSED(prop),
                                                                      bool *r_free)
 {
   *r_free = true;
-  return itemf_function_check(rna_enum_attribute_type_items, accumulate_field_type_supported);
+  return itemf_fn_check(rna_enum_attribute_type_items, accumulate_field_type_supported);
 }
 
-static void rna_GeometryNodeCompare_data_type_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_GeometryNodeCompare_data_type_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  bNode *node = ptr->data;
-  NodeFunctionCompare *node_storage = (NodeFunctionCompare *)node->storage;
+  Node *node = ptr->data;
+  NodeFnCompare *node_storage = (NodeFnCompare *)node->storage;
 
-  if (node_storage->data_type == SOCK_RGBA && !ELEM(node_storage->operation,
+  if (node_storage->data_type == SOCK_RGBA && !ELEM(node_storage->op,
                                                     NODE_COMPARE_EQUAL,
                                                     NODE_COMPARE_NOT_EQUAL,
                                                     NODE_COMPARE_COLOR_BRIGHTER,
@@ -2115,15 +2115,15 @@ static void rna_GeometryNodeCompare_data_type_update(Main *bmain, Scene *scene, 
     node_storage->operation = NODE_COMPARE_EQUAL;
   }
   else if (node_storage->data_type == SOCK_STRING &&
-           !ELEM(node_storage->operation, NODE_COMPARE_EQUAL, NODE_COMPARE_NOT_EQUAL)) {
+           !ELEM(node_storage->op, NODE_COMPARE_EQUAL, NODE_COMPARE_NOT_EQUAL)) {
     node_storage->operation = NODE_COMPARE_EQUAL;
   }
   else if (node_storage->data_type != SOCK_RGBA &&
-           ELEM(node_storage->operation, NODE_COMPARE_COLOR_BRIGHTER, NODE_COMPARE_COLOR_DARKER)) {
+           ELEM(node_storage->op, NODE_COMPARE_COLOR_BRIGHTER, NODE_COMPARE_COLOR_DARKER)) {
     node_storage->operation = NODE_COMPARE_EQUAL;
   }
 
-  rna_Node_socket_update(bmain, scene, ptr);
+  api_Node_socket_update(main, scene, ptr);
 }
 
 static bool generic_attribute_type_supported(const EnumPropertyItem *item)
@@ -2131,48 +2131,48 @@ static bool generic_attribute_type_supported(const EnumPropertyItem *item)
   return ELEM(
       item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_COLOR, CD_PROP_BOOL, CD_PROP_INT32);
 }
-static const EnumPropertyItem *rna_GeometryNodeAttributeType_type_itemf(bContext *UNUSED(C),
-                                                                        PointerRNA *UNUSED(ptr),
-                                                                        PropertyRNA *UNUSED(prop),
+static const EnumPropItem *api_GeometryNodeAttributeType_type_itemf(Cxt *UNUSED(C),
+                                                                        ApiPtr *UNUSED(ptr),
+                                                                        ApiProp *UNUSED(prop),
                                                                         bool *r_free)
 {
   *r_free = true;
-  return itemf_function_check(rna_enum_attribute_type_items, generic_attribute_type_supported);
+  return itemf_fn_check(api_enum_attribute_type_items, generic_attribute_type_supported);
 }
 
-static bool transfer_attribute_type_supported(const EnumPropertyItem *item)
+static bool transfer_attribute_type_supported(const EnumPropItem *item)
 {
   return ELEM(
       item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_COLOR, CD_PROP_BOOL, CD_PROP_INT32);
 }
-static const EnumPropertyItem *rna_NodeGeometryTransferAttribute_type_itemf(
-    bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
+static const EnumPropItem *api_NodeGeometryTransferAttribute_type_itemf(
+    Cxt *UNUSED(C), ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
   *r_free = true;
-  return itemf_function_check(rna_enum_attribute_type_items, transfer_attribute_type_supported);
+  return itemf_fn_check(api_enum_attribute_type_items, transfer_attribute_type_supported);
 }
 
-static bool attribute_statistic_type_supported(const EnumPropertyItem *item)
+static bool attribute_statistic_type_supported(const EnumPropItem *item)
 {
   return ELEM(item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3);
 }
-static const EnumPropertyItem *rna_GeometryNodeAttributeStatistic_type_itemf(
-    bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
+static const EnumPropItem *api_GeometryNodeAttributeStatistic_type_itemf(
+    Cxt *UNUSED(C), ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
   *r_free = true;
-  return itemf_function_check(rna_enum_attribute_type_items, attribute_statistic_type_supported);
+  return itemf_fn_check(api_enum_attribute_type_items, attribute_statistic_type_supported);
 }
 
-static StructRNA *rna_ShaderNode_register(Main *bmain,
+static ApiStruct *api_ShaderNode_register(Main *main,
                                           ReportList *reports,
                                           void *data,
-                                          const char *identifier,
-                                          StructValidateFunc validate,
-                                          StructCallbackFunc call,
-                                          StructFreeFunc free)
+                                          const char *id,
+                                          StructValidateFn validate,
+                                          StructCbFn call,
+                                          StructFreeFn free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_ShaderNode, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &ApiShaderNode, data, id, validate, call, free);
   if (!nt) {
     return NULL;
   }
@@ -2180,12 +2180,12 @@ static StructRNA *rna_ShaderNode_register(Main *bmain,
   nodeRegisterType(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
-static StructRNA *rna_CompositorNode_register(Main *bmain,
+static ApiStruct *rna_CompositorNode_register(Main *bmain,
                                               ReportList *reports,
                                               void *data,
                                               const char *identifier,
