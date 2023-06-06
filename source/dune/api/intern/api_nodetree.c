@@ -3350,7 +3350,7 @@ static ApiStruct *api_GeometryNodeCustomGroup_register(Main *main,
 
 void register_node_type_geo_custom_group(bNodeType *ntype);
 
-static StructRNA *rna_ShaderNodeCustomGroup_register(Main *bmain,
+static ApiStruct *api_ShaderNodeCustomGroup_register(Main *bmain,
                                                      ReportList *reports,
                                                      void *data,
                                                      const char *identifier,
@@ -3358,8 +3358,8 @@ static StructRNA *rna_ShaderNodeCustomGroup_register(Main *bmain,
                                                      StructCallbackFunc call,
                                                      StructFreeFunc free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_ShaderNodeCustomGroup, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &ApiShaderNodeCustomGroup, data, identifier, validate, call, free);
 
   if (!nt) {
     return NULL;
@@ -3372,48 +3372,48 @@ static StructRNA *rna_ShaderNodeCustomGroup_register(Main *bmain,
 
   nodeRegisterType(nt);
 
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
-static StructRNA *rna_CompositorNodeCustomGroup_register(Main *bmain,
+static ApiStruct *api_CompositorNodeCustomGroup_register(Main *main,
                                                          ReportList *reports,
                                                          void *data,
-                                                         const char *identifier,
-                                                         StructValidateFunc validate,
-                                                         StructCallbackFunc call,
-                                                         StructFreeFunc free)
+                                                         const char *id,
+                                                         StructValidateFn validate,
+                                                         StructCbFn call,
+                                                         StructFreeFn free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_CompositorNodeCustomGroup, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &api_CompositorNodeCustomGroup, data, id, validate, call, free);
   if (!nt) {
     return NULL;
   }
 
-  nt->group_update_func = node_group_update;
+  nt->group_update_fn = node_group_update;
   nt->type = NODE_CUSTOM_GROUP;
 
   register_node_type_cmp_custom_group(nt);
 
   nodeRegisterType(nt);
 
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
-static void rna_CompositorNode_tag_need_exec(bNode *node)
+static void api_CompositorNode_tag_need_ex(Node *node)
 {
-  node->need_exec = true;
+  node->need_ex = true;
 }
 
-static void rna_Node_tex_image_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Node_tex_image_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNode *node = (bNode *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  Node *node = (Node *)ptr->data;
 
-  BKE_ntree_update_tag_node_property(ntree, node);
+  dune_ntree_update_tag_node_property(ntree, node);
   ED_node_tree_propagate_change(NULL, bmain, ntree);
   WM_main_add_notifier(NC_IMAGE, NULL);
 }
