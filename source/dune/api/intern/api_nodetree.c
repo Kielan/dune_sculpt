@@ -1632,7 +1632,6 @@ static bool api_Node_poll(NodeType *ntype, NodeTree *ntree, const char **UNUSED(
 
   api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
-
   api_param_list_free(&list);
 
   return visible;
@@ -3450,10 +3449,10 @@ static void rna_NodeGroup_node_tree_set(PointerRNA *ptr,
   }
 }
 
-static bool rna_NodeGroup_node_tree_poll(PointerRNA *ptr, const PointerRNA value)
+static bool api_NodeGroup_node_tree_poll(ApiPtr *ptr, const PointerRNA value)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeTree *ngroup = value.data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeTree *ngroup = value.data;
 
   /* only allow node trees of the same type as the group node's tree */
   if (ngroup->type != ntree->type) {
@@ -3464,31 +3463,31 @@ static bool rna_NodeGroup_node_tree_poll(PointerRNA *ptr, const PointerRNA value
   return nodeGroupPoll(ntree, ngroup, &disabled_hint);
 }
 
-static StructRNA *rna_NodeGroup_interface_typef(PointerRNA *ptr)
+static ApiStruct *api_NodeGroup_interface_typef(ApiPtr *ptr)
 {
-  bNode *node = ptr->data;
-  bNodeTree *ngroup = (bNodeTree *)node->id;
+  Node *node = ptr->data;
+  NodeTree *ngroup = (NodeTree *)node->id;
 
   if (ngroup) {
-    StructRNA *srna = ntreeInterfaceTypeGet(ngroup, true);
+    ApiStruct *sapi = ntreeInterfaceTypeGet(ngroup, true);
     if (srna) {
-      return srna;
+      return sapi;
     }
   }
-  return &RNA_PropertyGroup;
+  return &ApiPropGroup;
 }
 
-static StructRNA *rna_NodeGroupInputOutput_interface_typef(PointerRNA *ptr)
+static ApiStruct *api_NodeGroupInputOutput_interface_typef(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
 
   if (ntree) {
-    StructRNA *srna = ntreeInterfaceTypeGet(ntree, true);
-    if (srna) {
-      return srna;
+    ApiStruct *sapi = ntreeInterfaceTypeGet(ntree, true);
+    if (sapi) {
+      return sapi;
     }
   }
-  return &RNA_PropertyGroup;
+  return &ApiPropGroup;
 }
 
 static void rna_distance_matte_t1_set(PointerRNA *ptr, float value)
