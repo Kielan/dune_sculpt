@@ -266,7 +266,7 @@ static void api_Action_use_frame_range_set(ApiPtr *ptr, bool value)
 
 static void api_Action_start_frame_set(ApiPtr *ptr, float value)
 {
-  Action *data = (bAction *)ptr->owner_id;
+  Action *data = (Action *)ptr->owner_id;
 
   data->frame_start = value;
   CLAMP_MIN(data->frame_end, data->frame_start);
@@ -282,7 +282,7 @@ static void api_Action_end_frame_set(ApiPtr *ptr, float value)
 
 /* Used to check if an action (value pointer)
  * is suitable to be assigned to the ID-block that is ptr. */
-bool api_Action_id_poll(PointerRNA *ptr, PointerRNA value)
+bool api_Action_id_poll(ApiPtr *ptr, ApiPtr value)
 {
   Id *srcId = ptr->owner_id;
   Action *act = (Action *)value.owner_id;
@@ -305,10 +305,10 @@ bool api_Action_id_poll(PointerRNA *ptr, PointerRNA value)
 
 /* Used to check if an action (value pointer)
  * can be assigned to Action Editor given current mode. */
-bool rna_Action_actedit_assign_poll(PointerRNA *ptr, PointerRNA value)
+bool api_Action_actedit_assign_poll(ApiPtr *ptr, ApiPtr value)
 {
   SpaceAction *saction = (SpaceAction *)ptr->data;
-  bAction *act = (bAction *)value.owner_id;
+  Action *act = (Action *)value.owner_id;
 
   if (act) {
     /* there can still be actions that will have undefined id-root
@@ -334,116 +334,116 @@ bool rna_Action_actedit_assign_poll(PointerRNA *ptr, PointerRNA value)
   return 0;
 }
 
-static char *rna_DopeSheet_path(PointerRNA *UNUSED(ptr))
+static char *api_DopeSheet_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("dopesheet");
+  return lib_strdup("dopesheet");
 }
 
 #else
 
-static void rna_def_dopesheet(BlenderRNA *brna)
+static void api_def_dopesheet(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "DopeSheet", NULL);
-  RNA_def_struct_sdna(srna, "bDopeSheet");
-  RNA_def_struct_path_func(srna, "rna_DopeSheet_path");
-  RNA_def_struct_ui_text(
+  srna = api_def_struct(dapi, "DopeSheet", NULL);
+  api_def_struct_stype(sapi, "bDopeSheet");
+  api_def_struct_path_fn(sapi, "api_DopeSheet_path");
+  api_def_struct_ui_text(
       srna, "Dope Sheet", "Settings for filtering the channels shown in animation editors");
 
   /* Source of DopeSheet data */
   /* XXX: make this obsolete? */
-  prop = RNA_def_property(srna, "source", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ID");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "source", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "ID");
+  api_def_prop_ui_text(
       prop, "Source", "ID-Block representing source data, usually ID_SCE (i.e. Scene)");
 
   /* Show data-block filters */
-  prop = RNA_def_property(srna, "show_datablock_filters", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADS_FLAG_SHOW_DBFILTERS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_datablock_filters", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADS_FLAG_SHOW_DBFILTERS);
+  api_def_prop_ui_text(
       prop,
       "Show Data-Block Filters",
       "Show options for whether channels related to certain types of data are included");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN, NULL);
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN, NULL);
 
   /* General Filtering Settings */
-  prop = RNA_def_property(srna, "show_only_selected", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filterflag", ADS_FILTER_ONLYSEL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_only_selected", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filterflag", ADS_FILTER_ONLYSEL);
+  api_def_prop_ui_text(
       prop, "Only Show Selected", "Only include channels relating to selected objects and data");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_hidden", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filterflag", ADS_FILTER_INCL_HIDDEN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_hidden", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filterflag", ADS_FILTER_INCL_HIDDEN);
+  api_def_prop_ui_text(
       prop, "Show Hidden", "Include channels from objects/bone that are not visible");
-  RNA_def_property_ui_icon(prop, ICON_OBJECT_HIDDEN, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OBJECT_HIDDEN, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "use_datablock_sort", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", ADS_FLAG_NO_DB_SORT);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_datablock_sort", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_boo_negative_stype(prop, NULL, "flag", ADS_FLAG_NO_DB_SORT);
+  api_def_prop_ui_text(prop,
                            "Sort Data-Blocks",
                            "Alphabetically sorts data-blocks - mainly objects in the scene "
                            "(disable to increase viewport speed)");
-  RNA_def_property_ui_icon(prop, ICON_SORTALPHA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_SORTALPHA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "use_filter_invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADS_FLAG_INVERT_FILTER);
-  RNA_def_property_ui_text(prop, "Invert", "Invert filter search");
-  RNA_def_property_ui_icon(prop, ICON_ZOOM_IN, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "use_filter_invert", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADS_FLAG_INVERT_FILTER);
+  api_def_prop_ui_text(prop, "Invert", "Invert filter search");
+  api_def_prop_ui_icon(prop, ICON_ZOOM_IN, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* Debug Filtering Settings */
-  prop = RNA_def_property(srna, "show_only_errors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filterflag", ADS_FILTER_ONLY_ERRORS);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(stype, "show_only_errors", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filterflag", ADS_FILTER_ONLY_ERRORS);
+  api_def_prop_ui_text(prop,
                            "Only Show Errors",
                            "Only include F-Curves and drivers that are disabled or have errors");
-  RNA_def_property_ui_icon(prop, ICON_ERROR, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_ERROR, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* Object Collection Filtering Settings */
-  prop = RNA_def_property(srna, "filter_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "filter_grp");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "filter_collection", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "filter_grp");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Filtering Collection", "Collection that included object should be a member of");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* FCurve Display Name Search Settings */
-  prop = RNA_def_property(srna, "filter_fcurve_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "searchstr");
-  RNA_def_property_ui_text(prop, "F-Curve Name Filter", "F-Curve live filtering string");
-  RNA_def_property_ui_icon(prop, ICON_VIEWZOOM, 0);
-  RNA_def_property_flag(prop, PROP_TEXTEDIT_UPDATE);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "filter_fcurve_name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "searchstr");
+  api_def_prop_ui_text(prop, "F-Curve Name Filter", "F-Curve live filtering string");
+  api_def_prop_ui_icon(prop, ICON_VIEWZOOM, 0);
+  api_def_prop_flag(prop, PROP_TEXTEDIT_UPDATE);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* NLA Name Search Settings (Shared with FCurve setting, but with different labels) */
-  prop = RNA_def_property(srna, "filter_text", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "searchstr");
-  RNA_def_property_ui_text(prop, "Name Filter", "Live filtering string");
-  RNA_def_property_flag(prop, PROP_TEXTEDIT_UPDATE);
-  RNA_def_property_ui_icon(prop, ICON_VIEWZOOM, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "filter_text", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "searchstr");
+  api_def_prop_ui_text(prop, "Name Filter", "Live filtering string")
+  api_def_prop_flag(prop, PROP_TEXTEDIT_UPDATE)
+  api_def_prop_ui_icon(prop, ICON_VIEWZOOM, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* Multi-word fuzzy search option for name/text filters */
-  prop = RNA_def_property(srna, "use_multi_word_filter", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADS_FLAG_FUZZY_NAMES);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_multi_word_filter", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADS_FLAG_FUZZY_NAMES);
+  api_def_prop_ui_text(prop,
                            "Multi-Word Fuzzy Filter",
                            "Perform fuzzy/multi-word matching.\n"
                            "Warning: May be slow");
-  RNA_def_property_ui_icon(prop, ICON_SORTALPHA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_SORTALPHA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* NLA Specific Settings */
-  prop = RNA_def_property(srna, "show_missing_nla", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(srna, "show_missing_nla", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NLA_NOACT);
   RNA_def_property_ui_text(prop,
                            "Include Missing NLA",
