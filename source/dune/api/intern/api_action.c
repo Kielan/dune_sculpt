@@ -34,7 +34,7 @@
 
 static void api_ActionGroup_channels_next(CollectionPropIter *iter)
 {
-  ListBaseIter *internal = &iter->internal.list;
+  ListIter *internal = &iter->internal.list;
   FCurve *fcu = (FCurve *)internal->link;
   ActionGroup *grp = fcu->grp;
 
@@ -54,14 +54,14 @@ static ActionGroup *api_Action_groups_new(Action *act, const char name[])
   return action_groups_add_new(act, name);
 }
 
-static void rna_Action_groups_remove(Action *act, ReportList *reports, ApiPtr *agrp_ptr)
+static void api_Action_groups_remove(Action *act, ReportList *reports, ApiPtr *agrp_ptr)
 {
-  bActionGroup *agrp = agrp_ptr->data;
+  ActionGroup *agrp = agrp_ptr->data;
   FCurve *fcu, *fcn;
 
   /* try to remove the F-Curve from the action */
-  if (BLI_remlink_safe(&act->groups, agrp) == false) {
-    BKE_reportf(reports,
+  if (lib_remlink_safe(&act->groups, agrp) == false) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Action group '%s' not found in action '%s'",
                 agrp->name,
@@ -77,14 +77,14 @@ static void rna_Action_groups_remove(Action *act, ReportList *reports, ApiPtr *a
     action_groups_remove_channel(act, fcu);
 
     /* tack onto the end */
-    BLI_addtail(&act->curves, fcu);
+    lib_addtail(&act->curves, fcu);
   }
 
-  MEM_freeN(agrp);
-  RNA_POINTER_INVALIDATE(agrp_ptr);
+  mem_freen(agrp);
+  API_PTR_INVALIDATE(agrp_ptr);
 
-  DEG_id_tag_update(&act->id, ID_RECALC_ANIMATION_NO_FLUSH);
-  WM_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+  graph_id_tag_update(&act->id, ID_RECALC_ANIMATION_NO_FLUSH);
+  wn_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 }
 
 static FCurve *rna_Action_fcurve_new(bAction *act,
@@ -99,13 +99,13 @@ static FCurve *rna_Action_fcurve_new(bAction *act,
   }
 
   if (data_path[0] == '\0') {
-    BKE_report(reports, RPT_ERROR, "F-Curve data path empty, invalid argument");
+    dube_report(reports, RPT_ERROR, "F-Curve data path empty, invalid argument");
     return NULL;
   }
 
   /* Annoying, check if this exists. */
-  if (ED_action_fcurve_find(act, data_path, index)) {
-    BKE_reportf(reports,
+  if (ed_action_fcurve_find(act, data_path, index)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "F-Curve '%s[%d]' already exists in action '%s'",
                 data_path,
@@ -127,15 +127,15 @@ static FCurve *rna_Action_fcurve_find(bAction *act,
   }
 
   /* Returns NULL if not found. */
-  return BKE_fcurve_find(&act->curves, data_path, index);
+  return dune_fcurve_find(&act->curves, data_path, index);
 }
 
-static void rna_Action_fcurve_remove(bAction *act, ReportList *reports, PointerRNA *fcu_ptr)
+static void api_Action_fcurve_remove(Action *act, ReportList *reports, PointerRNA *fcu_ptr)
 {
   FCurve *fcu = fcu_ptr->data;
   if (fcu->grp) {
-    if (BLI_findindex(&act->groups, fcu->grp) == -1) {
-      BKE_reportf(reports,
+    if (lib_findindex(&act->groups, fcu->grp) == -1) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "F-Curve's action group '%s' not found in action '%s'",
                   fcu->grp->name,
@@ -144,41 +144,41 @@ static void rna_Action_fcurve_remove(bAction *act, ReportList *reports, PointerR
     }
 
     action_groups_remove_channel(act, fcu);
-    BKE_fcurve_free(fcu);
-    RNA_POINTER_INVALIDATE(fcu_ptr);
+    dune_fcurve_free(fcu);
+    API_PTR_INVALIDATE(fcu_ptr);
   }
   else {
-    if (BLI_findindex(&act->curves, fcu) == -1) {
-      BKE_reportf(reports, RPT_ERROR, "F-Curve not found in action '%s'", act->id.name + 2);
+    if (lib_findindex(&act->curves, fcu) == -1) {
+      dune_reportf(reports, RPT_ERROR, "F-Curve not found in action '%s'", act->id.name + 2);
       return;
     }
 
-    BLI_remlink(&act->curves, fcu);
-    BKE_fcurve_free(fcu);
-    RNA_POINTER_INVALIDATE(fcu_ptr);
+    lib_remlink(&act->curves, fcu);
+    dune_fcurve_free(fcu);
+    API_PTR_INVALIDATE(fcu_ptr);
   }
 
-  DEG_id_tag_update(&act->id, ID_RECALC_ANIMATION_NO_FLUSH);
-  WM_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+  grpg_id_tag_update(&act->id, ID_RECALC_ANIMATION_NO_FLUSH);
+  wm_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 }
 
-static TimeMarker *rna_Action_pose_markers_new(bAction *act, const char name[])
+static TimeMarker *api_Action_pose_markers_new(Action *act, const char name[])
 {
-  TimeMarker *marker = MEM_callocN(sizeof(TimeMarker), "TimeMarker");
+  TimeMarker *marker = mem_callocn(sizeof(TimeMarker), "TimeMarker");
   marker->flag = 1;
   marker->frame = 1;
-  BLI_strncpy_utf8(marker->name, name, sizeof(marker->name));
-  BLI_addtail(&act->markers, marker);
+  lib_strncpy_utf8(marker->name, name, sizeof(marker->name));
+  lib_addtail(&act->markers, marker);
   return marker;
 }
 
-static void rna_Action_pose_markers_remove(bAction *act,
+static void api_Action_pose_markers_remove(Action *act,
                                            ReportList *reports,
-                                           PointerRNA *marker_ptr)
+                                           ApiPtr *marker_ptr)
 {
   TimeMarker *marker = marker_ptr->data;
-  if (!BLI_remlink_safe(&act->markers, marker)) {
-    BKE_reportf(reports,
+  if (!lib_remlink_safe(&act->markers, marker)) {
+    lib_reportf(reports,
                 RPT_ERROR,
                 "Timeline marker '%s' not found in action '%s'",
                 marker->name,
@@ -186,54 +186,54 @@ static void rna_Action_pose_markers_remove(bAction *act,
     return;
   }
 
-  MEM_freeN(marker);
-  RNA_POINTER_INVALIDATE(marker_ptr);
+  mem_freeN(marker);
+  API_PTR_INVALIDATE(marker_ptr);
 }
 
-static PointerRNA rna_Action_active_pose_marker_get(PointerRNA *ptr)
+static ApiPtr api_Action_active_pose_marker_get(ApiPtr *ptr)
 {
-  bAction *act = (bAction *)ptr->data;
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_TimelineMarker, BLI_findlink(&act->markers, act->active_marker - 1));
+  Action *act = (Action *)ptr->data;
+  return api_ptr_inherit_refine(
+      ptr, &ApiTimelineMarker, lib_findlink(&act->markers, act->active_marker - 1));
 }
 
-static void rna_Action_active_pose_marker_set(PointerRNA *ptr,
-                                              PointerRNA value,
+static void api_Action_active_pose_marker_set(ApiPtr *ptr,
+                                              ApiPtr value,
                                               struct ReportList *UNUSED(reports))
 {
-  bAction *act = (bAction *)ptr->data;
-  act->active_marker = BLI_findindex(&act->markers, value.data) + 1;
+  Action *act = (Action *)ptr->data;
+  act->active_marker = lib_findindex(&act->markers, value.data) + 1;
 }
 
-static int rna_Action_active_pose_marker_index_get(PointerRNA *ptr)
+static int api_Action_active_pose_marker_index_get(ApiPtr *ptr)
 {
-  bAction *act = (bAction *)ptr->data;
+  Action *act = (Action *)ptr->data;
   return MAX2(act->active_marker - 1, 0);
 }
 
-static void rna_Action_active_pose_marker_index_set(PointerRNA *ptr, int value)
+static void api_Action_active_pose_marker_index_set(ApiPtr *ptr, int value)
 {
-  bAction *act = (bAction *)ptr->data;
+  Action *act = (Action *)ptr->data;
   act->active_marker = value + 1;
 }
 
-static void rna_Action_active_pose_marker_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_Action_active_pose_marker_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
-  bAction *act = (bAction *)ptr->data;
+  Action *act = (Action *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&act->markers) - 1);
+  *max = max_ii(0, lib_list_count(&act->markers) - 1);
 }
 
-static void rna_Action_frame_range_get(PointerRNA *ptr, float *r_values)
+static void api_Action_frame_range_get(ApiPtr *ptr, float *r_values)
 {
-  BKE_action_get_frame_range((bAction *)ptr->owner_id, &r_values[0], &r_values[1]);
+  dune_action_get_frame_range((Action *)ptr->owner_id, &r_values[0], &r_values[1]);
 }
 
-static void rna_Action_frame_range_set(PointerRNA *ptr, const float *values)
+static void rna_Action_frame_range_set(ApiPtr *ptr, const float *values)
 {
-  bAction *data = (bAction *)ptr->owner_id;
+  Action *data = (Action *)ptr->owner_id;
 
   data->flag |= ACT_FRAME_RANGE;
   data->frame_start = values[0];
@@ -241,15 +241,15 @@ static void rna_Action_frame_range_set(PointerRNA *ptr, const float *values)
   CLAMP_MIN(data->frame_end, data->frame_start);
 }
 
-static void rna_Action_curve_frame_range_get(PointerRNA *ptr, float *values)
+static void api_Action_curve_frame_range_get(ApiPtr *ptr, float *values)
 { /* don't include modifiers because they too easily can have very large
    * ranges: MINAFRAMEF to MAXFRAMEF. */
-  calc_action_range((bAction *)ptr->owner_id, values, values + 1, false);
+  calc_action_range((Action *)ptr->owner_id, values, values + 1, false);
 }
 
-static void rna_Action_use_frame_range_set(PointerRNA *ptr, bool value)
+static void api_Action_use_frame_range_set(ApiPtr *ptr, bool value)
 {
-  bAction *data = (bAction *)ptr->owner_id;
+  Action *data = (Action *)ptr->owner_id;
 
   if (value) {
     /* If the frame range is blank, initialize it by scanning F-Curves. */
@@ -264,17 +264,17 @@ static void rna_Action_use_frame_range_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_Action_start_frame_set(PointerRNA *ptr, float value)
+static void api_Action_start_frame_set(ApiPtr *ptr, float value)
 {
-  bAction *data = (bAction *)ptr->owner_id;
+  Action *data = (bAction *)ptr->owner_id;
 
   data->frame_start = value;
   CLAMP_MIN(data->frame_end, data->frame_start);
 }
 
-static void rna_Action_end_frame_set(PointerRNA *ptr, float value)
+static void api_Action_end_frame_set(ApiPtr *ptr, float value)
 {
-  bAction *data = (bAction *)ptr->owner_id;
+  Action *data = (Action *)ptr->owner_id;
 
   data->frame_end = value;
   CLAMP_MAX(data->frame_start, data->frame_end);
@@ -282,10 +282,10 @@ static void rna_Action_end_frame_set(PointerRNA *ptr, float value)
 
 /* Used to check if an action (value pointer)
  * is suitable to be assigned to the ID-block that is ptr. */
-bool rna_Action_id_poll(PointerRNA *ptr, PointerRNA value)
+bool api_Action_id_poll(PointerRNA *ptr, PointerRNA value)
 {
-  ID *srcId = ptr->owner_id;
-  bAction *act = (bAction *)value.owner_id;
+  Id *srcId = ptr->owner_id;
+  Action *act = (Action *)value.owner_id;
 
   if (act) {
     /* there can still be actions that will have undefined id-root
