@@ -2696,7 +2696,7 @@ static ApiStruct *api_NodeSocket_register(Main *UNUSED(main),
   st->draw_color = (have_fn[1]) ? api_NodeSocket_draw_color : NULL;
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
   return st->ext_socket.sapi;
 }
@@ -3291,8 +3291,8 @@ static void api_NodeInternal_draw_btns_ext(Id *id,
     node->typeinfo->draw_buttons_ex(layout, C, &ptr);
   }
   else if (node->typeinfo->draw_buttons) {
-    PointerRNA ptr;
-    RNA_pointer_create(id, &RNA_Node, node, &ptr);
+    ApiPtr ptr;
+    api_ptr_create(id, &RNA_Node, node, &ptr);
     node->typeinfo->draw_buttons(layout, C, &ptr);
   }
 }
@@ -3322,31 +3322,31 @@ static ApiStruct *apu_NodeCustomGroup_register(Main *main,
   return nt->api_ext.sapi;
 }
 
-static ApiStruct *api_GeometryNodeCustomGroup_register(Main *bmain,
+static ApiStruct *api_GeometryNodeCustomGroup_register(Main *main,
                                                        ReportList *reports,
                                                        void *data,
-                                                       const char *identifier,
-                                                       StructValidateFunc validate,
-                                                       StructCallbackFunc call,
+                                                       const char *id,
+                                                       StructValidateFn validate,
+                                                       StructCbFn call,
                                                        StructFreeFunc free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_GeometryNodeCustomGroup, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &ApiGeometryNodeCustomGroup, data, id, validate, call, free);
 
   if (!nt) {
     return NULL;
   }
 
-  nt->group_update_func = node_group_update;
+  nt->group_update_fn = node_group_update;
   nt->type = NODE_CUSTOM_GROUP;
 
   register_node_type_geo_custom_group(nt);
 
   nodeRegisterType(nt);
 
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
 void register_node_type_geo_custom_group(bNodeType *ntype);
