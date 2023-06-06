@@ -2324,152 +2324,152 @@ static bool rna_Node_parent_poll(PointerRNA *ptr, PointerRNA value)
   return true;
 }
 
-static void rna_Node_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Node_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNode *node = (bNode *)ptr->data;
-  BKE_ntree_update_tag_node_property(ntree, node);
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  Node *node = (Node *)ptr->data;
+  dune_ntree_update_tag_node_property(ntree, node);
+  ed_node_tree_propagate_change(NULL, main, ntree);
 }
 
-static void rna_Node_update_relations(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Node_update_relations(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_Node_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_Node_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Node_socket_value_update(ID *id, bNode *UNUSED(node), bContext *C)
+static void api_Node_socket_value_update(Id *id, Node *UNUSED(node), Cxt *C)
 {
-  BKE_ntree_update_tag_all((bNodeTree *)id);
-  ED_node_tree_propagate_change(C, CTX_data_main(C), (bNodeTree *)id);
+  dune_ntree_update_tag_all((NodeTree *)id);
+  ed_node_tree_propagate_change(C, cxt_data_main(C), (NodeTree *)id);
 }
 
-static void rna_Node_select_set(PointerRNA *ptr, bool value)
+static void api_Node_select_set(ApiPtr *ptr, bool value)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
   nodeSetSelected(node, value);
 }
 
-static void rna_Node_name_set(PointerRNA *ptr, const char *value)
+static void apo_Node_name_set(ApiPtr *ptr, const char *value)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNode *node = (bNode *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  Node *node = (Node *)ptr->data;
   char oldname[sizeof(node->name)];
 
   /* make a copy of the old name first */
-  BLI_strncpy(oldname, node->name, sizeof(node->name));
+  lib_strncpy(oldname, node->name, sizeof(node->name));
   /* set new name */
-  BLI_strncpy_utf8(node->name, value, sizeof(node->name));
+  lib_strncpy_utf8(node->name, value, sizeof(node->name));
 
   nodeUniqueName(ntree, node);
 
   /* fix all the animation data which may link to this */
-  BKE_animdata_fix_paths_rename_all(NULL, "nodes", oldname, node->name);
+  dune_animdata_fix_paths_rename_all(NULL, "nodes", oldname, node->name);
 }
 
-static bNodeSocket *rna_Node_inputs_new(ID *id,
-                                        bNode *node,
-                                        Main *bmain,
-                                        ReportList *reports,
-                                        const char *type,
-                                        const char *name,
-                                        const char *identifier)
+static NodeSocket *api_Node_inputs_new(Id *id,
+                                       Node *node,
+                                       Main *main,
+                                       ReportList *reports,
+                                       const char *type,
+                                       const char *name,
+                                       const char *id)
 {
 
   if (ELEM(node->type, NODE_GROUP_INPUT, NODE_FRAME)) {
-    BKE_report(reports, RPT_ERROR, "Unable to create socket");
+    dune_report(reports, RPT_ERROR, "Unable to create socket");
     return NULL;
   }
   /* Adding an input to a group node is not working,
    * simpler to add it to its underlying nodetree. */
   if (ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP) && node->id != NULL) {
-    return rna_NodeTree_inputs_new((bNodeTree *)node->id, bmain, reports, type, name);
+    return api_NodeTree_inputs_new((NodeTree *)node->id, main, reports, type, name);
   }
 
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock;
+  NodeTree *ntree = (NodeTree *)id;
+  NodeSocket *sock;
 
-  sock = nodeAddSocket(ntree, node, SOCK_IN, type, identifier, name);
+  sock = nodeAddSocket(ntree, node, SOCK_IN, type, id, name);
 
   if (sock == NULL) {
-    BKE_report(reports, RPT_ERROR, "Unable to create socket");
+    dune_report(reports, RPT_ERROR, "Unable to create socket");
   }
   else {
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
-    WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+    ed_node_tree_propagate_change(NULL, main, ntree);
+    wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
   }
 
   return sock;
 }
 
-static bNodeSocket *rna_Node_outputs_new(ID *id,
-                                         bNode *node,
-                                         Main *bmain,
-                                         ReportList *reports,
-                                         const char *type,
-                                         const char *name,
-                                         const char *identifier)
+static NodeSocket *api_Node_outputs_new(Id *id,
+                                        Node *node,
+                                        Main *main,
+                                        ReportList *reports,
+                                        const char *type,
+                                        const char *name,
+                                        const char *id)
 {
   if (ELEM(node->type, NODE_GROUP_OUTPUT, NODE_FRAME)) {
-    BKE_report(reports, RPT_ERROR, "Unable to create socket");
+    dune_report(reports, RPT_ERROR, "Unable to create socket");
     return NULL;
   }
   /* Adding an output to a group node is not working,
    * simpler to add it to its underlying nodetree. */
   if (ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP) && node->id != NULL) {
-    return rna_NodeTree_outputs_new((bNodeTree *)node->id, bmain, reports, type, name);
+    return api_NodeTree_outputs_new((NodeTree *)node->id, main, reports, type, name);
   }
 
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock;
+  NodeTree *ntree = (NodeTree *)id;
+  NodeSocket *sock;
 
-  sock = nodeAddSocket(ntree, node, SOCK_OUT, type, identifier, name);
+  sock = nodeAddSocket(ntree, node, SOCK_OUT, type, id, name);
 
   if (sock == NULL) {
-    BKE_report(reports, RPT_ERROR, "Unable to create socket");
+    dune_report(reports, RPT_ERROR, "Unable to create socket");
   }
   else {
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
-    WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+    dune_node_tree_propagate_change(NULL, main, ntree);
+    wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
   }
 
   return sock;
 }
 
-static void rna_Node_socket_remove(
-    ID *id, bNode *node, Main *bmain, ReportList *reports, bNodeSocket *sock)
+static void api_Node_socket_remove(
+    Id *id, Node *node, Main *main, ReportList *reports, NodeSocket *sock)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
+  NodeTree *ntree = (bNodeTree *)id;
 
-  if (BLI_findindex(&node->inputs, sock) == -1 && BLI_findindex(&node->outputs, sock) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Unable to locate socket '%s' in node", sock->identifier);
+  if (lib_findindex(&node->inputs, sock) == -1 && lib_findindex(&node->outputs, sock) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Unable to locate socket '%s' in node", sock->id);
   }
   else {
     nodeRemoveSocket(ntree, node, sock);
 
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
-    WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+    ed_node_tree_propagate_change(NULL, main, ntree);
+    wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
   }
 }
 
-static void rna_Node_inputs_clear(ID *id, bNode *node, Main *bmain)
+static void api_Node_inputs_clear(Id *id, Node *node, Main *main)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock, *nextsock;
+  NodeTree *ntree = (NodeTree *)id;
+  NodeSocket *sock, *nextsock;
 
   for (sock = node->inputs.first; sock; sock = nextsock) {
     nextsock = sock->next;
     nodeRemoveSocket(ntree, node, sock);
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_Node_outputs_clear(ID *id, bNode *node, Main *bmain)
+static void api_Node_outputs_clear(ID *id, bNode *node, Main *bmain)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock, *nextsock;
+  NodeTree *ntree = (bNodeTree *)id;
+  NodeSocket *sock, *nextsock;
 
   for (sock = node->outputs.first; sock; sock = nextsock) {
     nextsock = sock->next;
