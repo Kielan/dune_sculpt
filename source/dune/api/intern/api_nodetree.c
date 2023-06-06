@@ -1928,7 +1928,7 @@ static NodeType *api_Node_register_base(Main *main,
   nt->freefn_api = (have_fn[6]) ? api_Node_free : NULL;
   nt->draw_btns = (have_fn[7]) ? api_Node_draw_btns : NULL;
   nt->draw_btns_ex = (have_fn[8]) ? api_Node_draw_btns_ext : NULL;
-  nt->labelfn = (have_function[9]) ? api_Node_draw_label : NULL;
+  nt->labelfn = (have_fn[9]) ? api_Node_draw_label : NULL;
 
   /* sanitize size values in case not all have been registered */
   if (nt->maxwidth < nt->minwidth) {
@@ -2871,20 +2871,20 @@ static void api_NodeSocketInterface_register_props(NodeTree *ntree,
   api_param_set_lookup(&list, "data_rna_type", &data_srna);
   stemp->typeinfo->ext_interface.call(NULL, &ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocketInterface_init_socket(bNodeTree *ntree,
-                                                const bNodeSocket *interface_socket,
-                                                bNode *node,
-                                                bNodeSocket *sock,
+static void api_NodeSocketInterface_init_socket(NodeTree *ntree,
+                                                const NodeSocket *interface_socket,
+                                                Node *node,
+                                                NodeSocket *sock,
                                                 const char *data_path)
 {
-  extern FunctionRNA rna_NodeSocketInterface_init_socket_func;
+  extern ApiFn api_NodeSocketInterface_init_socket_fn;
 
-  PointerRNA ptr, node_ptr, sock_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr, node_ptr, sock_ptr;
+  ParamList list;
+  ApiFn *fn;
 
   if (!interface_socket->typeinfo) {
     return;
