@@ -1925,10 +1925,10 @@ static NodeType *api_Node_register_base(Main *main,
   nt->insert_link = (have_fn[3]) ? api_Node_insert_link : NULL;
   nt->initfn_api = (have_fn[4]) ? api_Node_init : NULL;
   nt->copyfn_api = (have_fn[5]) ? api_Node_copy : NULL;
-  nt->freefn_api = (have_function[6]) ? rna_Node_free : NULL;
-  nt->draw_buttons = (have_function[7]) ? rna_Node_draw_buttons : NULL;
-  nt->draw_buttons_ex = (have_function[8]) ? rna_Node_draw_buttons_ext : NULL;
-  nt->labelfunc = (have_function[9]) ? rna_Node_draw_label : NULL;
+  nt->freefn_api = (have_fn[6]) ? api_Node_free : NULL;
+  nt->draw_btns = (have_fn[7]) ? api_Node_draw_btns : NULL;
+  nt->draw_btns_ex = (have_fn[8]) ? api_Node_draw_btns_ext : NULL;
+  nt->labelfn = (have_function[9]) ? api_Node_draw_label : NULL;
 
   /* sanitize size values in case not all have been registered */
   if (nt->maxwidth < nt->minwidth) {
@@ -1943,13 +1943,13 @@ static NodeType *api_Node_register_base(Main *main,
   return nt;
 }
 
-static StructRNA *rna_Node_register(Main *bmain,
+static ApiStruct *api_Node_register(Main *main,
                                     ReportList *reports,
                                     void *data,
-                                    const char *identifier,
-                                    StructValidateFunc validate,
-                                    StructCallbackFunc call,
-                                    StructFreeFunc free)
+                                    const char *id,
+                                    StructValidateFn validate,
+                                    StructCbFn call,
+                                    StructFreeFn free)
 {
   bNodeType *nt = rna_Node_register_base(
       bmain, reports, &RNA_Node, data, identifier, validate, call, free);
