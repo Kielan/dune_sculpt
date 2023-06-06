@@ -3158,87 +3158,87 @@ static void rna_NodeSocketStandard_vector_range(
 }
 
 /* using a context update function here, to avoid searching the node if possible */
-static void rna_NodeSocketStandard_value_update(struct bContext *C, PointerRNA *ptr)
+static void api_NodeSocketStandard_value_update(struct Cxt *C, ApiPtr *ptr)
 {
   /* default update */
-  rna_NodeSocket_update(CTX_data_main(C), CTX_data_scene(C), ptr);
+  api_NodeSocket_update(cxt_data_main(C), CTX_data_scene(C), ptr);
 }
 
-static void rna_NodeSocketStandard_value_and_relation_update(struct bContext *C, PointerRNA *ptr)
+static void api_NodeSocketStandard_value_and_relation_update(struct Cxt *C, ApiPtr *ptr)
 {
-  rna_NodeSocketStandard_value_update(C, ptr);
-  Main *bmain = CTX_data_main(C);
-  DEG_relations_tag_update(bmain);
+  api_NodeSocketStandard_value_update(C, ptr);
+  Main *main = cxt_data_main(C);
+  graph_relations_tag_update(main);
 }
 
 /* ******** Node Types ******** */
 
-static void rna_NodeInternalSocketTemplate_name_get(PointerRNA *ptr, char *value)
+static void api_NodeInternalSocketTemplate_name_get(ApiPtr *ptr, char *value)
 {
-  bNodeSocketTemplate *stemp = ptr->data;
+  NodeSocketTemplate *stemp = ptr->data;
   strcpy(value, stemp->name);
 }
 
-static int rna_NodeInternalSocketTemplate_name_length(PointerRNA *ptr)
+static int api_NodeInternalSocketTemplate_name_length(ApiPtr *ptr)
 {
-  bNodeSocketTemplate *stemp = ptr->data;
+  NodeSocketTemplate *stemp = ptr->data;
   return strlen(stemp->name);
 }
 
-static void rna_NodeInternalSocketTemplate_identifier_get(PointerRNA *ptr, char *value)
+static void api_NodeInternalSocketTemplate_id_get(ApiPtr *ptr, char *value)
 {
-  bNodeSocketTemplate *stemp = ptr->data;
+  NodeSocketTemplate *stemp = ptr->data;
   strcpy(value, stemp->identifier);
 }
 
-static int rna_NodeInternalSocketTemplate_identifier_length(PointerRNA *ptr)
+static int api_NodeInternalSocketTemplate_id_length(ApiPtr *ptr)
 {
-  bNodeSocketTemplate *stemp = ptr->data;
+  NodeSocketTemplate *stemp = ptr->data;
   return strlen(stemp->identifier);
 }
 
-static int rna_NodeInternalSocketTemplate_type_get(PointerRNA *ptr)
+static int api_NodeInternalSocketTemplate_type_get(ApiPtr *ptr)
 {
-  bNodeSocketTemplate *stemp = ptr->data;
+  NodeSocketTemplate *stemp = ptr->data;
   return stemp->type;
 }
 
-static PointerRNA rna_NodeInternal_input_template(StructRNA *srna, int index)
+static ApiPtr api_NodeInternal_input_template(ApiStruct *sapi, int index)
 {
-  bNodeType *ntype = RNA_struct_blender_type_get(srna);
+  NodeType *ntype = api_struct_blender_type_get(sapi);
   if (ntype && ntype->inputs) {
-    bNodeSocketTemplate *stemp = ntype->inputs;
+    NodeSocketTemplate *stemp = ntype->inputs;
     int i = 0;
     while (i < index && stemp->type >= 0) {
       i++;
       stemp++;
     }
     if (i == index && stemp->type >= 0) {
-      PointerRNA ptr;
-      RNA_pointer_create(NULL, &RNA_NodeInternalSocketTemplate, stemp, &ptr);
+      ApiPtr ptr;
+      api_ptr_create(NULL, &ApiNodeInternalSocketTemplate, stemp, &ptr);
       return ptr;
     }
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static PointerRNA rna_NodeInternal_output_template(StructRNA *srna, int index)
+static ApiPtr api_NodeInternal_output_template(ApiStruct *sapi, int index)
 {
-  bNodeType *ntype = RNA_struct_blender_type_get(srna);
+  NodeType *ntype = api_struct_dune_type_get(sapi);
   if (ntype && ntype->outputs) {
-    bNodeSocketTemplate *stemp = ntype->outputs;
+    blNodeSocketTemplate *stemp = ntype->outputs;
     int i = 0;
     while (i < index && stemp->type >= 0) {
       i++;
       stemp++;
     }
     if (i == index && stemp->type >= 0) {
-      PointerRNA ptr;
-      RNA_pointer_create(NULL, &RNA_NodeInternalSocketTemplate, stemp, &ptr);
+      ApiPtr ptr;
+      api_ptr_create(NULL, &RNA_NodeInternalSocketTemplate, stemp, &ptr);
       return ptr;
     }
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
 static bool rna_NodeInternal_poll(StructRNA *srna, bNodeTree *ntree)
