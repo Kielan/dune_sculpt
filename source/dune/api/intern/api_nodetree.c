@@ -3610,14 +3610,14 @@ static const EnumPropertyItem *renderresult_layers_add_enum(RenderLayer *rl)
   return item;
 }
 
-static const EnumPropertyItem *rna_Node_image_layer_itemf(bContext *UNUSED(C),
-                                                          PointerRNA *ptr,
-                                                          PropertyRNA *UNUSED(prop),
-                                                          bool *r_free)
+static const EnumPropItem *api_Node_image_layer_itemf(Cxt *UNUSED(C),
+                                                      ApiPtr *ptr,
+                                                      ApiProp *UNUSED(prop),
+                                                      bool *r_free)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
   Image *ima = (Image *)node->id;
-  const EnumPropertyItem *item = NULL;
+  const EnumPropItem *item = NULL;
   RenderLayer *rl;
 
   if (node->type == CMP_NODE_CRYPTOMATTE && node->custom1 != CMP_CRYPTOMATTE_SRC_IMAGE) {
@@ -3626,7 +3626,7 @@ static const EnumPropertyItem *rna_Node_image_layer_itemf(bContext *UNUSED(C),
 
   if (ima == NULL || ima->rr == NULL) {
     *r_free = false;
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
   rl = ima->rr->layers.first;
@@ -3637,9 +3637,9 @@ static const EnumPropertyItem *rna_Node_image_layer_itemf(bContext *UNUSED(C),
   return item;
 }
 
-static bool rna_Node_image_has_layers_get(PointerRNA *ptr)
+static bool api_Node_image_has_layers_get(ApiPtr *ptr)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
   Image *ima = (Image *)node->id;
 
   if (node->type == CMP_NODE_CRYPTOMATTE && node->custom1 != CMP_CRYPTOMATTE_SRC_IMAGE) {
@@ -3650,12 +3650,12 @@ static bool rna_Node_image_has_layers_get(PointerRNA *ptr)
     return false;
   }
 
-  return RE_layers_have_name(ima->rr);
+  return render_layers_have_name(ima->rr);
 }
 
-static bool rna_Node_image_has_views_get(PointerRNA *ptr)
+static bool api_Node_image_has_views_get(ApiPtr *ptr)
 {
-  bNode *node = (bNode *)ptr->data;
+  Node *node = (Node *)ptr->data;
   Image *ima = (Image *)node->id;
 
   if (node->type == CMP_NODE_CRYPTOMATTE && node->custom1 != CMP_CRYPTOMATTE_SRC_IMAGE) {
@@ -3666,7 +3666,7 @@ static bool rna_Node_image_has_views_get(PointerRNA *ptr)
     return false;
   }
 
-  return BLI_listbase_count_at_most(&ima->rr->views, 2) > 1;
+  return lib_list_count_at_most(&ima->rr->views, 2) > 1;
 }
 
 static const EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
