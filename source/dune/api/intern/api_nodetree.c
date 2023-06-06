@@ -3097,21 +3097,21 @@ static void api_NodeSocketInterfaceStandard_draw(Id *id,
   sock->typeinfo->interface_draw(C, layout, &ptr);
 }
 
-static void rna_NodeSocketInterfaceStandard_draw_color(ID *id,
-                                                       bNodeSocket *sock,
-                                                       struct bContext *C,
+static void api_NodeSocketInterfaceStandard_draw_color(Id *id,
+                                                       NodeSocket *sock,
+                                                       struct Cxt *C,
                                                        float r_color[4])
 {
-  PointerRNA ptr;
-  RNA_pointer_create(id, &RNA_NodeSocketInterface, sock, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(id, &ApiNodeSocketInterface, sock, &ptr);
   sock->typeinfo->interface_draw_color(C, &ptr, r_color);
 }
 
-static void rna_NodeSocketStandard_float_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_NodeSocketStandard_float_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  bNodeSocket *sock = ptr->data;
-  bNodeSocketValueFloat *dval = sock->default_value;
+  NodeSocket *sock = ptr->data;
+  NodeSocketValueFloat *dval = sock->default_value;
   int subtype = sock->typeinfo->subtype;
 
   if (dval->max < dval->min) {
@@ -3124,11 +3124,11 @@ static void rna_NodeSocketStandard_float_range(
   *softmax = dval->max;
 }
 
-static void rna_NodeSocketStandard_int_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void api_NodeSocketStandard_int_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax)
 {
-  bNodeSocket *sock = ptr->data;
-  bNodeSocketValueInt *dval = sock->default_value;
+  NodeSocket *sock = ptr->data;
+  NodeSocketValueInt *dval = sock->default_value;
   int subtype = sock->typeinfo->subtype;
 
   if (dval->max < dval->min) {
@@ -3141,11 +3141,11 @@ static void rna_NodeSocketStandard_int_range(
   *softmax = dval->max;
 }
 
-static void rna_NodeSocketStandard_vector_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_NodeSocketStandard_vector_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  bNodeSocket *sock = ptr->data;
-  bNodeSocketValueVector *dval = sock->default_value;
+  NodeSocket *sock = ptr->data;
+  NodeSocketValueVector *dval = sock->default_value;
 
   if (dval->max < dval->min) {
     dval->max = dval->min;
@@ -3241,16 +3241,16 @@ static ApiPtr api_NodeInternal_output_template(ApiStruct *sapi, int index)
   return ApiPtr_NULL;
 }
 
-static bool rna_NodeInternal_poll(StructRNA *srna, bNodeTree *ntree)
+static bool api_NodeInternal_poll(ApiStruct *sapi, NodeTree *ntree)
 {
-  bNodeType *ntype = RNA_struct_blender_type_get(srna);
+  NodeType *ntype = api_struct_dune_type_get(sapi);
   const char *disabled_hint;
   return ntype && (!ntype->poll || ntype->poll(ntype, ntree, &disabled_hint));
 }
 
-static bool rna_NodeInternal_poll_instance(bNode *node, bNodeTree *ntree)
+static bool api_NodeInternal_poll_instance(bNode *node, bNodeTree *ntree)
 {
-  bNodeType *ntype = node->typeinfo;
+  NodeType *ntype = node->typeinfo;
   const char *disabled_hint;
   if (ntype->poll_instance) {
     return ntype->poll_instance(node, ntree, &disabled_hint);
@@ -3261,33 +3261,33 @@ static bool rna_NodeInternal_poll_instance(bNode *node, bNodeTree *ntree)
   }
 }
 
-static void rna_NodeInternal_update(ID *id, bNode *node, Main *bmain)
+static void api_NodeInternal_update(Id *id, Node *node, Main *main)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
-  BKE_ntree_update_tag_node_property(ntree, node);
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  NodeTree *ntree = (NodeTree *)id;
+  dune_ntree_update_tag_node_prop(ntree, node);
+  ed_node_tree_propagate_change(NULL, main, ntree);
 }
 
-static void rna_NodeInternal_draw_buttons(ID *id,
-                                          bNode *node,
-                                          struct bContext *C,
+static void api_NodeInternal_draw_btns(Id *id,
+                                          Node *node,
+                                          struct Cxt *C,
                                           struct uiLayout *layout)
 {
-  if (node->typeinfo->draw_buttons) {
-    PointerRNA ptr;
-    RNA_pointer_create(id, &RNA_Node, node, &ptr);
+  if (node->typeinfo->draw_btns) {
+    ApiPtr ptr;
+    api_ptr_create(id, &ApiNode, node, &ptr);
     node->typeinfo->draw_buttons(layout, C, &ptr);
   }
 }
 
-static void rna_NodeInternal_draw_buttons_ext(ID *id,
-                                              bNode *node,
-                                              struct bContext *C,
-                                              struct uiLayout *layout)
+static void api_NodeInternal_draw_btns_ext(Id *id,
+                                           Node *node,
+                                           struct Cxt *C,
+                                           struct uiLayout *layout)
 {
   if (node->typeinfo->draw_buttons_ex) {
-    PointerRNA ptr;
-    RNA_pointer_create(id, &RNA_Node, node, &ptr);
+    ApiPtr ptr;
+    api_ptr_create(id, &RNA_Node, node, &ptr);
     node->typeinfo->draw_buttons_ex(layout, C, &ptr);
   }
   else if (node->typeinfo->draw_buttons) {
