@@ -1951,8 +1951,8 @@ static ApiStruct *api_Node_register(Main *main,
                                     StructCbFn call,
                                     StructFreeFn free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_Node, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &ApiNode, data, id, validate, call, free);
   if (!nt) {
     return NULL;
   }
@@ -1960,34 +1960,34 @@ static ApiStruct *api_Node_register(Main *main,
   nodeRegisterType(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
-static const EnumPropertyItem *itemf_function_check(
-    const EnumPropertyItem *original_item_array,
-    bool (*value_supported)(const EnumPropertyItem *item))
+static const EnumPropItem *itemf_fn_check(
+    const EnumPropItem *original_item_array,
+    bool (*value_supported)(const EnumPropItem *item))
 {
-  EnumPropertyItem *item_array = NULL;
+  EnumPropItem *item_array = NULL;
   int items_len = 0;
 
-  for (const EnumPropertyItem *item = original_item_array; item->identifier != NULL; item++) {
+  for (const EnumPropItem *item = original_item_array; item->id != NULL; item++) {
     if (value_supported(item)) {
-      RNA_enum_item_add(&item_array, &items_len, item);
+      api_enum_item_add(&item_array, &items_len, item);
     }
   }
 
-  RNA_enum_item_end(&item_array, &items_len);
+  api_enum_item_end(&item_array, &items_len);
   return item_array;
 }
 
-static bool switch_type_supported(const EnumPropertyItem *item)
+static bool switch_type_supported(const EnumPropItem *item)
 {
   return ELEM(item->value,
               SOCK_FLOAT,
               SOCK_INT,
-              SOCK_BOOLEAN,
+              SOCK_BOOL,
               SOCK_VECTOR,
               SOCK_STRING,
               SOCK_RGBA,
@@ -1999,10 +1999,10 @@ static bool switch_type_supported(const EnumPropertyItem *item)
               SOCK_IMAGE);
 }
 
-static const EnumPropItem *api_GeometryNodeSwitch_type_itemf(bContext *UNUSED(C),
-                                                                 PointerRNA *UNUSED(ptr),
-                                                                 PropertyRNA *UNUSED(prop),
-                                                                 bool *r_free)
+static const EnumPropItem *api_GeometryNodeSwitch_type_itemf(Cxt *UNUSED(C),
+                                                             ApiPointerRNA *UNUSED(ptr),
+                                                             ApiProp *UNUSED(prop),
+                                                             bool *r_free)
 {
   *r_free = true;
   return itemf_fn_check(node_socket_data_type_items, switch_type_supported);
@@ -2091,13 +2091,13 @@ static bool accumulate_field_type_supported(const EnumPropItem *item)
   return ELEM(item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_INT32);
 }
 
-static const EnumPropItem *rna_GeoNodeAccumulateField_type_itemf(bContext *UNUSED(C),
-                                                                     PointerRNA *UNUSED(ptr),
-                                                                     PropertyRNA *UNUSED(prop),
-                                                                     bool *r_free)
+static const EnumPropItem *api_GeoNodeAccumulateField_type_itemf(Cxt *UNUSED(C),
+                                                                 ApiPtr *UNUSED(ptr),
+                                                                 ApiProp *UNUSED(prop),
+                                                                 bool *r_free)
 {
   *r_free = true;
-  return itemf_fn_check(rna_enum_attribute_type_items, accumulate_field_type_supported);
+  return itemf_fn_check(api_enum_attribute_type_items, accumulate_field_type_supported);
 }
 
 static void api_GeometryNodeCompare_data_type_update(Main *main, Scene *scene, ApiPtr *ptr)
@@ -2114,7 +2114,7 @@ static void api_GeometryNodeCompare_data_type_update(Main *main, Scene *scene, A
   }
   else if (node_storage->data_type == SOCK_STRING &&
            !ELEM(node_storage->op, NODE_COMPARE_EQUAL, NODE_COMPARE_NOT_EQUAL)) {
-    node_storage->operation = NODE_COMPARE_EQUAL;
+    node_storage->op = NODE_COMPARE_EQUAL;
   }
   else if (node_storage->data_type != SOCK_RGBA &&
            ELEM(node_storage->op, NODE_COMPARE_COLOR_BRIGHTER, NODE_COMPARE_COLOR_DARKER)) {
@@ -2130,9 +2130,9 @@ static bool generic_attribute_type_supported(const EnumPropertyItem *item)
       item->value, CD_PROP_FLOAT, CD_PROP_FLOAT3, CD_PROP_COLOR, CD_PROP_BOOL, CD_PROP_INT32);
 }
 static const EnumPropItem *api_GeometryNodeAttributeType_type_itemf(Cxt *UNUSED(C),
-                                                                        ApiPtr *UNUSED(ptr),
-                                                                        ApiProp *UNUSED(prop),
-                                                                        bool *r_free)
+                                                                    ApiPtr *UNUSED(ptr),
+                                                                    ApiProp *UNUSED(prop),
+                                                                    bool *r_free)
 {
   *r_free = true;
   return itemf_fn_check(api_enum_attribute_type_items, generic_attribute_type_supported);
@@ -2277,12 +2277,12 @@ static IdProp **api_Node_idprops(ApiPtr *ptr)
   return &node->prop;
 }
 
-static void rna_Node_parent_set(PointerRNA *ptr,
-                                PointerRNA value,
+static void api_Node_parent_set(ApiPtr *ptr,
+                                ApiPtr value,
                                 struct ReportList *UNUSED(reports))
 {
-  bNode *node = ptr->data;
-  bNode *parent = value.data;
+  Node *node = ptr->data;
+  Node *parent = value.data;
 
   if (parent) {
     /* XXX only Frame node allowed for now,
@@ -2304,10 +2304,10 @@ static void rna_Node_parent_set(PointerRNA *ptr,
   }
 }
 
-static bool rna_Node_parent_poll(PointerRNA *ptr, PointerRNA value)
+static bool api_Node_parent_poll(ApiPtr *ptr, ApiPtr value)
 {
-  bNode *node = ptr->data;
-  bNode *parent = value.data;
+  Node *node = ptr->data;
+  Node *parent = value.data;
 
   /* XXX only Frame node allowed for now,
    * in the future should have a poll function or so to test possible attachment.
@@ -2350,7 +2350,7 @@ static void api_Node_select_set(ApiPtr *ptr, bool value)
   nodeSetSelected(node, value);
 }
 
-static void apo_Node_name_set(ApiPtr *ptr, const char *value)
+static void api_Node_name_set(ApiPtr *ptr, const char *value)
 {
   NodeTree *ntree = (NodeTree *)ptr->owner_id;
   Node *node = (Node *)ptr->data;
@@ -2890,31 +2890,31 @@ static void rna_NodeSocketInterface_init_socket(bNodeTree *ntree,
     return;
   }
 
-  RNA_pointer_create((ID *)ntree, &RNA_NodeSocketInterface, (bNodeSocket *)interface_socket, &ptr);
-  RNA_pointer_create((ID *)ntree, &RNA_Node, node, &node_ptr);
-  RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &sock_ptr);
-  // RNA_struct_find_function(&ptr, "init_socket");
-  func = &rna_NodeSocketInterface_init_socket_func;
+  api_ptr_create((Id *)ntree, &ApiNodeSocketInterface, (NodeSocket *)interface_socket, &ptr);
+  api_ptr_create((Id *)ntree, &ApiNode, node, &node_ptr);
+  api_ptr_create((Id *)ntree, &ApiNodeSocket, sock, &sock_ptr);
+  // api_struct_find_function(&ptr, "init_socket");
+  fn = &api_NodeSocketInterface_init_socket_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "node", &node_ptr);
-  RNA_parameter_set_lookup(&list, "socket", &sock_ptr);
-  RNA_parameter_set_lookup(&list, "data_path", &data_path);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "node", &node_ptr);
+  api_param_set_lookup(&list, "socket", &sock_ptr);
+  api_param_set_lookup(&list, "data_path", &data_path);
   interface_socket->typeinfo->ext_interface.call(NULL, &ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocketInterface_from_socket(bNodeTree *ntree,
-                                                bNodeSocket *interface_socket,
-                                                bNode *node,
-                                                bNodeSocket *sock)
+static void api_NodeSocketInterface_from_socket(NodeTree *ntree,
+                                                NodeSocket *interface_socket
+                                                Node *node,
+                                                NodeSocket *sock)
 {
-  extern FunctionRNA rna_NodeSocketInterface_from_socket_func;
+  extern ApiFn api_NodeSocketInterface_from_socket_fn;
 
-  PointerRNA ptr, node_ptr, sock_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr, node_ptr, sock_ptr;
+  ParamList list;
+  ApiFn *fn;
 
   if (!interface_socket->typeinfo) {
     return;
