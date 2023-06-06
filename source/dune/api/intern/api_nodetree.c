@@ -2683,41 +2683,41 @@ static ApiStruct *api_NodeSocket_register(Main *UNUSED(main),
     api_struct_free_extension(sapi, &st->ext_socket);
     apu_struct_free(&DUNE_API, sapi);
   }
-  st->ext_socket.srna = RNA_def_struct_ptr(&BLENDER_RNA, st->idname, &RNA_NodeSocket);
+  st->ext_socket.sapi = api_def_struct_ptr(&DUNE_API, st->idname, &RNA_NodeSocket);
   st->ext_socket.data = data;
   st->ext_socket.call = call;
   st->ext_socket.free = free;
-  api_struct_dune_type_set(st->ext_socket.srna, st);
+  api_struct_dune_type_set(st->ext_socket.sapi, st);
 
   /* XXX bad level call! needed to initialize the basic draw functions ... */
-  ED_init_custom_node_socket_type(st);
+  ed_init_custom_node_socket_type(st);
 
-  st->draw = (have_function[0]) ? rna_NodeSocket_draw : NULL;
-  st->draw_color = (have_function[1]) ? rna_NodeSocket_draw_color : NULL;
+  st->draw = (have_fn[0]) ? api_NodeSocket_draw : NULL;
+  st->draw_color = (have_fn[1]) ? api_NodeSocket_draw_color : NULL;
 
   /* update while blender is running */
   WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return st->ext_socket.srna;
+  return st->ext_socket.sapi;
 }
 
-static StructRNA *rna_NodeSocket_refine(PointerRNA *ptr)
+static ApiStruct *api_NodeSocket_refine(ApiPtr *ptr)
 {
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
 
-  if (sock->typeinfo->ext_socket.srna) {
-    return sock->typeinfo->ext_socket.srna;
+  if (sock->typeinfo->ext_socket.sapi) {
+    return sock->typeinfo->ext_socket.sapi;
   }
   else {
-    return &RNA_NodeSocket;
+    return &ApiNodeSocket;
   }
 }
 
-static char *rna_NodeSocket_path(PointerRNA *ptr)
+static char *api_NodeSocket_path(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  bNode *node;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  Node *node;
   int socketindex;
   char name_esc[sizeof(node->name) * 2];
 
@@ -2725,68 +2725,68 @@ static char *rna_NodeSocket_path(PointerRNA *ptr)
     return NULL;
   }
 
-  BLI_str_escape(name_esc, node->name, sizeof(name_esc));
+  lib_str_escape(name_esc, node->name, sizeof(name_esc));
 
   if (sock->in_out == SOCK_IN) {
-    return BLI_sprintfN("nodes[\"%s\"].inputs[%d]", name_esc, socketindex);
+    return lib_sprintfn("nodes[\"%s\"].inputs[%d]", name_esc, socketindex);
   }
   else {
-    return BLI_sprintfN("nodes[\"%s\"].outputs[%d]", name_esc, socketindex);
+    return lib_sprintfn("nodes[\"%s\"].outputs[%d]", name_esc, socketindex);
   }
 }
 
-static IDProperty **rna_NodeSocket_idprops(PointerRNA *ptr)
+static IdProp **api_NodeSocket_idprops(ApiPtr *ptr)
 {
-  bNodeSocket *sock = ptr->data;
+  NodeSocket *sock = ptr->data;
   return &sock->prop;
 }
 
-static PointerRNA rna_NodeSocket_node_get(PointerRNA *ptr)
+static ApiPtr api_NodeSocket_node_get(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  bNode *node;
-  PointerRNA r_ptr;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  Node *node;
+  ApiPtr r_ptr;
 
   nodeFindNode(ntree, sock, &node, NULL);
 
-  RNA_pointer_create((ID *)ntree, &RNA_Node, node, &r_ptr);
+  api_ptr_create((Id *)ntree, &ApiNode, node, &r_ptr);
   return r_ptr;
 }
 
-static void rna_NodeSocket_type_set(PointerRNA *ptr, int value)
+static void api_NodeSocket_type_set(ApiPtr *ptr, int value)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  bNode *node;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  Node *node;
   nodeFindNode(ntree, sock, &node, NULL);
   nodeModifySocketTypeStatic(ntree, node, sock, value, 0);
 }
 
-static void rna_NodeSocket_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_NodeSocket_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
 
-  BKE_ntree_update_tag_socket_property(ntree, sock);
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  dune_ntree_update_tag_socket_prop(ntree, sock);
+  ed_node_tree_propagate_change(NULL, main, ntree);
 }
 
-static bool rna_NodeSocket_is_output_get(PointerRNA *ptr)
+static bool api_NodeSocket_is_output_get(ApiPtr *ptr)
 {
-  bNodeSocket *sock = ptr->data;
+  NodeSocket *sock = ptr->data;
   return sock->in_out == SOCK_OUT;
 }
 
-static void rna_NodeSocket_link_limit_set(PointerRNA *ptr, int value)
+static void api_NodeSocket_link_limit_set(ApiPtr *ptr, int value)
 {
-  bNodeSocket *sock = ptr->data;
+  NodeSocket *sock = ptr->data;
   sock->limit = (value == 0 ? 0xFFF : value);
 }
 
-static void rna_NodeSocket_hide_set(PointerRNA *ptr, bool value)
+static void api_NodeSocket_hide_set(ApiPtr *ptr, bool value)
 {
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
 
   /* don't hide linked sockets */
   if (sock->flag & SOCK_IN_USE) {
@@ -2801,74 +2801,74 @@ static void rna_NodeSocket_hide_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_NodeSocketInterface_draw(bContext *C, struct uiLayout *layout, PointerRNA *ptr)
+static void api_NodeSocketInterface_draw(Cxt *C, struct uiLayout *layout, ApiPtr *ptr)
 {
-  extern FunctionRNA rna_NodeSocketInterface_draw_func;
+  extern ApiFn api_NodeSocketInterface_draw_fn;
 
-  bNodeSocket *stemp = (bNodeSocket *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  NodeSocket *stemp = (NodeSocket *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
 
   if (!stemp->typeinfo) {
     return;
   }
 
-  func = &rna_NodeSocketInterface_draw_func; /* RNA_struct_find_function(&ptr, "draw"); */
+  fn = &api_NodeSocketInterface_draw_fn; /* api_struct_find_fn(&ptr, "draw"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
-  stemp->typeinfo->ext_interface.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
+  stemp->typeinfo->ext_interface.call(C, ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocketInterface_draw_color(bContext *C, PointerRNA *ptr, float *r_color)
+static void api_NodeSocketInterface_draw_color(Cxt *C, ApiPtr *ptr, float *r_color)
 {
-  extern FunctionRNA rna_NodeSocketInterface_draw_color_func;
+  extern ApiFn api_NodeSocketInterface_draw_color_fn;
 
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
-  ParameterList list;
-  FunctionRNA *func;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
 
   if (!sock->typeinfo) {
     return;
   }
 
-  func =
-      &rna_NodeSocketInterface_draw_color_func; /* RNA_struct_find_function(&ptr, "draw_color"); */
+  fn =
+      &api_NodeSocketInterface_draw_color_fn; /* RNA_struct_find_function(&ptr, "draw_color"); */
 
-  RNA_parameter_list_create(&list, ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  sock->typeinfo->ext_interface.call(C, ptr, func, &list);
+  api_param_list_create(&list, ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  sock->typeinfo->ext_interface.call(C, ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "color", &ret);
+  api_param_get_lookup(&list, "color", &ret);
   copy_v4_v4(r_color, (float *)ret);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocketInterface_register_properties(bNodeTree *ntree,
-                                                        bNodeSocket *stemp,
-                                                        StructRNA *data_srna)
+static void api_NodeSocketInterface_register_props(NodeTree *ntree,
+                                                   NodeSocket *stemp,
+                                                   ApiStruct *data_sapi)
 {
-  extern FunctionRNA rna_NodeSocketInterface_register_properties_func;
+  extern ApiFn api_NodeSocketInterface_register_props_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApuFn *fn;
 
   if (!stemp->typeinfo) {
     return;
   }
 
-  RNA_pointer_create((ID *)ntree, &RNA_NodeSocketInterface, stemp, &ptr);
-  // RNA_struct_find_function(&ptr, "register_properties");
-  func = &rna_NodeSocketInterface_register_properties_func;
+  api_ptr_create((Id *)ntree, &ApiNodeSocketInterface, stemp, &ptr);
+  // api_struct_find_fn(&ptr, "register_props");
+  fn = api_NodeSocketInterface_register_props_fn;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "data_rna_type", &data_srna);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "data_rna_type", &data_srna);
   stemp->typeinfo->ext_interface.call(NULL, &ptr, func, &list);
 
   RNA_parameter_list_free(&list);
