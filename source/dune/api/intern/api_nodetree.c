@@ -3010,59 +3010,59 @@ static StructRNA *rna_NodeSocketInterface_register(Main *UNUSED(bmain),
   st->interface_from_socket = (have_function[4]) ? rna_NodeSocketInterface_from_socket : NULL;
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
   return st->ext_interface.srna;
 }
 
-static StructRNA *rna_NodeSocketInterface_refine(PointerRNA *ptr)
+static ApiStruct *api_NodeSocketInterface_refine(ApiPtr *ptr)
 {
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
 
-  if (sock->typeinfo && sock->typeinfo->ext_interface.srna) {
-    return sock->typeinfo->ext_interface.srna;
+  if (sock->typeinfo && sock->typeinfo->ext_interface.sapo) {
+    return sock->typeinfo->ext_interface.sapi;
   }
   else {
-    return &RNA_NodeSocketInterface;
+    return &ApiNodeSocketInterface;
   }
 }
 
-static char *rna_NodeSocketInterface_path(PointerRNA *ptr)
+static char *api_NodeSocketInterface_path(ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *sock = (bNodeSocket *)ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *sock = (NodeSocket *)ptr->data;
   int socketindex;
 
-  socketindex = BLI_findindex(&ntree->inputs, sock);
+  socketindex = lib_findindex(&ntree->inputs, sock);
   if (socketindex != -1) {
-    return BLI_sprintfN("inputs[%d]", socketindex);
+    return lib_sprintfn("inputs[%d]", socketindex);
   }
 
-  socketindex = BLI_findindex(&ntree->outputs, sock);
+  socketindex = lib_findindex(&ntree->outputs, sock);
   if (socketindex != -1) {
-    return BLI_sprintfN("outputs[%d]", socketindex);
+    return lib_sprintfn("outputs[%d]", socketindex);
   }
 
   return NULL;
 }
 
-static IDProperty **rna_NodeSocketInterface_idprops(PointerRNA *ptr)
+static IdProp **api_NodeSocketInterface_idprops(ApuPtr *ptr)
 {
   bNodeSocket *sock = ptr->data;
   return &sock->prop;
 }
 
-static void rna_NodeSocketInterface_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_NodeSocketInterface_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-  bNodeSocket *stemp = ptr->data;
+  NodeTree *ntree = (NodeTree *)ptr->owner_id;
+  NodeSocket *stemp = ptr->data;
 
   if (!stemp->typeinfo) {
     return;
   }
 
-  BKE_ntree_update_tag_interface(ntree);
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
+  dune_ntree_update_tag_interface(ntree);
+  ed_node_tree_propagate_change(NULL, bmain, ntree);
 }
 
 /* ******** Standard Node Socket Base Types ******** */
