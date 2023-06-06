@@ -3297,32 +3297,32 @@ static void api_NodeInternal_draw_btns_ext(Id *id,
   }
 }
 
-static StructRNA *rna_NodeCustomGroup_register(Main *bmain,
+static ApiStruct *apu_NodeCustomGroup_register(Main *main,
                                                ReportList *reports,
                                                void *data,
-                                               const char *identifier,
-                                               StructValidateFunc validate,
-                                               StructCallbackFunc call,
-                                               StructFreeFunc free)
+                                               const char *id,
+                                               StructValidateFn validate,
+                                               StructCbFn call,
+                                               StructFreeFn free)
 {
-  bNodeType *nt = rna_Node_register_base(
-      bmain, reports, &RNA_NodeCustomGroup, data, identifier, validate, call, free);
+  NodeType *nt = api_Node_register_base(
+      main, reports, &ApiNodeCustomGroup, data, id, validate, call, free);
   if (!nt) {
     return NULL;
   }
 
   /* this updates the group node instance from the tree's interface */
-  nt->group_update_func = node_group_update;
+  nt->group_update_fn = node_group_update;
 
   nodeRegisterType(nt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 
-  return nt->rna_ext.srna;
+  return nt->api_ext.sapi;
 }
 
-static StructRNA *rna_GeometryNodeCustomGroup_register(Main *bmain,
+static ApiStruct *api_GeometryNodeCustomGroup_register(Main *bmain,
                                                        ReportList *reports,
                                                        void *data,
                                                        const char *identifier,
