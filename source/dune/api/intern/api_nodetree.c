@@ -2900,7 +2900,7 @@ static void api_NodeSocketInterface_init_socket(NodeTree *ntree,
   api_param_set_lookup(&list, "node", &node_ptr);
   api_param_set_lookup(&list, "socket", &sock_ptr);
   api_param_set_lookup(&list, "data_path", &data_path);
-  interface_socket->typeinfo->ext_interface.call(NULL, &ptr, func, &list);
+  interface_socket->typeinfo->ext_interface.call(NULL, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -2920,18 +2920,18 @@ static void api_NodeSocketInterface_from_socket(NodeTree *ntree,
     return;
   }
 
-  RNA_pointer_create((ID *)ntree, &RNA_NodeSocketInterface, interface_socket, &ptr);
-  RNA_pointer_create((ID *)ntree, &RNA_Node, node, &node_ptr);
-  RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &sock_ptr);
-  // RNA_struct_find_function(&ptr, "from_socket");
-  func = &rna_NodeSocketInterface_from_socket_func;
+  api_ptr_create((Id *)ntree, &ApiNodeSocketInterface, interface_socket, &ptr);
+  api_ptr_create((Id *)ntree, &ApiNode, node, &node_ptr);
+  api_ptr_create((Id *)ntree, &ApiNodeSocket, sock, &sock_ptr);
+  // api_struct_find_fn(&ptr, "from_socket");
+  fn = &rna_NodeSocketInterface_from_socket_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "node", &node_ptr);
-  RNA_parameter_set_lookup(&list, "socket", &sock_ptr);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "node", &node_ptr);
+  api_param_set_lookup(&list, "socket", &sock_ptr);
   interface_socket->typeinfo->ext_interface.call(NULL, &ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void rna_NodeSocketInterface_unregister(Main *UNUSED(bmain), StructRNA *type)
