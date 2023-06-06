@@ -2466,9 +2466,9 @@ static void api_Node_inputs_clear(Id *id, Node *node, Main *main)
   wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void api_Node_outputs_clear(ID *id, bNode *node, Main *bmain)
+static void api_Node_outputs_clear(Id *id, Node *node, Main *main)
 {
-  NodeTree *ntree = (bNodeTree *)id;
+  NodeTree *ntree = (NodeTree *)id;
   NodeSocket *sock, *nextsock;
 
   for (sock = node->outputs.first; sock; sock = nextsock) {
@@ -2476,14 +2476,14 @@ static void api_Node_outputs_clear(ID *id, bNode *node, Main *bmain)
     nodeRemoveSocket(ntree, node, sock);
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_Node_inputs_move(ID *id, bNode *node, Main *bmain, int from_index, int to_index)
+static void api_Node_inputs_move(Id *id, Node *node, Main *main, int from_index, int to_index)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock;
+  NodeTree *ntree = (NodeTree *)id;
+  NodeSocket *sock;
 
   if (from_index == to_index) {
     return;
@@ -2492,30 +2492,29 @@ static void rna_Node_inputs_move(ID *id, bNode *node, Main *bmain, int from_inde
     return;
   }
 
-  sock = BLI_findlink(&node->inputs, from_index);
+  sock = lib_findlink(&node->inputs, from_index);
   if (to_index < from_index) {
-    bNodeSocket *nextsock = BLI_findlink(&node->inputs, to_index);
+    NodeSocket *nextsock = lib_findlink(&node->inputs, to_index);
     if (nextsock) {
-      BLI_remlink(&node->inputs, sock);
-      BLI_insertlinkbefore(&node->inputs, nextsock, sock);
+      lib_remlink(&node->inputs, sock);
+      lib_insertlinkbefore(&node->inputs, nextsock, sock);
     }
-  }
-  else {
-    bNodeSocket *prevsock = BLI_findlink(&node->inputs, to_index);
+  } else {
+    NodeSocket *prevsock = lib_findlink(&node->inputs, to_index);
     if (prevsock) {
-      BLI_remlink(&node->inputs, sock);
-      BLI_insertlinkafter(&node->inputs, prevsock, sock);
+      lib_remlink(&node->inputs, sock);
+      lib_insertlinkafter(&node->inputs, prevsock, sock);
     }
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_Node_outputs_move(ID *id, bNode *node, Main *bmain, int from_index, int to_index)
+static void api_Node_outputs_move(Id *id, Node *node, Main *main, int from_index, int to_index)
 {
-  bNodeTree *ntree = (bNodeTree *)id;
-  bNodeSocket *sock;
+  NodeTree *ntree = (NodeTree *)id;
+  NodeSocket *sock;
 
   if (from_index == to_index) {
     return;
@@ -2524,53 +2523,53 @@ static void rna_Node_outputs_move(ID *id, bNode *node, Main *bmain, int from_ind
     return;
   }
 
-  sock = BLI_findlink(&node->outputs, from_index);
+  sock = lib_findlink(&node->outputs, from_index);
   if (to_index < from_index) {
-    bNodeSocket *nextsock = BLI_findlink(&node->outputs, to_index);
+    NodeSocket *nextsock = lib_findlink(&node->outputs, to_index);
     if (nextsock) {
-      BLI_remlink(&node->outputs, sock);
-      BLI_insertlinkbefore(&node->outputs, nextsock, sock);
+      lib_remlink(&node->outputs, sock);
+      lib_insertlinkbefore(&node->outputs, nextsock, sock);
     }
   }
   else {
-    bNodeSocket *prevsock = BLI_findlink(&node->outputs, to_index);
+    NodeSocket *prevsock = lib_findlink(&node->outputs, to_index);
     if (prevsock) {
-      BLI_remlink(&node->outputs, sock);
-      BLI_insertlinkafter(&node->outputs, prevsock, sock);
+      lib_remlink(&node->outputs, sock);
+      lib_insertlinkafter(&node->outputs, prevsock, sock);
     }
   }
 
-  ED_node_tree_propagate_change(NULL, bmain, ntree);
-  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+  ed_node_tree_propagate_change(NULL, main, ntree);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, ntree);
 }
 
-static void rna_Node_width_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_Node_width_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  bNode *node = ptr->data;
+  Node *node = ptr->data;
   *min = *softmin = node->typeinfo->minwidth;
   *max = *softmax = node->typeinfo->maxwidth;
 }
 
-static void rna_Node_height_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_Node_height_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  bNode *node = ptr->data;
+  Node *node = ptr->data;
   *min = *softmin = node->typeinfo->minheight;
   *max = *softmax = node->typeinfo->maxheight;
 }
 
-static void rna_Node_dimensions_get(PointerRNA *ptr, float *value)
+static void api_Node_dimensions_get(PointerRNA *ptr, float *value)
 {
-  bNode *node = ptr->data;
+  Node *node = ptr->data;
   value[0] = node->totr.xmax - node->totr.xmin;
   value[1] = node->totr.ymax - node->totr.ymin;
 }
 
 /* ******** Node Socket ******** */
 
-static void rna_NodeSocket_draw(
-    bContext *C, struct uiLayout *layout, ApiPtr *ptr, ApiPtr *node_ptr, const char *text)
+static void api_NodeSocket_draw(
+    Cxt *C, struct uiLayout *layout, ApiPtr *ptr, ApiPtr *node_ptr, const char *text)
 {
   extern ApiFn api_NodeSocket_draw_fn;
 
@@ -2612,56 +2611,56 @@ static void api_NodeSocket_draw_color(Cxt *C,
   api_param_get_lookup(&list, "color", &ret);
   copy_v4_v4(r_color, (float *)ret);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void rna_NodeSocket_unregister(Main *UNUSED(bmain), StructRNA *type)
+static void api_NodeSocket_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  bNodeSocketType *st = RNA_struct_blender_type_get(type);
+  NodeSocketType *st = api_struct_dune_type_get(type);
   if (!st) {
     return;
   }
 
-  RNA_struct_free_extension(type, &st->ext_socket);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &st->ext_socket);
+  api_struct_free(&DUNE_API, type);
 
   nodeUnregisterSocketType(st);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
 }
 
-static StructRNA *rna_NodeSocket_register(Main *UNUSED(bmain),
+static ApiStruct *api_NodeSocket_register(Main *UNUSED(main),
                                           ReportList *reports,
                                           void *data,
-                                          const char *identifier,
-                                          StructValidateFunc validate,
-                                          StructCallbackFunc call,
-                                          StructFreeFunc free)
+                                          const char *id,
+                                          StructValidateFn validate,
+                                          StructCbFn call,
+                                          StructFreeFn free)
 {
-  bNodeSocketType *st, dummyst;
-  bNodeSocket dummysock;
-  PointerRNA dummyptr;
+  NodeSocketType *st, dummyst;
+  NodeSocket dummysock;
+  ApiPtr dummyptr;
   int have_function[2];
 
   /* setup dummy socket & socket type to store static properties in */
-  memset(&dummyst, 0, sizeof(bNodeSocketType));
+  memset(&dummyst, 0, sizeof(NodeSocketType));
   dummyst.type = SOCK_CUSTOM;
 
-  memset(&dummysock, 0, sizeof(bNodeSocket));
+  memset(&dummysock, 0, sizeof(NodeSocket));
   dummysock.typeinfo = &dummyst;
-  RNA_pointer_create(NULL, &RNA_NodeSocket, &dummysock, &dummyptr);
+  api_ptr_create(NULL, &ApiNodeSocket, &dummysock, &dummyptr);
 
   /* validate the python class */
-  if (validate(&dummyptr, data, have_function) != 0) {
+  if (validate(&dummyptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummyst.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummyst.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Registering node socket class: '%s' is too long, maximum length is %d",
-                identifier,
+                id,
                 (int)sizeof(dummyst.idname));
     return NULL;
   }
@@ -2670,25 +2669,25 @@ static StructRNA *rna_NodeSocket_register(Main *UNUSED(bmain),
   st = nodeSocketTypeFind(dummyst.idname);
   if (!st) {
     /* create a new node socket type */
-    st = MEM_mallocN(sizeof(bNodeSocketType), "node socket type");
+    st = mem_mallocn(sizeof(NodeSocketType), "node socket type");
     memcpy(st, &dummyst, sizeof(dummyst));
 
     nodeRegisterSocketType(st);
   }
 
-  st->free_self = (void (*)(bNodeSocketType * stype)) MEM_freeN;
+  st->free_self = (void (*)(NodeSocketType * stype)) MEM_freeN;
 
-  /* if RNA type is already registered, unregister first */
-  if (st->ext_socket.srna) {
-    StructRNA *srna = st->ext_socket.srna;
-    RNA_struct_free_extension(srna, &st->ext_socket);
-    RNA_struct_free(&BLENDER_RNA, srna);
+  /* if api type is already registered, unregister first */
+  if (st->ext_socket.sapu) {
+    ApiStruct *sapi = st->ext_socket.sapi;
+    api_struct_free_extension(sapi, &st->ext_socket);
+    apu_struct_free(&DUNE_API, sapi);
   }
   st->ext_socket.srna = RNA_def_struct_ptr(&BLENDER_RNA, st->idname, &RNA_NodeSocket);
   st->ext_socket.data = data;
   st->ext_socket.call = call;
   st->ext_socket.free = free;
-  RNA_struct_blender_type_set(st->ext_socket.srna, st);
+  api_struct_dune_type_set(st->ext_socket.srna, st);
 
   /* XXX bad level call! needed to initialize the basic draw functions ... */
   ED_init_custom_node_socket_type(st);
