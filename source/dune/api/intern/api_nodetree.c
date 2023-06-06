@@ -3348,15 +3348,15 @@ static ApiStruct *api_GeometryNodeCustomGroup_register(Main *main,
   return nt->api_ext.sapi;
 }
 
-void register_node_type_geo_custom_group(bNodeType *ntype);
+void register_node_type_geo_custom_group(NodeType *ntype);
 
-static ApiStruct *api_ShaderNodeCustomGroup_register(Main *bmain,
+static ApiStruct *api_ShaderNodeCustomGroup_register(Main *main,
                                                      ReportList *reports,
                                                      void *data,
-                                                     const char *identifier,
-                                                     StructValidateFunc validate,
-                                                     StructCallbackFunc call,
-                                                     StructFreeFunc free)
+                                                     const char *id,
+                                                     StructValidateFn validate,
+                                                     StructCbFn call,
+                                                     StructFreeFn free)
 {
   NodeType *nt = api_Node_register_base(
       main, reports, &ApiShaderNodeCustomGroup, data, identifier, validate, call, free);
@@ -3365,7 +3365,7 @@ static ApiStruct *api_ShaderNodeCustomGroup_register(Main *bmain,
     return NULL;
   }
 
-  nt->group_update_func = node_group_update;
+  nt->group_update_fn = node_group_update;
   nt->type = NODE_CUSTOM_GROUP;
 
   register_node_type_sh_custom_group(nt);
