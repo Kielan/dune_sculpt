@@ -1,42 +1,42 @@
 #include <stdlib.h>
 
-#include "DNA_action_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_scene_types.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_action.h"
+#include "dune_action.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_base.h"
+#  include "lib_math_base.h"
 
-#  include "BKE_fcurve.h"
+#  include "dune_fcurve.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_keyframing.h"
+#  include "ed_keyframing.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static void rna_ActionGroup_channels_next(CollectionPropertyIterator *iter)
+static void api_ActionGroup_channels_next(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListBaseIter *internal = &iter->internal.list;
   FCurve *fcu = (FCurve *)internal->link;
-  bActionGroup *grp = fcu->grp;
+  ActionGroup *grp = fcu->grp;
 
   /* only continue if the next F-Curve (if existent) belongs in the same group */
   if ((fcu->next) && (fcu->next->grp == grp)) {
@@ -49,12 +49,12 @@ static void rna_ActionGroup_channels_next(CollectionPropertyIterator *iter)
   iter->valid = (internal->link != NULL);
 }
 
-static bActionGroup *rna_Action_groups_new(bAction *act, const char name[])
+static ActionGroup *api_Action_groups_new(Action *act, const char name[])
 {
   return action_groups_add_new(act, name);
 }
 
-static void rna_Action_groups_remove(bAction *act, ReportList *reports, PointerRNA *agrp_ptr)
+static void rna_Action_groups_remove(Action *act, ReportList *reports, ApiPtr *agrp_ptr)
 {
   bActionGroup *agrp = agrp_ptr->data;
   FCurve *fcu, *fcn;
