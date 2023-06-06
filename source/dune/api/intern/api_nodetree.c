@@ -862,7 +862,7 @@ static const EnumPropItem *api_node_static_type_itemf(Cxt *UNUSED(C),
   if (api_struct_is_a(ptr->type, &ApiCompositorNode)) {
 #  define DefNode(Category, Id, DefFn, EnumName, StructName, UIName, UIDesc) \
     if (STREQ(#Category, "CompositorNode")) { \
-      tmp.value = ID; \
+      tmp.value = Id; \
       tmp.id = EnumName; \
       tmp.name = UIName; \
       tmp.description = UIDesc; \
@@ -1103,7 +1103,7 @@ static ApiStruct *rna_NodeTree_register(Main *main,
 
   nt->poll = (have_fn[0]) ? api_NodeTree_poll : NULL;
   nt->update = (have_fn[1]) ? api_NodeTree_update_reg : NULL;
-  nt->get_from_context = (have_fn[2]) ? api_NodeTree_get_from_cxt : NULL;
+  nt->get_from_cxt = (have_fn[2]) ? api_NodeTree_get_from_cxt : NULL;
   nt->valid_socket_type = (have_fn[3]) ? api_NodeTree_valid_socket_type : NULL;
 
   ntreeTypeAdd(nt);
@@ -3079,21 +3079,21 @@ static void api_NodeSocketStandard_draw(Id *id,
   sock->typeinfo->draw(C, layout, &ptr, nodeptr, text);
 }
 
-static void rna_NodeSocketStandard_draw_color(
-    ID *id, bNodeSocket *sock, struct bContext *C, PointerRNA *nodeptr, float r_color[4])
+static void api_NodeSocketStandard_draw_color(
+    Id *id, NodeSocket *sock, struct Cxt *C, ApiPtr *nodeptr, float r_color[4])
 {
-  PointerRNA ptr;
-  RNA_pointer_create(id, &RNA_NodeSocket, sock, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(id, &ApiNodeSocket, sock, &ptr);
   sock->typeinfo->draw_color(C, &ptr, nodeptr, r_color);
 }
 
-static void rna_NodeSocketInterfaceStandard_draw(ID *id,
-                                                 bNodeSocket *sock,
-                                                 struct bContext *C,
+static void api_NodeSocketInterfaceStandard_draw(Id *id,
+                                                 NodeSocket *sock,
+                                                 struct Cxt *C,
                                                  struct uiLayout *layout)
 {
-  PointerRNA ptr;
-  RNA_pointer_create(id, &RNA_NodeSocketInterface, sock, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(id, &ApiNodeSocketInterface, sock, &ptr);
   sock->typeinfo->interface_draw(C, layout, &ptr);
 }
 
