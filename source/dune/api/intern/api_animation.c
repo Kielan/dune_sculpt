@@ -106,18 +106,18 @@ const EnumPropItem api_enum_keying_flag_items_api[] = {
 
 #  include "wm_api.h"
 
-static void api_AnimData_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_AnimData_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Id *id = ptr->owner_id;
 
-  anim_id_update(bmain, id);
+  anim_id_update(main, id);
 }
 
-static void api_AnimData_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_AnimData_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  graph_relations_tag_update(bmain);
+  graph_relations_tag_update(main);
 
-  api_AnimData_update(bmain, scene, ptr);
+  api_AnimData_update(main, scene, ptr);
 }
 
 static int api_AnimData_action_editable(ApiPtr *ptr, const char **UNUSED(r_info))
@@ -671,7 +671,7 @@ static FCurve *api_Driver_find(AnimData *adt,
   return dune_fcurve_find(&adt->drivers, data_path, index);
 }
 
-bool rna_AnimaData_override_apply(Main *UNUSED(main),
+bool api_AnimaData_override_apply(Main *UNUSED(main),
                                   ApiPtr *ptr_dst,
                                   ApiPtr *ptr_src,
                                   ApiPtr *ptr_storage,
@@ -867,7 +867,7 @@ static void api_def_keyingset_info(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Id Name", KEYINGSET_IDNAME_DOC);
 
   prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
-  api_def_prop_string_sdna(prop, NULL, "name");
+  api_def_prop_string_stype(prop, NULL, "name");
   api_def_prop_ui_text(prop, "UI Name", "");
   api_def_struct_name_prop(sapi, prop);
   api_def_prop_flag(prop, PROP_REGISTER);
@@ -933,7 +933,7 @@ static void api_def_keyingset_path(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "KeyingSetPath", NULL);
-  api_def_struct_sdna(sapi, "KS_Path");
+  api_def_struct_stype(sapi, "KS_Path");
   api_def_struct_ui_text(sapi, "Keying Set Path", "Path to a setting for use in a Keying Set");
 
   /* ID */
@@ -1112,272 +1112,271 @@ static void api_def_keyingset(BlenderRNA *brna)
   api_def_prop_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL);
 #  endif
 
-  prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_KeyingSet_name_set");
-  RNA_def_property_ui_text(prop, "UI Name", "");
-  RNA_def_struct_ui_icon(srna, ICON_KEYINGSET);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL);
+  prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_KeyingSet_name_set");
+  api_def_prop_ui_text(prop, "UI Name", "");
+  api_def_struct_ui_icon(sapi, ICON_KEYINGSET);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL);
 
-  prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "description");
-  RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
-  RNA_def_property_ui_text(prop, "Description", "A short description of the keying set");
+  prop = api_def_prop(sapi, "bl_description", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "description");
+  api_def_prop_string_maxlength(prop, API_DYN_DESCR_MAX); /* else it uses the pointer size! */
+  api_def_prop_ui_text(prop, "Description", "A short description of the keying set");
 
   /* KeyingSetInfo (Type Info) for Builtin Sets only. */
-  prop = RNA_def_property(srna, "type_info", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "KeyingSetInfo");
-  RNA_def_property_pointer_funcs(prop, "rna_KeyingSet_typeinfo_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "type_info", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "KeyingSetInfo");
+  api_def_prop_ptr_fns(prop, "api_KeyingSet_typeinfo_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Type Info", "Callback function defines for built-in Keying Sets");
 
   /* Paths */
-  prop = RNA_def_property(srna, "paths", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "paths", NULL);
-  RNA_def_property_struct_type(prop, "KeyingSetPath");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "paths", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "paths", NULL);
+  api_def_prop_struct_type(prop, "KeyingSetPath");
+  api_def_prop_ui_text(
       prop, "Paths", "Keying Set Paths to define settings that get keyframed together");
-  rna_def_keyingset_paths(brna, prop);
+  api_def_keyingset_paths(dapi, prop);
 
   /* Flags */
-  prop = RNA_def_property(srna, "is_path_absolute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYINGSET_ABSOLUTE);
-  RNA_def_property_ui_text(prop,
-                           "Absolute",
-                           "Keying Set defines specific paths/settings to be keyframed "
-                           "(i.e. is not reliant on context info)");
+  prop = api_def_prop(sapi, "is_path_absolute", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYINGSET_ABSOLUTE);
+  api_def_prop_ui_text(prop,
+                       "Absolute",
+                       "Keying Set defines specific paths/settings to be keyframed "
+                       "(i.e. is not reliant on context info)");
 
   /* Keyframing Flags */
-  rna_def_common_keying_flags(srna, 0);
+  api_def_common_keying_flags(sapi, 0);
 
   /* Keying Set API */
-  RNA_api_keyingset(srna);
+  api_api_keyingset(sapi);
 }
 
 #  undef KEYINGSET_IDNAME_DOC
 /* --- */
 
-static void rna_api_animdata_nla_tracks(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_animdata_nla_tracks(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  RNA_def_property_srna(cprop, "NlaTracks");
-  srna = RNA_def_struct(brna, "NlaTracks", NULL);
-  RNA_def_struct_sdna(srna, "AnimData");
-  RNA_def_struct_ui_text(srna, "NLA Tracks", "Collection of NLA Tracks");
+  api_def_prop_sapi(cprop, "NlaTracks");
+  sapi = api_def_struct(dapi, "NlaTracks", NULL);
+  api_def_struct_stype(sapi, "AnimData");
+  api_def_struct_ui_text(sapi, "NLA Tracks", "Collection of NLA Tracks");
 
-  func = RNA_def_function(srna, "new", "rna_NlaTrack_new");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Add a new NLA Track");
-  RNA_def_pointer(func, "prev", "NlaTrack", "", "NLA Track to add the new one after");
+  fn = api_def_fn(sapi, "new", "api_NlaTrack_new");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Add a new NLA Track");
+  api_def_ptr(fn, "prev", "NlaTrack", "", "NLA Track to add the new one after");
   /* return type */
-  parm = RNA_def_pointer(func, "track", "NlaTrack", "", "New NLA Track");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "track", "NlaTrack", "", "New NLA Track");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_NlaTrack_remove");
-  RNA_def_function_flag(func,
-                        FUNC_USE_SELF_ID | FUNC_USE_REPORTS | FUNC_USE_MAIN | FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Remove a NLA Track");
-  parm = RNA_def_pointer(func, "track", "NlaTrack", "", "NLA Track to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_function(sapi, "remove", "api_NlaTrack_remove");
+  api_def_fn_flag(fn,
+                  FN_USE_SELF_ID | FN_USE_REPORTS | FN_USE_MAIN | FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Remove a NLA Track");
+  parm = api_def_ptr(fn, "track", "NlaTrack", "", "NLA Track to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "NlaTrack");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_NlaTrack_active_get", "rna_NlaTrack_active_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Active Track", "Active NLA Track");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "NlaTrack");
+  api_def_prop_ptr_fns(
+      prop, "api_NlaTrack_active_get", "api_NlaTrack_active_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Active Track", "Active NLA Track");
   /* XXX: should (but doesn't) update the active track in the NLA window */
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA | NA_SELECTED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA | NA_SELECTED, NULL);
 }
 
-static void rna_api_animdata_drivers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_animdata_drivers(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  /* PropertyRNA *prop; */
-
-  RNA_def_property_srna(cprop, "AnimDataDrivers");
-  srna = RNA_def_struct(brna, "AnimDataDrivers", NULL);
-  RNA_def_struct_sdna(srna, "AnimData");
-  RNA_def_struct_ui_text(srna, "Drivers", "Collection of Driver F-Curves");
+  /* ApiProp *prop; */
+  api_def_prop_sapi(cprop, "AnimDataDrivers");
+  srna = api_def_struct(dapi, "AnimDataDrivers", NULL);
+  api_def_struct_style(sapi, "AnimData");
+  api_def_struct_ui_text(sapi, "Drivers", "Collection of Driver F-Curves");
 
   /* Match: ActionFCurves.new/remove */
 
   /* AnimData.drivers.new(...) */
-  func = RNA_def_function(srna, "new", "rna_Driver_new");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  parm = RNA_def_string(func, "data_path", NULL, 0, "Data Path", "F-Curve data path to use");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
+  fn = api_def_fn(sapi, "new", "api_Driver_new");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_REPORTS | FN_USE_MAIN);
+  parm = api_def_string(fn, "data_path", NULL, 0, "Data Path", "F-Curve data path to use");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
   /* return type */
-  parm = RNA_def_pointer(func, "driver", "FCurve", "", "Newly Driver F-Curve");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "driver", "FCurve", "", "Newly Driver F-Curve");
+  api_def_fn_return(fn, parm);
 
   /* AnimData.drivers.remove(...) */
-  func = RNA_def_function(srna, "remove", "rna_Driver_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  parm = RNA_def_pointer(func, "driver", "FCurve", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "remove", "api_Driver_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  parm = api_def_ptr(fn, "driver", "FCurve", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* AnimData.drivers.from_existing(...) */
-  func = RNA_def_function(srna, "from_existing", "rna_Driver_from_existing");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Add a new driver given an existing one");
-  RNA_def_pointer(func,
-                  "src_driver",
-                  "FCurve",
-                  "",
-                  "Existing Driver F-Curve to use as template for a new one");
+  fn = api_def_fn(sapi, "from_existing", "rna_Driver_from_existing");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Add a new driver given an existing one");
+  api_def_ptr(fn,
+              "src_driver",
+              "FCurve",
+              "",
+              "Existing Driver F-Curve to use as template for a new one");
   /* return type */
-  parm = RNA_def_pointer(func, "driver", "FCurve", "", "New Driver F-Curve");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "driver", "FCurve", "", "New Driver F-Curve");
+  api_def_fn_return(fn, parm);
 
   /* AnimData.drivers.find(...) */
-  func = RNA_def_function(srna, "find", "rna_Driver_find");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "find", "api_Driver_find");
+  api_def_fn_ui_description(
+      fn,
       "Find a driver F-Curve. Note that this function performs a linear scan "
       "of all driver F-Curves.");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "data_path", NULL, 0, "Data Path", "F-Curve data path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "data_path", NULL, 0, "Data Path", "F-Curve data path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
   /* return type */
-  parm = RNA_def_pointer(
-      func, "fcurve", "FCurve", "", "The found F-Curve, or None if it doesn't exist");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(
+      fn, "fcurve", "FCurve", "", "The found F-Curve, or None if it doesn't exist");
+  api_def_fn_return(fn, parm);
 }
 
-void rna_def_animdata_common(StructRNA *srna)
+void api_def_animdata_common(StructRNA *srna)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "animation_data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "adt");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_AnimaData_override_apply");
-  RNA_def_property_ui_text(prop, "Animation Data", "Animation data for this data-block");
+  prop = api_def_prop(sapi, "animation_data", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "adt");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_override_fns(prop, NULL, NULL, "rna_AnimaData_override_apply");
+  api_def_prop_ui_text(prop, "Animation Data", "Animation data for this data-block");
 }
 
-static void rna_def_animdata(BlenderRNA *brna)
+static void api_def_animdata(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "AnimData", NULL);
-  RNA_def_struct_ui_text(srna, "Animation Data", "Animation data for data-block");
-  RNA_def_struct_ui_icon(srna, ICON_ANIM_DATA);
+  sapi = api_def_struct(dapi, "AnimData", NULL);
+  api_def_struct_ui_text(sapi, "Animation Data", "Animation data for data-block");
+  api_def_struct_ui_icon(sapi, ICON_ANIM_DATA);
 
   /* NLA */
-  prop = RNA_def_property(srna, "nla_tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "nla_tracks", NULL);
-  RNA_def_property_struct_type(prop, "NlaTrack");
-  RNA_def_property_ui_text(prop, "NLA Tracks", "NLA Tracks (i.e. Animation Layers)");
-  RNA_def_property_override_flag(prop,
-                                 PROPOVERRIDE_OVERRIDABLE_LIBRARY |
-                                     PROPOVERRIDE_LIBRARY_INSERTION | PROPOVERRIDE_NO_PROP_NAME);
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_NLA_tracks_override_apply");
+  prop = api_def_prop(sapi, "nla_tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "nla_tracks", NULL);
+  api_def_prop_struct_type(prop, "NlaTrack");
+  api_def_prop_ui_text(prop, "NLA Tracks", "NLA Tracks (i.e. Animation Layers)");
+  api_def_prop_override_flag(prop,
+                             PROPOVERRIDE_OVERRIDABLE_LIB |
+                               PROPOVERRIDE_LIB_INSERTION | PROPOVERRIDE_NO_PROP_NAME);
+  api_def_prop_override_fns(prop, NULL, NULL, "api_NLA_tracks_override_apply");
 
-  rna_api_animdata_nla_tracks(brna, prop);
+  api_api_animdata_nla_tracks(dapi, prop);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* Active Action */
-  prop = RNA_def_property(srna, "action", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "action", PROP_PTR, PROP_NONE);
   /* this flag as well as the dynamic test must be defined for this to be editable... */
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_AnimData_action_set", NULL, "rna_Action_id_poll");
-  RNA_def_property_editable_func(prop, "rna_AnimData_action_editable");
-  RNA_def_property_ui_text(prop, "Action", "Active Action for this data-block");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA_ACTCHANGE, "rna_AnimData_dependency_update");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_AnimData_action_set", NULL, "api_Action_id_poll");
+  api_def_prop_editable_fn(prop, "api_AnimData_action_editable");
+  api_def_prop_ui_text(prop, "Action", "Active Action for this data-block");
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA_ACTCHANGE, "api_AnimData_dependency_update");
 
   /* Active Action Settings */
-  prop = RNA_def_property(srna, "action_extrapolation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "act_extendmode");
-  RNA_def_property_enum_items(prop, rna_enum_nla_mode_extend_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "action_extrapolation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "act_extendmode");
+  api_def_prop_enum_items(prop, api_enum_nla_mode_extend_items);
+  api_def_prop_ui_text(
       prop,
       "Action Extrapolation",
       "Action to take for gaps past the Active Action's range (when evaluating with NLA)");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, "rna_AnimData_update");
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA, "api_AnimData_update");
 
-  prop = RNA_def_property(srna, "action_blend_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "act_blendmode");
-  RNA_def_property_enum_items(prop, rna_enum_nla_mode_blend_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "action_blend_type", PROP_ENUM, PROP_NONE);
+  ali_def_prop_enum_stype(prop, NULL, "act_blendmode");
+  api_def_prop_enum_items(prop, api_enum_nla_mode_blend_items);
+  api_def_prop_ui_text(
       prop,
       "Action Blending",
       "Method used for combining Active Action's result with result of NLA stack");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, "rna_AnimData_update"); /* this will do? */
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA, "api_AnimData_update"); /* this will do? */
 
-  prop = RNA_def_property(srna, "action_influence", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "act_influence");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "action_influence", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "act_influence");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop,
                            "Action Influence",
                            "Amount the Active Action contributes to the result of the NLA stack");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, "rna_AnimData_update"); /* this will do? */
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA, "api_AnimData_update"); /* this will do? */
 
   /* Drivers */
-  prop = RNA_def_property(srna, "drivers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "drivers", NULL);
-  RNA_def_property_struct_type(prop, "FCurve");
-  RNA_def_property_ui_text(prop, "Drivers", "The Drivers/Expressions for this data-block");
+  prop = api_def_prop(sapi, "drivers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "drivers", NULL);
+  api_def_prop_struct_type(prop, "FCurve");
+  api_def_prop_ui_text(prop, "Drivers", "The Drivers/Expressions for this data-block");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  rna_api_animdata_drivers(brna, prop);
+  api_animdata_drivers(dapi, prop);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* General Settings */
-  prop = RNA_def_property(srna, "use_nla", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", ADT_NLA_EVAL_OFF);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_nla", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_style(prop, NULL, "flag", ADT_NLA_EVAL_OFF);
+  api_def_prop_ui_text(
       prop, "NLA Evaluation Enabled", "NLA stack is evaluated when evaluating this block");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, "rna_AnimData_update"); /* this will do? */
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA, "api_AnimData_update"); /* this will do? */
 
-  prop = RNA_def_property(srna, "use_tweak_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADT_NLA_EDIT_ON);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_AnimData_tweakmode_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_tweak_mode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADT_NLA_EDIT_ON);
+  api_def_prop_bool_fns(prop, NULL, "api_AnimData_tweakmode_set");
+  api_def_prop_ui_text(
       prop, "Use NLA Tweak Mode", "Whether to enable or disable tweak mode in NLA");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, "rna_AnimData_update");
+  api_def_prop_update(prop, NC_ANIMATION | ND_NLA, "api_AnimData_update");
 
-  prop = RNA_def_property(srna, "use_pin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADT_CURVES_ALWAYS_VISIBLE);
-  RNA_def_property_ui_text(prop, "Pin in Graph Editor", "");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "use_pin", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADT_CURVES_ALWAYS_VISIBLE);
+  api_def_prop_ui_text(prop, "Pin in Graph Editor", "");
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
   /* Animation Data API */
-  RNA_api_animdata(srna);
+  api_api_animdata(sapi);
 }
 
 /* --- */
 
-void RNA_def_animation(BlenderRNA *brna)
+void api_def_animation(DuneApi *dapi)
 {
-  rna_def_animdata(brna);
+  api_def_animdata(dapi);
 
-  rna_def_keyingset(brna);
-  rna_def_keyingset_path(brna);
-  rna_def_keyingset_info(brna);
+  api_def_keyingset(dapi);
+  api_def_keyingset_path(dapi);
+  api_def_keyingset_info(dapi);
 }
 
 #endif
