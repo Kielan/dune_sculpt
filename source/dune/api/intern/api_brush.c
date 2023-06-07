@@ -718,41 +718,41 @@ static void api_Brush_icon_update(Main *UNUSED(bmain), Scene *UNUSED(scene), Poi
   br->id.icon_id = 0;
 
   if (br->flag & BRUSH_CUSTOM_ICON) {
-    BKE_icon_changed(BKE_icon_id_ensure(&br->id));
+    dune_icon_changed(dune_icon_id_ensure(&br->id));
   }
 
-  WM_main_add_notifier(NC_BRUSH | NA_EDITED, br);
+  wm_main_add_notifier(NC_BRUSH | NA_EDITED, br);
 }
 
-static bool rna_Brush_imagetype_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
+static bool api_Brush_imagetype_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
 {
   Image *image = (Image *)value.owner_id;
   return image->type != IMA_TYPE_R_RESULT && image->type != IMA_TYPE_COMPOSITE;
 }
 
-static void rna_TextureSlot_brush_angle_update(bContext *C, PointerRNA *ptr)
+static void api_TextureSlot_brush_angle_update(Cxt *C, ApiPtr *ptr)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   MTex *mtex = ptr->data;
   /* skip invalidation of overlay for stencil mode */
   if (mtex->mapping != MTEX_MAP_MODE_STENCIL) {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    BKE_paint_invalidate_overlay_tex(scene, view_layer, mtex->tex);
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    dune_paint_invalidate_overlay_tex(scene, view_layer, mtex->tex);
   }
 
-  rna_TextureSlot_update(C, ptr);
+  api_TextureSlot_update(C, ptr);
 }
 
-static void rna_Brush_set_size(PointerRNA *ptr, int value)
+static void api_Brush_set_size(ApiPtr *ptr, int value)
 {
   Brush *brush = ptr->data;
 
   /* scale unprojected radius so it stays consistent with brush size */
-  BKE_brush_scale_unprojected_radius(&brush->unprojected_radius, value, brush->size);
+  dune_brush_scale_unprojected_radius(&brush->unprojected_radius, value, brush->size);
   brush->size = value;
 }
 
-static void rna_Brush_use_gradient_set(PointerRNA *ptr, bool value)
+static void api_Brush_use_gradient_set(ApiPtr *ptr, bool value)
 {
   Brush *br = (Brush *)ptr->data;
 
@@ -764,59 +764,59 @@ static void rna_Brush_use_gradient_set(PointerRNA *ptr, bool value)
   }
 
   if ((br->flag & BRUSH_USE_GRADIENT) && br->gradient == NULL) {
-    br->gradient = BKE_colorband_add(true);
+    br->gradient = dune_colorband_add(true);
   }
 }
 
-static void rna_Brush_set_unprojected_radius(PointerRNA *ptr, float value)
+static void api_Brush_set_unprojected_radius(ApiPtr *ptr, float value)
 {
   Brush *brush = ptr->data;
 
   /* scale brush size so it stays consistent with unprojected_radius */
-  BKE_brush_scale_size(&brush->size, value, brush->unprojected_radius);
+  dune_brush_scale_size(&brush->size, value, brush->unprojected_radius);
   brush->unprojected_radius = value;
 }
 
-static const EnumPropertyItem *rna_Brush_direction_itemf(bContext *C,
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA *UNUSED(prop),
-                                                         bool *UNUSED(r_free))
+static const EnumPropItem *api_Brush_direction_itemf(Cxt *C,
+                                                     ApiPtr *ptr,
+                                                     ApiProp *UNUSED(prop),
+                                                     bool *UNUSED(r_free))
 {
-  ePaintMode mode = BKE_paintmode_get_active_from_context(C);
+  ePaintMode mode = dune_paintmode_get_active_from_cxt(C);
 
   /* sculpt mode */
-  static const EnumPropertyItem prop_flatten_contrast_items[] = {
+  static const EnumPropItem prop_flatten_contrast_items[] = {
       {BRUSH_DIR_IN, "CONTRAST", ICON_ADD, "Contrast", "Subtract effect of brush"},
       {0, "FLATTEN", ICON_REMOVE, "Flatten", "Add effect of brush"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_fill_deepen_items[] = {
+  static const EnumPropItem prop_fill_deepen_items[] = {
       {0, "FILL", ICON_ADD, "Fill", "Add effect of brush"},
       {BRUSH_DIR_IN, "DEEPEN", ICON_REMOVE, "Deepen", "Subtract effect of brush"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_scrape_peaks_items[] = {
+  static const EnumPropItem prop_scrape_peaks_items[] = {
       {0, "SCRAPE", ICON_ADD, "Scrape", "Add effect of brush"},
       {BRUSH_DIR_IN, "PEAKS", ICON_REMOVE, "Peaks", "Subtract effect of brush"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_pinch_magnify_items[] = {
+  static const EnumPropItem prop_pinch_magnify_items[] = {
       {BRUSH_DIR_IN, "MAGNIFY", ICON_ADD, "Magnify", "Subtract effect of brush"},
       {0, "PINCH", ICON_REMOVE, "Pinch", "Add effect of brush"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_inflate_deflate_items[] = {
+  static const EnumPropItem prop_inflate_deflate_items[] = {
       {0, "INFLATE", ICON_ADD, "Inflate", "Add effect of brush"},
       {BRUSH_DIR_IN, "DEFLATE", ICON_REMOVE, "Deflate", "Subtract effect of brush"},
       {0, NULL, 0, NULL, NULL},
   };
 
   /* texture paint mode */
-  static const EnumPropertyItem prop_soften_sharpen_items[] = {
+  static const EnumPropItem prop_soften_sharpen_items[] = {
       {BRUSH_DIR_IN, "SHARPEN", ICON_ADD, "Sharpen", "Sharpen effect of brush"},
       {0, "SOFTEN", ICON_REMOVE, "Soften", "Blur effect of brush"},
       {0, NULL, 0, NULL, NULL},
@@ -843,10 +843,10 @@ static const EnumPropertyItem *rna_Brush_direction_itemf(bContext *C,
               return prop_direction_items;
 
             case BRUSH_MASK_SMOOTH:
-              return DummyRNA_DEFAULT_items;
+              return DummyApi_DEFAULT_items;
 
             default:
-              return DummyRNA_DEFAULT_items;
+              return DummyApi_DEFAULT_items;
           }
 
         case SCULPT_TOOL_FLATTEN:
@@ -865,7 +865,7 @@ static const EnumPropertyItem *rna_Brush_direction_itemf(bContext *C,
           return prop_inflate_deflate_items;
 
         default:
-          return DummyRNA_DEFAULT_items;
+          return DummyApi_DEFAULT_items;
       }
 
     case PAINT_MODE_TEXTURE_2D:
@@ -875,22 +875,22 @@ static const EnumPropertyItem *rna_Brush_direction_itemf(bContext *C,
           return prop_soften_sharpen_items;
 
         default:
-          return DummyRNA_DEFAULT_items;
+          return DummyApi_DEFAULT_items;
       }
 
     default:
-      return DummyRNA_DEFAULT_items;
+      return DummyApi_DEFAULT_items;
   }
 }
 
-static const EnumPropertyItem *rna_Brush_stroke_itemf(bContext *C,
-                                                      PointerRNA *UNUSED(ptr),
-                                                      PropertyRNA *UNUSED(prop),
-                                                      bool *UNUSED(r_free))
+static const EnumPropItem *api_Brush_stroke_itemf(Cxt *C,
+                                                  ApiPtr *UNUSED(ptr),
+                                                  ApiProp *UNUSED(prop),
+                                                  bool *UNUSED(r_free))
 {
-  ePaintMode mode = BKE_paintmode_get_active_from_context(C);
+  ePaintMode mode = dune_paintmode_get_active_from_cxt(C);
 
-  static const EnumPropertyItem brush_stroke_method_items[] = {
+  static const EnumPropItem brush_stroke_method_items[] = {
       {0, "DOTS", 0, "Dots", "Apply paint on each mouse move step"},
       {BRUSH_SPACE,
        "SPACE",
@@ -922,49 +922,49 @@ static const EnumPropertyItem *rna_Brush_stroke_itemf(bContext *C,
   }
 }
 /* Grease Pencil Drawing Brushes Settings */
-static char *rna_BrushGpencilSettings_path(PointerRNA *UNUSED(ptr))
+static char *api_BrushGpencilSettings_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_paint.brush.gpencil_settings");
+  return lib_strdup("tool_settings.pen_paint.brush.pen_settings");
 }
 
-static void rna_BrushGpencilSettings_default_eraser_update(Main *bmain,
-                                                           Scene *scene,
-                                                           PointerRNA *UNUSED(ptr))
+static void api_BrushpenSettings_default_eraser_update(Main *main,
+                                                       Scene *scene,
+                                                       ApiPtr *UNUSED(ptr))
 {
   ToolSettings *ts = scene->toolsettings;
   Paint *paint = &ts->gp_paint->paint;
   Brush *brush_cur = paint->brush;
 
   /* disable default eraser in all brushes */
-  for (Brush *brush = bmain->brushes.first; brush; brush = brush->id.next) {
-    if ((brush != brush_cur) && (brush->ob_mode == OB_MODE_PAINT_GPENCIL) &&
-        (brush->gpencil_tool == GPAINT_TOOL_ERASE)) {
-      brush->gpencil_settings->flag &= ~GP_BRUSH_DEFAULT_ERASER;
+  for (Brush *brush = main->brushes.first; brush; brush = brush->id.next) {
+    if ((brush != brush_cur) && (brush->ob_mode == OB_MODE_PAINT_PEN) &&
+        (brush->pen_tool == PAINT_TOOL_ERASE)) {
+      brush->pen_settings->flag &= ~PEN_BRUSH_DEFAULT_ERASER;
     }
   }
 }
 
-static void rna_BrushGpencilSettings_use_material_pin_update(bContext *C, PointerRNA *ptr)
+static void api_BrushpenSettings_use_material_pin_update(Cxt *C, ApiPtr *ptr)
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Object *ob = OBACT(view_layer);
   Brush *brush = (Brush *)ptr->owner_id;
 
-  if (brush->gpencil_settings->flag & GP_BRUSH_MATERIAL_PINNED) {
-    Material *material = BKE_object_material_get(ob, ob->actcol);
-    BKE_gpencil_brush_material_set(brush, material);
+  if (brush->pen_settings->flag & PEN_BRUSH_MATERIAL_PINNED) {
+    Material *material = dune_object_material_get(ob, ob->actcol);
+    dune_pen_brush_material_set(brush, material);
   }
   else {
-    BKE_gpencil_brush_material_set(brush, NULL);
+    dune_pen_brush_material_set(brush, NULL);
   }
 
   /* number of material users changed */
-  WM_event_add_notifier(C, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+  wm_event_add_notifier(C, NC_SPACE | ND_SPACE_PROPS, NULL);
 }
 
-static void api_BrushGpencilSettings_eraser_mode_update(Main *UNUSED(bmain),
-                                                        Scene *scene,
-                                                        PointerRNA *UNUSED(ptr))
+static void api_BrushpenSettings_eraser_mode_update(Main *UNUSED(main),
+                                                    Scene *scene,
+                                                    ApiPtr *UNUSED(ptr))
 {
   ToolSettings *ts = scene->toolsettings;
   Paint *paint = &ts->pen_paint->paint;
@@ -974,7 +974,7 @@ static void api_BrushGpencilSettings_eraser_mode_update(Main *UNUSED(bmain),
   if ((brush) && (brush->pen_tool == PAINT_TOOL_ERASE)) {
     switch (brush->pen_settings->eraser_mode) {
       case PEN_BRUSH_ERASER_SOFT:
-        brush->pen_settings->icon_id = GP_BRUSH_ICON_ERASE_SOFT;
+        brush->pen_settings->icon_id = PEN_BRUSH_ICON_ERASE_SOFT;
         break;
       case PEN_BRUSH_ERASER_HARD:
         brush->pen_settings->icon_id = GP_BRUSH_ICON_ERASE_HARD;
@@ -1012,19 +1012,19 @@ static void api_PenBrush_pin_mode_set(ApiPtr *UNUSED(ptr), bool UNUSED(value))
   return;
 }
 
-static void api_PenBrush_pin_mode_update(bContext *C, PointerRNA *ptr)
+static void api_PenBrush_pin_mode_update(Cxt *C, ApiPtr *ptr)
 {
   Brush *brush = (Brush *)ptr->owner_id;
-  if ((brush != NULL) && (brush->gpencil_settings != NULL)) {
-    if (brush->pen_settings->brush_draw_mode != GP_BRUSH_MODE_ACTIVE) {
+  if ((brush != NULL) && (brush->pen_settings != NULL)) {
+    if (brush->pen_settings->brush_draw_mode != PEN_BRUSH_MODE_ACTIVE) {
       /* If not active, means that must be set to off. */
-      brush->pen_settings->brush_draw_mode = GP_BRUSH_MODE_ACTIVE;
+      brush->pen_settings->brush_draw_mode = PEN_BRUSH_MODE_ACTIVE;
     }
     else {
-      ToolSettings *ts = CTX_data_tool_settings(C);
-      brush->pen_settings->brush_draw_mode = GPENCIL_USE_VERTEX_COLOR(ts) ?
-                                                     GP_BRUSH_MODE_VERTEXCOLOR :
-                                                     GP_BRUSH_MODE_MATERIAL;
+      ToolSettings *ts = cxt_data_tool_settings(C);
+      brush->pen_settings->brush_draw_mode = PEN_USE_VERTEX_COLOR(ts) ?
+                                                     PEN_BRUSH_MODE_VERTEXCOLOR :
+                                                     PEN_BRUSH_MODE_MATERIAL;
     }
   }
 }
@@ -1032,7 +1032,7 @@ static void api_PenBrush_pin_mode_update(bContext *C, PointerRNA *ptr)
 static const EnumPropItem *api_BrushTextureSlot_map_mode_itemf(Cxt *C,
                                                                ApiPtr *UNUSED(ptr),
                                                                ApiProp *UNUSED(prop),
-                                                                   bool *UNUSED(r_free))
+                                                               abool *UNUSED(r_free))
 {
 
   if (C == NULL) {
@@ -1217,12 +1217,12 @@ static void api_def_image_paint_capabilities(DuneApi *dapi)
 #  undef IMAPAINT_TOOL_CAPABILITY
 }
 
-static void rna_def_vertex_paint_capabilities(BlenderRNA *brna)
+static void api_def_vertex_paint_capabilities(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "BrushCapabilitiesVertexPaint", NULL);
+  sapi = api_def_struct(dapi, "BrushCapabilitiesVertexPaint", NULL);
   api_def_struct_stype(sapi, "Brush");
   api_def_struct_nested(dapi, sapi, "Brush");
   apo_def_struct_ui_text(
@@ -1245,7 +1245,7 @@ static void api_def_weight_paint_capabilities(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "BrushCapabilitiesWeightPaint", NULL);
+  sapi = api_def_struct(dapi, "BrushCapabilitiesWeightPaint", NULL);
   api_def_struct_stype(sapi, "Brush");
   api_def_struct_nested(dapi, sapi, "Brush");
   api_def_struct_ui_text(
@@ -1269,10 +1269,10 @@ static void api_def_pen_options(DuneApi *dapi)
   ApiProp *prop;
 
   /* modes */
-  static EnumPropItem ppaint_mode_types_items[] = {
-      {PPAINT_MODE_STROKE, "STROKE", 0, "Stroke", "Vertex Color affects to Stroke only"},
-      {PPAINT_MODE_FILL, "FILL", 0, "Fill", "Vertex Color affects to Fill only"},
-      {PPAINT_MODE_BOTH, "BOTH", 0, "Stroke & Fill", "Vertex Color affects to Stroke and Fill"},
+  static EnumPropItem paint_mode_types_items[] = {
+      {PAINT_MODE_STROKE, "STROKE", 0, "Stroke", "Vertex Color affects to Stroke only"},
+      {PAINT_MODE_FILL, "FILL", 0, "Fill", "Vertex Color affects to Fill only"},
+      {PAINT_MODE_BOTH, "BOTH", 0, "Stroke & Fill", "Vertex Color affects to Stroke and Fill"},
       {0, NULL, 0, NULL, NULL},
   };
 
@@ -1282,9 +1282,9 @@ static void api_def_pen_options(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(dapi, "BrushGpencilSettings", NULL);
-  api_def_struct_stype(sapi, "BrushGpencilSettings");
-  api_def_struct_path_fn(sapi, "rna_BrushGpencilSettings_path");
+  sapi = api_def_struct(dapi, "BrushpenSettings", NULL);
+  api_def_struct_stype(sapi, "BrushpenSettings");
+  api_def_struct_path_fn(sapi, "api_BrushGpencilSettings_path");
   api_def_struct_ui_text(sapi, "Grease Pencil Brush Settings", "Settings for grease pencil brush");
 
   /* Strength factor for new strokes */
