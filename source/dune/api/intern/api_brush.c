@@ -2727,7 +2727,7 @@ static void api_def_brush(DuneApi *dapi)
                            "Volume Preservation",
                            "Poisson ratio for elastic deformation. Higher values preserve volume "
                            "more, but also lead to more bulging");
-  api_def_prop_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = api_def_prop(sapi, "rake_factor", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "rake_factor");
@@ -2735,604 +2735,604 @@ static void api_def_brush(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, 10.0f);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
   api_def_prop_ui_text(prop, "Rake", "How much grab will follow cursor rotation");
-  api_def_prop_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "crease_pinch_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "crease_pinch_factor");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Crease Brush Pinch Factor", "How much the crease brush pinches");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = apo_def_prop(sapi, "crease_pinch_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "crease_pinch_factor");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Crease Brush Pinch Factor", "How much the crease brush pinches");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "pose_offset", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "pose_offset");
-  RNA_def_property_range(prop, 0.0f, 2.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pose_offset", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "pose_offset");
+  api_def_prop_range(prop, 0.0f, 2.0f);
+  api_def_prop_ui_text(
       prop, "Pose Origin Offset", "Offset of the pose origin in relation to the brush radius");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "disconnected_distance_max", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "disconnected_distance_max");
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "disconnected_distance_max", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "disconnected_distance_max");
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_text(prop,
                            "Max Element Distance",
                            "Maximum distance to search for disconnected loose parts in the mesh");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "boundary_offset", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "boundary_offset");
-  RNA_def_property_range(prop, 0.0f, 30.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "boundary_offset", PROP_FLOAT, PROP_FACTOR);
+  apk_def_prop_float_stype(prop, NULL, "boundary_offset");
+  api_def_prop_range(prop, 0.0f, 30.0f);
+  api_def_prop_ui_text(prop,
                            "Boundary Origin Offset",
                            "Offset of the boundary origin in relation to the brush radius");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "surface_smooth_shape_preservation", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "surface_smooth_shape_preservation");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "surface_smooth_shape_preservation", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "surface_smooth_shape_preservation");
+  wpi_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Shape Preservation", "How much of the original shape is preserved when smoothing");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "surface_smooth_current_vertex", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "surface_smooth_current_vertex");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "surface_smooth_current_vertex", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "surface_smooth_current_vertex");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Per Vertex Displacement",
       "How much the position of each individual vertex influences the final result");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "surface_smooth_iterations", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "surface_smooth_iterations");
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_range(prop, 1, 10, 1, 3);
-  RNA_def_property_ui_text(prop, "Iterations", "Number of smoothing iterations per brush step");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "surface_smooth_iterations", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "surface_smooth_iterations");
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_range(prop, 1, 10, 1, 3);
+  api_def_prop_ui_text(prop, "Iterations", "Number of smoothing iterations per brush step");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "multiplane_scrape_angle", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "multiplane_scrape_angle");
-  RNA_def_property_range(prop, 0.0f, 160.0f);
-  RNA_def_property_ui_text(prop, "Plane Angle", "Angle between the planes of the crease");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "multiplane_scrape_angle", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "multiplane_scrape_angle");
+  api_def_prop_range(prop, 0.0f, 160.0f);
+  api_def_prop_ui_text(prop, "Plane Angle", "Angle between the planes of the crease");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "pose_smooth_iterations", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "pose_smooth_iterations");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pose_smooth_iterations", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "pose_smooth_iterations");l
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(
       prop,
       "Smooth Iterations",
       "Smooth iterations applied after calculating the pose factor of each vertex");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "pose_ik_segments", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "pose_ik_segments");
-  RNA_def_property_range(prop, 1, 20);
-  RNA_def_property_ui_range(prop, 1, 20, 1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pose_ik_segments", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "pose_ik_segments");
+  api_def_prop_range(prop, 1, 20);
+  api_def_prop_ui_range(prop, 1, 20, 1, 3);
+  api_def_prop_ui_text(
       prop,
       "Pose IK Segments",
       "Number of segments of the inverse kinematics chain that will deform the mesh");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "tip_roundness", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "tip_roundness");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Tip Roundness", "Roundness of the brush tip");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "tip_roundness", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "tip_roundness");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Tip Roundness", "Roundness of the brush tip");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_mass", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "cloth_mass");
-  RNA_def_property_range(prop, 0.01f, 2.0f);
-  RNA_def_property_ui_text(prop, "Cloth Mass", "Mass of each simulation particle");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cloth_mass", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "cloth_mass");
+  api_def_prop_range(prop, 0.01f, 2.0f);
+  api_def_prop_ui_text(prop, "Cloth Mass", "Mass of each simulation particle");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_damping", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "cloth_damping");
-  RNA_def_property_range(prop, 0.01f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cloth_damping", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "cloth_damping");
+  api_def_prop_range(prop, 0.01f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Cloth Damping", "How much the applied forces are propagated through the cloth");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_sim_limit", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "cloth_sim_limit");
-  RNA_def_property_range(prop, 0.1f, 10.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cloth_sim_limit", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "cloth_sim_limit");
+  api_def_prop_range(prop, 0.1f, 10.0f);
+  api_def_prop_ui_text(
       prop,
       "Simulation Limit",
       "Factor added relative to the size of the radius to limit the cloth simulation effects");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_sim_falloff", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "cloth_sim_falloff");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop,
-                           "Simulation Falloff",
-                           "Area to apply deformation falloff to the effects of the simulation");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cloth_sim_falloff", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "cloth_sim_falloff");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop,
+                       "Simulation Falloff",
+                       "Area to apply deformation falloff to the effects of the simulation");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_constraint_softbody_strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "cloth_constraint_softbody_strength");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cloth_constraint_softbody_strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "cloth_constraint_softbody_strength");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Soft Body Plasticity",
       "How much the cloth preserves the original shape, acting as a soft body");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "hardness", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "hardness");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "hardness", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "hardness");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Hardness", "How close the brush falloff starts from the edge of the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(
-      srna, "automasking_boundary_edges_propagation_steps", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "automasking_boundary_edges_propagation_steps");
-  RNA_def_property_range(prop, 1, 20);
-  RNA_def_property_ui_range(prop, 1, 20, 1, 3);
-  RNA_def_property_ui_text(prop,
-                           "Propagation Steps",
-                           "Distance where boundary edge automasking is going to protect vertices "
-                           "from the fully masked edge");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(
+      sapi, "automasking_boundary_edges_propagation_steps", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "automasking_boundary_edges_propagation_steps");
+  api_def_prop_range(prop, 1, 20);
+  api_def_prop_ui_range(prop, 1, 20, 1, 3);
+  api_def_prop_ui_text(prop,
+                       "Propagation Steps",
+                       "Distance where boundary edge automasking is going to protect vertices "
+                       "from the fully masked edge");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "auto_smooth_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "autosmooth_factor");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "auto_smooth_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "autosmooth_factor");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Auto-Smooth", "Amount of smoothing to automatically apply to each stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "topology_rake_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "topology_rake_factor");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop,
-                           "Topology Rake",
-                           "Automatically align edges to the brush direction to "
-                           "generate cleaner topology and define sharp features. "
-                           "Best used on low-poly meshes as it has a performance impact");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "topology_rake_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "topology_rake_factor");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(prop,
+                       "Topology Rake",
+                       "Automatically align edges to the brush direction to "
+                       "generate cleaner topology and define sharp features. "
+                       "Best used on low-poly meshes as it has a performance impact");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "tilt_strength_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "tilt_strength_factor");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tilt_strength_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "tilt_strength_factor");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Tilt Strength", "How much the tilt of the pen will affect the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "normal_radius_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "normal_radius_factor");
-  RNA_def_property_range(prop, 0.0f, 2.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop,
-                           "Normal Radius",
-                           "Ratio between the brush radius and the radius that is going to be "
-                           "used to sample the normal");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "normal_radius_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "normal_radius_factor");
+  api_def_prop_range(prop, 0.0f, 2.0f);
+  api_def_prop_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
+  api_def_prop_ui_text(prop,
+                       "Normal Radius",
+                       "Ratio between the brush radius and the radius that is going to be "
+                       "used to sample the normal");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "area_radius_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "area_radius_factor");
-  RNA_def_property_range(prop, 0.0f, 2.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop,
-                           "Area Radius",
-                           "Ratio between the brush radius and the radius that is going to be "
-                           "used to sample the area center");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "area_radius_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "area_radius_factor");
+  api_def_prop_range(prop, 0.0f, 2.0f);
+  api_def_prop_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
+  api_def_prop_ui_text(prop,
+                       "Area Radius",
+                       "Ratio between the brush radius and the radius that is going to be "
+                       "used to sample the area center");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "wet_paint_radius_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "wet_paint_radius_factor");
-  RNA_def_property_range(prop, 0.0f, 2.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop,
-                           "Wet Paint Radius",
-                           "Ratio between the brush radius and the radius that is going to be "
-                           "used to sample the color to blend in wet paint");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "wet_paint_radius_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "wet_paint_radius_factor");
+  api_def_prop_range(prop, 0.0f, 2.0f);
+  api_def_prop_ui_range(prop, 0.0f, 2.0f, 0.001, 3);
+  api_def_prop_ui_text(prop,
+                       "Wet Paint Radius",
+                       "Ratio between the brush radius and the radius that is going to be "
+                       "used to sample the color to blend in wet paint");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "stencil_pos", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "stencil_pos");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Stencil Position", "Position of stencil in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "stencil_pos", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "stencil_pos");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Stencil Position", "Position of stencil in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "stencil_dimension", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "stencil_dimension");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Stencil Dimensions", "Dimensions of stencil in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "stencil_dimension", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "stencil_dimension");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Stencil Dimensions", "Dimensions of stencil in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "mask_stencil_pos", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "mask_stencil_pos");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Mask Stencil Position", "Position of mask stencil in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "mask_stencil_pos", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "mask_stencil_pos");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Mask Stencil Position", "Position of mask stencil in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "mask_stencil_dimension", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "mask_stencil_dimension");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mask_stencil_dimension", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "mask_stencil_dimension");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(
       prop, "Mask Stencil Dimensions", "Dimensions of mask stencil in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "sharp_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 100.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, 3);
-  RNA_def_property_float_sdna(prop, NULL, "sharp_threshold");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sharp_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 100.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, 3);
+  api_def_prop_float_stype(prop, NULL, "sharp_threshold");
+  api_def_prop_ui_text(
       prop, "Sharp Threshold", "Threshold below which, no sharpening is done");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "fill_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 100.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, 3);
-  RNA_def_property_float_sdna(prop, NULL, "fill_threshold");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "fill_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 100.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, 3);
+  api_def_prop_float_stype(prop, NULL, "fill_threshold");
+  api_def_prop_ui_text(
       prop, "Fill Threshold", "Threshold above which filling is not propagated");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "blur_kernel_radius", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "blur_kernel_radius");
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 50, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "blur_kernel_radius", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "blur_kernel_radius");
+  api_def_prop_range(prop, 1, 10000);
+  api_def_prop_ui_range(prop, 1, 50, 1, -1);
+  api_def_prop_ui_text(
       prop, "Kernel Radius", "Radius of kernel used for soften and sharpen in pixels");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "blur_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_blur_mode_items);
-  RNA_def_property_ui_text(prop, "Blur Mode", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "blur_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_blur_mode_items);
+  api_def_prop_ui_text(prop, "Blur Mode", "");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "falloff_angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "falloff_angle");
-  RNA_def_property_range(prop, 0, M_PI_2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "falloff_angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "falloff_angle");
+  api_def_prop_range(prop, 0, M_PI_2);
+  api_def_prop_ui_text(
       prop,
       "Falloff Angle",
       "Paint most on faces pointing towards the view according to this angle");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
   /* flag */
-  prop = RNA_def_property(srna, "use_airbrush", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_AIRBRUSH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_airbrush", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypes(prop, NULL, "flag", BRUSH_AIRBRUSH);
+  api_def_prop_ui_text(
       prop, "Airbrush", "Keep applying paint effect while holding mouse (spray)");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_original_normal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ORIGINAL_NORMAL);
-  RNA_def_property_ui_text(prop,
-                           "Original Normal",
-                           "When locked keep using normal of surface where stroke was initiated");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_original_normal", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ORIGINAL_NORMAL);
+  api_def_prop_ui_text(prop,
+                       "Original Normal",
+                       "When locked keep using normal of surface where stroke was initiated");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "use_original_plane", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ORIGINAL_PLANE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_original_plane", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ORIGINAL_PLANE);
+  api_def_prop_ui_text(
       prop,
       "Original Plane",
       "When locked keep using the plane origin of surface where stroke was initiated");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_automasking_topology", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_TOPOLOGY);
-  RNA_def_property_ui_text(prop,
-                           "Topology Auto-Masking",
-                           "Affect only vertices connected to the active vertex under the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_automasking_topology", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypes(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_TOPOLOGY);
+  ali_def_prop_ui_text(prop,
+                       "Topology Auto-Masking",
+                       "Affect only vertices connected to the active vertex under the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_automasking_face_sets", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_FACE_SETS);
-  RNA_def_property_ui_text(prop,
-                           "Face Sets Auto-Masking",
-                           "Affect only vertices that share Face Sets with the active vertex");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = apo_def_prop(sapi, "use_automasking_face_sets", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_FACE_SETS);
+  api_def_prop_ui_text(prop,
+                       "Face Sets Auto-Masking",
+                       "Affect only vertices that share Face Sets with the active vertex");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_automasking_boundary_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_BOUNDARY_EDGES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_automasking_boundary_edges", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_BOUNDARY_EDGES);
+  api_def_prop_ui_text(
       prop, "Mesh Boundary Auto-Masking", "Do not affect non manifold boundary edges");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_automasking_boundary_face_sets", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_automasking_boundary_face_sets", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "automasking_flags", BRUSH_AUTOMASKING_BOUNDARY_FACE_SETS);
-  RNA_def_property_ui_text(prop,
-                           "Face Sets Boundary Automasking",
-                           "Do not affect vertices that belong to a Face Set boundary");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_ui_text(prop,
+                       "Face Sets Boundary Automasking",
+                       "Do not affect vertices that belong to a Face Set boundary");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_scene_spacing", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, brush_spacing_unit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_scene_spacing", PROP_ENUM, PROP_NONE);
+  apo_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, brush_spacing_unit_items);
+  api_def_prop_ui_text(
       prop, "Spacing Distance", "Calculate the brush spacing using view or scene distance");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_grab_active_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_GRAB_ACTIVE_VERTEX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_grab_active_vertex", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_GRAB_ACTIVE_VERTEX);
+  api_def_prop_ui_text(
       prop,
       "Grab Active Vertex",
       "Apply the maximum grab strength to the active vertex instead of the cursor location");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_grab_silhouette", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_GRAB_SILHOUETTE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_grab_silhouette", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_GRAB_SILHOUETTE);
+  api_def_prop_ui_text(
       prop, "Grab Silhouette", "Grabs trying to automask the silhouette of the object");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_paint_antialiasing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "sampling_flag", BRUSH_PAINT_ANTIALIASING);
-  RNA_def_property_ui_text(prop, "Anti-Aliasing", "Smooths the edges of the strokes");
+  prop = api_def_prop(sapi, "use_paint_antialiasing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "sampling_flag", BRUSH_PAINT_ANTIALIASING);
+  api_def_prop_ui_text(prop, "Anti-Aliasing", "Smooths the edges of the strokes");
 
-  prop = RNA_def_property(srna, "use_multiplane_scrape_dynamic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_MULTIPLANE_SCRAPE_DYNAMIC);
-  RNA_def_property_ui_text(prop,
-                           "Dynamic Mode",
-                           "The angle between the planes changes during the stroke to fit the "
-                           "surface under the cursor");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_multiplane_scrape_dynamic", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag2", BRUSH_MULTIPLANE_SCRAPE_DYNAMIC);
+  api_def_prop_ui_text(prop,
+                       "Dynamic Mode",
+                       "The angle between the planes changes during the stroke to fit the "
+                       "surface under the cursor");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "show_multiplane_scrape_planes_preview", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_MULTIPLANE_SCRAPE_PLANES_PREVIEW);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_multiplane_scrape_planes_preview", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_MULTIPLANE_SCRAPE_PLANES_PREVIEW);
+  api_def_prop_ui_text(
       prop, "Show Cursor Preview", "Preview the scrape planes in the cursor during the stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  apk_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pose_ik_anchored", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_POSE_IK_ANCHORED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pose_ik_anchored", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_POSE_IK_ANCHORED);
+  api_def_prop_ui_text(
       prop, "Keep Anchor Point", "Keep the position of the last segment in the IK chain fixed");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pose_lock_rotation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_POSE_USE_LOCK_ROTATION);
-  RNA_def_property_ui_text(prop,
-                           "Lock Rotation When Scaling",
-                           "Do not rotate the segment when using the scale deform mode");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_pose_lock_rotation", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_POSE_USE_LOCK_ROTATION);
+  api_def_prop_ui_text(prop,
+                       "Lock Rotation When Scaling",
+                       "Do not rotate the segment when using the scale deform mode");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_connected_only", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_USE_CONNECTED_ONLY);
-  RNA_def_property_ui_text(prop, "Connected Only", "Affect only topologically connected elements");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_connected_only", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypes(prop, NULL, "flag2", BRUSH_USE_CONNECTED_ONLY);
+  api_def_prop_ui_text(prop, "Connected Only", "Affect only topologically connected elements");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_cloth_pin_simulation_boundary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_CLOTH_PIN_SIMULATION_BOUNDARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_cloth_pin_simulation_boundary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_CLOTH_PIN_SIMULATION_BOUNDARY);
+  api_def_prop_ui_text(
       prop,
       "Pin Simulation Boundary",
       "Lock the position of the vertices in the simulation falloff area to avoid artifacts and "
       "create a softer transition with unaffected areas");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_cloth_collision", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_CLOTH_USE_COLLISION);
-  RNA_def_property_ui_text(prop, "Enable Collision", "Collide with objects during the simulation");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_cloth_collision", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_CLOTH_USE_COLLISION);
+  api_def_prop_ui_text(prop, "Enable Collision", "Collide with objects during the simulation");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_to_scrape_fill", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_INVERT_TO_SCRAPE_FILL);
-  RNA_def_property_ui_text(prop,
-                           "Invert to Scrape or Fill",
-                           "Use Scrape or Fill tool when inverting this brush instead of "
-                           "inverting its displacement direction");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "invert_to_scrape_fill", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_INVERT_TO_SCRAPE_FILL);
+  api_def_prop_ui_text(prop,
+                       "Invert to Scrape or Fill",
+                       "Use Scrape or Fill tool when inverting this brush instead of "
+                       "inverting its displacement direction");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ALPHA_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pressure_strength", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ALPHA_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Strength Pressure", "Enable tablet pressure sensitivity for strength");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_offset_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_OFFSET_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_offset_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_OFFSET_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Plane Offset Pressure", "Enable tablet pressure sensitivity for offset");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_area_radius", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", BRUSH_AREA_RADIUS_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pressure_area_radius", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", BRUSH_AREA_RADIUS_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Area Radius Pressure", "Enable tablet pressure sensitivity for area radius");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_SIZE_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Size Pressure", "Enable tablet pressure sensitivity for size");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_pressure_size", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_SIZE_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Size Pressure", "Enable tablet pressure sensitivity for size");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_jitter", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_JITTER_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pressure_jitter", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_JITTER_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Jitter Pressure", "Enable tablet pressure sensitivity for jitter");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_spacing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_SPACING_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pressure_spacing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_SPACING_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Spacing Pressure", "Enable tablet pressure sensitivity for spacing");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_pressure_masking", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mask_pressure");
-  RNA_def_property_enum_items(prop, brush_mask_pressure_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pressure_masking", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mask_pressure");
+  api_def_prop_enum_items(prop, brush_mask_pressure_items);
+  api_def_prop_ui_text(
       prop, "Mask Pressure Mode", "Pen pressure makes texture influence smaller");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_inverse_smooth_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_INVERSE_SMOOTH_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_inverse_smooth_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_INVERSE_SMOOTH_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Inverse Smooth Pressure", "Lighter pressure causes more smoothing to be applied");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_plane_trim", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_PLANE_TRIM);
-  RNA_def_property_ui_text(prop, "Use Plane Trim", "Enable Plane Trim");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapo, "use_plane_trim", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_PLANE_TRIM);
+  api_def_prop_ui_text(prop, "Use Plane Trim", "Enable Plane Trim");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_frontface", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_FRONTFACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_frontface", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_FRONTFACE);
+  api_def_prop_ui_text(
       prop, "Use Front-Face", "Brush only affects vertices that face the viewer");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_frontface_falloff", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_FRONTFACE_FALLOFF);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_frontface_falloff", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_FRONTFACE_FALLOFF);
+  api_def_prop_ui_text(
       prop, "Use Front-Face Falloff", "Blend brush influence by how much they face the front");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_anchor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ANCHORED);
-  RNA_def_property_ui_text(prop, "Anchored", "Keep the brush anchored to the initial location");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_anchor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ANCHORED);
+  api_def_prop_ui_text(prop, "Anchored", "Keep the brush anchored to the initial location");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_space", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_SPACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_space", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_SPACE);
+  api_def_prop_ui_text(
       prop, "Space", "Limit brush application to the distance specified by spacing");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_line", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_LINE);
-  RNA_def_property_ui_text(prop, "Line", "Draw a line with dabs separated according to spacing");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_line", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_LINE);
+  api_def_prop_ui_text(prop, "Line", "Draw a line with dabs separated according to spacing");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_curve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_CURVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_curve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_CURVE);
+  api_def_prop_ui_text(
       prop,
       "Curve",
       "Define the stroke curve with a bezier curve. Dabs are separated according to spacing");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_smooth_stroke", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_SMOOTH_STROKE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_smooth_stroke", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_SMOOTH_STROKE);
+  api_def_prop_ui_text(
       prop, "Smooth Stroke", "Brush lags behind mouse and follows a smoother path");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_persistent", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_PERSISTENT);
-  RNA_def_property_ui_text(prop, "Persistent", "Sculpt on a persistent layer of the mesh");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_persistent", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_PERSISTENT);
+  api_def_prop_ui_text(prop, "Persistent", "Sculpt on a persistent layer of the mesh");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_accumulate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ACCUMULATE);
-  RNA_def_property_ui_text(prop, "Accumulate", "Accumulate stroke daubs on top of each other");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_accumulate", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ACCUMULATE);
+  api_def_prop_ui_text(prop, "Accumulate", "Accumulate stroke daubs on top of each other");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_space_attenuation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_SPACE_ATTEN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_space_attenuation", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_SPACE_ATTEN);
+  api_def_prop_ui_text(
       prop,
       "Adjust Strength for Spacing",
       "Automatically adjust strength to give consistent results for different spacings");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* adaptive space is not implemented yet */
-  prop = RNA_def_property(srna, "use_adaptive_space", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_ADAPTIVE_SPACE);
-  RNA_def_property_ui_text(prop,
-                           "Adaptive Spacing",
-                           "Space daubs according to surface orientation instead of screen space");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_adaptive_space", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_ADAPTIVE_SPACE);
+  api_def_prop_ui_text(prop,
+                       "Adaptive Spacing",
+                       "Space daubs according to surface orientation instead of screen space");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_locked_size", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, brush_size_unit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_locked_size", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, brush_size_unit_items);
+  api_def_prop_ui_text(
       prop, "Radius Unit", "Measure brush size relative to the view or the scene");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "color_type", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, color_gradient_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_Brush_use_gradient_set", NULL);
-  RNA_def_property_ui_text(prop, "Color Type", "Use single color or gradient when painting");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "color_type", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, color_gradient_items);
+  api_def_prop_enum_fns(prop, NULL, "rna_Brush_use_gradient_set", NULL);
+  api_def_prop_ui_text(prop, "Color Type", "Use single color or gradient when painting");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_edge_to_edge", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_EDGE_TO_EDGE);
-  RNA_def_property_ui_text(prop, "Edge-to-Edge", "Drag anchor brush from edge-to-edge");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_edge_to_edge", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_EDGE_TO_EDGE);
+  api_def_prop_ui_text(prop, "Edge-to-Edge", "Drag anchor brush from edge-to-edge");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_restore_mesh", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_DRAG_DOT);
-  RNA_def_property_ui_text(prop, "Restore Mesh", "Allow a single dot to be carefully positioned");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_restore_mesh", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_DRAG_DOT);
+  api_def_prop_ui_text(prop, "Restore Mesh", "Allow a single dot to be carefully positioned");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* only for projection paint & vertex paint, TODO: other paint modes. */
-  prop = RNA_def_property(srna, "use_alpha", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", BRUSH_LOCK_ALPHA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_alpha", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "flag", BRUSH_LOCK_ALPHA);
+  api_def_prop_ui_text(
       prop, "Affect Alpha", "When this is disabled, lock alpha while painting");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
+  prop = api_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
   RNA_def_property_ui_text(prop, "Curve", "Editable falloff curve");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  RNA_def_property_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "paint_curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Paint Curve", "Active paint curve");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "paint_curve", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Paint Curve", "Active paint curve");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "gradient", PROP_POINTER, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "gradient");
-  RNA_def_property_struct_type(prop, "ColorRamp");
-  RNA_def_property_ui_text(prop, "Gradient", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "gradient", PROP_PTR, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "gradient");
+  api_def_prop_struct_type(prop, "ColorRamp");
+  api_def_prop_ui_text(prop, "Gradient", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* gradient source */
-  prop = RNA_def_property(srna, "gradient_stroke_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_gradient_items);
-  RNA_def_property_ui_text(prop, "Gradient Stroke Mode", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "gradient_stroke_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_gradient_items);
+  api_def_prop_ui_text(prop, "Gradient Stroke Mode", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "gradient_fill_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_gradient_fill_items);
-  RNA_def_property_ui_text(prop, "Gradient Fill Mode", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "gradient_fill_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_gradient_fill_items);
+  api_def_prop_ui_text(prop, "Gradient Fill Mode", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* overlay flags */
-  prop = RNA_def_property(srna, "use_primary_overlay", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "overlay_flags", BRUSH_OVERLAY_PRIMARY);
-  RNA_def_property_ui_text(prop, "Use Texture Overlay", "Show texture in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_primary_overlay", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "overlay_flags", BRUSH_OVERLAY_PRIMARY);
+  api_def_prop_ui_text(prop, "Use Texture Overlay", "Show texture in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_secondary_overlay", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "overlay_flags", BRUSH_OVERLAY_SECONDARY);
-  RNA_def_property_ui_text(prop, "Use Texture Overlay", "Show texture in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_secondary_overlay", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "overlay_flags", BRUSH_OVERLAY_SECONDARY);
+  api_def_prop_ui_text(prop, "Use Texture Overlay", "Show texture in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_cursor_overlay", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "overlay_flags", BRUSH_OVERLAY_CURSOR);
-  RNA_def_property_ui_text(prop, "Use Cursor Overlay", "Show cursor in viewport");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_cursor_overlay", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "overlay_flags", BRUSH_OVERLAY_CURSOR);
+  api_def_prop_ui_text(prop, "Use Cursor Overlay", "Show cursor in viewport");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_cursor_overlay_override", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_cursor_overlay_override", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "overlay_flags", BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE);
   RNA_def_property_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
   RNA_def_property_update(prop, 0, "rna_Brush_update");
@@ -3347,10 +3347,10 @@ static void api_def_brush(DuneApi *dapi)
   RNA_def_property_boolean_sdna(
       prop, NULL, "overlay_flags", BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE);
   RNA_def_property_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  RNA_def_property_update(prop, 0, "api_Brush_update");
 
   /* paint mode flags */
-  prop = RNA_def_property(srna, "use_paint_sculpt", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_paint_sculpt", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_SCULPT);
   RNA_def_property_ui_text(prop, "Use Sculpt", "Use this brush in sculpt mode");
 
