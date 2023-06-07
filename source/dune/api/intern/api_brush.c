@@ -1917,17 +1917,17 @@ static void api_def_curves_sculpt_options(DuneApi *dapi)
   api_def_struct_stype(sapi, "BrushCurvesSculptSettings");
   api_def_struct_ui_text(sapi, "Curves Sculpt Brush Settings", "");
 
-  prop = RNA_def_property(srna, "add_amount", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, INT32_MAX);
-  RNA_def_property_ui_text(prop, "Add Amount", "Number of curves added by the Add brush");
+  prop = api_def_prop(sapi, "add_amount", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, INT32_MAX);
+  api_def_prop_ui_text(prop, "Add Amount", "Number of curves added by the Add brush");
 }
 
-static void rna_def_brush(BlenderRNA *brna)
+static void api_def_brush(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_blend_items[] = {
+  static const EnumPropItem prop_blend_items[] = {
       {IMB_BLEND_MIX, "MIX", 0, "Mix", "Use Mix blending mode while painting"},
       {0, "", ICON_NONE, NULL, NULL},
       {IMB_BLEND_DARKEN, "DARKEN", 0, "Darken", "Use Darken blending mode while painting"},
@@ -2005,7 +2005,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_sculpt_plane_items[] = {
+  static const EnumPropItem brush_sculpt_plane_items[] = {
       {SCULPT_DISP_DIR_AREA, "AREA", 0, "Area Plane", ""},
       {SCULPT_DISP_DIR_VIEW, "VIEW", 0, "View Plane", ""},
       {SCULPT_DISP_DIR_X, "X", 0, "X Plane", ""},
@@ -2014,51 +2014,51 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_mask_tool_items[] = {
+  static const EnumPropItem brush_mask_tool_items[] = {
       {BRUSH_MASK_DRAW, "DRAW", 0, "Draw", ""},
       {BRUSH_MASK_SMOOTH, "SMOOTH", 0, "Smooth", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_blur_mode_items[] = {
+  static const EnumPropItem brush_blur_mode_items[] = {
       {KERNEL_BOX, "BOX", 0, "Box", ""},
       {KERNEL_GAUSSIAN, "GAUSSIAN", 0, "Gaussian", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_gradient_items[] = {
+  static const EnumPropItem brush_gradient_items[] = {
       {BRUSH_GRADIENT_PRESSURE, "PRESSURE", 0, "Pressure", ""},
       {BRUSH_GRADIENT_SPACING_REPEAT, "SPACING_REPEAT", 0, "Repeat", ""},
       {BRUSH_GRADIENT_SPACING_CLAMP, "SPACING_CLAMP", 0, "Clamp", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_gradient_fill_items[] = {
+  static const EnumPropItem brush_gradient_fill_items[] = {
       {BRUSH_GRADIENT_LINEAR, "LINEAR", 0, "Linear", ""},
       {BRUSH_GRADIENT_RADIAL, "RADIAL", 0, "Radial", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_mask_pressure_items[] = {
+  static const EnumPropItem brush_mask_pressure_items[] = {
       {0, "NONE", 0, "Off", ""},
       {BRUSH_MASK_PRESSURE_RAMP, "RAMP", ICON_STYLUS_PRESSURE, "Ramp", ""},
       {BRUSH_MASK_PRESSURE_CUTOFF, "CUTOFF", ICON_STYLUS_PRESSURE, "Cutoff", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_size_unit_items[] = {
+  static const EnumPropItem brush_size_unit_items[] = {
       {0, "VIEW", 0, "View", "Measure brush size relative to the view"},
       {BRUSH_LOCK_SIZE, "SCENE", 0, "Scene", "Measure brush size relative to the scene"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem color_gradient_items[] = {
+  static const EnumPropItem color_gradient_items[] = {
       {0, "COLOR", 0, "Color", "Paint with a single color"},
       {BRUSH_USE_GRADIENT, "GRADIENT", 0, "Gradient", "Paint with a gradient"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_spacing_unit_items[] = {
+  static const EnumPropItem brush_spacing_unit_items[] = {
       {0, "VIEW", 0, "View", "Calculate brush spacing relative to the view"},
       {BRUSH_SCENE_SPACING,
        "SCENE",
@@ -2068,13 +2068,13 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_jitter_unit_items[] = {
+  static const EnumPropItem brush_jitter_unit_items[] = {
       {BRUSH_ABSOLUTE_JITTER, "VIEW", 0, "View", "Jittering happens in screen space, in pixels"},
       {0, "BRUSH", 0, "Brush", "Jittering happens relative to the brush size"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem falloff_shape_unit_items[] = {
+  static const EnumPropItem falloff_shape_unit_items[] = {
       {0, "SPHERE", 0, "Sphere", "Apply brush influence in a Sphere, outwards from the center"},
       {PAINT_FALLOFF_SHAPE_TUBE,
        "PROJECTED",
@@ -2084,7 +2084,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_curve_preset_items[] = {
+  static const EnumPropItem brush_curve_preset_items[] = {
       {BRUSH_CURVE_CUSTOM, "CUSTOM", ICON_RNDCURVE, "Custom", ""},
       {BRUSH_CURVE_SMOOTH, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", ""},
       {BRUSH_CURVE_SMOOTHER, "SMOOTHER", ICON_SMOOTHCURVE, "Smoother", ""},
@@ -2098,7 +2098,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_deformation_target_items[] = {
+  static const EnumPropItem brush_deformation_target_items[] = {
       {BRUSH_DEFORM_TARGET_GEOMETRY,
        "GEOMETRY",
        0,
@@ -2112,7 +2112,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_elastic_deform_type_items[] = {
+  static const EnumPropItem brush_elastic_deform_type_items[] = {
       {BRUSH_ELASTIC_DEFORM_GRAB, "GRAB", 0, "Grab", ""},
       {BRUSH_ELASTIC_DEFORM_GRAB_BISCALE, "GRAB_BISCALE", 0, "Bi-Scale Grab", ""},
       {BRUSH_ELASTIC_DEFORM_GRAB_TRISCALE, "GRAB_TRISCALE", 0, "Tri-Scale Grab", ""},
@@ -2121,7 +2121,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_snake_hook_deform_type_items[] = {
+  static const EnumPropItem brush_snake_hook_deform_type_items[] = {
       {BRUSH_SNAKE_HOOK_DEFORM_FALLOFF,
        "FALLOFF",
        0,
@@ -2135,7 +2135,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_cloth_deform_type_items[] = {
+  static const EnumPropItem brush_cloth_deform_type_items[] = {
       {BRUSH_CLOTH_DEFORM_DRAG, "DRAG", 0, "Drag", ""},
       {BRUSH_CLOTH_DEFORM_PUSH, "PUSH", 0, "Push", ""},
       {BRUSH_CLOTH_DEFORM_PINCH_POINT, "PINCH_POINT", 0, "Pinch Point", ""},
@@ -2151,13 +2151,13 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_cloth_force_falloff_type_items[] = {
+  static const EnumPropItem brush_cloth_force_falloff_type_items[] = {
       {BRUSH_CLOTH_FORCE_FALLOFF_RADIAL, "RADIAL", 0, "Radial", ""},
       {BRUSH_CLOTH_FORCE_FALLOFF_PLANE, "PLANE", 0, "Plane", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_boundary_falloff_type_items[] = {
+  static const EnumPropItem brush_boundary_falloff_type_items[] = {
       {BRUSH_BOUNDARY_FALLOFF_CONSTANT,
        "CONSTANT",
        0,
@@ -2182,7 +2182,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_cloth_simulation_area_type_items[] = {
+  static const EnumPropItem brush_cloth_simulation_area_type_items[] = {
       {BRUSH_CLOTH_SIMULATION_AREA_LOCAL,
        "LOCAL",
        0,
@@ -2197,7 +2197,7 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_smooth_deform_type_items[] = {
+  static const EnumPropItem brush_smooth_deform_type_items[] = {
       {BRUSH_SMOOTH_DEFORM_LAPLACIAN,
        "LAPLACIAN",
        0,
@@ -2211,14 +2211,14 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_pose_deform_type_items[] = {
+  static const EnumPropItem brush_pose_deform_type_items[] = {
       {BRUSH_POSE_DEFORM_ROTATE_TWIST, "ROTATE_TWIST", 0, "Rotate/Twist", ""},
       {BRUSH_POSE_DEFORM_SCALE_TRASLATE, "SCALE_TRANSLATE", 0, "Scale/Translate", ""},
       {BRUSH_POSE_DEFORM_SQUASH_STRETCH, "SQUASH_STRETCH", 0, "Squash & Stretch", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_pose_origin_type_items[] = {
+  static const EnumPropItem brush_pose_origin_type_items[] = {
       {BRUSH_POSE_ORIGIN_TOPOLOGY,
        "TOPOLOGY",
        0,
@@ -2238,21 +2238,21 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_smear_deform_type_items[] = {
+  static const EnumPropItem brush_smear_deform_type_items[] = {
       {BRUSH_SMEAR_DEFORM_DRAG, "DRAG", 0, "Drag", ""},
       {BRUSH_SMEAR_DEFORM_PINCH, "PINCH", 0, "Pinch", ""},
       {BRUSH_SMEAR_DEFORM_EXPAND, "EXPAND", 0, "Expand", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_slide_deform_type_items[] = {
+  static const EnumPropItem brush_slide_deform_type_items[] = {
       {BRUSH_SLIDE_DEFORM_DRAG, "DRAG", 0, "Drag", ""},
       {BRUSH_SLIDE_DEFORM_PINCH, "PINCH", 0, "Pinch", ""},
       {BRUSH_SLIDE_DEFORM_EXPAND, "EXPAND", 0, "Expand", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem brush_boundary_deform_type_items[] = {
+  static const EnumPropItem brush_boundary_deform_type_items[] = {
       {BRUSH_BOUNDARY_DEFORM_BEND, "BEND", 0, "Bend", ""},
       {BRUSH_BOUNDARY_DEFORM_EXPAND, "EXPAND", 0, "Expand", ""},
       {BRUSH_BOUNDARY_DEFORM_INFLATE, "INFLATE", 0, "Inflate", ""},
@@ -2262,195 +2262,195 @@ static void rna_def_brush(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Brush", "ID");
-  RNA_def_struct_ui_text(
-      srna, "Brush", "Brush data-block for storing brush settings for painting and sculpting");
-  RNA_def_struct_ui_icon(srna, ICON_BRUSH_DATA);
+  sapi = api_def_struct(dapi, "Brush", "ID");
+  api_def_struct_ui_text(
+      sapi, "Brush", "Brush data-block for storing brush settings for painting and sculpting");
+  api_def_struct_ui_icon(sapi, ICON_BRUSH_DATA);
 
   /* enums */
-  prop = RNA_def_property(srna, "blend", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_blend_items);
-  RNA_def_property_ui_text(prop, "Blending Mode", "Brush blending mode");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "blend", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_blend_items);
+  api_def_prop_ui_text(prop, "Blending Mode", "Brush blending mode");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
   /**
    * Begin per-mode tool properties.
    *
-   * keep in sync with #BKE_paint_get_tool_prop_id_from_paintmode
+   * keep in sync with #dune_paint_get_tool_prop_id_from_paintmode
    */
-  prop = RNA_def_property(srna, "sculpt_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_brush_sculpt_tool_items);
-  RNA_def_property_ui_text(prop, "Sculpt Tool", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update_and_reset_icon");
+  prop = api_def_prop(sapi, "sculpt_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_brush_sculpt_tool_items);
+  api_def_prop_ui_text(prop, "Sculpt Tool", "");
+  api_def_prop_update(prop, 0, "api_Brush_update_and_reset_icon");
 
-  prop = RNA_def_property(srna, "uv_sculpt_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_brush_uv_sculpt_tool_items);
-  RNA_def_property_ui_text(prop, "Sculpt Tool", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update_and_reset_icon");
+  prop = api_def_prop(sapi, "uv_sculpt_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_brush_uv_sculpt_tool_items);
+  api_def_prop_ui_text(prop, "Sculpt Tool", "");
+  api_def_prop_update(prop, 0, "rna_Brush_update_and_reset_icon");
 
-  prop = RNA_def_property(srna, "vertex_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "vertexpaint_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_vertex_tool_items);
-  RNA_def_property_ui_text(prop, "Vertex Paint Tool", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update_and_reset_icon");
+  prop = api_def_prop(sapi, "vertex_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "vertexpaint_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_vertex_tool_items);
+  api_def_prop_ui_text(prop, "Vertex Paint Tool", "");
+  api_def_prop_update(prop, 0, "api_Brush_update_and_reset_icon");
 
-  prop = RNA_def_property(srna, "weight_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "weightpaint_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_weight_tool_items);
-  RNA_def_property_ui_text(prop, "Weight Paint Tool", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update_and_reset_icon");
+  prop = api_def_prop(sapi, "weight_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "weightpaint_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_weight_tool_items);
+  api_def_prop_ui_text(prop, "Weight Paint Tool", "");
+  api_def_prop_update(prop, 0, "api_Brush_update_and_reset_icon");
 
-  prop = RNA_def_property(srna, "image_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "imagepaint_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_image_tool_items);
-  RNA_def_property_ui_text(prop, "Image Paint Tool", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, "rna_Brush_update_and_reset_icon");
+  prop = api_def_prop(sapi, "image_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "imagepaint_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_image_tool_items);
+  api_def_prop_ui_text(prop, "Image Paint Tool", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Brush_update_and_reset_icon");
 
-  prop = RNA_def_property(srna, "gpencil_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpencil_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_gpencil_types_items);
-  RNA_def_property_ui_text(prop, "Grease Pencil Draw Tool", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "gpencil_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "pen_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_pen_types_items);
+  api_def_prop_ui_text(prop, "Pen Draw Tool", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "gpencil_vertex_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpencil_vertex_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_gpencil_vertex_types_items);
-  RNA_def_property_ui_text(prop, "Grease Pencil Vertex Paint Tool", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "pen_vertex_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "pen_vertex_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_pen_vertex_types_items);
+  api_def_prop_ui_text(prop, "Grease Pencil Vertex Paint Tool", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "gpencil_sculpt_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpencil_sculpt_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_gpencil_sculpt_types_items);
-  RNA_def_property_ui_text(prop, "Grease Pencil Sculpt Paint Tool", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "pen_sculpt_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "pen_sculpt_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_pen_sculpt_types_items);
+  api_def_prop_ui_text(prop, "Pen Sculpt Paint Tool", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "gpencil_weight_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpencil_weight_tool");
-  RNA_def_property_enum_items(prop, rna_enum_brush_gpencil_weight_types_items);
-  RNA_def_property_ui_text(prop, "Grease Pencil Weight Paint Tool", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "pen_weight_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "pen_weight_tool");
+  api_def_prop_enum_items(prop, api_enum_brush_pen_weight_types_items);
+  api_def_prop_ui_text(prop, "Grease Pencil Weight Paint Tool", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "curves_sculpt_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_brush_curves_sculpt_tool_items);
-  RNA_def_property_ui_text(prop, "Curves Sculpt Tool", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "curves_sculpt_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_brush_curves_sculpt_tool_items);
+  api_def_prop_ui_text(prop, "Curves Sculpt Tool", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
   /** End per mode tool properties. */
 
-  prop = RNA_def_property(srna, "direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_direction_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_Brush_direction_itemf");
-  RNA_def_property_ui_text(prop, "Direction", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_direction_items);
+  api_def_prop_enum_funcs(prop, NULL, NULL, "api_Brush_direction_itemf");
+  api_def_prop_ui_text(prop, "Direction", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "stroke_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, sculpt_stroke_method_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_Brush_stroke_itemf");
-  RNA_def_property_ui_text(prop, "Stroke Method", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_stroke_update");
+  prop = api_def_prop(sapi, "stroke_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, sculpt_stroke_method_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_Brush_stroke_itemf");
+  api_def_prop_ui_text(prop, "Stroke Method", "");
+  api_def_prop_update(prop, 0, "api_Brush_stroke_update");
 
-  prop = RNA_def_property(srna, "sculpt_plane", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_sculpt_plane_items);
-  RNA_def_property_ui_text(prop, "Sculpt Plane", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "sculpt_plane", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_sculpt_plane_items);
+  api_def_prop_ui_text(prop, "Sculpt Plane", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "mask_tool", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_mask_tool_items);
-  RNA_def_property_ui_text(prop, "Mask Tool", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "mask_tool", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_mask_tool_items);
+  api_def_prop_ui_text(prop, "Mask Tool", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "curve_preset", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_curve_preset_items);
-  RNA_def_property_ui_text(prop, "Curve Preset", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "curve_preset", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_curve_preset_items);
+  api_def_prop_ui_text(prop, "Curve Preset", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "deform_target", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_deformation_target_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "deform_target", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_deformation_target_items);
+  api_def_prop_ui_text(
       prop, "Deformation Target", "How the deformation of the brush will affect the object");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "elastic_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_elastic_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "elastic_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_elastic_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "snake_hook_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_snake_hook_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "snake_hook_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_snake_hook_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_cloth_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cloth_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_cloth_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_force_falloff_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_cloth_force_falloff_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cloth_force_falloff_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_cloth_force_falloff_type_items);
+  api_def_prop_ui_text(
       prop, "Force Falloff", "Shape used in the brush to apply force to the cloth");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cloth_simulation_area_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_cloth_simulation_area_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cloth_simulation_area_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_cloth_simulation_area_type_items);
+  api_def_prop_ui_text(
       prop,
       "Simulation Area",
       "Part of the mesh that is going to be simulated when the stroke is active");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "boundary_falloff_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_boundary_falloff_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "boundary_falloff_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_boundary_falloff_type_items);
+  api_def_prop_ui_text(
       prop, "Boundary Falloff", "How the brush falloff is applied across the boundary");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "smooth_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_smooth_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "smooth_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_smooth_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "smear_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_smear_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "smear_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_smear_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "slide_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_slide_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "slide_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_slide_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "boundary_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_boundary_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "boundary_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_boundary_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "pose_deform_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_pose_deform_type_items);
-  RNA_def_property_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "pose_deform_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_pose_deform_type_items);
+  api_def_prop_ui_text(prop, "Deformation", "Deformation type that is used in the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "pose_origin_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, brush_pose_origin_type_items);
-  RNA_def_property_ui_text(prop,
-                           "Rotation Origins",
-                           "Method to set the rotation origins for the segments of the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "pose_origin_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, brush_pose_origin_type_items);
+  api_def_prop_ui_text(prop,
+                       "Rotation Origins",
+                       "Method to set the rotation origins for the segments of the brush");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "jitter_unit", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, brush_jitter_unit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "jitter_unit", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, brush_jitter_unit_items);
+  api_def_prop_ui_text(
       prop, "Jitter Unit", "Jitter in screen space or relative to brush size");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "falloff_shape", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "falloff_shape");
-  RNA_def_property_enum_items(prop, falloff_shape_unit_items);
-  RNA_def_property_ui_text(prop, "Falloff Shape", "Use projected or spherical falloff");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "falloff_shape", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_stype(prop, NULL, "falloff_shape");
+  api_def_prop_enum_items(prop, falloff_shape_unit_items);
+  api_def_prop_ui_text(prop, "Falloff Shape", "Use projected or spherical falloff");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* number values */
   prop = RNA_def_property(srna, "size", PROP_INT, PROP_PIXEL);
