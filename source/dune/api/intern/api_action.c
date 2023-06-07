@@ -433,229 +433,229 @@ static void api_def_dopesheet(DuneApi *dapi)
   api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* Multi-word fuzzy search option for name/text filters */
-  prop = api_def_prop(sapi, "use_multi_word_filter", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_multi_word_filter", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ADS_FLAG_FUZZY_NAMES);
   api_def_prop_ui_text(prop,
-                           "Multi-Word Fuzzy Filter",
-                           "Perform fuzzy/multi-word matching.\n"
-                           "Warning: May be slow");
+                       "Multi-Word Fuzzy Filter",
+                       "Perform fuzzy/multi-word matching.\n"
+                       "Warning: May be slow");
   api_def_prop_ui_icon(prop, ICON_SORTALPHA, 0);
   api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* NLA Specific Settings */
-  prop = api_def_prop(srna, "show_missing_nla", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NLA_NOACT);
-  RNA_def_property_ui_text(prop,
-                           "Include Missing NLA",
-                           "Include animation data-blocks with no NLA data (NLA editor only)");
-  RNA_def_property_ui_icon(prop, ICON_ACTION, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "show_missing_nla", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NLA_NOACT);
+  api_def_prop_ui_text(prop,
+                       "Include Missing NLA",
+                       "Include animation data-blocks with no NLA data (NLA editor only)");
+  api_def_prop_ui_icon(prop, ICON_ACTION, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* Summary Settings (DopeSheet editors only) */
-  prop = RNA_def_property(srna, "show_summary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filterflag", ADS_FILTER_SUMMARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_summary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filterflag", ADS_FILTER_SUMMARY);
+  api_def_prop_ui_text(
       prop, "Display Summary", "Display an additional 'summary' line (Dope Sheet editors only)");
-  RNA_def_property_ui_icon(prop, ICON_BORDERMOVE, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_BORDERMOVE, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_expanded_summary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", ADS_FLAG_SUMMARY_COLLAPSED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_expanded_summary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", ADS_FLAG_SUMMARY_COLLAPSED);
+  api_def_prop_ui_text(
       prop,
       "Collapse Summary",
       "Collapse summary when shown, so all other channels get hidden (Dope Sheet editors only)");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* General DataType Filtering Settings */
-  prop = RNA_def_property(srna, "show_transforms", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOOBJ);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_transforms", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOOBJ);
+  api_def_prop_ui_text(
       prop,
       "Display Transforms",
       "Include visualization of object-level animation data (mostly transforms)");
-  RNA_def_property_ui_icon(prop, ICON_ORIENTATION_GLOBAL, 0); /* XXX? */
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_ORIENTATION_GLOBAL, 0); /* XXX? */
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_shapekeys", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOSHAPEKEYS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_shapekeys", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOSHAPEKEYS);
+  api_def_prop_ui_text(
       prop, "Display Shape Keys", "Include visualization of shape key related animation data");
-  RNA_def_property_ui_icon(prop, ICON_SHAPEKEY_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_SHAPEKEY_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_modifiers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOMODIFIERS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_modifiers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOMODIFIERS);
+  api_def_prop_ui_text(
       prop,
       "Display Modifier Data",
       "Include visualization of animation data related to data-blocks linked to modifiers");
-  RNA_def_property_ui_icon(prop, ICON_MODIFIER_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_MODIFIER_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_meshes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOMESH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_meshes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOMESH);
+  api_def_prop_ui_text(
       prop, "Display Meshes", "Include visualization of mesh related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_MESH, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_MESH, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_lattices", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOLAT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_lattices", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOLAT);
+  api_def_prop_ui_text(
       prop, "Display Lattices", "Include visualization of lattice related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_LATTICE, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_LATTICE, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_cameras", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOCAM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_cameras", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOCAM);
+  api_def_prop_ui_text(
       prop, "Display Camera", "Include visualization of camera related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_CAMERA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_CAMERA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOMAT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOMAT);
+  api_def_prop_ui_text(
       prop, "Display Material", "Include visualization of material related animation data");
-  RNA_def_property_ui_icon(prop, ICON_MATERIAL_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_MATERIAL_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_lights", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOLAM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_lights", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOLAM);
+  api_def_prop_ui_text(
       prop, "Display Light", "Include visualization of light related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_LIGHT, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_LIGHT, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_linestyles", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOLINESTYLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_linestyles", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOLINESTYLE);
+  api_def_prop_ui_text(
       prop, "Display Line Style", "Include visualization of Line Style related Animation data");
-  RNA_def_property_ui_icon(prop, ICON_LINE_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_LINE_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_textures", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOTEX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_textures", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOTEX);
+  api_def_prop_ui_text(
       prop, "Display Texture", "Include visualization of texture related animation data");
-  RNA_def_property_ui_icon(prop, ICON_TEXTURE_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_TEXTURE_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_curves", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOCUR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_curves", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOCUR);
+  api_def_prop_ui_text(
       prop, "Display Curve", "Include visualization of curve related animation data");
-  RNA_def_property_ui_icon(prop, ICON_CURVE_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_CURVE_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_worlds", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOWOR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_worlds", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOWOR);
+  api_def_prop_ui_text(
       prop, "Display World", "Include visualization of world related animation data");
-  RNA_def_property_ui_icon(prop, ICON_WORLD_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_WORLD_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_scenes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOSCE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_scenes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOSCE);
+  api_def_prop_ui_text(
       prop, "Display Scene", "Include visualization of scene related animation data");
-  RNA_def_property_ui_icon(prop, ICON_SCENE_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_SCENE_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_particles", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOPART);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_particles", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_style(prop, NULL, "filterflag", ADS_FILTER_NOPART);
+  api_def_prop_ui_text(
       prop, "Display Particle", "Include visualization of particle related animation data");
-  RNA_def_property_ui_icon(prop, ICON_PARTICLE_DATA, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_PARTICLE_DATA, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_metaballs", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOMBA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_metaballs", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOMBA);
+  api_def_prop_ui_text(
       prop, "Display Metaball", "Include visualization of metaball related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_META, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_META, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_armatures", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOARM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_armatures", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOARM);
+  api_def_prop_ui_text(
       prop, "Display Armature", "Include visualization of armature related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_ARMATURE, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_ARMATURE, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_nodes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NONTREE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_nodes", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NONTREE);
+  api_def_prop_ui_text(
       prop, "Display Node", "Include visualization of node related animation data");
-  RNA_def_property_ui_icon(prop, ICON_NODETREE, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_NODETREE, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_speakers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOSPK);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_speakers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag", ADS_FILTER_NOSPK);
+  api_def_prop_ui_text(
       prop, "Display Speaker", "Include visualization of speaker related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_SPEAKER, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_SPEAKER, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_cache_files", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag2", ADS_FILTER_NOCACHEFILES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_cache_files", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag2", ADS_FILTER_NOCACHEFILES);
+  api_def_prop_ui_text(
       prop, "Display Cache Files", "Include visualization of cache file related animation data");
-  RNA_def_property_ui_icon(prop, ICON_FILE, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_FILE, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_hair_curves", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag2", ADS_FILTER_NOHAIR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_hair_curves", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag2", ADS_FILTER_NOHAIR);
+  api_def_prop_ui_text(
       prop, "Display Hair", "Include visualization of hair related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_CURVES, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_CURVES, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_pointclouds", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag2", ADS_FILTER_NOPOINTCLOUD);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_pointclouds", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag2", ADS_FILTER_NOPOINTCLOUD);
+  api_def_prop_ui_text(
       prop, "Display Point Cloud", "Include visualization of point cloud related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_POINTCLOUD, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_POINTCLOUD, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_volumes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag2", ADS_FILTER_NOVOLUME);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_volumes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag2", ADS_FILTER_NOVOLUME);
+  api_def_prop_ui_text(
       prop, "Display Volume", "Include visualization of volume related animation data");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_VOLUME, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_VOLUME, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_gpencil", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOGPENCIL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_pen", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "filterflag", ADS_FILTER_NOPEN);
+  api_def_prop_ui_text(
       prop,
-      "Display Grease Pencil",
-      "Include visualization of Grease Pencil related animation data and frames");
-  RNA_def_property_ui_icon(prop, ICON_OUTLINER_OB_GREASEPENCIL, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+      "Display Pen",
+      "Include visualization of Pen related animation data and frames");
+  api_def_prop_ui_icon(prop, ICON_OUTLINER_OB_PEN, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_movieclips", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "filterflag2", ADS_FILTER_NOMOVIECLIPS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_movieclips", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "filterflag2", ADS_FILTER_NOMOVIECLIPS);
+  api_def_prop_ui_text(
       prop, "Display Movie Clips", "Include visualization of movie clip related animation data");
-  RNA_def_property_ui_icon(prop, ICON_TRACKER, 0);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_ui_icon(prop, ICON_TRACKER, 0);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 }
 
-static void rna_def_action_group(BlenderRNA *brna)
+static void api_def_action_group(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ActionGroup", NULL);
-  RNA_def_struct_sdna(srna, "bActionGroup");
-  RNA_def_struct_ui_text(srna, "Action Group", "Groups of F-Curves");
+  sapi = api_def_struct(dapi, "ActionGroup", NULL);
+  api_def_struct_stype(sapi, "ActionGroup");
+  api_def_struct_ui_text(sapi, "Action Group", "Groups of F-Curves");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "");
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "");
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* WARNING: be very careful when working with this list, since the endpoint is not
    * defined like a standard ListBase. Adding/removing channels from this list needs
@@ -667,242 +667,242 @@ static void rna_def_action_group(BlenderRNA *brna)
    * If such changes are required, these MUST go through the API functions for manipulating
    * these F-Curve groupings. Also, note that groups only apply in actions ONLY.
    */
-  prop = RNA_def_property(srna, "channels", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "channels", NULL);
-  RNA_def_property_struct_type(prop, "FCurve");
-  RNA_def_property_collection_funcs(
-      prop, NULL, "rna_ActionGroup_channels_next", NULL, NULL, NULL, NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Channels", "F-Curves in this group");
+  prop = api_def_prop(sapi, "channels", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "channels", NULL);
+  api_def_prop_struct_type(prop, "FCurve");
+  api_def_prop_collection_fns(
+      prop, NULL, "api_ActionGroup_channels_next", NULL, NULL, NULL, NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Channels", "F-Curves in this group");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", AGRP_SELECTED);
-  RNA_def_property_ui_text(prop, "Select", "Action group is selected");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, NULL);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", AGRP_SELECTED);
+  api_def_prop_ui_text(prop, "Select", "Action group is selected");
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, NULL);
 
-  prop = RNA_def_property(srna, "lock", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", AGRP_PROTECTED);
-  RNA_def_property_ui_text(prop, "Lock", "Action group is locked");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "lock", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", AGRP_PROTECTED);
+  api_def_prop_ui_text(prop, "Lock", "Action group is locked");
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_expanded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", AGRP_EXPANDED);
-  RNA_def_property_ui_text(prop, "Expanded", "Action group is expanded except in graph editor");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "show_expanded", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "flag", AGRP_EXPANDED);
+  api_def_prop_ui_text(prop, "Expanded", "Action group is expanded except in graph editor");
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "show_expanded_graph", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", AGRP_EXPANDED_G);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_expanded_graph", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "flag", AGRP_EXPANDED_G);
+  api_def_prop_ui_text(
       prop, "Expanded in Graph Editor", "Action group is expanded in graph editor");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "use_pin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ADT_CURVES_ALWAYS_VISIBLE);
-  RNA_def_property_ui_text(prop, "Pin in Graph Editor", "");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "use_pin", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_GRAPH_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ADT_CURVES_ALWAYS_VISIBLE);
+  api_def_prop_ui_text(prop, "Pin in Graph Editor", "");
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
   /* color set */
-  rna_def_actionbone_group_common(srna, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_actionbone_group_common(sapi, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 }
 
 /* fcurve.keyframe_points */
-static void rna_def_action_groups(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_action_groups(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "ActionGroups");
-  srna = RNA_def_struct(brna, "ActionGroups", NULL);
-  RNA_def_struct_sdna(srna, "bAction");
-  RNA_def_struct_ui_text(srna, "Action Groups", "Collection of action groups");
+  api_def_prop_sapi(cprop, "ActionGroups");
+  sapi = api_def_struct(dapi, "ActionGroups", NULL);
+  api_def_struct_stype(sapi, "Action");
+  api_def_struct_ui_text(sapi, "Action Groups", "Collection of action groups");
 
-  func = RNA_def_function(srna, "new", "rna_Action_groups_new");
-  RNA_def_function_ui_description(func, "Create a new action group and add it to the action");
-  parm = RNA_def_string(func, "name", "Group", 0, "", "New name for the action group");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Action_groups_new");
+  api_def_fn_ui_description(fn, "Create a new action group and add it to the action");
+  parm = api_def_string(fn, "name", "Group", 0, "", "New name for the action group");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  parm = RNA_def_pointer(func, "action_group", "ActionGroup", "", "Newly created action group");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "action_group", "ActionGroup", "", "Newly created action group");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Action_groups_remove");
-  RNA_def_function_ui_description(func, "Remove action group");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "action_group", "ActionGroup", "", "Action group to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_Action_groups_remove");
+  api_def_fn_ui_description(fn, "Remove action group");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "action_group", "ActionGroup", "", "Action group to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_action_fcurves(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_action_fcurves(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "ActionFCurves");
-  srna = RNA_def_struct(brna, "ActionFCurves", NULL);
-  RNA_def_struct_sdna(srna, "bAction");
-  RNA_def_struct_ui_text(srna, "Action F-Curves", "Collection of action F-Curves");
+  api_def_prop_sapi(cprop, "ActionFCurves");
+  sapi = api_def_struct(dapi, "ActionFCurves", NULL);
+  api_def_struct_stype(sapi, "Action");
+  api_def_struct_ui_text(sapi, "Action F-Curves", "Collection of action F-Curves");
 
   /* Action.fcurves.new(...) */
-  func = RNA_def_function(srna, "new", "rna_Action_fcurve_new");
-  RNA_def_function_ui_description(func, "Add an F-Curve to the action");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  parm = RNA_def_string(func, "data_path", NULL, 0, "Data Path", "F-Curve data path to use");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
-  RNA_def_string(
-      func, "action_group", NULL, 0, "Action Group", "Acton group to add this F-Curve into");
+  fn = api_def_fn(sapi, "new", "api_Action_fcurve_new");
+  api_def_fn_ui_description(fn, "Add an F-Curve to the action");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  parm = api_def_string(fn, "data_path", NULL, 0, "Data Path", "F-Curve data path to use");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
+  api_def_string(
+      fn, "action_group", NULL, 0, "Action Group", "Acton group to add this F-Curve into");
 
-  parm = RNA_def_pointer(func, "fcurve", "FCurve", "", "Newly created F-Curve");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "fcurve", "FCurve", "", "Newly created F-Curve");
+  api_def_fn_return(fn, parm);
 
   /* Action.fcurves.find(...) */
-  func = RNA_def_function(srna, "find", "rna_Action_fcurve_find");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "find", "rna_Action_fcurve_find");
+  api_def_fn_ui_description(
+      fn,
       "Find an F-Curve. Note that this function performs a linear scan "
       "of all F-Curves in the action.");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "data_path", NULL, 0, "Data Path", "F-Curve data path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
-  parm = RNA_def_pointer(
-      func, "fcurve", "FCurve", "", "The found F-Curve, or None if it doesn't exist");
-  RNA_def_function_return(func, parm);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "data_path", NULL, 0, "Data Path", "F-Curve data path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, INT_MAX, "Index", "Array index", 0, INT_MAX);
+  parm = api_def_ptr(
+      fn, "fcurve", "FCurve", "", "The found F-Curve, or None if it doesn't exist");
+  apj_def_fn_return(fn, parm);
 
   /* Action.fcurves.remove(...) */
-  func = RNA_def_function(srna, "remove", "rna_Action_fcurve_remove");
-  RNA_def_function_ui_description(func, "Remove action group");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "fcurve", "FCurve", "", "F-Curve to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_Action_fcurve_remove");
+  api_def_fn_ui_description(fn, "Remove action group");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "fcurve", "FCurve", "", "F-Curve to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_action_pose_markers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_action_pose_markers(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "ActionPoseMarkers");
-  srna = RNA_def_struct(brna, "ActionPoseMarkers", NULL);
-  RNA_def_struct_sdna(srna, "bAction");
-  RNA_def_struct_ui_text(srna, "Action Pose Markers", "Collection of timeline markers");
+  api_def_prop_sapi(cprop, "ActionPoseMarkers");
+  sapi = api_def_struct(dapi, "ActionPoseMarkers", NULL);
+  api_def_struct_stype(sapi, "Action");
+  api_def_struct_ui_text(sapi, "Action Pose Markers", "Collection of timeline markers");
 
-  func = RNA_def_function(srna, "new", "rna_Action_pose_markers_new");
-  RNA_def_function_ui_description(func, "Add a pose marker to the action");
-  parm = RNA_def_string(func, "name", "Marker", 0, NULL, "New name for the marker (not unique)");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "marker", "TimelineMarker", "", "Newly created marker");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_Action_pose_markers_new");
+  api_def_fn_ui_description(fn, "Add a pose marker to the action");
+  parm = api_def_string(fb, "name", "Marker", 0, NULL, "New name for the marker (not unique)");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "marker", "TimelineMarker", "", "Newly created marker");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Action_pose_markers_remove");
-  RNA_def_function_ui_description(func, "Remove a timeline marker");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "marker", "TimelineMarker", "", "Timeline marker to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_Action_pose_markers_remove");
+  api_def_fn_ui_description(fn, "Remove a timeline marker");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "marker", "TimelineMarker", "", "Timeline marker to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "TimelineMarker");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_LIB_EXCEPTION);
-  RNA_def_property_pointer_funcs(
-      prop, "rna_Action_active_pose_marker_get", "rna_Action_active_pose_marker_set", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Active Pose Marker", "Active pose marker for this action");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "TimelineMarker");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_LIB_EXCEPTION);
+  api_def_prop_ptr_fns(
+      prop, "api_Action_active_pose_marker_get", "api_Action_active_pose_marker_set", NULL, NULL);
+  api_def_prop_ui_text(prop, "Active Pose Marker", "Active pose marker for this action");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "active_marker");
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-  RNA_def_property_int_funcs(prop,
-                             "rna_Action_active_pose_marker_index_get",
-                             "rna_Action_active_pose_marker_index_set",
-                             "rna_Action_active_pose_marker_index_range");
-  RNA_def_property_ui_text(prop, "Active Pose Marker Index", "Index of active pose marker");
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "active_marker");
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_int_fns(prop,
+                       "api_Action_active_pose_marker_index_get",
+                       "api_Action_active_pose_marker_index_set",
+                       "api_Action_active_pose_marker_index_range");
+  api_def_prop_ui_text(prop, "Active Pose Marker Index", "Index of active pose marker");
 }
 
-static void rna_def_action(BlenderRNA *brna)
+static void api_def_action(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Action", "ID");
-  RNA_def_struct_sdna(srna, "bAction");
-  RNA_def_struct_ui_text(srna, "Action", "A collection of F-Curves for animation");
-  RNA_def_struct_ui_icon(srna, ICON_ACTION);
+  sapi = api_def_struct(dapi, "Action", "Id");
+  api_def_struct_sdna(sapi, "Action");
+  api_def_struct_ui_text(sapi, "Action", "A collection of F-Curves for animation");
+  api_def_struct_ui_icon(sapi, ICON_ACTION);
 
   /* collections */
-  prop = RNA_def_property(srna, "fcurves", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "curves", NULL);
-  RNA_def_property_struct_type(prop, "FCurve");
-  RNA_def_property_ui_text(prop, "F-Curves", "The individual F-Curves that make up the action");
-  rna_def_action_fcurves(brna, prop);
+  prop = api_def_prop(sapi, "fcurves", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "curves", NULL);
+  api_def_prop_struct_type(prop, "FCurve");
+  api_def_prop_ui_text(prop, "F-Curves", "The individual F-Curves that make up the action");
+  api_def_action_fcurves(dapi, prop);
 
-  prop = RNA_def_property(srna, "groups", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "groups", NULL);
-  RNA_def_property_struct_type(prop, "ActionGroup");
-  RNA_def_property_ui_text(prop, "Groups", "Convenient groupings of F-Curves");
-  rna_def_action_groups(brna, prop);
+  prop = api_def_prop(sapi, "groups", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "groups", NULL);
+  api_def_prop_struct_type(prop, "ActionGroup");
+  api_def_prop_ui_text(prop, "Groups", "Convenient groupings of F-Curves");
+  api_def_action_groups(dapi, prop);
 
-  prop = RNA_def_property(srna, "pose_markers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "markers", NULL);
-  RNA_def_property_struct_type(prop, "TimelineMarker");
+  prop = api_def_prop(sapi, "pose_markers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "markers", NULL);
+  api_def_prop_struct_type(prop, "TimelineMarker");
   /* Use lib exception so the list isn't grayed out;
    * adding/removing is still banned though, see T45689. */
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-  RNA_def_property_ui_text(
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_ui_text(
       prop, "Pose Markers", "Markers specific to this action, for labeling poses");
-  rna_def_action_pose_markers(brna, prop);
+  api_def_action_pose_markers(dapi, prop);
 
   /* properties */
-  prop = RNA_def_property(srna, "use_frame_range", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ACT_FRAME_RANGE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Action_use_frame_range_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_frame_range", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ACT_FRAME_RANGE);
+  api_def_prop_bool_fns(prop, NULL, "api_Action_use_frame_range_set");
+  api_def_prop_ui_text(
       prop,
       "Manual Frame Range",
       "Manually specify the intended playback frame range for the action "
       "(this range is used by some tools, but does not affect animation evaluation)");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ACT_CYCLIC);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ACT_CYCLIC);
+  api_def_prop_ui_text(
       prop,
       "Cyclic Animation",
       "The action is intended to be used as a cycle looping over its manually set "
       "playback frame range (enabling this doesn't automatically make it loop)");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "frame_start", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "frame_start");
-  RNA_def_property_float_funcs(prop, NULL, "rna_Action_start_frame_set", NULL);
-  RNA_def_property_ui_range(prop, MINFRAME, MAXFRAME, 100, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "frame_start", PROP_FLOAT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "frame_start");
+  api_def_prop_float_fns(prop, NULL, "api_Action_start_frame_set", NULL);
+  api_def_prop_ui_range(prop, MINFRAME, MAXFRAME, 100, 2);
+  api_def_prop_ui_text(
       prop, "Start Frame", "The start frame of the manually set intended playback range");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "frame_end", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "frame_end");
-  RNA_def_property_float_funcs(prop, NULL, "rna_Action_end_frame_set", NULL);
-  RNA_def_property_ui_range(prop, MINFRAME, MAXFRAME, 100, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "frame_end", PROP_FLOAT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "frame_end");
+  api_def_prop_float_fns(prop, NULL, "rna_Action_end_frame_set", NULL);
+  api_def_prop_ui_range(prop, MINFRAME, MAXFRAME, 100, 2);
+  api_def_prop_ui_text(
       prop, "End Frame", "The end frame of the manually set intended playback range");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_float_vector(
-      srna,
+  prop = api_def_float_vector(
+      sapi,
       "frame_range",
       2,
       NULL,
@@ -914,11 +914,11 @@ static void rna_def_action(BlenderRNA *brna)
       "if not (assigning sets the manual frame range)",
       0,
       0);
-  RNA_def_property_float_funcs(
-      prop, "rna_Action_frame_range_get", "rna_Action_frame_range_set", NULL);
-  RNA_def_property_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
+  api_def_prop_float_fns(
+      prop, "api_Action_frame_range_get", "api_Action_frame_range_set", NULL);
+  api_def_prop_update(prop, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, NULL);
 
-  prop = RNA_def_float_vector(srna,
+  prop = api_def_float_vector(sapi,
                               "curve_frame_range",
                               2,
                               NULL,
@@ -928,31 +928,31 @@ static void rna_def_action(BlenderRNA *brna)
                               "The combined frame range of all F-Curves within this action",
                               0,
                               0);
-  RNA_def_property_float_funcs(prop, "rna_Action_curve_frame_range_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_Action_curve_frame_range_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* special "type" limiter - should not really be edited in general,
    * but is still available/editable in 'emergencies' */
-  prop = RNA_def_property(srna, "id_root", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "idroot");
-  RNA_def_property_enum_items(prop, rna_enum_id_type_items);
-  RNA_def_property_ui_text(prop,
-                           "ID Root Type",
-                           "Type of ID block that action can be used on - "
-                           "DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
+  prop = api_def_prop(sapi, "id_root", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "idroot");
+  api_def_prop_enum_items(prop, api_enum_id_type_items);
+  api_def_prop_ui_text(prop,
+                       "ID Root Type",
+                       "Type of ID block that action can be used on - "
+                       "DO NOT CHANGE UNLESS YOU KNOW WHAT YOU ARE DOING");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_ID);
 
   /* API calls */
-  RNA_api_action(srna);
+  api_action(sapi);
 }
 
 /* --------- */
 
-void RNA_def_action(BlenderRNA *brna)
+void api_def_action(DuneApi *dapi)
 {
-  rna_def_action(brna);
-  rna_def_action_group(brna);
-  rna_def_dopesheet(brna);
+  api_def_action(dapi);
+  api_def_action_group(dapi);
+  api_def_dopesheet(dapi);
 }
 
 #endif
