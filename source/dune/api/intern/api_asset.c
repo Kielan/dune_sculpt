@@ -1,30 +1,30 @@
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "DNA_asset_types.h"
-#include "DNA_defs.h"
-#include "DNA_space_types.h"
+#include "types_asset.h"
+#include "types_defs.h"
+#include "types_space.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_asset.h"
-#  include "BKE_asset_library.h"
-#  include "BKE_context.h"
-#  include "BKE_idprop.h"
+#  include "dune_asset.h"
+#  include "dune_asset_lib.h"
+#  include "dune_context.h"
+#  include "dune_idprop.h"
 
-#  include "BLI_listbase.h"
-#  include "BLI_uuid.h"
+#  include "lib_list.h"
+#  include "lib_uuid.h"
 
-#  include "ED_asset.h"
-#  include "ED_fileselect.h"
+#  include "ed_asset.h"
+#  include "ed_fileselect.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-static bool rna_AssetMetaData_editable_from_owner_id(const ID *owner_id,
+static bool api_AssetMetaData_editable_from_owner_id(const Id *owner_id,
                                                      const AssetMetaData *asset_data,
                                                      const char **r_info)
 {
@@ -40,36 +40,36 @@ static bool rna_AssetMetaData_editable_from_owner_id(const ID *owner_id,
   return false;
 }
 
-int rna_AssetMetaData_editable(PointerRNA *ptr, const char **r_info)
+int api_AssetMetaData_editable(ApiPtr *ptr, const char **r_info)
 {
   AssetMetaData *asset_data = ptr->data;
 
-  return rna_AssetMetaData_editable_from_owner_id(ptr->owner_id, asset_data, r_info) ?
+  return api_AssetMetaData_editable_from_owner_id(ptr->owner_id, asset_data, r_info) ?
              PROP_EDITABLE :
              0;
 }
 
-static int rna_AssetTag_editable(PointerRNA *ptr, const char **r_info)
+static int api_AssetTag_editable(ApiPtr *ptr, const char **r_info)
 {
   AssetTag *asset_tag = ptr->data;
-  ID *owner_id = ptr->owner_id;
+  Id *owner_id = ptr->owner_id;
   if (owner_id && owner_id->asset_data) {
-    BLI_assert_msg(BLI_findindex(&owner_id->asset_data->tags, asset_tag) != -1,
+    lib_assert_msg(lib_findindex(&owner_id->asset_data->tags, asset_tag) != -1,
                    "The owner of the asset tag pointer is not the asset ID containing the tag");
     UNUSED_VARS_NDEBUG(asset_tag);
   }
 
-  return rna_AssetMetaData_editable_from_owner_id(ptr->owner_id, owner_id->asset_data, r_info) ?
+  return api_AssetMetaData_editable_from_owner_id(ptr->owner_id, owner_id->asset_data, r_info) ?
              PROP_EDITABLE :
              0;
 }
 
-static AssetTag *rna_AssetMetaData_tag_new(
-    ID *id, AssetMetaData *asset_data, ReportList *reports, const char *name, bool skip_if_exists)
+static AssetTag *api_AssetMetaData_tag_new(
+    Id *id, AssetMetaData *asset_data, ReportList *reports, const char *name, bool skip_if_exists)
 {
   const char *disabled_info = NULL;
-  if (!rna_AssetMetaData_editable_from_owner_id(id, asset_data, &disabled_info)) {
-    BKE_report(reports, RPT_WARNING, disabled_info);
+  if (!api_AssetMetaData_editable_from_owner_id(id, asset_data, &disabled_info)) {
+    dune_report(reports, RPT_WARNING, disabled_info);
     return NULL;
   }
 
@@ -79,47 +79,47 @@ static AssetTag *rna_AssetMetaData_tag_new(
     struct AssetTagEnsureResult result = BKE_asset_metadata_tag_ensure(asset_data, name);
 
     if (!result.is_new) {
-      BKE_reportf(
+      dun_reportf(
           reports, RPT_WARNING, "Tag '%s' already present for given asset", result.tag->name);
       /* Report, but still return valid item. */
     }
     tag = result.tag;
   }
   else {
-    tag = BKE_asset_metadata_tag_add(asset_data, name);
+    tag = dune_asset_metadata_tag_add(asset_data, name);
   }
 
   return tag;
 }
 
-static void rna_AssetMetaData_tag_remove(ID *id,
+static void api_AssetMetaData_tag_remove(Id *id,
                                          AssetMetaData *asset_data,
                                          ReportList *reports,
-                                         PointerRNA *tag_ptr)
+                                         ApiPtr *tag_ptr)
 {
   const char *disabled_info = NULL;
-  if (!rna_AssetMetaData_editable_from_owner_id(id, asset_data, &disabled_info)) {
-    BKE_report(reports, RPT_WARNING, disabled_info);
+  if (!api_AssetMetaData_editable_from_owner_id(id, asset_data, &disabled_info)) {
+    dune_report(reports, RPT_WARNING, disabled_info);
     return;
   }
 
   AssetTag *tag = tag_ptr->data;
-  if (BLI_findindex(&asset_data->tags, tag) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Tag '%s' not found in given asset", tag->name);
+  if (lib_findindex(&asset_data->tags, tag) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Tag '%s' not found in given asset", tag->name);
     return;
   }
 
-  BKE_asset_metadata_tag_remove(asset_data, tag);
-  RNA_POINTER_INVALIDATE(tag_ptr);
+  dune_asset_metadata_tag_remove(asset_data, tag);
+  API_PTR_INVALIDATE(tag_ptr);
 }
 
-static IDProperty **rna_AssetMetaData_idprops(PointerRNA *ptr)
+static IdProp **api_AssetMetaData_idprops(ApiPtr *ptr)
 {
   AssetMetaData *asset_data = ptr->data;
-  return &asset_data->properties;
+  return &asset_data->props;
 }
 
-static void rna_AssetMetaData_author_get(PointerRNA *ptr, char *value)
+static void api_AssetMetaData_author_get(ApiPtr *ptr, char *value)
 {
   AssetMetaData *asset_data = ptr->data;
 
@@ -131,29 +131,29 @@ static void rna_AssetMetaData_author_get(PointerRNA *ptr, char *value)
   }
 }
 
-static int rna_AssetMetaData_author_length(PointerRNA *ptr)
+static int api_AssetMetaData_author_length(ApiPtr *ptr)
 {
   AssetMetaData *asset_data = ptr->data;
   return asset_data->author ? strlen(asset_data->author) : 0;
 }
 
-static void rna_AssetMetaData_author_set(PointerRNA *ptr, const char *value)
+static void api_AssetMetaData_author_set(ApiPtr *ptr, const char *value)
 {
   AssetMetaData *asset_data = ptr->data;
 
   if (asset_data->author) {
-    MEM_freeN(asset_data->author);
+    mem_freen(asset_data->author);
   }
 
   if (value[0]) {
-    asset_data->author = BLI_strdup(value);
+    asset_data->author = lib_strdup(value);
   }
   else {
     asset_data->author = NULL;
   }
 }
 
-static void rna_AssetMetaData_description_get(PointerRNA *ptr, char *value)
+static void api_AssetMetaData_description_get(ApiPtr *ptr, char *value)
 {
   AssetMetaData *asset_data = ptr->data;
 
@@ -165,30 +165,30 @@ static void rna_AssetMetaData_description_get(PointerRNA *ptr, char *value)
   }
 }
 
-static int rna_AssetMetaData_description_length(PointerRNA *ptr)
+static int api_AssetMetaData_description_length(ApiPtr *ptr)
 {
   AssetMetaData *asset_data = ptr->data;
   return asset_data->description ? strlen(asset_data->description) : 0;
 }
 
-static void rna_AssetMetaData_description_set(PointerRNA *ptr, const char *value)
+static void api_AssetMetaData_description_set(ApiPtr *ptr, const char *value)
 {
   AssetMetaData *asset_data = ptr->data;
 
   if (asset_data->description) {
-    MEM_freeN(asset_data->description);
+    mem_freen(asset_data->description);
   }
 
   if (value[0]) {
-    asset_data->description = BLI_strdup(value);
+    asset_data->description = lib_strdup(value);
   }
   else {
     asset_data->description = NULL;
   }
 }
 
-static void rna_AssetMetaData_active_tag_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void api_AssetMetaData_active_tag_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax)
 {
   const AssetMetaData *asset_data = ptr->data;
   *min = *softmin = 0;
