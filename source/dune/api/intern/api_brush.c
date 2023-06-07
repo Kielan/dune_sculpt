@@ -1,32 +1,32 @@
 #include <stdlib.h>
 
-#include "DNA_brush_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_texture_types.h"
-#include "DNA_workspace_types.h"
+#include "types_brush.h"
+#include "types_pen.h"
+#include "types_material.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_texture.h"
+#include "types_workspace.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 #include "IMB_imbuf.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-static const EnumPropertyItem prop_direction_items[] = {
+static const EnumPropItem prop_direction_items[] = {
     {0, "ADD", ICON_ADD, "Add", "Add effect of brush"},
     {BRUSH_DIR_IN, "SUBTRACT", ICON_REMOVE, "Subtract", "Subtract effect of brush"},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem prop_smooth_direction_items[] = {
+#ifdef API_RUNTIME
+static const EnumPropItem prop_smooth_direction_items[] = {
     {0, "SMOOTH", ICON_ADD, "Smooth", "Smooth the surface"},
     {BRUSH_DIR_IN,
      "ENHANCE_DETAILS",
@@ -37,7 +37,7 @@ static const EnumPropertyItem prop_smooth_direction_items[] = {
 };
 #endif
 
-static const EnumPropertyItem sculpt_stroke_method_items[] = {
+static const EnumPropItem sculpt_stroke_method_items[] = {
     {0, "DOTS", 0, "Dots", "Apply paint on each mouse move step"},
     {BRUSH_DRAG_DOT, "DRAG_DOT", 0, "Drag Dot", "Allows a single dot to be carefully positioned"},
     {BRUSH_SPACE,
@@ -60,7 +60,7 @@ static const EnumPropertyItem sculpt_stroke_method_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_brush_texture_slot_map_all_mode_items[] = {
+static const EnumPropItem api_enum_brush_texture_slot_map_all_mode_items[] = {
     {MTEX_MAP_MODE_VIEW, "VIEW_PLANE", 0, "View Plane", ""},
     {MTEX_MAP_MODE_AREA, "AREA_PLANE", 0, "Area Plane", ""},
     {MTEX_MAP_MODE_TILED, "TILED", 0, "Tiled", ""},
@@ -70,8 +70,8 @@ static const EnumPropertyItem rna_enum_brush_texture_slot_map_all_mode_items[] =
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem rna_enum_brush_texture_slot_map_texture_mode_items[] = {
+#ifdef API_RUNTIME
+static const EnumPropItem api_enum_brush_texture_slot_map_texture_mode_items[] = {
     {MTEX_MAP_MODE_VIEW, "VIEW_PLANE", 0, "View Plane", ""},
     {MTEX_MAP_MODE_TILED, "TILED", 0, "Tiled", ""},
     {MTEX_MAP_MODE_3D, "3D", 0, "3D", ""},
@@ -82,7 +82,7 @@ static const EnumPropertyItem rna_enum_brush_texture_slot_map_texture_mode_items
 #endif
 
 /* clang-format off */
-const EnumPropertyItem rna_enum_brush_sculpt_tool_items[] = {
+const EnumPropItem api_enum_brush_sculpt_tool_items[] = {
     {SCULPT_TOOL_DRAW, "DRAW", ICON_BRUSH_SCULPT_DRAW, "Draw", ""},
     {SCULPT_TOOL_DRAW_SHARP, "DRAW_SHARP", ICON_BRUSH_SCULPT_DRAW, "Draw Sharp", ""},
     {SCULPT_TOOL_CLAY, "CLAY", ICON_BRUSH_CLAY, "Clay", ""},
@@ -122,14 +122,14 @@ const EnumPropertyItem rna_enum_brush_sculpt_tool_items[] = {
 };
 /* clang-format on */
 
-const EnumPropertyItem rna_enum_brush_uv_sculpt_tool_items[] = {
+const EnumPropItem api_enum_brush_uv_sculpt_tool_items[] = {
     {UV_SCULPT_TOOL_GRAB, "GRAB", 0, "Grab", "Grab UVs"},
     {UV_SCULPT_TOOL_RELAX, "RELAX", 0, "Relax", "Relax UVs"},
     {UV_SCULPT_TOOL_PINCH, "PINCH", 0, "Pinch", "Pinch UVs"},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_vertex_tool_items[] = {
+const EnumPropItem api_enum_brush_vertex_tool_items[] = {
     {VPAINT_TOOL_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
     {VPAINT_TOOL_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
     {VPAINT_TOOL_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
@@ -137,7 +137,7 @@ const EnumPropertyItem rna_enum_brush_vertex_tool_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_weight_tool_items[] = {
+const EnumPropItem api_enum_brush_weight_tool_items[] = {
     {WPAINT_TOOL_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
     {WPAINT_TOOL_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
     {WPAINT_TOOL_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
@@ -145,7 +145,7 @@ const EnumPropertyItem rna_enum_brush_weight_tool_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_image_tool_items[] = {
+const EnumPropItem api_enum_brush_image_tool_items[] = {
     {PAINT_TOOL_DRAW, "DRAW", ICON_BRUSH_TEXDRAW, "Draw", ""},
     {PAINT_TOOL_SOFTEN, "SOFTEN", ICON_BRUSH_SOFTEN, "Soften", ""},
     {PAINT_TOOL_SMEAR, "SMEAR", ICON_BRUSH_SMEAR, "Smear", ""},
@@ -155,19 +155,19 @@ const EnumPropertyItem rna_enum_brush_image_tool_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_gpencil_types_items[] = {
-    {GPAINT_TOOL_DRAW,
+const EnumPropItem api_enum_brush_pen_types_items[] = {
+    {PAINT_TOOL_DRAW,
      "DRAW",
      ICON_STROKE,
      "Draw",
      "The brush is of type used for drawing strokes"},
-    {GPAINT_TOOL_FILL, "FILL", ICON_COLOR, "Fill", "The brush is of type used for filling areas"},
-    {GPAINT_TOOL_ERASE,
+    {PAINT_TOOL_FILL, "FILL", ICON_COLOR, "Fill", "The brush is of type used for filling areas"},
+    {PAINT_TOOL_ERASE,
      "ERASE",
      ICON_PANEL_CLOSE,
      "Erase",
      "The brush is used for erasing strokes"},
-    {GPAINT_TOOL_TINT,
+    {PAINT_TOOL_TINT,
      "TINT",
      ICON_BRUSH_TEXDRAW,
      "Tint",
@@ -175,69 +175,69 @@ const EnumPropertyItem rna_enum_brush_gpencil_types_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_gpencil_vertex_types_items[] = {
-    {GPVERTEX_TOOL_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
-    {GPVERTEX_TOOL_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
-    {GPVERTEX_TOOL_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
-    {GPVERTEX_TOOL_SMEAR, "SMEAR", ICON_BRUSH_BLUR, "Smear", ""},
-    {GPVERTEX_TOOL_REPLACE, "REPLACE", ICON_BRUSH_BLUR, "Replace", ""},
+const EnumPropItem api_enum_brush_pen_vertex_types_items[] = {
+    {PVERTEX_TOOL_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
+    {PVERTEX_TOOL_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
+    {PVERTEX_TOOL_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
+    {PVERTEX_TOOL_SMEAR, "SMEAR", ICON_BRUSH_BLUR, "Smear", ""},
+    {PVERTEX_TOOL_REPLACE, "REPLACE", ICON_BRUSH_BLUR, "Replace", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_gpencil_sculpt_types_items[] = {
-    {GPSCULPT_TOOL_SMOOTH, "SMOOTH", ICON_GPBRUSH_SMOOTH, "Smooth", "Smooth stroke points"},
-    {GPSCULPT_TOOL_THICKNESS,
+const EnumPropItem api_enum_brush_pen_sculpt_types_items[] = {
+    {PSCULPT_TOOL_SMOOTH, "SMOOTH", ICON_PBRUSH_SMOOTH, "Smooth", "Smooth stroke points"},
+    {PSCULPT_TOOL_THICKNESS,
      "THICKNESS",
-     ICON_GPBRUSH_THICKNESS,
+     ICON_PBRUSH_THICKNESS,
      "Thickness",
      "Adjust thickness of strokes"},
-    {GPSCULPT_TOOL_STRENGTH,
+    {PSCULPT_TOOL_STRENGTH,
      "STRENGTH",
-     ICON_GPBRUSH_STRENGTH,
+     ICON_PBRUSH_STRENGTH,
      "Strength",
      "Adjust color strength of strokes"},
-    {GPSCULPT_TOOL_RANDOMIZE,
+    {PSCULPT_TOOL_RANDOMIZE,
      "RANDOMIZE",
-     ICON_GPBRUSH_RANDOMIZE,
+     ICON_PBRUSH_RANDOMIZE,
      "Randomize",
      "Introduce jitter/randomness into strokes"},
-    {GPSCULPT_TOOL_GRAB,
+    {PSCULPT_TOOL_GRAB,
      "GRAB",
-     ICON_GPBRUSH_GRAB,
+     ICON_PBRUSH_GRAB,
      "Grab",
      "Translate the set of points initially within the brush circle"},
-    {GPSCULPT_TOOL_PUSH,
+    {PSCULPT_TOOL_PUSH,
      "PUSH",
      ICON_GPBRUSH_PUSH,
      "Push",
      "Move points out of the way, as if combing them"},
-    {GPSCULPT_TOOL_TWIST,
+    {PSCULPT_TOOL_TWIST,
      "TWIST",
      ICON_GPBRUSH_TWIST,
      "Twist",
      "Rotate points around the midpoint of the brush"},
-    {GPSCULPT_TOOL_PINCH,
+    {PSCULPT_TOOL_PINCH,
      "PINCH",
-     ICON_GPBRUSH_PINCH,
+     ICON_PBRUSH_PINCH,
      "Pinch",
      "Pull points towards the midpoint of the brush"},
-    {GPSCULPT_TOOL_CLONE,
+    {PSCULPT_TOOL_CLONE,
      "CLONE",
-     ICON_GPBRUSH_CLONE,
+     ICON_PBRUSH_CLONE,
      "Clone",
      "Paste copies of the strokes stored on the clipboard"},
     {0, NULL, 0, NULL, NULL}};
 
-const EnumPropertyItem rna_enum_brush_gpencil_weight_types_items[] = {
-    {GPWEIGHT_TOOL_DRAW,
+const EnumPropItem api_enum_brush_pen_weight_types_items[] = {
+    {PWEIGHT_TOOL_DRAW,
      "WEIGHT",
-     ICON_GPBRUSH_WEIGHT,
+     ICON_PBRUSH_WEIGHT,
      "Weight",
      "Weight Paint for Vertex Groups"},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_brush_curves_sculpt_tool_items[] = {
+const EnumPropItem api_enum_brush_curves_sculpt_tool_items[] = {
     {CURVES_SCULPT_TOOL_COMB, "COMB", ICON_NONE, "Comb", ""},
     {CURVES_SCULPT_TOOL_DELETE, "DELETE", ICON_NONE, "Delete", ""},
     {CURVES_SCULPT_TOOL_SNAKE_HOOK, "SNAKE_HOOK", ICON_NONE, "Snake Hook", ""},
@@ -247,133 +247,133 @@ const EnumPropertyItem rna_enum_brush_curves_sculpt_tool_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static EnumPropertyItem rna_enum_gpencil_brush_eraser_modes_items[] = {
-    {GP_BRUSH_ERASER_SOFT,
+#ifndef API_RUNTIME
+static EnumPropItem api_enum_pen_brush_eraser_modes_items[] = {
+    {PEN_BRUSH_ERASER_SOFT,
      "SOFT",
      0,
      "Dissolve",
      "Erase strokes, fading their points strength and thickness"},
-    {GP_BRUSH_ERASER_HARD, "HARD", 0, "Point", "Erase stroke points"},
-    {GP_BRUSH_ERASER_STROKE, "STROKE", 0, "Stroke", "Erase entire strokes"},
+    {PEN_BRUSH_ERASER_HARD, "HARD", 0, "Point", "Erase stroke points"},
+    {PEN_BRUSH_ERASER_STROKE, "STROKE", 0, "Stroke", "Erase entire strokes"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem rna_enum_gpencil_fill_draw_modes_items[] = {
-    {GP_FILL_DMODE_BOTH,
+static EnumPropItem api_enum_pen_fill_draw_modes_items[] = {
+    {PEN_FILL_DMODE_BOTH,
      "BOTH",
      0,
      "All",
      "Use both visible strokes and edit lines as fill boundary limits"},
-    {GP_FILL_DMODE_STROKE, "STROKE", 0, "Strokes", "Use visible strokes as fill boundary limits"},
-    {GP_FILL_DMODE_CONTROL, "CONTROL", 0, "Edit Lines", "Use edit lines as fill boundary limits"},
+    {PEN_FILL_DMODE_STROKE, "STROKE", 0, "Strokes", "Use visible strokes as fill boundary limits"},
+    {PEN_FILL_DMODE_CONTROL, "CONTROL", 0, "Edit Lines", "Use edit lines as fill boundary limits"},
     {0, NULL, 0, NULL, NULL}};
 
-static EnumPropertyItem rna_enum_gpencil_fill_layers_modes_items[] = {
-    {GP_FILL_GPLMODE_VISIBLE, "VISIBLE", 0, "Visible", "Visible layers"},
-    {GP_FILL_GPLMODE_ACTIVE, "ACTIVE", 0, "Active", "Only active layer"},
-    {GP_FILL_GPLMODE_ABOVE, "ABOVE", 0, "Layer Above", "Layer above active"},
-    {GP_FILL_GPLMODE_BELOW, "BELOW", 0, "Layer Below", "Layer below active"},
-    {GP_FILL_GPLMODE_ALL_ABOVE, "ALL_ABOVE", 0, "All Above", "All layers above active"},
-    {GP_FILL_GPLMODE_ALL_BELOW, "ALL_BELOW", 0, "All Below", "All layers below active"},
+static EnumPropItem api_enum_pen_fill_layers_modes_items[] = {
+    {PEN_FILL_GPLMODE_VISIBLE, "VISIBLE", 0, "Visible", "Visible layers"},
+    {PEN_FILL_GPLMODE_ACTIVE, "ACTIVE", 0, "Active", "Only active layer"},
+    {PEN_FILL_GPLMODE_ABOVE, "ABOVE", 0, "Layer Above", "Layer above active"},
+    {PEN_FILL_GPLMODE_BELOW, "BELOW", 0, "Layer Below", "Layer below active"},
+    {PEN_FILL_GPLMODE_ALL_ABOVE, "ALL_ABOVE", 0, "All Above", "All layers above active"},
+    {PEN_FILL_GPLMODE_ALL_BELOW, "ALL_BELOW", 0, "All Below", "All layers below active"},
     {0, NULL, 0, NULL, NULL}};
 
-static EnumPropertyItem rna_enum_gpencil_fill_direction_items[] = {
+static EnumPropItem api_enum_pen_fill_direction_items[] = {
     {0, "NORMAL", ICON_ADD, "Normal", "Fill internal area"},
     {BRUSH_DIR_IN, "INVERT", ICON_REMOVE, "Inverted", "Fill inverted area"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem rna_enum_gpencil_brush_modes_items[] = {
-    {GP_BRUSH_MODE_ACTIVE, "ACTIVE", 0, "Active", "Use current mode"},
-    {GP_BRUSH_MODE_MATERIAL, "MATERIAL", 0, "Material", "Use always material mode"},
-    {GP_BRUSH_MODE_VERTEXCOLOR, "VERTEXCOLOR", 0, "Vertex Color", "Use always Vertex Color mode"},
+static EnumPropItem api_enum_pen_brush_modes_items[] = {
+    {PEN_BRUSH_MODE_ACTIVE, "ACTIVE", 0, "Active", "Use current mode"},
+    {PEN_BRUSH_MODE_MATERIAL, "MATERIAL", 0, "Material", "Use always material mode"},
+    {PEN_BRUSH_MODE_VERTEXCOLOR, "VERTEXCOLOR", 0, "Vertex Color", "Use always Vertex Color mode"},
     {0, NULL, 0, NULL, NULL}};
 
-static EnumPropertyItem rna_enum_gpencil_brush_paint_icons_items[] = {
-    {GP_BRUSH_ICON_PENCIL, "PENCIL", ICON_GPBRUSH_PENCIL, "Pencil", ""},
-    {GP_BRUSH_ICON_PEN, "PEN", ICON_GPBRUSH_PEN, "Pen", ""},
-    {GP_BRUSH_ICON_INK, "INK", ICON_GPBRUSH_INK, "Ink", ""},
-    {GP_BRUSH_ICON_INKNOISE, "INKNOISE", ICON_GPBRUSH_INKNOISE, "Ink Noise", ""},
-    {GP_BRUSH_ICON_BLOCK, "BLOCK", ICON_GPBRUSH_BLOCK, "Block", ""},
-    {GP_BRUSH_ICON_MARKER, "MARKER", ICON_GPBRUSH_MARKER, "Marker", ""},
-    {GP_BRUSH_ICON_AIRBRUSH, "AIRBRUSH", ICON_GPBRUSH_AIRBRUSH, "Airbrush", ""},
-    {GP_BRUSH_ICON_CHISEL, "CHISEL", ICON_GPBRUSH_CHISEL, "Chisel", ""},
-    {GP_BRUSH_ICON_FILL, "FILL", ICON_GPBRUSH_FILL, "Fill", ""},
-    {GP_BRUSH_ICON_ERASE_SOFT, "SOFT", ICON_GPBRUSH_ERASE_SOFT, "Eraser Soft", ""},
-    {GP_BRUSH_ICON_ERASE_HARD, "HARD", ICON_GPBRUSH_ERASE_HARD, "Eraser Hard", ""},
-    {GP_BRUSH_ICON_ERASE_STROKE, "STROKE", ICON_GPBRUSH_ERASE_STROKE, "Eraser Stroke", ""},
+static EnumPropItem api_enum_pen_brush_paint_icons_items[] = {
+    {PEN_BRUSH_ICON_PEN, "PEN", ICON_GPBRUSH_PEN, "Pen", ""},
+    {PEN_BRUSH_ICON_PEN, "PEN", ICON_GPBRUSH_PEN, "Pen", ""},
+    {PEN_BRUSH_ICON_INK, "INK", ICON_GPBRUSH_INK, "Ink", ""},
+    {PEN_BRUSH_ICON_INKNOISE, "INKNOISE", ICON_GPBRUSH_INKNOISE, "Ink Noise", ""},
+    {PEN_BRUSH_ICON_BLOCK, "BLOCK", ICON_GPBRUSH_BLOCK, "Block", ""},
+    {PEN_BRUSH_ICON_MARKER, "MARKER", ICON_GPBRUSH_MARKER, "Marker", ""},
+    {PEN_BRUSH_ICON_AIRBRUSH, "AIRBRUSH", ICON_GPBRUSH_AIRBRUSH, "Airbrush", ""},
+    {PEN_BRUSH_ICON_CHISEL, "CHISEL", ICON_GPBRUSH_CHISEL, "Chisel", ""},
+    {PEN_BRUSH_ICON_FILL, "FILL", ICON_GPBRUSH_FILL, "Fill", ""},
+    {PEN_BRUSH_ICON_ERASE_SOFT, "SOFT", ICON_GPBRUSH_ERASE_SOFT, "Eraser Soft", ""},
+    {PEN_BRUSH_ICON_ERASE_HARD, "HARD", ICON_GPBRUSH_ERASE_HARD, "Eraser Hard", ""},
+    {PEN_BRUSH_ICON_ERASE_STROKE, "STROKE", ICON_GPBRUSH_ERASE_STROKE, "Eraser Stroke", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem rna_enum_gpencil_brush_sculpt_icons_items[] = {
-    {GP_BRUSH_ICON_GPBRUSH_SMOOTH, "SMOOTH", ICON_GPBRUSH_SMOOTH, "Smooth", ""},
-    {GP_BRUSH_ICON_GPBRUSH_THICKNESS, "THICKNESS", ICON_GPBRUSH_THICKNESS, "Thickness", ""},
-    {GP_BRUSH_ICON_GPBRUSH_STRENGTH, "STRENGTH", ICON_GPBRUSH_STRENGTH, "Strength", ""},
-    {GP_BRUSH_ICON_GPBRUSH_RANDOMIZE, "RANDOMIZE", ICON_GPBRUSH_RANDOMIZE, "Randomize", ""},
-    {GP_BRUSH_ICON_GPBRUSH_GRAB, "GRAB", ICON_GPBRUSH_GRAB, "Grab", ""},
-    {GP_BRUSH_ICON_GPBRUSH_PUSH, "PUSH", ICON_GPBRUSH_PUSH, "Push", ""},
-    {GP_BRUSH_ICON_GPBRUSH_TWIST, "TWIST", ICON_GPBRUSH_TWIST, "Twist", ""},
-    {GP_BRUSH_ICON_GPBRUSH_PINCH, "PINCH", ICON_GPBRUSH_PINCH, "Pinch", ""},
-    {GP_BRUSH_ICON_GPBRUSH_CLONE, "CLONE", ICON_GPBRUSH_CLONE, "Clone", ""},
+static EnumPropItem api_enum_pen_brush_sculpt_icons_items[] = {
+    {PEM_BRUSH_ICON_GPBRUSH_SMOOTH, "SMOOTH", ICON_GPBRUSH_SMOOTH, "Smooth", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_THICKNESS, "THICKNESS", ICON_GPBRUSH_THICKNESS, "Thickness", ""},
+    {PEM_BRUSH_ICON_GPBRUSH_STRENGTH, "STRENGTH", ICON_GPBRUSH_STRENGTH, "Strength", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_RANDOMIZE, "RANDOMIZE", ICON_GPBRUSH_RANDOMIZE, "Randomize", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_GRAB, "GRAB", ICON_GPBRUSH_GRAB, "Grab", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_PUSH, "PUSH", ICON_GPBRUSH_PUSH, "Push", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_TWIST, "TWIST", ICON_GPBRUSH_TWIST, "Twist", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_PINCH, "PINCH", ICON_GPBRUSH_PINCH, "Pinch", ""},
+    {PEN_BRUSH_ICON_GPBRUSH_CLONE, "CLONE", ICON_GPBRUSH_CLONE, "Clone", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem rna_enum_gpencil_brush_weight_icons_items[] = {
-    {GP_BRUSH_ICON_GPBRUSH_WEIGHT, "DRAW", ICON_GPBRUSH_WEIGHT, "Draw", ""},
+static EnumPropItem api_enum_pen_brush_weight_icons_items[] = {
+    {PEN_BRUSH_ICON_GPBRUSH_WEIGHT, "DRAW", ICON_PBRUSH_WEIGHT, "Draw", ""},
     {0, NULL, 0, NULL, NULL},
 };
-static EnumPropertyItem rna_enum_gpencil_brush_vertex_icons_items[] = {
-    {GP_BRUSH_ICON_VERTEX_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
-    {GP_BRUSH_ICON_VERTEX_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
-    {GP_BRUSH_ICON_VERTEX_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
-    {GP_BRUSH_ICON_VERTEX_SMEAR, "SMEAR", ICON_BRUSH_BLUR, "Smear", ""},
-    {GP_BRUSH_ICON_VERTEX_REPLACE, "REPLACE", ICON_BRUSH_MIX, "Replace", ""},
+static EnumPropItem api_enum_pen_brush_vertex_icons_items[] = {
+    {PEN_BRUSH_ICON_VERTEX_DRAW, "DRAW", ICON_BRUSH_MIX, "Draw", ""},
+    {PEN_BRUSH_ICON_VERTEX_BLUR, "BLUR", ICON_BRUSH_BLUR, "Blur", ""},
+    {PEN_BRUSH_ICON_VERTEX_AVERAGE, "AVERAGE", ICON_BRUSH_BLUR, "Average", ""},
+    {PEN_BRUSH_ICON_VERTEX_SMEAR, "SMEAR", ICON_BRUSH_BLUR, "Smear", ""},
+    {PEN_BRUSH_ICON_VERTEX_REPLACE, "REPLACE", ICON_BRUSH_MIX, "Replace", ""},
     {0, NULL, 0, NULL, NULL},
 };
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_brush.h"
-#  include "BKE_colorband.h"
-#  include "BKE_gpencil.h"
-#  include "BKE_icons.h"
-#  include "BKE_material.h"
-#  include "BKE_paint.h"
+#  include "dune_brush.h"
+#  include "dune_colorband.h"
+#  include "dune_pen.h"
+#  include "dune_icons.h"
+#  include "dune_material.h"
+#  include "dune_paint.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static bool rna_BrushCapabilitiesSculpt_has_accumulate_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_accumulate_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return SCULPT_TOOL_HAS_ACCUMULATE(br->sculpt_tool);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_topology_rake_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_topology_rake_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return SCULPT_TOOL_HAS_TOPOLOGY_RAKE(br->sculpt_tool);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_auto_smooth_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_auto_smooth_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !ELEM(
       br->sculpt_tool, SCULPT_TOOL_MASK, SCULPT_TOOL_SMOOTH, SCULPT_TOOL_PAINT, SCULPT_TOOL_SMEAR);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_height_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_height_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return br->sculpt_tool == SCULPT_TOOL_LAYER;
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_jitter_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_jitter_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (!(br->flag & BRUSH_ANCHORED) && !(br->flag & BRUSH_DRAG_DOT) &&
@@ -384,38 +384,38 @@ static bool rna_BrushCapabilitiesSculpt_has_jitter_get(PointerRNA *ptr)
                 SCULPT_TOOL_THUMB));
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_normal_weight_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_normal_weight_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return SCULPT_TOOL_HAS_NORMAL_WEIGHT(br->sculpt_tool);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_rake_factor_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_rake_factor_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return SCULPT_TOOL_HAS_RAKE(br->sculpt_tool);
 }
 
-static bool rna_BrushCapabilities_has_overlay_get(PointerRNA *ptr)
+static bool api_BrushCapabilities_has_overlay_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(
       br->mtex.brush_map_mode, MTEX_MAP_MODE_VIEW, MTEX_MAP_MODE_TILED, MTEX_MAP_MODE_STENCIL);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_persistence_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_persistence_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->sculpt_tool, SCULPT_TOOL_LAYER, SCULPT_TOOL_CLOTH);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_pinch_factor_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_pinch_factor_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->sculpt_tool, SCULPT_TOOL_BLOB, SCULPT_TOOL_CREASE, SCULPT_TOOL_SNAKE_HOOK);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_plane_offset_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_plane_offset_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->sculpt_tool,
@@ -427,7 +427,7 @@ static bool rna_BrushCapabilitiesSculpt_has_plane_offset_get(PointerRNA *ptr)
               SCULPT_TOOL_SCRAPE);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_random_texture_angle_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_random_texture_angle_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (!ELEM(br->sculpt_tool,
@@ -437,19 +437,19 @@ static bool rna_BrushCapabilitiesSculpt_has_random_texture_angle_get(PointerRNA 
                 SCULPT_TOOL_THUMB));
 }
 
-static bool rna_TextureCapabilities_has_random_texture_angle_get(PointerRNA *ptr)
+static bool api_TextureCapabilities_has_random_texture_angle_get(ApiPtr *ptr)
 {
   MTex *mtex = (MTex *)ptr->data;
   return ELEM(mtex->brush_map_mode, MTEX_MAP_MODE_VIEW, MTEX_MAP_MODE_AREA, MTEX_MAP_MODE_RANDOM);
 }
 
-static bool rna_BrushCapabilities_has_random_texture_angle_get(PointerRNA *ptr)
+static bool api_BrushCapabilities_has_random_texture_angle_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !(br->flag & BRUSH_ANCHORED);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_sculpt_plane_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_sculpt_plane_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !ELEM(br->sculpt_tool,
@@ -459,19 +459,19 @@ static bool rna_BrushCapabilitiesSculpt_has_sculpt_plane_get(PointerRNA *ptr)
                SCULPT_TOOL_SMOOTH);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_color_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_color_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->sculpt_tool, SCULPT_TOOL_PAINT);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_secondary_color_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_secondary_color_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
-  return BKE_brush_sculpt_has_secondary_color(br);
+  return dune_brush_sculpt_has_secondary_color(br);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_smooth_stroke_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_smooth_stroke_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (!(br->flag & BRUSH_ANCHORED) && !(br->flag & BRUSH_DRAG_DOT) &&
@@ -483,14 +483,14 @@ static bool rna_BrushCapabilitiesSculpt_has_smooth_stroke_get(PointerRNA *ptr)
                 SCULPT_TOOL_THUMB));
 }
 
-static bool rna_BrushCapabilities_has_smooth_stroke_get(PointerRNA *ptr)
+static bool api_BrushCapabilities_has_smooth_stroke_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (!(br->flag & BRUSH_ANCHORED) && !(br->flag & BRUSH_DRAG_DOT) &&
           !(br->flag & BRUSH_LINE) && !(br->flag & BRUSH_CURVE));
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_space_attenuation_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_space_attenuation_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ((br->flag & (BRUSH_SPACE | BRUSH_LINE | BRUSH_CURVE)) && !ELEM(br->sculpt_tool,
@@ -500,50 +500,50 @@ static bool rna_BrushCapabilitiesSculpt_has_space_attenuation_get(PointerRNA *pt
                                                                          SCULPT_TOOL_SNAKE_HOOK));
 }
 
-static bool rna_BrushCapabilitiesImagePaint_has_space_attenuation_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesImagePaint_has_space_attenuation_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (br->flag & (BRUSH_SPACE | BRUSH_LINE | BRUSH_CURVE)) &&
          br->imagepaint_tool != PAINT_TOOL_FILL;
 }
 
-static bool rna_BrushCapabilitiesImagePaint_has_color_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesImagePaint_has_color_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->imagepaint_tool, PAINT_TOOL_DRAW, PAINT_TOOL_FILL);
 }
 
-static bool rna_BrushCapabilitiesVertexPaint_has_color_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesVertexPaint_has_color_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->vertexpaint_tool, VPAINT_TOOL_DRAW);
 }
 
-static bool rna_BrushCapabilitiesWeightPaint_has_weight_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesWeightPaint_has_weight_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->weightpaint_tool, WPAINT_TOOL_DRAW);
 }
 
-static bool rna_BrushCapabilities_has_spacing_get(PointerRNA *ptr)
+static bool api_BrushCapabilities_has_spacing_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return (!(br->flag & BRUSH_ANCHORED));
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_strength_pressure_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_strength_pressure_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !ELEM(br->sculpt_tool, SCULPT_TOOL_GRAB, SCULPT_TOOL_SNAKE_HOOK);
 }
 
-static bool rna_TextureCapabilities_has_texture_angle_get(PointerRNA *ptr)
+static bool api_TextureCapabilities_has_texture_angle_get(ApiPtr *ptr)
 {
   MTex *mtex = (MTex *)ptr->data;
   return mtex->brush_map_mode != MTEX_MAP_MODE_3D;
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_direction_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_direction_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !ELEM(br->sculpt_tool,
@@ -564,13 +564,13 @@ static bool rna_BrushCapabilitiesSculpt_has_direction_get(PointerRNA *ptr)
                SCULPT_TOOL_MASK);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_gravity_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_gravity_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return !ELEM(br->sculpt_tool, SCULPT_TOOL_MASK, SCULPT_TOOL_SMOOTH);
 }
 
-static bool rna_BrushCapabilitiesSculpt_has_tilt_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesSculpt_has_tilt_get(ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
   return ELEM(br->sculpt_tool,
@@ -583,13 +583,13 @@ static bool rna_BrushCapabilitiesSculpt_has_tilt_get(PointerRNA *ptr)
               SCULPT_TOOL_CLAY_THUMB);
 }
 
-static bool rna_TextureCapabilities_has_texture_angle_source_get(PointerRNA *ptr)
+static bool api_TextureCapabilities_has_texture_angle_source_get(ApiPtr *ptr)
 {
   MTex *mtex = (MTex *)ptr->data;
   return ELEM(mtex->brush_map_mode, MTEX_MAP_MODE_VIEW, MTEX_MAP_MODE_AREA, MTEX_MAP_MODE_RANDOM);
 }
 
-static bool rna_BrushCapabilitiesImagePaint_has_accumulate_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesImagePaint_has_accumulate_get(PointerRNA *ptr)
 {
   /* only support for draw tool */
   Brush *br = (Brush *)ptr->data;
@@ -605,7 +605,7 @@ static bool rna_BrushCapabilitiesImagePaint_has_accumulate_get(PointerRNA *ptr)
              true;
 }
 
-static bool rna_BrushCapabilitiesImagePaint_has_radius_get(PointerRNA *ptr)
+static bool api_BrushCapabilitiesImagePaint_has_radius_get(ApiPtr *ptr)
 {
   /* only support for draw tool */
   Brush *br = (Brush *)ptr->data;
@@ -613,105 +613,105 @@ static bool rna_BrushCapabilitiesImagePaint_has_radius_get(PointerRNA *ptr)
   return (br->imagepaint_tool != PAINT_TOOL_FILL);
 }
 
-static PointerRNA rna_Sculpt_tool_capabilities_get(PointerRNA *ptr)
+static ApiPtr api_Sculpt_tool_capabilities_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_BrushCapabilitiesSculpt, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiBrushCapabilitiesSculpt, ptr->owner_id);
 }
 
-static PointerRNA rna_Imapaint_tool_capabilities_get(PointerRNA *ptr)
+static ApiPtr api_Imapaint_tool_capabilities_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_BrushCapabilitiesImagePaint, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiBrushCapabilitiesImagePaint, ptr->owner_id);
 }
 
-static PointerRNA rna_Vertexpaint_tool_capabilities_get(PointerRNA *ptr)
+static ApiPtr api_Vertexpaint_tool_capabilities_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_BrushCapabilitiesVertexPaint, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiBrushCapabilitiesVertexPaint, ptr->owner_id);
 }
 
-static PointerRNA rna_Weightpaint_tool_capabilities_get(PointerRNA *ptr)
+static ApiPtr api_Weightpaint_tool_capabilities_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_BrushCapabilitiesWeightPaint, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiBrushCapabilitiesWeightPaint, ptr->owner_id);
 }
 
-static PointerRNA rna_Brush_capabilities_get(PointerRNA *ptr)
+static ApiPtr api_Brush_capabilities_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_BrushCapabilities, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiBrushCapabilities, ptr->owner_id);
 }
 
-static void rna_Brush_reset_icon(Brush *br)
+static void api_Brush_reset_icon(Brush *br)
 {
-  ID *id = &br->id;
+  Id *id = &br->id;
 
   if (br->flag & BRUSH_CUSTOM_ICON) {
     return;
   }
 
   if (id->icon_id >= BIFICONID_LAST) {
-    BKE_icon_id_delete(id);
-    BKE_previewimg_id_free(id);
+    dune_icon_id_delete(id);
+    dune_previewimg_id_free(id);
   }
 
   id->icon_id = 0;
 }
 
-static void rna_Brush_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Brush_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Brush *br = (Brush *)ptr->data;
-  WM_main_add_notifier(NC_BRUSH | NA_EDITED, br);
-  /*WM_main_add_notifier(NC_SPACE|ND_SPACE_VIEW3D, NULL); */
+  wm_main_add_notifier(NC_BRUSH | NA_EDITED, br);
+  /*em_main_add_notifier(NC_SPACE|ND_SPACE_VIEW3D, NULL); */
 }
 
-static void rna_Brush_material_update(bContext *UNUSED(C), PointerRNA *UNUSED(ptr))
+static void api_Brush_material_update(Cxt *UNUSED(C), ApiPtr *UNUSED(ptr))
 {
   /* number of material users changed */
-  WM_main_add_notifier(NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+  wm_main_add_notifier(NC_SPACE | ND_SPACE_PROPS, NULL);
 }
 
-static void rna_Brush_main_tex_update(bContext *C, PointerRNA *ptr)
+static void api_Brush_main_tex_update(Cxt *C, ApiPtr *ptr)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Brush *br = (Brush *)ptr->data;
-  BKE_paint_invalidate_overlay_tex(scene, view_layer, br->mtex.tex);
-  rna_Brush_update(bmain, scene, ptr);
+  dune_paint_invalidate_overlay_tex(scene, view_layer, br->mtex.tex);
+  api_Brush_update(main, scene, ptr);
 }
 
-static void rna_Brush_secondary_tex_update(bContext *C, PointerRNA *ptr)
+static void api_Brush_secondary_tex_update(Cxt *C, ApiPtr *ptr)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Brush *br = (Brush *)ptr->data;
-  BKE_paint_invalidate_overlay_tex(scene, view_layer, br->mask_mtex.tex);
-  rna_Brush_update(bmain, scene, ptr);
+  dune_paint_invalidate_overlay_tex(scene, view_layer, br->mask_mtex.tex);
+  api_Brush_update(main, scene, ptr);
 }
 
-static void rna_Brush_size_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Brush_size_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  BKE_paint_invalidate_overlay_all();
-  rna_Brush_update(bmain, scene, ptr);
+  dune_paint_invalidate_overlay_all();
+  api_Brush_update(main, scene, ptr);
 }
 
-static void rna_Brush_update_and_reset_icon(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Brush_update_and_reset_icon(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Brush *br = ptr->data;
-  rna_Brush_reset_icon(br);
-  rna_Brush_update(bmain, scene, ptr);
+  api_Brush_reset_icon(br);
+  api_Brush_update(main, scene, ptr);
 }
 
-static void rna_Brush_stroke_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Brush_stroke_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  WM_main_add_notifier(NC_SCENE | ND_TOOLSETTINGS, scene);
-  rna_Brush_update(bmain, scene, ptr);
+  wm_main_add_notifier(NC_SCENE | ND_TOOLSETTINGS, scene);
+  api_Brush_update(main, scene, ptr);
 }
 
-static void rna_Brush_icon_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Brush_icon_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Brush *br = (Brush *)ptr->data;
 
   if (br->icon_imbuf) {
-    IMB_freeImBuf(br->icon_imbuf);
+    imbuf_freeimbuf(br->icon_imbuf);
     br->icon_imbuf = NULL;
   }
 
