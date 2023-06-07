@@ -15,7 +15,7 @@
 
 #include "api_internal.h"
 
-#include "IMB_imbuf.h"
+#include "imbuf.h"
 
 #include "wm_types.h"
 
@@ -921,8 +921,8 @@ static const EnumPropItem *api_Brush_stroke_itemf(Cxt *C,
       return brush_stroke_method_items;
   }
 }
-/* Grease Pencil Drawing Brushes Settings */
-static char *api_BrushGpencilSettings_path(ApiPtr *UNUSED(ptr))
+/* Pen Drawing Brushes Settings */
+static char *api_BrushpenSettings_path(ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("tool_settings.pen_paint.brush.pen_settings");
 }
@@ -932,7 +932,7 @@ static void api_BrushpenSettings_default_eraser_update(Main *main,
                                                        ApiPtr *UNUSED(ptr))
 {
   ToolSettings *ts = scene->toolsettings;
-  Paint *paint = &ts->gp_paint->paint;
+  Paint *paint = &ts->pen_paint->paint;
   Brush *brush_cur = paint->brush;
 
   /* disable default eraser in all brushes */
@@ -1265,7 +1265,7 @@ static void api_def_weight_paint_capabilities(DuneApi *dapi)
 
 static void api_def_pen_options(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   /* modes */
@@ -1284,8 +1284,8 @@ static void api_def_pen_options(DuneApi *dapi)
 
   sapi = api_def_struct(dapi, "BrushpenSettings", NULL);
   api_def_struct_stype(sapi, "BrushpenSettings");
-  api_def_struct_path_fn(sapi, "api_BrushGpencilSettings_path");
-  api_def_struct_ui_text(sapi, "Grease Pencil Brush Settings", "Settings for grease pencil brush");
+  api_def_struct_path_fn(sapi, "api_BrushpenSettings_path");
+  api_def_struct_ui_text(sapi, "Pen Brush Settings", "Settings for grease pencil brush");
 
   /* Strength factor for new strokes */
   prop = api_def_prop(sapi, "pen_strength", PROP_FLOAT, PROP_FACTOR);
@@ -1392,11 +1392,11 @@ static void api_def_pen_options(DuneApi *dapi)
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   prop = api_def_prop(sapi, "curve_strength", PROP_POINTER, PROP_NONE);
-  RNA_def_prop_ptr_sdna(prop, NULL, "curve_strength");
-  RNA_def_prop_struct_type(prop, "CurveMapping");
-  RNA_def_prop_ui_text(prop, "Curve Strength", "Curve used for the strength");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
+  api_def_prop_ptr_stype(prop, NULL, "curve_strength");
+  api_def_prop_struct_type(prop, "CurveMapping");
+  api_def_prop_ui_text(prop, "Curve Strength", "Curve used for the strength");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   prop = api_def_prop(sapi, "curve_jitter", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_jitter");
@@ -1412,19 +1412,19 @@ static void api_def_pen_options(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = api_def_prop(sapi, "curve_random_strength", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "curve_random_strength", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_rand_strength");
   api_def_prop_struct_type(prop, "CurveMapping");
   api_def_prop_ui_text(prop, "Random Curve", "Curve used for modulating effect");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_GPENCIL | ND_DATA, NULL);
 
-  prop = api_def_prop(sapi, "curve_random_uv", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "curve_random_uv", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_rand_uv");
   api_def_prop_struct_type(prop, "CurveMapping");
   api_def_prop_ui_text(prop, "Random Curve", "Curve used for modulating effect");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   prop = api_def_prop(sapi, "curve_random_hue", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_rand_hue");
@@ -1620,93 +1620,93 @@ static void api_def_pen_options(DuneApi *dapi)
   api_def_param_clear_flags(prop, PROP_ANIMATABLE, 0);
 
   /* Number of pixels to dilate fill area. Negative values contract the filled area. */
-  prop = RNA_def_property(srna, "dilate", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "dilate_pixels");
-  RNA_def_property_range(prop, -40, 40);
-  RNA_def_property_int_default(prop, 1);
-  RNA_def_property_ui_text(
+  prop = apo_def_prop(sapi, "dilate", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "dilate_pixels");
+  api_def_prop_range(prop, -40, 40);
+  api_def_prop_int_default(prop, 1);
+  apo_def_prop_ui_text(
       prop, "Dilate/Contract", "Number of pixels to expand or contract fill area");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   /* Flags */
-  prop = RNA_def_property(srna, "use_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_USE_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use tablet pressure");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_USE_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use tablet pressure");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_strength_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_USE_STRENGTH_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_strength_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_USE_STRENGTH_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Use Pressure Strength", "Use tablet pressure for color strength");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  apo_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_jitter_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_USE_JITTER_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure Jitter", "Use tablet pressure for jitter");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_jitter_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_USE_JITTER_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure Jitter", "Use tablet pressure for jitter");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_hue", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_HUE_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_hue", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_HUE_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_sat", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_SAT_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_sat", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_SAT_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_val", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_VAL_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_val", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_VAL_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_radius", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_PRESS_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_radius", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_PRESS_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_STRENGTH_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_strength", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_STRENGTH_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_stroke_random_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_UV_AT_STROKE);
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_stroke_random_uv", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_UV_AT_STROKE);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_ui_text(prop, "Stroke Random", "Use randomness at stroke level");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_hue", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_HUE_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_hue", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", GP_BRUSH_USE_HUE_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_sat", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_SAT_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_sat", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", GP_BRUSH_USE_SAT_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_GPENCIL | ND_DATA, NULL);
 
   prop = RNA_def_property(srna, "use_random_press_val", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_VAL_RAND_PRESS);
