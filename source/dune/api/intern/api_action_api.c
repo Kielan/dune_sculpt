@@ -3,47 +3,47 @@
 #include <string.h>
 #include <time.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "DNA_action_types.h"
+#include "types_action.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_action.h"
+#  include "dune_action.h"
 
-#  include "DNA_anim_types.h"
-#  include "DNA_curve_types.h"
+#  include "types_anim.h"
+#  include "types_curve.h"
 
-static void rna_Action_flip_with_pose(bAction *act, ReportList *reports, Object *ob)
+static void api_Action_flip_with_pose(Action *act, ReportList *reports, Object *ob)
 {
   if (ob->type != OB_ARMATURE) {
-    BKE_report(reports, RPT_ERROR, "Only armature objects are supported");
+    dune_report(reports, RPT_ERROR, "Only armature objects are supported");
     return;
   }
-  BKE_action_flip_with_pose(act, ob);
+  dune_action_flip_with_pose(act, ob);
 
   /* Only for redraw. */
-  WM_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 }
 
 #else
 
-void RNA_api_action(StructRNA *srna)
+void api_action(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "flip_with_pose", "rna_Action_flip_with_pose");
-  RNA_def_function_ui_description(func, "Flip the action around the X axis using a pose");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "flip_with_pose", "api_Action_flip_with_pose");
+  api_def_fn_ui_description(fn, "Flip the action around the X axis using a pose");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
 
-  parm = RNA_def_pointer(
-      func, "object", "Object", "", "The reference armature object to use when flipping");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "object", "Object", "", "The reference armature object to use when flipping");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
 
 #endif
