@@ -2704,12 +2704,12 @@ static void api_def_brush(DuneApi *dapi)
       prop, "Brush Height", "Affectable height of brush (layer height for layer tool, i.e.)");
   api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "texture_sample_bias", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "texture_sample_bias");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, -1, 1);
-  RNA_def_property_ui_text(prop, "Texture Sample Bias", "Value added to texture samples");
-  RNA_def_property_update(prop, 0, "api_Brush_update");
+  prop = api_def_prop(sapi, "texture_sample_bias", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "texture_sample_bias");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, -1, 1);
+  api_def_prop_ui_text(prop, "Texture Sample Bias", "Value added to texture samples");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = api_def_prop(sapi, "normal_weight", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "normal_weight");
@@ -2727,15 +2727,15 @@ static void api_def_brush(DuneApi *dapi)
                            "Volume Preservation",
                            "Poisson ratio for elastic deformation. Higher values preserve volume "
                            "more, but also lead to more bulging");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "rake_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "rake_factor");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Rake", "How much grab will follow cursor rotation");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "rake_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "rake_factor");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(prop, "Rake", "How much grab will follow cursor rotation");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
   prop = RNA_def_property(srna, "crease_pinch_factor", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "crease_pinch_factor");
