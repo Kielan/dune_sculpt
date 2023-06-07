@@ -1620,7 +1620,7 @@ static void api_def_pen_options(DuneApi *dapi)
   api_def_param_clear_flags(prop, PROP_ANIMATABLE, 0);
 
   /* Number of pixels to dilate fill area. Negative values contract the filled area. */
-  prop = apo_def_prop(sapi, "dilate", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "dilate", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "dilate_pixels");
   api_def_prop_range(prop, -40, 40);
   api_def_prop_int_default(prop, 1);
@@ -1701,221 +1701,221 @@ static void api_def_pen_options(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = api_def_prop(sapi, "use_random_press_sat", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag2", GP_BRUSH_USE_SAT_RAND_PRESS);
+  prop = api_def_prop(sapi, "use_random_press_sat", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_SAT_RAND_PRESS);
   api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
   api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_val", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_VAL_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_val", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_VAL_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_radius", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_PRESSURE_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_radius", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", PEN_BRUSH_USE_PRESSURE_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_STRENGTH_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_strength", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", GP_BRUSH_USE_STRENGTH_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_random_press_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag2", GP_BRUSH_USE_UV_RAND_PRESS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  prop = api_def_prop(sapi, "use_random_press_uv", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag2", GP_BRUSH_USE_UV_RAND_PRESS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Use pressure to modulate randomness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "use_settings_stabilizer", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_STABILIZE_MOUSE);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(prop,
-                           "Use Stabilizer",
-                           "Draw lines with a delay to allow smooth strokes. Press Shift key to "
-                           "override while drawing");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "use_settings_stabilizer", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_STABILIZE_MOUSE);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(prop,
+                       "Use Stabilizer",
+                       "Draw lines with a delay to allow smooth strokes. Press Shift key to "
+                       "override while drawing");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "eraser_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "eraser_mode");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_brush_eraser_modes_items);
-  RNA_def_property_ui_text(prop, "Mode", "Eraser Mode");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(
-      prop, NC_GPENCIL | ND_DATA, "rna_BrushGpencilSettings_eraser_mode_update");
+  prop = api_def_prop(sapi, "eraser_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "eraser_mode");
+  api_def_prop_enum_items(prop, api_enum_pen_brush_eraser_modes_items);
+  api_def_prop_ui_text(prop, "Mode", "Eraser Mode");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(
+      prop, NC_PEN | ND_DATA, "api_BrushpenSettings_eraser_mode_update");
 
-  prop = RNA_def_property(srna, "caps_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "caps_type");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_brush_caps_types_items);
-  RNA_def_property_ui_text(prop, "Caps Type", "The shape of the start and end of the stroke");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "caps_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "caps_type");
+  api_def_prop_enum_items(prop, api_enum_pen_brush_caps_types_items);
+  api_def_prop_ui_text(prop, "Caps Type", "The shape of the start and end of the stroke");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "fill_draw_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "fill_draw_mode");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_fill_draw_modes_items);
-  RNA_def_property_ui_text(prop, "Mode", "Mode to draw boundary limits");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "fill_draw_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "fill_draw_mode");
+  api_def_prop_enum_items(prop, api_enum_pen_fill_draw_modes_items);
+  api_def_prop_ui_text(prop, "Mode", "Mode to draw boundary limits");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "fill_layer_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "fill_layer_mode");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_fill_layers_modes_items);
-  RNA_def_property_ui_text(prop, "Layer Mode", "Layers used as boundaries");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "fill_layer_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "fill_layer_mode");
+  api_def_prop_enum_items(prop, api_enum_gpencil_fill_layers_modes_items);
+  api_def_prop_ui_text(prop, "Layer Mode", "Layers used as boundaries");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "fill_direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "fill_direction");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_fill_direction_items);
-  RNA_def_property_ui_text(prop, "Direction", "Direction of the fill");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "fill_direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "fill_direction");
+  api_def_prop_enum_items(prop, api_enum_pen_fill_direction_items);
+  api_def_prop_ui_text(prop, "Direction", "Direction of the fill");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "pin_draw_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_GPencilBrush_pin_mode_get", "rna_GPencilBrush_pin_mode_set");
-  RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, "rna_GPencilBrush_pin_mode_update");
-  RNA_def_property_ui_text(prop, "Pin Mode", "Pin the mode to the brush");
+  prop = api_def_prop(sapi, "pin_draw_mode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_PenBrush_pin_mode_get", "api_PenBrush_pin_mode_set");
+  api_def_prop_ui_icon(prop, ICON_UNPINNED, 1);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, "api_PenBrush_pin_mode_update");
+  api_def_prop_ui_text(prop, "Pin Mode", "Pin the mode to the brush");
 
-  prop = RNA_def_property(srna, "brush_draw_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "brush_draw_mode");
-  RNA_def_property_enum_items(prop, rna_enum_gpencil_brush_modes_items);
-  RNA_def_property_ui_text(prop, "Mode", "Preselected mode when using this brush");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "brush_draw_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "brush_draw_mode");
+  api_def_prop_enum_items(prop, api_enum_pen_brush_modes_items);
+  api_def_prop_ui_text(prop, "Mode", "Preselected mode when using this brush");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_trim", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_TRIM_STROKE);
-  RNA_def_property_boolean_default(prop, false);
-  RNA_def_property_ui_text(prop, "Trim Stroke Ends", "Trim intersecting stroke ends");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "use_trim", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_TRIM_STROKE);
+  api_def_prop_bool_default(prop, false);
+  api_def_prop_ui_text(prop, "Trim Stroke Ends", "Trim intersecting stroke ends");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "sculpt_flag");
-  RNA_def_property_enum_items(prop, prop_direction_items);
-  RNA_def_property_ui_text(prop, "Direction", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "sculpt_flag");
+  api_def_prop_enum_items(prop, prop_direction_items);
+  api_def_prop_ui_text(prop, "Direction", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_edit_position", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "sculpt_mode_flag", GP_SCULPT_FLAGMODE_APPLY_POSITION);
-  RNA_def_property_ui_text(prop, "Affect Position", "The brush affects the position of the point");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_edit_position", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "sculpt_mode_flag", PEN_SCULPT_FLAGMODE_APPLY_POSITION);
+  api_def_prop_ui_text(prop, "Affect Position", "The brush affects the position of the point");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_edit_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "sculpt_mode_flag", GP_SCULPT_FLAGMODE_APPLY_STRENGTH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_strength", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "sculpt_mode_flag", PEN_SCULPT_FLAGMODE_APPLY_STRENGTH);
+  api_def_prop_ui_text(
       prop, "Affect Strength", "The brush affects the color strength of the point");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  apu_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_edit_thickness", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "sculpt_mode_flag", GP_SCULPT_FLAGMODE_APPLY_THICKNESS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_edit_thickness", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "sculpt_mode_flag", PEN_SCULPT_FLAGMODE_APPLY_THICKNESS);
+  api_def_prop_ui_text(
       prop, "Affect Thickness", "The brush affects the thickness of the point");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_edit_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "sculpt_mode_flag", GP_SCULPT_FLAGMODE_APPLY_UV);
-  RNA_def_property_ui_text(prop, "Affect UV", "The brush affects the UV rotation of the point");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_edit_uv", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "sculpt_mode_flag", PEN_SCULPT_FLAGMODE_APPLY_UV);
+  api_def_prop_ui_text(prop, "Affect UV", "The brush affects the UV rotation of the point");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   /* Material */
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Material");
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_BrushGpencilSettings_material_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK | PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Material", "Material used for strokes drawn using this brush");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, "rna_Brush_material_update");
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Material");
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_BrushpenSettings_material_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK | PROP_CXT_UPDATE);
+  api_def_prop_ui_text(prop, "Material", "Material used for strokes drawn using this brush");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, "api_Brush_material_update");
 
-  prop = RNA_def_property(srna, "show_fill_boundary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_FILL_SHOW_HELPLINES);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(prop, "Show Lines", "Show help lines for filling to see boundaries");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "show_fill_boundary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_FILL_SHOW_HELPLINES);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(prop, "Show Lines", "Show help lines for filling to see boundaries");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "show_fill_extend", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_FILL_SHOW_EXTENDLINES);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(prop, "Show Extend Lines", "Show help lines for stroke extension");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "show_fill_extend", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_FILL_SHOW_EXTENDLINES);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(prop, "Show Extend Lines", "Show help lines for stroke extension");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "show_fill", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", GP_BRUSH_FILL_HIDE);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_fill", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", PEN_BRUSH_FILL_HIDE);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(
       prop, "Show Fill", "Show transparent lines to use as boundary for filling");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_fill_limit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_FILL_FIT_DISABLE);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(prop, "Limit to Viewport", "Fill only visible areas in viewport");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "use_fill_limit", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_FILL_FIT_DISABLE);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(prop, "Limit to Viewport", "Fill only visible areas in viewport");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_default_eraser", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_DEFAULT_ERASER);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_default_eraser", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_DEFAULT_ERASER);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_icon(prop, ICON_UNPINNED, 1);
+  api_def_prop_ui_text(
       prop, "Default Eraser", "Use this brush when enable eraser with fast switch key");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(
-      prop, NC_GPENCIL | ND_DATA, "rna_BrushGpencilSettings_default_eraser_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(
+      prop, NC_PEN | ND_DATA, "api_BrushpenSettings_default_eraser_update");
 
-  prop = RNA_def_property(srna, "use_settings_postprocess", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_GROUP_SETTINGS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_settings_postprocess", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_GROUP_SETTINGS);
+  api_def_prop_ui_text(
       prop, "Use Post-Process Settings", "Additional post processing options for new strokes");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_settings_random", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_GROUP_RANDOM);
-  RNA_def_property_ui_text(prop, "Random Settings", "Random brush settings");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "use_settings_random", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_GROUP_RANDOM);
+  api_def_prop_ui_text(prop, "Random Settings", "Random brush settings");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_material_pin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_MATERIAL_PINNED);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
-  RNA_def_property_ui_text(prop, "Pin Material", "Keep material assigned to brush");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(
-      prop, NC_GPENCIL | ND_DATA, "rna_BrushGpencilSettings_use_material_pin_update");
+  prop = api_def_prop(sapi, "use_material_pin", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_MATERIAL_PINNED);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_ui_icon(prop, ICON_UNPINNED, 1);
+  api_def_prop_ui_text(prop, "Pin Material", "Keep material assigned to brush");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(
+      prop, NC_PEN | ND_DATA, "api_BrushpenSettings_use_material_pin_update");
 
-  prop = RNA_def_property(srna, "show_lasso", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", GP_BRUSH_DISSABLE_LASSO);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_lasso", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", PEN_BRUSH_DISSABLE_LASSO);
+  api_def_prop_ui_text(
       prop, "Show Lasso", "Do not display fill color while drawing the stroke");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_occlude_eraser", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_BRUSH_OCCLUDE_ERASER);
-  RNA_def_property_ui_text(prop, "Occlude Eraser", "Erase only strokes visible and not occluded");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "use_occlude_eraser", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BRUSH_OCCLUDE_ERASER);
+  api_def_prop_ui_text(prop, "Occlude Eraser", "Erase only strokes visible and not occluded");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 }
 
-static void rna_def_curves_sculpt_options(BlenderRNA *brna)
+static void api_def_curves_sculpt_options(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "BrushCurvesSculptSettings", NULL);
-  RNA_def_struct_sdna(srna, "BrushCurvesSculptSettings");
-  RNA_def_struct_ui_text(srna, "Curves Sculpt Brush Settings", "");
+  sapi = api_def_struct(dapi, "BrushCurvesSculptSettings", NULL);
+  api_def_struct_stype(sapi, "BrushCurvesSculptSettings");
+  api_def_struct_ui_text(sapi, "Curves Sculpt Brush Settings", "");
 
   prop = RNA_def_property(srna, "add_amount", PROP_INT, PROP_NONE);
   RNA_def_property_range(prop, 1, INT32_MAX);
