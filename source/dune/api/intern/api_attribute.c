@@ -1,23 +1,23 @@
 #include <stdlib.h>
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_curves_types.h"
-#include "DNA_customdata_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_pointcloud_types.h"
+#include "types_curves.h"
+#include "types_customdata.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_pointcloud.h"
 
-#include "BKE_attribute.h"
-#include "BKE_customdata.h"
+#include "dune_attribute.h"
+#include "dune_customdata.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_attribute_type_items[] = {
+const EnumPropItem api_enum_attribute_type_items[] = {
     {CD_PROP_FLOAT, "FLOAT", 0, "Float", "Floating-point value"},
     {CD_PROP_INT32, "INT", 0, "Integer", "32-bit integer"},
     {CD_PROP_FLOAT3, "FLOAT_VECTOR", 0, "Vector", "3D vector with floating-point values"},
@@ -30,7 +30,7 @@ const EnumPropertyItem rna_enum_attribute_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_attribute_type_with_auto_items[] = {
+const EnumPropItem api_enum_attribute_type_with_auto_items[] = {
     {CD_AUTO_FROM_NAME, "AUTO", 0, "Auto", ""},
     {CD_PROP_FLOAT, "FLOAT", 0, "Float", "Floating-point value"},
     {CD_PROP_INT32, "INT", 0, "Integer", "32-bit integer"},
@@ -44,7 +44,7 @@ const EnumPropertyItem rna_enum_attribute_type_with_auto_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_attribute_domain_items[] = {
+const EnumPropItem api_enum_attribute_domain_items[] = {
     /* Not implement yet */
     // {ATTR_DOMAIN_GEOMETRY, "GEOMETRY", 0, "Geometry", "Attribute on (whole) geometry"},
     {ATTR_DOMAIN_POINT, "POINT", 0, "Point", "Attribute on point"},
@@ -58,7 +58,7 @@ const EnumPropertyItem rna_enum_attribute_domain_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_attribute_domain_without_corner_items[] = {
+const EnumPropItem api_enum_attribute_domain_without_corner_items[] = {
     {ATTR_DOMAIN_POINT, "POINT", 0, "Point", "Attribute on point"},
     {ATTR_DOMAIN_EDGE, "EDGE", 0, "Edge", "Attribute on mesh edge"},
     {ATTR_DOMAIN_FACE, "FACE", 0, "Face", "Attribute on mesh faces"},
@@ -67,7 +67,7 @@ const EnumPropertyItem rna_enum_attribute_domain_without_corner_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_attribute_domain_with_auto_items[] = {
+const EnumPropItem api_enum_attribute_domain_with_auto_items[] = {
     {ATTR_DOMAIN_AUTO, "AUTO", 0, "Auto", ""},
     {ATTR_DOMAIN_POINT, "POINT", 0, "Point", "Attribute on point"},
     {ATTR_DOMAIN_EDGE, "EDGE", 0, "Edge", "Attribute on mesh edge"},
@@ -78,65 +78,65 @@ const EnumPropertyItem rna_enum_attribute_domain_with_auto_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "BLT_translation.h"
+#  include "lang.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 /* Attribute */
 
-static char *rna_Attribute_path(PointerRNA *ptr)
+static char *api_Attribute_path(ApiPtr *ptr)
 {
   CustomDataLayer *layer = ptr->data;
-  return BLI_sprintfN("attributes['%s']", layer->name);
+  return lib_sprintfn("attributes['%s']", layer->name);
 }
 
-static StructRNA *srna_by_custom_data_layer_type(const CustomDataType type)
-{
+static ApiStruct *sapi_by_custom_data_layer_type(const CustomDataType type)
+
   switch (type) {
     case CD_PROP_FLOAT:
-      return &RNA_FloatAttribute;
+      return &ApiFloatAttribute;
     case CD_PROP_INT32:
-      return &RNA_IntAttribute;
+      return &ApiIntAttribute;
     case CD_PROP_FLOAT3:
-      return &RNA_FloatVectorAttribute;
+      return &ApiFloatVectorAttribute;
     case CD_PROP_COLOR:
-      return &RNA_FloatColorAttribute;
+      return &ApiFloatColorAttribute;
     case CD_MLOOPCOL:
-      return &RNA_ByteColorAttribute;
+      return &ApiByteColorAttribute;
     case CD_PROP_STRING:
-      return &RNA_StringAttribute;
+      return &ApiStringAttribute;
     case CD_PROP_BOOL:
-      return &RNA_BoolAttribute;
+      return &ApiBoolAttribute;
     case CD_PROP_FLOAT2:
-      return &RNA_Float2Attribute;
+      return &ApiFloat2Attribute;
     case CD_PROP_INT8:
-      return &RNA_ByteIntAttribute;
+      return &ApiByteIntAttribute;
     default:
       return NULL;
   }
 }
 
-static StructRNA *rna_Attribute_refine(PointerRNA *ptr)
+static ApiStruct *api_Attribute_refine(ApiPtr *ptr)
 {
   CustomDataLayer *layer = ptr->data;
-  return srna_by_custom_data_layer_type(layer->type);
+  return sapi_by_custom_data_layer_type(layer->type);
 }
 
-static void rna_Attribute_name_set(PointerRNA *ptr, const char *value)
+static void api_Attribute_name_set(ApiPtr *ptr, const char *value)
 {
-  BKE_id_attribute_rename(ptr->owner_id, ptr->data, value, NULL);
+  dune_id_attribute_rename(ptr->owner_id, ptr->data, value, NULL);
 }
 
-static int rna_Attribute_name_editable(PointerRNA *ptr, const char **r_info)
+static int api_Attribute_name_editable(ApiPtr *ptr, const char **r_info)
 {
   CustomDataLayer *layer = ptr->data;
-  if (BKE_id_attribute_required(ptr->owner_id, layer)) {
+  if (dune_id_attribute_required(ptr->owner_id, layer)) {
     *r_info = N_("Can't modify name of required geometry attribute");
     return false;
   }
@@ -144,26 +144,26 @@ static int rna_Attribute_name_editable(PointerRNA *ptr, const char **r_info)
   return true;
 }
 
-static int rna_Attribute_type_get(PointerRNA *ptr)
+static int api_Attribute_type_get(ApiPtr *ptr)
 {
   CustomDataLayer *layer = ptr->data;
   return layer->type;
 }
 
-const EnumPropertyItem *rna_enum_attribute_domain_itemf(ID *id,
-                                                        bool include_instances,
-                                                        bool *r_free)
+const EnumPropItem *api_enum_attribute_domain_itemf(Id *id,
+                                                    bool include_instances,
+                                                    bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  const EnumPropertyItem *domain_item = NULL;
-  const ID_Type id_type = GS(id->name);
+  EnumPropItem *item = NULL;
+  const EnumPropItem *domain_item = NULL;
+  const IdType id_type = GS(id->name);
   int totitem = 0, a;
 
-  static EnumPropertyItem mesh_vertex_domain_item = {
+  static EnumPropItem mesh_vertex_domain_item = {
       ATTR_DOMAIN_POINT, "POINT", 0, "Vertex", "Attribute per point/vertex"};
 
-  for (a = 0; rna_enum_attribute_domain_items[a].identifier; a++) {
-    domain_item = &rna_enum_attribute_domain_items[a];
+  for (a = 0; api_enum_attribute_domain_items[a].id; a++) {
+    domain_item = &api_enum_attribute_domain_items[a];
 
     if (id_type == ID_PT && !ELEM(domain_item->value, ATTR_DOMAIN_POINT)) {
       continue;
@@ -179,45 +179,45 @@ const EnumPropertyItem *rna_enum_attribute_domain_itemf(ID *id,
     }
 
     if (domain_item->value == ATTR_DOMAIN_POINT && id_type == ID_ME) {
-      RNA_enum_item_add(&item, &totitem, &mesh_vertex_domain_item);
+      api_enum_item_add(&item, &totitem, &mesh_vertex_domain_item);
     }
     else {
-      RNA_enum_item_add(&item, &totitem, domain_item);
+      api_enum_item_add(&item, &totitem, domain_item);
     }
   }
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
 
   *r_free = true;
   return item;
 }
 
-static const EnumPropertyItem *rna_Attribute_domain_itemf(bContext *UNUSED(C),
-                                                          PointerRNA *ptr,
-                                                          PropertyRNA *UNUSED(prop),
-                                                          bool *r_free)
+static const EnumPropItem *api_Attribute_domain_itemf(Cxt *UNUSED(C),
+                                                      ApiPtr *ptr,
+                                                      ApiProp *UNUSED(prop),
+                                                      bool *r_free)
 {
-  return rna_enum_attribute_domain_itemf(ptr->owner_id, true, r_free);
+  return api_enum_attribute_domain_itemf(ptr->owner_id, true, r_free);
 }
 
-static int rna_Attribute_domain_get(PointerRNA *ptr)
+static int api_Attribute_domain_get(ApiPtr *ptr)
 {
-  return BKE_id_attribute_domain(ptr->owner_id, ptr->data);
+  return dune_id_attribute_domain(ptr->owner_id, ptr->data);
 }
 
-static void rna_Attribute_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Attribute_data_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
 
-  int length = BKE_id_attribute_data_length(id, layer);
+  int length = dune_id_attribute_data_length(id, layer);
   size_t struct_size;
 
   switch (layer->type) {
     case CD_PROP_FLOAT:
-      struct_size = sizeof(MFloatProperty);
+      struct_size = sizeof(MFloatProp);
       break;
     case CD_PROP_INT32:
-      struct_size = sizeof(MIntProperty);
+      struct_size = sizeof(MIntProp);
       break;
     case CD_PROP_FLOAT3:
       struct_size = sizeof(float[3]);
@@ -246,36 +246,36 @@ static void rna_Attribute_data_begin(CollectionPropertyIterator *iter, PointerRN
       break;
   }
 
-  rna_iterator_array_begin(iter, layer->data, struct_size, length, 0, NULL);
+  api_iter_array_begin(iter, layer->data, struct_size, length, 0, NULL);
 }
 
-static int rna_Attribute_data_length(PointerRNA *ptr)
+static int api_Attribute_data_length(ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  return BKE_id_attribute_data_length(id, layer);
+  return dune_id_attribute_data_length(id, layer);
 }
 
-static void rna_Attribute_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Attribute_update_data(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   /* cheating way for importers to avoid slow updates */
   if (id->us > 0) {
-    DEG_id_tag_update(id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+    graph_id_tag_update(id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, id);
   }
 }
 
 /* Color Attribute */
 
-static void rna_ByteColorAttributeValue_color_get(PointerRNA *ptr, float *values)
+static void api_ByteColorAttributeValue_color_get(ApiPtr *ptr, float *values)
 {
   MLoopCol *mlcol = (MLoopCol *)ptr->data;
   srgb_to_linearrgb_uchar4(values, &mlcol->r);
 }
 
-static void rna_ByteColorAttributeValue_color_set(PointerRNA *ptr, const float *values)
+static void api_ByteColorAttributeValue_color_set(ApiPtr *ptr, const float *values)
 {
   MLoopCol *mlcol = (MLoopCol *)ptr->data;
   linearrgb_to_srgb_uchar4(&mlcol->r, values);
@@ -283,13 +283,13 @@ static void rna_ByteColorAttributeValue_color_set(PointerRNA *ptr, const float *
 
 /* Int8 Attribute. */
 
-static int rna_ByteIntAttributeValue_get(PointerRNA *ptr)
+static int api_ByteIntAttributeValue_get(ApiPtr *ptr)
 {
   int8_t *value = (int8_t *)ptr->data;
   return (int)(*value);
 }
 
-static void rna_ByteIntAttributeValue_set(PointerRNA *ptr, const int new_value)
+static void api_ByteIntAttributeValue_set(ApiPtr *ptr, const int new_value)
 {
   int8_t *value = (int8_t *)ptr->data;
   if (new_value > INT8_MAX) {
@@ -305,29 +305,29 @@ static void rna_ByteIntAttributeValue_set(PointerRNA *ptr, const int new_value)
 
 /* Attribute Group */
 
-static PointerRNA rna_AttributeGroup_new(
-    ID *id, ReportList *reports, const char *name, const int type, const int domain)
+static ApiPtr api_AttributeGroup_new(
+    Id *id, ReportList *reports, const char *name, const int type, const int domain)
 {
-  CustomDataLayer *layer = BKE_id_attribute_new(id, name, type, domain, reports);
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  CustomDataLayer *layer = dune_id_attribute_new(id, name, type, domain, reports);
+  graph_id_tag_update(id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 
-  PointerRNA ptr;
-  RNA_pointer_create(id, &RNA_Attribute, layer, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(id, &ApiAttribute, layer, &ptr);
   return ptr;
 }
 
-static void rna_AttributeGroup_remove(ID *id, ReportList *reports, PointerRNA *attribute_ptr)
+static void api_AttributeGroup_remove(Id *id, ReportList *reports, ApiPtr *attribute_ptr)
 {
   CustomDataLayer *layer = (CustomDataLayer *)attribute_ptr->data;
-  BKE_id_attribute_remove(id, layer, reports);
-  RNA_POINTER_INVALIDATE(attribute_ptr);
+  dune_id_attribute_remove(id, layer, reports);
+  API_PTR_INVALIDATE(attribute_ptr);
 
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static int rna_Attributes_layer_skip(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_Attributes_layer_skip(CollectionPropIter *UNUSED(iter), void *data)
 {
   CustomDataLayer *layer = (CustomDataLayer *)data;
   return !(CD_TYPE_AS_MASK(layer->type) & CD_MASK_PROP_ALL);
@@ -335,516 +335,516 @@ static int rna_Attributes_layer_skip(CollectionPropertyIterator *UNUSED(iter), v
 
 /* Attributes are spread over multiple domains in separate CustomData, we use repeated
  * array iterators to loop over all. */
-static void rna_AttributeGroup_next_domain(ID *id,
-                                           CollectionPropertyIterator *iter,
-                                           int(skip)(CollectionPropertyIterator *iter, void *data))
+static void api_AttributeGroup_next_domain(Id *id,
+                                           CollectionPropIter *iter,
+                                           int(skip)(CollectionPropIter *iter, void *data))
 {
   do {
     CustomDataLayer *prev_layers = (iter->internal.array.endptr == NULL) ?
                                        NULL :
                                        (CustomDataLayer *)iter->internal.array.endptr -
                                            iter->internal.array.length;
-    CustomData *customdata = BKE_id_attributes_iterator_next_domain(id, prev_layers);
+    CustomData *customdata = dune_id_attributes_iter_next_domain(id, prev_layers);
     if (customdata == NULL) {
       return;
     }
-    rna_iterator_array_begin(
+    api_iter_array_begin(
         iter, customdata->layers, sizeof(CustomDataLayer), customdata->totlayer, false, skip);
   } while (!iter->valid);
 }
 
-void rna_AttributeGroup_iterator_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+void api_AttributeGroup_iter_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   memset(&iter->internal.array, 0, sizeof(iter->internal.array));
-  rna_AttributeGroup_next_domain(ptr->owner_id, iter, rna_Attributes_layer_skip);
+  api_AttributeGroup_next_domain(ptr->owner_id, iter, api_Attributes_layer_skip);
 }
 
-void rna_AttributeGroup_iterator_next(CollectionPropertyIterator *iter)
+void api_AttributeGroup_iter_next(CollectionPropIter *iter)
 {
-  rna_iterator_array_next(iter);
+  api_iter_array_next(iter);
 
   if (!iter->valid) {
-    ID *id = iter->parent.owner_id;
-    rna_AttributeGroup_next_domain(id, iter, rna_Attributes_layer_skip);
+    Id *id = iter->parent.owner_id;
+    api_AttributeGroup_next_domain(id, iter, api_Attributes_layer_skip);
   }
 }
 
-PointerRNA rna_AttributeGroup_iterator_get(CollectionPropertyIterator *iter)
+ApiPtr api_AttributeGroup_iter_get(CollectionPropIter *iter)
 {
   /* refine to the proper type */
-  CustomDataLayer *layer = rna_iterator_array_get(iter);
-  StructRNA *type = srna_by_custom_data_layer_type(layer->type);
+  CustomDataLayer *layer = api_iter_array_get(iter);
+  ApiStruct *type = sapi_by_custom_data_layer_type(layer->type);
   if (type == NULL) {
-    return PointerRNA_NULL;
+    return ApiPtr_NULL;
   }
-  return rna_pointer_inherit_refine(&iter->parent, type, layer);
+  return api_ptr_inherit_refine(&iter->parent, type, layer);
 }
 
-int rna_AttributeGroup_length(PointerRNA *ptr)
+int api_AttributeGroup_length(ApiPtr *ptr)
 {
-  return BKE_id_attributes_length(ptr->owner_id, CD_MASK_PROP_ALL);
+  return dunr_id_attributes_length(ptr->owner_id, CD_MASK_PROP_ALL);
 }
 
-static int rna_AttributeGroup_active_index_get(PointerRNA *ptr)
+static int api_AttributeGroup_active_index_get(ApiPtr *ptr)
 {
-  return *BKE_id_attributes_active_index_p(ptr->owner_id);
+  return *dune_id_attributes_active_index_p(ptr->owner_id);
 }
 
-static PointerRNA rna_AttributeGroup_active_get(PointerRNA *ptr)
+static ApiPtr api_AttributeGroup_active_get(ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
-  CustomDataLayer *layer = BKE_id_attributes_active_get(id);
+  Id *id = ptr->owner_id;
+  CustomDataLayer *layer = dune_id_attributes_active_get(id);
 
-  PointerRNA attribute_ptr;
-  RNA_pointer_create(id, &RNA_Attribute, layer, &attribute_ptr);
+  ApiPtr attribute_ptr;
+  api_ptr_create(id, &ApiAttribute, layer, &attribute_ptr);
   return attribute_ptr;
 }
 
-static void rna_AttributeGroup_active_set(PointerRNA *ptr,
-                                          PointerRNA attribute_ptr,
+static void api_AttributeGroup_active_set(ApiPtr *ptr,
+                                          ApiPtr attribute_ptr,
                                           ReportList *UNUSED(reports))
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   CustomDataLayer *layer = attribute_ptr.data;
-  BKE_id_attributes_active_set(id, layer);
+  dune_id_attributes_active_set(id, layer);
 }
 
-static void rna_AttributeGroup_active_index_set(PointerRNA *ptr, int value)
+static void api_AttributeGroup_active_index_set(ApiPtr *ptr, int value)
 {
-  *BKE_id_attributes_active_index_p(ptr->owner_id) = value;
+  *dune_id_attributes_active_index_p(ptr->owner_id) = value;
 }
 
-static void rna_AttributeGroup_active_index_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void api_AttributeGroup_active_index_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax)
 {
   *min = 0;
-  *max = BKE_id_attributes_length(ptr->owner_id, CD_MASK_PROP_ALL);
+  *max = dune_id_attributes_length(ptr->owner_id, CD_MASK_PROP_ALL);
 
   *softmin = *min;
   *softmax = *max;
 }
 
-static void rna_AttributeGroup_update_active(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_AttributeGroup_update_active(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_Attribute_update_data(bmain, scene, ptr);
+  api_Attribute_update_data(main, scene, ptr);
 }
 
 #else
 
-static void rna_def_attribute_float(BlenderRNA *brna)
+static void api_def_attribute_float(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "FloatAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "Float Attribute", "Geometry attribute with floating-point values");
+  sapi = api_def_struct(dapi, "FloatAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "Float Attribute", "Geometry attribute with floating-point values");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "FloatAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "FloatAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "FloatAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MFloatProperty");
-  RNA_def_struct_ui_text(
-      srna, "Float Attribute Value", "Floating-point value in geometry attribute");
-  prop = RNA_def_property(srna, "value", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "f");
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  sapi = api_def_struct(dapi, "FloatAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MFloatProp");
+  api_def_struct_ui_text(
+      sapi, "Float Attribute Value", "Floating-point value in geometry attribute");
+  prop = api_def_prop(sapi, "value", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "f");
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_float_vector(BlenderRNA *brna)
+static void api_def_attribute_float_vector(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* Float Vector Attribute */
-  srna = RNA_def_struct(brna, "FloatVectorAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(
-      srna, "Float Vector Attribute", "Vector geometry attribute, with floating-point values");
+  sapi = api_def_struct(dapi, "FloatVectorAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(
+      sapi, "Float Vector Attribute", "Vector geometry attribute, with floating-point values");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "FloatVectorAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "FloatVectorAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
   /* Float Vector Attribute Value */
-  srna = RNA_def_struct(brna, "FloatVectorAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "vec3f");
-  RNA_def_struct_ui_text(
-      srna, "Float Vector Attribute Value", "Vector value in geometry attribute");
+  sapi = api_def_struct(dapi, "FloatVectorAttributeValue", NULL);
+  api_def_struct_stype(sapi, "vec3f");
+  api_def_struct_ui_text(
+      sapi, "Float Vector Attribute Value", "Vector value in geometry attribute");
 
-  prop = RNA_def_property(srna, "vector", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_ui_text(prop, "Vector", "3D vector");
-  RNA_def_property_float_sdna(prop, NULL, "x");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  prop = api_def_prop(sapi, "vector", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_ui_text(prop, "Vector", "3D vector");
+  api_def_prop_float_stype(prop, NULL, "x");
+  api_def_prop_array(prop, 3);
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_float_color(BlenderRNA *brna)
+static void api_def_attribute_float_color(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* Float Color Attribute */
-  srna = RNA_def_struct(brna, "FloatColorAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(
-      srna, "Float Color Attribute", "Color geometry attribute, with floating-point values");
+  sapi = api_def_struct(dapi, "FloatColorAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(
+      sapi, "Float Color Attribute", "Color geometry attribute, with floating-point values");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "FloatColorAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "FloatColorAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "apo_iter_array_end",
+                              "api",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
   /* Float Color Attribute Value */
-  srna = RNA_def_struct(brna, "FloatColorAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MPropCol");
-  RNA_def_struct_ui_text(srna, "Float Color Attribute Value", "Color value in geometry attribute");
+  sapi = api_def_struct(dapi, "FloatColorAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MPropCol");
+  api_def_struct_ui_text(sapi, "Float Color Attribute Value", "Color value in geometry attribute");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_ui_text(prop, "Color", "RGBA color in scene linear color space");
-  RNA_def_property_float_sdna(prop, NULL, "color");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_ui_text(prop, "Color", "RGBA color in scene linear color space");
+  api_def_prop_float_stype(prop, NULL, "color");
+  api_def_prop_array(prop, 4);
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_byte_color(BlenderRNA *brna)
+static void api_def_attribute_byte_color(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* Byte Color Attribute */
-  srna = RNA_def_struct(brna, "ByteColorAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(
-      srna, "Byte Color Attribute", "Color geometry attribute, with 8-bit values");
+  sapi = api_def_struct(dapi, "ByteColorAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(
+      sapi, "Byte Color Attribute", "Color geometry attribute, with 8-bit values");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ByteColorAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "ByteColorAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
   /* Byte Color Attribute Value */
-  srna = RNA_def_struct(brna, "ByteColorAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MLoopCol");
-  RNA_def_struct_ui_text(srna, "Byte Color Attribute Value", "Color value in geometry attribute");
+  sapi = api_def_struct(dapi, "ByteColorAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MLoopCol");
+  api_def_struct_ui_text(sapi, "Byte Color Attribute Value", "Color value in geometry attribute");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_float_funcs(prop,
-                               "rna_ByteColorAttributeValue_color_get",
-                               "rna_ByteColorAttributeValue_color_set",
-                               NULL);
-  RNA_def_property_ui_text(prop, "Color", "RGBA color in scene linear color space");
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_array(prop, 4);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_float_fns(prop,
+                         "api_ByteColorAttributeValue_color_get",
+                         "api_ByteColorAttributeValue_color_set",
+                         NULL);
+  api_def_prop_ui_text(prop, "Color", "RGBA color in scene linear color space");
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_int(BlenderRNA *brna)
+static void api_def_attribute_int(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "IntAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "Int Attribute", "Integer geometry attribute");
+  sapi = api_def_struct(dapi, "IntAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "Int Attribute", "Integer geometry attribute");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "IntAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "IntAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "IntAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MIntProperty");
-  RNA_def_struct_ui_text(srna, "Integer Attribute Value", "Integer value in geometry attribute");
-  prop = RNA_def_property(srna, "value", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "i");
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  sapi = api_def_struct(dapi, "IntAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MIntProp");
+  api_def_struct_ui_text(sapi, "Integer Attribute Value", "Integer value in geometry attribute");
+  prop = api_def_prop(sapi, "value", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "i");
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_string(BlenderRNA *brna)
+static void api_def_attribute_string(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "StringAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "String Attribute", "String geometry attribute");
+  sapi = api_def_struct(dapi, "StringAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "String Attribute", "String geometry attribute");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "StringAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "StringAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "StringAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MStringProperty");
-  RNA_def_struct_ui_text(srna, "String Attribute Value", "String value in geometry attribute");
-  prop = RNA_def_property(srna, "value", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "s");
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  sapi = api_def_struct(dapi, "StringAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MStringProp");
+  api_def_struct_ui_text(sapi, "String Attribute Value", "String value in geometry attribute");
+  prop = api_def_prop(sapi, "value", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "s");
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute_bool(BlenderRNA *brna)
+static void api_def_attribute_bool(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "BoolAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "Bool Attribute", "Bool geometry attribute");
+  sapi = api_def_struct(dapi, "BoolAttribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "Bool Attribute", "Bool geometry attribute");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "BoolAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "BoolAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "BoolAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MBoolProperty");
-  RNA_def_struct_ui_text(srna, "Bool Attribute Value", "Bool value in geometry attribute");
-  prop = RNA_def_property(srna, "value", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "b", 0x01);
+  sapi = api_def_struct(dapi, "BoolAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MBoolProp");
+  api_def_struct_ui_text(sapi, "Bool Attribute Value", "Bool value in geometry attribute");
+  prop = api_def_prop(sapi, "value", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "b", 0x01);
 }
 
-static void rna_def_attribute_int8(BlenderRNA *brna)
+static void api_def_attribute_int8(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ByteIntAttribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "8-bit Int Attribute", "8-bit int geometry attribute");
+  sapi = api_def_struct(dapi, "ByteIntAttribute", "Attribute");
+  api_def_struct_style(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "8-bit Int Attribute", "8-bit int geometry attribute");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ByteIntAttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "ByteIntAttributeValue");
+  api_def_prop_collection_fns(prop,
+                              "api_Attribute_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Attribute_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "ByteIntAttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "MInt8Property");
-  RNA_def_struct_ui_text(
-      srna, "8-bit Integer Attribute Value", "8-bit value in geometry attribute");
-  prop = RNA_def_property(srna, "value", PROP_INT, PROP_NONE);
-  RNA_def_property_int_funcs(
-      prop, "rna_ByteIntAttributeValue_get", "rna_ByteIntAttributeValue_set", NULL);
+  sapi = api_def_struct(dapi, "ByteIntAttributeValue", NULL);
+  api_def_struct_stype(sapi, "MInt8Prop");
+  api_def_struct_ui_text(
+      sapi, "8-bit Integer Attribute Value", "8-bit value in geometry attribute");
+  prop = api_def_prop(sapi, "value", PROP_INT, PROP_NONE);
+  api_def_prop_int_fns(
+      prop, "api_ByteIntAttributeValue_get", "api_ByteIntAttributeValue_set", NULL);
 }
 
-static void rna_def_attribute_float2(BlenderRNA *brna)
+static void api_def_attribute_float2(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* Float2 Attribute */
-  srna = RNA_def_struct(brna, "Float2Attribute", "Attribute");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(
-      srna, "Float2 Attribute", "2D vector geometry attribute, with floating-point values");
+  sapi = api_def_struct(dapi, "Float2Attribute", "Attribute");
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(
+      sapi, "Float2 Attribute", "2D vector geometry attribute, with floating-point values");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Float2AttributeValue");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Attribute_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Attribute_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Float2AttributeValue");
+  api_def_prop_collection_fns(prop,
+                             "api_Attribute_data_begin",
+                             "api_iter_array_next",
+                             "api_iter_array_end",
+                             "api_iter_array_get",
+                             "api_Attribute_data_length",
+                             NULL,
+                             NULL,
+                             NULL);
 
   /* Float2 Attribute Value */
-  srna = RNA_def_struct(brna, "Float2AttributeValue", NULL);
-  RNA_def_struct_sdna(srna, "vec2f");
-  RNA_def_struct_ui_text(srna, "Float2 Attribute Value", "2D Vector value in geometry attribute");
+  sapi = api_def_struct(dapi, "Float2AttributeValue", NULL);
+  api_def_struct_stype(sapi, "vec2f");
+  api_def_struct_ui_text(sapi, "Float2 Attribute Value", "2D Vector value in geometry attribute");
 
-  prop = RNA_def_property(srna, "vector", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_ui_text(prop, "Vector", "2D vector");
-  RNA_def_property_float_sdna(prop, NULL, "x");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_update(prop, 0, "rna_Attribute_update_data");
+  prop = api_def_prop(sapi, "vector", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_ui_text(prop, "Vector", "2D vector");
+  api_def_prop_float_stype(prop, NULL, "x");
+  api_def_prop_array(prop, 2);
+  api_def_prop_update(prop, 0, "api_Attribute_update_data");
 }
 
-static void rna_def_attribute(BlenderRNA *brna)
+static void api_def_attribute(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  srna = RNA_def_struct(brna, "Attribute", NULL);
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_ui_text(srna, "Attribute", "Geometry attribute");
-  RNA_def_struct_path_func(srna, "rna_Attribute_path");
-  RNA_def_struct_refine_func(srna, "rna_Attribute_refine");
+  sapi = api_def_struct(dapo, "Attribute", NULL);
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_ui_text(sapi, "Attribute", "Geometry attribute");
+  api_def_struct_path_fn(sapi, "api_Attribute_path");
+  api_def_struct_refine_fn(sapi, "api_Attribute_refine");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Attribute_name_set");
-  RNA_def_property_editable_func(prop, "rna_Attribute_name_editable");
-  RNA_def_property_ui_text(prop, "Name", "Name of the Attribute");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_Attribute_name_set");
+  api_def_prop_editable_fn(prop, "api_Attribute_name_editable");
+  api_def_prop_ui_text(prop, "Name", "Name of the Attribute");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "data_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_attribute_type_items);
-  RNA_def_property_enum_funcs(prop, "rna_Attribute_type_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Data Type", "Type of data stored in attribute");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "data_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_attribute_type_items);
+  api_def_prop_enum_fns(prop, "api_Attribute_type_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Data Type", "Type of data stored in attribute");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "domain", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_attribute_domain_items);
-  RNA_def_property_enum_funcs(
-      prop, "rna_Attribute_domain_get", NULL, "rna_Attribute_domain_itemf");
-  RNA_def_property_ui_text(prop, "Domain", "Domain of the Attribute");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "domain", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_attribute_domain_items);
+  api_def_prop_enum_fns(
+      prop, "apo_Attribute_domain_get", NULL, "api_Attribute_domain_itemf");
+  api_def_prop_ui_text(prop, "Domain", "Domain of the Attribute");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* types */
-  rna_def_attribute_float(brna);
-  rna_def_attribute_float_vector(brna);
-  rna_def_attribute_float_color(brna);
-  rna_def_attribute_byte_color(brna);
-  rna_def_attribute_int(brna);
-  rna_def_attribute_string(brna);
-  rna_def_attribute_bool(brna);
-  rna_def_attribute_float2(brna);
-  rna_def_attribute_int8(brna);
+  api_def_attribute_float(dapi);
+  api_def_attribute_float_vector(dapi);
+  api_def_attribute_float_color(dapi);
+  api_def_attribute_byte_color(dapi);
+  api_def_attribute_int(dapi);
+  api_def_attribute_string(dapi);
+  api_def_attribute_bool(dapi);
+  api_def_attribute_float2(dapi);
+  api_def_attribute_int8(dapi);
 }
 
 /* Mesh/PointCloud/Hair.attributes */
-static void rna_def_attribute_group(BlenderRNA *brna)
+static void api_def_attribute_group(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "AttributeGroup", NULL);
-  RNA_def_struct_ui_text(srna, "Attribute Group", "Group of geometry attributes");
-  RNA_def_struct_sdna(srna, "ID");
+  sapi = api_def_struct(dapi, "AttributeGroup", NULL);
+  api_def_struct_ui_text(sapi, "Attribute Group", "Group of geometry attributes");
+  api_def_struct_stype(sapi, "Id");
 
   /* API */
-  func = RNA_def_function(srna, "new", "rna_AttributeGroup_new");
-  RNA_def_function_ui_description(func, "Add an attribute");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "name", "Attribute", 0, "", "Attribute name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(
-      func, "type", rna_enum_attribute_type_items, CD_PROP_FLOAT, "Type", "Attribute type");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func,
+  fn = api_def_fn(sapi, "new", "api_AttributeGroup_new");
+  api_def_fn_ui_description(fn, "Add an attribute");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "name", "Attribute", 0, "", "Attribute name");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(
+      fn, "type", api_enum_attribute_type_items, CD_PROP_FLOAT, "Type", "Attribute type");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn,
                       "domain",
-                      rna_enum_attribute_domain_items,
+                      api_enum_attribute_domain_items,
                       ATTR_DOMAIN_POINT,
                       "Domain",
                       "Type of element that attribute is stored on");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "attribute", "Attribute", "", "New geometry attribute");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  apo_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "attribute", "Attribute", "", "New geometry attribute");
+  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_AttributeGroup_remove");
-  RNA_def_function_ui_description(func, "Remove an attribute");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "attribute", "Attribute", "", "Geometry Attribute");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_AttributeGroup_remove");
+  api_def_fn_ui_description(fn, "Remove an attribute");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "attribute", "Attribute", "", "Geometry Attribute");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* Active */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Attribute");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_AttributeGroup_active_get", "rna_AttributeGroup_active_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Attribute", "Active attribute");
-  RNA_def_property_update(prop, 0, "rna_AttributeGroup_update_active");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Attribute");
+  api_def_prop_ptr_fns(
+      prop, "api_AttributeGroup_active_get", "api_AttributeGroup_active_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Attribute", "Active attribute");
+  api_def_prop_update(prop, 0, "api_AttributeGroup_update_active");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_AttributeGroup_active_index_get",
-                             "rna_AttributeGroup_active_index_set",
-                             "rna_AttributeGroup_active_index_range");
-  RNA_def_property_update(prop, 0, "rna_AttributeGroup_update_active");
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_AttributeGroup_active_index_get",
+                       "api_AttributeGroup_active_index_set",
+                       "api_AttributeGroup_active_index_range");
+  api_def_prop_update(prop, 0, "api_AttributeGroup_update_active");
 }
 
-void rna_def_attributes_common(StructRNA *srna)
+void api_def_attributes_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* Attributes */
-  prop = RNA_def_property(srna, "attributes", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_AttributeGroup_iterator_begin",
-                                    "rna_AttributeGroup_iterator_next",
-                                    "rna_iterator_array_end",
-                                    "rna_AttributeGroup_iterator_get",
-                                    "rna_AttributeGroup_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "Attribute");
-  RNA_def_property_ui_text(prop, "Attributes", "Geometry attributes");
-  RNA_def_property_srna(prop, "AttributeGroup");
+  prop = api_def_prop(sapi, "attributes", PROP_COLLECTION, PROP_NONE);
+  apk_def_prop_collection_fns(prop,
+                              "api_AttributeGroup_iter_begin",
+                              "api_AttributeGroup_iter_next",
+                              "api_iter_array_end",
+                              "api_AttributeGroup_iter_get",
+                              "api_AttributeGroup_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "Attribute");
+  api_def_prop_ui_text(prop, "Attributes", "Geometry attributes");
+  api_def_prop_sapi(prop, "AttributeGroup");
 }
 
-void RNA_def_attribute(BlenderRNA *brna)
+void api_def_attribute(DuneApi *dapi)
 {
-  rna_def_attribute(brna);
-  rna_def_attribute_group(brna);
+  api_def_attribute(dapi);
+  api_def_attribute_group(dapi);
 }
 #endif
