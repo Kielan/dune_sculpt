@@ -2453,277 +2453,277 @@ static void api_def_brush(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* number values */
-  prop = RNA_def_property(srna, "size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_funcs(prop, NULL, "rna_Brush_set_size", NULL);
-  RNA_def_property_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
-  RNA_def_property_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
-  RNA_def_property_ui_text(prop, "Radius", "Radius of the brush in pixels");
-  RNA_def_property_update(prop, 0, "rna_Brush_size_update");
+  prop = api_def_prop(sapi, "size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_fns(prop, NULL, "rna_Brush_set_size", NULL);
+  api_def_prop_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
+  api_def_prop_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
+  api_def_prop_ui_text(prop, "Radius", "Radius of the brush in pixels");
+  api_def_prop_update(prop, 0, "rna_Brush_size_update");
 
-  prop = RNA_def_property(srna, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_funcs(prop, NULL, "rna_Brush_set_unprojected_radius", NULL);
-  RNA_def_property_range(prop, 0.001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001, 1, 1, -1);
-  RNA_def_property_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
-  RNA_def_property_update(prop, 0, "rna_Brush_size_update");
+  prop = api_def_prop(sapi, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_fns(prop, NULL, "rna_Brush_set_unprojected_radius", NULL);
+  api_def_prop_range(prop, 0.001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001, 1, 1, -1);
+  api_def_prop_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
+  api_def_prop_update(prop, 0, "rna_Brush_size_update");
 
-  prop = RNA_def_property(srna, "jitter", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "jitter");
-  RNA_def_property_range(prop, 0.0f, 1000.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 2.0f, 0.1, 4);
-  RNA_def_property_ui_text(prop, "Jitter", "Jitter the position of the brush while painting");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "jitter", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "jitter");
+  api_def_prop_range(prop, 0.0f, 1000.0f);
+  api_def_prop_ui_range(prop, 0.0f, 2.0f, 0.1, 4);
+  api_def_prop_ui_text(prop, "Jitter", "Jitter the position of the brush while painting");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "jitter_absolute", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "jitter_absolute");
-  RNA_def_property_range(prop, 0, 1000000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "jitter_absolute", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "jitter_absolute");
+  api_def_prop_range(prop, 0, 1000000);
+  api_def_prop_ui_text(
       prop, "Jitter", "Jitter the position of the brush in pixels while painting");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "spacing", PROP_INT, PROP_PERCENTAGE);
-  RNA_def_property_int_sdna(prop, NULL, "spacing");
-  RNA_def_property_range(prop, 1, 1000);
-  RNA_def_property_ui_range(prop, 1, 500, 5, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "spacing", PROP_INT, PROP_PERCENTAGE);
+  api_def_prop_int_stype(prop, NULL, "spacing");
+  api_def_prop_range(prop, 1, 1000);
+  api_def_prop_ui_range(prop, 1, 500, 5, -1);
+  api_def_prop_ui_text(
       prop, "Spacing", "Spacing between brush daubs as a percentage of brush diameter");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "grad_spacing", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "gradient_spacing");
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 10000, 5, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "grad_spacing", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "gradient_spacing");
+  api_def_prop_range(prop, 1, 10000);
+  api_def_prop_ui_range(prop, 1, 10000, 5, -1);
+  api_def_prop_ui_text(
       prop, "Gradient Spacing", "Spacing before brush gradient goes full circle");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "smooth_stroke_radius", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 10, 200);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "smooth_stroke_radius", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 10, 200);
+  api_def_prop_ui_text(
       prop, "Smooth Stroke Radius", "Minimum distance from last point before stroke continues");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "smooth_stroke_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.5, 0.99);
-  RNA_def_property_ui_text(prop, "Smooth Stroke Factor", "Higher values give a smoother stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "smooth_stroke_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.5, 0.99);
+  api_def_prop_ui_text(prop, "Smooth Stroke Factor", "Higher values give a smoother stroke");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "rate", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "rate");
-  RNA_def_property_range(prop, 0.0001f, 10000.0f);
-  RNA_def_property_ui_range(prop, 0.01f, 1.0f, 1, 3);
-  RNA_def_property_ui_text(prop, "Rate", "Interval between paints for Airbrush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "rate", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "rate");
+  api_def_prop_range(prop, 0.0001f, 10000.0f);
+  api_def_prop_ui_range(prop, 0.01f, 1.0f, 1, 3);
+  api_def_prop_ui_text(prop, "Rate", "Interval between paints for Airbrush");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "rgb");
-  RNA_def_property_ui_text(prop, "Color", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "rgb");
+  api_def_prop_ui_text(prop, "Color", "");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "secondary_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "secondary_rgb");
-  RNA_def_property_ui_text(prop, "Secondary Color", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "secondary_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "secondary_rgb");
+  api_def_prop_ui_text(prop, "Secondary Color", "");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Weight", "Vertex weight when brush is applied");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(prop, "Weight", "Vertex weight when brush is applied");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "alpha");
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "alpha");
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 
+  api_def_prop_ui_text(
       prop, "Strength", "How powerful the effect of the brush is when applied");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "flow", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "flow");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Flow", "Amount of paint that is applied per stroke sample");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "flow", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "flow");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  apu_def_prop_ui_text(prop, "Flow", "Amount of paint that is applied per stroke sample");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "wet_mix", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "wet_mix");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "wet_mix", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "wet_mix");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Wet Mix", "Amount of paint that is picked from the surface into the brush color");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "wet_persistence", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "wet_persistence");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "wet_persistence", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "wet_persistence");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop,
       "Wet Persistence",
       "Amount of wet paint that stays in the brush after applying paint to the surface");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "density", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "density");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "density", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "density");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Density", "Amount of random elements that are going to be affected by the brush");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "tip_scale_x", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "tip_scale_x");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Tip Scale X", "Scale of the brush tip in the X axis");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "tip_scale_x", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "tip_scale_x");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(prop, "Tip Scale X", "Scale of the brush tip in the X axis");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "use_hardness_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_HARDNESS_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure for Hardness", "Use pressure to modulate hardness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_hardness_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_HARDNESS_PRESSURE
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure for Hardness", "Use pressure to modulate hardness");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_hardness_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_HARDNESS_PRESSURE_INVERT);
-  RNA_def_property_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "invert_hardness_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_HARDNESS_PRESSURE_INVERT);
+  api_def_prop_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
+  api_def_prop_ui_text(
       prop, "Invert Pressure for Hardness", "Invert the modulation of pressure in hardness");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_flow_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_FLOW_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure for Flow", "Use pressure to modulate flow");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_flow_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_FLOW_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure for Flow", "Use pressure to modulate flow");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_flow_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_FLOW_PRESSURE_INVERT);
-  RNA_def_property_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "invert_flow_pressure", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_FLOW_PRESSURE_INVERT);
+  api_def_prop_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
+  api_def_prop_ui_text(
       prop, "Invert Pressure for Flow", "Invert the modulation of pressure in flow");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_wet_mix_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_WET_MIX_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure for Wet Mix", "Use pressure to modulate wet mix");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_wet_mix_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_WET_MIX_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure for Wet Mix", "Use pressure to modulate wet mix");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_wet_mix_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_WET_MIX_PRESSURE_INVERT);
-  RNA_def_property_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "invert_wet_mix_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_WET_MIX_PRESSURE_INVERT);
+  api_def_prop_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
+  api_def_prop_ui_text(
       prop, "Invert Pressure for Wet Mix", "Invert the modulation of pressure in wet mix");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_wet_persistence_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_WET_PERSISTENCE_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_wet_persistence_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_WET_PERSISTENCE_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(
       prop, "Use Pressure for Wet Persistence", "Use pressure to modulate wet persistence");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_wet_persistence_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "invert_wet_persistence_pressure", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "paint_flags", BRUSH_PAINT_WET_PERSISTENCE_PRESSURE_INVERT);
-  RNA_def_property_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
-  RNA_def_property_ui_text(prop,
-                           "Invert Pressure for Wet Persistence",
-                           "Invert the modulation of pressure in wet persistence");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
+  api_def_prop_ui_text(prop,
+                      "Invert Pressure for Wet Persistence",
+                      "Invert the modulation of pressure in wet persistence");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_density_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_DENSITY_PRESSURE);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure for Density", "Use pressure to modulate density");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "use_density_pressure", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_DENSITY_PRESSURE);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure for Density", "Use pressure to modulate density");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "invert_density_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "paint_flags", BRUSH_PAINT_DENSITY_PRESSURE_INVERT);
-  RNA_def_property_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "invert_density_pressure", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_DENSITY_PRESSURE_INVERT);
+  api_def_prop_ui_icon(prop, ICON_ARROW_LEFTRIGHT, 0);
+  api_def_prop_ui_text(
       prop, "Invert Pressure for Density", "Invert the modulation of pressure in density");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "dash_ratio", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "dash_ratio");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "dash_ratio", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "dash_ratio");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Dash Ratio", "Ratio of samples in a cycle that the brush is enabled");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "dash_samples", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "dash_samples");
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 10000, 5, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "dash_samples", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "dash_samples");
+  api_def_prop_range(prop, 1, 10000);
+  apo_def_prop_ui_range(prop, 1, 10000, 5, -1);
+  api_def_prop_ui_text(
       prop, "Dash Length", "Length of a dash cycle measured in stroke samples");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "plane_offset", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "plane_offset");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, -2.0f, 2.0f);
-  RNA_def_property_ui_range(prop, -0.5f, 0.5f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "plane_offset", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "plane_offset");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, -2.0f, 2.0f);
+  api_def_prop_ui_range(prop, -0.5f, 0.5f, 0.001, 3);
+  api_def_prop_ui_text(
       prop,
       "Plane Offset",
       "Adjust plane on which the brush acts towards or away from the object surface");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "rna_Brush_update");
 
-  prop = RNA_def_property(srna, "plane_trim", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "plane_trim");
-  RNA_def_property_range(prop, 0, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "plane_trim", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "plane_trim");
+  api_def_prop_range(prop, 0, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Plane Trim",
       "If a vertex is further away from offset plane than this, then it is not affected");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "height");
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_range(prop, 0, 1.0f);
-  RNA_def_property_ui_range(prop, 0, 0.2f, 1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "height", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "height");
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_range(prop, 0, 1.0f);
+  api_def_prop_ui_range(prop, 0, 0.2f, 1, 3);
+  api_def_prop_ui_text(
       prop, "Brush Height", "Affectable height of brush (layer height for layer tool, i.e.)");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = RNA_def_property(srna, "texture_sample_bias", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "texture_sample_bias");
   RNA_def_property_float_default(prop, 0);
   RNA_def_property_range(prop, -1, 1);
   RNA_def_property_ui_text(prop, "Texture Sample Bias", "Value added to texture samples");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  RNA_def_property_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "normal_weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "normal_weight");
-  RNA_def_property_float_default(prop, 0);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "normal_weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "normal_weight");
+  api_def_prop_float_default(prop, 0);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Normal Weight", "How much grab will pull vertices out of surface during a grab");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "elastic_deform_volume_preservation", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "elastic_deform_volume_preservation");
-  RNA_def_property_range(prop, 0.0f, 0.9f);
-  RNA_def_property_ui_range(prop, 0.0f, 0.9f, 0.01f, 3);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "elastic_deform_volume_preservation", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "elastic_deform_volume_preservation");
+  api_def_prop_range(prop, 0.0f, 0.9f);
+  api_def_prop_ui_range(prop, 0.0f, 0.9f, 0.01f, 3);
+  api_def_prop_ui_text(prop,
                            "Volume Preservation",
                            "Poisson ratio for elastic deformation. Higher values preserve volume "
                            "more, but also lead to more bulging");
