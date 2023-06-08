@@ -1,108 +1,108 @@
 #include <stdlib.h>
 
-#include "DNA_camera_types.h"
+#include "types_camera.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_camera.h"
-#  include "BKE_object.h"
+#  include "dune_camera.h"
+#  include "dune_object.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "SEQ_relations.h"
+#  include "seq_relations.h"
 
-static float rna_Camera_angle_get(PointerRNA *ptr)
+static float api_Camera_angle_get(ApiPtr *ptr)
 {
   Camera *cam = (Camera *)ptr->owner_id;
-  float sensor = BKE_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
+  float sensor = dune_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
   return focallength_to_fov(cam->lens, sensor);
 }
 
-static void rna_Camera_angle_set(PointerRNA *ptr, float value)
+static void api_Camera_angle_set(ApiPtr *ptr, float value)
 {
   Camera *cam = (Camera *)ptr->owner_id;
-  float sensor = BKE_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
+  float sensor = dune_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
   cam->lens = fov_to_focallength(value, sensor);
 }
 
-static float rna_Camera_angle_x_get(PointerRNA *ptr)
+static float api_Camera_angle_x_get(ApiPtr *ptr)
 {
   Camera *cam = (Camera *)ptr->owner_id;
   return focallength_to_fov(cam->lens, cam->sensor_x);
 }
 
-static void rna_Camera_angle_x_set(PointerRNA *ptr, float value)
+static void api_Camera_angle_x_set(ApiPtr *ptr, float value)
 {
   Camera *cam = (Camera *)ptr->owner_id;
   cam->lens = fov_to_focallength(value, cam->sensor_x);
 }
 
-static float rna_Camera_angle_y_get(PointerRNA *ptr)
+static float api_Camera_angle_y_get(ApiPtr *ptr)
 {
   Camera *cam = (Camera *)ptr->owner_id;
   return focallength_to_fov(cam->lens, cam->sensor_y);
 }
 
-static void rna_Camera_angle_y_set(PointerRNA *ptr, float value)
+static void api_Camera_angle_y_set(ApiPtr *ptr, float value)
 {
   Camera *cam = (Camera *)ptr->owner_id;
   cam->lens = fov_to_focallength(value, cam->sensor_y);
 }
 
-static void rna_Camera_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Camera_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Camera *camera = (Camera *)ptr->owner_id;
 
-  DEG_id_tag_update(&camera->id, 0);
+  graph_id_tag_update(&camera->id, 0);
 }
 
-static void rna_Camera_dependency_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_Camera_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Camera *camera = (Camera *)ptr->owner_id;
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&camera->id, 0);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&camera->id, 0);
 }
 
-static CameraBGImage *rna_Camera_background_images_new(Camera *cam)
+static CameraBGImage *api_Camera_background_images_new(Camera *cam)
 {
-  CameraBGImage *bgpic = BKE_camera_background_image_new(cam);
+  CameraBGImage *bgpic = dune_camera_background_image_new(cam);
 
-  WM_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
+  wm_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
 
   return bgpic;
 }
 
-static void rna_Camera_background_images_remove(Camera *cam,
+static void api_Camera_background_images_remove(Camera *cam,
                                                 ReportList *reports,
-                                                PointerRNA *bgpic_ptr)
+                                                ApiPtr *bgpic_ptr)
 {
   CameraBGImage *bgpic = bgpic_ptr->data;
-  if (BLI_findindex(&cam->bg_images, bgpic) == -1) {
-    BKE_report(reports, RPT_ERROR, "Background image cannot be removed");
+  if (lib_findindex(&cam->bg_images, bgpic) == -1) {
+    dune_report(reports, RPT_ERROR, "Background image cannot be removed");
   }
 
-  BKE_camera_background_image_remove(cam, bgpic);
-  RNA_POINTER_INVALIDATE(bgpic_ptr);
+  dune_camera_background_image_remove(cam, bgpic);
+  API_PTR_INVALIDATE(bgpic_ptr);
 
-  WM_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
+  wm_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
 }
 
-static void rna_Camera_background_images_clear(Camera *cam)
+static void api_Camera_background_images_clear(Camera *cam)
 {
-  BKE_camera_background_image_clear(cam);
+  dune_camera_background_image_clear(cam);
 
-  WM_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
+  wm_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
 }
 
 static void rna_Camera_dof_update(Main *bmain, Scene *scene, PointerRNA *UNUSED(ptr))
