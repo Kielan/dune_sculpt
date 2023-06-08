@@ -145,7 +145,7 @@ static void rna_CameraDOFSettings_aperture_blades_set(PointerRNA *ptr, const int
 
 #else
 
-static void rna_def_camera_background_image(BlenderRNA *brna)
+static void api_def_camera_background_image(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
