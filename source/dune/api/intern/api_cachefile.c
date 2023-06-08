@@ -42,8 +42,8 @@ static void api_CacheFileLayer_update(Main *UNUSED(main), Scene *UNUSED(scene), 
 
 static void api_CacheFile_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_CacheFile_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_CacheFile_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
 static void api_CacheFile_object_paths_begin(CollectionPropIter *iter, ApiPtr *ptr)
@@ -52,7 +52,7 @@ static void api_CacheFile_object_paths_begin(CollectionPropIter *iter, ApiPtr *p
   api_iter_list_begin(iter, &cache_file->object_paths, NULL);
 }
 
-static PointerRNA rna_CacheFile_active_layer_get(ApiPtr *ptr)
+static ApoPtr api_CacheFile_active_layer_get(ApiPtr *ptr)
 {
   CacheFile *cache_file = (CacheFile *)ptr->owner_id;
   return api_ptr_inherit_refine(
@@ -223,7 +223,7 @@ static void api_def_cachefile_layers(DuneApi *dapi, ApiProp *cprop)
 static void api_def_cachefile(DuneApi *dapi)
 {
   ApiStruct *sapi = api_def_struct(dapi, "CacheFile", "ID");
-  api_def_struct_sdna(sapi, "CacheFile");
+  api_def_struct_stype(sapi, "CacheFile");
   api_def_struct_ui_text(sapi, "CacheFile", "");
   api_def_struct_ui_icon(sapi, ICON_FILE);
 
@@ -329,21 +329,21 @@ static void api_def_cachefile(DuneApi *dapi)
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "CacheObjectPath");
-  RNA_def_property_srna(prop, "CacheObjectPaths");
-  RNA_def_property_ui_text(
+  api_def_prop_struct_type(prop, "CacheObjectPath");
+  api_def_prop_sapi(prop, "CacheObjectPaths");
+  api_def_prop_ui_text(
       prop, "Object Paths", "Paths of the objects inside the Alembic archive");
 
   /* ----------------- Alembic Velocity Attribute ----------------- */
 
-  prop = RNA_def_property(srna, "velocity_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop,
-                           "Velocity Attribute",
-                           "Name of the Alembic attribute used for generating motion blur data");
-  RNA_def_property_update(prop, 0, "rna_CacheFile_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "velocity_name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop,
+                      "Velocity Attribute",
+                      "Name of the Alembic attribute used for generating motion blur data");
+  api_def_prop_update(prop, 0, "api_CacheFile_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  static const EnumPropertyItem velocity_unit_items[] = {
+  static const EnumPropItem velocity_unit_items[] = {
       {CACHEFILE_VELOCITY_UNIT_SECOND, "SECOND", 0, "Second", ""},
       {CACHEFILE_VELOCITY_UNIT_FRAME, "FRAME", 0, "Frame", ""},
       {0, NULL, 0, NULL, NULL},
@@ -357,38 +357,38 @@ static void api_def_cachefile(DuneApi *dapi)
       "Velocity Unit",
       "Define how the velocity vectors are interpreted with regard to time, 'frame' means "
       "the delta time is 1 frame, 'second' means the delta time is 1 / FPS");
-  RNA_def_property_update(prop, 0, "rna_CacheFile_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_CacheFile_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
   /* ----------------- Alembic Layers ----------------- */
 
-  prop = RNA_def_property(srna, "layers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "layers", NULL);
-  RNA_def_property_struct_type(prop, "CacheFileLayer");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Cache Layers", "Layers of the cache");
-  rna_def_cachefile_layers(brna, prop);
+  prop = api_def_prop(sapi, "layers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "layers", NULL);
+  api_def_prop_struct_type(prop, "CacheFileLayer");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Cache Layers", "Layers of the cache");
+  api_def_cachefile_layers(dapi, prop);
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "active_layer");
-  RNA_def_property_int_funcs(prop,
-                             "rna_CacheFile_active_layer_index_get",
-                             "rna_CacheFile_active_layer_index_set",
-                             "rna_CacheFile_active_layer_index_range");
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "active_layer");
+  api_def_prop_int_fns(prop,
+                       "api_CacheFile_active_layer_index_get",
+                       "api_CacheFile_active_layer_index_set",
+                       "api_CacheFile_active_layer_index_range");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  rna_def_cachefile_object_paths(brna, prop);
+  api_def_cachefile_object_paths(dapi, prop);
 
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 }
 
-void RNA_def_cachefile(BlenderRNA *brna)
+void api_def_cachefile(DuneApi *dapi)
 {
-  rna_def_cachefile(brna);
-  rna_def_alembic_object_path(brna);
-  rna_def_cachefile_layer(brna);
+  api_def_cachefile(dapi);
+  api_def_alembic_object_path(dapi);
+  api_def_cachefile_layer(dapi);
 }
 
 #endif
