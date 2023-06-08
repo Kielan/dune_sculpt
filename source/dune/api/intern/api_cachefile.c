@@ -349,10 +349,10 @@ static void api_def_cachefile(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "velocity_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "velocity_unit");
-  RNA_def_property_enum_items(prop, velocity_unit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "velocity_unit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "velocity_unit");
+  api_def_prop_enum_items(prop, velocity_unit_items);
+  api_def_prop_ui_text(
       prop,
       "Velocity Unit",
       "Define how the velocity vectors are interpreted with regard to time, 'frame' means "
