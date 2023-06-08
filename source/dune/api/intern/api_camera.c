@@ -147,69 +147,69 @@ static void rna_CameraDOFSettings_aperture_blades_set(PointerRNA *ptr, const int
 
 static void api_def_camera_background_image(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem bgpic_source_items[] = {
+  static const EnumPropItem bgpic_source_items[] = {
       {CAM_BGIMG_SOURCE_IMAGE, "IMAGE", 0, "Image", ""},
       {CAM_BGIMG_SOURCE_MOVIE, "MOVIE_CLIP", 0, "Movie Clip", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem bgpic_camera_frame_items[] = {
+  static const EnumPropItem bgpic_camera_frame_items[] = {
       {0, "STRETCH", 0, "Stretch", ""},
       {CAM_BGIMG_FLAG_CAMERA_ASPECT, "FIT", 0, "Fit", ""},
       {CAM_BGIMG_FLAG_CAMERA_ASPECT | CAM_BGIMG_FLAG_CAMERA_CROP, "CROP", 0, "Crop", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem bgpic_display_depth_items[] = {
+  static const EnumPropItem bgpic_display_depth_items[] = {
       {0, "BACK", 0, "Back", ""},
       {CAM_BGIMG_FLAG_FOREGROUND, "FRONT", 0, "Front", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "CameraBackgroundImage", NULL);
-  RNA_def_struct_sdna(srna, "CameraBGImage");
-  RNA_def_struct_ui_text(
-      srna, "Background Image", "Image and settings for display in the 3D View background");
+  srna = api_def_struct(dapi, "CameraBackgroundImage", NULL);
+  api_def_struct_stype(sapi, "CameraBGImage");
+  api_def_struct_ui_text(
+      sapi, "Background Image", "Image and settings for display in the 3D View background");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "source", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "source");
-  RNA_def_property_enum_items(prop, bgpic_source_items);
-  RNA_def_property_ui_text(prop, "Background Source", "Data source used for background");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "source", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "source");
+  api_def_prop_enum_items(prop, bgpic_source_items);
+  api_def_prop_ui_text(prop, "Background Source", "Data source used for background");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ima");
-  RNA_def_property_ui_text(prop, "Image", "Image displayed and edited in this space");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "image", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "ima");
+  api_def_prop_ui_text(prop, "Image", "Image displayed and edited in this space");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "clip", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "clip");
-  RNA_def_property_ui_text(prop, "MovieClip", "Movie clip displayed and edited in this space");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "clip", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "clip");
+  api_def_prop_ui_text(prop, "MovieClip", "Movie clip displayed and edited in this space");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "image_user", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "iuser");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "image_user", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "iuser");
+  api_def_prop_ui_text(
       prop,
       "Image User",
       "Parameters defining which layer, pass and frame of the image is displayed");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "clip_user", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "MovieClipUser");
-  RNA_def_property_pointer_sdna(prop, NULL, "cuser");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "clip_user", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "MovieClipUser");
+  api_def_prop_ptr_stype(prop, NULL, "cuser");
+  api_def_prop_ui_text(
       prop, "Clip User", "Parameters defining which frame of the movie clip is displayed");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
