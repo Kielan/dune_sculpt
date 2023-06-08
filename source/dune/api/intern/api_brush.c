@@ -2313,13 +2313,13 @@ static void api_def_brush(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
   prop = api_def_prop(sapi, "pen_vertex_tool", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "pen_vertex_tool");
+  api_def_prop_enum_stype(prop, NULL, "pen_vertex_tool");
   api_def_prop_enum_items(prop, api_enum_brush_pen_vertex_types_items);
   api_def_prop_ui_text(prop, "Grease Pencil Vertex Paint Tool", "");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
   prop = api_def_prop(sapi, "pen_sculpt_tool", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "pen_sculpt_tool");
+  api_def_prop_enum_stype(prop, NULL, "pen_sculpt_tool");
   api_def_prop_enum_items(prop, api_enum_brush_pen_sculpt_types_items);
   api_def_prop_ui_text(prop, "Pen Sculpt Paint Tool", "");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
@@ -2340,7 +2340,7 @@ static void api_def_brush(DuneApi *dapi)
   prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
   api_def_prop_enum_items(prop, prop_direction_items);
-  api_def_prop_enum_funcs(prop, NULL, NULL, "api_Brush_direction_itemf");
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_Brush_direction_itemf");
   api_def_prop_ui_text(prop, "Direction", "");
   api_def_prop_update(prop, 0, "api_Brush_update");
 
@@ -2399,7 +2399,7 @@ static void api_def_brush(DuneApi *dapi)
       prop,
       "Simulation Area",
       "Part of the mesh that is going to be simulated when the stroke is active");
-  api_def_prop_update(prop, 0, "rna_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = api_def_prop(sapi, "boundary_falloff_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, brush_boundary_falloff_type_items);
@@ -2649,7 +2649,7 @@ static void api_def_brush(DuneApi *dapi)
   api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
   api_def_prop_ui_text(prop, "Use Pressure for Density", "Use pressure to modulate density");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_update(prop, 0, "api_Brush_update");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = api_def_prop(sapi, "invert_density_pressure", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "paint_flags", BRUSH_PAINT_DENSITY_PRESSURE_INVERT);
@@ -3290,8 +3290,8 @@ static void api_def_brush(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Curve", "Editable falloff curve");
-  RNA_def_property_update(prop, 0, "api_Brush_update");
+  api_def_prop_ui_text(prop, "Curve", "Editable falloff curve");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   prop = api_def_prop(sapi, "paint_curve", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
@@ -3331,156 +3331,156 @@ static void api_def_brush(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Use Cursor Overlay", "Show cursor in viewport");
   api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = api_def_prop(sapi, "use_cursor_overlay_override", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_cursor_overlay_override", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "overlay_flags", BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE);
-  RNA_def_property_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_primary_overlay_override", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_primary_overlay_override", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "overlay_flags", BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE);
-  RNA_def_property_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  api_def_prop_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_secondary_overlay_override", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_secondary_overlay_override", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "overlay_flags", BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE);
-  RNA_def_property_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
-  RNA_def_property_update(prop, 0, "api_Brush_update");
+  api_def_prop_ui_text(prop, "Override Overlay", "Don't show overlay during a stroke");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
   /* paint mode flags */
-  prop = RNA_def_property(srna, "use_paint_sculpt", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_SCULPT);
-  RNA_def_property_ui_text(prop, "Use Sculpt", "Use this brush in sculpt mode");
+  prop = api_def_prop(sapi, "use_paint_sculpt", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_SCULPT);
+  api_def_prop_ui_text(prop, "Use Sculpt", "Use this brush in sculpt mode");
 
-  prop = RNA_def_property(srna, "use_paint_uv_sculpt", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_EDIT);
-  RNA_def_property_ui_text(prop, "Use UV Sculpt", "Use this brush in UV sculpt mode");
+  prop = api_def_prop(sapi, "use_paint_uv_sculpt", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_EDIT);
+  api_def_prop_ui_text(prop, "Use UV Sculpt", "Use this brush in UV sculpt mode");
 
-  prop = RNA_def_property(srna, "use_paint_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_VERTEX_PAINT);
-  RNA_def_property_ui_text(prop, "Use Vertex", "Use this brush in vertex paint mode");
+  prop = api_def_prop(sapi, "use_paint_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_VERTEX_PAINT);
+  api_def_prop_ui_text(prop, "Use Vertex", "Use this brush in vertex paint mode");
 
-  prop = RNA_def_property(srna, "use_paint_weight", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_WEIGHT_PAINT);
-  RNA_def_property_ui_text(prop, "Use Weight", "Use this brush in weight paint mode");
+  prop = api_def_prop(sapi, "use_paint_weight", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_WEIGHT_PAINT);
+  api_def_prop_ui_text(prop, "Use Weight", "Use this brush in weight paint mode");
 
-  prop = RNA_def_property(srna, "use_paint_image", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_TEXTURE_PAINT);
-  RNA_def_property_ui_text(prop, "Use Texture", "Use this brush in texture paint mode");
+  prop = api_def_prop(sapi, "use_paint_image", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_TEXTURE_PAINT);
+  api_def_prop_ui_text(prop, "Use Texture", "Use this brush in texture paint mode");
 
-  prop = RNA_def_property(srna, "use_paint_grease_pencil", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_PAINT_GPENCIL);
-  RNA_def_property_ui_text(prop, "Use Paint", "Use this brush in grease pencil drawing mode");
+  prop = api_def_prop(sapi, "use_paint_pen", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_PAINT_PEN);
+  api_def_prop_ui_text(prop, "Use Paint", "Use this brush in grease pencil drawing mode");
 
-  prop = RNA_def_property(srna, "use_vertex_grease_pencil", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ob_mode", OB_MODE_VERTEX_GPENCIL);
-  RNA_def_property_ui_text(
-      prop, "Use Vertex", "Use this brush in grease pencil vertex color mode");
+  prop = api_def_prop(sapi, "use_vertex_pen", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ob_mode", OB_MODE_VERTEX_GPENCIL);
+  api_def_prop_ui_text(
+      prop, "Use Vertex", "Use this brush in pen vertex color mode");
 
   /* texture */
-  prop = RNA_def_property(srna, "texture_slot", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "BrushTextureSlot");
-  RNA_def_property_pointer_sdna(prop, NULL, "mtex");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Texture Slot", "");
+  prop = api_def_prop(sapi, "texture_slot", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "BrushTextureSlot");
+  api_def_prop_ptr_stype(prop, NULL, "mtex");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Texture Slot", "");
 
-  prop = RNA_def_property(srna, "texture", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "mtex.tex");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Texture", "");
-  RNA_def_property_update(prop, NC_TEXTURE, "rna_Brush_main_tex_update");
+  prop = api_def_prop(sapi, "texture", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "mtex.tex");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CXT_UPDATE);
+  api_def_prop_ui_text(prop, "Texture", "");
+  api_def_prop_update(prop, NC_TEXTURE, "api_Brush_main_tex_update");
 
-  prop = RNA_def_property(srna, "mask_texture_slot", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "BrushTextureSlot");
-  RNA_def_property_pointer_sdna(prop, NULL, "mask_mtex");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Mask Texture Slot", "");
+  prop = api_def_prop(sapi, "mask_texture_slot", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "BrushTextureSlot");
+  api_def_prop_ptr_stype(prop, NULL, "mask_mtex");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Mask Texture Slot", "");
 
-  prop = RNA_def_property(srna, "mask_texture", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "mask_mtex.tex");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Mask Texture", "");
-  RNA_def_property_update(prop, NC_TEXTURE, "rna_Brush_secondary_tex_update");
+  prop = api_def_prop(sapi, "mask_texture", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "mask_mtex.tex");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CXT_UPDATE);
+  api_def_prop_ui_text(prop, "Mask Texture", "");
+  api_def_prop_update(prop, NC_TEXTURE, "api_Brush_secondary_tex_update");
 
-  prop = RNA_def_property(srna, "texture_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
-  RNA_def_property_int_sdna(prop, NULL, "texture_overlay_alpha");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Texture Overlay Alpha", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "texture_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
+  api_def_prop_int_stype(prop, NULL, "texture_overlay_alpha");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Texture Overlay Alpha", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "mask_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
-  RNA_def_property_int_sdna(prop, NULL, "mask_overlay_alpha");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Mask Texture Overlay Alpha", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "mask_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
+  api_def_prop_int_stype(prop, NULL, "mask_overlay_alpha");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Mask Texture Overlay Alpha", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cursor_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
-  RNA_def_property_int_sdna(prop, NULL, "cursor_overlay_alpha");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Mask Texture Overlay Alpha", "");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cursor_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
+  api_def_prop_int_stype(prop, NULL, "cursor_overlay_alpha");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Mask Texture Overlay Alpha", "");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cursor_color_add", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "add_col");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Add Color", "Color of cursor when adding");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cursor_color_add", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "add_col");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Add Color", "Color of cursor when adding");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "cursor_color_subtract", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "sub_col");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Subtract Color", "Color of cursor when subtracting");
-  RNA_def_property_update(prop, 0, "rna_Brush_update");
+  prop = api_def_prop(sapi, "cursor_color_subtract", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "sub_col");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Subtract Color", "Color of cursor when subtracting");
+  api_def_prop_update(prop, 0, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "use_custom_icon", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BRUSH_CUSTOM_ICON);
-  RNA_def_property_ui_text(prop, "Custom Icon", "Set the brush icon from an image file");
-  RNA_def_property_update(prop, 0, "rna_Brush_icon_update");
+  prop = api_def_prop(sapi, "use_custom_icon", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BRUSH_CUSTOM_ICON);
+  api_def_prop_ui_text(prop, "Custom Icon", "Set the brush icon from an image file");
+  api_def_prop_update(prop, 0, "api_Brush_icon_update");
 
-  prop = RNA_def_property(srna, "icon_filepath", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "icon_filepath");
-  RNA_def_property_ui_text(prop, "Brush Icon Filepath", "File path to brush icon");
-  RNA_def_property_update(prop, 0, "rna_Brush_icon_update");
+  prop = api_def_prop(sapi, "icon_filepath", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "icon_filepath");
+  api_def_prop_ui_text(prop, "Brush Icon Filepath", "File path to brush icon");
+  api_def_prop_update(prop, 0, "api_Brush_icon_update");
 
   /* clone tool */
-  prop = RNA_def_property(srna, "clone_image", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "clone.image");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Clone Image", "Image for clone tool");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, "rna_Brush_update");
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Brush_imagetype_poll");
+  prop = api_def_prop(sapi, "clone_image", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "clone.image");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Clone Image", "Image for clone tool");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Brush_update");
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_Brush_imagetype_poll");
 
-  prop = RNA_def_property(srna, "clone_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "clone.alpha");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Clone Alpha", "Opacity of clone image display");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, "rna_Brush_update");
+  prop = api_def_prop(sapi, "clone_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "clone.alpha");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Clone Alpha", "Opacity of clone image display");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "clone_offset", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "clone.offset");
-  RNA_def_property_ui_text(prop, "Clone Offset", "");
-  RNA_def_property_ui_range(prop, -1.0f, 1.0f, 10.0f, 3);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, "rna_Brush_update");
+  prop = api_def_prop(sapi, "clone_offset", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "clone.offset");
+  api_def_prop_ui_text(prop, "Clone Offset", "");
+  api_def_prop_ui_range(prop, -1.0f, 1.0f, 10.0f, 3);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Brush_update");
 
-  prop = RNA_def_property(srna, "brush_capabilities", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "BrushCapabilities");
-  RNA_def_property_pointer_funcs(prop, "rna_Brush_capabilities_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Brush Capabilities", "Brush's capabilities");
+  prop = api_def_prop(sapi, "brush_capabilities", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "BrushCapabilities");
+  api_def_prop_ptr_fns(prop, "api_Brush_capabilities_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Brush Capabilities", "Brush's capabilities");
 
   /* brush capabilities (mode-dependent) */
-  prop = RNA_def_property(srna, "sculpt_capabilities", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "BrushCapabilitiesSculpt");
-  RNA_def_property_pointer_funcs(prop, "rna_Sculpt_tool_capabilities_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Sculpt Capabilities", "");
+  prop = api_def_prop(sapi, "sculpt_capabilities", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "BrushCapabilitiesSculpt");
+  api_def_prop_ptr_fns(prop, "api_Sculpt_tool_capabilities_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Sculpt Capabilities", "");
 
   prop = RNA_def_property(srna, "image_paint_capabilities", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
   RNA_def_property_struct_type(prop, "BrushCapabilitiesImagePaint");
-  RNA_def_property_pointer_funcs(prop, "rna_Imapaint_tool_capabilities_get", NULL, NULL, NULL);
+  RNA_def_property_pointer_funcs(prop, "api_Imapaint_tool_capabilities_get", NULL, NULL, NULL);
   RNA_def_property_ui_text(prop, "Image Paint Capabilities", "");
 
   prop = RNA_def_property(srna, "vertex_paint_capabilities", PROP_POINTER, PROP_NONE);
