@@ -646,25 +646,25 @@ void api_def_camera(DuneApi *dapi)
                        "Show safe areas to fit content in a different aspect ratio");
   api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = api_def_prop(sapi, "show_name", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWNAME);
-  RNA_def_prop_ui_text(prop, "Show Name", "Show the active Camera's name in Camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "show_name", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWNAME);
+  api_def_prop_ui_text(prop, "Show Name", "Show the active Camera's name in Camera view");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_sensor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOWSENSOR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_sensor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWSENSOR);
+  api_def_prop_ui_text(
       prop, "Show Sensor Size", "Show sensor size (film gate) in Camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_background_images", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOW_BG_IMAGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_background_images", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOW_BG_IMAGE);
+  api_def_prop_ui_text(
       prop, "Display Background Images", "Display reference images behind objects in the 3D View");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "lens_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
+  prop = RNA_def_prop(sapi, "lens_unit", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_bitflag_stype(prop, NULL, "flag");
   RNA_def_property_enum_items(prop, prop_lens_unit_items);
   RNA_def_property_ui_text(prop, "Lens Unit", "Unit to edit lens in for the user interface");
 
