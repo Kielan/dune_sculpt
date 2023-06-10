@@ -691,7 +691,7 @@ void api_def_camera(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_GOLDEN);
   api_def_prop_ui_text(
       prop, "Golden Ratio", "Display golden ratio composition guide inside the camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = api_def_prop(sapi, "show_composition_golden_tria_a", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_GOLDEN_TRI_A);
@@ -708,10 +708,10 @@ void api_def_camera(DuneApi *dapi)
   api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = api_def_prop(sapi, "show_composition_harmony_tri_a", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dtx", CAM_DTX_HARMONY_TRI_A);
-  RNA_def_property_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_HARMONY_TRI_A);
+  api_def_prop_ui_text(
       prop, "Harmonious Triangle A", "Display harmony A composition guide inside the camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = api_def_prop(sapi, "show_composition_harmony_tri_b", PROP_BOOLEAN
                     BOOL, PROP_NONE);
