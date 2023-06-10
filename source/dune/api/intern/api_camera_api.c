@@ -23,7 +23,7 @@ static void api_camera_view_frame(struct Camera *camera,
 {
   float vec[4][3];
 
-  BKE_camera_view_frame(scene, camera, vec);
+  dune_camera_view_frame(scene, camera, vec);
 
   copy_v3_v3(r_vec1, vec[0]);
   copy_v3_v3(r_vec2, vec[1]);
@@ -33,7 +33,7 @@ static void api_camera_view_frame(struct Camera *camera,
 
 #else
 
-void RNA_api_camera(StructRNA *srna)
+void api_camera(ApiStruct *sapi)
 {
   FunctionRNA *func;
   PropertyRNA *parm;
