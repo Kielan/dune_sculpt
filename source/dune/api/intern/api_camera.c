@@ -412,21 +412,21 @@ static void rna_def_camera_dof_settings_data(BlenderRNA *brna)
 
   RNA_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use_dof", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_DOF_ENABLED);
-  RNA_def_property_ui_text(prop, "Depth of Field", "Use Depth of Field");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  prop = api_def_prop(sapi, "use_dof", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_DOF_ENABLED);
+  api_def_prop_ui_text(prop, "Depth of Field", "Use Depth of Field");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
 
-  prop = RNA_def_property(srna, "focus_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_pointer_sdna(prop, NULL, "focus_object");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "focus_object", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_ptr_stype(prop, NULL, "focus_object");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop, "Focus Object", "Use this object to define the depth of field focal point");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dependency_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dependency_update");
 
-  prop = RNA_def_property(srna, "focus_distance", PROP_FLOAT, PROP_DISTANCE);
+  prop = api_def_prop(sapi, "focus_distance", PROP_FLOAT, PROP_DISTANCE);
   // RNA_def_property_pointer_sdna(prop, NULL, "focus_distance");
   RNA_def_property_range(prop, 0.0f, FLT_MAX);
   RNA_def_property_ui_range(prop, 0.0f, 5000.0f, 1, 2);
