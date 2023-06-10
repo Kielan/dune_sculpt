@@ -381,27 +381,27 @@ static void rna_CollSettings_objcol_vgroup_get(PointerRNA *ptr, char *value)
   rna_object_vgroup_name_index_get(ptr, value, coll->vgroup_objcol);
 }
 
-static int rna_CollSettings_objcol_vgroup_length(PointerRNA *ptr)
+static int api_CollSettings_objcol_vgroup_length(PointerRNA *ptr)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, coll->vgroup_objcol);
+  return api_object_vgroup_name_index_length(ptr, coll->vgroup_objcol);
 }
 
-static void rna_CollSettings_objcol_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_CollSettings_objcol_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &coll->vgroup_objcol);
+  api_object_vgroup_name_index_set(ptr, value, &coll->vgroup_objcol);
 }
 
-static PointerRNA rna_ClothSettings_rest_shape_key_get(PointerRNA *ptr)
+static ApiPtr api_ClothSettings_rest_shape_key_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
 
-  return rna_object_shapekey_index_get(ob->data, sim->shapekey_rest);
+  return api_object_shapekey_index_get(ob->data, sim->shapekey_rest);
 }
 
-static void rna_ClothSettings_rest_shape_key_set(PointerRNA *ptr,
+static void api_ClothSettings_rest_shape_key_set(PointerRNA *ptr,
                                                  PointerRNA value,
                                                  struct ReportList *UNUSED(reports))
 {
@@ -447,19 +447,19 @@ static char *api_ClothSettings_path(ApiPtr *ptr)
 static char *api_ClothCollisionSettings_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Cloth);
+  ModData *md = dune_mods_findby_type(ob, eModType_Cloth);
 
   if (md) {
     char name_esc[sizeof(md->name) * 2];
-    BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-    return BLI_sprintfN("modifiers[\"%s\"].collision_settings", name_esc);
+    lib_str_escape(name_esc, md->name, sizeof(name_esc));
+    return lib_sprintfn("modifiers[\"%s\"].collision_settings", name_esc);
   }
   else {
     return NULL;
   }
 }
 
-static int rna_ClothSettings_internal_editable(struct PointerRNA *ptr, const char **r_info)
+static int api_ClothSettings_internal_editable(struct PointerRNA *ptr, const char **r_info)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
 
@@ -473,12 +473,12 @@ static int rna_ClothSettings_internal_editable(struct PointerRNA *ptr, const cha
 
 #else
 
-static void rna_def_cloth_solver_result(BlenderRNA *brna)
+static void api_def_cloth_solver_result(DuneApi *api)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem status_items[] = {
+  static const EnumPropItem status_items[] = {
       {SIM_SOLVER_SUCCESS, "SUCCESS", 0, "Success", "Computation was successful"},
       {SIM_SOLVER_NUMERICAL_ISSUE,
        "NUMERICAL_ISSUE",
