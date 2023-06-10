@@ -400,19 +400,19 @@ static void api_def_camera_stereo_data(DuneApi *dapi)
   RNA_define_lib_overridable(false);
 }
 
-static void rna_def_camera_dof_settings_data(BlenderRNA *brna)
+static void api_def_camera_dof_settings_data(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "CameraDOFSettings", NULL);
-  RNA_def_struct_sdna(srna, "CameraDOFSettings");
-  RNA_def_struct_path_func(srna, "rna_CameraDOFSettings_path");
-  RNA_def_struct_ui_text(srna, "Depth of Field", "Depth of Field settings");
+  sapi = api_def_struct(dapi, "CameraDOFSettings", NULL);
+  api_def_struct_stype(sapi, "CameraDOFSettings");
+  api_def_struct_path_fn(sapi, "api_CameraDOFSettings_path");
+  api_def_struct_ui_text(sapi, "Depth of Field", "Depth of Field settings");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = api_def_prop(sapi, "use_dof", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_dof", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", CAM_DOF_ENABLED);
   api_def_prop_ui_text(prop, "Depth of Field", "Use Depth of Field");
   api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
@@ -427,54 +427,54 @@ static void rna_def_camera_dof_settings_data(BlenderRNA *brna)
   api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dependency_update");
 
   prop = api_def_prop(sapi, "focus_distance", PROP_FLOAT, PROP_DISTANCE);
-  // RNA_def_property_pointer_sdna(prop, NULL, "focus_distance");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 5000.0f, 1, 2);
-  RNA_def_property_ui_text(
+  // api_def_prop_ptr_stype(prop, NULL, "focus_distance");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 5000.0f, 1, 2);
+  api_def_prop_ui_text(
       prop, "Focus Distance", "Distance to the focus point for depth of field");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_dof_update");
 
-  prop = RNA_def_property(srna, "aperture_fstop", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "aperture_fstop", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "F-Stop",
       "F-Stop ratio (lower numbers give more defocus, higher numbers give a sharper image)");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.1f, 128.0f, 10, 1);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.1f, 128.0f, 10, 1);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_dof_update");
 
-  prop = RNA_def_property(srna, "aperture_blades", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "aperture_blades", PROP_INT, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Blades", "Number of blades in aperture for polygonal bokeh (at least 3)");
-  RNA_def_property_range(prop, 0, 16);
-  RNA_def_property_int_funcs(prop, NULL, "rna_CameraDOFSettings_aperture_blades_set", NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  api_def_prop_range(prop, 0, 16);
+  api_def_prop_int_fns(prop, NULL, "api_CameraDOFSettings_aperture_blades_set", NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_dof_update");
 
-  prop = RNA_def_property(srna, "aperture_rotation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_ui_text(prop, "Rotation", "Rotation of blades in aperture");
-  RNA_def_property_range(prop, -M_PI, M_PI);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  prop = apu_def_prop(sapi, "aperture_rotation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_ui_text(prop, "Rotation", "Rotation of blades in aperture");
+  api_def_prop_range(prop, -M_PI, M_PI);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_dof_update");
 
-  prop = RNA_def_property(srna, "aperture_ratio", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Ratio", "Distortion to simulate anamorphic lens bokeh");
-  RNA_def_property_range(prop, 0.01f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 1.0f, 2.0f, 0.1, 3);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
+  prop = api_def_prop(sapi, "aperture_ratio", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(prop, "Ratio", "Distortion to simulate anamorphic lens bokeh");
+  api_def_prop_range(prop, 0.01f, FLT_MAX);
+  api_def_prop_ui_range(prop, 1.0f, 2.0f, 0.1, 3);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_dof_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-void RNA_def_camera(BlenderRNA *brna)
+void api_def_camera(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  static const EnumPropertyItem prop_type_items[] = {
+  ApiStruct *sapi;
+  ApiProp *prop;
+  static const EnumPropItem prop_type_items[] = {
       {CAM_PERSP, "PERSP", 0, "Perspective", ""},
       {CAM_ORTHO, "ORTHO", 0, "Orthographic", ""},
       {CAM_PANO, "PANO", 0, "Panoramic", ""},
       {0, NULL, 0, NULL, NULL},
   };
-  static const EnumPropertyItem prop_lens_unit_items[] = {
+  static const EnumPropItem prop_lens_unit_items[] = {
       {0, "MILLIMETERS", 0, "Millimeters", "Specify the lens in millimeters"},
       {CAM_ANGLETOGGLE,
        "FOV",
@@ -483,7 +483,7 @@ void RNA_def_camera(BlenderRNA *brna)
        "Specify the lens as the field of view's angle"},
       {0, NULL, 0, NULL, NULL},
   };
-  static const EnumPropertyItem sensor_fit_items[] = {
+  static const EnumPropItem sensor_fit_items[] = {
       {CAMERA_SENSOR_FIT_AUTO,
        "AUTO",
        0,
@@ -494,19 +494,19 @@ void RNA_def_camera(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Camera", "ID");
-  RNA_def_struct_ui_text(srna, "Camera", "Camera data-block for storing camera settings");
-  RNA_def_struct_ui_icon(srna, ICON_CAMERA_DATA);
+  sapi = api_def_struct(dapi, "Camera", "ID");
+  api_def_struct_ui_text(sapi, "Camera", "Camera data-block for storing camera settings");
+  api_def_struct_ui_icon(sapi, ICON_CAMERA_DATA);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* Enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Camera types");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = apu_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_type_items);
+  apu_def_prop_ui_text(prop, "Type", "Camera types");
+  apu_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
 
-  prop = RNA_def_property(srna, "sensor_fit", PROP_ENUM, PROP_NONE);
+  prop = apu_def_property(srna, "sensor_fit", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "sensor_fit");
   RNA_def_property_enum_items(prop, sensor_fit_items);
   RNA_def_property_ui_text(
