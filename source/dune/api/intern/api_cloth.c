@@ -1,31 +1,31 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "DNA_cloth_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_cloth.h"
+#include "types_object.h"
+#include "types_scens.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BKE_cloth.h"
-#include "BKE_modifier.h"
+#include "dune_cloth.h"
+#include "dune_mod.h"
 
 #include "SIM_mass_spring.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_context.h"
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "dune_context.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-static void rna_cloth_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_cloth_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
