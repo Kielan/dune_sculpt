@@ -339,34 +339,34 @@ static void rna_ClothSettings_internal_vgroup_set(PointerRNA *ptr, const char *v
   rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_intern);
 }
 
-static void rna_ClothSettings_pressure_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_pressure_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_pressure);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_pressure);
 }
 
-static int rna_ClothSettings_pressure_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_pressure_vgroup_length(PointerRNA *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_pressure);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_pressure);
 }
 
-static void rna_ClothSettings_pressure_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_pressure_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_pressure);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_pressure);
 }
 
-static void rna_CollSettings_selfcol_vgroup_get(PointerRNA *ptr, char *value)
+static void api_CollSettings_selfcol_vgroup_get(PointerRNA *ptr, char *value)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, coll->vgroup_selfcol);
+  api_object_vgroup_name_index_get(ptr, value, coll->vgroup_selfcol);
 }
 
-static int rna_CollSettings_selfcol_vgroup_length(PointerRNA *ptr)
+static int api_CollSettings_selfcol_vgroup_length(ApiPtr *ptr)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, coll->vgroup_selfcol);
+  return api_object_vgroup_name_index_length(ptr, coll->vgroup_selfcol);
 }
 
 static void rna_CollSettings_selfcol_vgroup_set(PointerRNA *ptr, const char *value)
