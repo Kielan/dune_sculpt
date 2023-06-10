@@ -67,7 +67,7 @@ static void api_Camera_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *
   graph_id_tag_update(&camera->id, 0);
 }
 
-static void rna_Camera_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_Camera_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Camera *camera = (Camera *)ptr->owner_id;
   graph_relations_tag_update(main);
@@ -105,13 +105,13 @@ static void api_Camera_background_images_clear(Camera *cam)
   wm_main_add_notifier(NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, cam);
 }
 
-static void rna_Camera_dof_update(Main *bmain, Scene *scene, PointerRNA *UNUSED(ptr))
+static void api_Camera_dof_update(Main *main, Scene *scene, ApiPtr *UNUSED(ptr))
 {
-  SEQ_relations_invalidate_scene_strips(bmain, scene);
+  SEQ_relations_invalidate_scene_strips(main, scene);
   WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 }
 
-char *rna_CameraDOFSettings_path(PointerRNA *ptr)
+char *api_CameraDOFSettings_path(ApiPtr *ptr)
 {
   /* if there is ID-data, resolve the path using the index instead of by name,
    * since the name used is the name of the texture assigned, but the texture
@@ -119,14 +119,14 @@ char *rna_CameraDOFSettings_path(PointerRNA *ptr)
    */
   if (ptr->owner_id) {
     if (GS(ptr->owner_id->name) == ID_CA) {
-      return BLI_strdup("dof");
+      return lib_strdup("dof");
     }
   }
 
-  return BLI_strdup("");
+  return lib_strdup("");
 }
 
-static void rna_CameraDOFSettings_aperture_blades_set(PointerRNA *ptr, const int value)
+static void api_CameraDOFSettings_aperture_blades_set(ApiPtr *ptr, const int value)
 {
   CameraDOFSettings *dofsettings = (CameraDOFSettings *)ptr->data;
 
@@ -213,34 +213,34 @@ static void api_def_camera_background_image(DuneApi *dapi)
       prop, "Clip User", "Parameters defining which frame of the movie clip is displayed");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
-  RNA_def_property_ui_text(prop, "Offset", "");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 0.1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_XYZ);
+  api_def_property_float_stype(prop, NULL, "offset");
+  api_def_property_ui_text(prop, "Offset", "");
+  api_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 0.1, RNA_TRANSLATION_PREC_DEFAULT);
+  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_ui_text(prop, "Scale", "Scale the background image");
+  prop = api_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
+  api_def_property_float_sdna(prop, NULL, "scale");
+  api_def_property_ui_text(prop, "Scale", "Scale the background image");
   RNA_def_property_range(prop, 0.0, FLT_MAX);
   RNA_def_property_ui_range(prop, 0.0, 10.0, 0.100, RNA_TRANSLATION_PREC_DEFAULT);
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "rotation");
-  RNA_def_property_ui_text(
+  api_def_property_float_sdna(prop, NULL, "rotation");
+  api_def_property_ui_text(
       prop, "Rotation", "Rotation for the background image (ortho view only)");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "use_flip_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_X);
-  RNA_def_property_ui_text(prop, "Flip Horizontally", "Flip the background image horizontally");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_property(srna, "use_flip_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_X);
+  api_def_property_ui_text(prop, "Flip Horizontally", "Flip the background image horizontally");
+  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "use_flip_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_Y);
-  RNA_def_property_ui_text(prop, "Flip Vertically", "Flip the background image vertically");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_property(srna, "use_flip_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_Y);
+  api_def_property_ui_text(prop, "Flip Vertically", "Flip the background image vertically");
+  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = RNA_def_property(srna, "alpha", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "alpha");
