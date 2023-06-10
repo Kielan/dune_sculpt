@@ -503,152 +503,152 @@ void api_def_camera(DuneApi *dapi)
   /* Enums */
   prop = apu_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, prop_type_items);
-  apu_def_prop_ui_text(prop, "Type", "Camera types");
-  apu_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  api_def_prop_ui_text(prop, "Type", "Camera types");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
 
-  prop = apu_def_property(srna, "sensor_fit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "sensor_fit");
-  RNA_def_property_enum_items(prop, sensor_fit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sensor_fit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "sensor_fit");
+  api_def_prop_enum_items(prop, sensor_fit_items);
+  api_def_prop_ui_text(
       prop, "Sensor Fit", "Method to fit image and field of view angle inside the sensor");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
 
   /* Number values */
 
-  prop = RNA_def_property(srna, "passepartout_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "passepartalpha");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "passepartout_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "passepartalpha");
+  api_def_prop_ui_text(
       prop, "Passepartout Alpha", "Opacity (alpha) of the darkened overlay in Camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prope_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "angle_x", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Horizontal FOV", "Camera lens horizontal field of view");
-  RNA_def_property_float_funcs(prop, "rna_Camera_angle_x_get", "rna_Camera_angle_x_set", NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "angle_x", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Horizontal FOV", "Camera lens horizontal field of view");
+  api_def_prop_float_fns(prop, "api_Camera_angle_x_get", "api_Camera_angle_x_set", NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "angle_y", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Vertical FOV", "Camera lens vertical field of view");
-  RNA_def_property_float_funcs(prop, "rna_Camera_angle_y_get", "rna_Camera_angle_y_set", NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "angle_y", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Vertical FOV", "Camera lens vertical field of view");
+  api_def_prop_float_fns(prop, "api_Camera_angle_y_get", "api_Camera_angle_y_set", NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Field of View", "Camera lens field of view");
-  RNA_def_property_float_funcs(prop, "rna_Camera_angle_get", "rna_Camera_angle_set", NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, DEG2RAD(0.367), DEG2RAD(172.847));
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Field of View", "Camera lens field of view");
+  api_def_prop_float_fns(prop, "api_Camera_angle_get", "api_Camera_angle_set", NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "clip_start", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(prop, "Clip Start", "Camera near clipping distance");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "clip_start", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_ui_text(prop, "Clip Start", "Camera near clipping distance");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "clip_end", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(prop, "Clip End", "Camera far clipping distance");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "clip_end", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_ui_text(prop, "Clip End", "Camera far clipping distance");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "lens", PROP_FLOAT, PROP_DISTANCE_CAMERA);
-  RNA_def_property_float_sdna(prop, NULL, "lens");
-  RNA_def_property_range(prop, 1.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 1.0f, 5000.0f, 100, 4);
-  RNA_def_property_ui_text(prop, "Focal Length", "Perspective Camera lens value in millimeters");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "lens", PROP_FLOAT, PROP_DISTANCE_CAMERA);
+  api_def_prop_float_stype(prop, NULL, "lens");
+  api_def_prop_range(prop, 1.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 1.0f, 5000.0f, 100, 4);
+  api_def_prop_ui_text(prop, "Focal Length", "Perspective Camera lens value in millimeters");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
 
-  prop = RNA_def_property(srna, "sensor_width", PROP_FLOAT, PROP_DISTANCE_CAMERA);
-  RNA_def_property_float_sdna(prop, NULL, "sensor_x");
-  RNA_def_property_range(prop, 1.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 1.0f, 100.0f, 100, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sensor_width", PROP_FLOAT, PROP_DISTANCE_CAMERA);
+  api_def_prop_float_stype(prop, NULL, "sensor_x");
+  api_def_prop_range(prop, 1.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 1.0f, 100.0f, 100, 4);
+  api_def_prop_ui_text(
       prop, "Sensor Width", "Horizontal size of the image sensor area in millimeters");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "sensor_height", PROP_FLOAT, PROP_DISTANCE_CAMERA);
-  RNA_def_property_float_sdna(prop, NULL, "sensor_y");
-  RNA_def_property_range(prop, 1.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 1.0f, 100.0f, 100, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sensor_height", PROP_FLOAT, PROP_DISTANCE_CAMERA);
+  api_def_prop_float_stype(prop, NULL, "sensor_y");
+  api_def_prop_range(prop, 1.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 1.0f, 100.0f, 100, 4);
+  api_def_prop_ui_text(
       prop, "Sensor Height", "Vertical size of the image sensor area in millimeters");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "ortho_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "ortho_scale");
-  RNA_def_property_range(prop, FLT_MIN, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, 10000.0f, 10, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ortho_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "ortho_scale");
+  api_def_prop_range(prop, FLT_MIN, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, 10000.0f, 10, 3);
+  api_def_prop_ui_text(
       prop, "Orthographic Scale", "Orthographic Camera scale (similar to zoom)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "display_size", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "drawsize");
-  RNA_def_property_range(prop, 0.01f, 1000.0f);
-  RNA_def_property_ui_range(prop, 0.01, 100, 1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "display_size", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "drawsize");
+  api_def_prop_range(prop, 0.01f, 1000.0f);
+  api_def_prop_ui_range(prop, 0.01, 100, 1, 2);
+  api_def_prop_ui_text(
       prop, "Display Size", "Apparent size of the Camera object in the 3D View");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "shift_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "shiftx");
-  RNA_def_property_range(prop, -10.0f, 10.0f);
-  RNA_def_property_ui_range(prop, -2.0, 2.0, 1, 3);
-  RNA_def_property_ui_text(prop, "Shift X", "Camera horizontal shift");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "shift_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "shiftx");
+  api_def_prop_range(prop, -10.0f, 10.0f);
+  api_def_prop_ui_range(prop, -2.0, 2.0, 1, 3);
+  api_def_prop_ui_text(prop, "Shift X", "Camera horizontal shift");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
-  prop = RNA_def_property(srna, "shift_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "shifty");
-  RNA_def_property_range(prop, -10.0f, 10.0f);
-  RNA_def_property_ui_range(prop, -2.0, 2.0, 1, 3);
-  RNA_def_property_ui_text(prop, "Shift Y", "Camera vertical shift");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Camera_update");
+  prop = api_def_prop(sapi, "shift_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "shifty");
+  api_def_prop_range(prop, -10.0f, 10.0f);
+  api_def_prop_ui_range(prop, -2.0, 2.0, 1, 3);
+  api_def_prop_ui_text(prop, "Shift Y", "Camera vertical shift");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Camera_update");
 
   /* Stereo Settings */
-  prop = RNA_def_property(srna, "stereo", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "stereo");
-  RNA_def_property_struct_type(prop, "CameraStereoData");
-  RNA_def_property_ui_text(prop, "Stereo", "");
+  prop = api_def_prop(sapi, "stereo", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stypes(prop, NULL, "stereo");
+  api_def_prop_struct_type(prop, "CameraStereoData");
+  api_def_prop_ui_text(prop, "Stereo", "");
 
   /* flag */
-  prop = RNA_def_property(srna, "show_limits", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOWLIMITS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_limits", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWLIMITS);
+  api_def_prop_ui_text(
       prop, "Show Limits", "Display the clipping range and focus point on the camera");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "show_mist", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOWMIST);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_mist", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWMIST);
+  api_def_prop_ui_text(
       prop, "Show Mist", "Display a line from the Camera to indicate the mist area");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "show_passepartout", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOWPASSEPARTOUT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_passepartout", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWPASSEPARTOUT);
+  api_def_prop_ui_text(
       prop, "Show Passepartout", "Show a darkened overlay outside the image area in Camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_safe_areas", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOW_SAFE_MARGINS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_safe_areas", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOW_SAFE_MARGINS);
+  api_def_prop_ui_text(
       prop, "Show Safe Areas", "Show TV title safe and action safe areas in Camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_safe_center", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOW_SAFE_CENTER);
-  RNA_def_property_ui_text(prop,
-                           "Show Center-Cut Safe Areas",
-                           "Show safe areas to fit content in a different aspect ratio");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "show_safe_center", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOW_SAFE_CENTER);
+  api_def_prop_ui_text(prop,
+                       "Show Center-Cut Safe Areas",
+                       "Show safe areas to fit content in a different aspect ratio");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_name", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_SHOWNAME);
-  RNA_def_property_ui_text(prop, "Show Name", "Show the active Camera's name in Camera view");
+  prop = api_def_prop(sapi, "show_name", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", CAM_SHOWNAME);
+  RNA_def_prop_ui_text(prop, "Show Name", "Show the active Camera's name in Camera view");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = RNA_def_property(srna, "show_sensor", PROP_BOOLEAN, PROP_NONE);
