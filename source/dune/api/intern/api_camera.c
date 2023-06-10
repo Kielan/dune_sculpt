@@ -226,7 +226,7 @@ static void api_def_camera_background_image(DuneApi *dapi)
   api_def_prop_ui_range(prop, 0.0, 10.0, 0.100, API_TRANSLATION_PREC_DEFAULT);
   api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = api_def_prop(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "rotation");
   api_def_prope_ui_text(
       prop, "Rotation", "Rotation for the background image (ortho view only)");
