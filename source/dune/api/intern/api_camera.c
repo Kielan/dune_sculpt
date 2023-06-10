@@ -169,7 +169,7 @@ static void api_def_camera_background_image(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = api_def_struct(dapi, "CameraBackgroundImage", NULL);
+  sapi = api_def_struct(dapi, "CameraBackgroundImage", NULL);
   api_def_struct_stype(sapi, "CameraBGImage");
   api_def_struct_ui_text(
       sapi, "Background Image", "Image and settings for display in the 3D View background");
@@ -675,21 +675,21 @@ void api_def_camera(DuneApi *dapi)
       prop, "Center", "Display center composition guide inside the camera view");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_composition_center_diagonal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dtx", CAM_DTX_CENTER_DIAG);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_composition_center_diagonal", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_CENTER_DIAG);
+  api_def_prop_ui_text(
       prop, "Center Diagonal", "Display diagonal center composition guide inside the camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_composition_thirds", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dtx", CAM_DTX_THIRDS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_composition_thirds", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_THIRDS);
+  api_def_prop_ui_text(
       prop, "Thirds", "Display rule of thirds composition guide inside the camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_composition_golden", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dtx", CAM_DTX_GOLDEN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_composition_golden", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_GOLDEN);
+  api_def_prop_ui_text(
       prop, "Golden Ratio", "Display golden ratio composition guide inside the camera view");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
