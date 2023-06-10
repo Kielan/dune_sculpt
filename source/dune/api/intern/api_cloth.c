@@ -285,22 +285,22 @@ static void rna_ClothSettings_struct_vgroup_set(PointerRNA *ptr, const char *val
   rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_struct);
 }
 
-static void rna_ClothSettings_shear_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_shear_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_shear);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_shear);
 }
 
-static int rna_ClothSettings_shear_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_shear_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_shear);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_shear);
 }
 
-static void rna_ClothSettings_shear_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_shear_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_shear);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_shear);
 }
 
 static void rna_ClothSettings_bend_vgroup_get(PointerRNA *ptr, char *value)
