@@ -392,15 +392,15 @@ static void api_def_camera_stereo_data(DuneApi *dapi)
   RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
   prop = api_def_prop(sapi, "pole_merge_angle_to", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, 0.0f, M_PI_2);
-  RNA_def_property_ui_text(
+  api_def_prop_range(prop, 0.0f, M_PI_2);
+  api_def_prop_ui_text(
       prop, "Pole Merge End Angle", "Angle at which interocular distance is 0");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void api_def_camera_dof_settings_data(BlenderRNA *brna)
+static void api_def_camera_dof_settings_data(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
