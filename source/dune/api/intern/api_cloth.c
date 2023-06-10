@@ -411,7 +411,7 @@ static void rna_ClothSettings_rest_shape_key_set(PointerRNA *ptr,
   sim->shapekey_rest = rna_object_shapekey_index_set(ob->data, value, sim->shapekey_rest);
 }
 
-static void rna_ClothSettings_gravity_get(PointerRNA *ptr, float *values)
+static void api_ClothSettings_gravity_get(PointerRNA *ptr, float *values)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
 
@@ -420,7 +420,7 @@ static void rna_ClothSettings_gravity_get(PointerRNA *ptr, float *values)
   values[2] = sim->gravity[2];
 }
 
-static void rna_ClothSettings_gravity_set(PointerRNA *ptr, const float *values)
+static void api_ClothSettings_gravity_set(PointerRNA *ptr, const float *values)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
 
@@ -429,22 +429,22 @@ static void rna_ClothSettings_gravity_set(PointerRNA *ptr, const float *values)
   sim->gravity[2] = values[2];
 }
 
-static char *rna_ClothSettings_path(PointerRNA *ptr)
+static char *api_ClothSettings_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Cloth);
+  ModData *md = dune_mods_findby_type(ob, eModType_Cloth);
 
   if (md) {
     char name_esc[sizeof(md->name) * 2];
-    BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-    return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
+    lib_str_escape(name_esc, md->name, sizeof(name_esc));
+    return lib_sprintfn("mods[\"%s\"].settings", name_esc);
   }
   else {
     return NULL;
   }
 }
 
-static char *rna_ClothCollisionSettings_path(PointerRNA *ptr)
+static char *api_ClothCollisionSettings_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Cloth);
