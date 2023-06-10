@@ -107,8 +107,8 @@ static void api_Camera_background_images_clear(Camera *cam)
 
 static void api_Camera_dof_update(Main *main, Scene *scene, ApiPtr *UNUSED(ptr))
 {
-  SEQ_relations_invalidate_scene_strips(main, scene);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  seq_relations_invalidate_scene_strips(main, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 }
 
 char *api_CameraDOFSettings_path(ApiPtr *ptr)
