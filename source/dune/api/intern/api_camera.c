@@ -713,40 +713,41 @@ void api_def_camera(DuneApi *dapi)
       prop, "Harmonious Triangle A", "Display harmony A composition guide inside the camera view");
   RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_composition_harmony_tri_b", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dtx", CAM_DTX_HARMONY_TRI_B);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_composition_harmony_tri_b", PROP_BOOLEAN
+                    BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dtx", CAM_DTX_HARMONY_TRI_B);
+  api_def_prop_ui_text(
       prop, "Harmonious Triangle B", "Display harmony B composition guide inside the camera view");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   /* pointers */
-  prop = RNA_def_property(srna, "dof", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "CameraDOFSettings");
-  RNA_def_property_ui_text(prop, "Depth Of Field", "");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "dof", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "CameraDOFSettings");
+  api_def_prop_ui_text(prop, "Depth Of Field", "");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "background_images", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "bg_images", NULL);
-  RNA_def_property_struct_type(prop, "CameraBackgroundImage");
-  RNA_def_property_ui_text(prop, "Background Images", "List of background images");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "background_images", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "bg_images", NULL);
+  api_def_prop_struct_type(prop, "CameraBackgroundImage");
+  api_def_prop_ui_text(prop, "Background Images", "List of background images");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 
-  rna_def_camera_background_image(brna);
-  rna_def_camera_background_images(brna, prop);
+  api_def_camera_background_image(dapi);
+  api_def_camera_background_images(dapi, prop);
 
   /* Nested Data. */
-  RNA_define_animate_sdna(true);
+  api_define_animate_stype(true);
 
   /* *** Animated *** */
-  rna_def_camera_stereo_data(brna);
-  rna_def_camera_dof_settings_data(brna);
+  api_def_camera_stereo_data(dapi);
+  api_def_camera_dof_settings_data(dapi);
 
   /* Camera API */
-  RNA_api_camera(srna);
+  api_camera(sapi);
 }
 
 #endif
