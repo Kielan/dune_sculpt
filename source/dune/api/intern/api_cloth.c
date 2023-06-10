@@ -33,26 +33,25 @@ static void api_cloth_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *p
   WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 }
 
-static void rna_cloth_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_cloth_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  DEG_relations_tag_update(bmain);
-  rna_cloth_update(bmain, scene, ptr);
+  graph_relations_tag_update(main);
+  api_cloth_update(main, scene, ptr);
 }
 
-static void rna_cloth_pinning_changed(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_cloth_pinning_changed(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   /*  ClothSimSettings *settings = (ClothSimSettings *)ptr->data; */
-  ClothModifierData *clmd = (ClothModifierData *)BKE_modifiers_findby_type(ob,
-                                                                           eModifierType_Cloth);
+  ClothModData *clmd = (ClothModData *)dune_mods_findby_type(eModType_Cloth);
 
-  cloth_free_modifier(clmd);
+  cloth_free_mod(clmd);
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_MOD, ob);
 }
 
-static void rna_ClothSettings_bending_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_bending_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -64,7 +63,7 @@ static void rna_ClothSettings_bending_set(struct PointerRNA *ptr, float value)
   }
 }
 
-static void rna_ClothSettings_max_bend_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_bend_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -76,7 +75,7 @@ static void rna_ClothSettings_max_bend_set(struct PointerRNA *ptr, float value)
   settings->max_bend = value;
 }
 
-static void rna_ClothSettings_tension_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_tension_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -88,7 +87,7 @@ static void rna_ClothSettings_tension_set(struct PointerRNA *ptr, float value)
   }
 }
 
-static void rna_ClothSettings_max_tension_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_tension_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -100,7 +99,7 @@ static void rna_ClothSettings_max_tension_set(struct PointerRNA *ptr, float valu
   settings->max_tension = value;
 }
 
-static void rna_ClothSettings_compression_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_compression_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
