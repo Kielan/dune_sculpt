@@ -35,39 +35,39 @@ static void api_camera_view_frame(struct Camera *camera,
 
 void api_camera(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "view_frame", "rna_camera_view_frame");
-  RNA_def_function_ui_description(
-      func, "Return 4 points for the cameras frame (before object transformation)");
+  fn = api_def_fn(sapi, "view_frame", "api_camera_view_frame");
+  api_def_fn_ui_description(
+      fn, "Return 4 points for the cameras frame (before object transformation)");
 
-  RNA_def_pointer(func,
-                  "scene",
-                  "Scene",
-                  "",
-                  "Scene to use for aspect calculation, when omitted 1:1 aspect is used");
+  api_def_ptr(fn,
+              "scene",
+              "Scene",
+              "",
+              "Scene to use for aspect calculation, when omitted 1:1 aspect is used");
 
   /* return location and normal */
   parm = api_def_float_vector(
-      func, "result_1", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
-  RNA_def_property_flag(parm, PROP_THICK_WRAP);
-  RNA_def_function_output(func, parm);
+      fn, "result_1", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
+  api_def_prop_flag(parm, PROP_THICK_WRAP);
+  api_def_fn_output(fn, parm);
 
-  parm = RNA_def_float_vector(
-      func, "result_2", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
-  RNA_def_property_flag(parm, PROP_THICK_WRAP);
-  RNA_def_function_output(func, parm);
+  parm = api_def_float_vector(
+      fn, "result_2", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
+  api_def_prop_flag(parm, PROP_THICK_WRAP);
+  api_def_fn_output(fn, parm);
 
-  parm = RNA_def_float_vector(
-      func, "result_3", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
-  RNA_def_property_flag(parm, PROP_THICK_WRAP);
-  RNA_def_function_output(func, parm);
+  parm = api_def_float_vector(
+      fn, "result_3", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
+  api_def_prop_flag(parm, PROP_THICK_WRAP);
+  api_def_fn_output(fn, parm);
 
-  parm = RNA_def_float_vector(
-      func, "result_4", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
-  RNA_def_property_flag(parm, PROP_THICK_WRAP);
-  RNA_def_function_output(func, parm);
+  parm = api_def_float_vector(
+      fn, "result_4", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
+  api_def_prop_flag(parm, PROP_THICK_WRAP);
+  api_def_fn_output(fn, parm);
 }
 
 #endif
