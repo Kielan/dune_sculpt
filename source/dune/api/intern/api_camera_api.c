@@ -49,7 +49,7 @@ void api_camera(ApiStruct *sapi)
                   "Scene to use for aspect calculation, when omitted 1:1 aspect is used");
 
   /* return location and normal */
-  parm = RNA_def_float_vector(
+  parm = api_def_float_vector(
       func, "result_1", 3, NULL, -FLT_MAX, FLT_MAX, "Result", NULL, -1e4, 1e4);
   RNA_def_property_flag(parm, PROP_THICK_WRAP);
   RNA_def_function_output(func, parm);
