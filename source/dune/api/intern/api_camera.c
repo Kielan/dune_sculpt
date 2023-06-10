@@ -317,81 +317,81 @@ static void api_def_camera_background_images(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_ui_description(fn, "Remove all background images");
 }
 
-static void rna_def_camera_stereo_data(BlenderRNA *brna)
+static void api_def_camera_stereo_data(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem convergence_mode_items[] = {
+  static const EnumPropItem convergence_mode_items[] = {
       {CAM_S3D_OFFAXIS, "OFFAXIS", 0, "Off-Axis", "Off-axis frustums converging in a plane"},
       {CAM_S3D_PARALLEL, "PARALLEL", 0, "Parallel", "Parallel cameras with no convergence"},
       {CAM_S3D_TOE, "TOE", 0, "Toe-in", "Rotated cameras, looking at the convergence distance"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem pivot_items[] = {
+  static const EnumPropItem pivot_items[] = {
       {CAM_S3D_PIVOT_LEFT, "LEFT", 0, "Left", ""},
       {CAM_S3D_PIVOT_RIGHT, "RIGHT", 0, "Right", ""},
       {CAM_S3D_PIVOT_CENTER, "CENTER", 0, "Center", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "CameraStereoData", NULL);
-  RNA_def_struct_sdna(srna, "CameraStereoSettings");
-  RNA_def_struct_nested(brna, srna, "Camera");
-  RNA_def_struct_ui_text(srna, "Stereo", "Stereoscopy settings for a Camera data-block");
+  sapi = api_def_struct(sapi, "CameraStereoData", NULL);
+  api_def_struct_sdna(sapi, "CameraStereoSettings");
+  api_def_struct_nested(dapi, sapi, "Camera");
+  api_def_struct_ui_text(sapi, "Stereo", "Stereoscopy settings for a Camera data-block");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "convergence_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, convergence_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "convergence_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, convergence_mode_items);
+  api_def_prop_ui_text(prop, "Mode", "");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "pivot", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, pivot_items);
-  RNA_def_property_ui_text(prop, "Pivot", "");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "pivot", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, pivot_items);
+  api_def_prop_ui_text(prop, "Pivot", "");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "interocular_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1e4f, 1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "interocular_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1e4f, 1, 3);
+  api_def_prop_ui_text(
       prop,
       "Interocular Distance",
       "Set the distance between the eyes - the stereo plane distance / 30 should be fine");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "convergence_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0.00001f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.00001f, 15.0f, 1, 3);
-  RNA_def_property_ui_text(prop,
-                           "Convergence Plane Distance",
-                           "The converge point for the stereo cameras "
-                           "(often the distance between a projector and the projection screen)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "convergence_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0.00001f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.00001f, 15.0f, 1, 3);
+  api_def_prop_ui_text(prop,
+                       "Convergence Plane Distance",
+                       "The converge point for the stereo cameras "
+                       "(often the distance between a projector and the projection screen)");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "use_spherical_stereo", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_S3D_SPHERICAL);
-  RNA_def_property_ui_text(prop,
-                           "Spherical Stereo",
-                           "Render every pixel rotating the camera around the "
-                           "middle of the interocular distance");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "use_spherical_stereo", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_S3D_SPHERICAL);
+  api_def_prop_ui_text(prop,
+                       "Spherical Stereo",
+                       "Render every pixel rotating the camera around the "
+                       "middle of the interocular distance");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "use_pole_merge", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_S3D_POLE_MERGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pole_merge", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_S3D_POLE_MERGE);
+  api_def_prop_ui_text(
       prop, "Use Pole Merge", "Fade interocular distance to 0 after the given cutoff angle");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "pole_merge_angle_from", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, 0.0f, M_PI_2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pole_merge_angle_from", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, 0.0f, M_PI_2);
+  api_def_prop_ui_text(
       prop, "Pole Merge Start Angle", "Angle at which interocular distance starts to fade to 0");
   RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "pole_merge_angle_to", PROP_FLOAT, PROP_ANGLE);
+  prop = api_def_prop(sapi, "pole_merge_angle_to", PROP_FLOAT, PROP_ANGLE);
   RNA_def_property_range(prop, 0.0f, M_PI_2);
   RNA_def_property_ui_text(
       prop, "Pole Merge End Angle", "Angle at which interocular distance is 0");
