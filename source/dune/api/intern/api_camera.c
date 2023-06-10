@@ -211,110 +211,110 @@ static void api_def_camera_background_image(DuneApi *dapi)
   api_def_prop_ptr_stype(prop, NULL, "cuser");
   api_def_prop_ui_text(
       prop, "Clip User", "Parameters defining which frame of the movie clip is displayed");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_XYZ);
-  api_def_property_float_stype(prop, NULL, "offset");
-  api_def_property_ui_text(prop, "Offset", "");
-  api_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 0.1, RNA_TRANSLATION_PREC_DEFAULT);
-  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_float_stype(prop, NULL, "offset");
+  api_def_prop_ui_text(prop, "Offset", "");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 0.1, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = api_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
-  api_def_property_float_sdna(prop, NULL, "scale");
-  api_def_property_ui_text(prop, "Scale", "Scale the background image");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 10.0, 0.100, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_ui_text(prop, "Scale", "Scale the background image");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 10.0, 0.100, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
-  api_def_property_float_sdna(prop, NULL, "rotation");
-  api_def_property_ui_text(
+  prop = api_def_prop(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "rotation");
+  api_def_prope_ui_text(
       prop, "Rotation", "Rotation for the background image (ortho view only)");
-  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = api_def_property(srna, "use_flip_x", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_X);
-  api_def_property_ui_text(prop, "Flip Horizontally", "Flip the background image horizontally");
-  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "use_flip_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_X);
+  api_def_prop_ui_text(prop, "Flip Horizontally", "Flip the background image horizontally");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = api_def_property(srna, "use_flip_y", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_Y);
-  api_def_property_ui_text(prop, "Flip Vertically", "Flip the background image vertically");
-  api_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "use_flip_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_FLIP_Y);
+  api_def_prop_ui_text(prop, "Flip Vertically", "Flip the background image vertically");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "alpha", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "alpha");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "alpha", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "alpha");
+  api_def_prop_ui_text(
       prop, "Opacity", "Image opacity to blend the image against the background color");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_expanded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_EXPANDED);
-  RNA_def_property_ui_text(prop, "Show Expanded", "Show the expanded in the user interface");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  prop = api_def_prop(sapi, "show_expanded", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_EXPANDED);
+  api_def_prop_ui_text(prop, "Show Expanded", "Show the expanded in the user interface");
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
-  prop = RNA_def_property(srna, "use_camera_clip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_CAMERACLIP);
-  RNA_def_property_ui_text(prop, "Camera Clip", "Use movie clip from active scene camera");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "use_camera_clip", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_CAMERACLIP);
+  api_def_prop_ui_text(prop, "Camera Clip", "Use movie clip from active scene camera");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_background_image", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_DISABLED);
-  RNA_def_property_ui_text(prop, "Show Background Image", "Show this image as background");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "show_background_image", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_DISABLED);
+  api_def_prop_ui_text(prop, "Show Background Image", "Show this image as background");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  prop = RNA_def_property(srna, "show_on_foreground", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_BGIMG_FLAG_FOREGROUND);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_on_foreground", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CAM_BGIMG_FLAG_FOREGROUND);
+  api_def_prop_ui_text(
       prop, "Show On Foreground", "Show this image in front of objects in viewport");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   /* expose 1 flag as a enum of 2 items */
-  prop = RNA_def_property(srna, "display_depth", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, bgpic_display_depth_items);
-  RNA_def_property_ui_text(prop, "Depth", "Display under or over everything");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "display_depth", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, bgpic_display_depth_items);
+  api_def_prop_ui_text(prop, "Depth", "Display under or over everything");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   /* expose 2 flags as a enum of 3 items */
-  prop = RNA_def_property(srna, "frame_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, bgpic_camera_frame_items);
-  RNA_def_property_ui_text(prop, "Frame Method", "How the image fits in the camera frame");
-  RNA_def_property_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "frame_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, bgpic_camera_frame_items);
+  api_def_prop_ui_text(prop, "Frame Method", "How the image fits in the camera frame");
+  api_def_prop_update(prop, NC_CAMERA | ND_DRAW_RENDER_VIEWPORT, NULL);
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_camera_background_images(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_camera_background_images(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "CameraBackgroundImages");
-  srna = RNA_def_struct(brna, "CameraBackgroundImages", NULL);
-  RNA_def_struct_sdna(srna, "Camera");
-  RNA_def_struct_ui_text(srna, "Background Images", "Collection of background images");
+  api_def_prop_sapi(cprop, "CameraBackgroundImages");
+  sapi = api_def_struct(dapi, "CameraBackgroundImages", NULL);
+  api_def_struct_stype(sapi, "Camera");
+  api_def_struct_ui_text(sapi, "Background Images", "Collection of background images");
 
-  func = RNA_def_function(srna, "new", "rna_Camera_background_images_new");
-  RNA_def_function_ui_description(func, "Add new background image");
-  parm = RNA_def_pointer(
-      func, "image", "CameraBackgroundImage", "", "Image displayed as viewport background");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_Camera_background_images_new");
+  api_def_fn_ui_description(fn, "Add new background image");
+  parm = api_def_ptr(
+      fn, "image", "CameraBackgroundImage", "", "Image displayed as viewport background");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Camera_background_images_remove");
-  RNA_def_function_ui_description(func, "Remove background image");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(
-      func, "image", "CameraBackgroundImage", "", "Image displayed as viewport background");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_Camera_background_images_remove");
+  api_def_fn_ui_description(fn, "Remove background image");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(
+      fn, "image", "CameraBackgroundImage", "", "Image displayed as viewport background");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "clear", "rna_Camera_background_images_clear");
-  RNA_def_function_ui_description(func, "Remove all background images");
+  fn = api_def_fn(sapi, "clear", "api_Camera_background_images_clear");
+  api_def_fn_ui_description(fn, "Remove all background images");
 }
 
 static void rna_def_camera_stereo_data(BlenderRNA *brna)
