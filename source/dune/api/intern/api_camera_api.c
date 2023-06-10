@@ -2,19 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_scene_types.h"
+#  include "types_scene.h"
 
-#  include "BKE_camera.h"
-#  include "BKE_context.h"
-#  include "BKE_object.h"
+#  include "dune_camera.h"
+#  include "dune_context.h"
+#  include "dune_object.h"
 
-static void rna_camera_view_frame(struct Camera *camera,
+static void api_camera_view_frame(struct Camera *camera,
                                   struct Scene *scene,
                                   float r_vec1[3],
                                   float r_vec2[3],
