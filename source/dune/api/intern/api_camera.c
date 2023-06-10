@@ -389,7 +389,7 @@ static void api_def_camera_stereo_data(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, M_PI_2);
   api_def_prop_ui_text(
       prop, "Pole Merge Start Angle", "Angle at which interocular distance starts to fade to 0");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
   prop = api_def_prop(sapi, "pole_merge_angle_to", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_range(prop, 0.0f, M_PI_2);
