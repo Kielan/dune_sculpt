@@ -816,9 +816,9 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "bending_stiffness_max", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "max_
+  api_def_prop_float_stype(prop, NULL, "max_
   api_def_prop_range(prop, 0.0f, 10000.0f);
-  api_def_prop_float_funcs(prop, NULL, "api_ClothSettings_max_bend_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_max_bend_set", NULL);
   api_def_prop_ui_text(prop, "Bending Stiffness Maximum", "Maximum bending stiffness value");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
@@ -846,41 +846,41 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
                            "Vertex group for fine control over bending stiffness");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = api_def_prop(sapi, "effector_weights", PROP_POINTER, PROP_NONE);
-  RNA_def_prop_struct_type(prop, "EffectorWeights");
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "effector_weights", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "EffectorWeights");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
                           apidef_prop_ui_text(prop, "Effector Weights", "");
 
-  prop = api_def_prop(srna, "rest_shape_key", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "rest_shape_key", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_struct_type(prop, "ShapeKey");
   api_def_prop_ptr_fns(prop,
-                                 "rna_ClothSettings_rest_shape_key_get",
-                                 "rna_ClothSettings_rest_shape_key_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+                       "api_ClothSettings_rest_shape_key_get",
+                       "api_ClothSettings_rest_shape_key_set",
+                       NULL,
+                       NULL);
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop, "Rest Shape Key", "Shape key to use the rest spring lengths from");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "use_dynamic_mesh", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_DYNAMIC_BASEMESH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_dynamic_mesh", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_DYNAMIC_BASEMESH);
+  api_def_prop_ui_text(
       prop, "Dynamic Base Mesh", "Make simulation respect deformations in the base mesh");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  spu_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "bending_model", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "bending_model");
-  RNA_def_property_enum_items(prop, prop_bending_model_items);
-  RNA_def_property_ui_text(prop, "Bending Model", "Physical model for simulating bending forces");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "bending_model", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "bending_model");
+  api_def_prop_enum_items(prop, prop_bending_model_items);
+  api_def_prop_ui_text(prop, "Bending Model", "Physical model for simulating bending forces");
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "use_internal_springs", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_internal_springs", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS);
+  api_def_prop_ui_text(prop,
                            "Create Internal Springs",
                            "Simulate an internal volume structure by creating springs connecting "
                            "the opposite sides of the mesh");
