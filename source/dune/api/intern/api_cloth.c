@@ -822,39 +822,39 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Bending Stiffness Maximum", "Maximum bending stiffness value");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "bending_damping", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bending_damping");
-  RNA_def_property_range(prop, 0.0f, 1000.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bending_damping", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "bending_damping");
+  api_def_prop_range(prop, 0.0f, 1000.0f);
+  api_def_prop_ui_text(
       prop, "Bending Spring Damping", "Amount of damping in bending behavior");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "use_sewing_springs", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_SEW);
-  RNA_def_property_ui_text(prop, "Sew Cloth", "Pulls loose edges together");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "use_sewing_springs", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_SEW);
+  api_def_prop_ui_text(prop, "Sew Cloth", "Pulls loose edges together");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_bending", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_bend_vgroup_get",
-                                "rna_ClothSettings_bend_vgroup_length",
-                                "rna_ClothSettings_bend_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "vertex_group_bending", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                                "api_ClothSettings_bend_vgroup_get",
+                                "api_ClothSettings_bend_vgroup_length",
+                                "api_ClothSettings_bend_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop,
                            "Bending Stiffness Vertex Group",
                            "Vertex group for fine control over bending stiffness");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "effector_weights", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "EffectorWeights");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Effector Weights", "");
+  prop = api_def_prop(sapi, "effector_weights", PROP_POINTER, PROP_NONE);
+  RNA_def_prop_struct_type(prop, "EffectorWeights");
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+                          apidef_prop_ui_text(prop, "Effector Weights", "");
 
-  prop = RNA_def_property(srna, "rest_shape_key", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "ShapeKey");
-  RNA_def_property_pointer_funcs(prop,
+  prop = api_def_prop(srna, "rest_shape_key", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "ShapeKey");
+  api_def_prop_ptr_fns(prop,
                                  "rna_ClothSettings_rest_shape_key_get",
                                  "rna_ClothSettings_rest_shape_key_set",
                                  NULL,
@@ -1051,27 +1051,27 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
 #  endif
   /* unused still */
 #  if 0
-  prop = RNA_def_property(srna, "effector_wind_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "eff_wind_scale");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Effector Wind Scale", "");
+  prop = api_def_prop(sapi, "effector_wind_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "eff_wind_scale");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Effector Wind Scale", "");
 #  endif
   /* unused still */
 #  if 0
-  prop = RNA_def_property(srna, "tearing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_TEARING);
-  RNA_def_property_ui_text(prop, "Tearing", "");
+  prop = api_def_prop(sapi, "tearing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_TEARING);
+  api_def_prop_ui_text(prop, "Tearing", "");
 #  endif
   /* unused still */
 #  if 0
-  prop = RNA_def_property(srna, "max_spring_extensions", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "maxspringlen");
-  RNA_def_property_range(prop, 1.0, 1000.0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "max_spring_extensions", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "maxspringlen");
+  api_def_prop_range(prop, 1.0, 1000.0);
+  api_def_prop_ui_text(
       prop, "Maximum Spring Extension", "Maximum extension before spring gets cut");
 #  endif
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 static void rna_def_cloth_collision_settings(BlenderRNA *brna)
@@ -1200,11 +1200,11 @@ static void rna_def_cloth_collision_settings(BlenderRNA *brna)
   RNA_define_lib_overridable(false);
 }
 
-void RNA_def_cloth(BlenderRNA *brna)
+void api_def_cloth(DuneApi *dapi)
 {
-  rna_def_cloth_solver_result(brna);
-  rna_def_cloth_sim_settings(brna);
-  rna_def_cloth_collision_settings(brna);
+  api_def_cloth_solver_result(dapi);
+  api_def_cloth_sim_settings(dapi);
+  api_def_cloth_collision_settings(dapi);
 }
 
 #endif
