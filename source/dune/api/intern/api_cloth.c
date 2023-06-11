@@ -578,35 +578,35 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(
       prop, "Goal Maximum", "Goal maximum, vertex group weights are scaled to match this range");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "goal_default", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "defgoal");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "goal_default", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stypes(prop, NULL, "defgoal");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Goal Default",
       "Default Goal (vertex target position) value, when no Vertex Group used");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "goal_spring", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "goalspring");
-  RNA_def_property_range(prop, 0.0f, 0.999f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "goal_spring", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "goalspring");
+  api_def_prop_range(prop, 0.0f, 0.999f);
+  api_def_prop_ui_text(
       prop, "Goal Stiffness", "Goal (vertex target position) spring stiffness");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "goal_friction", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "goalfrict");
-  RNA_def_property_range(prop, 0.0f, 50.0f);
-  RNA_def_property_ui_text(prop, "Goal Damping", "Goal (vertex target position) friction");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "goal_friction", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "goalfrict");
+  api_def_prop_range(prop, 0.0f, 50.0f);
+  api_def_prop_ui_text(prop, "Goal Damping", "Goal (vertex target position) friction");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "internal_friction", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "velocity_smooth");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Internal Friction", "");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "internal_friction", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "velocity_smooth");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Internal Friction", "");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = RNA_def_property(srna, "collider_friction", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "collider_friction");
