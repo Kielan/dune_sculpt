@@ -629,52 +629,52 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
 
   /* mass */
 
-  prop = RNA_def_prop(sapi, "mass", PROP_FLOAT, PROP_UNIT_MASS);
-  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
-  RNA_def_prop_ui_text(prop, "Vertex Mass", "The mass of each vertex on the cloth material");
-  RNA_def_prop_update(prop, 0, "api_cloth_update");
+  prop = api_def_prop(sapi, "mass", PROP_FLOAT, PROP_UNIT_MASS);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(prop, "Vertex Mass", "The mass of each vertex on the cloth material");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_mass", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_mass_vgroup_get",
-                                "rna_ClothSettings_mass_vgroup_length",
-                                "rna_ClothSettings_mass_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Mass Vertex Group", "Vertex Group for pinning of vertices");
-  RNA_def_property_update(prop, 0, "rna_cloth_pinning_changed");
+  prop = api_def_prop(sapi, "vertex_group_mass", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_ClothSettings_mass_vgroup_get",
+                          "api_ClothSettings_mass_vgroup_length",
+                          "api_ClothSettings_mass_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "Mass Vertex Group", "Vertex Group for pinning of vertices");
+  api_def_prop_update(prop, 0, "api_cloth_pinning_changed");
 
-  prop = RNA_def_property(srna, "gravity", PROP_FLOAT, PROP_ACCELERATION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -100.0, 100.0);
-  RNA_def_property_float_funcs(
-      prop, "rna_ClothSettings_gravity_get", "rna_ClothSettings_gravity_set", NULL);
-  RNA_def_property_ui_text(prop, "Gravity", "Gravity or external force vector");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "gravity", PROP_FLOAT, PROP_ACCELERATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -100.0, 100.0);
+  api_def_prop_float_fns(
+      prop, "api_ClothSettings_gravity_get", "api_ClothSettings_gravity_set", NULL);
+  api_def_prop_ui_text(prop, "Gravity", "Gravity or external force vector");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   /* various */
 
-  prop = RNA_def_property(srna, "air_damping", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "Cvi");
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "air_damping", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "Cvi");
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_text(
       prop, "Air Damping", "Air has normally some thickness which slows falling things down");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "pin_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "goalspring");
-  RNA_def_property_range(prop, 0.0f, 50.0);
-  RNA_def_property_ui_text(prop, "Pin Stiffness", "Pin (vertex target position) spring stiffness");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "pin_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "goalspring");
+  api_def_prop_range(prop, 0.0f, 50.0);
+  api_def_prop_ui_text(prop, "Pin Stiffness", "Pin (vertex target position) spring stiffness");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "quality", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "stepsPerFrame");
-  RNA_def_property_range(prop, 1, INT_MAX);
-  RNA_def_property_ui_range(prop, 1, 80, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "quality", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "stepsPerFrame");
+  api_def_prop_range(prop, 1, INT_MAX);
+  api_def_prop_ui_range(prop, 1, 80, 1, -1);
+  api_def_prop_ui_text(
       prop,
       "Quality",
       "Quality of the simulation in steps per frame (higher is better quality but slower)");
-  RNA_def_prop_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "time_scale", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "time_scale");
@@ -701,32 +701,32 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "shrink_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "shrink_max");
-  RNA_def_property_range(prop, -FLT_MAX, 1.0f);
-  RNA_def_property_ui_range(prop, -1.0f, 1.0f, 0.05f, 3);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_shrink_max_set", NULL);
-  RNA_def_property_ui_text(prop, "Shrink Factor Max", "Max amount to shrink cloth by");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_float_stype(prop, NULL, "shrink_max");
+  api_def_prop_range(prop, -FLT_MAX, 1.0f);
+  api_def_prop_ui_range(prop, -1.0f, 1.0f, 0.05f, 3);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_shrink_max_set", NULL);
+  api_def_prop_ui_text(prop, "Shrink Factor Max", "Max amount to shrink cloth by");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "voxel_cell_size", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "voxel_cell_size");
-  RNA_def_property_range(prop, 0.0001f, 10000.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "voxel_cell_size", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "voxel_cell_size");
+  api_def_prop_range(prop, 0.0001f, 10000.0f);
+  api_def_prop_ui_text(
       prop, "Voxel Grid Cell Size", "Size of the voxel grid cells for interaction effects");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   /* springs */
-  prop = RNA_def_property(srna, "tension_damping", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "tension_damp");
-  RNA_def_property_range(prop, 0.0f, 50.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tension_damping", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "tension_damp");
+  api_def_prop_range(prop, 0.0f, 50.0f);
+  api_def_prop_ui_text(
       prop, "Tension Spring Damping", "Amount of damping in stretching behavior");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "compression_damping", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "compression_damp");
-  RNA_def_property_range(prop, 0.0f, 50.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "compression_damping", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "compression_damp");
+  api_def_prop_range(prop, 0.0f, 50.0f);
+  api_def_prop_ui_text(
       prop, "Compression Spring Damping", "Amount of damping in compression behavior");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
