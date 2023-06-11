@@ -252,37 +252,37 @@ static void api_ClothSettings_mass_vgroup_set(ApiPtr *ptr, const char *value)
 static void api_ClothSettings_shrink_vgroup_get(PointerRNA *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_shrink);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_shrink);
 }
 
-static int rna_ClothSettings_shrink_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_shrink_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_shrink);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_shrink);
 }
 
-static void rna_ClothSettings_shrink_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_shrink_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_shrink);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_shrink);
 }
 
-static void rna_ClothSettings_struct_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_struct_vgroup_get(PointerRNA *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_struct);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_struct);
 }
 
-static int rna_ClothSettings_struct_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_struct_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_struct);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_struct);
 }
 
-static void rna_ClothSettings_struct_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_struct_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_struct);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_struct);
 }
 
 static void api_ClothSettings_shear_vgroup_get(ApiPtr *ptr, char *value)
@@ -303,40 +303,40 @@ static void api_ClothSettings_shear_vgroup_set(ApiPtr *ptr, const char *value)
   api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_shear);
 }
 
-static void rna_ClothSettings_bend_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_bend_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_bend);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_bend);
 }
 
-static int rna_ClothSettings_bend_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_bend_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_bend);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_bend);
 }
 
-static void rna_ClothSettings_bend_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_bend_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_bend);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_bend);
 }
 
-static void rna_ClothSettings_internal_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_internal_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_intern);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_intern);
 }
 
-static int rna_ClothSettings_internal_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_internal_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_intern);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_intern);
 }
 
-static void rna_ClothSettings_internal_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_internal_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_intern);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_intern);
 }
 
 static void api_ClothSettings_pressure_vgroup_get(ApiPtr *ptr, char *value)
@@ -606,13 +606,13 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "velocity_smooth");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Internal Friction", "");
-  api_def_prop_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "collider_friction", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "collider_friction");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Collider Friction", "");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "collider_friction", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "collider_friction");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Collider Friction", "");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "density_target", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "density_target");
@@ -728,99 +728,99 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, 50.0f);
   api_def_prop_ui_text(
       prop, "Compression Spring Damping", "Amount of damping in compression behavior");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
+                      
+  prop = api_def_prop(sapi, "shear_damping", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "shear_damp");
+  api_def_prop_range(prop, 0.0f, 50.0f);
+  api_def_prop_ui_text(prop, "Shear Spring Damping", "Amount of damping in shearing behavior");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "shear_damping", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "shear_damp");
-  RNA_def_property_range(prop, 0.0f, 50.0f);
-  RNA_def_property_ui_text(prop, "Shear Spring Damping", "Amount of damping in shearing behavior");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(api, "tension_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "tension");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_tension_set", NULL);
+  api_def_prop_ui_text(prop, "Tension Stiffness", "How much the material resists stretching");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "tension_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "tension");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_tension_set", NULL);
-  RNA_def_property_ui_text(prop, "Tension Stiffness", "How much the material resists stretching");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "tension_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_tension");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_max_tension_set", NULL);
+  api_def_prop_ui_text(prop, "Tension Stiffness Maximum", "Maximum tension stiffness value");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "tension_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_tension");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_tension_set", NULL);
-  RNA_def_property_ui_text(prop, "Tension Stiffness Maximum", "Maximum tension stiffness value");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-
-  prop = RNA_def_property(srna, "compression_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "compression");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_compression_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "compression_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "compression");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_compression_set", NULL);
+  api_def_prop_ui_text(
       prop, "Compression Stiffness", "How much the material resists compression");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "compression_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_compression");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_compression_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "compression_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_compression");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_max_compression_set", NULL);
+  api_def_prop_ui_text(
       prop, "Compression Stiffness Maximum", "Maximum compression stiffness value");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "shear_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "shear");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_shear_set", NULL);
-  RNA_def_property_ui_text(prop, "Shear Stiffness", "How much the material resists shearing");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "shear_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "shear");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_shear_set", NULL);
+  api_def_prop_ui_text(prop, "Shear Stiffness", "How much the material resists shearing");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "shear_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_shear");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_shear_set", NULL);
-  RNA_def_property_ui_text(prop, "Shear Stiffness Maximum", "Maximum shear scaling value");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "shear_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "max_shear");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_max_shear_set", NULL);
+  api_def_prop_ui_text(prop, "Shear Stiffness Maximum", "Maximum shear scaling value");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "sewing_force_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_sewing");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_sewing_set", NULL);
-  RNA_def_property_ui_text(prop, "Sewing Force Max", "Maximum sewing force");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "sewing_force_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_sewing");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_max_sewing_set", NULL);
+  api_def_prop_ui_text(prop, "Sewing Force Max", "Maximum sewing force");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_structural_stiffness", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_struct_vgroup_get",
-                                "rna_ClothSettings_struct_vgroup_length",
-                                "rna_ClothSettings_struct_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop,
-                           "Structural Stiffness Vertex Group",
-                           "Vertex group for fine control over structural stiffness");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "vertex_group_structural_stiffness", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_ClothSettings_struct_vgroup_get",
+                          "api_ClothSettings_struct_vgroup_length",
+                          "api_ClothSettings_struct_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop,
+                       "Structural Stiffness Vertex Group",
+                       "Vertex group for fine control over structural stiffness");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_shear_stiffness", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_shear_vgroup_get",
-                                "rna_ClothSettings_shear_vgroup_length",
-                                "rna_ClothSettings_shear_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group_shear_stiffness", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                         "api_ClothSettings_shear_vgroup_get",
+                         "api_ClothSettings_shear_vgroup_length",
+                         "api_ClothSettings_shear_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop, "Shear Stiffness Vertex Group", "Vertex group for fine control over shear stiffness");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = RNA_def_property(srna, "bending_stiffness", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "bending");
   RNA_def_property_range(prop, 0.0f, 10000.0f);
   RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_bending_set", NULL);
   RNA_def_property_ui_text(prop, "Bending Stiffness", "How much the material resists bending");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  RNA_def_property_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "bending_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_bend");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_bend_set", NULL);
-  RNA_def_property_ui_text(prop, "Bending Stiffness Maximum", "Maximum bending stiffness value");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_property(srna, "bending_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "max_
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_funcs(prop, NULL, "api_ClothSettings_max_bend_set", NULL);
+  api_def_prop_ui_text(prop, "Bending Stiffness Maximum", "Maximum bending stiffness value");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = RNA_def_property(srna, "bending_damping", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "bending_damping");
