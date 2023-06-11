@@ -111,7 +111,7 @@ static void api_ClothSettings_compression_set(struct PointerRNA *ptr, float valu
   }
 }
 
-static void rna_ClothSettings_max_compression_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_compression_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -123,7 +123,7 @@ static void rna_ClothSettings_max_compression_set(struct PointerRNA *ptr, float 
   settings->max_compression = value;
 }
 
-static void rna_ClothSettings_shear_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_shear_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -808,14 +808,14 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
       prop, "Shear Stiffness Vertex Group", "Vertex group for fine control over shear stiffness");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "bending_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bending");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_bending_set", NULL);
-  RNA_def_property_ui_text(prop, "Bending Stiffness", "How much the material resists bending");
-  RNA_def_property_update(prop, 0, "api_cloth_update");
+  prop = api_def_prop(sapi, "bending_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "bending");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_bending_set", NULL);
+  api_def_prop_ui_text(prop, "Bending Stiffness", "How much the material resists bending");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = api_def_property(srna, "bending_stiffness_max", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "bending_stiffness_max", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_sdna(prop, NULL, "max_
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_float_funcs(prop, NULL, "api_ClothSettings_max_bend_set", NULL);
