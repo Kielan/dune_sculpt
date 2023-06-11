@@ -674,33 +674,33 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
       prop,
       "Quality",
       "Quality of the simulation in steps per frame (higher is better quality but slower)");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  RNA_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "time_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "time_scale");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 10.0f, 10, 3);
-  RNA_def_property_ui_text(prop, "Speed", "Cloth speed is multiplied by this value");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "time_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "time_scale");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 10.0f, 10, 3);
+  api_def_prop_ui_text(prop, "Speed", "Cloth speed is multiplied by this value");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_shrink", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_shrink_vgroup_get",
-                                "rna_ClothSettings_shrink_vgroup_length",
-                                "rna_ClothSettings_shrink_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Shrink Vertex Group", "Vertex Group for shrinking cloth");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "vertex_group_shrink", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_ClothSettings_shrink_vgroup_get",
+                          "api_ClothSettings_shrink_vgroup_length",
+                          "api_ClothSettings_shrink_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "Shrink Vertex Group", "Vertex Group for shrinking cloth");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "shrink_min", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "shrink_min");
-  RNA_def_property_range(prop, -FLT_MAX, 1.0f);
-  RNA_def_property_ui_range(prop, -1.0f, 1.0f, 0.05f, 3);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_shrink_min_set", NULL);
-  RNA_def_property_ui_text(prop, "Shrink Factor", "Factor by which to shrink cloth");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "shrink_min", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "shrink_min");
+  api_def_prop_range(prop, -FLT_MAX, 1.0f);
+  api_def_prop_ui_range(prop, -1.0f, 1.0f, 0.05f, 3);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_shrink_min_set", NULL);
+  api_def_prop_ui_text(prop, "Shrink Factor", "Factor by which to shrink cloth");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "shrink_max", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "shrink_max", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "shrink_max");
   RNA_def_property_range(prop, -FLT_MAX, 1.0f);
   RNA_def_property_ui_range(prop, -1.0f, 1.0f, 0.05f, 3);
