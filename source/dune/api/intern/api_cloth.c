@@ -614,25 +614,25 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Collider Friction", "");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "density_target", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "density_target");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Target Density", "Maximum density of hair");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "density_target", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "density_target");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Target Density", "Maximum density of hair");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "density_strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "density_strength");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "density_strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "density_strength");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Target Density Strength", "Influence of target density on the simulation");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   /* mass */
 
-  prop = RNA_def_property(srna, "mass", PROP_FLOAT, PROP_UNIT_MASS);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Vertex Mass", "The mass of each vertex on the cloth material");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = RNA_def_prop(sapi, "mass", PROP_FLOAT, PROP_UNIT_MASS);
+  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
+  RNA_def_prop_ui_text(prop, "Vertex Mass", "The mass of each vertex on the cloth material");
+  RNA_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = RNA_def_property(srna, "vertex_group_mass", PROP_STRING, PROP_NONE);
   RNA_def_property_string_funcs(prop,
