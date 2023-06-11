@@ -3,7 +3,7 @@
 
 #include "types_cloth.h"
 #include "types_object.h"
-#include "types_scens.h"
+#include "types_scene.h"
 
 #include "api_define.h"
 
@@ -195,7 +195,7 @@ static void rna_ClothSettings_internal_tension_set(struct PointerRNA *ptr, float
   }
 }
 
-static void rna_ClothSettings_max_internal_tension_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_internal_tension_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -207,7 +207,7 @@ static void rna_ClothSettings_max_internal_tension_set(struct PointerRNA *ptr, f
   settings->max_internal_tension = value;
 }
 
-static void rna_ClothSettings_internal_compression_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_internal_compression_set(struct PointerRNA *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -219,7 +219,7 @@ static void rna_ClothSettings_internal_compression_set(struct PointerRNA *ptr, f
   }
 }
 
-static void rna_ClothSettings_max_internal_compression_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_internal_compression_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -231,25 +231,25 @@ static void rna_ClothSettings_max_internal_compression_set(struct PointerRNA *pt
   settings->max_internal_compression = value;
 }
 
-static void rna_ClothSettings_mass_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_mass_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_mass);
+  api_object_vgroup_name_index_get(ptr, value, sim->vgroup_mass);
 }
 
-static int rna_ClothSettings_mass_vgroup_length(PointerRNA *ptr)
+static int api_ClothSettings_mass_vgroup_length(ApiPtr *ptr)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, sim->vgroup_mass);
+  return api_object_vgroup_name_index_length(ptr, sim->vgroup_mass);
 }
 
-static void rna_ClothSettings_mass_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ClothSettings_mass_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &sim->vgroup_mass);
+  api_object_vgroup_name_index_set(ptr, value, &sim->vgroup_mass);
 }
 
-static void rna_ClothSettings_shrink_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ClothSettings_shrink_vgroup_get(PointerRNA *ptr, char *value)
 {
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
   rna_object_vgroup_name_index_get(ptr, value, sim->vgroup_shrink);
