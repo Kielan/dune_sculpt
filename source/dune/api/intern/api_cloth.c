@@ -498,57 +498,57 @@ static void api_def_cloth_solver_result(DuneApi *api)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ClothSolverResult", NULL);
-  RNA_def_struct_ui_text(srna, "Solver Result", "Result of cloth solver iteration");
+  sapi = api_def_struct(dapi, "ClothSolverResult", NULL);
+  api_def_struct_ui_text(sapi, "Solver Result", "Result of cloth solver iteration");
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
-  prop = RNA_def_property(srna, "status", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, status_items);
-  RNA_def_property_enum_sdna(prop, NULL, "status");
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Status", "Status of the solver iteration");
+  prop = api_def_prop(sapi, "status", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, status_items);
+  api_def_prop_lib_enum_stype(prop, NULL, "status");
+  api_def_prop_flag(prop, PROP_ENUM_FLAG);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Status", "Status of the solver iteration");
 
-  prop = RNA_def_property(srna, "max_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Maximum Error", "Maximum error during substeps");
+  prop = api_def_prop(sapi, "max_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Maximum Error", "Maximum error during substeps");
 
-  prop = RNA_def_property(srna, "min_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Minimum Error", "Minimum error during substeps");
+  prop = api_def_prop(sapi, "min_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Minimum Error", "Minimum error during substeps");
 
-  prop = RNA_def_property(srna, "avg_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "avg_error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Average Error", "Average error during substeps");
+  prop = api_def_prop(sapi, "avg_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stypes(prop, NULL, "avg_error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Average Error", "Average error during substeps");
 
-  prop = RNA_def_property(srna, "max_iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "max_iterations");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Maximum Iterations", "Maximum iterations during substeps");
+  prop = api_def_prop(sapi, "max_iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "max_iterations");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Maximum Iterations", "Maximum iterations during substeps");
 
-  prop = RNA_def_property(srna, "min_iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "min_iterations");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Minimum Iterations", "Minimum iterations during substeps");
+  prop = api_def_prop(sapi, "min_iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "min_iterations");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Minimum Iterations", "Minimum iterations during substeps");
 
-  prop = RNA_def_property(srna, "avg_iterations", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "avg_iterations");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Average Iterations", "Average iterations during substeps");
+  prop = api_def_prop(sapi, "avg_iterations", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "avg_iterations");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Average Iterations", "Average iterations during substeps");
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_sdna(1);
 }
 
-static void rna_def_cloth_sim_settings(BlenderRNA *brna)
+static void api_def_cloth_sim_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_bending_model_items[] = {
+  static const EnumPropItem prop_bending_model_items[] = {
       {CLOTH_BENDING_ANGULAR, "ANGULAR", 0, "Angular", "Cloth model with angular bending springs"},
       {CLOTH_BENDING_LINEAR,
        "LINEAR",
@@ -558,26 +558,25 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ClothSettings", NULL);
-  RNA_def_struct_ui_text(srna, "Cloth Settings", "Cloth simulation settings for an object");
-  RNA_def_struct_sdna(srna, "ClothSimSettings");
-  RNA_def_struct_path_func(srna, "rna_ClothSettings_path");
+  sapi = api_def_struct(dapi, "ClothSettings", NULL);
+  api_def_struct_ui_text(sapi, "Cloth Settings", "Cloth simulation settings for an object");
+  api_def_struct_stype(sapi, "ClothSimSettings");
+  api_def_struct_path_fn(sapi, "api_ClothSettings_path");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* goal */
 
-  prop = RNA_def_property(srna, "goal_min", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "mingoal");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "goal_min", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "mingoal");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Goal Minimum", "Goal minimum, vertex group weights are scaled to match this range");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-
-  prop = RNA_def_property(srna, "goal_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "maxgoal");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  api_def_prop_update(prop, 0, "rna_cloth_update"
+  prop = api_def_prop(sapi, "goal_max", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "maxgoal");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Goal Maximum", "Goal maximum, vertex group weights are scaled to match this range");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
