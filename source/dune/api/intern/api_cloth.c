@@ -135,7 +135,7 @@ static void rna_ClothSettings_shear_set(struct PointerRNA *ptr, float value)
   }
 }
 
-static void rna_ClothSettings_max_shear_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_shear_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -147,7 +147,7 @@ static void rna_ClothSettings_max_shear_set(struct PointerRNA *ptr, float value)
   settings->max_shear = value;
 }
 
-static void rna_ClothSettings_max_sewing_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_max_sewing_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -159,7 +159,7 @@ static void rna_ClothSettings_max_sewing_set(struct PointerRNA *ptr, float value
   settings->max_sewing = value;
 }
 
-static void rna_ClothSettings_shrink_min_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_shrink_min_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -171,7 +171,7 @@ static void rna_ClothSettings_shrink_min_set(struct PointerRNA *ptr, float value
   }
 }
 
-static void rna_ClothSettings_shrink_max_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_shrink_max_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
@@ -183,7 +183,7 @@ static void rna_ClothSettings_shrink_max_set(struct PointerRNA *ptr, float value
   settings->shrink_max = value;
 }
 
-static void rna_ClothSettings_internal_tension_set(struct PointerRNA *ptr, float value)
+static void api_ClothSettings_internal_tension_set(struct ApiPtr *ptr, float value)
 {
   ClothSimSettings *settings = (ClothSimSettings *)ptr->data;
 
