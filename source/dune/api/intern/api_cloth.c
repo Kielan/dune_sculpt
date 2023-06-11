@@ -957,11 +957,11 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_intern", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_internal_vgroup_get",
-                                "rna_ClothSettings_internal_vgroup_length",
-                                "rna_ClothSettings_internal_vgroup_set");
+  prop = api_def_prop(sapi, "vertex_group_intern", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_fns(prop,
+                              "api_ClothSettings_internal_vgroup_get",
+                              "api_ClothSettings_internal_vgroup_length",
+                              "api_ClothSettings_internal_vgroup_set");
   RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_ui_text(prop,
                            "Internal Springs Vertex Group",
