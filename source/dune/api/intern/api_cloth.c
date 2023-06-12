@@ -1181,14 +1181,14 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
                                 "rna_CollSettings_objcol_vgroup_get",
                                 "rna_CollSettings_objcol_vgroup_length",
                                 "rna_CollSettings_objcol_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop,
       "Collision Vertex Group",
       "Triangles with all vertices in this group are not used during object collisions");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "self_impulse_clamp", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "self_impulse_clamp", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "self_clamp");
   RNA_def_property_range(prop, 0.0f, 100.0f);
   RNA_def_property_ui_text(
