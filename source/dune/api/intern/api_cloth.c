@@ -369,16 +369,16 @@ static int api_CollSettings_selfcol_vgroup_length(ApiPtr *ptr)
   return api_object_vgroup_name_index_length(ptr, coll->vgroup_selfcol);
 }
 
-static void rna_CollSettings_selfcol_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_CollSettings_selfcol_vgroup_set(ApiPtr *ptr, const char *value)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &coll->vgroup_selfcol);
+  api_object_vgroup_name_index_set(ptr, value, &coll->vgroup_selfcol);
 }
 
-static void rna_CollSettings_objcol_vgroup_get(PointerRNA *ptr, char *value)
+static void api_CollSettings_objcol_vgroup_get(ApiPtr *ptr, char *value)
 {
   ClothCollSettings *coll = (ClothCollSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, coll->vgroup_objcol);
+  api_object_vgroup_name_index_get(ptr, value, coll->vgroup_objcol);
 }
 
 static int api_CollSettings_objcol_vgroup_length(PointerRNA *ptr)
@@ -408,7 +408,7 @@ static void api_ClothSettings_rest_shape_key_set(PointerRNA *ptr,
   Object *ob = (Object *)ptr->owner_id;
   ClothSimSettings *sim = (ClothSimSettings *)ptr->data;
 
-  sim->shapekey_rest = rna_object_shapekey_index_set(ob->data, value, sim->shapekey_rest);
+  sim->shapekey_rest = api_object_shapekey_index_set(ob->data, value, sim->shapekey_rest);
 }
 
 static void api_ClothSettings_gravity_get(PointerRNA *ptr, float *values)
@@ -1024,30 +1024,30 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
       "Density (kg/l) of the fluid contained inside the object, used to create "
       "a hydrostatic pressure gradient simulating the weight of the internal fluid, "
       "or buoyancy from the surrounding fluid if negative");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_pressure", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ClothSettings_pressure_vgroup_get",
-                                "rna_ClothSettings_pressure_vgroup_length",
-                                "rna_ClothSettings_pressure_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group_pressure", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_ClothSettings_pressure_vgroup_get",
+                          "api_ClothSettings_pressure_vgroup_length",
+                          "api_ClothSettings_pressure_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop,
       "Pressure Vertex Group",
       "Vertex Group for where to apply pressure. Zero weight means no "
       "pressure while a weight of one means full pressure. Faces with a vertex "
       "that has zero weight will be excluded from the volume calculation");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   /* unused */
 
   /* unused still */
 #  if 0
-  prop = RNA_def_property(srna, "effector_force_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "eff_force_scale");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Effector Force Scale", "");
+  prop = api_def_prop(sapi, "effector_force_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "eff_force_scale");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Effector Force Scale", "");
 #  endif
   /* unused still */
 #  if 0
@@ -1074,29 +1074,29 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_define_lib_overridable(false);
 }
 
-static void rna_def_cloth_collision_settings(BlenderRNA *brna)
+static void api_def_cloth_collision_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ClothCollisionSettings", NULL);
-  RNA_def_struct_ui_text(
-      srna,
+  sapi = api_def_struct(dapi, "ClothCollisionSettings", NULL);
+  api_def_struct_ui_text(
+      sapi,
       "Cloth Collision Settings",
       "Cloth simulation settings for self collision and collision with other objects");
-  RNA_def_struct_sdna(srna, "ClothCollSettings");
-  RNA_def_struct_path_func(srna, "rna_ClothCollisionSettings_path");
+  api_def_struct_stype(sapi, "ClothCollSettings");
+  api_def_struct_path_fn(sapi, "api_ClothCollisionSettings_path");
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* general collision */
 
-  prop = RNA_def_property(srna, "use_collision", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_ENABLED);
-  RNA_def_property_ui_text(prop, "Enable Collision", "Enable collisions with other objects");
-  RNA_def_property_update(prop, 0, "rna_cloth_dependency_update");
+  prop = api_def_prop(sapi, "use_collision", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_ENABLED);
+  api_def_prop_ui_text(prop, "Enable Collision", "Enable collisions with other objects");
+  api_def_prop_update(prop, 0, "rna_cloth_dependency_update");
 
-  prop = RNA_def_property(srna, "distance_min", PROP_FLOAT, PROP_DISTANCE);
+  prop = api_def_prop(sapi, "distance_min", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "epsilon");
   RNA_def_property_range(prop, 0.001f, 1.0f);
   RNA_def_property_ui_text(
