@@ -1018,7 +1018,7 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "fluid_density", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "fluid_density");
   api_def_prop_ui_range(prop, -2.0f, 2.0f, 0.05f, 4);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Fluid Density",
       "Density (kg/l) of the fluid contained inside the object, used to create "
@@ -1105,11 +1105,11 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
       "Minimum distance between collision objects before collision response takes effect");
   api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "friction", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0f, 80.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "friction", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0f, 80.0f);
+  api_def_prop_ui_text(
       prop, "Friction", "Friction force if a collision happened (higher = less movement)");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = api_def_prop(sapi, "damping", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "damping");
