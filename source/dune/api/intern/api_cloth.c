@@ -966,14 +966,14 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Internal Springs Vertex Group",
                        "Vertex group for fine control over the internal spring stiffness");
-  RNA_def_property_editable_fn(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   /* Pressure */
 
-  prop = RNA_def_property(srna, "use_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Simulate pressure inside a closed cloth mesh");
+  prop = api_def_prop(sapi, "use_pressure", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE);
+  RNA_def_property_ui_text(prop, "Use Pressure", "Simulate pressure inside a closed cloth mesh")
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
@@ -1006,18 +1006,18 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
                            "set to zero the change in volume will not affect pressure");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "pressure_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "pressure_factor");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "pressure_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "pressure_factor");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop,
                            "Pressure Scale",
                            "Ambient pressure (kPa) that balances out between the inside and "
                            "outside of the object when it has the target volume");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "fluid_density", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "fluid_density");
-  RNA_def_property_ui_range(prop, -2.0f, 2.0f, 0.05f, 4);
+  prop = api_def_prop(sapi, "fluid_density", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "fluid_density");
+  api_def_prop_ui_range(prop, -2.0f, 2.0f, 0.05f, 4);
   RNA_def_property_ui_text(
       prop,
       "Fluid Density",
