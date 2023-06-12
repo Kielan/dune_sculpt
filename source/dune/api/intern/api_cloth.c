@@ -884,89 +884,89 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
                            "Create Internal Springs",
                            "Simulate an internal volume structure by creating springs connecting "
                            "the opposite sides of the mesh");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "internal_spring_normal_check", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "internal_spring_normal_check", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS_NORMAL);
-  RNA_def_property_ui_text(prop,
-                           "Check Internal Spring Normals",
-                           "Require the points the internal springs connect to have opposite "
-                           "normal directions");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop,
+                       "Check Internal Spring Normals",
+                       "Require the points the internal springs connect to have opposite "
+                       "normal directions");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "internal_spring_max_length", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "internal_spring_max_length");
-  RNA_def_property_range(prop, 0.0f, 1000.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "internal_spring_max_length", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "internal_spring_max_length");
+  api_def_prop_range(prop, 0.0f, 1000.0f);
+  api_def_prop_ui_text(
       prop,
       "Internal Spring Max Length",
       "The maximum length an internal spring can have during creation. If the distance between "
       "internal points is greater than this, no internal spring will be created between these "
       "points. "
       "A length of zero means that there is no length limit");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "internal_spring_max_diversion", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "internal_spring_max_diversion");
-  RNA_def_property_range(prop, 0.0f, M_PI_4);
-  RNA_def_property_ui_text(prop,
-                           "Internal Spring Max Diversion",
-                           "How much the rays used to connect the internal points can diverge "
-                           "from the vertex normal");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "internal_spring_max_diversion", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_floa_stype(prop, NULL, "internal_spring_max_diversion");
+  api_def_prop_range(prop, 0.0f, M_PI_4);
+  api_def_prop_ui_text(prop,
+                       "Internal Spring Max Diversion",
+                       "How much the rays used to connect the internal points can diverge "
+                       "from the vertex normal");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
-  prop = RNA_def_property(srna, "internal_tension_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "internal_tension");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_internal_tension_set", NULL);
-  RNA_def_property_ui_text(prop, "Tension Stiffness", "How much the material resists stretching");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "internal_tension_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "internal_tension");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_internal_tension_set", NULL);
+  api_def_prop_ui_text(prop, "Tension Stiffness", "How much the material resists stretching");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "internal_tension_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_internal_tension");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_internal_tension_set", NULL);
-  RNA_def_property_ui_text(prop, "Tension Stiffness Maximum", "Maximum tension stiffness value");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "internal_tension_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_internal_tension");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_max_internal_tension_set", NULL);
+  api_def_prop_ui_text(prop, "Tension Stiffness Maximum", "Maximum tension stiffness value");
+  api_def_prop_editable_fb(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "internal_compression_stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "internal_compression");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_internal_compression_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "internal_compression_stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "internal_compression");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_internal_compression_set", NULL);
+  api_def_prop_ui_text(
       prop, "Compression Stiffness", "How much the material resists compression");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "internal_compression_stiffness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_internal_compression");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_ClothSettings_max_internal_compression_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "internal_compression_stiffness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_internal_compression");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_max_internal_compression_set", NULL);
+  api_def_prop_ui_text(
       prop, "Compression Stiffness Maximum", "Maximum compression stiffness value");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_editable_fn(prop, "api_ClothSettings_internal_editable");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "vertex_group_intern", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_fns(prop,
-                              "api_ClothSettings_internal_vgroup_get",
-                              "api_ClothSettings_internal_vgroup_length",
-                              "api_ClothSettings_internal_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop,
-                           "Internal Springs Vertex Group",
-                           "Vertex group for fine control over the internal spring stiffness");
-  RNA_def_property_editable_func(prop, "rna_ClothSettings_internal_editable");
+  api_def_prop_string_fns(prop,
+                          "api_ClothSettings_internal_vgroup_get",
+                          "api_ClothSettings_internal_vgroup_length",
+                          "api_ClothSettings_internal_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop,
+                       "Internal Springs Vertex Group",
+                       "Vertex group for fine control over the internal spring stiffness");
+  RNA_def_property_editable_fn(prop, "rna_ClothSettings_internal_editable");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
   /* Pressure */
