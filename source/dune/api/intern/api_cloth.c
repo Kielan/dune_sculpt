@@ -811,7 +811,7 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "bending_stiffness", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "bending");
   api_def_prop_range(prop, 0.0f, 10000.0f);
-  api_def_prop_float_fns(prop, NULL, "rna_ClothSettings_bending_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_ClothSettings_bending_set", NULL);
   api_def_prop_ui_text(prop, "Bending Stiffness", "How much the material resists bending");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
@@ -837,13 +837,13 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "vertex_group_bending", PROP_STRING, PROP_NONE);
   api_def_prop_string_fns(prop,
-                                "api_ClothSettings_bend_vgroup_get",
-                                "api_ClothSettings_bend_vgroup_length",
-                                "api_ClothSettings_bend_vgroup_set");
+                          "api_ClothSettings_bend_vgroup_get",
+                          "api_ClothSettings_bend_vgroup_length",
+                          "api_ClothSettings_bend_vgroup_set");
   api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   api_def_prop_ui_text(prop,
-                           "Bending Stiffness Vertex Group",
-                           "Vertex group for fine control over bending stiffness");
+                       "Bending Stiffness Vertex Group",
+                       "Vertex group for fine control over bending stiffness");
   api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "effector_weights", PROP_PTR, PROP_NONE);
@@ -881,9 +881,9 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_internal_springs", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_INTERNAL_SPRINGS);
   api_def_prop_ui_text(prop,
-                           "Create Internal Springs",
-                           "Simulate an internal volume structure by creating springs connecting "
-                           "the opposite sides of the mesh");
+                       "Create Internal Springs",
+                       "Simulate an internal volume structure by creating springs connecting "
+                       "the opposite sides of the mesh");
   api_def_prop_update(prop, 0, "api_cloth_update");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
 
@@ -972,19 +972,19 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   /* Pressure */
 
   prop = api_def_prop(sapi, "use_pressure", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Simulate pressure inside a closed cloth mesh")
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE);
+  api_def_prop_ui_text(prop, "Use Pressure", "Simulate pressure inside a closed cloth mesh")
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "use_pressure_volume", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE_VOL);
-  RNA_def_property_ui_text(prop,
-                           "Use Custom Volume",
-                           "Use the Target Volume parameter as the initial volume, instead "
-                           "of calculating it from the mesh itself");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "use_pressure_volume", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_PRESSURE_VOL);
+  api_def_prop_ui_text(prop,
+                       "Use Custom Volume",
+                       "Use the Target Volume parameter as the initial volume, instead "
+                       "of calculating it from the mesh itself");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE)p
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = RNA_def_property(srna, "uniform_pressure_force", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "uniform_pressure_force");
@@ -1013,7 +1013,7 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
                            "Pressure Scale",
                            "Ambient pressure (kPa) that balances out between the inside and "
                            "outside of the object when it has the target volume");
-  api_def_prop_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
   prop = api_def_prop(sapi, "fluid_density", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "fluid_density");
@@ -1097,13 +1097,13 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_cloth_dependency_update");
 
   prop = api_def_prop(sapi, "distance_min", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "epsilon");
-  RNA_def_property_range(prop, 0.001f, 1.0f);
-  RNA_def_property_ui_text(
+  api_def_prop_float_stype(prop, NULL, "epsilon");
+  api_def_prop_range(prop, 0.001f, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Minimum Distance",
       "Minimum distance between collision objects before collision response takes effect");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = RNA_def_property(srna, "friction", PROP_FLOAT, PROP_NONE);
   RNA_def_property_range(prop, 0.0f, 80.0f);
@@ -1111,18 +1111,18 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
       prop, "Friction", "Friction force if a collision happened (higher = less movement)");
   RNA_def_property_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "damping", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "damping");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Restitution", "Amount of velocity lost on collision");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "damping", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "damping");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Restitution", "Amount of velocity lost on collision");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "collision_quality", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "loop_count");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_range(prop, 1, 20, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "collision_quality", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "loop_count");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_range(prop, 1, 20, 1, -1);
+  api_def_prop_ui_text(
       prop,
       "Collision Quality",
       "How many collision iterations should be done. (higher is better quality but slower)");
