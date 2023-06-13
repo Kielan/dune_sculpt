@@ -99,24 +99,24 @@ static void api_CurveMapping_white_level_set(ApiPtr *ptr, const float *values)
   dune_curvemapping_set_black_white(cumap, NULL, NULL);
 }
 
-static void api_CurveMapping_tone_update(Main *UNUSED(bmain),
+static void api_CurveMapping_tone_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *UNUSED(ptr))
+                                         ApiPtr *UNUSED(ptr))
 {
   wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
   wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
 }
 
-static void api_CurveMapping_extend_update(Main *UNUSED(bmain),
+static void api_CurveMapping_extend_update(Main *UNUSED(main),
                                            Scene *UNUSED(scene),
-                                           PointerRNA *UNUSED(ptr))
+                                           ApiPtr *UNUSED(ptr))
 {
   wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
   wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
 }
 
-static void rna_CurveMapping_clipminx_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_CurveMapping_clipminx_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
@@ -124,8 +124,8 @@ static void rna_CurveMapping_clipminx_range(
   *max = cumap->clipr.xmax;
 }
 
-static void rna_CurveMapping_clipminy_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_CurveMapping_clipminy_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
@@ -142,8 +142,8 @@ static void rna_CurveMapping_clipmaxx_range(
   *max = 100.0f;
 }
 
-static void rna_CurveMapping_clipmaxy_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_CurveMapping_clipmaxy_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
@@ -151,19 +151,19 @@ static void rna_CurveMapping_clipmaxy_range(
   *max = 100.0f;
 }
 
-static char *rna_ColorRamp_path(PointerRNA *ptr)
+static char *api_ColorRamp_path(ApiPtr *ptr)
 {
   char *path = NULL;
 
   /* handle the cases where a single data-block may have 2 ramp types */
   if (ptr->owner_id) {
-    ID *id = ptr->owner_id;
+    Id *id = ptr->owner_id;
 
     switch (GS(id->name)) {
       case ID_NT: {
-        bNodeTree *ntree = (bNodeTree *)id;
-        bNode *node;
-        PointerRNA node_ptr;
+        NodeTree *ntree = (NodeTree *)id;
+        Node *node;
+        ApiPtr node_ptr;
         char *node_path;
 
         for (node = ntree->nodes.first; node; node = node->next) {
@@ -172,10 +172,10 @@ static char *rna_ColorRamp_path(PointerRNA *ptr)
               /* all node color ramp properties called 'color_ramp'
                * prepend path from ID to the node
                */
-              RNA_pointer_create(id, &RNA_Node, node, &node_ptr);
-              node_path = RNA_path_from_ID_to_struct(&node_ptr);
-              path = BLI_sprintfN("%s.color_ramp", node_path);
-              MEM_freeN(node_path);
+              api_ptr_create(id, &ApiNode, node, &node_ptr);
+              node_path = api_path_from_id_to_struct(&node_ptr);
+              path = lib_sprintfn("%s.color_ramp", node_path);
+              mem_freen(node_path);
             }
           }
         }
