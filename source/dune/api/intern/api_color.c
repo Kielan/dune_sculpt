@@ -781,25 +781,25 @@ static void api_def_curvemap(DuneApi *dapi)
   rna_def_curvemap_points_api(brna, prop);
 }
 
-static void rna_def_curvemapping(BlenderRNA *brna)
+static void api_def_curvemapping(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop, *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop, *parm;
+  ApiFn *fn;
 
-  static const EnumPropertyItem tone_items[] = {
+  static const EnumPropItem tone_items[] = {
       {CURVE_TONE_STANDARD, "STANDARD", 0, "Standard", ""},
       {CURVE_TONE_FILMLIKE, "FILMLIKE", 0, "Filmlike", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_extend_items[] = {
+  static const EnumPropItem prop_extend_items[] = {
       {0, "HORIZONTAL", 0, "Horizontal", ""},
       {CUMA_EXTEND_EXTRAPOLATE, "EXTRAPOLATED", 0, "Extrapolated", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "CurveMapping", NULL);
+  srna = api_def_struct(brna, "CurveMapping", NULL);
   RNA_def_struct_ui_text(
       srna,
       "CurveMapping",
