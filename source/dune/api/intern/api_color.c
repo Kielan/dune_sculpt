@@ -359,59 +359,59 @@ static void api_ColorRampElement_remove(struct ColorBand *coba,
    API_PTR_INVALIDATE(element_ptr);
 }
 
-static void rna_CurveMap_remove_point(CurveMap *cuma, ReportList *reports, PointerRNA *point_ptr)
+static void api_CurveMap_remove_point(CurveMap *cuma, ReportList *reports, ApiPtr *point_ptr)
 {
   CurveMapPoint *point = point_ptr->data;
-  if (BKE_curvemap_remove_point(cuma, point) == false) {
-    BKE_report(reports, RPT_ERROR, "Unable to remove curve point");
+  if (dune_curvemap_remove_point(cuma, point) == false) {
+    dune_report(reports, RPT_ERROR, "Unable to remove curve point");
     return;
   }
 
-  RNA_POINTER_INVALIDATE(point_ptr);
+  API_PTR_INVALIDATE(point_ptr);
 }
 
-static void rna_Scopes_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scopes_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scopes *s = (Scopes *)ptr->data;
   s->ok = 0;
 }
 
-static int rna_ColorManagedDisplaySettings_display_device_get(struct PointerRNA *ptr)
+static int api_ColorManagedDisplaySettings_display_device_get(struct ApiPtr *ptr)
 {
   ColorManagedDisplaySettings *display = (ColorManagedDisplaySettings *)ptr->data;
 
-  return IMB_colormanagement_display_get_named_index(display->display_device);
+  return imbuf_colormanagement_display_get_named_index(display->display_device);
 }
 
-static void rna_ColorManagedDisplaySettings_display_device_set(struct PointerRNA *ptr, int value)
+static void api_ColorManagedDisplaySettings_display_device_set(struct ApiPtr *ptr, int value)
 {
   ColorManagedDisplaySettings *display = (ColorManagedDisplaySettings *)ptr->data;
-  const char *name = IMB_colormanagement_display_get_indexed_name(value);
+  const char *name = imbuf_colormanagement_display_get_indexed_name(value);
 
   if (name) {
-    BLI_strncpy(display->display_device, name, sizeof(display->display_device));
+    lib_strncpy(display->display_device, name, sizeof(display->display_device));
   }
 }
 
-static const EnumPropertyItem *rna_ColorManagedDisplaySettings_display_device_itemf(
-    bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
+static const EnumPropItem *api_ColorManagedDisplaySettings_display_device_itemf(
+    Cxt *UNUSED(C), ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
-  EnumPropertyItem *items = NULL;
+  EnumPropItem *items = NULL;
   int totitem = 0;
 
-  IMB_colormanagement_display_items_add(&items, &totitem);
-  RNA_enum_item_end(&items, &totitem);
+  imbuf_colormanagement_display_items_add(&items, &totitem);
+  api_enum_item_end(&items, &totitem);
 
   *r_free = true;
 
   return items;
 }
 
-static void rna_ColorManagedDisplaySettings_display_device_update(Main *bmain,
+static void api_ColorManagedDisplaySettings_display_device_update(Main *main,
                                                                   Scene *UNUSED(scene),
-                                                                  PointerRNA *ptr)
+                                                                  ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (!id) {
     return;
@@ -420,43 +420,43 @@ static void rna_ColorManagedDisplaySettings_display_device_update(Main *bmain,
   if (GS(id->name) == ID_SCE) {
     Scene *scene = (Scene *)id;
 
-    IMB_colormanagement_validate_settings(&scene->display_settings, &scene->view_settings);
+    imbuf_colormanagement_validate_settings(&scene->display_settings, &scene->view_settings);
 
-    DEG_id_tag_update(id, 0);
-    WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+    graph_id_tag_update(id, 0);
+    wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
 
     /* Color management can be baked into shaders, need to refresh. */
-    for (Material *ma = bmain->materials.first; ma; ma = ma->id.next) {
-      DEG_id_tag_update(&ma->id, ID_RECALC_COPY_ON_WRITE);
+    for (Material *ma = main->materials.first; ma; ma = ma->id.next) {
+      graph_id_tag_update(&ma->id, ID_RECALC_COPY_ON_WRITE);
     }
   }
 }
 
-static char *rna_ColorManagedDisplaySettings_path(PointerRNA *UNUSED(ptr))
+static char *api_ColorManagedDisplaySettings_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("display_settings");
+  return lib_strdup("display_settings");
 }
 
-static int rna_ColorManagedViewSettings_view_transform_get(PointerRNA *ptr)
+static int api_ColorManagedViewSettings_view_transform_get(ApiPtr *ptr)
 {
   ColorManagedViewSettings *view = (ColorManagedViewSettings *)ptr->data;
 
-  return IMB_colormanagement_view_get_named_index(view->view_transform);
+  return imbuf_colormanagement_view_get_named_index(view->view_transform);
 }
 
-static void rna_ColorManagedViewSettings_view_transform_set(PointerRNA *ptr, int value)
+static void api_ColorManagedViewSettings_view_transform_set(ApiPtr *ptr, int value)
 {
   ColorManagedViewSettings *view = (ColorManagedViewSettings *)ptr->data;
 
-  const char *name = IMB_colormanagement_view_get_indexed_name(value);
+  const char *name = imbuf_colormanagement_view_get_indexed_name(value);
 
   if (name) {
-    BLI_strncpy(view->view_transform, name, sizeof(view->view_transform));
+    lib_strncpy(view->view_transform, name, sizeof(view->view_transform));
   }
 }
 
-static const EnumPropertyItem *rna_ColorManagedViewSettings_view_transform_itemf(
-    bContext *C, PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
+static const EnumPropItem *api_ColorManagedViewSettings_view_transform_itemf(
+    Cxt *C, ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
   Scene *scene = CTX_data_scene(C);
   EnumPropertyItem *items = NULL;
