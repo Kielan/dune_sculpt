@@ -986,21 +986,21 @@ static void api_def_cloth_sim_settings(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE)p
   api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "uniform_pressure_force", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "uniform_pressure_force");
-  RNA_def_property_range(prop, -10000.0f, 10000.0f);
-  RNA_def_property_float_default(prop, 0.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "uniform_pressure_force", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "uniform_pressure_force");
+  api_def_prop_range(prop, -10000.0f, 10000.0f);
+  api_def_prop_float_default(prop, 0.0f);
+  api_def_prop_ui_text(prop,
                            "Pressure",
                            "The uniform pressure that is constantly applied to the mesh, in units "
                            "of Pressure Scale. Can be negative");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "target_volume", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "target_volume");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_float_default(prop, 0.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "target_volume", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_s(prop, NULL, "target_volume");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_float_default(prop, 0.0f);
+  api_def_prop_ui_text(prop,
                            "Target Volume",
                            "The mesh volume where the inner/outer pressure will be the same. If "
                            "set to zero the change in volume will not affect pressure");
