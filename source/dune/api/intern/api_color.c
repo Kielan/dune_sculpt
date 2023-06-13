@@ -841,24 +841,24 @@ static void api_def_curvemapping(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Clip Max Y", "");
   RNA_def_property_float_funcs(prop, NULL, NULL, "rna_CurveMapping_clipmaxy_range");
 
-  prop = RNA_def_property(srna, "extend", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_extend_items);
-  RNA_def_property_ui_text(prop, "Extend", "Extrapolate the curve or extend it horizontally");
-  RNA_def_property_update(prop, 0, "rna_CurveMapping_extend_update");
+  prop = api_def_prop(srna, "extend", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_extend_items);
+  api_def_prop_ui_text(prop, "Extend", "Extrapolate the curve or extend it horizontally");
+  api_def_prop_update(prop, 0, "rna_CurveMapping_extend_update");
 
-  prop = RNA_def_property(srna, "curves", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_CurveMapping_curves_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_CurveMapping_curves_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "CurveMap");
-  RNA_def_property_ui_text(prop, "Curves", "");
+  prop = api_def_prop(sapi, "curves", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_CurveMapping_curves_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_CurveMapping_curves_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "CurveMap");
+  api_def_prop_ui_text(prop, "Curves", "");
 
   prop = RNA_def_property(srna, "black_level", PROP_FLOAT, PROP_COLOR);
   RNA_def_property_float_sdna(prop, NULL, "black");
