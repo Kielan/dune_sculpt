@@ -1139,19 +1139,19 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
 
   /* self collision */
 
-  prop = RNA_def_property(srna, "use_self_collision", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_SELF);
-  RNA_def_property_ui_text(prop, "Enable Self Collision", "Enable self collisions");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "use_self_collision", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_SELF);
+  RNA_def_prop_ui_text(prop, "Enable Self Collision", "Enable self collisions");
+  RNA_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "self_distance_min", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "selfepsilon");
-  RNA_def_property_range(prop, 0.001f, 0.1f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "self_distance_min", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "selfepsilon");
+  api_def_prop_range(prop, 0.001f, 0.1f);
+  api_def_prop_ui_text(
       prop,
       "Self Minimum Distance",
       "Minimum distance between cloth faces before collision response takes effect");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = RNA_def_property(srna, "self_friction", PROP_FLOAT, PROP_NONE);
   RNA_def_property_range(prop, 0.0f, 80.0f);
