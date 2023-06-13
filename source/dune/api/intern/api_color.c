@@ -532,7 +532,7 @@ static bool api_ColorManagedColorspaceSettings_is_data_get(struct PointerRNA *pt
   return STREQ(colorspace->name, data_name);
 }
 
-static void rna_ColorManagedColorspaceSettings_is_data_set(struct PointerRNA *ptr, bool value)
+static void api_ColorManagedColorspaceSettings_is_data_set(struct PointerRNA *ptr, bool value)
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
   if (value) {
@@ -589,7 +589,7 @@ static bool seq_find_colorspace_settings_cb(Seq *seq, void *user_data)
 
 static bool seq_free_anim_cb(Seq *seq, void *UNUSED(user_data))
 {
-  seq_relations_sequence_free_anim(seq);
+  seq_relations_seq_free_anim(seq);
   return true;
 }
 
@@ -627,13 +627,13 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
                                                                 ptr->data;
       seq_colorspace_cb_data cb_data = {colorspace_settings, NULL};
 
-      if (&scene->sequencer_colorspace_settings != colorspace_settings) {
-        seq_for_each_callback(&scene->ed->seqbase, seq_find_colorspace_settings_cb, &cb_data);
+      if (&scene->seq_colorspace_settings != colorspace_settings) {
+        seq_for_each_cb(&scene->ed->seqbase, seq_find_colorspace_settings_cb, &cb_data);
       }
       Seq *seq = cb_data.r_seq;
 
       if (seq) {
-        seq_relations_sequence_free_anim(seq);
+        seq_relations_seq_free_anim(seq);
 
         if (seq->strip->proxy && seq->strip->proxy->anim) {
           IMB_free_anim(seq->strip->proxy->anim);
@@ -643,7 +643,7 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
         seq_relations_invalidate_cache_raw(scene, seq);
       }
       else {
-        seq_for_each_callback(&scene->ed->seqbase, seq_free_anim_cb, NULL);
+        seq_for_each_cb(&scene->ed->seqbase, seq_free_anim_cb, NULL);
       }
 
       wm_main_add_notifier(NC_SCENE | ND_SEQ, NULL);
@@ -651,14 +651,14 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
   }
 }
 
-static char *rna_ColorManagedSequencerColorspaceSettings_path(ApiPtr *UNUSED(ptr))
+static char *api_ColorManagedSequencerColorspaceSettings_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("sequencer_colorspace_settings");
+  return lib_strdup("sequencer_colorspace_settings");
 }
 
-static char *rna_ColorManagedInputColorspaceSettings_path(PointerRNA *UNUSED(ptr))
+static char *api_ColorManagedInputColorspaceSettings_path(ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("colorspace_settings");
+  return lib_strdup("colorspace_settings");
 }
 
 static void rna_ColorManagement_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
@@ -670,25 +670,25 @@ static void rna_ColorManagement_update(Main *UNUSED(bmain), Scene *UNUSED(scene)
   }
 
   if (GS(id->name) == ID_SCE) {
-    DEG_id_tag_update(id, 0);
-    WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+    graph_id_tag_update(id, 0);
+    wm_main_add_notifier(NC_SCENE | ND_SEQ, NULL);
   }
 }
 
-/* this function only exists because #BKE_curvemap_evaluateF uses a 'const' qualifier */
-static float rna_CurveMapping_evaluateF(struct CurveMapping *cumap,
+/* this function only exists because #dune_curvemap_evaluateF uses a 'const' qualifier */
+static float api_CurveMapping_evaluateF(struct CurveMapping *cumap,
                                         ReportList *reports,
                                         struct CurveMap *cuma,
                                         float value)
 {
   if (&cumap->cm[0] != cuma && &cumap->cm[1] != cuma && &cumap->cm[2] != cuma &&
       &cumap->cm[3] != cuma) {
-    BKE_report(reports, RPT_ERROR, "CurveMapping does not own CurveMap");
+    dune_report(reports, RPT_ERROR, "CurveMapping does not own CurveMap");
     return 0.0f;
   }
 
   if (!cuma->table) {
-    BKE_curvemapping_init(cumap);
+    dune_curvemapping_init(cumap);
   }
   return BKE_curvemap_evaluateF(cumap, cuma, value);
 }
