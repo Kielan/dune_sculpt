@@ -520,7 +520,7 @@ static void api_ColorManagedViewSettings_use_curves_set(ApiPtr *ptr, bool value)
   }
 }
 
-static char *api_ColorManagedViewSettings_path(PointerRNA *UNUSED(ptr))
+static char *api_ColorManagedViewSettings_path(ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("view_settings");
 }
@@ -572,7 +572,7 @@ static const EnumPropItem *api_ColorManagedColorspaceSettings_colorspace_itemf(
   return items;
 }
 
-typedef struct Seq_colorspace_cb_data {
+typedef struct seq_colorspace_cb_data {
   ColorManagedColorspaceSettings *colorspace_settings;
   Seq *r_seq;
 } seq_colorspace_cb_data;
@@ -613,7 +613,7 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
     MovieClip *clip = (MovieClip *)id;
 
     graph_id_tag_update(&clip->id, ID_RECALC_SOURCE);
-    seq_relations_invalidate_movieclip_strips(bmain, clip);
+    seq_relations_invalidate_movieclip_strips(main, clip);
 
     wm_main_add_notifier(NC_MOVIECLIP | ND_DISPLAY, &clip->id);
     wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, &clip->id);
@@ -661,7 +661,7 @@ static char *api_ColorManagedInputColorspaceSettings_path(ApiPtr *UNUSED(ptr))
   return lib_strdup("colorspace_settings");
 }
 
-static void api_ColorManagement_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_ColorManagement_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Id *id = ptr->owner_id;
 
@@ -724,7 +724,7 @@ static void api_def_curvemappoint(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Handle Type", "Curve interpolation at this point: Bezier or vector");
 
-  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", CUMA_SELECT);
   api_def_prop_ui_text(prop, "Select", "Selection state of the curve point");
 }
@@ -768,20 +768,20 @@ static void api_def_curvemap_points_api(DuneApi *dapi, ApiProp *cprop)
 
 static void api_def_curvemap(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "CurveMap", NULL);
-  RNA_def_struct_ui_text(srna, "CurveMap", "Curve in a curve mapping");
+  sapi = api_def_struct(dapi, "CurveMap", NULL);
+  api_def_struct_ui_text(sapi, "CurveMap", "Curve in a curve mapping");
 
-  prop = RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "curve", "totpoint");
-  RNA_def_property_struct_type(prop, "CurveMapPoint");
-  RNA_def_property_ui_text(prop, "Points", "");
-  rna_def_curvemap_points_api(brna, prop);
+  prop = api_def_prop(sapi, "points", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "curve", "totpoint");
+  api_def_prop_struct_type(prop, "CurveMapPoint");
+  api_def_prop_ui_text(prop, "Points", "");
+  api_def_curvemap_points_api(dapi, prop);
 }
 
-static void api_def_curvemapping(BlenderRNA *brna)
+static void api_def_curvemapping(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop, *parm;
