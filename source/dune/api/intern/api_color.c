@@ -719,30 +719,30 @@ static void api_def_curvemappoint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Location", "X/Y coordinates of the curve point");
 
   prop = api_def_prop(sapi, "handle_type", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_handle_type_items);
-  RNA_def_property_ui_text(
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_handle_type_items);
+  api_def_prop_ui_text(
       prop, "Handle Type", "Curve interpolation at this point: Bezier or vector");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CUMA_SELECT);
-  RNA_def_property_ui_text(prop, "Select", "Selection state of the curve point");
+  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CUMA_SELECT);
+  api_def_prop_ui_text(prop, "Select", "Selection state of the curve point");
 }
 
-static void rna_def_curvemap_points_api(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_curvemap_points_api(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  RNA_def_property_srna(cprop, "CurveMapPoints");
-  srna = RNA_def_struct(brna, "CurveMapPoints", NULL);
-  RNA_def_struct_sdna(srna, "CurveMap");
-  RNA_def_struct_ui_text(srna, "Curve Map Point", "Collection of Curve Map Points");
+  api_def_prop_sapi(cprop, "CurveMapPoints");
+  sapi = api_def_struct(dapi, "CurveMapPoints", NULL);
+  api_def_struct_stype(sapi, "CurveMap");
+  api_def_struct_ui_text(sapi, "Curve Map Point", "Collection of Curve Map Points");
 
-  func = RNA_def_function(srna, "new", "BKE_curvemap_insert");
-  RNA_def_function_ui_description(func, "Add point to CurveMap");
-  parm = RNA_def_float(func,
+  fn = api_def_fn(sapi, "new", "dune_curvemap_insert");
+  api_def_fn_ui_description(fn, "Add point to CurveMap");
+  parm = api_def_float(fn,
                        "position",
                        0.0f,
                        -FLT_MAX,
@@ -751,22 +751,22 @@ static void rna_def_curvemap_points_api(BlenderRNA *brna, PropertyRNA *cprop)
                        "Position to add point",
                        -FLT_MAX,
                        FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(
-      func, "value", 0.0f, -FLT_MAX, FLT_MAX, "Value", "Value of point", -FLT_MAX, FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "point", "CurveMapPoint", "", "New point");
-  RNA_def_function_return(func, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(
+      fn, "value", 0.0f, -FLT_MAX, FLT_MAX, "Value", "Value of point", -FLT_MAX, FLT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "point", "CurveMapPoint", "", "New point");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_CurveMap_remove_point");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Delete point from CurveMap");
-  parm = RNA_def_pointer(func, "point", "CurveMapPoint", "", "PointElement to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_CurveMap_remove_point");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Delete point from CurveMap");
+  parm = api_def_ptr(fn, "point", "CurveMapPoint", "", "PointElement to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_curvemap(BlenderRNA *brna)
+static void api_def_curvemap(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
