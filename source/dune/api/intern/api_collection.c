@@ -45,42 +45,42 @@ const EnumPropItem api_enum_collection_color_items[] = {
 static void api_Collection_all_objects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
-  ListBase collection_objects = dune_collection_object_cache_get(collection);
-  rna_iterator_listbase_begin(iter, &collection_objects, NULL);
+  ListApi collection_objects = dune_collection_object_cache_get(collection);
+  api_iter_list_begin(iter, &collection_objects, NULL);
 }
 
-static PointerRNA rna_Collection_all_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Collection_all_objects_get(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
 
   /* we are actually iterating a ObjectBase list, so override get */
   Base *base = (Base *)internal->link;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Object, base->object);
+  return api_ptr_inherit_refine(&iter->parent, &ApiObject, base->object);
 }
 
-static void rna_Collection_objects_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Collection_objects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
-  rna_iterator_listbase_begin(iter, &collection->gobject, NULL);
+  api_iter_list_begin(iter, &collection->gobject, NULL);
 }
 
-static PointerRNA rna_Collection_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Collection_objects_get(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
 
   /* we are actually iterating a ObjectBase list, so override get */
   CollectionObject *cob = (CollectionObject *)internal->link;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Object, cob->ob);
+  return api_ptr_inherit_refine(&iter->parent, &ApiObject, cob->ob);
 }
 
-static void rna_Collection_objects_link(Collection *collection,
-                                        Main *bmain,
+static void api_Collection_objects_link(Collection *collection,
+                                        Main *main,
                                         ReportList *reports,
                                         Object *object)
 {
   /* Currently this should not be allowed (might be supported in the future though...). */
-  if (ID_IS_OVERRIDE_LIBRARY(&collection->id)) {
-    BKE_reportf(reports,
+  if (ID_IS_OVERRIDE_LIB(&collection->id)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Could not link the object '%s' because the collection '%s' is overridden",
                 object->id.name + 2,
@@ -88,15 +88,15 @@ static void rna_Collection_objects_link(Collection *collection,
     return;
   }
   if (ID_IS_LINKED(&collection->id)) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Could not link the object '%s' because the collection '%s' is linked",
                 object->id.name + 2,
                 collection->id.name + 2);
     return;
   }
-  if (!BKE_collection_object_add(bmain, collection, object)) {
-    BKE_reportf(reports,
+  if (!dune_collection_object_add(bmain, collection, object)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Object '%s' already in collection '%s'",
                 object->id.name + 2,
@@ -104,18 +104,18 @@ static void rna_Collection_objects_link(Collection *collection,
     return;
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, &object->id);
+  graph_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(bmain);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, &object->id);
 }
 
-static void rna_Collection_objects_unlink(Collection *collection,
-                                          Main *bmain,
+static void api_Collection_objects_unlink(Collection *collection,
+                                          Main *main,
                                           ReportList *reports,
                                           Object *object)
 {
-  if (!BKE_collection_object_remove(bmain, collection, object, false)) {
-    BKE_reportf(reports,
+  if (!dune_collection_object_remove(main, collection, object, false)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Object '%s' not in collection '%s'",
                 object->id.name + 2,
@@ -123,34 +123,34 @@ static void rna_Collection_objects_unlink(Collection *collection,
     return;
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, &object->id);
+  graph_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(main);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, &object->id);
 }
 
-static bool rna_Collection_objects_override_apply(Main *bmain,
-                                                  PointerRNA *ptr_dst,
-                                                  PointerRNA *UNUSED(ptr_src),
-                                                  PointerRNA *UNUSED(ptr_storage),
-                                                  PropertyRNA *UNUSED(prop_dst),
-                                                  PropertyRNA *UNUSED(prop_src),
-                                                  PropertyRNA *UNUSED(prop_storage),
+static bool api_Collection_objects_override_apply(Main *main,
+                                                  ApiPtr *ptr_dst,
+                                                  ApiPtr *UNUSED(ptr_src),
+                                                  ApiPtr *UNUSED(ptr_storage),
+                                                  ApiProp *UNUSED(prop_dst),
+                                                  ApiProp *UNUSED(prop_src),
+                                                  ApiProp *UNUSED(prop_storage),
                                                   const int UNUSED(len_dst),
                                                   const int UNUSED(len_src),
                                                   const int UNUSED(len_storage),
-                                                  PointerRNA *ptr_item_dst,
-                                                  PointerRNA *ptr_item_src,
-                                                  PointerRNA *UNUSED(ptr_item_storage),
-                                                  IDOverrideLibraryPropertyOperation *opop)
+                                                  ApiPtr *ptr_item_dst,
+                                                  ApiPtr *ptr_item_src,
+                                                  ApiPtr *UNUSED(ptr_item_storage),
+                                                  IdOverrideLibPropOp *opop)
 {
-  BLI_assert(opop->operation == IDOVERRIDE_LIBRARY_OP_REPLACE &&
-             "Unsupported RNA override operation on collections' objects");
+  lib_assert(opop->oper == IDOVERRIDE_LIBRARY_OP_REPLACE &&
+             "Unsupported api override operation on collections' objects");
   UNUSED_VARS_NDEBUG(opop);
 
   Collection *coll_dst = (Collection *)ptr_dst->owner_id;
 
   if (ptr_item_dst->type == NULL || ptr_item_src->type == NULL) {
-    // BLI_assert_msg(0, "invalid source or destination object.");
+    // lib_assert_msg(0, "invalid source or destination object.");
     return false;
   }
 
@@ -165,18 +165,18 @@ static bool rna_Collection_objects_override_apply(Main *bmain,
       &coll_dst->gobject, ob_dst, offsetof(CollectionObject, ob));
 
   if (cob_dst == NULL) {
-    BLI_assert_msg(0, "Could not find destination object in destination collection!");
+    lib_assert_msg(0, "Could not find destination object in destination collection!");
     return false;
   }
 
   /* XXX TODO: We most certainly rather want to have a 'swap object pointer in collection'
-   * util in BKE_collection. This is only temp quick dirty test! */
+   * util in dune_collection. This is only temp quick dirty test! */
   id_us_min(&cob_dst->ob->id);
   cob_dst->ob = ob_src;
   id_us_plus(&cob_dst->ob->id);
 
-  if (BKE_collection_is_in_scene(coll_dst)) {
-    BKE_main_collection_sync(bmain);
+  if (dune_collection_is_in_scene(coll_dst)) {
+    dune_main_collection_sync(bmain);
   }
 
   return true;
@@ -194,16 +194,16 @@ static PointerRNA rna_Collection_children_get(CollectionPropertyIterator *iter)
 
   /* we are actually iterating a CollectionChild list, so override get */
   CollectionChild *child = (CollectionChild *)internal->link;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Collection, child->collection);
+  return api_pointer_inherit_refine(&iter->parent, &RNA_Collection, child->collection);
 }
 
-static void rna_Collection_children_link(Collection *collection,
-                                         Main *bmain,
+static void api_Collection_children_link(Collection *collection,
+                                         Main *main,
                                          ReportList *reports,
                                          Collection *child)
 {
-  if (!BKE_collection_child_add(bmain, collection, child)) {
-    BKE_reportf(reports,
+  if (!dune_collection_child_add(main, collection, child)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Collection '%s' already in collection '%s'",
                 child->id.name + 2,
@@ -211,18 +211,18 @@ static void rna_Collection_children_link(Collection *collection,
     return;
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, &child->id);
+  graph_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(main);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, &child->id);
 }
 
 static void rna_Collection_children_unlink(Collection *collection,
-                                           Main *bmain,
+                                           Main *main,
                                            ReportList *reports,
                                            Collection *child)
 {
-  if (!BKE_collection_child_remove(bmain, collection, child)) {
-    BKE_reportf(reports,
+  if (!dune_collection_child_remove(main, collection, child)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Collection '%s' not in collection '%s'",
                 child->id.name + 2,
@@ -230,28 +230,28 @@ static void rna_Collection_children_unlink(Collection *collection,
     return;
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, &child->id);
+  graph_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(main);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, &child->id);
 }
 
-static bool rna_Collection_children_override_apply(Main *bmain,
-                                                   PointerRNA *ptr_dst,
-                                                   PointerRNA *UNUSED(ptr_src),
-                                                   PointerRNA *UNUSED(ptr_storage),
-                                                   PropertyRNA *UNUSED(prop_dst),
-                                                   PropertyRNA *UNUSED(prop_src),
-                                                   PropertyRNA *UNUSED(prop_storage),
+static bool api_Collection_children_override_apply(Main *main,
+                                                   ApiPtr *ptr_dst,
+                                                   ApiPtr *UNUSED(ptr_src),
+                                                   ApiPtr *UNUSED(ptr_storage),
+                                                   ApiProp *UNUSED(prop_dst),
+                                                   ApiProp *UNUSED(prop_src),
+                                                   ApiProp *UNUSED(prop_storage),
                                                    const int UNUSED(len_dst),
                                                    const int UNUSED(len_src),
                                                    const int UNUSED(len_storage),
-                                                   PointerRNA *ptr_item_dst,
-                                                   PointerRNA *ptr_item_src,
-                                                   PointerRNA *UNUSED(ptr_item_storage),
-                                                   IDOverrideLibraryPropertyOperation *opop)
+                                                   ApiPtr *ptr_item_dst,
+                                                   ApiPtr *ptr_item_src,
+                                                   ApiPtr *UNUSED(ptr_item_storage),
+                                                   IdOverrideLibPropOp *opop)
 {
-  BLI_assert(opop->operation == IDOVERRIDE_LIBRARY_OP_REPLACE &&
-             "Unsupported RNA override operation on collections' children");
+  lib_assert(opop->op == IDOVERRIDE_LIB_OP_REPLACE &&
+             "Unsupported api override operation on collections' children");
   UNUSED_VARS_NDEBUG(opop);
 
   Collection *coll_dst = (Collection *)ptr_dst->owner_id;
@@ -264,11 +264,11 @@ static bool rna_Collection_children_override_apply(Main *bmain,
   Collection *subcoll_dst = ptr_item_dst->data;
   Collection *subcoll_src = ptr_item_src->data;
 
-  CollectionChild *collchild_dst = BLI_findptr(
+  CollectionChild *collchild_dst = lib_findptr(
       &coll_dst->children, subcoll_dst, offsetof(CollectionChild, collection));
 
   if (collchild_dst == NULL) {
-    BLI_assert_msg(0, "Could not find destination sub-collection in destination collection!");
+    lib_assert_msg(0, "Could not find destination sub-collection in destination collection!");
     return false;
   }
 
@@ -278,13 +278,13 @@ static bool rna_Collection_children_override_apply(Main *bmain,
   collchild_dst->collection = subcoll_src;
   id_us_plus(&collchild_dst->collection->id);
 
-  BKE_collection_object_cache_free(coll_dst);
-  BKE_main_collection_sync(bmain);
+  dune_collection_object_cache_free(coll_dst);
+  dune_main_collection_sync(main);
 
   return true;
 }
 
-static void rna_Collection_flag_set(PointerRNA *ptr, const bool value, const int flag)
+static void api_Collection_flag_set(ApiPtr *ptr, const bool value, const int flag)
 {
   Collection *collection = (Collection *)ptr->data;
 
@@ -300,40 +300,40 @@ static void rna_Collection_flag_set(PointerRNA *ptr, const bool value, const int
   }
 }
 
-static void rna_Collection_hide_select_set(PointerRNA *ptr, bool value)
+static void api_Collection_hide_select_set(ApiPtr *ptr, bool value)
 {
-  rna_Collection_flag_set(ptr, value, COLLECTION_HIDE_SELECT);
+  api_Collection_flag_set(ptr, value, COLLECTION_HIDE_SELECT);
 }
 
-static void rna_Collection_hide_viewport_set(PointerRNA *ptr, bool value)
+static void api_Collection_hide_viewport_set(ApiPtr *ptr, bool value)
 {
-  rna_Collection_flag_set(ptr, value, COLLECTION_HIDE_VIEWPORT);
+  api_Collection_flag_set(ptr, value, COLLECTION_HIDE_VIEWPORT);
 }
 
-static void rna_Collection_hide_render_set(PointerRNA *ptr, bool value)
+static void api_Collection_hide_render_set(PointerRNA *ptr, bool value)
 {
-  rna_Collection_flag_set(ptr, value, COLLECTION_HIDE_RENDER);
+  api_Collection_flag_set(ptr, value, COLLECTION_HIDE_RENDER);
 }
 
-static void rna_Collection_flag_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Collection_flag_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
-  BKE_collection_object_cache_free(collection);
-  BKE_main_collection_sync(bmain);
+  dune_collection_object_cache_free(collection);
+  dune_main_collection_sync(main);
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_SCENE | ND_OB_SELECT, scene);
+  graph_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(main);
+  wm_main_add_notifier(NC_SCENE | ND_OB_SELECT, scene);
 }
 
-static int rna_Collection_color_tag_get(struct PointerRNA *ptr)
+static int api_Collection_color_tag_get(struct ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
 
   return collection->color_tag;
 }
 
-static void rna_Collection_color_tag_set(struct PointerRNA *ptr, int value)
+static void api_Collection_color_tag_set(struct ApiPtr *ptr, int value)
 {
   Collection *collection = (Collection *)ptr->data;
 
@@ -344,50 +344,50 @@ static void rna_Collection_color_tag_set(struct PointerRNA *ptr, int value)
   collection->color_tag = value;
 }
 
-static void rna_Collection_color_tag_update(Main *UNUSED(bmain),
+static void api_Collection_color_tag_update(Main *UNUSED(main),
                                             Scene *scene,
-                                            PointerRNA *UNUSED(ptr))
+                                            ApiPtr *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, scene);
+  wm_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, scene);
 }
 
 #else
 
 /* collection.objects */
-static void rna_def_collection_objects(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_collection_objects(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "CollectionObjects");
-  srna = RNA_def_struct(brna, "CollectionObjects", NULL);
-  RNA_def_struct_sdna(srna, "Collection");
-  RNA_def_struct_ui_text(srna, "Collection Objects", "Collection of collection objects");
+  api_def_prop_sapi(cprop, "CollectionObjects");
+  sapi = api_def_struct(dapi, "CollectionObjects", NULL);
+  api_def_struct_stype(sapi, "Collection");
+  api_def_struct_ui_text(sapi, "Collection Objects", "Collection of collection objects");
 
   /* add object */
-  func = RNA_def_function(srna, "link", "rna_Collection_objects_link");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add this object to a collection");
-  parm = RNA_def_pointer(func, "object", "Object", "", "Object to add");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "link", "api_Collection_objects_link");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  api_def_fn_ui_description(fn, "Add this object to a collection");
+  parm = api_def_ptr(fn, "object", "Object", "", "Object to add");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* remove object */
-  func = RNA_def_function(srna, "unlink", "rna_Collection_objects_unlink");
-  RNA_def_function_ui_description(func, "Remove this object from a collection");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  parm = RNA_def_pointer(func, "object", "Object", "", "Object to remove");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "unlink", "api_Collection_objects_unlink");
+  api_def_fn_ui_description(fn, "Remove this object from a collection");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  parm = api_def_ptr(fn, "object", "Object", "", "Object to remove");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
 /* collection.children */
-static void rna_def_collection_children(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_collection_children(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProperty *parm;
 
-  RNA_def_property_srna(cprop, "CollectionChildren");
+  api_def_prop_srna(cprop, "CollectionChildren");
   srna = RNA_def_struct(brna, "CollectionChildren", NULL);
   RNA_def_struct_sdna(srna, "Collection");
   RNA_def_struct_ui_text(srna, "Collection Children", "Collection of child collections");
