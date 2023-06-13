@@ -812,22 +812,22 @@ static void api_def_curvemapping(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Tone", "Tone of the curve");
   RNA_def_property_update(prop, 0, "rna_CurveMapping_tone_update");
 
-  prop = RNA_def_property(srna, "use_clip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CUMA_DO_CLIP);
-  RNA_def_property_ui_text(prop, "Clip", "Force the curve view to fit a defined boundary");
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_CurveMapping_clip_set");
+  prop = api_def_prop(sapi, "use_clip", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CUMA_DO_CLIP);
+  api_def_prop_ui_text(prop, "Clip", "Force the curve view to fit a defined boundary");
+  apu_def_prop_bool_fns(prop, NULL, "api_CurveMapping_clip_set");
 
-  prop = RNA_def_property(srna, "clip_min_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "clipr.xmin");
-  RNA_def_property_range(prop, -100.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Clip Min X", "");
-  RNA_def_property_float_funcs(prop, NULL, NULL, "rna_CurveMapping_clipminx_range");
+  prop = apu_def_prop(sapi, "clip_min_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "clipr.xmin");
+  api_def_prop_range(prop, -100.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Clip Min X", "");
+  api_def_prop_float_fns(prop, NULL, NULL, "rna_CurveMapping_clipminx_range");
 
-  prop = RNA_def_property(srna, "clip_min_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "clipr.ymin");
-  RNA_def_property_range(prop, -100.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Clip Min Y", "");
-  RNA_def_property_float_funcs(prop, NULL, NULL, "rna_CurveMapping_clipminy_range");
+  prop = api_def_prop(sapi, "clip_min_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "clipr.ymin");
+  api_def_prop_range(prop, -100.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Clip Min Y", "");
+  api_def_prop_float_fns(prop, NULL, NULL, "rna_CurveMapping_clipminy_range");
 
   prop = RNA_def_property(srna, "clip_max_x", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "clipr.xmax");
