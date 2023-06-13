@@ -528,7 +528,7 @@ static char *api_ColorManagedViewSettings_path(PointerRNA *UNUSED(ptr))
 static bool api_ColorManagedColorspaceSettings_is_data_get(struct PointerRNA *ptr)
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
-  const char *data_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DATA);
+  const char *data_name = imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_DATA);
   return STREQ(colorspace->name, data_name);
 }
 
@@ -536,36 +536,36 @@ static void rna_ColorManagedColorspaceSettings_is_data_set(struct PointerRNA *pt
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
   if (value) {
-    const char *data_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DATA);
+    const char *data_name = imbug_colormanagement_role_colorspace_name_get(COLOR_ROLE_DATA);
     STRNCPY(colorspace->name, data_name);
   }
 }
 
-static int rna_ColorManagedColorspaceSettings_colorspace_get(struct PointerRNA *ptr)
+static int api_ColorManagedColorspaceSettings_colorspace_get(struct PointerRNA *ptr)
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
 
-  return IMB_colormanagement_colorspace_get_named_index(colorspace->name);
+  return imbuf_colormanagement_colorspace_get_named_index(colorspace->name);
 }
 
-static void rna_ColorManagedColorspaceSettings_colorspace_set(struct PointerRNA *ptr, int value)
+static void api_ColorManagedColorspaceSettings_colorspace_set(struct PointerRNA *ptr, int value)
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
-  const char *name = IMB_colormanagement_colorspace_get_indexed_name(value);
+  const char *name = imbuf_colormanagement_colorspace_get_indexed_name(value);
 
   if (name && name[0]) {
-    BLI_strncpy(colorspace->name, name, sizeof(colorspace->name));
+    lib_strncpy(colorspace->name, name, sizeof(colorspace->name));
   }
 }
 
-static const EnumPropertyItem *rna_ColorManagedColorspaceSettings_colorspace_itemf(
+static const EnumPropItem *rna_ColorManagedColorspaceSettings_colorspace_itemf(
     bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
 {
-  EnumPropertyItem *items = NULL;
+  EnumPropItem *items = NULL;
   int totitem = 0;
 
-  IMB_colormanagement_colorspace_items_add(&items, &totitem);
-  RNA_enum_item_end(&items, &totitem);
+  imbuf_colormanagement_colorspace_items_add(&items, &totitem);
+  api_enum_item_end(&items, &totitem);
 
   *r_free = true;
 
@@ -589,38 +589,38 @@ static bool seq_find_colorspace_settings_cb(Sequence *seq, void *user_data)
 
 static bool seq_free_anim_cb(Sequence *seq, void *UNUSED(user_data))
 {
-  SEQ_relations_sequence_free_anim(seq);
+  seq_relations_sequence_free_anim(seq);
   return true;
 }
 
-static void rna_ColorManagedColorspaceSettings_reload_update(Main *bmain,
+static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
                                                              Scene *UNUSED(scene),
-                                                             PointerRNA *ptr)
+                                                             ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (GS(id->name) == ID_IM) {
     Image *ima = (Image *)id;
 
-    DEG_id_tag_update(&ima->id, 0);
+    graph_id_tag_update(&ima->id, 0);
 
-    BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_COLORMANAGE);
+    dune_image_signal(main, ima, NULL, IMA_SIGNAL_COLORMANAGE);
 
-    WM_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
-    WM_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
+    wm_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
+    wm_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
   }
   else if (GS(id->name) == ID_MC) {
     MovieClip *clip = (MovieClip *)id;
 
-    DEG_id_tag_update(&clip->id, ID_RECALC_SOURCE);
-    SEQ_relations_invalidate_movieclip_strips(bmain, clip);
+    graph_id_tag_update(&clip->id, ID_RECALC_SOURCE);
+    seq_relations_invalidate_movieclip_strips(bmain, clip);
 
-    WM_main_add_notifier(NC_MOVIECLIP | ND_DISPLAY, &clip->id);
-    WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, &clip->id);
+    wm_main_add_notifier(NC_MOVIECLIP | ND_DISPLAY, &clip->id);
+    wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, &clip->id);
   }
   else if (GS(id->name) == ID_SCE) {
     Scene *scene = (Scene *)id;
-    SEQ_relations_invalidate_scene_strips(bmain, scene);
+    seq_relations_invalidate_scene_strips(bmain, scene);
 
     if (scene->ed) {
       ColorManagedColorspaceSettings *colorspace_settings = (ColorManagedColorspaceSettings *)
