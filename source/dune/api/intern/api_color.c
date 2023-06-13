@@ -458,53 +458,53 @@ static void api_ColorManagedViewSettings_view_transform_set(ApiPtr *ptr, int val
 static const EnumPropItem *api_ColorManagedViewSettings_view_transform_itemf(
     Cxt *C, ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
-  Scene *scene = CTX_data_scene(C);
-  EnumPropertyItem *items = NULL;
+  Scene *scene = cxt_data_scene(C);
+  EnumPropItem *items = NULL;
   ColorManagedDisplaySettings *display_settings = &scene->display_settings;
   int totitem = 0;
 
-  IMB_colormanagement_view_items_add(&items, &totitem, display_settings->display_device);
-  RNA_enum_item_end(&items, &totitem);
+  imbuf_colormanagement_view_items_add(&items, &totitem, display_settings->display_device);
+  api_enum_item_end(&items, &totitem);
 
   *r_free = true;
   return items;
 }
 
-static int rna_ColorManagedViewSettings_look_get(PointerRNA *ptr)
+static int api_ColorManagedViewSettings_look_get(ApiPtr *ptr)
 {
   ColorManagedViewSettings *view = (ColorManagedViewSettings *)ptr->data;
 
-  return IMB_colormanagement_look_get_named_index(view->look);
+  return imbuf_colormanagement_look_get_named_index(view->look);
 }
 
-static void rna_ColorManagedViewSettings_look_set(PointerRNA *ptr, int value)
+static void api_ColorManagedViewSettings_look_set(ApiPtr *ptr, int value)
 {
   ColorManagedViewSettings *view = (ColorManagedViewSettings *)ptr->data;
 
-  const char *name = IMB_colormanagement_look_get_indexed_name(value);
+  const char *name = imbuf_colormanagement_look_get_indexed_name(value);
 
   if (name) {
-    BLI_strncpy(view->look, name, sizeof(view->look));
+    lib_strncpy(view->look, name, sizeof(view->look));
   }
 }
 
-static const EnumPropertyItem *rna_ColorManagedViewSettings_look_itemf(bContext *UNUSED(C),
-                                                                       PointerRNA *ptr,
-                                                                       PropertyRNA *UNUSED(prop),
-                                                                       bool *r_free)
+static const EnumPropItem *api_ColorManagedViewSettings_look_itemf(Cxt *UNUSED(C),
+                                                                   ApiPtr *ptr,
+                                                                   ApiProp *UNUSED(prop),
+                                                                   bool *r_free)
 {
   ColorManagedViewSettings *view = (ColorManagedViewSettings *)ptr->data;
-  EnumPropertyItem *items = NULL;
+  EnumPropItem *items = NULL;
   int totitem = 0;
 
-  IMB_colormanagement_look_items_add(&items, &totitem, view->view_transform);
-  RNA_enum_item_end(&items, &totitem);
+  imbuf_colormanagement_look_items_add(&items, &totitem, view->view_transform);
+  api_enum_item_end(&items, &totitem);
 
   *r_free = true;
   return items;
 }
 
-static void rna_ColorManagedViewSettings_use_curves_set(PointerRNA *ptr, bool value)
+static void api_ColorManagedViewSettings_use_curves_set(ApiPtr *ptr, bool value)
 {
   ColorManagedViewSettings *view_settings = (ColorManagedViewSettings *)ptr->data;
 
@@ -512,7 +512,7 @@ static void rna_ColorManagedViewSettings_use_curves_set(PointerRNA *ptr, bool va
     view_settings->flag |= COLORMANAGE_VIEW_USE_CURVES;
 
     if (view_settings->curve_mapping == NULL) {
-      view_settings->curve_mapping = BKE_curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
+      view_settings->curve_mapping = dune_curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
     }
   }
   else {
@@ -520,12 +520,12 @@ static void rna_ColorManagedViewSettings_use_curves_set(PointerRNA *ptr, bool va
   }
 }
 
-static char *rna_ColorManagedViewSettings_path(PointerRNA *UNUSED(ptr))
+static char *api_ColorManagedViewSettings_path(PointerRNA *UNUSED(ptr))
 {
-  return BLI_strdup("view_settings");
+  return lib_strdup("view_settings");
 }
 
-static bool rna_ColorManagedColorspaceSettings_is_data_get(struct PointerRNA *ptr)
+static bool api_ColorManagedColorspaceSettings_is_data_get(struct PointerRNA *ptr)
 {
   ColorManagedColorspaceSettings *colorspace = (ColorManagedColorspaceSettings *)ptr->data;
   const char *data_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DATA);
