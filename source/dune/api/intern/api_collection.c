@@ -182,19 +182,19 @@ static bool api_Collection_objects_override_apply(Main *main,
   return true;
 }
 
-static void rna_Collection_children_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Collection_children_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
-  rna_iterator_listbase_begin(iter, &collection->children, NULL);
+  api_iter_list_begin(iter, &collection->children, NULL);
 }
 
-static PointerRNA rna_Collection_children_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Collection_children_get(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.listbase;
 
   /* we are actually iterating a CollectionChild list, so override get */
   CollectionChild *child = (CollectionChild *)internal->link;
-  return api_pointer_inherit_refine(&iter->parent, &RNA_Collection, child->collection);
+  return api_ptr_inherit_refine(&iter->parent, &ApiCollection, child->collection);
 }
 
 static void api_Collection_children_link(Collection *collection,
@@ -216,7 +216,7 @@ static void api_Collection_children_link(Collection *collection,
   wm_main_add_notifier(NC_OBJECT | ND_DRAW, &child->id);
 }
 
-static void rna_Collection_children_unlink(Collection *collection,
+static void api_Collection_children_unlink(Collection *collection,
                                            Main *main,
                                            ReportList *reports,
                                            Collection *child)
@@ -385,53 +385,53 @@ static void api_def_collection_children(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiFn *fn;
-  ApiProperty *parm;
+  ApiProp *parm;
 
-  api_def_prop_srna(cprop, "CollectionChildren");
-  srna = RNA_def_struct(brna, "CollectionChildren", NULL);
-  RNA_def_struct_sdna(srna, "Collection");
-  RNA_def_struct_ui_text(srna, "Collection Children", "Collection of child collections");
+  api_def_prop_sapi(cprop, "CollectionChildren");
+  sapi = api_def_struct(dapi, "CollectionChildren", NULL);
+  api_def_struct_stype(sapi, "Collection");
+  api_def_struct_ui_text(sapi, "Collection Children", "Collection of child collections");
 
   /* add child */
-  func = RNA_def_function(srna, "link", "rna_Collection_children_link");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add this collection as child of this collection");
-  parm = RNA_def_pointer(func, "child", "Collection", "", "Collection to add");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(, "link", "api_Collection_children_link");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  api_def_fn_ui_description(fn, "Add this collection as child of this collection");
+  parm = api_def_ptr(fn, "child", "Collection", "", "Collection to add");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* remove child */
-  func = RNA_def_function(srna, "unlink", "rna_Collection_children_unlink");
-  RNA_def_function_ui_description(func, "Remove this child collection from a collection");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_MAIN);
-  parm = RNA_def_pointer(func, "child", "Collection", "", "Collection to remove");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "unlink", "api_Collection_children_unlink");
+  api_def_fn_ui_description(fn, "Remove this child collection from a collection");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_MAIN);
+  parm = api_def_ptr(fn, "child", "Collection", "", "Collection to remove");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_collections(BlenderRNA *brna)
+void api_def_collections(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Collection", "ID");
-  RNA_def_struct_ui_text(srna, "Collection", "Collection of Object data-blocks");
-  RNA_def_struct_ui_icon(srna, ICON_OUTLINER_COLLECTION);
+  sapi = api_def_struct(dapi, "Collection", "ID");
+  api_def_struct_ui_text(sapi, "Collection", "Collection of Object data-blocks");
+  api_def_struct_ui_icon(sapi, ICON_OUTLINER_COLLECTION);
   /* This is done on save/load in readfile.c,
    * removed if no objects are in the collection and not in a scene. */
-  RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
+  api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "instance_offset", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "instance_offset", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_ui_text(
       prop, "Instance Offset", "Offset from the origin to use when instancing");
-  RNA_def_property_ui_range(prop, -10000.0, 10000.0, 10, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  api_def_prop_ui_range(prop, -10000.0, 10000.0, 10, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "objects", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_Collection_objects_override_apply");
-  RNA_def_property_ui_text(prop, "Objects", "Objects that are directly in this collection");
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_override_fns(prop, NULL, NULL, "api_Collection_objects_override_apply");
+  api_def_prop_ui_text(prop, "Objects", "Objects that are directly in this collection");
+  api_def_prop_collection_fns(prop,
                                     "rna_Collection_objects_begin",
                                     "rna_iterator_listbase_next",
                                     "rna_iterator_listbase_end",
@@ -440,66 +440,66 @@ void RNA_def_collections(BlenderRNA *brna)
                                     NULL,
                                     NULL,
                                     NULL);
-  rna_def_collection_objects(brna, prop);
+  api_def_collection_objects(dapi, prop);
 
-  prop = RNA_def_property(srna, "all_objects", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "all_objects", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_ui_text(
       prop, "All Objects", "Objects that are in this collection and its child collections");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Collection_all_objects_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_Collection_all_objects_get",
+  api_def_prop_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_collection_fns(prop,
+                                    "api_Collection_all_objects_begin",
+                                    "api_iter_lib_next",
+                                    "api_iter_lib_end",
+                                    "api_Collection_all_objects_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
 
-  prop = RNA_def_property(srna, "children", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_Collection_children_override_apply");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "children", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_override_fns(prop, NULL, NULL, "rna_Collection_children_override_apply");
+  api_def_prop_ui_text(
       prop, "Children", "Collections that are immediate children of this collection");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Collection_children_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_Collection_children_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  rna_def_collection_children(brna, prop);
+  api_def_prop_collection_fns(prop,
+                              "rna_Collection_children_begin",
+                              "rna_iterator_listbase_next",
+                              "rna_iterator_listbase_end",
+                              "rna_Collection_children_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_collection_children(dapi, prop);
 
   /* Flags */
-  prop = RNA_def_property(srna, "hide_select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", COLLECTION_HIDE_SELECT);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Collection_hide_select_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, -1);
-  RNA_def_property_ui_text(prop, "Disable Selection", "Disable selection in viewport");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_flag_update");
+  prop = api_def_prop(sapi, "hide_select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", COLLECTION_HIDE_SELECT);
+  api_def_prop_bool_fns(prop, NULL, "api_Collection_hide_select_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, -1);
+  api_def_prop_ui_text(prop, "Disable Selection", "Disable selection in viewport");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_flag_update");
 
-  prop = RNA_def_property(srna, "hide_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", COLLECTION_HIDE_VIEWPORT);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Collection_hide_viewport_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_VIEW_OFF, -1);
-  RNA_def_property_ui_text(prop, "Disable in Viewports", "Globally disable in viewports");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_flag_update");
+  prop = api_def_prop(sapi, "hide_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", COLLECTION_HIDE_VIEWPORT);
+  api_def_prop_bool_fns(prop, NULL, "rna_Collection_hide_viewport_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_VIEW_OFF, -1);
+  api_def_prop_ui_text(prop, "Disable in Viewports", "Globally disable in viewports");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "api_Collection_flag_update");
 
-  prop = RNA_def_property(srna, "hide_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", COLLECTION_HIDE_RENDER);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Collection_hide_render_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_RENDER_OFF, -1);
-  RNA_def_property_ui_text(prop, "Disable in Renders", "Globally disable in renders");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_flag_update");
+  prop = api_def_prop(sapi, "hide_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", COLLECTION_HIDE_RENDER);
+  api_def_prop_bool_fns(prop, NULL, "api_Collection_hide_render_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_RENDER_OFF, -1);
+  api_def_prop_ui_text(prop, "Disable in Renders", "Globally disable in renders");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "api_Collection_flag_update");
 
-  static const EnumPropertyItem rna_collection_lineart_usage[] = {
+  static const EnumPropItem api_collection_lineart_usage[] = {
       {COLLECTION_LRT_INCLUDE,
        "INCLUDE",
        0,
@@ -523,33 +523,33 @@ void RNA_def_collections(BlenderRNA *brna)
        "Include this collection but do not generate intersection lines"},
       {0, NULL, 0, NULL, NULL}};
 
-  prop = RNA_def_property(srna, "lineart_usage", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_collection_lineart_usage);
-  RNA_def_property_ui_text(prop, "Usage", "How to use this collection in line art");
-  RNA_def_property_update(prop, NC_SCENE, NULL);
+  prop = api_def_prop(sapi, "lineart_usage", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_collection_lineart_usage);
+  api_def_prop_ui_text(prop, "Usage", "How to use this collection in line art");
+  api_def_prop_update(prop, NC_SCENE, NULL);
 
-  prop = RNA_def_property(srna, "lineart_use_intersection_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "lineart_flags", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "lineart_use_intersection_mask", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "lineart_flags", 1);
+  api_def_prop_ui_text(
       prop, "Use Intersection Masks", "Use custom intersection mask for faces in this collection");
-  RNA_def_property_update(prop, NC_SCENE, NULL);
+  api_def_prop_update(prop, NC_SCENE, NULL);
 
-  prop = RNA_def_property(srna, "lineart_intersection_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "lineart_intersection_mask", 1);
-  RNA_def_property_array(prop, 8);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "lineart_intersection_mask", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "lineart_intersection_mask", 1);
+  api_def_prop_array(prop, 8);
+  api_def_prop_ui_text(
       prop, "Masks", "Intersection generated by this collection will have this mask value");
-  RNA_def_property_update(prop, NC_SCENE, NULL);
+  api_def_prop_update(prop, NC_SCENE, NULL);
 
-  prop = RNA_def_property(srna, "color_tag", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "color_tag");
-  RNA_def_property_enum_funcs(
-      prop, "rna_Collection_color_tag_get", "rna_Collection_color_tag_set", NULL);
-  RNA_def_property_enum_items(prop, rna_enum_collection_color_items);
-  RNA_def_property_ui_text(prop, "Collection Color", "Color tag for a collection");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_color_tag_update");
+  prop = api_def_prop(sapi, "color_tag", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "color_tag");
+  api_def_prop_enum_fns(
+      prop, "api_Collection_color_tag_get", "api_Collection_color_tag_set", NULL);
+  api_def_prop_enum_items(prop, api_enum_collection_color_items);
+  api_def_prop_ui_text(prop, "Collection Color", "Color tag for a collection");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "api_Collection_color_tag_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 #endif
