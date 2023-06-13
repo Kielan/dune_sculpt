@@ -558,8 +558,8 @@ static void api_ColorManagedColorspaceSettings_colorspace_set(struct PointerRNA 
   }
 }
 
-static const EnumPropItem *rna_ColorManagedColorspaceSettings_colorspace_itemf(
-    bContext *UNUSED(C), PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), bool *r_free)
+static const EnumPropItem *api_ColorManagedColorspaceSettings_colorspace_itemf(
+    Cxt *UNUSED(C), ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
   EnumPropItem *items = NULL;
   int totitem = 0;
@@ -575,11 +575,11 @@ static const EnumPropItem *rna_ColorManagedColorspaceSettings_colorspace_itemf(
 typedef struct Seq_colorspace_cb_data {
   ColorManagedColorspaceSettings *colorspace_settings;
   Sequence *r_seq;
-} Seq_colorspace_cb_data;
+} seq_colorspace_cb_data;
 
-static bool seq_find_colorspace_settings_cb(Sequence *seq, void *user_data)
+static bool seq_find_colorspace_settings_cb(Seq *seq, void *user_data)
 {
-  Seq_colorspace_cb_data *cd = (Seq_colorspace_cb_data *)user_data;
+  seq_colorspace_cb_data *cd = (seq_colorspace_cb_data *)user_data;
   if (seq->strip && &seq->strip->colorspace_settings == cd->colorspace_settings) {
     cd->r_seq = seq;
     return false;
@@ -587,7 +587,7 @@ static bool seq_find_colorspace_settings_cb(Sequence *seq, void *user_data)
   return true;
 }
 
-static bool seq_free_anim_cb(Sequence *seq, void *UNUSED(user_data))
+static bool seq_free_anim_cb(Seq *seq, void *UNUSED(user_data))
 {
   seq_relations_sequence_free_anim(seq);
   return true;
@@ -625,33 +625,33 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
     if (scene->ed) {
       ColorManagedColorspaceSettings *colorspace_settings = (ColorManagedColorspaceSettings *)
                                                                 ptr->data;
-      Seq_colorspace_cb_data cb_data = {colorspace_settings, NULL};
+      seq_colorspace_cb_data cb_data = {colorspace_settings, NULL};
 
       if (&scene->sequencer_colorspace_settings != colorspace_settings) {
-        SEQ_for_each_callback(&scene->ed->seqbase, seq_find_colorspace_settings_cb, &cb_data);
+        seq_for_each_callback(&scene->ed->seqbase, seq_find_colorspace_settings_cb, &cb_data);
       }
-      Sequence *seq = cb_data.r_seq;
+      Seq *seq = cb_data.r_seq;
 
       if (seq) {
-        SEQ_relations_sequence_free_anim(seq);
+        seq_relations_sequence_free_anim(seq);
 
         if (seq->strip->proxy && seq->strip->proxy->anim) {
           IMB_free_anim(seq->strip->proxy->anim);
           seq->strip->proxy->anim = NULL;
         }
 
-        SEQ_relations_invalidate_cache_raw(scene, seq);
+        seq_relations_invalidate_cache_raw(scene, seq);
       }
       else {
-        SEQ_for_each_callback(&scene->ed->seqbase, seq_free_anim_cb, NULL);
+        seq_for_each_callback(&scene->ed->seqbase, seq_free_anim_cb, NULL);
       }
 
-      WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+      wm_main_add_notifier(NC_SCENE | ND_SEQ, NULL);
     }
   }
 }
 
-static char *rna_ColorManagedSequencerColorspaceSettings_path(PointerRNA *UNUSED(ptr))
+static char *rna_ColorManagedSequencerColorspaceSettings_path(ApiPtr *UNUSED(ptr))
 {
   return BLI_strdup("sequencer_colorspace_settings");
 }
