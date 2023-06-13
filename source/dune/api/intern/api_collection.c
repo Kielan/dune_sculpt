@@ -1,19 +1,19 @@
 #include <stdlib.h>
 
-#include "DNA_collection_types.h"
+#include "types_collection.h"
 
-#include "DNA_lineart_types.h"
+#include "types_lineart.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_collection_color_items[] = {
+const EnumPropItem api_enum_collection_color_items[] = {
     {COLLECTION_COLOR_NONE, "NONE", ICON_X, "None", "Assign no color tag to the collection"},
     {COLLECTION_COLOR_01, "COLOR_01", ICON_COLLECTION_COLOR_01, "Color 01", ""},
     {COLLECTION_COLOR_02, "COLOR_02", ICON_COLLECTION_COLOR_02, "Color 02", ""},
@@ -26,26 +26,26 @@ const EnumPropertyItem rna_enum_collection_color_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef APU_RUNTIME
 
-#  include "DNA_object_types.h"
-#  include "DNA_scene_types.h"
+#  include "types_object.h"
+#  include "types_scene.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "BKE_collection.h"
-#  include "BKE_global.h"
-#  include "BKE_layer.h"
+#  include "dune_collection.h"
+#  include "dune_global.h"
+#  include "dune_layer.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-static void rna_Collection_all_objects_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Collection_all_objects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Collection *collection = (Collection *)ptr->data;
-  ListBase collection_objects = BKE_collection_object_cache_get(collection);
+  ListBase collection_objects = dune_collection_object_cache_get(collection);
   rna_iterator_listbase_begin(iter, &collection_objects, NULL);
 }
 
