@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types_color_types.h"
-#include "types_texture_types.h"
+#include "types_color.h"
+#include "types_texture.h"
 
 #include "lib_utildefines.h"
 
