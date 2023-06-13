@@ -1,51 +1,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DNA_color_types.h"
-#include "DNA_texture_types.h"
+#include "types_color_types.h"
+#include "types_texture_types.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_node_tree_update.h"
+#include "dune_node_tree_update.h"
 
-#include "RNA_define.h"
-#include "rna_internal.h"
+#include "api_define.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "DNA_image_types.h"
-#  include "DNA_material_types.h"
-#  include "DNA_movieclip_types.h"
-#  include "DNA_node_types.h"
-#  include "DNA_object_types.h"
-#  include "DNA_particle_types.h"
-#  include "DNA_sequence_types.h"
+#  include "types_image.h"
+#  include "types_material.h"
+#  include "types_movieclip.h"
+#  include "types_node.h"
+#  include "types_object.h"
+#  include "types_particle.h"
+#  include "types_sequence_types.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_colorband.h"
-#  include "BKE_colortools.h"
-#  include "BKE_image.h"
-#  include "BKE_linestyle.h"
-#  include "BKE_movieclip.h"
-#  include "BKE_node.h"
+#  include "dune_colorband.h"
+#  include "dune_colortools.h"
+#  include "dune_image.h"
+#  include "dune_linestyle.h"
+#  include "dune_movieclip.h"
+#  include "dune_node.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_node.h"
+#  include "ed_node.h"
 
-#  include "IMB_colormanagement.h"
-#  include "IMB_imbuf.h"
+#  include "imbuf_colormanagement.h"
+#  include "imbuf.h"
 
-#  include "SEQ_iterator.h"
-#  include "SEQ_relations.h"
+#  include "seq_iterator.h"
+#  include "seq_relations.h"
 
-static int rna_CurveMapping_curves_length(PointerRNA *ptr)
+static int api_CurveMapping_curves_length(ApiPtr *ptr)
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
   int len;
@@ -59,15 +59,15 @@ static int rna_CurveMapping_curves_length(PointerRNA *ptr)
   return len;
 }
 
-static void rna_CurveMapping_curves_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_CurveMapping_curves_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
-  rna_iterator_array_begin(
-      iter, cumap->cm, sizeof(CurveMap), rna_CurveMapping_curves_length(ptr), 0, NULL);
+  api_iter_array_begin(
+      iter, cumap->cm, sizeof(CurveMap), api_CurveMapping_curves_length(ptr), 0, NULL);
 }
 
-static void rna_CurveMapping_clip_set(PointerRNA *ptr, bool value)
+static void api_CurveMapping_clip_set(ApiPtr *ptr, bool value)
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
@@ -78,41 +78,41 @@ static void rna_CurveMapping_clip_set(PointerRNA *ptr, bool value)
     cumap->flag &= ~CUMA_DO_CLIP;
   }
 
-  BKE_curvemapping_changed(cumap, false);
+  dune_curvemapping_changed(cumap, false);
 }
 
-static void rna_CurveMapping_black_level_set(PointerRNA *ptr, const float *values)
+static void api_CurveMapping_black_level_set(ApiPtr *ptr, const float *values)
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
   cumap->black[0] = values[0];
   cumap->black[1] = values[1];
   cumap->black[2] = values[2];
-  BKE_curvemapping_set_black_white(cumap, NULL, NULL);
+  dune_curvemapping_set_black_white(cumap, NULL, NULL);
 }
 
-static void rna_CurveMapping_white_level_set(PointerRNA *ptr, const float *values)
+static void api_CurveMapping_white_level_set(ApiPtr *ptr, const float *values)
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
   cumap->white[0] = values[0];
   cumap->white[1] = values[1];
   cumap->white[2] = values[2];
-  BKE_curvemapping_set_black_white(cumap, NULL, NULL);
+  dune_curvemapping_set_black_white(cumap, NULL, NULL);
 }
 
-static void rna_CurveMapping_tone_update(Main *UNUSED(bmain),
+static void api_CurveMapping_tone_update(Main *UNUSED(bmain),
                                          Scene *UNUSED(scene),
                                          PointerRNA *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
 }
 
-static void rna_CurveMapping_extend_update(Main *UNUSED(bmain),
+static void api_CurveMapping_extend_update(Main *UNUSED(bmain),
                                            Scene *UNUSED(scene),
                                            PointerRNA *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+  wm_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
 }
 
 static void rna_CurveMapping_clipminx_range(
