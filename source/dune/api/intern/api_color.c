@@ -184,28 +184,28 @@ static char *api_ColorRamp_path(ApiPtr *ptr)
 
       case ID_LS: {
         /* may be NULL */
-        path = BKE_linestyle_path_to_color_ramp((FreestyleLineStyle *)id, (ColorBand *)ptr->data);
+        path = dune_linestyle_path_to_color_ramp((FreestyleLineStyle *)id, (ColorBand *)ptr->data);
         break;
       }
 
       default:
         /* everything else just uses 'color_ramp' */
-        path = BLI_strdup("color_ramp");
+        path = lib_strdup("color_ramp");
         break;
     }
   }
   else {
     /* everything else just uses 'color_ramp' */
-    path = BLI_strdup("color_ramp");
+    path = lib_strdup("color_ramp");
   }
 
   return path;
 }
 
-static char *rna_ColorRampElement_path(PointerRNA *ptr)
+static char *api_ColorRampElement_path(PointerRNA *ptr)
 {
-  PointerRNA ramp_ptr;
-  PropertyRNA *prop;
+  ApiPtr ramp_ptr;
+  ApiProp *prop;
   char *path = NULL;
   int index;
 
@@ -215,13 +215,13 @@ static char *rna_ColorRampElement_path(PointerRNA *ptr)
 
 #  define COLRAMP_GETPATH \
     { \
-      prop = RNA_struct_find_property(&ramp_ptr, "elements"); \
+      prop = api_struct_find_prop(&ramp_ptr, "elements"); \
       if (prop) { \
-        index = RNA_property_collection_lookup_index(&ramp_ptr, prop, ptr); \
+        index = api_prop_collection_lookup_index(&ramp_ptr, prop, ptr); \
         if (index != -1) { \
-          char *texture_path = rna_ColorRamp_path(&ramp_ptr); \
-          path = BLI_sprintfN("%s.elements[%d]", texture_path, index); \
-          MEM_freeN(texture_path); \
+          char *texture_path = api_ColorRamp_path(&ramp_ptr); \
+          path = lib_sprintfn("%s.elements[%d]", texture_path, index); \
+          mem_freen(texture_path); \
         } \
       } \
     } \
