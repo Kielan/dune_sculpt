@@ -234,35 +234,35 @@ static char *api_ColorRampElement_path(PointerRNA *ptr)
 
     switch (GS(id->name)) {
       case ID_NT: {
-        NodeTree *ntree = (bNodeTree *)id;
+        NodeTree *ntree = (NodeTree *)id;
         Node *node;
 
         for (node = ntree->nodes.first; node; node = node->next) {
           if (ELEM(node->type, SH_NODE_VALTORGB, CMP_NODE_VALTORGB, TEX_NODE_VALTORGB)) {
-            api_ptr_create(id, &RNA_ColorRamp, node->storage, &ramp_ptr);
+            api_ptr_create(id, &ApiColorRamp, node->storage, &ramp_ptr);
             COLRAMP_GETPATH;
           }
         }
         break;
       }
       case ID_LS: {
-        ListBase listbase;
+        List list
         LinkData *link;
 
-        BKE_linestyle_modifier_list_color_ramps((FreestyleLineStyle *)id, &listbase);
-        for (link = (LinkData *)listbase.first; link; link = link->next) {
-          RNA_pointer_create(id, &RNA_ColorRamp, link->data, &ramp_ptr);
+        dune_linestyle_mod_list_color_ramps((FreestyleLineStyle *)id, &list);
+        for (link = (LinkData *)list.first; link; link = link->next) {
+          api_ptr_create(id, &ApiColorRamp, link->data, &ramp_ptr);
           COLRAMP_GETPATH;
         }
-        BLI_freelistN(&listbase);
+        lib_freelistn(&list);
         break;
       }
 
       default: /* everything else should have a "color_ramp" property */
       {
-        /* create pointer to the ID block, and try to resolve "color_ramp" pointer */
-        RNA_id_pointer_create(id, &ramp_ptr);
-        if (RNA_path_resolve(&ramp_ptr, "color_ramp", &ramp_ptr, &prop)) {
+        /* create ptr to the Id block, and try to resolve "color_ramp" pointer */
+        api_id_ptr_create(id, &ramp_ptr);
+        if (api_path_resolve(&ramp_ptr, "color_ramp", &ramp_ptr, &prop)) {
           COLRAMP_GETPATH;
         }
         break;
@@ -574,7 +574,7 @@ static const EnumPropItem *api_ColorManagedColorspaceSettings_colorspace_itemf(
 
 typedef struct Seq_colorspace_cb_data {
   ColorManagedColorspaceSettings *colorspace_settings;
-  Sequence *r_seq;
+  Seq *r_seq;
 } seq_colorspace_cb_data;
 
 static bool seq_find_colorspace_settings_cb(Seq *seq, void *user_data)
@@ -636,7 +636,7 @@ static void api_ColorManagedColorspaceSettings_reload_update(Main *main,
         seq_relations_seq_free_anim(seq);
 
         if (seq->strip->proxy && seq->strip->proxy->anim) {
-          IMB_free_anim(seq->strip->proxy->anim);
+          imbuf_free_anim(seq->strip->proxy->anim);
           seq->strip->proxy->anim = NULL;
         }
 
@@ -661,9 +661,9 @@ static char *api_ColorManagedInputColorspaceSettings_path(ApiPtr *UNUSED(ptr))
   return lib_strdup("colorspace_settings");
 }
 
-static void rna_ColorManagement_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_ColorManagement_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (!id) {
     return;
@@ -690,36 +690,36 @@ static float api_CurveMapping_evaluateF(struct CurveMapping *cumap,
   if (!cuma->table) {
     dune_curvemapping_init(cumap);
   }
-  return BKE_curvemap_evaluateF(cumap, cuma, value);
+  return dune_curvemap_evaluateF(cumap, cuma, value);
 }
 
-static void rna_CurveMap_initialize(struct CurveMapping *cumap)
+static void api_CurveMap_initialize(struct CurveMapping *cumap)
 {
-  BKE_curvemapping_init(cumap);
+  dune_curvemapping_init(cumap);
 }
 #else
 
-static void rna_def_curvemappoint(BlenderRNA *brna)
+static void api_def_curvemappoint(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  static const EnumPropertyItem prop_handle_type_items[] = {
+  ApiStruct *sapi;
+  ApiProp *prop;
+  static const EnumPropItem prop_handle_type_items[] = {
       {0, "AUTO", 0, "Auto Handle", ""},
       {CUMA_HANDLE_AUTO_ANIM, "AUTO_CLAMPED", 0, "Auto Clamped Handle", ""},
       {CUMA_HANDLE_VECTOR, "VECTOR", 0, "Vector Handle", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "CurveMapPoint", NULL);
-  RNA_def_struct_ui_text(srna, "CurveMapPoint", "Point of a curve used for a curve mapping");
+  sapi = api_def_struct(dapi, "CurveMapPoint", NULL);
+  api_def_struct_ui_text(sapi, "CurveMapPoint", "Point of a curve used for a curve mapping");
 
-  prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "x");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Location", "X/Y coordinates of the curve point");
+  prop = api_def_prop(sapi, "location", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "x");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Location", "X/Y coordinates of the curve point");
 
-  prop = RNA_def_property(srna, "handle_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
+  prop = api_def_prop(sapi, "handle_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "flag");
   RNA_def_property_enum_items(prop, prop_handle_type_items);
   RNA_def_property_ui_text(
       prop, "Handle Type", "Curve interpolation at this point: Bezier or vector");
