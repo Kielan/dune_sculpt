@@ -1126,23 +1126,23 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
       prop,
       "Collision Quality",
       "How many collision iterations should be done. (higher is better quality but slower)");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "impulse_clamp", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "clamp");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "impulse_clamp", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "clamp");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(
       prop,
       "Impulse Clamping",
       "Clamp collision impulses to avoid instability (0.0 to disable clamping)");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   /* self collision */
 
   prop = api_def_prop(sapi, "use_self_collision", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_SELF);
-  RNA_def_prop_ui_text(prop, "Enable Self Collision", "Enable self collisions");
-  RNA_def_prop_update(prop, 0, "rna_cloth_update");
+  api_def_prop_bool_stype(prop, NULL, "flags", CLOTH_COLLSETTINGS_FLAG_SELF);
+  api_def_prop_ui_text(prop, "Enable Self Collision", "Enable self collisions");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = api_def_prop(sapi, "self_distance_min", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "selfepsilon");
@@ -1151,33 +1151,33 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
       prop,
       "Self Minimum Distance",
       "Minimum distance between cloth faces before collision response takes effect");
-  api_def_prop_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "self_friction", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0f, 80.0f);
-  RNA_def_property_ui_text(prop, "Self Friction", "Friction with self contact");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  prop = api_def_prop(sapi, "self_friction", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0f, 80.0f);
+  api_def_prop_ui_text(prop, "Self Friction", "Friction with self contact");
+  api_def_prop_update(prop, 0, "api_cloth_update");
 
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "group");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Collision Collection", "Limit colliders to this Collection");
-  RNA_def_property_update(prop, 0, "rna_cloth_dependency_update");
+  prop = api_def_prop(sapi, "collection", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "group");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Collision Collection", "Limit colliders to this Collection");
+  api_def_prop_update(prop, 0, "api_cloth_dependency_update");
 
-  prop = RNA_def_property(srna, "vertex_group_self_collisions", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_CollSettings_selfcol_vgroup_get",
-                                "rna_CollSettings_selfcol_vgroup_length",
-                                "rna_CollSettings_selfcol_vgroup_set");
-  RNA_def_property_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group_self_collisions", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_CollSettings_selfcol_vgroup_get",
+                          "api_CollSettings_selfcol_vgroup_length",
+                          "api_CollSettings_selfcol_vgroup_set");
+  api_def_prop_override_clear_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop,
       "Selfcollision Vertex Group",
       "Triangles with all vertices in this group are not used during self collisions");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  prop = RNA_def_property(srna, "vertex_group_object_collisions", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
+  prop = api_def_prop(sapi, "vertex_group_object_collisions", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
                                 "rna_CollSettings_objcol_vgroup_get",
                                 "rna_CollSettings_objcol_vgroup_length",
                                 "rna_CollSettings_objcol_vgroup_set");
@@ -1189,15 +1189,15 @@ static void api_def_cloth_collision_settings(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_cloth_update");
 
   prop = api_def_prop(sapi, "self_impulse_clamp", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "self_clamp");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(
+  api_def_prop_float_sdna(prop, NULL, "self_clamp");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(
       prop,
       "Impulse Clamping",
       "Clamp collision impulses to avoid instability (0.0 to disable clamping)");
-  RNA_def_property_update(prop, 0, "rna_cloth_update");
+  api_def_prop_update(prop, 0, "rna_cloth_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 void api_def_cloth(DuneApi *dapi)
