@@ -276,27 +276,27 @@ static char *rna_ColorRampElement_path(PointerRNA *ptr)
   return path;
 }
 
-static void rna_ColorRamp_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_ColorRamp_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
   if (ptr->owner_id) {
-    ID *id = ptr->owner_id;
+    Id *id = ptr->owner_id;
 
     switch (GS(id->name)) {
       case ID_MA: {
         Material *ma = (Material *)ptr->owner_id;
 
-        DEG_id_tag_update(&ma->id, 0);
-        WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, ma);
+        graph_id_tag_update(&ma->id, 0);
+        wm_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, ma);
         break;
       }
       case ID_NT: {
-        bNodeTree *ntree = (bNodeTree *)id;
-        bNode *node;
+        NodeTree *ntree = (NodeTree *)id;
+        Node *node;
 
         for (node = ntree->nodes.first; node; node = node->next) {
           if (ELEM(node->type, SH_NODE_VALTORGB, CMP_NODE_VALTORGB, TEX_NODE_VALTORGB)) {
-            BKE_ntree_update_tag_node_property(ntree, node);
-            ED_node_tree_propagate_change(NULL, bmain, ntree);
+            dune_ntree_update_tag_node_prop(ntree, node);
+            ed_node_tree_propagate_change(NULL, main, ntree);
           }
         }
         break;
@@ -304,14 +304,14 @@ static void rna_ColorRamp_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *
       case ID_TE: {
         Tex *tex = (Tex *)ptr->owner_id;
 
-        DEG_id_tag_update(&tex->id, 0);
-        WM_main_add_notifier(NC_TEXTURE, tex);
+        graph_id_tag_update(&tex->id, 0);
+        wm_main_add_notifier(NC_TEXTURE, tex);
         break;
       }
       case ID_LS: {
         FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
 
-        WM_main_add_notifier(NC_LINESTYLE, linestyle);
+        wm_main_add_notifier(NC_LINESTYLE, linestyle);
         break;
       }
       /* ColorRamp for particle display is owned by the object (see T54422) */
@@ -319,7 +319,7 @@ static void rna_ColorRamp_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *
       case ID_PA: {
         ParticleSettings *part = (ParticleSettings *)ptr->owner_id;
 
-        WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, part);
+        wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, part);
       }
       default:
         break;
@@ -327,36 +327,36 @@ static void rna_ColorRamp_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *
   }
 }
 
-static void rna_ColorRamp_eval(struct ColorBand *coba, float position, float color[4])
+static void api_ColorRamp_eval(struct ColorBand *coba, float position, float color[4])
 {
-  BKE_colorband_evaluate(coba, position, color);
+  api_colorband_evaluate(coba, position, color);
 }
 
-static CBData *rna_ColorRampElement_new(struct ColorBand *coba,
+static CBData *api_ColorRampElement_new(struct ColorBand *coba,
                                         ReportList *reports,
                                         float position)
 {
-  CBData *element = BKE_colorband_element_add(coba, position);
+  CBData *element = dune_colorband_element_add(coba, position);
 
   if (element == NULL) {
-    BKE_reportf(reports, RPT_ERROR, "Unable to add element to colorband (limit %d)", MAXCOLORBAND);
+    dune_reportf(reports, RPT_ERROR, "Unable to add element to colorband (limit %d)", MAXCOLORBAND);
   }
 
   return element;
 }
 
-static void rna_ColorRampElement_remove(struct ColorBand *coba,
+static void api_ColorRampElement_remove(struct ColorBand *coba,
                                         ReportList *reports,
-                                        PointerRNA *element_ptr)
+                                        ApiPtr *element_ptr)
 {
   CBData *element = element_ptr->data;
   int index = (int)(element - coba->data);
-  if (!BKE_colorband_element_remove(coba, index)) {
-    BKE_report(reports, RPT_ERROR, "Element not found in element collection or last element");
+  if (!dune_colorband_element_remove(coba, index)) {
+    dune_report(reports, RPT_ERROR, "Element not found in element collection or last element");
     return;
   }
-
-  RNA_POINTER_INVALIDATE(element_ptr);
+  
+   API_PTR_INVALIDATE(element_ptr);
 }
 
 static void rna_CurveMap_remove_point(CurveMap *cuma, ReportList *reports, PointerRNA *point_ptr)
