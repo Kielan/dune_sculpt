@@ -133,8 +133,8 @@ static void api_CurveMapping_clipminy_range(
   *max = cumap->clipr.ymax;
 }
 
-static void rna_CurveMapping_clipmaxx_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_CurveMapping_clipmaxx_range(
+   ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   CurveMapping *cumap = (CurveMapping *)ptr->data;
 
@@ -230,16 +230,16 @@ static char *api_ColorRampElement_path(PointerRNA *ptr)
   /* determine the path from the ID-block to the ramp */
   /* FIXME: this is a very slow way to do it, but it will have to suffice... */
   if (ptr->owner_id) {
-    ID *id = ptr->owner_id;
+    Id *id = ptr->owner_id;
 
     switch (GS(id->name)) {
       case ID_NT: {
-        bNodeTree *ntree = (bNodeTree *)id;
-        bNode *node;
+        NodeTree *ntree = (bNodeTree *)id;
+        Node *node;
 
         for (node = ntree->nodes.first; node; node = node->next) {
           if (ELEM(node->type, SH_NODE_VALTORGB, CMP_NODE_VALTORGB, TEX_NODE_VALTORGB)) {
-            RNA_pointer_create(id, &RNA_ColorRamp, node->storage, &ramp_ptr);
+            api_ptr_create(id, &RNA_ColorRamp, node->storage, &ramp_ptr);
             COLRAMP_GETPATH;
           }
         }
