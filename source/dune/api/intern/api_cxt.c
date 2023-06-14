@@ -286,51 +286,51 @@ void api_def_cxt(DuneApi *dapi)
   prop = api_def_prop(sapi, "asset_file_handle", PROP_POINTER, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_struct_type(prop, "FileSelectEntry");
-  api_def_prop_ptr_fns(prop, "rna_Context_asset_file_handle_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_cxt_asset_file_handle_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop,
-                           "",
-                           "The file of an active asset. Avoid using this, it will be replaced by "
-                           "a proper AssetHandle design");
+                       "",
+                       "The file of an active asset. Avoid using this, it will be replaced by "
+                       "a proper AssetHandle design");
 
   /* Data */
-  prop = RNA_def_property(srna, "blend_data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "BlendData");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_main_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "blend_data", PROP_POINTER, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "BlendData");
+  api_def_prop_ptr_fns(prop, "api_cxt_main_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "scene", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Scene");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_scene_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "scene", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Scene");
+  api_def_prop_ptr_fns(prop, "api_Context_scene_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "view_layer", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "ViewLayer");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_view_layer_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "view_layer", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "ViewLayer");
+  api_def_prop_ptr_fns(prop, "api_cxt_view_layer_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "engine", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(prop, "rna_Context_engine_get", "rna_Context_engine_length", NULL);
+  prop = api_def_prop(sapi, "engine", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_funcs(prop, "api_cxt_engine_get", "api_cxt_engine_length", NULL);
 
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_collection_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "collection", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prope_struct_type(prop, "Collection");
+  api_def_prop_ptr_fns(prop, "api_cxt_collection_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "layer_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "LayerCollection");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_layer_collection_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "layer_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "LayerCollection");
+  api_def_prop_ptr_fns(prop, "api_cxt_layer_collection_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "tool_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "ToolSettings");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_tool_settings_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "tool_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "ToolSettings");
+  api_def_prop_ptr_fns(prop, "api_cxt_tool_settings_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "preferences", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Preferences");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_preferences_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "prefs", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Prefs");
+  api_def_prop_ptr_fns(prop, "api_cxt_prefs_get", NULL, NULL, NULL);
 
   prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, rna_enum_context_mode_items);
