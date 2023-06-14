@@ -1,54 +1,54 @@
 #include <stdlib.h>
 
-#include "DNA_ID.h"
-#include "DNA_userdef_types.h"
+#include "types_id.h"
+#include "types_userdef.h"
 
-#include "BKE_context.h"
-#include "BLI_utildefines.h"
+#include "dune_cxt.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-const EnumPropertyItem rna_enum_context_mode_items[] = {
-    {CTX_MODE_EDIT_MESH, "EDIT_MESH", 0, "Mesh Edit", ""},
-    {CTX_MODE_EDIT_CURVE, "EDIT_CURVE", 0, "Curve Edit", ""},
-    {CTX_MODE_EDIT_CURVES, "EDIT_CURVES", 0, "Curves Edit", ""},
-    {CTX_MODE_EDIT_SURFACE, "EDIT_SURFACE", 0, "Surface Edit", ""},
-    {CTX_MODE_EDIT_TEXT, "EDIT_TEXT", 0, "Text Edit", ""},
+const EnumPropItem api_enum_cxt_mode_items[] = {
+    {CXT_MODE_EDIT_MESH, "EDIT_MESH", 0, "Mesh Edit", ""},
+    {CXT_MODE_EDIT_CURVE, "EDIT_CURVE", 0, "Curve Edit", ""},
+    {CXT_MODE_EDIT_CURVES, "EDIT_CURVES", 0, "Curves Edit", ""},
+    {CXT_MODE_EDIT_SURFACE, "EDIT_SURFACE", 0, "Surface Edit", ""},
+    {CXT_MODE_EDIT_TEXT, "EDIT_TEXT", 0, "Text Edit", ""},
     /* PARSKEL reuse will give issues */
-    {CTX_MODE_EDIT_ARMATURE, "EDIT_ARMATURE", 0, "Armature Edit", ""},
-    {CTX_MODE_EDIT_METABALL, "EDIT_METABALL", 0, "Metaball Edit", ""},
-    {CTX_MODE_EDIT_LATTICE, "EDIT_LATTICE", 0, "Lattice Edit", ""},
-    {CTX_MODE_POSE, "POSE", 0, "Pose", ""},
-    {CTX_MODE_SCULPT, "SCULPT", 0, "Sculpt", ""},
-    {CTX_MODE_PAINT_WEIGHT, "PAINT_WEIGHT", 0, "Weight Paint", ""},
-    {CTX_MODE_PAINT_VERTEX, "PAINT_VERTEX", 0, "Vertex Paint", ""},
-    {CTX_MODE_PAINT_TEXTURE, "PAINT_TEXTURE", 0, "Texture Paint", ""},
-    {CTX_MODE_PARTICLE, "PARTICLE", 0, "Particle", ""},
-    {CTX_MODE_OBJECT, "OBJECT", 0, "Object", ""},
-    {CTX_MODE_PAINT_GPENCIL, "PAINT_GPENCIL", 0, "Grease Pencil Paint", ""},
-    {CTX_MODE_EDIT_GPENCIL, "EDIT_GPENCIL", 0, "Grease Pencil Edit", ""},
-    {CTX_MODE_SCULPT_GPENCIL, "SCULPT_GPENCIL", 0, "Grease Pencil Sculpt", ""},
-    {CTX_MODE_WEIGHT_GPENCIL, "WEIGHT_GPENCIL", 0, "Grease Pencil Weight Paint", ""},
-    {CTX_MODE_VERTEX_GPENCIL, "VERTEX_GPENCIL", 0, "Grease Pencil Vertex Paint", ""},
-    {CTX_MODE_SCULPT_CURVES, "SCULPT_CURVES", 0, "Curves Sculpt", ""},
+    {CXT_MODE_EDIT_ARMATURE, "EDIT_ARMATURE", 0, "Armature Edit", ""},
+    {CXT_MODE_EDIT_METABALL, "EDIT_METABALL", 0, "Metaball Edit", ""},
+    {CXT_MODE_EDIT_LATTICE, "EDIT_LATTICE", 0, "Lattice Edit", ""},
+    {CXT_MODE_POSE, "POSE", 0, "Pose", ""},
+    {CXT_MODE_SCULPT, "SCULPT", 0, "Sculpt", ""},
+    {CXT_MODE_PAINT_WEIGHT, "PAINT_WEIGHT", 0, "Weight Paint", ""},
+    {CXT_MODE_PAINT_VERTEX, "PAINT_VERTEX", 0, "Vertex Paint", ""},
+    {CXT_MODE_PAINT_TEXTURE, "PAINT_TEXTURE", 0, "Texture Paint", ""},
+    {CXT_MODE_PARTICLE, "PARTICLE", 0, "Particle", ""},
+    {CXT_MODE_OBJECT, "OBJECT", 0, "Object", ""},
+    {CXT_MODE_PAINT_PEN, "PAINT_PEN", 0, "Pen Paint", ""},
+    {CXT_MODE_EDIT_PEN, "EDIT_PEN", 0, "Pen Edit", ""},
+    {CXT_MODE_SCULPT_PEN, "SCULPT_PEN", 0, "Pen Sculpt", ""},
+    {CXT_MODE_WEIGHT_PEN, "WEIGHT_PEN", 0, "Pen Weight Paint", ""},
+    {CXT_MODE_VERTEX_PEN, "VERTEX_PEN", 0, "Pen Vertex Paint", ""},
+    {CXT_MODE_SCULPT_CURVES, "SCULPT_CURVES", 0, "Curves Sculpt", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_asset_types.h"
+#  include "types_asset.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-#  include "RE_engine.h"
+#  include "render_engine.h"
 
-static PointerRNA rna_Context_manager_get(PointerRNA *ptr)
+static ApiPtr rna_Context_manager_get(PointerRNA *ptr)
 {
   bContext *C = (bContext *)ptr->data;
   return rna_pointer_inherit_refine(ptr, &RNA_WindowManager, CTX_wm_manager(C));
