@@ -156,63 +156,63 @@ static ApiPtr api_cxt_view_layer_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(&scene_ptr, &ApiViewLayer, cxt_data_view_layer(C));
 }
 
-static void api_cxt_engine_get(PointerRNA *ptr, char *value)
+static void api_cxt_engine_get(ApiPtr *ptr, char *value)
 {
-  bContext *C = (bContext *)ptr->data;
-  RenderEngineType *engine_type = CTX_data_engine_type(C);
+  Cxt *C = (Cxt *)ptr->data;
+  RenderEngineType *engine_type = cxt_data_engine_type(C);
   strcpy(value, engine_type->idname);
 }
 
-static int rna_Context_engine_length(PointerRNA *ptr)
+static int api_cxt_engine_length(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  RenderEngineType *engine_type = CTX_data_engine_type(C);
+  Cxt *C = (bContext *)ptr->data;
+  RenderEngineType *engine_type = cxt_data_engine_type(C);
   return strlen(engine_type->idname);
 }
 
-static PointerRNA rna_Context_collection_get(PointerRNA *ptr)
+static ApiPtr api_cxt_collection_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Collection, CTX_data_collection(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiCollection, cxt_data_collection(C));
 }
 
-static PointerRNA rna_Context_layer_collection_get(PointerRNA *ptr)
+static ApiPtr api_cxt_layer_collection_get(PointerRNA *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  ptr->owner_id = &CTX_data_scene(C)->id;
-  return rna_pointer_inherit_refine(ptr, &RNA_LayerCollection, CTX_data_layer_collection(C));
+  Cxt *C = (cxt *)ptr->data;
+  ptr->owner_id = &cxt_data_scene(C)->id;
+  return api_ptr_inherit_refine(ptr, &ApiLayerCollection, CTX_data_layer_collection(C));
 }
 
-static PointerRNA rna_Context_tool_settings_get(PointerRNA *ptr)
+static ApiPtr api_cxt_tool_settings_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  ptr->owner_id = &CTX_data_scene(C)->id;
-  return rna_pointer_inherit_refine(ptr, &RNA_ToolSettings, CTX_data_tool_settings(C));
+  Cxt *C = (Cxt *)ptr->data;
+  ptr->owner_id = &cxt_data_scene(C)->id;
+  return api_ptr_inherit_refine(ptr, &ApiToolSettings, cxt_data_tool_settings(C));
 }
 
-static PointerRNA rna_Context_preferences_get(PointerRNA *UNUSED(ptr))
+static ApiPtr api_cxt_prefs_get(ApiPtr *UNUSED(ptr))
 {
-  PointerRNA newptr;
-  RNA_pointer_create(NULL, &RNA_Preferences, &U, &newptr);
+  ApiPtr newptr;
+  api_ptr_create(NULL, &ApiPtrs, &U, &newptr);
   return newptr;
 }
 
-static int rna_Context_mode_get(PointerRNA *ptr)
+static int api_cxt_mode_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return CTX_data_mode_enum(C);
+  Cxt *C = (Cxt *)ptr->data;
+  return cxt_data_mode_enum(C);
 }
 
-static struct Depsgraph *rna_Context_evaluated_depsgraph_get(bContext *C)
+static struct Graph *api_cxt_evaluated_graph_get(Cxt *C)
 {
-  struct Depsgraph *depsgraph;
+  struct Graph *graph;
 
 #  ifdef WITH_PYTHON
   /* Allow drivers to be evaluated */
   BPy_BEGIN_ALLOW_THREADS;
 #  endif
 
-  depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  graph = cxt_data_ensure_evaluated_depsgraph(C);
 
 #  ifdef WITH_PYTHON
   BPy_END_ALLOW_THREADS;
@@ -223,71 +223,71 @@ static struct Depsgraph *rna_Context_evaluated_depsgraph_get(bContext *C)
 
 #else
 
-void RNA_def_context(BlenderRNA *brna)
+void api_def_cxt(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "Context", NULL);
-  RNA_def_struct_ui_text(srna, "Context", "Current windowmanager and data context");
-  RNA_def_struct_sdna(srna, "bContext");
+  sapi = api_def_struct(dapi, "Context", NULL);
+  api_def_struct_ui_text(sapi, "Context", "Current windowmanager and data context");
+  api_def_struct_sdna(sapi, "bContext");
 
   /* WM */
-  prop = RNA_def_property(srna, "window_manager", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "WindowManager");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_manager_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "window_manager", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "WindowManager");
+  api_def_prop_ptr_fns(prop, "api_cxt_manager_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "window", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Window");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_window_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "window", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Window");
+  api_def_prop_ptr_fns(prop, "api_cxt_window_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "workspace", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "WorkSpace");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_workspace_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "workspace", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "WorkSpace");
+  api_def_prop_ptr_fns(prop, "api_cxt_workspace_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "screen", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Screen");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_screen_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "screen", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Screen");
+  api_def_prop_ptr_fns(prop, "api_cxt_screen_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "area", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Area");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_area_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "area", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Area");
+  api_def_prop_ptr_fns(prop, "api_cxt_area_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "space_data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Space");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_space_data_get", NULL, NULL, NULL);
+  prop = api_def_prop(sai, "space_data", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Space");
+  api_def_prop_ptr_fns(prop, "api_cxt_space_data_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "region", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Region");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_region_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "region", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Region");
+  api_def_prop_ptr_fns(prop, "api_cxt_region_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "region_data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "RegionView3D");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_region_data_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "region_data", PROP_PTR, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "RegionView3D");
+  api_def_prop_ptr_fns(prop, "api_cxt_region_data_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "gizmo_group", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "GizmoGroup");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_gizmo_group_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "gizmo_group", PROP_PTR, PROP_l);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "GizmoGroup");
+  api_def_prop_ptr_fns(prop, "api_cxt_gizmo_group_get", NULL, NULL, NULL);
 
   /* TODO can't expose AssetHandle, since there is no permanent storage to it (so we can't
    * return a pointer). Instead provide the FileDirEntry pointer it wraps. */
-  prop = RNA_def_property(srna, "asset_file_handle", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "FileSelectEntry");
-  RNA_def_property_pointer_funcs(prop, "rna_Context_asset_file_handle_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "asset_file_handle", PROP_POINTER, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "FileSelectEntry");
+  api_def_prop_ptr_fns(prop, "rna_Context_asset_file_handle_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop,
                            "",
                            "The file of an active asset. Avoid using this, it will be replaced by "
                            "a proper AssetHandle design");
