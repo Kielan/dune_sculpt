@@ -944,23 +944,23 @@ static void rna_def_color_ramp_element(BlenderRNA *brna)
 
 static void rna_def_color_ramp_element_api(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  RNA_def_property_srna(cprop, "ColorRampElements");
-  srna = RNA_def_struct(brna, "ColorRampElements", NULL);
-  RNA_def_struct_sdna(srna, "ColorBand");
-  RNA_def_struct_path_func(srna, "rna_ColorRampElement_path");
-  RNA_def_struct_ui_text(srna, "Color Ramp Elements", "Collection of Color Ramp Elements");
+  api_def_prop_sapi(cprop, "ColorRampElements");
+  sapi = api_def_struct(dapi, "ColorRampElements", NULL);
+  api_def_struct_stype(sapi, "ColorBand");
+  api_def_struct_path_fn(sapi, "api_ColorRampElement_path");
+  api_def_struct_ui_text(srna, "Color Ramp Elements", "Collection of Color Ramp Elements");
 
   /* TODO: make these functions generic in `texture.c`. */
-  func = RNA_def_function(srna, "new", "rna_ColorRampElement_new");
-  RNA_def_function_ui_description(func, "Add element to ColorRamp");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_float(
-      func, "position", 0.0f, 0.0f, 1.0f, "Position", "Position to add element", 0.0f, 1.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "rna_ColorRampElement_new");
+  api_def_fn_ui_description(fn, "Add element to ColorRamp");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_float(
+      fn, "position", 0.0f, 0.0f, 1.0f, "Position", "Position to add element", 0.0f, 1.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
   parm = RNA_def_pointer(func, "element", "ColorRampElement", "", "New element");
   RNA_def_function_return(func, parm);
