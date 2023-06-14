@@ -1164,12 +1164,12 @@ static void rna_def_colormanage(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem look_items[] = {
+  static const EnumPropItem look_items[] = {
       {0, "NONE", 0, "None", "Do not modify image in an artistic manner"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem view_transform_items[] = {
+  static const EnumPropItem view_transform_items[] = {
       {0,
        "NONE",
        0,
@@ -1179,7 +1179,7 @@ static void rna_def_colormanage(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem color_space_items[] = {
+  static const EnumPropItem color_space_items[] = {
       {0,
        "NONE",
        0,
@@ -1190,86 +1190,86 @@ static void rna_def_colormanage(BlenderRNA *brna)
   };
 
   /* ** Display Settings ** */
-  srna = RNA_def_struct(brna, "ColorManagedDisplaySettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_ColorManagedDisplaySettings_path");
-  RNA_def_struct_ui_text(
-      srna, "ColorManagedDisplaySettings", "Color management specific to display device");
+  sapi = api_def_struct(dapi, "ColorManagedDisplaySettings", NULL);
+  api_def_struct_path_fn(sapi, "rna_ColorManagedDisplaySettings_path");
+  api_def_struct_ui_text(
+      sapi, "ColorManagedDisplaySettings", "Color management specific to display device");
 
-  prop = RNA_def_property(srna, "display_device", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, display_device_items);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_ColorManagedDisplaySettings_display_device_get",
-                              "rna_ColorManagedDisplaySettings_display_device_set",
-                              "rna_ColorManagedDisplaySettings_display_device_itemf");
-  RNA_def_property_ui_text(prop, "Display Device", "Display device name");
-  RNA_def_property_update(
-      prop, NC_WINDOW, "rna_ColorManagedDisplaySettings_display_device_update");
+  prop = api_def_prop(sapi, "display_device", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, display_device_items);
+  api_def_prop_enum_fns(prop,
+                        "api_ColorManagedDisplaySettings_display_device_get",
+                        "api_ColorManagedDisplaySettings_display_device_set",
+                        "appi_ColorManagedDisplaySettings_display_device_itemf");
+  api_def_prop_ui_text(prop, "Display Device", "Display device name");
+  api_def_prop_update(
+      prop, NC_WINDOW, "api_ColorManagedDisplaySettings_display_device_update");
 
   /* ** View Settings ** */
-  srna = RNA_def_struct(brna, "ColorManagedViewSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_ColorManagedViewSettings_path");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "ColorManagedViewSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_ColorManagedViewSettings_path");
+  api_def_struct_ui_text(sapi,
                          "ColorManagedViewSettings",
                          "Color management settings used for displaying images on the display");
 
-  prop = RNA_def_property(srna, "look", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, look_items);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_ColorManagedViewSettings_look_get",
-                              "rna_ColorManagedViewSettings_look_set",
-                              "rna_ColorManagedViewSettings_look_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "look", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, look_items);
+  api_def_prop_enum_fns(prop,
+                       "api_ColorManagedViewSettings_look_get",
+                       "api_ColorManagedViewSettings_look_set",
+                       "api_ColorManagedViewSettings_look_itemf");
+  api_def_prop_ui_text(
       prop, "Look", "Additional transform applied before view transform for artistic needs");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = RNA_def_property(srna, "view_transform", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, view_transform_items);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_ColorManagedViewSettings_view_transform_get",
-                              "rna_ColorManagedViewSettings_view_transform_set",
-                              "rna_ColorManagedViewSettings_view_transform_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_transform", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, view_transform_items);
+  api_def_prop_enum_fns(prop,
+                        "api_ColorManagedViewSettings_view_transform_get",
+                        "api_ColorManagedViewSettings_view_transform_set",
+                        "api_ColorManagedViewSettings_view_transform_itemf");
+  api_def_prop_ui_text(
       prop, "View Transform", "View used when converting image to a display space");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = RNA_def_property(srna, "exposure", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "exposure");
-  RNA_def_property_float_default(prop, 0.0f);
-  RNA_def_property_range(prop, -32.0f, 32.0f);
-  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 1, 3);
-  RNA_def_property_ui_text(prop, "Exposure", "Exposure (stops) applied before display transform");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  prop = api_def_prop(sapi, "exposure", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "exposure");
+  api_def_prop_float_default(prop, 0.0f);
+  api_def_prop_range(prop, -32.0f, 32.0f);
+  api_def_prop_ui_range(prop, -10.0f, 10.0f, 1, 3);
+  api_def_prop_ui_text(prop, "Exposure", "Exposure (stops) applied before display transform");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = RNA_def_property(srna, "gamma", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "gamma");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_range(prop, 0.0f, 5.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "gamma", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "gamma");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_range(prop, 0.0f, 5.0f);
+  api_def_prop_ui_text(
       prop, "Gamma", "Amount of gamma modification applied after display transform");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = RNA_def_property(srna, "curve_mapping", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curve_mapping");
-  RNA_def_property_ui_text(prop, "Curve", "Color curve mapping applied before display transform");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  prop = api_def_prop(sapu, "curve_mapping", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curve_mapping");
+  api_def_prop_ui_text(prop, "Curve", "Color curve mapping applied before display transform");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = RNA_def_property(srna, "use_curve_mapping", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", COLORMANAGE_VIEW_USE_CURVES);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_ColorManagedViewSettings_use_curves_set");
-  RNA_def_property_ui_text(prop, "Use Curves", "Use RGB curved for pre-display transformation");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  prop = api_def_prop(sapi, "use_curve_mapping", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", COLORMANAGE_VIEW_USE_CURVES);
+  api_def_prop_bool_fns(prop, NULL, "api_ColorManagedViewSettings_use_curves_set");
+  api_def_prop_ui_text(prop, "Use Curves", "Use RGB curved for pre-display transformation");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
   /* ** Colorspace ** */
-  srna = RNA_def_struct(brna, "ColorManagedInputColorspaceSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_ColorManagedInputColorspaceSettings_path");
-  RNA_def_struct_ui_text(
-      srna, "ColorManagedInputColorspaceSettings", "Input color space settings");
+  sapi = api_def_struct(dapi, "ColorManagedInputColorspaceSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_ColorManagedInputColorspaceSettings_path");
+  api_def_struct_ui_text(
+      sapi, "ColorManagedInputColorspaceSettings", "Input color space settings");
 
-  prop = RNA_def_property(srna, "name", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_ENUM_NO_CONTEXT);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, color_space_items);
-  RNA_def_property_enum_funcs(prop,
+  prop = api_def_prop(sapi, "name", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_ENUM_NO_CONTEXT);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, color_space_items);
+  api_def_prop_enum_fns(prop,
                               "rna_ColorManagedColorspaceSettings_colorspace_get",
                               "rna_ColorManagedColorspaceSettings_colorspace_set",
                               "rna_ColorManagedColorspaceSettings_colorspace_itemf");
