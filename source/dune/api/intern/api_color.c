@@ -801,7 +801,7 @@ static void api_def_curvemapping(DuneApi *dapi)
 
   sapi = api_def_struct(dapi, "CurveMapping", NULL);
   api_def_struct_ui_text(
-      srna,
+      sapi,
       "CurveMapping",
       "Curve mapping to map color, vector and scalar values to other values using "
       "a user defined curve");
@@ -887,10 +887,10 @@ static void api_def_curvemapping(DuneApi *dapi)
 
   fn = api_def_fn(sapi, "evaluate", "rna_CurveMapping_evaluateF");
   api_def_fn_flag(fn, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Evaluate curve at given location");
-  parm = RNA_def_pointer(func, "curve", "CurveMap", "curve", "Curve to evaluate");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  api_def_fn_ui_description(fn, "Evaluate curve at given location");
+  parm = api_def_ptr(fn, "curve", "CurveMap", "curve", "Curve to evaluate");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "position",
                        0.0f,
                        -FLT_MAX,
@@ -899,8 +899,8 @@ static void api_def_curvemapping(DuneApi *dapi)
                        "Position to evaluate curve at",
                        -FLT_MAX,
                        FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "value",
                        0.0f,
                        -FLT_MAX,
@@ -909,10 +909,10 @@ static void api_def_curvemapping(DuneApi *dapi)
                        "Value of curve at given location",
                        -FLT_MAX,
                        FLT_MAX);
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_color_ramp_element(BlenderRNA *brna)
+static void api_def_color_ramp_element(BlenderRNA *brna)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -923,26 +923,26 @@ static void rna_def_color_ramp_element(BlenderRNA *brna)
   api_def_struct_ui_text(
       sapi, "Color Ramp Element", "Element defining a color at a position in the color ramp");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "r");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Color", "Set color of selected color stop");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "r");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Color", "Set color of selected color stop");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 
-  prop = RNA_def_property(srna, "alpha", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "a");
-  RNA_def_property_ui_text(prop, "Alpha", "Set alpha of selected color stop");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "alpha", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "a");
+  api_def_prop_ui_text(prop, "Alpha", "Set alpha of selected color stop");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 
-  prop = RNA_def_property(srna, "position", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "pos");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_range(prop, 0, 1, 1, 3);
-  RNA_def_property_ui_text(prop, "Position", "Set position of selected color stop");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "position", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "pos");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_range(prop, 0, 1, 1, 3);
+  api_def_prop_ui_text(prop, "Position", "Set position of selected color stop");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 }
 
-static void rna_def_color_ramp_element_api(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_color_ramp_element_api(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiProp *parm;
@@ -955,33 +955,33 @@ static void rna_def_color_ramp_element_api(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_struct_ui_text(srna, "Color Ramp Elements", "Collection of Color Ramp Elements");
 
   /* TODO: make these functions generic in `texture.c`. */
-  fn = api_def_fn(sapi, "new", "rna_ColorRampElement_new");
+  fn = api_def_fn(sapi, "new", "api_ColorRampElement_new");
   api_def_fn_ui_description(fn, "Add element to ColorRamp");
   api_def_fn_flag(fn, FN_USE_REPORTS);
   parm = api_def_float(
       fn, "position", 0.0f, 0.0f, 1.0f, "Position", "Position to add element", 0.0f, 1.0f);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "element", "ColorRampElement", "", "New element");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "element", "ColorRampElement", "", "New element");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_ColorRampElement_remove");
-  RNA_def_function_ui_description(func, "Delete element from ColorRamp");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "element", "ColorRampElement", "", "Element to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_ColorRampElement_remove");
+  api_def_fn_ui_description(fn, "Delete element from ColorRamp");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "element", "ColorRampElement", "", "Element to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_color_ramp(BlenderRNA *brna)
+static void api_def_color_ramp(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem prop_interpolation_items[] = {
+  static const EnumPropItem prop_interpolation_items[] = {
       {COLBAND_INTERP_EASE, "EASE", 0, "Ease", ""},
       {COLBAND_INTERP_CARDINAL, "CARDINAL", 0, "Cardinal", ""},
       {COLBAND_INTERP_LINEAR, "LINEAR", 0, "Linear", ""},
@@ -990,14 +990,14 @@ static void rna_def_color_ramp(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_mode_items[] = {
+  static const EnumPropItem prop_mode_items[] = {
       {COLBAND_BLEND_RGB, "RGB", 0, "RGB", ""},
       {COLBAND_BLEND_HSV, "HSV", 0, "HSV", ""},
       {COLBAND_BLEND_HSL, "HSL", 0, "HSL", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_hsv_items[] = {
+  static const EnumPropItem prop_hsv_items[] = {
       {COLBAND_HUE_NEAR, "NEAR", 0, "Near", ""},
       {COLBAND_HUE_FAR, "FAR", 0, "Far", ""},
       {COLBAND_HUE_CW, "CW", 0, "Clockwise", ""},
@@ -1005,49 +1005,49 @@ static void rna_def_color_ramp(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ColorRamp", NULL);
-  RNA_def_struct_sdna(srna, "ColorBand");
-  RNA_def_struct_path_func(srna, "rna_ColorRamp_path");
-  RNA_def_struct_ui_text(srna, "Color Ramp", "Color ramp mapping a scalar value to a color");
+  sapi = api_def_struct(dapi, "ColorRamp", NULL);
+  api_def_struct_stype(sapi, "ColorBand");
+  api_def_struct_path_fn(sapi, "api_ColorRamp_path");
+  api_def_struct_ui_text(sapi, "Color Ramp", "Color ramp mapping a scalar value to a color");
 
-  prop = RNA_def_property(srna, "elements", PROP_COLLECTION, PROP_COLOR);
-  RNA_def_property_collection_sdna(prop, NULL, "data", "tot");
-  RNA_def_property_struct_type(prop, "ColorRampElement");
-  RNA_def_property_ui_text(prop, "Elements", "");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
-  rna_def_color_ramp_element_api(brna, prop);
+  prop = api_def_prop(sapi, "elements", PROP_COLLECTION, PROP_COLOR);
+  api_def_prop_collection_stype(prop, NULL, "data", "tot");
+  api_def_prop_struct_type(prop, "ColorRampElement");
+  api_def_prop_ui_text(prop, "Elements", "");
+  api_def_prop_update(prop, 0, "rna_ColorRamp_update");
+  api_def_color_ramp_element_api(brna, prop);
 
-  prop = RNA_def_property(srna, "interpolation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "ipotype");
-  RNA_def_property_enum_items(prop, prop_interpolation_items);
-  RNA_def_property_ui_text(prop, "Interpolation", "Set interpolation between color stops");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "interpolation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "ipotype");
+  api_def_prop_enum_items(prop, prop_interpolation_items);
+  api_def_prop_ui_text(prop, "Interpolation", "Set interpolation between color stops");
+  api_def_prop_update(prop, 0, "rna_ColorRamp_update");
 
-  prop = RNA_def_property(srna, "hue_interpolation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "ipotype_hue");
-  RNA_def_property_enum_items(prop, prop_hsv_items);
-  RNA_def_property_ui_text(prop, "Color Interpolation", "Set color interpolation");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "hue_interpolation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "ipotype_hue");
+  api_def_prop_enum_items(prop, prop_hsv_items);
+  api_def_prop_ui_text(prop, "Color Interpolation", "Set color interpolation");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 
-  prop = RNA_def_property(srna, "color_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "color_mode");
-  RNA_def_property_enum_items(prop, prop_mode_items);
-  RNA_def_property_ui_text(prop, "Color Mode", "Set color mode to use for interpolation");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  prop = api_def_prop(sapi, "color_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "color_mode");
+  api_def_prop_enum_items(prop, prop_mode_items);
+  api_def_prop_ui_text(prop, "Color Mode", "Set color mode to use for interpolation");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 
 #  if 0 /* use len(elements) */
-  prop = RNA_def_property(srna, "total", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "tot");
+  prop = api_def_prop_stype(, "total", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "tot");
   /* needs a function to do the right thing when adding elements like colorband_add_cb() */
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_range(prop, 0, 31); /* MAXCOLORBAND = 32 */
-  RNA_def_property_ui_text(prop, "Total", "Total number of elements");
-  RNA_def_property_update(prop, 0, "rna_ColorRamp_update");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_range(prop, 0, 31); /* MAXCOLORBAND = 32 */
+  api_def_prop_ui_text(prop, "Total", "Total number of elements");
+  api_def_prop_update(prop, 0, "api_ColorRamp_update");
 #  endif
 
-  func = RNA_def_function(srna, "evaluate", "rna_ColorRamp_eval");
-  RNA_def_function_ui_description(func, "Evaluate ColorRamp");
-  parm = RNA_def_float(func,
+  fn = api_def_fn(sapi, "evaluate", "api_ColorRamp_eval");
+  api_def_fn_ui_description(fn, "Evaluate ColorRamp");
+  parm = api_def_float(fn,
                        "position",
                        1.0f,
                        0.0f,
@@ -1056,9 +1056,9 @@ static void rna_def_color_ramp(BlenderRNA *brna)
                        "Evaluate ColorRamp at position",
                        0.0f,
                        1.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = RNA_def_float_color(func,
+  parm = api_def_float_color(fn,
                              "color",
                              4,
                              NULL,
@@ -1068,16 +1068,16 @@ static void rna_def_color_ramp(BlenderRNA *brna)
                              "Color at given position",
                              -FLT_MAX,
                              FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 }
 
-static void rna_def_histogram(BlenderRNA *brna)
+static void api_def_histogram(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_mode_items[] = {
+  static const EnumPropItem prop_mode_items[] = {
       {HISTO_MODE_LUMA, "LUMA", 0, "Luma", "Luma"},
       {HISTO_MODE_RGB, "RGB", 0, "RGB", "Red Green Blue"},
       {HISTO_MODE_R, "R", 0, "R", "Red"},
@@ -1087,26 +1087,26 @@ static void rna_def_histogram(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Histogram", NULL);
-  RNA_def_struct_ui_text(srna, "Histogram", "Statistical view of the levels of color in an image");
+  sapi = api_def_struct(dapi, "Histogram", NULL);
+  api_def_struct_ui_text(sapi, "Histogram", "Statistical view of the levels of color in an image");
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, prop_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "Channels to display in the histogram");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, prop_mode_items);
+  api_def_prop_ui_text(prop, "Mode", "Channels to display in the histogram");
 
-  prop = RNA_def_property(srna, "show_line", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", HISTO_FLAG_LINE);
-  RNA_def_property_ui_text(prop, "Show Line", "Display lines rather than filled shapes");
-  RNA_def_property_ui_icon(prop, ICON_GRAPH, 0);
+  prop = api_def_prop(sapi, "show_line", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", HISTO_FLAG_LINE);
+  api_def_prop_ui_text(prop, "Show Line", "Display lines rather than filled shapes");
+  api_def_prop_ui_icon(prop, ICON_GRAPH, 0);
 }
 
-static void rna_def_scopes(BlenderRNA *brna)
+static void api_def_scopes(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_wavefrm_mode_items[] = {
+  static const EnumPropItem prop_wavefrm_mode_items[] = {
       {SCOPES_WAVEFRM_LUMA, "LUMA", ICON_COLOR, "Luma", ""},
       {SCOPES_WAVEFRM_RGB_PARADE, "PARADE", ICON_COLOR, "Parade", ""},
       {SCOPES_WAVEFRM_YCC_601, "YCBCR601", ICON_COLOR, "YCbCr (ITU 601)", ""},
@@ -1116,37 +1116,37 @@ static void rna_def_scopes(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Scopes", NULL);
-  RNA_def_struct_ui_text(srna, "Scopes", "Scopes for statistical view of an image");
+  sapi = api_def_struct(dapi, "Scopes", NULL);
+  api_def_struct_ui_text(sapi, "Scopes", "Scopes for statistical view of an image");
 
-  prop = RNA_def_property(srna, "use_full_resolution", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, "Scopes", "sample_full", 1);
-  RNA_def_property_ui_text(prop, "Full Sample", "Sample every pixel of the image");
-  RNA_def_property_update(prop, 0, "rna_Scopes_update");
+  prop = api_def_prop(sapi, "use_full_resolution", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, "Scopes", "sample_full", 1);
+  api_def_prop_ui_text(prop, "Full Sample", "Sample every pixel of the image");
+  api_def_prop_update(prop, 0, "api_Scopes_update");
 
-  prop = RNA_def_property(srna, "accuracy", PROP_FLOAT, PROP_PERCENTAGE);
-  RNA_def_property_float_sdna(prop, "Scopes", "accuracy");
-  RNA_def_property_range(prop, 0.0, 100.0);
-  RNA_def_property_ui_range(prop, 0.0, 100.0, 10, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "accuracy", PROP_FLOAT, PROP_PERCENTAGE);
+  api_def_prop_float_stype(prop, "Scopes", "accuracy");
+  api_def_prop_range(prop, 0.0, 100.0);
+  api_def_prop_ui_range(prop, 0.0, 100.0, 10, 1);
+  api_def_prop_ui_text(
       prop, "Accuracy", "Proportion of original image source pixel lines to sample");
-  RNA_def_property_update(prop, 0, "rna_Scopes_update");
+  api_def_prop_update(prop, 0, "rna_Scopes_update");
 
-  prop = RNA_def_property(srna, "histogram", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, "Scopes", "hist");
-  RNA_def_property_struct_type(prop, "Histogram");
-  RNA_def_property_ui_text(prop, "Histogram", "Histogram for viewing image statistics");
+  prop = api_def_prop(sapi, "histogram", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, "Scopes", "hist");
+  api_def_prop_struct_type(prop, "Histogram");
+  api_def_prop_ui_text(prop, "Histogram", "Histogram for viewing image statistics");
 
-  prop = RNA_def_property(srna, "waveform_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, "Scopes", "wavefrm_mode");
-  RNA_def_property_enum_items(prop, prop_wavefrm_mode_items);
-  RNA_def_property_ui_text(prop, "Waveform Mode", "");
-  RNA_def_property_update(prop, 0, "rna_Scopes_update");
+  prop = api_def_prop(sapi, "waveform_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, "Scopes", "wavefrm_mode");
+  api_def_prop_enum_items(prop, prop_wavefrm_mode_items);
+  api_def_prop_ui_text(prop, "Waveform Mode", "");
+  api_def_prop_update(prop, 0, "api_Scopes_update");
 
-  prop = RNA_def_property(srna, "waveform_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, "Scopes", "wavefrm_alpha");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Waveform Opacity", "Opacity of the points");
+  prop = api_def_prop(sapi, "waveform_alpha", PROP_FLOAT, PROP_FACTOR);
+  RNA_def_prop_float_stype(prop, "Scopes", "wavefrm_alpha");
+  RNA_def_prop_range(prop, 0, 1);
+  RNA_def_prop_ui_text(prop, "Waveform Opacity", "Opacity of the points");
 
   prop = RNA_def_property(srna, "vectorscope_alpha", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, "Scopes", "vecscope_alpha");
