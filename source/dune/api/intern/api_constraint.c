@@ -1,16 +1,16 @@
 #include <stdlib.h>
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_action_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_action.h"
+#include "types_constraint.h"
+#include "types_modifier.h"
+#include "types_object.h"
+#include "types_scene.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
