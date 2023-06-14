@@ -373,16 +373,16 @@ static void api_ConstraintTargetBone_target_set(ApiPtr *ptr,
                                                 ApiPtr value,
                                                 struct ReportList *UNUSED(reports))
 {
-  bConstraintTarget *tgt = (bConstraintTarget *)ptr->data;
+  ConstraintTarget *tgt = (ConstraintTarget *)ptr->data;
   Object *ob = value.data;
 
   if (!ob || ob->type == OB_ARMATURE) {
-    id_lib_extern((ID *)ob);
+    id_lib_extern((Id *)ob);
     tgt->tar = ob;
   }
 }
 
-static void rna_Constraint_name_set(PointerRNA *ptr, const char *value)
+static void api_Constraint_name_set(ApiPtr *ptr, const char *value)
 {
   Constraint *con = ptr->data;
   char oldname[sizeof(con->name)];
@@ -627,34 +627,34 @@ static ConstraintTarget *api_ArmatureConstraint_target_new(Id *id, Constraint *c
 }
 
 static void api_ArmatureConstraint_target_remove(
-    Id *id, Constraint *con, Main *bmain, ReportList *reports, PointerRNA *target_ptr)
+    Id *id, Constraint *con, Main *main, ReportList *reports, ApiPtr *target_ptr)
 {
-  bArmatureConstraint *acon = con->data;
-  bConstraintTarget *tgt = target_ptr->data;
+  ArmatureConstraint *acon = con->data;
+  ConstraintTarget *tgt = target_ptr->data;
 
-  if (BLI_findindex(&acon->targets, tgt) < 0) {
-    BKE_report(reports, RPT_ERROR, "Target is not in the constraint target list");
+  if (lib_findindex(&acon->targets, tgt) < 0) {
+    dune_report(reports, RPT_ERROR, "Target is not in the constraint target list");
     return;
   }
 
-  BLI_freelinkN(&acon->targets, tgt);
+  lib_freelinkn(&acon->targets, tgt);
 
-  ED_object_constraint_dependency_tag_update(bmain, (Object *)id, con);
+  ed_object_constraint_dependency_tag_update(bmain, (Object *)id, con);
 }
 
-static void rna_ArmatureConstraint_target_clear(ID *id, bConstraint *con, Main *bmain)
+static void api_ArmatureConstraint_target_clear(Id *id, Constraint *con, Main *main)
 {
-  bArmatureConstraint *acon = con->data;
+  ArmatureConstraint *acon = con->data;
 
-  BLI_freelistN(&acon->targets);
+  lib_freelistn(&acon->targets);
 
-  ED_object_constraint_dependency_tag_update(bmain, (Object *)id, con);
+  ed_object_constraint_dependency_tag_update(main, (Object *)id, con);
 }
 
-static void rna_ActionConstraint_mix_mode_set(PointerRNA *ptr, int value)
+static void api_ActionConstraint_mix_mode_set(ApiPtr *ptr, int value)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bActionConstraint *acon = (bActionConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  ActionConstraint *acon = (bActionConstraint *)con->data;
 
   acon->mix_mode = value;
 
@@ -668,11 +668,11 @@ static void rna_ActionConstraint_mix_mode_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_ActionConstraint_minmax_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_ActionConstraint_minmax_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bActionConstraint *acon = (bActionConstraint *)con->data;
+  bConstraint *con = (Constraint *)ptr->data;
+  bActionConstraint *acon = (ActionConstraint *)con->data;
 
   /* 0, 1, 2 = magic numbers for rotX, rotY, rotZ */
   if (ELEM(acon->type, 0, 1, 2)) {
@@ -685,7 +685,7 @@ static void rna_ActionConstraint_minmax_range(
   }
 }
 
-static int rna_SplineIKConstraint_joint_bindings_get_length(PointerRNA *ptr,
+static int api_SplineIKConstraint_joint_bindings_get_length(ApiPtr *ptr,
                                                             int length[RNA_MAX_ARRAY_DIMENSION])
 {
   bConstraint *con = (bConstraint *)ptr->data;
