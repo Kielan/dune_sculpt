@@ -384,34 +384,34 @@ static void rna_ConstraintTargetBone_target_set(PointerRNA *ptr,
 
 static void rna_Constraint_name_set(PointerRNA *ptr, const char *value)
 {
-  bConstraint *con = ptr->data;
+  Constraint *con = ptr->data;
   char oldname[sizeof(con->name)];
 
   /* make a copy of the old name first */
-  BLI_strncpy(oldname, con->name, sizeof(con->name));
+  lib_strncpy(oldname, con->name, sizeof(con->name));
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(con->name, value, sizeof(con->name));
+  lib_strncpy_utf8(con->name, value, sizeof(con->name));
 
   /* make sure name is unique */
   if (ptr->owner_id) {
     Object *ob = (Object *)ptr->owner_id;
-    ListBase *list = ED_object_constraint_list_from_constraint(ob, con, NULL);
+    List *list = ed_object_constraint_list_from_constraint(ob, con, NULL);
 
     /* if we have the list, check for unique name, otherwise give up */
     if (list) {
-      BKE_constraint_unique_name(con, list);
+      dune_constraint_unique_name(con, list);
     }
   }
 
   /* fix all the animation data which may link to this */
-  BKE_animdata_fix_paths_rename_all(NULL, "constraints", oldname, con->name);
+  dune_animdata_fix_paths_rename_all(NULL, "constraints", oldname, con->name);
 }
 
-static char *rna_Constraint_do_compute_path(Object *ob, bConstraint *con)
+static char *api_Constraint_do_compute_path(Object *ob, Constraint *con)
 {
-  bPoseChannel *pchan;
-  ListBase *lb = ED_object_constraint_list_from_constraint(ob, con, &pchan);
+  PoseChannel *pchan;
+  List *lb = ed_object_constraint_list_from_constraint(ob, con, &pchan);
 
   if (lb == NULL) {
     printf("%s: internal error, constraint '%s' not found in object '%s'\n",
@@ -423,56 +423,56 @@ static char *rna_Constraint_do_compute_path(Object *ob, bConstraint *con)
   if (pchan) {
     char name_esc_pchan[sizeof(pchan->name) * 2];
     char name_esc_const[sizeof(con->name) * 2];
-    BLI_str_escape(name_esc_pchan, pchan->name, sizeof(name_esc_pchan));
-    BLI_str_escape(name_esc_const, con->name, sizeof(name_esc_const));
-    return BLI_sprintfN("pose.bones[\"%s\"].constraints[\"%s\"]", name_esc_pchan, name_esc_const);
+    lib_str_escape(name_esc_pchan, pchan->name, sizeof(name_esc_pchan));
+    lib_str_escape(name_esc_const, con->name, sizeof(name_esc_const));
+    return lib_sprintfn("pose.bones[\"%s\"].constraints[\"%s\"]", name_esc_pchan, name_esc_const);
   }
   else {
     char name_esc_const[sizeof(con->name) * 2];
-    BLI_str_escape(name_esc_const, con->name, sizeof(name_esc_const));
-    return BLI_sprintfN("constraints[\"%s\"]", name_esc_const);
+    lib_str_escape(name_esc_const, con->name, sizeof(name_esc_const));
+    return lib_sprintfn("constraints[\"%s\"]", name_esc_const);
   }
 }
 
-static char *rna_Constraint_path(PointerRNA *ptr)
+static char *api_Constraint_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bConstraint *con = ptr->data;
+  Constraint *con = ptr->data;
 
-  return rna_Constraint_do_compute_path(ob, con);
+  return api_Constraint_do_compute_path(ob, con);
 }
 
-static bConstraint *rna_constraint_from_target(PointerRNA *ptr)
+static Constraint *api_constraint_from_target(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bConstraintTarget *tgt = ptr->data;
+  ConstraintTarget *tgt = ptr->data;
 
-  return BKE_constraint_find_from_target(ob, tgt, NULL);
+  return dune_constraint_find_from_target(ob, tgt, NULL);
 }
 
-static char *rna_ConstraintTarget_path(PointerRNA *ptr)
+static char *api_ConstraintTarget_path(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bConstraintTarget *tgt = ptr->data;
-  bConstraint *con = rna_constraint_from_target(ptr);
+  ConstraintTarget *tgt = ptr->data;
+  Constraint *con = api_constraint_from_target(ptr);
   int index = -1;
 
   if (con != NULL) {
     if (con->type == CONSTRAINT_TYPE_ARMATURE) {
-      bArmatureConstraint *acon = con->data;
-      index = BLI_findindex(&acon->targets, tgt);
+      ArmatureConstraint *acon = con->data;
+      index = lib_findindex(&acon->targets, tgt);
     }
     else if (con->type == CONSTRAINT_TYPE_PYTHON) {
-      bPythonConstraint *pcon = con->data;
-      index = BLI_findindex(&pcon->targets, tgt);
+      PythonConstraint *pcon = con->data;
+      index = lib_findindex(&pcon->targets, tgt);
     }
   }
 
   if (index >= 0) {
-    char *con_path = rna_Constraint_do_compute_path(ob, con);
-    char *result = BLI_sprintfN("%s.targets[%d]", con_path, index);
+    char *con_path = api_Constraint_do_compute_path(ob, con);
+    char *result = lib_sprintfn("%s.targets[%d]", con_path, index);
 
-    MEM_freeN(con_path);
+    mem_freen(con_path);
     return result;
   }
   else {
@@ -485,19 +485,19 @@ static char *rna_ConstraintTarget_path(PointerRNA *ptr)
   return NULL;
 }
 
-static void rna_Constraint_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Constraint_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ED_object_constraint_tag_update(bmain, (Object *)ptr->owner_id, ptr->data);
+  ed_object_constraint_tag_update(main, (Object *)ptr->owner_id, ptr->data);
 }
 
-static void rna_Constraint_dependency_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Constraint_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ED_object_constraint_dependency_tag_update(bmain, (Object *)ptr->owner_id, ptr->data);
+  ed_object_constraint_dependency_tag_update(main, (Object *)ptr->owner_id, ptr->data);
 }
 
-static void rna_ConstraintTarget_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_ConstraintTarget_update(Main *bmain, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ED_object_constraint_tag_update(bmain, (Object *)ptr->owner_id, rna_constraint_from_target(ptr));
+  ED_object_constraint_tag_update(bmain, (Object *)ptr->owner_id, api_constraint_from_target(ptr));
 }
 
 static void rna_ConstraintTarget_dependency_update(Main *bmain,
