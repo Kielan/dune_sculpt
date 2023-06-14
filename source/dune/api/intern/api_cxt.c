@@ -96,14 +96,14 @@ static PointerRNA rna_Context_region_get(PointerRNA *ptr)
   return newptr;
 }
 
-static PointerRNA rna_Context_region_data_get(PointerRNA *ptr)
+static ApiPtr api_cxt_region_data_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
+  Cxt *C = (Cxt *)ptr->data;
 
   /* only exists for one space still, no generic system yet */
-  if (CTX_wm_view3d(C)) {
+  if (cxt_wm_view3d(C)) {
     PointerRNA newptr;
-    api_ptr_create((Id *)CTX_wm_screen(C), &RNA_RegionView3D, CTX_wm_region_data(C), &newptr);
+    api_ptr_create((Id *)CTX_wm_screen(C), &ApiRegionView3D, cxt_wm_region_data(C), &newptr);
     return newptr;
   }
 
