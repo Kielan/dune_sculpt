@@ -303,63 +303,63 @@ static const EnumPropItem space_object_items[] = {
 
 static ApiStruct *api_ConstraintType_refine(struct PointerRNA *ptr)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
+  Constraint *con = (Constraint *)ptr->data;
 
   switch (con->type) {
     case CONSTRAINT_TYPE_CHILDOF:
-      return &RNA_ChildOfConstraint;
+      return &ApiChildOfConstraint;
     case CONSTRAINT_TYPE_TRACKTO:
-      return &RNA_TrackToConstraint;
+      return &ApiTrackToConstraint;
     case CONSTRAINT_TYPE_KINEMATIC:
-      return &RNA_KinematicConstraint;
+      return &ApiKinematicConstraint;
     case CONSTRAINT_TYPE_FOLLOWPATH:
-      return &RNA_FollowPathConstraint;
+      return &ApiFollowPathConstraint;
     case CONSTRAINT_TYPE_ROTLIKE:
-      return &RNA_CopyRotationConstraint;
+      return &ApiCopyRotationConstraint;
     case CONSTRAINT_TYPE_LOCLIKE:
-      return &RNA_CopyLocationConstraint;
+      return &ApiCopyLocationConstraint;
     case CONSTRAINT_TYPE_SIZELIKE:
-      return &RNA_CopyScaleConstraint;
+      return &ApiCopyScaleConstraint;
     case CONSTRAINT_TYPE_SAMEVOL:
-      return &RNA_MaintainVolumeConstraint;
+      return &ApiMaintainVolumeConstraint;
     case CONSTRAINT_TYPE_PYTHON:
-      return &RNA_PythonConstraint;
+      return &ApiPythonConstraint;
     case CONSTRAINT_TYPE_ARMATURE:
-      return &RNA_ArmatureConstraint;
+      return &ApiArmatureConstraint;
     case CONSTRAINT_TYPE_ACTION:
-      return &RNA_ActionConstraint;
+      return &ApiActionConstraint;
     case CONSTRAINT_TYPE_LOCKTRACK:
-      return &RNA_LockedTrackConstraint;
+      return &ApiLockedTrackConstraint;
     case CONSTRAINT_TYPE_STRETCHTO:
-      return &RNA_StretchToConstraint;
+      return &ApiStretchToConstraint;
     case CONSTRAINT_TYPE_MINMAX:
-      return &RNA_FloorConstraint;
+      return &ApiFloorConstraint;
     case CONSTRAINT_TYPE_CLAMPTO:
-      return &RNA_ClampToConstraint;
+      return &ApiClampToConstraint;
     case CONSTRAINT_TYPE_TRANSFORM:
-      return &RNA_TransformConstraint;
+      return &ApiTransformConstraint;
     case CONSTRAINT_TYPE_ROTLIMIT:
-      return &RNA_LimitRotationConstraint;
+      return &ApiLimitRotationConstraint;
     case CONSTRAINT_TYPE_LOCLIMIT:
-      return &RNA_LimitLocationConstraint;
+      return &ApiLimitLocationConstraint;
     case CONSTRAINT_TYPE_SIZELIMIT:
-      return &RNA_LimitScaleConstraint;
+      return &ApiLimitScaleConstraint;
     case CONSTRAINT_TYPE_DISTLIMIT:
-      return &RNA_LimitDistanceConstraint;
+      return &ApiLimitDistanceConstraint;
     case CONSTRAINT_TYPE_SHRINKWRAP:
-      return &RNA_ShrinkwrapConstraint;
+      return &ApiShrinkwrapConstraint;
     case CONSTRAINT_TYPE_DAMPTRACK:
-      return &RNA_DampedTrackConstraint;
+      return &ApiDampedTrackConstraint;
     case CONSTRAINT_TYPE_SPLINEIK:
-      return &RNA_SplineIKConstraint;
+      return &ApiSplineIKConstraint;
     case CONSTRAINT_TYPE_TRANSLIKE:
-      return &RNA_CopyTransformsConstraint;
+      return &ApiCopyTransformsConstraint;
     case CONSTRAINT_TYPE_PIVOT:
-      return &RNA_PivotConstraint;
+      return &ApiPivotConstraint;
     case CONSTRAINT_TYPE_FOLLOWTRACK:
-      return &RNA_FollowTrackConstraint;
+      return &ApiFollowTrackConstraint;
     case CONSTRAINT_TYPE_CAMERASOLVER:
-      return &RNA_CameraSolverConstraint;
+      return &ApiCameraSolverConstraint;
     case CONSTRAINT_TYPE_OBJECTSOLVER:
       return &RNA_ObjectSolverConstraint;
     case CONSTRAINT_TYPE_TRANSFORM_CACHE:
