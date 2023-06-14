@@ -48,51 +48,51 @@ const EnumPropItem api_enum_cxt_mode_items[] = {
 
 #  include "render_engine.h"
 
-static ApiPtr rna_Context_manager_get(PointerRNA *ptr)
+static ApiPtr api_cxt_manager_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_WindowManager, CTX_wm_manager(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiWindowManager, cxt_wm_manager(C));
 }
 
-static PointerRNA rna_Context_window_get(PointerRNA *ptr)
+static ApiPtr api_cxt_window_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Window, CTX_wm_window(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiWindow, cxt_wm_window(C));
 }
 
-static PointerRNA rna_Context_workspace_get(PointerRNA *ptr)
+static ApiPtr api_cxt_workspace_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_WorkSpace, CTX_wm_workspace(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiWorkSpace, cxt_wm_workspace(C));
 }
 
-static PointerRNA rna_Context_screen_get(PointerRNA *ptr)
+static ApiPtr api_cxt_screen_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Screen, CTX_wm_screen(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiScreen, cxt_wm_screen(C));
 }
 
-static PointerRNA rna_Context_area_get(PointerRNA *ptr)
+static ApiPtr api_cxt_area_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  PointerRNA newptr;
-  RNA_pointer_create((ID *)CTX_wm_screen(C), &RNA_Area, CTX_wm_area(C), &newptr);
+  Cxt *C = (Cxt *)ptr->data;
+  ApiPtr newptr;
+  api_ptr_create((Id *)cxt_wm_screen(C), &ApiArea, cxt_wm_area(C), &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Context_space_data_get(PointerRNA *ptr)
+static ApiPtr api_cxt_space_data_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  PointerRNA newptr;
-  RNA_pointer_create((ID *)CTX_wm_screen(C), &RNA_Space, CTX_wm_space_data(C), &newptr);
+  Cxt *C = (Cxt *)ptr->data;
+  ApiPtr newptr;
+  api_ptr_create((Id *)cxt_wm_screen(C), &ApiSpace, cxt_wm_space_data(C), &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Context_region_get(PointerRNA *ptr)
+static ApiPtr api_cxt_region_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  PointerRNA newptr;
-  RNA_pointer_create((ID *)CTX_wm_screen(C), &RNA_Region, CTX_wm_region(C), &newptr);
+  Cxt *C = (Cxt *)ptr->data;
+  ApiPtr newptr;
+  api_ptr_create((Id *)cxt_wm_screen(C), &ApiRegion, cxt_wm_region(C), &newptr);
   return newptr;
 }
 
@@ -102,8 +102,8 @@ static ApiPtr api_cxt_region_data_get(ApiPtr *ptr)
 
   /* only exists for one space still, no generic system yet */
   if (cxt_wm_view3d(C)) {
-    PointerRNA newptr;
-    api_ptr_create((Id *)CTX_wm_screen(C), &ApiRegionView3D, cxt_wm_region_data(C), &newptr);
+    ApiPtr newptr;
+    api_ptr_create((Id *)cxt_wm_screen(C), &ApiRegionView3D, cxt_wm_region_data(C), &newptr);
     return newptr;
   }
 
@@ -118,7 +118,7 @@ static ApiPtr api_cxt_gizmo_group_get(ApiPtr *ptr)
   return newptr;
 }
 
-static PointerRNA rna_Context_asset_file_handle_get(ApiPtr *ptr)
+static ApiPtr api_cxt_asset_file_handle_get(ApiPtr *ptr)
 {
   Cxt *C = (Cxt *)ptr->data;
   bool is_handle_valid;
@@ -129,34 +129,34 @@ static PointerRNA rna_Context_asset_file_handle_get(ApiPtr *ptr)
 
   ApiPtr newptr;
   /* Have to cast away const, but the file entry API doesn't allow modifications anyway. */
-  RNA_pointer_create(
-      NULL, &RNA_FileSelectEntry, (struct FileDirEntry *)asset_handle.file_data, &newptr);
+  api_ptr_create(
+      NULL, &ApiFileSelectEntry, (struct FileDirEntry *)asset_handle.file_data, &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Context_main_get(PointerRNA *ptr)
+static ApiPtr api_cxt_main_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_BlendData, CTX_data_main(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiFnData, cxt_data_main(C));
 }
 
-static PointerRNA rna_Context_scene_get(PointerRNA *ptr)
+static ApiPtr api_cxt_scene_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Scene, CTX_data_scene(C));
+  Cxt *C = (Cxt *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &ApiScene, cxt_data_scene(C));
 }
 
-static PointerRNA rna_Context_view_layer_get(PointerRNA *ptr)
+static ApiPtr api_cxt_view_layer_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  Scene *scene = CTX_data_scene(C);
-  PointerRNA scene_ptr;
+  Cxt *C = (Cxt *)ptr->data;
+  Scene *scene = cxt_data_scene(C);
+  ApiPtr scene_ptr;
 
-  RNA_id_pointer_create(&scene->id, &scene_ptr);
-  return rna_pointer_inherit_refine(&scene_ptr, &RNA_ViewLayer, CTX_data_view_layer(C));
+ api_id_ptr_create(&scene->id, &scene_ptr);
+  return api_ptr_inherit_refine(&scene_ptr, &ApiViewLayer, cxt_data_view_layer(C));
 }
 
-static void rna_Context_engine_get(PointerRNA *ptr, char *value)
+static void api_cxt_engine_get(PointerRNA *ptr, char *value)
 {
   bContext *C = (bContext *)ptr->data;
   RenderEngineType *engine_type = CTX_data_engine_type(C);
