@@ -833,19 +833,19 @@ static void api_def_curvemapping(DuneApi *dapi)
   RNA_def_property_float_sdna(prop, NULL, "clipr.xmax");
   RNA_def_property_range(prop, -100.0f, 100.0f);
   RNA_def_property_ui_text(prop, "Clip Max X", "");
-  RNA_def_property_float_funcs(prop, NULL, NULL, "rna_CurveMapping_clipmaxx_range");
+  RNA_def_property_float_funcs(prop, NULL, NULL, "api_CurveMapping_clipmaxx_range");
 
-  prop = RNA_def_property(srna, "clip_max_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "clipr.ymax");
-  RNA_def_property_range(prop, -100.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Clip Max Y", "");
-  RNA_def_property_float_funcs(prop, NULL, NULL, "rna_CurveMapping_clipmaxy_range");
+  prop = api_def_prop(sapi, "clip_max_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "clipr.ymax");
+  api_def_prop_range(prop, -100.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Clip Max Y", "");
+  api_def_prop_float_fns(prop, NULL, NULL, "api_CurveMapping_clipmaxy_range");
 
-  prop = api_def_prop(srna, "extend", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_bitflag_sdna(prop, NULL, "flag");
+  prop = api_def_prop(sapi, "extend", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
   api_def_prop_enum_items(prop, prop_extend_items);
   api_def_prop_ui_text(prop, "Extend", "Extrapolate the curve or extend it horizontally");
-  api_def_prop_update(prop, 0, "rna_CurveMapping_extend_update");
+  api_def_prop_update(prop, 0, "api_CurveMapping_extend_update");
 
   prop = api_def_prop(sapi, "curves", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_fns(prop,
@@ -860,17 +860,17 @@ static void api_def_curvemapping(DuneApi *dapi)
   api_def_prop_struct_type(prop, "CurveMap");
   api_def_prop_ui_text(prop, "Curves", "");
 
-  prop = RNA_def_property(srna, "black_level", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "black");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "black_level", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "black");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
+  api_def_prop_ui_text(
       prop, "Black Level", "For RGB curves, the color that black is mapped to");
-  RNA_def_property_float_funcs(prop, NULL, "rna_CurveMapping_black_level_set", NULL);
+  api_def_prop_float_funcs(prop, NULL, "rna_CurveMapping_black_level_set", NULL);
 
-  prop = RNA_def_property(srna, "white_level", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "white");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+  prop = api_def_prop(sapi, "white_level", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "white");
+  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   RNA_def_property_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
   RNA_def_property_ui_text(
       prop, "White Level", "For RGB curves, the color that white is mapped to");
