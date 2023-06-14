@@ -1144,22 +1144,22 @@ static void api_def_scopes(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Scopes_update");
 
   prop = api_def_prop(sapi, "waveform_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_float_stype(prop, "Scopes", "wavefrm_alpha");
-  RNA_def_prop_range(prop, 0, 1);
-  RNA_def_prop_ui_text(prop, "Waveform Opacity", "Opacity of the points");
+  api_def_prop_float_stype(prop, "Scopes", "wavefrm_alpha");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Waveform Opacity", "Opacity of the points");
 
-  prop = RNA_def_property(srna, "vectorscope_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, "Scopes", "vecscope_alpha");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Vectorscope Opacity", "Opacity of the points");
+  prop = api_def_prop(sapi, "vectorscope_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, "Scopes", "vecscope_alpha");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Vectorscope Opacity", "Opacity of the points");
 }
 
-static void rna_def_colormanage(BlenderRNA *brna)
+static void api_def_colormanage(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem display_device_items[] = {
+  static const EnumPropItem display_device_items[] = {
       {0, "NONE", 0, "None", ""},
       {0, NULL, 0, NULL, NULL},
   };
@@ -1248,7 +1248,7 @@ static void rna_def_colormanage(BlenderRNA *brna)
       prop, "Gamma", "Amount of gamma modification applied after display transform");
   api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
-  prop = api_def_prop(sapu, "curve_mapping", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "curve_mapping", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_mapping");
   api_def_prop_ui_text(prop, "Curve", "Color curve mapping applied before display transform");
   api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
@@ -1270,53 +1270,53 @@ static void rna_def_colormanage(BlenderRNA *brna)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_enum_items(prop, color_space_items);
   api_def_prop_enum_fns(prop,
-                              "rna_ColorManagedColorspaceSettings_colorspace_get",
-                              "rna_ColorManagedColorspaceSettings_colorspace_set",
-                              "rna_ColorManagedColorspaceSettings_colorspace_itemf");
-  RNA_def_property_ui_text(
+                        "api_ColorManagedColorspaceSettings_colorspace_get",
+                        "api_ColorManagedColorspaceSettings_colorspace_set",
+                        "api_ColorManagedColorspaceSettings_colorspace_itemf");
+  api_def_prop_ui_text(
       prop,
       "Input Color Space",
       "Color space in the image file, to convert to and from when saving and loading the image");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagedColorspaceSettings_reload_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagedColorspaceSettings_reload_update");
 
-  prop = RNA_def_property(srna, "is_data", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_ColorManagedColorspaceSettings_is_data_get",
-                                 "rna_ColorManagedColorspaceSettings_is_data_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_data", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_fns(prop,
+                        "api_ColorManagedColorspaceSettings_is_data_get",
+                        "api_ColorManagedColorspaceSettings_is_data_set");
+  api_def_prop_ui_text(
       prop,
       "Is Data",
       "Treat image as non-color data without color management, like normal or displacement maps");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagement_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_ColorManagement_update");
 
   //
-  srna = RNA_def_struct(brna, "ColorManagedSequencerColorspaceSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_ColorManagedSequencerColorspaceSettings_path");
-  RNA_def_struct_ui_text(
-      srna, "ColorManagedSequencerColorspaceSettings", "Input color space settings");
+  sapi = api_def_struct(dapi, "ColorManagedSequencerColorspaceSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_ColorManagedSequencerColorspaceSettings_path");
+  api_def_struct_ui_text(
+      sapi, "ColorManagedSequencerColorspaceSettings", "Input color space settings");
 
-  prop = RNA_def_property(srna, "name", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_ENUM_NO_CONTEXT);
-  RNA_def_property_enum_items(prop, color_space_items);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_ColorManagedColorspaceSettings_colorspace_get",
-                              "rna_ColorManagedColorspaceSettings_colorspace_set",
-                              "rna_ColorManagedColorspaceSettings_colorspace_itemf");
-  RNA_def_property_ui_text(prop, "Color Space", "Color space that the sequencer operates in");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_ColorManagedColorspaceSettings_reload_update");
+  prop = api_def_prop(sapi, "name", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_ENUM_NO_CONTEXT);
+  api_def_prop_enum_items(prop, color_space_items);
+  api_def_prop_enum_fns(prop,
+                              "api_ColorManagedColorspaceSettings_colorspace_get",
+                              "api_ColorManagedColorspaceSettings_colorspace_set",
+                              "api_ColorManagedColorspaceSettings_colorspace_itemf");
+  api_def_prop_ui_text(prop, "Color Space", "Color space that the sequencer operates in");
+  api_def_prop_update(prop, NC_WINDOW, "rna_ColorManagedColorspaceSettings_reload_update");
 }
 
-void RNA_def_color(BlenderRNA *brna)
+void api_def_color(DuneApi *dapi)
 {
-  rna_def_curvemappoint(brna);
-  rna_def_curvemap(brna);
-  rna_def_curvemapping(brna);
-  rna_def_color_ramp_element(brna);
-  rna_def_color_ramp(brna);
-  rna_def_histogram(brna);
-  rna_def_scopes(brna);
-  rna_def_colormanage(brna);
+  api_def_curvemappoint(dapi);
+  api_def_curvemap(dapi);
+  api_def_curvemapping(dapi);
+  api_def_color_ramp_element(dapi);
+  api_def_color_ramp(dapi);
+  api_def_histogram(dapi);
+  api_def_scopes(dapi);
+  api_def_colormanage(dapu);
 }
 
 #endif
