@@ -361,16 +361,16 @@ static ApiStruct *api_ConstraintType_refine(struct PointerRNA *ptr)
     case CONSTRAINT_TYPE_CAMERASOLVER:
       return &ApiCameraSolverConstraint;
     case CONSTRAINT_TYPE_OBJECTSOLVER:
-      return &RNA_ObjectSolverConstraint;
+      return &ApiObjectSolverConstraint;
     case CONSTRAINT_TYPE_TRANSFORM_CACHE:
-      return &RNA_TransformCacheConstraint;
+      return &ApiTransformCacheConstraint;
     default:
-      return &RNA_UnknownType;
+      return &ApiUnknownType;
   }
 }
 
-static void rna_ConstraintTargetBone_target_set(PointerRNA *ptr,
-                                                PointerRNA value,
+static void api_ConstraintTargetBone_target_set(ApiPtr *ptr,
+                                                ApiPtr value,
                                                 struct ReportList *UNUSED(reports))
 {
   bConstraintTarget *tgt = (bConstraintTarget *)ptr->data;
