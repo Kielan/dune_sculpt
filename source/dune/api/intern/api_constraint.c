@@ -558,8 +558,8 @@ static bool api_Constraint_RotLike_use_offset_get(struct ApiPtr *ptr)
 
 static void api_Constraint_RotLike_use_offset_set(struct ApiPtr *ptr, bool value)
 {
-  bConstraint *con = ptr->data;
-  bRotateLikeConstraint *rotlike = con->data;
+  Constraint *con = ptr->data;
+  RotateLikeConstraint *rotlike = con->data;
   bool curval = (rotlike->mix_mode != ROTLIKE_MIX_REPLACE);
   if (curval != value) {
     rotlike->mix_mode = (value ? ROTLIKE_MIX_OFFSET : ROTLIKE_MIX_REPLACE);
@@ -572,9 +572,9 @@ static const EnumPropItem *api_Constraint_owner_space_itemf(Cxt *UNUSED(C),
                                                             bool *UNUSED(r_free))
 {
   Object *ob = (Object *)ptr->owner_id;
-  bConstraint *con = (bConstraint *)ptr->data;
+  Constraint *con = (Constraint *)ptr->data;
 
-  if (BLI_findindex(&ob->constraints, con) == -1) {
+  if (lib_findindex(&ob->constraints, con) == -1) {
     return owner_space_pchan_items;
   }
   else {
@@ -583,15 +583,15 @@ static const EnumPropItem *api_Constraint_owner_space_itemf(Cxt *UNUSED(C),
   }
 }
 
-static const EnumPropertyItem *rna_Constraint_target_space_itemf(bContext *UNUSED(C),
-                                                                 PointerRNA *ptr,
-                                                                 PropertyRNA *UNUSED(prop),
+static const EnumPropItem *api_Constraint_target_space_itemf(Cxt *UNUSED(C),
+                                                                 ApiPtr *ptr,
+                                                                 ApiProp *UNUSED(prop),
                                                                  bool *UNUSED(r_free))
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  const bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
-  ListBase targets = {NULL, NULL};
-  bConstraintTarget *ct;
+  Constraint *con = (Constraint *)ptr->data;
+  const ConstraintTypeInfo *cti = dune_constraint_typeinfo_get(con);
+  List targets = {NULL, NULL};
+  ConstraintTarget *ct;
 
   if (cti && cti->get_constraint_targets) {
     cti->get_constraint_targets(con, &targets);
@@ -614,20 +614,20 @@ static const EnumPropertyItem *rna_Constraint_target_space_itemf(bContext *UNUSE
   return space_object_items;
 }
 
-static bConstraintTarget *rna_ArmatureConstraint_target_new(ID *id, bConstraint *con, Main *bmain)
+static ConstraintTarget *api_ArmatureConstraint_target_new(Id *id, Constraint *con, Main *main)
 {
-  bArmatureConstraint *acon = con->data;
-  bConstraintTarget *tgt = MEM_callocN(sizeof(bConstraintTarget), "Constraint Target");
+  ArmatureConstraint *acon = con->data;
+  ConstraintTarget *tgt = mem_callocn(sizeof(ConstraintTarget), "Constraint Target");
 
   tgt->weight = 1.0f;
-  BLI_addtail(&acon->targets, tgt);
+  lib_addtail(&acon->targets, tgt);
 
-  ED_object_constraint_dependency_tag_update(bmain, (Object *)id, con);
+  ed_object_constraint_dependency_tag_update(bmain, (Object *)id, con);
   return tgt;
 }
 
-static void rna_ArmatureConstraint_target_remove(
-    ID *id, bConstraint *con, Main *bmain, ReportList *reports, PointerRNA *target_ptr)
+static void api_ArmatureConstraint_target_remove(
+    Id *id, Constraint *con, Main *bmain, ReportList *reports, PointerRNA *target_ptr)
 {
   bArmatureConstraint *acon = con->data;
   bConstraintTarget *tgt = target_ptr->data;
