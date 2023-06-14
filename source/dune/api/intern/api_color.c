@@ -866,27 +866,27 @@ static void api_def_curvemapping(DuneApi *dapi)
   api_def_prop_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
   api_def_prop_ui_text(
       prop, "Black Level", "For RGB curves, the color that black is mapped to");
-  api_def_prop_float_funcs(prop, NULL, "rna_CurveMapping_black_level_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "rna_CurveMapping_black_level_set", NULL);
 
   prop = api_def_prop(sapi, "white_level", PROP_FLOAT, PROP_COLOR);
   api_def_prop_float_stype(prop, NULL, "white");
-  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
-  RNA_def_property_ui_text(
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1000.0f, 1000.0f, 1, 3);
+  api_def_prop_ui_text(
       prop, "White Level", "For RGB curves, the color that white is mapped to");
-  RNA_def_property_float_funcs(prop, NULL, "rna_CurveMapping_white_level_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_CurveMapping_white_level_set", NULL);
 
-  func = RNA_def_function(srna, "update", "BKE_curvemapping_changed_all");
-  RNA_def_function_ui_description(func, "Update curve mapping after making changes");
+  fn = api_def_fn(sapi, "update", "dune_curvemapping_changed_all");
+  api_def_fn_ui_description(fn, "Update curve mapping after making changes");
 
-  func = RNA_def_function(srna, "reset_view", "BKE_curvemapping_reset_view");
-  RNA_def_function_ui_description(func, "Reset the curve mapping grid to its clipping size");
+  fn = api_def_fn(sapi, "reset_view", "dune_curvemapping_reset_view");
+  api_def_fn_ui_description(fb, "Reset the curve mapping grid to its clipping size");
 
-  func = RNA_def_function(srna, "initialize", "rna_CurveMap_initialize");
-  RNA_def_function_ui_description(func, "Initialize curve");
+  fn = api_def_fn(sapi, "initialize", "rna_CurveMap_initialize");
+  api_def_fn_ui_description(fn, "Initialize curve");
 
-  func = RNA_def_function(srna, "evaluate", "rna_CurveMapping_evaluateF");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "evaluate", "rna_CurveMapping_evaluateF");
+  api_def_fn_flag(fn, FUNC_USE_REPORTS);
   RNA_def_function_ui_description(func, "Evaluate curve at given location");
   parm = RNA_def_pointer(func, "curve", "CurveMap", "curve", "Curve to evaluate");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
