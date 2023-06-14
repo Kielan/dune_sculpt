@@ -495,20 +495,20 @@ static void api_Constraint_dependency_update(Main *main, Scene *UNUSED(scene), A
   ed_object_constraint_dependency_tag_update(main, (Object *)ptr->owner_id, ptr->data);
 }
 
-static void rna_ConstraintTarget_update(Main *bmain, Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_ConstraintTarget_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ED_object_constraint_tag_update(bmain, (Object *)ptr->owner_id, api_constraint_from_target(ptr));
+  ed_object_constraint_tag_update(main, (Object *)ptr->owner_id, api_constraint_from_target(ptr));
 }
 
-static void rna_ConstraintTarget_dependency_update(Main *bmain,
+static void api_ConstraintTarget_dependency_update(Main *main,
                                                    Scene *UNUSED(scene),
-                                                   PointerRNA *ptr)
+                                                   ApiPtr *ptr)
 {
-  ED_object_constraint_dependency_tag_update(
-      bmain, (Object *)ptr->owner_id, rna_constraint_from_target(ptr));
+  ed_object_constraint_dependency_tag_update(
+      main, (Object *)ptr->owner_id, api_constraint_from_target(ptr));
 }
 
-static void rna_Constraint_influence_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Constraint_influence_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
@@ -516,24 +516,24 @@ static void rna_Constraint_influence_update(Main *bmain, Scene *scene, PointerRN
     ob->pose->flag |= (POSE_LOCKED | POSE_DO_UNLOCK);
   }
 
-  rna_Constraint_update(bmain, scene, ptr);
+  api_Constraint_update(main, scene, ptr);
 }
 
 /* Update only needed so this isn't overwritten on first evaluation. */
-static void rna_Constraint_childof_inverse_matrix_update(Main *bmain,
+static void api_Constraint_childof_inverse_matrix_update(Main *main,
                                                          Scene *scene,
-                                                         PointerRNA *ptr)
+                                                         ApiPtr *ptr)
 {
-  bConstraint *con = ptr->data;
-  bChildOfConstraint *data = con->data;
+  Constraint *con = ptr->data;
+  ChildOfConstraint *data = con->data;
   data->flag &= ~CHILDOF_SET_INVERSE;
-  rna_Constraint_update(bmain, scene, ptr);
+  api_Constraint_update(main, scene, ptr);
 }
 
-static void rna_Constraint_ik_type_set(struct PointerRNA *ptr, int value)
+static void api_Constraint_ik_type_set(struct ApiPtr *ptr, int value)
 {
-  bConstraint *con = ptr->data;
-  bKinematicConstraint *ikdata = con->data;
+  Constraint *con = ptr->data;
+  KinematicConstraint *ikdata = con->data;
 
   if (ikdata->type != value) {
     /* the type of IK constraint has changed, set suitable default values */
@@ -549,14 +549,14 @@ static void rna_Constraint_ik_type_set(struct PointerRNA *ptr, int value)
 }
 
 /* DEPRECATED: use_offset replaced with mix_mode */
-static bool rna_Constraint_RotLike_use_offset_get(struct PointerRNA *ptr)
+static bool api_Constraint_RotLike_use_offset_get(struct ApiPtr *ptr)
 {
-  bConstraint *con = ptr->data;
-  bRotateLikeConstraint *rotlike = con->data;
+  Constraint *con = ptr->data;
+  RotateLikeConstraint *rotlike = con->data;
   return rotlike->mix_mode != ROTLIKE_MIX_REPLACE;
 }
 
-static void rna_Constraint_RotLike_use_offset_set(struct PointerRNA *ptr, bool value)
+static void api_Constraint_RotLike_use_offset_set(struct ApiPtr *ptr, bool value)
 {
   bConstraint *con = ptr->data;
   bRotateLikeConstraint *rotlike = con->data;
@@ -566,10 +566,10 @@ static void rna_Constraint_RotLike_use_offset_set(struct PointerRNA *ptr, bool v
   }
 }
 
-static const EnumPropertyItem *rna_Constraint_owner_space_itemf(bContext *UNUSED(C),
-                                                                PointerRNA *ptr,
-                                                                PropertyRNA *UNUSED(prop),
-                                                                bool *UNUSED(r_free))
+static const EnumPropItem *api_Constraint_owner_space_itemf(Cxt *UNUSED(C),
+                                                            ApiPtr *ptr,
+                                                            ApiProp *UNUSED(prop),
+                                                            bool *UNUSED(r_free))
 {
   Object *ob = (Object *)ptr->owner_id;
   bConstraint *con = (bConstraint *)ptr->data;
