@@ -12,17 +12,17 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "ED_object.h"
+#include "ed_object.h"
 
 /* please keep the names in sync with constraint.c */
-const EnumPropertyItem rna_enum_constraint_type_items[] = {
+const EnumPropItem api_enum_constraint_type_items[] = {
     {0, "", 0, N_("Motion Tracking"), ""},
     {CONSTRAINT_TYPE_CAMERASOLVER, "CAMERA_SOLVER", ICON_CON_CAMERASOLVER, "Camera Solver", ""},
     {CONSTRAINT_TYPE_FOLLOWTRACK, "FOLLOW_TRACK", ICON_CON_FOLLOWTRACK, "Follow Track", ""},
@@ -173,7 +173,7 @@ const EnumPropertyItem rna_enum_constraint_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem target_space_pchan_items[] = {
+static const EnumPropItem target_space_pchan_items[] = {
     {CONSTRAINT_SPACE_WORLD,
      "WORLD",
      0,
@@ -216,7 +216,7 @@ static const EnumPropertyItem target_space_pchan_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem owner_space_pchan_items[] = {
+static const EnumPropItem owner_space_pchan_items[] = {
     {CONSTRAINT_SPACE_WORLD,
      "WORLD",
      0,
@@ -247,7 +247,7 @@ static const EnumPropertyItem owner_space_pchan_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem track_axis_items[] = {
+static const EnumPropItem track_axis_items[] = {
     {TRACK_X, "TRACK_X", 0, "X", ""},
     {TRACK_Y, "TRACK_Y", 0, "Y", ""},
     {TRACK_Z, "TRACK_Z", 0, "Z", ""},
@@ -257,7 +257,7 @@ static const EnumPropertyItem track_axis_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem euler_order_items[] = {
+static const EnumPropItem euler_order_items[] = {
     {CONSTRAINT_EULER_AUTO, "AUTO", 0, "Default", "Euler using the default rotation order"},
     {CONSTRAINT_EULER_XYZ, "XYZ", 0, "XYZ Euler", "Euler using the XYZ rotation order"},
     {CONSTRAINT_EULER_XZY, "XZY", 0, "XZY Euler", "Euler using the XZY rotation order"},
@@ -268,9 +268,9 @@ static const EnumPropertyItem euler_order_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-static const EnumPropertyItem space_object_items[] = {
+static const EnumPropItem space_object_items[] = {
     {CONSTRAINT_SPACE_WORLD,
      "WORLD",
      0,
@@ -290,18 +290,18 @@ static const EnumPropertyItem space_object_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#  include "DNA_cachefile_types.h"
+#  include "types_cachefile_types.h"
 
-#  include "BKE_action.h"
-#  include "BKE_animsys.h"
-#  include "BKE_constraint.h"
-#  include "BKE_context.h"
+#  include "dune_action.h"
+#  include "dune_animsys.h"
+#  include "dune_constraint.h"
+#  include "dune_context.h"
 
 #  ifdef WITH_ALEMBIC
 #    include "ABC_alembic.h"
 #  endif
 
-static StructRNA *rna_ConstraintType_refine(struct PointerRNA *ptr)
+static ApiStruct *api_ConstraintType_refine(struct PointerRNA *ptr)
 {
   bConstraint *con = (bConstraint *)ptr->data;
 
