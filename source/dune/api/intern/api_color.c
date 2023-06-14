@@ -799,41 +799,41 @@ static void api_def_curvemapping(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = api_def_struct(brna, "CurveMapping", NULL);
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(dapi, "CurveMapping", NULL);
+  api_def_struct_ui_text(
       srna,
       "CurveMapping",
       "Curve mapping to map color, vector and scalar values to other values using "
       "a user defined curve");
 
-  prop = RNA_def_property(srna, "tone", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "tone");
-  RNA_def_property_enum_items(prop, tone_items);
-  RNA_def_property_ui_text(prop, "Tone", "Tone of the curve");
-  RNA_def_property_update(prop, 0, "rna_CurveMapping_tone_update");
+  prop = api_def_prop(sapi, "tone", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "tone");
+  api_def_prop_enum_items(prop, tone_items);
+  api_def_prop_ui_text(prop, "Tone", "Tone of the curve");
+  api_def_prop_update(prop, 0, "api_CurveMapping_tone_update");
 
-  prop = api_def_prop(sapi, "use_clip", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_clip", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", CUMA_DO_CLIP);
   api_def_prop_ui_text(prop, "Clip", "Force the curve view to fit a defined boundary");
   apu_def_prop_bool_fns(prop, NULL, "api_CurveMapping_clip_set");
 
-  prop = apu_def_prop(sapi, "clip_min_x", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "clip_min_x", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "clipr.xmin");
   api_def_prop_range(prop, -100.0f, 100.0f);
   api_def_prop_ui_text(prop, "Clip Min X", "");
   api_def_prop_float_fns(prop, NULL, NULL, "rna_CurveMapping_clipminx_range");
 
   prop = api_def_prop(sapi, "clip_min_y", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "clipr.ymin");
+  api_def_prop_float_stype(prop, NULL, "clipr.ymin");
   api_def_prop_range(prop, -100.0f, 100.0f);
   api_def_prop_ui_text(prop, "Clip Min Y", "");
-  api_def_prop_float_fns(prop, NULL, NULL, "rna_CurveMapping_clipminy_range");
+  api_def_prop_float_fns(prop, NULL, NULL, "api_CurveMapping_clipminy_range");
 
-  prop = RNA_def_property(srna, "clip_max_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "clipr.xmax");
-  RNA_def_property_range(prop, -100.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Clip Max X", "");
-  RNA_def_property_float_funcs(prop, NULL, NULL, "api_CurveMapping_clipmaxx_range");
+  prop = api_def_prop(sapi, "clip_max_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_style(prop, NULL, "clipr.xmax");
+  api_def_prop_range(prop, -100.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Clip Max X", "");
+  api_def_prop_float_fns(prop, NULL, NULL, "api_CurveMapping_clipmaxx_range");
 
   prop = api_def_prop(sapi, "clip_max_y", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "clipr.ymax");
