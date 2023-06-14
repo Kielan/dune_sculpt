@@ -654,7 +654,7 @@ static void api_ArmatureConstraint_target_clear(Id *id, Constraint *con, Main *m
 static void api_ActionConstraint_mix_mode_set(ApiPtr *ptr, int value)
 {
   Constraint *con = (Constraint *)ptr->data;
-  ActionConstraint *acon = (bActionConstraint *)con->data;
+  ActionConstraint *acon = (ActionConstraint *)con->data;
 
   acon->mix_mode = value;
 
@@ -671,8 +671,8 @@ static void api_ActionConstraint_mix_mode_set(ApiPtr *ptr, int value)
 static void api_ActionConstraint_minmax_range(
     ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
-  bConstraint *con = (Constraint *)ptr->data;
-  bActionConstraint *acon = (ActionConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  ActionConstraint *acon = (ActionConstraint *)con->data;
 
   /* 0, 1, 2 = magic numbers for rotX, rotY, rotZ */
   if (ELEM(acon->type, 0, 1, 2)) {
@@ -688,8 +688,8 @@ static void api_ActionConstraint_minmax_range(
 static int api_SplineIKConstraint_joint_bindings_get_length(ApiPtr *ptr,
                                                             int length[RNA_MAX_ARRAY_DIMENSION])
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bSplineIKConstraint *ikData = (bSplineIKConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  SplineIKConstraint *ikData = (SplineIKConstraint *)con->data;
 
   if (ikData) {
     length[0] = ikData->numpoints;
@@ -701,37 +701,37 @@ static int api_SplineIKConstraint_joint_bindings_get_length(ApiPtr *ptr,
   return length[0];
 }
 
-static void rna_SplineIKConstraint_joint_bindings_get(PointerRNA *ptr, float *values)
+static void api_SplineIKConstraint_joint_bindings_get(ApiPtr *ptr, float *values)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bSplineIKConstraint *ikData = (bSplineIKConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  SplineIKConstraint *ikData = (SplineIKConstraint *)con->data;
 
   memcpy(values, ikData->points, ikData->numpoints * sizeof(float));
 }
 
-static void rna_SplineIKConstraint_joint_bindings_set(PointerRNA *ptr, const float *values)
+static void api_SplineIKConstraint_joint_bindings_set(ApiPtr *ptr, const float *values)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bSplineIKConstraint *ikData = (bSplineIKConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  SplineIKConstraint *ikData = (SplineIKConstraint *)con->data;
 
   memcpy(ikData->points, values, ikData->numpoints * sizeof(float));
 }
 
-static int rna_ShrinkwrapConstraint_face_cull_get(PointerRNA *ptr)
+static int api_ShrinkwrapConstraint_face_cull_get(ApiPtr *ptr)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bShrinkwrapConstraint *swc = (bShrinkwrapConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  ShrinkwrapConstraint *swc = (ShrinkwrapConstraint *)con->data;
   return swc->flag & CON_SHRINKWRAP_PROJECT_CULL_MASK;
 }
 
-static void rna_ShrinkwrapConstraint_face_cull_set(struct PointerRNA *ptr, int value)
+static void api_ShrinkwrapConstraint_face_cull_set(struct ApiPtr *ptr, int value)
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bShrinkwrapConstraint *swc = (bShrinkwrapConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  ShrinkwrapConstraint *swc = (ShrinkwrapConstraint *)con->data;
   swc->flag = (swc->flag & ~CON_SHRINKWRAP_PROJECT_CULL_MASK) | value;
 }
 
-static bool rna_Constraint_cameraObject_poll(PointerRNA *ptr, PointerRNA value)
+static bool api_Constraint_cameraObject_poll(PointerRNA *ptr, PointerRNA value)
 {
   Object *ob = (Object *)value.data;
 
@@ -744,18 +744,18 @@ static bool rna_Constraint_cameraObject_poll(PointerRNA *ptr, PointerRNA value)
   return 0;
 }
 
-static void rna_Constraint_followTrack_camera_set(PointerRNA *ptr,
-                                                  PointerRNA value,
+static void api_Constraint_followTrack_camera_set(ApiPtr *ptr,
+                                                  ApiPtr value,
                                                   struct ReportList *UNUSED(reports))
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bFollowTrackConstraint *data = (bFollowTrackConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  FollowTrackConstraint *data = (FollowTrackConstraint *)con->data;
   Object *ob = (Object *)value.data;
 
   if (ob) {
     if (ob->type == OB_CAMERA && ob != (Object *)ptr->owner_id) {
       data->camera = ob;
-      id_lib_extern((ID *)ob);
+      id_lib_extern((Id *)ob);
     }
   }
   else {
@@ -763,12 +763,12 @@ static void rna_Constraint_followTrack_camera_set(PointerRNA *ptr,
   }
 }
 
-static void rna_Constraint_followTrack_depthObject_set(PointerRNA *ptr,
-                                                       PointerRNA value,
+static void api_Constraint_followTrack_depthObject_set(ApiPtr *ptr,
+                                                       ApiPtr value,
                                                        struct ReportList *UNUSED(reports))
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bFollowTrackConstraint *data = (bFollowTrackConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  FollowTrackConstraint *data = (FollowTrackConstraint *)con->data;
   Object *ob = (Object *)value.data;
 
   if (ob) {
@@ -782,7 +782,7 @@ static void rna_Constraint_followTrack_depthObject_set(PointerRNA *ptr,
   }
 }
 
-static bool rna_Constraint_followTrack_depthObject_poll(PointerRNA *ptr, PointerRNA value)
+static bool api_Constraint_followTrack_depthObject_poll(ApiPtr *ptr, ApiPtr value)
 {
   Object *ob = (Object *)value.data;
 
@@ -795,18 +795,18 @@ static bool rna_Constraint_followTrack_depthObject_poll(PointerRNA *ptr, Pointer
   return 0;
 }
 
-static void rna_Constraint_objectSolver_camera_set(PointerRNA *ptr,
-                                                   PointerRNA value,
+static void api_Constraint_objectSolver_camera_set(ApiPtr *ptr,
+                                                   ApiPtr value,
                                                    struct ReportList *UNUSED(reports))
 {
-  bConstraint *con = (bConstraint *)ptr->data;
-  bObjectSolverConstraint *data = (bObjectSolverConstraint *)con->data;
+  Constraint *con = (Constraint *)ptr->data;
+  ObjectSolverConstraint *data = (ObjectSolverConstraint *)con->data;
   Object *ob = (Object *)value.data;
 
   if (ob) {
     if (ob->type == OB_CAMERA && ob != (Object *)ptr->owner_id) {
       data->camera = ob;
-      id_lib_extern((ID *)ob);
+      id_lib_extern((Id *)ob);
     }
   }
   else {
@@ -816,7 +816,7 @@ static void rna_Constraint_objectSolver_camera_set(PointerRNA *ptr,
 
 #else
 
-static const EnumPropertyItem constraint_distance_items[] = {
+static const EnumPropItem constraint_distance_items[] = {
     {LIMITDIST_INSIDE,
      "LIMITDIST_INSIDE",
      0,
