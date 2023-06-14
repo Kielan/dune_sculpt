@@ -103,31 +103,31 @@ static PointerRNA rna_Context_region_data_get(PointerRNA *ptr)
   /* only exists for one space still, no generic system yet */
   if (CTX_wm_view3d(C)) {
     PointerRNA newptr;
-    RNA_pointer_create((ID *)CTX_wm_screen(C), &RNA_RegionView3D, CTX_wm_region_data(C), &newptr);
+    api_ptr_create((Id *)CTX_wm_screen(C), &RNA_RegionView3D, CTX_wm_region_data(C), &newptr);
     return newptr;
   }
 
-  return PointerRNA_NULL;
+  return ApiPtrNULL;
 }
 
-static PointerRNA rna_Context_gizmo_group_get(PointerRNA *ptr)
+static ApiPtr api_cxt_gizmo_group_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
-  PointerRNA newptr;
-  RNA_pointer_create(NULL, &RNA_GizmoGroup, CTX_wm_gizmo_group(C), &newptr);
+  Cxt *C = (Cxt *)ptr->data;
+  ApiPtr newptr;
+  api_ptr_create(NULL, &ApiGizmoGroup, cxt_wm_gizmo_group(C), &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Context_asset_file_handle_get(PointerRNA *ptr)
+static PointerRNA rna_Context_asset_file_handle_get(ApiPtr *ptr)
 {
-  bContext *C = (bContext *)ptr->data;
+  Cxt *C = (Cxt *)ptr->data;
   bool is_handle_valid;
-  AssetHandle asset_handle = CTX_wm_asset_handle(C, &is_handle_valid);
+  AssetHandle asset_handle = cxt_wm_asset_handle(C, &is_handle_valid);
   if (!is_handle_valid) {
-    return PointerRNA_NULL;
+    return ApiPtrNULL;
   }
 
-  PointerRNA newptr;
+  ApiPtr newptr;
   /* Have to cast away const, but the file entry API doesn't allow modifications anyway. */
   RNA_pointer_create(
       NULL, &RNA_FileSelectEntry, (struct FileDirEntry *)asset_handle.file_data, &newptr);
