@@ -914,14 +914,14 @@ static void api_def_curvemapping(DuneApi *dapi)
 
 static void rna_def_color_ramp_element(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ColorRampElement", NULL);
-  RNA_def_struct_sdna(srna, "CBData");
-  RNA_def_struct_path_func(srna, "rna_ColorRampElement_path");
-  RNA_def_struct_ui_text(
-      srna, "Color Ramp Element", "Element defining a color at a position in the color ramp");
+  sapi = api_def_struct(dapi, "ColorRampElement", NULL);
+  api_def_struct_stype(sapi, "CBData");
+  api_def_struct_path_fn(sapi, "api_ColorRampElement_path");
+  api_def_struct_ui_text(
+      sapi, "Color Ramp Element", "Element defining a color at a position in the color ramp");
 
   prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
   RNA_def_property_float_sdna(prop, NULL, "r");
