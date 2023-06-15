@@ -220,10 +220,10 @@ ApiStructDef *api_find_struct_def(ApiStruct *srna)
     return NULL;
   }
 
-  dsrna = ApuDef.structs.last;
-  for (; dsrna; dsrna = dsrna->cont.prev) {
-    if (dsrna->srna == srna) {
-      return dsrna;
+  dsapi = ApiDef.structs.last;
+  for (; dsapi; dsapi = dsapi->cont.prev) {
+    if (dsapi->sapi == sapi) {
+      return dsapi;
     }
   }
 
