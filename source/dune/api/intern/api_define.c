@@ -230,7 +230,7 @@ ApiStructDef *api_find_struct_def(ApiStruct *srna)
   return NULL;
 }
 
-ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
+ApiPropDef *api_find_struct_prop_def(ApiStruct *sapi, ApiProp *prop)
 {
   ApiStructDef *dsrna;
   ApiPropDef *dprop;
@@ -241,17 +241,17 @@ ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
     return NULL;
   }
 
-  dsrna = api_find_struct_def(srna);
-  dprop = dsrna->cont.props.last;
+  dsapi = api_find_struct_def(sapi);
+  dprop = dsapi->cont.props.last;
   for (; dprop; dprop = dprop->prev) {
     if (dprop->prop == prop) {
       return dprop;
     }
   }
 
-  dsrna = ApiDef.structs.last;
-  for (; dsrna; dsrna = dsrna->cont.prev) {
-    dprop = dsrna->cont.props.last;
+  dsapi = ApiDef.structs.last;
+  for (; dsapi; dsapi = dsapi->cont.prev) {
+    dprop = dapo->cont.props.last;
     for (; dprop; dprop = dprop->prev) {
       if (dprop->prop == prop) {
         return dprop;
