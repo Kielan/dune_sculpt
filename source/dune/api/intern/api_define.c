@@ -430,20 +430,20 @@ static int api_member_cmp(const char *name, const char *oname)
   return (name[a] == oname[a]);
 }
 
-static int api_find_sdna_member(SDNA *sdna,
+static int api_find_stype_member(SType *sapi,
                                 const char *structname,
                                 const char *membername,
                                 TypeStructMember *smember,
                                 int *offset)
 {
-  const char *dnaname;
+  const char *stypename;
   int b, structnr, cmp;
 
   if (!ApiDef.preprocess) {
     LOG_ERROR(&LOG, "only during preprocessing.");
     return 0;
   }
-  structnr = types_struct_find_nr_wrapper(sdna, structname);
+  structnr = types_struct_find_nr_wrapper(stype, structname);
 
   smember->offset = -1;
   if (structnr == -1) {
@@ -453,16 +453,16 @@ static int api_find_sdna_member(SDNA *sdna,
     return 0;
   }
 
-  const SDNA_Struct *struct_info = sdna->structs[structnr];
+  const STypeStruct *struct_info = stype->structs[structnr];
   for (int a = 0; a < struct_info->members_len; a++) {
-    const SDNA_StructMember *member = &struct_info->members[a];
-    const int size = types_elem_size_nr(sdna, member->type, member->name);
-    dnaname = sdna->alias.names[member->name];
-    cmp = api_member_cmp(dnaname, membername);
+    const StructMember *member = &struct_info->members[a];
+    const int size = types_elem_size_nr(stype, member->type, member->name);
+    stypename = stype->alias.names[member->name];
+    cmp = api_member_cmp(stypename, membername);
 
     if (cmp == 1) {
-      smember->type = sdna->alias.types[member->type];
-      smember->name = dnaname;
+      smember->type = sapi->alias.types[member->type];
+      smember->name = stypename;
       smember->offset = *offset;
       smember->size = size;
 
@@ -473,8 +473,8 @@ static int api_find_sdna_member(SDNA *sdna,
         smember->arraylength = type_elem_array_size(smember->name);
       }
 
-      smember->pointerlevel = 0;
-      for (b = 0; dnaname[b] == '*'; b++) {
+      smember->ptrlevel = 0;
+      for (b = 0; stypename[b] == '*'; b++) {
         smember->ptrlevel++;
       }
 
@@ -482,20 +482,20 @@ static int api_find_sdna_member(SDNA *sdna,
     }
     if (cmp == 2) {
       smember->type = "";
-      smember->name = dnaname;
+      smember->name = stypename;
       smember->offset = *offset;
       smember->size = size;
       smember->pointerlevel = 0;
       smember->arraylength = 0;
 
       membername = strstr(membername, ".") + strlen(".");
-      api_find_sdna_member(sdna, sdna->alias.types[member->type], membername, smember, offset);
+      api_find_stype_member(stype, stype->alias.types[member->type], membername, smember, offset);
 
       return 1;
     }
     if (cmp == 3) {
       smember->type = "";
-      smember->name = dnaname;
+      smember->name = stypename;
       smember->offset = *offset;
       smember->size = size;
       smember->ptrlevel = 0;
@@ -505,7 +505,7 @@ static int api_find_sdna_member(SDNA *sdna,
         *offset = -1;
       }
       membername = strstr(membername, "->") + strlen("->");
-      api_find_sdna_member(sdna, sdna->alias.types[member->type], membername, smember, offset);
+      api_find_stype_member(stype, stype->alias.types[member->type], membername, smember, offset);
 
       return 1;
     }
