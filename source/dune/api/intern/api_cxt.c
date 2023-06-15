@@ -218,7 +218,7 @@ static struct Graph *api_cxt_evaluated_graph_get(Cxt *C)
   BPy_END_ALLOW_THREADS;
 #  endif
 
-  return depsgraph;
+  return graph;
 }
 
 #else
@@ -332,20 +332,20 @@ void api_def_cxt(DuneApi *dapi)
   api_def_prop_struct_type(prop, "Prefs");
   api_def_prop_ptr_fns(prop, "api_cxt_prefs_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_context_mode_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_funcs(prop, "rna_Context_mode_get", NULL, NULL);
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_cxt_mode_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_fns(prop, "api_cxt_mode_get", NULL, NULL);
 
-  func = RNA_def_function(srna, "evaluated_depsgraph_get", "rna_Context_evaluated_depsgraph_get");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "eval_graph_get", "api_cxt_eval_graph_get");
+  api_def_fn_ui_description(
+      fn,
       "Get the dependency graph for the current scene and view layer, to access to data-blocks "
       "with animation and modifiers applied. If any data-blocks have been edited, the dependency "
       "graph will be updated. This invalidates all references to evaluated data-blocks from the "
       "dependency graph.");
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "Evaluated dependency graph");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "graph", "Graph", "", "Evaluated dependency graph");
+  api_def_fn_return(fn, parm);
 }
 
 #endif
