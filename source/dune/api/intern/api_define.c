@@ -518,7 +518,7 @@ static int api_find_stype_member(SType *sapi,
   return 0;
 }
 
-static int api_validate_identifier(const char *identifier, char *error, bool property)
+static int api_validate_id(const char *id, char *error, bool prop)
 {
   int a = 0;
 
@@ -698,7 +698,7 @@ DuneApi *api_create(void)
   return bapi;
 }
 
-void api_define_free(BlenderRNA *UNUSED(brna))
+void api_define_free(DuneApi *UNUSED(dapi))
 {
   ApiStructDef *ds;
   ApiFn *dfn;
@@ -710,25 +710,25 @@ void api_define_free(BlenderRNA *UNUSED(brna))
   api_freelistn(&ApiDef.allocs);
 
   for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
-    for (dfn = ds->functions.first; dfn; dfn = dfn->cont.next) {
+    for (dfn = ds->fns.first; dfn; dfn = dfn->cont.next) {
       api_freelistn(&dfn->cont.props);
     }
 
-    api_freelistn(&ds->cont.properties);
-    api_freelistn(&ds->functions);
+    api_freelistn(&ds->cont.props);
+    api_freelistn(&ds->fns);
   }
 
-  rna_freelistN(&DefRNA.structs);
+  api_freelistn(&DefApi.structs);
 
-  if (ApiDef.sdna) {
-    api_sdna_free(ApiDef.sdna);
-    ApiDef.sdna = NULL;
+  if (ApiDef.stype) {
+    api_stype_free(ApiDef.stype);
+    ApiDef.stype = NULL;
   }
 
   ApiDef.error = false;
 }
 
-void api_define_verify_sdna(bool verify)
+void api_define_verify_stype(bool verify)
 {
   ApiDef.verify = verify;
 }
@@ -746,16 +746,16 @@ void api_define_animate_sdna(bool animate)
 #endif
 
 #ifndef API_RUNTIME
-void api_define_fallback_prop_update(int noteflag, const char *updatefunc)
+void api_define_fallback_prop_update(int noteflag, const char *updatefn)
 {
   ApiDef.fallback.prop_update.noteflag = noteflag;
-  ApiDef.fallback.prop_update.updatefunc = updatefn;
+  ApiDef.fallback.prop_update.updatefn = updatefn;
 }
 #endif
 
-void RNA_struct_free_extension(StructRNA *srna, ExtensionRNA *rna_ext)
+void api_struct_free_extension(ApiStruct *sapi, ApiExtension *api_ext)
 {
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
   rna_ext->free(rna_ext->data);            /* decref's the PyObject that the srna owns */
   RNA_struct_blender_type_set(srna, NULL); /* FIXME: this gets accessed again. */
 
