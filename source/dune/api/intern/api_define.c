@@ -344,7 +344,7 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
 
   dsapi = ApiDef.structs.last;
   for (; dsapi; dsapi = dsapi->cont.prev) {
-    dfunc = dsapi->fns.last;
+    dfn = dsapi->fns.last;
     for (; dfn; dfn = df ->cont.prev) {
       dparm = dfn->cont.props.last;
       for (; dparm; dparm = dparm->prev) {
@@ -667,29 +667,29 @@ void api_id_sanitize(char *id, int prop)
   }
 }
 
-/* Blender Data Definition */
+/* Dune Data Definition */
 
 DuneApi *api_create(void)
 {
   DuneApi *bapi;
 
-  bapi = mem_callocn(sizeof(DuneApi), "DuneApi");
+  dapi = mem_callocn(sizeof(DuneApi), "DuneApi");
   const char *error_message = NULL;
 
   lib_list_clear(&ApiDef.structs);
-  brna->structs_map = lib_ghash_str_new_ex(__func__, 2048);
+  dapi->structs_map = lib_ghash_str_new_ex(__func__, 2048);
 
   ApiDef.error = false;
   ApiDef.preprocess = true;
 
-  ApiDef.sdna = types_sdna_from_data(typestr, typelen, false, false, &error_message);
+  ApiDef.sdna = types_stype_from_data(typestr, typelen, false, false, &error_message);
   if (ApiDef.sdna == NULL) {
     LOG_ERROR(&LOG, "Failed to decode SDNA: %s.", error_message);
     ApiDef.error = true;
   }
 
   /* We need both alias and static (on-disk) DNA names. */
-  types_sdna_alias_data_ensure(ApiDef.sdna);
+  types_stype_alias_data_ensure(ApiDef.sdna);
 
 #ifndef API_RUNTIME
   types_alias_maps(TYPE_RENAME_STATIC_FROM_ALIAS, &g_version_data.struct_map_static_from_alias, NULL);
