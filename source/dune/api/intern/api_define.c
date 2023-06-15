@@ -65,21 +65,21 @@ static struct {
  * When set, report details about which defaults are used.
  * Noisy but handy when investigating default extraction.
  */
-static bool debugSRNA_defaults = false;
+static bool debug_sapi_defaults = false;
 
 static void print_default_info(const ApiPropDef *dp)
 {
   fprintf(stderr,
-          "dna_type=%s, dna_offset=%d, dna_struct=%s, dna_name=%s, id=%s\n",
-          dp->dnatype,
-          dp->dnaoffset,
+          "types_type=%s, types_offset=%d, types_struct=%s, types_name=%s, id=%s\n",
+          dp->typestype,
+          dp->typesoffset,
           dp->dnastructname,
-          dp->dnaname,
+          dp->typesname,
           dp->prop->id);
 }
-#endif /* RNA_RUNTIME */
+#endif /* API_RUNTIME */
 
-/* Duplicated code since we can't link in blenkernel or blenlib */
+/* Duplicated code since we can't link in folder dune or lib */
 
 /* pedantic check for final '.', note '...' are allowed though. */
 #ifndef NDEBUG
@@ -167,20 +167,20 @@ void api_freelistn(List *list)
   list->first = list->last = NULL;
 }
 
-static void api_brna_structs_add(DuneApi *brna, ApiStruct *srna)
+static void api_dapi_structs_add(DuneApi *dapi, ApiStruct *sapi)
 {
   api_addtail(&brna->structs, srna);
   brna->structs_len += 1;
 
   /* This exception is only needed for pre-processing.
    * otherwise we don't allow empty names. */
-  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && (srna->id[0] != '\0')) {
-    lib_ghash_insert(brna->structs_map, (void *)srna->id, srna);
+  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && (sapi->id[0] != '\0')) {
+    lib_ghash_insert(dapi->structs_map, (void *)sapi->id, sapi);
   }
 }
 
 #ifdef API_RUNTIME
-static void api_brna_structs_remove_and_free(BlenderRNA *brna, StructRNA *srna)
+static void api_brna_structs_remove_and_free(DuneApi *dapi, StructRNA *srna)
 {
   if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && brna->structs_map) {
     if (srna->id[0] != '\0') {
