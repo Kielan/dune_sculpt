@@ -11,7 +11,7 @@
 
 #include "types_defaults.h"
 #include "types_genfile.h"
-#include "types_sdna_types.h"
+#include "types_sapi_types.h"
 
 #include "lib_ghash.h"
 #include "lib_list.h"
@@ -42,7 +42,7 @@ static LogRef LOG = {"api.define"};
 /* Global used during defining */
 
 DuneApiDef ApiDef = {
-    .sdna = NULL,
+    .stype = NULL,
     .structs = {NULL, NULL},
     .allocs = {NULL, NULL},
     .laststruct = NULL,
@@ -135,7 +135,7 @@ static void api_remlink(ListBase *listbase, void *vlink)
   }
 }
 
-ApiPropDef *api_findlink(ListBase *listbase, const char *identifier)
+ApiPropDef *api_findlink(List *list, const char *id)
 {
   Link *link;
 
@@ -169,8 +169,8 @@ void api_freelistn(List *list)
 
 static void api_dapi_structs_add(DuneApi *dapi, ApiStruct *sapi)
 {
-  api_addtail(&brna->structs, srna);
-  brna->structs_len += 1;
+  api_addtail(&dapi->structs, sapi);
+  dapi->structs_len += 1;
 
   /* This exception is only needed for pre-processing.
    * otherwise we don't allow empty names. */
