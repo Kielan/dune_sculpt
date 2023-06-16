@@ -232,7 +232,7 @@ ApiStructDef *api_find_struct_def(ApiStruct *srna)
 
 ApiPropDef *api_find_struct_prop_def(ApiStruct *sapi, ApiProp *prop)
 {
-  ApiStructDef *dsrna;
+  ApiStructDef *dsapi;
   ApiPropDef *dprop;
 
   if (!ApiDef.preprocess) {
@@ -391,7 +391,7 @@ typedef struct TypeStructMember {
   int ptrlevel;
   int offset;
   int size;
-} TupeStructMember;
+} TypeStructMember;
 
 static int api_member_cmp(const char *name, const char *oname)
 {
@@ -756,19 +756,19 @@ void api_define_fallback_prop_update(int noteflag, const char *updatefn)
 void api_struct_free_extension(ApiStruct *sapi, ApiExtension *api_ext)
 {
 #ifdef API_RUNTIME
-  rna_ext->free(rna_ext->data);            /* decref's the PyObject that the srna owns */
-  RNA_struct_blender_type_set(srna, NULL); /* FIXME: this gets accessed again. */
+  api_ext->free(api_ext->data);            /* decref's the PyObject that the srna owns */
+  api_struct_dune_type_set(sapi, NULL); /* FIXME: this gets accessed again. */
 
-  /* NULL the srna's value so RNA_struct_free won't complain of a leak */
-  RNA_struct_py_type_set(srna, NULL);
+  /* NULL the sapi's value so api_struct_free won't complain of a leak */
+  api_struct_py_type_set(sapi, NULL);
 
 #else
-  (void)srna;
-  (void)rna_ext;
+  (void)sapi;
+  (void)api_ext;
 #endif
 }
 
-void api_struct_free(DuneApi *dapi, StructRNA *srna)
+void api_struct_free(DuneApi *dapi, ApiStruct *sapi)
 {
 #ifdef API_RUNTIME
   ApiFn *fn, *nextfn;
@@ -777,24 +777,24 @@ void api_struct_free(DuneApi *dapi, StructRNA *srna)
 
 #  if 0
   if (srna->flag & STRUCT_RUNTIME) {
-    if (api_struct_py_type_get(srna)) {
-      fprintf(stderr, "%s '%s' freed while holding a python reference.", srna->identifier);
+    if (api_struct_py_type_get(sapi)) {
+      fprintf(stderr, "%s '%s' freed while holding a python reference.", sapi->id);
     }
   }
 #  endif
 
-  for (prop = srna->cont.props.first; prop; prop = nextprop) {
+  for (prop = sapi->cont.props.first; prop; prop = nextprop) {
     nextprop = prop->next;
 
     api_def_prop_free_ptrs(prop);
 
     if (prop->flag_internal & PROP_INTERN_RUNTIME) {
-      api_freelinkn(&srna->cont.props, prop);
+      api_freelinkn(&sapi->cont.props, prop);
     }
   }
 
-  for (func = srna->fns.first; fn; fn = nextfn) {
-    nextfunc = fn->cont.next;
+  for (fn = sapi->fns.first; fn; fn = nextfn) {
+    nextfn = fn->cont.next;
 
     for (parm = fn->cont.properties.first; parm; parm = nextparm) {
       nextparm = parm->next;
@@ -806,63 +806,63 @@ void api_struct_free(DuneApi *dapi, StructRNA *srna)
       }
     }
 
-    api_def_fn_free_pointers(func);
+    api_def_fn_free_ptrs(fn);
 
-    if (func->flag & FUNC_RUNTIME) {
-      api_freelinkN(&srna->functions, func);
+    if (fn->flag & FN_RUNTIME) {
+      api_freelinkn(&sapi->fns, fn);
     }
   }
 
-  api_brna_structs_remove_and_free(brna, srna);
+  api_dapi_structs_remove_and_free(dapi, sapi);
 #else
-  UNUSED_VARS(brna, srna);
+  UNUSED_VARS(dapi, sapi);
 #endif
 }
 
-void api_free(DuneApi *brna)
+void api_free(DuneApi *dapi)
 {
-  ApiStruct *sapi, *nextsrna;
+  ApiStruct *sapi, *nextsapi;
   ApiFn *fn;
 
-  lib_ghash_free(brna->structs_map, NULL, NULL);
-  brna->structs_map = NULL;
+  lib_ghash_free(dapi->structs_map, NULL, NULL);
+  dapi->structs_map = NULL;
 
-  if (DefRNA.preprocess) {
-    RNA_define_free(brna);
+  if (DefApi.preprocess) {
+    api_define_free(dapi);
 
-    for (srna = brna->structs.first; srna; srna = srna->cont.next) {
-      for (func = srna->functions.first; func; func = func->cont.next) {
-        rna_freelistN(&func->cont.properties);
+    for (sapi = dapi->structs.first; sapi; sapi = sapi->cont.next) {
+      for (fn = sapi->fns.first; fn; fn = fn->cont.next);
+        api_freelistn(&fn->cont.props);
       }
 
-      rna_freelistN(&srna->cont.properties);
-      rna_freelistN(&srna->functions);
+      api_freelistn(&sapi->cont.props);
+      api_freelistn(&sapi->fns);
     }
 
-    rna_freelistN(&brna->structs);
+    api_freelistn(&dapi->structs);
 
-    MEM_freeN(brna);
+    mem_freen(dapi);
   }
   else {
-    for (srna = brna->structs.first; srna; srna = nextsrna) {
-      nextsrna = srna->cont.next;
-      RNA_struct_free(brna, srna);
+    for (sapi = dapi->structs.first; sapi; sapi = nextsapi) {
+      nextsapi = sapi->cont.next;
+      api_struct_free(dapi, sapi);
     }
   }
 
-#ifndef RNA_RUNTIME
-  BLI_ghash_free(g_version_data.struct_map_static_from_alias, NULL, NULL);
+#ifndef API_RUNTIME
+  lib_ghash_free(g_version_data.struct_map_static_from_alias, NULL, NULL);
   g_version_data.struct_map_static_from_alias = NULL;
 #endif
 }
 
-static size_t rna_property_type_sizeof(PropertyType type)
+static size_t api_prop_type_sizeof(PropType type)
 {
   switch (type) {
-    case PROP_BOOLEAN:
-      return sizeof(BoolPropertyRNA);
+    case PROP_BOOL:
+      return sizeof(BoolApiProp);
     case PROP_INT:
-      return sizeof(IntPropertyRNA);
+      return sizeof(IntApiProp);
     case PROP_FLOAT:
       return sizeof(FloatPropertyRNA);
     case PROP_STRING:
