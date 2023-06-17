@@ -1004,14 +1004,14 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     api_def_prop_ui_text(prop, "RNA", "RNA type definition");
 
     if (ApiDef.preprocess) {
-      api_def_property_struct_type(prop, "Struct");
-      api_def_property_pointer_funcs(prop, "rna_builtin_type_get", NULL, NULL, NULL);
+      api_def_prop_struct_type(prop, "Struct");
+      api_def_prop_pointer_funcs(prop, "rna_builtin_type_get", NULL, NULL, NULL);
     }
     else {
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
       ApiPtrProp *pprop = (ApiPtrProp *)prop;
-      pprop->get = rna_builtin_type_get;
-      pprop->type = &RNA_Struct;
+      pprop->get = api_builtin_type_get;
+      pprop->type = &api_Struct;
 #endif
     }
   }
