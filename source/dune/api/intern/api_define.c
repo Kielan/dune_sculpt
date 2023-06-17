@@ -682,9 +682,9 @@ DuneApi *api_create(void)
   ApiDef.error = false;
   ApiDef.preprocess = true;
 
-  ApiDef.sdna = types_stype_from_data(typestr, typelen, false, false, &error_message);
-  if (ApiDef.sdna == NULL) {
-    LOG_ERROR(&LOG, "Failed to decode SDNA: %s.", error_message);
+  ApiDef.sype = types_stype_from_data(typestr, typelen, false, false, &error_message);
+  if (ApiDef.stype == NULL) {
+    LOG_ERROR(&LOG, "Failed to decode Stype: %s.", error_message);
     ApiDef.error = true;
   }
 
@@ -695,7 +695,7 @@ DuneApi *api_create(void)
   types_alias_maps(TYPE_RENAME_STATIC_FROM_ALIAS, &g_version_data.struct_map_static_from_alias, NULL);
 #endif
 
-  return bapi;
+  return dapi;
 }
 
 void api_define_free(DuneApi *UNUSED(dapi))
@@ -776,7 +776,7 @@ void api_struct_free(DuneApi *dapi, ApiStruct *sapi)
   ApiProp *parm, *nextparm;
 
 #  if 0
-  if (srna->flag & STRUCT_RUNTIME) {
+  if (sapi->flag & STRUCT_RUNTIME) {
     if (api_struct_py_type_get(sapi)) {
       fprintf(stderr, "%s '%s' freed while holding a python reference.", sapi->id);
     }
@@ -796,7 +796,7 @@ void api_struct_free(DuneApi *dapi, ApiStruct *sapi)
   for (fn = sapi->fns.first; fn; fn = nextfn) {
     nextfn = fn->cont.next;
 
-    for (parm = fn->cont.properties.first; parm; parm = nextparm) {
+    for (parm = fn->cont.props.first; parm; parm = nextparm) {
       nextparm = parm->next;
 
       api_def_prop_free_ptrs(parm);
@@ -921,7 +921,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     sapi->base = sapifrom;
 
     if (ApiDef.preprocess) {
-      dsfrom = api_find_def_struct(srnafrom);
+      dsfrom = api_find_def_struct(sapifrom);
     }
     else {
       if (sapifrom->flag & STRUCT_PUBLIC_NAMESPACE_INHERIT) {
@@ -937,10 +937,10 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   sapi->name = id; /* may be overwritten later RNA_def_struct_ui_text */
   sapi->description = "";
   /* may be overwritten later RNA_def_struct_translation_context */
-  sapi->translation_context = BLT_I18NCONTEXT_DEFAULT_BPYRNA;
-  if (!srnafrom) {
-    srna->icon = ICON_DOT;
-    srna->flag |= STRUCT_UNDO;
+  sapi->translation_cxt = LANG_I18NCONTEXT_DEFAULT_BPYRNA;
+  if (!sapifrom) {
+    sapi->icon = ICON_DOT;
+    sapi->flag |= STRUCT_UNDO;
   }
 
   if (DefRNA.preprocess) {
@@ -967,7 +967,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     sapi->flag |= STRUCT_RUNTIME;
   }
 
-  if (sapofrom) {
+  if (sapifrom) {
     sapi->nameprop = sapifrom->nameprop;
     sapi->iterprop = sapifrom->iterprop;
   }
@@ -980,9 +980,9 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     if (ApiDef.preprocess) {
       api_def_prop_struct_type(prop, "Property");
       api_def_prop_collection_funcs(prop,
-                                        "rna_builtin_properties_begin",
-                                        "rna_builtin_properties_next",
-                                        "rna_iterator_listbase_end",
+                                    "api_builtin_props_begin",
+                                    "api_builtin_props_next",
+                                    "api_iter_list_end",
                                         "rna_builtin_properties_get",
                                         NULL,
                                         NULL,
