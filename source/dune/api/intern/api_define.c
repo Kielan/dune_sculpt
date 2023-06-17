@@ -991,21 +991,21 @@ StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRN
     }
     else {
 #ifdef RNA_RUNTIME
-      CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)prop;
-      cprop->begin = rna_builtin_properties_begin;
-      cprop->next = rna_builtin_properties_next;
-      cprop->get = rna_builtin_properties_get;
-      cprop->item_type = &RNA_Property;
+      CollectionPropertyRNA *cprop = (ApiCollectionProp *)prop;
+      cprop->begin = api_builtin_props_begin;
+      cprop->next = api_builtin_props_next;
+      cprop->get = api_builtin_props_get;
+      cprop->item_type = &api_prop;
 #endif
     }
 
-    prop = RNA_def_property(&srna->cont, "rna_type", PROP_POINTER, PROP_NONE);
-    RNA_def_property_flag(prop, PROP_HIDDEN);
-    RNA_def_property_ui_text(prop, "RNA", "RNA type definition");
+    prop = api_def_prop(&srna->cont, "rna_type", PROP_POINTER, PROP_NONE);
+    api_def_prop_flag(prop, PROP_HIDDEN);
+    api_def_prop_ui_text(prop, "RNA", "RNA type definition");
 
-    if (DefRNA.preprocess) {
-      RNA_def_property_struct_type(prop, "Struct");
-      RNA_def_property_pointer_funcs(prop, "rna_builtin_type_get", NULL, NULL, NULL);
+    if (ApiDef.preprocess) {
+      api_def_property_struct_type(prop, "Struct");
+      api_def_property_pointer_funcs(prop, "rna_builtin_type_get", NULL, NULL, NULL);
     }
     else {
 #ifdef RNA_RUNTIME
