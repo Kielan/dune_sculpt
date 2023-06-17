@@ -1039,11 +1039,11 @@ ApiStruct *api_def_struct(DuneApi *dapi, const char *id, const char *from)
   return api_def_struct_ptr(dapi, id, sapifrom);
 }
 
-void RNA_def_struct_sdna(StructRNA *srna, const char *structname)
+void api_def_struct_stype(ApiStruct *sapi, const char *structname)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
