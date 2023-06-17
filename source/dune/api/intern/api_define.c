@@ -870,7 +870,7 @@ static size_t api_prop_type_sizeof(PropType type)
     case PROP_ENUM:
       return sizeof(ApiEnumProp);
     case PROP_PTR:
-      return sizeof(ApiPointerProp);
+      return sizeof(ApiPtrProp);
     case PROP_COLLECTION:
       return sizeof(ApiCollectionProp);
     default:
@@ -882,8 +882,8 @@ static ApiStructDef *api_find_def_struct(ApiStruct *sapi)
 {
   ApiStructDef *ds;
 
-  for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
-    if (ds->srna == srna) {
+  for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
+    if (ds->sapi == sapi) {
       return ds;
     }
   }
@@ -891,13 +891,13 @@ static ApiStructDef *api_find_def_struct(ApiStruct *sapi)
   return NULL;
 }
 
-StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRNA *srnafrom)
+ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom)
 {
-  StructRNA *srna;
-  StructDefRNA *ds = NULL, *dsfrom = NULL;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiStructDef *ds = NULL, *dsfrom = NULL;
+  ApiProp *prop;
 
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     char error[512];
 
     if (rna_validate_identifier(identifier, error, false) == 0) {
