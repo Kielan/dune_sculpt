@@ -864,23 +864,23 @@ static size_t api_prop_type_sizeof(PropType type)
     case PROP_INT:
       return sizeof(IntApiProp);
     case PROP_FLOAT:
-      return sizeof(FloatPropertyRNA);
+      return sizeof(ApiFloatProperty);
     case PROP_STRING:
-      return sizeof(StringPropertyRNA);
+      return sizeof(ApiStringPropertyRNA);
     case PROP_ENUM:
-      return sizeof(EnumPropertyRNA);
+      return sizeof(ApiEnumPropertyRNA);
     case PROP_POINTER:
-      return sizeof(PointerPropertyRNA);
+      return sizeof(ApiPointerPropertyRNA);
     case PROP_COLLECTION:
-      return sizeof(CollectionPropertyRNA);
+      return sizeof(ApiCollectionPropertyRNA);
     default:
       return 0;
   }
 }
 
-static StructDefRNA *rna_find_def_struct(StructRNA *srna)
+static ApiStructDef *api_find_def_struct(ApiStruct *sapi)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
   for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
     if (ds->srna == srna) {
