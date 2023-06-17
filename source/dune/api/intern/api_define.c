@@ -943,16 +943,16 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     sapi->flag |= STRUCT_UNDO;
   }
 
-  if (DefRNA.preprocess) {
-    srna->flag |= STRUCT_PUBLIC_NAMESPACE;
+  if (ApiDefRNA.preprocess) {
+    sapi->flag |= STRUCT_PUBLIC_NAMESPACE;
   }
 
-  rna_brna_structs_add(brna, srna);
+  rna_dapi_structs_add(dapi, sapi);
 
-  if (DefRNA.preprocess) {
-    ds = MEM_callocN(sizeof(StructDefRNA), "StructDefRNA");
+  if (ApiDefRNA.preprocess) {
+    ds = mem_callocN(sizeof(StructDefRNA), "StructDefRNA");
     ds->srna = srna;
-    rna_addtail(&DefRNA.structs, ds);
+    api_addtail(&ApiDefRNA.structs, ds);
 
     if (dsfrom) {
       ds->dnafromname = dsfrom->dnaname;
@@ -1100,31 +1100,31 @@ void RNA_def_struct_name_property(struct StructRNA *srna, struct PropertyRNA *pr
     CLOG_ERROR(&LOG, "\"%s.%s\", must be a string property.", srna->identifier, prop->identifier);
     DefRNA.error = true;
   }
-  else if (srna->nameproperty != NULL) {
+  else if (sapi->nameprop != NULL) {
     CLOG_ERROR(
         &LOG, "\"%s.%s\", name property is already set.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    ApiDefRNA.error = true;
   }
   else {
-    srna->nameproperty = prop;
+    srna->nameprop = prop;
   }
 }
 
-void RNA_def_struct_nested(BlenderRNA *brna, StructRNA *srna, const char *structname)
+void api_def_struct_nested(BlenderRNA *brna, StructRNA *srna, const char *structname)
 {
-  StructRNA *srnafrom;
+  ApiStruct *srnafrom;
 
   /* find struct to derive from */
-  srnafrom = BLI_ghash_lookup(brna->structs_map, structname);
+  sapifrom = lib_ghash_lookup(brna->structs_map, structname);
   if (!srnafrom) {
     CLOG_ERROR(&LOG, "struct %s not found for %s.", structname, srna->identifier);
-    DefRNA.error = true;
+    ApiDef.error = true;
   }
 
-  srna->nested = srnafrom;
+  sapi->nested = sapifrom;
 }
 
-void RNA_def_struct_flag(StructRNA *srna, int flag)
+void api_def_struct_flag(ApiStruct *sapi, int flag)
 {
   srna->flag |= flag;
 }
