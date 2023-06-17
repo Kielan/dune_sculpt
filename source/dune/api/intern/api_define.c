@@ -911,24 +911,24 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
 
   if (sapifrom) {
     /* copy from struct to derive stuff, a bit clumsy since we can't
-     * use MEM_dupallocN, data structs may not be alloced but builtin */
-    memcpy(srna, srnafrom, sizeof(StructRNA));
-    srna->cont.prophash = NULL;
-    BLI_listbase_clear(&srna->cont.properties);
-    BLI_listbase_clear(&srna->functions);
-    srna->py_type = NULL;
+     * use mem_dupallocn, data structs may not be alloced but builtin */
+    memcpy(sapi, sapifrom, sizeof(ApiStuct));
+    sapi->cont.prophash = NULL;
+    lib_list_clear(&sapi->cont.props);
+    lib_list_clear(&sapi->fns);
+    sapi->py_type = NULL;
 
-    srna->base = srnafrom;
+    sapi->base = sapifrom;
 
-    if (DefRNA.preprocess) {
-      dsfrom = rna_find_def_struct(srnafrom);
+    if (ApiDef.preprocess) {
+      dsfrom = api_find_def_struct(srnafrom);
     }
     else {
-      if (srnafrom->flag & STRUCT_PUBLIC_NAMESPACE_INHERIT) {
-        srna->flag |= STRUCT_PUBLIC_NAMESPACE | STRUCT_PUBLIC_NAMESPACE_INHERIT;
+      if (sapifrom->flag & STRUCT_PUBLIC_NAMESPACE_INHERIT) {
+        sapi->flag |= STRUCT_PUBLIC_NAMESPACE | STRUCT_PUBLIC_NAMESPACE_INHERIT;
       }
       else {
-        srna->flag &= ~(STRUCT_PUBLIC_NAMESPACE | STRUCT_PUBLIC_NAMESPACE_INHERIT);
+        sapi->flag &= ~(STRUCT_PUBLIC_NAMESPACE | STRUCT_PUBLIC_NAMESPACE_INHERIT);
       }
     }
   }
