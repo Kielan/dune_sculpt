@@ -1009,7 +1009,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     }
     else {
 #ifdef RNA_RUNTIME
-      PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+      ApiPtrProp *pprop = (ApiPtrProp *)prop;
       pprop->get = rna_builtin_type_get;
       pprop->type = &RNA_Struct;
 #endif
@@ -1019,24 +1019,24 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   return srna;
 }
 
-StructRNA *RNA_def_struct(BlenderRNA *brna, const char *identifier, const char *from)
+ApiStruct *api_def_struct(DuneApi *dapi, const char *id, const char *from)
 {
-  StructRNA *srnafrom = NULL;
+  ApiStruct *sapifrom = NULL;
 
-  /* only use RNA_def_struct() while pre-processing, otherwise use RNA_def_struct_ptr() */
-  BLI_assert(DefRNA.preprocess);
+  /* only use api_def_struct() while pre-processing, otherwise use RNA_def_struct_ptr() */
+  lib_assert(ApiDef.preprocess);
 
   if (from) {
     /* find struct to derive from */
-    /* Inline RNA_struct_find(...) because it won't link from here. */
-    srnafrom = BLI_ghash_lookup(brna->structs_map, from);
-    if (!srnafrom) {
-      CLOG_ERROR(&LOG, "struct %s not found to define %s.", from, identifier);
-      DefRNA.error = true;
+    /* Inline api_struct_find(...) because it won't link from here. */
+    sapifrom = lib_ghash_lookup(dapi->structs_map, from);
+    if (!sapifrom) {
+      CLOG_ERROR(&LOG, "struct %s not found to define %s.", from, id);
+      ApiDef.error = true;
     }
   }
 
-  return RNA_def_struct_ptr(brna, identifier, srnafrom);
+  return api_def_struct_ptr(dapi, id, sapifrom);
 }
 
 void RNA_def_struct_sdna(StructRNA *srna, const char *structname)
