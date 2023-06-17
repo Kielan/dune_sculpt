@@ -1068,24 +1068,24 @@ void api_def_struct_stype(ApiStruct *sapi, const char *structname)
 
 void RNA_def_struct_sdna_from(StructRNA *srna, const char *structname, const char *propname)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
 
-  ds = rna_find_def_struct(srna);
+  ds = api_find_def_struct(srna);
 
-  if (!ds->dnaname) {
+  if (!ds->typesname) {
     CLOG_ERROR(&LOG, "%s base struct must know DNA already.", structname);
     return;
   }
 
-  if (DNA_struct_find_nr_wrapper(DefRNA.sdna, structname) == -1) {
-    if (!DefRNA.silent) {
+  if (types_struct_find_nr_wrapper(ApiDef.stype, structname) == -1) {
+    if (!ApiDef.silent) {
       CLOG_ERROR(&LOG, "%s not found.", structname);
-      DefRNA.error = true;
+      ApiDef.error = true;
     }
     return;
   }
