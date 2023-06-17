@@ -174,24 +174,24 @@ static void api_dapi_structs_add(DuneApi *dapi, ApiStruct *sapi)
 
   /* This exception is only needed for pre-processing.
    * otherwise we don't allow empty names. */
-  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && (sapi->id[0] != '\0')) {
+  if ((sapi->flag & STRUCT_PUBLIC_NAMESPACE) && (sapi->id[0] != '\0')) {
     lib_ghash_insert(dapi->structs_map, (void *)sapi->id, sapi);
   }
 }
 
 #ifdef API_RUNTIME
-static void api_brna_structs_remove_and_free(DuneApi *dapi, StructRNA *srna)
+static void api_brna_structs_remove_and_free(DuneApi *dapi, ApiStruct *sapi)
 {
-  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && brna->structs_map) {
-    if (srna->id[0] != '\0') {
-      lib_ghash_remove(brna->structs_map, (void *)srna->identifier, NULL, NULL);
+  if ((sapi->flag & STRUCT_PUBLIC_NAMESPACE) && dapi->structs_map) {
+    if (sapi->id[0] != '\0') {
+      lib_ghash_remove(dapi->structs_map, (void *)sapi->id, NULL, NULL);
     }
   }
 
-  api_def_struct_free_ptrs(NULL, srna);
+  api_def_struct_free_ptrs(NULL, sapi);
 
   if (srna->flag & STRUCT_RUNTIME) {
-    api_freelinkn(&brna->structs, srna);
+    api_freelinkn(&dapi->structs, sapi);
   }
   brna->structs_len -= 1;
 }
@@ -207,7 +207,7 @@ static int types_struct_find_nr_wrapper(const struct SDNA *sdna, const char *str
   struct_name = lib_ghash_lookup_default(
       g_version_data.struct_map_static_from_alias, struct_name, (void *)struct_name);
 #endif
-  return types_struct_find_nr(sdna, struct_name);
+  return types_struct_find_nr(stypr, struct_name);
 }
 
 ApiStructDef *api_find_struct_def(ApiStruct *srna)
