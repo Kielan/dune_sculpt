@@ -864,15 +864,15 @@ static size_t api_prop_type_sizeof(PropType type)
     case PROP_INT:
       return sizeof(IntApiProp);
     case PROP_FLOAT:
-      return sizeof(ApiFloatProperty);
+      return sizeof(ApiFloatProp);
     case PROP_STRING:
-      return sizeof(ApiStringPropertyRNA);
+      return sizeof(ApiStringProp);
     case PROP_ENUM:
-      return sizeof(ApiEnumPropertyRNA);
-    case PROP_POINTER:
-      return sizeof(ApiPointerPropertyRNA);
+      return sizeof(ApiEnumProp);
+    case PROP_PTR:
+      return sizeof(ApiPointerProp);
     case PROP_COLLECTION:
-      return sizeof(ApiCollectionPropertyRNA);
+      return sizeof(ApiCollectionProp);
     default:
       return 0;
   }
@@ -906,10 +906,10 @@ StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRN
     }
   }
 
-  srna = MEM_callocN(sizeof(StructRNA), "StructRNA");
-  DefRNA.laststruct = srna;
+  sapi = mem_callocn(sizeof(ApiStruct), "StructRNA");
+  ApiDef.laststruct = sapi;
 
-  if (srnafrom) {
+  if (sapifrom) {
     /* copy from struct to derive stuff, a bit clumsy since we can't
      * use MEM_dupallocN, data structs may not be alloced but builtin */
     memcpy(srna, srnafrom, sizeof(StructRNA));
