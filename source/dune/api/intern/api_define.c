@@ -961,25 +961,25 @@ StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRN
 
   /* in preprocess, try to find sdna */
   if (DefRNA.preprocess) {
-    RNA_def_struct_sdna(srna, srna->identifier);
+    api_def_struct_stype(sapi, sapi->id);
   }
   else {
-    srna->flag |= STRUCT_RUNTIME;
+    sapi->flag |= STRUCT_RUNTIME;
   }
 
-  if (srnafrom) {
-    srna->nameprop = sapifrom->nameprop;
-    srna->iterprop = sapifrom->iterprop;
+  if (sapofrom) {
+    sapi->nameprop = sapifrom->nameprop;
+    sapi->iterprop = sapifrom->iterprop;
   }
   else {
     /* define some builtin properties */
-    prop = RNA_def_property(&srna->cont, "rna_properties", PROP_COLLECTION, PROP_NONE);
+    prop = api_def_prop(&sapi->cont, "api_props", PROP_COLLECTION, PROP_NONE);
     prop->flag_internal |= PROP_INTERN_BUILTIN;
-    RNA_def_property_ui_text(prop, "Properties", "RNA property collection");
+    api_def_prop_ui_text(prop, "Props", "Api prop collection");
 
-    if (DefRNA.preprocess) {
-      RNA_def_property_struct_type(prop, "Property");
-      RNA_def_property_collection_funcs(prop,
+    if (ApiDef.preprocess) {
+      api_def_prop_struct_type(prop, "Property");
+      api_def_prop_collection_funcs(prop,
                                         "rna_builtin_properties_begin",
                                         "rna_builtin_properties_next",
                                         "rna_iterator_listbase_end",
