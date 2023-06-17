@@ -671,7 +671,7 @@ void api_id_sanitize(char *id, int prop)
 
 DuneApi *api_create(void)
 {
-  DuneApi *bapi;
+  DuneApi *dapi;
 
   dapi = mem_callocn(sizeof(DuneApi), "DuneApi");
   const char *error_message = NULL;
@@ -968,8 +968,8 @@ StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRN
   }
 
   if (srnafrom) {
-    srna->nameproperty = srnafrom->nameproperty;
-    srna->iteratorproperty = srnafrom->iteratorproperty;
+    srna->nameprop = sapifrom->nameprop;
+    srna->iterprop = sapifrom->iterprop;
   }
   else {
     /* define some builtin properties */
