@@ -1196,18 +1196,18 @@ void RNA_def_struct_path_func(StructRNA *srna, const char *path)
   }
 }
 
-void RNA_def_struct_identifier(BlenderRNA *brna, StructRNA *srna, const char *identifier)
+void api_def_struct_id(DuneApi *dapi, ApiStruct *sapi, const char *id)
 {
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only at runtime.");
     return;
   }
 
-  /* Operator registration may set twice, see: operator_properties_init */
-  if (srna->flag & STRUCT_PUBLIC_NAMESPACE) {
-    if (identifier != srna->identifier) {
-      if (srna->identifier[0] != '\0') {
-        BLI_ghash_remove(brna->structs_map, (void *)srna->identifier, NULL, NULL);
+  /* Operator registration may set twice, see: op_props_init */
+  if (sapi->flag & STRUCT_PUBLIC_NAMESPACE) {
+    if (id != sapi->id) {
+      if (sapi->id[0] != '\0') {
+        lib_ghash_remove(dapi->structs_map, (void *)sapi->id, NULL, NULL);
       }
       if (identifier[0] != '\0') {
         BLI_ghash_insert(brna->structs_map, (void *)identifier, srna);
