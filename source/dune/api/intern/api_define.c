@@ -180,7 +180,7 @@ static void api_dapi_structs_add(DuneApi *dapi, ApiStruct *sapi)
 }
 
 #ifdef API_RUNTIME
-static void api_brna_structs_remove_and_free(DuneApi *dapi, ApiStruct *sapi)
+static void api_dapi_structs_remove_and_free(DuneApi *dapi, ApiStruct *sapi)
 {
   if ((sapi->flag & STRUCT_PUBLIC_NAMESPACE) && dapi->structs_map) {
     if (sapi->id[0] != '\0') {
@@ -190,10 +190,10 @@ static void api_brna_structs_remove_and_free(DuneApi *dapi, ApiStruct *sapi)
 
   api_def_struct_free_ptrs(NULL, sapi);
 
-  if (srna->flag & STRUCT_RUNTIME) {
+  if (sapi->flag & STRUCT_RUNTIME) {
     api_freelinkn(&dapi->structs, sapi);
   }
-  brna->structs_len -= 1;
+  dapi->structs_len -= 1;
 }
 #endif
 
@@ -212,7 +212,7 @@ static int types_struct_find_nr_wrapper(const struct SDNA *sdna, const char *str
 
 ApiStructDef *api_find_struct_def(ApiStruct *srna)
 {
-  ApiStructDef *dsrna;
+  ApiStructDef *dsapi;
 
   if (!ApiDef.preprocess) {
     /* we should never get here */
@@ -900,13 +900,13 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   if (ApiDef.preprocess) {
     char error[512];
 
-    if (rna_validate_identifier(identifier, error, false) == 0) {
-      CLOG_ERROR(&LOG, "struct identifier \"%s\" error - %s", identifier, error);
-      DefRNA.error = true;
+    if (api_validate_id(id, error, false) == 0) {
+      CLOG_ERROR(&LOG, "struct id \"%s\" error - %s", identifier, error);
+      ApiDef.error = true;
     }
   }
 
-  sapi = mem_callocn(sizeof(ApiStruct), "StructRNA");
+  sapi = mem_callocn(sizeof(ApiStruct), "ApiStruc");
   ApiDef.laststruct = sapi;
 
   if (sapifrom) {
@@ -933,11 +933,11 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     }
   }
 
-  srna->identifier = identifier;
-  srna->name = identifier; /* may be overwritten later RNA_def_struct_ui_text */
-  srna->description = "";
+  sapi->id = id;
+  sapi->name = id; /* may be overwritten later RNA_def_struct_ui_text */
+  sapi->description = "";
   /* may be overwritten later RNA_def_struct_translation_context */
-  srna->translation_context = BLT_I18NCONTEXT_DEFAULT_BPYRNA;
+  sapi->translation_context = BLT_I18NCONTEXT_DEFAULT_BPYRNA;
   if (!srnafrom) {
     srna->icon = ICON_DOT;
     srna->flag |= STRUCT_UNDO;
