@@ -503,19 +503,19 @@ static void api_def_canvas_surface(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Effect Type", "");
 
   prop = api_def_prop(sapi, "use_dry_log", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_bool_stype(prop, NULL, "flags", MOD_DPAINT_DRY_LOG);
-  RNA_def_property_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_DRY_LOG);
+  api_def_prop_ui_text(
       prop, "Slow", "Use logarithmic drying (makes high values to dry faster than low values)");
 
-  prop = RNA_def_property(srna, "use_dissolve_log", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_DISSOLVE_LOG);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_dissolve_log", PROP_BOOLEAN, PROP_NONE);
+  apu_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_DISSOLVE_LOG);
+  api_def_prop_ui_text(
       prop, "Slow", "Use logarithmic dissolve (makes high values to fade faster than low values)");
 
-  prop = RNA_def_property(srna, "use_spread", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "effect", MOD_DPAINT_EFFECT_DO_SPREAD);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_spread", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "effect", MOD_DPAINT_EFFECT_DO_SPREAD);
+  api_def_prop_ui_text(
       prop, "Use Spread", "Process spread effect (spread wet paint around surface)");
   RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_reset");
 
