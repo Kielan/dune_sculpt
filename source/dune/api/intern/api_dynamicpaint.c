@@ -4,11 +4,11 @@
 #include "dune_dynamicpaint.h"
 #include "dune_modifier.h"
 
-#include "dune_dynamicpaint_types.h"
-#include "dune_modifier_types.h"
-#include "dune_object_force_types.h"
-#include "dune_object_types.h"
-#include "dune_scene_types.h"
+#include "types_dynamicpaint.h"
+#include "types_modifier.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_scene.h"
 
 #include "api_define.h"
 #include "api_enum_types.h"
