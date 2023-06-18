@@ -1430,30 +1430,30 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
         break;
       }
       case PROP_STRING: {
-        DefRNA.silent = true;
-        RNA_def_property_string_sdna(prop, NULL, identifier);
-        DefRNA.silent = false;
+        ApiDef.silent = true;
+        api_def_prop_string_styor(prop, NULL, identifier);
+        ApiDef.silent = false;
         break;
       }
       case PROP_ENUM:
         ApiDef.silent = true;
-        api_def_prop_enum_sdna(prop, NULL, identifier);
+        api_def_prop_enum_stype(prop, NULL, identifier);
         ApiDef.silent = false;
         break;
       case PROP_POINTER:
         DefRNA.silent = true;
-        RNA_def_property_pointer_sdna(prop, NULL, identifier);
+        api_def_prop_ptr_styoe(prop, NULL, identifier);
         DefRNA.silent = false;
         break;
       case PROP_COLLECTION:
         DefRNA.silent = true;
-        RNA_def_property_collection_sdna(prop, NULL, identifier, NULL);
+        api_def_property_collection_stype(prop, NULL, id, NULL);
         DefRNA.silent = false;
         break;
     }
   }
   else {
-    prop->flag |= PROP_IDPROPERTY;
+    prop->flag |= PROP_IDPROP;
     prop->flag_internal |= PROP_INTERN_RUNTIME;
 #ifdef RNA_RUNTIME
     if (cont->prophash) {
