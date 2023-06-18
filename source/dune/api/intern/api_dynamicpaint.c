@@ -497,13 +497,13 @@ static void api_def_canvas_surface(DuneApi *dapi)
   /*
    * Effect Settings
    */
-  prop = RNA_def_property(srna, "effect_ui", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, prop_dynamicpaint_effecttype);
-  RNA_def_property_ui_text(prop, "Effect Type", "");
+  prop = api_def_prop(sapi, "effect_ui", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, prop_dynamicpaint_effecttype);
+  api_def_prop_ui_text(prop, "Effect Type", "");
 
-  prop = RNA_def_property(srna, "use_dry_log", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_DRY_LOG);
+  prop = api_def_prop(sapi, "use_dry_log", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_bool_stype(prop, NULL, "flags", MOD_DPAINT_DRY_LOG);
   RNA_def_property_ui_text(
       prop, "Slow", "Use logarithmic drying (makes high values to dry faster than low values)");
 
