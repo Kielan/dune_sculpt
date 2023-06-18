@@ -1794,9 +1794,9 @@ void RNA_def_property_struct_type(PropertyRNA *prop, const char *type)
 void RNA_def_property_struct_runtime(StructOrFunctionRNA *cont, PropertyRNA *prop, StructRNA *type)
 {
   /* Never valid when defined from python. */
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStruct *sapi = ApiDef.laststruct;
 
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only at runtime.");
     return;
   }
@@ -1805,19 +1805,19 @@ void RNA_def_property_struct_runtime(StructOrFunctionRNA *cont, PropertyRNA *pro
 
   switch (prop->type) {
     case PROP_POINTER: {
-      PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+      ApiPtrProp *pprop = (ApiPtrProp *)prop;
       pprop->type = type;
 
       /* Check between `cont` and `srna` is mandatory, since when defined from python
        * `DefRNA.laststruct` is not valid.
        * This is not an issue as bpy code already checks for this case on its own. */
-      if (cont == srna && (srna->flag & STRUCT_NO_DATABLOCK_IDPROPERTIES) != 0 && is_id_type) {
+      if (cont == sapi && (sapi->flag & STRUCT_NO_DATABLOCK_IDPROPS) != 0 && is_id_type) {
         CLOG_ERROR(&LOG,
-                   "\"%s.%s\", this struct type (probably an Operator, Keymap or UserPreference) "
-                   "does not accept ID pointer properties.",
-                   CONTAINER_RNA_ID(cont),
-                   prop->identifier);
-        DefRNA.error = true;
+                   "\"%s.%s\", this struct type (probably an Op, Keymap or UserPref) "
+                   "does not accept Id pointer props.",
+                   CONTAINER_API_ID(cont),
+                   prop->id);
+        ApiDef.error = true;
         return;
       }
 
@@ -1828,7 +1828,7 @@ void RNA_def_property_struct_runtime(StructOrFunctionRNA *cont, PropertyRNA *pro
       break;
     }
     case PROP_COLLECTION: {
-      CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)prop;
+      ApiCollectionProp *cprop = (CollectionPropertyRNA *)prop;
       cprop->item_type = type;
       break;
     }
