@@ -466,26 +466,24 @@ static void api_def_canvas_surface(DuneApi *dapi)
       prop, "Radius Scale", "Adjust radius of proximity brushes or particles for this surface");
   api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
 
-  /*
-   * Initial Color
-   */
+  /* Initial Color */
 
-  prop = RNA_def_property(srna, "init_color_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, prop_dynamicpaint_init_color_type);
-  RNA_def_property_ui_text(prop, "Initial Color", "");
-  RNA_def_property_update(prop,
-                          NC_MATERIAL | ND_SHADING_DRAW | ND_MODIFIER,
-                          "rna_DynamicPaintSurface_initialcolortype");
+  prop = api_def_prop(sapi, "init_color_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, prop_dynamicpaint_init_color_type);
+  api_def_prop_ui_text(prop, "Initial Color", "");
+  api_def_prop_update(prop,
+                      NC_MATERIAL | ND_SHADING_DRAW | ND_MOD,
+                      "api_DynamicPaintSurface_initialcolortype");
 
-  prop = RNA_def_property(srna, "init_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Color", "Initial color of the surface");
-  RNA_def_property_update(
-      prop, NC_MATERIAL | ND_SHADING_DRAW | ND_MODIFIER, "rna_DynamicPaintSurface_reset");
+  prop = RNA_def_prop(sapi, "init_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Color", "Initial color of the surface");
+  api_def_prop_update(
+      prop, NC_MATERIAL | ND_SHADING_DRAW | ND_MOD, "api_DynamicPaintSurface_reset");
 
-  prop = RNA_def_property(srna, "init_texture", PROP_POINTER, PROP_NONE);
+  prop = RNA_def_property(srna, "init_texture", PROP_PTR, PROP_NONE);
   RNA_def_property_flag(prop, PROP_EDITABLE);
   RNA_def_property_ui_text(prop, "Texture", "");
   RNA_def_property_update(
