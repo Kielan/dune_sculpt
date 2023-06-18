@@ -1241,30 +1241,30 @@ void RNA_def_struct_ui_icon(StructRNA *srna, int icon)
   srna->icon = icon;
 }
 
-void RNA_def_struct_translation_context(StructRNA *srna, const char *context)
+void api_def_struct_translation_cxt(ApiStruct *sapi, const char *cxt)
 {
-  srna->translation_context = context ? context : BLT_I18NCONTEXT_DEFAULT_BPYRNA;
+  sapi->translation_cxt = cxt ? cxt : LANG_CXT_DEFAULT_BPYAPI;
 }
 
 /* Property Definition */
 
-PropertyRNA *RNA_def_property(StructOrFunctionRNA *cont_,
-                              const char *identifier,
-                              int type,
-                              int subtype)
+ApiProp *api_def_prop(ApiStructOrFn *cont_,
+                      const char *id,
+                      int type,
+                      int subtype)
 {
-  // StructRNA *srna = DefRNA.laststruct; /* Invalid for Python defined props. */
-  ContainerRNA *cont = cont_;
-  ContainerDefRNA *dcont;
-  PropertyDefRNA *dprop = NULL;
-  PropertyRNA *prop;
+  // ApiStruct *sapi = ApiDef.laststruct; /* Invalid for Python defined props. */
+  ApiContainer *cont = cont_;
+  ApiContainerDef *dcont;
+  ApiPropertyDef *dprop = NULL;
+  ApiProperty *prop;
 
-  if (DefRNA.preprocess) {
+  if (ApuDef.preprocess) {
     char error[512];
 
-    if (rna_validate_identifier(identifier, error, true) == 0) {
+    if (api_validate_id(id, error, true) == 0) {
       CLOG_ERROR(
-          &LOG, "prop id \"%s.%s\" - %s", CONTAINER_RNA_ID(cont), identifier, error);
+          &LOG, "prop id \"%s.%s\" - %s", CONTAINER_API_ID(cont), id, error);
       DefRNA.error = true;
     }
 
