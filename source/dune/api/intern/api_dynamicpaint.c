@@ -68,9 +68,9 @@ static char *api_DynamicPaintSurface_path(ApiPtr *ptr)
  * Surfaces
  */
 
-static void rna_DynamicPaint_redoModifier(Main *UNUSED(bmain),
-                                          Scene *UNUSED(scene),
-                                          PointerRNA *ptr)
+static void api_DynamicPaint_redoMod(Main *UNUSED(main),
+                                     Scene *UNUSED(scene),
+                                     Apitr *ptr)
 {
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
@@ -146,34 +146,34 @@ static ApiPtr api_PaintSurface_active_get(ApiPtr *ptr)
     }
     id++;
   }
-  return rna_pointer_inherit_refine(ptr, &RNA_DynamicPaintSurface, NULL);
+  return api_ptr_inherit_refine(ptr, &ApiDynamicPaintSurface, NULL);
 }
 
-static void rna_DynamicPaint_surfaces_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_DynamicPaint_surfaces_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
 #  if 0
-  rna_iterator_array_begin(
+  api_iter_array_begin(
       iter, (void *)canvas->surfaces, sizeof(PaintSurface), canvas->totsur, 0, 0);
 #  endif
-  rna_iterator_listbase_begin(iter, &canvas->surfaces, NULL);
+  api_iter_list_begin(iter, &canvas->surfaces, NULL);
 }
 
-static int rna_Surface_active_point_index_get(PointerRNA *ptr)
+static int api_Surface_active_point_index_get(ApiPtr *ptr)
 {
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
   return canvas->active_sur;
 }
 
-static void rna_Surface_active_point_index_set(struct PointerRNA *ptr, int value)
+static void api_Surface_active_point_index_set(struct ApiPtr *ptr, int value)
 {
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
   canvas->active_sur = value;
   return;
 }
 
-static void rna_Surface_active_point_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_Surface_active_point_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
 
@@ -219,45 +219,45 @@ static const EnumPropItem *api_DynamicPaint_surface_type_itemf(Cxt *UNUSED(C),
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   /* Paint type - available for all formats */
   tmp.value = MOD_DPAINT_SURFACE_T_PAINT;
-  tmp.identifier = "PAINT";
+  tmp.id = "PAINT";
   tmp.name = "Paint";
   tmp.icon = ICON_TPAINT_HLT;
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   /* Displace */
   if (ELEM(surface->format, MOD_DPAINT_SURFACE_F_VERTEX, MOD_DPAINT_SURFACE_F_IMAGESEQ)) {
     tmp.value = MOD_DPAINT_SURFACE_T_DISPLACE;
-    tmp.identifier = "DISPLACE";
+    tmp.id = "DISPLACE";
     tmp.name = "Displace";
     tmp.icon = ICON_MOD_DISPLACE;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
   /* Weight */
   if (surface->format == MOD_DPAINT_SURFACE_F_VERTEX) {
     tmp.value = MOD_DPAINT_SURFACE_T_WEIGHT;
-    tmp.identifier = "WEIGHT";
+    tmp.id = "WEIGHT";
     tmp.name = "Weight";
     tmp.icon = ICON_MOD_VERTEX_WEIGHT;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
   /* Height waves */
   {
     tmp.value = MOD_DPAINT_SURFACE_T_WAVE;
-    tmp.identifier = "WAVE";
+    tmp.id = "WAVE";
     tmp.name = "Waves";
     tmp.icon = ICON_MOD_WAVE;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -271,10 +271,10 @@ static void api_def_canvas_surfaces(DuneApi *dapi, ApiProp *cprop)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  api_def_prop_srna(cprop, "DynamicPaintSurfaces");
+  api_def_prop_sapi(cprop, "DynamicPaintSurfaces");
   sapi = api_def_struct(dapi, "DynamicPaintSurfaces", NULL);
-  RNA_def_struct_sdna(srna, "DynamicPaintCanvasSettings");
-  RNA_def_struct_ui_text(srna, "Canvas Surfaces", "Collection of Dynamic Paint Canvas surfaces");
+  api_def_struct_stype(sapi, "DynamicPaintCanvasSettings");
+  api_def_struct_ui_text(sapi, "Canvas Surfaces", "Collection of Dynamic Paint Canvas surfaces");
 
   prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
@@ -286,20 +286,20 @@ static void api_def_canvas_surfaces(DuneApi *dapi, ApiProp *cprop)
 
   prop = api_def_prop(sapi, "active", PROP_POINTER, PROP_NONE);
   api_def_prop_struct_type(prop, "DynamicPaintSurface");
-  api_def_prop_ptr_fns(prop, "rna_PaintSurface_active_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_PaintSurface_active_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Active Surface", "Active Dynamic Paint surface being displayed");
   api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 }
 
-static void rna_def_canvas_surface(BlenderRNA *brna)
+static void api_def_canvas_surface(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiProp *parm;
+  ApiFn *fn;
 
   /*  Surface format */
-  static const EnumPropertyItem prop_dynamicpaint_surface_format[] = {
+  static const EnumPropItem prop_dynamicpaint_surface_format[] = {
       /*{MOD_DPAINT_SURFACE_F_PTEX, "PTEX", ICON_TEXTURE_SHADED, "Ptex", ""}, */
       {MOD_DPAINT_SURFACE_F_VERTEX, "VERTEX", ICON_OUTLINER_DATA_MESH, "Vertex", ""},
       {MOD_DPAINT_SURFACE_F_IMAGESEQ, "IMAGE", ICON_FILE_IMAGE, "Image Sequence", ""},
@@ -396,7 +396,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   api_def_prop_int_stype(prop, NULL, "diss_speed");
   api_def_prop_range(prop, 1.0, 10000.0);
   api_def_prop_ui_range(prop, 1.0, 10000.0, 5, -1);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Dissolve Time", "Approximately in how many frames should dissolve happen");
 
   prop = api_def_prop(sapi, "use_drying", PROP_BOOL, PROP_NONE);
@@ -437,11 +437,11 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "End Frame", "Simulation end frame");
   RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 
-  prop = RNA_def_property(srna, "frame_substeps", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "substeps");
-  RNA_def_property_range(prop, 0.0, 20.0);
-  RNA_def_property_ui_range(prop, 0.0, 10, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "frame_substeps", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "substeps");
+  api_def_prop_range(prop, 0.0, 20.0);
+  api_def_prop_ui_range(prop, 0.0, 10, 1, -1);
+  api_def_prop_ui_text(
       prop, "Sub-Steps", "Do extra frames between scene frames to ensure smooth motion");
 
   prop = api_def_prop(sapi, "use_antialiasing", PROP_BOOLEAN, PROP_NONE);
