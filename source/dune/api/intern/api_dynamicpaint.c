@@ -266,13 +266,13 @@ static const EnumPropItem *api_DynamicPaint_surface_type_itemf(Cxt *UNUSED(C),
 #else
 
 /* canvas.canvas_surfaces */
-static void rna_def_canvas_surfaces(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_canvas_surfaces(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  RNA_def_property_srna(cprop, "DynamicPaintSurfaces");
-  srna = RNA_def_struct(brna, "DynamicPaintSurfaces", NULL);
+  api_def_prop_srna(cprop, "DynamicPaintSurfaces");
+  sapi = api_def_struct(dapi, "DynamicPaintSurfaces", NULL);
   RNA_def_struct_sdna(srna, "DynamicPaintCanvasSettings");
   RNA_def_struct_ui_text(srna, "Canvas Surfaces", "Collection of Dynamic Paint Canvas surfaces");
 
