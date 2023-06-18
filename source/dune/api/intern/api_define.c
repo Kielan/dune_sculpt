@@ -950,7 +950,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   api_dapi_structs_add(dapi, sapi);
 
   if (ApiDef.preprocess) {
-    ds = mem_callocN(sizeof(ApiStructDef), "ApiStructDef");
+    ds = mem_callocn(sizeof(ApiStructDef), "ApiStructDef");
     ds->srna = srna;
     api_addtail(&ApiDef.structs, ds);
 
@@ -1147,7 +1147,7 @@ void api_def_struct_refine_fn(ApiStruct *sapi, const char *refine)
   }
 
   if (refine) {
-    srna->refine = (StructRefineFunc)refine;
+    sapi->refine = (StructRefineFn)refine;
   }
 }
 
@@ -1174,25 +1174,25 @@ void api_def_struct_register_fns(ApiStruct *srna,
   }
 
   if (reg) {
-    srna->reg = (StructRegisterFn)reg;
+    sapi->reg = (StructRegisterFn)reg;
   }
   if (unreg) {
-    srna->unreg = (StructUnregisterFn)unreg;
+    sapi->unreg = (StructUnregisterFn)unreg;
   }
   if (instance) {
-    srna->instance = (StructInstanceFunc)instance;
+    sapi->instance = (StructInstanceFn)instance;
   }
 }
 
-void RNA_def_struct_path_func(StructRNA *srna, const char *path)
+void api_def_struct_path_fn(ApiStruct *sapi, const char *path)
 {
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
 
   if (path) {
-    srna->path = (StructPathFunc)path;
+    sapi->path = (StructPathFn)path;
   }
 }
 
@@ -1210,7 +1210,7 @@ void api_def_struct_id(DuneApi *dapi, ApiStruct *sapi, const char *id)
         lib_ghash_remove(dapi->structs_map, (void *)sapi->id, NULL, NULL);
       }
       if (identifier[0] != '\0') {
-        BLI_ghash_insert(brna->structs_map, (void *)identifier, srna);
+        lib_ghash_insert(dapu->structs_map, (void *)id, sapi);
       }
     }
   }
