@@ -1238,7 +1238,7 @@ void api_def_struct_ui_text(ApiStruct *sapi, const char *name, const char *descr
 
 void api_def_struct_ui_icon(ApiStruct *sapi, int icon)
 {
-  srna->icon = icon;
+  sapi->icon = icon;
 }
 
 void api_def_struct_translation_cxt(ApiStruct *sapi, const char *cxt)
@@ -1256,7 +1256,7 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
   // ApiStruct *sapi = ApiDef.laststruct; /* Invalid for Python defined props. */
   ApiContainer *cont = cont_;
   ApiContainerDef *dcont;
-  ApiPropertyDef *dprop = NULL;
+  ApiPropDef *dprop = NULL;
   ApiProp *prop;
 
   if (ApiDef.preprocess) {
@@ -1353,7 +1353,7 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
     case PROP_STRING: {
       ApiStringProp *sprop = (ApiStringProp *)prop;
       /* By default don't allow NULL string args, callers may clear. */
-      api_def_property_flag(prop, PROP_NEVER_NULL);
+      api_def_prop_flag(prop, PROP_NEVER_NULL);
       sprop->defaultvalue = "";
       break;
     }
@@ -1556,15 +1556,15 @@ void RNA_def_property_array(PropertyRNA *prop, int length)
   if (prop->arraydimension > 1) {
     CLOG_ERROR(&LOG,
                "\"%s.%s\", array dimensions has been set to %u but would be overwritten as 1.",
-               srna->identifier,
-               prop->identifier,
+               srna->id,
+               prop->id,
                prop->arraydimension);
     DefRNA.error = true;
     return;
   }
 
   switch (prop->type) {
-    case PROP_BOOLEAN:
+    case PROP_BOOL:
     case PROP_INT:
     case PROP_FLOAT:
       prop->arraylength[0] = length;
@@ -1574,47 +1574,47 @@ void RNA_def_property_array(PropertyRNA *prop, int length)
     default:
       CLOG_ERROR(&LOG,
                  "\"%s.%s\", only boolean/int/float can be array.",
-                 srna->identifier,
-                 prop->identifier);
-      DefRNA.error = true;
+                 sapi->id,
+                 prop->id);
+      ApiDef.error = true;
       break;
   }
 }
 
-const float rna_default_quaternion[4] = {1, 0, 0, 0};
-const float rna_default_axis_angle[4] = {0, 0, 1, 0};
-const float rna_default_scale_3d[3] = {1, 1, 1};
+const float api_default_quaternion[4] = {1, 0, 0, 0};
+const float api_default_axis_angle[4] = {0, 0, 1, 0};
+const float api_default_scale_3d[3] = {1, 1, 1};
 
 const int rna_matrix_dimsize_3x3[] = {3, 3};
 const int rna_matrix_dimsize_4x4[] = {4, 4};
 const int rna_matrix_dimsize_4x2[] = {4, 2};
 
-void RNA_def_property_multi_array(PropertyRNA *prop, int dimension, const int length[])
+void api_def_prop_multi_array(ApiProp *prop, int dimension, const int length[])
 {
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStruct *sapi = ApiDef.laststruct;
   int i;
 
   if (dimension < 1 || dimension > RNA_MAX_ARRAY_DIMENSION) {
     CLOG_ERROR(&LOG,
                "\"%s.%s\", array dimension must be between 1 and %d.",
-               srna->identifier,
-               prop->identifier,
-               RNA_MAX_ARRAY_DIMENSION);
-    DefRNA.error = true;
+               sapi->id,
+               prop->id,
+               API_MAX_ARRAY_DIMENSION);
+    ApiDef.error = true;
     return;
   }
 
   switch (prop->type) {
-    case PROP_BOOLEAN:
+    case PROP_BOOL:
     case PROP_INT:
     case PROP_FLOAT:
       break;
     default:
       CLOG_ERROR(&LOG,
                  "\"%s.%s\", only boolean/int/float can be array.",
-                 srna->identifier,
-                 prop->identifier);
-      DefRNA.error = true;
+                 sapi->id,
+                 prop->id);
+      ApiDefRNA.error = true;
       break;
   }
 
