@@ -1677,21 +1677,21 @@ void RNA_def_property_ui_range(
   }
 
   if (precision < -1 || precision > UI_PRECISION_FLOAT_MAX) {
-    CLOG_ERROR(&LOG, "\"%s.%s\", precision outside range.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    CLOG_ERROR(&LOG, "\"%s.%s\", precision outside range.", sapi->id, prop->id);
+    ApiDef.error = true;
   }
 #endif
 
   switch (prop->type) {
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
+      ApiIntProp *iprop = (ApiIntProp *)prop;
       iprop->softmin = (int)min;
       iprop->softmax = (int)max;
       iprop->step = (int)step;
       break;
     }
     case PROP_FLOAT: {
-      FloatPropertyRNA *fprop = (FloatPropertyRNA *)prop;
+      ApiFloatProp *fprop = (ApiFloatProp *)prop;
       fprop->softmin = (float)min;
       fprop->softmax = (float)max;
       fprop->step = (float)step;
@@ -1701,29 +1701,29 @@ void RNA_def_property_ui_range(
     default:
       CLOG_ERROR(
           &LOG, "\"%s.%s\", invalid type for ui range.", srna->identifier, prop->identifier);
-      DefRNA.error = true;
+      ApiDef.error = true;
       break;
   }
 }
 
-void RNA_def_property_ui_scale_type(PropertyRNA *prop, PropertyScaleType ui_scale_type)
+void apo_def_prop_ui_scale_type(ApiProp *prop, PropScaleType ui_scale_type)
 {
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStruct *sapi = ApiDef.laststruct;
 
   switch (prop->type) {
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
+      ApiIntProp *iprop = (ApiIntProp *)prop;
       iprop->ui_scale_type = ui_scale_type;
       break;
     }
     case PROP_FLOAT: {
-      FloatPropertyRNA *fprop = (FloatPropertyRNA *)prop;
+      ApiFloatProp *fprop = (ApiFloatProp *)prop;
       fprop->ui_scale_type = ui_scale_type;
       break;
     }
     default:
       CLOG_ERROR(&LOG, "\"%s.%s\", invalid type for scale.", srna->identifier, prop->identifier);
-      DefRNA.error = true;
+      ApiDef.error = true;
       break;
   }
 }
