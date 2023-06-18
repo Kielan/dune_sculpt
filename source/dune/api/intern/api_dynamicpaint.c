@@ -421,23 +421,23 @@ static void api_def_canvas_surface(DuneApi *dapi)
   api_def_prop_ui_text(prop, "UV Map", "UV map name");
   api_def_prop_string_fns(prop, NULL, NULL, "api_DynamicPaint_uvlayer_set");
 
-  prop = RNA_def_prop(sapi, "frame_start", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "start_frame");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_range(prop, 1.0, MAXFRAMEF);
-  RNA_def_prop_ui_range(prop, 1.0, 9999, 1, -1);
-  RNA_def_prop_ui_text(prop, "Start Frame", "Simulation start frame");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
+  prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "start_frame");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1.0, MAXFRAMEF);
+  api_def_prop_ui_range(prop, 1.0, 9999, 1, -1);
+  api_def_prop_ui_text(prop, "Start Frame", "Simulation start frame");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 
-  prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "end_frame");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1.0, MAXFRAMEF);
-  RNA_def_property_ui_range(prop, 1.0, 9999.0, 1, -1);
-  RNA_def_property_ui_text(prop, "End Frame", "Simulation end frame");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
+  prop = api_def_prop(sapi, "frame_end", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "end_frame");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1.0, MAXFRAMEF);
+  api_def_prop_ui_range(prop, 1.0, 9999.0, 1, -1);
+  api_def_prop_ui_text(prop, "End Frame", "Simulation end frame");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 
-  prop = api_def_prop(srna, "frame_substeps", PROP_INT, PROP_NONE);
+  prop = api_def_prop(sapi, "frame_substeps", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "substeps");
   api_def_prop_range(prop, 0.0, 20.0);
   api_def_prop_ui_range(prop, 0.0, 10, 1, -1);
