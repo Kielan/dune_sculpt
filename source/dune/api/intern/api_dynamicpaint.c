@@ -369,35 +369,33 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 
   prop = api_def_prop(sapi, "is_active", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_ACTIVE);
-  RNA_def_property_ui_text(prop, "Is Active", "Toggle whether surface is processed or ignored");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
+  api_def_prop_ui_text(prop, "Is Active", "Toggle whether surface is processed or ignored");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_DynamicPaint_redoMod");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Surface name");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_DynamicPaintSurface_uniqueName");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(srna, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Surface name");
+  api_def_prop_update(prop, NC_OBJECT, "api_DynamicPaintSurface_uniqueName");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "brush_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_pointer_sdna(prop, NULL, "brush_group");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "brush_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_ptr_stype(prop, NULL, "brush_group");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Brush Collection", "Only use brush objects from this collection");
-  RNA_def_property_update(
-      prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_reset_dependency");
+  api_def_prop_update(
+      prop, NC_OBJECT | ND_MODIFIER, "api_DynamicPaintSurface_reset_dependency");
 
-  /*
-   *   Paint, wet and displace
-   */
+  /* Paint, wet and displace */
 
-  prop = RNA_def_property(srna, "use_dissolve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_DISSOLVE);
-  RNA_def_property_ui_text(prop, "Dissolve", "Enable to make surface changes disappear over time");
+  prop = api_def_prop(sapi, "use_dissolve", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_DISSOLVE);
+  api_def_prop_ui_text(prop, "Dissolve", "Enable to make surface changes disappear over time");
 
-  prop = RNA_def_property(srna, "dissolve_speed", PROP_INT, PROP_TIME);
-  RNA_def_property_int_sdna(prop, NULL, "diss_speed");
-  RNA_def_property_range(prop, 1.0, 10000.0);
-  RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, -1);
+  prop = api_def_prop(sapi, "dissolve_speed", PROP_INT, PROP_TIME);
+  api_def_prop_int_stype(prop, NULL, "diss_speed");
+  api_def_prop_range(prop, 1.0, 10000.0);
+  api_def_prop_ui_range(prop, 1.0, 10000.0, 5, -1);
   RNA_def_property_ui_text(
       prop, "Dissolve Time", "Approximately in how many frames should dissolve happen");
 
