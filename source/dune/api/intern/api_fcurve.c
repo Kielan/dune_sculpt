@@ -219,23 +219,23 @@ static void rna_ChannelDriver_update_data(Main *bmain, Scene *scene, PointerRNA 
   WM_main_add_notifier(NC_SCENE | ND_FRAME, scene);
 }
 
-static void rna_ChannelDriver_update_expr(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ChannelDriver_update_expr(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   ChannelDriver *driver = ptr->data;
 
   /* tag driver as needing to be recompiled */
-  BKE_driver_invalidate_expression(driver, true, false);
+  dune_driver_invalidate_expression(driver, true, false);
 
   /* update_data() clears invalid flag and schedules for updates */
-  rna_ChannelDriver_update_data(bmain, scene, ptr);
+  api_ChannelDriver_update_data(bmain, scene, ptr);
 }
 
-static void rna_DriverTarget_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DriverTarget_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  PointerRNA driverptr;
+  ApiPtr driverptr;
   ChannelDriver *driver;
   FCurve *fcu;
-  AnimData *adt = BKE_animdata_from_id(ptr->owner_id);
+  AnimData *adt = dune_animdata_from_id(ptr->owner_id);
 
   /* find the driver this belongs to and update it */
   for (fcu = adt->drivers.first; fcu; fcu = fcu->next) {
@@ -244,19 +244,19 @@ static void rna_DriverTarget_update_data(Main *bmain, Scene *scene, PointerRNA *
 
     if (driver) {
       /* FIXME: need to be able to search targets for required one. */
-      // BLI_findindex(&driver->targets, ptr->data) != -1)
-      RNA_pointer_create(ptr->owner_id, &RNA_Driver, driver, &driverptr);
-      rna_ChannelDriver_update_data(bmain, scene, &driverptr);
+      // lib_findindex(&driver->targets, ptr->data) != -1)
+      api_ptr_create(ptr->owner_id, &ApiDriver, driver, &driverptr);
+      api_ChannelDriver_update_data(main, scene, &driverptr);
     }
   }
 }
 
-static void rna_DriverTarget_update_name(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DriverTarget_update_name(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   ChannelDriver *driver = ptr->data;
-  rna_DriverTarget_update_data(bmain, scene, ptr);
+  api_DriverTarget_update_data(bmain, scene, ptr);
 
-  BKE_driver_invalidate_expression(driver, false, true);
+  dune_driver_invalidate_expression(driver, false, true);
 }
 
 /* ----------- */
