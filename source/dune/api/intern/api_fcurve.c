@@ -179,13 +179,13 @@ static ApiStruct *api_FModType_refine(struct ApiPtr *ptr)
       return &ApiFModFilter;
 #  endif
     case FMOD_TYPE_PYTHON:
-      return &ApiFModifierPython;
-    case FMODIFIER_TYPE_LIMITS:
-      return &RNA_FModifierLimits;
-    case FMODIFIER_TYPE_STEPPED:
-      return &RNA_FModifierStepped;
+      return &ApiFModPython;
+    case FMOD_TYPE_LIMITS:
+      return &ApiFModLimits;
+    case FMOD_TYPE_STEPPED:
+      return &ApiFModStepped;
     default:
-      return &RNA_UnknownType;
+      return &ApiUnknownType;
   }
 }
 
