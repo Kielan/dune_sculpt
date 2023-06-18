@@ -1991,16 +1991,16 @@ void RNA_def_property_int_default(PropertyRNA *prop, int value)
   }
 }
 
-void RNA_def_property_int_array_default(PropertyRNA *prop, const int *array)
+void api_def_prop_int_array_default(ApiApiProp *prop, const int *array)
 {
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStruct *sapi = ApiDef.laststruct;
 
   switch (prop->type) {
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
-#ifndef RNA_RUNTIME
+      ApiIntProp *iprop = (ApoIntProp *)prop;
+#ifndef API_RUNTIME
       if (iprop->defaultarray != NULL) {
-        CLOG_ERROR(&LOG, "\"%s.%s\", set from DNA.", srna->identifier, prop->identifier);
+        CLOG_ERROR(&LOG, "\"%s.%s\", set from types.", sapi->id, prop->id);
       }
 #endif
       iprop->defaultarray = array;
