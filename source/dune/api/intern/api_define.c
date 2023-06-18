@@ -1048,7 +1048,7 @@ void api_def_struct_stype(ApiStruct *sapi, const char *structname)
     return;
   }
 
-  ds = api_find_def_struct(srna);
+  ds = api_find_def_struct(sapi);
 
   /* There are far too many structs which initialize without valid DNA struct names,
    * this can't be checked without adding an option to disable
@@ -1504,7 +1504,7 @@ void api_def_prop_override_clear_flag(ApiProp *prop, PropOverrideFlag flag)
   prop->flag_override &= ~flag;
 }
 
-void api_def_prop_tags(PropertyRNA *prop, int tags)
+void api_def_prop_tags(ApiProp *prop, int tags)
 {
   prop->tags |= tags;
 }
@@ -1525,38 +1525,38 @@ void api_def_param_clear_flags(ApiProp *prop,
   prop->flag_param &= ~flag_param;
 }
 
-void RNA_def_property_subtype(PropertyRNA *prop, PropertySubType subtype)
+void RNA_def_property_subtype(ApiProp *prop, PropertySubType subtype)
 {
   prop->subtype = subtype;
 }
 
-void RNA_def_property_array(PropertyRNA *prop, int length)
+void api_def_prop_array(ApiProp *prop, int length)
 {
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStruct *sapi = ApiDef.laststruct;
 
   if (length < 0) {
     CLOG_ERROR(&LOG,
                "\"%s.%s\", array length must be zero of greater.",
-               srna->identifier,
-               prop->identifier);
-    DefRNA.error = true;
+               sapi->id,
+               prop->id);
+    ApiDef.error = true;
     return;
   }
 
-  if (length > RNA_MAX_ARRAY_LENGTH) {
+  if (length > API_MAX_ARRAY_LENGTH) {
     CLOG_ERROR(&LOG,
                "\"%s.%s\", array length must be smaller than %d.",
-               srna->identifier,
-               prop->identifier,
-               RNA_MAX_ARRAY_LENGTH);
-    DefRNA.error = true;
+               sapi->id,
+               prop->id,
+               API_MAX_ARRAY_LENGTH);
+    ApiDef.error = true;
     return;
   }
 
   if (prop->arraydimension > 1) {
     CLOG_ERROR(&LOG,
                "\"%s.%s\", array dimensions has been set to %u but would be overwritten as 1.",
-               srna->id,
+               sapi->id,
                prop->id,
                prop->arraydimension);
     ApiDef.error = true;
@@ -1668,12 +1668,12 @@ void api_def_prop_ui_range(
 
   if (step < 0 || step > 100) {
     CLOG_ERROR(&LOG, "\"%s.%s\", step outside range.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    ApiDefRNA.error = true;
   }
 
   if (step == 0) {
     CLOG_ERROR(&LOG, "\"%s.%s\", step is zero.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    ApiDefRNA.error = true;
   }
 
   if (precision < -1 || precision > UI_PRECISION_FLOAT_MAX) {
@@ -1741,7 +1741,7 @@ void RNA_def_property_range(PropertyRNA *prop, double min, double max)
 
   switch (prop->type) {
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
+      ApiIntProp *iprop = (IntPropertyRNA *)prop;
       iprop->hardmin = (int)min;
       iprop->hardmax = (int)max;
       iprop->softmin = MAX2((int)min, iprop->hardmin);
