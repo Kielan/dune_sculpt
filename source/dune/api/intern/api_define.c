@@ -1614,7 +1614,7 @@ void api_def_prop_multi_array(ApiProp *prop, int dimension, const int length[])
                  "\"%s.%s\", only boolean/int/float can be array.",
                  sapi->id,
                  prop->id);
-      ApiDefRNA.error = true;
+      ApiDef.error = true;
       break;
   }
 
@@ -1636,15 +1636,15 @@ void api_def_prop_multi_array(ApiProp *prop, int dimension, const int length[])
   /* TODO: make sure `arraylength` values are sane. */
 }
 
-void RNA_def_property_ui_text(PropertyRNA *prop, const char *name, const char *description)
+void api_def_prop_ui_text(ApiProp *prop, const char *name, const char *description)
 {
-  DESCR_CHECK(description, prop->identifier, NULL);
+  DESCR_CHECK(description, prop->id, NULL);
 
   prop->name = name;
   prop->description = description;
 }
 
-void RNA_def_property_ui_icon(PropertyRNA *prop, int icon, int consecutive)
+void api_def_prop_ui_icon(ApiProp *prop, int icon, int consecutive)
 {
   prop->icon = icon;
   if (consecutive != 0) {
@@ -1655,10 +1655,10 @@ void RNA_def_property_ui_icon(PropertyRNA *prop, int icon, int consecutive)
   }
 }
 
-void RNA_def_property_ui_range(
-    PropertyRNA *prop, double min, double max, double step, int precision)
+void api_def_prop_ui_range(
+    ApiProp *prop, double min, double max, double step, int precision)
 {
-  StructRNA *srna = DefRNA.laststruct;
+  ApiStructRNA *srna = DefRNA.laststruct;
 
 #ifndef NDEBUG
   if (min > max) {
