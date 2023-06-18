@@ -191,18 +191,18 @@ static ApiStruct *api_FModType_refine(struct ApiPtr *ptr)
 
 /* ****************************** */
 
-#  include "BKE_anim_data.h"
-#  include "BKE_fcurve.h"
-#  include "BKE_fcurve_driver.h"
+#  include "dune_anim_data.h"
+#  include "dune_fcurve.h"
+#  include "dune_fcurve_driver.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-static bool rna_ChannelDriver_is_simple_expression_get(PointerRNA *ptr)
+static bool api_ChannelDriver_is_simple_expression_get(ApiPtr *ptr)
 {
   ChannelDriver *driver = ptr->data;
 
-  return BKE_driver_has_simple_expression(driver);
+  return dune_driver_has_simple_expression(driver);
 }
 
 static void api_ChannelDriver_update_data(Main *main, Scene *scene, ApiPtr *ptr)
@@ -227,7 +227,7 @@ static void api_ChannelDriver_update_expr(Main *main, Scene *scene, ApiPtr *ptr)
   dune_driver_invalidate_expression(driver, true, false);
 
   /* update_data() clears invalid flag and schedules for updates */
-  api_ChannelDriver_update_data(bmain, scene, ptr);
+  api_ChannelDriver_update_data(main, scene, ptr);
 }
 
 static void api_DriverTarget_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
@@ -262,8 +262,8 @@ static void api_DriverTarget_update_name(Main *bmain, Scene *scene, PointerRNA *
 /* ----------- */
 
 /* NOTE: this function exists only to avoid id refcounting. */
-static void api_DriverTarget_id_set(PointerRNA *ptr,
-                                    PointerRNA value,
+static void api_DriverTarget_id_set(ApiPtr *ptr,
+                                    ApiPtr value,
                                     struct ReportList *UNUSED(reports))
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
@@ -282,13 +282,12 @@ static int api_DriverTarget_id_editable(ApiPtr *ptr, const char **UNUSED(r_info)
   return (dtar->idtype) ? PROP_EDITABLE : 0;
 }
 
-static int api_DriverTarget_id_type_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_DriverTarget_id_type_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
   /* when the id-type can only be object, don't allow editing
-   * otherwise, there may be strange crashes
-   */
+   * otherwise, there may be strange crashes */
   return ((dtar->flag & DTAR_FLAG_ID_OB_ONLY) == 0);
 }
 
@@ -316,8 +315,8 @@ static void api_DriverTarget_ApiPath_get(ApiPtr *ptr, char *value)
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
-  if (dtar->rna_path) {
-    strcpy(value, dtar->rna_path);
+  if (dtar->api_path) {
+    strcpy(value, dtar->api_path);
   }
   else {
     value[0] = '\0';
@@ -482,7 +481,7 @@ static int api_FCurve_ApiPath_length(ApiPtr *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
-  if (fcu->rna_path) {
+  if (fcu->api_path) {
     return strlen(fcu->rna_path);
   }
   else {
