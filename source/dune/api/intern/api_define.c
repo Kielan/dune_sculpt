@@ -1436,9 +1436,9 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
         break;
       }
       case PROP_ENUM:
-        DefRNA.silent = true;
-        RNA_def_property_enum_sdna(prop, NULL, identifier);
-        DefRNA.silent = false;
+        ApiDef.silent = true;
+        api_def_prop_enum_sdna(prop, NULL, identifier);
+        ApiDef.silent = false;
         break;
       case PROP_POINTER:
         DefRNA.silent = true;
