@@ -307,13 +307,13 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   };
 
   /*  Surface type - generated dynamically based on surface format */
-  static const EnumPropertyItem prop_dynamicpaint_surface_type[] = {
+  static const EnumPropItem prop_dynamicpaint_surface_type[] = {
       {MOD_DPAINT_SURFACE_T_PAINT, "PAINT", 0, "Paint", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
   /*  Initial color setting */
-  static const EnumPropertyItem prop_dynamicpaint_init_color_type[] = {
+  static const EnumPropItem prop_dynamicpaint_init_color_type[] = {
       {MOD_DPAINT_INITIAL_NONE, "NONE", 0, "None", ""},
       {MOD_DPAINT_INITIAL_COLOR, "COLOR", ICON_COLOR, "Color", ""},
       {MOD_DPAINT_INITIAL_TEXTURE, "TEXTURE", ICON_TEXTURE, "UV Texture", ""},
@@ -350,25 +350,25 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   sapi = api_def_struct(dapi, "DynamicPaintSurface", NULL);
   api_def_struct_stype(sapi, "DynamicPaintSurface");
   api_def_struct_ui_text(sapi, "Paint Surface", "A canvas surface layer");
-  api_def_struct_path_fn(sapi, "rna_DynamicPaintSurface_path");
+  api_def_struct_path_fn(sapi, "api_DynamicPaintSurface_path");
 
   prop =api_def_prop(sapi, "surface_format", PROP_ENUM, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_enum_sdna(prop, NULL, "format");
   api_def_prop_enum_items(prop, prop_dynamicpaint_surface_format);
   api_def_prop_ui_text(prop, "Format", "Surface Format");
-  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_changeFormat");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_DynamicPaintSurfaces_changeFormat");
 
   prop = api_def_prop(sapi, "surface_type", PROP_ENUM, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_enum_sdna(prop, NULL, "type");
   api_def_prop_enum_items(prop, prop_dynamicpaint_surface_type);
-  api_def_prop_enum_funcs(prop, NULL, NULL, "rna_DynamicPaint_surface_type_itemf");
+  api_def_prop_enum_funcs(prop, NULL, NULL, "api_DynamicPaint_surface_type_itemf");
   api_def_prop_ui_text(prop, "Surface Type", "Surface Type");
-  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_changeType");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_DynamicPaintSurface_changeType");
 
-  prop = RNA_def_property(srna, "is_active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_ACTIVE);
+  prop = api_def_prop(sapi, "is_active", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_ACTIVE);
   RNA_def_property_ui_text(prop, "Is Active", "Toggle whether surface is processed or ignored");
   RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
 
