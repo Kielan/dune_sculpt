@@ -435,7 +435,7 @@ static void api_FKeyframe_ctrlpoint_get(PointerRNA *ptr, float *values)
   values[1] = bezt->vec[1][1];
 }
 
-static void rna_FKeyframe_ctrlpoint_set(PointerRNA *ptr, const float *values)
+static void api_FKeyframe_ctrlpoint_set(PointerRNA *ptr, const float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
@@ -443,7 +443,7 @@ static void rna_FKeyframe_ctrlpoint_set(PointerRNA *ptr, const float *values)
   bezt->vec[1][1] = values[1];
 }
 
-static void rna_FKeyframe_ctrlpoint_ui_set(PointerRNA *ptr, const float *values)
+static void api_FKeyframe_ctrlpoint_ui_set(PointerRNA *ptr, const float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
@@ -466,7 +466,7 @@ static void rna_FKeyframe_ctrlpoint_ui_set(PointerRNA *ptr, const float *values)
 
 /* ****************************** */
 
-static void rna_FCurve_RnaPath_get(PointerRNA *ptr, char *value)
+static void api_FCurve_RnaPath_get(ApiPtr *ptr, char *value)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
@@ -478,7 +478,7 @@ static void rna_FCurve_RnaPath_get(PointerRNA *ptr, char *value)
   }
 }
 
-static int rna_FCurve_RnaPath_length(PointerRNA *ptr)
+static int api_FCurve_ApiPath_length(ApiPtr *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
