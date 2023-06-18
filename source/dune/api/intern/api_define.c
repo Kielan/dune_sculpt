@@ -116,7 +116,7 @@ void api_addtail(List *list, void *vlink)
   list->last = link;
 }
 
-static void api_remlink(ListBase *listbase, void *vlink)
+static void api_remlink(List *list, void *vlink)
 {
   Link *link = vlink;
 
@@ -1016,7 +1016,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     }
   }
 
-  return srna;
+  return sapi;
 }
 
 ApiStruct *api_def_struct(DuneApi *dapi, const char *id, const char *from)
@@ -1293,30 +1293,30 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
 #endif
   }
 
-  prop = MEM_callocN(rna_property_type_sizeof(type), "PropertyRNA");
+  prop = mem_callocn(api_prop_type_sizeof(type), "ApiProp");
 
   switch (type) {
-    case PROP_BOOLEAN:
-      if (DefRNA.preprocess) {
+    case PROP_BOOL:
+      if (ApiDef.preprocess) {
         if ((subtype & ~PROP_LAYER_MEMBER) != PROP_NONE) {
           CLOG_ERROR(&LOG,
                      "subtype does not apply to 'PROP_BOOLEAN' \"%s.%s\"",
-                     CONTAINER_RNA_ID(cont),
-                     identifier);
-          DefRNA.error = true;
+                     CONTAINER_API_ID(cont),
+                     id);
+          ApiDef.error = true;
         }
       }
       break;
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
+      ApiIntProp *iprop = (ApiIntProp *)prop;
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
       if (subtype == PROP_DISTANCE) {
         CLOG_ERROR(&LOG,
                    "subtype does not apply to 'PROP_INT' \"%s.%s\"",
-                   CONTAINER_RNA_ID(cont),
-                   identifier);
-        DefRNA.error = true;
+                   CONTAINER_API_ID(cont),
+                   id);
+        ApiDef.error = true;
       }
 #endif
 
@@ -1329,7 +1329,7 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
       break;
     }
     case PROP_FLOAT: {
-      FloatPropertyRNA *fprop = (FloatPropertyRNA *)prop;
+      ApiFloatProp *fprop = (ApiFloatProp *)prop;
 
       fprop->hardmin = (subtype == PROP_UNSIGNED) ? 0.0f : -FLT_MAX;
       fprop->hardmax = FLT_MAX;
@@ -1351,13 +1351,13 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
       break;
     }
     case PROP_STRING: {
-      StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
+      ApiStringProp *sprop = (ApiStringProp *)prop;
       /* By default don't allow NULL string args, callers may clear. */
-      RNA_def_property_flag(prop, PROP_NEVER_NULL);
+      api_def_property_flag(prop, PROP_NEVER_NULL);
       sprop->defaultvalue = "";
       break;
     }
-    case PROP_POINTER:
+    case PROP_PTR:
       prop->flag |= PROP_THICK_WRAP; /* needed for default behavior when PARM_RNAPTR is set */
       break;
     case PROP_ENUM:
@@ -1365,56 +1365,56 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
       break;
     default:
       CLOG_ERROR(&LOG, "\"%s.%s\", invalid property type.", CONTAINER_RNA_ID(cont), identifier);
-      DefRNA.error = true;
+      ApiDef.error = true;
       return NULL;
   }
 
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     dprop->cont = cont;
     dprop->prop = prop;
   }
 
-  prop->magic = RNA_MAGIC;
-  prop->identifier = identifier;
+  prop->magic = API_MAGIC;
+  prop->id = id;
   prop->type = type;
   prop->subtype = subtype;
-  prop->name = identifier;
+  prop->name = id;
   prop->description = "";
-  prop->translation_context = BLT_I18NCONTEXT_DEFAULT_BPYRNA;
+  prop->translation_context = LANG_CXT_DEFAULT_BPYRNA;
   /* a priori not raw editable */
   prop->rawtype = -1;
 
-  if (!ELEM(type, PROP_COLLECTION, PROP_POINTER)) {
+  if (!ELEM(type, PROP_COLLECTION, PROP_PTR)) {
     prop->flag = PROP_EDITABLE;
 
     if (type != PROP_STRING) {
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
       prop->flag |= PROP_ANIMATABLE;
 #else
-      if (DefRNA.animate) {
+      if (ApiDef.animate) {
         prop->flag |= PROP_ANIMATABLE;
       }
 #endif
     }
   }
 
-#ifndef RNA_RUNTIME
-  if (DefRNA.make_overridable) {
-    prop->flag_override |= PROPOVERRIDE_OVERRIDABLE_LIBRARY;
+#ifndef API_RUNTIME
+  if (ApiDef.make_overridable) {
+    prop->flag_override |= PROPOVERRIDE_OVERRIDABLE_LIB;
   }
 #endif
 
   if (type == PROP_STRING) {
     /* used so generated 'get/length/set' functions skip a NULL check
      * in some cases we want it */
-    RNA_def_property_flag(prop, PROP_NEVER_NULL);
+    api_def_prop_flag(prop, PROP_NEVER_NULL);
   }
 
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     switch (type) {
-      case PROP_BOOLEAN:
-        DefRNA.silent = true;
-        RNA_def_property_boolean_sdna(prop, NULL, identifier, 0);
+      case PROP_BOOL:
+        ApiDef.silent = true;
+        api_def_prop_bool_stype(prop, NULL, id, 0);
         DefRNA.silent = false;
         break;
       case PROP_INT: {
