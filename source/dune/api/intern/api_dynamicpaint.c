@@ -1,66 +1,66 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "BKE_dynamicpaint.h"
-#include "BKE_modifier.h"
+#include "dune_dynamicpaint.h"
+#include "dune_modifier.h"
 
-#include "DNA_dynamicpaint_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "dune_dynamicpaint_types.h"
+#include "dune_modifier_types.h"
+#include "dune_object_force_types.h"
+#include "dune_object_types.h"
+#include "dune_scene_types.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_prop_dynamicpaint_type_items[] = {
+const EnumPropItem api_enum_prop_dynamicpaint_type_items[] = {
     {MOD_DYNAMICPAINT_TYPE_CANVAS, "CANVAS", 0, "Canvas", ""},
     {MOD_DYNAMICPAINT_TYPE_BRUSH, "BRUSH", 0, "Brush", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_context.h"
-#  include "BKE_particle.h"
+#  include "dune_context.h"
+#  include "dune_particle.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-static char *rna_DynamicPaintCanvasSettings_path(PointerRNA *ptr)
+static char *api_DynamicPaintCanvasSettings_path(ApiPtr *ptr)
 {
   DynamicPaintCanvasSettings *settings = (DynamicPaintCanvasSettings *)ptr->data;
-  ModifierData *md = (ModifierData *)settings->pmd;
+  ModData *md = (ModData *)settings->pmd;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].canvas_settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfN("mods[\"%s\"].canvas_settings", name_esc);
 }
 
-static char *rna_DynamicPaintBrushSettings_path(PointerRNA *ptr)
+static char *api_DynamicPaintBrushSettings_path(ApiPtr *ptr)
 {
   DynamicPaintBrushSettings *settings = (DynamicPaintBrushSettings *)ptr->data;
-  ModifierData *md = (ModifierData *)settings->pmd;
+  ModData *md = (ModData *)settings->pmd;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].brush_settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("mods[\"%s\"].brush_settings", name_esc);
 }
 
-static char *rna_DynamicPaintSurface_path(PointerRNA *ptr)
+static char *api_DynamicPaintSurface_path(ApiPtr *ptr)
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
-  ModifierData *md = (ModifierData *)surface->canvas->pmd;
+  ModData *md = (ModData *)surface->canvas->pmd;
   char name_esc[sizeof(md->name) * 2];
   char name_esc_surface[sizeof(surface->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  BLI_str_escape(name_esc_surface, surface->name, sizeof(name_esc_surface));
-  return BLI_sprintfN(
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  lib_str_escape(name_esc_surface, surface->name, sizeof(name_esc_surface));
+  return lib_sprintfn(
       "modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]", name_esc, name_esc_surface);
 }
 
