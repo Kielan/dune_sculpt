@@ -960,7 +960,7 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   }
 
   /* in preprocess, try to find sdna */
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     api_def_struct_stype(sapi, sapi->id);
   }
   else {
@@ -1257,18 +1257,18 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
   ApiContainer *cont = cont_;
   ApiContainerDef *dcont;
   ApiPropertyDef *dprop = NULL;
-  ApiProperty *prop;
+  ApiProp *prop;
 
-  if (ApuDef.preprocess) {
+  if (ApiDef.preprocess) {
     char error[512];
 
     if (api_validate_id(id, error, true) == 0) {
       CLOG_ERROR(
           &LOG, "prop id \"%s.%s\" - %s", CONTAINER_API_ID(cont), id, error);
-      DefRNA.error = true;
+      ApiDef.error = true;
     }
 
-    dcont = rna_find_container_def(cont);
+    dcont = api_find_container_def(cont);
 
     /* TODO: detect super-type collisions. */
     if (api_findlink(&dcont->props, id)) {
@@ -1415,12 +1415,12 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
       case PROP_BOOL:
         ApiDef.silent = true;
         api_def_prop_bool_stype(prop, NULL, id, 0);
-        DefRNA.silent = false;
+        ApiDef.silent = false;
         break;
       case PROP_INT: {
-        DefRNA.silent = true;
-        RNA_def_property_int_sdna(prop, NULL, identifier);
-        DefRNA.silent = false;
+        ApiDef.silent = true;
+        api_def_property_int_sdna(prop, NULL, identifier);
+        ApiDef.silent = false;
         break;
       }
       case PROP_FLOAT: {
