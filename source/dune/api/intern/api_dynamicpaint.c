@@ -178,11 +178,11 @@ static void rna_Surface_active_point_range(
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
 
   *min = 0;
-  *max = BLI_listbase_count(&canvas->surfaces) - 1;
+  *max = lib_list_count(&canvas->surfaces) - 1;
 }
 
 /* uvlayer */
-static void rna_DynamicPaint_uvlayer_set(PointerRNA *ptr, const char *value)
+static void api_DynamicPaint_uvlayer_set(ApiPtr *ptr, const char *value)
 {
   DynamicPaintCanvasSettings *canvas = ((DynamicPaintSurface *)ptr->data)->canvas;
   DynamicPaintSurface *surface = canvas->surfaces.first;
@@ -190,7 +190,7 @@ static void rna_DynamicPaint_uvlayer_set(PointerRNA *ptr, const char *value)
 
   for (; surface; surface = surface->next) {
     if (id == canvas->active_sur) {
-      rna_object_uvlayer_name_set(
+      api_object_uvlayer_name_set(
           ptr, value, surface->uvlayer_name, sizeof(surface->uvlayer_name));
       return;
     }
@@ -276,19 +276,19 @@ static void rna_def_canvas_surfaces(BlenderRNA *brna, PropertyRNA *cprop)
   RNA_def_struct_sdna(srna, "DynamicPaintCanvasSettings");
   RNA_def_struct_ui_text(srna, "Canvas Surfaces", "Collection of Dynamic Paint Canvas surfaces");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_Surface_active_point_index_get",
-                             "rna_Surface_active_point_index_set",
-                             "rna_Surface_active_point_range");
-  RNA_def_property_ui_text(prop, "Active Point Cache Index", "");
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_Surface_active_point_index_get",
+                       "api_Surface_active_point_index_set",
+                       "api_Surface_active_point_range");
+  api_def_prop_ui_text(prop, "Active Point Cache Index", "");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "DynamicPaintSurface");
-  RNA_def_property_pointer_funcs(prop, "rna_PaintSurface_active_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Active Surface", "Active Dynamic Paint surface being displayed");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "active", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "DynamicPaintSurface");
+  api_def_prop_ptr_fns(prop, "rna_PaintSurface_active_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Active Surface", "Active Dynamic Paint surface being displayed");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, NULL);
 }
 
 static void rna_def_canvas_surface(BlenderRNA *brna)
@@ -323,7 +323,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
 
   /* Effect type
    * Only used by UI to view per effect settings. */
-  static const EnumPropertyItem prop_dynamicpaint_effecttype[] = {
+  static const EnumPropItem prop_dynamicpaint_effecttype[] = {
       {1, "SPREAD", 0, "Spread", ""},
       {2, "DRIP", 0, "Drip", ""},
       {3, "SHRINK", 0, "Shrink", ""},
@@ -331,7 +331,7 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   };
 
   /* Displace-map file format. */
-  static const EnumPropertyItem prop_dynamicpaint_image_fileformat[] = {
+  static const EnumPropItem prop_dynamicpaint_image_fileformat[] = {
       {MOD_DPAINT_IMGFORMAT_PNG, "PNG", 0, "PNG", ""},
 #  ifdef WITH_OPENEXR
       {MOD_DPAINT_IMGFORMAT_OPENEXR, "OPENEXR", 0, "OpenEXR", ""},
@@ -340,32 +340,32 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   };
 
   /* Displace-map type. */
-  static const EnumPropertyItem prop_dynamicpaint_displace_type[] = {
+  static const EnumPropItem prop_dynamicpaint_displace_type[] = {
       {MOD_DPAINT_DISP_DISPLACE, "DISPLACE", 0, "Displacement", ""},
       {MOD_DPAINT_DISP_DEPTH, "DEPTH", 0, "Depth", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
   /* Surface */
-  srna = RNA_def_struct(brna, "DynamicPaintSurface", NULL);
-  RNA_def_struct_sdna(srna, "DynamicPaintSurface");
-  RNA_def_struct_ui_text(srna, "Paint Surface", "A canvas surface layer");
-  RNA_def_struct_path_func(srna, "rna_DynamicPaintSurface_path");
+  sapi = api_def_struct(dapi, "DynamicPaintSurface", NULL);
+  api_def_struct_stype(sapi, "DynamicPaintSurface");
+  api_def_struct_ui_text(sapi, "Paint Surface", "A canvas surface layer");
+  api_def_struct_path_fn(sapi, "rna_DynamicPaintSurface_path");
 
-  prop = RNA_def_property(srna, "surface_format", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "format");
-  RNA_def_property_enum_items(prop, prop_dynamicpaint_surface_format);
-  RNA_def_property_ui_text(prop, "Format", "Surface Format");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_changeFormat");
+  prop =api_def_prop(sapi, "surface_format", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_sdna(prop, NULL, "format");
+  api_def_prop_enum_items(prop, prop_dynamicpaint_surface_format);
+  api_def_prop_ui_text(prop, "Format", "Surface Format");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_changeFormat");
 
-  prop = RNA_def_property(srna, "surface_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, prop_dynamicpaint_surface_type);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_DynamicPaint_surface_type_itemf");
-  RNA_def_property_ui_text(prop, "Surface Type", "Surface Type");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_changeType");
+  prop = api_def_prop(sapi, "surface_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_sdna(prop, NULL, "type");
+  api_def_prop_enum_items(prop, prop_dynamicpaint_surface_type);
+  api_def_prop_enum_funcs(prop, NULL, NULL, "rna_DynamicPaint_surface_type_itemf");
+  api_def_prop_ui_text(prop, "Surface Type", "Surface Type");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_changeType");
 
   prop = RNA_def_property(srna, "is_active", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_ACTIVE);
