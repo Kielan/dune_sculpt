@@ -631,27 +631,27 @@ static void api_FCurve_update_eval(Main *main, Scene *UNUSED(scene), ApiPtr *ptr
   api_tag_animation_update(main, ptr->owner_id);
 }
 
-static ApiPtr api_FCurve_active_modifier_get(PointerRNA *ptr)
+static ApiPtr api_FCurve_active_modifier_get(ApiPtr *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
-  FModifier *fcm = find_active_fmodifier(&fcu->modifiers);
-  return rna_pointer_inherit_refine(ptr, &RNA_FModifier, fcm);
+  FModifier *fcm = find_active_fmodifier(&fcu->mods);
+  return api_ptr_inherit_refine(ptr, &ApiFMod, fcm);
 }
 
-static void rna_FCurve_active_modifier_set(PointerRNA *ptr,
-                                           PointerRNA value,
-                                           struct ReportList *UNUSED(reports))
+static void api_FCurve_active_mod_set(ApiPtr *ptr,
+                                      ApiPtr value,
+                                      struct ReportList *UNUSED(reports))
 {
   FCurve *fcu = (FCurve *)ptr->data;
-  set_active_fmodifier(&fcu->modifiers, (FModifier *)value.data);
+  set_active_fmod(&fcu->mods, (FMod *)value.data);
 }
 
-static FModifier *rna_FCurve_modifiers_new(FCurve *fcu, int type)
+static FMod *api_FCurve_mods_new(FCurve *fcu, int type)
 {
-  return add_fmodifier(&fcu->modifiers, type, fcu);
+  return add_fmod(&fcu->mods, type, fcu);
 }
 
-static void rna_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, PointerRNA *fcm_ptr)
+static void api_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, PointerRNA *fcm_ptr)
 {
   FModifier *fcm = fcm_ptr->data;
   if (BLI_findindex(&fcu->modifiers, fcm) == -1) {
