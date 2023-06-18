@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
-#include "DNA_anim_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_curve.h"
+#include "types_object.h"
+#include "types_scene.h"
 
 #include "MEM_guardedalloc.h"
 
