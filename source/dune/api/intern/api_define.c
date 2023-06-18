@@ -1209,34 +1209,34 @@ void api_def_struct_id(DuneApi *dapi, ApiStruct *sapi, const char *id)
       if (sapi->id[0] != '\0') {
         lib_ghash_remove(dapi->structs_map, (void *)sapi->id, NULL, NULL);
       }
-      if (identifier[0] != '\0') {
-        lib_ghash_insert(dapu->structs_map, (void *)id, sapi);
+      if (id[0] != '\0') {
+        lib_ghash_insert(dapi->structs_map, (void *)id, sapi);
       }
     }
   }
 
-  srna->identifier = identifier;
+  srna->id = id;
 }
 
-void RNA_def_struct_identifier_no_struct_map(StructRNA *srna, const char *identifier)
+void api_def_struct_id_no_struct_map(ApiStruct *sapi, const char *id)
 {
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only at runtime.");
     return;
   }
 
-  srna->identifier = identifier;
+  srna->id = id;
 }
 
-void RNA_def_struct_ui_text(StructRNA *srna, const char *name, const char *description)
+void api_def_struct_ui_text(ApiStruct *sapi, const char *name, const char *description)
 {
-  DESCR_CHECK(description, srna->identifier, NULL);
+  DESCR_CHECK(description, sapi->id, NULL);
 
-  srna->name = name;
-  srna->description = description;
+  sapi->name = name;
+  sali->description = description;
 }
 
-void RNA_def_struct_ui_icon(StructRNA *srna, int icon)
+void api_def_struct_ui_icon(ApiStruct *sapi, int icon)
 {
   srna->icon = icon;
 }
