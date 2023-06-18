@@ -1075,7 +1075,7 @@ void api_def_struct_stype_from(ApiStruct *sapi, const char *structname, const ch
     return;
   }
 
-  ds = api_find_def_struct(srna);
+  ds = api_find_def_struct(sapi);
 
   if (!ds->typesname) {
     CLOG_ERROR(&LOG, "%s base struct must know types already.", structname);
@@ -1112,7 +1112,7 @@ void api_def_struct_name_prop(struct ApiStruct *sapi, struct ApiProp *prop)
 
 void api_def_struct_nested(DuneApi *dapi, ApiStruc *sapi, const char *structname)
 {
-  ApiStruct *srnafrom;
+  ApiStruct *sapifrom;
 
   /* find struct to derive from */
   sapifrom = lib_ghash_lookup(dapi->structs_map, structname);
@@ -1131,17 +1131,17 @@ void api_def_struct_flag(ApiStruct *sapi, int flag)
 
 void api_def_struct_clear_flag(ApiStruct *sapi, int flag)
 {
-  srna->flag &= ~flag;
+  sapi->flag &= ~flag;
 }
 
-void RNA_def_struct_property_tags(ApiStruct *srna, const EnumPropertyItem *prop_tag_defines)
+void api_def_struct_prop_tags(ApiStruct *sapi, const EnumPropItem *prop_tag_defines)
 {
-  srna->prop_tag_defines = prop_tag_defines;
+  sapi->prop_tag_defines = prop_tag_defines;
 }
 
-void RNA_def_struct_refine_func(StructRNA *srna, const char *refine)
+void api_def_struct_refine_fn(ApiStruct *sapi, const char *refine)
 {
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
