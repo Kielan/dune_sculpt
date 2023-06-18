@@ -73,7 +73,7 @@ static void print_default_info(const ApiPropDef *dp)
           "types_type=%s, types_offset=%d, types_struct=%s, types_name=%s, id=%s\n",
           dp->typestype,
           dp->typesoffset,
-          dp->dnastructname,
+          dp->typesstructname,
           dp->typesname,
           dp->prop->id);
 }
