@@ -199,7 +199,7 @@ static void rna_DynamicPaint_uvlayer_set(PointerRNA *ptr, const char *value)
 }
 
 /* is point cache used */
-static bool rna_DynamicPaint_is_cache_user_get(PointerRNA *ptr)
+static bool api_DynamicPaint_is_cache_user_get(ApiPtr *ptr)
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 
@@ -207,15 +207,15 @@ static bool rna_DynamicPaint_is_cache_user_get(PointerRNA *ptr)
 }
 
 /* Does output layer exist. */
-static bool rna_DynamicPaint_is_output_exists(DynamicPaintSurface *surface, Object *ob, int index)
+static bool api_DynamicPaint_is_output_exists(DynamicPaintSurface *surface, Object *ob, int index)
 {
   return dynamicPaint_outputLayerExists(surface, ob, index);
 }
 
-static const EnumPropertyItem *rna_DynamicPaint_surface_type_itemf(bContext *UNUSED(C),
-                                                                   PointerRNA *ptr,
-                                                                   PropertyRNA *UNUSED(prop),
-                                                                   bool *r_free)
+static const EnumPropItem *api_DynamicPaint_surface_type_itemf(Cxt *UNUSED(C),
+                                                               ApiPtr *ptr,
+                                                               ApiProp *UNUSED(prop),
+                                                               bool *r_free)
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 
