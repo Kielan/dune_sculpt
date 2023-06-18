@@ -205,21 +205,21 @@ static bool rna_ChannelDriver_is_simple_expression_get(PointerRNA *ptr)
   return BKE_driver_has_simple_expression(driver);
 }
 
-static void rna_ChannelDriver_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ChannelDriver_update_data(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   ChannelDriver *driver = ptr->data;
 
   driver->flag &= ~DRIVER_FLAG_INVALID;
 
   /* TODO: this really needs an update guard... */
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
 
-  WM_main_add_notifier(NC_SCENE | ND_FRAME, scene);
+  wm_main_add_notifier(NC_SCENE | ND_FRAME, scene);
 }
 
-static void api_ChannelDriver_update_expr(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ChannelDriver_update_expr(Main *main, Scene *scene, ApiPtr *ptr)
 {
   ChannelDriver *driver = ptr->data;
 
@@ -262,7 +262,7 @@ static void api_DriverTarget_update_name(Main *bmain, Scene *scene, PointerRNA *
 /* ----------- */
 
 /* NOTE: this function exists only to avoid id refcounting. */
-static void rna_DriverTarget_id_set(PointerRNA *ptr,
+static void api_DriverTarget_id_set(PointerRNA *ptr,
                                     PointerRNA value,
                                     struct ReportList *UNUSED(reports))
 {
@@ -270,19 +270,19 @@ static void rna_DriverTarget_id_set(PointerRNA *ptr,
   dtar->id = value.data;
 }
 
-static StructRNA *rna_DriverTarget_id_typef(PointerRNA *ptr)
+static ApiStruct *api_DriverTarget_id_typef(ApiPtr *ptr)
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
-  return ID_code_to_RNA_type(dtar->idtype);
+  return id_code_to_api_type(dtar->idtype);
 }
 
-static int rna_DriverTarget_id_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_DriverTarget_id_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
   return (dtar->idtype) ? PROP_EDITABLE : 0;
 }
 
-static int rna_DriverTarget_id_type_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_DriverTarget_id_type_editable(PointerRNA *ptr, const char **UNUSED(r_info))
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
@@ -292,7 +292,7 @@ static int rna_DriverTarget_id_type_editable(PointerRNA *ptr, const char **UNUSE
   return ((dtar->flag & DTAR_FLAG_ID_OB_ONLY) == 0);
 }
 
-static void rna_DriverTarget_id_type_set(PointerRNA *ptr, int value)
+static void api_DriverTarget_id_type_set(ApiPtr *ptr, int value)
 {
   DriverTarget *data = (DriverTarget *)(ptr->data);
 
@@ -312,7 +312,7 @@ static void rna_DriverTarget_id_type_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_DriverTarget_RnaPath_get(PointerRNA *ptr, char *value)
+static void api_DriverTarget_ApiPath_get(ApiPtr *ptr, char *value)
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
