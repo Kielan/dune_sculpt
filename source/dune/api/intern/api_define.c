@@ -1151,33 +1151,33 @@ void RNA_def_struct_refine_func(StructRNA *srna, const char *refine)
   }
 }
 
-void RNA_def_struct_idprops_func(StructRNA *srna, const char *idproperties)
+void api_def_struct_idprops_fn(ApiStruct *sapi, const char *idprops)
 {
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
 
-  if (idproperties) {
-    srna->idproperties = (IDPropertiesFunc)idproperties;
+  if (idprops) {
+    sapi->idprops = (IdPropsFn)idprops;
   }
 }
 
-void RNA_def_struct_register_funcs(StructRNA *srna,
-                                   const char *reg,
-                                   const char *unreg,
-                                   const char *instance)
+void api_def_struct_register_fns(ApiStruct *srna,
+                                 const char *reg,
+                                 const char *unreg,
+                                 const char *instance)
 {
-  if (!DefRNA.preprocess) {
+  if (!Apief.preprocess) {
     CLOG_ERROR(&LOG, "only during preprocessing.");
     return;
   }
 
   if (reg) {
-    srna->reg = (StructRegisterFunc)reg;
+    srna->reg = (StructRegisterFn)reg;
   }
   if (unreg) {
-    srna->unreg = (StructUnregisterFunc)unreg;
+    srna->unreg = (StructUnregisterFn)unreg;
   }
   if (instance) {
     srna->instance = (StructInstanceFunc)instance;
