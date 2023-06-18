@@ -342,19 +342,19 @@ static void rna_DriverTarget_RnaPath_set(PointerRNA *ptr, const char *value)
 
   /* XXX in this case we need to be very careful,
    * as this will require some new dependencies to be added! */
-  if (dtar->rna_path) {
-    MEM_freeN(dtar->rna_path);
+  if (dtar->api_path) {
+    mem_freen(dtar->api_path);
   }
 
   if (value[0]) {
-    dtar->rna_path = BLI_strdup(value);
+    dtar->api_path = lib_strdup(value);
   }
   else {
-    dtar->rna_path = NULL;
+    dtar->api_path = NULL;
   }
 }
 
-static void rna_DriverVariable_type_set(PointerRNA *ptr, int value)
+static void api_DriverVariable_type_set(PointerRNA *ptr, int value)
 {
   DriverVar *dvar = (DriverVar *)ptr->data;
 
@@ -362,40 +362,40 @@ static void rna_DriverVariable_type_set(PointerRNA *ptr, int value)
   driver_change_variable_type(dvar, value);
 }
 
-void rna_DriverVariable_name_set(PointerRNA *ptr, const char *value)
+void api_DriverVariable_name_set(ApiPtr *ptr, const char *value)
 {
   DriverVar *data = (DriverVar *)(ptr->data);
 
-  BLI_strncpy_utf8(data->name, value, 64);
+  lib_strncpy_utf8(data->name, value, 64);
   driver_variable_name_validate(data);
   driver_variable_unique_name(data);
 }
 
 /* ----------- */
 
-static DriverVar *rna_Driver_new_variable(ChannelDriver *driver)
+static DriverVar *api_Driver_new_variable(ChannelDriver *driver)
 {
   /* call the API function for this */
   return driver_add_new_variable(driver);
 }
 
-static void rna_Driver_remove_variable(ChannelDriver *driver,
+static void api_Driver_remove_variable(ChannelDriver *driver,
                                        ReportList *reports,
-                                       PointerRNA *dvar_ptr)
+                                       ApiPtr *dvar_ptr)
 {
   DriverVar *dvar = dvar_ptr->data;
-  if (BLI_findindex(&driver->variables, dvar) == -1) {
-    BKE_report(reports, RPT_ERROR, "Variable does not exist in this driver");
+  if (lib_findindex(&driver->variables, dvar) == -1) {
+    dune_report(reports, RPT_ERROR, "Variable does not exist in this driver");
     return;
   }
 
   driver_free_variable_ex(driver, dvar);
-  RNA_POINTER_INVALIDATE(dvar_ptr);
+  API_PTR_INVALIDATE(dvar_ptr);
 }
 
 /* ****************************** */
 
-static void rna_FKeyframe_handle1_get(PointerRNA *ptr, float *values)
+static void api_FKeyframe_handle1_get(PointerRNA *ptr, float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
