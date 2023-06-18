@@ -937,25 +937,25 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
   sapi->name = id; /* may be overwritten later RNA_def_struct_ui_text */
   sapi->description = "";
   /* may be overwritten later RNA_def_struct_translation_context */
-  sapi->translation_cxt = LANG_I18NCONTEXT_DEFAULT_BPYRNA;
+  sapi->translation_cxt = LANG_CXT_DEFAULT_APIBPY;
   if (!sapifrom) {
     sapi->icon = ICON_DOT;
     sapi->flag |= STRUCT_UNDO;
   }
 
-  if (ApiDefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     sapi->flag |= STRUCT_PUBLIC_NAMESPACE;
   }
 
-  rna_dapi_structs_add(dapi, sapi);
+  api_dapi_structs_add(dapi, sapi);
 
-  if (ApiDefRNA.preprocess) {
-    ds = mem_callocN(sizeof(StructDefRNA), "StructDefRNA");
+  if (ApiDef.preprocess) {
+    ds = mem_callocN(sizeof(ApiStructDef), "ApiStructDef");
     ds->srna = srna;
-    api_addtail(&ApiDefRNA.structs, ds);
+    api_addtail(&ApiDef.structs, ds);
 
     if (dsfrom) {
-      ds->dnafromname = dsfrom->dnaname;
+      ds->typesfromname = dsfrom->typesname;
     }
   }
 
@@ -978,20 +978,20 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
     api_def_prop_ui_text(prop, "Props", "Api prop collection");
 
     if (ApiDef.preprocess) {
-      api_def_prop_struct_type(prop, "Property");
+      api_def_prop_struct_type(prop, "Prop");
       api_def_prop_collection_funcs(prop,
                                     "api_builtin_props_begin",
                                     "api_builtin_props_next",
-                                    "api_iter_list_end",
-                                        "rna_builtin_properties_get",
-                                        NULL,
-                                        NULL,
-                                        "rna_builtin_properties_lookup_string",
-                                        NULL);
+                                    "api_iter_list_end",         
+                                    "api_builtin_props_get",
+                                    NULL,
+                                    NULL,
+                                    "api_builtin_props_lookup_string",
+                                    NULL);
     }
     else {
-#ifdef RNA_RUNTIME
-      CollectionPropertyRNA *cprop = (ApiCollectionProp *)prop;
+#ifdef API_RUNTIME
+      ApiCollectionProp *cprop = (ApiCollectionProp *)prop;
       cprop->begin = api_builtin_props_begin;
       cprop->next = api_builtin_props_next;
       cprop->get = api_builtin_props_get;
@@ -999,13 +999,13 @@ ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom
 #endif
     }
 
-    prop = api_def_prop(&srna->cont, "rna_type", PROP_POINTER, PROP_NONE);
+    prop = api_def_prop(&sapi->cont, "api_type", PROP_PTR, PROP_NONE);
     api_def_prop_flag(prop, PROP_HIDDEN);
-    api_def_prop_ui_text(prop, "RNA", "RNA type definition");
+    api_def_prop_ui_text(prop, "Api", "Api type definition");
 
     if (ApiDef.preprocess) {
       api_def_prop_struct_type(prop, "Struct");
-      api_def_prop_pointer_funcs(prop, "rna_builtin_type_get", NULL, NULL, NULL);
+      api_def_prop_ptr_fns(prop, "api_builtin_type_get", NULL, NULL, NULL);
     }
     else {
 #ifdef API_RUNTIME
@@ -1048,25 +1048,25 @@ void api_def_struct_stype(ApiStruct *sapi, const char *structname)
     return;
   }
 
-  ds = rna_find_def_struct(srna);
+  ds = api_find_def_struct(srna);
 
   /* There are far too many structs which initialize without valid DNA struct names,
    * this can't be checked without adding an option to disable
    * (tested this and it means changes all over - Campbell) */
 #if 0
-  if (DNA_struct_find_nr_wrapper(DefRNA.sdna, structname) == -1) {
-    if (!DefRNA.silent) {
+  if (types_struct_find_nr_wrapper(ApiDef.stype, structname) == -1) {
+    if (!ApiDef.silent) {
       CLOG_ERROR(&LOG, "%s not found.", structname);
-      DefRNA.error = true;
+      ApiDef.error = true;
     }
     return;
   }
 #endif
 
-  ds->dnaname = structname;
+  ds->typesname = structname;
 }
 
-void RNA_def_struct_sdna_from(StructRNA *srna, const char *structname, const char *propname)
+void api_def_struct_stype_from(ApiStruct *sapi, const char *structname, const char *propname)
 {
   ApiStructDef *ds;
 
@@ -1078,7 +1078,7 @@ void RNA_def_struct_sdna_from(StructRNA *srna, const char *structname, const cha
   ds = api_find_def_struct(srna);
 
   if (!ds->typesname) {
-    CLOG_ERROR(&LOG, "%s base struct must know DNA already.", structname);
+    CLOG_ERROR(&LOG, "%s base struct must know types already.", structname);
     return;
   }
 
@@ -1090,20 +1090,20 @@ void RNA_def_struct_sdna_from(StructRNA *srna, const char *structname, const cha
     return;
   }
 
-  ds->dnafromprop = propname;
-  ds->dnaname = structname;
+  ds->typesfromprop = propname;
+  ds->typesname = structname;
 }
 
-void RNA_def_struct_name_property(struct StructRNA *srna, struct PropertyRNA *prop)
+void api_def_struct_name_property(struct ApiStruct *sapi, struct ApiProp *prop)
 {
   if (prop->type != PROP_STRING) {
-    CLOG_ERROR(&LOG, "\"%s.%s\", must be a string property.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    CLOG_ERROR(&LOG, "\"%s.%s\", must be a string prop.", sapi->id, prop->id);
+    ApiDef.error = true;
   }
   else if (sapi->nameprop != NULL) {
     CLOG_ERROR(
         &LOG, "\"%s.%s\", name property is already set.", srna->identifier, prop->identifier);
-    ApiDefRNA.error = true;
+    ApiDef.error = true;
   }
   else {
     srna->nameprop = prop;
