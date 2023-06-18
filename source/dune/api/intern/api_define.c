@@ -1486,7 +1486,7 @@ void RNA_def_property_flag(PropertyRNA *prop, PropertyFlag flag)
   prop->flag |= flag;
 }
 
-void RNA_def_property_clear_flag(PropertyRNA *prop, PropertyFlag flag)
+void api_def_prop_clear_flag(ApiProp *prop, PropFlag flag)
 {
   prop->flag &= ~flag;
   if (flag & PROP_PTR_NO_OWNERSHIP) {
@@ -1494,35 +1494,35 @@ void RNA_def_property_clear_flag(PropertyRNA *prop, PropertyFlag flag)
   }
 }
 
-void RNA_def_property_override_flag(PropertyRNA *prop, PropertyOverrideFlag flag)
+void api_def_prop_override_flag(ApiProp *prop, PropOverrideFlag flag)
 {
   prop->flag_override |= flag;
 }
 
-void RNA_def_property_override_clear_flag(PropertyRNA *prop, PropertyOverrideFlag flag)
+void api_def_prop_override_clear_flag(ApiProp *prop, PropOverrideFlag flag)
 {
   prop->flag_override &= ~flag;
 }
 
-void RNA_def_property_tags(PropertyRNA *prop, int tags)
+void api_def_prop_tags(PropertyRNA *prop, int tags)
 {
   prop->tags |= tags;
 }
 
-void RNA_def_parameter_flags(PropertyRNA *prop,
-                             PropertyFlag flag_property,
-                             ParameterFlag flag_parameter)
+void api_def_param_flags(ApiProp *prop,
+                         ApiPropFlag flag_prop,
+                         ParamFlag flag_param)
 {
-  prop->flag |= flag_property;
-  prop->flag_parameter |= flag_parameter;
+  prop->flag |= flag_prop;
+  prop->flag_param |= flag_param;
 }
 
-void RNA_def_parameter_clear_flags(PropertyRNA *prop,
-                                   PropertyFlag flag_property,
-                                   ParameterFlag flag_parameter)
+void api_def_param_clear_flags(ApiProp *prop,
+                               PropFlag flag_prop,
+                               ParamFlag flag_param)
 {
-  prop->flag &= ~flag_property;
-  prop->flag_parameter &= ~flag_parameter;
+  prop->flag &= ~flag_prop;
+  prop->flag_param &= ~flag_param;
 }
 
 void RNA_def_property_subtype(PropertyRNA *prop, PropertySubType subtype)
