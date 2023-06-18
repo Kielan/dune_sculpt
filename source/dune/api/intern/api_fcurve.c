@@ -324,19 +324,19 @@ static void rna_DriverTarget_RnaPath_get(PointerRNA *ptr, char *value)
   }
 }
 
-static int rna_DriverTarget_RnaPath_length(PointerRNA *ptr)
+static int api_DriverTarget_ApiPath_length(ApiPtr *ptr)
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
-  if (dtar->rna_path) {
-    return strlen(dtar->rna_path);
+  if (dtar->api_path) {
+    return strlen(dtar->api_path);
   }
   else {
     return 0;
   }
 }
 
-static void rna_DriverTarget_RnaPath_set(PointerRNA *ptr, const char *value)
+static void api_DriverTarget_ApiPath_set(ApiPtr *ptr, const char *value)
 {
   DriverTarget *dtar = (DriverTarget *)ptr->data;
 
@@ -354,7 +354,7 @@ static void rna_DriverTarget_RnaPath_set(PointerRNA *ptr, const char *value)
   }
 }
 
-static void api_DriverVariable_type_set(PointerRNA *ptr, int value)
+static void api_DriverVariable_type_set(ApiPtr *ptr, int value)
 {
   DriverVar *dvar = (DriverVar *)ptr->data;
 
@@ -403,7 +403,7 @@ static void api_FKeyframe_handle1_get(PointerRNA *ptr, float *values)
   values[1] = bezt->vec[0][1];
 }
 
-static void rna_FKeyframe_handle1_set(PointerRNA *ptr, const float *values)
+static void api_FKeyframe_handle1_set(ApiPtr *ptr, const float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
@@ -411,7 +411,7 @@ static void rna_FKeyframe_handle1_set(PointerRNA *ptr, const float *values)
   bezt->vec[0][1] = values[1];
 }
 
-static void rna_FKeyframe_handle2_get(PointerRNA *ptr, float *values)
+static void api_FKeyframe_handle2_get(ApiPtr *ptr, float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
@@ -419,7 +419,7 @@ static void rna_FKeyframe_handle2_get(PointerRNA *ptr, float *values)
   values[1] = bezt->vec[2][1];
 }
 
-static void rna_FKeyframe_handle2_set(PointerRNA *ptr, const float *values)
+static void api_FKeyframe_handle2_set(ApiPtr *ptr, const float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
@@ -427,7 +427,7 @@ static void rna_FKeyframe_handle2_set(PointerRNA *ptr, const float *values)
   bezt->vec[2][1] = values[1];
 }
 
-static void rna_FKeyframe_ctrlpoint_get(PointerRNA *ptr, float *values)
+static void api_FKeyframe_ctrlpoint_get(PointerRNA *ptr, float *values)
 {
   BezTriple *bezt = (BezTriple *)ptr->data;
 
