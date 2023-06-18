@@ -5,50 +5,50 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_action.h"
+#include "dune_action.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "ED_keyframes_edit.h"
-#include "ED_keyframing.h"
+#include "ed_keyframes_edit.h"
+#include "ed_keyframing.h"
 
-const EnumPropertyItem rna_enum_fmodifier_type_items[] = {
-    {FMODIFIER_TYPE_NULL, "NULL", 0, "Invalid", ""},
-    {FMODIFIER_TYPE_GENERATOR,
+const EnumPropItem api_enum_fmod_type_items[] = {
+    {FMOD_TYPE_NULL, "NULL", 0, "Invalid", ""},
+    {FMOD_TYPE_GENERATOR,
      "GENERATOR",
      0,
      "Generator",
      "Generate a curve using a factorized or expanded polynomial"},
-    {FMODIFIER_TYPE_FN_GENERATOR,
+    {FMOD_TYPE_FN_GENERATOR,
      "FNGENERATOR",
      0,
      "Built-In Function",
      "Generate a curve using standard math functions such as sin and cos"},
-    {FMODIFIER_TYPE_ENVELOPE,
+    {FMOD_TYPE_ENVELOPE,
      "ENVELOPE",
      0,
      "Envelope",
      "Reshape F-Curve values, e.g. change amplitude of movements"},
-    {FMODIFIER_TYPE_CYCLES, "CYCLES", 0, "Cycles", "Cyclic extend/repeat keyframe sequence"},
-    {FMODIFIER_TYPE_NOISE, "NOISE", 0, "Noise", "Add pseudo-random noise on top of F-Curves"},
-    // {FMODIFIER_TYPE_FILTER, "FILTER", 0, "Filter", ""}, /* FIXME: not implemented yet! */
-    // {FMODIFIER_TYPE_PYTHON, "PYTHON", 0, "Python", ""}, /* FIXME: not implemented yet! */
-    {FMODIFIER_TYPE_LIMITS,
+    {FMOD_TYPE_CYCLES, "CYCLES", 0, "Cycles", "Cyclic extend/repeat keyframe sequence"},
+    {FMOD_TYPE_NOISE, "NOISE", 0, "Noise", "Add pseudo-random noise on top of F-Curves"},
+    // {FMOD_TYPE_FILTER, "FILTER", 0, "Filter", ""}, /* FIXME: not implemented yet! */
+    // {FMOD_TYPE_PYTHON, "PYTHON", 0, "Python", ""}, /* FIXME: not implemented yet! */
+    {FMOD_TYPE_LIMITS,
      "LIMITS",
      0,
      "Limits",
      "Restrict maximum and minimum values of F-Curve"},
-    {FMODIFIER_TYPE_STEPPED,
+    {FMOD_TYPE_STEPPED,
      "STEPPED",
      0,
      "Stepped Interpolation",
@@ -56,7 +56,7 @@ const EnumPropertyItem rna_enum_fmodifier_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_fcurve_auto_smoothing_items[] = {
+const EnumPropItem api_enum_fcurve_auto_smoothing_items[] = {
     {FCURVE_SMOOTH_NONE,
      "NONE",
      0,
@@ -72,7 +72,7 @@ const EnumPropertyItem rna_enum_fcurve_auto_smoothing_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_beztriple_keyframe_type_items[] = {
+const EnumPropItem api_enum_beztriple_keyframe_type_items[] = {
     {BEZT_KEYTYPE_KEYFRAME,
      "KEYFRAME",
      ICON_KEYTYPE_KEYFRAME_VEC,
@@ -101,7 +101,7 @@ const EnumPropertyItem rna_enum_beztriple_keyframe_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_beztriple_interpolation_easing_items[] = {
+const EnumPropItem rna_enum_beztriple_interpolation_easing_items[] = {
     /* XXX: auto-easing is currently using a placeholder icon... */
     {BEZT_IPO_EASE_AUTO,
      "AUTO",
@@ -128,7 +128,7 @@ const EnumPropertyItem rna_enum_beztriple_interpolation_easing_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_driver_target_rotation_mode_items[] = {
+const EnumPropItem api_enum_driver_target_rotation_mode_items[] = {
     {DTAR_ROTMODE_AUTO, "AUTO", 0, "Auto Euler", "Euler using the rotation order of the target"},
     {DTAR_ROTMODE_EULER_XYZ, "XYZ", 0, "XYZ Euler", "Euler using the XYZ rotation order"},
     {DTAR_ROTMODE_EULER_XZY, "XZY", 0, "XZY Euler", "Euler using the XZY rotation order"},
@@ -155,31 +155,31 @@ const EnumPropertyItem rna_enum_driver_target_rotation_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static StructRNA *rna_FModifierType_refine(struct PointerRNA *ptr)
+static ApiStruct *api_FModType_refine(struct ApiPtr *ptr)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   switch (fcm->type) {
-    case FMODIFIER_TYPE_GENERATOR:
-      return &RNA_FModifierGenerator;
-    case FMODIFIER_TYPE_FN_GENERATOR:
-      return &RNA_FModifierFunctionGenerator;
-    case FMODIFIER_TYPE_ENVELOPE:
-      return &RNA_FModifierEnvelope;
-    case FMODIFIER_TYPE_CYCLES:
-      return &RNA_FModifierCycles;
-    case FMODIFIER_TYPE_NOISE:
-      return &RNA_FModifierNoise;
+    case FMOD_TYPE_GENERATOR:
+      return &ApiFModifierGenerator;
+    case FMOD_TYPE_FN_GENERATOR:
+      return &ApiFModFnGenerator;
+    case FMOD_TYPE_ENVELOPE:
+      return &ApiFModEnvelope;
+    case FMOD_TYPE_CYCLES:
+      return &ApiFModCycles;
+    case FMOD_TYPE_NOISE:
+      return &ApiFModNoise;
 #  if 0
-    case FMODIFIER_TYPE_FILTER:
-      return &RNA_FModifierFilter;
+    case FMOD_TYPE_FILTER:
+      return &ApiFModFilter;
 #  endif
-    case FMODIFIER_TYPE_PYTHON:
-      return &RNA_FModifierPython;
+    case FMOD_TYPE_PYTHON:
+      return &ApiFModifierPython;
     case FMODIFIER_TYPE_LIMITS:
       return &RNA_FModifierLimits;
     case FMODIFIER_TYPE_STEPPED:
