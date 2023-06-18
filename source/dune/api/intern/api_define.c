@@ -1094,7 +1094,7 @@ void api_def_struct_stype_from(ApiStruct *sapi, const char *structname, const ch
   ds->typesname = structname;
 }
 
-void api_def_struct_name_property(struct ApiStruct *sapi, struct ApiProp *prop)
+void api_def_struct_name_prop(struct ApiStruct *sapi, struct ApiProp *prop)
 {
   if (prop->type != PROP_STRING) {
     CLOG_ERROR(&LOG, "\"%s.%s\", must be a string prop.", sapi->id, prop->id);
@@ -1102,22 +1102,22 @@ void api_def_struct_name_property(struct ApiStruct *sapi, struct ApiProp *prop)
   }
   else if (sapi->nameprop != NULL) {
     CLOG_ERROR(
-        &LOG, "\"%s.%s\", name property is already set.", srna->identifier, prop->identifier);
+        &LOG, "\"%s.%s\", name prop is already set.", sapi->id, prop->id);
     ApiDef.error = true;
   }
   else {
-    srna->nameprop = prop;
+    sapi->nameprop = prop;
   }
 }
 
-void api_def_struct_nested(BlenderRNA *brna, StructRNA *srna, const char *structname)
+void api_def_struct_nested(DuneApi *dapi, ApiStruc *sapi, const char *structname)
 {
   ApiStruct *srnafrom;
 
   /* find struct to derive from */
-  sapifrom = lib_ghash_lookup(brna->structs_map, structname);
-  if (!srnafrom) {
-    CLOG_ERROR(&LOG, "struct %s not found for %s.", structname, srna->identifier);
+  sapifrom = lib_ghash_lookup(dapi->structs_map, structname);
+  if (!sapifrom) {
+    CLOG_ERROR(&LOG, "struct %s not found for %s.", structname, sapi->id);
     ApiDef.error = true;
   }
 
@@ -1126,15 +1126,15 @@ void api_def_struct_nested(BlenderRNA *brna, StructRNA *srna, const char *struct
 
 void api_def_struct_flag(ApiStruct *sapi, int flag)
 {
-  srna->flag |= flag;
+  sapi->flag |= flag;
 }
 
-void RNA_def_struct_clear_flag(StructRNA *srna, int flag)
+void api_def_struct_clear_flag(ApiStruct *sapi, int flag)
 {
   srna->flag &= ~flag;
 }
 
-void RNA_def_struct_property_tags(StructRNA *srna, const EnumPropertyItem *prop_tag_defines)
+void RNA_def_struct_property_tags(ApiStruct *srna, const EnumPropertyItem *prop_tag_defines)
 {
   srna->prop_tag_defines = prop_tag_defines;
 }
