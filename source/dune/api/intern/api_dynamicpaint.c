@@ -401,36 +401,34 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   RNA_def_property_ui_text(
       prop, "Dissolve Time", "Approximately in how many frames should dissolve happen");
 
-  prop = RNA_def_property(srna, "use_drying", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_USE_DRYING);
-  RNA_def_property_ui_text(prop, "Dry", "Enable to make surface wetness dry over time");
+  prop = api_def_prop(sapi, "use_drying", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_USE_DRYING);
+  api_def_prop_ui_text(prop, "Dry", "Enable to make surface wetness dry over time");
 
-  prop = RNA_def_property(srna, "dry_speed", PROP_INT, PROP_TIME);
-  RNA_def_property_range(prop, 1.0, 10000.0);
-  RNA_def_property_ui_range(prop, 1.0, 10000.0, 5, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "dry_speed", PROP_INT, PROP_TIME);
+  api_def_prop_range(prop, 1.0, 10000.0);
+  api_def_prop_ui_range(prop, 1.0, 10000.0, 5, -1);
+  api_def_prop_ui_text(
       prop, "Dry Time", "Approximately in how many frames should drying happen");
 
-  /*
-   *   Simulation settings
-   */
-  prop = RNA_def_property(srna, "image_resolution", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 16.0, 4096.0);
-  RNA_def_property_ui_range(prop, 16.0, 4096.0, 1, -1);
-  RNA_def_property_ui_text(prop, "Resolution", "Output image resolution");
+  /* Simulation settings */
+  prop = api_def_prop(sapi, "image_resolution", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 16.0, 4096.0);
+  api_def_prop_ui_range(prop, 16.0, 4096.0, 1, -1);
+  api_def_prop_ui_text(prop, "Resolution", "Output image resolution");
 
-  prop = RNA_def_property(srna, "uv_layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "uvlayer_name");
-  RNA_def_property_ui_text(prop, "UV Map", "UV map name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_DynamicPaint_uvlayer_set");
+  prop = api_def_prop(sapi, "uv_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "uvlayer_name");
+  api_def_prop_ui_text(prop, "UV Map", "UV map name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_DynamicPaint_uvlayer_set");
 
-  prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "start_frame");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1.0, MAXFRAMEF);
-  RNA_def_property_ui_range(prop, 1.0, 9999, 1, -1);
-  RNA_def_property_ui_text(prop, "Start Frame", "Simulation start frame");
+  prop = RNA_def_prop(sapi, "frame_start", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "start_frame");
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_range(prop, 1.0, MAXFRAMEF);
+  RNA_def_prop_ui_range(prop, 1.0, 9999, 1, -1);
+  RNA_def_prop_ui_text(prop, "Start Frame", "Simulation start frame");
   RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurfaces_updateFrames");
 
   prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_NONE);
