@@ -444,14 +444,14 @@ static void rna_def_canvas_surface(BlenderRNA *brna)
   RNA_def_property_ui_text(
       prop, "Sub-Steps", "Do extra frames between scene frames to ensure smooth motion");
 
-  prop = RNA_def_property(srna, "use_antialiasing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_DPAINT_ANTIALIAS);
-  RNA_def_property_ui_text(prop, "Anti-Aliasing", "Use 5x multisampling to smooth paint edges");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_reset");
+  prop = api_def_prop(sapi, "use_antialiasing", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_DPAINT_ANTIALIAS);
+  api_def_prop_ui_text(prop, "Anti-Aliasing", "Use 5x multisampling to smooth paint edges");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaintSurface_reset");
 
-  prop = RNA_def_property(srna, "brush_influence_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "influence_scale");
+  prop = api_def_prop(sapi, "brush_influence_scale", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "influence_scale");
   RNA_def_property_range(prop, 0.0, 1.0);
   RNA_def_property_ui_range(prop, 0.0, 1.0, 1, 2);
   RNA_def_property_ui_text(
