@@ -1225,7 +1225,7 @@ void api_def_struct_id_no_struct_map(ApiStruct *sapi, const char *id)
     return;
   }
 
-  srna->id = id;
+  sapi->id = id;
 }
 
 void api_def_struct_ui_text(ApiStruct *sapi, const char *name, const char *description)
@@ -1233,7 +1233,7 @@ void api_def_struct_ui_text(ApiStruct *sapi, const char *name, const char *descr
   DESCR_CHECK(description, sapi->id, NULL);
 
   sapi->name = name;
-  sali->description = description;
+  sapi->description = description;
 }
 
 void api_def_struct_ui_icon(ApiStruct *sapi, int icon)
@@ -1419,58 +1419,58 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
         break;
       case PROP_INT: {
         ApiDef.silent = true;
-        api_def_property_int_sdna(prop, NULL, identifier);
+        api_def_prop_int_stype(prop, NULL, identifier);
         ApiDef.silent = false;
         break;
       }
       case PROP_FLOAT: {
-        DefRNA.silent = true;
-        RNA_def_property_float_sdna(prop, NULL, identifier);
-        DefRNA.silent = false;
+        ApiDef.silent = true;
+        api_def_prop_float_stype(prop, NULL, id);
+        ApiDef.silent = false;
         break;
       }
       case PROP_STRING: {
         ApiDef.silent = true;
-        api_def_prop_string_styor(prop, NULL, identifier);
+        api_def_prop_string_styor(prop, NULL, id);
         ApiDef.silent = false;
         break;
       }
       case PROP_ENUM:
         ApiDef.silent = true;
-        api_def_prop_enum_stype(prop, NULL, identifier);
+        api_def_prop_enum_stype(prop, NULL, id);
         ApiDef.silent = false;
         break;
-      case PROP_POINTER:
-        DefRNA.silent = true;
-        api_def_prop_ptr_styoe(prop, NULL, identifier);
-        DefRNA.silent = false;
+      case PROP_PTR:
+        ApiDef.silent = true;
+        api_def_prop_ptr_styoe(prop, NULL, id);
+        ApiDef.silent = false;
         break;
       case PROP_COLLECTION:
-        DefRNA.silent = true;
-        api_def_property_collection_stype(prop, NULL, id, NULL);
-        DefRNA.silent = false;
+        ApiDef.silent = true;
+        api_def_prop_collection_stype(prop, NULL, id, NULL);
+        ApiDef.silent = false;
         break;
     }
   }
   else {
     prop->flag |= PROP_IDPROP;
     prop->flag_internal |= PROP_INTERN_RUNTIME;
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
     if (cont->prophash) {
-      BLI_ghash_insert(cont->prophash, (void *)prop->identifier, prop);
+      lib_ghash_insert(cont->prophash, (void *)prop->identifier, prop);
     }
 #endif
   }
 
   /* Override handling. */
-  if (DefRNA.preprocess) {
+  if (ApiDef.preprocess) {
     prop->override_diff = (ApiPropOverrideDiff) "api_prop_override_diff_default";
     prop->override_store = (ApiPropOverrideStore) "api_prop_override_store_default";
     prop->override_apply = (ApiPropOverrideApply) "api_prop_override_apply_default";
   }
   /* TODO: do we want that for runtime-defined stuff too? I’d say no, but... maybe yes :/ */
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
   /* Both are typically cleared. */
   api_def_prop_update(
       prop, ApiDef.fallback.prop_update.noteflag, ApiDef.fallback.prop_update.updatefn);
@@ -1525,7 +1525,7 @@ void api_def_param_clear_flags(ApiProp *prop,
   prop->flag_param &= ~flag_param;
 }
 
-void RNA_def_property_subtype(ApiProp *prop, PropertySubType subtype)
+void api_def_prop_subtype(ApiProp *prop, PropertySubType subtype)
 {
   prop->subtype = subtype;
 }
@@ -1573,7 +1573,7 @@ void api_def_prop_array(ApiProp *prop, int length)
       break;
     default:
       CLOG_ERROR(&LOG,
-                 "\"%s.%s\", only boolean/int/float can be array.",
+                 "\"%s.%s\", only bool/int/float can be array.",
                  sapi->id,
                  prop->id);
       ApiDef.error = true;
@@ -1663,7 +1663,7 @@ void api_def_prop_ui_range(
 #ifndef NDEBUG
   if (min > max) {
     CLOG_ERROR(&LOG, "\"%s.%s\", min > max.", srna->identifier, prop->identifier);
-    DefRNA.error = true;
+    ApiDefRNA.error = true;
   }
 
   if (step < 0 || step > 100) {
@@ -1673,7 +1673,7 @@ void api_def_prop_ui_range(
 
   if (step == 0) {
     CLOG_ERROR(&LOG, "\"%s.%s\", step is zero.", srna->identifier, prop->identifier);
-    ApiDefRNA.error = true;
+    ApiDef.error = true;
   }
 
   if (precision < -1 || precision > UI_PRECISION_FLOAT_MAX) {
@@ -1722,13 +1722,13 @@ void apo_def_prop_ui_scale_type(ApiProp *prop, PropScaleType ui_scale_type)
       break;
     }
     default:
-      CLOG_ERROR(&LOG, "\"%s.%s\", invalid type for scale.", srna->identifier, prop->identifier);
+      CLOG_ERROR(&LOG, "\"%s.%s\", invalid type for scale.", sapi->id, prop->id);
       ApiDef.error = true;
       break;
   }
 }
 
-void RNA_def_property_range(PropertyRNA *prop, double min, double max)
+void api_def_prop_range(ApiProp *prop, double min, double max)
 {
   StructRNA *srna = DefRNA.laststruct;
 
