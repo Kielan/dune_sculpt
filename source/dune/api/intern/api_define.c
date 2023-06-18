@@ -1464,24 +1464,24 @@ ApiProp *api_def_prop(ApiStructOrFn *cont_,
 
   /* Override handling. */
   if (DefRNA.preprocess) {
-    prop->override_diff = (RNAPropOverrideDiff) "rna_property_override_diff_default";
-    prop->override_store = (RNAPropOverrideStore) "rna_property_override_store_default";
-    prop->override_apply = (RNAPropOverrideApply) "rna_property_override_apply_default";
+    prop->override_diff = (ApiPropOverrideDiff) "api_prop_override_diff_default";
+    prop->override_store = (ApiPropOverrideStore) "api_prop_override_store_default";
+    prop->override_apply = (ApiPropOverrideApply) "api_prop_override_apply_default";
   }
   /* TODO: do we want that for runtime-defined stuff too? I’d say no, but... maybe yes :/ */
 
 #ifndef RNA_RUNTIME
   /* Both are typically cleared. */
-  RNA_def_property_update(
-      prop, DefRNA.fallback.property_update.noteflag, DefRNA.fallback.property_update.updatefunc);
+  api_def_prop_update(
+      prop, ApiDef.fallback.prop_update.noteflag, ApiDef.fallback.prop_update.updatefn);
 #endif
 
-  rna_addtail(&cont->properties, prop);
+  api_addtail(&cont->props, prop);
 
   return prop;
 }
 
-void RNA_def_property_flag(PropertyRNA *prop, PropertyFlag flag)
+void api_def_prop_flag(ApiProp *prop, PropFlag flag)
 {
   prop->flag |= flag;
 }
