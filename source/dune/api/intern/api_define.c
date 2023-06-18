@@ -1264,31 +1264,31 @@ PropertyRNA *RNA_def_property(StructOrFunctionRNA *cont_,
 
     if (rna_validate_identifier(identifier, error, true) == 0) {
       CLOG_ERROR(
-          &LOG, "property identifier \"%s.%s\" - %s", CONTAINER_RNA_ID(cont), identifier, error);
+          &LOG, "prop id \"%s.%s\" - %s", CONTAINER_RNA_ID(cont), identifier, error);
       DefRNA.error = true;
     }
 
     dcont = rna_find_container_def(cont);
 
     /* TODO: detect super-type collisions. */
-    if (rna_findlink(&dcont->properties, identifier)) {
-      CLOG_ERROR(&LOG, "duplicate identifier \"%s.%s\"", CONTAINER_RNA_ID(cont), identifier);
-      DefRNA.error = true;
+    if (api_findlink(&dcont->props, id)) {
+      CLOG_ERROR(&LOG, "duplicate id \"%s.%s\"", CONTAINER_API_ID(cont), id);
+      ApiDef.error = true;
     }
 
-    dprop = MEM_callocN(sizeof(PropertyDefRNA), "PropertyDefRNA");
-    rna_addtail(&dcont->properties, dprop);
+    dprop = mem_callocn(sizeof(ApiPropDef), "ApiPropDef");
+    api_addtail(&dcont->properties, dprop);
   }
   else {
 #ifndef NDEBUG
     char error[512];
-    if (rna_validate_identifier(identifier, error, true) == 0) {
+    if (api_validate_id(id, error, true) == 0) {
       CLOG_ERROR(&LOG,
-                 "runtime property identifier \"%s.%s\" - %s",
-                 CONTAINER_RNA_ID(cont),
-                 identifier,
+                 "runtime prop id \"%s.%s\" - %s",
+                 CONTAINER_API_ID(cont),
+                 id,
                  error);
-      DefRNA.error = true;
+      ApiDef.error = true;
     }
 #endif
   }
