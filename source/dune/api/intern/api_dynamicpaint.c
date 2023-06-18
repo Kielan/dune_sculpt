@@ -75,66 +75,66 @@ static void rna_DynamicPaint_redoModifier(Main *UNUSED(bmain),
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
 
-static void rna_DynamicPaintSurfaces_updateFrames(Main *UNUSED(bmain),
+static void api_DynamicPaintSurfaces_updateFrames(Main *UNUSED(main),
                                                   Scene *UNUSED(scene),
-                                                  PointerRNA *ptr)
+                                                  ApiPtr *ptr)
 {
   dynamicPaint_cacheUpdateFrames((DynamicPaintSurface *)ptr->data);
 }
 
-static void rna_DynamicPaintSurface_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DynamicPaintSurface_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
   dynamicPaint_resetSurface(scene, (DynamicPaintSurface *)ptr->data);
-  rna_DynamicPaint_redoModifier(bmain, scene, ptr);
+  api_DynamicPaint_redoModifier(main, scene, ptr);
 }
 
-static void rna_DynamicPaintSurface_initialcolortype(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DynamicPaintSurface_initialcolortype(Main *main, Scene *scene, ApiPtr *ptr)
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 
   surface->init_layername[0] = '\0';
   dynamicPaint_clearSurface(scene, surface);
-  rna_DynamicPaint_redoModifier(bmain, scene, ptr);
+  api_DynamicPaint_redoMod(main, scene, ptr);
 }
 
-static void rna_DynamicPaintSurface_uniqueName(Main *UNUSED(bmain),
+static void api_DynamicPaintSurface_uniqueName(Main *UNUSED(main),
                                                Scene *UNUSED(scene),
-                                               PointerRNA *ptr)
+                                               ApiPtr *ptr)
 {
   dynamicPaintSurface_setUniqueName((DynamicPaintSurface *)ptr->data,
                                     ((DynamicPaintSurface *)ptr->data)->name);
 }
 
-static void rna_DynamicPaintSurface_changeType(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DynamicPaintSurface_changeType(Main *main, Scene *scene, ApiPtr *ptr)
 {
   dynamicPaintSurface_updateType((DynamicPaintSurface *)ptr->data);
   dynamicPaint_resetSurface(scene, (DynamicPaintSurface *)ptr->data);
-  rna_DynamicPaintSurface_reset(bmain, scene, ptr);
+  api_DynamicPaintSurface_reset(bmain, scene, ptr);
 }
 
-static void rna_DynamicPaintSurfaces_changeFormat(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DynamicPaintSurfaces_changeFormat(Main *main, Scene *scene, ApiPtr *ptr)
 {
   DynamicPaintSurface *surface = (DynamicPaintSurface *)ptr->data;
 
   surface->type = MOD_DPAINT_SURFACE_T_PAINT;
   dynamicPaintSurface_updateType((DynamicPaintSurface *)ptr->data);
-  rna_DynamicPaintSurface_reset(bmain, scene, ptr);
+  api_DynamicPaintSurface_reset(main, scene, ptr);
 }
 
-static void rna_DynamicPaint_reset_dependency(Main *bmain,
+static void api_DynamicPaint_reset_dependency(Main *main,
                                               Scene *UNUSED(scene),
-                                              PointerRNA *UNUSED(ptr))
+                                              ApiPtr *UNUSED(ptr))
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(bmain);
 }
 
-static void rna_DynamicPaintSurface_reset_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DynamicPaintSurface_reset_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  rna_DynamicPaintSurface_reset(bmain, scene, ptr);
-  rna_DynamicPaint_reset_dependency(bmain, scene, ptr);
+  api_DynamicPaintSurface_reset(main, scene, ptr);
+  api_DynamicPaint_reset_dependency(main, scene, ptr);
 }
 
-static PointerRNA rna_PaintSurface_active_get(PointerRNA *ptr)
+static ApiPtr api_PaintSurface_active_get(ApiPtr *ptr)
 {
   DynamicPaintCanvasSettings *canvas = (DynamicPaintCanvasSettings *)ptr->data;
   DynamicPaintSurface *surface = canvas->surfaces.first;
@@ -142,7 +142,7 @@ static PointerRNA rna_PaintSurface_active_get(PointerRNA *ptr)
 
   for (; surface; surface = surface->next) {
     if (id == canvas->active_sur) {
-      return rna_pointer_inherit_refine(ptr, &RNA_DynamicPaintSurface, surface);
+      return api_ptr_inherit_refine(ptr, &ApiDynamicPaintSurface, surface);
     }
     id++;
   }
