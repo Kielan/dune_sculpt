@@ -1559,7 +1559,7 @@ void RNA_def_property_array(PropertyRNA *prop, int length)
                srna->id,
                prop->id,
                prop->arraydimension);
-    DefRNA.error = true;
+    ApiDef.error = true;
     return;
   }
 
@@ -1585,9 +1585,9 @@ const float api_default_quaternion[4] = {1, 0, 0, 0};
 const float api_default_axis_angle[4] = {0, 0, 1, 0};
 const float api_default_scale_3d[3] = {1, 1, 1};
 
-const int rna_matrix_dimsize_3x3[] = {3, 3};
-const int rna_matrix_dimsize_4x4[] = {4, 4};
-const int rna_matrix_dimsize_4x2[] = {4, 2};
+const int api_matrix_dimsize_3x3[] = {3, 3};
+const int api_matrix_dimsize_4x4[] = {4, 4};
+const int api_matrix_dimsize_4x2[] = {4, 2};
 
 void api_def_prop_multi_array(ApiProp *prop, int dimension, const int length[])
 {
