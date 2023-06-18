@@ -602,37 +602,36 @@ static void api_tag_animation_update(Main *main, Id *id)
 }
 
 /* allow scripts to update curve after editing manually */
-static void rna_FCurve_update_data_ex(ID *id, FCurve *fcu, Main *bmain)
+static void api_FCurve_update_data_ex(Id *id, FCurve *fcu, Main *main)
 {
   sort_time_fcurve(fcu);
   calchandles_fcurve(fcu);
 
-  rna_tag_animation_update(bmain, id);
+  api_tag_animation_update(bmain, id);
 }
 
 /* api update callback for F-Curves after curve shape changes */
-static void api_FCurve_update_data(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_FCurve_update_data(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  lib_assert(ptr->type == &RNA_FCurve);
-  api_FCurve_update_data_ex(ptr->owner_id, (FCurve *)ptr->data, bmain);
+  lib_assert(ptr->type == &ApiFCurve);
+  api_FCurve_update_data_ex(ptr->owner_id, (FCurve *)ptr->data, main);
 }
 
-static void rna_FCurve_update_data_relations(Main *bmain,
+static void api_FCurve_update_data_relations(Main *main,
                                              Scene *UNUSED(scene),
-                                             PointerRNA *UNUSED(ptr))
+                                             ApiPtr *UNUSED(ptr))
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(main);
 }
 
-/* RNA update callback for F-Curves to indicate that there are copy-on-write tagging/flushing
- * needed (e.g. for properties that affect how animation gets evaluated).
- */
-static void rna_FCurve_update_eval(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+/* api update callback for F-Curves to indicate that there are copy-on-write tagging/flushing
+ * needed (e.g. for properties that affect how animation gets evaluated) */
+static void api_FCurve_update_eval(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  rna_tag_animation_update(bmain, ptr->owner_id);
+  api_tag_animation_update(main, ptr->owner_id);
 }
 
-static PointerRNA rna_FCurve_active_modifier_get(PointerRNA *ptr)
+static ApiPtr api_FCurve_active_modifier_get(PointerRNA *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
   FModifier *fcm = find_active_fmodifier(&fcu->modifiers);
