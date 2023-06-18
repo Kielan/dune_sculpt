@@ -458,13 +458,13 @@ static void api_def_canvas_surface(DuneApi *dapi)
       prop, "Influence Scale", "Adjust influence brush objects have on this surface");
   RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
 
-  prop = RNA_def_property(srna, "brush_radius_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "radius_scale");
-  RNA_def_property_range(prop, 0.0, 10.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "brush_radius_scale", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "radius_scale");
+  api_def_prop_range(prop, 0.0, 10.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, 2);
+  api_def_prop_ui_text(
       prop, "Radius Scale", "Adjust radius of proximity brushes or particles for this surface");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_DynamicPaint_redoModifier");
 
   /*
    * Initial Color
