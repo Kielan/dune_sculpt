@@ -490,31 +490,31 @@ static int api_FCurve_ApiPath_length(ApiPtr *ptr)
   }
 }
 
-static void rna_FCurve_RnaPath_set(PointerRNA *ptr, const char *value)
+static void api_FCurve_RnaPath_set(PointerRNA *ptr, const char *value)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
-  if (fcu->rna_path) {
-    MEM_freeN(fcu->rna_path);
+  if (fcu->api_path) {
+    mem_freen(fcu->api_path);
   }
 
   if (value[0]) {
-    fcu->rna_path = BLI_strdup(value);
+    fcu->api_path = lib_strdup(value);
     fcu->flag &= ~FCURVE_DISABLED;
   }
   else {
-    fcu->rna_path = NULL;
+    fcu->api_path = NULL;
   }
 }
 
-static void rna_FCurve_group_set(PointerRNA *ptr,
-                                 PointerRNA value,
+static void api_FCurve_group_set(ApiPtr *ptr,
+                                 ApiPtr value,
                                  struct ReportList *UNUSED(reports))
 {
-  ID *pid = ptr->owner_id;
-  ID *vid = value.owner_id;
+  Id *pid = ptr->owner_id;
+  Id *vid = value.owner_id;
   FCurve *fcu = ptr->data;
-  bAction *act = NULL;
+  Action *act = NULL;
 
   /* get action */
   if (ELEM(NULL, pid, vid)) {
@@ -532,11 +532,11 @@ static void rna_FCurve_group_set(PointerRNA *ptr,
   if (GS(pid->name) == ID_AC && GS(vid->name) == ID_AC) {
     /* The ID given is the action already -
      * usually when F-Curve is obtained from an action's pointer. */
-    act = (bAction *)pid;
+    act = (Action *)pid;
   }
   else {
     /* the ID given is the owner of the F-Curve (for drivers) */
-    AnimData *adt = BKE_animdata_from_id(ptr->owner_id);
+    AnimData *adt = dune_animdata_from_id(ptr->owner_id);
     act = (adt) ? adt->action : NULL;
   }
 
@@ -556,7 +556,7 @@ static void rna_FCurve_group_set(PointerRNA *ptr,
     return;
   }
   /* make sure F-Curve exists in this action first, otherwise we could still have been tricked */
-  else if (BLI_findindex(&act->curves, fcu) == -1) {
+  else if (lib_findindex(&act->curves, fcu) == -1) {
     printf("ERROR: F-Curve (%p) doesn't exist in action '%s'\n", fcu, act->id.name);
     return;
   }
@@ -573,33 +573,33 @@ static void rna_FCurve_group_set(PointerRNA *ptr,
   else {
     /* Need to add this back, but it can only go at the end of the list
      * (or else will corrupt groups). */
-    BLI_addtail(&act->curves, fcu);
+    lib_addtail(&act->curves, fcu);
   }
 }
 
 /* calculate time extents of F-Curve */
-static void rna_FCurve_range(FCurve *fcu, float range[2])
+static void api_FCurve_range(FCurve *fcu, float range[2])
 {
-  BKE_fcurve_calc_range(fcu, range, range + 1, false, false);
+  dune_fcurve_calc_range(fcu, range, range + 1, false, false);
 }
 
-static bool rna_FCurve_is_empty_get(PointerRNA *ptr)
+static bool api_FCurve_is_empty_get(ApiPtr *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
-  return BKE_fcurve_is_empty(fcu);
+  return dune_fcurve_is_empty(fcu);
 }
 
-static void rna_tag_animation_update(Main *bmain, ID *id)
+static void api_tag_animation_update(Main *main, Id *id)
 {
   const int tags = ID_RECALC_ANIMATION;
-  AnimData *adt = BKE_animdata_from_id(id);
+  AnimData *adt = dune_animdata_from_id(id);
 
   if (adt && adt->action) {
     /* Action is separate datablock, needs separate tag. */
-    DEG_id_tag_update_ex(bmain, &adt->action->id, tags);
+    graph_id_tag_update_ex(bmain, &adt->action->id, tags);
   }
 
-  DEG_id_tag_update_ex(bmain, id, tags);
+  graph_id_tag_update_ex(bmain, id, tags);
 }
 
 /* allow scripts to update curve after editing manually */
@@ -611,11 +611,11 @@ static void rna_FCurve_update_data_ex(ID *id, FCurve *fcu, Main *bmain)
   rna_tag_animation_update(bmain, id);
 }
 
-/* RNA update callback for F-Curves after curve shape changes */
-static void rna_FCurve_update_data(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+/* api update callback for F-Curves after curve shape changes */
+static void api_FCurve_update_data(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  BLI_assert(ptr->type == &RNA_FCurve);
-  rna_FCurve_update_data_ex(ptr->owner_id, (FCurve *)ptr->data, bmain);
+  lib_assert(ptr->type == &RNA_FCurve);
+  api_FCurve_update_data_ex(ptr->owner_id, (FCurve *)ptr->data, bmain);
 }
 
 static void rna_FCurve_update_data_relations(Main *bmain,
