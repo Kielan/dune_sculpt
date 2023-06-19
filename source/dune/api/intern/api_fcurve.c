@@ -750,10 +750,10 @@ static void rna_FModifier_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
   api_tag_animation_update(main, id);
 }
 
-static void api_FMod_verify_data_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_FMod_verify_data_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
-  const FModifierTypeInfo *fmi = fmodifier_get_typeinfo(fcm);
+  FMod *fcm = (FMod *)ptr->data;
+  const FModTypeInfo *fmi = fmod_get_typeinfo(fcm);
 
   /* call the verify callback on the modifier if applicable */
   if (fmi && fmi->verify_data) {
