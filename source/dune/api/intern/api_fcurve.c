@@ -738,19 +738,19 @@ static void api_FMod_blending_range(
   *max = fcm->efra - fcm->sfra;
 }
 
-static void rna_FModifier_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_FModifier_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   ID *id = ptr->owner_id;
   FModifier *fcm = (FModifier *)ptr->data;
 
-  if (fcm->curve && fcm->type == FMODIFIER_TYPE_CYCLES) {
+  if (fcm->curve && fcm->type == FMOD_TYPE_CYCLES) {
     calchandles_fcurve(fcm->curve);
   }
 
-  rna_tag_animation_update(bmain, id);
+  api_tag_animation_update(main, id);
 }
 
-static void rna_FModifier_verify_data_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_FMod_verify_data_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   FModifier *fcm = (FModifier *)ptr->data;
   const FModifierTypeInfo *fmi = fmodifier_get_typeinfo(fcm);
