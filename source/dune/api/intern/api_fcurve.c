@@ -465,12 +465,12 @@ static void api_FKeyframe_ctrlpoint_ui_set(PointerRNA *ptr, const float *values)
 
 /* ****************************** */
 
-static void api_FCurve_RnaPath_get(ApiPtr *ptr, char *value)
+static void api_FCurve_ApiPath_get(ApiPtr *ptr, char *value)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
-  if (fcu->rna_path) {
-    strcpy(value, fcu->rna_path);
+  if (fcu->api_path) {
+    strcpy(value, fcu->api_path);
   }
   else {
     value[0] = '\0';
@@ -482,14 +482,14 @@ static int api_FCurve_ApiPath_length(ApiPtr *ptr)
   FCurve *fcu = (FCurve *)ptr->data;
 
   if (fcu->api_path) {
-    return strlen(fcu->rna_path);
+    return strlen(fcu->api_path);
   }
   else {
     return 0;
   }
 }
 
-static void api_FCurve_RnaPath_set(PointerRNA *ptr, const char *value)
+static void api_FCurve_ApiPath_set(PointerRNA *ptr, const char *value)
 {
   FCurve *fcu = (FCurve *)ptr->data;
 
@@ -595,10 +595,10 @@ static void api_tag_animation_update(Main *main, Id *id)
 
   if (adt && adt->action) {
     /* Action is separate datablock, needs separate tag. */
-    graph_id_tag_update_ex(bmain, &adt->action->id, tags);
+    graph_id_tag_update_ex(main, &adt->action->id, tags);
   }
 
-  graph_id_tag_update_ex(bmain, id, tags);
+  graph_id_tag_update_ex(main, id, tags);
 }
 
 /* allow scripts to update curve after editing manually */
@@ -607,7 +607,7 @@ static void api_FCurve_update_data_ex(Id *id, FCurve *fcu, Main *main)
   sort_time_fcurve(fcu);
   calchandles_fcurve(fcu);
 
-  api_tag_animation_update(bmain, id);
+  api_tag_animation_update(main, id);
 }
 
 /* api update callback for F-Curves after curve shape changes */
@@ -631,10 +631,10 @@ static void api_FCurve_update_eval(Main *main, Scene *UNUSED(scene), ApiPtr *ptr
   api_tag_animation_update(main, ptr->owner_id);
 }
 
-static ApiPtr api_FCurve_active_modifier_get(ApiPtr *ptr)
+static ApiPtr api_FCurve_active_mod_get(ApiPtr *ptr)
 {
   FCurve *fcu = (FCurve *)ptr->data;
-  FModifier *fcm = find_active_fmodifier(&fcu->mods);
+  FMod *fcm = find_active_fmod(&fcu->mods);
   return api_ptr_inherit_refine(ptr, &ApiFMod, fcm);
 }
 
@@ -665,7 +665,7 @@ static void api_FCurve_mods_remove(FCurve *fcu, ReportList *reports, ApiPtr *fcm
 
 static void api_FMod_active_set(ApiPtr *ptr, bool UNUSED(value))
 {
-  FModifier *fcm = (FMod *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   /* don't toggle, always switch on */
   fcm->flag |= FMOD_FLAG_ACTIVE;
@@ -697,7 +697,7 @@ static void api_FMod_end_frame_set(ApiPtr *ptr, float value)
   }
 }
 
-static void rna_FModifier_start_frame_range(PointerRNA *UNUSED(ptr),
+static void api_FMod_start_frame_range(PointerRNA *UNUSED(ptr),
                                             float *min,
                                             float *max,
                                             float *UNUSED(softmin),
