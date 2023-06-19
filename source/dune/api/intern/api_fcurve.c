@@ -651,29 +651,29 @@ static FMod *api_FCurve_mods_new(FCurve *fcu, int type)
   return add_fmod(&fcu->mods, type, fcu);
 }
 
-static void api_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, PointerRNA *fcm_ptr)
+static void api_FCurve_mods_remove(FCurve *fcu, ReportList *reports, ApiPtr *fcm_ptr)
 {
-  FModifier *fcm = fcm_ptr->data;
-  if (BLI_findindex(&fcu->modifiers, fcm) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "F-Curve modifier '%s' not found in F-Curve", fcm->name);
+  FMod *fcm = fcm_ptr->data;
+  if (lib_findindex(&fcu->mods, fcm) == -1) {
+    dune_reportf(reports, RPT_ERROR, "F-Curve modifier '%s' not found in F-Curve", fcm->name);
     return;
   }
 
-  remove_fmodifier(&fcu->modifiers, fcm);
-  RNA_POINTER_INVALIDATE(fcm_ptr);
+  remove_fmod(&fcu->mods, fcm);
+  API_PTR_INVALIDATE(fcm_ptr);
 }
 
-static void rna_FModifier_active_set(PointerRNA *ptr, bool UNUSED(value))
+static void api_FMod_active_set(ApiPtr *ptr, bool UNUSED(value))
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FModifier *fcm = (FMod *)ptr->data;
 
   /* don't toggle, always switch on */
-  fcm->flag |= FMODIFIER_FLAG_ACTIVE;
+  fcm->flag |= FMOD_FLAG_ACTIVE;
 }
 
-static void rna_FModifier_start_frame_set(PointerRNA *ptr, float value)
+static void api_FMod_start_frame_set(PointerRNA *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FModifier *)ptr->data;
 
   CLAMP(value, MINAFRAMEF, MAXFRAMEF);
   fcm->sfra = value;
@@ -684,9 +684,9 @@ static void rna_FModifier_start_frame_set(PointerRNA *ptr, float value)
   }
 }
 
-static void rna_FModifier_end_frame_set(PointerRNA *ptr, float value)
+static void api_FMod_end_frame_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   CLAMP(value, MINAFRAMEF, MAXFRAMEF);
   fcm->efra = value;
