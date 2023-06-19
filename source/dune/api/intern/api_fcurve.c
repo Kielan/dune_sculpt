@@ -801,16 +801,16 @@ static void api_FModGenerator_coefficients_get(ApiPtr *ptr, float *values)
   memcpy(values, gen->coefficients, gen->arraysize * sizeof(float));
 }
 
-static void rna_FModifierGenerator_coefficients_set(ApiPtr *ptr, const float *values)
+static void api_FModGenerator_coefficients_set(ApiPtr *ptr, const float *values)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Generator *gen = fcm->data;
   memcpy(gen->coefficients, values, gen->arraysize * sizeof(float));
 }
 
-static void rna_FModifierLimits_minx_set(PointerRNA *ptr, float value)
+static void api_FModLimits_minx_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Limits *data = fcm->data;
 
   data->rect.xmin = value;
@@ -820,9 +820,9 @@ static void rna_FModifierLimits_minx_set(PointerRNA *ptr, float value)
   }
 }
 
-static void rna_FModifierLimits_maxx_set(PointerRNA *ptr, float value)
+static void api_FModLimits_maxx_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Limits *data = fcm->data;
 
   data->rect.xmax = value;
@@ -832,9 +832,9 @@ static void rna_FModifierLimits_maxx_set(PointerRNA *ptr, float value)
   }
 }
 
-static void rna_FModifierLimits_miny_set(PointerRNA *ptr, float value)
+static void api_FModLimits_miny_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Limits *data = fcm->data;
 
   data->rect.ymin = value;
@@ -844,9 +844,9 @@ static void rna_FModifierLimits_miny_set(PointerRNA *ptr, float value)
   }
 }
 
-static void rna_FModifierLimits_maxy_set(PointerRNA *ptr, float value)
+static void api_FModLimits_maxy_set(PointerRNA *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Limits *data = fcm->data;
 
   data->rect.ymax = value;
@@ -856,13 +856,13 @@ static void rna_FModifierLimits_maxy_set(PointerRNA *ptr, float value)
   }
 }
 
-static void rna_FModifierLimits_minx_range(PointerRNA *UNUSED(ptr),
+static void api_FModLimits_minx_range(ApiPtr *UNUSED(ptr),
                                            float *min,
                                            float *max,
                                            float *UNUSED(softmin),
                                            float *UNUSED(softmax))
 {
-  // FModifier *fcm = (FModifier *)ptr->data;
+  // FMod *fcm = (FMod *)ptr->data;
   // FMod_Limits *data = fcm->data;
 
   /* No soft-limits on lower bound -
@@ -871,10 +871,10 @@ static void rna_FModifierLimits_minx_range(PointerRNA *UNUSED(ptr),
   *max = MAXFRAMEF;
 }
 
-static void rna_FModifierLimits_maxx_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_FModLimits_maxx_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Limits *data = fcm->data;
 
   *min = MINAFRAMEF;
@@ -884,13 +884,13 @@ static void rna_FModifierLimits_maxx_range(
   *max = MAXFRAMEF;
 }
 
-static void rna_FModifierLimits_miny_range(PointerRNA *UNUSED(ptr),
-                                           float *min,
-                                           float *max,
-                                           float *UNUSED(softmin),
-                                           float *UNUSED(softmax))
+static void api_FModLimits_miny_range(ApiPtr *UNUSED(ptr),
+                                      float *min,
+                                      float *max,
+                                      float *UNUSED(softmin),
+                                      float *UNUSED(softmax))
 {
-  // FModifier *fcm = (FModifier *)ptr->data;
+  // FMod *fcm = (FMod *)ptr->data;
   // FMod_Limits *data = fcm->data;
 
   /* No soft-limits on lower bound -
@@ -912,68 +912,67 @@ static void rna_FModifierLimits_maxy_range(
   *max = FLT_MAX;
 }
 
-static void rna_FModifierStepped_start_frame_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_FModStepped_start_frame_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Stepped *data = fcm->data;
 
   *min = MINAFRAMEF;
   *max = (data->flag & FCM_STEPPED_NO_AFTER) ? data->end_frame : MAXFRAMEF;
 }
 
-static void rna_FModifierStepped_end_frame_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_FModStepped_end_frame_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Stepped *data = fcm->data;
 
   *min = (data->flag & FCM_STEPPED_NO_BEFORE) ? data->start_frame : MINAFRAMEF;
   *max = MAXFRAMEF;
 }
 
-static void rna_FModifierStepped_frame_start_set(PointerRNA *ptr, float value)
+static void api_FModStepped_frame_start_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Stepped *data = fcm->data;
 
   float prop_clamp_min = -FLT_MAX, prop_clamp_max = FLT_MAX, prop_soft_min, prop_soft_max;
-  rna_FModifierStepped_start_frame_range(
+  api_FModStepped_start_frame_range(
       ptr, &prop_clamp_min, &prop_clamp_max, &prop_soft_min, &prop_soft_max);
   value = CLAMPIS(value, prop_clamp_min, prop_clamp_max);
 
   /* Need to set both step-data's start/end and the start/end on the base-data,
-   * or else Restrict-Range doesn't work due to RNA-property shadowing (T52009)
+   * or else Restrict-Range doesn't work due to Api-prop shadowing (T52009)
    */
   data->start_frame = value;
   fcm->sfra = value;
 }
 
-static void rna_FModifierStepped_frame_end_set(PointerRNA *ptr, float value)
+static void api_FModStepped_frame_end_set(ApiPtr *ptr, float value)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Stepped *data = fcm->data;
 
   float prop_clamp_min = -FLT_MAX, prop_clamp_max = FLT_MAX, prop_soft_min, prop_soft_max;
-  rna_FModifierStepped_end_frame_range(
+  api_FModStepped_end_frame_range(
       ptr, &prop_clamp_min, &prop_clamp_max, &prop_soft_min, &prop_soft_max);
   value = CLAMPIS(value, prop_clamp_min, prop_clamp_max);
 
   /* Need to set both step-data's start/end and the start/end on the base-data,
-   * or else Restrict-Range doesn't work due to RNA-property shadowing (T52009)
-   */
+   * or else Restrict-Range doesn't work due to RNA-property shadowing (T52009) */
   data->end_frame = value;
   fcm->efra = value;
 }
 
-static BezTriple *rna_FKeyframe_points_insert(
-    ID *id, FCurve *fcu, Main *bmain, float frame, float value, int keyframe_type, int flag)
+static BezTriple *api_FKeyframe_points_insert(
+    Id *id, FCurve *fcu, Main *main, float frame, float value, int keyframe_type, int flag)
 {
   int index = insert_vert_fcurve(
       fcu, frame, value, (char)keyframe_type, flag | INSERTKEY_NO_USERPREF);
 
   if ((fcu->bezt) && (index >= 0)) {
-    rna_tag_animation_update(bmain, id);
+    api_tag_animation_update(main, id);
 
     return fcu->bezt + index;
   }
@@ -981,12 +980,12 @@ static BezTriple *rna_FKeyframe_points_insert(
   return NULL;
 }
 
-static void rna_FKeyframe_points_add(ID *id, FCurve *fcu, Main *bmain, int tot)
+static void api_FKeyframe_points_add(Id *id, FCurve *fcu, Main *main, int tot)
 {
   if (tot > 0) {
     BezTriple *bezt;
 
-    fcu->bezt = MEM_recallocN(fcu->bezt, sizeof(BezTriple) * (fcu->totvert + tot));
+    fcu->bezt = mem_recallocn(fcu->bezt, sizeof(BezTriple) * (fcu->totvert + tot));
 
     bezt = fcu->bezt + fcu->totvert;
     fcu->totvert += tot;
@@ -999,34 +998,34 @@ static void rna_FKeyframe_points_add(ID *id, FCurve *fcu, Main *bmain, int tot)
       bezt++;
     }
 
-    rna_tag_animation_update(bmain, id);
+    api_tag_animation_update(main, id);
   }
 }
 
-static void rna_FKeyframe_points_remove(
-    ID *id, FCurve *fcu, Main *bmain, ReportList *reports, PointerRNA *bezt_ptr, bool do_fast)
+static void api_FKeyframe_points_remove(
+    Id *id, FCurve *fcu, Main *main, ReportList *reports, ApiPtr *bezt_ptr, bool do_fast)
 {
   BezTriple *bezt = bezt_ptr->data;
   int index = (int)(bezt - fcu->bezt);
   if (index < 0 || index >= fcu->totvert) {
-    BKE_report(reports, RPT_ERROR, "Keyframe not in F-Curve");
+    dune_report(reports, RPT_ERROR, "Keyframe not in F-Curve");
     return;
   }
 
   delete_fcurve_key(fcu, index, !do_fast);
-  RNA_POINTER_INVALIDATE(bezt_ptr);
+  API_PTR_INVALIDATE(bezt_ptr);
 
-  rna_tag_animation_update(bmain, id);
+  api_tag_animation_update(main, id);
 }
 
-static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(
-    ID *id, FModifier *fmod, Main *bmain, ReportList *reports, float frame)
+static FCM_EnvelopeData *api_FModEnvelope_points_add(
+    Id *id, FModifier *fmod, Main *main, ReportList *reports, float frame)
 {
   FCM_EnvelopeData fed;
   FMod_Envelope *env = (FMod_Envelope *)fmod->data;
   int i;
 
-  rna_tag_animation_update(bmain, id);
+  api_tag_animation_update(main, id);
 
   /* init template data */
   fed.min = -1.0f;
@@ -1036,14 +1035,14 @@ static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(
 
   if (env->data) {
     bool exists;
-    i = BKE_fcm_envelope_find_index(env->data, frame, env->totvert, &exists);
+    i = dune_fcm_envelope_find_index(env->data, frame, env->totvert, &exists);
     if (exists) {
-      BKE_reportf(reports, RPT_ERROR, "Already a control point at frame %.6f", frame);
+      dune_reportf(reports, RPT_ERROR, "Already a control point at frame %.6f", frame);
       return NULL;
     }
 
     /* realloc memory for extra point */
-    env->data = (FCM_EnvelopeData *)MEM_reallocN((void *)env->data,
+    env->data = (FCM_EnvelopeData *)mem_reallocn((void *)env->data,
                                                  (env->totvert + 1) * sizeof(FCM_EnvelopeData));
 
     /* move the points after the added point */
@@ -1054,7 +1053,7 @@ static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(
     env->totvert++;
   }
   else {
-    env->data = MEM_mallocN(sizeof(FCM_EnvelopeData), "FCM_EnvelopeData");
+    env->data = mem_mallocn(sizeof(FCM_EnvelopeData), "FCM_EnvelopeData");
     env->totvert = 1;
     i = 0;
   }
@@ -1064,8 +1063,8 @@ static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(
   return (env->data + i);
 }
 
-static void rna_FModifierEnvelope_points_remove(
-    ID *id, FModifier *fmod, Main *bmain, ReportList *reports, PointerRNA *point)
+static void api_FModifierEnvelope_points_remove(
+    Id *id, FMod *fmod, Main *main, ReportList *reports, ApiPtr *point)
 {
   FCM_EnvelopeData *cp = point->data;
   FMod_Envelope *env = (FMod_Envelope *)fmod->data;
@@ -1074,11 +1073,11 @@ static void rna_FModifierEnvelope_points_remove(
 
   /* test point is in range */
   if (index < 0 || index >= env->totvert) {
-    BKE_report(reports, RPT_ERROR, "Control point not in Envelope F-Modifier");
+    dune_report(reports, RPT_ERROR, "Control point not in Envelope F-Modifier");
     return;
   }
 
-  rna_tag_animation_update(bmain, id);
+  api_tag_animation_update(main, id);
 
   if (env->totvert > 1) {
     /* move data after the removed point */
@@ -1089,37 +1088,37 @@ static void rna_FModifierEnvelope_points_remove(
 
     /* realloc smaller array */
     env->totvert--;
-    env->data = (FCM_EnvelopeData *)MEM_reallocN((void *)env->data,
+    env->data = (FCM_EnvelopeData *)mem_reallocn((void *)env->data,
                                                  (env->totvert) * sizeof(FCM_EnvelopeData));
   }
   else {
     /* just free array, since the only vert was deleted */
     if (env->data) {
-      MEM_freeN(env->data);
+      mem_freen(env->data);
       env->data = NULL;
     }
     env->totvert = 0;
   }
-  RNA_POINTER_INVALIDATE(point);
+  API_PTR_INVALIDATE(point);
 }
 
-static void rna_Keyframe_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Keyframe_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  rna_tag_animation_update(bmain, ptr->owner_id);
+  api_tag_animation_update(main, ptr->owner_id);
 }
 
-static void rna_FModifier_show_expanded_set(PointerRNA *ptr, bool value)
+static void api_FMod_show_expanded_set(ApiPtr *ptr, bool value)
 {
-  FModifier *fcm = ptr->data;
+  FMod *fcm = ptr->data;
   SET_FLAG_FROM_TEST(fcm->ui_expand_flag, value, UI_PANEL_DATA_EXPAND_ROOT);
 }
 
 #else
 
-static void rna_def_fmodifier_generator(BlenderRNA *brna)
+static void api_def_fmodifier_generator(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
   static const EnumPropertyItem generator_mode_items[] = {
       {FCM_GENERATOR_POLYNOMIAL, "POLYNOMIAL", 0, "Expanded Polynomial", ""},
