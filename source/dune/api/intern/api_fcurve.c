@@ -673,7 +673,7 @@ static void api_FMod_active_set(ApiPtr *ptr, bool UNUSED(value))
 
 static void api_FMod_start_frame_set(PointerRNA *ptr, float value)
 {
-  FMod *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   CLAMP(value, MINAFRAMEF, MAXFRAMEF);
   fcm->sfra = value;
@@ -794,14 +794,14 @@ static int api_FModGenerator_coefficients_get_length(ApiPtr *ptr,
   return length[0];
 }
 
-static void api_FModGenerator_coefficients_get(PointerRNA *ptr, float *values)
+static void api_FModGenerator_coefficients_get(ApiPtr *ptr, float *values)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
   FMod_Generator *gen = fcm->data;
   memcpy(values, gen->coefficients, gen->arraysize * sizeof(float));
 }
 
-static void rna_FModifierGenerator_coefficients_set(PointerRNA *ptr, const float *values)
+static void rna_FModifierGenerator_coefficients_set(ApiPtr *ptr, const float *values)
 {
   FModifier *fcm = (FModifier *)ptr->data;
   FMod_Generator *gen = fcm->data;
