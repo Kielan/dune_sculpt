@@ -760,25 +760,25 @@ static void rna_FModifier_verify_data_update(Main *bmain, Scene *scene, PointerR
     fmi->verify_data(fcm);
   }
 
-  rna_FModifier_update(bmain, scene, ptr);
+  api_FMod_update(main, scene, ptr);
 }
 
-static void rna_FModifier_active_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_FMod_active_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  FModifier *fm, *fmo = (FModifier *)ptr->data;
+  FMod *fm, *fmo = (FMod *)ptr->data;
 
   /* clear active state of other FModifiers in this list */
   for (fm = fmo->prev; fm; fm = fm->prev) {
-    fm->flag &= ~FMODIFIER_FLAG_ACTIVE;
+    fm->flag &= ~FMOD_FLAG_ACTIVE;
   }
   for (fm = fmo->next; fm; fm = fm->next) {
-    fm->flag &= ~FMODIFIER_FLAG_ACTIVE;
+    fm->flag &= ~FMOD_FLAG_ACTIVE;
   }
 
-  rna_FModifier_update(bmain, scene, ptr);
+  api_FMod_update(main, scene, ptr);
 }
 
-static int rna_FModifierGenerator_coefficients_get_length(PointerRNA *ptr,
+static int api_FModGenerator_coefficients_get_length(PointerRNA *ptr,
                                                           int length[RNA_MAX_ARRAY_DIMENSION])
 {
   FModifier *fcm = (FModifier *)ptr->data;
