@@ -732,13 +732,13 @@ static void api_FMod_end_frame_range(
 static void api_FMod_blending_range(
     ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   *min = 0.0f;
   *max = fcm->efra - fcm->sfra;
 }
 
-static void rna_FModifier_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_FMod_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   ID *id = ptr->owner_id;
   FModifier *fcm = (FModifier *)ptr->data;
@@ -778,11 +778,11 @@ static void api_FMod_active_update(Main *main, Scene *scene, ApiPtr *ptr)
   api_FMod_update(main, scene, ptr);
 }
 
-static int api_FModGenerator_coefficients_get_length(PointerRNA *ptr,
-                                                          int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_FModGenerator_coefficients_get_length(ApiPtr *ptr,
+                                                     int length[Api_MAX_ARRAY_DIMENSION])
 {
-  FModifier *fcm = (FModifier *)ptr->data;
-  FMod_Generator *gen = fcm->data;
+  FMod *fcm = (FMod *)ptr->data;
+  FModGenerator *gen = fcm->data;
 
   if (gen) {
     length[0] = gen->arraysize;
@@ -794,7 +794,7 @@ static int api_FModGenerator_coefficients_get_length(PointerRNA *ptr,
   return length[0];
 }
 
-static void rna_FModifierGenerator_coefficients_get(PointerRNA *ptr, float *values)
+static void api_FModGenerator_coefficients_get(PointerRNA *ptr, float *values)
 {
   FModifier *fcm = (FModifier *)ptr->data;
   FMod_Generator *gen = fcm->data;
