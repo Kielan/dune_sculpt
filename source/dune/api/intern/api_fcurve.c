@@ -715,22 +715,22 @@ static void rna_FModifier_start_frame_range(PointerRNA *UNUSED(ptr),
   *max = MAXFRAMEF;
 }
 
-static void rna_FModifier_end_frame_range(
-    PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void api_FMod_end_frame_range(
+    ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax)
 {
-  FModifier *fcm = (FModifier *)ptr->data;
+  FMod *fcm = (FMod *)ptr->data;
 
   /* Technically, "sfra <= efra" must hold; however, we can't strictly enforce that,
    * or else it becomes tricky to adjust the range, see: T36844. */
   *min = MINAFRAMEF;
-  *softmin = (fcm->flag & FMODIFIER_FLAG_RANGERESTRICT) ? fcm->sfra : MINAFRAMEF;
+  *softmin = (fcm->flag & FMOD_FLAG_RANGERESTRICT) ? fcm->sfra : MINAFRAMEF;
 
   *softmax = MAXFRAMEF;
   *max = MAXFRAMEF;
 }
 
-static void rna_FModifier_blending_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_FMod_blending_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   FModifier *fcm = (FModifier *)ptr->data;
 
