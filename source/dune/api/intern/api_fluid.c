@@ -22,7 +22,7 @@
 #include "types_scene.h"
 
 #include "wm_api.h"
-#include "wn_types.h"
+#include "wm_types.h"
 
 #ifdef API_RUNTIME
 
