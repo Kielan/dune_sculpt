@@ -1270,34 +1270,34 @@ static void api_def_fmod_envelope_ctrl(DuneApi *dapi)
   RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
   /* Frame */
-  prop = RNA_def_property(srna, "frame", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "time");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Frame", "Frame this control-point occurs on");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
+  prop = api_def_prop(sapi, "frame", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "time");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Frame", "Frame this control-point occurs on");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
   /* TODO: */
   /* - selection flags (not implemented in UI yet though) */
 }
 
-static void rna_def_fmodifier_envelope_control_points(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_fmod_envelope_control_points(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "FModifierEnvelopeControlPoints");
-  srna = RNA_def_struct(brna, "FModifierEnvelopeControlPoints", NULL);
-  RNA_def_struct_sdna(srna, "FModifier");
+  api_def_prop_sapi(cprop, "FModEnvelopeControlPoints");
+  srna = api_def_struct(dapi, "FModEnvelopeControlPoints", NULL);
+  RNA_def_struct_sdna(srna, "FMod");
 
-  RNA_def_struct_ui_text(
+  api_def_struct_ui_text(
       srna, "Control Points", "Control points defining the shape of the envelope");
 
-  func = RNA_def_function(srna, "add", "rna_FModifierEnvelope_points_add");
-  RNA_def_function_ui_description(func, "Add a control point to a FModifierEnvelope");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_float(func,
+  func = api_def_fn(sapi, "add", "api_FModEnvelope_points_add");
+  api_def_fn_ui_description(fn, "Add a control point to a FModifierEnvelope");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
+  parm = api_def_float(fn,
                        "frame",
                        0.0f,
                        -FLT_MAX,
