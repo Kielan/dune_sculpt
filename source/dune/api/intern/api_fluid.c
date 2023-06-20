@@ -942,8 +942,8 @@ static int rna_FluidModifier_velocity_grid_get_length(PointerRNA *ptr,
   return length[0];
 }
 
-static int rna_FluidModifier_heat_grid_get_length(PointerRNA *ptr,
-                                                  int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_FluidMod_heat_grid_get_length(ApiPtr *ptr,
+                                             int length[API_MAX_ARRAY_DIMENSION])
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
   float *heat = NULL;
@@ -959,7 +959,7 @@ static int rna_FluidModifier_heat_grid_get_length(PointerRNA *ptr,
   return length[0];
 }
 
-static void rna_FluidModifier_density_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_density_grid_get(PointerRNA *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
   int length[RNA_MAX_ARRAY_DIMENSION];
