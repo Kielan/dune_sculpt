@@ -1311,29 +1311,29 @@ static void api_def_fmod_envelope_control_points(DuneApi *dapi, ApiProp *cprop)
       fn, "point", "FModEnvelopeControlPoint", "", "Newly created control-point");
   api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_FModifierEnvelope_points_remove");
-  RNA_def_function_ui_description(func, "Remove a control-point from an FModifierEnvelope");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(
-      func, "point", "FModifierEnvelopeControlPoint", "", "Control-point to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  func = api_def_fn(sapi, "remove", "api_FModEnvelope_points_remove");
+  api_def_fn_ui_description(fn, "Remove a control-point from an FModEnvelope");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS);
+  parm = api_def_ptr(
+      fn, "point", "FModEnvelopeControlPoint", "", "Control-point to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
 }
 
-static void rna_def_fmodifier_envelope(BlenderRNA *brna)
+static void api_def_fmod_envelope(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "FModifierEnvelope", "FModifier");
-  RNA_def_struct_ui_text(srna, "Envelope F-Modifier", "Scale the values of the modified F-Curve");
-  RNA_def_struct_sdna_from(srna, "FMod_Envelope", "data");
+  sapi = api_def_struct(dapi, "FModEnvelope", "FMod");
+  api_def_struct_ui_text(sapi, "Envelope F-Mod", "Scale the values of the modified F-Curve");
+  api_def_struct_stype_from(sapi, "FMod_Envelope", "data");
 
   /* Collections */
-  prop = RNA_def_property(srna, "control_points", PROP_COLLECTION, PROP_NONE);
-  api_def_property_collection_sdna(prop, NULL, "data", "totvert");
-  api_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
-  api_def_property_struct_type(prop, "FModEnvelopeControlPoint");
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "control_points", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_sdna(prop, NULL, "data", "totvert");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_struct_type(prop, "FModEnvelopeControlPoint");
+  api_def_prop_ui_text(
       prop, "Control Points", "Control points defining the shape of the envelope");
   api_def_fmod_envelope_control_points(dapi, prop);
 
@@ -1345,10 +1345,10 @@ static void rna_def_fmodifier_envelope(BlenderRNA *brna)
       prop, "Ref Value", "Value that envelope's influence is centered around / based on");
   api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
-  prop = RNA_def_property(srna, "default_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "default_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop, "Default Minimum", "Lower distance from Reference Value for 1:1 default influence");
   RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
