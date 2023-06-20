@@ -78,26 +78,26 @@ static void api_Fluid_noisecache_reset(Main *UNUSED(main), Scene *UNUSED(scene),
   if (settings->fmd && settings->fmd->domain) {
     Object *ob = (Object *)ptr->owner_id;
     int cache_map = FLUID_DOMAIN_OUTDATED_NOISE;
-    BKE_fluid_cache_free(settings, ob, cache_map);
+    dune_fluid_cache_free(settings, ob, cache_map);
   }
 #  endif
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
-static void rna_Fluid_meshcache_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_meshcache_reset(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
   if (settings->fmd && settings->fmd->domain) {
     Object *ob = (Object *)ptr->owner_id;
     int cache_map = FLUID_DOMAIN_OUTDATED_MESH;
-    BKE_fluid_cache_free(settings, ob, cache_map);
+    dune_fluid_cache_free(settings, ob, cache_map);
   }
 #  endif
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
-static void rna_Fluid_particlescache_reset(Main *UNUSED(bmain),
+static void api_Fluid_particlescache_reset(Main *UNUSED(main),
                                            Scene *UNUSED(scene),
-                                           PointerRNA *ptr)
+                                           ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
@@ -126,106 +126,106 @@ static void rna_Fluid_guidingcache_reset(Main *UNUSED(bmain),
   DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
 
-static void rna_Fluid_effector_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_effector_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidEffectorSettings *settings = (FluidEffectorSettings *)ptr->data;
   settings->flags |= FLUID_EFFECTOR_NEEDS_UPDATE;
 #  endif
 
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_flow_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_flow_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidFlowSettings *settings = (FluidFlowSettings *)ptr->data;
   settings->flags |= FLUID_FLOW_NEEDS_UPDATE;
 #  endif
 
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_domain_data_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_domain_data_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_modifier_reset(settings->fmd);
+  dune_fluid_mod_reset(settings->fmd);
 #  endif
 
-  rna_Fluid_datacache_reset(bmain, scene, ptr);
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_datacache_reset(main, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_domain_noise_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_domain_noise_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_modifier_reset(settings->fmd);
+  dune_fluid_mod_reset(settings->fmd);
 #  endif
 
-  rna_Fluid_noisecache_reset(bmain, scene, ptr);
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_noisecache_reset(main, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_domain_mesh_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_domain_mesh_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_modifier_reset(settings->fmd);
+  dune_fluid_modifier_reset(settings->fmd);
 #  endif
 
-  rna_Fluid_meshcache_reset(bmain, scene, ptr);
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_meshcache_reset(main, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_domain_particles_reset(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_domain_particles_reset(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_modifier_reset(settings->fmd);
+  dune_fluid_mod_reset(settings->fmd);
 #  endif
 
-  rna_Fluid_particlescache_reset(bmain, scene, ptr);
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_particlescache_reset(main, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_reset_dependency(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_reset_dependency(Main *main, Scene *scene, ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_modifier_reset(settings->fmd);
+  dune_fluid_mod_reset(settings->fmd);
 #  endif
 
-  rna_Fluid_dependency_update(bmain, scene, ptr);
+  api_Fluid_dependency_update(main, scene, ptr);
 }
 
-static void rna_Fluid_parts_create(Main *bmain,
-                                   PointerRNA *ptr,
+static void api_Fluid_parts_create(Main *main,
+                                   ApiPtr *ptr,
                                    const char *pset_name,
                                    const char *parts_name,
                                    const char *psys_name,
                                    int psys_type)
 {
 #  ifndef WITH_FLUID
-  UNUSED_VARS(bmain, ptr, pset_name, parts_name, psys_name, psys_type);
+  UNUSED_VARS(main, ptr, pset_name, parts_name, psys_name, psys_type);
 #  else
   Object *ob = (Object *)ptr->owner_id;
-  BKE_fluid_particle_system_create(bmain, ob, pset_name, parts_name, psys_name, psys_type);
+  dune_fluid_particle_system_create(main, ob, pset_name, parts_name, psys_name, psys_type);
 #  endif
 }
 
-static void rna_Fluid_parts_delete(PointerRNA *ptr, int ptype)
+static void api_Fluid_parts_delete(ApiPtr *ptr, int ptype)
 {
 #  ifndef WITH_FLUID
   UNUSED_VARS(ptr, ptype);
 #  else
   Object *ob = (Object *)ptr->owner_id;
-  BKE_fluid_particle_system_destroy(ob, ptype);
+  dune_fluid_particle_system_destroy(ob, ptype);
 #  endif
 }
 
-static bool rna_Fluid_parts_exists(PointerRNA *ptr, int ptype)
+static bool api_Fluid_parts_exists(ApiPtr *ptr, int ptype)
 {
   Object *ob = (Object *)ptr->owner_id;
   ParticleSystem *psys;
@@ -238,61 +238,61 @@ static bool rna_Fluid_parts_exists(PointerRNA *ptr, int ptype)
   return false;
 }
 
-static void rna_Fluid_flip_parts_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_flip_parts_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-  bool exists = rna_Fluid_parts_exists(ptr, PART_FLUID_FLIP);
+  FluidModData *fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
+  bool exists = api_Fluid_parts_exists(ptr, PART_FLUID_FLIP);
 
   /* Only create a particle system in liquid domain mode.
    * Remove any remaining data from a liquid sim when switching to gas. */
   if (fmd->domain->type != FLUID_DOMAIN_TYPE_LIQUID) {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_FLIP);
+    api_Fluid_parts_delete(ptr, PART_FLUID_FLIP);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_FLIP;
-    rna_Fluid_domain_data_reset(bmain, scene, ptr);
+    api_Fluid_domain_data_reset(main, scene, ptr);
     return;
   }
 
   if (ob->type == OB_MESH && !exists) {
-    rna_Fluid_parts_create(
-        bmain, ptr, "LiquidParticleSettings", "Liquid", "Liquid Particle System", PART_FLUID_FLIP);
+    api_Fluid_parts_create(
+        main, ptr, "LiquidParticleSettings", "Liquid", "Liquid Particle System", PART_FLUID_FLIP);
     fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_FLIP;
   }
   else {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_FLIP);
+    api_Fluid_parts_delete(ptr, PART_FLUID_FLIP);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_FLIP;
   }
-  rna_Fluid_update(bmain, scene, ptr);
+  api_Fluid_update(main, scene, ptr);
 }
 
-static void rna_Fluid_spray_parts_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_spray_parts_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-  bool exists = rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
+  FluidModData *fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
+  bool exists = api_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
 
   if (ob->type == OB_MESH && !exists) {
-    rna_Fluid_parts_create(
-        bmain, ptr, "SprayParticleSettings", "Spray", "Spray Particle System", PART_FLUID_SPRAY);
+    api_Fluid_parts_create(
+        main, ptr, "SprayParticleSettings", "Spray", "Spray Particle System", PART_FLUID_SPRAY);
     fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_SPRAY;
   }
   else {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
+    api_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_SPRAY;
   }
 }
 
-static void rna_Fluid_bubble_parts_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_bubble_parts_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-  bool exists = rna_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
+  FluidModData *fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
+  bool exists = api_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
 
   if (ob->type == OB_MESH && !exists) {
-    rna_Fluid_parts_create(bmain,
+    api_Fluid_parts_create(main,
                            ptr,
                            "BubbleParticleSettings",
                            "Bubbles",
@@ -301,38 +301,38 @@ static void rna_Fluid_bubble_parts_update(Main *bmain, Scene *UNUSED(scene), Poi
     fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_BUBBLE;
   }
   else {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
+    api_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_BUBBLE;
   }
 }
 
-static void rna_Fluid_foam_parts_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_foam_parts_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-  bool exists = rna_Fluid_parts_exists(ptr, PART_FLUID_FOAM);
+  FluidModData fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
+  bool exists = api_Fluid_parts_exists(ptr, PART_FLUID_FOAM);
 
   if (ob->type == OB_MESH && !exists) {
-    rna_Fluid_parts_create(
+    api_Fluid_parts_create(
         bmain, ptr, "FoamParticleSettings", "Foam", "Foam Particle System", PART_FLUID_FOAM);
     fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_FOAM;
   }
   else {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
+    api_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_FOAM;
   }
 }
 
-static void rna_Fluid_tracer_parts_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_tracer_parts_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-  bool exists = rna_Fluid_parts_exists(ptr, PART_FLUID_TRACER);
+  FluidModData *fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
+  bool exists = api_Fluid_parts_exists(ptr, PART_FLUID_TRACER);
 
   if (ob->type == OB_MESH && !exists) {
-    rna_Fluid_parts_create(bmain,
+    api_Fluid_parts_create(main,
                            ptr,
                            "TracerParticleSettings",
                            "Tracers",
@@ -341,42 +341,42 @@ static void rna_Fluid_tracer_parts_update(Main *bmain, Scene *UNUSED(scene), Poi
     fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_TRACER;
   }
   else {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_TRACER);
+    api_Fluid_parts_delete(ptr, PART_FLUID_TRACER);
     fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_TRACER;
   }
 }
 
-static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_combined_export_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  FluidModifierData *fmd;
-  fmd = (FluidModifierData *)BKE_modifiers_findby_type(ob, eModifierType_Fluid);
+  FluidModData *fmd;
+  fmd = (FluidModData *)dune_mods_findby_type(ob, eModType_Fluid);
 
   if (fmd->domain->sndparticle_combined_export == SNDPARTICLE_COMBINED_EXPORT_OFF) {
-    rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
-    rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
-    rna_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
-    rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
+    api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
+    api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
+    api_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
+    api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
 
-    bool exists_spray = rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
-    bool exists_foam = rna_Fluid_parts_exists(ptr, PART_FLUID_FOAM);
-    bool exists_bubble = rna_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
+    bool exists_spray = api_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
+    bool exists_foam = api_Fluid_parts_exists(ptr, PART_FLUID_FOAM);
+    bool exists_bubble = api_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
 
     /* Re-add each particle type if enabled and no particle system exists for them anymore. */
     if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_SPRAY) && !exists_spray) {
-      rna_Fluid_spray_parts_update(bmain, scene, ptr);
+      api_Fluid_spray_parts_update(bmain, scene, ptr);
     }
     if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_FOAM) && !exists_foam) {
-      rna_Fluid_foam_parts_update(bmain, scene, ptr);
+      api_Fluid_foam_parts_update(bmain, scene, ptr);
     }
     if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_BUBBLE) && !exists_bubble) {
-      rna_Fluid_bubble_parts_update(bmain, scene, ptr);
+      api_Fluid_bubble_parts_update(bmain, scene, ptr);
     }
   }
   else if (fmd->domain->sndparticle_combined_export == SNDPARTICLE_COMBINED_EXPORT_SPRAY_FOAM) {
-    if (ob->type == OB_MESH && !rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAYFOAM)) {
+    if (ob->type == OB_MESH && !api_Fluid_parts_exists(ptr, PART_FLUID_SPRAYFOAM)) {
 
-      rna_Fluid_parts_create(bmain,
+      api_Fluid_parts_create(main,
                              ptr,
                              "SprayFoamParticleSettings",
                              "Spray + Foam",
@@ -386,23 +386,23 @@ static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerR
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_SPRAY;
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_FOAM;
 
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
 
       /* Re-add spray if enabled and no particle system exists for it anymore. */
-      bool exists_bubble = rna_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
+      bool exists_bubble = api_Fluid_parts_exists(ptr, PART_FLUID_BUBBLE);
       if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_BUBBLE) && !exists_bubble) {
-        rna_Fluid_bubble_parts_update(bmain, scene, ptr);
+        api_Fluid_bubble_parts_update(main, scene, ptr);
       }
     }
   }
   else if (fmd->domain->sndparticle_combined_export == SNDPARTICLE_COMBINED_EXPORT_SPRAY_BUBBLE) {
-    if (ob->type == OB_MESH && !rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAYBUBBLE)) {
+    if (ob->type == OB_MESH && !api_Fluid_parts_exists(ptr, PART_FLUID_SPRAYBUBBLE)) {
 
-      rna_Fluid_parts_create(bmain,
+      api_Fluid_parts_create(main,
                              ptr,
                              "SprayBubbleParticleSettings",
                              "Spray + Bubbles",
@@ -412,23 +412,23 @@ static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerR
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_SPRAY;
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_BUBBLE;
 
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
+      api_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
 
       /* Re-add foam if enabled and no particle system exists for it anymore. */
       bool exists_foam = rna_Fluid_parts_exists(ptr, PART_FLUID_FOAM);
       if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_FOAM) && !exists_foam) {
-        rna_Fluid_foam_parts_update(bmain, scene, ptr);
+        api_Fluid_foam_parts_update(main, scene, ptr);
       }
     }
   }
   else if (fmd->domain->sndparticle_combined_export == SNDPARTICLE_COMBINED_EXPORT_FOAM_BUBBLE) {
-    if (ob->type == OB_MESH && !rna_Fluid_parts_exists(ptr, PART_FLUID_FOAMBUBBLE)) {
+    if (ob->type == OB_MESH && !api_Fluid_parts_exists(ptr, PART_FLUID_FOAMBUBBLE)) {
 
-      rna_Fluid_parts_create(bmain,
+      api_Fluid_parts_create(main,
                              ptr,
                              "FoamBubbleParticleSettings",
                              "Foam + Bubble Particles",
@@ -438,24 +438,24 @@ static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerR
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_FOAM;
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_BUBBLE;
 
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAMBUBBLE);
 
       /* Re-add foam if enabled and no particle system exists for it anymore. */
-      bool exists_spray = rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
+      bool exists_spray = api_Fluid_parts_exists(ptr, PART_FLUID_SPRAY);
       if ((fmd->domain->particle_type & FLUID_DOMAIN_PARTICLE_SPRAY) && !exists_spray) {
-        rna_Fluid_spray_parts_update(bmain, scene, ptr);
+        api_Fluid_spray_parts_update(main, scene, ptr);
       }
     }
   }
   else if (fmd->domain->sndparticle_combined_export ==
            SNDPARTICLE_COMBINED_EXPORT_SPRAY_FOAM_BUBBLE) {
-    if (ob->type == OB_MESH && !rna_Fluid_parts_exists(ptr, PART_FLUID_SPRAYFOAMBUBBLE)) {
+    if (ob->type == OB_MESH && !api_Fluid_parts_exists(ptr, PART_FLUID_SPRAYFOAMBUBBLE)) {
 
-      rna_Fluid_parts_create(bmain,
+      api_Fluid_parts_create(main,
                              ptr,
                              "SprayFoamBubbleParticleSettings",
                              "Spray + Foam + Bubbles",
@@ -466,12 +466,12 @@ static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerR
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_FOAM;
       fmd->domain->particle_type |= FLUID_DOMAIN_PARTICLE_BUBBLE;
 
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
-      rna_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAY);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_BUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYFOAM);
+      api_Fluid_parts_delete(ptr, PART_FLUID_SPRAYBUBBLE);
+      api_Fluid_parts_delete(ptr, PART_FLUID_FOAMBUBBLE);
     }
   }
   else {
@@ -480,43 +480,43 @@ static void rna_Fluid_combined_export_update(Main *bmain, Scene *scene, PointerR
   }
 }
 
-static void rna_Fluid_cache_startframe_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cache_startframe_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cache_startframe_set(settings, value);
+  dune_fluid_cache_startframe_set(settings, value);
 }
 
-static void rna_Fluid_cache_endframe_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cache_endframe_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cache_endframe_set(settings, value);
+  dune_fluid_cache_endframe_set(settings, value);
 }
 
-static void rna_Fluid_cachetype_mesh_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cachetype_mesh_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cachetype_mesh_set(settings, value);
+  dune_fluid_cachetype_mesh_set(settings, value);
 }
 
-static void rna_Fluid_cachetype_data_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cachetype_data_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cachetype_data_set(settings, value);
+  dune_fluid_cachetype_data_set(settings, value);
 }
 
-static void rna_Fluid_cachetype_particle_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cachetype_particle_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cachetype_particle_set(settings, value);
+  dune_fluid_cachetype_particle_set(settings, value);
 }
 
-static void rna_Fluid_cachetype_noise_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cachetype_noise_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  BKE_fluid_cachetype_noise_set(settings, value);
+  dune_fluid_cachetype_noise_set(settings, value);
 }
 
-static void rna_Fluid_cachetype_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_cachetype_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
 
@@ -526,17 +526,17 @@ static void rna_Fluid_cachetype_set(struct PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Fluid_guide_parent_set(struct PointerRNA *ptr,
-                                       struct PointerRNA value,
+static void api_Fluid_guide_parent_set(struct ApiPtr *ptr,
+                                       struct ApiPtr value,
                                        struct ReportList *UNUSED(reports))
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
   Object *par = (Object *)value.data;
 
-  FluidModifierData *fmd_par = NULL;
+  FluidModData *fmd_par = NULL;
 
   if (par != NULL) {
-    fmd_par = (FluidModifierData *)BKE_modifiers_findby_type(par, eModifierType_Fluid);
+    fmd_par = (FluidModData *)dune_mods_findby_type(par, eModType_Fluid);
     if (fmd_par && fmd_par->domain) {
       fds->guide_parent = value.data;
       copy_v3_v3_int(fds->guide_res, fmd_par->domain->res);
@@ -547,13 +547,13 @@ static void rna_Fluid_guide_parent_set(struct PointerRNA *ptr,
   }
 }
 
-static const EnumPropertyItem *rna_Fluid_cachetype_mesh_itemf(bContext *UNUSED(C),
-                                                              PointerRNA *UNUSED(ptr),
-                                                              PropertyRNA *UNUSED(prop),
-                                                              bool *r_free)
+static const EnumPropItem *api_Fluid_cachetype_mesh_itemf(Cxt *UNUSED(C),
+                                                          ApiPtr *UNUSED(ptr),
+                                                          ApiProp *UNUSED(prop),
+                                                          bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   tmp.value = FLUID_DOMAIN_FILE_BIN_OBJECT;
