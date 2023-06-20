@@ -1479,158 +1479,158 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
   api_def_prop_array(prop, 32);
   api_def_prop_flag(prop, PROP_DYNAMIC);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_fns(prop, "api_FluidMod_velocity_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_velocity_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Velocity Grid", "Smoke velocity grid");
+  api_def_prop_dynamic_array_fns(prop, "api_FluidMod_velocity_grid_get_length");
+  api_def_prop_float_fns(prop, "api_FluidMod_velocity_grid_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Velocity Grid", "Smoke velocity grid");
 
-  prop = RNA_def_property(srna, "flame_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_flame_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Flame Grid", "Smoke flame grid");
+  prop = api_def_prop(sapi, "flame_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_fns(prop, "api_FluidMod_grid_get_length");
+  api_def_prop_float_fns(prop, "api_FluidMod_flame_grid_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Flame Grid", "Smoke flame grid");
 
-  prop = RNA_def_property(srna, "color_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_color_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_color_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Color Grid", "Smoke color grid");
+  prop = api_def_prop(sapi, "color_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_funcs(prop, "api_FluidMod_color_grid_get_length");
+  api_def_prop_float_fns(prop, "api_FluidMod_color_grid_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Color Grid", "Smoke color grid");
 
-  prop = RNA_def_property(srna, "heat_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_heat_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_heat_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Heat Grid", "Smoke heat grid");
+  prop = api_def_prop(sapi, "heat_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_fns(prop, "rna_FluidModifier_heat_grid_get_length");
+  api_def_prop_float_fns(prop, "rna_FluidModifier_heat_grid_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Heat Grid", "Smoke heat grid");
 
-  prop = RNA_def_property(srna, "temperature_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_temperature_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(swpapi, "temperature_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_fns(prop, "rna_FluidModifier_grid_get_length");
+  apo_def_prop_float_funcs(prop, "rna_FluidModifier_temperature_grid_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Temperature Grid", "Smoke temperature grid, range 0 to 1 represents 0 to 1000K");
 #  endif /* WITH_FLUID */
 
   /* domain object data */
 
-  prop = RNA_def_property(srna,
-                          "start_point",
-                          PROP_FLOAT,
-                          PROP_XYZ); /* can change each frame when using adaptive domain */
-  RNA_def_property_float_sdna(prop, NULL, "p0");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "p0", "Start point");
+  prop = api_def_prop(sapi,
+                      "start_point",
+                      PROP_FLOAT,
+                      PROP_XYZ); /* can change each frame when using adaptive domain */
+  api_def_prop_float_stype(prop, NULL, "p0");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "p0", "Start point");
 
-  prop = RNA_def_property(srna,
-                          "cell_size",
-                          PROP_FLOAT,
-                          PROP_XYZ); /* can change each frame when using adaptive domain */
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "cell_size", "Cell Size");
+  prop = api_def_prop(sapi,
+                     "cell_size",
+                      PROP_FLOAT,
+                      PROP_XYZ); /* can change each frame when using adaptive domain */
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "cell_size", "Cell Size");
 
-  prop = RNA_def_property(srna,
-                          "domain_resolution",
-                          PROP_INT,
-                          PROP_XYZ); /* can change each frame when using adaptive domain */
-  RNA_def_property_int_sdna(prop, NULL, "res");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "res", "Smoke Grid Resolution");
+  prop = api_def_prop(sapi,
+                      "domain_resolution",
+                      PROP_INT,
+                      PROP_XYZ); /* can change each frame when using adaptive domain */
+  api_def_prop_int_stype(prop, NULL, "res");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "res", "Smoke Grid Resolution");
 
   /* adaptive domain options */
 
-  prop = RNA_def_property(srna, "additional_res", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "adapt_res");
-  RNA_def_property_range(prop, 0, 512);
-  RNA_def_property_ui_text(prop, "Additional", "Maximum number of additional cells");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "additional_res", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "adapt_res");
+  api_def_prop_range(prop, 0, 512);
+  api_def_prop_ui_text(prop, "Additional", "Maximum number of additional cells");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "adapt_margin", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "adapt_margin");
-  RNA_def_property_range(prop, 2, 24);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "adapt_margin", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "adapt_margin");
+  api_def_prop_range(prop, 2, 24);
+  api_def_prop_ui_text(
       prop, "Margin", "Margin added around fluid to minimize boundary interference");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "adapt_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.02, 6);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "adapt_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.02, 6);
+  api_def_prop_ui_text(
       prop,
       "Threshold",
       "Minimum amount of fluid a cell can contain before it is considered empty");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_adaptive_domain", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_adaptive_domain", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN);
+  api_def_prop_ui_text(
       prop, "Adaptive Domain", "Adapt simulation resolution and size to fluid");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_domain_data_reset");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_domain_data_reset");
 
   /* fluid domain options */
 
-  prop = RNA_def_property(srna, "resolution_max", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "maxres");
-  RNA_def_property_range(prop, 6, 10000);
-  RNA_def_property_ui_range(prop, 24, 10000, 2, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "resolution_max", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "maxres");
+  api_def_prop_range(prop, 6, 10000);
+  api_def_prop_ui_range(prop, 24, 10000, 2, -1);
+  api_def_prop_ui_text(
       prop,
       "Maximum Resolution",
       "Resolution used for the fluid domain. Value corresponds to the longest domain side "
       "(resolution for other domain sides is calculated automatically)");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_domain_data_reset");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_domain_data_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_front", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_FRONT);
-  RNA_def_property_ui_text(prop, "Front", "Enable collisions with front domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_collision_border_front", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_FRONT);
+  api_def_prop_ui_text(prop, "Front", "Enable collisions with front domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_back", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_BACK);
-  RNA_def_property_ui_text(prop, "Back", "Enable collisions with back domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = apo_def_prop(sapi, "use_collision_border_back", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_BACK);
+  api_def_prop_ui_text(prop, "Back", "Enable collisions with back domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_right", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_RIGHT);
-  RNA_def_property_ui_text(prop, "Right", "Enable collisions with right domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_collision_border_right", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_RIGHT);
+  api_def_prop_ui_text(prop, "Right", "Enable collisions with right domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_left", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_LEFT);
-  RNA_def_property_ui_text(prop, "Left", "Enable collisions with left domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_collision_border_left", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_LEFT);
+  api_def_prop_ui_text(prop, "Left", "Enable collisions with left domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_top", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_TOP);
-  RNA_def_property_ui_text(prop, "Top", "Enable collisions with top domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_collision_border_top", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_TOP);
+  api_def_prop_ui_text(prop, "Top", "Enable collisions with top domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_collision_border_bottom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_BOTTOM);
-  RNA_def_property_ui_text(prop, "Bottom", "Enable collisions with bottom domain border");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_collision_border_bottom", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "border_collisions", FLUID_DOMAIN_BORDER_BOTTOM);
+  api_def_prop_ui_text(prop, "Bottom", "Enable collisions with bottom domain border");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "gravity", PROP_FLOAT, PROP_ACCELERATION);
-  RNA_def_property_float_sdna(prop, NULL, "gravity");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1000.1, 1000.1);
-  RNA_def_property_ui_text(prop, "Gravity", "Gravity in X, Y and Z direction");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "gravity", PROP_FLOAT, PROP_ACCELERATION);
+  api_def_prop_float_stype(prop, NULL, "gravity");
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1000.1, 1000.1);
+  api_def_prop_ui_text(prop, "Gravity", "Gravity in X, Y and Z direction");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "domain_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, domain_types);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_Fluid_domaintype_set", NULL);
-  RNA_def_property_ui_text(prop, "Domain Type", "Change domain type of the simulation");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Fluid_flip_parts_update");
+  prop = api_def_prop(srna, "domain_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "type");
+  api_def_prop_enum_items(prop, domain_types);
+  api_def_prop_enum_fns(prop, NULL, "api_Fluid_domaintype_set", NULL);
+  api_def_prop_ui_text(prop, "Domain Type", "Change domain type of the simulation");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Fluid_flip_parts_update");
 
   prop = RNA_def_property(srna, "delete_in_obstacle", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_DELETE_IN_OBSTACLE);
