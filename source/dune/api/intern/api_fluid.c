@@ -1115,48 +1115,46 @@ static void rna_FluidModifier_temperature_grid_get(PointerRNA *ptr, float *value
     memset(values, 0, size * sizeof(float));
   }
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 #  endif /* WITH_FLUID */
 
-/** \} */
-
-static void rna_FluidFlow_density_vgroup_get(PointerRNA *ptr, char *value)
+static void api_FluidFlow_density_vgroup_get(ApiPtr *ptr, char *value)
 {
   FluidFlowSettings *flow = (FluidFlowSettings *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, flow->vgroup_density);
+  api_object_vgroup_name_index_get(ptr, value, flow->vgroup_density);
 }
 
-static int rna_FluidFlow_density_vgroup_length(PointerRNA *ptr)
+static int api_FluidFlow_density_vgroup_length(ApiPtr *ptr)
 {
   FluidFlowSettings *flow = (FluidFlowSettings *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, flow->vgroup_density);
+  return api_object_vgroup_name_index_length(ptr, flow->vgroup_density);
 }
 
-static void rna_FluidFlow_density_vgroup_set(struct PointerRNA *ptr, const char *value)
+static void api_FluidFlow_density_vgroup_set(struct ApiPtr *ptr, const char *value)
 {
   FluidFlowSettings *flow = (FluidFlowSettings *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &flow->vgroup_density);
+  api_object_vgroup_name_index_set(ptr, value, &flow->vgroup_density);
 }
 
-static void rna_FluidFlow_uvlayer_set(struct PointerRNA *ptr, const char *value)
+static void api_FluidFlow_uvlayer_set(struct ApiPtr *ptr, const char *value)
 {
   FluidFlowSettings *flow = (FluidFlowSettings *)ptr->data;
-  rna_object_uvlayer_name_set(ptr, value, flow->uvlayer_name, sizeof(flow->uvlayer_name));
+  api_object_uvlayer_name_set(ptr, value, flow->uvlayer_name, sizeof(flow->uvlayer_name));
 }
 
-static void rna_Fluid_use_color_ramp_set(struct PointerRNA *ptr, bool value)
+static void api_Fluid_use_color_ramp_set(struct ApiPtr *ptr, bool value)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
 
   fds->use_coba = value;
 
   if (value && fds->coba == NULL) {
-    fds->coba = BKE_colorband_add(false);
+    fds->coba = dune_colorband_add(false);
   }
 }
 
-static void rna_Fluid_flowsource_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_flowsource_set(struct ApiPtr *ptr, int value)
 {
   FluidFlowSettings *settings = (FluidFlowSettings *)ptr->data;
 
@@ -1165,15 +1163,15 @@ static void rna_Fluid_flowsource_set(struct PointerRNA *ptr, int value)
   }
 }
 
-static const EnumPropertyItem *rna_Fluid_flowsource_itemf(bContext *UNUSED(C),
-                                                          PointerRNA *ptr,
-                                                          PropertyRNA *UNUSED(prop),
-                                                          bool *r_free)
+static const EnumPropItem *api_Fluid_flowsource_itemf(Cxt *UNUSED(C),
+                                                      ApiPtr *ptr,
+                                                      ApiProp *UNUSED(prop),
+                                                      bool *r_free)
 {
   FluidFlowSettings *settings = (FluidFlowSettings *)ptr->data;
 
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   tmp.value = FLUID_FLOW_SOURCE_MESH;
