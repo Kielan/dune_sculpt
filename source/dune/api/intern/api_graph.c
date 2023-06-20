@@ -352,21 +352,21 @@ static void rna_Depsgraph_object_instances_next(CollectionPropertyIterator *iter
    * so we have same issue as with the iterator itself:
    * we need to keep a local copy, which memory remains valid a bit longer,
    * for Python accesses to work. */
-  if (di_it->deg_data[di_it->counter % 2].dupli_object_current != NULL) {
+  if (di_it->graph_data[di_it->counter % 2].dupli_object_current != NULL) {
     di_it->dupli_object_current[di_it->counter % 2] =
         *di_it->deg_data[di_it->counter % 2].dupli_object_current;
-    di_it->deg_data[di_it->counter % 2].dupli_object_current =
+    di_it->graph_data[di_it->counter % 2].dupli_object_current =
         &di_it->dupli_object_current[di_it->counter % 2];
   }
-  iter->valid = di_it->iterators[di_it->counter % 2].valid;
+  iter->valid = di_it->iters[di_it->counter % 2].valid;
 }
 
-static void rna_Depsgraph_object_instances_end(CollectionPropertyIterator *iter)
+static void api_graph_object_instances_end(CollectionPropIter *iter)
 {
-  RNA_Depsgraph_Instances_Iterator *di_it = (RNA_Depsgraph_Instances_Iterator *)
+  api_graph_instances_iter *di_it = (ApiGraphInstancesIter *)
                                                 iter->internal.custom;
-  DEG_iterator_objects_end(&di_it->iterators[0]);
-  DEG_iterator_objects_end(&di_it->iterators[1]);
+  graph_iter_objects_end(&di_it->iters[0]);
+  DEG_iterator_objects_end(&di_it->iters[1]);
   MEM_freeN(di_it);
 }
 
