@@ -635,7 +635,7 @@ static const EnumPropItem *api_Fluid_cachetype_particle_itemf(Cxt *UNUSED(C),
   return item;
 }
 
-static void rna_Fluid_cache_directory_set(struct PointerRNA *ptr, const char *value)
+static void api_Fluid_cache_directory_set(struct ApiPtr *ptr, const char *value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
 
@@ -643,16 +643,16 @@ static void rna_Fluid_cache_directory_set(struct PointerRNA *ptr, const char *va
     return;
   }
 
-  BLI_strncpy(settings->cache_directory, value, sizeof(settings->cache_directory));
+  lib_strncpy(settings->cache_directory, value, sizeof(settings->cache_directory));
 
-  /* TODO(sebbas): Read cache state in order to set cache bake flags and cache pause frames
+  /* TODO: Read cache state in order to set cache bake flags and cache pause frames
    * correctly. */
   // settings->cache_flag = 0;
 }
 
-static const EnumPropertyItem *rna_Fluid_cobafield_itemf(bContext *UNUSED(C),
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA *UNUSED(prop),
+static const EnumPropertyItem *rna_Fluid_cobafield_itemf(Cxt *UNUSED(C),
+                                                         ApiPtr *ptr,
+                                                         ApiProp *UNUSED(prop),
                                                          bool *r_free)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
