@@ -1174,22 +1174,22 @@ static const EnumPropItem *api_Fluid_flowsource_itemf(Cxt *UNUSED(C),
   int totitem = 0;
 
   tmp.value = FLUID_FLOW_SOURCE_MESH;
-  tmp.identifier = "MESH";
+  tmp.id = "MESH";
   tmp.icon = ICON_META_CUBE;
   tmp.name = "Mesh";
   tmp.description = "Emit fluid from mesh surface or volume";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   if (settings->type != FLUID_FLOW_TYPE_LIQUID) {
     tmp.value = FLUID_FLOW_SOURCE_PARTICLES;
-    tmp.identifier = "PARTICLES";
+    tmp.id = "PARTICLES";
     tmp.icon = ICON_PARTICLES;
     tmp.name = "Particle System";
     tmp.description = "Emit smoke from particles";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -1443,21 +1443,21 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
 
   /* object collections */
 
-  prop = RNA_def_property(srna, "effector_group", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "effector_group");
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Effector Collection", "Limit effectors to this collection");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
+  prop = api_def_prop(sapi, "effector_group", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "effector_group");
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Effector Collection", "Limit effectors to this collection");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
 
-  prop = RNA_def_property(srna, "fluid_group", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "fluid_group");
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Fluid Collection", "Limit fluid objects to this collection");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
+  prop = api_def_prop(sapi, "fluid_group", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "fluid_group");
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Fluid Collection", "Limit fluid objects to this collection");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
 
-  prop = RNA_def_property(srna, "force_collection", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(srna, "force_collection", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "force_group");
   RNA_def_property_struct_type(prop, "Collection");
   RNA_def_property_flag(prop, PROP_EDITABLE);
