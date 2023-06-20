@@ -96,27 +96,27 @@ static PointerRNA rna_DepsgraphObjectInstance_particle_system_get(PointerRNA *pt
   if (deg_iter->dupli_object_current != NULL) {
     particle_system = deg_iter->dupli_object_current->particle_system;
   }
-  return rna_pointer_inherit_refine(ptr, &RNA_ParticleSystem, particle_system);
+  return api_ptr_inherit_refine(ptr, &ApiParticleSystem, particle_system);
 }
 
-static void rna_DepsgraphObjectInstance_persistent_id_get(PointerRNA *ptr, int *persistent_id)
+static void api_GraphObjectInstance_persistent_id_get(PointerRNA *ptr, int *persistent_id)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  if (deg_iter->dupli_object_current != NULL) {
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iterator->data;
+  if (graph_iter->dupli_object_current != NULL) {
     memcpy(persistent_id,
-           deg_iter->dupli_object_current->persistent_id,
-           sizeof(deg_iter->dupli_object_current->persistent_id));
+           graph_iter->dupli_object_current->persistent_id,
+           sizeof(graph_iter->dupli_object_current->persistent_id));
   }
   else {
-    memset(persistent_id, 0, sizeof(deg_iter->dupli_object_current->persistent_id));
+    memset(persistent_id, 0, sizeof(graph_iter->dupli_object_current->persistent_id));
   }
 }
 
-static unsigned int rna_DepsgraphObjectInstance_random_id_get(PointerRNA *ptr)
+static unsigned int api_GraphObjectInstance_random_id_get(PointerRNA *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  LibIter *iter = ptr->data;
+  GraohObjectIterData *deg_iter = (GraphObjectIterData *)iterator->data;
   if (deg_iter->dupli_object_current != NULL) {
     return deg_iter->dupli_object_current->random_id;
   }
@@ -125,12 +125,12 @@ static unsigned int rna_DepsgraphObjectInstance_random_id_get(PointerRNA *ptr)
   }
 }
 
-static void rna_DepsgraphObjectInstance_matrix_world_get(PointerRNA *ptr, float *mat)
+static void api_GraphObjectInstance_matrix_world_get(ApiPtr *ptr, float *mat)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  if (deg_iter->dupli_object_current != NULL) {
-    copy_m4_m4((float(*)[4])mat, deg_iter->dupli_object_current->mat);
+  LibIter iter->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  if (graph_iter->dupli_object_current != NULL) {
+    copy_m4_m4((float(*)[4])mat, graph_iter->dupli_object_current->mat);
   }
   else {
     /* We can return actual object's matrix here, no reason to return identity matrix
@@ -143,7 +143,7 @@ static void rna_DepsgraphObjectInstance_matrix_world_get(PointerRNA *ptr, float 
 static void api_GraphObjectInstance_orco_get(PointerRNA *ptr, float *orco)
 {
   LibIter *iter = ptr->data;
-  GraphObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iterator->data;
   if (graph_iter->dupli_object_current != NULL) {
     copy_v3_v3(orco, deg_iter->dupli_object_current->orco);
   }
