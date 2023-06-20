@@ -43,14 +43,14 @@ static ApiPtr api_GraphObjectInstance_object_get(ApiPtr *ptr)
   return apo_ptr_inherit_refine(ptr, &ApiObject, iter->current);
 }
 
-static int rna_DepsgraphObjectInstance_is_instance_get(PointerRNA *ptr)
+static int api_GraphObjectInstance_is_instance_get(PointerRNA *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  return (deg_iter->dupli_object_current != NULL);
+  BLI_Iterator *iter = ptr->data;
+  DEGObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  return (graph_iter->dupli_object_current != NULL);
 }
 
-static PointerRNA rna_DepsgraphObjectInstance_instance_object_get(PointerRNA *ptr)
+static ApiPtr api_graphObjectInstance_instance_object_get(ApiPtr *ptr)
 {
   BLI_Iterator *iterator = ptr->data;
   DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
