@@ -140,11 +140,11 @@ static void rna_DepsgraphObjectInstance_matrix_world_get(PointerRNA *ptr, float 
   }
 }
 
-static void rna_DepsgraphObjectInstance_orco_get(PointerRNA *ptr, float *orco)
+static void api_GraphObjectInstance_orco_get(PointerRNA *ptr, float *orco)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  if (deg_iter->dupli_object_current != NULL) {
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  if (graph_iter->dupli_object_current != NULL) {
     copy_v3_v3(orco, deg_iter->dupli_object_current->orco);
   }
   else {
