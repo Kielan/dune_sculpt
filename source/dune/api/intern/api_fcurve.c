@@ -1983,88 +1983,87 @@ static void rna_def_channeldriver(BlenderRNA *brna)
   RNA_def_struct_ui_icon(srna, ICON_DRIVER);
 
   /* Enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Driver type");
-  RNA_def_property_update(prop, 0, "rna_ChannelDriver_update_data");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_type_items);
+  api_def_prop_ui_text(prop, "Type", "Driver type");
+  api_def_prop_update(prop, 0, "api_ChannelDriver_update_data");
 
   /* String values */
-  prop = RNA_def_property(srna, "expression", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Expression", "Expression to use for Scripted Expression");
-  RNA_def_property_update(prop, 0, "rna_ChannelDriver_update_expr");
+  prop = api_def_prop(sapi, "expression", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Expression", "Expression to use for Scripted Expression");
+  api_def_prop_update(prop, 0, "api_ChannelDriver_update_expr");
 
   /* Collections */
-  prop = RNA_def_property(srna, "variables", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "variables", NULL);
-  RNA_def_property_struct_type(prop, "DriverVariable");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Variables", "Properties acting as inputs for this driver");
-  rna_def_channeldriver_variables(brna, prop);
+  prop = api_def_prop(sapi, "variables", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "variables", NULL);
+  apo_def_prop_struct_type(prop, "DriverVariable");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Variables", "Properties acting as inputs for this driver");
+  api_def_channeldriver_variables(dapi, prop);
 
   /* Settings */
-  prop = RNA_def_property(srna, "use_self", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", DRIVER_FLAG_USE_SELF);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_self", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", DRIVER_FLAG_USE_SELF);
+  api_def_prop_ui_text(
       prop,
       "Use Self",
       "Include a 'self' variable in the name-space, "
       "so drivers can easily reference the data being modified (object, bone, etc...)");
 
   /* State Info (for Debugging) */
-  prop = RNA_def_property(srna, "is_valid", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", DRIVER_FLAG_INVALID);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_valid", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", DRIVER_FLAG_INVALID);
+  api_def_prop_ui_text(
       prop, "Invalid", "Driver could not be evaluated in past, so should be skipped");
 
-  prop = RNA_def_property(srna, "is_simple_expression", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_ChannelDriver_is_simple_expression_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_simple_expression", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_ChannelDriver_is_simple_expression_get", NULL);
+  api_def_prop_ui_text(
       prop,
       "Simple Expression",
       "The scripted expression can be evaluated without using the full python interpreter");
 
   /* Functions */
-  RNA_api_drivers(srna);
+  api_api_drivers(sapi);
 }
 
 /* *********************** */
 
-static void rna_def_fpoint(BlenderRNA *brna)
+static void api_def_fpoint(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "FCurveSample", NULL);
-  RNA_def_struct_sdna(srna, "FPoint");
-  RNA_def_struct_ui_text(srna, "F-Curve Sample", "Sample point for F-Curve");
+  sapi = api_def_struct(dapi, "FCurveSample", NULL);
+  api_def_struct_stype(sapi, "FPoint");
+  api_def_struct_ui_text(sapi, "F-Curve Sample", "Sample point for F-Curve");
 
   /* Boolean values */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", 1);
-  RNA_def_property_ui_text(prop, "Select", "Selection status");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, NULL);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", 1);
+  api_def_prop_ui_text(prop, "Select", "Selection status");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, NULL);
 
   /* Vector value */
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
-  RNA_def_property_float_sdna(prop, NULL, "vec");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Point", "Point coordinates");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_COORDS); /* keyframes are dimensionless */
+  RNA_def_prop_float_stypr(prop, NULL, "vec");
+  RNA_def_prop_array(prop, 2);
+  RNA_def_prop_ui_text(prop, "Point", "Point coordinates");
+  RNA_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
 }
 
 /* duplicate of BezTriple in rna_curve.c
- * but with F-Curve specific options updates/functionality
- */
-static void rna_def_fkeyframe(BlenderRNA *brna)
+ * but with F-Curve specific options updates/functionality */
+static void api_def_fkeyframe(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Keyframe", NULL);
-  RNA_def_struct_sdna(srna, "BezTriple");
-  RNA_def_struct_ui_text(
-      srna, "Keyframe", "Bezier curve point with two handles defining a Keyframe on an F-Curve");
+  sapi = api_def_struct(dapi, "Keyframe", NULL);
+  api_def_struct_stype(sapi, "BezTriple");
+  api_def_struct_ui_text(
+      sapi, "Keyframe", "Bezier curve point with two handles defining a Keyframe on an F-Curve");
 
   /* Boolean values */
   prop = RNA_def_property(srna, "select_left_handle", PROP_BOOLEAN, PROP_NONE);
