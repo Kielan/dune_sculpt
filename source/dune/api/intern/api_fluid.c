@@ -704,7 +704,7 @@ static const EnumPropertyItem *rna_Fluid_cobafield_itemf(Cxt *UNUSED(C),
   api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_FORCE_Y;
-  tmp.identifier = "FORCE_Y";
+  tmp.id = "FORCE_Y";
   tmp.icon = 0;
   tmp.name = "Y Force";
   tmp.description = "Y component of the force field";
@@ -871,23 +871,22 @@ static char *api_FluidFlowSettings_path(ApiPtr *ptr)
   return lib_sprintfn("mods[\"%s\"].flow_settings", name_esc);
 }
 
-static char *api_FluidEffectorSettings_path(PointerRNA *ptr)
+static char *api_FluidEffectorSettings_path(ApiPtr *ptr)
 {
   FluidEffectorSettings *settings = (FluidEffectorSettings *)ptr->data;
-  ModData *md = (ModifierData *)settings->fmd;
+  ModData *md = (ModData *)settings->fmd;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].effector_settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("modifiers[\"%s\"].effector_settings", name_esc);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Grid Accessors
- * \{ */
+/** Grid Accessor */
 
 #  ifdef WITH_FLUID
 
-static int rna_FluidModifier_grid_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_FluidMod_grid_get_length(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
   float *density = NULL;
@@ -912,10 +911,10 @@ static int rna_FluidModifier_grid_get_length(PointerRNA *ptr, int length[RNA_MAX
   return length[0];
 }
 
-static int rna_FluidModifier_color_grid_get_length(PointerRNA *ptr,
-                                                   int length[RNA_MAX_ARRAY_DIMENSION])
+static int rna_FluidMod_color_grid_get_length(ApiPtr *ptr,
+                                                   int length[API_MAX_ARRAY_DIMENSION])
 {
-  rna_FluidModifier_grid_get_length(ptr, length);
+  rna_FluidMod_grid_get_length(ptr, length);
 
   length[0] *= 4;
   return length[0];
@@ -959,14 +958,14 @@ static int api_FluidMod_heat_grid_get_length(ApiPtr *ptr,
   return length[0];
 }
 
-static void api_FluidMod_density_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_density_grid_get(ApiPtr *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_grid_get_length(ptr, length);
+  int length[API_MAX_ARRAY_DIMENSION];
+  int size = api_FluidMod_grid_get_length(ptr, length);
   float *density;
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   if (fds->flags & FLUID_DOMAIN_USE_NOISE && fds->fluid) {
     density = manta_noise_get_density(fds->fluid);
