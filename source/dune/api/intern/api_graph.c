@@ -277,32 +277,32 @@ static void api_graph_objects_begin(CollectionPtrIter *iter, ApiPtr *ptr)
   iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
   GraphObjectIterData *data = mem_callocn(sizeof(GraphObjectIterData), __func__);
 
-  data->graph = (Depsgraph *)ptr->data;
-  data->flag = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY | DEG_ITER_OBJECT_FLAG_VISIBLE |
-               DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET;
+  data->graph = (Graph *)ptr->data;
+  data->flag = GRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY | DEG_ITER_OBJECT_FLAG_VISIBLE |
+               GRAPH_ITER_OBJECT_FLAG_LINKED_VIA_SET;
 
-  ((BLI_Iterator *)iter->internal.custom)->valid = true;
-  DEG_iterator_objects_begin(iter->internal.custom, data);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  ((LibIter *)iter->internal.custom)->valid = true;
+  graph_iter_objects_begin(iter->internal.custom, data);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Depsgraph_objects_next(CollectionPropertyIterator *iter)
+static void api_graph_objects_next(CollectionPropIter *iter)
 {
-  DEG_iterator_objects_next(iter->internal.custom);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  graph_iter_objects_next(iter->internal.custom);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Depsgraph_objects_end(CollectionPropertyIterator *iter)
+static void api_Graph_objects_end(CollectionPropIter *iter)
 {
-  DEG_iterator_objects_end(iter->internal.custom);
-  MEM_freeN(((BLI_Iterator *)iter->internal.custom)->data);
-  MEM_freeN(iter->internal.custom);
+  graph_iter_objects_end(iter->internal.custom);
+  mem_freen(((LibIter *)iter->internal.custom)->data));
+  mem_freen(iter->internal.custom);
 }
 
-static PointerRNA rna_Depsgraph_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Graph_objects_get(CollectionPropIter *iter)
 {
-  Object *ob = ((BLI_Iterator *)iter->internal.custom)->current;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Object, ob);
+  Object *ob = ((LibIter *)iter->internal.custom)->current;
+  return api_ptr_inherit_refine(&iter->parent, &ApiObject, ob);
 }
 
 /* Iteration over objects, extended version
