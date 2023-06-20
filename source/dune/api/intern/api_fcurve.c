@@ -1406,20 +1406,20 @@ static void api_def_fmod_cycles(DuneApi *dapi)
   RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
   /* after */
-  prop = RNA_def_property(srna, "mode_after", PROP_ENUM, PROP_NONE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_enum_sdna(prop, NULL, "after_mode");
-  RNA_def_property_enum_items(prop, prop_type_items);
-  RNA_def_property_ui_text(prop, "After Mode", "Cycling mode to use after last keyframe");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
+  prop = api_def_prop(sapi, "mode_after", PROP_ENUM, PROP_NONE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_enum_stype(prop, NULL, "after_mode");
+  api_def_prop_enum_items(prop, prop_type_items);
+  api_def_prop_ui_text(prop, "After Mode", "Cycling mode to use after last keyframe");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
-  prop = RNA_def_property(srna, "cycles_after", PROP_INT, PROP_NONE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_int_sdna(prop, NULL, "after_cycles");
-  RNA_def_property_ui_text(prop,
-                           "After Cycles",
-                           "Maximum number of cycles to allow after last keyframe (0 = infinite)");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
+  prop = api_def_prop(sapi, "cycles_after", PROP_INT, PROP_NONE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_int_stype(prop, NULL, "after_cycles");
+  api_def_prop_ui_text(prop,
+                       "After Cycles",
+                       "Maximum number of cycles to allow after last keyframe (0 = infinite)");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "api_FMod_update");
 }
 
 /* --------- */
