@@ -976,18 +976,18 @@ static void api_FluidMod_density_grid_get(ApiPtr *ptr, float *values)
 
   memcpy(values, density, size * sizeof(float));
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 
-static void rna_FluidModifier_velocity_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_velocity_grid_get(PointerRNA *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
   int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_velocity_grid_get_length(ptr, length);
+  int size = api_FluidMod_velocity_grid_get_length(ptr, length);
   float *vx, *vy, *vz;
   int i;
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   vx = manta_get_velocity_x(fds->fluid);
   vy = manta_get_velocity_y(fds->fluid);
@@ -999,16 +999,16 @@ static void rna_FluidModifier_velocity_grid_get(PointerRNA *ptr, float *values)
     *(values++) = *(vz++);
   }
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 
-static void rna_FluidModifier_color_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_color_grid_get(PointerRNA *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_grid_get_length(ptr, length);
+  int length[API_MAX_ARRAY_DIMENSION];
+  int size = api_FluidMod_grid_get_length(ptr, length);
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   if (!fds->fluid) {
     memset(values, 0, size * sizeof(float));
@@ -1032,17 +1032,17 @@ static void rna_FluidModifier_color_grid_get(PointerRNA *ptr, float *values)
     }
   }
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 
-static void rna_FluidModifier_flame_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_flame_grid_get(ApiPtr *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_grid_get_length(ptr, length);
+  int length[API_MAX_ARRAY_DIMENSION];
+  int size = api_FluidMod_grid_get_length(ptr, length);
   float *flame;
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   if (fds->flags & FLUID_DOMAIN_USE_NOISE && fds->fluid) {
     flame = manta_noise_get_flame(fds->fluid);
@@ -1058,17 +1058,17 @@ static void rna_FluidModifier_flame_grid_get(PointerRNA *ptr, float *values)
     memset(values, 0, size * sizeof(float));
   }
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 
-static void rna_FluidModifier_heat_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_heat_grid_get(ApiPtr *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_heat_grid_get_length(ptr, length);
+  int length[API_MAX_ARRAY_DIMENSION];
+  int size = api_FluidMod_heat_grid_get_length(ptr, length);
   float *heat;
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   heat = manta_smoke_get_heat(fds->fluid);
 
@@ -1082,17 +1082,17 @@ static void rna_FluidModifier_heat_grid_get(PointerRNA *ptr, float *values)
     memset(values, 0, size * sizeof(float));
   }
 
-  BLI_rw_mutex_unlock(fds->fluid_mutex);
+  lib_rw_mutex_unlock(fds->fluid_mutex);
 }
 
-static void rna_FluidModifier_temperature_grid_get(PointerRNA *ptr, float *values)
+static void api_FluidMod_temperature_grid_get(ApiPtr *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
-  int size = rna_FluidModifier_grid_get_length(ptr, length);
+  int length[API_MAX_ARRAY_DIMENSION];
+  int size = api_FluidMod_grid_get_length(ptr, length);
   float *flame;
 
-  BLI_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
+  lib_rw_mutex_lock(fds->fluid_mutex, THREAD_LOCK_READ);
 
   if (fds->flags & FLUID_DOMAIN_USE_NOISE && fds->fluid) {
     flame = manta_noise_get_flame(fds->fluid);
@@ -1206,7 +1206,7 @@ static void rna_Fluid_flowtype_set(struct PointerRNA *ptr, int value)
     /* Force flow source to mesh for liquids.
      * Also use different surface emission. Liquids should by default not emit around surface. */
     if (value == FLUID_FLOW_TYPE_LIQUID) {
-      rna_Fluid_flowsource_set(ptr, FLUID_FLOW_SOURCE_MESH);
+      api_Fluid_flowsource_set(ptr, FLUID_FLOW_SOURCE_MESH);
       settings->surface_distance = 0.0f;
     }
     /* Use some surface emission when switching to a gas emitter. Gases should by default emit a
@@ -1219,17 +1219,17 @@ static void rna_Fluid_flowtype_set(struct PointerRNA *ptr, int value)
 
 #else
 
-static void rna_def_fluid_domain_settings(BlenderRNA *brna)
+static void api_def_fluid_domain_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static EnumPropertyItem domain_types[] = {
+  static EnumPropItem domain_types[] = {
       {FLUID_DOMAIN_TYPE_GAS, "GAS", 0, "Gas", "Create domain for gases"},
       {FLUID_DOMAIN_TYPE_LIQUID, "LIQUID", 0, "Liquid", "Create domain for liquids"},
       {0, NULL, 0, NULL, NULL}};
 
-  static const EnumPropertyItem prop_compression_items[] = {
+  static const EnumPropItem prop_compression_items[] = {
       {VDB_COMPRESSION_ZIP, "ZIP", 0, "Zip", "Effective but slow compression"},
 #  ifdef WITH_OPENVDB_BLOSC
       {VDB_COMPRESSION_BLOSC,
@@ -1241,14 +1241,14 @@ static void rna_def_fluid_domain_settings(BlenderRNA *brna)
       {VDB_COMPRESSION_NONE, "NONE", 0, "None", "Do not use any compression"},
       {0, NULL, 0, NULL, NULL}};
 
-  static const EnumPropertyItem smoke_highres_sampling_items[] = {
+  static const EnumPropItem smoke_highres_sampling_items[] = {
       {SM_HRES_FULLSAMPLE, "FULLSAMPLE", 0, "Full Sample", ""},
       {SM_HRES_LINEAR, "LINEAR", 0, "Linear", ""},
       {SM_HRES_NEAREST, "NEAREST", 0, "Nearest", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static EnumPropertyItem cache_types[] = {
+  static EnumPropItem cache_types[] = {
       {FLUID_DOMAIN_CACHE_REPLAY, "REPLAY", 0, "Replay", "Use the timeline to bake the scene"},
       {FLUID_DOMAIN_CACHE_MODULAR,
        "MODULAR",
@@ -1259,12 +1259,12 @@ static void rna_def_fluid_domain_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL}};
 
   /*  OpenVDB data depth - generated dynamically based on domain type */
-  static EnumPropertyItem fluid_data_depth_items[] = {
+  static EnumPropItem fluid_data_depth_items[] = {
       {0, "NONE", 0, "", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static EnumPropertyItem fluid_mesh_quality_items[] = {
+  static EnumPropItem fluid_mesh_quality_items[] = {
       {FLUID_DOMAIN_MESH_IMPROVED,
        "IMPROVED",
        0,
@@ -1279,7 +1279,7 @@ static void rna_def_fluid_domain_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static EnumPropertyItem fluid_guide_source_items[] = {
+  static EnumPropItem fluid_guide_source_items[] = {
       {FLUID_DOMAIN_GUIDE_SRC_DOMAIN,
        "DOMAIN",
        0,
