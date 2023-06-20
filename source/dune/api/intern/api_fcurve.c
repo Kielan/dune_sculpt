@@ -1288,13 +1288,13 @@ static void api_def_fmod_envelope_control_points(DuneApi *dapi, ApiProp *cprop)
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "FModEnvelopeControlPoints");
-  srna = api_def_struct(dapi, "FModEnvelopeControlPoints", NULL);
-  RNA_def_struct_sdna(srna, "FMod");
+  sapi = api_def_struct(dapi, "FModEnvelopeControlPoints", NULL);
+  api_def_struct_stype(sapi, "FMod");
 
   api_def_struct_ui_text(
-      srna, "Control Points", "Control points defining the shape of the envelope");
+      sapi, "Control Points", "Control points defining the shape of the envelope");
 
-  func = api_def_fn(sapi, "add", "api_FModEnvelope_points_add");
+  fn = api_def_fn(sapi, "add", "api_FModEnvelope_points_add");
   api_def_fn_ui_description(fn, "Add a control point to a FModifierEnvelope");
   api_def_fn_flag(fn, FN_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
   parm = api_def_float(fn,
@@ -1306,10 +1306,10 @@ static void api_def_fmod_envelope_control_points(DuneApi *dapi, ApiProp *cprop)
                        "Frame to add this control-point",
                        -FLT_MAX,
                        FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "point", "FModifierEnvelopeControlPoint", "", "Newly created control-point");
-  RNA_def_function_return(func, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "point", "FModEnvelopeControlPoint", "", "Newly created control-point");
+  api_def_fn_return(fn, parm);
 
   func = RNA_def_function(srna, "remove", "rna_FModifierEnvelope_points_remove");
   RNA_def_function_ui_description(func, "Remove a control-point from an FModifierEnvelope");
