@@ -982,7 +982,7 @@ static void api_FluidMod_density_grid_get(ApiPtr *ptr, float *values)
 static void api_FluidMod_velocity_grid_get(PointerRNA *ptr, float *values)
 {
   FluidDomainSettings *fds = (FluidDomainSettings *)ptr->data;
-  int length[RNA_MAX_ARRAY_DIMENSION];
+  int length[API_MAX_ARRAY_DIMENSION];
   int size = api_FluidMod_velocity_grid_get_length(ptr, length);
   float *vx, *vy, *vz;
   int i;
@@ -1432,54 +1432,54 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
 
   sapi = api_def_struct(dapi, "FluidDomainSettings", NULL);
   api_def_struct_ui_text(sapi, "Domain Settings", "Fluid domain settings");
-  api_def_struct_sdna(sapi, "FluidDomainSettings");
-  api_def_struct_path_func(sapi, "api_FluidDomainSettings_path");
+  api_def_struct_stype(sapi, "FluidDomainSettings");
+  api_def_struct_path_fn(sapi, "api_FluidDomainSettings_path");
 
-  prop = api_def_prop(sapi, "effector_weights", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "EffectorWeights");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Effector Weights", "");
+  prop = api_def_prop(sapi, "effector_weights", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "EffectorWeights");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Effector Weights", "");
 
   /* object collections */
 
-  prop = api_def_prop(sapi, "effector_group", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "effector_group", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "effector_group");
   api_def_prop_struct_type(prop, "Collection");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Effector Collection", "Limit effectors to this collection");
-  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_reset_dependency");
 
-  prop = api_def_prop(sapi, "fluid_group", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "fluid_group", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "fluid_group");
   api_def_prop_struct_type(prop, "Collection");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Fluid Collection", "Limit fluid objects to this collection");
-  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_reset_dependency");
 
-  prop = api_def_prop(srna, "force_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "force_group");
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Force Collection", "Limit forces to this collection");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_reset_dependency");
+  prop = api_def_prop(sapi, "force_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "force_group");
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Force Collection", "Limit forces to this collection");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_reset_dependency");
 
   /* grid access */
 
 #  ifdef WITH_FLUID
-  prop = RNA_def_property(srna, "density_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_grid_get_length");
-  RNA_def_property_float_funcs(prop, "rna_FluidModifier_density_grid_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Density Grid", "Smoke density grid");
+  prop = api_def_prop(sapi, "density_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_fns(prop, "api_FluidMod_grid_get_length");
+  api_def_prop_float_fnss(prop, "api_FluidMod_density_grid_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Density Grid", "Smoke density grid");
 
-  prop = RNA_def_property(srna, "velocity_grid", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 32);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_FluidModifier_velocity_grid_get_length");
+  prop = api_def_prop(sapi, "velocity_grid", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 32);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_property_dynamic_array_fns(prop, "api_FluidMod_velocity_grid_get_length");
   RNA_def_property_float_funcs(prop, "rna_FluidModifier_velocity_grid_get", NULL, NULL);
   RNA_def_property_ui_text(prop, "Velocity Grid", "Smoke velocity grid");
 
