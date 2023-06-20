@@ -1,46 +1,46 @@
 #include <stdlib.h>
 
-#include "BLI_path_util.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 #define STATS_MAX_SIZE 16384
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-#  include "BLI_iterator.h"
-#  include "BLI_math.h"
+#  include "lib_iter.h"
+#  include "lib_math.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_duplilist.h"
-#  include "BKE_object.h"
-#  include "BKE_scene.h"
+#  include "dune_duplilist.h"
+#  include "dune_object.h"
+#  include "dune_scene.h"
 
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_debug.h"
-#  include "DEG_depsgraph_query.h"
+#  include "graph_build.h"
+#  include "graph_debug.h"
+#  include "graph_query.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
 /* **************** Object Instance **************** */
 
-static PointerRNA rna_DepsgraphObjectInstance_object_get(PointerRNA *ptr)
+static ApiPtr api_GraphObjectInstance_object_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Object, iterator->current);
+  LibIter *iter = ptr->data;
+  return apo_ptr_inherit_refine(ptr, &ApiObject, iter->current);
 }
 
 static int rna_DepsgraphObjectInstance_is_instance_get(PointerRNA *ptr)
