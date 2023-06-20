@@ -662,151 +662,151 @@ static const EnumPropertyItem *rna_Fluid_cobafield_itemf(bContext *UNUSED(C),
   int totitem = 0;
 
   tmp.value = FLUID_DOMAIN_FIELD_FLAGS;
-  tmp.identifier = "FLAGS";
+  tmp.id = "FLAGS";
   tmp.icon = 0;
   tmp.name = "Flags";
   tmp.description = "Flag grid of the fluid domain";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_PRESSURE;
-  tmp.identifier = "PRESSURE";
+  tmp.id = "PRESSURE";
   tmp.icon = 0;
   tmp.name = "Pressure";
   tmp.description = "Pressure field of the fluid domain";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_VELOCITY_X;
-  tmp.identifier = "VELOCITY_X";
+  tmp.id = "VELOCITY_X";
   tmp.icon = 0;
   tmp.name = "X Velocity";
   tmp.description = "X component of the velocity field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_VELOCITY_Y;
-  tmp.identifier = "VELOCITY_Y";
+  tmp.id = "VELOCITY_Y";
   tmp.icon = 0;
   tmp.name = "Y Velocity";
   tmp.description = "Y component of the velocity field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_VELOCITY_Z;
-  tmp.identifier = "VELOCITY_Z";
+  tmp.id = "VELOCITY_Z";
   tmp.icon = 0;
   tmp.name = "Z Velocity";
   tmp.description = "Z component of the velocity field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_FORCE_X;
-  tmp.identifier = "FORCE_X";
+  tmp.id = "FORCE_X";
   tmp.icon = 0;
   tmp.name = "X Force";
   tmp.description = "X component of the force field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_FORCE_Y;
   tmp.identifier = "FORCE_Y";
   tmp.icon = 0;
   tmp.name = "Y Force";
   tmp.description = "Y component of the force field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = FLUID_DOMAIN_FIELD_FORCE_Z;
-  tmp.identifier = "FORCE_Z";
+  tmp.id = "FORCE_Z";
   tmp.icon = 0;
   tmp.name = "Z Force";
   tmp.description = "Z component of the force field";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   if (settings->type == FLUID_DOMAIN_TYPE_GAS) {
     tmp.value = FLUID_DOMAIN_FIELD_COLOR_R;
-    tmp.identifier = "COLOR_R";
+    tmp.id = "COLOR_R";
     tmp.icon = 0;
     tmp.name = "Red";
     tmp.description = "Red component of the color field";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_COLOR_G;
-    tmp.identifier = "COLOR_G";
+    tmp.id = "COLOR_G";
     tmp.icon = 0;
     tmp.name = "Green";
     tmp.description = "Green component of the color field";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_COLOR_B;
-    tmp.identifier = "COLOR_B";
+    tmp.id = "COLOR_B";
     tmp.icon = 0;
     tmp.name = "Blue";
     tmp.description = "Blue component of the color field";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_DENSITY;
-    tmp.identifier = "DENSITY";
+    tmp.id = "DENSITY";
     tmp.icon = 0;
     tmp.name = "Density";
     tmp.description = "Quantity of soot in the fluid";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_FLAME;
-    tmp.identifier = "FLAME";
+    tmp.id = "FLAME";
     tmp.icon = 0;
     tmp.name = "Flame";
     tmp.description = "Flame field";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_FUEL;
-    tmp.identifier = "FUEL";
+    tmp.id = "FUEL";
     tmp.icon = 0;
     tmp.name = "Fuel";
     tmp.description = "Fuel field";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_HEAT;
-    tmp.identifier = "HEAT";
+    tmp.id = "HEAT";
     tmp.icon = 0;
     tmp.name = "Heat";
     tmp.description = "Temperature of the fluid";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
   else if (settings->type == FLUID_DOMAIN_TYPE_LIQUID) {
     tmp.value = FLUID_DOMAIN_FIELD_PHI;
-    tmp.identifier = "PHI";
+    tmp.id = "PHI";
     tmp.icon = 0;
     tmp.name = "Fluid Levelset";
     tmp.description = "Levelset representation of the fluid";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_PHI_IN;
-    tmp.identifier = "PHI_IN";
+    tmp.id = "PHI_IN";
     tmp.icon = 0;
     tmp.name = "Inflow Levelset";
     tmp.description = "Levelset representation of the inflow";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_PHI_OUT;
-    tmp.identifier = "PHI_OUT";
+    tmp.id = "PHI_OUT";
     tmp.icon = 0;
     tmp.name = "Outflow Levelset";
     tmp.description = "Levelset representation of the outflow";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
 
     tmp.value = FLUID_DOMAIN_FIELD_PHI_OBSTACLE;
-    tmp.identifier = "PHI_OBSTACLE";
+    tmp.id = "PHI_OBSTACLE";
     tmp.icon = 0;
     tmp.name = "Obstacle Levelset";
     tmp.description = "Levelset representation of the obstacles";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static const EnumPropertyItem *rna_Fluid_data_depth_itemf(bContext *UNUSED(C),
-                                                          PointerRNA *ptr,
-                                                          PropertyRNA *UNUSED(prop),
-                                                          bool *r_free)
+static const EnumPropItem *api_Fluid_data_depth_itemf(Cxt *UNUSED(C),
+                                                      ApiPtr *ptr,
+                                                      ApiProp *UNUSED(prop),
+                                                      bool *r_free)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
 
