@@ -1296,12 +1296,12 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
   };
 
   /*  Cache type - generated dynamically based on domain type */
-  static EnumPropertyItem cache_file_type_items[] = {
+  static EnumPropItem cache_file_type_items[] = {
       {0, "NONE", 0, "", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem interp_method_item[] = {
+  static const EnumPropItem interp_method_item[] = {
       {FLUID_DISPLAY_INTERP_LINEAR, "LINEAR", 0, "Linear", "Good smoothness and speed"},
       {FLUID_DISPLAY_INTERP_CUBIC,
        "CUBIC",
@@ -1312,7 +1312,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem axis_slice_position_items[] = {
+  static const EnumPropItem axis_slice_position_items[] = {
       {SLICE_AXIS_AUTO,
        "AUTO",
        0,
@@ -1324,14 +1324,14 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem vector_draw_items[] = {
+  static const EnumPropItem vector_draw_items[] = {
       {VECTOR_DRAW_NEEDLE, "NEEDLE", 0, "Needle", "Display vectors as needles"},
       {VECTOR_DRAW_STREAMLINE, "STREAMLINE", 0, "Streamlines", "Display vectors as streamlines"},
       {VECTOR_DRAW_MAC, "MAC", 0, "MAC Grid", "Display vector field as MAC grid"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem vector_field_items[] = {
+  static const EnumPropItem vector_field_items[] = {
       {FLUID_DOMAIN_VECTOR_FIELD_VELOCITY,
        "FLUID_VELOCITY",
        0,
@@ -1346,7 +1346,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem gridlines_color_field_items[] = {
+  static const EnumPropItem gridlines_color_field_items[] = {
       {0, "NONE", 0, "None", "None"},
       {FLUID_GRIDLINE_COLOR_TYPE_FLAGS, "FLAGS", 0, "Flags", "Flag grid of the fluid domain"},
       {FLUID_GRIDLINE_COLOR_TYPE_RANGE,
@@ -1357,7 +1357,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem gridlines_cell_filter_items[] = {
+  static const EnumPropItem gridlines_cell_filter_items[] = {
       {FLUID_CELL_TYPE_NONE, "NONE", 0, "None", "Highlight the cells regardless of their type"},
       {FLUID_CELL_TYPE_FLUID, "FLUID", 0, "Fluid", "Highlight only the cells of type Fluid"},
       {FLUID_CELL_TYPE_OBSTACLE,
@@ -1375,7 +1375,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem sndparticle_boundary_items[] = {
+  static const EnumPropItem sndparticle_boundary_items[] = {
       {SNDPARTICLE_BOUNDARY_DELETE,
        "DELETE",
        0,
@@ -1388,7 +1388,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
        "Push secondary particles that left the domain back into the domain"},
       {0, NULL, 0, NULL, NULL}};
 
-  static const EnumPropertyItem sndparticle_combined_export_items[] = {
+  static const EnumPropItem sndparticle_combined_export_items[] = {
       {SNDPARTICLE_COMBINED_EXPORT_OFF,
        "OFF",
        0,
@@ -1416,7 +1416,7 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
        "Create one particle system that contains all three secondary particle types"},
       {0, NULL, 0, NULL, NULL}};
 
-  static EnumPropertyItem simulation_methods[] = {
+  static EnumPropItem simulation_methods[] = {
       {FLUID_DOMAIN_METHOD_FLIP,
        "FLIP",
        0,
@@ -1430,12 +1430,12 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "FluidDomainSettings", NULL);
-  RNA_def_struct_ui_text(srna, "Domain Settings", "Fluid domain settings");
-  RNA_def_struct_sdna(srna, "FluidDomainSettings");
-  RNA_def_struct_path_func(srna, "rna_FluidDomainSettings_path");
+  sapi = api_def_struct(dapi, "FluidDomainSettings", NULL);
+  api_def_struct_ui_text(sapi, "Domain Settings", "Fluid domain settings");
+  api_def_struct_sdna(sapi, "FluidDomainSettings");
+  api_def_struct_path_func(sapi, "api_FluidDomainSettings_path");
 
-  prop = RNA_def_property(srna, "effector_weights", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "effector_weights", PROP_POINTER, PROP_NONE);
   RNA_def_property_struct_type(prop, "EffectorWeights");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
