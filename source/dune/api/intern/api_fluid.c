@@ -53,7 +53,7 @@ static void api_Fluid_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
   graph_relations_tag_update(main);
 }
 
-static void rna_Fluid_datacache_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_datacache_reset(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
@@ -66,12 +66,12 @@ static void rna_Fluid_datacache_reset(Main *UNUSED(bmain), Scene *UNUSED(scene),
     if (settings->cache_type == FLUID_DOMAIN_CACHE_REPLAY) {
       cache_map |= FLUID_DOMAIN_OUTDATED_GUIDE;
     }
-    BKE_fluid_cache_free(settings, ob, cache_map);
+    dune_fluid_cache_free(settings, ob, cache_map);
   }
 #  endif
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
-static void rna_Fluid_noisecache_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_noisecache_reset(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_FLUID
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
