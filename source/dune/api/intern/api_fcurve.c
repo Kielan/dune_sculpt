@@ -1352,22 +1352,22 @@ static void rna_def_fmodifier_envelope(BlenderRNA *brna)
       prop, "Default Minimum", "Lower distance from Reference Value for 1:1 default influence");
   RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
-  prop = RNA_def_property(srna, "default_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "default_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(
       prop, "Default Maximum", "Upper distance from Reference Value for 1:1 default influence");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "api_FMod_update");
 }
 
 /* --------- */
 
-static void rna_def_fmodifier_cycles(BlenderRNA *brna)
+static void api_def_fmod_cycles(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_type_items[] = {
+  static const EnumProp prop_type_items[] = {
       {FCM_EXTRAPOLATE_NONE, "NONE", 0, "No Cycles", "Don't do anything"},
       {FCM_EXTRAPOLATE_CYCLIC, "REPEAT", 0, "Repeat Motion", "Repeat keyframe range as-is"},
       {FCM_EXTRAPOLATE_CYCLIC_OFFSET,
@@ -1384,9 +1384,9 @@ static void rna_def_fmodifier_cycles(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "FModifierCycles", "FModifier");
-  RNA_def_struct_ui_text(srna, "Cycles F-Modifier", "Repeat the values of the modified F-Curve");
-  RNA_def_struct_sdna_from(srna, "FMod_Cycles", "data");
+  sapi = api_def_struct(dapi, "FModifierCycles", "FModifier");
+  api_def_struct_ui_text(sapi, "Cycles F-Modifier", "Repeat the values of the modified F-Curve");
+  api_def_struct_stype_from(sapi, "FMod_Cycles", "data");
 
   /* before */
   prop = RNA_def_property(srna, "mode_before", PROP_ENUM, PROP_NONE);
