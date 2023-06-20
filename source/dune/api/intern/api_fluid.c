@@ -594,7 +594,7 @@ static const EnumPropertyItem *rna_Fluid_cachetype_volume_itemf(bContext *UNUSED
   tmp.identifier = "OPENVDB";
   tmp.name = "OpenVDB";
   tmp.description = "OpenVDB file format (.vdb)";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 #  endif
 
   /* Support for deprecated .raw format. */
@@ -602,34 +602,34 @@ static const EnumPropertyItem *rna_Fluid_cachetype_volume_itemf(bContext *UNUSED
   if (fds->cache_data_format == FLUID_DOMAIN_FILE_RAW ||
       fds->cache_noise_format == FLUID_DOMAIN_FILE_RAW) {
     tmp.value = FLUID_DOMAIN_FILE_RAW;
-    tmp.identifier = "RAW";
+    tmp.id = "RAW";
     tmp.name = "Raw Cache";
     tmp.description = "Raw file format (.raw)";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static const EnumPropertyItem *rna_Fluid_cachetype_particle_itemf(bContext *UNUSED(C),
-                                                                  PointerRNA *UNUSED(ptr),
-                                                                  PropertyRNA *UNUSED(prop),
-                                                                  bool *r_free)
+static const EnumPropItem *api_Fluid_cachetype_particle_itemf(Cxt *UNUSED(C),
+                                                              ApiPtr *UNUSED(ptr),
+                                                              ApiProp *UNUSED(prop),
+                                                              bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   tmp.value = FLUID_DOMAIN_FILE_UNI;
-  tmp.identifier = "UNI";
+  tmp.id = "UNI";
   tmp.name = "Uni Cache";
   tmp.description = "Uni file format";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
