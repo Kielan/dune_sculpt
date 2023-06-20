@@ -152,12 +152,12 @@ static void rna_DepsgraphObjectInstance_orco_get(PointerRNA *ptr, float *orco)
   }
 }
 
-static void rna_DepsgraphObjectInstance_uv_get(PointerRNA *ptr, float *uv)
+static void api_GraphObjectInstance_uv_get(ApiPtr *ptr, float *uv)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  if (deg_iter->dupli_object_current != NULL) {
-    copy_v2_v2(uv, deg_iter->dupli_object_current->uv);
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  if (graph_iter->dupli_object_current != NULL) {
+    copy_v2_v2(uv, graph_iter->dupli_object_current->uv);
   }
   else {
     zero_v2(uv);
@@ -166,36 +166,36 @@ static void rna_DepsgraphObjectInstance_uv_get(PointerRNA *ptr, float *uv)
 
 /* ******************** Sorted  ***************** */
 
-static int rna_Depsgraph_mode_get(PointerRNA *ptr)
+static int api_Graph_mode_get(ApiPtr *ptr)
 {
-  Depsgraph *depsgraph = ptr->data;
-  return DEG_get_mode(depsgraph);
+  Graph *graph = ptr->data;
+  return graph_get_mode(graph);
 }
 
 /* ******************** Updates ***************** */
 
-static PointerRNA rna_DepsgraphUpdate_id_get(PointerRNA *ptr)
+static ApiPtr api_GraphUpdate_id_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_ID, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiId, ptr->data);
 }
 
-static bool rna_DepsgraphUpdate_is_updated_transform_get(PointerRNA *ptr)
+static bool api_GraphUpdate_is_updated_transform_get(ApiPtr *ptr)
 {
-  ID *id = ptr->data;
+  Id *id = ptr->data;
   return ((id->recalc & ID_RECALC_TRANSFORM) != 0);
 }
 
-static bool rna_DepsgraphUpdate_is_updated_shading_get(PointerRNA *ptr)
+static bool api_GraphUpdate_is_updated_shading_get(ApiPtr *ptr)
 {
   /* Assume any animated parameters can affect shading, we don't have fine
    * grained enough updates to distinguish this. */
-  ID *id = ptr->data;
+  Id *id = ptr->data;
   return ((id->recalc & (ID_RECALC_SHADING | ID_RECALC_ANIMATION)) != 0);
 }
 
-static bool rna_DepsgraphUpdate_is_updated_geometry_get(PointerRNA *ptr)
+static bool api_GraphUpdate_is_updated_geometry_get(ApiPtr *ptr)
 {
-  ID *id = ptr->data;
+  Id *id = ptr->data;
   if (id->recalc & ID_RECALC_GEOMETRY) {
     return true;
   }
@@ -203,7 +203,7 @@ static bool rna_DepsgraphUpdate_is_updated_geometry_get(PointerRNA *ptr)
     return false;
   }
   Object *object = (Object *)id;
-  ID *data = object->data;
+  Id *data = object->data;
   if (data == NULL) {
     return false;
   }
@@ -212,38 +212,38 @@ static bool rna_DepsgraphUpdate_is_updated_geometry_get(PointerRNA *ptr)
 
 /* **************** Depsgraph **************** */
 
-static void rna_Depsgraph_debug_relations_graphviz(Depsgraph *depsgraph, const char *filename)
+static void api_Graph_debug_relations_graphviz(Graph *graph, const char *filename)
 {
   FILE *f = fopen(filename, "w");
   if (f == NULL) {
     return;
   }
-  DEG_debug_relations_graphviz(depsgraph, f, "Depsgraph");
+  graph_debug_relations_graphviz(graph, f, "Graph");
   fclose(f);
 }
 
-static void rna_Depsgraph_debug_stats_gnuplot(Depsgraph *depsgraph,
-                                              const char *filename,
-                                              const char *output_filename)
+static void api_graph_debug_stats_gnuplot(Graph *graph,
+                                          const char *filename,
+                                          const char *output_filename)
 {
   FILE *f = fopen(filename, "w");
   if (f == NULL) {
     return;
   }
-  DEG_debug_stats_gnuplot(depsgraph, f, "Timing Statistics", output_filename);
+  graph_debug_stats_gnuplot(graph, f, "Timing Statistics", output_filename);
   fclose(f);
 }
 
-static void rna_Depsgraph_debug_tag_update(Depsgraph *depsgraph)
+static void api_graph_debug_tag_update(graph *graph)
 {
-  DEG_graph_tag_relations_update(depsgraph);
+  graph_tag_relations_update(graph);
 }
 
-static void rna_Depsgraph_debug_stats(Depsgraph *depsgraph, char *result)
+static void api_graph_debug_stats(Graph *graph, char *result)
 {
   size_t outer, ops, rels;
-  DEG_stats_simple(depsgraph, &outer, &ops, &rels);
-  BLI_snprintf(result,
+  graph_stats_simple(graph, &outer, &ops, &rels);
+  lib_snprintf(result,
                STATS_MAX_SIZE,
                "Approx %zu Operations, %zu Relations, %zu Outer Nodes",
                ops,
@@ -251,10 +251,10 @@ static void rna_Depsgraph_debug_stats(Depsgraph *depsgraph, char *result)
                outer);
 }
 
-static void rna_Depsgraph_update(Depsgraph *depsgraph, Main *bmain, ReportList *reports)
+static void api_graph_update(Graph *graph, Main *main, ReportList *reports)
 {
-  if (DEG_is_evaluating(depsgraph)) {
-    BKE_report(reports, RPT_ERROR, "Dependency graph update requested during evaluation");
+  if (graph_is_evaluating(graph)) {
+    dune_report(reports, RPT_ERROR, "Dependency graph update requested during evaluation");
     return;
   }
 
@@ -263,7 +263,7 @@ static void rna_Depsgraph_update(Depsgraph *depsgraph, Main *bmain, ReportList *
   BPy_BEGIN_ALLOW_THREADS;
 #  endif
 
-  BKE_scene_graph_update_tagged(depsgraph, bmain);
+  dune_scene_graph_update_tagged(graph, main);
 
 #  ifdef WITH_PYTHON
   BPy_END_ALLOW_THREADS;
@@ -272,10 +272,10 @@ static void rna_Depsgraph_update(Depsgraph *depsgraph, Main *bmain, ReportList *
 
 /* Iteration over objects, simple version */
 
-static void rna_Depsgraph_objects_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_graph_objects_begin(CollectionPtrIter *iter, ApiPtr *ptr)
 {
-  iter->internal.custom = MEM_callocN(sizeof(BLI_Iterator), __func__);
-  DEGObjectIterData *data = MEM_callocN(sizeof(DEGObjectIterData), __func__);
+  iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
+  GraphObjectIterData *data = mem_callocn(sizeof(GraphObjectIterData), __func__);
 
   data->graph = (Depsgraph *)ptr->data;
   data->flag = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY | DEG_ITER_OBJECT_FLAG_VISIBLE |
