@@ -1,56 +1,56 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "BLI_path_util.h"
-#include "BLI_sys_types.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_sys_types.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "BKE_fluid.h"
-#include "BKE_modifier.h"
-#include "BKE_pointcache.h"
+#include "dune_fluid.h"
+#include "dune_mod.h"
+#include "dune_pointcache.h"
 
-#include "DNA_fluid_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
+#include "types_fluid.h"
+#include "types_mod.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_scene.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wn_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
-#  include "BLI_threads.h"
+#  include "lib_math.h"
+#  include "lib_threads.h"
 
-#  include "BKE_colorband.h"
-#  include "BKE_context.h"
-#  include "BKE_particle.h"
+#  include "dune_colorband.h"
+#  include "dune_cxt.h"
+#  include "dune_particle.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
 #  include "manta_fluid_API.h"
 
-static void rna_Fluid_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Fluid_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 
   /* Needed for liquid domain objects */
   Object *ob = (Object *)ptr->owner_id;
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
-static void rna_Fluid_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Fluid_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_Fluid_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_Fluid_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
 static void rna_Fluid_datacache_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
