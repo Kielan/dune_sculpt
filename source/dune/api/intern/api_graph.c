@@ -312,27 +312,26 @@ static ApiPtr api_Graph_objects_get(CollectionPropIter *iter)
 
 /* XXX Ugly python seems to query next item of an iterator before using current one (see T57558).
  * This forces us to use that nasty ping-pong game between two sets of iterator data,
- * so that previous one remains valid memory for python to access to. Yuck.
- */
-typedef struct RNA_Depsgraph_Instances_Iterator {
-  BLI_Iterator iterators[2];
-  DEGObjectIterData deg_data[2];
+ * so that previous one remains valid memory for python to access to. Yuck. */
+typedef struct ApiGraphIntancesIter {
+  LibIter iters[2];
+  GraphObjectIterData graph_data[2];
   DupliObject dupli_object_current[2];
   int counter;
-} RNA_Depsgraph_Instances_Iterator;
+} Api_graph_Instances_Iterator;
 
-static void rna_Depsgraph_object_instances_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_graph_object_instances_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  RNA_Depsgraph_Instances_Iterator *di_it = iter->internal.custom = MEM_callocN(sizeof(*di_it),
+  api_Graph_Instances_Iter *di_it = iter->internal.custom = mem_callocn(sizeof(*di_it),
                                                                                 __func__);
 
-  DEGObjectIterData *data = &di_it->deg_data[0];
-  data->graph = (Depsgraph *)ptr->data;
-  data->flag = DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY | DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET |
-               DEG_ITER_OBJECT_FLAG_VISIBLE | DEG_ITER_OBJECT_FLAG_DUPLI;
+  GraphObjectIterData *data = &di_it->deg_data[0];
+  data->graph = (Graph *)ptr->data;
+  data->flag = GRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY | GRAPH_ITER_OBJECT_FLAG_LINKED_VIA_SET |
+               GRAPH_ITER_OBJECT_FLAG_VISIBLE | GRAPH_ITER_OBJECT_FLAG_DUPLI;
 
-  di_it->iterators[0].valid = true;
-  DEG_iterator_objects_begin(&di_it->iterators[0], data);
+  di_it->iters[0].valid = true;
+  graph_iter_objects_begin(&di_it->iterators[0], data);
   iter->valid = di_it->iterators[0].valid;
 }
 
