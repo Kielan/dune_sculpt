@@ -1330,20 +1330,20 @@ static void rna_def_fmodifier_envelope(BlenderRNA *brna)
 
   /* Collections */
   prop = RNA_def_property(srna, "control_points", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "data", "totvert");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_struct_type(prop, "FModifierEnvelopeControlPoint");
-  RNA_def_property_ui_text(
+  api_def_property_collection_sdna(prop, NULL, "data", "totvert");
+  api_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_property_struct_type(prop, "FModEnvelopeControlPoint");
+  api_def_property_ui_text(
       prop, "Control Points", "Control points defining the shape of the envelope");
-  rna_def_fmodifier_envelope_control_points(brna, prop);
+  api_def_fmod_envelope_control_points(dapi, prop);
 
   /* Range Settings */
-  prop = RNA_def_property(srna, "reference_value", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "midval");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
-      prop, "Reference Value", "Value that envelope's influence is centered around / based on");
-  RNA_def_property_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
+  prop = api_def_prop(sapi, "ref_value", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "midval");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
+      prop, "Ref Value", "Value that envelope's influence is centered around / based on");
+  api_def_prop_update(prop, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, "rna_FModifier_update");
 
   prop = RNA_def_property(srna, "default_min", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "min");
