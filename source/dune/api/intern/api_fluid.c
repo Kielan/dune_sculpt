@@ -566,32 +566,32 @@ static const EnumPropItem *api_Fluid_cachetype_mesh_itemf(Cxt *UNUSED(C),
   tmp.identifier = "OBJECT";
   tmp.name = "Object";
   tmp.description = "Object file format (.obj)";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static const EnumPropertyItem *rna_Fluid_cachetype_volume_itemf(bContext *UNUSED(C),
-                                                                PointerRNA *ptr,
-                                                                PropertyRNA *UNUSED(prop),
-                                                                bool *r_free)
+static const EnumPropItem *api_Fluid_cachetype_volume_itemf(Cxt *UNUSED(C),
+                                                            ApiPtr *ptr,
+                                                            ApiProp *UNUSED(prop),
+                                                            bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   tmp.value = FLUID_DOMAIN_FILE_UNI;
-  tmp.identifier = "UNI";
+  tmp.id = "UNI";
   tmp.name = "Uni Cache";
   tmp.description = "Uni file format (.uni)";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
 #  ifdef WITH_OPENVDB
   tmp.value = FLUID_DOMAIN_FILE_OPENVDB;
-  tmp.identifier = "OPENVDB";
+  tmp.id = "OPENVDB";
   tmp.name = "OpenVDB";
   tmp.description = "OpenVDB file format (.vdb)";
   api_enum_item_add(&item, &totitem, &tmp);
@@ -810,8 +810,8 @@ static const EnumPropItem *api_Fluid_data_depth_itemf(Cxt *UNUSED(C),
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
 
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int totitem = 0;
 
   tmp.value = VDB_PRECISION_FULL_FLOAT;
@@ -819,62 +819,62 @@ static const EnumPropItem *api_Fluid_data_depth_itemf(Cxt *UNUSED(C),
   tmp.icon = 0;
   tmp.name = "Full";
   tmp.description = "Full float (Use 32 bit for all data)";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   tmp.value = VDB_PRECISION_HALF_FLOAT;
-  tmp.identifier = "16";
+  tmp.id = "16";
   tmp.icon = 0;
   tmp.name = "Half";
   tmp.description = "Half float (Use 16 bit for all data)";
-  RNA_enum_item_add(&item, &totitem, &tmp);
+  api_enum_item_add(&item, &totitem, &tmp);
 
   if (settings->type == FLUID_DOMAIN_TYPE_LIQUID) {
     tmp.value = VDB_PRECISION_MINI_FLOAT;
-    tmp.identifier = "8";
+    tmp.id = "8";
     tmp.icon = 0;
     tmp.name = "Mini";
     tmp.description = "Mini float (Use 8 bit where possible, otherwise use 16 bit)";
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static void rna_Fluid_domaintype_set(struct PointerRNA *ptr, int value)
+static void api_Fluid_domaintype_set(struct ApiPtr *ptr, int value)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
-  BKE_fluid_domain_type_set(ob, settings, value);
-  BKE_fluid_fields_sanitize(settings);
+  dune_fluid_domain_type_set(ob, settings, value);
+  dune_fluid_fields_sanitize(settings);
 }
 
-static char *rna_FluidDomainSettings_path(PointerRNA *ptr)
+static char *api_FluidDomainSettings_path(ApiPtr *ptr)
 {
   FluidDomainSettings *settings = (FluidDomainSettings *)ptr->data;
-  ModifierData *md = (ModifierData *)settings->fmd;
+  ModData *md = (ModData *)settings->fmd;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].domain_settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("mods[\"%s\"].domain_settings", name_esc);
 }
 
-static char *rna_FluidFlowSettings_path(PointerRNA *ptr)
+static char *api_FluidFlowSettings_path(ApiPtr *ptr)
 {
   FluidFlowSettings *settings = (FluidFlowSettings *)ptr->data;
-  ModifierData *md = (ModifierData *)settings->fmd;
+  ModData *md = (ModData *)settings->fmd;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"].flow_settings", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("mods[\"%s\"].flow_settings", name_esc);
 }
 
-static char *rna_FluidEffectorSettings_path(PointerRNA *ptr)
+static char *api_FluidEffectorSettings_path(PointerRNA *ptr)
 {
   FluidEffectorSettings *settings = (FluidEffectorSettings *)ptr->data;
-  ModifierData *md = (ModifierData *)settings->fmd;
+  ModData *md = (ModifierData *)settings->fmd;
   char name_esc[sizeof(md->name) * 2];
 
   BLI_str_escape(name_esc, md->name, sizeof(name_esc));
