@@ -380,32 +380,32 @@ static PointerRNA rna_Depsgraph_object_instances_get(CollectionPropertyIterator 
 
 /* Iteration over evaluated IDs */
 
-static void rna_Depsgraph_ids_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void rna_Depsgraph_ids_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  iter->internal.custom = MEM_callocN(sizeof(BLI_Iterator), __func__);
-  DEGIDIterData *data = MEM_callocN(sizeof(DEGIDIterData), __func__);
+  iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
+  GraphIdIterData *data = mem_callocn(sizeof(GraphIdIterData), __func__);
 
-  data->graph = (Depsgraph *)ptr->data;
+  data->graph = (Graph *)ptr->data;
 
-  ((BLI_Iterator *)iter->internal.custom)->valid = true;
-  DEG_iterator_ids_begin(iter->internal.custom, data);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  ((LibIter *)iter->internal.custom)->valid = true;
+  graph_iter_ids_begin(iter->internal.custom, data);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Depsgraph_ids_next(CollectionPropertyIterator *iter)
+static void api_graph_ids_next(CollectionPropIter *iter)
 {
-  DEG_iterator_ids_next(iter->internal.custom);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  graph_iter_ids_next(iter->internal.custom);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Depsgraph_ids_end(CollectionPropertyIterator *iter)
+static void api_Graph_ids_end(CollectionPropIter *iter)
 {
-  DEG_iterator_ids_end(iter->internal.custom);
-  MEM_freeN(((BLI_Iterator *)iter->internal.custom)->data);
-  MEM_freeN(iter->internal.custom);
+  graph_iter_ids_end(iter->internal.custom);
+  mem_freen(((LibIter *)iter->internal.custom)->data);
+  mem_freen(iter->internal.custom);
 }
 
-static PointerRNA rna_Depsgraph_ids_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Graph_ids_get(CollectionPropIter *iter)
 {
   ID *id = ((BLI_Iterator *)iter->internal.custom)->current;
   return rna_pointer_inherit_refine(&iter->parent, &RNA_ID, id);
