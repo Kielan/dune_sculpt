@@ -1632,208 +1632,208 @@ static void api_def_fluid_domain_settings(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_Fluid_flip_parts_update");
 
-  prop = RNA_def_property(srna, "delete_in_obstacle", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_DELETE_IN_OBSTACLE);
-  RNA_def_property_ui_text(prop, "Clear In Obstacle", "Delete fluid inside obstacles");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "delete_in_obstacle", PROP_BOOL, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "flags", FLUID_DOMAIN_DELETE_IN_OBSTACLE);
+  api_def_prop_ui_text(prop, "Clear In Obstacle", "Delete fluid inside obstacles");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
   /* smoke domain options */
 
-  prop = RNA_def_property(srna, "alpha", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "alpha");
-  RNA_def_property_range(prop, -5.0, 5.0);
-  RNA_def_property_ui_range(prop, -5.0, 5.0, 0.02, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "alpha", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "alpha");
+  api_def_prop_range(prop, -5.0, 5.0);
+  api_def_prop_ui_range(prop, -5.0, 5.0, 0.02, 5);
+  api_def_prop_ui_text(
       prop,
       "Buoyancy Density",
       "Buoyant force based on smoke density (higher value results in faster rising smoke)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "beta", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "beta");
-  RNA_def_property_range(prop, -5.0, 5.0);
-  RNA_def_property_ui_range(prop, -5.0, 5.0, 0.02, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "beta", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "beta");
+  api_def_prop_range(prop, -5.0, 5.0);
+  api_def_prop_ui_range(prop, -5.0, 5.0, 0.02, 5);
+  api_def_prop_ui_text(
       prop,
       "Buoyancy Heat",
       "Buoyant force based on smoke heat (higher value results in faster rising smoke)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "dissolve_speed", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "diss_speed");
-  RNA_def_property_range(prop, 1.0, 10000.0);
-  RNA_def_property_ui_range(prop, 1.0, 10000.0, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "dissolve_speed", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "diss_speed");
+  api_def_prop_range(prop, 1.0, 10000.0);
+  api_def_prop_ui_range(prop, 1.0, 10000.0, 1, -1);
+  api_def_prop_ui_text(
       prop,
       "Dissolve Speed",
       "Determine how quickly the smoke dissolves (lower value makes smoke disappear faster)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "vorticity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vorticity");
-  RNA_def_property_range(prop, 0.0, 4.0);
-  RNA_def_property_ui_text(prop, "Vorticity", "Amount of turbulence and rotation in smoke");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "vorticity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vorticity");
+  api_def_prop_range(prop, 0.0, 4.0);
+  api_def_prop_ui_text(prop, "Vorticity", "Amount of turbulence and rotation in smoke");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "highres_sampling", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, smoke_highres_sampling_items);
-  RNA_def_property_ui_text(prop, "Emitter", "Method for sampling the high resolution flow");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "highres_sampling", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, smoke_highres_sampling_items);
+  api_def_prop_ui_text(prop, "Emitter", "Method for sampling the high resolution flow");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_dissolve_smoke", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_USE_DISSOLVE);
-  RNA_def_property_ui_text(prop, "Dissolve Smoke", "Let smoke disappear over time");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "use_dissolve_smoke", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FLUID_DOMAIN_USE_DISSOLVE);
+  api_def_prop_ui_text(prop, "Dissolve Smoke", "Let smoke disappear over time");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "use_dissolve_smoke_log", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_USE_DISSOLVE_LOG);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_dissolve_smoke_log", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FLUID_DOMAIN_USE_DISSOLVE_LOG);
+  api_def_prop_ui_text(
       prop,
       "Logarithmic Dissolve",
       "Dissolve smoke in a logarithmic fashion. Dissolves quickly at first, but lingers longer");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
 
   /* flame options */
 
-  prop = RNA_def_property(srna, "burning_rate", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.01, 4.0);
-  RNA_def_property_ui_range(prop, 0.01, 2.0, 1.0, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "burning_rate", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.01, 4.0);
+  api_def_prop_ui_range(prop, 0.01, 2.0, 1.0, 5);
+  api_def_prop_ui_text(
       prop, "Speed", "Speed of the burning reaction (higher value results in smaller flames)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "flame_smoke", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 8.0);
-  RNA_def_property_ui_range(prop, 0.0, 4.0, 1.0, 5);
-  RNA_def_property_ui_text(prop, "Smoke", "Amount of smoke created by burning fuel");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "flame_smoke", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 8.0);
+  api_def_prop_ui_range(prop, 0.0, 4.0, 1.0, 5);
+  api_def_prop_ui_text(prop, "Smoke", "Amount of smoke created by burning fuel");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "flame_vorticity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 2.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1.0, 5);
-  RNA_def_property_ui_text(prop, "Vorticity", "Additional vorticity for the flames");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "flame_vorticity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 2.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1.0, 5);
+  api_def_prop_ui_text(prop, "Vorticity", "Additional vorticity for the flames");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "flame_ignition", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.5, 5.0);
-  RNA_def_property_ui_range(prop, 0.5, 2.5, 1.0, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "flame_ignition", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.5, 5.0);
+  api_def_prop_ui_range(prop, 0.5, 2.5, 1.0, 5);
+  api_def_prop_ui_text(
       prop,
       "Minimum",
       "Minimum temperature of the flames (higher value results in faster rising flames)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "flame_max_temp", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 1.0, 10.0);
-  RNA_def_property_ui_range(prop, 1.0, 5.0, 1.0, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "flame_max_temp", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 1.0, 10.0);
+  api_def_prop_ui_range(prop, 1.0, 5.0, 1.0, 5);
+  api_def_prop_ui_text(
       prop,
       "Maximum",
       "Maximum temperature of the flames (higher value results in faster rising flames)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+ api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "flame_smoke_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Smoke Color", "Color of smoke emitted from burning fuel");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "flame_smoke_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Smoke Color", "Color of smoke emitted from burning fuel");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
   /* noise options */
 
-  prop = RNA_def_property(srna, "noise_strength", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noise_strength");
-  RNA_def_property_range(prop, 0.0, 10.0);
-  RNA_def_property_ui_range(prop, 0.0, 10.0, 1, 2);
-  RNA_def_property_ui_text(prop, "Strength", "Strength of noise");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_noisecache_reset");
+  prop = api_def_prop(sapi, "noise_strength", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noise_strength");
+  api_def_prop_range(prop, 0.0, 10.0);
+  api_def_prop_ui_range(prop, 0.0, 10.0, 1, 2);
+  api_def_prop_ui_text(prop, "Strength", "Strength of noise");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_noisecache_reset");
 
-  prop = RNA_def_property(srna, "noise_pos_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noise_pos_scale");
-  RNA_def_property_range(prop, 0.0001, 10.0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "noise_pos_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noise_pos_scale");
+  api_def_prop_range(prop, 0.0001, 10.0);
+  api_def_prop_ui_text(
       prop, "Scale", "Scale of noise (higher value results in larger vortices)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_noisecache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_noisecache_reset");
 
-  prop = RNA_def_property(srna, "noise_time_anim", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noise_time_anim");
-  RNA_def_property_range(prop, 0.0001, 10.0);
-  RNA_def_property_ui_text(prop, "Time", "Animation time of noise");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_noisecache_reset");
+  prop = api_def_prop(sapi, "noise_time_anim", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noise_time_anim");
+  api_def_prop_range(prop, 0.0001, 10.0);
+  api_def_prop_ui_text(prop, "Time", "Animation time of noise");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_noisecache_reset");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "noise_scale");
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_range(prop, 1, 10, 1, -1);
-  RNA_def_property_ui_text(prop,
-                           "Noise Scale",
-                           "The noise simulation is scaled up by this factor (compared to the "
-                           "base resolution of the domain)");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_domain_noise_reset");
+  prop = apk_def_prop(sapi, "noise_scale", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "noise_scale");
+  api_def_prop_range(prop, 1, 100);
+  api_def_prop_ui_range(prop, 1, 10, 1, -1);
+  api_def_prop_ui_text(prop,
+                       "Noise Scale",
+                       "The noise simulation is scaled up by this factor (compared to the "
+                       "base resolution of the domain)");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_domain_noise_reset");
 
-  prop = RNA_def_property(srna, "use_noise", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FLUID_DOMAIN_USE_NOISE);
-  RNA_def_property_ui_text(prop, "Use Noise", "Enable fluid noise (using amplification)");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_update");
+  prop = api_def_prop(sapi, "use_noise", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FLUID_DOMAIN_USE_NOISE);
+  api_def_prop_ui_text(prop, "Use Noise", "Enable fluid noise (using amplification)");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "api_Fluid_update");
 
   /* liquid domain options */
 
-  prop = RNA_def_property(srna, "simulation_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "simulation_method");
-  RNA_def_property_enum_items(prop, simulation_methods);
-  RNA_def_property_ui_text(prop, "Simulation Method", "Change the underlying simulation method");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_domain_data_reset");
+  prop = api_def_prop(sapi, "simulation_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "simulation_method");
+  api_def_prop_enum_items(prop, simulation_methods);
+  api_def_prop_ui_text(prop, "Simulation Method", "Change the underlying simulation method");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_domain_data_reset");
 
-  prop = RNA_def_property(srna, "flip_ratio", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "flip_ratio", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(
       prop,
       "FLIP Ratio",
       "PIC/FLIP Ratio. A value of 1.0 will result in a completely FLIP based simulation. Use a "
       "lower value for simulations which should produce smaller splashes");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_randomness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 10.0);
-  RNA_def_property_ui_text(prop, "Randomness", "Randomness factor for particle sampling");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "particle_randomness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 10.0);
+  api_def_prop_ui_text(prop, "Randomness", "Randomness factor for particle sampling");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_number", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, 5);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "particle_number", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, 5);
+  api_def_prop_ui_text(
       prop, "Number", "Particle number factor (higher value results in more particles)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_min", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "particle_minimum");
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "particle_min", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "particle_minimum");
+  apii_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(prop,
                            "Minimum",
                            "Minimum number of particles per cell (ensures that each cell has at "
                            "least this amount of particles)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_max", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "particle_maximum");
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(prop,
-                           "Maximum",
-                           "Maximum number of particles per cell (ensures that each cell has at "
-                           "most this amount of particles)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "particle_max", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "particle_maximum");
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(prop,
+                       "Maximum",
+                       "Maximum number of particles per cell (ensures that each cell has at "
+                       "most this amount of particles)");
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_radius", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 10.0);
-  RNA_def_property_ui_text(prop,
-                           "Radius",
-                           "Particle radius factor. Increase this value if the simulation appears "
-                           "to leak volume, decrease it if the simulation seems to gain volume");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Fluid_datacache_reset");
+  prop = api_def_prop(sapi, "particle_radius", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 10.0);
+  api_def_prop_ui_text(prop,
+                       "Radius",
+                       "Particle radius factor. Increase this value if the simulation appears "
+                       "to leak volume, decrease it if the simulation seems to gain volume");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD, "api_Fluid_datacache_reset");
 
-  prop = RNA_def_property(srna, "particle_band_width", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1000.0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "particle_band_width", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1000.0);
+  api_def_prop_ui_text(
       prop,
       "Width",
       "Particle (narrow) band width (higher value results in thicker band and more particles)");
