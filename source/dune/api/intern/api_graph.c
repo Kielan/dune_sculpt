@@ -423,23 +423,23 @@ static void rna_Depsgraph_updates_begin(CollectionPropertyIterator *iter, Pointe
   iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
 }
 
-static PointerRNA rna_Depsgraph_updates_get(CollectionPropertyIterator *iter)
+static ApiPtr api_graph_updates_get(CollectionPropIter *iter)
 {
-  ID *id = ((BLI_Iterator *)iter->internal.custom)->current;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_DepsgraphUpdate, id);
+  Id *id = ((LibIter *)iter->internal.custom)->current;
+  return api_ptr_inherit_refine(&iter->parent, &ApiGraphUpdate, id);
 }
 
-static ID *rna_Depsgraph_id_eval_get(Depsgraph *depsgraph, ID *id_orig)
+static Id *ai_graph_id_eval_get(Graph *graph, Id *id_orig)
 {
-  return DEG_get_evaluated_id(depsgraph, id_orig);
+  return graph_get_evaluated_id(graph, id_orig);
 }
 
-static bool rna_Depsgraph_id_type_updated(Depsgraph *depsgraph, int id_type)
+static bool api_graph_id_type_updated(Graph *graph, int id_type)
 {
-  return DEG_id_type_updated(depsgraph, id_type);
+  return graph_id_type_updated(graph, id_type);
 }
 
-static PointerRNA rna_Depsgraph_scene_get(PointerRNA *ptr)
+static PointerRNA ai_graph_scene_get(ApiPtr *ptr)
 {
   Depsgraph *depsgraph = (Depsgraph *)ptr->data;
   Scene *scene = DEG_get_input_scene(depsgraph);
