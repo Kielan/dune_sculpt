@@ -292,7 +292,7 @@ static void api_graph_objects_next(CollectionPropIter *iter)
   iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void api_Graph_objects_end(CollectionPropIter *iter)
+static void api_graph_objects_end(CollectionPropIter *iter)
 {
   graph_iter_objects_end(iter->internal.custom);
   mem_freen(((LibIter *)iter->internal.custom)->data));
@@ -307,8 +307,7 @@ static ApiPtr api_Graph_objects_get(CollectionPropIter *iter)
 
 /* Iteration over objects, extended version
  *
- * Contains extra information about duplicator and persistent ID.
- */
+ * Contains extra information about duplicator and persistent Id. */
 
 /* XXX Ugly python seems to query next item of an iterator before using current one (see T57558).
  * This forces us to use that nasty ping-pong game between two sets of iterator data,
@@ -323,7 +322,7 @@ typedef struct ApiGraphIntancesIter {
 static void api_graph_object_instances_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   api_Graph_Instances_Iter *di_it = iter->internal.custom = mem_callocn(sizeof(*di_it),
-                                                                                __func__);
+                                                                        __func__);
 
   GraphObjectIterData *data = &di_it->deg_data[0];
   data->graph = (Graph *)ptr->data;
@@ -331,22 +330,22 @@ static void api_graph_object_instances_begin(CollectionPropIter *iter, ApiPtr *p
                GRAPH_ITER_OBJECT_FLAG_VISIBLE | GRAPH_ITER_OBJECT_FLAG_DUPLI;
 
   di_it->iters[0].valid = true;
-  graph_iter_objects_begin(&di_it->iterators[0], data);
-  iter->valid = di_it->iterators[0].valid;
+  graph_iter_objects_begin(&di_it->iters[0], data);
+  iter->valid = di_it->iters[0].valid;
 }
 
-static void rna_Depsgraph_object_instances_next(CollectionPropertyIterator *iter)
+static void api_graph_object_instances_next(CollectionPropIter *iter)
 {
-  RNA_Depsgraph_Instances_Iterator *di_it = (RNA_Depsgraph_Instances_Iterator *)
+  api_graph_Instances_Iterator *di_it = (ApiGraphInstancesIter *)
                                                 iter->internal.custom;
 
   /* We need to copy current iterator status to next one being worked on. */
-  di_it->iterators[(di_it->counter + 1) % 2] = di_it->iterators[di_it->counter % 2];
-  di_it->deg_data[(di_it->counter + 1) % 2] = di_it->deg_data[di_it->counter % 2];
+  di_it->iters[(di_it->counter + 1) % 2] = di_it->iterators[di_it->counter % 2];
+  di_it->graph_data[(di_it->counter + 1) % 2] = di_it->deg_data[di_it->counter % 2];
   di_it->counter++;
 
-  di_it->iterators[di_it->counter % 2].data = &di_it->deg_data[di_it->counter % 2];
-  DEG_iterator_objects_next(&di_it->iterators[di_it->counter % 2]);
+  di_it->iters[di_it->counter % 2].data = &di_it->deg_data[di_it->counter % 2];
+  graph_iter_objects_next(&di_it->iterators[di_it->counter % 2]);
   /* Dupli_object_current is also temp memory generated during the iterations,
    * it may be freed when last item has been iterated,
    * so we have same issue as with the iterator itself:
