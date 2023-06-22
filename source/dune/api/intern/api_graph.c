@@ -212,7 +212,7 @@ static bool api_GraphUpdate_is_updated_geometry_get(ApiPtr *ptr)
 
 /* **************** Depsgraph **************** */
 
-static void api_Graph_debug_relations_graphviz(Graph *graph, const char *filename)
+static void api_hraph_debug_relations_graphviz(Graph *graph, const char *filename)
 {
   FILE *f = fopen(filename, "w");
   if (f == NULL) {
@@ -369,9 +369,9 @@ static void api_graph_object_instances_end(CollectionPropIter *iter)
   mem_freen(di_it);
 }
 
-static ApiPtr api_graph_object_instances_get(CollectionPropertyIterator *iter)
+static ApiPtr api_graph_object_instances_get(CollectionPropIter *iter)
 {
-  api_graph_Instances_Iterator *di_it = (RNA_Depsgraph_Instances_Iterator *)
+  api_graph_Instances_Iterator *di_it = (ApiGraphInstancesIt *)
                                                 iter->internal.custom;
   LibIter *iter = &di_it->iters[di_it->counter % 2];
   return api_ptr_inherit_refine(&iter->parent, &ApiGraphObjectInstance, iter);
@@ -406,14 +406,14 @@ static void api_Graph_ids_end(CollectionPropIter *iter)
 
 static ApiPtr api_Graph_ids_get(CollectionPropIter *iter)
 {
-  ID *id = ((BLI_Iterator *)iter->internal.custom)->current;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_ID, id);
+  ID *id = ((LibIter *)iter->internal.custom)->current;
+  return api_ptr_inherit_refine(&iter->parent, &ApiId, id);
 }
 
-static void rna_Depsgraph_updates_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_graph_updates_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  iter->internal.custom = MEM_callocN(sizeof(BLI_Iterator), __func__);
-  DEGIDIterData *data = MEM_callocN(sizeof(DEGIDIterData), __func__);
+  iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
+  GraphIdIterData *data = mem_callocm(sizeof(GraphIdIterData), __func__);
 
   data->graph = (Depsgraph *)ptr->data;
   data->only_updated = true;
