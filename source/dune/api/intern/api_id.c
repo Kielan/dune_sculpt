@@ -274,32 +274,32 @@ void api_id_name_set(ApiPtr *ptr, const char *value)
   }
 }
 
-static int rna_ID_name_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_id_name_editable(ApiPtr *ptr, const char **UNUSED(r_info)
 {
-  ID *id = (ID *)ptr->data;
+  Id *id = (Id *)ptr->data;
 
   if (GS(id->name) == ID_VF) {
     VFont *vfont = (VFont *)id;
-    if (BKE_vfont_is_builtin(vfont)) {
+    if (dune_vfont_is_builtin(vfont)) {
       return 0;
     }
   }
-  else if (!BKE_id_is_in_global_main(id)) {
+  else if (!dune_id_is_in_global_main(id)) {
     return 0;
   }
 
   return PROP_EDITABLE;
 }
 
-void rna_ID_name_full_get(PointerRNA *ptr, char *value)
+void api_id_name_full_get(ApiPtr *ptr, char *value)
 {
-  ID *id = (ID *)ptr->data;
-  BKE_id_full_name_get(value, id, 0);
+  Id *id = (Id *)ptr->data;
+  dune_id_full_name_get(value, id, 0);
 }
 
-int rna_ID_name_full_length(PointerRNA *ptr)
+int api_id_name_full_length(ApiPtr *ptr)
 {
-  ID *id = (ID *)ptr->data;
+  Id *id = (Id *)ptr->data;
   char name[MAX_ID_FULL_NAME];
   BKE_id_full_name_get(name, id, 0);
   return strlen(name);
