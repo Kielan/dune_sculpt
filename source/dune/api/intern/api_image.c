@@ -1,14 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #include <stdlib.h>
 
-#include "DNA_image_types.h"
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
+#include "types_image.h"
+#include "types_node.h"
+#include "types_scene.h"
 
 #include "BLI_utildefines.h"
 
