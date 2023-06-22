@@ -714,55 +714,55 @@ static void api_id_override_template_create(IDd*id, ReportList *reports)
     return;
   }
   if (ID_IS_LINKED(id)) {
-    BKE_report(reports, RPT_ERROR, "Unable to create override template for linked data-blocks");
+    dune_report(reports, RPT_ERROR, "Unable to create override template for linked data-blocks");
     return;
   }
-  if (ID_IS_OVERRIDE_LIBRARY(id)) {
-    BKE_report(
+  if (ID_IS_OVERRIDE_LIB(id)) {
+    dune_report(
         reports, RPT_ERROR, "Unable to create override template for overridden data-blocks");
     return;
   }
-  BKE_lib_override_library_template_create(id);
+  dune_lib_override_lib_template_create(id);
 
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 }
 
-static void rna_ID_override_library_operations_update(ID *id,
-                                                      IDOverrideLibrary *UNUSED(override_library),
-                                                      Main *bmain,
-                                                      ReportList *reports)
+static void api_id_override_lib_ops_update(Id *id,
+                                           IdOverrideLib *UNUSED(override_lib),
+                                           Main *main,
+                                           ReportList *reports)
 {
-  if (!ID_IS_OVERRIDE_LIBRARY_REAL(id)) {
-    BKE_reportf(reports, RPT_ERROR, "ID '%s' isn't an override", id->name);
+  if (!ID_IS_OVERRIDE_LIB_REAL(id)) {
+    dune_reportf(reports, RPT_ERROR, "ID '%s' isn't an override", id->name);
     return;
   }
 
   if (ID_IS_LINKED(id)) {
-    BKE_reportf(reports, RPT_ERROR, "ID '%s' is linked, cannot edit its overrides", id->name);
+    dune_reportf(reports, RPT_ERROR, "ID '%s' is linked, cannot edit its overrides", id->name);
     return;
   }
 
-  BKE_lib_override_library_operations_create(bmain, id);
+  dune_lib_override_lib_ops_create(main, id);
 
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 }
 
-static void rna_ID_override_library_reset(ID *id,
-                                          IDOverrideLibrary *UNUSED(override_library),
-                                          Main *bmain,
-                                          ReportList *reports,
-                                          bool do_hierarchy)
+static void api_id_override_lib_reset(Id *id,
+                                      IdOverrideLib *UNUSED(override_lib),
+                                      Main *main,
+                                      ReportList *reports,
+                                      bool do_hierarchy)
 {
-  if (!ID_IS_OVERRIDE_LIBRARY_REAL(id)) {
-    BKE_reportf(reports, RPT_ERROR, "ID '%s' isn't an override", id->name);
+  if (!ID_IS_OVERRIDE_LIB_REAL(id)) {
+    dune_reportf(reports, RPT_ERROR, "ID '%s' isn't an override", id->name);
     return;
   }
 
   if (do_hierarchy) {
-    BKE_lib_override_library_id_hierarchy_reset(bmain, id);
+    dune_lib_override_lib_id_hierarchy_reset(main, id);
   }
   else {
-    BKE_lib_override_library_id_reset(bmain, id);
+    dune_lib_override_lib_id_reset(main, id);
   }
 
   WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
