@@ -88,30 +88,30 @@ static void api_image_source_set(ApiPtr *ptr, int value)
 static void api_image_reload_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
-  BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_RELOAD);
-  WM_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
-  DEG_id_tag_update(&ima->id, 0);
-  DEG_id_tag_update(&ima->id, ID_RECALC_EDITORS);
+  dune_image_signal(main, ima, NULL, IMA_SIGNAL_RELOAD);
+  wm_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
+  graph_id_tag_update(&ima->id, 0);
+  graph_id_tag_update(&ima->id, ID_RECALC_EDITORS);
 }
 
-static void rna_Image_generated_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_image_generated_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
-  BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_FREE);
-  BKE_image_partial_update_mark_full_update(ima);
+  dune_image_signal(main, ima, NULL, IMA_SIGNAL_FREE);
+  dune_image_partial_update_mark_full_update(ima);
 }
 
-static void rna_Image_colormanage_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Image_colormanage_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
-  BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_COLORMANAGE);
-  DEG_id_tag_update(&ima->id, 0);
-  DEG_id_tag_update(&ima->id, ID_RECALC_EDITORS);
-  WM_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
-  WM_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
+  dune_image_signal(main, ima, NULL, IMA_SIGNAL_COLORMANAGE);
+  graph_id_tag_update(&ima->id, 0);
+  graph_id_tag_update(&ima->id, ID_RECALC_EDITORS);
+  wm_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
+  wm_main_add_notifier(NC_IMAGE | NA_EDITED, &ima->id);
 }
 
-static void rna_Image_alpha_mode_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Image_alpha_mode_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
   /* When operating on a generated image, avoid re-generating when changing the alpha-mode
@@ -119,46 +119,46 @@ static void rna_Image_alpha_mode_update(Main *bmain, Scene *scene, PointerRNA *p
   if (ima->source == IMA_SRC_GENERATED) {
     return;
   }
-  rna_Image_colormanage_update(bmain, scene, ptr);
+  api_Image_colormanage_update(bmain, scene, ptr);
 }
 
-static void rna_Image_views_format_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Image_views_format_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
   ImBuf *ibuf;
   void *lock;
 
-  ibuf = BKE_image_acquire_ibuf(ima, NULL, &lock);
+  ibuf = dune_image_acquire_ibuf(ima, NULL, &lock);
 
   if (ibuf) {
     ImageUser iuser = {NULL};
     iuser.scene = scene;
-    BKE_image_signal(bmain, ima, &iuser, IMA_SIGNAL_FREE);
+    dune_image_signal(main, ima, &iuser, IMA_SIGNAL_FREE);
   }
 
-  BKE_image_release_ibuf(ima, ibuf, lock);
-  BKE_image_partial_update_mark_full_update(ima);
+  dune_image_release_ibuf(ima, ibuf, lock);
+  dune_image_partial_update_mark_full_update(ima);
 }
 
-static void rna_ImageUser_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ImageUser_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   ImageUser *iuser = ptr->data;
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (scene != NULL) {
-    BKE_image_user_frame_calc(NULL, iuser, scene->r.cfra);
+    dune_image_user_frame_calc(NULL, iuser, scene->r.cfra);
   }
 
   if (id) {
     if (GS(id->name) == ID_NT) {
       /* Special update for nodetrees. */
-      BKE_ntree_update_tag_image_user_changed((bNodeTree *)id, iuser);
-      ED_node_tree_propagate_change(NULL, bmain, NULL);
+      dune_ntree_update_tag_image_user_changed((NodeTree *)id, iuser);
+      ed_node_tree_propagate_change(NULL, main, NULL);
     }
     else {
       /* Update material or texture for render preview. */
-      DEG_id_tag_update(id, 0);
-      DEG_id_tag_update(id, ID_RECALC_EDITORS);
+      graph_id_tag_update(id, 0);
+      graph_id_tag_update(id, ID_RECALC_EDITORS);
     }
   }
 }
