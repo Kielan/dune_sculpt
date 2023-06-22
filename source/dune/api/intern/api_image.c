@@ -4,25 +4,25 @@
 #include "types_node.h"
 #include "types_scene.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_node_tree_update.h"
+#include "dune_image.h"
+#include "dune_image_format.h"
+#include "dune_node_tree_update.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "graph.h"
+#include "graph_build.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_image_generated_type_items[] = {
+const EnumPropItem api_enum_image_generated_type_items[] = {
     {IMA_GENTYPE_BLANK, "BLANK", 0, "Blank", "Generate a blank image"},
     {IMA_GENTYPE_GRID, "UV_GRID", 0, "UV Grid", "Generated grid to test UV mappings"},
     {IMA_GENTYPE_GRID_COLOR,
@@ -33,9 +33,9 @@ const EnumPropertyItem rna_enum_image_generated_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem image_source_items[] = {
+static const EnumPropItem image_source_items[] = {
     {IMA_SRC_FILE, "FILE", 0, "Single Image", "Single image file"},
-    {IMA_SRC_SEQUENCE, "SEQUENCE", 0, "Image Sequence", "Multiple image files, as a sequence"},
+    {IMA_SRC_SEQUENCE, "SEQ", 0, "Image Seq", "Multiple image files, as a sequence"},
     {IMA_SRC_MOVIE, "MOVIE", 0, "Movie", "Movie file"},
     {IMA_SRC_GENERATED, "GENERATED", 0, "Generated", "Generated image"},
     {IMA_SRC_VIEWER, "VIEWER", 0, "Viewer", "Compositing node viewer"},
@@ -43,49 +43,49 @@ static const EnumPropertyItem image_source_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_base.h"
+#  include "lib_math_base.h"
 
-#  include "BKE_global.h"
+#  include "dune_global.h"
 
-#  include "GPU_texture.h"
+#  include "gpu_texture.h"
 
-#  include "IMB_imbuf.h"
-#  include "IMB_imbuf_types.h"
+#  include "imbuf.h"
+#  include "imbuf_types.h"
 
-#  include "ED_node.h"
+#  include "ed_node.h"
 
-static bool rna_Image_is_stereo_3d_get(PointerRNA *ptr)
+static bool api_image_is_stereo_3d_get(ApiPtr *ptr)
 {
-  return BKE_image_is_stereo((Image *)ptr->data);
+  return dune_image_is_stereo((Image *)ptr->data);
 }
 
-static bool rna_Image_is_multiview_get(PointerRNA *ptr)
+static bool api_image_is_multiview_get(ApiPtr *ptr)
 {
-  return BKE_image_is_multiview((Image *)ptr->data);
+  return dune_image_is_multiview((Image *)ptr->data);
 }
 
-static bool rna_Image_dirty_get(PointerRNA *ptr)
+static bool api_image_dirty_get(ApiPtr *ptr)
 {
-  return BKE_image_is_dirty((Image *)ptr->data);
+  return dune_image_is_dirty((Image *)ptr->data);
 }
 
-static void rna_Image_source_set(PointerRNA *ptr, int value)
+static void api_image_source_set(ApiPtr *ptr, int value)
 {
   Image *ima = (Image *)ptr->owner_id;
 
   if (value != ima->source) {
     ima->source = value;
-    BLI_assert(BKE_id_is_in_global_main(&ima->id));
-    BKE_image_signal(G_MAIN, ima, NULL, IMA_SIGNAL_SRC_CHANGE);
-    DEG_id_tag_update(&ima->id, 0);
-    DEG_id_tag_update(&ima->id, ID_RECALC_EDITORS);
-    DEG_relations_tag_update(G_MAIN);
+    lib_assert(dune_id_is_in_global_main(&ima->id));
+    dune_image_signal(G_MAIN, ima, NULL, IMA_SIGNAL_SRC_CHANGE);
+    graph_id_tag_update(&ima->id, 0);
+    graph_id_tag_update(&ima->id, ID_RECALC_EDITORS);
+    graph_relations_tag_update(G_MAIN);
   }
 }
 
-static void rna_Image_reload_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_image_reload_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
   BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_RELOAD);
