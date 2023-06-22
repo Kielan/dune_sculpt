@@ -203,37 +203,37 @@ static void rna_Image_gpu_texture_update(Main *UNUSED(bmain),
   WM_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
 }
 
-static const EnumPropertyItem *rna_Image_source_itemf(bContext *UNUSED(C),
-                                                      PointerRNA *ptr,
-                                                      PropertyRNA *UNUSED(prop),
-                                                      bool *r_free)
+static const EnumPropItem *api_image_source_itemf(Cxt *UNUSED(C),
+                                                  ApiPtr *ptr,
+                                                  ApiProp *UNUSED(prop),
+                                                  bool *r_free)
 {
   Image *ima = (Image *)ptr->data;
-  EnumPropertyItem *item = NULL;
+  EnumPropItem *item = NULL;
   int totitem = 0;
 
   if (ima->source == IMA_SRC_VIEWER) {
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_VIEWER);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_VIEWER);
   }
   else {
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_FILE);
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_SEQUENCE);
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_MOVIE);
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_GENERATED);
-    RNA_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_TILED);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_FILE);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_SEQUENCE);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_MOVIE);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_GENERATED);
+    api_enum_items_add_value(&item, &totitem, image_source_items, IMA_SRC_TILED);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static int rna_Image_file_format_get(PointerRNA *ptr)
+static int api_Image_file_format_get(ApiPtr *ptr)
 {
   Image *image = (Image *)ptr->data;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(image, NULL, NULL);
-  int imtype = BKE_ftype_to_imtype(ibuf ? ibuf->ftype : IMB_FTYPE_NONE,
+  ImBuf *ibuf = dune_image_acquire_ibuf(image, NULL, NULL);
+  int imtype = dune_ftype_to_imtype(ibuf ? ibuf->ftype : IMB_FTYPE_NONE,
                                    ibuf ? &ibuf->foptions : NULL);
 
   BKE_image_release_ibuf(image, ibuf, NULL);
