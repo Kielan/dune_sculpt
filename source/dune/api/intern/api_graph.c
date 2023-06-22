@@ -278,7 +278,7 @@ static void api_graph_objects_begin(CollectionPtrIter *iter, ApiPtr *ptr)
   GraphObjectIterData *data = mem_callocn(sizeof(GraphObjectIterData), __func__);
 
   data->graph = (Graph *)ptr->data;
-  data->flag = GRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY | DEG_ITER_OBJECT_FLAG_VISIBLE |
+  data->flag = GRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY | GRAPH_ITER_OBJECT_FLAG_VISIBLE |
                GRAPH_ITER_OBJECT_FLAG_LINKED_VIA_SET;
 
   ((LibIter *)iter->internal.custom)->valid = true;
@@ -363,23 +363,23 @@ static void api_graph_object_instances_next(CollectionPropIter *iter)
 static void api_graph_object_instances_end(CollectionPropIter *iter)
 {
   api_graph_instances_iter *di_it = (ApiGraphInstancesIter *)
-                                                iter->internal.custom;
+  iter->internal.custom;
   graph_iter_objects_end(&di_it->iters[0]);
-  DEG_iterator_objects_end(&di_it->iters[1]);
-  MEM_freeN(di_it);
+  graph_iter_objects_end(&di_it->iters[1]);
+  mem_freen(di_it);
 }
 
-static PointerRNA rna_Depsgraph_object_instances_get(CollectionPropertyIterator *iter)
+static ApiPtr api_graph_object_instances_get(CollectionPropertyIterator *iter)
 {
-  RNA_Depsgraph_Instances_Iterator *di_it = (RNA_Depsgraph_Instances_Iterator *)
+  api_graph_Instances_Iterator *di_it = (RNA_Depsgraph_Instances_Iterator *)
                                                 iter->internal.custom;
-  BLI_Iterator *iterator = &di_it->iterators[di_it->counter % 2];
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_DepsgraphObjectInstance, iterator);
+  LibIter *iter = &di_it->iters[di_it->counter % 2];
+  return api_ptr_inherit_refine(&iter->parent, &ApiGraphObjectInstance, iter);
 }
 
 /* Iteration over evaluated IDs */
 
-static void rna_Depsgraph_ids_begin(CollectionPropIter *iter, ApiPtr *ptr)
+static void api_graph_ids_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
   GraphIdIterData *data = mem_callocn(sizeof(GraphIdIterData), __func__);
