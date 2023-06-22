@@ -269,7 +269,7 @@ void api_id_name_set(ApiPtr *ptr, const char *value)
   if (GS(id->name) == ID_OB) {
     Object *ob = (Object *)id;
     if (ob->type == OB_MBALL) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
 }
@@ -456,21 +456,21 @@ ApiStruct *id_code_to_api_type(short idcode)
    * so adding new ID's causes a warning. */
   switch ((ID_Type)idcode) {
     case ID_AC:
-      return &RNA_Action;
+      return &ApiAction;
     case ID_AR:
-      return &RNA_Armature;
+      return ApiArmature;
     case ID_BR:
-      return &RNA_Brush;
+      return &ApiBrush;
     case ID_CA:
-      return &RNA_Camera;
+      return &ApiCamera;
     case ID_CF:
-      return &RNA_CacheFile;
+      return &ApiCacheFile;
     case ID_CU_LEGACY:
-      return &RNA_Curve;
+      return &ApiCurve;
     case ID_GD:
       return &ApiPen;
     case ID_GR:
-      return &ApuCollection;
+      return &ApiCollection;
     case ID_CV:
 #  ifdef WITH_NEW_CURVES_TYPE
       return &ApiCurves;
@@ -502,7 +502,7 @@ ApiStruct *id_code_to_api_type(short idcode)
     case ID_NT:
       return &ApiNodeTree;
     case ID_OB:
-      return &ApuObject;
+      return &ApiObject;
     case ID_PA:
       return &ApiParticleSettings;
     case ID_PAL:
@@ -521,10 +521,10 @@ ApiStruct *id_code_to_api_type(short idcode)
 #  ifdef WITH_SIMULATION_DATABLOCK
       return &ApiSimulation;
 #  else
-      return &ApiID;
+      return &ApiId;
 #  endif
     case ID_SO:
-      return &RNA_Sound;
+      return &ApiSound;
     case ID_SPK:
       return &ApiSpeaker;
     case ID_TE:
@@ -610,7 +610,7 @@ ApiStruct *api_PropGroup_register(Main *UNUSED(main),
   if (lib_strnlen(id, MAX_IDPROP_NAME) == MAX_IDPROP_NAME) {
         dune_reportf(reports,
             RPT_ERROR,
-            "Registering id property class: '%s' is too long, maximum length is %d",
+            "Registering id prop class: '%s' is too long, maximum length is %d",
             id,
             MAX_IDPROP_NAME);
     return NULL;
@@ -624,93 +624,93 @@ ApiStruct *api_PropGroup_refine(ApiPtr *ptr)
   return ptr->type;
 }
 
-static ID *rna_ID_evaluated_get(ID *id, struct Graph *graph)
+static Id *api_id_eval_get(Id *id, struct Graph *graph)
 {
-  return DEG_get_evaluated_id(depsgraph, id);
+  return graph_get_evaluated_id(graph, id);
 }
 
-static ID *rna_ID_copy(ID *id, Main *bmain)
+static Id *api_id_copy(Id *id, Main *main)
 {
-  ID *newid = BKE_id_copy(bmain, id);
+  Id *newid = dune_id_copy(main, id);
 
   if (newid != NULL) {
     id_us_min(newid);
   }
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return newid;
 }
 
-static void rna_ID_asset_mark(ID *id)
+static void api_id_asset_mark(Id *id)
 {
-  if (ED_asset_mark_id(id)) {
-    WM_main_add_notifier(NC_ID | NA_EDITED, NULL);
-    WM_main_add_notifier(NC_ASSET | NA_ADDED, NULL);
+  if (ed_asset_mark_id(id)) {
+    wm_main_add_notifier(NC_ID | NA_EDITED, NULL);
+    wm_main_add_notifier(NC_ASSET | NA_ADDED, NULL);
   }
 }
 
-static void rna_ID_asset_generate_preview(ID *id, bContext *C)
+static void api_id_asset_generate_preview(Id *id, Cxt *C)
 {
-  ED_asset_generate_preview(C, id);
+  ed_asset_generate_preview(C, id);
 
-  WM_main_add_notifier(NC_ID | NA_EDITED, NULL);
-  WM_main_add_notifier(NC_ASSET | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_ID | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_ASSET | NA_EDITED, NULL);
 }
 
-static void rna_ID_asset_clear(ID *id)
+static void api_id_asset_clear(Id *id)
 {
-  if (ED_asset_clear_id(id)) {
-    WM_main_add_notifier(NC_ID | NA_EDITED, NULL);
-    WM_main_add_notifier(NC_ASSET | NA_REMOVED, NULL);
+  if (ed_asset_clear_id(id)) {
+    wm_main_add_notifier(NC_ID | NA_EDITED, NULL);
+    wm_main_add_notifier(NC_ASSET | NA_REMOVED, NULL);
   }
 }
 
-static ID *rna_ID_override_create(ID *id, Main *bmain, bool remap_local_usages)
+static Id *api_id_override_create(Id *id, Main *main, bool remap_local_usages)
 {
-  if (!ID_IS_OVERRIDABLE_LIBRARY(id)) {
+  if (!ID_IS_OVERRIDABLE_LIB(id)) {
     return NULL;
   }
 
   if (remap_local_usages) {
-    BKE_main_id_tag_all(bmain, LIB_TAG_DOIT, true);
+    dune_main_id_tag_all(main, LIB_TAG_DOIT, true);
   }
 
-  ID *local_id = BKE_lib_override_library_create_from_id(bmain, id, remap_local_usages);
+  Id *local_id = dune_lib_override_lib_create_from_id(main, id, remap_local_usages);
 
   if (remap_local_usages) {
-    BKE_main_id_tag_all(bmain, LIB_TAG_DOIT, false);
+    dune_main_id_tag_all(bmain, LIB_TAG_DOIT, false);
   }
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
   return local_id;
 }
 
-static ID *rna_ID_override_hierarchy_create(
-    ID *id, Main *bmain, Scene *scene, ViewLayer *view_layer, ID *id_instance_hint)
+static Id *api_id_override_hierarchy_create(
+    Id *id, Main *main, Scene *scene, ViewLayer *view_layer, Id *id_instance_hint)
 {
-  if (!ID_IS_OVERRIDABLE_LIBRARY(id)) {
+  if (!ID_IS_OVERRIDABLE_LIB(id)) {
     return NULL;
   }
 
-  BKE_main_id_tag_all(bmain, LIB_TAG_DOIT, false);
+  dune_main_id_tag_all(main, LIB_TAG_DOIT, false);
 
-  ID *id_root_override = NULL;
-  BKE_lib_override_library_create(
-      bmain, scene, view_layer, NULL, id, id, id_instance_hint, &id_root_override);
+  Id *id_root_override = NULL;
+  dune_lib_override_lib_create(
+      main, scene, view_layer, NULL, id, id, id_instance_hint, &id_root_override);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
   return id_root_override;
 }
 
-static void rna_ID_override_template_create(ID *id, ReportList *reports)
+static void api_id_override_template_create(IDd*id, ReportList *reports)
 {
   if (!U.experimental.use_override_templates) {
-    BKE_report(reports, RPT_ERROR, "Override template experimental feature is disabled");
+    dune_report(reports, RPT_ERROR, "Override template experimental feature is disabled");
     return;
   }
   if (ID_IS_LINKED(id)) {
