@@ -36,7 +36,6 @@
 #  include "mem_guardedalloc.h"
 
 /* **************** Object Instance **************** */
-
 static ApiPtr api_GraphObjectInstance_object_get(ApiPtr *ptr)
 {
   LibIter *iter = ptr->data;
@@ -90,8 +89,8 @@ static ApiPtr api_GraphObjectInstance_parent_get(ApiPtr *ptr)
 
 static ApiPtr api_GraphObjectInstance_particle_system_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *deg_iter = (GraphObjectIterData *)iter->data;
   struct ParticleSystem *particle_system = NULL;
   if (deg_iter->dupli_object_current != NULL) {
     particle_system = deg_iter->dupli_object_current->particle_system;
@@ -107,8 +106,7 @@ static void api_GraphObjectInstance_persistent_id_get(PointerRNA *ptr, int *pers
     memcpy(persistent_id,
            graph_iter->dupli_object_current->persistent_id,
            sizeof(graph_iter->dupli_object_current->persistent_id));
-  }
-  else {
+  } else {
     memset(persistent_id, 0, sizeof(graph_iter->dupli_object_current->persistent_id));
   }
 }
@@ -119,8 +117,7 @@ static unsigned int api_GraphObjectInstance_random_id_get(PointerRNA *ptr)
   GraohObjectIterData *deg_iter = (GraphObjectIterData *)iterator->data;
   if (deg_iter->dupli_object_current != NULL) {
     return deg_iter->dupli_object_current->random_id;
-  }
-  else {
+  } else {
     return 0;
   }
 }
@@ -131,8 +128,7 @@ static void api_GraphObjectInstance_matrix_world_get(ApiPtr *ptr, float *mat)
   GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
   if (graph_iter->dupli_object_current != NULL) {
     copy_m4_m4((float(*)[4])mat, graph_iter->dupli_object_current->mat);
-  }
-  else {
+  } else {
     /* We can return actual object's matrix here, no reason to return identity matrix
      * when this is not actually an instance... */
     Object *ob = (Object *)iterator->current;
@@ -165,7 +161,6 @@ static void api_GraphObjectInstance_uv_get(ApiPtr *ptr, float *uv)
 }
 
 /* ******************** Sorted  ***************** */
-
 static int api_Graph_mode_get(ApiPtr *ptr)
 {
   Graph *graph = ptr->data;
@@ -271,7 +266,6 @@ static void api_graph_update(Graph *graph, Main *main, ReportList *reports)
 }
 
 /* Iteration over objects, simple version */
-
 static void api_graph_objects_begin(CollectionPtrIter *iter, ApiPtr *ptr)
 {
   iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
@@ -371,14 +365,13 @@ static void api_graph_object_instances_end(CollectionPropIter *iter)
 
 static ApiPtr api_graph_object_instances_get(CollectionPropIter *iter)
 {
-  api_graph_Instances_Iterator *di_it = (ApiGraphInstancesIt *)
+  ApiGraphInstancesIter *di_it = (ApiGraphInstancesIt *)
                                                 iter->internal.custom;
   LibIter *iter = &di_it->iters[di_it->counter % 2];
   return api_ptr_inherit_refine(&iter->parent, &ApiGraphObjectInstance, iter);
 }
 
-/* Iteration over evaluated IDs */
-
+/* Iteration over evaluated Ids */
 static void api_graph_ids_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
@@ -490,11 +483,11 @@ static void api_def_graph_instance(DuneApi *dapi)
                          "Extended information about dependency graph object iterator "
                          "(Warning: All data here is 'evaluated' one, not original .blend IDs)");
 
-  prop = api_def_prop(srna, "object", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "Object");
   api_def_prop_ui_text(prop, "Object", "Evaluated object the iterator points to");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
-  api_def_prop_pointer_fns(prop, "api_GraphObjectInstance_object_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_GraphObjectInstance_object_get", NULL, NULL, NULL);
 
   prop = api_def_prop(sapi, "show_self", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
@@ -556,7 +549,7 @@ static void api_def_graph_instance(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
   api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
   api_def_prop_ui_text(prop, "Generated Matrix", "Generated transform matrix in world space");
-  api_def_prop_float_funcs(prop, "api_GraphObjectInstance_matrix_world_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_GraphObjectInstance_matrix_world_get", NULL, NULL);
 
   prop = api_def_prop(sapi, "orco", PROP_FLOAT, PROP_TRANSLATION);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
@@ -624,8 +617,7 @@ static void api_def_graph(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_enum_fns(prop, "api_graph_mode_get", NULL, NULL);
 
-  /* Debug helpers. */
-
+  /* Debug helpers. */l
   fn = api_def_fn(
       sapi, "debug_relations_graphviz", "api_graph_debug_relations_graphviz");
   parm = api_def_string_file_path(
@@ -654,7 +646,6 @@ static void api_def_graph(DuneApi *dapi)
   api_def_fn_output(fn, parm);
 
   /* Updates. */
-
   fn = api_def_fn(sapi, "update", "api_graph_update");
   api_def_fn_ui_description(
       fn,
@@ -663,7 +654,6 @@ static void api_def_graph(DuneApi *dapi)
   api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
 
   /* Queries for original data-blocks (the ones depsgraph is built for). */
-
   prop = api_def_prop(sapi, "scene", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "Scene");
   api_def_prop_ptr_fns(prop, "api_graph_scene_get", NULL, NULL, NULL);
@@ -672,7 +662,7 @@ static void api_def_graph(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "view_layer", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "ViewLayer");
-  api_def_prop_pointer_funcs(prop, "api_graph_view_layer_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_graph_view_layer_get", NULL, NULL, NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(
       prop, "View Layer", "Original view layer dependency graph is built for");
