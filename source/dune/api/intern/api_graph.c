@@ -439,30 +439,30 @@ static bool api_graph_id_type_updated(Graph *graph, int id_type)
   return graph_id_type_updated(graph, id_type);
 }
 
-static PointerRNA ai_graph_scene_get(ApiPtr *ptr)
+static ApiPtr api_graph_scene_get(ApiPtr *ptr)
 {
-  Depsgraph *depsgraph = (Depsgraph *)ptr->data;
-  Scene *scene = DEG_get_input_scene(depsgraph);
-  PointerRNA newptr;
-  RNA_pointer_create(&scene->id, &RNA_Scene, scene, &newptr);
+  Graph *graph = (Graph *)ptr->data;
+  Scene *scene = graph_get_input_scene(graph);
+  ApiPtr newptr;
+  api_ptr_create(&scene->id, &ApiScene, scene, &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Depsgraph_view_layer_get(PointerRNA *ptr)
+static ApiPte api_graph_view_layer_get(ApiPtr *ptr)
 {
-  Depsgraph *depsgraph = (Depsgraph *)ptr->data;
-  Scene *scene = DEG_get_input_scene(depsgraph);
-  ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
-  PointerRNA newptr;
-  RNA_pointer_create(&scene->id, &RNA_ViewLayer, view_layer, &newptr);
+  Graph *graph = (Graph *)ptr->data;
+  Scene *scene = graph_get_input_scene(graph);
+  ViewLayer *view_layer = graph_get_input_view_layer(graph);
+  ApiPtr newptr;
+  api_ptr_create(&scene->id, &ApiViewLayer, view_layer, &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Depsgraph_scene_eval_get(PointerRNA *ptr)
+static ApiPointer api_graph_scene_eval_get(ApiPtr *ptr)
 {
-  Depsgraph *depsgraph = (Depsgraph *)ptr->data;
-  Scene *scene_eval = DEG_get_evaluated_scene(depsgraph);
-  PointerRNA newptr;
+  Graph *graph = (Graph *)ptr->data;
+  Scene *scene_eval = graph_get_evaluated_scene(depsgraph);
+  ApiPtr newptr;
   RNA_pointer_create(&scene_eval->id, &RNA_Scene, scene_eval, &newptr);
   return newptr;
 }
