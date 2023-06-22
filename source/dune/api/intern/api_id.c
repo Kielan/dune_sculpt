@@ -319,131 +319,131 @@ static PointerRNA rna_ID_original_get(PointerRNA *ptr)
   return rna_pointer_inherit_refine(ptr, &RNA_ID, DEG_get_original_id(id));
 }
 
-short RNA_type_to_ID_code(const StructRNA *type)
+short api_type_to_id_code(const ApiStruct *type)
 {
-  const StructRNA *base_type = RNA_struct_base_child_of(type, &RNA_ID);
+  const ApiStruct *base_type = api_struct_base_child_of(type, &ApiId);
   if (UNLIKELY(base_type == NULL)) {
     return 0;
   }
-  if (base_type == &RNA_Action) {
+  if (base_type == &ApiAction) {
     return ID_AC;
   }
-  if (base_type == &RNA_Armature) {
+  if (base_type == &ApiArmature) {
     return ID_AR;
   }
-  if (base_type == &RNA_Brush) {
+  if (base_type == &ApiBrush) {
     return ID_BR;
   }
-  if (base_type == &RNA_CacheFile) {
+  if (base_type == &ApiCacheFile) {
     return ID_CF;
   }
-  if (base_type == &RNA_Camera) {
+  if (base_type == &ApiCamera) {
     return ID_CA;
   }
-  if (base_type == &RNA_Curve) {
+  if (base_type == &ApiCurve) {
     return ID_CU_LEGACY;
   }
-  if (base_type == &RNA_GreasePencil) {
+  if (base_type == &ApiPen) {
     return ID_GD;
   }
-  if (base_type == &RNA_Collection) {
+  if (base_type == &ApiCollection) {
     return ID_GR;
   }
-  if (base_type == &RNA_Image) {
+  if (base_type == &ApiImage) {
     return ID_IM;
   }
-  if (base_type == &RNA_Key) {
+  if (base_type == &ApiKey) {
     return ID_KE;
   }
-  if (base_type == &RNA_Light) {
+  if (base_type == &ApiLight) {
     return ID_LA;
   }
-  if (base_type == &RNA_Library) {
+  if (base_type == &ApiLib) {
     return ID_LI;
   }
-  if (base_type == &RNA_FreestyleLineStyle) {
+  if (base_type == &ApiFreestyleLineStyle) {
     return ID_LS;
   }
 #  ifdef WITH_NEW_CURVES_TYPE
-  if (base_type == &RNA_Curves) {
+  if (base_type == &ApiCurves) {
     return ID_CV;
   }
 #  endif
-  if (base_type == &RNA_Lattice) {
+  if (base_type == &ApiLattice) {
     return ID_LT;
   }
-  if (base_type == &RNA_Material) {
+  if (base_type == &ApiMaterial) {
     return ID_MA;
   }
-  if (base_type == &RNA_MetaBall) {
+  if (base_type == &ApiMetaBall) {
     return ID_MB;
   }
-  if (base_type == &RNA_MovieClip) {
+  if (base_type == &ApiMovieClip) {
     return ID_MC;
   }
-  if (base_type == &RNA_Mesh) {
+  if (base_type == &ApiMesh) {
     return ID_ME;
   }
-  if (base_type == &RNA_Mask) {
+  if (base_type == &ApiMask) {
     return ID_MSK;
   }
-  if (base_type == &RNA_NodeTree) {
+  if (base_type == &ApiNodeTree) {
     return ID_NT;
   }
-  if (base_type == &RNA_Object) {
+  if (base_type == &ApiObject) {
     return ID_OB;
   }
-  if (base_type == &RNA_ParticleSettings) {
+  if (base_type == &ApiParticleSettings) {
     return ID_PA;
   }
-  if (base_type == &RNA_Palette) {
+  if (base_type == &ApiPalette) {
     return ID_PAL;
   }
-  if (base_type == &RNA_PaintCurve) {
+  if (base_type == &ApiPaintCurve) {
     return ID_PC;
   }
-  if (base_type == &RNA_PointCloud) {
+  if (base_type == &ApiPointCloud) {
     return ID_PT;
   }
-  if (base_type == &RNA_LightProbe) {
+  if (base_type == &ApiLightProbe) {
     return ID_LP;
   }
-  if (base_type == &RNA_Scene) {
+  if (base_type == &ApiScene) {
     return ID_SCE;
   }
-  if (base_type == &RNA_Screen) {
+  if (base_type == &ApiScreen) {
     return ID_SCR;
   }
 #  ifdef WITH_SIMULATION_DATABLOCK
-  if (base_type == &RNA_Simulation) {
+  if (base_type == &ApiSimulation) {
     return ID_SIM;
   }
 #  endif
-  if (base_type == &RNA_Sound) {
+  if (base_type == &ApiSound) {
     return ID_SO;
   }
-  if (base_type == &RNA_Speaker) {
+  if (base_type == &ApiSpeaker) {
     return ID_SPK;
   }
-  if (base_type == &RNA_Texture) {
+  if (base_type == &ApiTexture) {
     return ID_TE;
   }
-  if (base_type == &RNA_Text) {
+  if (base_type == &ApiText) {
     return ID_TXT;
   }
-  if (base_type == &RNA_VectorFont) {
+  if (base_type == &ApiVectorFont) {
     return ID_VF;
   }
-  if (base_type == &RNA_Volume) {
+  if (base_type == &ApiVolume) {
     return ID_VO;
   }
-  if (base_type == &RNA_WorkSpace) {
+  if (base_type == &ApiWorkSpace) {
     return ID_WS;
   }
-  if (base_type == &RNA_World) {
+  if (base_type == &ApiWorld) {
     return ID_WO;
   }
-  if (base_type == &RNA_WindowManager) {
+  if (base_type == &ApiWindowManager) {
     return ID_WM;
   }
 
