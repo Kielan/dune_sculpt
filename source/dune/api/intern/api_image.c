@@ -557,61 +557,61 @@ static PointerRNA rna_Image_packed_file_get(PointerRNA *ptr)
 
   if (BKE_image_has_packedfile(ima)) {
     ImagePackedFile *imapf = ima->packedfiles.first;
-    return rna_pointer_inherit_refine(ptr, &RNA_PackedFile, imapf->packedfile);
+    return rna_pointer_inherit_refine(ptr, &ApiPackedFile, imapf->packedfile);
   }
   else {
-    return PointerRNA_NULL;
+    return ApiPtrNULL;
   }
 }
 
-static void rna_RenderSlot_clear(ID *id, RenderSlot *slot, ImageUser *iuser)
+static void api_RenderSlot_clear(Id *id, RenderSlot *slot, ImageUser *iuser)
 {
   Image *image = (Image *)id;
-  int index = BLI_findindex(&image->renderslots, slot);
-  BKE_image_clear_renderslot(image, iuser, index);
+  int index = lib_findindex(&image->renderslots, slot);
+  dune_image_clear_renderslot(image, iuser, index);
 
-  WM_main_add_notifier(NC_IMAGE | ND_DISPLAY, image);
+  wm_main_add_notifier(NC_IMAGE | ND_DISPLAY, image);
 }
 
-static PointerRNA rna_render_slots_active_get(PointerRNA *ptr)
+static ApiPtr api_render_slots_active_get(ApiPtr *ptr)
 {
   Image *image = (Image *)ptr->owner_id;
-  RenderSlot *render_slot = BKE_image_get_renderslot(image, image->render_slot);
+  RenderSlot *render_slot = dune_image_get_renderslot(image, image->render_slot);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_RenderSlot, render_slot);
+  return api_ptr_inherit_refine(ptr, &ApiRenderSlot, render_slot);
 }
 
-static void rna_render_slots_active_set(PointerRNA *ptr,
-                                        PointerRNA value,
+static void api_render_slots_active_set(ApiPtr *ptr,
+                                        ApiPtr value,
                                         struct ReportList *UNUSED(reports))
 {
   Image *image = (Image *)ptr->owner_id;
   if (value.owner_id == &image->id) {
     RenderSlot *slot = (RenderSlot *)value.data;
-    int index = BLI_findindex(&image->renderslots, slot);
+    int index = lib_findindex(&image->renderslots, slot);
     if (index != -1) {
       image->render_slot = index;
-      BKE_image_partial_update_mark_full_update(image);
+      dune_image_partial_update_mark_full_update(image);
     }
   }
 }
 
-static int rna_render_slots_active_index_get(PointerRNA *ptr)
+static int api_render_slots_active_index_get(PointerRNA *ptr)
 {
   Image *image = (Image *)ptr->owner_id;
   return image->render_slot;
 }
 
-static void rna_render_slots_active_index_set(PointerRNA *ptr, int value)
+static void api_render_slots_active_index_set(PointerRNA *ptr, int value)
 {
   Image *image = (Image *)ptr->owner_id;
-  int num_slots = BLI_listbase_count(&image->renderslots);
+  int num_slots = lib_list_count(&image->renderslots);
   image->render_slot = value;
-  BKE_image_partial_update_mark_full_update(image);
+  dune_image_partial_update_mark_full_update(image);
   CLAMP(image->render_slot, 0, num_slots - 1);
 }
 
-static void rna_render_slots_active_index_range(
+static void api_render_slots_active_index_range(
     PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   Image *image = (Image *)ptr->owner_id;
