@@ -212,7 +212,7 @@ static bool api_GraphUpdate_is_updated_geometry_get(ApiPtr *ptr)
 
 /* **************** Depsgraph **************** */
 
-static void api_hraph_debug_relations_graphviz(Graph *graph, const char *filename)
+static void api_graph_debug_relations_graphviz(Graph *graph, const char *filename)
 {
   FILE *f = fopen(filename, "w");
   if (f == NULL) {
@@ -312,12 +312,12 @@ static ApiPtr api_Graph_objects_get(CollectionPropIter *iter)
 /* XXX Ugly python seems to query next item of an iterator before using current one (see T57558).
  * This forces us to use that nasty ping-pong game between two sets of iterator data,
  * so that previous one remains valid memory for python to access to. Yuck. */
-typedef struct ApiGraphIntancesIter {
+typedef struct ApiGraphInstancesIter {
   LibIter iters[2];
   GraphObjectIterData graph_data[2];
   DupliObject dupli_object_current[2];
   int counter;
-} Api_graph_Instances_Iterator;
+} ApiGraphInstancesIter;
 
 static void api_graph_object_instances_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
@@ -406,7 +406,7 @@ static void api_Graph_ids_end(CollectionPropIter *iter)
 
 static ApiPtr api_Graph_ids_get(CollectionPropIter *iter)
 {
-  ID *id = ((LibIter *)iter->internal.custom)->current;
+  Id *id = ((LibIter *)iter->internal.custom)->current;
   return api_ptr_inherit_refine(&iter->parent, &ApiId, id);
 }
 
@@ -415,12 +415,12 @@ static void api_graph_updates_begin(CollectionPropIter *iter, ApiPtr *ptr)
   iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
   GraphIdIterData *data = mem_callocm(sizeof(GraphIdIterData), __func__);
 
-  data->graph = (Depsgraph *)ptr->data;
+  data->graph = (Graph *)ptr->data;
   data->only_updated = true;
 
-  ((BLI_Iterator *)iter->internal.custom)->valid = true;
-  DEG_iterator_ids_begin(iter->internal.custom, data);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  ((LibIter *)iter->internal.custom)->valid = true;
+  graph_iter_ids_begin(iter->internal.custom, data);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
 static ApiPtr api_graph_updates_get(CollectionPropIter *iter)
@@ -429,7 +429,7 @@ static ApiPtr api_graph_updates_get(CollectionPropIter *iter)
   return api_ptr_inherit_refine(&iter->parent, &ApiGraphUpdate, id);
 }
 
-static Id *ai_graph_id_eval_get(Graph *graph, Id *id_orig)
+static Id *api_graph_id_eval_get(Graph *graph, Id *id_orig)
 {
   return graph_get_evaluated_id(graph, id_orig);
 }
@@ -461,28 +461,28 @@ static ApiPte api_graph_view_layer_get(ApiPtr *ptr)
 static ApiPointer api_graph_scene_eval_get(ApiPtr *ptr)
 {
   Graph *graph = (Graph *)ptr->data;
-  Scene *scene_eval = graph_get_evaluated_scene(depsgraph);
+  Scene *scene_eval = graph_get_evaluated_scene(graph);
   ApiPtr newptr;
-  RNA_pointer_create(&scene_eval->id, &RNA_Scene, scene_eval, &newptr);
+  api_ptr_create(&scene_eval->id, &ApiScene, scene_eval, &newptr);
   return newptr;
 }
 
-static PointerRNA rna_Depsgraph_view_layer_eval_get(PointerRNA *ptr)
+static ApiPtr api_graph_view_layer_eval_get(ApiPtr *ptr)
 {
-  Depsgraph *depsgraph = (Depsgraph *)ptr->data;
-  Scene *scene_eval = DEG_get_evaluated_scene(depsgraph);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
-  PointerRNA newptr;
-  RNA_pointer_create(&scene_eval->id, &RNA_ViewLayer, view_layer_eval, &newptr);
+  Graph *graph = (Graph *)ptr->data;
+  Scene *scene_eval = graph_get_evaluated_scene(graph);
+  ViewLayer *view_layer_eval = graph_get_evaluated_view_layer(graph);
+  ApiPtr newptr;
+  api_ptr_create(&scene_eval->id, &ApiViewLayer, view_layer_eval, &newptr);
   return newptr;
 }
 
 #else
 
-static void rna_def_depsgraph_instance(BlenderRNA *brna)
+static void api_def_graph_instance(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "GraphObjectInstance", NULL);
   api_def_struct_ui_text(sapi,
@@ -588,192 +588,190 @@ static void api_def_graph_update(DuneApi *dapi)
 
   /* Use term 'is_updated' instead of 'is_dirty' here because this is a signal
    * that users of the depsgraph may want to update their data (render engines for eg). */
+  prop = api_def_prop(sapi, "is_updated_transform", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Transform", "Object transformation is updated");
+  api_def_prop_bool_fns(prop, "api_GraphUpdate_is_updated_transform_get", NULL);
 
-  prop = RNA_def_property(srna, "is_updated_transform", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Transform", "Object transformation is updated");
-  RNA_def_property_boolean_funcs(prop, "rna_DepsgraphUpdate_is_updated_transform_get", NULL);
+  prop = api_def_prop(sapi, "is_updated_geometry", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Geometry", "Object geometry is updated");
+  api_def_prop_bool_fns(prop, "api_GraphUpdate_is_updated_geometry_get", NULL);
 
-  prop = RNA_def_property(srna, "is_updated_geometry", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Geometry", "Object geometry is updated");
-  RNA_def_property_boolean_funcs(prop, "rna_DepsgraphUpdate_is_updated_geometry_get", NULL);
-
-  prop = RNA_def_property(srna, "is_updated_shading", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Shading", "Object shading is updated");
-  RNA_def_property_boolean_funcs(prop, "rna_DepsgraphUpdate_is_updated_shading_get", NULL);
+  prop = api_def_prop(sapi, "is_updated_shading", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Shading", "Object shading is updated");
+  api_def_prop_bool_fns(prop, "api_GraphUpdate_is_updated_shading_get", NULL);
 }
 
-static void rna_def_depsgraph(BlenderRNA *brna)
+static void api_def_graph(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
+  ApiProp *prop;
 
-  static EnumPropertyItem enum_depsgraph_mode_items[] = {
+  static EnumPropItem enum_graph_mode_items[] = {
       {DAG_EVAL_VIEWPORT, "VIEWPORT", 0, "Viewport", "Viewport non-rendered mode"},
       {DAG_EVAL_RENDER, "RENDER", 0, "Render", "Render"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Depsgraph", NULL);
-  RNA_def_struct_ui_text(srna, "Dependency Graph", "");
+  sapi = api_def_struct(dapi, "graph", NULL);
+  api_def_struct_ui_text(sapi, "Dependency Graph", "");
 
-  prop = RNA_def_enum(srna, "mode", enum_depsgraph_mode_items, 0, "Mode", "Evaluation mode");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_funcs(prop, "rna_Depsgraph_mode_get", NULL, NULL);
+  prop = api_def_enum(sapi, "mode", enum_graph_mode_items, 0, "Mode", "Evaluation mode");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_fns(prop, "api_graph_mode_get", NULL, NULL);
 
   /* Debug helpers. */
 
-  func = RNA_def_function(
-      srna, "debug_relations_graphviz", "rna_Depsgraph_debug_relations_graphviz");
-  parm = RNA_def_string_file_path(
-      func, "filename", NULL, FILE_MAX, "File Name", "Output path for the graphviz debug file");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(
+      sapi, "debug_relations_graphviz", "api_graph_debug_relations_graphviz");
+  parm = api_def_string_file_path(
+      fn, "filename", NULL, FILE_MAX, "File Name", "Output path for the graphviz debug file");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "debug_stats_gnuplot", "rna_Depsgraph_debug_stats_gnuplot");
-  parm = RNA_def_string_file_path(
-      func, "filename", NULL, FILE_MAX, "File Name", "Output path for the gnuplot debug file");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string_file_path(func,
+  fn = api_def_fn(sapi, "debug_stats_gnuplot", "api_graph_debug_stats_gnuplot");
+  parm = api_def_string_file_path(
+      fn, "filename", NULL, FILE_MAX, "File Name", "Output path for the gnuplot debug file");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string_file_path(fn,
                                   "output_filename",
                                   NULL,
                                   FILE_MAX,
                                   "Output File Name",
                                   "File name where gnuplot script will save the result");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "debug_tag_update", "rna_Depsgraph_debug_tag_update");
+  fn = api_def_fn(sapi, "debug_tag_update", "api_graph_debug_tag_update");
 
-  func = RNA_def_function(srna, "debug_stats", "rna_Depsgraph_debug_stats");
-  RNA_def_function_ui_description(func, "Report the number of elements in the Dependency Graph");
+  fn = api_def_fn(sapi, "debug_stats", "api_graph_debug_stats");
+  api_def_fn_ui_description(fn, "Report the number of elements in the Dependency Graph");
   /* weak!, no way to return dynamic string type */
-  parm = RNA_def_string(func, "result", NULL, STATS_MAX_SIZE, "result", "");
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
-  RNA_def_function_output(func, parm);
+  parm = api_def_string(fn, "result", NULL, STATS_MAX_SIZE, "result", "");
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
+  api_def_fn_output(fn, parm);
 
   /* Updates. */
 
-  func = RNA_def_function(srna, "update", "rna_Depsgraph_update");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "update", "api_graph_update");
+  api_def_fn_ui_description(
+      fn,
       "Re-evaluate any modified data-blocks, for example for animation or modifiers. "
       "This invalidates all references to evaluated data-blocks from this dependency graph.");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
 
   /* Queries for original data-blocks (the ones depsgraph is built for). */
 
-  prop = RNA_def_property(srna, "scene", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Scene");
-  RNA_def_property_pointer_funcs(prop, "rna_Depsgraph_scene_get", NULL, NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Scene", "Original scene dependency graph is built for");
+  prop = api_def_prop(sapi, "scene", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Scene");
+  api_def_prop_ptr_fns(prop, "api_graph_scene_get", NULL, NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Scene", "Original scene dependency graph is built for");
 
-  prop = RNA_def_property(srna, "view_layer", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ViewLayer");
-  RNA_def_property_pointer_funcs(prop, "rna_Depsgraph_view_layer_get", NULL, NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_layer", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "ViewLayer");
+  api_def_prop_pointer_funcs(prop, "api_graph_view_layer_get", NULL, NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "View Layer", "Original view layer dependency graph is built for");
 
   /* Queries for evaluated data-blocks (the ones depsgraph is evaluating). */
 
-  func = RNA_def_function(srna, "id_eval_get", "rna_Depsgraph_id_eval_get");
-  parm = RNA_def_pointer(
-      func, "id", "ID", "", "Original ID to get evaluated complementary part for");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "id_eval", "ID", "", "Evaluated ID for the given original one");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "id_eval_get", "api_graph_id_eval_get");
+  parm = api_def_ptr(
+      fn, "id", "ID", "", "Original ID to get evaluated complementary part for");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "id_eval", "ID", "", "Evaluated ID for the given original one");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "id_type_updated", "rna_Depsgraph_id_type_updated");
-  parm = RNA_def_enum(func, "id_type", rna_enum_id_type_items, 0, "ID Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func,
-                         "updated",
-                         false,
-                         "Updated",
-                         "True if any datablock with this type was added, updated or removed");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "id_type_updated", "api_graph_id_type_updated");
+  parm = api_def_enum(fn, "id_type", api_enum_id_type_items, 0, "ID Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn,
+                      "updated",
+                      false,
+                      "Updated",
+                      "True if any datablock with this type was added, updated or removed");
+  api_def_fn_return(fn, parm);
 
-  prop = RNA_def_property(srna, "scene_eval", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Scene");
-  RNA_def_property_pointer_funcs(prop, "rna_Depsgraph_scene_eval_get", NULL, NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Scene", "Original scene dependency graph is built for");
+  prop = api_def_prop(sapi, "scene_eval", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Scene");
+  api_def_prop_ptr_fns(prop, "api_graph_scene_eval_get", NULL, NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Scene", "Original scene dependency graph is built for");
 
-  prop = RNA_def_property(srna, "view_layer_eval", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ViewLayer");
-  RNA_def_property_pointer_funcs(prop, "rna_Depsgraph_view_layer_eval_get", NULL, NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_layer_eval", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "ViewLayer");
+  api_def_prop_ptr_fns(prop, "api_graph_view_layer_eval_get", NULL, NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "View Layer", "Original view layer dependency graph is built for");
 
   /* Iterators. */
+  prop = api_def_prop(sapi, "ids", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "ID");
+  api_def_prop_collection_fns(prop,
+                              "api_graph_ids_begin",
+                              "api_graph_ids_next",
+                              "api_graph_ids_end",
+                              "api_graph_ids_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(prop, "IDs", "All evaluated data-blocks");
 
-  prop = RNA_def_property(srna, "ids", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ID");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Depsgraph_ids_begin",
-                                    "rna_Depsgraph_ids_next",
-                                    "rna_Depsgraph_ids_end",
-                                    "rna_Depsgraph_ids_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "IDs", "All evaluated data-blocks");
+  prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_collection_fns(prop,
+                              "api_graph_objects_begin",
+                              "api_graph_objects_next",
+                              "api_graph_objects_end",
+                              "api_graph_objects_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(prop, "Objects", "Evaluated objects in the dependency graph");
 
-  prop = RNA_def_property(srna, "objects", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Depsgraph_objects_begin",
-                                    "rna_Depsgraph_objects_next",
-                                    "rna_Depsgraph_objects_end",
-                                    "rna_Depsgraph_objects_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "Objects", "Evaluated objects in the dependency graph");
+  prop = api_def_prop(sapi, "object_instances", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "GraphObjectInstance");
+  api_def_prop_collection_fns(prop,
+                              "api_graph_object_instances_begin",
+                              "api_graph_object_instances_next",
+                              "api_graph_object_instances_end",
+                              "api_graph_object_instances_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(prop,
+                      "Object Instances",
+                      "All object instances to display or render "
+                      "(Warning: Only use this as an iterator, never as a sequence, "
+                      "and do not keep any references to its items)");
 
-  prop = RNA_def_property(srna, "object_instances", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "DepsgraphObjectInstance");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Depsgraph_object_instances_begin",
-                                    "rna_Depsgraph_object_instances_next",
-                                    "rna_Depsgraph_object_instances_end",
-                                    "rna_Depsgraph_object_instances_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop,
-                           "Object Instances",
-                           "All object instances to display or render "
-                           "(Warning: Only use this as an iterator, never as a sequence, "
-                           "and do not keep any references to its items)");
-
-  prop = RNA_def_property(srna, "updates", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "DepsgraphUpdate");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Depsgraph_updates_begin",
-                                    "rna_Depsgraph_ids_next",
-                                    "rna_Depsgraph_ids_end",
-                                    "rna_Depsgraph_updates_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "Updates", "Updates to data-blocks");
+  prop = api_def_prop(sapi, "updates", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "graphUpdate");
+  api_def_prop_collection_fns(prop,
+                              "api_graph_updates_begin",
+                              "api_graph_ids_next",
+                              "api_graph_ids_end",
+                              "api_graph_updates_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(prop, "Updates", "Updates to data-blocks");
 }
 
-void RNA_def_depsgraph(BlenderRNA *brna)
+void api_def_graph(DuneApi *dapi)
 {
-  rna_def_depsgraph_instance(brna);
-  rna_def_depsgraph_update(brna);
-  rna_def_depsgraph(brna);
+  api_def_graph_instance(dapi);
+  api_def_graph_update(dapi);
+  api_def_graph(dapi);
 }
 
 #endif
