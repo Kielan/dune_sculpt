@@ -450,7 +450,7 @@ short api_type_to_id_code(const ApiStruct *type)
   return 0;
 }
 
-StructRNA *ID_code_to_RNA_type(short idcode)
+ApiStruct *id_code_to_api_type(short idcode)
 {
   /* NOTE: this switch doesn't use a 'default',
    * so adding new ID's causes a warning. */
@@ -468,60 +468,60 @@ StructRNA *ID_code_to_RNA_type(short idcode)
     case ID_CU_LEGACY:
       return &RNA_Curve;
     case ID_GD:
-      return &RNA_GreasePencil;
+      return &ApiPen;
     case ID_GR:
-      return &RNA_Collection;
+      return &ApuCollection;
     case ID_CV:
 #  ifdef WITH_NEW_CURVES_TYPE
-      return &RNA_Curves;
+      return &ApiCurves;
 #  else
-      return &RNA_ID;
+      return &ApiId;
 #  endif
     case ID_IM:
-      return &RNA_Image;
+      return &ApiImage;
     case ID_KE:
-      return &RNA_Key;
+      return &ApiKey;
     case ID_LA:
-      return &RNA_Light;
+      return &ApiLight;
     case ID_LI:
-      return &RNA_Library;
+      return &ApiLib;
     case ID_LS:
-      return &RNA_FreestyleLineStyle;
+      return &ApiFreestyleLineStyle;
     case ID_LT:
-      return &RNA_Lattice;
+      return &ApiLattice;
     case ID_MA:
-      return &RNA_Material;
+      return &ApiMaterial;
     case ID_MB:
-      return &RNA_MetaBall;
+      return &ApiMetaBall;
     case ID_MC:
-      return &RNA_MovieClip;
+      return &ApiMovieClip;
     case ID_ME:
-      return &RNA_Mesh;
+      return &ApiMesh;
     case ID_MSK:
-      return &RNA_Mask;
+      return &ApiMask;
     case ID_NT:
-      return &RNA_NodeTree;
+      return &ApiNodeTree;
     case ID_OB:
-      return &RNA_Object;
+      return &ApuObject;
     case ID_PA:
-      return &RNA_ParticleSettings;
+      return &ApiParticleSettings;
     case ID_PAL:
-      return &RNA_Palette;
+      return &ApiPalette;
     case ID_PC:
-      return &RNA_PaintCurve;
+      return &ApiPaintCurve;
     case ID_PT:
-      return &RNA_PointCloud;
+      return &ApiPointCloud;
     case ID_LP:
-      return &RNA_LightProbe;
+      return &ApiLightProbe;
     case ID_SCE:
-      return &RNA_Scene;
+      return &ApiScene;
     case ID_SCR:
-      return &RNA_Screen;
+      return &ApiScreen;
     case ID_SIM:
 #  ifdef WITH_SIMULATION_DATABLOCK
-      return &RNA_Simulation;
+      return &ApiSimulation;
 #  else
-      return &RNA_ID;
+      return &ApiID;
 #  endif
     case ID_SO:
       return &RNA_Sound;
