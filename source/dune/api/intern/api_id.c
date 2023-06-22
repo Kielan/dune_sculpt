@@ -121,9 +121,9 @@ const struct IdFilterEnumPropItem api_enum_id_type_filter_items[] = {
     {FILTER_ID_CF, "filter_cachefile", ICON_FILE, "Cache Files", "Show Cache File data-blocks"},
     {FILTER_ID_CU_LEGACY, "filter_curve", ICON_CURVE_DATA, "Curves", "Show Curve data-blocks"},
     {FILTER_ID_GD,
-     "filter_grease_pencil",
+     "filter_pen",
      ICON_PEN,
-     "Grease Pencil",
+     "Pen",
      "Show peen data-blocks"},
     {FILTER_ID_GR,
      "filter_group",
@@ -178,7 +178,7 @@ const struct IdFilterEnumPropItem api_enum_id_type_filter_items[] = {
     {FILTER_ID_SCE, "filter_scene", ICON_SCENE_DATA, "Scenes", "Show Scene data-blocks"},
     {FILTER_ID_SIM,
      "filter_simulation",
-     ICON_PHYSICS,
+     ICON_PHYS,
      "Simulations",
      "Show Simulation data-blocks"}, /* TODO: Use correct icon. */
     {FILTER_ID_SPK, "filter_speaker", ICON_SPEAKER, "Speakers", "Show Speaker data-blocks"},
@@ -196,7 +196,7 @@ const struct IdFilterEnumPropItem api_enum_id_type_filter_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  include "types_anim.h"
 
@@ -224,47 +224,47 @@ const struct IdFilterEnumPropItem api_enum_id_type_filter_items[] = {
 
 void api_id_override_lib_prop_op_refname_get(ApiPtr *ptr, char *value)
 {
-  IDOverrideLibraryPropertyOperation *opop = ptr->data;
-  strcpy(value, (opop->subitem_reference_name == NULL) ? "" : opop->subitem_reference_name);
+  IdOverrideLibPropOp *opop = ptr->data;
+  strcpy(value, (opop->subitem_ref_name == NULL) ? "" : opop->subitem_reference_name);
 }
 
-int rna_ID_override_library_property_operation_refname_length(PointerRNA *ptr)
+int api_id_override_lib_prop_oper_refname_length(ApiPtr *ptr)
 {
-  IDOverrideLibraryPropertyOperation *opop = ptr->data;
-  return (opop->subitem_reference_name == NULL) ? 0 : strlen(opop->subitem_reference_name);
+  IdOverrideLibPropOp *opop = ptr->data;
+  return (opop->subitem_ref_name == NULL) ? 0 : strlen(opop->subitem_reference_name);
 }
 
-void rna_ID_override_library_property_operation_locname_get(PointerRNA *ptr, char *value)
+void api_id_override_lib_prop_op_locname_get(PointerRNA *ptr, char *value)
 {
   IDOverrideLibraryPropertyOperation *opop = ptr->data;
   strcpy(value, (opop->subitem_local_name == NULL) ? "" : opop->subitem_local_name);
 }
 
-int rna_ID_override_library_property_operation_locname_length(PointerRNA *ptr)
+int api_id_override_lib_prop_op_locname_length(ApiPtr *ptr)
 {
-  IDOverrideLibraryPropertyOperation *opop = ptr->data;
+  IdOverrideLibPropOp *opop = ptr->data;
   return (opop->subitem_local_name == NULL) ? 0 : strlen(opop->subitem_local_name);
 }
 
-/* name functions that ignore the first two ID characters */
-void rna_ID_name_get(PointerRNA *ptr, char *value)
+/* name functions that ignore the first two Id characters */
+void api_id_name_get(ApiPtr *ptr, char *value)
 {
-  ID *id = (ID *)ptr->data;
-  BLI_strncpy(value, id->name + 2, sizeof(id->name) - 2);
+  Id *id = (Id *)ptr->data;
+  lib_strncpy(value, id->name + 2, sizeof(id->name) - 2);
 }
 
-int rna_ID_name_length(PointerRNA *ptr)
+int api_id_name_length(Apitr *ptr)
 {
-  ID *id = (ID *)ptr->data;
+  Id *id = (Id *)ptr->data;
   return strlen(id->name + 2);
 }
 
-void rna_ID_name_set(PointerRNA *ptr, const char *value)
+void api_id_name_set(ApiPtr *ptr, const char *value)
 {
-  ID *id = (ID *)ptr->data;
-  BLI_strncpy_utf8(id->name + 2, value, sizeof(id->name) - 2);
-  BLI_assert(BKE_id_is_in_global_main(id));
-  BLI_libblock_ensure_unique_name(G_MAIN, id->name);
+  Id *id = (Id *)ptr->data;
+  lib_strncpy_utf8(id->name + 2, value, sizeof(id->name) - 2);
+  lib_assert(dune_id_is_in_global_main(id));
+  lib_libblock_ensure_unique_name(G_MAIN, id->name);
 
   if (GS(id->name) == ID_OB) {
     Object *ob = (Object *)id;
