@@ -1,29 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DNA_ID.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_vfont_types.h"
+#include "types_id.h"
+#include "types_material.h"
+#include "types_object.h"
+#include "types_vfont.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_icons.h"
-#include "BKE_lib_id.h"
-#include "BKE_object.h"
+#include "dune_icons.h"
+#include "dune_lib_id.h"
+#include "dune_object.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 /* enum of ID-block types
- * NOTE: need to keep this in line with the other defines for these
- */
-const EnumPropertyItem rna_enum_id_type_items[] = {
+ * NOTE: need to keep this in line with the other defines for these */
+const EnumPropItem api_enum_id_type_items[] = {
     {ID_AC, "ACTION", ICON_ACTION, "Action", ""},
     {ID_AR, "ARMATURE", ICON_ARMATURE_DATA, "Armature", ""},
     {ID_BR, "BRUSH", ICON_BRUSH_DATA, "Brush", ""},
@@ -31,12 +30,12 @@ const EnumPropertyItem rna_enum_id_type_items[] = {
     {ID_CF, "CACHEFILE", ICON_FILE, "Cache File", ""},
     {ID_CU_LEGACY, "CURVE", ICON_CURVE_DATA, "Curve", ""},
     {ID_VF, "FONT", ICON_FONT_DATA, "Font", ""},
-    {ID_GD, "GREASEPENCIL", ICON_GREASEPENCIL, "Grease Pencil", ""},
+    {ID_GD, "PENCI", ICON_PEN, "Grease Pencil", ""},
     {ID_GR, "COLLECTION", ICON_OUTLINER_COLLECTION, "Collection", ""},
     {ID_IM, "IMAGE", ICON_IMAGE_DATA, "Image", ""},
     {ID_KE, "KEY", ICON_SHAPEKEY_DATA, "Key", ""},
     {ID_LA, "LIGHT", ICON_LIGHT_DATA, "Light", ""},
-    {ID_LI, "LIBRARY", ICON_LIBRARY_DATA_DIRECT, "Library", ""},
+    {ID_LI, "LIB", ICON_LIBRARY_DATA_DIRECT, "Lib", ""},
     {ID_LS, "LINESTYLE", ICON_LINE_DATA, "Line Style", ""},
     {ID_LT, "LATTICE", ICON_LATTICE_DATA, "Lattice", ""},
     {ID_MSK, "MASK", ICON_MOD_MASK, "Mask", ""},
@@ -65,39 +64,39 @@ const EnumPropertyItem rna_enum_id_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_override_library_property_operation_items[] = {
-    {IDOVERRIDE_LIBRARY_OP_NOOP,
+static const EnumPropItem api_enum_override_lib_prop_op_items[] = {
+    {IDOVERRIDE_LIB_OP_NOOP,
      "NOOP",
      0,
      "No-Op",
      "Does nothing, prevents adding actual overrides (NOT USED)"},
-    {IDOVERRIDE_LIBRARY_OP_REPLACE,
+    {IDOVERRIDE_LIB_OP_REPLACE,
      "REPLACE",
      0,
      "Replace",
      "Replace value of reference by overriding one"},
-    {IDOVERRIDE_LIBRARY_OP_ADD,
+    {IDOVERRIDE_LIB_OP_ADD,
      "DIFF_ADD",
      0,
      "Differential",
      "Stores and apply difference between reference and local value (NOT USED)"},
-    {IDOVERRIDE_LIBRARY_OP_SUBTRACT,
+    {IDOVERRIDE_LIB_OP_SUBTRACT,
      "DIFF_SUB",
      0,
      "Differential",
      "Stores and apply difference between reference and local value (NOT USED)"},
-    {IDOVERRIDE_LIBRARY_OP_MULTIPLY,
+    {IDOVERRIDE_LIB_OP_MULTIPLY,
      "FACT_MULTIPLY",
      0,
      "Factor",
      "Stores and apply multiplication factor between reference and local value (NOT USED)"},
-    {IDOVERRIDE_LIBRARY_OP_INSERT_AFTER,
+    {IDOVERRIDE_LIB_OP_INSERT_AFTER,
      "INSERT_AFTER",
      0,
      "Insert After",
      "Insert a new item into collection after the one referenced in subitem_reference_name or "
      "_index"},
-    {IDOVERRIDE_LIBRARY_OP_INSERT_BEFORE,
+    {IDOVERRIDE_LIB_OP_INSERT_BEFORE,
      "INSERT_BEFORE",
      0,
      "Insert Before",
@@ -109,7 +108,7 @@ static const EnumPropertyItem rna_enum_override_library_property_operation_items
 /**
  * \note Uses #IDFilterEnumPropertyItem, not EnumPropertyItem, to support 64 bit items.
  */
-const struct IDFilterEnumPropertyItem rna_enum_id_type_filter_items[] = {
+const struct IdFilterEnumPropItem api_enum_id_type_filter_items[] = {
     /* Datablocks */
     {FILTER_ID_AC, "filter_action", ICON_ACTION, "Actions", "Show Action data-blocks"},
     {FILTER_ID_AR,
@@ -123,9 +122,9 @@ const struct IDFilterEnumPropertyItem rna_enum_id_type_filter_items[] = {
     {FILTER_ID_CU_LEGACY, "filter_curve", ICON_CURVE_DATA, "Curves", "Show Curve data-blocks"},
     {FILTER_ID_GD,
      "filter_grease_pencil",
-     ICON_GREASEPENCIL,
+     ICON_PEN,
      "Grease Pencil",
-     "Show Grease pencil data-blocks"},
+     "Show peen data-blocks"},
     {FILTER_ID_GR,
      "filter_group",
      ICON_OUTLINER_COLLECTION,
@@ -199,31 +198,31 @@ const struct IDFilterEnumPropertyItem rna_enum_id_type_filter_items[] = {
 
 #ifdef RNA_RUNTIME
 
-#  include "DNA_anim_types.h"
+#  include "types_anim.h"
 
-#  include "BLI_listbase.h"
-#  include "BLI_math_base.h"
+#  include "lib_list.h"
+#  include "lib_math_base.h"
 
-#  include "BKE_anim_data.h"
-#  include "BKE_global.h" /* XXX, remove me */
-#  include "BKE_idprop.h"
-#  include "BKE_idtype.h"
-#  include "BKE_lib_override.h"
-#  include "BKE_lib_query.h"
-#  include "BKE_lib_remap.h"
-#  include "BKE_library.h"
-#  include "BKE_material.h"
-#  include "BKE_vfont.h"
+#  include "dune_anim_data.h"
+#  include "dune_global.h" /* XXX, remove me */
+#  include "dune_idprop.h"
+#  include "dune_idtype.h"
+#  include "dune_lib_override.h"
+#  include "dune_lib_query.h"
+#  include "dune_lib_remap.h"
+#  include "dune_lib.h"
+#  include "dune_material.h"
+#  include "dune_vfont.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_query.h"
+#  include "graph.h"
+#  include "graph_build.h"
+#  include "graph_query.h"
 
-#  include "ED_asset.h"
+#  include "ed_asset.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-void rna_ID_override_library_property_operation_refname_get(PointerRNA *ptr, char *value)
+void api_id_override_lib_prop_op_refname_get(ApiPtr *ptr, char *value)
 {
   IDOverrideLibraryPropertyOperation *opop = ptr->data;
   strcpy(value, (opop->subitem_reference_name == NULL) ? "" : opop->subitem_reference_name);
