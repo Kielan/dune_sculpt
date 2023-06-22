@@ -43,52 +43,52 @@ static ApiPtr api_GraphObjectInstance_object_get(ApiPtr *ptr)
   return apo_ptr_inherit_refine(ptr, &ApiObject, iter->current);
 }
 
-static int api_GraphObjectInstance_is_instance_get(PointerRNA *ptr)
+static int api_GraphObjectInstance_is_instance_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iter = ptr->data;
-  DEGObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
   return (graph_iter->dupli_object_current != NULL);
 }
 
 static ApiPtr api_graphObjectInstance_instance_object_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
   Object *instance_object = NULL;
-  if (deg_iter->dupli_object_current != NULL) {
-    instance_object = deg_iter->dupli_object_current->ob;
+  if (graph_iter->dupli_object_current != NULL) {
+    instance_object = graph_iter->dupli_object_current->ob;
   }
-  return rna_pointer_inherit_refine(ptr, &RNA_Object, instance_object);
+  return api_ptr_inherit_refine(ptr, &ApiObject, instance_object);
 }
 
-static bool rna_DepsgraphObjectInstance_show_self_get(PointerRNA *ptr)
+static bool api_GraphObjectInstance_show_self_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  int ob_visibility = BKE_object_visibility(iterator->current, deg_iter->eval_mode);
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  int ob_visibility = dune_object_visibility(iter->current, graph_iter->eval_mode);
   return (ob_visibility & OB_VISIBLE_SELF) != 0;
 }
 
-static bool rna_DepsgraphObjectInstance_show_particles_get(PointerRNA *ptr)
+static bool api_GraphObjectInstance_show_particles_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
-  int ob_visibility = BKE_object_visibility(iterator->current, deg_iter->eval_mode);
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
+  int ob_visibility = dune_object_visibility(iter->current, graph_iter->eval_mode);
   return (ob_visibility & OB_VISIBLE_PARTICLES) != 0;
 }
 
-static PointerRNA rna_DepsgraphObjectInstance_parent_get(PointerRNA *ptr)
+static ApiPtr api_GraphObjectInstance_parent_get(ApiPtr *ptr)
 {
-  BLI_Iterator *iterator = ptr->data;
-  DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
+  LibIter *iter = ptr->data;
+  GraphObjectIterData *graph_iter = (GraphObjectIterData *)iter->data;
   Object *dupli_parent = NULL;
-  if (deg_iter->dupli_object_current != NULL) {
+  if (graph_iter->dupli_object_current != NULL) {
     dupli_parent = deg_iter->dupli_parent;
   }
-  return rna_pointer_inherit_refine(ptr, &RNA_Object, dupli_parent);
+  return api_ptr_inherit_refine(ptr, &ApiObject, dupli_parent);
 }
 
-static PointerRNA rna_DepsgraphObjectInstance_particle_system_get(PointerRNA *ptr)
+static ApiPtr api_GraphObjectInstance_particle_system_get(ApiPtr *ptr)
 {
   BLI_Iterator *iterator = ptr->data;
   DEGObjectIterData *deg_iter = (DEGObjectIterData *)iterator->data;
