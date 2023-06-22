@@ -526,46 +526,46 @@ StructRNA *ID_code_to_RNA_type(short idcode)
     case ID_SO:
       return &RNA_Sound;
     case ID_SPK:
-      return &RNA_Speaker;
+      return &ApiSpeaker;
     case ID_TE:
-      return &RNA_Texture;
+      return &ApiTexture;
     case ID_TXT:
-      return &RNA_Text;
+      return &ApiText;
     case ID_VF:
-      return &RNA_VectorFont;
+      return &ApiVectorFont;
     case ID_VO:
-      return &RNA_Volume;
+      return &ApiVolume;
     case ID_WM:
-      return &RNA_WindowManager;
+      return &ApiWindowManager;
     case ID_WO:
-      return &RNA_World;
+      return &ApiWorld;
     case ID_WS:
-      return &RNA_WorkSpace;
+      return &ApiWorkSpace;
 
     /* deprecated */
     case ID_IP:
       break;
   }
 
-  return &RNA_ID;
+  return &ApiId;
 }
 
-StructRNA *rna_ID_refine(PointerRNA *ptr)
+ApiStruct *api_id_refine(ApiPtr *ptr)
 {
-  ID *id = (ID *)ptr->data;
+  Id *id = (Id *)ptr->data;
 
-  return ID_code_to_RNA_type(GS(id->name));
+  return id_code_to_api_type(GS(id->name));
 }
 
-IDProperty **rna_ID_idprops(PointerRNA *ptr)
+IdProp **api_id_idprops(ApiPtr *ptr)
 {
-  ID *id = (ID *)ptr->data;
-  return &id->properties;
+  Id *id = (Id *)ptr->data;
+  return &id->props;
 }
 
-void rna_ID_fake_user_set(PointerRNA *ptr, bool value)
+void api_id_fake_user_set(ApiPtr *ptr, bool value)
 {
-  ID *id = (ID *)ptr->data;
+  Id *id = (Id *)ptr->data;
 
   if (value) {
     id_fake_user_set(id);
@@ -575,28 +575,28 @@ void rna_ID_fake_user_set(PointerRNA *ptr, bool value)
   }
 }
 
-IDProperty **rna_PropertyGroup_idprops(PointerRNA *ptr)
+IdProp **api_PropGroup_idprops(ApiPtr *ptr)
 {
-  return (IDProperty **)&ptr->data;
+  return (IdProp **)&ptr->data;
 }
 
-void rna_PropertyGroup_unregister(Main *UNUSED(bmain), StructRNA *type)
+void api_PropGroup_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free(&DuneApi, type);
 }
 
-StructRNA *rna_PropertyGroup_register(Main *UNUSED(bmain),
-                                      ReportList *reports,
-                                      void *data,
-                                      const char *identifier,
-                                      StructValidateFunc validate,
-                                      StructCallbackFunc UNUSED(call),
-                                      StructFreeFunc UNUSED(free))
+ApiStruct *api_PropGroup_register(Main *UNUSED(main),
+                                  ReportList *reports,
+                                  void *data,
+                                  const char *id,
+                                  StructValidateFn validate,
+                                  StructCbFn UNUSED(call),
+                                  StructFreeFn UNUSED(free))
 {
-  PointerRNA dummyptr;
+  ApiPtr dummyptr;
 
   /* create dummy pointer */
-  RNA_pointer_create(NULL, &RNA_PropertyGroup, NULL, &dummyptr);
+  api_ptr_create(NULL, &ApiPropGroup, NULL, &dummyptr);
 
   /* validate the python class */
   if (validate(&dummyptr, data, NULL) != 0) {
@@ -605,26 +605,26 @@ StructRNA *rna_PropertyGroup_register(Main *UNUSED(bmain),
 
   /* NOTE: it looks like there is no length limit on the srna id since its
    * just a char pointer, but take care here, also be careful that python
-   * owns the string pointer which it could potentially free while blender
+   * owns the string pointer which it could potentially free while dune
    * is running. */
-  if (BLI_strnlen(identifier, MAX_IDPROP_NAME) == MAX_IDPROP_NAME) {
-    BKE_reportf(reports,
-                RPT_ERROR,
-                "Registering id property class: '%s' is too long, maximum length is %d",
-                identifier,
-                MAX_IDPROP_NAME);
+  if (lib_strnlen(id, MAX_IDPROP_NAME) == MAX_IDPROP_NAME) {
+        dune_reportf(reports,
+            RPT_ERROR,
+            "Registering id property class: '%s' is too long, maximum length is %d",
+            id,
+            MAX_IDPROP_NAME);
     return NULL;
   }
 
-  return RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_PropertyGroup); /* XXX */
+  return api_def_struct_ptr(&DuneApi, id, &ApiPropGroup); /* XXX */
 }
 
-StructRNA *rna_PropertyGroup_refine(PointerRNA *ptr)
+ApiStruct *api_PropGroup_refine(ApiPtr *ptr)
 {
   return ptr->type;
 }
 
-static ID *rna_ID_evaluated_get(ID *id, struct Depsgraph *depsgraph)
+static ID *rna_ID_evaluated_get(ID *id, struct Graph *graph)
 {
   return DEG_get_evaluated_id(depsgraph, id);
 }
