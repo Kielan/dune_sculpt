@@ -236,12 +236,12 @@ static int api_Image_file_format_get(ApiPtr *ptr)
   int imtype = dune_ftype_to_imtype(ibuf ? ibuf->ftype : IMB_FTYPE_NONE,
                                    ibuf ? &ibuf->foptions : NULL);
 
-  BKE_image_release_ibuf(image, ibuf, NULL);
+  dune_image_release_ibuf(image, ibuf, NULL);
 
   return imtype;
 }
 
-static void rna_Image_file_format_set(PointerRNA *ptr, int value)
+static void api_image_file_format_set(PointerRNA *ptr, int value)
 {
   Image *image = (Image *)ptr->data;
   if (BKE_imtype_is_movie(value) == 0) { /* should be able to throw an error here */
