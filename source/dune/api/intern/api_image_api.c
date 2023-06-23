@@ -218,7 +218,7 @@ static int api_image_gl_load(
   return 0; /* GL_NO_ERROR */
 }
 
-static int api_Image_gl_touch(
+static int api_image_gl_touch(
     Image *image, ReportList *reports, int frame, int layer_index, int pass_index)
 {
   int error = 0; /* GL_NO_ERROR */
@@ -232,7 +232,7 @@ static int api_Image_gl_touch(
   return error;
 }
 
-static void api_Image_gl_free(Image *image)
+static void api_image_gl_free(Image *image)
 {
   dune_image_free_gputextures(image);
 
@@ -240,12 +240,12 @@ static void api_Image_gl_free(Image *image)
   image->flag &= ~IMA_NOCOLLECT;
 }
 
-static void api_Image_filepath_from_user(Image *image, ImageUser *image_user, char *filepath)
+static void api_image_filepath_from_user(Image *image, ImageUser *image_user, char *filepath)
 {
   dune_image_user_file_path(image_user, image, filepath);
 }
 
-static void api_Image_buffers_free(Image *image)
+static void api_image_buffers_free(Image *image)
 {
   dune_image_free_buffers_ex(image, true);
 }
@@ -278,12 +278,12 @@ void api_image(ApiStruct *sapi)
   api_def_fn_ui_description(fn, "Save image to its source path");
   api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_CXT | FN_USE_REPORTS);
 
-  func = RNA_def_function(srna, "pack", "rna_Image_pack");
-  RNA_def_function_ui_description(func, "Pack an image as embedded data into the .blend file");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_CONTEXT | FUNC_USE_REPORTS);
-  parm = RNA_def_property(func, "data", PROP_STRING, PROP_BYTESTRING);
-  RNA_def_property_ui_text(parm, "data", "Raw data (bytes, exact content of the embedded file)");
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "pack", "api_image_pack");
+  api_def_fn_ui_description(fn, "Pack an image as embedded data into the .blend file");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_CXT | FN_USE_REPORTS);
+  parm = api_def_prop(fn, "data", PROP_STRING, PROP_BYTESTRING);
+  api_def_prop_ui_text(parm, "data", "Raw data (bytes, exact content of the embedded file)");
+  api_def_int(fn,
               "data_len",
               0,
               0,
@@ -293,35 +293,35 @@ void api_image(ApiStruct *sapi)
               0,
               INT_MAX);
 
-  func = RNA_def_function(srna, "unpack", "rna_Image_unpack");
-  RNA_def_function_ui_description(func, "Save an image packed in the .blend file to disk");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  RNA_def_enum(
-      func, "method", rna_enum_unpack_method_items, PF_USE_LOCAL, "method", "How to unpack");
+  fn = api_def_fn(sapi, "unpack", "api_Image_unpack");
+  api_def_fn_ui_description(fn, "Save an image packed in the .dune file to disk");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
+  api_def_enum(
+      fn, "method", api_enum_unpack_method_items, PF_USE_LOCAL, "method", "How to unpack");
 
-  func = RNA_def_function(srna, "reload", "rna_Image_reload");
-  RNA_def_function_flag(func, FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Reload the image from its source path");
+  fn = api_def_fn(sapi, "reload", "api_image_reload");
+  api_def_fn_flag(fn, FN_USE_MAIN);
+  api_def_fn_ui_description(fn, "Reload the image from its source path");
 
-  func = RNA_def_function(srna, "update", "rna_Image_update");
-  RNA_def_function_ui_description(func, "Update the display image from the floating-point buffer");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "update", "api_image_update");
+  api_def_fn_ui_description(fn, "Update the display image from the floating-point buffer");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
 
-  func = RNA_def_function(srna, "scale", "rna_Image_scale");
-  RNA_def_function_ui_description(func, "Scale the image in pixels");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int(func, "width", 1, 1, INT_MAX, "", "Width", 1, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "height", 1, 1, INT_MAX, "", "Height", 1, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "scale", "api_Image_scale");
+  api_def_fn_ui_description(fn, "Scale the image in pixels");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int(fn, "width", 1, 1, INT_MAX, "", "Width", 1, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "height", 1, 1, INT_MAX, "", "Height", 1, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "gl_touch", "rna_Image_gl_touch");
-  RNA_def_function_ui_description(
+  fn = api_def_fn(sapi, "gl_touch", "api_Image_gl_touch");
+  api_def_fn_ui_description(
       func, "Delay the image from being cleaned from the cache due inactivity");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_int(
-      func, "frame", 0, 0, INT_MAX, "Frame", "Frame of image sequence or movie", 0, INT_MAX);
-  RNA_def_int(func,
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_int(
+      fn, "frame", 0, 0, INT_MAX, "Frame", "Frame of image sequence or movie", 0, INT_MAX);
+  api_def_int(fn,
               "layer_index",
               0,
               0,
@@ -330,7 +330,7 @@ void api_image(ApiStruct *sapi)
               "Index of layer that should be loaded",
               0,
               INT_MAX);
-  RNA_def_int(func,
+  api_def_int(fn,
               "pass_index",
               0,
               0,
@@ -340,9 +340,9 @@ void api_image(ApiStruct *sapi)
               0,
               INT_MAX);
   /* return value */
-  parm = RNA_def_int(
+  parm = api_def_int(
       func, "error", 0, -INT_MAX, INT_MAX, "Error", "OpenGL error value", -INT_MAX, INT_MAX);
-  RNA_def_function_return(func, parm);
+  apu_def_fn_return(fn, parm);
 
   func = RNA_def_function(srna, "gl_load", "rna_Image_gl_load");
   RNA_def_function_ui_description(
