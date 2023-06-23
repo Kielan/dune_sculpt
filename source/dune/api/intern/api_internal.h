@@ -73,31 +73,31 @@ typedef struct ApiPropDef {
   int enumbitflags;
 } PropertyDefRNA;
 
-typedef struct StructDefRNA {
-  ContainerDefRNA cont;
+typedef struct ApiStructDef {
+  ApiContainerDef cont;
 
-  struct StructRNA *srna;
+  struct ApiStruct *sapi;
   const char *filename;
 
-  const char *dnaname;
+  const char *stypename;
 
   /* for derived structs to find data in some property */
-  const char *dnafromname;
-  const char *dnafromprop;
+  const char *stypefromname;
+  const char *stypefromprop;
 
-  ListBase functions;
-} StructDefRNA;
+  List fns;
+} ApiStructDef;
 
-typedef struct AllocDefRNA {
-  struct AllocDefRNA *next, *prev;
+typedef struct ApiAllocDef {
+  struct ApiAllocDef *next, *prev;
   void *mem;
-} AllocDefRNA;
+} ApiAllocDef;
 
-typedef struct BlenderDefRNA {
-  struct SDNA *sdna;
-  ListBase structs;
-  ListBase allocs;
-  struct StructRNA *laststruct;
+typedef struct ApiDuneDef {
+  struct SType *stype;
+  List structs;
+  List allocs;
+  struct ApiStruct *laststruct;
   bool error;
   bool silent;
   bool preprocess;
@@ -107,13 +107,13 @@ typedef struct BlenderDefRNA {
   bool make_overridable;
 
   /* Keep last. */
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
   struct {
-    /** #RNA_def_property_update */
+    /** #api_def_prop_update */
     struct {
       int noteflag;
-      const char *updatefunc;
-    } property_update;
+      const char *updatefn;
+    } prop_update;
   } fallback;
 #endif
 } BlenderDefRNA;
