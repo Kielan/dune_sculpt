@@ -31,36 +31,34 @@ typedef struct ApiContainerDef {
   List props;
 } ApiContainerDef;
 
-typedef struct FunctionDefRNA {
-  ContainerDefRNA cont;
-
-  FunctionRNA *func;
-  const char *srna;
+typedef struct ApiFnDef { 
+  ApiContainerDef cont;
+  ApiFn *fn;
+  const char *sapi;
   const char *call;
   const char *gencall;
-} FunctionDefRNA;
+} ApiFnDef;
 
-typedef struct PropertyDefRNA {
-  struct PropertyDefRNA *next, *prev;
-
-  struct ContainerRNA *cont;
-  struct PropertyRNA *prop;
+typedef struct ApiPropDef {
+  struct ApiPropDef *next, *prev;
+  struct ApiContainer *cont;
+  struct ApiProp *prop;
 
   /* struct */
-  const char *dnastructname;
-  const char *dnastructfromname;
-  const char *dnastructfromprop;
+  const char *stypestructname;
+  const char *stypestructfromname;
+  const char *stypestructfromprop;
 
   /* property */
-  const char *dnaname;
-  const char *dnatype;
-  int dnaarraylength;
-  int dnapointerlevel;
+  const char *stypename;
+  const char *stype;
+  int stylearraylength;
+  int stypeptrlevel;
   /**
    * Offset in bytes within `dnastructname`.
    * -1 when unusable (follows pointer for e.g.). */
-  int dnaoffset;
-  int dnasize;
+  int stypeoffset;
+  int stypesize;
 
   /* for finding length of array collections */
   const char *dnalengthstructname;
