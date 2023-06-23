@@ -154,8 +154,7 @@ static void api_ImageUser_update(Main *main, Scene *scene, ApiPtr *ptr)
       /* Special update for nodetrees. */
       dune_ntree_update_tag_image_user_changed((NodeTree *)id, iuser);
       ed_node_tree_propagate_change(NULL, main, NULL);
-    }
-    else {
+    } else {
       /* Update material or texture for render preview. */
       graph_id_tag_update(id, 0);
       graph_id_tag_update(id, ID_RECALC_EDITORS);
@@ -163,13 +162,13 @@ static void api_ImageUser_update(Main *main, Scene *scene, ApiPtr *ptr)
   }
 }
 
-static void rna_ImageUser_relations_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ImageUser_relations_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_ImageUser_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_ImageUser_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
-static char *rna_ImageUser_path(PointerRNA *ptr)
+static char *api_ImageUser_path(ApiPtr *ptr)
 {
   if (ptr->owner_id) {
     /* ImageUser *iuser = ptr->data; */
@@ -177,30 +176,30 @@ static char *rna_ImageUser_path(PointerRNA *ptr)
     switch (GS(ptr->owner_id->name)) {
       case ID_OB:
       case ID_TE: {
-        return BLI_strdup("image_user");
+        return lib_strdup("image_user");
       }
       case ID_NT: {
-        return rna_Node_ImageUser_path(ptr);
+        return api_Node_ImageUser_path(ptr);
       }
       default:
         break;
     }
   }
 
-  return BLI_strdup("");
+  return lib_strdup("");
 }
 
-static void rna_Image_gpu_texture_update(Main *UNUSED(bmain),
+static void api_image_gpu_texture_update(Main *UNUSED(main);
                                          Scene *UNUSED(scene),
-                                         PointerRNA *ptr)
+                                         ApiPtr *ptr)
 {
   Image *ima = (Image *)ptr->owner_id;
 
   if (!G.background) {
-    BKE_image_free_gputextures(ima);
+    dune_image_free_gputextures(ima);
   }
 
-  WM_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
+  wm_main_add_notifier(NC_IMAGE | ND_DISPLAY, &ima->id);
 }
 
 static const EnumPropItem *api_image_source_itemf(Cxt *UNUSED(C),
@@ -241,83 +240,83 @@ static int api_Image_file_format_get(ApiPtr *ptr)
   return imtype;
 }
 
-static void api_image_file_format_set(PointerRNA *ptr, int value)
+static void api_image_file_format_set(ApiPtr *ptr, int value)
 {
   Image *image = (Image *)ptr->data;
-  if (BKE_imtype_is_movie(value) == 0) { /* should be able to throw an error here */
+  if (dune_imtype_is_movie(value) == 0) { /* should be able to throw an error here */
     ImbFormatOptions options;
-    int ftype = BKE_imtype_to_ftype(value, &options);
-    BKE_image_file_format_set(image, ftype, &options);
+    int ftype = dune_imtype_to_ftype(value, &options);
+    dune_image_file_format_set(image, ftype, &options);
   }
 }
 
-static void rna_UDIMTile_label_get(PointerRNA *ptr, char *value)
+static void api_UDIMTile_label_get(ApiPtr *ptr, char *value)
 {
   ImageTile *tile = (ImageTile *)ptr->data;
   Image *image = (Image *)ptr->owner_id;
 
   /* We don't know the length of the target string here, so we assume
    * that it has been allocated according to what rna_UDIMTile_label_length returned. */
-  BKE_image_get_tile_label(image, tile, value, sizeof(tile->label));
+  dune_image_get_tile_label(image, tile, value, sizeof(tile->label));
 }
 
-static int rna_UDIMTile_label_length(PointerRNA *ptr)
+static int api_UDIMTile_label_length(ApiPtr *ptr)
 {
   ImageTile *tile = (ImageTile *)ptr->data;
   Image *image = (Image *)ptr->owner_id;
 
   char label[sizeof(tile->label)];
-  BKE_image_get_tile_label(image, tile, label, sizeof(label));
+  dunr_image_get_tile_label(image, tile, label, sizeof(label));
 
   return strlen(label);
 }
 
-static void rna_UDIMTile_tile_number_set(PointerRNA *ptr, int value)
+static void api_UDIMTile_tile_number_set(ApiPtr *ptr, int value)
 {
   ImageTile *tile = (ImageTile *)ptr->data;
   Image *image = (Image *)ptr->owner_id;
 
   /* Check that no other tile already has that number. */
-  ImageTile *cur_tile = BKE_image_get_tile(image, value);
+  ImageTile *cur_tile = dune_image_get_tile(image, value);
   if (cur_tile == NULL) {
-    BKE_image_reassign_tile(image, tile, value);
+    dune_image_reassign_tile(image, tile, value);
   }
 }
 
-static int rna_Image_active_tile_index_get(PointerRNA *ptr)
+static int api_Image_active_tile_index_get(ApiPtr *ptr)
 {
   Image *image = (Image *)ptr->data;
   return image->active_tile_index;
 }
 
-static void rna_Image_active_tile_index_set(PointerRNA *ptr, int value)
+static void api_Image_active_tile_index_set(ApiPtr *ptr, int value)
 {
   Image *image = (Image *)ptr->data;
-  int num_tiles = BLI_listbase_count(&image->tiles);
+  int num_tiles = lib_list_count(&image->tiles);
 
   image->active_tile_index = min_ii(value, num_tiles - 1);
 }
 
-static void rna_Image_active_tile_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_image_active_tile_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   Image *image = (Image *)ptr->data;
-  int num_tiles = BLI_listbase_count(&image->tiles);
+  int num_tiles = lib_list_count(&image->tiles);
 
   *min = 0;
   *max = max_ii(0, num_tiles - 1);
 }
 
-static PointerRNA rna_Image_active_tile_get(PointerRNA *ptr)
+static ApiPtr api_image_active_tile_get(ApiPtr *ptr)
 {
   Image *image = (Image *)ptr->data;
-  ImageTile *tile = BLI_findlink(&image->tiles, image->active_tile_index);
+  ImageTile *tile = lib_findlink(&image->tiles, image->active_tile_index);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_UDIMTile, tile);
+  return api_ptr_inherit_refine(ptr, &ApiUDIMTile, tile);
 }
 
-static void rna_Image_active_tile_set(PointerRNA *ptr,
-                                      PointerRNA value,
+static void api_image_active_tile_set(ApiPtr *ptr,
+                                      ApiPtr value,
                                       struct ReportList *UNUSED(reports))
 {
   Image *image = (Image *)ptr->data;
