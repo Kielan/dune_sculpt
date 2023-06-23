@@ -71,7 +71,7 @@ typedef struct ApiPropDef {
   /* not to be confused with PROP_ENUM_FLAG
    * this only allows one of the flags to be set at a time, clearing all others */
   int enumbitflags;
-} PropertyDefRNA;
+} ApiPropDef;
 
 typedef struct ApiStructDef {
   ApiContainerDef cont;
@@ -93,7 +93,7 @@ typedef struct ApiAllocDef {
   void *mem;
 } ApiAllocDef;
 
-typedef struct ApiDuneDef {
+typedef struct DuneApiDef {
   struct SType *stype;
   List structs;
   List allocs;
@@ -116,76 +116,76 @@ typedef struct ApiDuneDef {
     } prop_update;
   } fallback;
 #endif
-} BlenderDefRNA;
+} DuneApiDef;
 
-extern BlenderDefRNA DefRNA;
+extern DuneApiDef ApiDef;
 
 /* Define functions for all types */
 #ifndef __RNA_ACCESS_H__
-extern BlenderRNA BLENDER_RNA;
+extern DuneApi DUNE_API;
 #endif
 
-void RNA_def_ID(struct BlenderRNA *brna);
-void RNA_def_action(struct BlenderRNA *brna);
-void RNA_def_animation(struct BlenderRNA *brna);
-void RNA_def_animviz(struct BlenderRNA *brna);
-void RNA_def_armature(struct BlenderRNA *brna);
-void RNA_def_attribute(struct BlenderRNA *brna);
-void RNA_def_asset(struct BlenderRNA *brna);
-void RNA_def_boid(struct BlenderRNA *brna);
-void RNA_def_brush(struct BlenderRNA *brna);
-void RNA_def_cachefile(struct BlenderRNA *brna);
-void RNA_def_camera(struct BlenderRNA *brna);
-void RNA_def_cloth(struct BlenderRNA *brna);
-void RNA_def_collections(struct BlenderRNA *brna);
-void RNA_def_color(struct BlenderRNA *brna);
-void RNA_def_constraint(struct BlenderRNA *brna);
-void RNA_def_context(struct BlenderRNA *brna);
-void RNA_def_curve(struct BlenderRNA *brna);
-void RNA_def_depsgraph(struct BlenderRNA *brna);
-void RNA_def_dynamic_paint(struct BlenderRNA *brna);
-void RNA_def_fcurve(struct BlenderRNA *brna);
-void RNA_def_gpencil(struct BlenderRNA *brna);
-void RNA_def_greasepencil_modifier(struct BlenderRNA *brna);
-void RNA_def_shader_fx(struct BlenderRNA *brna);
-void RNA_def_curves(struct BlenderRNA *brna);
-void RNA_def_image(struct BlenderRNA *brna);
-void RNA_def_key(struct BlenderRNA *brna);
-void RNA_def_light(struct BlenderRNA *brna);
-void RNA_def_lattice(struct BlenderRNA *brna);
-void RNA_def_linestyle(struct BlenderRNA *brna);
-void RNA_def_main(struct BlenderRNA *brna);
-void RNA_def_material(struct BlenderRNA *brna);
-void RNA_def_mesh(struct BlenderRNA *brna);
-void RNA_def_meta(struct BlenderRNA *brna);
-void RNA_def_modifier(struct BlenderRNA *brna);
-void RNA_def_nla(struct BlenderRNA *brna);
-void RNA_def_nodetree(struct BlenderRNA *brna);
-void RNA_def_object(struct BlenderRNA *brna);
-void RNA_def_object_force(struct BlenderRNA *brna);
-void RNA_def_packedfile(struct BlenderRNA *brna);
-void RNA_def_palette(struct BlenderRNA *brna);
-void RNA_def_particle(struct BlenderRNA *brna);
-void RNA_def_pointcloud(struct BlenderRNA *brna);
-void RNA_def_pose(struct BlenderRNA *brna);
-void RNA_def_profile(struct BlenderRNA *brna);
-void RNA_def_lightprobe(struct BlenderRNA *brna);
-void RNA_def_render(struct BlenderRNA *brna);
-void RNA_def_rigidbody(struct BlenderRNA *brna);
-void RNA_def_rna(struct BlenderRNA *brna);
-void RNA_def_scene(struct BlenderRNA *brna);
-void RNA_def_simulation(struct BlenderRNA *brna);
-void RNA_def_view_layer(struct BlenderRNA *brna);
-void RNA_def_screen(struct BlenderRNA *brna);
-void RNA_def_sculpt_paint(struct BlenderRNA *brna);
-void RNA_def_sequencer(struct BlenderRNA *brna);
-void RNA_def_fluid(struct BlenderRNA *brna);
-void RNA_def_space(struct BlenderRNA *brna);
-void RNA_def_speaker(struct BlenderRNA *brna);
-void RNA_def_test(struct BlenderRNA *brna);
-void RNA_def_text(struct BlenderRNA *brna);
-void RNA_def_texture(struct BlenderRNA *brna);
-void RNA_def_timeline_marker(struct BlenderRNA *brna);
+void api_def_id(struct DuneApiDef *dapi);
+void api_def_action(struct DuneApi *dapi);
+void api_def_anim(struct DuneApi *dapi);
+void api_def_animviz(struct DuneApi *dapi);
+void api_def_armature(struct DuneApi *dapi);
+void api_def_attribute(struct DuneApi *dapi);
+void api_def_asset(struct DuneApi *dapi);
+void api_def_boid(struct DuneApi *dapi);
+void api_def_brush(struct DuneApi *dapi);
+void api_def_cachefile(struct DuneApi *dapi);
+void api_def_camera(struct DuneApi *dapi);
+void api_def_cloth(struct DuneApi *dapi);
+void api_def_collections(struct DuneApi *dapi);
+void api_def_color(struct DuneApi *dapi);
+void api_def_constraint(struct DuneApi *dapi);
+void api_def_cxt(struct DuneApi *dapi);
+void api_def_curve(struct DuneApi *dapi);
+void RNA_def_depsgraph(struct DuneApi *dapi);
+void RNA_def_dynamic_paint(struct DuneApi *dapi);
+void RNA_def_fcurve(struct DuneApi *dapi);
+void RNA_def_gpencil(struct DuneApi *dapi);
+void RNA_def_greasepencil_modifier(struct DuneApi *dapi);
+void RNA_def_shader_fx(struct DuneApi *dapi);
+void RNA_def_curves(struct DuneApi *dapi);
+void RNA_def_image(struct DuneApi *dapi);
+void RNA_def_key(struct DuneApi *dapi);
+void RNA_def_light(struct DuneApi *dapi);
+void RNA_def_lattice(struct DuneApi *dapi);
+void RNA_def_linestyle(struct DuneApi *dapi);
+void RNA_def_main(struct DuneApi *dapi);
+void RNA_def_material(struct DuneApi *dapi);
+void RNA_def_mesh(struct DuneApi *dapi);
+void RNA_def_meta(struct DuneApi *dapi);
+void RNA_def_modifier(struct DuneApi *dapi);
+void RNA_def_nla(struct DuneApi *dapi);
+void RNA_def_nodetree(struct DuneApi *dapi);
+void RNA_def_object(struct DuneApi *dapi);
+void RNA_def_object_force(struct DuneApi *dapi);
+void RNA_def_packedfile(struct DuneApi *dapi);
+void RNA_def_palette(struct DuneApi *dapi);
+void RNA_def_particle(struct DuneApi *dapi);
+void RNA_def_pointcloud(struct DuneApi *dapi);
+void RNA_def_pose(struct DuneApi *dapi);
+void RNA_def_profile(struct DuneApi *dapi);
+void RNA_def_lightprobe(struct DuneApi *dapi);
+void RNA_def_render(struct DuneApi *dapi);
+void RNA_def_rigidbody(struct DuneApi *dapi);
+void RNA_def_rna(struct DuneApi *dapi);
+void RNA_def_scene(struct DuneApi *dapi);
+void RNA_def_simulation(struct DuneApi *dapi);
+void RNA_def_view_layer(struct DuneApi *dapi);
+void RNA_def_screen(struct DuneApi *dapi);
+void RNA_def_sculpt_paint(struct DuneApi *dapi);
+void RNA_def_sequencer(struct DuneApi *dapi);
+void RNA_def_fluid(struct DuneApi *dapi);
+void RNA_def_space(struct DuneApi *dapi);
+void RNA_def_speaker(struct DuneApi *dapi);
+void RNA_def_test(struct DuneApi *dapi);
+void RNA_def_text(struct DuneApi *dapi);
+void RNA_def_texture(struct DuneApi *dapi);
+void RNA_def_timeline_marker(struct DuneApi *dapi);
 void RNA_def_sound(struct BlenderRNA *brna);
 void RNA_def_ui(struct BlenderRNA *brna);
 void RNA_def_userdef(struct BlenderRNA *brna);
