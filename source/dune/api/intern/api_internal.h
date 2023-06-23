@@ -1,35 +1,35 @@
 #pragma once
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BLI_compiler_attrs.h"
+#include "lib_compiler_attrs.h"
 
-#include "rna_internal_types.h"
+#include "api_internal_types.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#define RNA_MAGIC ((int)~0)
+#define API_MAGIC ((int)~0)
 
-struct AssetLibraryReference;
+struct AssetLibRef;
 struct FreestyleSettings;
-struct ID;
-struct IDOverrideLibrary;
-struct IDOverrideLibraryPropertyOperation;
-struct IDProperty;
+struct Id;
+struct IdOverrideLib;
+struct IdOverrideLibPropOp;
+struct IdProp;
 struct Main;
 struct Object;
 struct ReportList;
-struct SDNA;
+struct SType;
 struct ViewLayer;
 
 /* Data structures used during define */
 
-typedef struct ContainerDefRNA {
+typedef struct ApiContainerDef {
   void *next, *prev;
 
-  ContainerRNA *cont;
-  ListBase properties;
-} ContainerDefRNA;
+  ApiContainer *cont;
+  List props;
+} ApiContainerDef;
 
 typedef struct FunctionDefRNA {
   ContainerDefRNA cont;
