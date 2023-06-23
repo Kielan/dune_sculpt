@@ -342,18 +342,18 @@ void api_image(ApiStruct *sapi)
   /* return value */
   parm = api_def_int(
       func, "error", 0, -INT_MAX, INT_MAX, "Error", "OpenGL error value", -INT_MAX, INT_MAX);
-  apu_def_fn_return(fn, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "gl_load", "rna_Image_gl_load");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "gl_load", "rna_Image_gl_load");
+  api_def_fn_ui_description(
+      fn,
       "Load the image into an OpenGL texture. On success, image.bindcode will contain the "
       "OpenGL texture bindcode. Colors read from the texture will be in scene linear color space "
       "and have premultiplied or straight alpha matching the image alpha mode");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_int(
-      func, "frame", 0, 0, INT_MAX, "Frame", "Frame of image sequence or movie", 0, INT_MAX);
-  RNA_def_int(func,
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_int(
+      fn, "frame", 0, 0, INT_MAX, "Frame", "Frame of image sequence or movie", 0, INT_MAX);
+  api_def_int(fn,
               "layer_index",
               0,
               0,
@@ -362,7 +362,7 @@ void api_image(ApiStruct *sapi)
               "Index of layer that should be loaded",
               0,
               INT_MAX);
-  RNA_def_int(func,
+  api_def_int(fn,
               "pass_index",
               0,
               0,
@@ -372,31 +372,31 @@ void api_image(ApiStruct *sapi)
               0,
               INT_MAX);
   /* return value */
-  parm = RNA_def_int(
+  parm = api_def_int(
       func, "error", 0, -INT_MAX, INT_MAX, "Error", "OpenGL error value", -INT_MAX, INT_MAX);
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "gl_free", "rna_Image_gl_free");
-  RNA_def_function_ui_description(func, "Free the image from OpenGL graphics memory");
+  fn = api_def_fn(sapi, "gl_free", "api_Image_gl_free");
+  api_def_fn_ui_description(fn, "Free the image from OpenGL graphics memory");
 
   /* path to an frame specified by image user */
-  func = RNA_def_function(srna, "filepath_from_user", "rna_Image_filepath_from_user");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "filepath_from_user", "api_image_filepath_from_user");
+  api_def_fn_ui_description(
+      fn,
       "Return the absolute path to the filepath of an image frame specified by the image user");
-  RNA_def_pointer(
-      func, "image_user", "ImageUser", "", "Image user of the image to get filepath for");
-  parm = RNA_def_string_file_path(func,
+  api_def_ptr(
+      fn, "image_user", "ImageUser", "", "Image user of the image to get filepath for");
+  parm = api_def_string_file_path(fn,
                                   "filepath",
                                   NULL,
                                   FILE_MAX,
                                   "File Path",
                                   "The resulting filepath from the image and its user");
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
+  api_def_fn_output(fn, parm);
 
-  func = RNA_def_function(srna, "buffers_free", "rna_Image_buffers_free");
-  RNA_def_function_ui_description(func, "Free the image buffers from memory");
+  fn = api_def_fn(sapi, "buffers_free", "api_image_buffers_free");
+  api_def_fn_ui_description(fn, "Free the image buffers from memory");
 
   /* TODO: pack/unpack, maybe should be generic functions? */
 }
