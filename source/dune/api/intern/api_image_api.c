@@ -3,50 +3,50 @@
 #include <string.h>
 #include <time.h>
 
-#include "DNA_packedFile_types.h"
+#include "types_packedFile.h"
 
-#include "BLI_path_util.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "BKE_packedFile.h"
+#include "dune_packedFile.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_image.h"
-#  include "BKE_image_format.h"
-#  include "BKE_main.h"
-#  include "BKE_scene.h"
+#  include "dune_image.h"
+#  include "dune_image_format.h"
+#  include "dune_main.h"
+#  include "dune_scene.h"
 #  include <errno.h>
 
-#  include "IMB_colormanagement.h"
-#  include "IMB_imbuf.h"
+#  include "imbuf_colormanagement.h"
+#  include "imbuf.h"
 
-#  include "DNA_image_types.h"
-#  include "DNA_scene_types.h"
+#  include "types_image.h"
+#  include "types_scene.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-static void rna_ImagePackedFile_save(ImagePackedFile *imapf, Main *bmain, ReportList *reports)
+static void api_ImagePackedFile_save(ImagePackedFile *imapf, Main *main, ReportList *reports)
 {
-  if (BKE_packedfile_write_to_file(
-          reports, BKE_main_blendfile_path(bmain), imapf->filepath, imapf->packedfile, 0) !=
+  if (dune_packedfile_write_to_file(
+          reports, dune_main_dunefile_path(main), imapf->filepath, imapf->packedfile, 0) !=
       RET_OK) {
-    BKE_reportf(reports, RPT_ERROR, "Could not save packed file to disk as '%s'", imapf->filepath);
+    dune_reportf(reports, RPT_ERROR, "Could not save packed file to disk as '%s'", imapf->filepath);
   }
 }
 
-static void rna_Image_save_render(
-    Image *image, bContext *C, ReportList *reports, const char *path, Scene *scene)
+static void api_image_save_render(
+    Image *image, Cxt *C, ReportList *reports, const char *path, Scene *scene)
 {
   ImBuf *ibuf;
 
   if (scene == NULL) {
-    scene = CTX_data_scene(C);
+    scene = cxt_data_scene(C);
   }
 
   if (scene) {
@@ -55,66 +55,65 @@ static void rna_Image_save_render(
 
     iuser.scene = scene;
 
-    ibuf = BKE_image_acquire_ibuf(image, &iuser, &lock);
+    ibuf = dune_image_acquire_ibuf(image, &iuser, &lock);
 
     if (ibuf == NULL) {
-      BKE_report(reports, RPT_ERROR, "Could not acquire buffer from image");
+      dune_report(reports, RPT_ERROR, "Could not acquire buffer from image");
     }
     else {
       ImBuf *write_ibuf;
 
       ImageFormatData image_format;
-      BKE_image_format_init_for_write(&image_format, scene, NULL);
+      dune_image_format_init_for_write(&image_format, scene, NULL);
 
-      write_ibuf = IMB_colormanagement_imbuf_for_write(ibuf, true, true, &image_format);
+      write_ibuf = imbuf_colormanagement_imbuf_for_write(ibuf, true, true, &image_format);
 
       write_ibuf->planes = image_format.planes;
       write_ibuf->dither = scene->r.dither_intensity;
 
-      if (!BKE_imbuf_write(write_ibuf, path, &image_format)) {
-        BKE_reportf(reports, RPT_ERROR, "Could not write image: %s, '%s'", strerror(errno), path);
+      if (!dune_imbuf_write(write_ibuf, path, &image_format)) {
+        dune_reportf(reports, RPT_ERROR, "Could not write image: %s, '%s'", strerror(errno), path);
       }
 
       if (write_ibuf != ibuf) {
-        IMB_freeImBuf(write_ibuf);
+        imbuf_freeImBuf(write_ibuf);
       }
 
-      BKE_image_format_free(&image_format);
+      dune_image_format_free(&image_format);
     }
 
-    BKE_image_release_ibuf(image, ibuf, lock);
+    dune_image_release_ibuf(image, ibuf, lock);
   }
   else {
-    BKE_report(reports, RPT_ERROR, "Scene not in context, could not get save parameters");
+    dune_report(reports, RPT_ERROR, "Scene not in context, could not get save parameters");
   }
 }
 
-static void rna_Image_save(Image *image, Main *bmain, bContext *C, ReportList *reports)
+static void api_Image_save(Image *image, Main *main, Cxt *C, ReportList *reports)
 {
   void *lock;
 
-  ImBuf *ibuf = BKE_image_acquire_ibuf(image, NULL, &lock);
+  ImBuf *ibuf = dune_image_acquire_ibuf(image, NULL, &lock);
   if (ibuf) {
     char filename[FILE_MAX];
-    BLI_strncpy(filename, image->filepath, sizeof(filename));
-    BLI_path_abs(filename, ID_BLEND_PATH(bmain, &image->id));
+    lib_strncpy(filename, image->filepath, sizeof(filename));
+    lib_path_abs(filename, ID_DUNE_PATH(main, &image->id));
 
     /* NOTE: we purposefully ignore packed files here,
      * developers need to explicitly write them via 'packed_files' */
-
-    if (IMB_saveiff(ibuf, filename, ibuf->flags)) {
+    if (imbuf_saveiff(ibuf, filename, ibuf->flags)) {
       image->type = IMA_TYPE_IMAGE;
 
       if (image->source == IMA_SRC_GENERATED) {
         image->source = IMA_SRC_FILE;
       }
 
-      IMB_colormanagement_colorspace_from_ibuf_ftype(&image->colorspace_settings, ibuf);
+      imbuf_colormanagement_colorspace_from_ibuf_ftype(&image->colorspace_settings, ibuf);
 
       ibuf->userflags &= ~IB_BITMAPDIRTY;
     }
     else {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Image '%s' could not be saved to '%s'",
                   image->id.name + 2,
@@ -122,162 +121,162 @@ static void rna_Image_save(Image *image, Main *bmain, bContext *C, ReportList *r
     }
   }
   else {
-    BKE_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
   }
 
-  BKE_image_release_ibuf(image, ibuf, lock);
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, image);
+  dune_image_release_ibuf(image, ibuf, lock);
+  wm_event_add_notifier(C, NC_IMAGE | NA_EDITED, image);
 }
 
-static void rna_Image_pack(
-    Image *image, Main *bmain, bContext *C, ReportList *reports, const char *data, int data_len)
+static void api_image_pack(
+    Image *image, Main *main, Cxt *C, ReportList *reports, const char *data, int data_len)
 {
-  BKE_image_free_packedfiles(image);
+  dune_image_free_packedfiles(image);
 
   if (data) {
-    char *data_dup = MEM_mallocN(sizeof(*data_dup) * (size_t)data_len, __func__);
+    char *data_dup = mem_mallocn(sizeof(*data_dup) * (size_t)data_len, __func__);
     memcpy(data_dup, data, (size_t)data_len);
-    BKE_image_packfiles_from_mem(reports, image, data_dup, (size_t)data_len);
+    dune_image_packfiles_from_mem(reports, image, data_dup, (size_t)data_len);
   }
-  else if (BKE_image_is_dirty(image)) {
-    BKE_image_memorypack(image);
+  else if (dune_image_is_dirty(image)) {
+    dune_image_memorypack(image);
   }
   else {
-    BKE_image_packfiles(reports, image, ID_BLEND_PATH(bmain, &image->id));
+    dune_image_packfiles(reports, image, ID_DUNE_PATH(main, &image->id));
   }
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, image);
+  wm_event_add_notifier(C, NC_IMAGE | NA_EDITED, image);
 }
 
-static void rna_Image_unpack(Image *image, Main *bmain, ReportList *reports, int method)
+static void api_image_unpack(Image *image, Main *bmain, ReportList *reports, int method)
 {
-  if (!BKE_image_has_packedfile(image)) {
-    BKE_report(reports, RPT_ERROR, "Image not packed");
+  if (!dune_image_has_packedfile(image)) {
+    dune_report(reports, RPT_ERROR, "Image not packed");
   }
-  else if (BKE_image_has_multiple_ibufs(image)) {
-    BKE_report(
+  else if (dune_image_has_multiple_ibufs(image)) {
+    dune_report(
         reports, RPT_ERROR, "Unpacking movies, image sequences or tiled images not supported");
     return;
   }
   else {
     /* reports its own error on failure */
-    BKE_packedfile_unpack_image(bmain, reports, image, method);
+    dune_packedfile_unpack_image(main, reports, image, method);
   }
 }
 
-static void rna_Image_reload(Image *image, Main *bmain)
+static void api_image_reload(Image *image, Main *main)
 {
-  BKE_image_signal(bmain, image, NULL, IMA_SIGNAL_RELOAD);
-  WM_main_add_notifier(NC_IMAGE | NA_EDITED, image);
+  dune_image_signal(main, image, NULL, IMA_SIGNAL_RELOAD);
+  wm_main_add_notifier(NC_IMAGE | NA_EDITED, image);
 }
 
-static void rna_Image_update(Image *image, ReportList *reports)
+static void api_image_update(Image *image, ReportList *reports)
 {
-  ImBuf *ibuf = BKE_image_acquire_ibuf(image, NULL, NULL);
+  ImBuf *ibuf = dune_image_acquire_ibuf(image, NULL, NULL);
 
   if (ibuf == NULL) {
-    BKE_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
     return;
   }
 
   if (ibuf->rect) {
-    IMB_rect_from_float(ibuf);
+    imbuf_rect_from_float(ibuf);
   }
 
   ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
 
-  BKE_image_release_ibuf(image, ibuf, NULL);
+  dune_image_release_ibuf(image, ibuf, NULL);
 }
 
-static void rna_Image_scale(Image *image, ReportList *reports, int width, int height)
+static void api_image_scale(Image *image, ReportList *reports, int width, int height)
 {
-  if (!BKE_image_scale(image, width, height)) {
-    BKE_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
+  if (!dune_image_scale(image, width, height)) {
+    dune_reportf(reports, RPT_ERROR, "Image '%s' does not have any image data", image->id.name + 2);
   }
 }
 
-static int rna_Image_gl_load(
+static int api_image_gl_load(
     Image *image, ReportList *reports, int frame, int layer_index, int pass_index)
 {
   ImageUser iuser;
-  BKE_imageuser_default(&iuser);
+  dune_imageuser_default(&iuser);
   iuser.framenr = frame;
   iuser.layer = layer_index;
   iuser.pass = pass_index;
   if (image->rr != NULL) {
-    BKE_image_multilayer_index(image->rr, &iuser);
+    dune_image_multilayer_index(image->rr, &iuser);
   }
 
-  GPUTexture *tex = BKE_image_get_gpu_texture(image, &iuser, NULL);
+  GPUTexture *tex = dune_image_get_gpu_texture(image, &iuser, NULL);
 
   if (tex == NULL) {
-    BKE_reportf(reports, RPT_ERROR, "Failed to load image texture '%s'", image->id.name + 2);
-    /* TODO(fclem): this error code makes no sense for vulkan. */
+    dune_reportf(reports, RPT_ERROR, "Failed to load image texture '%s'", image->id.name + 2);
+    /* TODO: this error code makes no sense for vulkan. */
     return 0x0502; /* GL_INVALID_OPERATION */
   }
 
   return 0; /* GL_NO_ERROR */
 }
 
-static int rna_Image_gl_touch(
+static int api_Image_gl_touch(
     Image *image, ReportList *reports, int frame, int layer_index, int pass_index)
 {
   int error = 0; /* GL_NO_ERROR */
 
-  BKE_image_tag_time(image);
+  dune_image_tag_time(image);
 
   if (image->gputexture[TEXTARGET_2D][0][IMA_TEXTURE_RESOLUTION_FULL] == NULL) {
-    error = rna_Image_gl_load(image, reports, frame, layer_index, pass_index);
+    error = api_image_gl_load(image, reports, frame, layer_index, pass_index);
   }
 
   return error;
 }
 
-static void rna_Image_gl_free(Image *image)
+static void api_Image_gl_free(Image *image)
 {
-  BKE_image_free_gputextures(image);
+  dune_image_free_gputextures(image);
 
   /* remove the nocollect flag, image is available for garbage collection again */
   image->flag &= ~IMA_NOCOLLECT;
 }
 
-static void rna_Image_filepath_from_user(Image *image, ImageUser *image_user, char *filepath)
+static void api_Image_filepath_from_user(Image *image, ImageUser *image_user, char *filepath)
 {
-  BKE_image_user_file_path(image_user, image, filepath);
+  dune_image_user_file_path(image_user, image, filepath);
 }
 
-static void rna_Image_buffers_free(Image *image)
+static void api_Image_buffers_free(Image *image)
 {
-  BKE_image_free_buffers_ex(image, true);
+  dune_image_free_buffers_ex(image, true);
 }
 
 #else
 
-void RNA_api_image_packed_file(StructRNA *srna)
+void api_image_packed_file(ApiStruct *sapi)
 {
-  FunctionRNA *func;
+  ApiFn *fn;
 
-  func = RNA_def_function(srna, "save", "rna_ImagePackedFile_save");
-  RNA_def_function_ui_description(func, "Save the packed file to its filepath");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "save", "api_ImagePackedFile_save");
+  api_def_fn_ui_description(fn, "Save the packed file to its filepath");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
 }
 
-void RNA_api_image(StructRNA *srna)
+void api_image(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "save_render", "rna_Image_save_render");
-  RNA_def_function_ui_description(func,
-                                  "Save image to a specific path using a scenes render settings");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT | FUNC_USE_REPORTS);
-  parm = RNA_def_string_file_path(func, "filepath", NULL, 0, "", "Save path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_pointer(func, "scene", "Scene", "", "Scene to take image parameters from");
+  fn = api_def_function(srna, "save_render", "api_image_save_render");
+  api_def_fn_ui_description(fn,
+                            "Save image to a specific path using a scenes render settings");
+  api_def_fn_flag(fn, FN_USE_CXT | FN_USE_REPORTS);
+  parm = api_def_string_file_path(fn, "filepath", NULL, 0, "", "Save path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_ptr(fn, "scene", "Scene", "", "Scene to take image parameters from");
 
-  func = RNA_def_function(srna, "save", "rna_Image_save");
-  RNA_def_function_ui_description(func, "Save image to its source path");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_CONTEXT | FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "save", "api_image_save");
+  api_def_fn_ui_description(fn, "Save image to its source path");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_CXT | FN_USE_REPORTS);
 
   func = RNA_def_function(srna, "pack", "rna_Image_pack");
   RNA_def_function_ui_description(func, "Pack an image as embedded data into the .blend file");
