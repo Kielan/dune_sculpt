@@ -461,9 +461,9 @@ void api_def_main_paintcurves(BlenderRNA *brna, PropertyRNA *cprop);
 void api_def_main_workspaces(BlenderRNA *brna, PropertyRNA *cprop);
 void api_def_main_lightprobes(BlenderRNA *brna, PropertyRNA *cprop);
 #ifdef WITH_NEW_CURVES_TYPE
-void RNA_def_main_hair_curves(BlenderRNA *brna, PropertyRNA *cprop);
+void api_def_main_hair_curves(DuneApi *dapi, PropertyRNA *cprop);
 #endif
-void RNA_def_main_pointclouds(BlenderRNA *brna, PropertyRNA *cprop);
+void api_def_main_pointclouds(DuneA *dapi, PropertyRNA *cprop);
 void RNA_def_main_volumes(BlenderRNA *brna, PropertyRNA *cprop);
 #ifdef WITH_SIMULATION_DATABLOCK
 void RNA_def_main_simulations(BlenderRNA *brna, PropertyRNA *cprop);
