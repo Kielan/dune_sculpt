@@ -350,20 +350,20 @@ size_t rna_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
                                      const size_t rna_path_buffer_size);
 
 /* named internal so as not to conflict with obj.update() rna func */
-void rna_Object_internal_update_data(struct Main *bmain,
+void api_Object_internal_update_data(struct Main *main,
                                      struct Scene *scene,
-                                     struct PointerRNA *ptr);
-void rna_Mesh_update_draw(struct Main *main, struct Scene *scene, struct PointerRNA *ptr);
-void rna_TextureSlot_update(struct Cxt *C, struct ApiPtr *ptr);
+                                     struct ApiPtr *ptr);
+void api_Mesh_update_draw(struct Main *main, struct Scene *scene, struct ApiPtr *ptr);
+void api_TextureSlot_update(struct Cxt *C, struct ApiPtr *ptr);
 
 /* basic poll functions for object types */
-bool api_Armature_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
-bool api_Camera_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
-bool api_Curve_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
-bool api_Pen_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
-bool api_Light_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool api_Lattice_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool api_Mesh_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Armature_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Camera_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Curve_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Pen_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Light_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
+bool api_Lattice_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
+bool api_Mesh_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
 
 /* basic poll functions for actions (to prevent actions getting set in wrong places) */
 bool api_Action_id_poll(struct PointerRNA *ptr, struct PointerRNA value);
