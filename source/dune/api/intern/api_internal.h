@@ -363,7 +363,7 @@ bool api_Mesh_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
 bool api_Action_id_poll(struct ApiPtr *ptr, struct ApiPtr value);
 bool api_Action_actedit_assign_poll(struct ApiPtr *ptr, struct ApiPtr value);
 
-/* Grease Pencil datablock polling functions - for filtering GP Object vs Annotation datablocks */
+/* Pen datablock polling functions - for filtering GP Object vs Annotation datablocks */
 bool api_Pen_datablocks_annotations_poll(struct ApiPtr *ptr,
                                          const struct ApiPtr value);
 bool api_Pen_datablocks_obdata_poll(struct ApiPtr *ptr, const struct ApiPtr value);
@@ -426,14 +426,14 @@ void api_api_workspace(struct StructRNA *srna);
 void api_api_workspace_tool(struct StructRNA *srna);
 
 /* main collection functions */
-void apk_def_main_cameras(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_scenes(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_objects(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_materials(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_lights(BlenderRNA *brna, PropertyRNA *cprop);
-void api_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop);
+void apk_def_main_cameras(DuneApi *dapi, ApiProp *cprop);
+void api_def_main_scenes(DuneApi *dapi, ApiProp *cprop);
+void api_def_main_objects(DuneApi *dapi, ApiProp *cprop);
+void api_def_main_materials(DuneApi *dapi, ApiProp *cprop);
+void api_def_main_node_groups(DuneApi *api, ApiProp *cprop);
+void api_def_main_meshes(BlenderRNA *dapi, Prop *cprop);
+void api_def_main_lights(BlenderRNA *dapi, PropertyRNA *cprop);
+void api_def_main_libs(BlenderRNA *brna, PropertyRNA *cprop);
 void api_def_main_screens(BlenderRNA *brna, PropertyRNA *cprop);
 void api_def_main_window_managers(BlenderRNA *brna, PropertyRNA *cprop);
 void api_def_main_images(BlenderRNA *brna, PropertyRNA *cprop);
