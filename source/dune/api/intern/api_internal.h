@@ -463,10 +463,10 @@ void api_def_main_lightprobes(BlenderRNA *brna, PropertyRNA *cprop);
 #ifdef WITH_NEW_CURVES_TYPE
 void api_def_main_hair_curves(DuneApi *dapi, PropertyRNA *cprop);
 #endif
-void api_def_main_pointclouds(DuneA *dapi, PropertyRNA *cprop);
-void RNA_def_main_volumes(BlenderRNA *brna, PropertyRNA *cprop);
+void api_def_main_pointclouds(DuneApi *dapi, ApiProp *cprop);
+void api_def_main_volumes(BlenderRNA *dapi, ApiProp *cprop);
 #ifdef WITH_SIMULATION_DATABLOCK
-void RNA_def_main_simulations(BlenderRNA *brna, PropertyRNA *cprop);
+void api_def_main_simulations(DuneApi *dapi, PropertyRNA *cprop);
 #endif
 
 /* ID Properties */
