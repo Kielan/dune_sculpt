@@ -256,15 +256,15 @@ const EnumPropItem *api_asset_lib_ref_itemf(struct Cxt *C,
                                             bool *r_free);
 
 /** Common properties for Action/Bone Groups - related to color. */
-void api_def_actionbone_group_common(struct StructRNA *srna,
+void api_def_actionbone_group_common(struct ApiStruct *sapi,
                                      int update_flag,
                                      const char *update_cb);
-void api_ActionGroup_colorset_set(struct PointerRNA *ptr, int value);
-bool api_ActionGroup_is_custom_colorset_get(struct PointerRNA *ptr);
+void api_ActionGroup_colorset_set(struct ApiPtr *ptr, int value);
+bool api_ActionGroup_is_custom_colorset_get(struct ApiPtr *ptr);
 
-void api_id_name_get(struct PointerRNA *ptr, char *value);
-int api_id_name_length(struct PointerRNA *ptr);
-void api_id_name_set(struct PointerRNA *ptr, const char *value);
+void api_id_name_get(struct ApiPtr *ptr, char *value);
+int api_id_name_length(struct ApiPtr *ptr);
+void api_id_name_set(struct ApiPtr *ptr, const char *value);
 struct ApiStruct *api_id_refine(struct ApiPtr *ptr);
 struct IdProp **api_id_idprops(struct ApiPtr *ptr);
 void api_id_fake_user_set(struct ApiPtr *ptr, bool value);
