@@ -353,20 +353,20 @@ size_t rna_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
 void rna_Object_internal_update_data(struct Main *bmain,
                                      struct Scene *scene,
                                      struct PointerRNA *ptr);
-void rna_Mesh_update_draw(struct Main *bmain, struct Scene *scene, struct PointerRNA *ptr);
-void rna_TextureSlot_update(struct bContext *C, struct PointerRNA *ptr);
+void rna_Mesh_update_draw(struct Main *main, struct Scene *scene, struct PointerRNA *ptr);
+void rna_TextureSlot_update(struct Cxt *C, struct ApiPtr *ptr);
 
 /* basic poll functions for object types */
-bool rna_Armature_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Camera_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Curve_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_GPencil_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Light_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Lattice_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Mesh_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Armature_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
+bool api_Camera_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
+bool api_Curve_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
+bool api_Pen_object_poll(struct ApiPtr *ptr, struct PointerRNA value);
+bool api_Light_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Lattice_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Mesh_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
 
 /* basic poll functions for actions (to prevent actions getting set in wrong places) */
-bool rna_Action_id_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Action_id_poll(struct PointerRNA *ptr, struct PointerRNA value);
 bool rna_Action_actedit_assign_poll(struct PointerRNA *ptr, struct PointerRNA value);
 
 /* Grease Pencil datablock polling functions - for filtering GP Object vs Annotation datablocks */
