@@ -265,9 +265,9 @@ struct ApiStruct *api_id_refine(struct ApiPtr *ptr);
 struct IdProp **api_id_idprops(struct ApiPtr *ptr);
 void api_id_fake_user_set(struct ApiPtr *ptr, bool value);
 void **api_id_instance(ApiPtr *ptr);
-struct IDProperty **rna_PropGroup_idprops(struct ApiPtr *ptr);
+struct IdProp **api_PropGroup_idprops(struct ApiPtr *ptr);
 void api_PropGroup_unregister(struct Main *main, struct ApiStruct *type);
-struct StructRNA *api_PropGroup_register(struct Main *main,
+struct ApiStruct *api_PropGroup_register(struct Main *main,
                                          struct ReportList *reports,
                                          void *data,
                                          const char *id,
@@ -469,18 +469,15 @@ void api_def_main_volumes(BlenderRNA *dapi, ApiProp *cprop);
 void api_def_main_simulations(DuneApi *dapi, PropertyRNA *cprop);
 #endif
 
-/* ID Properties */
-
-#ifndef __RNA_ACCESS_H__
-extern StructRNA RNA_PropertyGroupItem;
-extern StructRNA RNA_PropertyGroup;
+/* Id Properties */
+#ifndef __API_ACCESS_H__
+extern ApiStruct AppPropGroupItem;
+extern ApiStruct ApiPropGroup;
 #endif
 
-/**
- * This function only returns an #IDProperty,
- * or NULL (in case IDProp could not be found, or prop is a real RNA property).
- */
-struct IDProperty *rna_idproperty_check(struct PropertyRNA **prop,
+/** This function only returns an #IDProperty,
+ * or NULL (in case IDProp could not be found, or prop is a real api prop). */
+struct IDProperty *rna_idproperty_check(struct ApiProperty **prop,
                                         struct PointerRNA *ptr) ATTR_WARN_UNUSED_RESULT;
 /** This fn always return the valid, real data pointer, be it a regular api prop one,
  * or an IdProp one. */
