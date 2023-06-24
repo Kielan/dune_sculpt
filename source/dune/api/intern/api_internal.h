@@ -204,10 +204,10 @@ void RNA_def_xr(struct BlenderRNA *brna);
 
 void rna_def_attributes_common(struct StructRNA *srna);
 
-void rna_AttributeGroup_iterator_begin(CollectionPropertyIterator *iter, PointerRNA *ptr);
-void rna_AttributeGroup_iterator_next(CollectionPropertyIterator *iter);
-PointerRNA rna_AttributeGroup_iterator_get(CollectionPropertyIterator *iter);
-int rna_AttributeGroup_length(PointerRNA *ptr);
+void api_AttributeGroup_iter_begin(CollectionPropIter *iter, PointerRNA *ptr);
+void api_AttributeGroup_iter_next(CollectionPropIter *iter);
+ApiPtr api_AttributeGroup_iter_get(CollectionPropIter *iter);
+int api_AttributeGroup_length(PointerRNA *ptr);
 
 void rna_def_animdata_common(struct StructRNA *srna);
 
