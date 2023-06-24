@@ -336,13 +336,13 @@ void rna_ViewLayer_material_override_update(struct Main *bmain,
 void rna_ViewLayer_pass_update(struct Main *bmain,
                                struct Scene *activescene,
                                struct PointerRNA *ptr);
-void rna_ViewLayer_active_aov_index_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax);
-int rna_ViewLayer_active_aov_index_get(PointerRNA *ptr);
-void rna_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value);
+void api_ViewLayer_active_aov_index_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax);
+int api_ViewLayer_active_aov_index_get(PointerRNA *ptr);
+void api_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value);
 /**
- *  Set `r_rna_path` with the base view-layer path.
- *  `rna_path_buffer_size` should be at least `sizeof(ViewLayer.name) * 3`.
+ *  Set `r_api_path` with the base view-layer path.
+ *  `api_path_buffer_size` should be at least `sizeof(ViewLayer.name) * 3`.
  *  \return actual length of the generated RNA path.
  */
 size_t rna_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
