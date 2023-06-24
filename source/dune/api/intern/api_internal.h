@@ -272,13 +272,13 @@ void **api_id_instance(ApiPtr *ptr);
 struct IDProperty **rna_PropGroup_idprops(struct ApiPtr *ptr);
 void api_PropGroup_unregister(struct Main *main, struct ApiStruct *type);
 struct StructRNA *api_PropGroup_register(struct Main *main,
-                                             struct ReportList *reports,
+                                         struct ReportList *reports,
                                              void *data,
-                                             const char *identifier,
-                                             StructValidateFunc validate,
-                                             StructCallbackFunc call,
-                                             StructFreeFunc free);
-struct StructRNA *rna_PropertyGroup_refine(struct PointerRNA *ptr);
+                                             const char *id,
+                                             StructValidateFn validate,
+                                             StructCallbackFn call,
+                                             StructFreeFn free);
+struct StructRNA *api_PropGroup_refine(struct ApiPtr *ptr);
 
 void api_object_vgroup_name_index_get(struct PointerRNA *ptr, char *value, int index);
 int api_object_vgroup_name_index_length(struct PointerRNA *ptr, int index);
