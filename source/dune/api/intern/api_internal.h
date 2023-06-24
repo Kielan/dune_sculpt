@@ -61,12 +61,12 @@ typedef struct ApiPropDef {
   int stypesize;
 
   /* for finding length of array collections */
-  const char *dnalengthstructname;
-  const char *dnalengthname;
-  int dnalengthfixed;
+  const char *stypelengthstructname;
+  const char *stypelengthname;
+  int stypelengthfixed;
 
-  int64_t booleanbit;
-  bool booleannegative;
+  int64_t boolbit;
+  bool boolnegative;
 
   /* not to be confused with PROP_ENUM_FLAG
    * this only allows one of the flags to be set at a time, clearing all others */
@@ -75,16 +75,12 @@ typedef struct ApiPropDef {
 
 typedef struct ApiStructDef {
   ApiContainerDef cont;
-
   struct ApiStruct *sapi;
   const char *filename;
-
   const char *stypename;
-
   /* for derived structs to find data in some property */
   const char *stypefromname;
   const char *stypefromprop;
-
   List fns;
 } ApiStructDef;
 
@@ -121,7 +117,7 @@ typedef struct DuneApiDef {
 extern DuneApiDef ApiDef;
 
 /* Define functions for all types */
-#ifndef __RNA_ACCESS_H__
+#ifndef __API_ACCESS_H__
 extern DuneApi DUNE_API;
 #endif
 
@@ -172,7 +168,7 @@ void api_def_profile(struct DuneApi *dapi);
 void api_def_lightprobe(struct DuneApi *dapi);
 void api_def_render(struct DuneApi *dapi);
 void api_def_rigidbody(struct DuneApi *dapi);
-void api_def_rna(struct DuneApi *dapi);
+void api_def_api(struct DuneApi *dapi);
 void api_def_scene(struct DuneApi *dapi);
 void api_def_simulation(struct DuneApi *dapi);
 void api_def_view_layer(struct DuneApi *dapi);
@@ -296,7 +292,7 @@ void api_object_vcollayer_name_set(struct Apitr *ptr,
                                    char *result,
                                    int maxlen);
 ApiPtr api_object_shapekey_index_get(struct Id *id, int value);
-int api_object_shapekey_index_set(struct Id *id, PointerRNA value, int current);
+int api_object_shapekey_index_set(struct Id *id, ApiPtr value, int current);
 
 /* ViewLayer related functions defined in rna_scene.c but required in api_layer.c */
 void api_def_freestyle_settings(struct ApiDune *dapi);
@@ -335,18 +331,16 @@ void api_ViewLayer_material_override_update(struct Main *main,
                                             struct ApiPtr *ptr);
 void api_ViewLayer_pass_update(struct Main *main,
                                struct Scene *activescene,
-                               struct PointerRNA *ptr);
+                               struct ApiPtr *ptr);
 void api_ViewLayer_active_aov_index_range(
     ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax);
-int api_ViewLayer_active_aov_index_get(PointerRNA *ptr);
-void api_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value);
-/**
- *  Set `r_api_path` with the base view-layer path.
+int api_ViewLayer_active_aov_index_get(ApiPtr *ptr);
+void api_ViewLayer_active_aov_index_set(Apitr *ptr, int value);
+/** Set `r_api_path` with the base view-layer path.
  *  `api_path_buffer_size` should be at least `sizeof(ViewLayer.name) * 3`.
- *  return actual length of the generated RNA path.
- */
+ *  return actual length of the generated api path */
 size_t api_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
-                                     char *r_rna_path,
+                                     char *r_api_path,
                                      const size_t rna_path_buffer_size);
 
 /* named internal so as not to conflict with obj.update() rna func */
