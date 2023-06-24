@@ -186,23 +186,22 @@ void api_def_test(struct DuneApi *dapi);
 void api_def_text(struct DuneApi *dapi);
 void RNA_def_texture(struct DuneApi *dapi);
 void api_def_timeline_marker(struct DuneApi *dapi);
-void RNA_def_sound(struct BlenderRNA *brna);
-void RNA_def_ui(struct BlenderRNA *brna);
-void RNA_def_userdef(struct BlenderRNA *brna);
-void RNA_def_vfont(struct BlenderRNA *brna);
-void RNA_def_volume(struct BlenderRNA *brna);
-void RNA_def_wm(struct BlenderRNA *brna);
-void RNA_def_wm_gizmo(struct BlenderRNA *brna);
-void RNA_def_workspace(struct BlenderRNA *brna);
-void RNA_def_world(struct BlenderRNA *brna);
-void RNA_def_movieclip(struct BlenderRNA *brna);
-void RNA_def_tracking(struct BlenderRNA *brna);
-void RNA_def_mask(struct BlenderRNA *brna);
-void RNA_def_xr(struct BlenderRNA *brna);
+void api_def_sound(struct DundApi *dapi);
+void api_def_ui(struct DuneApi *dapi);
+void api_def_userdef(struct DuneApi *dapi);
+void api_def_vfont(struct DuneApi *dapi);
+void api_def_volume(struct DuneApi *dapi);
+void api_def_wm(struct DuneApi *dapi);
+void api_def_wm_gizmo(struct DuneApi *dapi);
+void api_def_workspace(struct DuneApi *dapi);
+void api_def_world(struct DuneApi *dapi);
+void api_def_movieclip(struct DuneApi *dapu);
+void api_def_tracking(struct DuneApi *dapi);
+void api_def_mask(struct BlenderRNA *brna);
+void api_def_xr(struct BlenderRNA *brna);
 
 /* Common Define functions */
-
-void rna_def_attributes_common(struct StructRNA *srna);
+void api_def_attributes_common(struct StructRNA *srna);
 
 void api_AttributeGroup_iter_begin(CollectionPropIter *iter, PointerRNA *ptr);
 void api_AttributeGroup_iter_next(CollectionPropIter *iter);
