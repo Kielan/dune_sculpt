@@ -510,7 +510,7 @@ int api_prop_override_diff_default(struct Main *main,
                                        int flags,
                                        bool *r_override_changed);
 
-bool rna_property_override_store_default(struct Main *main,
+bool api_prop_override_store_default(struct Main *main,
                                          struct ApiPointerRNA *ptr_local,
                                          struct ApiPointerRNA *ptr_reference,
                                          struct PointerRNA *ptr_storage,
@@ -520,12 +520,12 @@ bool rna_property_override_store_default(struct Main *main,
                                          int len_local,
                                          int len_reference,
                                          int len_storage,
-                                         struct IDOverrideLibraryPropertyOperation *opop);
+                                         struct IdOverrideLibPropOp *opop);
 
-bool rna_property_override_apply_default(struct Main *bmain,
-                                         struct PointerRNA *ptr_dst,
-                                         struct PointerRNA *ptr_src,
-                                         struct PointerRNA *ptr_storage,
+bool api_prop_override_apply_default(struct Main *main,
+                                     struct ApiPtr *ptr_dst,
+                                     struct ApiPtr *ptr_src,
+                                     struct ApiPtr *ptr_storage,
                                          struct PropertyRNA *prop_dst,
                                          struct PropertyRNA *prop_src,
                                          struct PropertyRNA *prop_storage,
