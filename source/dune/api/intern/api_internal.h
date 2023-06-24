@@ -555,12 +555,12 @@ void rna_iterator_array_begin(struct CollectionPropertyIterator *iter,
                               int length,
                               bool free_ptr,
                               IteratorSkipFunc skip);
-void rna_iterator_array_next(struct CollectionPropertyIterator *iter);
-void *rna_iterator_array_get(struct CollectionPropertyIterator *iter);
-void *rna_iterator_array_dereference_get(struct CollectionPropertyIterator *iter);
-void rna_iterator_array_end(struct CollectionPropertyIterator *iter);
-PointerRNA rna_array_lookup_int(
-    PointerRNA *ptr, StructRNA *type, void *data, int itemsize, int length, int index);
+void api_iter_array_next(struct CollectionPropIter *iter);
+void *api_iter_array_get(struct CollectionPropIter *iter);
+void *api_iter_array_dereference_get(struct CollectionPropIter *iter);
+void api_iter_array_end(struct CollectionPropIter *iter);
+ApiPtr api_array_lookup_int(
+    ApiPtr *ptr, ApiStruct *type, void *data, int itemsize, int length, int index);
 
 /* Duplicated code since we can't link in blenlib */
 
