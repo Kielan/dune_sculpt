@@ -208,22 +208,22 @@ void api_AttributeGroup_iter_next(CollectionPropIter *iter);
 ApiPtr api_AttributeGroup_iter_get(CollectionPropIter *iter);
 int api_AttributeGroup_length(PointerRNA *ptr);
 
-void rna_def_animdata_common(struct StructRNA *srna);
+void api_def_AnimData_common(struct ApiStruct *sapi);
 
-bool rna_AnimaData_override_apply(struct Main *bmain,
-                                  struct PointerRNA *ptr_local,
-                                  struct PointerRNA *ptr_reference,
-                                  struct PointerRNA *ptr_storage,
-                                  struct PropertyRNA *prop_local,
-                                  struct PropertyRNA *prop_reference,
-                                  struct PropertyRNA *prop_storage,
+bool api_AnimaData_override_apply(struct Main *main,
+                                  struct ApiPtr *ptr_local,
+                                  struct ApiPtr *ptr_ref,
+                                  struct ApiPtr *ptr_storage,
+                                  struct ApiProp *prop_local,
+                                  struct ApiProp *prop_ref,
+                                  struct ApiProp *prop_storage,
                                   int len_local,
-                                  int len_reference,
+                                  int len_ref,
                                   int len_storage,
-                                  struct PointerRNA *ptr_item_local,
-                                  struct PointerRNA *ptr_item_reference,
-                                  struct PointerRNA *ptr_item_storage,
-                                  struct IDOverrideLibraryPropertyOperation *opop);
+                                  struct ApiPtr *ptr_item_local,
+                                  struct ApiPtr *ptr_item_ref,
+                                  struct ApiPtr *ptr_item_storage,
+                                  struct IdOverrideLibPropOp *opop);
 
 void api_def_animviz_common(struct StructRNA *srna);
 void api_def_motionpath_common(struct StructRNA *srna);
