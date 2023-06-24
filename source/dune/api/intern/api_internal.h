@@ -343,9 +343,9 @@ void api_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value);
 /**
  *  Set `r_api_path` with the base view-layer path.
  *  `api_path_buffer_size` should be at least `sizeof(ViewLayer.name) * 3`.
- *  \return actual length of the generated RNA path.
+ *  return actual length of the generated RNA path.
  */
-size_t rna_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
+size_t api_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
                                      char *r_rna_path,
                                      const size_t rna_path_buffer_size);
 
@@ -419,17 +419,17 @@ void api_text(struct ApiStructRNA *srna);
 void api_ui_layout(struct ApiStructRNA *srna);
 void api_window(struct ApiStructRNA *srna);
 void api_wm(struct ApiStructRNA *srna);
-void api_space_node(struct ApiStructRNA *srna);
-void api_space_text(struct ApiStructRNA *srna);
-void api_space_filebrowser(struct ApiStructRNA *srna);
-void api_region_view3d(struct ApiStructRNA *srna);
-void api_texture(struct ApiStructRNA *srna);
+void api_space_node(struct ApiStruct *sapi);
+void api_space_text(struct ApiStruct *sapi);
+void api_space_filebrowser(struct ApiStruct *sapi);
+void api_region_view3d(struct ApiStruct *sapi);
+void api_texture(struct ApiStruct *sapi);
 void api_sequences(DuneApi *dapi, ApiProp *cprop, bool metastrip);
-void api_seq_elements(BlenderRNA *brna, PropertyRNA *cprop);
+void api_seq_elements(DuneA *dapi, ApiProp *cprop);
 void api_sound(struct StructRNA *srna);
-void RNA_api_vfont(struct StructRNA *srna);
-void RNA_api_workspace(struct StructRNA *srna);
-void RNA_api_workspace_tool(struct StructRNA *srna);
+void api_api_vfont(struct StructRNA *srna);
+void api_api_workspace(struct StructRNA *srna);
+void api_api_workspace_tool(struct StructRNA *srna);
 
 /* main collection functions */
 void apk_def_main_cameras(BlenderRNA *brna, PropertyRNA *cprop);
