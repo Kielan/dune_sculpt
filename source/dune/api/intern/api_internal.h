@@ -533,11 +533,11 @@ bool api_prop_override_apply_default(struct Main *main,
 
 /* Builtin Property Callbacks */
 
-void rna_builtin_properties_begin(struct CollectionPropertyIterator *iter, struct PointerRNA *ptr);
-void rna_builtin_properties_next(struct CollectionPropertyIterator *iter);
-PointerRNA rna_builtin_properties_get(struct CollectionPropertyIterator *iter);
-PointerRNA rna_builtin_type_get(struct PointerRNA *ptr);
-int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr);
+void api_builtin_props_begin(struct CollectionPropIter *iter, struct ApiPtr *ptr);
+void api_builtin_props_next(struct CollectionPropIter *iter);
+ApiPtr api_builtin_props_get(struct CollectionPropIter *iter);
+ApiPtr api_builtin_type_get(struct ApiPtr *ptr);
+int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, PointerRNA *r_ptr);
 
 /* Iterators */
 
