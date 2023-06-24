@@ -526,10 +526,10 @@ bool api_prop_override_apply_default(struct Main *main,
                                          int len_dst,
                                          int len_src,
                                          int len_storage,
-                                         struct PointerRNA *ptr_item_dst,
-                                         struct PointerRNA *ptr_item_src,
-                                         struct PointerRNA *ptr_item_storage,
-                                         struct IDOverrideLibraryPropertyOperation *opop);
+                                         struct ApiPtr *ptr_item_dst,
+                                         struct ApiPtr *ptr_item_src,
+                                         struct ApiPtr *ptr_item_storage,
+                                         struct IdOverrideLibPropOp *opop);
 
 /* Builtin Property Callbacks */
 
@@ -541,7 +541,7 @@ int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, PointerRNA *r_
 
 /* Iterators */
 
-void rna_iterator_listbase_begin(struct CollectionPropertyIterator *iter,
+void api_iter_list_begin(struct CollectionPropertyIterator *iter,
                                  struct ListBase *lb,
                                  IteratorSkipFunc skip);
 void rna_iterator_listbase_next(struct CollectionPropertyIterator *iter);
