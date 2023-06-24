@@ -225,17 +225,15 @@ bool rna_AnimaData_override_apply(struct Main *bmain,
                                   struct PointerRNA *ptr_item_storage,
                                   struct IDOverrideLibraryPropertyOperation *opop);
 
-void rna_def_animviz_common(struct StructRNA *srna);
-void rna_def_motionpath_common(struct StructRNA *srna);
+void api_def_animviz_common(struct StructRNA *srna);
+void api_def_motionpath_common(struct StructRNA *srna);
 
-/**
- * Settings for curved bbone settings.
- */
-void rna_def_bone_curved_common(struct StructRNA *srna, bool is_posebone, bool is_editbone);
+/** Settings for curved bbone settings. */
+void rna_def_bone_curved_common(struct ApiStruct *sapi, bool is_posebone, bool is_editbone);
 
-void rna_def_texmat_common(struct StructRNA *srna, const char *texspace_editable);
-void rna_def_mtex_common(struct BlenderRNA *brna,
-                         struct StructRNA *srna,
+void rna_def_texmat_common(struct ApiStruct *sapi, const char *texspace_editable);
+void rna_def_mtex_common(struct DuneApi *dapi,
+                         struct ApiStruct *sapi,
                          const char *begin,
                          const char *activeget,
                          const char *activeset,
@@ -244,35 +242,31 @@ void rna_def_mtex_common(struct BlenderRNA *brna,
                          const char *structname_slots,
                          const char *update,
                          const char *update_index);
-void rna_def_texpaint_slots(struct BlenderRNA *brna, struct StructRNA *srna);
-void rna_def_view_layer_common(struct BlenderRNA *brna, struct StructRNA *srna, bool scene);
+void api_def_texpaint_slots(struct DuneApi *dapi, struct ApiStruct *sapi);
+void api_def_view_layer_common(struct DuneApi *dapi, struct ApStruct *sapi, bool scene);
 
-int rna_AssetMetaData_editable(struct PointerRNA *ptr, const char **r_info);
-/**
- * \note the UI text and updating has to be set by the caller.
- */
-PropertyRNA *rna_def_asset_library_reference_common(struct StructRNA *srna,
-                                                    const char *get,
-                                                    const char *set);
-const EnumPropertyItem *rna_asset_library_reference_itemf(struct bContext *C,
-                                                          struct PointerRNA *ptr,
-                                                          struct PropertyRNA *prop,
-                                                          bool *r_free);
+int api_AssetMetaData_editable(struct ApiPtr *ptr, const char **r_info);
+/** the UI text and updating has to be set by the caller. */
+ApiProp *api_def_asset_lib_ref_common(struct ApiStruct *sapi,
+                                      const char *get,
+                                      const char *set);
+const EnumPropItem *api_asset_lib_ref_itemf(struct Cxt *C,
+                                            struct ApiPtr *ptr,
+                                            struct ApiProp *prop,
+                                            bool *r_free);
 
-/**
- * Common properties for Action/Bone Groups - related to color.
- */
-void rna_def_actionbone_group_common(struct StructRNA *srna,
+/** Common properties for Action/Bone Groups - related to color. */
+void api_def_actionbone_group_common(struct StructRNA *srna,
                                      int update_flag,
                                      const char *update_cb);
-void rna_ActionGroup_colorset_set(struct PointerRNA *ptr, int value);
-bool rna_ActionGroup_is_custom_colorset_get(struct PointerRNA *ptr);
+void api_ActionGroup_colorset_set(struct PointerRNA *ptr, int value);
+bool api_ActionGroup_is_custom_colorset_get(struct PointerRNA *ptr);
 
-void rna_ID_name_get(struct PointerRNA *ptr, char *value);
-int rna_ID_name_length(struct PointerRNA *ptr);
-void rna_ID_name_set(struct PointerRNA *ptr, const char *value);
-struct StructRNA *rna_ID_refine(struct PointerRNA *ptr);
-struct IDProperty **rna_ID_idprops(struct PointerRNA *ptr);
+void api_id_name_get(struct PointerRNA *ptr, char *value);
+int rna_id_name_length(struct PointerRNA *ptr);
+void rna_id_name_set(struct PointerRNA *ptr, const char *value);
+struct ApiStruct *api_id_refine(struct ApiPtr *ptr);
+struct IdProp **api_id_idprops(struct ApiPtr *ptr);
 void rna_ID_fake_user_set(struct PointerRNA *ptr, bool value);
 void **rna_ID_instance(PointerRNA *ptr);
 struct IDProperty **rna_PropertyGroup_idprops(struct PointerRNA *ptr);
