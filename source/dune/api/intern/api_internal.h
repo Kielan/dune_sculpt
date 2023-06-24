@@ -488,13 +488,11 @@ extern StructRNA RNA_PropertyGroup;
  */
 struct IDProperty *rna_idproperty_check(struct PropertyRNA **prop,
                                         struct PointerRNA *ptr) ATTR_WARN_UNUSED_RESULT;
-/**
- * This function always return the valid, real data pointer, be it a regular RNA property one,
- * or an #IDProperty one.
- */
-struct PropertyRNA *rna_ensure_property_realdata(struct PropertyRNA **prop,
-                                                 struct PointerRNA *ptr) ATTR_WARN_UNUSED_RESULT;
-struct PropertyRNA *rna_ensure_property(struct PropertyRNA *prop) ATTR_WARN_UNUSED_RESULT;
+/** This fn always return the valid, real data pointer, be it a regular api prop one,
+ * or an IdProp one. */
+struct ApiProp api_ensure_prop_realdata(struct ApiProp **prop,
+                                                 struct ApiPtr *ptr) ATTR_WARN_UNUSED_RESULT;
+struct PropertyRNA *rna_ensure_property(struct ApiProp *prop) ATTR_WARN_UNUSED_RESULT;
 
 /* Override default callbacks. */
 /* Default override callbacks for all types. */
@@ -502,19 +500,19 @@ struct PropertyRNA *rna_ensure_property(struct PropertyRNA *prop) ATTR_WARN_UNUS
  *       (like we do for default get/set/etc.)?
  *       Not obvious though, those are fairly more complicated than basic SDNA access.
  */
-int rna_property_override_diff_default(struct Main *bmain,
-                                       struct PropertyRNAOrID *prop_a,
-                                       struct PropertyRNAOrID *prop_b,
+int api_prop_override_diff_default(struct Main *main,
+                                   struct ApiOrIdProp *prop_a,
+                                   struct ApiOrIdProp *prop_b,
                                        int mode,
-                                       struct IDOverrideLibrary *override,
-                                       const char *rna_path,
-                                       size_t rna_path_len,
+                                       struct IdOverrideLib *override,
+                                       const char *api_path,
+                                       size_t api_path_len,
                                        int flags,
                                        bool *r_override_changed);
 
-bool rna_property_override_store_default(struct Main *bmain,
-                                         struct PointerRNA *ptr_local,
-                                         struct PointerRNA *ptr_reference,
+bool rna_property_override_store_default(struct Main *main,
+                                         struct ApiPointerRNA *ptr_local,
+                                         struct ApiPointerRNA *ptr_reference,
                                          struct PointerRNA *ptr_storage,
                                          struct PropertyRNA *prop_local,
                                          struct PropertyRNA *prop_reference,
@@ -580,10 +578,10 @@ void *rna_alloc_from_buffer(const char *buffer, int buffer_len);
 void *rna_calloc(int buffer_len);
 #endif
 
-void rna_addtail(struct ListBase *listbase, void *vlink);
-void rna_freelinkN(struct ListBase *listbase, void *vlink);
-void rna_freelistN(struct ListBase *listbase);
-PropertyDefRNA *rna_findlink(ListBase *listbase, const char *identifier);
+void rna_addtail(struct List *listbase, void *vlink);
+void api_freelinkN(struct List *listbase, void *vlink);
+void api_freelistN(struct List *listbase);
+ApiPropDef *api_findlink(List *listbase, const char *identifier);
 
 StructDefRNA *rna_find_struct_def(StructRNA *srna);
 FunctionDefRNA *rna_find_function_def(FunctionRNA *func);
