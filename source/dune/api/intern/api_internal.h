@@ -280,46 +280,46 @@ struct StructRNA *rna_PropertyGroup_register(struct Main *bmain,
                                              StructFreeFunc free);
 struct StructRNA *rna_PropertyGroup_refine(struct PointerRNA *ptr);
 
-void rna_object_vgroup_name_index_get(struct PointerRNA *ptr, char *value, int index);
-int rna_object_vgroup_name_index_length(struct PointerRNA *ptr, int index);
-void rna_object_vgroup_name_index_set(struct PointerRNA *ptr, const char *value, short *index);
-void rna_object_vgroup_name_set(struct PointerRNA *ptr,
+void api_object_vgroup_name_index_get(struct PointerRNA *ptr, char *value, int index);
+int api_object_vgroup_name_index_length(struct PointerRNA *ptr, int index);
+void api_object_vgroup_name_index_set(struct PointerRNA *ptr, const char *value, short *index);
+void api_object_vgroup_name_set(struct PointerRNA *ptr,
                                 const char *value,
                                 char *result,
                                 int maxlen);
-void rna_object_uvlayer_name_set(struct PointerRNA *ptr,
+void api_object_uvlayer_name_set(struct PointerRNA *ptr,
                                  const char *value,
                                  char *result,
                                  int maxlen);
-void rna_object_vcollayer_name_set(struct PointerRNA *ptr,
+void api_object_vcollayer_name_set(struct PointerRNA *ptr,
                                    const char *value,
                                    char *result,
                                    int maxlen);
-PointerRNA rna_object_shapekey_index_get(struct ID *id, int value);
-int rna_object_shapekey_index_set(struct ID *id, PointerRNA value, int current);
+ApiPtr api_object_shapekey_index_get(struct ID *id, int value);
+int api_object_shapekey_index_set(struct ID *id, PointerRNA value, int current);
 
-/* ViewLayer related functions defined in rna_scene.c but required in rna_layer.c */
-void rna_def_freestyle_settings(struct BlenderRNA *brna);
-struct PointerRNA rna_FreestyleLineSet_linestyle_get(struct PointerRNA *ptr);
-void rna_FreestyleLineSet_linestyle_set(struct PointerRNA *ptr,
-                                        struct PointerRNA value,
+/* ViewLayer related functions defined in rna_scene.c but required in api_layer.c */
+void api_def_freestyle_settings(struct ApiDune *dapi);
+struct ApiPtr api_FreestyleLineSet_linestyle_get(struct ApiPtr *ptr);
+void api_FreestyleLineSet_linestyle_set(struct ApiPtr *ptr,
+                                        struct ApiPtr value,
                                         struct ReportList *reports);
-struct FreestyleLineSet *rna_FreestyleSettings_lineset_add(struct ID *id,
+struct FreestyleLineSet *api_FreestyleSettings_lineset_add(struct Id *id,
                                                            struct FreestyleSettings *config,
-                                                           struct Main *bmain,
+                                                           struct Main *main,
                                                            const char *name);
-void rna_FreestyleSettings_lineset_remove(struct ID *id,
+void api_FreestyleSettings_lineset_remove(struct Id *id,
                                           struct FreestyleSettings *config,
                                           struct ReportList *reports,
-                                          struct PointerRNA *lineset_ptr);
-struct PointerRNA rna_FreestyleSettings_active_lineset_get(struct PointerRNA *ptr);
-void rna_FreestyleSettings_active_lineset_index_range(
-    struct PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax);
-int rna_FreestyleSettings_active_lineset_index_get(struct PointerRNA *ptr);
-void rna_FreestyleSettings_active_lineset_index_set(struct PointerRNA *ptr, int value);
+                                          struct ApiPtr *lineset_ptr);
+struct ApiPtr api_FreestyleSettings_active_lineset_get(struct ApiPtr *ptr);
+void api_FreestyleSettings_active_lineset_index_range(
+    struct ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax);
+int api_FreestyleSettings_active_lineset_index_get(struct PointerRNA *ptr);
+void api_FreestyleSettings_active_lineset_index_set(struct PointerRNA *ptr, int value);
 struct FreestyleModuleConfig *rna_FreestyleSettings_module_add(struct ID *id,
                                                                struct FreestyleSettings *config);
-void rna_FreestyleSettings_module_remove(struct ID *id,
+void api_FreestyleSettings_module_remove(struct ID *id,
                                          struct FreestyleSettings *config,
                                          struct ReportList *reports,
                                          struct PointerRNA *module_ptr);
