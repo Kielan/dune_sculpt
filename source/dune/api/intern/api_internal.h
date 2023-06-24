@@ -361,43 +361,43 @@ bool api_Armature_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
 bool api_Camera_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
 bool api_Curve_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
 bool api_Pen_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
-bool api_Light_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
-bool api_Lattice_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
-bool api_Mesh_object_poll(struct PointerRNA *ptr, struct ApiPtr value);
+bool api_Light_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Lattice_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Mesh_object_poll(struct ApiPtr *ptr, struct ApiPtr value);
 
 /* basic poll functions for actions (to prevent actions getting set in wrong places) */
-bool api_Action_id_poll(struct PointerRNA *ptr, struct PointerRNA value);
-bool rna_Action_actedit_assign_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool api_Action_id_poll(struct ApiPtr *ptr, struct ApiPtr value);
+bool api_Action_actedit_assign_poll(struct ApiPtr *ptr, struct ApiPtr value);
 
 /* Grease Pencil datablock polling functions - for filtering GP Object vs Annotation datablocks */
-bool rna_GPencil_datablocks_annotations_poll(struct PointerRNA *ptr,
-                                             const struct PointerRNA value);
-bool rna_GPencil_datablocks_obdata_poll(struct PointerRNA *ptr, const struct PointerRNA value);
+bool api_Pen_datablocks_annotations_poll(struct ApiPtr *ptr,
+                                         const struct ApiPtr value);
+bool api_Pen_datablocks_obdata_poll(struct ApiPtr *ptr, const struct ApiPtr value);
 
-char *rna_TextureSlot_path(struct PointerRNA *ptr);
-char *rna_Node_ImageUser_path(struct PointerRNA *ptr);
+char *api_TextureSlot_path(struct ApiPtr *ptr);
+char *api_Node_ImageUser_path(struct ApiPtr *ptr);
 
 /* Set U.is_dirty and redraw. */
 void api_userdef_is_dirty_update_impl(void);
 void api_userdef_is_dirty_update(struct Main *main, struct Scene *scene, struct ApiPtr *ptr);
 
 /* API functions */
-void api_action(ApiStructRNA *srna);
-void api_animdata(struct ApiStructRNA *srna);
-void api_armature_edit_bone(ApiStructRNA *srna);
-void api_bone(ApiStructRNA *srna);
-void api_camera(ApiStructRNA *srna);
-void api_curve(ApiStructRNA *srna);
-void api_curve_nurb(ApiStructRNA *srna);
-void api_fcurves(ApiStructRNA *srna);
-void api_drivers(ApiStructRNA *srna);
-void api_image_packed_file(struct ApiStructRNA *srna);
-void api_image(struct ApiStructRNA *srna);
-void api_lattice(struct ApiStructRNA *srna);
-void api_op(struct ApiStructRNA *srna);
-void api_macro(struct ApiStructRNA *srna);
-void api_gizmo(struct ApiStructRNA *srna);
-void api_gizmogroup(struct ApiStructRNA *srna);
+void api_action(ApiStruct *sapi);
+void api_animdata(struct ApiStruct *sapi);
+void api_armature_edit_bone(ApiStruct *sapi);
+void api_bone(ApiStruct *sapi);
+void api_camera(ApiStruct *sapi);
+void api_curve(ApiStruct *sapi);
+void api_curve_nurb(ApiStruct *sapi);
+void api_fcurves(ApiStruct *sapi);
+void api_drivers(ApiStruct *sapi);
+void api_image_packed_file(struct ApiStruct *sapi);
+void api_image(struct ApiStruct *sapi);
+void api_lattice(struct ApiStruct *sapi);
+void api_op(struct ApiStruct *sapi);
+void api_macro(struct ApiStruct *sapi);
+void api_gizmo(struct ApiStruct *sapi);
+void api_gizmogroup(struct ApiStruct *sapi);
 void api_keyconfig(struct ApiStructRNA *srna);
 void api_keyconfigs(struct ApiStructRNA *srna);
 void api_keyingset(struct ApiStructRNA *srna);
