@@ -281,22 +281,22 @@ struct StructRNA *api_PropGroup_register(struct Main *main,
 struct ApiStruct *api_PropGroup_refine(struct ApiPtr *ptr);
 
 void api_object_vgroup_name_index_get(struct ApiPtr *ptr, char *value, int index);
-int api_object_vgroup_name_index_length(struct PointerRNA *ptr, int index);
-void api_object_vgroup_name_index_set(struct PointerRNA *ptr, const char *value, short *index);
-void api_object_vgroup_name_set(struct PointerRNA *ptr,
+int api_object_vgroup_name_index_length(struct ApiPtr *ptr, int index);
+void api_object_vgroup_name_index_set(struct ApiPtr *ptr, const char *value, short *index);
+void api_object_vgroup_name_set(struct ApiPtr *ptr,
                                 const char *value,
                                 char *result,
                                 int maxlen);
-void api_object_uvlayer_name_set(struct PointerRNA *ptr,
+void api_object_uvlayer_name_set(struct ApiPtr *ptr,
                                  const char *value,
                                  char *result,
                                  int maxlen);
-void api_object_vcollayer_name_set(struct PointerRNA *ptr,
+void api_object_vcollayer_name_set(struct Apitr *ptr,
                                    const char *value,
                                    char *result,
                                    int maxlen);
-ApiPtr api_object_shapekey_index_get(struct ID *id, int value);
-int api_object_shapekey_index_set(struct ID *id, PointerRNA value, int current);
+ApiPtr api_object_shapekey_index_get(struct Id *id, int value);
+int api_object_shapekey_index_set(struct Id *id, PointerRNA value, int current);
 
 /* ViewLayer related functions defined in rna_scene.c but required in api_layer.c */
 void api_def_freestyle_settings(struct ApiDune *dapi);
