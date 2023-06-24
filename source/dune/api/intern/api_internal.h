@@ -317,23 +317,23 @@ void api_FreestyleSettings_active_lineset_index_range(
     struct ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax);
 int api_FreestyleSettings_active_lineset_index_get(struct PointerRNA *ptr);
 void api_FreestyleSettings_active_lineset_index_set(struct PointerRNA *ptr, int value);
-struct FreestyleModuleConfig *rna_FreestyleSettings_module_add(struct ID *id,
+struct FreestyleModuleConfig *rna_FreestyleSettings_module_add(struct Id *id,
                                                                struct FreestyleSettings *config);
-void api_FreestyleSettings_module_remove(struct ID *id,
+void api_FreestyleSettings_module_remove(struct Id *id,
                                          struct FreestyleSettings *config,
                                          struct ReportList *reports,
-                                         struct PointerRNA *module_ptr);
+                                         struct ApiPtr *module_ptr);
 
-void rna_Scene_use_view_map_cache_update(struct Main *bmain,
+void api_Scene_use_view_map_cache_update(struct Main *main,
                                          struct Scene *scene,
-                                         struct PointerRNA *ptr);
-void rna_Scene_glsl_update(struct Main *bmain, struct Scene *scene, struct PointerRNA *ptr);
-void rna_Scene_freestyle_update(struct Main *bmain, struct Scene *scene, struct PointerRNA *ptr);
-void rna_ViewLayer_name_set(struct PointerRNA *ptr, const char *value);
-void rna_ViewLayer_material_override_update(struct Main *bmain,
+                                         struct ApiPtr *ptr);
+void api_Scene_glsl_update(struct Main *main, struct Scene *scene, struct PointerRNA *ptr);
+void api_Scene_freestyle_update(struct Main *main, struct Scene *scene, struct PointerRNA *ptr);
+void api_ViewLayer_name_set(struct ApiPtr *ptr, const char *value);
+void api_ViewLayer_material_override_update(struct Main *main,
                                             struct Scene *activescene,
-                                            struct PointerRNA *ptr);
-void rna_ViewLayer_pass_update(struct Main *bmain,
+                                            struct ApiPtr *ptr);
+void api_ViewLayer_pass_update(struct Main *main,
                                struct Scene *activescene,
                                struct PointerRNA *ptr);
 void api_ViewLayer_active_aov_index_range(
