@@ -197,16 +197,16 @@ void api_def_workspace(struct DuneApi *dapi);
 void api_def_world(struct DuneApi *dapi);
 void api_def_movieclip(struct DuneApi *dapu);
 void api_def_tracking(struct DuneApi *dapi);
-void api_def_mask(struct BlenderRNA *brna);
-void api_def_xr(struct BlenderRNA *brna);
+void api_def_mask(struct DuneApi *dapi);
+void api_def_xr(struct DuneApi *dapi);
 
 /* Common Define functions */
-void api_def_attributes_common(struct StructRNA *srna);
+void api_def_attributes_common(struct ApiStruct *sapi);
 
-void api_AttributeGroup_iter_begin(CollectionPropIter *iter, PointerRNA *ptr);
+void api_AttributeGroup_iter_begin(CollectionPropIter *iter, ApiPtr *ptr);
 void api_AttributeGroup_iter_next(CollectionPropIter *iter);
 ApiPtr api_AttributeGroup_iter_get(CollectionPropIter *iter);
-int api_AttributeGroup_length(PointerRNA *ptr);
+int api_AttributeGroup_length(ApiPtr *ptr);
 
 void api_def_AnimData_common(struct ApiStruct *sapi);
 
@@ -225,14 +225,14 @@ bool api_AnimaData_override_apply(struct Main *main,
                                   struct ApiPtr *ptr_item_storage,
                                   struct IdOverrideLibPropOp *opop);
 
-void api_def_animviz_common(struct StructRNA *srna);
-void api_def_motionpath_common(struct StructRNA *srna);
+void api_def_animviz_common(struct ApiStruct *sapi)
+void api_def_motionpath_common(struct ApiSruct *sapi);
 
 /** Settings for curved bbone settings. */
-void rna_def_bone_curved_common(struct ApiStruct *sapi, bool is_posebone, bool is_editbone);
+void api_def_bone_curved_common(struct ApiStruct *sapi, bool is_posebone, bool is_editbone);
 
-void rna_def_texmat_common(struct ApiStruct *sapi, const char *texspace_editable);
-void rna_def_mtex_common(struct DuneApi *dapi,
+void api_def_texmat_common(struct ApiStruct *sapi, const char *texspace_editable);
+void api_def_mtex_common(struct DuneApi *dapi,
                          struct ApiStruct *sapi,
                          const char *begin,
                          const char *activeget,
@@ -263,15 +263,15 @@ void api_ActionGroup_colorset_set(struct PointerRNA *ptr, int value);
 bool api_ActionGroup_is_custom_colorset_get(struct PointerRNA *ptr);
 
 void api_id_name_get(struct PointerRNA *ptr, char *value);
-int rna_id_name_length(struct PointerRNA *ptr);
-void rna_id_name_set(struct PointerRNA *ptr, const char *value);
+int api_id_name_length(struct PointerRNA *ptr);
+void api_id_name_set(struct PointerRNA *ptr, const char *value);
 struct ApiStruct *api_id_refine(struct ApiPtr *ptr);
 struct IdProp **api_id_idprops(struct ApiPtr *ptr);
-void rna_ID_fake_user_set(struct PointerRNA *ptr, bool value);
-void **rna_ID_instance(PointerRNA *ptr);
-struct IDProperty **rna_PropertyGroup_idprops(struct PointerRNA *ptr);
-void rna_PropertyGroup_unregister(struct Main *bmain, struct StructRNA *type);
-struct StructRNA *rna_PropertyGroup_register(struct Main *bmain,
+void api_id_fake_user_set(struct ApiPtr *ptr, bool value);
+void **api_id_instance(ApiPtr *ptr);
+struct IDProperty **rna_PropGroup_idprops(struct ApiPtr *ptr);
+void api_PropGroup_unregister(struct Main *main, struct ApiStruct *type);
+struct StructRNA *api_PropGroup_register(struct Main *main,
                                              struct ReportList *reports,
                                              void *data,
                                              const char *identifier,
