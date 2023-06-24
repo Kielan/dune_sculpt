@@ -184,7 +184,7 @@ void api_def_space(struct DuneApi *dapi);
 void api_def_speaker(struct DuneApi *dapi);
 void api_def_test(struct DuneApi *dapi);
 void api_def_text(struct DuneApi *dapi);
-void RNA_def_texture(struct DuneApi *dapi);
+void api_def_texture(struct DuneApi *dapi);
 void api_def_timeline_marker(struct DuneApi *dapi);
 void api_def_sound(struct DundApi *dapi);
 void api_def_ui(struct DuneApi *dapi);
@@ -273,14 +273,14 @@ struct IDProperty **rna_PropGroup_idprops(struct ApiPtr *ptr);
 void api_PropGroup_unregister(struct Main *main, struct ApiStruct *type);
 struct StructRNA *api_PropGroup_register(struct Main *main,
                                          struct ReportList *reports,
-                                             void *data,
-                                             const char *id,
-                                             StructValidateFn validate,
-                                             StructCallbackFn call,
-                                             StructFreeFn free);
-struct StructRNA *api_PropGroup_refine(struct ApiPtr *ptr);
+                                         void *data,
+                                         const char *id,
+                                         StructValidateFn validate,
+                                         StructCallbackFn call,
+                                         StructFreeFn free);
+struct ApiStruct *api_PropGroup_refine(struct ApiPtr *ptr);
 
-void api_object_vgroup_name_index_get(struct PointerRNA *ptr, char *value, int index);
+void api_object_vgroup_name_index_get(struct ApiPtr *ptr, char *value, int index);
 int api_object_vgroup_name_index_length(struct PointerRNA *ptr, int index);
 void api_object_vgroup_name_index_set(struct PointerRNA *ptr, const char *value, short *index);
 void api_object_vgroup_name_set(struct PointerRNA *ptr,
