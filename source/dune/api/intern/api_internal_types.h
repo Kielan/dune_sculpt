@@ -408,18 +408,18 @@ typedef struct ApiFloatProp {
 
   float defaultvalue;
   const float *defaultarray;
-} FloatPropertyRNA;
+} ApiFloatProp;
 
-typedef struct StringPropertyRNA {
-  PropertyRNA property;
+typedef struct ApiStringProp {
+  ApiProp prop;
 
-  PropStringGetFunc get;
-  PropStringLengthFunc length;
-  PropStringSetFunc set;
+  PropStringGetFn get;
+  PropStringLengthFn length;
+  PropStringSetFn set;
 
-  PropStringGetFuncEx get_ex;
-  PropStringLengthFuncEx length_ex;
-  PropStringSetFuncEx set_ex;
+  PropStringGetFnEx get_ex;
+  PropStringLengthFnEx length_ex;
+  PropStringSetFnEx set_ex;
 
   int maxlength; /* includes string terminator! */
 
