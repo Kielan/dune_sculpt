@@ -352,19 +352,18 @@ typedef enum PropertyFlagIntern {
 } PropertyFlagIntern;
 
 /* Property Types */
+typedef struct ApiBoolProp {
+  ApiProp prop;
 
-typedef struct BoolPropertyRNA {
-  PropertyRNA property;
+  PropBoolGetFn get;
+  PropBoolSetFn set;
+  PropBoolArrayGetFn getarray;
+  PropBoolArraySetFn setarray;
 
-  PropBooleanGetFunc get;
-  PropBooleanSetFunc set;
-  PropBooleanArrayGetFunc getarray;
-  PropBooleanArraySetFunc setarray;
-
-  PropBooleanGetFuncEx get_ex;
-  PropBooleanSetFuncEx set_ex;
-  PropBooleanArrayGetFuncEx getarray_ex;
-  PropBooleanArraySetFuncEx setarray_ex;
+  PropBoolGetFnEx get_ex;
+  PropBoolSetFnEx set_ex;
+  PropBoolArrayGetFnEx getarray_ex;
+  PropBoolArraySetFnEx setarray_ex;
 
   bool defaultvalue;
   const bool *defaultarray;
