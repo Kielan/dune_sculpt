@@ -154,14 +154,14 @@ typedef struct PropertyRNAOrID {
   /** The real RNA property of this property, never NULL:
    * - Static RNA: The rna property, also gives direct access to the data (from any matching
    *               PointerRNA).
-   * - Runtime RNA: The rna property, does not directly gives access to the data.
-   * - IDProperty: The generic PropertyRNA matching its type.
+   * - Runtime api: The rna property, does not directly gives access to the data.
+   * - IdProp: The generic ApiProp matching its type.
    */
-  PropertyRNA *rnaprop;
-  /** The IDProperty storing the data of this property, may be NULL:
-   * - Static RNA: Always NULL.
-   * - Runtime RNA: The IDProperty storing the data of that property, may be NULL if never set yet.
-   * - IDProperty: The IDProperty, never NULL.
+  ApiProp *apiprop;
+  /** The IdProp storing the data of this prop, may be NULL:
+   * - Static api: Always NULL.
+   * - Runtime api: The IdProp storing the data of that prop, may be NULL if never set yet.
+   * - IdProp: The IdProp, never NULL.
    */
   IDProperty *idprop;
   /** The name of the property. */
