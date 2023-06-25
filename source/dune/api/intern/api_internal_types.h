@@ -179,11 +179,11 @@ typedef struct PropertyRNAOrID {
 } PropertyRNAOrID;
 
 /**
- * If \a override is NULL, merely do comparison between prop_a and prop_b,
+ * If override is NULL, merely do comparison between prop_a and prop_b,
  * following comparison mode given.
- * If \a override and \a rna_path are not NULL, it will add a new override operation for
+ * If override and api_path are not NULL, it will add a new override operation for
  * overridable properties that differ and have not yet been overridden
- * (and set accordingly \a r_override_changed if given).
+ * (and set accordingly r_override_changed if given).
  *
  * override, api_path and r_override_changed may be NULL pointers.
  */
@@ -197,17 +197,15 @@ typedef int (*ApiPropOverrideDiff)(struct Main *main,
                                    int flags,
                                    bool *r_override_changed);
 
-/**
- * Only used for differential override (add, sub, etc.).
+/** Only used for differential override (add, sub, etc.).
  * Store into storage the value needed to transform reference's value into local's value.
  *
  * Given Prop are final (in case of IdProps...).
  * In non-array cases, len values are 0.
  * Might change given override operation (e.g. change 'add' one into 'sub'),
  * in case computed storage value is out of range
- * (or even change it to basic 'set' operation if nothing else works).
- */
-typedef bool (*RNAPropOverrideStore)(struct Main *bmain,
+ * (or even change it to basic 'set' operation if nothing else works). */
+typedef bool (*ApiPropOverrideStore)(struct Main *main,
                                      struct ApiPtr *ptr_local,
                                      struct ApiPtr *ptr_ref,
                                      struct ApiPtr *ptr_storage,
@@ -224,9 +222,8 @@ typedef bool (*RNAPropOverrideStore)(struct Main *bmain,
  * for differential operations).
  *
  * Given ApiProp are final (in case of IdProps...).
- * In non-array cases, len values are 0.
- */
-typedef bool (*RNAPropOverrideApply)(struct Main *main,
+ * In non-array cases, len values are 0. */
+typedef bool (*ApiPropOverrideApply)(struct Main *main,
                                      struct ApiPtr *ptr_dst,
                                      struct ApiPtr *ptr_src,
                                      struct ApiPtr *ptr_storage,
@@ -236,25 +233,24 @@ typedef bool (*RNAPropOverrideApply)(struct Main *main,
                                      int len_dst,
                                      int len_src,
                                      int len_storage,
-                                     struct PointerRNA *ptr_item_dst,
-                                     struct PointerRNA *ptr_item_src,
-                                     struct PointerRNA *ptr_item_storage,
-                                     struct IDOverrideLibraryPropertyOperation *opop);
+                                     struct ApiPtr *ptr_item_dst,
+                                     struct ApiPtr *ptr_item_src,
+                                     struct ApiPtr *ptr_item_storage,
+                                     struct IdOverrideLibPropOp *opop);
 
-/* Container - generic abstracted container of RNA properties */
-typedef struct ContainerRNA {
+/* Container - generic abstracted container of api props */
+typedef struct ApiContainer {
   void *next, *prev;
 
   struct GHash *prophash;
-  ListBase properties;
-} ContainerRNA;
+  List props;
+} ApiContainer;
 
-struct FunctionRNA {
+struct ApiFn {
   /* structs are containers of properties */
-  ContainerRNA cont;
-
-  /* unique identifier, keep after 'cont' */
-  const char *identifier;
+  ApiContainer cont;
+  /* unique id, keep after 'cont' */
+  const char *id;
   /* various options */
   int flag;
 
@@ -262,11 +258,11 @@ struct FunctionRNA {
   const char *description;
 
   /* callback to execute the function */
-  CallFunc call;
+  CallFn call;
 
   /* parameter for the return value
    * NOTE: this is only the C return value, rna functions can have multiple return values. */
-  PropertyRNA *c_ret;
+  ApiProp *c_ret;
 };
 
 struct PropertyRNA {
