@@ -288,47 +288,47 @@ struct PropertyRNA {
   const char *name;
   /* single line description, displayed in the tooltip for example */
   const char *description;
-  /* icon ID */
+  /* icon Id */
   int icon;
   /* context for translation */
-  const char *translation_context;
+  const char *translation_cxt;
 
   /* property type as it appears to the outside */
-  PropertyType type;
+  PropType type;
   /* subtype, 'interpretation' of the property */
-  PropertySubType subtype;
+  PropSubType subtype;
   /* if non-NULL, overrides arraylength. Must not return 0? */
-  PropArrayLengthGetFunc getlength;
+  PropArrayLengthGetFn getlength;
   /* dimension of array */
   unsigned int arraydimension;
   /* Array lengths for all dimensions (when `arraydimension > 0`). */
-  unsigned int arraylength[RNA_MAX_ARRAY_DIMENSION];
+  unsigned int arraylength[API_MAX_ARRAY_DIMENSION];
   unsigned int totarraylength;
 
   /* callback for updates on change */
-  UpdateFunc update;
+  UpdateFn update;
   int noteflag;
 
   /* Callback for testing if editable. Its r_info parameter can be used to
    * return info on editable state that might be shown to user. E.g. tooltips
    * of disabled buttons can show reason why button is disabled using this. */
-  EditableFunc editable;
+  EditableFn editable;
   /* callback for testing if array-item editable (if applicable) */
-  ItemEditableFunc itemeditable;
+  ItemEditableFn itemeditable;
 
   /* Override handling callbacks (diff is also used for comparison). */
-  RNAPropOverrideDiff override_diff;
-  RNAPropOverrideStore override_store;
-  RNAPropOverrideApply override_apply;
+  ApiPropOverrideDiff override_diff;
+  ApiPropOverrideStore override_store;
+  ApiPropOverrideApply override_apply;
 
   /* raw access */
   int rawoffset;
-  RawPropertyType rawtype;
+  RawPropType rawtype;
 
   /* This is used for accessing props/functions of this property
    * any property can have this but should only be used for collections and arrays
    * since python will convert int/bool/pointer's */
-  struct StructRNA *srna; /* attributes attached directly to this collection */
+  struct ApiStruct *sapi; /* attributes attached directly to this collection */
 
   /* python handle to hold all callbacks
    * (in a pointer array at the moment, may later be a tuple) */
@@ -336,16 +336,16 @@ struct PropertyRNA {
 };
 
 /* internal flags WARNING! 16bits only! */
-typedef enum PropertyFlagIntern {
+typedef enum PropFlagIntern {
   PROP_INTERN_BUILTIN = (1 << 0),
   PROP_INTERN_RUNTIME = (1 << 1),
   PROP_INTERN_RAW_ACCESS = (1 << 2),
   PROP_INTERN_RAW_ARRAY = (1 << 3),
-  PROP_INTERN_FREE_POINTERS = (1 << 4),
+  PROP_INTERN_FREE_PTRS = (1 << 4),
   /* Negative mirror of PROP_PTR_NO_OWNERSHIP, used to prevent automatically setting that one in
    * makesrna when pointer is an ID... */
   PROP_INTERN_PTR_OWNERSHIP_FORCED = (1 << 5),
-} PropertyFlagIntern;
+} PropFlagIntern;
 
 /* Property Types */
 typedef struct ApiBoolProp {
@@ -363,31 +363,31 @@ typedef struct ApiBoolProp {
 
   bool defaultvalue;
   const bool *defaultarray;
-} BoolPropertyRNA;
+} ApiBoolProp;
 
-typedef struct IntPropertyRNA {
-  PropertyRNA property;
+typedef struct ApiIntProp {
+  ApiProp prop;
 
-  PropIntGetFunc get;
-  PropIntSetFunc set;
-  PropIntArrayGetFunc getarray;
-  PropIntArraySetFunc setarray;
-  PropIntRangeFunc range;
+  PropIntGetFn get;
+  PropIntSetFn set;
+  PropIntArrayGetFn getarray;
+  PropIntArraySetFn setarray;
+  PropIntRangeFn range;
 
-  PropIntGetFuncEx get_ex;
-  PropIntSetFuncEx set_ex;
-  PropIntArrayGetFuncEx getarray_ex;
-  PropIntArraySetFuncEx setarray_ex;
-  PropIntRangeFuncEx range_ex;
+  PropIntGetFnEx get_ex;
+  PropIntSetFnEx set_ex;
+  PropIntArrayGetFnEx getarray_ex;
+  PropIntArraySetFnEx setarray_ex;
+  PropIntRangeFnEx range_ex;
 
-  PropertyScaleType ui_scale_type;
+  PropScaleType ui_scale_type;
   int softmin, softmax;
   int hardmin, hardmax;
   int step;
 
   int defaultvalue;
   const int *defaultarray;
-} IntPropertyRNA;
+} ApiIntProp;
 
 typedef struct FloatPropertyRNA {
   PropertyRNA property;
