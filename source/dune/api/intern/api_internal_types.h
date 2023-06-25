@@ -24,19 +24,19 @@ typedef struct IdProp IdProp;
 
 /* Function Callbacks */
 
-/** Update callback for an RNA property.
+/** Update callback for an apo prop.
  *
  *  This is NOT called automatically when writing into the prop, it needs to be called
  * manually (through api_prop_update or api_prop_update_main) when needed.
  *
- *  \param bmain: the Main data-base to which `ptr` data belongs.
- *  \param active_scene: The current active scene (may be NULL in some cases).
- *  \param ptr: The api ptr data to update. */
+ *  param main: the Main data-base to which `ptr` data belongs.
+ *  param active_scene: The current active scene (may be NULL in some cases).
+ *  param ptr: The api ptr data to update. */
 typedef void (*UpdateFn)(struct Main *main, struct Scene *active_scene, struct ApiPtr *ptr);
-typedef void (*ContextPropUpdateFn)(struct Cxt *C,
+typedef void (*CxtPropUpdateFn)(struct Cxt *C,
                                       struct ApiPtr *ptr,
                                       struct ApiProp *prop);
-typedef void (*ContextUpdateFunc)(struct bContext *C, struct ApiPtr *ptr);
+typedef void (*CxtUpdateFn)(struct Cxt *C, struct ApiPtr *ptr);
 
 typedef int (*EditableFunc)(struct PointerRNA *ptr, const char **r_info);
 typedef int (*ItemEditableFunc)(struct PointerRNA *ptr, int index);
