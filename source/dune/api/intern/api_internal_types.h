@@ -94,7 +94,7 @@ typedef int (*PropCollectionAssignIntFn)(struct ApiPtr *ptr,
                                          int key,
                                          const struct ApiPtr *assign_ptr);
 
-/* extended versions with PropertyRNA argument */
+/* extended versions with ApiProp argument */
 typedef bool (*PropBoolGetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*PropBoolSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, bool value);
 typedef void (*PropBoolArrayGetFnEx)(struct ApiPtr *ptr,
@@ -142,19 +142,18 @@ typedef void (*PropEnumSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, int va
 /* Handling override operations, and also comparison. */
 
 /** Structure storing all needed data to process all three kinds of RNA properties. */
-typedef struct PropertyRNAOrID {
+typedef struct PropApiOrId {
   ApiPtr ptr;
 
   /** The ApiProp passed as param, used to generate that structure's content:
-   * - Static api: The api prop (same as `rnaprop`), never NULL.
-   * - Runtime api: The api prop (same as `rnaprop`), never NULL.
-   * - IdProp: The IdProp, never NULL.
-   */
+   * - Static api: The api prop (same as `apiprop`), never NULL.
+   * - Runtime api: The api prop (same as `apiprop`), never NULL.
+   * - IdProp: The IdProp, never NULL. */
   ApiProp *rawprop;
-  /** The real api prop of this property, never NULL:
-   * - Static api: The api property, also gives direct access to the data (from any matching
-   *               PointerRNA).
-   * - Runtime api: The rna property, does not directly gives access to the data.
+  /** The real api prop of this prop, never NULL:
+   * - Static api: The api prop, also gives direct access to the data (from any matching
+   *               ApiPtr).
+   * - Runtime api: The rna prop, does not directly gives access to the data.
    * - IdProp: The generic ApiProp matching its type.
    */
   ApiProp *apiprop;
@@ -167,26 +166,24 @@ typedef struct PropertyRNAOrID {
   /** The name of the prop. */
   const char *id;
 
-  /** Whether this property is a 'pure' IDProperty or not. */
+  /** Whether this prop is a 'pure' IdProp or not. */
   bool is_idprop;
-  /** For runtime RNA properties, whether it is set, defined, or not.
+  /** For runtime api props, whether it is set, defined, or not.
    * WARNING: This DOES take into account the `IDP_FLAG_GHOST` flag, i.e. it matches result of
-   *          `RNA_property_is_set`. */
+   *          `api_prop_is_set`. */
   bool is_set;
 
   bool is_array;
   uint array_len;
-} PropertyRNAOrID;
+} PropApiOrId;
 
-/**
- * If override is NULL, merely do comparison between prop_a and prop_b,
+/* If override is NULL, merely do comparison between prop_a and prop_b,
  * following comparison mode given.
- * If override and api_path are not NULL, it will add a new override operation for
- * overridable properties that differ and have not yet been overridden
+ * If override and api_path are not NULL, it will add a new override op for
+ * overridable props that differ and have not yet been overridden
  * (and set accordingly r_override_changed if given).
  *
- * override, api_path and r_override_changed may be NULL pointers.
- */
+ * override, api_path and r_override_changed may be NULL ptrs. */
 typedef int (*ApiPropOverrideDiff)(struct Main *main,
                                    struct PropApiOrId *prop_a,
                                    struct PropApiOrId *prop_b,
