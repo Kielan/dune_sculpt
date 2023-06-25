@@ -479,52 +479,52 @@ struct StructRNA {
   ContainerRNA cont;
 
   /* unique identifier, keep after 'cont' */
-  const char *identifier;
+  const char *id;
 
   /** Python type, this is a subtype of #pyrna_struct_Type
    * but used so each struct can have its own type which is useful for subclassing RNA. */
   void *py_type;
-  void *blender_type;
+  void *dune_type;
 
   /* various options */
   int flag;
-  /* Each StructRNA type can define own tags which properties can set
-   * (PropertyRNA.tags) for changed behavior based on struct-type. */
-  const EnumPropertyItem *prop_tag_defines;
+  /* Each ApiStruct type can define own tags which properties can set
+   * (ApiProp.tags) for changed behavior based on struct-type. */
+  const EnumPropItem *prop_tag_defines;
 
   /* user readable name */
   const char *name;
   /* single line description, displayed in the tooltip for example */
   const char *description;
   /* context for translation */
-  const char *translation_context;
+  const char *translation_cxt;
   /* icon ID */
   int icon;
 
   /* property that defines the name */
-  PropertyRNA *nameproperty;
+  ApiProp *nameprop;
 
   /* property to iterate over properties */
-  PropertyRNA *iteratorproperty;
+  ApiProp *iterprop;
 
   /* struct this is derivedfrom */
-  struct StructRNA *base;
+  struct ApiStruct *base;
 
   /* only use for nested structs, where both the parent and child access
    * the same C Struct but nesting is used for grouping properties.
    * The parent property is used so we know NULL checks are not needed,
    * and that this struct will never exist without its parent */
-  struct StructRNA *nested;
+  struct ApiStruct *nested;
 
   /* function to give the more specific type */
-  StructRefineFunc refine;
+  StructRefineFn refine;
 
   /* function to find path to this struct in an ID */
-  StructPathFunc path;
+  StructPathFn path;
 
   /* function to register/unregister subclasses */
-  StructRegisterFunc reg;
-  StructUnregisterFunc unreg;
+  StructRegisterFn reg;
+  StructUnregisterFn unreg;
   /**
    * Optionally support reusing Python instances for this type.
    *
@@ -534,28 +534,25 @@ struct StructRNA {
    *
    * Being able to access the instance also has the advantage that we can invalidate
    * the Python instance when the data has been removed, see: #BPY_DECREF_RNA_INVALIDATE
-   * so accessing the variables from Python raises an exception instead of crashing.
-   */
-  StructInstanceFunc instance;
+   * so accessing the variables from Python raises an exception instead of crashing. */
+  StructInstanceFn instance;
 
   /** Return the location of the struct's pointer to the root group IDProperty. */
-  IDPropertiesFunc idproperties;
+  IdPropsFn idprops;
 
   /* functions of this struct */
-  ListBase functions;
+  List fns;
 };
 
-/* Blender RNA
- *
- * Root RNA data structure that lists all struct types. */
+/* Dune Api Root api data structure that lists all struct types. */
 
-struct BlenderRNA {
-  ListBase structs;
-  /* A map of structs: {StructRNA.identifier -> StructRNA}
+struct DuneApi {
+  List structs;
+  /* A map of structs: {Struct.id -> ApiStruct}
    * These are ensured to have unique names (with STRUCT_PUBLIC_NAMESPACE enabled). */
   struct GHash *structs_map;
-  /* Needed because types with an empty identifier aren't included in 'structs_map'. */
+  /* Needed because types with an empty id aren't included in 'structs_map'. */
   unsigned int structs_len;
 };
 
-#define CONTAINER_RNA_ID(cont) (*(const char **)(((ContainerRNA *)(cont)) + 1))
+#define CONTAINER_API_ID(cont) (*(const char **)(((ApiContainer *)(cont)) + 1))
