@@ -443,8 +443,8 @@ typedef struct EnumPropertyRNA {
   const char *native_enum_type;
 } EnumPropertyRNA;
 
-typedef struct PointerPropertyRNA {
-  PropertyRNA property;
+typedef struct ApiPtrProp {
+  ApiProp prop;
 
   PropPointerGetFunc get;
   PropPointerSetFunc set;
