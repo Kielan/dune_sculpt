@@ -76,28 +76,28 @@ typedef void (*PropPtrSetFn)(struct ApiPtr *ptr,
                              struct ReportList *reports);
 typedef bool (*PropPtrPollFn)(struct ApiPtr *ptr, const ApiPtr value);
 typedef bool (*PropPtrPollFnPy)(struct ApiPtr *ptr,
-                                      const ApiPtr value,
-                                      const ApiProp *prop);
+                                const ApiPtr value,
+                                const ApiProp *prop);
 typedef void (*PropCollectionBeginFn)(struct CollectionPropIter *iter,
-                                        struct ApiPtr *ptr);
+                                      struct ApiPtr *ptr);
 typedef void (*PropCollectionNextFn)(struct CollectionPropIter *iter);
 typedef void (*PropCollectionEndFn)(struct CollectionPropIter *iter);
 typedef ApiPtr (*PropCollectionGetFn)(struct CollectionPropIter *iter);
-typedef int (*PropCollectionLengthFunc)(struct ApiPtr *ptr);
-typedef int (*PropCollectionLookupIntFunc)(struct PointerRNA *ptr,
-                                           int key,
-                                           struct PointerRNA *r_ptr);
-typedef int (*PropCollectionLookupStringFunc)(struct PointerRNA *ptr,
-                                              const char *key,
-                                              struct PointerRNA *r_ptr);
-typedef int (*PropCollectionAssignIntFunc)(struct PointerRNA *ptr,
-                                           int key,
-                                           const struct PointerRNA *assign_ptr);
+typedef int (*PropCollectionLengthFn)(struct ApiPtr *ptr);
+typedef int (*PropCollectionLookupIntFn)(struct ApiPtr *ptr,
+                                         int key,
+                                         struct ApiPtr *r_ptr);
+typedef int (*PropCollectionLookupStringFn)(struct ApiPtr *ptr,
+                                            const char *key,
+                                            struct ApiPtr *r_ptr);
+typedef int (*PropCollectionAssignIntFn)(struct ApiPtr *ptr,
+                                         int key,
+                                         const struct ApiPtr *assign_ptr);
 
 /* extended versions with PropertyRNA argument */
-typedef bool (*PropBooleanGetFuncEx)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*PropBooleanSetFuncEx)(struct PointerRNA *ptr, struct PropertyRNA *prop, bool value);
-typedef void (*PropBooleanArrayGetFuncEx)(struct PointerRNA *ptr,
+typedef bool (*PropBoolGetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*PropBoolSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, bool value);
+typedef void (*PropBoolArrayGetFnEx)(struct ApiPtr *ptr,
                                           struct PropertyRNA *prop,
                                           bool *values);
 typedef void (*PropBooleanArraySetFuncEx)(struct PointerRNA *ptr,
