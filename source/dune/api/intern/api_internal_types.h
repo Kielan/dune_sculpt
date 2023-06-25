@@ -1,32 +1,26 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #pragma once
 
-#include "DNA_listBase.h"
+#include "list.h"
 
-#include "RNA_types.h"
+#include "api_types.h"
 
-struct BlenderRNA;
-struct CollectionPropertyIterator;
-struct ContainerRNA;
-struct FunctionRNA;
+struct DuneApi;
+struct CollectionPropIter;
+struct ApiContainer;
+struct ApiFn;
 struct GHash;
-struct IDOverrideLibrary;
-struct IDOverrideLibraryPropertyOperation;
-struct IDProperty;
+struct IdOverrideLib;
+struct IdOverrideLibPropOp
+struct IdProp;
 struct Main;
-struct PointerRNA;
-struct PropertyRNA;
+struct ApiPointerRNA;
+struct ApiPropertyRNA;
 struct ReportList;
 struct Scene;
-struct StructRNA;
-struct bContext;
+struct ApiStruct;
+struct Cxt;
 
-typedef struct IDProperty IDProperty;
+typedef struct IdProp IdProp;
 
 /* Function Callbacks */
 
