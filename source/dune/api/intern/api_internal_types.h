@@ -185,15 +185,15 @@ typedef struct PropertyRNAOrID {
  * overridable properties that differ and have not yet been overridden
  * (and set accordingly \a r_override_changed if given).
  *
- * \note \a override, \a rna_path and \a r_override_changed may be NULL pointers.
+ * override, api_path and r_override_changed may be NULL pointers.
  */
-typedef int (*RNAPropOverrideDiff)(struct Main *bmain,
-                                   struct PropertyRNAOrID *prop_a,
-                                   struct PropertyRNAOrID *prop_b,
+typedef int (*ApiPropOverrideDiff)(struct Main *main,
+                                   struct PropApiOrId *prop_a,
+                                   struct PropApiOrId *prop_b,
                                    int mode,
-                                   struct IDOverrideLibrary *override,
-                                   const char *rna_path,
-                                   size_t rna_path_len,
+                                   struct IdOverrideLib *override,
+                                   const char *api_path,
+                                   size_t api_path_len,
                                    int flags,
                                    bool *r_override_changed);
 
@@ -201,38 +201,38 @@ typedef int (*RNAPropOverrideDiff)(struct Main *bmain,
  * Only used for differential override (add, sub, etc.).
  * Store into storage the value needed to transform reference's value into local's value.
  *
- * \note Given PropertyRNA are final (in case of IDProps...).
- * \note In non-array cases, \a len values are 0.
- * \note Might change given override operation (e.g. change 'add' one into 'sub'),
+ * Given Prop are final (in case of IdProps...).
+ * In non-array cases, len values are 0.
+ * Might change given override operation (e.g. change 'add' one into 'sub'),
  * in case computed storage value is out of range
  * (or even change it to basic 'set' operation if nothing else works).
  */
 typedef bool (*RNAPropOverrideStore)(struct Main *bmain,
-                                     struct PointerRNA *ptr_local,
-                                     struct PointerRNA *ptr_reference,
-                                     struct PointerRNA *ptr_storage,
-                                     struct PropertyRNA *prop_local,
-                                     struct PropertyRNA *prop_reference,
-                                     struct PropertyRNA *prop_storage,
+                                     struct ApiPtr *ptr_local,
+                                     struct ApiPtr *ptr_ref,
+                                     struct ApiPtr *ptr_storage,
+                                     struct ApiProp *prop_local,
+                                     struct ApiProp *prop_ref,
+                                     struct ApiProp *prop_storage,
                                      int len_local,
-                                     int len_reference,
+                                     int len_ref,
                                      int len_storage,
-                                     struct IDOverrideLibraryPropertyOperation *opop);
+                                     struct IdOverrideLibProp op);
 
 /**
  * Apply given override operation from src to dst (using value from storage as second operand
  * for differential operations).
  *
- * \note Given PropertyRNA are final (in case of IDProps...).
- * \note In non-array cases, \a len values are 0.
+ * Given ApiProp are final (in case of IdProps...).
+ * In non-array cases, len values are 0.
  */
-typedef bool (*RNAPropOverrideApply)(struct Main *bmain,
-                                     struct PointerRNA *ptr_dst,
-                                     struct PointerRNA *ptr_src,
-                                     struct PointerRNA *ptr_storage,
-                                     struct PropertyRNA *prop_dst,
-                                     struct PropertyRNA *prop_src,
-                                     struct PropertyRNA *prop_storage,
+typedef bool (*RNAPropOverrideApply)(struct Main *main,
+                                     struct ApiPtr *ptr_dst,
+                                     struct ApiPtr *ptr_src,
+                                     struct ApiPtr *ptr_storage,
+                                     struct ApiProp *prop_dst,
+                                     struct ApiProp *prop_src,
+                                     struct ApiProp *prop_storage,
                                      int len_dst,
                                      int len_src,
                                      int len_storage,
