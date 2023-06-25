@@ -143,16 +143,16 @@ typedef void (*PropEnumSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, int va
 
 /** Structure storing all needed data to process all three kinds of RNA properties. */
 typedef struct PropertyRNAOrID {
-  PointerRNA ptr;
+  ApiPtr ptr;
 
-  /** The PropertyRNA passed as parameter, used to generate that structure's content:
-   * - Static RNA: The RNA property (same as `rnaprop`), never NULL.
-   * - Runtime RNA: The RNA property (same as `rnaprop`), never NULL.
-   * - IDProperty: The IDProperty, never NULL.
+  /** The ApiProp passed as param, used to generate that structure's content:
+   * - Static api: The api prop (same as `rnaprop`), never NULL.
+   * - Runtime api: The api prop (same as `rnaprop`), never NULL.
+   * - IdProp: The IdProp, never NULL.
    */
-  PropertyRNA *rawprop;
-  /** The real RNA property of this property, never NULL:
-   * - Static RNA: The rna property, also gives direct access to the data (from any matching
+  ApiProp *rawprop;
+  /** The real api prop of this property, never NULL:
+   * - Static api: The api property, also gives direct access to the data (from any matching
    *               PointerRNA).
    * - Runtime api: The rna property, does not directly gives access to the data.
    * - IdProp: The generic ApiProp matching its type.
@@ -163,9 +163,9 @@ typedef struct PropertyRNAOrID {
    * - Runtime api: The IdProp storing the data of that prop, may be NULL if never set yet.
    * - IdProp: The IdProp, never NULL.
    */
-  IDProperty *idprop;
-  /** The name of the property. */
-  const char *identifier;
+  IdProp *idprop;
+  /** The name of the prop. */
+  const char *id;
 
   /** Whether this property is a 'pure' IDProperty or not. */
   bool is_idprop;
