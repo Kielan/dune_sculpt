@@ -241,7 +241,6 @@ typedef bool (*ApiPropOverrideApply)(struct Main *main,
 /* Container - generic abstracted container of api props */
 typedef struct ApiContainer {
   void *next, *prev;
-
   struct GHash *prophash;
   List props;
 } ApiContainer;
@@ -265,23 +264,23 @@ struct ApiFn {
   ApiProp *c_ret;
 };
 
-struct PropertyRNA {
-  struct PropertyRNA *next, *prev;
+struct ApiProp {
+  struct ApiProp *next, *prev;
 
   /* magic bytes to distinguish with IDProperty */
   int magic;
 
-  /* unique identifier */
-  const char *identifier;
+  /* unique id */
+  const char *id;
   /* various options */
   int flag;
   /* various override options */
   int flag_override;
   /* Function parameters flags. */
-  short flag_parameter;
+  short flag_param;
   /* Internal ("private") flags. */
   short flag_internal;
-  /* The subset of StructRNA.prop_tag_defines values that applies to this property. */
+  /* The subset of ApiStruct.prop_tag_defines values that applies to this property. */
   short tags;
 
   /* user readable name */
@@ -389,22 +388,22 @@ typedef struct ApiIntProp {
   const int *defaultarray;
 } ApiIntProp;
 
-typedef struct FloatPropertyRNA {
-  PropertyRNA property;
+typedef struct ApiFloatProp {
+  ApiProp prop;
 
-  PropFloatGetFunc get;
-  PropFloatSetFunc set;
-  PropFloatArrayGetFunc getarray;
-  PropFloatArraySetFunc setarray;
-  PropFloatRangeFunc range;
+  PropFloatGetFn get;
+  PropFloatSetFn set;
+  PropFloatArrayGetFn getarray;
+  PropFloatArraySetFn setarray;
+  PropFloatRangeFn range;
 
-  PropFloatGetFuncEx get_ex;
-  PropFloatSetFuncEx set_ex;
-  PropFloatArrayGetFuncEx getarray_ex;
-  PropFloatArraySetFuncEx setarray_ex;
-  PropFloatRangeFuncEx range_ex;
+  PropFloatGetFnEx get_ex;
+  PropFloatSetFnEx set_ex;
+  PropFloatArrayGetFnEx getarray_ex;
+  PropFloatArraySetFnEx setarray_ex;
+  PropFloatRangeFnEx range_ex;
 
-  PropertyScaleType ui_scale_type;
+  PropScaleType ui_scale_type;
   float softmin, softmax;
   float hardmin, hardmax;
   float step;
