@@ -74,16 +74,16 @@ typedef ApiStruct *(*PropPtrTypeFn)(struct ApiPtr *ptr);
 typedef void (*PropPtrSetFn)(struct ApiPtr *ptr,
                              const ApiPtr value,
                              struct ReportList *reports);
-typedef bool (*PropPointerPollFunc)(struct PointerRNA *ptr, const PointerRNA value);
-typedef bool (*PropPointerPollFuncPy)(struct PointerRNA *ptr,
-                                      const PointerRNA value,
-                                      const PropertyRNA *prop);
-typedef void (*PropCollectionBeginFunc)(struct CollectionPropertyIterator *iter,
-                                        struct PointerRNA *ptr);
-typedef void (*PropCollectionNextFunc)(struct CollectionPropertyIterator *iter);
-typedef void (*PropCollectionEndFunc)(struct CollectionPropertyIterator *iter);
-typedef PointerRNA (*PropCollectionGetFunc)(struct CollectionPropertyIterator *iter);
-typedef int (*PropCollectionLengthFunc)(struct PointerRNA *ptr);
+typedef bool (*PropPtrPollFn)(struct ApiPtr *ptr, const ApiPtr value);
+typedef bool (*PropPtrPollFnPy)(struct ApiPtr *ptr,
+                                      const ApiPtr value,
+                                      const ApiProp *prop);
+typedef void (*PropCollectionBeginFn)(struct CollectionPropIter *iter,
+                                        struct ApiPtr *ptr);
+typedef void (*PropCollectionNextFn)(struct CollectionPropIter *iter);
+typedef void (*PropCollectionEndFn)(struct CollectionPropIter *iter);
+typedef ApiPtr (*PropCollectionGetFn)(struct CollectionPropIter *iter);
+typedef int (*PropCollectionLengthFunc)(struct ApiPtr *ptr);
 typedef int (*PropCollectionLookupIntFunc)(struct PointerRNA *ptr,
                                            int key,
                                            struct PointerRNA *r_ptr);
