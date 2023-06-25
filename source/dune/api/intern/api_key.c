@@ -1,32 +1,26 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #include <stdlib.h>
 
-#include "DNA_ID.h"
-#include "DNA_curve_types.h"
-#include "DNA_key_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_scene_types.h"
+#include "types_id.h"
+#include "types_curve.h"
+#include "types_key.h"
+#include "types_lattice.h"
+#include "types_mesh.h"
+#include "types_scene.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  include <stddef.h>
 
