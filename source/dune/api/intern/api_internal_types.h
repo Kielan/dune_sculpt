@@ -23,7 +23,6 @@ struct Cxt;
 typedef struct IdProp IdProp;
 
 /* Function Callbacks */
-
 /** Update callback for an apo prop.
  *
  *  This is NOT called automatically when writing into the prop, it needs to be called
@@ -34,47 +33,47 @@ typedef struct IdProp IdProp;
  *  param ptr: The api ptr data to update. */
 typedef void (*UpdateFn)(struct Main *main, struct Scene *active_scene, struct ApiPtr *ptr);
 typedef void (*CxtPropUpdateFn)(struct Cxt *C,
-                                      struct ApiPtr *ptr,
-                                      struct ApiProp *prop);
+                                struct ApiPtr *ptr,
+                                struct ApiProp *prop);
 typedef void (*CxtUpdateFn)(struct Cxt *C, struct ApiPtr *ptr);
 
-typedef int (*EditableFunc)(struct PointerRNA *ptr, const char **r_info);
-typedef int (*ItemEditableFunc)(struct PointerRNA *ptr, int index);
-typedef struct IDProperty **(*IDPropertiesFunc)(struct ApiPtr *ptr);
-typedef struct StructRNA *(*StructRefineFunc)(struct ApiPtr *ptr);
-typedef char *(*StructPathFunc)(struct PointerRNA *ptr);
+typedef int (*EditableFn)(struct ApiPtr *ptr, const char **r_info);
+typedef int (*ItemEditableFn)(struct ApiPtr *ptr, int index);
+typedef struct IdProp **(*IdPropsFn)(struct ApiPtr *ptr);
+typedef struct ApiStruct *(*StructRefineFn)(struct ApiPtr *ptr);
+typedef char *(*StructPathFn)(struct ApiPtr *ptr);
 
-typedef int (*PropArrayLengthGetFunc)(struct PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION]);
-typedef bool (*PropBooleanGetFunc)(struct PointerRNA *ptr);
-typedef void (*PropBooleanSetFunc)(struct PointerRNA *ptr, bool value);
-typedef void (*PropBooleanArrayGetFunc)(struct PointerRNA *ptr, bool *values);
-typedef void (*PropBooleanArraySetFunc)(struct PointerRNA *ptr, const bool *values);
-typedef int (*PropIntGetFunc)(struct PointerRNA *ptr);
-typedef void (*PropIntSetFunc)(struct PointerRNA *ptr, int value);
-typedef void (*PropIntArrayGetFunc)(struct PointerRNA *ptr, int *values);
-typedef void (*PropIntArraySetFunc)(struct PointerRNA *ptr, const int *values);
-typedef void (*PropIntRangeFunc)(
-    struct PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax);
-typedef float (*PropFloatGetFunc)(struct PointerRNA *ptr);
-typedef void (*PropFloatSetFunc)(struct PointerRNA *ptr, float value);
-typedef void (*PropFloatArrayGetFunc)(struct PointerRNA *ptr, float *values);
-typedef void (*PropFloatArraySetFunc)(struct PointerRNA *ptr, const float *values);
-typedef void (*PropFloatRangeFunc)(
-    struct PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax);
-typedef void (*PropStringGetFunc)(struct PointerRNA *ptr, char *value);
-typedef int (*PropStringLengthFunc)(struct PointerRNA *ptr);
-typedef void (*PropStringSetFunc)(struct PointerRNA *ptr, const char *value);
-typedef int (*PropEnumGetFunc)(struct PointerRNA *ptr);
-typedef void (*PropEnumSetFunc)(struct PointerRNA *ptr, int value);
-typedef const EnumPropertyItem *(*PropEnumItemFunc)(struct bContext *C,
-                                                    struct PointerRNA *ptr,
-                                                    struct PropertyRNA *prop,
-                                                    bool *r_free);
-typedef PointerRNA (*PropPointerGetFunc)(struct PointerRNA *ptr);
-typedef StructRNA *(*PropPointerTypeFunc)(struct PointerRNA *ptr);
-typedef void (*PropPointerSetFunc)(struct PointerRNA *ptr,
-                                   const PointerRNA value,
-                                   struct ReportList *reports);
+typedef int (*PropArrayLengthGetFn)(struct ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION]);
+typedef bool (*PropBoolGetFn)(struct ApiPtr *ptr);
+typedef void (*PropBoolSetFn)(struct ApiPtr *ptr, bool value);
+typedef void (*PropBoolArrayGetFn)(struct ApiPtr *ptr, bool *values);
+typedef void (*PropBoolArraySetn)(struct ApiPtr *ptr, const bool *values);
+typedef int (*PropIntGetFn)(struct ApiPte *ptr);
+typedef void (*PropIntSetFn)(struct ApiPtr *ptr, int value);
+typedef void (*PropIntArrayGetFn)(struct ApiPtr *ptr, int *values);
+typedef void (*PropIntArraySetFn)(struct ApiPtr *ptr, const int *values);
+typedef void (*PropIntRangeFn)(
+    struct ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax);
+typedef float (*PropFloatGetFn)(struct ApiPtr *ptr);
+typedef void (*PropFloatSetFn)(struct ApiPtr *ptr, float value);
+typedef void (*PropFloatArrayGetFn)(struct ApiPtr *ptr, float *values);
+typedef void (*PropFloatArraySetFn)(struct ApiPtr *ptr, const float *values);
+typedef void (*PropFloatRangeFn)(
+    struct ApiPtr *ptr, float *min, float *max, float *softmin, float *softmax);
+typedef void (*PropStringGetFn)(struct ApiPtr *ptr, char *value);
+typedef int (*PropStringLengthFn)(struct ApiPtr *ptr);
+typedef void (*PropStringSetFn)(struct ApiPtr *ptr, const char *value);
+typedef int (*PropEnumGetFn)(struct ApiPtr *ptr);
+typedef void (*PropEnumSetFn)(struct ApiPtr *ptr, int value);
+typedef const EnumPropItem *(*PropEnumItemFn)(struct Cxt *C,
+                                              struct ApiPtr *ptr,
+                                              struct ApiProp *prop,
+                                              bool *r_free);
+typedef ApiPtr (*PropPtrGetFn)(struct ApiPtr *ptr);
+typedef ApiStruct *(*PropPtrTypeFn)(struct ApiPtr *ptr);
+typedef void (*PropPtrSetFn)(struct ApiPtr *ptr,
+                             const ApiPtr value,
+                             struct ReportList *reports);
 typedef bool (*PropPointerPollFunc)(struct PointerRNA *ptr, const PointerRNA value);
 typedef bool (*PropPointerPollFuncPy)(struct PointerRNA *ptr,
                                       const PointerRNA value,
