@@ -105,9 +105,9 @@ typedef void (*PropBoolArraySetFnEx)(struct ApiPtr *ptr,
                                      const bool *values);
 typedef int (*PropIntGetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*PropIntSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
-typedef void (*PropIntArrayGetFnEx)(struct PointerRNA *ptr,
-                                      struct PropertyRNA *prop,
-                                      int *values);
+typedef void (*PropIntArrayGetFnEx)(struct ApiPtr *ptr,
+                                    struct ApiProp *prop,
+                                    int *values);
 typedef void (*PropIntArraySetFnEx)(struct ApiPtr *ptr,
                                     struct ApiProp *prop,
                                     const int *values);
@@ -136,8 +136,8 @@ typedef int (*PropStringLengthFnEx)(struct ApiPtr *ptr, struct PropertyRNA *prop
 typedef void (*PropStringSetFnEx)(struct ApiPtr *ptr,
                                     struct ApiProp *prop,
                                     const char *value);
-typedef int (*PropEnumGetFuncEx)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*PropEnumSetFuncEx)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
+typedef int (*PropEnumGetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*PropEnumSetFnEx)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
 
 /* Handling override operations, and also comparison. */
 
