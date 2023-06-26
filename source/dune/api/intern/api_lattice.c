@@ -79,18 +79,18 @@ static void rna_Lattice_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), P
   ID *id = ptr->owner_id;
 
   DEG_id_tag_update(id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
 /* copy settings to editlattice,
  * we could split this up differently (one update call per property)
  * but for now that's overkill
  */
-static void rna_Lattice_update_data_editlatt(Main *UNUSED(bmain),
+static void api_Lattice_update_data_editlatt(Main *UNUSED(bmain),
                                              Scene *UNUSED(scene),
                                              PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   Lattice *lt = (Lattice *)ptr->owner_id;
 
   if (lt->editlatt) {
@@ -99,14 +99,14 @@ static void rna_Lattice_update_data_editlatt(Main *UNUSED(bmain),
     lt_em->typev = lt->typev;
     lt_em->typew = lt->typew;
     lt_em->flag = lt->flag;
-    BLI_strncpy(lt_em->vgroup, lt->vgroup, sizeof(lt_em->vgroup));
+    lib_strncpy(lt_em->vgroup, lt->vgroup, sizeof(lt_em->vgroup));
   }
 
-  DEG_id_tag_update(id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static void rna_Lattice_update_size(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Lattice_update_size(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   Lattice *lt = (Lattice *)ptr->owner_id;
   Object *ob;
@@ -118,11 +118,11 @@ static void rna_Lattice_update_size(Main *bmain, Scene *scene, PointerRNA *ptr)
   neww = (lt->opntsw > 0) ? lt->opntsw : lt->pntsw;
 
   /* #BKE_lattice_resize needs an object, any object will have the same result */
-  for (ob = bmain->objects.first; ob; ob = ob->id.next) {
+  for (ob = main->objects.first; ob; ob = ob->id.next) {
     if (ob->data == lt) {
-      BKE_lattice_resize(lt, newu, newv, neww, ob);
+      dune_lattice_resize(lt, newu, newv, neww, ob);
       if (lt->editlatt) {
-        BKE_lattice_resize(lt->editlatt->latt, newu, newv, neww, ob);
+        dune_lattice_resize(lt->editlatt->latt, newu, newv, neww, ob);
       }
       break;
     }
@@ -130,16 +130,16 @@ static void rna_Lattice_update_size(Main *bmain, Scene *scene, PointerRNA *ptr)
 
   /* otherwise without, means old points are not repositioned */
   if (!ob) {
-    BKE_lattice_resize(lt, newu, newv, neww, NULL);
+    dune_lattice_resize(lt, newu, newv, neww, NULL);
     if (lt->editlatt) {
-      BKE_lattice_resize(lt->editlatt->latt, newu, newv, neww, NULL);
+      dune_lattice_resize(lt->editlatt->latt, newu, newv, neww, NULL);
     }
   }
 
-  rna_Lattice_update_data(bmain, scene, ptr);
+  api_Lattice_update_data(main, scene, ptr);
 }
 
-static void rna_Lattice_use_outside_set(PointerRNA *ptr, bool value)
+static void api_Lattice_use_outside_set(PointerRNA *ptr, bool value)
 {
   Lattice *lt = ptr->data;
 
