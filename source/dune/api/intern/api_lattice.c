@@ -17,32 +17,32 @@
 #  include "types_object.h"
 #  include "types_scene.h"
 
-#  include "BKE_deform.h"
-#  include "BKE_lattice.h"
-#  include "BKE_main.h"
-#  include "BLI_string.h"
+#  include "dune_deform.h"
+#  include "dune_lattice.h"
+#  include "dune_main.h"
+#  include "lib_string.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_lattice.h"
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "ed_lattice.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static void rna_LatticePoint_co_get(PointerRNA *ptr, float *values)
+static void api_LatticePoint_co_get(ApiPtr *ptr, float *values)
 {
   Lattice *lt = (Lattice *)ptr->owner_id;
-  BPoint *bp = (BPoint *)ptr->data;
+  Point *bp = (Point *)ptr->data;
   int index = bp - lt->def;
   int u, v, w;
 
-  BKE_lattice_index_to_uvw(lt, index, &u, &v, &w);
+  dune_lattice_index_to_uvw(lt, index, &u, &v, &w);
 
   values[0] = lt->fu + u * lt->du;
   values[1] = lt->fv + v * lt->dv;
   values[2] = lt->fw + w * lt->dw;
 }
 
-static void rna_LatticePoint_groups_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_LatticePoint_groups_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Lattice *lt = (Lattice *)ptr->owner_id;
 
