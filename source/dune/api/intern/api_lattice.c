@@ -47,27 +47,27 @@ static void api_LatticePoint_groups_begin(CollectionPropIter *iter, ApiPtr *ptr)
   Lattice *lt = (Lattice *)ptr->owner_id;
 
   if (lt->dvert) {
-    BPoint *bp = (BPoint *)ptr->data;
-    MDeformVert *dvert = lt->dvert + (bp - lt->def);
+    Point *bp = (Point *)ptr->data;
+    MeshDeformVert *dvert = lt->dvert + (bp - lt->def);
 
-    rna_iterator_array_begin(
-        iter, (void *)dvert->dw, sizeof(MDeformWeight), dvert->totweight, 0, NULL);
+    api_iter_array_begin(
+        iter, (void *)dvert->dw, sizeof(MeshDeformWeight), dvert->totweight, 0, NULL);
   }
   else {
-    rna_iterator_array_begin(iter, NULL, 0, 0, 0, NULL);
+    api_iter_array_begin(iter, NULL, 0, 0, 0, NULL);
   }
 }
 
-static void rna_Lattice_points_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Lattice_points_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Lattice *lt = (Lattice *)ptr->data;
   int tot = lt->pntsu * lt->pntsv * lt->pntsw;
 
   if (lt->editlatt && lt->editlatt->latt->def) {
-    rna_iterator_array_begin(iter, (void *)lt->editlatt->latt->def, sizeof(BPoint), tot, 0, NULL);
+    api_iter_array_begin(iter, (void *)lt->editlatt->latt->def, sizeof(BPoint), tot, 0, NULL);
   }
   else if (lt->def) {
-    rna_iterator_array_begin(iter, (void *)lt->def, sizeof(BPoint), tot, 0, NULL);
+    api_iter_array_begin(iter, (void *)lt->def, sizeof(Point), tot, 0, NULL);
   }
   else {
     rna_iterator_array_begin(iter, NULL, 0, 0, 0, NULL);
