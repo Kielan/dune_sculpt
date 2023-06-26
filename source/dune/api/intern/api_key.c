@@ -24,21 +24,21 @@
 
 #  include <stddef.h>
 
-#  include "DNA_object_types.h"
+#  include "types_object.h"
 
-#  include "BLI_listbase.h"
-#  include "BLI_string_utils.h"
+#  include "lib_list.h"
+#  include "lib_string_utils.h"
 
-#  include "BKE_animsys.h"
-#  include "BKE_key.h"
-#  include "BKE_main.h"
+#  include "dune_animsys.h"
+#  include "dune_key.h"
+#  include "dune_main.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static Key *rna_ShapeKey_find_key(ID *id)
+static Key *api_ShapeKey_find_key(Id *id)
 {
   switch (GS(id->name)) {
     case ID_CU_LEGACY:
@@ -50,53 +50,53 @@ static Key *rna_ShapeKey_find_key(ID *id)
     case ID_ME:
       return ((Mesh *)id)->key;
     case ID_OB:
-      return BKE_key_from_object((Object *)id);
+      return dune_key_from_object((Object *)id);
     default:
       return NULL;
   }
 }
 
-static void rna_ShapeKey_name_set(PointerRNA *ptr, const char *value)
+static void api_ShapeKey_name_set(ApiPtr *ptr, const char *value)
 {
   KeyBlock *kb = ptr->data;
   char oldname[sizeof(kb->name)];
 
   /* make a copy of the old name first */
-  BLI_strncpy(oldname, kb->name, sizeof(kb->name));
+  lib_strncpy(oldname, kb->name, sizeof(kb->name));
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(kb->name, value, sizeof(kb->name));
+  lib_strncpy_utf8(kb->name, value, sizeof(kb->name));
 
   /* make sure the name is truly unique */
   if (ptr->owner_id) {
-    Key *key = rna_ShapeKey_find_key(ptr->owner_id);
-    BLI_uniquename(&key->block,
+    Key *key = api_ShapeKey_find_key(ptr->owner_id);
+    lib_uniquename(&key->block,
                    kb,
-                   CTX_DATA_(BLT_I18NCONTEXT_ID_SHAPEKEY, "Key"),
+                   CXT_DATA_(LANG_CXT_ID_SHAPEKEY, "Key"),
                    '.',
                    offsetof(KeyBlock, name),
                    sizeof(kb->name));
   }
 
   /* fix all the animation data which may link to this */
-  BKE_animdata_fix_paths_rename_all(NULL, "key_blocks", oldname, kb->name);
+  dune_animdata_fix_paths_rename_all(NULL, "key_blocks", oldname, kb->name);
 }
 
-static float rna_ShapeKey_frame_get(PointerRNA *ptr)
+static float api_ShapeKey_frame_get(ApiPtr *ptr)
 {
   KeyBlock *kb = (KeyBlock *)ptr->data;
   return kb->pos * 100.0f; /* Because pos is ctime/100... */
 }
 
-static void rna_ShapeKey_value_set(PointerRNA *ptr, float value)
+static void api_ShapeKey_value_set(ApiPtr *ptr, float value)
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
   CLAMP(value, data->slidermin, data->slidermax);
   data->curval = value;
 }
 
-static void rna_ShapeKey_value_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_ShapeKey_value_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
 
@@ -107,8 +107,8 @@ static void rna_ShapeKey_value_range(
 /* epsilon for how close one end of shapekey range can get to the other */
 #  define SHAPEKEY_SLIDER_TOL 0.001f
 
-static void rna_ShapeKey_slider_min_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_ShapeKey_slider_min_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
 
@@ -116,18 +116,18 @@ static void rna_ShapeKey_slider_min_range(
   *max = data->slidermax - SHAPEKEY_SLIDER_TOL;
 }
 
-static void rna_ShapeKey_slider_min_set(PointerRNA *ptr, float value)
+static void api_ShapeKey_slider_min_set(ApiPtr *ptr, float value)
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
   float min, max, softmin, softmax;
 
-  rna_ShapeKey_slider_min_range(ptr, &min, &max, &softmin, &softmax);
+  api_ShapeKey_slider_min_range(ptr, &min, &max, &softmin, &softmax);
   CLAMP(value, min, max);
   data->slidermin = value;
 }
 
-static void rna_ShapeKey_slider_max_range(
-    PointerRNA *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
+static void api_ShapeKey_slider_max_range(
+    ApiPtr *ptr, float *min, float *max, float *UNUSED(softmin), float *UNUSED(softmax))
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
 
@@ -135,12 +135,12 @@ static void rna_ShapeKey_slider_max_range(
   *max = 10.0f;
 }
 
-static void rna_ShapeKey_slider_max_set(PointerRNA *ptr, float value)
+static void api_ShapeKey_slider_max_set(ApiPtr *ptr, float value)
 {
   KeyBlock *data = (KeyBlock *)ptr->data;
   float min, max, softmin, softmax;
 
-  rna_ShapeKey_slider_max_range(ptr, &min, &max, &softmin, &softmax);
+  api_ShapeKey_slider_max_range(ptr, &min, &max, &softmin, &softmax);
   CLAMP(value, min, max);
   data->slidermax = value;
 }
@@ -153,9 +153,9 @@ static void rna_ShapeKey_slider_max_set(PointerRNA *ptr, float value)
  *       such case looks rather unlikely - and not worth adding some kind of caching in key-blocks.
  */
 
-static Mesh *rna_KeyBlock_normals_get_mesh(PointerRNA *ptr, ID *id)
+static Mesh *qpi_KeyBlock_normals_get_mesh(ApiPtr *ptr, Id *id)
 {
-  Key *key = rna_ShapeKey_find_key((id == NULL && ptr != NULL) ? ptr->owner_id : id);
+  Key *key = api_ShapeKey_find_key((id == NULL && ptr != NULL) ? ptr->owner_id : id);
   id = key ? key->from : NULL;
 
   if (id != NULL) {
@@ -176,9 +176,9 @@ static Mesh *rna_KeyBlock_normals_get_mesh(PointerRNA *ptr, ID *id)
   return NULL;
 }
 
-static int rna_KeyBlock_normals_vert_len(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_KeyBlock_normals_vert_len(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(ptr, NULL);
+  Mesh *me = api_KeyBlock_normals_get_mesh(ptr, NULL);
 
   length[0] = me ? me->totvert : 0;
   length[1] = 3;
@@ -186,12 +186,12 @@ static int rna_KeyBlock_normals_vert_len(PointerRNA *ptr, int length[RNA_MAX_ARR
   return (length[0] * length[1]);
 }
 
-static void rna_KeyBlock_normals_vert_calc(ID *id,
+static void api_KeyBlock_normals_vert_calc(Id *id,
                                            KeyBlock *data,
                                            int *normals_len,
                                            float **normals)
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(NULL, id);
+  Mesh *me = api_KeyBlock_normals_get_mesh(NULL, id);
 
   *normals_len = (me ? me->totvert : 0) * 3;
 
@@ -200,14 +200,14 @@ static void rna_KeyBlock_normals_vert_calc(ID *id,
     return;
   }
 
-  *normals = MEM_mallocN(sizeof(**normals) * (size_t)(*normals_len), __func__);
+  *normals = mem_mallocn(sizeof(**normals) * (size_t)(*normals_len), __func__);
 
-  BKE_keyblock_mesh_calc_normals(data, me, (float(*)[3])(*normals), NULL, NULL);
+  dune_keyblock_mesh_calc_normals(data, me, (float(*)[3])(*normals), NULL, NULL);
 }
 
-static int rna_KeyBlock_normals_poly_len(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_KeyBlock_normals_poly_len(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(ptr, NULL);
+  Mesh *me = api_KeyBlock_normals_get_mesh(ptr, NULL);
 
   length[0] = me ? me->totpoly : 0;
   length[1] = 3;
@@ -215,12 +215,12 @@ static int rna_KeyBlock_normals_poly_len(PointerRNA *ptr, int length[RNA_MAX_ARR
   return (length[0] * length[1]);
 }
 
-static void rna_KeyBlock_normals_poly_calc(ID *id,
+static void api_KeyBlock_normals_poly_calc(Id *id,
                                            KeyBlock *data,
                                            int *normals_len,
                                            float **normals)
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(NULL, id);
+  Mesh *me = api_KeyBlock_normals_get_mesh(NULL, id);
 
   *normals_len = (me ? me->totpoly : 0) * 3;
 
@@ -229,14 +229,14 @@ static void rna_KeyBlock_normals_poly_calc(ID *id,
     return;
   }
 
-  *normals = MEM_mallocN(sizeof(**normals) * (size_t)(*normals_len), __func__);
+  *normals = mem_mallocn(sizeof(**normals) * (size_t)(*normals_len), __func__);
 
-  BKE_keyblock_mesh_calc_normals(data, me, NULL, (float(*)[3])(*normals), NULL);
+  dune_keyblock_mesh_calc_normals(data, me, NULL, (float(*)[3])(*normals), NULL);
 }
 
-static int rna_KeyBlock_normals_loop_len(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_KeyBlock_normals_loop_len(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(ptr, NULL);
+  Mesh *me = api_KeyBlock_normals_get_mesh(ptr, NULL);
 
   length[0] = me ? me->totloop : 0;
   length[1] = 3;
@@ -244,12 +244,12 @@ static int rna_KeyBlock_normals_loop_len(PointerRNA *ptr, int length[RNA_MAX_ARR
   return (length[0] * length[1]);
 }
 
-static void rna_KeyBlock_normals_loop_calc(ID *id,
+static void api_KeyBlock_normals_loop_calc(Id *id,
                                            KeyBlock *data,
                                            int *normals_len,
                                            float **normals)
 {
-  Mesh *me = rna_KeyBlock_normals_get_mesh(NULL, id);
+  Mesh *me = api_KeyBlock_normals_get_mesh(NULL, id);
 
   *normals_len = (me ? me->totloop : 0) * 3;
 
@@ -258,32 +258,32 @@ static void rna_KeyBlock_normals_loop_calc(ID *id,
     return;
   }
 
-  *normals = MEM_mallocN(sizeof(**normals) * (size_t)(*normals_len), __func__);
+  *normals = mem_mallocn(sizeof(**normals) * (size_t)(*normals_len), __func__);
 
-  BKE_keyblock_mesh_calc_normals(data, me, NULL, NULL, (float(*)[3])(*normals));
+  dune_keyblock_mesh_calc_normals(data, me, NULL, NULL, (float(*)[3])(*normals));
 }
 
-PointerRNA rna_object_shapekey_index_get(ID *id, int value)
+ApiPtr api_object_shapekey_index_get(Id *id, int value)
 {
-  Key *key = rna_ShapeKey_find_key(id);
+  Key *key = api_ShapeKey_find_key(id);
   KeyBlock *kb = NULL;
-  PointerRNA ptr;
+  ApiPtr ptr;
 
   if (key && value < key->totkey) {
-    kb = BLI_findlink(&key->block, value);
+    kb = lib_findlink(&key->block, value);
   }
 
-  RNA_pointer_create(id, &RNA_ShapeKey, kb, &ptr);
+  api_ptr_create(id, &ApiShapeKey, kb, &ptr);
 
   return ptr;
 }
 
-int rna_object_shapekey_index_set(ID *id, PointerRNA value, int current)
+int rna_object_shapekey_index_set(Id *id, ApiPtr value, int current)
 {
-  Key *key = rna_ShapeKey_find_key(id);
+  Key *key = api_ShapeKey_find_key(id);
 
   if (key) {
-    int a = BLI_findindex(&key->block, value.data);
+    int a = lib_findindex(&key->block, value.data);
     if (a != -1) {
       return a;
     }
@@ -292,15 +292,15 @@ int rna_object_shapekey_index_set(ID *id, PointerRNA value, int current)
   return current;
 }
 
-static PointerRNA rna_ShapeKey_relative_key_get(PointerRNA *ptr)
+static ApiPtr api_ShapeKey_relative_key_get(ApiPtr *ptr)
 {
   KeyBlock *kb = (KeyBlock *)ptr->data;
 
-  return rna_object_shapekey_index_get(ptr->owner_id, kb->relative);
+  return api_object_shapekey_index_get(ptr->owner_id, kb->relative);
 }
 
-static void rna_ShapeKey_relative_key_set(PointerRNA *ptr,
-                                          PointerRNA value,
+static void api_ShapeKey_relative_key_set(ApiPtr *ptr,
+                                          ApiPtr value,
                                           struct ReportList *UNUSED(reports))
 {
   KeyBlock *kb = (KeyBlock *)ptr->data;
