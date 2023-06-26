@@ -278,7 +278,7 @@ ApiPtr api_object_shapekey_index_get(Id *id, int value)
   return ptr;
 }
 
-int rna_object_shapekey_index_set(Id *id, ApiPtr value, int current)
+int api_object_shapekey_index_set(Id *id, ApiPtr value, int current)
 {
   Key *key = api_ShapeKey_find_key(id);
 
@@ -305,10 +305,10 @@ static void api_ShapeKey_relative_key_set(ApiPtr *ptr,
 {
   KeyBlock *kb = (KeyBlock *)ptr->data;
 
-  kb->relative = rna_object_shapekey_index_set(ptr->owner_id, value, kb->relative);
+  kb->relative = api_object_shapekey_index_set(ptr->owner_id, value, kb->relative);
 }
 
-static void rna_ShapeKeyPoint_co_get(PointerRNA *ptr, float *values)
+static void api_ShapeKeyPoint_co_get(ApiPtr *ptr, float *values)
 {
   float *vec = (float *)ptr->data;
 
@@ -317,7 +317,7 @@ static void rna_ShapeKeyPoint_co_get(PointerRNA *ptr, float *values)
   values[2] = vec[2];
 }
 
-static void rna_ShapeKeyPoint_co_set(PointerRNA *ptr, const float *values)
+static void api_ShapeKeyPoint_co_set(ApiPtr *ptr, const float *values)
 {
   float *vec = (float *)ptr->data;
 
@@ -326,32 +326,32 @@ static void rna_ShapeKeyPoint_co_set(PointerRNA *ptr, const float *values)
   vec[2] = values[2];
 }
 
-static float rna_ShapeKeyCurvePoint_tilt_get(PointerRNA *ptr)
+static float api_ShapeKeyCurvePoint_tilt_get(ApiPtr *ptr)
 {
   float *vec = (float *)ptr->data;
   return vec[3];
 }
 
-static void rna_ShapeKeyCurvePoint_tilt_set(PointerRNA *ptr, float value)
+static void api_ShapeKeyCurvePoint_tilt_set(ApiPtr *ptr, float value)
 {
   float *vec = (float *)ptr->data;
   vec[3] = value;
 }
 
-static float rna_ShapeKeyCurvePoint_radius_get(PointerRNA *ptr)
+static float api_ShapeKeyCurvePoint_radius_get(ApiPtr *ptr)
 {
   float *vec = (float *)ptr->data;
   return vec[4];
 }
 
-static void rna_ShapeKeyCurvePoint_radius_set(PointerRNA *ptr, float value)
+static void api_ShapeKeyCurvePoint_radius_set(ApiPtr *ptr, float value)
 {
   float *vec = (float *)ptr->data;
   CLAMP_MIN(value, 0.0f);
   vec[4] = value;
 }
 
-static void rna_ShapeKeyBezierPoint_co_get(PointerRNA *ptr, float *values)
+static void api_ShapeKeyBezierPoint_co_get(ApiPtr *ptr, float *values)
 {
   float *vec = (float *)ptr->data;
 
