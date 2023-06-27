@@ -42,26 +42,26 @@
 
 /***********************************/
 
-static ApiPtr api_ViewLayer_active_layer_collection_get(PointerRNA *ptr)
+static ApiPtr api_ViewLayer_active_layer_collection_get(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   LayerCollection *lc = view_layer->active_collection;
-  return rna_pointer_inherit_refine(ptr, &RNA_LayerCollection, lc);
+  return api_ptr_inherit_refine(ptr, &ApiLayerCollection, lc);
 }
 
-static void rna_ViewLayer_active_layer_collection_set(PointerRNA *ptr,
-                                                      PointerRNA value,
+static void rna_ViewLayer_active_layer_collection_set(ApiPtr *ptr,
+                                                      ApiPtr value,
                                                       struct ReportList *UNUSED(reports))
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   LayerCollection *lc = (LayerCollection *)value.data;
-  const int index = BKE_layer_collection_findindex(view_layer, lc);
+  const int index = dune_layer_collection_findindex(view_layer, lc);
   if (index != -1) {
-    BKE_layer_collection_activate(view_layer, lc);
+    dune_layer_collection_activate(view_layer, lc);
   }
 }
 
-static PointerRNA rna_LayerObjects_active_object_get(PointerRNA *ptr)
+static PointerRNA rna_LayerObjects_active_object_get(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   return rna_pointer_inherit_refine(
