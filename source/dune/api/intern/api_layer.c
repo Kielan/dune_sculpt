@@ -237,26 +237,26 @@ static void api_ObjectBase_select_update(Main *UNUSED(bmain),
 
 static void api_ObjectBase_hide_viewport_update(bContext *C, PointerRNA *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_layer_collection_sync(scene, view_layer);
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  dune_layer_collection_sync(scene, view_layer);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  wm_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 }
 
-static void rna_LayerCollection_name_get(struct PointerRNA *ptr, char *value)
+static void api_LayerCollection_name_get(struct ApiPtr *ptr, char *value)
 {
-  ID *id = (ID *)((LayerCollection *)ptr->data)->collection;
-  BLI_strncpy(value, id->name + 2, sizeof(id->name) - 2);
+  Id *id = (Id *)((LayerCollection *)ptr->data)->collection;
+  lib_strncpy(value, id->name + 2, sizeof(id->name) - 2);
 }
 
-int rna_LayerCollection_name_length(PointerRNA *ptr)
+int api_LayerCollection_name_length(ApiPtr *ptr)
 {
-  ID *id = (ID *)((LayerCollection *)ptr->data)->collection;
+  Id *id = (Id *)((LayerCollection *)ptr->data)->collection;
   return strlen(id->name + 2);
 }
 
-static void rna_LayerCollection_flag_set(PointerRNA *ptr, const bool value, const int flag)
+static void api_LayerCollection_flag_set(ApiPtr *ptr, const bool value, const int flag)
 {
   LayerCollection *layer_collection = (LayerCollection *)ptr->data;
   Collection *collection = layer_collection->collection;
@@ -273,50 +273,50 @@ static void rna_LayerCollection_flag_set(PointerRNA *ptr, const bool value, cons
   }
 }
 
-static void rna_LayerCollection_exclude_set(PointerRNA *ptr, bool value)
+static void api_LayerCollection_exclude_set(PointerRNA *ptr, bool value)
 {
-  rna_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_EXCLUDE);
+  api_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_EXCLUDE);
 }
 
-static void rna_LayerCollection_holdout_set(PointerRNA *ptr, bool value)
+static void api_LayerCollection_holdout_set(ApiPtr *ptr, bool value)
 {
-  rna_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_HOLDOUT);
+  api_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_HOLDOUT);
 }
 
-static void rna_LayerCollection_indirect_only_set(PointerRNA *ptr, bool value)
+static void api_LayerCollection_indirect_only_set(ApiPtr *ptr, bool value)
 {
-  rna_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_INDIRECT_ONLY);
+  api_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_INDIRECT_ONLY);
 }
 
-static void rna_LayerCollection_hide_viewport_set(PointerRNA *ptr, bool value)
+static void api_LayerCollection_hide_viewport_set(ApiPtr *ptr, bool value)
 {
-  rna_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_HIDE);
+  api_LayerCollection_flag_set(ptr, value, LAYER_COLLECTION_HIDE);
 }
 
-static void rna_LayerCollection_exclude_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_LayerCollection_exclude_update(Main *main, Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   LayerCollection *lc = (LayerCollection *)ptr->data;
-  ViewLayer *view_layer = BKE_view_layer_find_from_collection(scene, lc);
+  ViewLayer *view_layer = dune_view_layer_find_from_collection(scene, lc);
 
   /* Set/Unset it recursively to match the behavior of excluding via the menu or shortcuts. */
   const bool exclude = (lc->flag & LAYER_COLLECTION_EXCLUDE) != 0;
-  BKE_layer_collection_set_flag(lc, LAYER_COLLECTION_EXCLUDE, exclude);
+  dune_layer_collection_set_flag(lc, LAYER_COLLECTION_EXCLUDE, exclude);
 
-  BKE_layer_collection_sync(scene, view_layer);
+  dune_layer_collection_sync(scene, view_layer);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
   if (!exclude) {
     /* We need to update animation of objects added back to the scene through enabling this view
      * layer. */
     FOREACH_OBJECT_BEGIN (view_layer, ob) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_ANIMATION);
+      graph_id_tag_update(&ob->id, ID_RECALC_ANIMATION);
     }
     FOREACH_OBJECT_END;
   }
 
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, NULL);
+  graph_relations_tag_update(bmain);
+  wm_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, NULL);
   if (exclude) {
     ED_object_base_active_refresh(bmain, scene, view_layer);
   }
