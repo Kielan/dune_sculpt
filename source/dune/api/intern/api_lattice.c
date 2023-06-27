@@ -242,75 +242,75 @@ static void api_def_latticepoint(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LatticePoint", NULL);
-  RNA_def_struct_sdna(srna, "BPoint");
-  RNA_def_struct_ui_text(srna, "LatticePoint", "Point in the lattice grid");
-  RNA_def_struct_path_func(srna, "rna_LatticePoint_path");
+  srna = api_def_struct(dapi, "LatticePoint", NULL);
+  api_def_struct_stype(sapi, "Point");
+  api_def_struct_ui_text(sapi, "LatticePoint", "Point in the lattice grid");
+  api_def_struct_path_fn(sapi, "api_LatticePoint_path");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "f1", SELECT);
-  RNA_def_property_ui_text(prop, "Point selected", "Selection status");
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "f1", SELECT);
+  api_def_prop_ui_text(prop, "Point selected", "Selection status");
 
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_LatticePoint_co_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_LatticePoint_co_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop,
       "Location",
       "Original undeformed location used to calculate the strength of the deform effect "
       "(edit/animate the Deformed Location instead)");
 
-  prop = RNA_def_property(srna, "co_deform", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "vec");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Deformed Location", "");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data");
+  prop = api_def_prop(sapi, "co_deform", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "vec");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Deformed Location", "");
+  api_def_prop_update(prop, 0, "api_Lattice_update_data");
 
-  prop = RNA_def_property(srna, "weight_softbody", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "weight");
-  RNA_def_property_range(prop, 0.01f, 100.0f);
-  RNA_def_property_ui_text(prop, "Weight", "Softbody goal weight");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data");
+  prop = api_def_property(sapi, "weight_softbody", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sapi(prop, NULL, "weight");
+  api_def_prop_range(prop, 0.01f, 100.0f);
+  api_def_prop_ui_text(prop, "Weight", "Softbody goal weight");
+  api_def_prop_update(prop, 0, "api_Lattice_update_data");
 
-  prop = RNA_def_property(srna, "groups", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_LatticePoint_groups_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "VertexGroupElement");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "groups", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_LatticePoint_groups_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "VertexGroupElement");
+  api_def_prop_ui_text(
       prop, "Groups", "Weights for the vertex groups this point is member of");
 }
 
-static void rna_def_lattice(BlenderRNA *brna)
+static void api_def_lattice(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct sapi;
+  ApiProp prop;
 
-  srna = RNA_def_struct(brna, "Lattice", "ID");
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(dapi, "Lattice", "Id");
+  api_def_struct_ui_text(
       srna, "Lattice", "Lattice data-block defining a grid for deforming other objects");
-  RNA_def_struct_ui_icon(srna, ICON_LATTICE_DATA);
+  RNA_def_struct_ui_icon(sapi, ICON_LATTICE_DATA);
 
-  prop = RNA_def_property(srna, "points_u", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pntsu");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_u_set", NULL);
-  RNA_def_property_range(prop, 1, 64);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "points_u", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pntsu");
+  api_def_prop_int_fns(prop, NULL, "api_Lattice_points_u_set", NULL);
+  api_def_prop_range(prop, 1, 64);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "U", "Point in U direction (can't be changed when there are shape keys)");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
-  RNA_def_property_editable_func(prop, "rna_Lattice_size_editable");
+  api_def_prop_update(prop, 0, "api_Lattice_update_size");
+  RNA_def_property_editable_fn(prop, "api_Lattice_size_editable");
 
-  prop = RNA_def_property(srna, "points_v", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pntsv");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_v_set", NULL);
+  prop = api_def_prop(sapi, "points_v", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "pntsv");
+  RNA_def_prop_int_fns(prop, NULL, "api_Lattice_points_v_set", NULL);
   RNA_def_property_range(prop, 1, 64);
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_ui_text(
