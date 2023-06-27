@@ -92,10 +92,10 @@ const EnumPropertyItem rna_enum_light_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static void rna_def_light(BlenderRNA *brna)
+static void api_def_light(DuneApi *dapo)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
   static float default_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
   srna = RNA_def_struct(brna, "Light", "ID");
