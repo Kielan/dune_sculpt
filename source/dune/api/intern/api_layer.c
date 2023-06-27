@@ -120,7 +120,7 @@ static IDProperty **rna_ViewLayer_idprops(PointerRNA *ptr)
 
 static bool rna_LayerCollection_visible_get(LayerCollection *layer_collection, bContext *C)
 {
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_wm_view3d(C);
 
   if ((v3d == NULL) || ((v3d->flag & V3D_LOCAL_COLLECTIONS) == 0)) {
     return (layer_collection->runtime_flag & LAYER_COLLECTION_VISIBLE_VIEW_LAYER) != 0;
@@ -133,22 +133,22 @@ static bool rna_LayerCollection_visible_get(LayerCollection *layer_collection, b
   return false;
 }
 
-static void rna_ViewLayer_update_render_passes(ID *id)
+static void api_ViewLayer_update_render_passes(Id *id)
 {
   Scene *scene = (Scene *)id;
   if (scene->nodetree) {
     ntreeCompositUpdateRLayers(scene->nodetree);
   }
 
-  RenderEngineType *engine_type = RE_engines_find(scene->r.engine);
+  RenderEngineType *engine_type = render_engines_find(scene->r.engine);
   if (engine_type->update_render_passes) {
-    RenderEngine *engine = RE_engine_create(engine_type);
+    RenderEngine *engine = render_engine_create(engine_type);
     if (engine) {
-      LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-        BKE_view_layer_verify_aov(engine, scene, view_layer);
+      LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+        dune_view_layer_verify_aov(engine, scene, view_layer);
       }
     }
-    RE_engine_free(engine);
+    render_engine_free(engine);
     engine = NULL;
   }
 }
