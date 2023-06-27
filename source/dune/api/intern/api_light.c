@@ -119,25 +119,25 @@ static void api_def_light(DuneApi *dapo)
       prop,
       "Distance",
       "Falloff distance - the light is at half the original intensity at this point");
-  RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+  api_def_prop_update(prop, 0, "api_Light_draw_update");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "r");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_array_default(prop, default_color);
-  RNA_def_property_ui_text(prop, "Color", "Light color");
-  RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "r");
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_array_default(prop, default_color);
+  api_def_prop_ui_text(prop, "Color", "Light color");
+  api_def_prop_update(prop, 0, "api_Light_draw_update");
 
-  prop = RNA_def_property(srna, "specular_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "spec_fac");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
-  RNA_def_property_ui_text(prop, "Specular Factor", "Specular reflection multiplier");
-  RNA_def_property_update(prop, 0, "rna_Light_update");
+  prop = api_def_prop(sapi, "specular_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "spec_fac");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
+  api_def_prop_ui_text(prop, "Specular Factor", "Specular reflection multiplier");
+  api_def_prop_update(prop, 0, "api_Light_update");
 
-  prop = api_def_property(srna, "diffuse_factor", PROP_FLOAT, PROP_FACTOR);
-  api_def_property_float_sdna(prop, NULL, "diff_fac");
-  api_def_property_range(prop, 0.0f, FLT_MAX);
+  prop = api_def_prop(sapi, "diffuse_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "diff_fac");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
   api_def_prop_ui_text(prop, "Diffuse Factor", "Diffuse reflection multiplier");
   api_def_prop_update(prop, 0, "api_Light_update");
