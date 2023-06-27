@@ -175,35 +175,35 @@ static int rna_ViewLayer_objects_selected_skip(CollectionPropertyIterator *iter,
   return 1;
 };
 
-static PointerRNA rna_ViewLayer_depsgraph_get(PointerRNA *ptr)
+static ApiPtr api_ViewLayer_graph_get(ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (GS(id->name) == ID_SCE) {
     Scene *scene = (Scene *)id;
     ViewLayer *view_layer = (ViewLayer *)ptr->data;
-    Depsgraph *depsgraph = BKE_scene_get_depsgraph(scene, view_layer);
-    return rna_pointer_inherit_refine(ptr, &RNA_Depsgraph, depsgraph);
+    Graph *graph = dune_scene_get_graph(scene, view_layer);
+    return api_ptr_inherit_refine(ptr, &ApiGraph, graph);
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static void rna_LayerObjects_selected_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_LayerObjects_selected_begin(CollectionPropIter iter, ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  rna_iterator_listbase_begin(
-      iter, &view_layer->object_bases, rna_ViewLayer_objects_selected_skip);
+  api_iter_list_begin(
+      iter, &view_layer->object_bases, api_ViewLayer_objects_selected_skip);
 }
 
-static void rna_ViewLayer_update_tagged(ID *id_ptr,
+static void api_ViewLayer_update_tagged(Id *id_ptr,
                                         ViewLayer *view_layer,
-                                        Main *bmain,
+                                        Main *main,
                                         ReportList *reports)
 {
   Scene *scene = (Scene *)id_ptr;
-  Depsgraph *depsgraph = BKE_scene_ensure_depsgraph(bmain, scene, view_layer);
+  Graph *graph = dune_scene_ensure_graph(main, scene, view_layer);
 
-  if (DEG_is_evaluating(depsgraph)) {
-    BKE_report(reports, RPT_ERROR, "Dependency graph update requested during evaluation");
+  if (graph_is_evaluating(depsgraph)) {
+    dune_report(reports, RPT_ERROR, "Dependency graph update requested during evaluation");
     return;
   }
 
@@ -218,24 +218,24 @@ static void rna_ViewLayer_update_tagged(ID *id_ptr,
    * The reason for this is that it's possible to have Python operator which asks view layer to
    * be updated. After re-do of such operator view layer's dependency graph will not be marked
    * as active. */
-  DEG_make_active(depsgraph);
-  BKE_scene_graph_update_tagged(depsgraph, bmain);
+  graph_make_active(graph);
+  dune_scene_graph_update_tagged(graph, main);
 
 #  ifdef WITH_PYTHON
   BPy_END_ALLOW_THREADS;
 #  endif
 }
 
-static void rna_ObjectBase_select_update(Main *UNUSED(bmain),
+static void api_ObjectBase_select_update(Main *UNUSED(bmain),
                                          Scene *UNUSED(scene),
                                          PointerRNA *ptr)
 {
   Base *base = (Base *)ptr->data;
   short mode = (base->flag & BASE_SELECTED) ? BA_SELECT : BA_DESELECT;
-  ED_object_base_select(base, mode);
+  ed_object_base_select(base, mode);
 }
 
-static void rna_ObjectBase_hide_viewport_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_ObjectBase_hide_viewport_update(bContext *C, PointerRNA *UNUSED(ptr))
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
