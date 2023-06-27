@@ -1,54 +1,48 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
+#include "types_layer.h"
+#include "types_scene.h"
+#include "types_view3d.h"
 
-/** \file
- * \ingroup RNA
- */
+#include "lang_translation.h"
 
-#include "DNA_layer_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_view3d_types.h"
+#include "ed_object.h"
+#include "ed_render.h"
 
-#include "BLT_translation.h"
+#include "render_engine.h"
 
-#include "ED_object.h"
-#include "ED_render.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RE_engine.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "api_internal.h"
 
-#include "RNA_define.h"
-
-#include "rna_internal.h"
-
-#ifdef RNA_RUNTIME
+#ifde API_RUNTIME
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-#  include "DNA_collection_types.h"
-#  include "DNA_object_types.h"
+#  include "types_collection.h"
+#  include "types_object.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_idprop.h"
-#  include "BKE_layer.h"
-#  include "BKE_mesh.h"
-#  include "BKE_node.h"
-#  include "BKE_scene.h"
+#  include "dune_idprop.h"
+#  include "dune_layer.h"
+#  include "dune_mesh.h"
+#  include "dune_node.h"
+#  include "dune_scene.h"
 
 #  include "NOD_composite.h"
 
-#  include "BLI_listbase.h"
+#  include "lib_list.h"
 
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_query.h"
+#  include "graph_build.h"
+#  include "graph_query.h"
 
 /***********************************/
 
-static PointerRNA rna_ViewLayer_active_layer_collection_get(PointerRNA *ptr)
+static ApiPtr api_ViewLayer_active_layer_collection_get(PointerRNA *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   LayerCollection *lc = view_layer->active_collection;
