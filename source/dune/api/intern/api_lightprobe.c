@@ -176,16 +176,16 @@ static void api_def_lightprobe(DuneApi *dapi)
       prop, "Intensity", "Modify the intensity of the lighting captured by this probe");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
-  prop = RNA_def_property(srna, "visibility_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_pointer_sdna(prop, NULL, "visibility_grp");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "visibility_collection", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_ptr_sapi(prop, NULL, "visibility_grp");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(
       prop, "Visibility Collection", "Restrict objects visible for this probe");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
-  prop = RNA_def_property(srna, "invert_visibility_collection", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "invert_visibility_collection", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_INVERT_GROUP);
   RNA_def_property_flag(prop, PROP_EDITABLE);
   RNA_def_property_ui_text(prop, "Invert Collection", "Invert visibility collection");
