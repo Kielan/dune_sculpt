@@ -29,13 +29,13 @@ void api_api_lattice(ApiStruct *sapi)
   Fn *fn;
   ApiProp *parm;
 
-  fn = api_def_fn(sapi, "transform", "rna_Lattice_transform");
-  RNA_def_function_ui_description(fn, "Transform lattice by a matrix");
-  parm = RNA_def_float_matrix(func, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "shape_keys", 0, "", "Transform Shape Keys");
+  fn = api_def_fn(sapi, "transform", "api_Lattice_transform");
+  api_def_fn_ui_description(fn, "Transform lattice by a matrix");
+  parm = api_def_float_matrix(fn, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "shape_keys", 0, "", "Transform Shape Keys");
 
-  RNA_def_function(srna, "update_gpu_tag", "rna_Lattice_update_gpu_tag");
+  api_def_fn(sapi, "update_gpu_tag", "api_Lattice_update_gpu_tag");
 }
 
 #endif
