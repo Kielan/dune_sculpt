@@ -306,7 +306,7 @@ static void api_def_lattice(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "U", "Point in U direction (can't be changed when there are shape keys)");
   api_def_prop_update(prop, 0, "api_Lattice_update_size");
-  RNA_def_prop_editable_fn(prop, "api_Lattice_size_editable");
+  api_def_prop_editable_fn(prop, "api_Lattice_size_editable");
 
   prop = api_def_prop(sapi, "points_v", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "pntsv");
@@ -325,14 +325,14 @@ static void api_def_lattice(DuneApi *dapi)
   apo_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(
       prop, "W", "Point in W direction (can't be changed when there are shape keys)");
-  api_def_prop_update(prop, 0, "rna_Lattice_update_size");
-  api_def_prop_editable_fn(prop, "rna_Lattice_size_editable");
+  api_def_prop_update(prop, 0, "api_Lattice_update_size");
+  api_def_prop_editable_fn(prop, "api_Lattice_size_editable");
 
   prop = api_def_prop(sapi, "interpolation_type_u", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_stype(prop, NULL, "typeu");
-  RNA_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
-  RNA_def_prop_ui_text(prop, "Interpolation Type U", "");
-  RNA_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  api_def_prop_enum_stype(prop, NULL, "typeu");
+  api_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
+  api_def_prop_ui_text(prop, "Interpolation Type U", "");
+  api_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
 
   prop = api_def_prop(sapi, "interpolation_type_v", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "typev");
@@ -342,58 +342,58 @@ static void api_def_lattice(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "interpolation_type_w", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "typew");
-  api_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
+  api_def_prop_enum_items(prop, api_enum_keyblock_type_items);
   api_def_prop_ui_text(prop, "Interpolation Type W", "");
-  api_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  api_def_prop_update(prop, 0, "api_Lattice_update_data_editlatt");
 
-  prop = RNA_def_property(srna, "use_outside", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LT_OUTSIDE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Lattice_use_outside_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_outside", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LT_OUTSIDE);
+  api_def_prop_bool_fns(prop, NULL, "api_Lattice_use_outside_set");
+  api_def_prop_ui_text(
       prop, "Outside", "Only display and take into account the outer vertices");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  api_def_prop_update(prop, 0, "api_Lattice_update_data_editlatt");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgroup");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "vgroup");
+  api_def_prop_ui_text(
       prop, "Vertex Group", "Vertex group to apply the influence of the lattice");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Lattice_vg_name_set");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_Lattice_vg_name_set");
+  api_def_prop_update(prop, 0, "api_Lattice_update_data_editlatt");
 
-  prop = RNA_def_property(srna, "shape_keys", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "key");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_ui_text(prop, "Shape Keys", "");
+  prop = api_def_prop(sapi, "shape_keys", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "key");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_ui_text(prop, "Shape Keys", "");
 
-  prop = RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
+  prop = api_def_prop(sapi, "points", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_struct_type(prop, "LatticePoint");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Lattice_points_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "Points", "Points of the lattice");
+  RNA_def_property_collection_fns(prop,
+                                  "api_Lattice_points_begin",
+                                  "api_iter_array_next",
+                                  "api_iter_array_end",
+                                  "api_iter_array_get",
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL);
+  api_def_prop_ui_text(prop, "Points", "Points of the lattice");
 
-  prop = RNA_def_property(srna, "is_editmode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_Lattice_is_editmode_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Is Editmode", "True when used in editmode");
+  prop = api_def_prop(sapi, "is_editmode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "rna_Lattice_is_editmode_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Is Editmode", "True when used in editmode");
 
   /* pointers */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 
-  RNA_api_lattice(srna);
+  api_api_lattice(sapi);
 }
 
-void RNA_def_lattice(BlenderRNA *brna)
+void api_def_lattice(DuneApi *dapi)
 {
-  rna_def_lattice(brna);
-  rna_def_latticepoint(brna);
+  api_def_lattice(dapi);
+  api_def_latticepoint(dapi);
 }
 
 #endif
