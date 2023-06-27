@@ -166,15 +166,15 @@ static void api_def_lightprobe(DuneApi *dapi)
   RNA_def_property_float_sdna(prop, NULL, "vis_blur");
   RNA_def_property_range(prop, 0.0f, 1.0f);
   RNA_def_property_ui_text(prop, "Visibility Blur", "Filter size of the visibility blur");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  RNA_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
-  prop = RNA_def_property(srna, "intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "intensity");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 3.0f, 1.0, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "intensity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "intensity");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 3.0f, 1.0, 3);
+  api_def_prop_ui_text(
       prop, "Intensity", "Modify the intensity of the lighting captured by this probe");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   prop = RNA_def_property(srna, "visibility_collection", PROP_POINTER, PROP_NONE);
   RNA_def_property_struct_type(prop, "Collection");
