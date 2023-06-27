@@ -186,14 +186,14 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   prop = api_def_prop(sapi, "invert_visibility_collection", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_INVERT_GROUP);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Invert Collection", "Invert visibility collection");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_INVERT_GROUP);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Invert Collection", "Invert visibility collection");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   /* Data preview */
-  prop = RNA_def_prop(sapi, "show_data", PROP_BOOL, PROP_NONE);
-  api_def_prop_boolean_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_DATA);
+  prop = api_def_prop(sapi, "show_data", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_DATA);
   api_def_prop_ui_text(prop,
                            "Show Preview Plane",
                            "Show captured lighting data into the 3D view for debugging purpose");
