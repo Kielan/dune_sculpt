@@ -12,30 +12,30 @@
 #include "types_material.h"
 #include "types_texture.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_linestyle_color_modifier_type_items[] = {
-    {LS_MODIFIER_ALONG_STROKE, "ALONG_STROKE", ICON_MODIFIER, "Along Stroke", ""},
-    {LS_MODIFIER_CREASE_ANGLE, "CREASE_ANGLE", ICON_MODIFIER, "Crease Angle", ""},
-    {LS_MODIFIER_CURVATURE_3D, "CURVATURE_3D", ICON_MODIFIER, "Curvature 3D", ""},
-    {LS_MODIFIER_DISTANCE_FROM_CAMERA,
+const EnumPropItem api_enum_linestyle_color_mod_type_items[] = {
+    {LS_MOD_ALONG_STROKE, "ALONG_STROKE", ICON_MOD, "Along Stroke", ""},
+    {LS_MOD_CREASE_ANGLE, "CREASE_ANGLE", ICON_MOD, "Crease Angle", ""},
+    {LS_MOD_CURVATURE_3D, "CURVATURE_3D", ICON_MOD, "Curvature 3D", ""},
+    {LS_MOD_DISTANCE_FROM_CAMERA,
      "DISTANCE_FROM_CAMERA",
-     ICON_MODIFIER,
+     ICON_MOD,
      "Distance from Camera",
      ""},
-    {LS_MODIFIER_DISTANCE_FROM_OBJECT,
+    {LS_MOD_DISTANCE_FROM_OBJECT,
      "DISTANCE_FROM_OBJECT",
-     ICON_MODIFIER,
+     ICON_MOD,
      "Distance from Object",
      ""},
-    {LS_MODIFIER_MATERIAL, "MATERIAL", ICON_MODIFIER, "Material", ""},
-    {LS_MODIFIER_NOISE, "NOISE", ICON_MODIFIER, "Noise", ""},
-    {LS_MODIFIER_TANGENT, "TANGENT", ICON_MODIFIER, "Tangent", ""},
+    {LS_MOD_MATERIAL, "MATERIAL", ICON_MODIFIER, "Material", ""},
+    {LS_MOD_NOISE, "NOISE", ICON_MODIFIER, "Noise", ""},
+    {LS_MOD_TANGENT, "TANGENT", ICON_MODIFIER, "Tangent", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_linestyle_alpha_modifier_type_items[] = {
+const EnumPropItem rna_enum_linestyle_alpha_modifier_type_items[] = {
     {LS_MODIFIER_ALONG_STROKE, "ALONG_STROKE", ICON_MODIFIER, "Along Stroke", ""},
     {LS_MODIFIER_CREASE_ANGLE, "CREASE_ANGLE", ICON_MODIFIER, "Crease Angle", ""},
     {LS_MODIFIER_CURVATURE_3D, "CURVATURE_3D", ICON_MODIFIER, "Curvature 3D", ""},
