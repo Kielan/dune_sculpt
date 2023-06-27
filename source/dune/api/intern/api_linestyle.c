@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_linestyle_types.h"
-#include "DNA_material_types.h"
-#include "DNA_texture_types.h"
+#include "types_linestyle.h"
+#include "types_material.h"
+#include "types_texture.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
