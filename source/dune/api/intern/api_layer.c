@@ -318,44 +318,44 @@ static void api_LayerCollection_exclude_update(Main *main, Scene *UNUSED(scene),
   graph_relations_tag_update(bmain);
   wm_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, NULL);
   if (exclude) {
-    ED_object_base_active_refresh(bmain, scene, view_layer);
+    ed_object_base_active_refresh(main, scene, view_layer);
   }
 }
 
-static void rna_LayerCollection_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_LayerCollection_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   LayerCollection *lc = (LayerCollection *)ptr->data;
-  ViewLayer *view_layer = BKE_view_layer_find_from_collection(scene, lc);
+  ViewLayer *view_layer = dune_view_layer_find_from_collection(scene, lc);
 
-  BKE_layer_collection_sync(scene, view_layer);
+  dune_layer_collection_sync(scene, view_layer);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
 
-  WM_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_LAYER_CONTENT, NULL);
 }
 
-static bool rna_LayerCollection_has_objects(LayerCollection *lc)
+static bool api_LayerCollection_has_objects(LayerCollection *lc)
 {
   return (lc->runtime_flag & LAYER_COLLECTION_HAS_OBJECTS) != 0;
 }
 
-static bool rna_LayerCollection_has_selected_objects(LayerCollection *lc, ViewLayer *view_layer)
+static bool api_LayerCollection_has_selected_objects(LayerCollection *lc, ViewLayer *view_layer)
 {
-  return BKE_layer_collection_has_selected_objects(view_layer, lc);
+  return dune_layer_collection_has_selected_objects(view_layer, lc);
 }
 
 #else
 
-static void rna_def_layer_collection(BlenderRNA *brna)
+static void api_def_layer_collection(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LayerCollection", NULL);
-  RNA_def_struct_ui_text(srna, "Layer Collection", "Layer collection");
-  RNA_def_struct_ui_icon(srna, ICON_OUTLINER_COLLECTION);
+  sapi = api_def_struct(dapi, "LayerCollection", NULL);
+  api_def_struct_ui_text(sapi, "Layer Collection", "Layer collection");
+  api_def_struct_ui_icon(sapi, ICON_OUTLINER_COLLECTION);
 
   prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
