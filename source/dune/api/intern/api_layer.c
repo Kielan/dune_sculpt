@@ -357,7 +357,7 @@ static void api_def_layer_collection(DuneApi *dapi)
   api_def_struct_ui_text(sapi, "Layer Collection", "Layer collection");
   api_def_struct_ui_icon(sapi, ICON_OUTLINER_COLLECTION);
 
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "collection", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE | PROP_ANIMATABLE);
   api_def_prop_struct_type(prop, "Collection");
@@ -378,26 +378,26 @@ static void api_def_layer_collection(DuneApi *dapi)
 
   /* Restriction flags. */
   prop = api_def_prop(sapi, "exclude", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_EXCLUDE);
-  RNA_def_prop_bool_fns(prop, NULL, "api_LayerCollection_exclude_set");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Exclude from View Layer", "Exclude from view layer");
-  RNA_def_property_ui_icon(prop, ICON_CHECKBOX_HLT, -1);
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "api_LayerCollection_exclude_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_EXCLUDE);
+  api_def_prop_bool_fns(prop, NULL, "api_LayerCollection_exclude_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Exclude from View Layer", "Exclude from view layer");
+  api_def_prop_ui_icon(prop, ICON_CHECKBOX_HLT, -1);
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER, "api_LayerCollection_exclude_update");
 
-  prop = RNA_def_property(srna, "holdout", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "holdout", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_HOLDOUT);
-  api_def_prop_bool_fns(prop, NULL, "rna_LayerCollection_holdout_set");
+  api_def_prop_bool_fns(prop, NULL, "api_LayerCollection_holdout_set");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_icon(prop, ICON_HOLDOUT_OFF, 1);
   api_def_prop_ui_text(prop, "Holdout", "Mask out objects in collection from view layer");
   api_def_prop_update(prop, NC_SCENE | ND_LAYER, "rna_LayerCollection_update");
 
   prop = api_def_prop(sapi, "indirect_only", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LAYER_COLLECTION_INDIRECT_ONLY);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_LayerCollection_indirect_only_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_icon(prop, ICON_INDIRECT_ONLY_OFF, 1);
+  api_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_INDIRECT_ONLY);
+  api_def_prop_bool_fns(prop, NULL, "rna_LayerCollection_indirect_only_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_icon(prop, ICON_INDIRECT_ONLY_OFF, 1);
   RNA_def_property_ui_text(
       prop,
       "Indirect Only",
