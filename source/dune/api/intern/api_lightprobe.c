@@ -113,13 +113,13 @@ static void api_def_lightprobe(DuneApi *dapi)
       prop, "Use Custom Parallax", "Enable custom settings for the parallax correction volume");
   RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "show_parallax", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_PARALLAX);
-  RNA_def_property_ui_text(prop, "Parallax", "Show the parallax correction volume in the 3D view");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = RNA_def_prop(srna, "show_parallax", PROP_BOOLEAN, PROP_NONE);
+  apu_def_prop_bool_styoe(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_PARALLAX);
+  api_def_prop_ui_text(prop, "Parallax", "Show the parallax correction volume in the 3D view");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "parallax_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, parallax_type_items);
+  prop = api_def_prop(srna, "parallax_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, parallax_type_items);
   RNA_def_property_ui_text(prop, "Type", "Type of parallax volume");
   RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
