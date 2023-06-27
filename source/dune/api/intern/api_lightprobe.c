@@ -93,41 +93,41 @@ static void api_def_lightprobe(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "show_influence", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_INFLUENCE);
-  RNA_def_property_ui_text(prop, "Influence", "Show the influence volume in the 3D view");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  api_def_prop_ui_text(prop, "Influence", "Show the influence volume in the 3D view");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = api_def_property(srna, "influence_distance", PROP_FLOAT, PROP_DISTANCE);
-  api_def_property_float_sdna(prop, NULL, "distinf");
-  api_def_property_range(prop, 0.0f, FLT_MAX);
-  api_def_property_ui_text(prop, "Influence Distance", "Influence distance of the probe");
-  api_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_prop(sapi, "influence_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "distinf");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(prop, "Influence Distance", "Influence distance of the probe");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "falloff", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Falloff", "Control how fast the probe influence decreases");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_prop(srna, "falloff", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Falloff", "Control how fast the probe influence decreases");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "use_custom_parallax", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_CUSTOM_PARALLAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_parallax", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_CUSTOM_PARALLAX);
+  api_def_prop_ui_text(
       prop, "Use Custom Parallax", "Enable custom settings for the parallax correction volume");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_prop(srna, "show_parallax", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_parallax", PROP_BOOLEAN, PROP_NONE);
   apu_def_prop_bool_styoe(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_PARALLAX);
   api_def_prop_ui_text(prop, "Parallax", "Show the parallax correction volume in the 3D view");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   prop = api_def_prop(srna, "parallax_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, parallax_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Type of parallax volume");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  api_def_prop_ui_text(prop, "Type", "Type of parallax volume");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "parallax_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "distpar");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Parallax Radius", "Lowest corner of the parallax bounding box");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_prop(sapi, "parallax_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "distpar");
+  api_def_property_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(prop, "Parallax Radius", "Lowest corner of the parallax bounding box");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   /* irradiance grid */
   prop = RNA_def_property(srna, "grid_resolution_x", PROP_INT, PROP_NONE);
