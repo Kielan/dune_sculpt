@@ -49,7 +49,7 @@ static ApiPtr api_ViewLayer_active_layer_collection_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &ApiLayerCollection, lc);
 }
 
-static void rna_ViewLayer_active_layer_collection_set(ApiPtr *ptr,
+static void api_ViewLayer_active_layer_collection_set(ApiPtr *ptr,
                                                       ApiPtr value,
                                                       struct ReportList *UNUSED(reports))
 {
@@ -105,20 +105,20 @@ size_t api_ViewLayer_path_buffer_get(ViewLayer *view_layer,
 static char *rna_ViewLayer_path(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  char rna_path[sizeof(view_layer->name) * 3];
+  char api_path[sizeof(view_layer->name) * 3];
 
-  rna_ViewLayer_path_buffer_get(view_layer, rna_path, sizeof(rna_path));
+  api_ViewLayer_path_buffer_get(view_layer, rna_path, sizeof(rna_path));
 
-  return BLI_strdup(rna_path);
+  return lib_strdup(api_path);
 }
 
-static IDProperty **rna_ViewLayer_idprops(PointerRNA *ptr)
+static IdProp **api_ViewLayer_idprops(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  return &view_layer->id_properties;
+  return &view_layer->id_props;
 }
 
-static bool rna_LayerCollection_visible_get(LayerCollection *layer_collection, bContext *C)
+static bool api_LayerCollection_visible_get(LayerCollection *layer_collection, bContext *C)
 {
   View3D *v3d = cxt_wm_view3d(C);
 
@@ -153,9 +153,9 @@ static void api_ViewLayer_update_render_passes(Id *id)
   }
 }
 
-static PointerRNA rna_ViewLayer_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_ViewLayer_objects_get(CollectionPropertyIterator *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.listbase;
 
   /* we are actually iterating a ObjectBase list */
   Base *base = (Base *)internal->link;
