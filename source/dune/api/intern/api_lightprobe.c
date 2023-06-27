@@ -76,31 +76,31 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "clipend");
   api_def_prop_range(prop, 1e-6f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(
+  apu_def_prop_ui_text(
       prop, "Clip End", "Probe clip end, beyond which objects will not appear in reflections");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
-  prop = RNA_def_prop(sapi, "show_clip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_CLIP_DIST);
-  RNA_def_prop_ui_text(prop, "Clipping", "Show the clipping distances in the 3D view");
-  RNA_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_prop(sapi, "show_clip", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_CLIP_DIST);
+  api_def_prop_ui_text(prop, "Clipping", "Show the clipping distances in the 3D view");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   prop = api_def_prop(sapi, "influence_type", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_stype(prop, NULL, "attenuation_type");
-  RNA_def_prop_enum_items(prop, parallax_type_items);
-  RNA_def_prop_ui_text(prop, "Type", "Type of influence volume");
-  RNA_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  api_def_prop_enum_stype(prop, NULL, "attenuation_type");
+  api_def_prop_enum_items(prop, parallax_type_items);
+  api_def_prop_ui_text(prop, "Type", "Type of influence volume");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "show_influence", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_INFLUENCE);
+  prop = api_def_prop(sapi, "show_influence", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_INFLUENCE);
   RNA_def_property_ui_text(prop, "Influence", "Show the influence volume in the 3D view");
   RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = RNA_def_property(srna, "influence_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "distinf");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Influence Distance", "Influence distance of the probe");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_property(srna, "influence_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_property_float_sdna(prop, NULL, "distinf");
+  api_def_property_range(prop, 0.0f, FLT_MAX);
+  api_def_property_ui_text(prop, "Influence Distance", "Influence distance of the probe");
+  api_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   prop = RNA_def_property(srna, "falloff", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_range(prop, 0.0f, 1.0f);
