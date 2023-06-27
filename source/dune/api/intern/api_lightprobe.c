@@ -118,7 +118,7 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Parallax", "Show the parallax correction volume in the 3D view");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = api_def_prop(srna, "parallax_type", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "parallax_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, parallax_type_items);
   api_def_prop_ui_text(prop, "Type", "Type of parallax volume");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
@@ -148,12 +148,12 @@ static void api_def_lightprobe(DuneApi *dapi)
       prop, "Resolution Z", "Number of sample along the z axis of the volume");
   RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
-  prop = RNA_def_property(srna, "visibility_buffer_bias", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vis_bias");
-  RNA_def_property_range(prop, 0.001f, 9999.0f);
-  RNA_def_property_ui_range(prop, 0.001f, 5.0f, 1.0, 3);
-  RNA_def_property_ui_text(prop, "Visibility Bias", "Bias for reducing self shadowing");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  prop = api_def_prop(sapi, "visibility_buffer_bias", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vis_bias");
+  api_def_prop_range(prop, 0.001f, 9999.0f);
+  api_def_prop_ui_range(prop, 0.001f, 5.0f, 1.0, 3);
+  api_def_prop_ui_text(prop, "Visibility Bias", "Bias for reducing self shadowing");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   prop = RNA_def_property(srna, "visibility_bleed_bias", PROP_FLOAT, PROP_FACTOR);
   RNA_def_property_float_sdna(prop, NULL, "vis_bleedbias");
