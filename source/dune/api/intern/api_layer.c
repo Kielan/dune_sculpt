@@ -523,27 +523,27 @@ void api_def_view_layer(BlenderRNA *brna)
 
   rna_def_view_layer_common(brna, srna, true);
 
-  func = RNA_def_function(srna, "update_render_passes", "rna_ViewLayer_update_render_passes");
-  RNA_def_function_ui_description(func,
-                                  "Requery the enabled render passes from the render engine");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_NO_SELF);
+  fn = api_def_fn(sapi, "update_render_passes", "rna_ViewLayer_update_render_passes");
+  api_def_fn_ui_description(fn,
+                            "Requery the enabled render passes from the render engine");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_NO_SELF);
 
-  prop = RNA_def_property(srna, "layer_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "LayerCollection");
-  RNA_def_property_pointer_sdna(prop, NULL, "layer_collections.first");
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "layer_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "LayerCollection");
+  api_def_prop_ptr_stype(prop, NULL, "layer_collections.first");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(
       prop,
       "Layer Collection",
       "Root of collections hierarchy of this view layer,"
-      "its 'collection' pointer property is the same as the scene's master collection");
+      "its 'collection' ptr prop is the same as the scene's master collection");
 
-  prop = RNA_def_property(srna, "active_layer_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "LayerCollection");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_ViewLayer_active_layer_collection_get",
-                                 "rna_ViewLayer_active_layer_collection_set",
-                                 NULL,
+  prop = api_def_prop(sapi, "active_layer_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "LayerCollection");
+  api_def_prop_ptr_fns(prop,
+                       "rna_ViewLayer_active_layer_collection_get",
+                       "rna_ViewLayer_active_layer_collection_set",
+                       NULL,
                                  NULL);
   RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
   RNA_def_property_ui_text(
