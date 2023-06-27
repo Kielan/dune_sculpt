@@ -155,13 +155,13 @@ static void api_def_light(DuneApi *dapo)
                            "Use custom attenuation distance instead of global light threshold");
   RNA_def_property_update(prop, 0, "rna_Light_update");
 
-  prop = RNA_def_property(srna, "cutoff_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "att_dist");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.01f, 100.0f, 1.0, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cutoff_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "att_dist");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.01f, 100.0f, 1.0, 2);
+  api_def_prop_ui_text(
       prop, "Cutoff Distance", "Distance at which the light influence will be set to 0");
-  RNA_def_property_update(prop, 0, "rna_Light_update");
+  api_def_prop_update(prop, 0, "rna_Light_update");
 
   /* nodes */
   prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
