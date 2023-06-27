@@ -421,95 +421,95 @@ static void api_def_layer_collection(DuneApi *dapi)
   api_def_fn_return(fn, api_def_bool(fn, "result", 0, "", ""));
 
   /* Run-time flags. */
-  prop = api_def_property(srna, "is_visible", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "runtime_flag", LAYER_COLLECTION_VISIBLE_VIEW_LAYER);
+  prop = api_def_prop(sapi, "is_visible", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "runtime_flag", LAYER_COLLECTION_VISIBLE_VIEW_LAYER);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop,
-                           "Visible",
-                           "Whether this collection is visible for the view layer, take into "
-                           "account the collection parent");
+                       "Visible",
+                       "Whether this collection is visible for the view layer, take into "
+                       "account the collection parent");
 
-  func = RNA_def_function(srna, "has_objects", "rna_LayerCollection_has_objects");
-  RNA_def_function_ui_description(func, "");
-  RNA_def_function_return(func, RNA_def_boolean(func, "result", 0, "", ""));
+  fn = api_def_fn(sapi, "has_objects", "api_LayerCollection_has_objects");
+  api_def_fn_ui_description(fn, "");
+  api_def_fn_return(fn, api_def_bool(fn, "result", 0, "", ""));
 
-  func = RNA_def_function(
-      srna, "has_selected_objects", "rna_LayerCollection_has_selected_objects");
-  RNA_def_function_ui_description(func, "");
-  prop = RNA_def_pointer(
+  fn = api_def_fn(
+      sapi, "has_selected_objects", "api_LayerCollection_has_selected_objects");
+  api_def_fn_ui_description(fn, "");
+  prop = api_def_ptr(
       func, "view_layer", "ViewLayer", "", "View layer the layer collection belongs to");
-  RNA_def_parameter_flags(prop, 0, PARM_REQUIRED);
-  RNA_def_function_return(func, RNA_def_boolean(func, "result", 0, "", ""));
+  api_def_param_flags(prop, 0, PARM_REQUIRED);
+  api_def_fn_return(fn, api_def_bool(fn, "result", 0, "", ""));
 }
 
-static void rna_def_layer_objects(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_layer_objects(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  RNA_def_property_srna(cprop, "LayerObjects");
-  srna = RNA_def_struct(brna, "LayerObjects", NULL);
-  RNA_def_struct_sdna(srna, "ViewLayer");
-  RNA_def_struct_ui_text(srna, "Layer Objects", "Collections of objects");
+  api_def_prop_sapi(cprop, "LayerObjects");
+  sapi = api_def_struct(dapi, "LayerObjects", NULL);
+  api_def_struct_stype(sapi, "ViewLayer");
+  api_def_struct_ui_text(sapi, "Layer Objects", "Collections of objects");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_LayerObjects_active_object_get",
-                                 "rna_LayerObjects_active_object_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Object", "Active object for this layer");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_ptr_fns(prop,
+                       "api_LayerObjects_active_object_get",
+                       "api_LayerObjects_active_object_set",
+                       NULL,
+                       NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Object", "Active object for this layer");
   /* Could call: `ED_object_base_activate(C, view_layer->basact);`
    * but would be a bad level call and it seems the notifier is enough */
-  RNA_def_property_update(prop, NC_SCENE | ND_OB_ACTIVE, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_OB_ACTIVE, NULL);
 
-  prop = RNA_def_property(srna, "selected", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "object_bases", NULL);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_LayerObjects_selected_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_ViewLayer_objects_get",
+  prop = api_def_prop(sapi, "selected", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "object_bases", NULL);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_collection_fns(prop,
+                                    "api_LayerObjects_selected_begin",
+                                    "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_ViewLayer_objects_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_ui_text(prop, "Selected Objects", "All the selected objects of this layer");
+  api_def_prop_ui_text(prop, "Selected Objects", "All the selected objects of this layer");
 }
 
-static void rna_def_object_base(BlenderRNA *brna)
+static void api_def_object_base(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ObjectBase", NULL);
-  RNA_def_struct_sdna(srna, "Base");
-  RNA_def_struct_ui_text(srna, "Object Base", "An object instance in a render layer");
-  RNA_def_struct_ui_icon(srna, ICON_OBJECT_DATA);
+  sapi = api_def_struct(dapi, "ObjectBase", NULL);
+  api_def_struct_stype(sapi, "Base");
+  api_def_struct_ui_text(sapi, "Object Base", "An object instance in a render layer");
+  api_def_struct_ui_icon(sapi, ICON_OBJECT_DATA);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "object");
-  RNA_def_property_ui_text(prop, "Object", "Object this base links to");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "object");
+  api_def_prop_ui_text(prop, "Object", "Object this base links to");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BASE_SELECTED);
-  RNA_def_property_ui_text(prop, "Select", "Object base selection state");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_ObjectBase_select_update");
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BASE_SELECTED);
+  api_def_prop_ui_text(prop, "Select", "Object base selection state");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_ObjectBase_select_update");
 
-  prop = RNA_def_property(srna, "hide_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", BASE_HIDDEN);
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_icon(prop, ICON_HIDE_OFF, -1);
-  RNA_def_property_ui_text(prop, "Hide in Viewport", "Temporarily hide in viewport");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_ObjectBase_hide_viewport_update");
+  prop = api_def_prop(sapi, "hide_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", BASE_HIDDEN);
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_icon(prop, ICON_HIDE_OFF, -1);
+  api_def_prop_ui_text(prop, "Hide in Viewport", "Temporarily hide in viewport");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_ObjectBase_hide_viewport_update");
 }
 
-void RNA_def_view_layer(BlenderRNA *brna)
+void api_def_view_layer(BlenderRNA *brna)
 {
   FunctionRNA *func;
   StructRNA *srna;
