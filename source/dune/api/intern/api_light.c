@@ -181,31 +181,31 @@ static void api_def_light(DuneApi *dapo)
   rna_def_animdata_common(srna);
 }
 
-static void rna_def_light_energy(StructRNA *srna, const short light_type)
+static void api_def_light_energy(ApiStruct *sapi, const short light_type)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   switch (light_type) {
     case LA_SUN: {
       /* Distant light strength has no unit defined,
        * it's proportional to 'watt/m^2' and is not sensitive to scene unit scale. */
-      prop = RNA_def_property(srna, "energy", PROP_FLOAT, PROP_NONE);
-      RNA_def_property_ui_range(prop, 0.0f, 10.0f, 1, 3);
-      RNA_def_property_ui_text(
+      prop = api_def_prop(sapi, "energy", PROP_FLOAT, PROP_NONE);
+      api_def_prop_ui_range(prop, 0.0f, 10.0f, 1, 3);
+      api_def_prop_ui_text(
           prop, "Strength", "Sunlight strength in watts per meter squared (W/m^2)");
-      RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+      api_def_prop_update(prop, 0, "rna_Light_draw_update");
       break;
     }
     case LA_SPOT: {
       /* Lights with a location have power in Watts,
        * which is sensitive to scene unit scale. */
-      prop = RNA_def_property(srna, "energy", PROP_FLOAT, PROP_POWER);
-      RNA_def_property_ui_range(prop, 0.0f, 1000000.0f, 10, 5);
-      RNA_def_property_ui_text(prop,
+      prop = api_def_prop(sapi, "energy", PROP_FLOAT, PROP_POWER);
+      api_def_prop_ui_range(prop, 0.0f, 1000000.0f, 10, 5);
+      api_def_prop_ui_text(prop,
                                "Power",
                                "The energy this light would emit over its entire area "
                                "if it wasn't limited by the spot angle");
-      RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+      api_def_prop_update(prop, 0, "rna_Light_draw_update");
       break;
     }
     default: {
