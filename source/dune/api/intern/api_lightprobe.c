@@ -192,20 +192,20 @@ static void api_def_lightprobe(DuneApi *dapi)
   RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   /* Data preview */
-  prop = RNA_def_property(srna, "show_data", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_DATA);
-  RNA_def_property_ui_text(prop,
+  prop = RNA_def_prop(sapi, "show_data", PROP_BOOL, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_DATA);
+  api_def_prop_ui_text(prop,
                            "Show Preview Plane",
                            "Show captured lighting data into the 3D view for debugging purpose");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, NULL);
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   /* common */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(api);
 }
 
-void RNA_def_lightprobe(BlenderRNA *brna)
+void api_def_lightprobe(DuneApi *dapi)
 {
-  rna_def_lightprobe(brna);
+  api_def_lightprobe(dapi);
 }
 
 #endif
