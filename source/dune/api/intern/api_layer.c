@@ -358,42 +358,42 @@ static void api_def_layer_collection(DuneApi *dapi)
   api_def_struct_ui_icon(sapi, ICON_OUTLINER_COLLECTION);
 
   prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE | PROP_ANIMATABLE);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_ui_text(prop, "Collection", "Collection this layer collection is wrapping");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE | PROP_ANIMATABLE);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_ui_text(prop, "Collection", "Collection this layer collection is wrapping");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "collection->id.name");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE | PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Name", "Name of this view layer (same as its collection one)");
-  RNA_def_property_string_funcs(
-      prop, "rna_LayerCollection_name_get", "rna_LayerCollection_name_length", NULL);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "collection->id.name");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE | PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Name", "Name of this view layer (same as its collection one)");
+  api_def_prop_string_fns(
+      prop, "api_LayerCollection_name_get", "rna_LayerCollection_name_length", NULL);
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "children", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "layer_collections", NULL);
-  RNA_def_property_struct_type(prop, "LayerCollection");
-  RNA_def_property_ui_text(prop, "Children", "Child layer collections");
+  prop = api_def_prop(sapi, "children", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_sdna(prop, NULL, "layer_collections", NULL);
+  api_def_prop_struct_type(prop, "LayerCollection");
+  api_def_prop_ui_text(prop, "Children", "Child layer collections");
 
   /* Restriction flags. */
-  prop = RNA_def_property(srna, "exclude", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LAYER_COLLECTION_EXCLUDE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_LayerCollection_exclude_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  prop = api_def_prop(sapi, "exclude", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_EXCLUDE);
+  RNA_def_prop_bool_fns(prop, NULL, "api_LayerCollection_exclude_set");
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_ui_text(prop, "Exclude from View Layer", "Exclude from view layer");
   RNA_def_property_ui_icon(prop, ICON_CHECKBOX_HLT, -1);
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "rna_LayerCollection_exclude_update");
+  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "api_LayerCollection_exclude_update");
 
   prop = RNA_def_property(srna, "holdout", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LAYER_COLLECTION_HOLDOUT);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_LayerCollection_holdout_set");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_icon(prop, ICON_HOLDOUT_OFF, 1);
-  RNA_def_property_ui_text(prop, "Holdout", "Mask out objects in collection from view layer");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "rna_LayerCollection_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_HOLDOUT);
+  api_def_prop_bool_fns(prop, NULL, "rna_LayerCollection_holdout_set");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_icon(prop, ICON_HOLDOUT_OFF, 1);
+  api_def_prop_ui_text(prop, "Holdout", "Mask out objects in collection from view layer");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER, "rna_LayerCollection_update");
 
-  prop = RNA_def_property(srna, "indirect_only", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "indirect_only", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", LAYER_COLLECTION_INDIRECT_ONLY);
   RNA_def_property_boolean_funcs(prop, NULL, "rna_LayerCollection_indirect_only_set");
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
