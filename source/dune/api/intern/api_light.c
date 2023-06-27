@@ -1,38 +1,32 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #include <stdlib.h>
 
-#include "BLI_math_base.h"
-#include "BLI_math_rotation.h"
-#include "BLI_sys_types.h"
+#include "lib_math_base.h"
+#include "lib_math_rotation.h"
+#include "lib_sys_types.h"
 
-#include "BLT_translation.h"
+#include "lib_translation.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-#include "rna_internal.h"
+#include "api_define.h"
+#include "api_enum_types.h"
+#include "api_internal.h"
 
-#include "DNA_light_types.h"
-#include "DNA_material_types.h"
-#include "DNA_texture_types.h"
+#include "types_light.h"
+#include "types_material.h"
+#include "types_texture.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_context.h"
-#  include "BKE_main.h"
-#  include "BKE_texture.h"
+#  include "dune_context.h"
+#  include "dune_main.h"
+#  include "dune_texture.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_node.h"
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "ed_node.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
 static void rna_Light_buffer_size_set(PointerRNA *ptr, int value)
 {
