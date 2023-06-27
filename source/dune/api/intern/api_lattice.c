@@ -267,7 +267,7 @@ static void api_def_latticepoint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Deformed Location", "");
   api_def_prop_update(prop, 0, "api_Lattice_update_data");
 
-  prop = api_def_property(sapi, "weight_softbody", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "weight_softbody", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_sapi(prop, NULL, "weight");
   api_def_prop_range(prop, 0.01f, 100.0f);
   api_def_prop_ui_text(prop, "Weight", "Softbody goal weight");
@@ -296,7 +296,7 @@ static void api_def_lattice(DuneApi *dapi)
   sapi = api_def_struct(dapi, "Lattice", "Id");
   api_def_struct_ui_text(
       srna, "Lattice", "Lattice data-block defining a grid for deforming other objects");
-  RNA_def_struct_ui_icon(sapi, ICON_LATTICE_DATA);
+  api_def_struct_ui_icon(sapi, ICON_LATTICE_DATA);
 
   prop = api_def_prop(sapi, "points_u", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "pntsu");
@@ -306,45 +306,45 @@ static void api_def_lattice(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "U", "Point in U direction (can't be changed when there are shape keys)");
   api_def_prop_update(prop, 0, "api_Lattice_update_size");
-  RNA_def_property_editable_fn(prop, "api_Lattice_size_editable");
+  RNA_def_prop_editable_fn(prop, "api_Lattice_size_editable");
 
   prop = api_def_prop(sapi, "points_v", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "pntsv");
-  RNA_def_prop_int_fns(prop, NULL, "api_Lattice_points_v_set", NULL);
-  RNA_def_property_range(prop, 1, 64);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  api_def_prop_int_stype(prop, NULL, "pntsv");
+  api_def_prop_int_fns(prop, NULL, "api_Lattice_points_v_set", NULL);
+  api_def_prop_range(prop, 1, 64);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "V", "Point in V direction (can't be changed when there are shape keys)");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
-  RNA_def_property_editable_func(prop, "rna_Lattice_size_editable");
+  api_def_prop_update(prop, 0, "api_Lattice_update_size");
+  api_def_prop_editable_fn(prop, "api_Lattice_size_editable");
 
-  prop = RNA_def_property(srna, "points_w", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pntsw");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_w_set", NULL);
-  RNA_def_property_range(prop, 1, 64);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "points_w", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pntsw");
+  api_def_prop_int_fns(prop, NULL, "rna_Lattice_points_w_set", NULL);
+  api_def_prop_range(prop, 1, 64);
+  apo_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "W", "Point in W direction (can't be changed when there are shape keys)");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
-  RNA_def_property_editable_func(prop, "rna_Lattice_size_editable");
+  api_def_prop_update(prop, 0, "rna_Lattice_update_size");
+  api_def_prop_editable_fn(prop, "rna_Lattice_size_editable");
 
-  prop = RNA_def_property(srna, "interpolation_type_u", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "typeu");
-  RNA_def_property_enum_items(prop, rna_enum_keyblock_type_items);
-  RNA_def_property_ui_text(prop, "Interpolation Type U", "");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  prop = api_def_prop(sapi, "interpolation_type_u", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_stype(prop, NULL, "typeu");
+  RNA_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
+  RNA_def_prop_ui_text(prop, "Interpolation Type U", "");
+  RNA_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
 
-  prop = RNA_def_property(srna, "interpolation_type_v", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "typev");
-  RNA_def_property_enum_items(prop, rna_enum_keyblock_type_items);
-  RNA_def_property_ui_text(prop, "Interpolation Type V", "");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  prop = api_def_prop(sapi, "interpolation_type_v", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "typev");
+  api_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
+  api_def_prop_ui_text(prop, "Interpolation Type V", "");
+  api_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
 
-  prop = RNA_def_property(srna, "interpolation_type_w", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "typew");
-  RNA_def_property_enum_items(prop, rna_enum_keyblock_type_items);
-  RNA_def_property_ui_text(prop, "Interpolation Type W", "");
-  RNA_def_property_update(prop, 0, "rna_Lattice_update_data_editlatt");
+  prop = api_def_prop(sapi, "interpolation_type_w", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "typew");
+  api_def_prop_enum_items(prop, rna_enum_keyblock_type_items);
+  api_def_prop_ui_text(prop, "Interpolation Type W", "");
+  api_def_prop_update(prop, 0, "rna_Lattice_update_data_editlatt");
 
   prop = RNA_def_property(srna, "use_outside", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", LT_OUTSIDE);
