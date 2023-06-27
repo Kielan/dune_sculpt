@@ -403,28 +403,28 @@ static void api_def_layer_collection(DuneApi *dapi)
       "Indirect Only",
       "Objects in collection only contribute indirectly (through shadows and reflections) "
       "in the view layer");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "rna_LayerCollection_update");
+  RNA_def_property_update(prop, NC_SCENE | ND_LAYER, "api_LayerCollection_update");
 
-  prop = RNA_def_property(srna, "hide_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", LAYER_COLLECTION_HIDE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_LayerCollection_hide_viewport_set");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_icon(prop, ICON_HIDE_OFF, -1);
-  RNA_def_property_ui_text(prop, "Hide in Viewport", "Temporarily hide in viewport");
-  RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_LayerCollection_update");
+  prop = api_def_prop(sapi, "hide_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", LAYER_COLLECTION_HIDE);
+  api_def_prop_bool_fns(prop, NULL, "rna_LayerCollection_hide_viewport_set");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_icon(prop, ICON_HIDE_OFF, -1);
+  api_def_prop_ui_text(prop, "Hide in Viewport", "Temporarily hide in viewport");
+  api_def_prop_update(prop, NC_SCENE | ND_LAYER_CONTENT, "api_LayerCollection_update");
 
-  func = RNA_def_function(srna, "visible_get", "rna_LayerCollection_visible_get");
-  RNA_def_function_ui_description(func,
-                                  "Whether this collection is visible, take into account the "
-                                  "collection parent and the viewport");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_return(func, RNA_def_boolean(func, "result", 0, "", ""));
+  fn = api_def_fn(sapi, "visible_get", "api_LayerCollection_visible_get");
+  api_def_fn_ui_description(fn,
+                            "Whether this collection is visible, take into account the "
+                            "collection parent and the viewport");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_return(fn, api_def_bool(fn, "result", 0, "", ""));
 
   /* Run-time flags. */
-  prop = RNA_def_property(srna, "is_visible", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "runtime_flag", LAYER_COLLECTION_VISIBLE_VIEW_LAYER);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_property(srna, "is_visible", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "runtime_flag", LAYER_COLLECTION_VISIBLE_VIEW_LAYER);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop,
                            "Visible",
                            "Whether this collection is visible for the view layer, take into "
                            "account the collection parent");
