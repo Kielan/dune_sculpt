@@ -153,19 +153,19 @@ static void api_ViewLayer_update_render_passes(Id *id)
   }
 }
 
-static ApiPtr api_ViewLayer_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_ViewLayer_objects_get(CollectionPropIter *iter)
 {
-  ListIter *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
 
   /* we are actually iterating a ObjectBase list */
   Base *base = (Base *)internal->link;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Object, base->object);
+  return api_ptr_inherit_refine(&iter->parent, &ApiObject, base->object);
 }
 
-static int rna_ViewLayer_objects_selected_skip(CollectionPropertyIterator *iter,
+static int api_ViewLayer_objects_selected_skip(CollectionPropertyIterator *iter,
                                                void *UNUSED(data))
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.listbase;
   Base *base = (Base *)internal->link;
 
   if ((base->flag & BASE_SELECTED) != 0) {
