@@ -61,26 +61,26 @@ static void rna_ViewLayer_active_layer_collection_set(ApiPtr *ptr,
   }
 }
 
-static PointerRNA rna_LayerObjects_active_object_get(ApiPtr *ptr)
+static ApiPtr api_LayerObjects_active_object_get(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_Object, view_layer->basact ? view_layer->basact->object : NULL);
+  return api_ptr_inherit_refine(
+      ptr, &ApiObject, view_layer->basact ? view_layer->basact->object : NULL);
 }
 
-static void rna_LayerObjects_active_object_set(PointerRNA *ptr,
-                                               PointerRNA value,
+static void api_LayerObjects_active_object_set(ApiPtr *ptr,
+                                               ApoPtr value,
                                                struct ReportList *reports)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   if (value.data) {
     Object *ob = value.data;
-    Base *basact_test = BKE_view_layer_base_find(view_layer, ob);
+    Base *basact_test = dune_view_layer_base_find(view_layer, ob);
     if (basact_test != NULL) {
       view_layer->basact = basact_test;
     }
     else {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "ViewLayer '%s' does not contain object '%s'",
                   view_layer->name,
@@ -92,17 +92,17 @@ static void rna_LayerObjects_active_object_set(PointerRNA *ptr,
   }
 }
 
-size_t rna_ViewLayer_path_buffer_get(ViewLayer *view_layer,
-                                     char *r_rna_path,
-                                     const size_t rna_path_buffer_size)
+size_t api_ViewLayer_path_buffer_get(ViewLayer *view_layer,
+                                     char *r_api_path,
+                                     const size_t api_path_buffer_size)
 {
   char name_esc[sizeof(view_layer->name) * 2];
-  BLI_str_escape(name_esc, view_layer->name, sizeof(name_esc));
+  lib_str_escape(name_esc, view_layer->name, sizeof(name_esc));
 
-  return BLI_snprintf_rlen(r_rna_path, rna_path_buffer_size, "view_layers[\"%s\"]", name_esc);
+  return lib_snprintf_rlen(r_api_path, api_path_buffer_size, "view_layers[\"%s\"]", name_esc);
 }
 
-static char *rna_ViewLayer_path(PointerRNA *ptr)
+static char *rna_ViewLayer_path(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   char rna_path[sizeof(view_layer->name) * 3];
