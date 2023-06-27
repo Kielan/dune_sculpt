@@ -102,7 +102,7 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Influence Distance", "Influence distance of the probe");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
-  prop = api_def_prop(srna, "falloff", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "falloff", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Falloff", "Control how fast the probe influence decreases");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
@@ -114,7 +114,7 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   prop = api_def_prop(sapi, "show_parallax", PROP_BOOLEAN, PROP_NONE);
-  apu_def_prop_bool_styoe(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_PARALLAX);
+  apu_def_prop_bool_stype(prop, NULL, "flag", LIGHTPROBE_FLAG_SHOW_PARALLAX);
   api_def_prop_ui_text(prop, "Parallax", "Show the parallax correction volume in the 3D view");
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
@@ -130,11 +130,11 @@ static void api_def_lightprobe(DuneApi *dapi)
   api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, NULL);
 
   /* irradiance grid */
-  prop = RNA_def_property(srna, "grid_resolution_x", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, 256);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "grid_resolution_x", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, 256);
+  api_def_prop_ui_text(
       prop, "Resolution X", "Number of sample along the x axis of the volume");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   prop = api_def_prop(sapi, "grid_resolution_y", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, 1, 256);
