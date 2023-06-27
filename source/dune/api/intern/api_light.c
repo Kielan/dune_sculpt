@@ -164,18 +164,18 @@ static void api_def_light(DuneApi *dapo)
   api_def_prop_update(prop, 0, "rna_Light_update");
 
   /* nodes */
-  prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "nodetree");
-  RNA_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Node Tree", "Node tree for node based lights");
+  prop = api_def_prop(sapi, "node_tree", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "nodetree");
+  api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Node Tree", "Node tree for node based lights");
 
-  prop = RNA_def_property(srna, "use_nodes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_nodes", 1);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Use Nodes", "Use shader nodes to render the light");
-  RNA_def_property_update(prop, 0, "rna_Light_use_nodes_update");
+  prop = api_def_prop(sapi, "use_nodes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_nodes", 1);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_ui_text(prop, "Use Nodes", "Use shader nodes to render the light");
+  api_def_prop_update(prop, 0, "rna_Light_use_nodes_update");
 
   /* common */
   rna_def_animdata_common(srna);
