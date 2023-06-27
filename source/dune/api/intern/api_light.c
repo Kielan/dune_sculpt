@@ -28,7 +28,7 @@
 #  include "wm_api.h"
 #  include "wm_types.h"
 
-static void rna_Light_buffer_size_set(PointerRNA *ptr, int value)
+static void api_Light_buffer_size_set(ApiPtr *ptr, int value)
 {
   Light *la = (Light *)ptr->data;
 
@@ -37,54 +37,54 @@ static void rna_Light_buffer_size_set(PointerRNA *ptr, int value)
   la->bufsize &= (~15); /* round to multiple of 16 */
 }
 
-static StructRNA *rna_Light_refine(struct PointerRNA *ptr)
+static ApiStruct *spi_Light_refine(struct ApiPtr *ptr)
 {
   Light *la = (Light *)ptr->data;
 
   switch (la->type) {
     case LA_LOCAL:
-      return &RNA_PointLight;
+      return &Api_PointLight;
     case LA_SUN:
-      return &RNA_SunLight;
+      return &Api_SunLight;
     case LA_SPOT:
-      return &RNA_SpotLight;
+      return &Api_SpotLight;
     case LA_AREA:
-      return &RNA_AreaLight;
+      return &Api_AreaLight;
     default:
-      return &RNA_Light;
+      return &Api_Light;
   }
 }
 
-static void rna_Light_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Light_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Light *la = (Light *)ptr->owner_id;
 
-  DEG_id_tag_update(&la->id, 0);
-  WM_main_add_notifier(NC_LAMP | ND_LIGHTING, la);
+  graph_id_tag_update(&la->id, 0);
+  wm_main_add_notifier(NC_LAMP | ND_LIGHTING, la);
 }
 
-static void rna_Light_draw_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Light_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Light *la = (Light *)ptr->owner_id;
 
-  DEG_id_tag_update(&la->id, 0);
-  WM_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, la);
+  graph_id_tag_update(&la->id, 0);
+  wm_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, la);
 }
 
-static void rna_Light_use_nodes_update(bContext *C, PointerRNA *ptr)
+static void api_Light_use_nodes_update(Cxt *C, ApiPtr *ptr)
 {
   Light *la = (Light *)ptr->data;
 
   if (la->use_nodes && la->nodetree == NULL) {
-    ED_node_shader_default(C, &la->id);
+    ed_node_shader_default(C, &la->id);
   }
 
-  rna_Light_update(CTX_data_main(C), CTX_data_scene(C), ptr);
+  api_Light_update(cxt_data_main(C), CTX_data_scene(C), ptr);
 }
 
 #else
 /* Don't define icons here, so they don't show up in the Light UI (properties Editor) - DingTo */
-const EnumPropertyItem rna_enum_light_type_items[] = {
+const EnumPropItem api_enum_light_type_items[] = {
     {LA_LOCAL, "POINT", 0, "Point", "Omnidirectional point light source"},
     {LA_SUN, "SUN", 0, "Sun", "Constant direction parallel ray light source"},
     {LA_SPOT, "SPOT", 0, "Spot", "Directional cone light source"},
@@ -98,24 +98,24 @@ static void api_def_light(DuneApi *dapo)
   ApiProp *prop;
   static float default_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
-  srna = RNA_def_struct(brna, "Light", "ID");
-  RNA_def_struct_sdna(srna, "Light");
-  RNA_def_struct_refine_func(srna, "rna_Light_refine");
-  RNA_def_struct_ui_text(srna, "Light", "Light data-block for lighting a scene");
-  RNA_def_struct_translation_context(srna, BLT_I18NCONTEXT_ID_LIGHT);
-  RNA_def_struct_ui_icon(srna, ICON_LIGHT_DATA);
+  sapi = api_def_struct(dapi, "Light", "ID");
+  api_def_struct_stype(sapi, "Light");
+  api_def_struct_refine_fn(sapi, "api_Light_refine");
+  api_def_struct_ui_text(sapi, "Light", "Light data-block for lighting a scene");
+  api_def_struct_translation_cxt(sapi, LANG_I18NCXT_ID_LIGHT);
+  api_def_struct_ui_icon(sapi, ICON_LIGHT_DATA);
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_light_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Type of light");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_LIGHT);
-  RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_light_type_items);
+  api_def_prop_ui_text(prop, "Type", "Type of light");
+  api_def_prop_translation_cxt(prop, LANG_I18NCXT_ID_LIGHT);
+  api_def_prop_update(prop, 0, "api_Light_draw_update");
 
-  prop = RNA_def_property(srna, "distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "dist");
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1000, 1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "dist");
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_range(prop, 0, 1000, 1, 3);
+  api_def_prop_ui_text(
       prop,
       "Distance",
       "Falloff distance - the light is at half the original intensity at this point");
