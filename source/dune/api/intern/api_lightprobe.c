@@ -1,40 +1,40 @@
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_lightprobe_types.h"
+#include "types_lightprobe.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_main.h"
-#  include "DEG_depsgraph.h"
+#  include "dune_main.h"
+#  include "graph.h"
 
-#  include "DNA_collection_types.h"
-#  include "DNA_object_types.h"
+#  include "types_collection.h"
+#  include "types_object.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static void rna_LightProbe_recalc(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_LightProbe_recalc(Main *UNUSED(main), Scene *UNUSED(scene), Atr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
 }
 
 #else
 
-static EnumPropertyItem parallax_type_items[] = {
+static EnumPropItem parallax_type_items[] = {
     {LIGHTPROBE_SHAPE_ELIPSOID, "ELIPSOID", ICON_NONE, "Sphere", ""},
     {LIGHTPROBE_SHAPE_BOX, "BOX", ICON_NONE, "Box", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static EnumPropertyItem lightprobe_type_items[] = {
+static EnumPropItem lightprobe_type_items[] = {
     {LIGHTPROBE_TYPE_CUBE,
      "CUBEMAP",
      ICON_LIGHTPROBE_CUBEMAP,
@@ -49,28 +49,28 @@ static EnumPropertyItem lightprobe_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static void rna_def_lightprobe(BlenderRNA *brna)
+static void api_def_lightprobe(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapu;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LightProbe", "ID");
-  RNA_def_struct_ui_text(
-      srna, "LightProbe", "Light Probe data-block for lighting capture objects");
-  RNA_def_struct_ui_icon(srna, ICON_OUTLINER_DATA_LIGHTPROBE);
+  sapi = api_def_struct(dapi, "LightProbe", "ID");
+  api_def_struct_ui_text(
+      sapi, "LightProbe", "Light Probe data-block for lighting capture objects");
+  api_def_struct_ui_icon(sapi, ICON_OUTLINER_DATA_LIGHTPROBE);
+  
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, lightprobe_type_items);
+  api_def_prop_ui_text(prop, "Type", "Type of light probe");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, lightprobe_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Type of light probe");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-
-  prop = RNA_def_property(srna, "clip_start", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "clipsta");
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "clip_start", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_styoe(prop, NULL, "clipsta");
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_ui_text(
       prop, "Clip Start", "Probe clip start, below which objects will not appear in reflections");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING, "rna_LightProbe_recalc");
 
   prop = RNA_def_property(srna, "clip_end", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "clipend");
