@@ -211,13 +211,13 @@ static void api_def_light_energy(ApiStruct *sapi, const short light_type)
     default: {
       /* Lights with a location have power in Watts,
        * which is sensitive to scene unit scale. */
-      prop = RNA_def_property(srna, "energy", PROP_FLOAT, PROP_POWER);
-      RNA_def_property_ui_range(prop, 0.0f, 1000000.0f, 10, 5);
-      RNA_def_property_ui_text(
+      prop = api_def_prop(sapi, "energy", PROP_FLOAT, PROP_POWER);
+      api_def_prop_ui_range(prop, 0.0f, 1000000.0f, 10, 5);
+      api_def_prop_ui_text(
           prop,
           "Power",
           "Light energy emitted over the entire area of the light in all directions");
-      RNA_def_property_update(prop, 0, "rna_Light_draw_update");
+      api_def_prop_update(prop, 0, "api_Light_draw_update");
       break;
     }
   }
