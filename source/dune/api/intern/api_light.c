@@ -135,23 +135,22 @@ static void rna_def_light(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Specular Factor", "Specular reflection multiplier");
   RNA_def_property_update(prop, 0, "rna_Light_update");
 
-  prop = RNA_def_property(srna, "diffuse_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "diff_fac");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
-  RNA_def_property_ui_text(prop, "Diffuse Factor", "Diffuse reflection multiplier");
-  RNA_def_property_update(prop, 0, "rna_Light_update");
+  prop = api_def_property(srna, "diffuse_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_property_float_sdna(prop, NULL, "diff_fac");
+  api_def_property_range(prop, 0.0f, FLT_MAX);
+  api_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
+  api_def_prop_ui_text(prop, "Diffuse Factor", "Diffuse reflection multiplier");
+  api_def_prop_update(prop, 0, "api_Light_update");
+  prop = api_def_prop(sapi, "volume_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "volume_fac");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
+  api_def_prop_ui_text(prop, "Volume Factor", "Volume light multiplier");
+  api_def_prop_update(prop, 0, "rna_Light_update");
 
-  prop = RNA_def_property(srna, "volume_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "volume_fac");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
-  RNA_def_property_ui_text(prop, "Volume Factor", "Volume light multiplier");
-  RNA_def_property_update(prop, 0, "rna_Light_update");
-
-  prop = RNA_def_property(srna, "use_custom_distance", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", LA_CUSTOM_ATTENUATION);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(srna, "use_custom_distance", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mode", LA_CUSTOM_ATTENUATION);
+  api_def_prop_ui_text(prop,
                            "Custom Attenuation",
                            "Use custom attenuation distance instead of global light threshold");
   RNA_def_property_update(prop, 0, "rna_Light_update");
