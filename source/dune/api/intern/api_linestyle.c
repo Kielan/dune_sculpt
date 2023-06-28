@@ -657,10 +657,10 @@ static void api_def_mod_type_common(ApiStruct *sapi,
   api_def_struct_name_prop(sapi, prop);
 
   if (blend) {
-    prop = RNA_def_property(srna, "blend", PROP_ENUM, PROP_NONE);
-    RNA_def_prop_enum_sdna(prop, NULL, "modifier.blend");
-    RNA_def_prop_enum_items(prop, (color) ? rna_enum_ramp_blend_items : value_blend_items);
-    RNA_def_prop_ui_text(
+    prop = api_def_prop(sapi, "blend", PROP_ENUM, PROP_NONE);
+    api_def_prop_enum_stype(prop, NULL, "modifier.blend");
+    api_def_prop_enum_items(prop, (color) ? rna_enum_ramp_blend_items : value_blend_items);
+    api_def_prop_ui_text(
         prop, "Blend", "Specify how the modifier value is blended into the base value");
     api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
@@ -685,10 +685,10 @@ static void api_def_mod_type_common(ApiStruct *sapi,
 static void api_def_color_mod(ApiStruct *sapi)
 {
   api_def_mod_type_common(sapi,
-                               api_enum_linestyle_color_mod_type_items,
-                               "api_LineStyleColorMod_name_set",
-                               true,
-                               true);
+                          api_enum_linestyle_color_mod_type_items,
+                          "api_LineStyleColorMod_name_set",
+                          true,
+                          true);
 }
 
 static void api_def_alpha_mod(ApiStruct *sapi)
@@ -700,7 +700,7 @@ static void api_def_alpha_mod(ApiStruct *sapi)
                           false);
 }
 
-static void api_def_thickness_modifier(StructRNA *srna)
+static void api_def_thickness_mod(ApiStruct *sapi)
 {
   api_def_mod_type_common(srna,
                                rna_enum_linestyle_thickness_modifier_type_items,
