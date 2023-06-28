@@ -785,21 +785,21 @@ static void rna_def_modifier_curve_common(StructRNA *srna, bool range, bool valu
   }
 
   if (value) {
-    prop = RNA_def_property(srna, "value_min", PROP_FLOAT, PROP_NONE);
-    RNA_def_property_float_sdna(prop, NULL, "value_min");
-    RNA_def_property_ui_text(prop, "Value Min", "Minimum output value of the mapping");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    prop = api_def_prop(sapi, "value_min", PROP_FLOAT, PROP_NONE);
+    api_def_prop_float_stype(prop, NULL, "value_min");
+    api_def_prop_ui_text(prop, "Value Min", "Minimum output value of the mapping");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-    prop = RNA_def_property(srna, "value_max", PROP_FLOAT, PROP_NONE);
-    RNA_def_property_float_sdna(prop, NULL, "value_max");
-    RNA_def_property_ui_text(prop, "Value Max", "Maximum output value of the mapping");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    prop = api_def_prop(sapi, "value_max", PROP_FLOAT, PROP_NONE);
+    api_def_prop_float_stype(prop, NULL, "value_max");
+    api_def_prop_ui_text(prop, "Value Max", "Maximum output value of the mapping");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
   }
 }
 
-static void rna_def_modifier_material_common(StructRNA *srna)
+static void api_def_mod_material_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   static const EnumPropertyItem mat_attr_items[] = {
       {LS_MODIFIER_MATERIAL_LINE, "LINE", 0, "Line Color", ""},
