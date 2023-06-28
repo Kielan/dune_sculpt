@@ -35,10 +35,10 @@ const EnumPropItem api_enum_linestyle_color_mod_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropItem api_enum_linestyle_alpha_modifier_type_items[] = {
-    {LS_MOD_ALONG_STROKE, "ALONG_STROKE", ICON_MODIFIER, "Along Stroke", ""},
-    {LS_MOD_CREASE_ANGLE, "CREASE_ANGLE", ICON_MODIFIER, "Crease Angle", ""},
-    {LS_MOD_CURVATURE_3D, "CURVATURE_3D", ICON_MODIFIER, "Curvature 3D", ""},
+const EnumPropItem api_enum_linestyle_alpha_mod_type_items[] = {
+    {LS_MOD_ALONG_STROKE, "ALONG_STROKE", ICON_MOD, "Along Stroke", ""},
+    {LS_MOD_CREASE_ANGLE, "CREASE_ANGLE", ICON_MOD, "Crease Angle", ""},
+    {LS_MOD_CURVATURE_3D, "CURVATURE_3D", ICON_MOD, "Curvature 3D", ""},
     {LS_MOD_DISTANCE_FROM_CAMERA,
      "DISTANCE_FROM_CAMERA",
      ICON_MOD,
@@ -175,70 +175,71 @@ static ApiStruct *api_LineStyle_thickness_mod_refine(struct PointerRNA *ptr)
     case LS_MOD_ALONG_STROKE:
       return &Api_LineStyleThicknessModifier_AlongStroke;
     case LS_MOD_DISTANCE_FROM_CAMERA:
-      return &Api_LineStyleThicknessModifier_DistanceFromCamera;
+      return &Api_LineStyleThicknessMod_DistanceFromCamera;
     case LS_MOD_DISTANCE_FROM_OBJECT:
-      return &Api_LineStyleThicknessModifier_DistanceFromObject;
+      return &Api_LineStyleThicknessMod_DistanceFromObject;
     case LS_MOD_MATERIAL:
-      return &Api_LineStyleThicknessModifier_Material;
+      return &Api_LineStyleThicknessMod_Material;
     case LS_MOD_CALLIGRAPHY:
-      return &Api_LineStyleThicknessModifier_Calligraphy;
+      return &Api_LineStyleThicknessMod_Calligraphy;
     case LS_MOD_TANGENT:
-      return &Api_LineStyleThicknessModifier_Tangent;
+      return &Api_LineStyleThicknessMod_Tangent;
     case LS_MOD_NOISE:
-      return &Api_LineStyleThicknessModifier_Noise;
+      return &Api_LineStyleThicknessMod_Noise;
     case LS_MOD_CREASE_ANGLE:
-      return &RNA_LineStyleThicknessModifier_CreaseAngle;
-    case LS_MODIFIER_CURVATURE_3D:
-      return &RNA_LineStyleThicknessModifier_Curvature_3D;
+      return &Api_LineStyleThicknessMod_CreaseAngle;
+    case LS_MOD_CURVATURE_3D:
+      return &Api_LineStyleThicknessMod_Moisture_3D;
     default:
-      return &RNA_LineStyleThicknessModifier;
+      return &Api_LineStyleThicknessMod
   }
 }
 
-static StructRNA *rna_LineStyle_geometry_modifier_refine(struct PointerRNA *ptr)
+static ApiStruct *api_LineStyle_geometry_mod_refine(struct ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
   switch (m->type) {
-    case LS_MODIFIER_SAMPLING:
-      return &RNA_LineStyleGeometryModifier_Sampling;
-    case LS_MODIFIER_BEZIER_CURVE:
-      return &RNA_LineStyleGeometryModifier_BezierCurve;
-    case LS_MODIFIER_SINUS_DISPLACEMENT:
-      return &RNA_LineStyleGeometryModifier_SinusDisplacement;
-    case LS_MODIFIER_SPATIAL_NOISE:
-      return &RNA_LineStyleGeometryModifier_SpatialNoise;
-    case LS_MODIFIER_PERLIN_NOISE_1D:
-      return &RNA_LineStyleGeometryModifier_PerlinNoise1D;
-    case LS_MODIFIER_PERLIN_NOISE_2D:
-      return &RNA_LineStyleGeometryModifier_PerlinNoise2D;
-    case LS_MODIFIER_BACKBONE_STRETCHER:
-      return &RNA_LineStyleGeometryModifier_BackboneStretcher;
-    case LS_MODIFIER_TIP_REMOVER:
-      return &RNA_LineStyleGeometryModifier_TipRemover;
-    case LS_MODIFIER_POLYGONIZATION:
-      return &RNA_LineStyleGeometryModifier_Polygonalization;
-    case LS_MODIFIER_GUIDING_LINES:
-      return &RNA_LineStyleGeometryModifier_GuidingLines;
-    case LS_MODIFIER_BLUEPRINT:
-      return &RNA_LineStyleGeometryModifier_Blueprint;
-    case LS_MODIFIER_2D_OFFSET:
-      return &RNA_LineStyleGeometryModifier_2DOffset;
-    case LS_MODIFIER_2D_TRANSFORM:
-      return &RNA_LineStyleGeometryModifier_2DTransform;
-    case LS_MODIFIER_SIMPLIFICATION:
-      return &RNA_LineStyleGeometryModifier_Simplification;
+    case LS_MOD_SAMPLING:
+      return &Api_LineStyleGeometryMod_Sampling;
+    case LS_MOD_BEZIER_CURVE:
+      return &Api_LineStyleGeometryMod_BezierCurve;
+    case LS_MOD_SINUS_DISPLACEMENT:
+      return &Api_LineStyleGeometryMod_SinusDisplacement;
+    case LS_MOD_SPATIAL_NOISE:
+      return &Api_LineStyleGeometryMod_SpatialNoise;
+    case LS_MOD_PERLIN_NOISE_1D:
+      return &Api_LineStyleGeometryMod_PerlinNoise1D;
+    case LS_MOD_PERLIN_NOISE_2D:
+      return &Api_LineStyleGeometryMod_PerlinNoise2D;
+    case LS_MOD_BACKBONE_STRETCHER:
+      return &Api_LineStyleGeometryMod_BackboneStretcher;
+    case LS_MOD_TIP_REMOVER:
+      return &Api_LineStyleGeometryMod_TipRemover;
+    case LS_MOD_POLYGONIZATION:
+      return &Api_LineStyleGeometryMod_Polygonalization;
+    case LS_MOD_GUIDING_LINES:
+      return &Api_LineStyleGeometryMod_GuidingLines;
+    case LS_MOD_BLUEPRINT:
+      return &Api_LineStyleGeometryMod_Blueprint;
+    case LS_MOD_2D_OFFSET:
+      return &Api_LineStyleGeometryMod_2DOffset;
+    case LS_MOD_2D_TRANSFORM:
+      return &Api_LineStyleGeometryMod_2DTransform;
+    case LS_MOD_SIMPLIFICATION:
+      return &Api_LineStyleGeometryMod_Simplification;
     default:
-      return &RNA_LineStyleGeometryModifier;
+      return &Api_LineStyleGeometryMod;
   }
 }
 
-static char *rna_LineStyle_color_modifier_path(PointerRNA *ptr)
+static char *api_LineStyle_color_mod_path(ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyle *m = (LineStyleModifier *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
-  BLI_str_escape(name_esc, m->name, sizeof(name_esc));
-  return BLI_sprintfN("color_modifiers[\"%s\"]", name_esc);
+
+  lib_str_escape(name_esc, m->name, sizeof(name_esc));
+  return lib_("color_modifiers[\"%s\"]", name_esc);
 }
 
 static char *rna_LineStyle_alpha_modifier_path(PointerRNA *ptr)
@@ -246,36 +247,36 @@ static char *rna_LineStyle_alpha_modifier_path(PointerRNA *ptr)
   LineStyleModifier *m = (LineStyleModifier *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
   BLI_str_escape(name_esc, m->name, sizeof(name_esc));
-  return BLI_sprintfN("alpha_modifiers[\"%s\"]", name_esc);
+  return lib_sprintfn("alpha_modifiers[\"%s\"]", name_esc);
 }
 
-static char *rna_LineStyle_thickness_modifier_path(PointerRNA *ptr)
+static char *api_LineStyle_thickness_mod_path(ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
-  BLI_str_escape(name_esc, m->name, sizeof(name_esc));
-  return BLI_sprintfN("thickness_modifiers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, m->name, sizeof(name_esc));
+  return lib_sprintfn("thickness_mods[\"%s\"]", name_esc);
 }
 
-static char *rna_LineStyle_geometry_modifier_path(PointerRNA *ptr)
+static char *api_LineStyle_geometry_mod_path(ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
-  BLI_str_escape(name_esc, m->name, sizeof(name_esc));
-  return BLI_sprintfN("geometry_modifiers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, m->name, sizeof(name_esc));
+  return lib_sprintfn("geometry_mods[\"%s\"]", name_esc);
 }
 
-static void rna_LineStyleColorModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_LineStyleColorMod_name_set(ApiPtr *ptr, const char *value)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineMod *)ptr->data;
 
-  BLI_strncpy_utf8(m->name, value, sizeof(m->name));
-  BLI_uniquename(&linestyle->color_modifiers,
+  lib_strncpy_utf8(m->name, value, sizeof(m->name));
+  lib_uniquename(&linestyle->color_mods,
                  m,
-                 "ColorModifier",
+                 "ColorMod",
                  '.',
-                 offsetof(LineStyleModifier, name),
+                 offsetof(LineStyleMod, name),
                  sizeof(m->name));
 }
 
@@ -293,7 +294,7 @@ static void api_LineStyleAlphaMod_name_set(ApiPtr *ptr, const char *value)
                  sizeof(m->name));
 }
 
-static void api_LineStyleThicknessModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_LineStyleThicknessMod_name_set(ApiPtr *ptr, const char *value)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
   LineStyleMod *m = (LineStyleMod *)ptr->data;
@@ -313,7 +314,7 @@ static void api_LineStyleGeometryMod_name_set(ApiPtr *ptr, const char *value)
   LineStyleMod *m = (LineStyleMod *)ptr->data;
 
   lib_strncpy_utf8(m->name, value, sizeof(m->name));
-  lib_uniquename(&linestyle->geometry_modifiers,
+  lib_uniquename(&linestyle->geometry_mods,
                  m,
                  "GeometryMod",
                  '.',
@@ -364,10 +365,10 @@ static void api_LineStyle_use_nodes_update(Cxt *C, ApiPtr *ptr)
   api_LineStyle_update(cxt_data_main(C), cxt_data_scene(C), ptr);
 }
 
-static LineStyleMod *api_LineStyle_color_modifier_add(FreestyleLineStyle *linestyle,
-                                                           ReportList *reports,
-                                                           const char *name,
-                                                           int type)
+static LineStyleMod *api_LineStyle_color_mod_add(FreestyleLineStyle *linestyle,
+                                                 ReportList *reports,
+                                                 const char *name,
+                                                 int type)
 {
   LineStyleMod *mod = dune_linestyle_color_mod_add(linestyle, name, type);
 
@@ -404,97 +405,96 @@ static LineStyleMod *api_LineStyle_alpha_mod_add(FreestyleLineStyle *linestyle,
                                                  const char *name,
                                                  int type)
 {
-  LineStyleModifier *modifier = dune_linestyle_alpha_mod_add(linestyle, name, type);
+  LineStyleMod *mod = dune_linestyle_alpha_mod_add(linestyle, name, type);
 
-  if (!modifier) {
-    BKE_report(reports, RPT_ERROR, "Failed to add the alpha modifier");
+  if (!mod) {
+    dune_report(reports, RPT_ERROR, "Failed to add the alpha modifier");
     return NULL;
   }
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 
-  return modifier;
+  return mod;
 }
 
-static void rna_LineStyle_alpha_modifier_remove(FreestyleLineStyle *linestyle,
-                                                ReportList *reports,
-                                                PointerRNA *modifier_ptr)
+static void api_LineStyle_alpha_mod_remove(FreestyleLineStyle *linestyle,
+                                           ReportList *reports,
+                                           ApiPtr *mod_ptr)
 {
-  LineStyleModifier *modifier = modifier_ptr->data;
+  LineStyleMod *mod = mod_ptr->data;
 
-  if (BKE_linestyle_alpha_modifier_remove(linestyle, modifier) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Alpha modifier '%s' could not be removed", modifier->name);
+  if (dune_linestyle_alpha_mod_remove(linestyle, modifier) == -1);
+    dune_reportf(reports, RPT_ERROR, "Alpha modifier '%s' could not be removed", modifier->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(modifier_ptr);
+  API_PTR_INVALIDATE(mod_ptr);
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 }
 
-static LineStyleModifier *rna_LineStyle_thickness_modifier_add(FreestyleLineStyle *linestyle,
-                                                               ReportList *reports,
-                                                               const char *name,
-                                                               int type)
+static LineStyleMod *api_LineStyle_thickness_mod_add(FreestyleLineStyle *linestyle,
+                                                     ReportList *reports,
+                                                     const char *name,
+                                                     int type)
 {
-  LineStyleModifier *modifier = BKE_linestyle_thickness_modifier_add(linestyle, name, type);
+  LineStyleMod *mod = dune_linestyle_thickness_mod_add(linestyle, name, type);
 
-  if (!modifier) {
-    BKE_report(reports, RPT_ERROR, "Failed to add the thickness modifier");
+  if (!mod) {
+    dune_report(reports, RPT_ERROR, "Failed to add the thickness modifier");
     return NULL;
   }
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 
-  return modifier;
+  return mod;
 }
 
-static void rna_LineStyle_thickness_modifier_remove(FreestyleLineStyle *linestyle,
+static void api_LineStyle_thickness_mod_remove(FreestyleLineStyle *linestyle,
+                                               ReportList *reports,
+                                               ApiPtr *mod_ptr)
+{
+  LineStyleMod *mod = mod_ptr->data;
+
+  if (dune_linestyle_thickness_mod_remove(linestyle, mod) == -1) {
+    dune_reportf(
+        reports, RPT_ERROR, "Thickness mod '%s' could not be removed", modifier->name);
+    return;
+  }
+
+  API_PTR_INVALIDATE(mod_ptr);
+
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
+}
+
+static LineStyleMod *api_LineStyle_geometry_mod_add(FreestyleLineStyle *linestyle,
                                                     ReportList *reports,
-                                                    PointerRNA *modifier_ptr)
+                                                    const char *name,
+                                                    int type)
 {
-  LineStyleModifier *modifier = modifier_ptr->data;
-
-  if (BKE_linestyle_thickness_modifier_remove(linestyle, modifier) == -1) {
-    BKE_reportf(
-        reports, RPT_ERROR, "Thickness modifier '%s' could not be removed", modifier->name);
-    return;
-  }
-
-  RNA_POINTER_INVALIDATE(modifier_ptr);
-
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
-}
-
-static LineStyleModifier *rna_LineStyle_geometry_modifier_add(FreestyleLineStyle *linestyle,
-                                                              ReportList *reports,
-                                                              const char *name,
-                                                              int type)
-{
-  LineStyleModifier *modifier = BKE_linestyle_geometry_modifier_add(linestyle, name, type);
+  LineStyleMod *mod = dune_linestyle_geometry_mod_add(linestyle, name, type);
 
   if (!modifier) {
-    BKE_report(reports, RPT_ERROR, "Failed to add the geometry modifier");
+    dune_report(reports, RPT_ERROR, "Failed to add the geometry modifier");
     return NULL;
   }
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 
-  return modifier;
+  return mod;
 }
 
-static void rna_LineStyle_geometry_modifier_remove(FreestyleLineStyle *linestyle,
-                                                   ReportList *reports,
-                                                   PointerRNA *modifier_ptr)
+static void api_LineStyle_geometry_mod_remove(FreestyleLineStyle *linestyle,
+                                              ReportList *reports,
+                                              ApiPtr *mod_ptr)
 {
-  LineStyleModifier *modifier = modifier_ptr->data;
-
-  if (BKE_linestyle_geometry_modifier_remove(linestyle, modifier) == -1) {
+  LineStyleod *mod = mod_ptr->data;
+  if (BKE_linestyle_geometry_mod_remove(linestyle, modifier) == -1) {
     BKE_reportf(reports, RPT_ERROR, "Geometry modifier '%s' could not be removed", modifier->name);
     return;
   }
@@ -507,14 +507,14 @@ static void rna_LineStyle_geometry_modifier_remove(FreestyleLineStyle *linestyle
 
 #else
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-static void rna_def_linestyle_mtex(BlenderRNA *brna)
+static void api_def_linestyle_mtex(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem texco_items[] = {
+  static const EnumPropItem texco_items[] = {
       {TEXCO_WINDOW, "WINDOW", 0, "Window", "Use screen coordinates as texture coordinates"},
       {TEXCO_GLOB, "GLOBAL", 0, "Global", "Use global coordinates for the texture coordinates"},
       {TEXCO_STROKE,
@@ -530,7 +530,7 @@ static void rna_def_linestyle_mtex(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_mapping_items[] = {
+  static const EnumPropItem prop_mapping_items[] = {
       {MTEX_FLAT, "FLAT", 0, "Flat", "Map X and Y coordinates directly"},
       {MTEX_CUBE, "CUBE", 0, "Cube", "Map using the normal vector"},
       {MTEX_TUBE, "TUBE", 0, "Tube", "Map with Z as central axis"},
@@ -538,7 +538,7 @@ static void rna_def_linestyle_mtex(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_x_mapping_items[] = {
+  static const EnumPropItem prop_x_mapping_items[] = {
       {0, "NONE", 0, "None", ""},
       {1, "X", 0, "X", ""},
       {2, "Y", 0, "Y", ""},
@@ -546,7 +546,7 @@ static void rna_def_linestyle_mtex(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_y_mapping_items[] = {
+  static const EnumPropItem prop_y_mapping_items[] = {
       {0, "NONE", 0, "None", ""},
       {1, "X", 0, "X", ""},
       {2, "Y", 0, "Y", ""},
@@ -554,7 +554,7 @@ static void rna_def_linestyle_mtex(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_z_mapping_items[] = {
+  static const EnumPropItem prop_z_mapping_items[] = {
       {0, "NONE", 0, "None", ""},
       {1, "X", 0, "X", ""},
       {2, "Y", 0, "Y", ""},
