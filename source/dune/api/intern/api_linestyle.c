@@ -242,11 +242,11 @@ static char *api_LineStyle_color_mod_path(ApiPtr *ptr)
   return lib_("color_modifiers[\"%s\"]", name_esc);
 }
 
-static char *rna_LineStyle_alpha_modifier_path(PointerRNA *ptr)
+static char *api_LineStyle_alpha_modifier_path(ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleModifier *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
-  BLI_str_escape(name_esc, m->name, sizeof(name_esc));
+  lib_str_escape(name_esc, m->name, sizeof(name_esc));
   return lib_sprintfn("alpha_modifiers[\"%s\"]", name_esc);
 }
 
@@ -494,15 +494,15 @@ static void api_LineStyle_geometry_mod_remove(FreestyleLineStyle *linestyle,
                                               ApiPtr *mod_ptr)
 {
   LineStyleod *mod = mod_ptr->data;
-  if (BKE_linestyle_geometry_mod_remove(linestyle, modifier) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Geometry modifier '%s' could not be removed", modifier->name);
+  if (dune_linestyle_geometry_mod_remove(linestyle, mod) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Geometry mod '%s' could not be removed", modifier->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(modifier_ptr);
+  API_PTR_INVALIDATE(modifier_ptr);
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 }
 
 #else
@@ -562,76 +562,76 @@ static void api_def_linestyle_mtex(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "LineStyleTextureSlot", "TextureSlot");
-  RNA_def_struct_sdna(srna, "MTex");
-  RNA_def_struct_ui_text(
-      srna, "LineStyle Texture Slot", "Texture slot for textures in a LineStyle data-block");
+  sapi = api_def_struct(dapi, "LineStyleTextureSlot", "TextureSlot");
+  api_def_struct_stype(sapi, "MTex");
+  api_def_struct_ui_text(
+      sapi, "LineStyle Texture Slot", "Texture slot for textures in a LineStyle data-block");
 
-  prop = RNA_def_property(srna, "mapping_x", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projx");
-  RNA_def_property_enum_items(prop, prop_x_mapping_items);
-  RNA_def_property_ui_text(prop, "X Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "mapping_x", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "projx");
+  api_def_prop_enum_items(prop, prop_x_mapping_items);
+  api_def_prop_ui_text(prop, "X Mapping", "");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "mapping_y", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projy");
-  RNA_def_property_enum_items(prop, prop_y_mapping_items);
-  RNA_def_property_ui_text(prop, "Y Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "mapping_y", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "projy");
+  api_def_prop_enum_items(prop, prop_y_mapping_items);
+  api_def_prop_ui_text(prop, "Y Mapping", "");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "mapping_z", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projz");
-  RNA_def_property_enum_items(prop, prop_z_mapping_items);
-  RNA_def_property_ui_text(prop, "Z Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "mapping_z", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "projz");
+  api_def_prop_enum_items(prop, prop_z_mapping_items);
+  api_def_prop_ui_text(prop, "Z Mapping", "");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "mapping", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_mapping_items);
-  RNA_def_property_ui_text(prop, "Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "mapping", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_mapping_items);
+  api_def_prop_ui_text(prop, "Mapping", "");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
   /* map to */
-  prop = RNA_def_property(srna, "use_map_color_diffuse", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mapto", MAP_COL);
-  RNA_def_property_ui_text(prop, "Diffuse Color", "The texture affects basic color of the stroke");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "use_map_color_diffuse", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "mapto", MAP_COL);
+  api_def_prop_ui_text(prop, "Diffuse Color", "The texture affects basic color of the stroke");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "use_map_alpha", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mapto", MAP_ALPHA);
-  RNA_def_property_ui_text(prop, "Alpha", "The texture affects the alpha value");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "use_map_alpha", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mapto", MAP_ALPHA);
+  api_def_prop_ui_text(prop, "Alpha", "The texture affects the alpha value");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "texture_coords", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "texco");
-  RNA_def_property_enum_items(prop, texco_items);
-  RNA_def_property_ui_text(prop,
-                           "Texture Coordinates",
-                           "Texture coordinates used to map the texture onto the background");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "texture_coords", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "texco");
+  api_def_prop_enum_items(prop, texco_items);
+  api_def_prop_ui_text(prop,
+                       "Texture Coordinates",
+                       "Texture coordinates used to map the texture onto the background");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "alpha_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "alphafac");
-  RNA_def_property_ui_range(prop, -1, 1, 10, 3);
-  RNA_def_property_ui_text(prop, "Alpha Factor", "Amount texture affects alpha");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "alpha_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "alphafac");
+  api_def_prop_ui_range(prop, -1, 1, 10, 3);
+  api_def_prop_ui_text(prop, "Alpha Factor", "Amount texture affects alpha");
+  api_def_prop_update(prop, 0, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "diffuse_color_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "colfac");
-  RNA_def_property_ui_range(prop, 0, 1, 10, 3);
-  RNA_def_property_ui_text(prop, "Diffuse Color Factor", "Amount texture affects diffuse color");
-  RNA_def_property_update(prop, 0, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "diffuse_color_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "colfac");
+  api_def_prop_ui_range(prop, 0, 1, 10, 3);
+  api_def_prop_ui_text(prop, "Diffuse Color Factor", "Amount texture affects diffuse color");
+  apu_def_prop_update(prop, 0, "api_LineStyle_update");
 }
 
-static void rna_def_modifier_type_common(StructRNA *srna,
-                                         const EnumPropertyItem *modifier_type_items,
-                                         const char *set_name_func,
-                                         const bool blend,
-                                         const bool color)
+static void api_def_mod_type_common(ApiStruct *sapi,
+                                    const EnumPropItem *mod_type_items,
+                                    const char *set_name_fn,
+                                    const bool blend,
+                                    const bool color)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* TODO: Check this is not already defined somewhere else, e.g. in nodes... */
-  static const EnumPropertyItem value_blend_items[] = {
+  static const EnumPropItem value_blend_items[] = {
       {LS_VALUE_BLEND, "MIX", 0, "Mix", ""},
       {LS_VALUE_ADD, "ADD", 0, "Add", ""},
       {LS_VALUE_SUB, "SUBTRACT", 0, "Subtract", ""},
@@ -643,18 +643,18 @@ static void rna_def_modifier_type_common(StructRNA *srna,
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "modifier.type");
-  RNA_def_property_enum_items(prop, modifier_type_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Modifier Type", "Type of the modifier");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mod.type");
+  api_def_prop_enum_items(prop, mod_type_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Mod Type", "Type of the modifier");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "modifier.name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, set_name_func);
-  RNA_def_property_ui_text(prop, "Modifier Name", "Name of the modifier");
-  RNA_def_property_update(prop, NC_LINESTYLE, NULL);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "mod.name");
+  api_def_prop_string_fns(prop, NULL, NULL, set_name_func);
+  api_def_prop_ui_text(prop, "Modifier Name", "Name of the modifier");
+  api_def_prop_update(prop, NC_LINESTYLE, NULL);
+  api_def_struct_name_prop(sapi, prop);
 
   if (blend) {
     prop = RNA_def_property(srna, "blend", PROP_ENUM, PROP_NONE);
