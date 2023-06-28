@@ -702,11 +702,11 @@ static void api_def_alpha_mod(ApiStruct *sapi)
 
 static void api_def_thickness_mod(ApiStruct *sapi)
 {
-  api_def_mod_type_common(srna,
-                               rna_enum_linestyle_thickness_modifier_type_items,
-                               "rna_LineStyleThicknessModifier_name_set",
-                               true,
-                               false);
+  api_def_mod_type_common(sapi,
+                          api_enum_linestyle_thickness_mod_type_items,
+                          "api_LineStyleThicknessMod_name_set",
+                          true,
+                          false);
 }
 
 static void api_def_geometry_mod(ApiStruct *sapi)
@@ -718,57 +718,57 @@ static void api_def_geometry_mod(ApiStruct *sapi)
                           false);
 }
 
-static void api_def_modifier_color_ramp_common(StructRNA *srna, int range)
+static void api_def_mod_color_ramp_common(ApiStruct *sapi, int range)
 {
   ApiProp *prop;
 
-  prop = RNA_def_property(srna, "color_ramp", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "color_ramp");
-  RNA_def_property_struct_type(prop, "ColorRamp");
-  RNA_def_property_ui_text(prop, "Color Ramp", "Color ramp used to change line color");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "color_ramp", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "color_ramp");
+  api_def_prop_struct_type(prop, "ColorRamp");
+  api_def_prop_ui_text(prop, "Color Ramp", "Color ramp used to change line color");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   if (range) {
-    prop = RNA_def_property(srna, "range_min", PROP_FLOAT, PROP_DISTANCE);
-    RNA_def_property_float_sdna(prop, NULL, "range_min");
-    RNA_def_property_ui_text(
+    prop = api_def_prop(sapi, "range_min", PROP_FLOAT, PROP_DISTANCE);
+    api_def_prop_float_stype(prop, NULL, "range_min");
+    api_def_prop_ui_text(
         prop, "Range Min", "Lower bound of the input range the mapping is applied");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-    prop = RNA_def_property(srna, "range_max", PROP_FLOAT, PROP_DISTANCE);
-    RNA_def_property_float_sdna(prop, NULL, "range_max");
-    RNA_def_property_ui_text(
+    prop = api_def_prop(sapi, "range_max", PROP_FLOAT, PROP_DISTANCE);
+    api_def_prop_float_stype(prop, NULL, "range_max");
+    api_def_prop_ui_text(
         prop, "Range Max", "Upper bound of the input range the mapping is applied");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
   }
 }
 
-static void rna_def_modifier_curve_common(StructRNA *srna, bool range, bool value)
+static void api_def_mod_curve_common(ApiStruct *sapi, bool range, bool value)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  static const EnumPropertyItem mapping_items[] = {
+  static const EnumPropItem mapping_items[] = {
       {0, "LINEAR", 0, "Linear", "Use linear mapping"},
-      {LS_MODIFIER_USE_CURVE, "CURVE", 0, "Curve", "Use curve mapping"},
+      {LS_MOD_USE_CURVE, "CURVE", 0, "Curve", "Use curve mapping"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "mapping", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flags");
-  RNA_def_property_enum_items(prop, mapping_items);
-  RNA_def_property_ui_text(prop, "Mapping", "Select the mapping type");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "mapping", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flags");
+  api_def_prop_enum_items(prop, mapping_items);
+  api_def_prop_ui_text(prop, "Mapping", "Select the mapping type");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = RNA_def_property(srna, "invert", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_MODIFIER_INVERT);
   RNA_def_property_ui_text(prop, "Invert", "Invert the fade-out direction of the linear mapping");
   RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curve");
-  RNA_def_property_struct_type(prop, "CurveMapping");
-  RNA_def_property_ui_text(prop, "Curve", "Curve used for the curve mapping");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(srna, "curve", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curve");
+  api_def_prop_struct_type(prop, "CurveMapping");
+  api_def_prop_ui_text(prop, "Curve", "Curve used for the curve mapping");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   if (range) {
     prop = RNA_def_property(srna, "range_min", PROP_FLOAT, PROP_DISTANCE);
