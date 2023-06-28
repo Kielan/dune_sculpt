@@ -658,11 +658,11 @@ static void api_def_mod_type_common(ApiStruct *sapi,
 
   if (blend) {
     prop = RNA_def_property(srna, "blend", PROP_ENUM, PROP_NONE);
-    RNA_def_property_enum_sdna(prop, NULL, "modifier.blend");
-    RNA_def_property_enum_items(prop, (color) ? rna_enum_ramp_blend_items : value_blend_items);
-    RNA_def_property_ui_text(
+    RNA_def_prop_enum_sdna(prop, NULL, "modifier.blend");
+    RNA_def_prop_enum_items(prop, (color) ? rna_enum_ramp_blend_items : value_blend_items);
+    RNA_def_prop_ui_text(
         prop, "Blend", "Specify how the modifier value is blended into the base value");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
     prop = api_def_prop(sapi, "influence", PROP_FLOAT, PROP_FACTOR);
     api_def_prop_float_stype(prop, NULL, "modifier.influence");
@@ -682,25 +682,25 @@ static void api_def_mod_type_common(ApiStruct *sapi,
   api_def_prop_ui_text(prop, "Expanded", "True if the modifier tab is expanded");
 }
 
-static void rna_def_color_modifier(StructRNA *srna)
+static void api_def_color_mod(ApiStruct *sapi)
 {
-  rna_def_modifier_type_common(srna,
-                               rna_enum_linestyle_color_modifier_type_items,
-                               "rna_LineStyleColorModifier_name_set",
+  api_def_mod_type_common(sapi,
+                               api_enum_linestyle_color_mod_type_items,
+                               "api_LineStyleColorMod_name_set",
                                true,
                                true);
 }
 
-static void rna_def_alpha_modifier(StructRNA *srna)
+static void api_def_alpha_mod(ApiStruct *sapi)
 {
-  rna_def_modifier_type_common(srna,
-                               rna_enum_linestyle_alpha_modifier_type_items,
-                               "rna_LineStyleAlphaModifier_name_set",
-                               true,
-                               false);
+  api_def_mod_type_common(sapi,
+                          api_enum_linestyle_alpha_mod_type_items,
+                          "api_LineStyleAlphaMod_name_set",
+                          true,
+                          false);
 }
 
-static void rna_def_thickness_modifier(StructRNA *srna)
+static void api_def_thickness_modifier(StructRNA *srna)
 {
   api_def_mod_type_common(srna,
                                rna_enum_linestyle_thickness_modifier_type_items,
