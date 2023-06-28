@@ -77,116 +77,116 @@ const EnumPropItem api_enum_linestyle_thickness_mod_type_items[] = {
 };
 
 const EnumPropItem api_enum_linestyle_geometry_mod_type_items[] = {
-    {LS_MODIFIER_2D_OFFSET, "2D_OFFSET", ICON_MOD, "2D Offset", ""},
-    {LS_MODIFIER_2D_TRANSFORM, "2D_TRANSFORM", ICON_MOD, "2D Transform", ""},
-    {LS_MODIFIER_BACKBONE_STRETCHER,
+    {LS_MOD_2D_OFFSET, "2D_OFFSET", ICON_MOD, "2D Offset", ""},
+    {LS_MOD_2D_TRANSFORM, "2D_TRANSFORM", ICON_MOD, "2D Transform", ""},
+    {LS_MOD_BACKBONE_STRETCHER,
      "BACKBONE_STRETCHER",
-     ICON_MODIFIER,
+     ICON_MOD,
      "Backbone Stretcher",
      ""},
-    {LS_MODIFIER_BEZIER_CURVE, "BEZIER_CURVE", ICON_MODIFIER, "Bezier Curve", ""},
-    {LS_MODIFIER_BLUEPRINT, "BLUEPRINT", ICON_MODIFIER, "Blueprint", ""},
-    {LS_MODIFIER_GUIDING_LINES, "GUIDING_LINES", ICON_MODIFIER, "Guiding Lines", ""},
-    {LS_MODIFIER_PERLIN_NOISE_1D, "PERLIN_NOISE_1D", ICON_MODIFIER, "Perlin Noise 1D", ""},
-    {LS_MODIFIER_PERLIN_NOISE_2D, "PERLIN_NOISE_2D", ICON_MODIFIER, "Perlin Noise 2D", ""},
-    {LS_MODIFIER_POLYGONIZATION, "POLYGONIZATION", ICON_MODIFIER, "Polygonization", ""},
-    {LS_MODIFIER_SAMPLING, "SAMPLING", ICON_MODIFIER, "Sampling", ""},
-    {LS_MODIFIER_SIMPLIFICATION, "SIMPLIFICATION", ICON_MODIFIER, "Simplification", ""},
-    {LS_MODIFIER_SINUS_DISPLACEMENT,
+    {LS_MOD_BEZIER_CURVE, "BEZIER_CURVE", ICON_MOD, "Bezier Curve", ""},
+    {LS_MOD_BLUEPRINT, "BLUEPRINT", ICON_MOD, "Blueprint", ""},
+    {LS_MOD_GUIDING_LINES, "GUIDING_LINES", ICON_MOD, "Guiding Lines", ""},
+    {LS_MOD_PERLIN_NOISE_1D, "PERLIN_NOISE_1D", ICON_MOD, "Perlin Noise 1D", ""},
+    {LS_MOD_PERLIN_NOISE_2D, "PERLIN_NOISE_2D", ICON_MOD, "Perlin Noise 2D", ""},
+    {LS_MOD_POLYGONIZATION, "POLYGONIZATION", ICON_MOD, "Polygonization", ""},
+    {LS_MOD_SAMPLING, "SAMPLING", ICON_MOD, "Sampling", ""},
+    {LS_MOD_SIMPLIFICATION, "SIMPLIFICATION", ICON_MOD, "Simplification", ""},
+    {LS_MOD_SINUS_DISPLACEMENT,
      "SINUS_DISPLACEMENT",
-     ICON_MODIFIER,
+     ICON_MOD,
      "Sinus Displacement",
      ""},
-    {LS_MODIFIER_SPATIAL_NOISE, "SPATIAL_NOISE", ICON_MODIFIER, "Spatial Noise", ""},
-    {LS_MODIFIER_TIP_REMOVER, "TIP_REMOVER", ICON_MODIFIER, "Tip Remover", ""},
+    {LS_MOD_SPATIAL_NOISE, "SPATIAL_NOISE", ICON_MOD, "Spatial Noise", ""},
+    {LS_MOD_TIP_REMOVER, "TIP_REMOVER", ICON_MOD, "Tip Remover", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_string_utils.h"
+#  include "lib_string_utils.h"
 
-#  include "BKE_linestyle.h"
-#  include "BKE_texture.h"
+#  include "dune_linestyle.h"
+#  include "dune_texture.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_node.h"
+#  include "ed_node.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-static StructRNA *rna_LineStyle_color_modifier_refine(struct PointerRNA *ptr)
+static ApiStruct *api_LineStyle_color_mod_refine(struct ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
   switch (m->type) {
-    case LS_MODIFIER_ALONG_STROKE:
-      return &RNA_LineStyleColorModifier_AlongStroke;
-    case LS_MODIFIER_DISTANCE_FROM_CAMERA:
-      return &RNA_LineStyleColorModifier_DistanceFromCamera;
-    case LS_MODIFIER_DISTANCE_FROM_OBJECT:
-      return &RNA_LineStyleColorModifier_DistanceFromObject;
-    case LS_MODIFIER_MATERIAL:
-      return &RNA_LineStyleColorModifier_Material;
-    case LS_MODIFIER_TANGENT:
-      return &RNA_LineStyleColorModifier_Tangent;
-    case LS_MODIFIER_NOISE:
-      return &RNA_LineStyleColorModifier_Noise;
-    case LS_MODIFIER_CREASE_ANGLE:
-      return &RNA_LineStyleColorModifier_CreaseAngle;
-    case LS_MODIFIER_CURVATURE_3D:
-      return &RNA_LineStyleColorModifier_Curvature_3D;
+    case LS_MOD_ALONG_STROKE:
+      return &Api_LineStyleColorMod_AlongStroke;
+    case LS_MOD_DISTANCE_FROM_CAMERA:
+      return &Api_LineStyleColorMod_DistanceFromCamera;
+    case LS_MOD_DISTANCE_FROM_OBJECT:
+      return &Api_LineStyleColorMod_DistanceFromObject;
+    case LS_MOD_MATERIAL:
+      return &Api_LineStyleColorMod_Material;
+    case LS_MOD_TANGENT:
+      return &Api_LineStyleColorMod_Tangent;
+    case LS_MOD_NOISE:
+      return &Api_LineStyleColorMod_Noise;
+    case LS_MOD_CREASE_ANGLE:
+      return &Api_LineStyleColorMod_CreaseAngle;
+    case LS_MOD_CURVATURE_3D:
+      return &Api_LineStyleColorMod_Curvature_3D;
     default:
-      return &RNA_LineStyleColorModifier;
+      return &Api_LineStyleColorMod;
   }
 }
 
-static StructRNA *rna_LineStyle_alpha_modifier_refine(struct PointerRNA *ptr)
+static ApiStrucy *api_LineStyle_alpha_mod_refine(struct ApiPtr *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
   switch (m->type) {
-    case LS_MODIFIER_ALONG_STROKE:
-      return &RNA_LineStyleAlphaModifier_AlongStroke;
-    case LS_MODIFIER_DISTANCE_FROM_CAMERA:
-      return &RNA_LineStyleAlphaModifier_DistanceFromCamera;
-    case LS_MODIFIER_DISTANCE_FROM_OBJECT:
-      return &RNA_LineStyleAlphaModifier_DistanceFromObject;
-    case LS_MODIFIER_MATERIAL:
-      return &RNA_LineStyleAlphaModifier_Material;
-    case LS_MODIFIER_TANGENT:
-      return &RNA_LineStyleAlphaModifier_Tangent;
-    case LS_MODIFIER_NOISE:
-      return &RNA_LineStyleAlphaModifier_Noise;
-    case LS_MODIFIER_CREASE_ANGLE:
-      return &RNA_LineStyleAlphaModifier_CreaseAngle;
-    case LS_MODIFIER_CURVATURE_3D:
-      return &RNA_LineStyleAlphaModifier_Curvature_3D;
+    case LS_MOD_ALONG_STROKE:
+      return &Api_LineStyleAlphaMod_AlongStroke;
+    case LS_MOD_DISTANCE_FROM_CAMERA:
+      return &Api_LineStyleAlphaMod_DistanceFromCamera;
+    case LS_MOD_DISTANCE_FROM_OBJECT:
+      return &Api_LineStyleAlphaMod_DistanceFromObject;
+    case LS_MOD_MATERIAL:
+      return &Api_LineStyleAlphaMod_Material;
+    case LS_MOD_TANGENT:
+      return &Api_LineStyleAlphaMod_Tangent;
+    case LS_MOD_NOISE:
+      return &Api_LineStyleAlphaMod_Noise;
+    case LS_MOD_CREASE_ANGLE:
+      return &Apo_LineStyleAlphaMod_CreaseAngle;
+    case LS_MOD_CURVATURE_3D:
+      return &Api_LineStyleAlphaMod_Curvature_3D;
     default:
-      return &RNA_LineStyleAlphaModifier;
+      return &Api_LineStyleAlphaMod;
   }
 }
 
-static StructRNA *rna_LineStyle_thickness_modifier_refine(struct PointerRNA *ptr)
+static ApiStruct *api_LineStyle_thickness_mod_refine(struct PointerRNA *ptr)
 {
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
   switch (m->type) {
-    case LS_MODIFIER_ALONG_STROKE:
-      return &RNA_LineStyleThicknessModifier_AlongStroke;
-    case LS_MODIFIER_DISTANCE_FROM_CAMERA:
-      return &RNA_LineStyleThicknessModifier_DistanceFromCamera;
-    case LS_MODIFIER_DISTANCE_FROM_OBJECT:
-      return &RNA_LineStyleThicknessModifier_DistanceFromObject;
-    case LS_MODIFIER_MATERIAL:
-      return &RNA_LineStyleThicknessModifier_Material;
-    case LS_MODIFIER_CALLIGRAPHY:
-      return &RNA_LineStyleThicknessModifier_Calligraphy;
-    case LS_MODIFIER_TANGENT:
-      return &RNA_LineStyleThicknessModifier_Tangent;
-    case LS_MODIFIER_NOISE:
-      return &RNA_LineStyleThicknessModifier_Noise;
-    case LS_MODIFIER_CREASE_ANGLE:
+    case LS_MOD_ALONG_STROKE:
+      return &Api_LineStyleThicknessModifier_AlongStroke;
+    case LS_MOD_DISTANCE_FROM_CAMERA:
+      return &Api_LineStyleThicknessModifier_DistanceFromCamera;
+    case LS_MOD_DISTANCE_FROM_OBJECT:
+      return &Api_LineStyleThicknessModifier_DistanceFromObject;
+    case LS_MOD_MATERIAL:
+      return &Api_LineStyleThicknessModifier_Material;
+    case LS_MOD_CALLIGRAPHY:
+      return &Api_LineStyleThicknessModifier_Calligraphy;
+    case LS_MOD_TANGENT:
+      return &Api_LineStyleThicknessModifier_Tangent;
+    case LS_MOD_NOISE:
+      return &Api_LineStyleThicknessModifier_Noise;
+    case LS_MOD_CREASE_ANGLE:
       return &RNA_LineStyleThicknessModifier_CreaseAngle;
     case LS_MODIFIER_CURVATURE_3D:
       return &RNA_LineStyleThicknessModifier_Curvature_3D;
@@ -279,65 +279,65 @@ static void rna_LineStyleColorModifier_name_set(PointerRNA *ptr, const char *val
                  sizeof(m->name));
 }
 
-static void rna_LineStyleAlphaModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_LineStyleAlphaMod_name_set(ApiPtr *ptr, const char *value)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
-  BLI_strncpy_utf8(m->name, value, sizeof(m->name));
-  BLI_uniquename(&linestyle->alpha_modifiers,
+  lib_strncpy_utf8(m->name, value, sizeof(m->name));
+  lib_uniquename(&linestyle->alpha_modifiers,
                  m,
-                 "AlphaModifier",
+                 "AlphaMod",
                  '.',
-                 offsetof(LineStyleModifier, name),
+                 offsetof(LineStyleMod, name),
                  sizeof(m->name));
 }
 
-static void rna_LineStyleThicknessModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_LineStyleThicknessModifier_name_set(PointerRNA *ptr, const char *value)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
-  BLI_strncpy_utf8(m->name, value, sizeof(m->name));
-  BLI_uniquename(&linestyle->thickness_modifiers,
+  lib_strncpy_utf8(m->name, value, sizeof(m->name));
+  lib_uniquename(&linestyle->thickness_mods,
                  m,
-                 "ThicknessModifier",
+                 "ThicknessMod",
                  '.',
-                 offsetof(LineStyleModifier, name),
+                 offsetof(LineStyleMod, name),
                  sizeof(m->name));
 }
 
-static void rna_LineStyleGeometryModifier_name_set(PointerRNA *ptr, const char *value)
+static void api_LineStyleGeometryMod_name_set(ApiPtr *ptr, const char *value)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
-  LineStyleModifier *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
 
-  BLI_strncpy_utf8(m->name, value, sizeof(m->name));
-  BLI_uniquename(&linestyle->geometry_modifiers,
+  lib_strncpy_utf8(m->name, value, sizeof(m->name));
+  lib_uniquename(&linestyle->geometry_modifiers,
                  m,
-                 "GeometryModifier",
+                 "GeometryMod",
                  '.',
-                 offsetof(LineStyleModifier, name),
+                 offsetof(LineStyleMod, name),
                  sizeof(m->name));
 }
 
-static void rna_LineStyle_mtex_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_LineStyle_mtex_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
-  rna_iterator_array_begin(iter, (void *)linestyle->mtex, sizeof(MTex *), MAX_MTEX, 0, NULL);
+  api_iter_array_begin(iter, (void *)linestyle->mtex, sizeof(MeshTex *), MAX_MTEX, 0, NULL);
 }
 
-static PointerRNA rna_LineStyle_active_texture_get(PointerRNA *ptr)
+static ApiPtr api_LineStyle_active_texture_get(ApiPtr *ptr)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
   Tex *tex;
 
   tex = give_current_linestyle_texture(linestyle);
-  return rna_pointer_inherit_refine(ptr, &RNA_Texture, tex);
+  return api_ptr_inherit_refine(ptr, &Api_Texture, tex);
 }
 
-static void rna_LineStyle_active_texture_set(PointerRNA *ptr,
-                                             PointerRNA value,
+static void api_LineStyle_active_texture_set(ApiPtr *ptr,
+                                             ApiPtr value,
                                              struct ReportList *UNUSED(reports))
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
@@ -345,66 +345,66 @@ static void rna_LineStyle_active_texture_set(PointerRNA *ptr,
   set_current_linestyle_texture(linestyle, value.data);
 }
 
-static void rna_LineStyle_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_LineStyle_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->owner_id;
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 }
 
-static void rna_LineStyle_use_nodes_update(bContext *C, PointerRNA *ptr)
+static void api_LineStyle_use_nodes_update(Cxt *C, ApiPtr *ptr)
 {
   FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ptr->data;
 
   if (linestyle->use_nodes && linestyle->nodetree == NULL) {
-    BKE_linestyle_default_shader(C, linestyle);
+    dune_linestyle_default_shader(C, linestyle);
   }
 
-  rna_LineStyle_update(CTX_data_main(C), CTX_data_scene(C), ptr);
+  api_LineStyle_update(cxt_data_main(C), cxt_data_scene(C), ptr);
 }
 
-static LineStyleModifier *rna_LineStyle_color_modifier_add(FreestyleLineStyle *linestyle,
+static LineStyleMod *api_LineStyle_color_modifier_add(FreestyleLineStyle *linestyle,
                                                            ReportList *reports,
                                                            const char *name,
                                                            int type)
 {
-  LineStyleModifier *modifier = BKE_linestyle_color_modifier_add(linestyle, name, type);
+  LineStyleMod *mod = dune_linestyle_color_mod_add(linestyle, name, type);
 
-  if (!modifier) {
-    BKE_report(reports, RPT_ERROR, "Failed to add the color modifier");
+  if (!mod) {
+    dune_report(reports, RPT_ERROR, "Failed to add the color modifier");
     return NULL;
   }
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 
-  return modifier;
+  return mod;
 }
 
-static void rna_LineStyle_color_modifier_remove(FreestyleLineStyle *linestyle,
-                                                ReportList *reports,
-                                                PointerRNA *modifier_ptr)
+static void api_LineStyle_color_mod_remove(FreestyleLineStyle *linestyle,
+                                           ReportList *reports,
+                                           ApiPtr *mod_ptr)
 {
-  LineStyleModifier *modifier = modifier_ptr->data;
+  LineStyleMod *mod = mod_ptr->data;
 
-  if (BKE_linestyle_color_modifier_remove(linestyle, modifier) == -1) {
-    BKE_reportf(reports, RPT_ERROR, "Color modifier '%s' could not be removed", modifier->name);
+  if (dune_linestyle_color_mod_remove(linestyle, mod) == -1) {
+    dune_reportf(reports, RPT_ERROR, "Color modifier '%s' could not be removed", modifier->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(modifier_ptr);
+  API_PTR_INVALIDATE(mod_ptr);
 
-  DEG_id_tag_update(&linestyle->id, 0);
-  WM_main_add_notifier(NC_LINESTYLE, linestyle);
+  graph_id_tag_update(&linestyle->id, 0);
+  wm_main_add_notifier(NC_LINESTYLE, linestyle);
 }
 
-static LineStyleModifier *rna_LineStyle_alpha_modifier_add(FreestyleLineStyle *linestyle,
-                                                           ReportList *reports,
-                                                           const char *name,
-                                                           int type)
+static LineStyleMod *api_LineStyle_alpha_mod_add(FreestyleLineStyle *linestyle,
+                                                 ReportList *reports,
+                                                 const char *name,
+                                                 int type)
 {
-  LineStyleModifier *modifier = BKE_linestyle_alpha_modifier_add(linestyle, name, type);
+  LineStyleModifier *modifier = dune_linestyle_alpha_mod_add(linestyle, name, type);
 
   if (!modifier) {
     BKE_report(reports, RPT_ERROR, "Failed to add the alpha modifier");
