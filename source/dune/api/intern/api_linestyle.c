@@ -664,22 +664,22 @@ static void api_def_mod_type_common(ApiStruct *sapi,
         prop, "Blend", "Specify how the modifier value is blended into the base value");
     RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-    prop = RNA_def_property(srna, "influence", PROP_FLOAT, PROP_FACTOR);
-    RNA_def_property_float_sdna(prop, NULL, "modifier.influence");
-    RNA_def_property_range(prop, 0.0f, 1.0f);
-    RNA_def_property_ui_text(
+    prop = api_def_prop(sapi, "influence", PROP_FLOAT, PROP_FACTOR);
+    api_def_prop_float_stype(prop, NULL, "modifier.influence");
+    api_def_prop_range(prop, 0.0f, 1.0f);
+    api_def_prop_ui_text(
         prop, "Influence", "Influence factor by which the modifier changes the property");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
   }
 
-  prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier.flags", LS_MODIFIER_ENABLED);
-  RNA_def_property_ui_text(prop, "Use", "Enable or disable this modifier during stroke rendering");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "use", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier.flags", LS_MODIFIER_ENABLED);
+  api_def_prop_ui_text(prop, "Use", "Enable or disable this modifier during stroke rendering");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "expanded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier.flags", LS_MODIFIER_EXPANDED);
-  RNA_def_property_ui_text(prop, "Expanded", "True if the modifier tab is expanded");
+  prop = api_def_prop(sapi, "expanded", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier.flags", LS_MODIFIER_EXPANDED);
+  api_def_prop_ui_text(prop, "Expanded", "True if the modifier tab is expanded");
 }
 
 static void rna_def_color_modifier(StructRNA *srna)
