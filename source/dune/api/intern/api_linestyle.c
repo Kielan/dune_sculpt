@@ -702,25 +702,25 @@ static void rna_def_alpha_modifier(StructRNA *srna)
 
 static void rna_def_thickness_modifier(StructRNA *srna)
 {
-  rna_def_modifier_type_common(srna,
+  api_def_mod_type_common(srna,
                                rna_enum_linestyle_thickness_modifier_type_items,
                                "rna_LineStyleThicknessModifier_name_set",
                                true,
                                false);
 }
 
-static void rna_def_geometry_modifier(StructRNA *srna)
+static void api_def_geometry_mod(ApiStruct *sapi)
 {
-  rna_def_modifier_type_common(srna,
-                               rna_enum_linestyle_geometry_modifier_type_items,
-                               "rna_LineStyleGeometryModifier_name_set",
-                               false,
-                               false);
+  api_def_mod_type_common(sapi,
+                          api_enum_linestyle_geometry_mod_type_items,
+                          "api_LineStyleGeometryMod_name_set",
+                          false,
+                          false);
 }
 
-static void rna_def_modifier_color_ramp_common(StructRNA *srna, int range)
+static void api_def_modifier_color_ramp_common(StructRNA *srna, int range)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   prop = RNA_def_property(srna, "color_ramp", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "color_ramp");
