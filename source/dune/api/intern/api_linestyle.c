@@ -1072,17 +1072,17 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   /* line thickness modifiers */
-  srna = api_def_struct(dapi, "LineStyleThicknessModifier", "LineStyleModifier");
+  sapi = api_def_struct(dapi, "LineStyleThicknessMod", "LineStyleMod");
   api_def_struct_stype(sapi, "LineStyleMod");
-  api_def_struct_refine_fn(sapi, "spi_LineStyle_thickness_modifier_refine");
-  api_def_struct_path_fn(sapi, "api_LineStyle_thickness_modifier_path");
+  api_def_struct_refine_fn(sapi, "spi_LineStyle_thickness_mod_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_thickness_mod_path");
   api_def_struct_ui_text(
-      srna, "Line Style Thickness Modifier", "Base type to define line thickness modifiers");
+      sapi, "Line Style Thickness Mod", "Base type to define line thickness modifiers");
 
-  srna = api_def_struct(dapi, "LineStyleThicknessMod_Tangent", "LineStyleThicknessModifier");
+  sapi = api_def_struct(dapi, "LineStyleThicknessMod_Tangent", "LineStyleThicknessMod");
   api_def_struct_ui_text(sapi, "Tangent", "Thickness based on the direction of the stroke");
   api_def_thickness_mod(sapi);
-  api_def_mod_curve_common(srna, false, false);
+  api_def_mod_curve_common(sapi, false, false);
 
   prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "min_thickness");
@@ -1405,68 +1405,68 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   sapi = api_def_struct(
-      dapi, "LineStyleGeometryMod_BackboneStretcher", "LineStyleGeometryModifier");
+      dapi, "LineStyleGeometryMod_BackboneStretcher", "LineStyleGeometryMod");
   api_def_struct_ui_text(
       sapi, "Backbone Stretcher", "Stretch the beginning and the end of stroke backbone");
   api_def_geometry_mod(sap);
 
   prop = api_def_prop(sapi, "backbone_length", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "backbone_length");
-  RNA_def_prop_ui_text(prop, "Backbone Length", "Amount of backbone stretching");
-  RNA_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_ui_text(prop, "Backbone Length", "Amount of backbone stretching");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleGeometryModifier_TipRemover", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna,
+  srna = api_def_struct(dapi, "LineStyleGeometryMod_TipRemover", "LineStyleGeometryMod");
+  api_def_struct_ui_text(
+      sapi,
       "Tip Remover",
       "Remove a piece of stroke at the beginning and the end of stroke backbone");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "tip_length", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "tip_length");
-  RNA_def_property_ui_text(prop, "Tip Length", "Length of tips to be removed");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "tip_length", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "tip_length");
+  api_def_prop_ui_text(prop, "Tip Length", "Length of tips to be removed");
+  api_def_pro_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_Polygonalization", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna, "Polygonalization", "Modify the stroke geometry so that it looks more 'polygonal'");
-  rna_def_geometry_modifier(srna);
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_Polygonalization", "LineStyleGeometryMod");
+  api_def_struct_ui_text(
+      sapi, "Polygonalization", "Modify the stroke geometry so that it looks more 'polygonal'");
+  api_def_geometry_mods(sapi);
 
-  prop = RNA_def_property(srna, "error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "error");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "error");
+  api_def_prop_ui_text(
       prop,
       "Error",
       "Maximum distance between the original stroke and its polygonal approximation");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_GuidingLines", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna,
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_GuidingLines", "LineStyleGeometryMod");
+  api_def_struct_ui_text(
+      sapi,
       "Guiding Lines",
       "Modify the stroke geometry so that it corresponds to its main direction line");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "offset");
+  api_def_prop_ui_text(
       prop, "Offset", "Displacement that is applied to the main direction line along its normal");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleGeometryModifier_Blueprint", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna,
+  sapi = api_def_struct(dapi, "LineStyleGeometryMod_Blueprint", "LineStyleGeometryMod");
+  api_def_struct_ui_text(
+      sapi,
       "Blueprint",
       "Produce a blueprint using circular, elliptic, and square contour strokes");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "shape", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flags");
-  RNA_def_property_enum_items(prop, blueprint_shape_items);
-  RNA_def_property_ui_text(prop, "Shape", "Select the shape of blueprint contour strokes");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "shape", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flags");
+  api_def_prop_enum_items(prop, blueprint_shape_items);
+  api_def_prop_ui_text(prop, "Shape", "Select the shape of blueprint contour strokes");
+  apj_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "rounds", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_sdna(prop, NULL, "rounds");
