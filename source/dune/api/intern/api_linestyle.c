@@ -1012,13 +1012,13 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Tangent", "LineStyleAlphaModifier");
   RNA_def_struct_ui_text(
       srna, "Tangent", "Alpha transparency based on the direction of the stroke");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(srna, false, false);
 
-  srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Noise", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(srna, "Noise", "Alpha transparency based on random noise");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  sapi = api_def_struct(dapi, "LineStyleAlphaModifier_Noise", "LineStyleAlphaModifier");
+  api_def_struct_ui_text(sapi, "Noise", "Alpha transparency based on random noise");
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, false, false);
 
   prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "amplitude");
