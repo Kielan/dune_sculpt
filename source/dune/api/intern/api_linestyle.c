@@ -945,12 +945,12 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
   RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "angle_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "max_angle");
-  RNA_def_property_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "max_angle");
+  api_def_prop_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleColorModifier_Curvature_3D", "LineStyleColorModifier");
+  srna = RNA_def_struct(brna, "LineStyleColorMod_Curvature_3D", "LineStyleColorMod");
   RNA_def_struct_ui_text(
       srna, "Curvature 3D", "Change line color based on the radial curvature of 3D mesh surfaces");
   rna_def_color_modifier(srna);
@@ -959,12 +959,12 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   prop = RNA_def_property(srna, "curvature_min", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "min_curvature");
   RNA_def_property_ui_text(prop, "Min Curvature", "Minimum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_curvature");
-  RNA_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "curvature_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_curvature");
+  api_def_prop_ui_text(prop, "Max Curvature", "Maximum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   /* alpha transparency modifiers */
 
