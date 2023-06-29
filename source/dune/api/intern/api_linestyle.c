@@ -242,9 +242,9 @@ static char *api_LineStyle_color_mod_path(ApiPtr *ptr)
   return lib_("color_modifiers[\"%s\"]", name_esc);
 }
 
-static char *api_LineStyle_alpha_modifier_path(ApiPtr *ptr)
+static char *api_LineStyle_alpha_mod_path(ApiPtr *ptr)
 {
-  LineStyleMod *m = (LineStyleModifier *)ptr->data;
+  LineStyleMod *m = (LineStyleMod *)ptr->data;
   char name_esc[sizeof(m->name) * 2];
   lib_str_escape(name_esc, m->name, sizeof(name_esc));
   return lib_sprintfn("alpha_modifiers[\"%s\"]", name_esc);
@@ -1059,13 +1059,13 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_alpha_mod(sapi);
   api_def_mod_curve_common(sapi, false, false);
 
-  prop = api_def_prop(srna, "curvature_min", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "min_curvature");
+  prop = api_def_prop(sapi, "curvature_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_curvature");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_text(prop, "Min Curvature", "Minimum Curvature");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = api_def_prop(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "curvature_max", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "max_curvature");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_text(prop, "Max Curvature", "Maximum Curvature");
@@ -1079,15 +1079,15 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_struct_ui_text(
       srna, "Line Style Thickness Modifier", "Base type to define line thickness modifiers");
 
-  srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Tangent", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(srna, "Tangent", "Thickness based on the direction of the stroke");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  srna = api_def_struct(dapi, "LineStyleThicknessMod_Tangent", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(sapi, "Tangent", "Thickness based on the direction of the stroke");
+  api_def_thickness_mod(sapi);
+  api_def_mod_curve_common(srna, false, false);
 
-  prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Min Thickness", "Minimum thickness");
+  prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Min Thickness", "Minimum thickness");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
@@ -1109,12 +1109,12 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_thickness_mod(sapi);
   api_def_mod_curve_common(sapi, true, true);
 
-  srna = RNA_def_struct(
+  srna = api_def_struct(
       brna, "LineStyleThicknessModifier_DistanceFromObject", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(
+  api_def_struct_ui_text(
       srna, "Distance from Object", "Change line thickness based on the distance from an object");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, true, true);
+  api_def_thickness_mod(sapi);
+  api_def_mod_curve_common(sapi, true, true);
 
   prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "target");
