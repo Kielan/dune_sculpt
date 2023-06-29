@@ -1135,12 +1135,12 @@ static void api_def_linestyle_mods(DuneApi *dapi)
       srna,
       "Calligraphy",
       "Change line thickness so that stroke looks like made with a calligraphic pen");
-  rna_def_thickness_modifier(srna);
+  rna_def_thickness_mod(sapi);
 
-  prop = RNA_def_property(srna, "orientation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "orientation");
-  RNA_def_property_ui_text(prop, "Orientation", "Angle of the main direction");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "orientation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_style(prop, NULL, "orientation");
+  api_def_prop_ui_text(prop, "Orientation", "Angle of the main direction");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "min_thickness");
@@ -1155,32 +1155,32 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "max_thickness");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness in the main direction");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
+    
+  sapi = api_def_struct(dapi, "LineStyleThicknessMod_Noise", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(sapi, "Noise", "Line thickness based on random noise");
+  api_def_thickness_mod(sapi);
 
-  srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Noise", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(srna, "Noise", "Line thickness based on random noise");
-  rna_def_thickness_modifier(srna);
-
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "period", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "period");
   RNA_def_property_ui_text(prop, "Period", "Period of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_sdna(prop, NULL, "seed");
   RNA_def_property_range(prop, 1, SHRT_MAX);
   RNA_def_property_ui_text(prop, "Seed", "Seed for the noise generation");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "use_asymmetric", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_asymmetric", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_THICKNESS_ASYMMETRIC);
   RNA_def_property_ui_text(prop, "Asymmetric", "Allow thickness to be assigned asymmetrically");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   srna = RNA_def_struct(
       brna, "LineStyleThicknessModifier_Curvature_3D", "LineStyleThicknessModifier");
@@ -1193,7 +1193,7 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   RNA_def_property_float_sdna(prop, NULL, "min_thickness");
   RNA_def_property_range(prop, 0.0f, 10000.0f);
   RNA_def_property_ui_text(prop, "Min Thickness", "Minimum thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "max_thickness");
