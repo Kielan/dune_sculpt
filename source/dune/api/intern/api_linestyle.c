@@ -1243,14 +1243,14 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   /* geometry modifiers */
-  srna = api_def_struct(dapi, "LineStyleGeometryMod", "LineStyleMod");
+  sapi = api_def_struct(dapi, "LineStyleGeometryMod", "LineStyleMod");
   api_def_struct_stype(sapi, "LineStyleModifier");
   api_def_struct_refine_fn(sapi, "api_LineStyle_geometry_mod_refine");
   api_def_struct_path_fn(sapi, "api_LineStyle_geometry_mod_path");
   api_def_struct_ui_text(
       sapi, "Line Style Geometry Modifier", "Base type to define stroke geometry modifiers");
 
-  srna = api_def_struct(dapi, "LineStyleGeometryModifier_Sampling", "LineStyleGeometryModifier");
+  sapi = api_def_struct(dapi, "LineStyleGeometryModifier_Sampling", "LineStyleGeometryModifier");
   api_def_struct_ui_text(
       sapi,
       "Sampling",
@@ -1312,108 +1312,108 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the spatial noise");
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_ui_text(prop, "Scale", "Scale of the spatial noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_ui_text(prop, "Scale", "Scale of the spatial noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "octaves", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "octaves");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "octaves", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "octaves");
+  api_def_prop_ui_text(
       prop, "Octaves", "Number of octaves (i.e., the amount of detail of the spatial noise)");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "smooth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_MODIFIER_SPATIAL_NOISE_SMOOTH);
-  RNA_def_property_ui_text(prop, "Smooth", "If true, the spatial noise is smooth");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "smooth", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_MOD_SPATIAL_NOISE_SMOOTH);
+  api_def_prop_ui_text(prop, "Smooth", "If true, the spatial noise is smooth");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "use_pure_random", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_MODIFIER_SPATIAL_NOISE_PURERANDOM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pure_random", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_MODIFIER_SPATIAL_NOISE_PURERANDOM);
+  api_def_prop_ui_text(
       prop, "Pure Random", "If true, the spatial noise does not show any coherence");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_PerlinNoise1D", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna, "Perlin Noise 1D", "Add one-dimensional Perlin noise to stroke backbone geometry");
-  rna_def_geometry_modifier(srna);
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_PerlinNoise1D", "LineStyleGeometryModifier");
+  api_def_struct_ui_text(
+      sapi, "Perlin Noise 1D", "Add one-dimensional Perlin noise to stroke backbone geometry");
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "frequency", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "frequency");
-  RNA_def_property_ui_text(prop, "Frequency", "Frequency of the Perlin noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "frequency", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "frequency");
+  api_def_prop_ui_text(prop, "Frequency", "Frequency of the Perlin noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the Perlin noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the Perlin noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "octaves", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "octaves");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "octaves", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "octaves");
+  api_def_prop_ui_text(
       prop, "Octaves", "Number of octaves (i.e., the amount of detail of the Perlin noise)");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "angle");
-  RNA_def_property_ui_text(prop, "Angle", "Displacement direction");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "angle");
+  api_def_prop_ui_text(prop, "Angle", "Displacement direction");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "seed");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "seed");
+  api_def_prop_ui_text(
       prop,
       "Seed",
       "Seed for random number generation (if negative, time is used as a seed instead)");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_PerlinNoise2D", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(
+      dapu, "LineStyleGeometryMod_PerlinNoise2D", "LineStyleGeometryMod");
+  api_def_struct_ui_text(
       srna, "Perlin Noise 2D", "Add two-dimensional Perlin noise to stroke backbone geometry");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_modifier(srna);
 
-  prop = RNA_def_property(srna, "frequency", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "frequency");
-  RNA_def_property_ui_text(prop, "Frequency", "Frequency of the Perlin noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "frequency", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "frequency");
+  api_def_prop_ui_text(prop, "Frequency", "Frequency of the Perlin noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the Perlin noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the Perlin noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "octaves", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "octaves");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "octaves", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "octaves");
+  api_def_prop_ui_text(
       prop, "Octaves", "Number of octaves (i.e., the amount of detail of the Perlin noise)");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "angle");
-  RNA_def_property_ui_text(prop, "Angle", "Displacement direction");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "angle");
+  api_def_prop_ui_text(prop, "Angle", "Displacement direction");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "seed");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "seed");
+  api_def_prop_ui_text(
       prop,
       "Seed",
       "Seed for random number generation (if negative, time is used as a seed instead)");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_BackboneStretcher", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna, "Backbone Stretcher", "Stretch the beginning and the end of stroke backbone");
-  rna_def_geometry_modifier(srna);
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_BackboneStretcher", "LineStyleGeometryModifier");
+  api_def_struct_ui_text(
+      sapi, "Backbone Stretcher", "Stretch the beginning and the end of stroke backbone");
+  api_def_geometry_mod(sap);
 
-  prop = RNA_def_property(srna, "backbone_length", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "backbone_length");
-  RNA_def_property_ui_text(prop, "Backbone Length", "Amount of backbone stretching");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "backbone_length", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "backbone_length");
+  RNA_def_prop_ui_text(prop, "Backbone Length", "Amount of backbone stretching");
+  RNA_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(brna, "LineStyleGeometryModifier_TipRemover", "LineStyleGeometryModifier");
   RNA_def_struct_ui_text(
