@@ -801,33 +801,33 @@ static void api_def_mod_material_common(ApiStruct *sapi)
 {
   ApiProp *prop;
 
-  static const EnumPropertyItem mat_attr_items[] = {
-      {LS_MODIFIER_MATERIAL_LINE, "LINE", 0, "Line Color", ""},
-      {LS_MODIFIER_MATERIAL_LINE_R, "LINE_R", 0, "Line Color Red", ""},
-      {LS_MODIFIER_MATERIAL_LINE_G, "LINE_G", 0, "Line Color Green", ""},
-      {LS_MODIFIER_MATERIAL_LINE_B, "LINE_B", 0, "Line Color Blue", ""},
-      {LS_MODIFIER_MATERIAL_LINE_A, "LINE_A", 0, "Line Color Alpha", ""},
-      {LS_MODIFIER_MATERIAL_DIFF, "DIFF", 0, "Diffuse Color", ""},
-      {LS_MODIFIER_MATERIAL_DIFF_R, "DIFF_R", 0, "Diffuse Color Red", ""},
-      {LS_MODIFIER_MATERIAL_DIFF_G, "DIFF_G", 0, "Diffuse Color Green", ""},
-      {LS_MODIFIER_MATERIAL_DIFF_B, "DIFF_B", 0, "Diffuse Color Blue", ""},
-      {LS_MODIFIER_MATERIAL_SPEC, "SPEC", 0, "Specular Color", ""},
-      {LS_MODIFIER_MATERIAL_SPEC_R, "SPEC_R", 0, "Specular Color Red", ""},
-      {LS_MODIFIER_MATERIAL_SPEC_G, "SPEC_G", 0, "Specular Color Green", ""},
-      {LS_MODIFIER_MATERIAL_SPEC_B, "SPEC_B", 0, "Specular Color Blue", ""},
-      {LS_MODIFIER_MATERIAL_SPEC_HARD, "SPEC_HARD", 0, "Specular Hardness", ""},
-      {LS_MODIFIER_MATERIAL_ALPHA, "ALPHA", 0, "Alpha Transparency", ""},
+  static const EnumPropItem mat_attr_items[] = {
+      {LS_MOD_MATERIAL_LINE, "LINE", 0, "Line Color", ""},
+      {LS_MOD_MATERIAL_LINE_R, "LINE_R", 0, "Line Color Red", ""},
+      {LS_MOD_MATERIAL_LINE_G, "LINE_G", 0, "Line Color Green", ""},
+      {LS_MOD_MATERIAL_LINE_B, "LINE_B", 0, "Line Color Blue", ""},
+      {LS_MOD_MATERIAL_LINE_A, "LINE_A", 0, "Line Color Alpha", ""},
+      {LS_MOD_MATERIAL_DIFF, "DIFF", 0, "Diffuse Color", ""},
+      {LS_MOD_MATERIAL_DIFF_R, "DIFF_R", 0, "Diffuse Color Red", ""},
+      {LS_MOD_MATERIAL_DIFF_G, "DIFF_G", 0, "Diffuse Color Green", ""},
+      {LS_MOD_MATERIAL_DIFF_B, "DIFF_B", 0, "Diffuse Color Blue", ""},
+      {LS_MOD_MATERIAL_SPEC, "SPEC", 0, "Specular Color", ""},
+      {LS_MOD_MATERIAL_SPEC_R, "SPEC_R", 0, "Specular Color Red", ""},
+      {LS_MOD_MATERIAL_SPEC_G, "SPEC_G", 0, "Specular Color Green", ""},
+      {LS_MOD_MATERIAL_SPEC_B, "SPEC_B", 0, "Specular Color Blue", ""},
+      {LS_MOD_MATERIAL_SPEC_HARD, "SPEC_HARD", 0, "Specular Hardness", ""},
+      {LS_MOD_MATERIAL_ALPHA, "ALPHA", 0, "Alpha Transparency", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "material_attribute", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mat_attr");
-  RNA_def_property_enum_items(prop, mat_attr_items);
-  RNA_def_property_ui_text(prop, "Material Attribute", "Specify which material attribute is used");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "material_attribute", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mat_attr");
+  api_def_prop_enum_items(prop, mat_attr_items);
+  api_def_prop_ui_text(prop, "Material Attribute", "Specify which material attribute is used");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 }
 
-static void rna_def_linestyle_modifiers(BlenderRNA *brna)
+static void api_def_linestyle_modifiers(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApoProp *prop;
@@ -851,83 +851,82 @@ static void rna_def_linestyle_modifiers(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem transform_pivot_items[] = {
-      {LS_MODIFIER_2D_TRANSFORM_PIVOT_CENTER, "CENTER", 0, "Stroke Center", ""},
-      {LS_MODIFIER_2D_TRANSFORM_PIVOT_START, "START", 0, "Stroke Start", ""},
-      {LS_MODIFIER_2D_TRANSFORM_PIVOT_END, "END", 0, "Stroke End", ""},
-      {LS_MODIFIER_2D_TRANSFORM_PIVOT_PARAM, "PARAM", 0, "Stroke Point Parameter", ""},
-      {LS_MODIFIER_2D_TRANSFORM_PIVOT_ABSOLUTE, "ABSOLUTE", 0, "Absolute 2D Point", ""},
+  static const EnumPropItem transform_pivot_items[] = {
+      {LS_MOD_2D_TRANSFORM_PIVOT_CENTER, "CENTER", 0, "Stroke Center", ""},
+      {LS_MOD_2D_TRANSFORM_PIVOT_START, "START", 0, "Stroke Start", ""},
+      {LS_MOD_2D_TRANSFORM_PIVOT_END, "END", 0, "Stroke End", ""},
+      {LS_MOD_2D_TRANSFORM_PIVOT_PARAM, "PARAM", 0, "Stroke Point Parameter", ""},
+      {LS_MOD_2D_TRANSFORM_PIVOT_ABSOLUTE, "ABSOLUTE", 0, "Absolute 2D Point", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "LineStyleModifier", NULL);
-  RNA_def_struct_ui_text(srna, "Line Style Modifier", "Base type to define modifiers");
+  sapi = api_def_struct(dapi, "LineStyle", NULL);
+  api_def_struct_ui_text(sapi, "Line Style Mod", "Base type to define mods");
 
   /* line color modifiers */
+  sapi = api_def_struct(dapi, "LineStyleColorMod", "LineStyleMod");
+  api_def_struct_stype(sapi, "LineStyleMod");
+  api_def_struct_refine_fn(sapi, "api_LineStyle_color_mod_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_color_mod_path");
+  api_def_struct_ui_text(
+      sapi, "Line Style Color Mod", "Base type to define line color modifiers");
 
-  srna = RNA_def_struct(brna, "LineStyleColorModifier", "LineStyleModifier");
-  RNA_def_struct_sdna(srna, "LineStyleModifier");
-  RNA_def_struct_refine_func(srna, "rna_LineStyle_color_modifier_refine");
-  RNA_def_struct_path_func(srna, "rna_LineStyle_color_modifier_path");
-  RNA_def_struct_ui_text(
-      srna, "Line Style Color Modifier", "Base type to define line color modifiers");
+  srna = api_def_struct(dapi, "LineStyleColorMod_AlongStroke", "LineStyleColorModifier");
+  api_def_struct_ui_text(sapi, "Along Stroke", "Change line color along stroke");
+  api_def_color_mod(sapi);
+  api_def_mod_color_ramp_common(sapi, false);
 
-  srna = RNA_def_struct(brna, "LineStyleColorModifier_AlongStroke", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(srna, "Along Stroke", "Change line color along stroke");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_color_ramp_common(srna, false);
+  sapi = api_def_struct(
+      dapi, "LineStyleColorMod_DistanceFromCamera", "LineStyleColorModifier");
+  api_def_struct_ui_text(
+      sapi, "Distance from Camera", "Change line color based on the distance from the camera");
+  api_def_color_mod(sapi);
+  api_def_mod_color_ramp_common(srna, true);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleColorModifier_DistanceFromCamera", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(
-      srna, "Distance from Camera", "Change line color based on the distance from the camera");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_color_ramp_common(srna, true);
+  sapi = api_def_struct(
+      dapi, "LineStyleColorMod_DistanceFromObject", "LineStyleColorMod");
+  api_def_struct_ui_text(
+      sapi, "Distance from Object", "Change line color based on the distance from an object");
+  api_def_color_mod(sapi);
+  api_def_mod_color_ramp_common(sapi, true);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleColorModifier_DistanceFromObject", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(
-      srna, "Distance from Object", "Change line color based on the distance from an object");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_color_ramp_common(srna, true);
+  prop = api_def_prop(sapi, "target", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "target");
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Target", "Target object from which the distance is measured");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "target");
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Target", "Target object from which the distance is measured");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  sapi = api_def_struct(dapi, "LineStyleColorMod_Material", "LineStyleColorModifier");
+  api_def_struct_ui_text(sapi, "Material", "Change line color based on a material attribute");
+  api_def_color_mod(sapi);
+  api_def_mod_material_common(sapi);
+  api_def_mod_color_ramp_common(sapi, false);
 
-  srna = RNA_def_struct(brna, "LineStyleColorModifier_Material", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(srna, "Material", "Change line color based on a material attribute");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_material_common(srna);
-  rna_def_modifier_color_ramp_common(srna, false);
+  prop = api_def_prop(sapi, "use_ramp", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_MODIFIER_USE_RAMP);
+  api_def_prop_ui_text(prop, "Ramp", "Use color ramp to map the BW average into an RGB color");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "use_ramp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_MODIFIER_USE_RAMP);
-  RNA_def_property_ui_text(prop, "Ramp", "Use color ramp to map the BW average into an RGB color");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
-
-  srna = RNA_def_struct(brna, "LineStyleColorModifier_Tangent", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(srna, "Tangent", "Change line color based on the direction of a stroke");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_color_ramp_common(srna, false);
+  sapi = api_def_struct(dapi, "LineStyleColorMod_Tangent", "LineStyleColorModifier");
+  api_def_struct_ui_text(sapi, "Tangent", "Change line color based on the direction of a stroke");
+  api_def_color_mod(sapi);
+  api_def_mod_color_ramp_common(srna, false);
 
   srna = RNA_def_struct(brna, "LineStyleColorModifier_Noise", "LineStyleColorModifier");
   RNA_def_struct_ui_text(srna, "Noise", "Change line color based on random noise");
   rna_def_color_modifier(srna);
   rna_def_modifier_color_ramp_common(srna, false);
 
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "period", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "period");
-  RNA_def_property_ui_text(prop, "Period", "Period of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "period", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "period");
+  api_def_prop_ui_text(prop, "Period", "Period of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_sdna(prop, NULL, "seed");
