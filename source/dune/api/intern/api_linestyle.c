@@ -1103,25 +1103,25 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_mod_curve_common(sapi, false, true);
 
   sapi = api_def_struct(
-      dapi, "LineStyleThicknessModifier_DistanceFromCamera", "LineStyleThicknessModifier");
+      dapi, "LineStyleThicknessMod_DistanceFromCamera", "LineStyleThicknessModifier");
   api_def_struct_ui_text(
       sapi, "Distance from Camera", "Change line thickness based on the distance from the camera");
   api_def_thickness_mod(sapi);
   api_def_mod_curve_common(sapi, true, true);
 
-  srna = api_def_struct(
-      brna, "LineStyleThicknessModifier_DistanceFromObject", "LineStyleThicknessModifier");
+  sapi = api_def_struct(
+      dapi, "LineStyleThicknessMod_DistanceFromObject", "LineStyleThicknessModifier");
   api_def_struct_ui_text(
-      srna, "Distance from Object", "Change line thickness based on the distance from an object");
+      sapi, "Distance from Object", "Change line thickness based on the distance from an object");
   api_def_thickness_mod(sapi);
   api_def_mod_curve_common(sapi, true, true);
 
-  prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "target");
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Target", "Target object from which the distance is measured");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "target", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "target");
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Target", "Target object from which the distance is measured");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Material", "LineStyleThicknessModifier");
   RNA_def_struct_ui_text(srna, "Material", "Change line thickness based on a material attribute");
