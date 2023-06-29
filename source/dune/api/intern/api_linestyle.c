@@ -1091,23 +1091,23 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_stype(prop, NULL, "max_thickness");
-  RNA_def_prop_range(prop, 0.0f, 10000.0f);
-  RNA_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness");
-  RNA_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_float_stype(prop, NULL, "max_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleThicknessModifier_AlongStroke", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(srna, "Along Stroke", "Change line thickness along stroke");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, true);
+  sapi = api_def_struct(
+      dapi, "LineStyleThicknessModifier_AlongStroke", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(sapi, "Along Stroke", "Change line thickness along stroke");
+  api_def_thickness_mod(sapi);
+  api_def_mod_curve_common(sapi, false, true);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleThicknessModifier_DistanceFromCamera", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(
-      srna, "Distance from Camera", "Change line thickness based on the distance from the camera");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, true, true);
+  sapi = api_def_struct(
+      dapi, "LineStyleThicknessModifier_DistanceFromCamera", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(
+      sapi, "Distance from Camera", "Change line thickness based on the distance from the camera");
+  api_def_thickness_mod(sapi);
+  api_def_mod_curve_common(sapi, true, true);
 
   srna = RNA_def_struct(
       brna, "LineStyleThicknessModifier_DistanceFromObject", "LineStyleThicknessModifier");
