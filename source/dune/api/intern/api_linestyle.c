@@ -829,21 +829,21 @@ static void api_def_mod_material_common(ApiStruct *sapi)
 
 static void rna_def_linestyle_modifiers(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApoProp *prop;
 
-  static const EnumPropertyItem blueprint_shape_items[] = {
-      {LS_MODIFIER_BLUEPRINT_CIRCLES,
+  static const EnumPropItem blueprint_shape_items[] = {
+      {LS_MOD_BLUEPRINT_CIRCLES,
        "CIRCLES",
        0,
        "Circles",
        "Draw a blueprint using circular contour strokes"},
-      {LS_MODIFIER_BLUEPRINT_ELLIPSES,
+      {LS_MOD_BLUEPRINT_ELLIPSES,
        "ELLIPSES",
        0,
        "Ellipses",
        "Draw a blueprint using elliptic contour strokes"},
-      {LS_MODIFIER_BLUEPRINT_SQUARES,
+      {LS_MOD_BLUEPRINT_SQUARES,
        "SQUARES",
        0,
        "Squares",
