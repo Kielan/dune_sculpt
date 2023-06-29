@@ -1290,27 +1290,27 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "wavelength");
   api_def_prop_range(prop, 0.0001f, FLT_MAX);
   api_def_prop_ui_text(prop, "Wavelength", "Wavelength of the sinus displacement");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "amplitude");
   api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the sinus displacement");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "phase", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "phase");
-  RNA_def_property_ui_text(prop, "Phase", "Phase of the sinus displacement");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_ui_text(prop, "Phase", "Phase of the sinus displacement");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_SpatialNoise", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(srna, "Spatial Noise", "Add spatial noise to stroke backbone geometry");
-  rna_def_geometry_modifier(srna);
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_SpatialNoise", "LineStyleGeometryModifier");
+  api_def_struct_ui_text(sapi, "Spatial Noise", "Add spatial noise to stroke backbone geometry");
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the spatial noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the spatial noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "scale");
