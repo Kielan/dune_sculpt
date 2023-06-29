@@ -499,7 +499,7 @@ static void api_LineStyle_geometry_mod_remove(FreestyleLineStyle *linestyle,
     return;
   }
 
-  API_PTR_INVALIDATE(modifier_ptr);
+  API_PTR_INVALIDATE(mod_ptr);
 
   graph_id_tag_update(&linestyle->id, 0);
   wm_main_add_notifier(NC_LINESTYLE, linestyle);
@@ -509,7 +509,7 @@ static void api_LineStyle_geometry_mod_remove(FreestyleLineStyle *linestyle,
 
 #  include "lib_math.h"
 
-static void api_def_linestyle_mtex(BlenderRNA *brna)
+static void api_def_linestyle_mtex(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -827,7 +827,7 @@ static void api_def_mod_material_common(ApiStruct *sapi)
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 }
 
-static void api_def_linestyle_modifiers(DuneApi *dapi)
+static void api_def_linestyle_mods(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApoProp *prop;
@@ -1030,11 +1030,11 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Period", "Period of the noise");
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "seed");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Seed", "Seed for the noise generation");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "seed");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Seed", "Seed for the noise generation");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   sapi = api_def_struct(dapi, "LineStyleAlphaModifier_CreaseAngle", "LineStyleAlphaModifier");
   api_def_struct_ui_text(
@@ -1065,11 +1065,11 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Min Curvature", "Minimum Curvature");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
-  api_def_property_float_sdna(prop, NULL, "max_curvature");
-  api_def_property_range(prop, 0.0f, 10000.0f);
-  api_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  api_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_curvature");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Curvature", "Maximum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   /* line thickness modifiers */
   srna = api_def_struct(dapi, "LineStyleThicknessModifier", "LineStyleModifier");
