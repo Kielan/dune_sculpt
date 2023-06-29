@@ -1013,7 +1013,7 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_struct_ui_text(
       sapi, "Tangent", "Alpha transparency based on the direction of the stroke");
   api_def_alpha_mod(sapi);
-  api_def_mod_curve_common(srna, false, false);
+  api_def_mod_curve_common(sapi, false, false);
 
   sapi = api_def_struct(dapi, "LineStyleAlphaMod_Noise", "LineStyleAlphaModifier");
   api_def_struct_ui_text(sapi, "Noise", "Alpha transparency based on random noise");
@@ -1121,16 +1121,16 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_struct_type(prop, "Object");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Target", "Target object from which the distance is measured");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Material", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(srna, "Material", "Change line thickness based on a material attribute");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_material_common(srna);
-  rna_def_modifier_curve_common(srna, false, true);
+  sapi = api_def_struct(dapi, "LineStyleThicknessMod_Material", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(sapi, "Material", "Change line thickness based on a material attribute");
+  api_def_thickness_mod(sapi);
+  api_def_mod_material_common(sapi);
+  api_def_mod_curve_common(sapi, false, true);
 
   srna = RNA_def_struct(
-      brna, "LineStyleThicknessModifier_Calligraphy", "LineStyleThicknessModifier");
+      brna, "LineStyleThicknessMod_Calligraphy", "LineStyleThicknessModifier");
   RNA_def_struct_ui_text(
       srna,
       "Calligraphy",
