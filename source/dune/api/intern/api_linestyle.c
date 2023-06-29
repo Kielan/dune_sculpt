@@ -1129,13 +1129,13 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_mod_material_common(sapi);
   api_def_mod_curve_common(sapi, false, true);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleThicknessMod_Calligraphy", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(
-      srna,
+  sapi = api_def_struct(
+      dapi, "LineStyleThicknessMod_Calligraphy", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(
+      sapi,
       "Calligraphy",
       "Change line thickness so that stroke looks like made with a calligraphic pen");
-  rna_def_thickness_mod(sapi);
+  api_def_thickness_mod(sapi);
 
   prop = api_def_prop(sapi, "orientation", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_style(prop, NULL, "orientation");
@@ -1166,116 +1166,115 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the noise");
   api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "period", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "period");
-  RNA_def_property_ui_text(prop, "Period", "Period of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
+  prop = api_def_prop(dapi, "period", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "period");
+  api_def_prop_ui_text(prop, "Period", "Period of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "seed");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Seed", "Seed for the noise generation");
-  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "seed");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Seed", "Seed for the noise generation");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "use_asymmetric", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_THICKNESS_ASYMMETRIC);
-  RNA_def_property_ui_text(prop, "Asymmetric", "Allow thickness to be assigned asymmetrically");
-  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
+  prop = api_def_prop(sapi, "use_asymmetric", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_THICKNESS_ASYMMETRIC);
+  api_def_prop_ui_text(prop, "Asymmetric", "Allow thickness to be assigned asymmetrically");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleThicknessModifier_Curvature_3D", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(
-      srna, "Curvature 3D", "Line thickness based on the radial curvature of 3D mesh surfaces");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  sapi = api_def_struct(
+      dapi, "LineStyleThicknessMod_Curvature_3D", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(
+      sapi, "Curvature 3D", "Line thickness based on the radial curvature of 3D mesh surfaces");
+  api_def_thickness_mod(srna);
+  api_def_mod_curve_common(srna, false, false);
 
-  prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Min Thickness", "Minimum thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
+  prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Min Thickness", "Minimum thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "max_thickness");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "curvature_min", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "min_curvature");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_text(prop, "Min Curvature", "Minimum Curvature");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = api_def_prop(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "max_curvature");
-  api_def_property_range(prop, 0.0f, 10000.0f);
-  api_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "curvature_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_curvature");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Curvature", "Maximum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleThicknessModifier_CreaseAngle", "LineStyleThicknessModifier");
-  RNA_def_struct_ui_text(
+  srna = api_def_struct(
+      dapi, "LineStyleThicknessMod_CreaseAngle", "LineStyleThicknessModifier");
+  api_def_struct_ui_text(
       srna, "Crease Angle", "Line thickness based on the angle between two adjacent faces");
-  rna_def_thickness_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  api_def_thickness_mod(sapi);
+  rna_def_mod_curve_common(sapi, false, false);
 
-  prop = RNA_def_property(srna, "angle_min", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "min_angle");
-  RNA_def_property_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle_min", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "min_angle");
+  api_def_prop_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "angle_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "max_angle");
-  RNA_def_property_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "max_angle");
+  api_def_prop_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Min Thickness", "Minimum thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sype(prop, NULL, "min_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Min Thickness", "Minimum thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Max Thickness", "Maximum thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   /* geometry modifiers */
+  srna = api_def_struct(dapi, "LineStyleGeometryMod", "LineStyleMod");
+  api_def_struct_stype(sapi, "LineStyleModifier");
+  api_def_struct_refine_fn(sapi, "api_LineStyle_geometry_mod_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_geometry_mod_path");
+  api_def_struct_ui_text(
+      sapi, "Line Style Geometry Modifier", "Base type to define stroke geometry modifiers");
 
-  srna = RNA_def_struct(brna, "LineStyleGeometryModifier", "LineStyleModifier");
-  RNA_def_struct_sdna(srna, "LineStyleModifier");
-  RNA_def_struct_refine_func(srna, "rna_LineStyle_geometry_modifier_refine");
-  RNA_def_struct_path_func(srna, "rna_LineStyle_geometry_modifier_path");
-  RNA_def_struct_ui_text(
-      srna, "Line Style Geometry Modifier", "Base type to define stroke geometry modifiers");
-
-  srna = RNA_def_struct(brna, "LineStyleGeometryModifier_Sampling", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(
-      srna,
+  srna = api_def_struct(dapi, "LineStyleGeometryModifier_Sampling", "LineStyleGeometryModifier");
+  api_def_struct_ui_text(
+      sapi,
       "Sampling",
       "Specify a new sampling value that determines the resolution of stroke polylines");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "sampling", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "sampling");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(
-      prop, "Sampling", "New sampling value to be used for subsequent modifiers");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "sampling", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "sampling");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(
+      prop, "Sampling", "New sampling value to be used for subsequent mods");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(
-      brna, "LineStyleGeometryModifier_BezierCurve", "LineStyleGeometryModifier");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(
+      dapi, "LineStyleGeometryMod_BezierCurve", "LineStyleGeometryMod");
+  api_def_struct_ui_text(sapi,
                          "Bezier Curve",
                          "Replace stroke backbone geometry by a Bezier curve approximation of the "
                          "original backbone geometry");
-  rna_def_geometry_modifier(srna);
+  api_def_geometry_mod(sapi);
 
-  prop = RNA_def_property(srna, "error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "error");
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "error");
+  api_def_prop_ui_text(prop,
                            "Error",
                            "Maximum distance allowed between the new Bezier curve and the "
                            "original backbone geometry");
