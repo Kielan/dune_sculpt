@@ -928,11 +928,11 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Period", "Period of the noise");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "seed");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Seed", "Seed for the noise generation");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "seed");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Seed", "Seed for the noise generation");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(brna, "LineStyleColorModifier_CreaseAngle", "LineStyleColorModifier");
   RNA_def_struct_ui_text(
