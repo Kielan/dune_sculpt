@@ -943,7 +943,7 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   prop = api_def_prop(sapi, "angle_min", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "min_angle");
   api_def_prop_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = api_def_prop(sapi, "angle_max", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "max_angle");
@@ -964,23 +964,23 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   prop = api_def_prop(sapi, "curvature_max", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "max_curvature");
   api_def_prop_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   /* alpha transparency modifiers */
-  srna = api_def_struct(dapi, "LineStyleAlphaMod", "LineStyleModifier");
+  srna = api_def_struct(dapi, "LineStyleAlphaMod", "LineStyleMod");
   api_def_struct_stype(sapi, "LineStyleMod");
-  api_def_struct_refine_fn(sapi, "api_LineStyle_alpha_modifier_refine");
-  api_def_struct_path_fn(sapi, "api_LineStyle_alpha_modifier_path");
+  api_def_struct_refine_fn(sapi, "api_LineStyle_alpha_mod_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_alpha_mod_path");
   api_def_struct_ui_text(
-      sapu, "Line Style Alpha Modifier", "Base type to define alpha transparency modifiers");
+      sapu, "Line Style Alpha Modifier", "Base type to define alpha transparency mod");
 
-  sapi = api_def_struct(dapi, "LineStyleAlphaModifier_AlongStroke", "LineStyleAlphaModifier");
+  sapi = api_def_struct(dapi, "LineStyleAlphaMod_AlongStroke", "LineStyleAlphaMod");
   api_def_struct_ui_text(sapi, "Along Stroke", "Change alpha transparency along stroke");
   sapi_def_alpha_mod(sapi);
   api_def_mod_curve_common(sapi, false, false);
 
   sapi = api_def_struct(
-      dapi, "LineStyleAlphaMod_DistanceFromCamera", "LineStyleAlphaModifier");
+      dapi, "LineStyleAlphaMod_DistanceFromCamera", "LineStyleAlphaMod");
   api_def_struct_ui_text(sapi,
                          "Distance from Camera",
                          "Change alpha transparency based on the distance from the camera");
@@ -988,47 +988,47 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_mod_curve_common(sapi, true, false);
 
   sapi = api_def_struct(
-      dapi, "LineStyleAlphaMod_DistanceFromObject", "LineStyleAlphaModifier");
+      dapi, "LineStyleAlphaMod_DistanceFromObject", "LineStyleAlphaMod");
   api_def_struct_ui_text(sapi,
                          "Distance from Object",
                          "Change alpha transparency based on the distance from an object");
   api_def_alpha_mod(sapi);
   api_def_mod_curve_common(sapi, true, false);
 
-  prop = api_def_prop(sapi, "target", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "target", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "target");
   api_def_prop_struct_type(prop, "Object");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Target", "Target object from which the distance is measured");
-  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Material", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(dapi, "LineStyleModMaterial", "LineStyleAlphaMod");
+  api_def_struct_ui_text(
       srna, "Material", "Change alpha transparency based on a material attribute");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_material_common(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  api_def_alpha_mod(sapi);
+  api_def_mod_material_common(sapi);
+  api_def_mod_curve_common(sapi, false, false);
 
-  srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Tangent", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(
-      srna, "Tangent", "Alpha transparency based on the direction of the stroke");
+  sapi = api_def_struct(dapi, "LineStyleAlphaMod_Tangent", "LineStyleAlphaMod");
+  api_def_struct_ui_text(
+      sapi, "Tangent", "Alpha transparency based on the direction of the stroke");
   api_def_alpha_mod(sapi);
   api_def_mod_curve_common(srna, false, false);
 
-  sapi = api_def_struct(dapi, "LineStyleAlphaModifier_Noise", "LineStyleAlphaModifier");
+  sapi = api_def_struct(dapi, "LineStyleAlphaMod_Noise", "LineStyleAlphaModifier");
   api_def_struct_ui_text(sapi, "Noise", "Alpha transparency based on random noise");
   api_def_alpha_mod(sapi);
   api_def_mod_curve_common(sapi, false, false);
 
-  prop = RNA_def_property(srna, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "amplitude");
-  RNA_def_property_ui_text(prop, "Amplitude", "Amplitude of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "period", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "period");
-  RNA_def_property_ui_text(prop, "Period", "Period of the noise");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "period", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "period");
+  api_def_prop_ui_text(prop, "Period", "Period of the noise");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
   prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_sdna(prop, NULL, "seed");
@@ -1066,17 +1066,17 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = RNA_def_property(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_curvature");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_property_float_sdna(prop, NULL, "max_curvature");
+  api_def_property_range(prop, 0.0f, 10000.0f);
+  api_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
+  api_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   /* line thickness modifiers */
-  srna = RNA_def_struct(brna, "LineStyleThicknessModifier", "LineStyleModifier");
-  RNA_def_struct_sdna(srna, "LineStyleModifier");
-  RNA_def_struct_refine_func(srna, "rna_LineStyle_thickness_modifier_refine");
-  RNA_def_struct_path_func(srna, "rna_LineStyle_thickness_modifier_path");
-  RNA_def_struct_ui_text(
+  srna = api_def_struct(dapi, "LineStyleThicknessModifier", "LineStyleModifier");
+  api_def_struct_stype(sapi, "LineStyleMod");
+  api_def_struct_refine_fn(sapi, "spi_LineStyle_thickness_modifier_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_thickness_modifier_path");
+  api_def_struct_ui_text(
       srna, "Line Style Thickness Modifier", "Base type to define line thickness modifiers");
 
   srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Tangent", "LineStyleThicknessModifier");
