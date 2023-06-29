@@ -1195,23 +1195,23 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Min Thickness", "Minimum thickness");
   RNA_def_property_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Max Thickness", "Maximum thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "curvature_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_curvature");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Min Curvature", "Minimum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "curvature_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_curvature");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Min Curvature", "Minimum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_curvature");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "max_curvature");
+  api_def_property_range(prop, 0.0f, 10000.0f);
+  api_def_property_ui_text(prop, "Max Curvature", "Maximum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(
       brna, "LineStyleThicknessModifier_CreaseAngle", "LineStyleThicknessModifier");
