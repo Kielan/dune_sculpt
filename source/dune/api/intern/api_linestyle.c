@@ -1142,20 +1142,20 @@ static void api_def_linestyle_mods(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Orientation", "Angle of the main direction");
   RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "min_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(
       prop,
       "Min Thickness",
       "Minimum thickness in the direction perpendicular to the main direction");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "max_thickness");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Max Thickness", "Maximum thickness in the main direction");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "max_thickness");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Max Thickness", "Maximum thickness in the main direction");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(brna, "LineStyleThicknessModifier_Noise", "LineStyleThicknessModifier");
   RNA_def_struct_ui_text(srna, "Noise", "Line thickness based on random noise");
