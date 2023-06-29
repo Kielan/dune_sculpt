@@ -1036,34 +1036,34 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Seed", "Seed for the noise generation");
   RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleAlphaModifier_CreaseAngle", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(
-      srna, "Crease Angle", "Alpha transparency based on the angle between two adjacent faces");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  sapi = api_def_struct(dapi, "LineStyleAlphaModifier_CreaseAngle", "LineStyleAlphaModifier");
+  api_def_struct_ui_text(
+       sapi, "Crease Angle", "Alpha transparency based on the angle between two adjacent faces");
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, false, false);
 
-  prop = RNA_def_property(srna, "angle_min", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "min_angle");
-  RNA_def_property_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle_min", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "min_angle");
+  api_def_prop_ui_text(prop, "Min Angle", "Minimum angle to modify thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  prop = RNA_def_property(srna, "angle_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "max_angle");
-  RNA_def_property_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "angle_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "max_angle");
+  api_def_prop_ui_text(prop, "Max Angle", "Maximum angle to modify thickness");
+  api_def_prop_update(prop, NC_LINESTYLE, "api_LineStyle_update");
 
-  srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Curvature_3D", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "LineStyleAlphaMod_Curvature_3D", "LineStyleAlphaMod");
+  api_def_struct_ui_text(sapi,
                          "Curvature 3D",
                          "Alpha transparency based on the radial curvature of 3D mesh surfaces");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, false, false);
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, false, false);
 
-  prop = RNA_def_property(srna, "curvature_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "min_curvature");
-  RNA_def_property_range(prop, 0.0f, 10000.0f);
-  RNA_def_property_ui_text(prop, "Min Curvature", "Minimum Curvature");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(srna, "curvature_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "min_curvature");
+  api_def_prop_range(prop, 0.0f, 10000.0f);
+  api_def_prop_ui_text(prop, "Min Curvature", "Minimum Curvature");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   prop = RNA_def_property(srna, "curvature_max", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "max_curvature");
