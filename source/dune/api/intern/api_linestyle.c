@@ -903,23 +903,23 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_mod_material_common(sapi);
   api_def_mod_color_ramp_common(sapi, false);
 
-  prop = api_def_prop(sapi, "use_ramp", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flags", LS_MODIFIER_USE_RAMP);
+  prop = api_def_prop(sapi, "use_ramp", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_MOD_USE_RAMP);
   api_def_prop_ui_text(prop, "Ramp", "Use color ramp to map the BW average into an RGB color");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   sapi = api_def_struct(dapi, "LineStyleColorMod_Tangent", "LineStyleColorModifier");
   api_def_struct_ui_text(sapi, "Tangent", "Change line color based on the direction of a stroke");
   api_def_color_mod(sapi);
-  api_def_mod_color_ramp_common(srna, false);
+  api_def_mod_color_ramp_common(sapi, false);
 
-  srna = RNA_def_struct(brna, "LineStyleColorModifier_Noise", "LineStyleColorModifier");
-  RNA_def_struct_ui_text(srna, "Noise", "Change line color based on random noise");
-  rna_def_color_modifier(srna);
-  rna_def_modifier_color_ramp_common(srna, false);
+  sapi = api_def_struct(dapi, "LineStyleColorModifier_Noise", "LineStyleColorModifier");
+  api_def_struct_ui_text(sapi, "Noise", "Change line color based on random noise");
+  api_def_color_mod(sapi);
+  api_def_mod_color_ramp_common(sapi, false);
 
   prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "amplitude");
+  api_def_prop_float_stype(prop, NULL, "amplitude");
   api_def_prop_ui_text(prop, "Amplitude", "Amplitude of the noise");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
