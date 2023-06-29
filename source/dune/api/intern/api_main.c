@@ -1,29 +1,22 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_path_util.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_global.h"
-#  include "BKE_main.h"
-#  include "BKE_mesh.h"
+#  include "dune_global.h"
+#  include "dune_main.h"
+#  include "dune_mesh.h"
 
-/* all the list begin functions are added manually here, Main is not in SDNA */
-
-static bool rna_Main_use_autopack_get(PointerRNA *UNUSED(ptr))
+/* all the list begin functions are added manually here, Main is not in stype */
+static bool api_Main_use_autopack_get(PointerRNA *UNUSED(ptr))
 {
   if (G.fileflags & G_FILE_AUTOPACK) {
     return 1;
@@ -32,7 +25,7 @@ static bool rna_Main_use_autopack_get(PointerRNA *UNUSED(ptr))
   return 0;
 }
 
-static void rna_Main_use_autopack_set(PointerRNA *UNUSED(ptr), bool value)
+static void api_Main_use_autopack_set(ApiPtr *UNUSED(ptr), bool value)
 {
   if (value) {
     G.fileflags |= G_FILE_AUTOPACK;
@@ -42,7 +35,7 @@ static void rna_Main_use_autopack_set(PointerRNA *UNUSED(ptr), bool value)
   }
 }
 
-static bool rna_Main_is_saved_get(PointerRNA *ptr)
+static bool api_Main_is_saved_get(ApiPtr *ptr)
 {
   const Main *bmain = (Main *)ptr->data;
   return (bmain->filepath[0] != '\0');
