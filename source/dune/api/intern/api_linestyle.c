@@ -759,29 +759,29 @@ static void api_def_mod_curve_common(ApiStruct *sapi, bool range, bool value)
   api_def_prop_ui_text(prop, "Mapping", "Select the mapping type");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = RNA_def_property(srna, "invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LS_MODIFIER_INVERT);
-  RNA_def_property_ui_text(prop, "Invert", "Invert the fade-out direction of the linear mapping");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "invert", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LS_MODIFIER_INVERT);
+  api_def_prop_ui_text(prop, "Invert", "Invert the fade-out direction of the linear mapping");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-  prop = api_def_prop(srna, "curve", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "curve", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve");
   api_def_prop_struct_type(prop, "CurveMapping");
   api_def_prop_ui_text(prop, "Curve", "Curve used for the curve mapping");
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   if (range) {
-    prop = RNA_def_property(srna, "range_min", PROP_FLOAT, PROP_DISTANCE);
-    RNA_def_property_float_sdna(prop, NULL, "range_min");
-    RNA_def_property_ui_text(
+    prop = api_def_prop(sapi, "range_min", PROP_FLOAT, PROP_DISTANCE);
+    api_def_prop_float_stype(prop, NULL, "range_min");
+    api_def_prop_ui_text(
         prop, "Range Min", "Lower bound of the input range the mapping is applied");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
-    prop = RNA_def_property(srna, "range_max", PROP_FLOAT, PROP_DISTANCE);
-    RNA_def_property_float_sdna(prop, NULL, "range_max");
-    RNA_def_property_ui_text(
+    prop = api_def_prop(sapi, "range_max", PROP_FLOAT, PROP_DISTANCE);
+    api_def_prop_float_stype(prop, NULL, "range_max");
+    api_def_prop_ui_text(
         prop, "Range Max", "Upper bound of the input range the mapping is applied");
-    RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+    api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
   }
 
   if (value) {
@@ -967,41 +967,40 @@ static void api_def_linestyle_modifiers(DuneApi *dapi)
   api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   /* alpha transparency modifiers */
-
-  srna = RNA_def_struct(brna, "LineStyleAlphaMod", "LineStyleModifier");
-  RNA_def_struct_sdna(srna, "LineStyleMod");
-  api_def_struct_refine_func(sapi, "api_LineStyle_alpha_modifier_refine");
-  api_def_struct_path_func(sapi, "api_LineStyle_alpha_modifier_path");
+  srna = api_def_struct(dapi, "LineStyleAlphaMod", "LineStyleModifier");
+  api_def_struct_stype(sapi, "LineStyleMod");
+  api_def_struct_refine_fn(sapi, "api_LineStyle_alpha_modifier_refine");
+  api_def_struct_path_fn(sapi, "api_LineStyle_alpha_modifier_path");
   api_def_struct_ui_text(
-      srna, "Line Style Alpha Modifier", "Base type to define alpha transparency modifiers");
+      sapu, "Line Style Alpha Modifier", "Base type to define alpha transparency modifiers");
 
-  srna = api_def_struct(dapi, "LineStyleAlphaModifier_AlongStroke", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(sapi, "Along Stroke", "Change alpha transparency along stroke");
-  rna_def_alpha_modifier(sapi);
-  rna_def_modifier_curve_common(sapi, false, false);
+  sapi = api_def_struct(dapi, "LineStyleAlphaModifier_AlongStroke", "LineStyleAlphaModifier");
+  api_def_struct_ui_text(sapi, "Along Stroke", "Change alpha transparency along stroke");
+  sapi_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, false, false);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleAlphaModifier_DistanceFromCamera", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(
+      dapi, "LineStyleAlphaMod_DistanceFromCamera", "LineStyleAlphaModifier");
+  api_def_struct_ui_text(sapi,
                          "Distance from Camera",
                          "Change alpha transparency based on the distance from the camera");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, true, false);
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, true, false);
 
-  srna = RNA_def_struct(
-      brna, "LineStyleAlphaModifier_DistanceFromObject", "LineStyleAlphaModifier");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(
+      dapi, "LineStyleAlphaMod_DistanceFromObject", "LineStyleAlphaModifier");
+  api_def_struct_ui_text(sapi,
                          "Distance from Object",
                          "Change alpha transparency based on the distance from an object");
-  rna_def_alpha_modifier(srna);
-  rna_def_modifier_curve_common(srna, true, false);
+  api_def_alpha_mod(sapi);
+  api_def_mod_curve_common(sapi, true, false);
 
-  prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "target");
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Target", "Target object from which the distance is measured");
-  RNA_def_property_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
+  prop = api_def_prop(sapi, "target", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "target");
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Target", "Target object from which the distance is measured");
+  api_def_prop_update(prop, NC_LINESTYLE, "rna_LineStyle_update");
 
   srna = RNA_def_struct(brna, "LineStyleAlphaModifier_Material", "LineStyleAlphaModifier");
   RNA_def_struct_ui_text(
