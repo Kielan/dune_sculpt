@@ -37,75 +37,75 @@ static void api_Main_use_autopack_set(ApiPtr *UNUSED(ptr), bool value)
 
 static bool api_Main_is_saved_get(ApiPtr *ptr)
 {
-  const Main *bmain = (Main *)ptr->data;
-  return (bmain->filepath[0] != '\0');
+  const Main *main = (Main *)ptr->data;
+  return (main->filepath[0] != '\0');
 }
 
-static bool rna_Main_is_dirty_get(PointerRNA *ptr)
+static bool api_Main_is_dirty_get(ApiPtr *ptr)
 {
-  /* XXX, not totally nice to do it this way, should store in main ? */
-  Main *bmain = (Main *)ptr->data;
+  /* not totally nice to do it this way, should store in main ? */
+  Main *main = (Main *)ptr->data;
   wmWindowManager *wm;
-  if ((wm = bmain->wm.first)) {
+  if ((wm = main->wm.first)) {
     return !wm->file_saved;
   }
 
   return true;
 }
 
-static void rna_Main_filepath_get(PointerRNA *ptr, char *value)
+static void api_Main_filepath_get(ApiPtr *ptr, char *value)
 {
-  Main *bmain = (Main *)ptr->data;
-  BLI_strncpy(value, bmain->filepath, sizeof(bmain->filepath));
+  Main *main = (Main *)ptr->data;
+  lib_strncpy(value, main->filepath, sizeof(main->filepath));
 }
 
-static int rna_Main_filepath_length(PointerRNA *ptr)
+static int api_Main_filepath_length(ApiPtr *ptr)
 {
-  Main *bmain = (Main *)ptr->data;
-  return strlen(bmain->filepath);
+  Main *main = (Main *)ptr->data;
+  return strlen(main->filepath);
 }
 
 #  if 0
-static void rna_Main_filepath_set(PointerRNA *ptr, const char *value)
+static void api_Main_filepath_set(ApiPtr *ptr, const char *value)
 {
-  Main *bmain = (Main *)ptr->data;
-  STRNCPY(bmain->filepath, value);
+  Main *main = (Main *)ptr->data;
+  STRNCPY(main->filepath, value);
 }
 #  endif
 
-#  define RNA_MAIN_LISTBASE_FUNCS_DEF(_listbase_name) \
-    static void rna_Main_##_listbase_name##_begin(CollectionPropertyIterator *iter, \
-                                                  PointerRNA *ptr) \
-    { \
-      rna_iterator_listbase_begin(iter, &((Main *)ptr->data)->_listbase_name, NULL); \
+#  define API_MAIN_LIST_FNS_DEF(_list_name) \
+    static void api_Main_##_list_name##_begin(CollectionPropIter *iter, \
+                                              ApiPtr *ptr) \
+  
+      api_iter_list_begin(iter, &((Main *)ptr->data)->_list_name, NULL); \
     }
 
-RNA_MAIN_LISTBASE_FUNCS_DEF(actions)
-RNA_MAIN_LISTBASE_FUNCS_DEF(armatures)
-RNA_MAIN_LISTBASE_FUNCS_DEF(brushes)
-RNA_MAIN_LISTBASE_FUNCS_DEF(cachefiles)
-RNA_MAIN_LISTBASE_FUNCS_DEF(cameras)
-RNA_MAIN_LISTBASE_FUNCS_DEF(collections)
-RNA_MAIN_LISTBASE_FUNCS_DEF(curves)
-RNA_MAIN_LISTBASE_FUNCS_DEF(fonts)
-RNA_MAIN_LISTBASE_FUNCS_DEF(gpencils)
+API_MAIN_LIST_FNS_DEF(actions)
+API_MAIN_LIST_FNS_DEF(armatures)
+API_MAIN_LIST_FNS_DEF(brushes)
+API_MAIN_LIST_FNS_DEF(cachefiles)
+API_MAIN_LIST_FNS_DEF(cameras)
+API_MAIN_LIST_FNS_DEF(collections)
+API_MAIN_LIST_FNS_DEF(curves)
+API_MAIN_LIST_FNS_DEF(fonts)
+API_MAIN_LIST_FNS_DEF(pens)
 #  ifdef WITH_NEW_CURVES_TYPE
-RNA_MAIN_LISTBASE_FUNCS_DEF(hair_curves)
+API_MAIN_LIST_FNS_DEF(hair_curves)
 #  endif
-RNA_MAIN_LISTBASE_FUNCS_DEF(images)
-RNA_MAIN_LISTBASE_FUNCS_DEF(lattices)
-RNA_MAIN_LISTBASE_FUNCS_DEF(libraries)
-RNA_MAIN_LISTBASE_FUNCS_DEF(lightprobes)
-RNA_MAIN_LISTBASE_FUNCS_DEF(lights)
-RNA_MAIN_LISTBASE_FUNCS_DEF(linestyles)
-RNA_MAIN_LISTBASE_FUNCS_DEF(masks)
-RNA_MAIN_LISTBASE_FNS_DEF(materials)
-RNA_MAIN_LISTBASE_FNS_DEF(meshes)
-RNA_MAIN_LISTBASE_FNS_DEF(metaballs)
-RNA_MAIN_LISTBASE_FNS_DEF(movieclips)
-RNA_MAIN_LISTBASE_FNS_DEF(nodetrees)
+API_MAIN_LIST_FNS_DEF(images)
+API_MAIN_LIST_FNS_DEF(lattices)
+API_MAIN_LIST_FNS_DEF(libs)
+API_MAIN_LIST_FNS_DEF(lightprobes)
+API_MAIN_LIST_FNS_DEF(lights)
+API_MAIN_LIST_FNS_DEF(linestyles)
+API_MAIN_LIST_FNS_DEF(masks)
+RNA_MAIN_LIST_FNS_DEF(materials)
+RNA_MAIN_LIST_FNS_DEF(meshes)
+RNA_MAIN_LIST_FNS_DEF(metaballs)
+RNA_MAIN_LIST_FNS_DEF(movieclips)
+RNA_MAIN_LIST_FNS_DEF(nodetrees)
 RNA_MAIN_LISTBASE_FNS_DEF(objects)
-RNA_MAIN_LISTBASE_FNS_DEF(paintcurves)
+RNA_MAIN_LIST_FNS_DEF(paintcurves)
 RNA_MAIN_LISTBASE_FNS_DEF(palettes)
 RNA_MAIN_LISTBASE_FNS_DEF(particles)
 API_MAIN_LISTBASE_FNS_DEF(pointclouds)
