@@ -138,8 +138,8 @@ static void api_Main_version_get(ApiPtr *ptr, int *value)
 
 static ApiPtr api_Test_test_get(ApiPtr *ptr)
 {
-  PointerRNA ret = *ptr;
-  ret.type = &RNA_Test;
+  ApiPtr ret = *ptr;
+  ret.type = &Api_Test;
 
   return ret;
 }
@@ -149,293 +149,291 @@ static ApiPtr api_Test_test_get(ApiPtr *ptr)
 #else
 
 /* local convenience types */
-typedef void(CollectionDefFunc)(struct BlenderRNA *brna, struct PropertyRNA *cprop);
+typedef void(CollectionDefFn)(struct DuneApi *dapi, struct ApiProp *cprop);
 
 typedef struct MainCollectionDef {
-  const char *identifier;
+  const char *id;
   const char *type;
   const char *iter_begin;
   const char *name;
   const char *description;
-  CollectionDefFunc *func;
+  CollectionDefFn *fb;
 } MainCollectionDef;
 
-void RNA_def_main(BlenderRNA *brna)
+void api_def_main(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  CollectionDefFunc *func;
+  ApiStruct *sapi;
+  ApiPrip *prop;
+  CollectionDefFn fn;
 
   /* plural must match idtypes in readblenentry.c */
   MainCollectionDef lists[] = {
       {"cameras",
        "Camera",
-       "rna_Main_cameras_begin",
+       "api_Main_cameras_begin",
        "Cameras",
        "Camera data-blocks",
-       RNA_def_main_cameras},
+       api_def_main_cameras},
       {"scenes",
        "Scene",
-       "rna_Main_scenes_begin",
+       "api_Main_scenes_begin",
        "Scenes",
        "Scene data-blocks",
-       RNA_def_main_scenes},
+       api_def_main_scenes},
       {"objects",
        "Object",
-       "rna_Main_objects_begin",
+       "api_Main_objects_begin",
        "Objects",
        "Object data-blocks",
-       RNA_def_main_objects},
+       api_def_main_objects},
       {"materials",
        "Material",
-       "rna_Main_materials_begin",
+       "api_Main_materials_begin",
        "Materials",
        "Material data-blocks",
-       RNA_def_main_materials},
+       api_def_main_materials},
       {"node_groups",
        "NodeTree",
-       "rna_Main_nodetrees_begin",
+       "api_Main_nodetrees_begin",
        "Node Groups",
        "Node group data-blocks",
-       RNA_def_main_node_groups},
+       api_def_main_node_groups},
       {"meshes",
        "Mesh",
-       "rna_Main_meshes_begin",
+       "api_Main_meshes_begin",
        "Meshes",
        "Mesh data-blocks",
-       RNA_def_main_meshes},
+       api_def_main_meshes},
       {"lights",
        "Light",
-       "rna_Main_lights_begin",
+       "api_Main_lights_begin",
        "Lights",
        "Light data-blocks",
-       RNA_def_main_lights},
-      {"libraries",
-       "Library",
-       "rna_Main_libraries_begin",
-       "Libraries",
-       "Library data-blocks",
-       RNA_def_main_libraries},
+       api_def_main_lights},
+      {"libs",
+       "Lib",
+       "api_Main_libs_begin",
+       "Libs",
+       "Lib data-blocks",
+       api_def_main_libs},
       {"screens",
        "Screen",
-       "rna_Main_screens_begin",
+       "api_Main_screens_begin",
        "Screens",
        "Screen data-blocks",
-       RNA_def_main_screens},
+       api_def_main_screens},
       {"window_managers",
        "WindowManager",
        "rna_Main_wm_begin",
        "Window Managers",
        "Window manager data-blocks",
-       RNA_def_main_window_managers},
+       api_def_main_window_managers},
       {"images",
        "Image",
-       "rna_Main_images_begin",
+       "api_Main_images_begin",
        "Images",
        "Image data-blocks",
-       RNA_def_main_images},
+       api_def_main_images},
       {"lattices",
        "Lattice",
-       "rna_Main_lattices_begin",
+       "api_Main_lattices_begin",
        "Lattices",
        "Lattice data-blocks",
-       RNA_def_main_lattices},
+       api_def_main_lattices},
       {"curves",
        "Curve",
        "rna_Main_curves_begin",
        "Curves",
        "Curve data-blocks",
-       RNA_def_main_curves},
+       api_def_main_curves},
       {"metaballs",
        "MetaBall",
-       "rna_Main_metaballs_begin",
+       "api_Main_metaballs_begin",
        "Metaballs",
        "Metaball data-blocks",
-       RNA_def_main_metaballs},
+       api_def_main_metaballs},
       {"fonts",
        "VectorFont",
-       "rna_Main_fonts_begin",
+       "api_Main_fonts_begin",
        "Vector Fonts",
        "Vector font data-blocks",
-       RNA_def_main_fonts},
+       api_def_main_fonts},
       {"textures",
        "Texture",
        "rna_Main_textures_begin",
        "Textures",
        "Texture data-blocks",
-       RNA_def_main_textures},
+       api_def_main_textures},
       {"brushes",
        "Brush",
-       "rna_Main_brushes_begin",
+       "api_Main_brushes_begin",
        "Brushes",
        "Brush data-blocks",
-       RNA_def_main_brushes},
+       api_def_main_brushes},
       {"worlds",
        "World",
-       "rna_Main_worlds_begin",
+       "api_Main_worlds_begin",
        "Worlds",
        "World data-blocks",
-       RNA_def_main_worlds},
+       api_def_main_worlds},
       {"collections",
        "Collection",
-       "rna_Main_collections_begin",
+       "api_Main_collections_begin",
        "Collections",
        "Collection data-blocks",
-       RNA_def_main_collections},
+       api_def_main_collections},
       {"shape_keys",
        "Key",
-       "rna_Main_shapekeys_begin",
+       "api_Main_shapekeys_begin",
        "Shape Keys",
        "Shape Key data-blocks",
        NULL},
-      {"texts", "Text", "rna_Main_texts_begin", "Texts", "Text data-blocks", RNA_def_main_texts},
+      {"texts", "Text", "api_Main_texts_begin", "Texts", "Text data-blocks", RNA_def_main_texts},
       {"speakers",
        "Speaker",
-       "rna_Main_speakers_begin",
+       "api_Main_speakers_begin",
        "Speakers",
        "Speaker data-blocks",
-       RNA_def_main_speakers},
+       api_def_main_speakers},
       {"sounds",
        "Sound",
-       "rna_Main_sounds_begin",
+       "api_Main_sounds_begin",
        "Sounds",
        "Sound data-blocks",
-       RNA_def_main_sounds},
+       api_def_main_sounds},
       {"armatures",
        "Armature",
-       "rna_Main_armatures_begin",
+       "api_Main_armatures_begin",
        "Armatures",
        "Armature data-blocks",
-       RNA_def_main_armatures},
+       api_def_main_armatures},
       {"actions",
        "Action",
-       "rna_Main_actions_begin",
+       "api_Main_actions_begin",
        "Actions",
        "Action data-blocks",
-       RNA_def_main_actions},
+       api_def_main_actions},
       {"particles",
        "ParticleSettings",
-       "rna_Main_particles_begin",
+       "api_Main_particles_begin",
        "Particles",
        "Particle data-blocks",
-       RNA_def_main_particles},
+       api_def_main_particles},
       {"palettes",
        "Palette",
-       "rna_Main_palettes_begin",
+       "api_Main_palettes_begin",
        "Palettes",
        "Palette data-blocks",
-       RNA_def_main_palettes},
-      {"grease_pencils",
-       "GreasePencil",
-       "rna_Main_gpencils_begin",
-       "Grease Pencil",
-       "Grease Pencil data-blocks",
-       RNA_def_main_gpencil},
+       api_def_main_palettes},
+      {"pen",
+       "ePen",
+       "api_Main_pen_begin",
+       "Pen",
+       "Pen data-blocks",
+       api_def_main_pen},
       {"movieclips",
        "MovieClip",
-       "rna_Main_movieclips_begin",
+       "api_Main_movieclips_begin",
        "Movie Clips",
        "Movie Clip data-blocks",
-       RNA_def_main_movieclips},
+       api_def_main_movieclips},
       {"masks", "Mask", "rna_Main_masks_begin", "Masks", "Masks data-blocks", RNA_def_main_masks},
       {"linestyles",
        "FreestyleLineStyle",
        "rna_Main_linestyles_begin",
        "Line Styles",
        "Line Style data-blocks",
-       RNA_def_main_linestyles},
+       api_def_main_linestyles},
       {"cache_files",
        "CacheFile",
        "rna_Main_cachefiles_begin",
        "Cache Files",
        "Cache Files data-blocks",
-       RNA_def_main_cachefiles},
+       api_def_main_cachefiles},
       {"paint_curves",
        "PaintCurve",
-       "rna_Main_paintcurves_begin",
+       "api_Main_paintcurves_begin",
        "Paint Curves",
        "Paint Curves data-blocks",
-       RNA_def_main_paintcurves},
+       api_def_main_paintcurves},
       {"workspaces",
        "WorkSpace",
-       "rna_Main_workspaces_begin",
+       "api_Main_workspaces_begin",
        "Workspaces",
        "Workspace data-blocks",
-       RNA_def_main_workspaces},
+       api_def_main_workspaces},
       {"lightprobes",
        "LightProbe",
-       "rna_Main_lightprobes_begin",
+       "api_Main_lightprobes_begin",
        "Light Probes",
        "Light Probe data-blocks",
-       RNA_def_main_lightprobes},
+       api_def_main_lightprobes},
 #  ifdef WITH_NEW_CURVES_TYPE
-      /**
-       * \note The name `hair_curves` is chosen to be different than `curves`,
-       * but they are generic curve data-blocks, not just for hair.
-       */
+      /** The name `hair_curves` is chosen to be different than `curves`,
+       * but they are generic curve data-blocks, not just for hair. */
       {"hair_curves",
        "Curves",
-       "rna_Main_hair_curves_begin",
+       "api_Main_hair_curves_begin",
        "Hair Curves",
        "Hair curve data-blocks",
-       RNA_def_main_hair_curves},
+       api_def_main_hair_curves},
 #  endif
       {"pointclouds",
        "PointCloud",
-       "rna_Main_pointclouds_begin",
+       "api_Main_pointclouds_begin",
        "Point Clouds",
        "Point cloud data-blocks",
-       RNA_def_main_pointclouds},
+       api_def_main_pointclouds},
       {"volumes",
        "Volume",
-       "rna_Main_volumes_begin",
+       "api_Main_volumes_begin",
        "Volumes",
        "Volume data-blocks",
-       RNA_def_main_volumes},
+       api_def_main_volumes},
 #  ifdef WITH_SIMULATION_DATABLOCK
       {"simulations",
        "Simulation",
        "rna_Main_simulations_begin",
        "Simulations",
        "Simulation data-blocks",
-       RNA_def_main_simulations},
+       api_def_main_simulations},
 #  endif
       {NULL, NULL, NULL, NULL, NULL, NULL},
   };
 
   int i;
 
-  srna = RNA_def_struct(brna, "BlendData", NULL);
-  RNA_def_struct_ui_text(srna,
-                         "Blend-File Data",
+  sapi = api_def_struct(dapi, "DuneData", NULL);
+  api_def_struct_ui_text(sapi,
+                         "Dune-File Data",
                          "Main data structure representing a .blend file and all its data-blocks");
-  RNA_def_struct_ui_icon(srna, ICON_BLENDER);
+  api_def_struct_ui_icon(sapi, ICON_DUNE);
 
-  prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_maxlength(prop, FILE_MAX);
-  RNA_def_property_string_funcs(
-      prop, "rna_Main_filepath_get", "rna_Main_filepath_length", "rna_Main_filepath_set");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Filename", "Path to the .blend file");
+  prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_maxlength(prop, FILE_MAX);
+  api_def_prop_string_fns(
+      prop, "api_Main_filepath_get", "rna_Main_filepath_length", "rna_Main_filepath_set");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Filename", "Path to the .blend file");
 
-  prop = RNA_def_property(srna, "is_dirty", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Main_is_dirty_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_dirty", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Main_is_dirty_get", NULL);
+  api_def_prop_ui_text(
       prop, "File Has Unsaved Changes", "Have recent edits been saved to disk");
 
-  prop = RNA_def_property(srna, "is_saved", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Main_is_saved_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_saved", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Main_is_saved_get", NULL);
+  api_def_prop_ui_text(
       prop, "File is Saved", "Has the current session been saved to disk as a .blend file");
 
-  prop = RNA_def_property(srna, "use_autopack", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_Main_use_autopack_get", "rna_Main_use_autopack_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_autopack", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_Main_use_autopack_get", "rna_Main_use_autopack_set");
+  api_def_prop_ui_text(
       prop, "Use Auto-Pack", "Automatically pack all external data into .blend file");
 
-  prop = RNA_def_int_vector(srna,
+  prop = api_def_int_vector(sapi,
                             "version",
                             3,
                             NULL,
@@ -445,42 +443,42 @@ void RNA_def_main(BlenderRNA *brna)
                             "File format version the .blend file was saved with",
                             0,
                             INT_MAX);
-  RNA_def_property_int_funcs(prop, "rna_Main_version_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_THICK_WRAP);
+  api_def_prop_int_fns(prop, "api_Main_version_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_THICK_WRAP);
 
   for (i = 0; lists[i].name; i++) {
-    prop = RNA_def_property(srna, lists[i].identifier, PROP_COLLECTION, PROP_NONE);
-    RNA_def_property_struct_type(prop, lists[i].type);
-    RNA_def_property_collection_funcs(prop,
-                                      lists[i].iter_begin,
-                                      "rna_iterator_listbase_next",
-                                      "rna_iterator_listbase_end",
-                                      "rna_iterator_listbase_get",
-                                      NULL,
-                                      NULL,
-                                      NULL,
-                                      NULL);
-    RNA_def_property_ui_text(prop, lists[i].name, lists[i].description);
+    prop = api_def_prop(srna, lists[i].id, PROP_COLLECTION, PROP_NONE);
+    api_def_prop_struct_type(prop, lists[i].type);
+    api_def_prop_collection_fn(prop,
+                                lists[i].iter_begin,
+                                "api_iter_list_next",
+                                "api_iter_list_end",
+                                "api_iter_list_get",
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
+    api_def_prop_ui_text(prop, lists[i].name, lists[i].description);
 
-    /* collection functions */
-    func = lists[i].func;
-    if (func) {
-      func(brna, prop);
+    /* collection fns */
+    fn = lists[i].fn;
+    if (fn) {
+      fn(dapi, prop);
     }
   }
 
-  RNA_api_main(srna);
+  api_main(sapi);
 
 #  ifdef UNIT_TEST
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
-  prop = RNA_def_property(srna, "test", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Test");
-  RNA_def_property_pointer_funcs(prop, "rna_Test_test_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "test", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Test");
+  api_def_prop_ptr_fns(prop, "api_Test_test_get", NULL, NULL, NULL);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 
 #  endif
 }
