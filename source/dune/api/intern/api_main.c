@@ -99,21 +99,21 @@ API_MAIN_LIST_FNS_DEF(lightprobes)
 API_MAIN_LIST_FNS_DEF(lights)
 API_MAIN_LIST_FNS_DEF(linestyles)
 API_MAIN_LIST_FNS_DEF(masks)
-RNA_MAIN_LIST_FNS_DEF(materials)
-RNA_MAIN_LIST_FNS_DEF(meshes)
-RNA_MAIN_LIST_FNS_DEF(metaballs)
-RNA_MAIN_LIST_FNS_DEF(movieclips)
-RNA_MAIN_LIST_FNS_DEF(nodetrees)
-RNA_MAIN_LISTBASE_FNS_DEF(objects)
-RNA_MAIN_LIST_FNS_DEF(paintcurves)
-RNA_MAIN_LISTBASE_FNS_DEF(palettes)
-RNA_MAIN_LISTBASE_FNS_DEF(particles)
-API_MAIN_LISTBASE_FNS_DEF(pointclouds)
-API_MAIN_LISTBASE_FNS_DEF(scenes)
-API_MAIN_LISTBASE_FNS_DEF(screens)
-API_MAIN_LISTBASE_FNS_DEF(shapekeys)
+API_MAIN_LIST_FNS_DEF(materials)
+API_MAIN_LIST_FNS_DEF(meshes)
+API_MAIN_LIST_FNS_DEF(metaballs)
+API_MAIN_LIST_FNS_DEF(movieclips)
+API_MAIN_LIST_FNS_DEF(nodetrees)
+API_MAIN_LISTBASE_FNS_DEF(objects)
+API_MAIN_LIST_FNS_DEF(paintcurves)
+API_MAIN_LIST_FNS_DEF(palettes)
+RNA_MAIN_LIST_FNS_DEF(particles)
+API_MAIN_LIST_FNS_DEF(pointclouds)
+API_MAIN_LIST_FNS_DEF(scenes)
+API_MAIN_LIST_FNS_DEF(screens)
+API_MAIN_LIST_FNS_DEF(shapekeys)
 #  ifdef WITH_SIMULATION_DATABLOCK
-RNA_MAIN_LISTBASE_FUNCS_DEF(simulations)
+API_MAIN_LIST_FNS_DEF(simulations)
 #  endif
 API_MAIN_LIST_FNS_DEF(sounds)
 API_MAIN_LIST_FNS_DEF(speakers)
@@ -124,19 +124,19 @@ API_MAIN_LIST_FNS_DEF(wm)
 API_MAIN_LIST_FNS_DEF(workspaces)
 API_MAIN_LIST_FNS_DEF(worlds)
 
-#  undef RNA_MAIN_LISTBASE_FUNCS_DEF
+#  undef API_MAIN_LIST_FNS_DEF
 
-static void rna_Main_version_get(PointerRNA *ptr, int *value)
+static void api_Main_version_get(ApiPtr *ptr, int *value)
 {
-  Main *bmain = (Main *)ptr->data;
-  value[0] = bmain->versionfile / 100;
-  value[1] = bmain->versionfile % 100;
-  value[2] = bmain->subversionfile;
+  Main *main = (Main *)ptr->data;
+  value[0] = main->versionfile / 100;
+  value[1] = main->versionfile % 100;
+  value[2] =main->subversionfile;
 }
 
 #  ifdef UNIT_TEST
 
-static PointerRNA rna_Test_test_get(PointerRNA *ptr)
+static ApiPtr api_Test_test_get(ApiPtr *ptr)
 {
   PointerRNA ret = *ptr;
   ret.type = &RNA_Test;
