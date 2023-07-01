@@ -628,15 +628,15 @@ static ParticleSettings *api_Main_particles_new(Main *main, const char *name)
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
 
-  ParticleSettings *part = BKE_particlesettings_add(bmain, safe_name);
+  ParticleSettings *part = new_particlesettings_add(bmain, safe_name);
   id_us_min(&part->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return part;
 }
 
-static Palette *api_Main_palettes_new(Main *bmain, const char *name)
+static Palette *api_Main_palettes_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
@@ -738,15 +738,15 @@ static PenData *api_Main_pens_new(Main *main, const char *name)
 }
 
 #  ifdef WITH_NEW_CURVES_TYPE
-static Curves *api_Main_hair_curves_new(Main *bmain, const char *name)
+static Curves *api_Main_hair_curves_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
 
-  Curves *curves = dune_curves_add(bmain, safe_name);
+  Curves *curves = dune_curves_add(main, safe_name);
   id_us_min(&curves->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return curves;
 }
@@ -755,25 +755,25 @@ static Curves *api_Main_hair_curves_new(Main *bmain, const char *name)
 static PointCloud *api_Main_pointclouds_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  PointCloud *pointcloud = BKE_pointcloud_add(bmain, safe_name);
+  PointCloud *pointcloud = dune_pointcloud_add(main, safe_name);
   id_us_min(&pointcloud->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return pointcloud;
 }
 
-static Volume *rna_Main_volumes_new(Main *bmain, const char *name)
+static Volume *api_Main_volumes_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Volume *volume = BKE_volume_add(bmain, safe_name);
+  Volume *volume = dune_volume_add(main, safe_name);
   id_us_min(&volume->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return volume;
 }
