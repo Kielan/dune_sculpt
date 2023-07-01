@@ -879,67 +879,67 @@ void api_def_main_cameras(DuneApi *dapi, ApiProp *cprop)
   fn = api_def_fn(sapi, "new", "api_Main_cameras_new");
   api_def_fn_ui_description(fn, "Add a new camera to the main database");
   parm = api_def_string(fn, "name", "Camera", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "camera", "Camera", "", "New camera data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "camera", "Camera", "", "New camera data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a camera from the current blendfile");
-  parm = RNA_def_pointer(func, "camera", "Camera", "", "Camera to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(func,
+  fn = api_def_fn(sapi, "remove", "api_Main_id_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a camera from the current dunefile");
+  parm = api_def_ptr(fn, "camera", "Camera", "", "Camera to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(fn,
                   "do_unlink",
                   true,
                   "",
                   "Unlink all usages of this camera before deleting it "
                   "(WARNING: will also delete objects instancing that camera data)");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this camera");
-  RNA_def_boolean(
+  api_def_bool(fn,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this camera");
+  api_def_bool(
       func, "do_ui_user", true, "", "Make sure interface does not reference this camera");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_cameras_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_cameras_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_scenes(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_scenes(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataScenes");
-  srna = RNA_def_struct(brna, "BlendDataScenes", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Scenes", "Collection of scenes");
+  api_def_prop_sapi(cprop, "BlendDataScenes");
+  sapi = api_def_struct(dapi, "BlendDataScenes", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Scenes", "Collection of scenes");
 
-  func = RNA_def_function(srna, "new", "rna_Main_scenes_new");
-  RNA_def_function_ui_description(func, "Add a new scene to the main database");
-  parm = RNA_def_string(func, "name", "Scene", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_scenes_new");
+  api_def_fn_ui_description(fn, "Add a new scene to the main database");
+  parm = api_def_string(fn, "name", "Scene", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "New scene data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "scene", "Scene", "", "New scene data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_scenes_remove");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT | FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a scene from the current blendfile");
-  parm = RNA_def_pointer(func, "scene", "Scene", "", "Scene to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(
-      func, "do_unlink", true, "", "Unlink all usages of this scene before deleting it");
+  fn = api_def_fn(sapi, "remove", "api_Main_scenes_remove");
+  api_def_fn_flag(fn, FN_USE_CXT | FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a scene from the current blendfile");
+  parm = api_def_ptr(fn, "scene", "Scene", "", "Scene to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(
+      fn, "do_unlink", true, "", "Unlink all usages of this scene before deleting it");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_scenes_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_scenes_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
 void RNA_def_main_objects(BlenderRNA *brna, PropertyRNA *cprop)
