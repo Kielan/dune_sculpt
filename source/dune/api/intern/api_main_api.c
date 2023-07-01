@@ -305,12 +305,12 @@ static Mesh *api_Main_meshes_new(Main *main, const char *name)
   return me;
 }
 
-/* copied from Mesh_getFromObject and adapted to RNA interface */
-static Mesh *rna_Main_meshes_new_from_object(Main *bmain,
+/* copied from Mesh_getFromObject and adapted to api interface */
+static Mesh *api_Main_meshes_new_from_object(Main *main,
                                              ReportList *reports,
                                              Object *object,
                                              bool preserve_all_data_layers,
-                                             Depsgraph *depsgraph)
+                                             Graph *graph)
 {
   switch (object->type) {
     case OB_FONT:
@@ -332,12 +332,12 @@ static Mesh *rna_Main_meshes_new_from_object(Main *bmain,
   return mesh;
 }
 
-static Light *api_Main_lights_new(Main *bmain, const char *name, int type)
+static Light *api_Main_lights_new(Main *main, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
 
-  Light *lamp = dune_light_add(bmain, safe_name);
+  Light *lamp = dune_light_add(main, safe_name);
   lamp->type = type;
   id_us_min(&lamp->id);
 
@@ -360,7 +360,7 @@ static Image *api_Main_images_new(Main *main,
   api_idname_validate(name, safe_name);
 
   float color[4] = {0.0, 0.0, 0.0, 1.0};
-  Image *image = dune_image_add_generated(bmain,
+  Image *image = dune_image_add_generated(main,
                                          width,
                                          height,
                                          safe_name,
@@ -407,7 +407,7 @@ static Image *api_Main_images_load(Main *main,
   return ima;
 }
 
-static Lattice *api_Main_lattices_new(Main *bmain, const char *name)
+static Lattice *api_Main_lattices_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
@@ -545,25 +545,24 @@ static Speaker *api_Main_speakers_new(Main *main, const char *name)
   return speaker;
 }
 
-static bSound *rna_Main_sounds_load(Main *bmain, const char *name, bool check_existing)
+static Sound *dune_Main_sounds_load(Main *main, const char *name, bool check_existing)
 {
-  bSound *sound;
+  Sound *sound;
 
   if (check_existing) {
-    sound = BKE_sound_new_file_exists(bmain, name);
-  }
-  else {
-    sound = BKE_sound_new_file(bmain, name);
+    sound = dune_sound_new_file_exists(main, name);
+  } else {
+    sound = dune_sound_new_file(bmain, name);
   }
 
   id_us_min(&sound->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return sound;
 }
 
-static Text *rna_Main_texts_new(Main *bmain, const char *name)
+static Text *rna_Main_texts_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   rna_idname_validate(name, safe_name);
