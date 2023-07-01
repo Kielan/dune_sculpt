@@ -724,26 +724,26 @@ static LightProbe *api_Main_lightprobe_new(Main *bmain, const char *name, int ty
   return probe;
 }
 
-static bGPdata *rna_Main_gpencils_new(Main *bmain, const char *name)
+static PenData *api_Main_pens_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  bGPdata *gpd = BKE_gpencil_data_addnew(bmain, safe_name);
-  id_us_min(&gpd->id);
+  PenData *pd = dune_pen_data_addnew(main, safe_name);
+  id_us_min(&pd->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
-  return gpd;
+  return pd;
 }
 
 #  ifdef WITH_NEW_CURVES_TYPE
-static Curves *rna_Main_hair_curves_new(Main *bmain, const char *name)
+static Curves *api_Main_hair_curves_new(Main *bmain, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Curves *curves = BKE_curves_add(bmain, safe_name);
+  Curves *curves = dune_curves_add(bmain, safe_name);
   id_us_min(&curves->id);
 
   WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
@@ -752,7 +752,7 @@ static Curves *rna_Main_hair_curves_new(Main *bmain, const char *name)
 }
 #  endif
 
-static PointCloud *rna_Main_pointclouds_new(Main *bmain, const char *name)
+static PointCloud *api_Main_pointclouds_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   rna_idname_validate(name, safe_name);
