@@ -58,78 +58,78 @@
 #  include "graph_build.h"
 #  include "graph_query.h"
 
-#  include "DNA_armature_types.h"
-#  include "DNA_brush_types.h"
-#  include "DNA_camera_types.h"
-#  include "DNA_collection_types.h"
-#  include "DNA_curve_types.h"
-#  include "DNA_curves_types.h"
-#  include "DNA_gpencil_types.h"
-#  include "DNA_lattice_types.h"
-#  include "DNA_light_types.h"
-#  include "DNA_lightprobe_types.h"
-#  include "DNA_mask_types.h"
-#  include "DNA_material_types.h"
-#  include "DNA_mesh_types.h"
-#  include "DNA_meta_types.h"
-#  include "DNA_movieclip_types.h"
-#  include "DNA_node_types.h"
-#  include "DNA_particle_types.h"
-#  include "DNA_pointcloud_types.h"
-#  include "DNA_simulation_types.h"
-#  include "DNA_sound_types.h"
-#  include "DNA_speaker_types.h"
-#  include "DNA_text_types.h"
-#  include "DNA_texture_types.h"
-#  include "DNA_vfont_types.h"
-#  include "DNA_volume_types.h"
-#  include "DNA_world_types.h"
+#  include "types_armature.h"
+#  include "types_brush.h"
+#  include "types_camera.h"
+#  include "types_collectio.h"
+#  include "types_curve.h"
+#  include "types_curves.h"
+#  include "types_pen.h"
+#  include "types_lattice.h"
+#  include "types_light.h"
+#  include "types_lightprobe.h"
+#  include "types_mask.h"
+#  include "types_material_types.h"
+#  include "types_mesh_types.h"
+#  include "types_meta_types.h"
+#  include "types_movieclip_types.h"
+#  include "types_node_types.h"
+#  include "types_particle_types.h"
+#  include "types_pointcloud_.h"
+#  include "types_simulation.h"
+#  include "types_sound.h"
+#  include "types_speaker.h"
+#  include "types_text.h"
+#  include "types_texture.h"
+#  include "types_vfont.h"
+#  include "types_volume.h"
+#  include "types_world.h"
 
-#  include "ED_screen.h"
+#  include "ed_screen.h"
 
-#  include "BLT_translation.h"
+#  include "lang_translation.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static void rna_idname_validate(const char *name, char *r_name)
+static void api_idname_validate(const char *name, char *r_name)
 {
-  BLI_strncpy(r_name, name, MAX_ID_NAME - 2);
-  BLI_str_utf8_invalid_strip(r_name, strlen(r_name));
+  lib_strncpy(r_name, name, MAX_ID_NAME - 2);
+  lib_str_utf8_invalid_strip(r_name, strlen(r_name));
 }
 
-static void rna_Main_ID_remove(Main *bmain,
+static void api_Main_id_remove(Main *main,
                                ReportList *reports,
-                               PointerRNA *id_ptr,
+                               ApiPtr *id_ptr,
                                bool do_unlink,
                                bool do_id_user,
                                bool do_ui_user)
 {
-  ID *id = id_ptr->data;
+  Id *id = id_ptr->data;
   if (id->tag & LIB_TAG_NO_MAIN) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is outside of main database and can not be removed from it",
-                BKE_idtype_idcode_to_name(GS(id->name)),
+                dune_idtype_idcode_to_name(GS(id->name)),
                 id->name + 2);
     return;
   }
   if (do_unlink) {
-    BKE_id_delete(bmain, id);
-    RNA_POINTER_INVALIDATE(id_ptr);
+    dune_id_delete(main, id);
+    API_PTR_INVALIDATE(id_ptr);
     /* Force full redraw, mandatory to avoid crashes when running this from UI... */
-    WM_main_add_notifier(NC_WINDOW, NULL);
+    wm_main_add_notifier(NC_WINDOW, NULL);
   }
   else if (ID_REAL_USERS(id) <= 0) {
     const int flag = (do_id_user ? 0 : LIB_ID_FREE_NO_USER_REFCOUNT) |
                      (do_ui_user ? 0 : LIB_ID_FREE_NO_UI_USER);
-    /* Still using ID flags here, this is in-between commit anyway... */
-    BKE_id_free_ex(bmain, id, flag, true);
-    RNA_POINTER_INVALIDATE(id_ptr);
+    /* Still using id flags here, this is in-between commit anyway... */
+    dune_id_free_ex(main, id, flag, true);
+    API_PTR_INVALIDATE(id_ptr);
   }
   else {
     BKE_reportf(
