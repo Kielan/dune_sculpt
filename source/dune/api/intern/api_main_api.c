@@ -357,10 +357,10 @@ static Image *api_Main_images_new(Main *main,
                                   bool tiled)
 {
   char safe_name[MAX_ID_NAME - 2];
-  apo_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
   float color[4] = {0.0, 0.0, 0.0, 1.0};
-  Image *image = BKE_image_add_generated(bmain,
+  Image *image = dune_image_add_generated(bmain,
                                          width,
                                          height,
                                          safe_name,
@@ -373,11 +373,11 @@ static Image *api_Main_images_new(Main *main,
                                          tiled);
   id_us_min(&image->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return image;
 }
-static Image *rna_Main_images_load(Main *bmain,
+static Image *api_Main_images_load(Main *main,
                                    ReportList *reports,
                                    const char *filepath,
                                    bool check_existing)
@@ -386,67 +386,67 @@ static Image *rna_Main_images_load(Main *bmain,
 
   errno = 0;
   if (check_existing) {
-    ima = BKE_image_load_exists(bmain, filepath);
+    ima = dune_image_load_exists(bmain, filepath);
   }
   else {
-    ima = BKE_image_load(bmain, filepath);
+    ima = dune_image_load(bmain, filepath);
   }
 
   if (!ima) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Cannot read '%s': %s",
                 filepath,
                 errno ? strerror(errno) : TIP_("unsupported image format"));
   }
 
-  id_us_min((ID *)ima);
+  id_us_min((Id *)ima);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return ima;
 }
 
-static Lattice *rna_Main_lattices_new(Main *bmain, const char *name)
+static Lattice *api_Main_lattices_new(Main *bmain, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Lattice *lt = BKE_lattice_add(bmain, safe_name);
+  Lattice *lt = dune_lattice_add(main, safe_name);
   id_us_min(&lt->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return lt;
 }
 
-static Curve *rna_Main_curves_new(Main *bmain, const char *name, int type)
+static Curve *api_Main_curves_new(Main *main, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Curve *cu = BKE_curve_add(bmain, safe_name, type);
+  Curve *cu = dune_curve_add(main, safe_name, type);
   id_us_min(&cu->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return cu;
 }
 
-static MetaBall *rna_Main_metaballs_new(Main *bmain, const char *name)
+static MetaBall *api_Main_metaballs_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  MetaBall *mb = BKE_mball_add(bmain, safe_name);
+  MetaBall *mb = dune_mball_add(main, safe_name);
   id_us_min(&mb->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return mb;
 }
 
-static VFont *rna_Main_fonts_load(Main *bmain,
+static VFont *api_Main_fonts_load(Main *main,
                                   ReportList *reports,
                                   const char *filepath,
                                   bool check_existing)
@@ -455,43 +455,42 @@ static VFont *rna_Main_fonts_load(Main *bmain,
   errno = 0;
 
   if (check_existing) {
-    font = BKE_vfont_load_exists(bmain, filepath);
-  }
-  else {
-    font = BKE_vfont_load(bmain, filepath);
+    font = dune_vfont_load_exists(main, filepath);
+  } else {
+    font = dune_vfont_load(main, filepath);
   }
 
   if (!font) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Cannot read '%s': %s",
                 filepath,
                 errno ? strerror(errno) : TIP_("unsupported font format"));
   }
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return font;
 }
 
-static Tex *rna_Main_textures_new(Main *bmain, const char *name, int type)
+static Tex *api_Main_textures_new(Main *main, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Tex *tex = BKE_texture_add(bmain, safe_name);
-  BKE_texture_type_set(tex, type);
+  Tex *tex = dune_texture_add(main, safe_name);
+  dune_texture_type_set(tex, type);
   id_us_min(&tex->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return tex;
 }
 
-static Brush *rna_Main_brushes_new(Main *bmain, const char *name, int mode)
+static Brush *api_Main_brushes_new(Main *main, const char *name, int mode)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
   Brush *brush = BKE_brush_add(bmain, safe_name, mode);
   id_us_min(&brush->id);
