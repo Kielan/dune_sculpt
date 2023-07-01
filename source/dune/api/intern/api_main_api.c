@@ -565,16 +565,16 @@ static Sound *dune_Main_sounds_load(Main *main, const char *name, bool check_exi
 static Text *rna_Main_texts_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Text *text = BKE_text_add(bmain, safe_name);
+  Text *text = dune_text_add(main, safe_name);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return text;
 }
 
-static Text *rna_Main_texts_load(Main *bmain,
+static Text *api_Main_texts_load(Main *main,
                                  ReportList *reports,
                                  const char *filepath,
                                  bool is_internal)
@@ -582,27 +582,27 @@ static Text *rna_Main_texts_load(Main *bmain,
   Text *txt;
 
   errno = 0;
-  txt = BKE_text_load_ex(bmain, filepath, BKE_main_blendfile_path(bmain), is_internal);
+  txt = dune_text_load_ex(main, filepath, BKE_main_blendfile_path(bmain), is_internal);
 
   if (!txt) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Cannot read '%s': %s",
                 filepath,
                 errno ? strerror(errno) : TIP_("unable to load text"));
   }
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return txt;
 }
 
-static bArmature *rna_Main_armatures_new(Main *bmain, const char *name)
+static Armature *api_Main_armatures_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  bArmature *arm = BKE_armature_add(bmain, safe_name);
+  Armature *arm = dune_armature_add(bmain, safe_name);
   id_us_min(&arm->id);
 
   WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
