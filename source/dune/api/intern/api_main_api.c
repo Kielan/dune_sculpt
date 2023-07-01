@@ -605,28 +605,28 @@ static Armature *api_Main_armatures_new(Main *main, const char *name)
   Armature *arm = dune_armature_add(bmain, safe_name);
   id_us_min(&arm->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return arm;
 }
 
-static bAction *rna_Main_actions_new(Main *bmain, const char *name)
+static Action *api_Main_actions_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   rna_idname_validate(name, safe_name);
 
-  bAction *act = BKE_action_add(bmain, safe_name);
+  bAction *act = dune_action_add(main, safe_name);
   id_fake_user_clear(&act->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return act;
 }
 
-static ParticleSettings *rna_Main_particles_new(Main *bmain, const char *name)
+static ParticleSettings *api_Main_particles_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
   ParticleSettings *part = BKE_particlesettings_add(bmain, safe_name);
   id_us_min(&part->id);
@@ -636,20 +636,20 @@ static ParticleSettings *rna_Main_particles_new(Main *bmain, const char *name)
   return part;
 }
 
-static Palette *rna_Main_palettes_new(Main *bmain, const char *name)
+static Palette *api_Main_palettes_new(Main *bmain, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Palette *palette = BKE_palette_add(bmain, safe_name);
+  Palette *palette = dune_palette_add(main, safe_name);
   id_us_min(&palette->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return (Palette *)palette;
 }
 
-static MovieClip *rna_Main_movieclip_load(Main *bmain,
+static MovieClip *api_Main_movieclip_load(Main *main,
                                           ReportList *reports,
                                           const char *filepath,
                                           bool check_existing)
@@ -659,67 +659,67 @@ static MovieClip *rna_Main_movieclip_load(Main *bmain,
   errno = 0;
 
   if (check_existing) {
-    clip = BKE_movieclip_file_add_exists(bmain, filepath);
+    clip = dune_movieclip_file_add_exists(bmain, filepath);
   }
   else {
-    clip = BKE_movieclip_file_add(bmain, filepath);
+    clip = dune_movieclip_file_add(bmain, filepath);
   }
 
   if (clip != NULL) {
-    DEG_relations_tag_update(bmain);
+    graph_relations_tag_update(bmain);
   }
   else {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Cannot read '%s': %s",
                 filepath,
                 errno ? strerror(errno) : TIP_("unable to load movie clip"));
   }
 
-  id_us_min((ID *)clip);
+  id_us_min((Id *)clip);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return clip;
 }
 
-static Mask *rna_Main_mask_new(Main *bmain, const char *name)
+static Mask *api_Main_mask_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Mask *mask = BKE_mask_new(bmain, safe_name);
+  Mask *mask = dune_mask_new(main, safe_name);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return mask;
 }
 
-static FreestyleLineStyle *rna_Main_linestyles_new(Main *bmain, const char *name)
+static FreestyleLineStyle *api_Main_linestyles_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
   FreestyleLineStyle *linestyle = BKE_linestyle_new(bmain, safe_name);
   id_us_min(&linestyle->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return linestyle;
 }
 
-static LightProbe *rna_Main_lightprobe_new(Main *bmain, const char *name, int type)
+static LightProbe *api_Main_lightprobe_new(Main *bmain, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  LightProbe *probe = BKE_lightprobe_add(bmain, safe_name);
+  LightProbe *probe = dune_lightprobe_add(main, safe_name);
 
-  BKE_lightprobe_type_set(probe, type);
+  dune_lightprobe_type_set(probe, type);
 
   id_us_min(&probe->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return probe;
 }
