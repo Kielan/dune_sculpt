@@ -492,55 +492,55 @@ static Brush *api_Main_brushes_new(Main *main, const char *name, int mode)
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
 
-  Brush *brush = BKE_brush_add(bmain, safe_name, mode);
+  Brush *brush = dune_brush_add(main, safe_name, mode);
   id_us_min(&brush->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return brush;
 }
 
-static void rna_Main_brush_gpencil_data(Main *UNUSED(bmain), PointerRNA *id_ptr)
+static void api_Main_brush_pen_data(Main *UNUSED(main), ApiPtr *id_ptr)
 {
-  ID *id = id_ptr->data;
+  Id *id = id_ptr->data;
   Brush *brush = (Brush *)id;
-  BKE_brush_init_gpencil_settings(brush);
+  dune_brush_init_pen_settings(brush);
 }
 
-static World *rna_Main_worlds_new(Main *bmain, const char *name)
+static World *api_Main_worlds_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  World *world = BKE_world_add(bmain, safe_name);
+  World *world = dune_world_add(main, safe_name);
   id_us_min(&world->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return world;
 }
 
-static Collection *rna_Main_collections_new(Main *bmain, const char *name)
+static Collection *api_Main_collections_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Collection *collection = BKE_collection_add(bmain, NULL, safe_name);
+  Collection *collection = dune_collection_add(main, NULL, safe_name);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return collection;
 }
 
-static Speaker *rna_Main_speakers_new(Main *bmain, const char *name)
+static Speaker *api_Main_speakers_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Speaker *speaker = BKE_speaker_add(bmain, safe_name);
+  Speaker *speaker = dune_speaker_add(main, safe_name);
   id_us_min(&speaker->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return speaker;
 }
