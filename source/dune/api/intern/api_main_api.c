@@ -562,7 +562,7 @@ static Sound *dune_Main_sounds_load(Main *main, const char *name, bool check_exi
   return sound;
 }
 
-static Text *rna_Main_texts_new(Main *main, const char *name)
+static Text *api_Main_texts_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
   api_idname_validate(name, safe_name);
@@ -615,7 +615,7 @@ static Action *api_Main_actions_new(Main *main, const char *name)
   char safe_name[MAX_ID_NAME - 2];
   rna_idname_validate(name, safe_name);
 
-  bAction *act = dune_action_add(main, safe_name);
+  Action *act = dune_action_add(main, safe_name);
   id_fake_user_clear(&act->id);
 
   wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
@@ -942,16 +942,16 @@ void api_def_main_scenes(DuneApi *dapi, ApiProp *cprop)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_objects(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataObjects");
-  srna = RNA_def_struct(brna, "BlendDataObjects", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Objects", "Collection of objects");
+  RNA_def_prop_sapo(cprop, "BlendDataObjects");
+  srna = api_def_struct(dapi, "BlendDataObjects", NULL);
+  RNA_def_struct_stype(sapi, "Main");
+  RNA_def_struct_ui_text(sapi, "Main Objects", "Collection of objects");
 
   func = RNA_def_function(srna, "new", "rna_Main_objects_new");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
