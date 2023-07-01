@@ -16,7 +16,7 @@
 #  include "dune_mesh.h"
 
 /* all the list begin functions are added manually here, Main is not in stype */
-static bool api_Main_use_autopack_get(PointerRNA *UNUSED(ptr))
+static bool api_Main_use_autopack_get(ApiPtr *UNUSED(ptr))
 {
   if (G.fileflags & G_FILE_AUTOPACK) {
     return 1;
@@ -104,7 +104,7 @@ API_MAIN_LIST_FNS_DEF(meshes)
 API_MAIN_LIST_FNS_DEF(metaballs)
 API_MAIN_LIST_FNS_DEF(movieclips)
 API_MAIN_LIST_FNS_DEF(nodetrees)
-API_MAIN_LISTBASE_FNS_DEF(objects)
+API_MAIN_LIST_FNS_DEF(objects)
 API_MAIN_LIST_FNS_DEF(paintcurves)
 API_MAIN_LIST_FNS_DEF(palettes)
 RNA_MAIN_LIST_FNS_DEF(particles)
@@ -260,7 +260,7 @@ void api_def_main(DuneApi *dapi)
        api_def_main_fonts},
       {"textures",
        "Texture",
-       "rna_Main_textures_begin",
+       "api_Main_textures_begin",
        "Textures",
        "Texture data-blocks",
        api_def_main_textures},
@@ -393,7 +393,7 @@ void api_def_main(DuneApi *dapi)
 #  ifdef WITH_SIMULATION_DATABLOCK
       {"simulations",
        "Simulation",
-       "rna_Main_simulations_begin",
+       "api_Main_simulations_begin",
        "Simulations",
        "Simulation data-blocks",
        api_def_main_simulations},
@@ -448,7 +448,7 @@ void api_def_main(DuneApi *dapi)
   api_def_prop_flag(prop, PROP_THICK_WRAP);
 
   for (i = 0; lists[i].name; i++) {
-    prop = api_def_prop(srna, lists[i].id, PROP_COLLECTION, PROP_NONE);
+    prop = api_def_prop(sapi, lists[i].id, PROP_COLLECTION, PROP_NONE);
     api_def_prop_struct_type(prop, lists[i].type);
     api_def_prop_collection_fn(prop,
                                 lists[i].iter_begin,
