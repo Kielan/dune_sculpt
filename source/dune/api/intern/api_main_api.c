@@ -132,91 +132,91 @@ static void api_Main_id_remove(Main *main,
     API_PTR_INVALIDATE(id_ptr);
   }
   else {
-    BKE_reportf(
+    dune_reportf(
         reports,
         RPT_ERROR,
         "%s '%s' must have zero users to be removed, found %d (try with do_unlink=True parameter)",
-        BKE_idtype_idcode_to_name(GS(id->name)),
+        dune_idtype_idcode_to_name(GS(id->name)),
         id->name + 2,
         ID_REAL_USERS(id));
   }
 }
 
-static Camera *rna_Main_cameras_new(Main *bmain, const char *name)
+static Camera *api_Main_cameras_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  ID *id = BKE_camera_add(bmain, safe_name);
+  Id *id = dune_camera_add(main, safe_name);
   id_us_min(id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return (Camera *)id;
 }
 
-static Scene *rna_Main_scenes_new(Main *bmain, const char *name)
+static Scene *api_Main_scenes_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Scene *scene = BKE_scene_add(bmain, safe_name);
+  Scene *scene = dune_scene_add(main, safe_name);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return scene;
 }
-static void rna_Main_scenes_remove(
-    Main *bmain, bContext *C, ReportList *reports, PointerRNA *scene_ptr, bool do_unlink)
+static void api_Main_scenes_remove(
+    Main *main, Cxt *C, ReportList *reports, ApiPtr *scene_ptr, bool do_unlink)
 {
   /* don't call BKE_id_free(...) directly */
   Scene *scene = scene_ptr->data;
 
-  if (BKE_scene_can_be_removed(bmain, scene)) {
+  if (dune_scene_can_be_removed(main, scene)) {
     Scene *scene_new = scene->id.prev ? scene->id.prev : scene->id.next;
     if (do_unlink) {
-      wmWindow *win = CTX_wm_window(C);
+      wmWindow *win = cxt_wm_window(C);
 
-      if (WM_window_get_active_scene(win) == scene) {
+      if (wm_window_get_active_scene(win) == scene) {
 
 #  ifdef WITH_PYTHON
         BPy_BEGIN_ALLOW_THREADS;
 #  endif
 
-        WM_window_set_active_scene(bmain, C, win, scene_new);
+        wm_window_set_active_scene(bmain, C, win, scene_new);
 
 #  ifdef WITH_PYTHON
         BPy_END_ALLOW_THREADS;
 #  endif
       }
     }
-    rna_Main_ID_remove(bmain, reports, scene_ptr, do_unlink, true, true);
+    api_Main_id_remove(main, reports, scene_ptr, do_unlink, true, true);
   }
   else {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Scene '%s' is the last local one, cannot be removed",
                 scene->id.name + 2);
   }
 }
 
-static Object *rna_Main_objects_new(Main *bmain, ReportList *reports, const char *name, ID *data)
+static Object *api_Main_objects_new(Main *bmain, ReportList *reports, const char *name, ID *data)
 {
   if (data != NULL && (data->tag & LIB_TAG_NO_MAIN)) {
-    BKE_report(reports,
+    dune_report(reports,
                RPT_ERROR,
                "Can not create object in main database with an evaluated data data-block");
     return NULL;
   }
 
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
   Object *ob;
   int type = OB_EMPTY;
 
   if (data) {
-    type = BKE_object_obdata_to_type(data);
+    type = dune_object_obdata_to_type(data);
     if (type == -1) {
       const char *idname;
       if (RNA_enum_id_from_value(rna_enum_id_type_items, GS(data->name), &idname) == 0) {
