@@ -61,7 +61,7 @@
 #  include "types_armature.h"
 #  include "types_brush.h"
 #  include "types_camera.h"
-#  include "types_collectio.h"
+#  include "types_collection.h"
 #  include "types_curve.h"
 #  include "types_curves.h"
 #  include "types_pen.h"
@@ -69,12 +69,12 @@
 #  include "types_light.h"
 #  include "types_lightprobe.h"
 #  include "types_mask.h"
-#  include "types_material_types.h"
-#  include "types_mesh_types.h"
-#  include "types_meta_types.h"
-#  include "types_movieclip_types.h"
-#  include "types_node_types.h"
-#  include "types_particle_types.h"
+#  include "types_material.h"
+#  include "types_mesh.h"
+#  include "types_meta.h"
+#  include "types_movieclip.h"
+#  include "types_node.h"
+#  include "types_particle.h"
 #  include "types_pointcloud_.h"
 #  include "types_simulation.h"
 #  include "types_sound.h"
@@ -219,89 +219,88 @@ static Object *api_Main_objects_new(Main *bmain, ReportList *reports, const char
     type = dune_object_obdata_to_type(data);
     if (type == -1) {
       const char *idname;
-      if (RNA_enum_id_from_value(rna_enum_id_type_items, GS(data->name), &idname) == 0) {
+      if (api_enum_id_from_value(api_enum_id_type_items, GS(data->name), &idname) == 0) {
         idname = "UNKNOWN";
       }
 
-      BKE_reportf(reports, RPT_ERROR, "ID type '%s' is not valid for an object", idname);
+      dune_reportf(reports, RPT_ERROR, "id type '%s' is not valid for an object", idname);
       return NULL;
     }
 
     id_us_plus(data);
   }
 
-  ob = BKE_object_add_only_object(bmain, type, safe_name);
+  ob = dune_object_add_only_object(main, type, safe_name);
 
   ob->data = data;
-  BKE_object_materials_test(bmain, ob, ob->data);
+  dune_object_materials_test(main, ob, ob->data);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return ob;
 }
 
-static Material *rna_Main_materials_new(Main *bmain, const char *name)
+static Material *api_Main_materials_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  ID *id = (ID *)BKE_material_add(bmain, safe_name);
+  Id *id = (Id *)dune_material_add(main, safe_name);
   id_us_min(id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return (Material *)id;
 }
 
-static void rna_Main_materials_gpencil_data(Main *UNUSED(bmain), PointerRNA *id_ptr)
+static void api_Main_materials_pen_data(Main *UNUSED(main), ApiPtr *id_ptr)
 {
-  ID *id = id_ptr->data;
+  Id *id = id_ptr->data;
   Material *ma = (Material *)id;
-  BKE_gpencil_material_attr_init(ma);
+  dune_pen_material_attr_init(ma);
 }
 
-static void rna_Main_materials_gpencil_remove(Main *UNUSED(bmain), PointerRNA *id_ptr)
+static void api_Main_materials_pen_remove(Main *UNUSED(main), ApiPtr *id_ptr)
 {
-  ID *id = id_ptr->data;
+  Id *id = id_ptr->data;
   Material *ma = (Material *)id;
-  if (ma->gp_style) {
-    MEM_SAFE_FREE(ma->gp_style);
+  if (ma->pen_style) {
+    MEM_SAFE_FREE(ma->pen_style);
   }
 }
 
-static const EnumPropertyItem *rna_Main_nodetree_type_itemf(bContext *UNUSED(C),
-                                                            PointerRNA *UNUSED(ptr),
-                                                            PropertyRNA *UNUSED(prop),
-                                                            bool *r_free)
+static const EnumPropItem *api_Main_nodetree_type_itemf(Cxt *UNUSED(C),
+                                                        ApiPtr *UNUSED(ptr),
+                                                        ApiProp *UNUSED(prop),
+                                                        bool *r_free)
 {
-  return rna_node_tree_type_itemf(NULL, NULL, r_free);
+  return api_node_tree_type_itemf(NULL, NULL, r_free);
 }
-static struct bNodeTree *rna_Main_nodetree_new(Main *bmain, const char *name, int type)
+static struct NodeTree *api_Main_nodetree_new(Main *main, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  bNodeTreeType *typeinfo = rna_node_tree_type_from_enum(type);
+  NodeTreeType *typeinfo = api_node_tree_type_from_enum(type);
   if (typeinfo) {
-    bNodeTree *ntree = ntreeAddTree(bmain, safe_name, typeinfo->idname);
+    NodeTree *ntree = ntreeAddTree(main, safe_name, typeinfo->idname);
 
     id_us_min(&ntree->id);
     return ntree;
-  }
-  else {
+  } else {
     return NULL;
   }
 }
 
-static Mesh *rna_Main_meshes_new(Main *bmain, const char *name)
+static Mesh *api_Main_meshes_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Mesh *me = BKE_mesh_add(bmain, safe_name);
+  Mesh *me = dune_mesh_add(main, safe_name);
   id_us_min(&me->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return me;
 }
