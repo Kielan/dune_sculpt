@@ -779,106 +779,106 @@ static Volume *api_Main_volumes_new(Main *main, const char *name)
 }
 
 #  ifdef WITH_SIMULATION_DATABLOCK
-static Simulation *rna_Main_simulations_new(Main *bmain, const char *name)
+static Simulation *api_Main_simulations_new(Main *main, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Simulation *simulation = BKE_simulation_add(bmain, safe_name);
+  Simulation *simulation = dune_simulation_add(main, safe_name);
   id_us_min(&simulation->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return simulation;
 }
 #  endif
 
 /* tag functions, all the same */
-#  define RNA_MAIN_ID_TAG_FUNCS_DEF(_func_name, _listbase_name, _id_type) \
-    static void rna_Main_##_func_name##_tag(Main *bmain, bool value) \
+#  define API_MAIN_ID_TAG_FNS_DEF(_fn_name, _list_name, _id_type) \
+    static void api_Main_##_fn_name##_tag(Main *main, bool value) \
     { \
-      BKE_main_id_tag_listbase(&bmain->_listbase_name, LIB_TAG_DOIT, value); \
+      dune_main_id_tag_list(&main->_list_name, LIB_TAG_DOIT, value); \
     }
 
-RNA_MAIN_ID_TAG_FUNCS_DEF(cameras, cameras, ID_CA)
-RNA_MAIN_ID_TAG_FUNCS_DEF(scenes, scenes, ID_SCE)
-RNA_MAIN_ID_TAG_FUNCS_DEF(objects, objects, ID_OB)
-RNA_MAIN_ID_TAG_FUNCS_DEF(materials, materials, ID_MA)
-RNA_MAIN_ID_TAG_FUNCS_DEF(node_groups, nodetrees, ID_NT)
-RNA_MAIN_ID_TAG_FUNCS_DEF(meshes, meshes, ID_ME)
-RNA_MAIN_ID_TAG_FUNCS_DEF(lights, lights, ID_LA)
-RNA_MAIN_ID_TAG_FUNCS_DEF(libraries, libraries, ID_LI)
-RNA_MAIN_ID_TAG_FUNCS_DEF(screens, screens, ID_SCR)
-RNA_MAIN_ID_TAG_FUNCS_DEF(window_managers, wm, ID_WM)
-RNA_MAIN_ID_TAG_FUNCS_DEF(images, images, ID_IM)
-RNA_MAIN_ID_TAG_FUNCS_DEF(lattices, lattices, ID_LT)
-RNA_MAIN_ID_TAG_FUNCS_DEF(curves, curves, ID_CU_LEGACY)
-RNA_MAIN_ID_TAG_FUNCS_DEF(metaballs, metaballs, ID_MB)
-RNA_MAIN_ID_TAG_FUNCS_DEF(fonts, fonts, ID_VF)
-RNA_MAIN_ID_TAG_FUNCS_DEF(textures, textures, ID_TE)
-RNA_MAIN_ID_TAG_FUNCS_DEF(brushes, brushes, ID_BR)
-RNA_MAIN_ID_TAG_FUNCS_DEF(worlds, worlds, ID_WO)
-RNA_MAIN_ID_TAG_FUNCS_DEF(collections, collections, ID_GR)
-// RNA_MAIN_ID_TAG_FUNCS_DEF(shape_keys, key, ID_KE)
-RNA_MAIN_ID_TAG_FUNCS_DEF(texts, texts, ID_TXT)
-RNA_MAIN_ID_TAG_FUNCS_DEF(speakers, speakers, ID_SPK)
-RNA_MAIN_ID_TAG_FUNCS_DEF(sounds, sounds, ID_SO)
-RNA_MAIN_ID_TAG_FUNCS_DEF(armatures, armatures, ID_AR)
-RNA_MAIN_ID_TAG_FUNCS_DEF(actions, actions, ID_AC)
-RNA_MAIN_ID_TAG_FUNCS_DEF(particles, particles, ID_PA)
-RNA_MAIN_ID_TAG_FUNCS_DEF(palettes, palettes, ID_PAL)
-RNA_MAIN_ID_TAG_FUNCS_DEF(gpencils, gpencils, ID_GD)
-RNA_MAIN_ID_TAG_FUNCS_DEF(movieclips, movieclips, ID_MC)
-RNA_MAIN_ID_TAG_FUNCS_DEF(masks, masks, ID_MSK)
-RNA_MAIN_ID_TAG_FUNCS_DEF(linestyle, linestyles, ID_LS)
-RNA_MAIN_ID_TAG_FUNCS_DEF(cachefiles, cachefiles, ID_CF)
-RNA_MAIN_ID_TAG_FUNCS_DEF(paintcurves, paintcurves, ID_PC)
-RNA_MAIN_ID_TAG_FUNCS_DEF(workspaces, workspaces, ID_WS)
-RNA_MAIN_ID_TAG_FUNCS_DEF(lightprobes, lightprobes, ID_LP)
+API_MAIN_ID_TAG_FUNCS_DEF(cameras, cameras, ID_CA)
+API_MAIN_ID_TAG_FUNCS_DEF(scenes, scenes, ID_SCE)
+API_MAIN_ID_TAG_FUNCS_DEF(objects, objects, ID_OB)
+API_MAIN_ID_TAG_FUNCS_DEF(materials, materials, ID_MA)
+API_MAIN_ID_TAG_FUNCS_DEF(node_groups, nodetrees, ID_NT)
+API_MAIN_ID_TAG_FUNCS_DEF(meshes, meshes, ID_ME)
+API_MAIN_ID_TAG_FUNCS_DEF(lights, lights, ID_LA)
+API_MAIN_ID_TAG_FUNCS_DEF(libraries, libraries, ID_LI)
+API_MAIN_ID_TAG_FUNCS_DEF(screens, screens, ID_SCR)
+API_MAIN_ID_TAG_FUNCS_DEF(window_managers, wm, ID_WM)
+API_MAIN_ID_TAG_FUNCS_DEF(images, images, ID_IM)
+API_MAIN_ID_TAG_FUNCS_DEF(lattices, lattices, ID_LT)
+API_MAIN_ID_TAG_FUNCS_DEF(curves, curves, ID_CU_LEGACY)
+API_MAIN_ID_TAG_FUNCS_DEF(metaballs, metaballs, ID_MB)
+API_MAIN_ID_TAG_FUNCS_DEF(fonts, fonts, ID_VF)
+API_MAIN_ID_TAG_FUNCS_DEF(textures, textures, ID_TE)
+API_MAIN_ID_TAG_FUNCS_DEF(brushes, brushes, ID_BR)
+API_MAIN_ID_TAG_FUNCS_DEF(worlds, worlds, ID_WO)
+API_MAIN_ID_TAG_FUNCS_DEF(collections, collections, ID_GR)
+// API_MAIN_ID_TAG_FUNCS_DEF(shape_keys, key, ID_KE)
+API_MAIN_ID_TAG_FUNCS_DEF(texts, texts, ID_TXT)
+API_MAIN_ID_TAG_FUNCS_DEF(speakers, speakers, ID_SPK)
+API_MAIN_ID_TAG_FUNCS_DEF(sounds, sounds, ID_SO)
+API_MAIN_ID_TAG_FUNCS_DEF(armatures, armatures, ID_AR)
+API_MAIN_ID_TAG_FUNCS_DEF(actions, actions, ID_AC)
+API_MAIN_ID_TAG_FUNCS_DEF(particles, particles, ID_PA)
+API_MAIN_ID_TAG_FUNCS_DEF(palettes, palettes, ID_PAL)
+API_MAIN_ID_TAG_FUNCS_DEF(pen, pens, ID_GD)
+API_MAIN_ID_TAG_FUNCS_DEF(movieclips, movieclips, ID_MC)
+API_MAIN_ID_TAG_FNS_DEF(masks, masks, ID_MSK)
+API_MAIN_ID_TAG_FNS_DEF(linestyle, linestyles, ID_LS)
+API_MAIN_ID_TAG_FNS_DEF(cachefiles, cachefiles, ID_CF)
+API_MAIN_ID_TAG_FNS_DEF(paintcurves, paintcurves, ID_PC)
+API_MAIN_ID_TAG_FNS_DEF(workspaces, workspaces, ID_WS)
+API_MAIN_ID_TAG_FNS_DEF(lightprobes, lightprobes, ID_LP)
 #  ifdef WITH_NEW_CURVES_TYPE
-RNA_MAIN_ID_TAG_FUNCS_DEF(hair_curves, hair_curves, ID_CV)
+API_MAIN_ID_TAG_FUNCS_DEF(hair_curves, hair_curves, ID_CV)
 #  endif
-RNA_MAIN_ID_TAG_FUNCS_DEF(pointclouds, pointclouds, ID_PT)
-RNA_MAIN_ID_TAG_FUNCS_DEF(volumes, volumes, ID_VO)
+API_MAIN_ID_TAG_FNS_DEF(pointclouds, pointclouds, ID_PT)
+API_MAIN_ID_TAG_FNS_DEF(volumes, volumes, ID_VO)
 #  ifdef WITH_SIMULATION_DATABLOCK
-RNA_MAIN_ID_TAG_FUNCS_DEF(simulations, simulations, ID_SIM)
+API_MAIN_ID_TAG_FNS_DEF(simulations, simulations, ID_SIM)
 #  endif
 
-#  undef RNA_MAIN_ID_TAG_FUNCS_DEF
+#  undef API_MAIN_ID_TAG_FNS_DEF
 
 #else
 
-void RNA_api_main(StructRNA *UNUSED(srna))
+void api_main(ApiStruct *UNUSED(sapi))
 {
 #  if 0
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
   /* maybe we want to add functions in 'bpy.data' still?
    * for now they are all in collections bpy.data.images.new(...) */
-  func = RNA_def_function(srna, "add_image", "rna_Main_add_image");
-  RNA_def_function_ui_description(func, "Add a new image");
-  parm = RNA_def_string_file_path(func, "filepath", NULL, 0, "", "File path to load image from");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "image", "Image", "", "New image");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "add_image", "api_Main_add_image");
+  api_def_fn_ui_description(fn, "Add a new image");
+  parm = api_def_string_file_path(fn, "filepath", NULL, 0, "", "File path to load image from");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "image", "Image", "", "New image");
+  api_def_fn_return(fn, parm);
 #  endif
 }
 
-void RNA_def_main_cameras(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_cameras(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataCameras");
-  srna = RNA_def_struct(brna, "BlendDataCameras", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Cameras", "Collection of cameras");
+  api_def_prop_sapi(cprop, "BlendDataCameras");
+  sapi = api_def_struct(dapi, "BlendDataCameras", NULL);
+  api_def_struct_sdna(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Cameras", "Collection of cameras");
 
-  func = RNA_def_function(srna, "new", "rna_Main_cameras_new");
-  RNA_def_function_ui_description(func, "Add a new camera to the main database");
-  parm = RNA_def_string(func, "name", "Camera", 0, "", "New name for the data-block");
+  fn = api_def_fn(sapi, "new", "api_Main_cameras_new");
+  api_def_fn_ui_description(fn, "Add a new camera to the main database");
+  parm = api_def_string(fn, "name", "Camera", 0, "", "New name for the data-block");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   /* return type */
   parm = RNA_def_pointer(func, "camera", "Camera", "", "New camera data-block");
