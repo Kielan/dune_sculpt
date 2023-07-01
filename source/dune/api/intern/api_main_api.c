@@ -320,33 +320,33 @@ static Mesh *rna_Main_meshes_new_from_object(Main *bmain,
     case OB_MESH:
       break;
     default:
-      BKE_report(reports, RPT_ERROR, "Object does not have geometry data");
+      dune_report(reports, RPT_ERROR, "Object does not have geometry data");
       return NULL;
   }
 
-  Mesh *mesh = BKE_mesh_new_from_object_to_bmain(
-      bmain, depsgraph, object, preserve_all_data_layers);
+  Mesh *mesh = dune_mesh_new_from_object_to_bmain(
+      main, graph, object, preserve_all_data_layers);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return mesh;
 }
 
-static Light *rna_Main_lights_new(Main *bmain, const char *name, int type)
+static Light *api_Main_lights_new(Main *bmain, const char *name, int type)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  api_idname_validate(name, safe_name);
 
-  Light *lamp = BKE_light_add(bmain, safe_name);
+  Light *lamp = dune_light_add(bmain, safe_name);
   lamp->type = type;
   id_us_min(&lamp->id);
 
-  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+  wm_main_add_notifier(NC_ID | NA_ADDED, NULL);
 
   return lamp;
 }
 
-static Image *rna_Main_images_new(Main *bmain,
+static Image *api_Main_images_new(Main *main,
                                   const char *name,
                                   int width,
                                   int height,
@@ -357,7 +357,7 @@ static Image *rna_Main_images_new(Main *bmain,
                                   bool tiled)
 {
   char safe_name[MAX_ID_NAME - 2];
-  rna_idname_validate(name, safe_name);
+  apo_idname_validate(name, safe_name);
 
   float color[4] = {0.0, 0.0, 0.0, 1.0};
   Image *image = BKE_image_add_generated(bmain,
