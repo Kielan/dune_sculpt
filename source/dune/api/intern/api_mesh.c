@@ -791,14 +791,14 @@ static bool api_MeshVertColorLayer_active_get(PointerRNA *ptr)
   return api_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 0);
 }
 
-static void api_MeshVertColorLayer_active_render_set(PointerRNA *ptr, bool value)
+static void api_MeshVertColorLayer_active_render_set(ApiPtr *ptr, bool value)
 {
-  api_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 1);
+  api_CustomDataLayer_active_set(ptr, api_mesh_vdata(ptr), value, CD_PROP_COLOR, 1);
 }
 
-static void api_MeshVertColorLayer_active_set(PointerRNA *ptr, bool value)
+static void api_MeshVertColorLayer_active_set(ApiPtr *ptr, bool value)
 {
-  api_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 0);
+  api_CustomDataLayer_active_set(ptr, api_mesh_vdata(ptr), value, CD_PROP_COLOR, 0);
 }
 
 static int api_float_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
@@ -940,7 +940,6 @@ static int api_MeshSkinVertexLayer_data_length(PointerRNA *ptr)
 }
 
 /* End skin vertices */
-
 /* Vertex creases */
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(vertex_crease, vdata, CD_CREASE)
 
@@ -1281,35 +1280,35 @@ static int api_Mesh_vertex_normals_length(ApiPtr *ptr)
   return mesh->totvert;
 }
 
-static void rna_Mesh_poly_normals_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_poly_normals_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  const Mesh *mesh = rna_mesh(ptr);
-  const float(*normals)[3] = BKE_mesh_poly_normals_ensure(mesh);
-  rna_iterator_array_begin(iter, (void *)normals, sizeof(float[3]), mesh->totpoly, false, NULL);
+  const Mesh *mesh = api_mesh(ptr);
+  const float(*normals)[3] = dune_mesh_poly_normals_ensure(mesh);
+  api_iter_array_begin(iter, (void *)normals, sizeof(float[3]), mesh->totpoly, false, NULL);
 }
 
-static int rna_Mesh_poly_normals_length(PointerRNA *ptr)
+static int rna_Mesh_poly_normals_length(ApiPtr *ptr)
 {
   const Mesh *mesh = rna_mesh(ptr);
   return mesh->totpoly;
 }
 
-static char *rna_MeshUVLoop_path(PointerRNA *ptr)
+static char *api_MeshUVLoop_path(ApiPtr *ptr)
 {
-  return rna_LoopCustomData_data_path(ptr, "uv_layers", CD_MLOOPUV);
+  return api_LoopCustomData_data_path(ptr, "uv_layers", CD_MLOOPUV);
 }
 
-static char *rna_MeshLoopColorLayer_path(PointerRNA *ptr)
+static char *api_MeshLoopColorLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("vertex_colors[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("vertex_colors[\"%s\"]", name_esc);
 }
 
-static char *rna_MeshColor_path(PointerRNA *ptr)
+static char *api_MeshColor_path(PointerRNA *ptr)
 {
-  return rna_LoopCustomData_data_path(ptr, "vertex_colors", CD_MLOOPCOL);
+  return api_LoopCustomData_data_path(ptr, "vertex_colors", CD_MLOOPCOL);
 }
 
 static char *rna_MeshVertColorLayer_path(PointerRNA *ptr)
