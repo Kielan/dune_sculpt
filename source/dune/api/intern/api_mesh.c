@@ -274,81 +274,78 @@ static void rna_Mesh_update_facemask(Main *bmain, Scene *scene, PointerRNA *ptr)
     me->editflag &= ~ME_EDIT_PAINT_VERT_SEL;
   }
 
-  BKE_mesh_batch_cache_dirty_tag(me, BKE_MESH_BATCH_DIRTY_ALL);
+  dune_mesh_batch_cache_dirty_tag(me, DUNE_MESH_BATCH_DIRTY_ALL);
 
-  rna_Mesh_update_draw(bmain, scene, ptr);
+  api_Mesh_update_draw(main, scene, ptr);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Property get/set Callbacks
- * \{ */
+/** Property get/set Callbacks **/
 
-static void rna_MeshVertex_normal_get(PointerRNA *ptr, float *value)
+static void api_MeshVertex_normal_get(ApiPtr *ptr, float *value)
 {
   Mesh *mesh = rna_mesh(ptr);
-  const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(mesh);
+  const float(*vert_normals)[3] = dune_mesh_vertex_normals_ensure(mesh);
 
-  const int index = (MVert *)ptr->data - mesh->mvert;
-  BLI_assert(index >= 0);
-  BLI_assert(index < mesh->totvert);
+  const int index = (MeshVert *)ptr->data - mesh->mvert;
+  lib_assert(index >= 0);
+  lib_assert(index < mesh->totvert);
 
   copy_v3_v3(value, vert_normals[index]);
 }
 
-static void rna_MeshVertex_normal_set(PointerRNA *ptr, const float *value)
+static void api_MeshVertex_normal_set(ApiPtr *ptr, const float *value)
 {
-  Mesh *mesh = rna_mesh(ptr);
-  float(*vert_normals)[3] = BKE_mesh_vertex_normals_for_write(mesh);
+  Mesh *mesh = api_mesh(ptr);
+  float(*vert_normals)[3] = dune_mesh_vertex_normals_for_write(mesh);
 
-  const int index = (MVert *)ptr->data - mesh->mvert;
-  BLI_assert(index >= 0);
-  BLI_assert(index < mesh->totvert);
+  const int index = (MeshVert *)ptr->data - mesh->mvert;
+  lib_assert(index >= 0);
+  lib_assert(index < mesh->totvert);
 
   copy_v3_v3(vert_normals[index], value);
 }
 
-static float rna_MeshVertex_bevel_weight_get(PointerRNA *ptr)
+static float api_MeshVertex_bevel_weight_get(PointerRNA *ptr)
 {
-  MVert *mvert = (MVert *)ptr->data;
+  MeshVert *mvert = (MVert *)ptr->data;
   return mvert->bweight / 255.0f;
 }
 
-static void rna_MeshVertex_bevel_weight_set(PointerRNA *ptr, float value)
+static void api_MeshVertex_bevel_weight_set(ApiPtr *ptr, float value)
 {
-  MVert *mvert = (MVert *)ptr->data;
+  MeshVert *mvert = (MeshVert *)ptr->data;
   mvert->bweight = round_fl_to_uchar_clamp(value * 255.0f);
 }
 
-static float rna_MEdge_bevel_weight_get(PointerRNA *ptr)
+static float api_MeshEdge_bevel_weight_get(ApiPtr *ptr)
 {
-  MEdge *medge = (MEdge *)ptr->data;
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   return medge->bweight / 255.0f;
 }
 
-static void rna_MEdge_bevel_weight_set(PointerRNA *ptr, float value)
+static void api_MeshEdge_bevel_weight_set(ApiPtr *ptr, float value)
 {
-  MEdge *medge = (MEdge *)ptr->data;
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   medge->bweight = round_fl_to_uchar_clamp(value * 255.0f);
 }
 
-static float rna_MEdge_crease_get(PointerRNA *ptr)
+static float api_MeshEdge_crease_get(ApiPtr *ptr)
 {
-  MEdge *medge = (MEdge *)ptr->data;
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   return medge->crease / 255.0f;
 }
 
-static void rna_MEdge_crease_set(PointerRNA *ptr, float value)
+static void api_MeshEdge_crease_set(ApiPtr *ptr, float value)
 {
-  MEdge *medge = (MEdge *)ptr->data;
+  MEdge *medge = (MeshEdge *)ptr->data;
   medge->crease = round_fl_to_uchar_clamp(value * 255.0f);
 }
 
-static void rna_MeshLoop_normal_get(PointerRNA *ptr, float *values)
+static void api_MeshLoop_normal_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *ml = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoop *ml = (MeshLoop *)ptr->data;
   const float(*vec)[3] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_NORMAL);
 
   if (!vec) {
@@ -359,10 +356,10 @@ static void rna_MeshLoop_normal_get(PointerRNA *ptr, float *values)
   }
 }
 
-static void rna_MeshLoop_normal_set(PointerRNA *ptr, const float *values)
+static void api_MeshLoop_normal_set(PointerRNA *ptr, const float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *ml = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoop *ml = (MLoop *)ptr->data;
   float(*vec)[3] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_NORMAL);
 
   if (vec) {
@@ -370,10 +367,10 @@ static void rna_MeshLoop_normal_set(PointerRNA *ptr, const float *values)
   }
 }
 
-static void rna_MeshLoop_tangent_get(PointerRNA *ptr, float *values)
+static void api_MeshLoop_tangent_get(PointerRNA *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *ml = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoop *ml = (MLoop *)ptr->data;
   const float(*vec)[4] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_MLOOPTANGENT);
 
   if (!vec) {
