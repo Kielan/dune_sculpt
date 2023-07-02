@@ -1075,14 +1075,14 @@ void api_def_main_node_groups(DuneApi *dapi, ApiProp *cprop)
                   true,
                   "",
                   "Decrement user counter of all datablocks used by this node tree");
-  RNA_def_boolean(
-      func, "do_ui_user", true, "", "Make sure interface does not reference this node tree");
+  api_def_bool(
+      fn, "do_ui_user", true, "", "Make sure interface does not reference this node tree");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_node_groups_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "rna_Main_node_groups_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
-void RNA_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_meshes(DunApi *brna, PropertyRNA *cprop)
 {
   StructRNA *srna;
   FunctionRNA *func;
