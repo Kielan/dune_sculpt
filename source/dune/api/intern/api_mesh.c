@@ -1260,8 +1260,8 @@ static char *rna_LoopCustomData_data_path(PointerRNA *ptr, const char *collectio
       b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
       if (b >= 0 && b < totloop) {
         char name_esc[sizeof(cdl->name) * 2];
-        BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-        return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+        lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+        return lib_sprintfn("%s[\"%s\"].data[%d]", collection, name_esc, b);
       }
     }
   }
@@ -1269,14 +1269,14 @@ static char *rna_LoopCustomData_data_path(PointerRNA *ptr, const char *collectio
   return NULL;
 }
 
-static void rna_Mesh_vertex_normals_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_vertex_normals_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  const Mesh *mesh = rna_mesh(ptr);
-  const float(*normals)[3] = BKE_mesh_vertex_normals_ensure(mesh);
-  rna_iterator_array_begin(iter, (void *)normals, sizeof(float[3]), mesh->totvert, false, NULL);
+  const Mesh *mesh = api_mesh(ptr);
+  const float(*normals)[3] = dune_mesh_vertex_normals_ensure(mesh);
+  api_iter_array_begin(iter, (void *)normals, sizeof(float[3]), mesh->totvert, false, NULL);
 }
 
-static int rna_Mesh_vertex_normals_length(PointerRNA *ptr)
+static int api_Mesh_vertex_normals_length(ApiPtr *ptr)
 {
   const Mesh *mesh = rna_mesh(ptr);
   return mesh->totvert;
