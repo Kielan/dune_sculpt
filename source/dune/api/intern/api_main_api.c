@@ -1066,30 +1066,30 @@ void api_def_main_node_groups(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_fn_ui_description(fn, "Remove a node tree from the current blendfile");
   parm = apo_def_ptr(fn, "tree", "NodeTree", "", "Node tree to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(
-      func, "do_unlink", true, "", "Unlink all usages of this node tree before deleting it");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this node tree");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(
+      fn, "do_unlink", true, "", "Unlink all usages of this node tree before deleting it");
+  api_def_bool(fn,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this node tree");
   api_def_bool(
       fn, "do_ui_user", true, "", "Make sure interface does not reference this node tree");
 
-  fn = api_def_fn(sapi, "tag", "rna_Main_node_groups_tag");
+  fn = api_def_fn(sapi, "tag", "api_Main_node_groups_tag");
   parm = api_def_bool(fn, "value", 0, "Value", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
-void api_def_main_meshes(DunApi *brna, PropertyRNA *cprop)
+void api_def_main_meshes(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *func;
+  ApiProp *parm;
 
-  api_def_property_srna(cprop, "BlendDataMeshes");
-  sapi = RNA_def_struct(brna, "BlendDataMeshes", NULL);
+  api_def_prop_sapi(cprop, "BlendDataMeshes");
+  sapi = api_def_struct(brna, "BlendDataMeshes", NULL);
   api_def_struct_sdna(srna, "Main");
   RNA_def_struct_ui_text(srna, "Main Meshes", "Collection of meshes");
 
