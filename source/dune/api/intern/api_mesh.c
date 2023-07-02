@@ -1667,7 +1667,7 @@ static void api_def_mvert_group(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "VertexGroupElement", NULL);
-  spi_def_struct_stype(sapi, "MDeformWeight");
+  spi_def_struct_stype(sapi, "MeshDeformWeight");
   api_def_struct_path_fn(sapi, "api_VertexGroupElement_path");
   api_def_struct_ui_text(
       sapi, "Vertex Group Element", "Weight value of a vertex in a vertex group");
@@ -1679,56 +1679,56 @@ static void api_def_mvert_group(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "def_nr");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Group Index", "");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
   prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Weight", "Vertex Weight");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_weight");
+  RNA_def_property_update(prop, 0, "api_Mesh_update_data_edit_weight");
 }
 
-static void rna_def_mvert(BlenderRNA *brna)
+static void api_def_mvert(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MeshVertex", NULL);
-  RNA_def_struct_sdna(srna, "MVert");
-  RNA_def_struct_ui_text(srna, "Mesh Vertex", "Vertex in a Mesh data-block");
-  RNA_def_struct_path_func(srna, "rna_MeshVertex_path");
-  RNA_def_struct_ui_icon(srna, ICON_VERTEXSEL);
+  sapi = api_def_struct(dapi, "MeshVertex", NULL);
+  api_def_struct_stype(sapi, "MVert");
+  api_def_struct_ui_text(sapi, "Mesh Vertex", "Vertex in a Mesh data-block");
+  api_def_struct_path_fn(sapi, "api_MeshVertex_path");
+  api_def_struct_ui_icon(sapi, ICON_VERTEXSEL);
 
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
-  // RNA_def_property_float_sdna(prop, NULL, "no");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_float_funcs(
-      prop, "rna_MeshVertex_normal_get", "rna_MeshVertex_normal_set", NULL);
-  RNA_def_property_ui_text(prop, "Normal", "Vertex Normal");
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_DIRECTION);
+  // api_def_prop_float_sdna(prop, NULL, "no");
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_float_fns(
+      prop, "api_MeshVertex_normal_get", "api_MeshVertex_normal_set", NULL);
+  api_def_prop_ui_text(prop, "Normal", "Vertex Normal");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(srna, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Select", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_HIDE);
-  RNA_def_property_ui_text(prop, "Hide", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
+  api_def_prop_ui_text(prop, "Hide", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "bevel_weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_funcs(
-      prop, "rna_MeshVertex_bevel_weight_get", "rna_MeshVertex_bevel_weight_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bevel_weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_fns(
+      prop, "api_MeshVertex_bevel_weight_get", "api_MeshVertex_bevel_weight_set", NULL);
+  api_def_prop_ui_text(
       prop, "Bevel Weight", "Weight used by the Bevel modifier 'Only Vertices' option");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "groups", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(sapi, "groups", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
                                     "api_MeshVertex_groups_begin",
                                     "api_iter_array_next",
                                     "api_iter_array_end",
@@ -1741,9 +1741,9 @@ static void rna_def_mvert(BlenderRNA *brna)
   api_def_prop_ui_text(
       prop, "Groups", "Weights for the vertex groups this vertex is member of");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_int_fns(prop, "rna_MeshVertex_index_get", NULL, NULL);
+  prop = api_def_prop(srna, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "api_MeshVertex_index_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Index", "Index of this vertex");
 
   prop = api_def_prop(sapi, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
@@ -1759,42 +1759,42 @@ static void rna_def_mvert(BlenderRNA *brna)
 
 static void api_def_medge(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MeshEdge", NULL);
-  RNA_def_struct_sdna(srna, "MEdge");
-  RNA_def_struct_ui_text(srna, "Mesh Edge", "Edge in a Mesh data-block");
-  RNA_def_struct_path_func(srna, "rna_MeshEdge_path");
-  RNA_def_struct_ui_icon(srna, ICON_EDGESEL);
+  sapi = api_def_struct(dapi, "MeshEdge", NULL);
+  api_def_struct_stype(sapi, "MeshEdge");
+  api_def_struct_ui_text(sapi, "Mesh Edge", "Edge in a Mesh data-block");
+  api_def_struct_path_fn(sapi, "api_MeshEdge_path");
+  api_def_struct_ui_icon(sapi, ICON_EDGESEL);
 
-  prop = RNA_def_property(srna, "vertices", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "v1");
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Vertices", "Vertex indices");
+  prop = api_def_prop(sapi, "vertices", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "v1");
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Vertices", "Vertex indices");
   /* XXX allows creating invalid meshes */
 
-  prop = RNA_def_property(srna, "crease", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_funcs(prop, "rna_MEdge_crease_get", "rna_MEdge_crease_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "crease", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_fns(prop, "api_MEdge_crease_get", "rna_MEdge_crease_set", NULL);
+  api_def_prop_ui_text(
       prop, "Crease", "Weight used by the Subdivision Surface modifier for creasing");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "bevel_weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_funcs(
-      prop, "rna_MEdge_bevel_weight_get", "rna_MEdge_bevel_weight_set", NULL);
-  RNA_def_property_ui_text(prop, "Bevel Weight", "Weight used by the Bevel modifier");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "bevel_weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_fns(
+      prop, "api_MeshEdge_bevel_weight_get", "rna_MEdge_bevel_weight_set", NULL);
+  api_def_prop_ui_text(prop, "Bevel Weight", "Weight used by the Bevel modifier");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Select", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_HIDE);
-  RNA_def_property_ui_text(prop, "Hide", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "hide", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
+  api_def_prop_ui_text(prop, "Hide", "");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
   prop = RNA_def_property(srna, "use_seam", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_SEAM);
