@@ -1088,9 +1088,9 @@ void api_def_main_meshes(DunApi *brna, PropertyRNA *cprop)
   FunctionRNA *func;
   PropertyRNA *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataMeshes");
-  srna = RNA_def_struct(brna, "BlendDataMeshes", NULL);
-  RNA_def_struct_sdna(srna, "Main");
+  api_def_property_srna(cprop, "BlendDataMeshes");
+  sapi = RNA_def_struct(brna, "BlendDataMeshes", NULL);
+  api_def_struct_sdna(srna, "Main");
   RNA_def_struct_ui_text(srna, "Main Meshes", "Collection of meshes");
 
   func = RNA_def_function(srna, "new", "rna_Main_meshes_new");
