@@ -540,16 +540,16 @@ static void api_MeshVertex_groups_begin(CollectionPropertyIterator *iter, Pointe
     MeshDeformVert *dvert = me->dvert + (mvert - me->mvert);
 
     api_iter_array_begin(
-        iter, (void *)dvert->dw, sizeof(MDeformWeight), dvert->totweight, 0, NULL);
+        iter, (void *)dvert->dw, sizeof(MeshDeformWeight), dvert->totweight, 0, NULL);
   } else {
     api_iter_array_begin(iter, NULL, 0, 0, 0, NULL);
   }
 }
 
-static void api_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
+static void api_MeshVertex_undeformed_co_get(Apitr *ptr, float values[3])
 {
   Mesh *me = api_mesh(ptr);
-  MeshVert *mvert = (MVert *)ptr->data;
+  MeshVert *mvert = (MeshVert *)ptr->data;
   float(*orco)[3] = CustomData_get_layer(&me->vdata, CD_ORCO);
 
   if (orco) {
