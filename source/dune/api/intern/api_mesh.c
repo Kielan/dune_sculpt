@@ -778,47 +778,47 @@ static void api_MeshVertColorLayer_data_begin(CollectionPropertyIterator *iter, 
 
 static int api_MeshVertColorLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totvert;
 }
 
-static bool rna_MeshVertColorLayer_active_render_get(PointerRNA *ptr)
+static bool api_MeshVertColorLayer_active_render_get(PointerRNA *ptr)
 {
-  return rna_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 1);
+  return api_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 1);
 }
 
-static bool rna_MeshVertColorLayer_active_get(PointerRNA *ptr)
+static bool api_MeshVertColorLayer_active_get(PointerRNA *ptr)
 {
-  return rna_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 0);
+  return api_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 0);
 }
 
-static void rna_MeshVertColorLayer_active_render_set(PointerRNA *ptr, bool value)
+static void api_MeshVertColorLayer_active_render_set(PointerRNA *ptr, bool value)
 {
-  rna_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 1);
+  api_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 1);
 }
 
-static void rna_MeshVertColorLayer_active_set(PointerRNA *ptr, bool value)
+static void api_MeshVertColorLayer_active_set(PointerRNA *ptr, bool value)
 {
-  rna_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 0);
+  api_CustomDataLayer_active_set(ptr, rna_mesh_vdata(ptr), value, CD_PROP_COLOR, 0);
 }
 
-static int rna_float_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_float_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
   CustomDataLayer *layer = (CustomDataLayer *)data;
   return (layer->type != CD_PROP_FLOAT);
 }
 
-static void rna_Mesh_vertex_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_vertex_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  CustomData *vdata = rna_mesh_vdata(ptr);
-  rna_iterator_array_begin(iter,
-                           (void *)vdata->layers,
-                           sizeof(CustomDataLayer),
-                           vdata->totlayer,
-                           0,
-                           rna_float_layer_check);
+  CustomData *vdata = api_mesh_vdata(ptr);
+  api_iter_array_begin(iter,
+                       (void *)vdata->layers,
+                       sizeof(CustomDataLayer),
+                       vdata->totlayer,
+                       0,
+                       api_float_layer_check);
 }
-static void rna_Mesh_polygon_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_polygon_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
   CustomData *pdata = rna_mesh_pdata(ptr);
   rna_iterator_array_begin(iter,
