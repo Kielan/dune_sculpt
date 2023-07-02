@@ -1266,24 +1266,24 @@ void api_def_main_window_managers(DuneApi *dapi, ApiProp *cprop)
 }
 void api_def_main_images(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataImages");
-  srna = RNA_def_struct(brna, "BlendDataImages", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Images", "Collection of images");
+  api_def_prop_sapi(cprop, "BlendDataImages");
+  sapi = api_def_struct(dapi, "BlendDataImages", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Images", "Collection of images");
 
-  func = RNA_def_function(srna, "new", "rna_Main_images_new");
-  RNA_def_function_ui_description(func, "Add a new image to the main database");
-  parm = RNA_def_string(func, "name", "Image", 0, "", "New name for the data-block");
+  func = api_def_fn(sapi, "new", "api_Main_images_new");
+  RNA_def_fn_ui_description(fn, "Add a new image to the main database");
+  parm = api_def_string(fn, "name", "Image", 0, "", "New name for the data-block");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_int(func, "width", 1024, 1, INT_MAX, "", "Width of the image", 1, INT_MAX);
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "height", 1024, 1, INT_MAX, "", "Height of the image", 1, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "alpha", 0, "Alpha", "Use alpha channel");
+  parm = RNA_def_int(fn, "height", 1024, 1, INT_MAX, "", "Height of the image", 1, INT_MAX);
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  RNA_def_boolean(fn, "alpha", 0, "Alpha", "Use alpha channel");
   RNA_def_boolean(
       func, "float_buffer", 0, "Float Buffer", "Create an image with floating-point color");
   RNA_def_boolean(func, "stereo3d", 0, "Stereo 3D", "Create left and right views");
