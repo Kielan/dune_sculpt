@@ -1642,51 +1642,48 @@ static bool rna_Mesh_is_editmode_get(PointerRNA *ptr)
 static void UNUSED_FUNCTION(rna_mesh_unused)(void)
 {
   /* unused functions made by macros */
-  (void)rna_Mesh_skin_vertice_index_range;
-  (void)rna_Mesh_vertex_paint_mask_index_range;
-  (void)rna_Mesh_uv_layer_render_get;
-  (void)rna_Mesh_uv_layer_render_index_get;
-  (void)rna_Mesh_uv_layer_render_index_set;
-  (void)rna_Mesh_uv_layer_render_set;
-  (void)rna_Mesh_face_map_index_range;
-  (void)rna_Mesh_face_map_active_index_set;
-  (void)rna_Mesh_face_map_active_index_get;
-  (void)rna_Mesh_face_map_active_set;
-  (void)rna_Mesh_vertex_crease_index_range;
+  (void)api_Mesh_skin_vertice_index_range;
+  (void)api_Mesh_vertex_paint_mask_index_range;
+  (void)api_Mesh_uv_layer_render_get;
+  (void)api_Mesh_uv_layer_render_index_get;
+  (void)api_Mesh_uv_layer_render_index_set;
+  (void)api_Mesh_uv_layer_render_set;
+  (void)api_Mesh_face_map_index_range;
+  (void)api_Mesh_face_map_active_index_set;
+  (void)api_Mesh_face_map_active_index_get;
+  (void)api_Mesh_face_map_active_set;
+  (void)api_Mesh_vertex_crease_index_range;
   /* end unused function block */
 }
-
-/** \} */
 
 #else
 
 /* -------------------------------------------------------------------- */
-/** \name RNA Mesh Definition
- * \{ */
+/** Api Mesh Definition */
 
-static void rna_def_mvert_group(BlenderRNA *brna)
+static void api_def_mvert_group(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "VertexGroupElement", NULL);
   spi_def_struct_stype(sapi, "MDeformWeight");
-  api_def_struct_path_fn(sapi, "rna_VertexGroupElement_path");
+  api_def_struct_path_fn(sapi, "api_VertexGroupElement_path");
   api_def_struct_ui_text(
       sapi, "Vertex Group Element", "Weight value of a vertex in a vertex group");
   api_def_struct_ui_icon(sapi, ICON_GROUP_VERTEX);
 
   /* we can't point to actual group, it is in the object and so
    * there is no unique group to point to, hence the index */
-  prop = RNA_def_property(srna, "group", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "def_nr");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Group Index", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "group", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "def_nr");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Group Index", "");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Weight", "Vertex Weight");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Weight", "Vertex Weight");
   RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_weight");
 }
 
