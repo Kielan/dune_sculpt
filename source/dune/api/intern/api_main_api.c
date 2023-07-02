@@ -1233,38 +1233,38 @@ void api_def_main_libs(DuneApi *dapi, ApiProp *cprop)
       func, "do_ui_user", true, "", "Make sure interface does not reference this library");
 }
 
-void api_def_main_screens(ApiDune *dapi, ApiProp *cprop)
+void api_def_main_screens(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiFn *fn;
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "BlendDataScreens");
-  sapi = api_def_struct(brna, "BlendDataScreens", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Screens", "Collection of screens");
+  sapi = api_def_struct(dapi, "BlendDataScreens", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Screens", "Collection of screens");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_screens_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_screens_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_window_managers(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_window_managers(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fm;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataWindowManagers");
-  srna = RNA_def_struct(brna, "BlendDataWindowManagers", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Window Managers", "Collection of window managers");
+  api_def_prop_sapi(cprop, "BlendDataWindowManagers");
+  sapi = api_def_struct(dapi, "BlendDataWindowManagers", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Window Managers", "Collection of window managers");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_window_managers_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_window_managers_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
-void RNA_def_main_images(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_images(BlenderRNA *brna, PropertyRNA *cprop)
 {
   StructRNA *srna;
   FunctionRNA *func;
