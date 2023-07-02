@@ -63,76 +63,71 @@ static const EnumPropItem api_enum_mesh_remesh_mode_items[] = {
 
 /* -------------------------------------------------------------------- */
 /** Generic Helpers */
-
 static Mesh *api_mesh(ApiPtr *ptr)
 {
   Mesh *me = (Mesh *)ptr->owner_id;
   return me;
 }
 
-static CustomData *rna_mesh_vdata_helper(Mesh *me)
+static CustomData *api_mesh_vdata_helper(Mesh *me)
 {
   return (me->edit_mesh) ? &me->edit_mesh->bm->vdata : &me->vdata;
 }
 
-static CustomData *rna_mesh_edata_helper(Mesh *me)
+static CustomData *api_mesh_edata_helper(Mesh *me)
 {
   return (me->edit_mesh) ? &me->edit_mesh->bm->edata : &me->edata;
 }
 
-static CustomData *rna_mesh_pdata_helper(Mesh *me)
+static CustomData *api_mesh_pdata_helper(Mesh *me)
 {
   return (me->edit_mesh) ? &me->edit_mesh->bm->pdata : &me->pdata;
 }
 
-static CustomData *rna_mesh_ldata_helper(Mesh *me)
+static CustomData *api_mesh_ldata_helper(Mesh *me)
 {
   return (me->edit_mesh) ? &me->edit_mesh->bm->ldata : &me->ldata;
 }
 
-static CustomData *rna_mesh_fdata_helper(Mesh *me)
+static CustomData *api_mesh_fdata_helper(Mesh *me)
 {
   return (me->edit_mesh) ? NULL : &me->fdata;
 }
 
-static CustomData *rna_mesh_vdata(PointerRNA *ptr)
+static CustomData *api_mesh_vdata(ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
-  return rna_mesh_vdata_helper(me);
+  return api_mesh_vdata_helper(me);
 }
 #  if 0
-static CustomData *rna_mesh_edata(PointerRNA *ptr)
+static CustomData *api_mesh_edata(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  return rna_mesh_edata_helper(me);
+  Mesh *me = api_mesh(ptr);
+  return api_mesh_edata_helper(me);
 }
 #  endif
-static CustomData *rna_mesh_pdata(PointerRNA *ptr)
+static CustomData *api_mesh_pdata(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  return rna_mesh_pdata_helper(me);
+  Mesh *me = api_mesh(ptr);
+  return api_mesh_pdata_helper(me);
 }
 
-static CustomData *rna_mesh_ldata(PointerRNA *ptr)
+static CustomData *api_mesh_ldata(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  return rna_mesh_ldata_helper(me);
+  Mesh *me = api_mesh(ptr);
+  return api_mesh_ldata_helper(me);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Generic CustomData Layer Functions
- * \{ */
-
-static void rna_cd_layer_name_set(CustomData *cdata, CustomDataLayer *cdl, const char *value)
+/** Generic CustomData Layer Functions **/
+static void api_cd_layer_name_set(CustomData *cdata, CustomDataLayer *cdl, const char *value)
 {
-  BLI_strncpy_utf8(cdl->name, value, sizeof(cdl->name));
+  lib_strncpy_utf8(cdl->name, value, sizeof(cdl->name));
   CustomData_set_layer_unique_name(cdata, cdl - cdata->layers);
 }
 
 /* avoid using where possible!, ideally the type is known */
-static CustomData *rna_cd_from_layer(PointerRNA *ptr, CustomDataLayer *cdl)
+static CustomData *api_cd_from_layer(ApiPtr *ptr, CustomDataLayer *cdl)
 {
   /* find out where we come from by */
   Mesh *me = (Mesh *)ptr->owner_id;
@@ -145,11 +140,11 @@ static CustomData *rna_cd_from_layer(PointerRNA *ptr, CustomDataLayer *cdl)
     } \
     ((void)0)
 
-  TEST_CDL(rna_mesh_vdata_helper);
-  TEST_CDL(rna_mesh_edata_helper);
-  TEST_CDL(rna_mesh_pdata_helper);
-  TEST_CDL(rna_mesh_ldata_helper);
-  TEST_CDL(rna_mesh_fdata_helper);
+  TEST_CDL(api_mesh_vdata_helper);
+  TEST_CDL(api_mesh_edata_helper);
+  TEST_CDL(api_mesh_pdata_helper);
+  TEST_CDL(api_mesh_ldata_helper);
+  TEST_CDL(api_mesh_fdata_helper);
 
 #  undef TEST_CDL
 
@@ -157,65 +152,61 @@ static CustomData *rna_cd_from_layer(PointerRNA *ptr, CustomDataLayer *cdl)
   return NULL;
 }
 
-static void rna_MeshVertexLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshVertexLayer_name_set(ApiPtr *ptr, const char *value)
 {
-  rna_cd_layer_name_set(rna_mesh_vdata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(api_mesh_vdata(ptr), (CustomDataLayer *)ptr->data, value);
 }
 #  if 0
-static void rna_MeshEdgeLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshEdgeLayer_name_set(ApiPtr *ptr, const char *value)
 {
-  rna_cd_layer_name_set(rna_mesh_edata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(rna_mesh_edata(ptr), (CustomDataLayer *)ptr->data, value);
 }
 #  endif
-static void rna_MeshPolyLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshPolyLayer_name_set(PointerRNA *ptr, const char *value)
 {
-  rna_cd_layer_name_set(rna_mesh_pdata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(rna_mesh_pdata(ptr), (CustomDataLayer *)ptr->data, value);
 }
-static void rna_MeshLoopLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshLoopLayer_name_set(PointerRNA *ptr, const char *value)
 {
-  rna_cd_layer_name_set(rna_mesh_ldata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(rna_mesh_ldata(ptr), (CustomDataLayer *)ptr->data, value);
 }
 /* only for layers shared between types */
-static void rna_MeshAnyLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshAnyLayer_name_set(PointerRNA *ptr, const char *value)
 {
-  CustomData *cd = rna_cd_from_layer(ptr, (CustomDataLayer *)ptr->data);
-  rna_cd_layer_name_set(cd, (CustomDataLayer *)ptr->data, value);
+  CustomData *cd = api_cd_from_layer(ptr, (CustomDataLayer *)ptr->data);
+  api_cd_layer_name_set(cd, (CustomDataLayer *)ptr->data, value);
 }
 
-static bool rna_Mesh_has_custom_normals_get(PointerRNA *ptr)
+static bool api_Mesh_has_custom_normals_get(PointerRNA *ptr)
 {
   Mesh *me = ptr->data;
-  return BKE_mesh_has_custom_loop_normals(me);
+  return dune_mesh_has_custom_loop_normals(me);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Update Callbacks
+/** Update Callbacks
  *
- * \note Skipping meshes without users is a simple way to avoid updates on newly created meshes.
- * This speeds up importers that manipulate mesh data before linking it to an object & collection.
- *
- * \{ */
+ * note Skipping meshes without users is a simple way to avoid updates on newly created meshes.
+ * This speeds up importers that manipulate mesh data before linking it to an object & collection. **/
 
 /**
- * \warning This calls `DEG_id_tag_update(id, 0)` which is something that should be phased out
- * (see #deg_graph_node_tag_zero), for now it's kept since changes to updates must be carefully
+ * warning This calls graph_id_tag_update(id, 0) which is something that should be phased out
+ * see graph_node_tag_zero, for now it's kept since changes to updates must be carefully
  * tested to make sure there aren't any regressions.
  *
  * This function should be replaced with more specific update flags where possible.
  */
-static void rna_Mesh_update_data_legacy_deg_tag_all(Main *UNUSED(bmain),
+static void api_Mesh_update_data_legacy_deg_tag_all(Main *UNUSED(bmain),
                                                     Scene *UNUSED(scene),
                                                     PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (id->us <= 0) { /* See note in section heading. */
     return;
   }
 
-  DEG_id_tag_update(id, 0);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, 0);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
 static void rna_Mesh_update_geom_and_params(Main *UNUSED(bmain),
