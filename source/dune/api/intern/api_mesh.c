@@ -338,7 +338,7 @@ static float api_MeshEdge_crease_get(ApiPtr *ptr)
 
 static void api_MeshEdge_crease_set(ApiPtr *ptr, float value)
 {
-  MEdge *medge = (MeshEdge *)ptr->data;
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   medge->crease = round_fl_to_uchar_clamp(value * 255.0f);
 }
 
@@ -350,8 +350,7 @@ static void api_MeshLoop_normal_get(ApiPtr *ptr, float *values)
 
   if (!vec) {
     zero_v3(values);
-  }
-  else {
+  } else {
     copy_v3_v3(values, (const float *)vec);
   }
 }
@@ -533,23 +532,22 @@ static void rna_Mesh_texspace_loc_get(PointerRNA *ptr, float values[3])
   copy_v3_v3(values, me->loc);
 }
 
-static void rna_MeshVertex_groups_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshVertex_groups_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
 
   if (me->dvert) {
-    MVert *mvert = (MVert *)ptr->data;
-    MDeformVert *dvert = me->dvert + (mvert - me->mvert);
+    MeshVert *mvert = (MeshVert *)ptr->data;
+    MeshDeformVert *dvert = me->dvert + (mvert - me->mvert);
 
-    rna_iterator_array_begin(
+    api_iter_array_begin(
         iter, (void *)dvert->dw, sizeof(MDeformWeight), dvert->totweight, 0, NULL);
-  }
-  else {
-    rna_iterator_array_begin(iter, NULL, 0, 0, 0, NULL);
+  } else {
+    api_iter_array_begin(iter, NULL, 0, 0, 0, NULL);
   }
 }
 
-static void rna_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
+static void api_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
 {
   Mesh *me = rna_mesh(ptr);
   MVert *mvert = (MVert *)ptr->data;
@@ -559,10 +557,9 @@ static void rna_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
     /* orco is normalized to 0..1, we do inverse to match mvert->co */
     float loc[3], size[3];
 
-    BKE_mesh_texspace_get(me->texcomesh ? me->texcomesh : me, loc, size);
+    dune_mesh_texspace_get(me->texcomesh ? me->texcomesh : me, loc, size);
     madd_v3_v3v3v3(values, loc, orco[(mvert - me->mvert)], size);
-  }
-  else {
+  } else {
     copy_v3_v3(values, mvert->co);
   }
 }
@@ -573,13 +570,12 @@ static int rna_CustomDataLayer_active_get(PointerRNA *ptr, CustomData *data, int
 
   if (render) {
     return (n == CustomData_get_render_layer_index(data, type));
-  }
-  else {
+  } else {
     return (n == CustomData_get_active_layer_index(data, type));
   }
 }
 
-static int rna_CustomDataLayer_clone_get(PointerRNA *ptr, CustomData *data, int type)
+static int api_CustomDataLayer_clone_get(ApiPtr *ptr, CustomData *data, int type)
 {
   int n = ((CustomDataLayer *)ptr->data) - data->layers;
 
