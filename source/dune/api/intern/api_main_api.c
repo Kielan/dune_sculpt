@@ -1290,15 +1290,15 @@ void api_def_main_images(BlenderRNA *brna, PropertyRNA *cprop)
   RNA_def_boolean(func, "is_data", 0, "Is Data", "Create image with non-color data color space");
   RNA_def_boolean(func, "tiled", 0, "Tiled", "Create a tiled image");
   /* return type */
-  parm = RNA_def_pointer(func, "image", "Image", "", "New image data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "image", "Image", "", "New image data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "load", "rna_Main_images_load");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Load a new image into the main database");
-  parm = RNA_def_string_file_path(
-      func, "filepath", "File Path", 0, "", "Path of the file to load");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = RNA_def_function(sapi, "load", "api_Main_images_load");
+  api_def_function_flag(fn, FN_USE_REPORTS);
+  api_def_function_ui_description(fn, "Load a new image into the main database");
+  parm = api_def_string_file_path(
+      fn, "filepath", "File Path", 0, "", "Path of the file to load");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   RNA_def_boolean(func,
                   "check_existing",
                   false,
