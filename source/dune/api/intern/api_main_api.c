@@ -1154,63 +1154,63 @@ void api_def_main_meshes(DunApi *brna, PropertyRNA *cprop)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_lights(DuneApi *dapi, ApiProp *cprop)
+void api_def_main_lights(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp prop;
 
-  RNA_def_property_srna(cprop, "BlendDataLights");
-  srna = RNA_def_struct(brna, "BlendDataLights", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Lights", "Collection of lights");
+  apo_def_prop_srna(cprop, "BlendDataLights");
+  sapi = api_def_struct(dapi, "BlendDataLights", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Lights", "Collection of lights");
 
-  func = RNA_def_function(srna, "new", "rna_Main_lights_new");
-  RNA_def_function_ui_description(func, "Add a new light to the main database");
-  parm = RNA_def_string(func, "name", "Light", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(
-      func, "type", rna_enum_light_type_items, 0, "Type", "The type of light to add");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_lights_new");
+  api_def_fn_ui_description(fn, "Add a new light to the main database");
+  parm = api_def_string(fn, "name", "Light", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(
+      fn, "type", api_enum_light_type_items, 0, "Type", "The type of light to add");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "light", "Light", "", "New light data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "light", "Light", "", "New light data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a light from the current blendfile");
-  parm = RNA_def_pointer(func, "light", "Light", "", "Light to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(func,
-                  "do_unlink",
-                  true,
-                  "",
-                  "Unlink all usages of this light before deleting it "
-                  "(WARNING: will also delete objects instancing that light data)");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this light data");
-  RNA_def_boolean(
+  fn = api_def_fn(sapi, "remove", "api_Main_ID_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a light from the current blendfile");
+  parm = api_def_ptr(fn, "light", "Light", "", "Light to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(fn,
+               "do_unlink",
+               true,
+               "",
+               "Unlink all usages of this light before deleting it "
+               "(WARNING: will also delete objects instancing that light data)");
+  api_def_bool(fn,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this light data");
+  api_def_bool(
       func, "do_ui_user", true, "", "Make sure interface does not reference this light data");
 
-  fn = api_def_function(srna, "tag", "rna_Main_lights_tag");
-  parm = api_def_bool(func, "value", 0, "Value", "");
+  fn = api_def_fn(sapi, "tag", "api_Main_lights_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void api_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_libs(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiFn *fn;
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "BlendDataLibraries");
-  srna = RNA_def_struct(brna, "BlendDataLibraries", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Libraries", "Collection of libraries");
+  sapi = api_def_struct(brna, "BlendDataLibraries", NULL);
+  api_def_struct_sdna(srna, "Main");
+  api_def_struct_ui_text(srna, "Main Libraries", "Collection of libraries");
 
   func = RNA_def_function(srna, "tag", "rna_Main_libraries_tag");
   parm = RNA_def_boolean(func, "value", 0, "Value", "");
