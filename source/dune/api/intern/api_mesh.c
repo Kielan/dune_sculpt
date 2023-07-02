@@ -1729,16 +1729,16 @@ static void rna_def_mvert(BlenderRNA *brna)
 
   prop = RNA_def_property(srna, "groups", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_collection_funcs(prop,
-                                    "rna_MeshVertex_groups_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
+                                    "api_MeshVertex_groups_begin",
+                                    "api_iter_array_next",
+                                    "api_iter_array_end",
+                                    "api_iter_array_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "VertexGroupElement");
-  RNA_def_property_ui_text(
+  api_def_prop_struct_type(prop, "VertexGroupElement");
+  api_def_prop_ui_text(
       prop, "Groups", "Weights for the vertex groups this vertex is member of");
 
   prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
@@ -1748,16 +1748,16 @@ static void rna_def_mvert(BlenderRNA *brna)
 
   prop = api_def_prop(sapi, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
   api_def_prop_array(prop, 3);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Undeformed Location",
       "For meshes with modifiers applied, the coordinate of the vertex with no deforming "
       "modifiers applied, as used for generated texture coordinates");
-  RNA_def_property_float_funcs(prop, "rna_MeshVertex_undeformed_co_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_MeshVertex_undeformed_co_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 }
 
-static void rna_def_medge(BlenderRNA *brna)
+static void api_def_medge(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
