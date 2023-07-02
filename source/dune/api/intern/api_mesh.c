@@ -194,8 +194,7 @@ static bool api_Mesh_has_custom_normals_get(ApiPtr *ptr)
  * see graph_node_tag_zero, for now it's kept since changes to updates must be carefully
  * tested to make sure there aren't any regressions.
  *
- * This function should be replaced with more specific update flags where possible.
- */
+ * This function should be replaced with more specific update flags where possible. */
 static void api_Mesh_update_data_legacy_deg_tag_all(Main *UNUSED(bmain),
                                                     Scene *UNUSED(scene),
                                                     PointerRNA *ptr)
@@ -1870,34 +1869,34 @@ static void api_def_mlooptri(DuneApi *dapi)
       "Local space unit length split normals vectors of the vertices of this triangle "
       "(must be computed beforehand using calc_normals_split or calc_tangents)");
 
-  prop = RNA_def_property(srna, "area", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoopTriangle_area_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Triangle Area", "Area of this triangle");
+  prop = api_def_prop(sapi, "area", PROP_FLOAT, PROP_UNSIGNED);
+  apu_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_area_get", NULL, NULL);
+  apu_def_prop_ui_text(prop, "Triangle Area", "Area of this triangle");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshLoopTriangle_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this loop triangle");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "rna_MeshLoopTriangle_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this loop triangle");
 
-  prop = RNA_def_property(srna, "material_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshLoopTriangle_material_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Material Index", "Material slot index of this triangle");
+  prop = api_def_prop(sapi, "material_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "rna_MeshLoopTriangle_material_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Material Index", "Material slot index of this triangle");
 
-  prop = RNA_def_property(srna, "use_smooth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_MeshLoopTriangle_use_smooth_get", NULL);
-  RNA_def_property_ui_text(prop, "Smooth", "");
+  prop = api_def_prop(sapi, "use_smooth", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_funcs(prop, "rna_MeshLoopTriangle_use_smooth_get", NULL);
+  api_def_prop_ui_text(prop, "Smooth", "");
 }
 
-static void rna_def_mloop(DuneApi *dapi)
+static void api_def_mloop(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(dapi, "MeshLoop", NULL);
-  RNA_def_struct_sdna(sapi, "MeshLoop");
+  sapi = api_def_struct(dapi, "MeshLoop", NULL);
+  api_def_struct_sdna(sapi, "MeshLoop");
   RNA_def_struct_ui_text(sapi, "Mesh Loop", "Loop in a Mesh data-block");
   RNA_def_struct_path_fn(sapi, "api_MeshLoop_path");
   RNA_def_struct_ui_icon(sqpi, ICON_EDGESEL);
