@@ -1533,11 +1533,11 @@ static ApiPtr api_Mesh_vertex_color_new(struct Mesh *me,
     cdl = &ldata->layers[CustomData_get_layer_index_n(ldata, CD_MLOOPCOL, index)];
   }
 
-  RNA_pointer_create(&me->id, &Api_MeshLoopColorLayer, cdl, &ptr);
+  api_ptr_create(&me->id, &Api_MeshLoopColorLayer, cdl, &ptr);
   return ptr;
 }
 
-static void rna_Mesh_vertex_color_remove(struct Mesh *me,
+static void api_Mesh_vertex_color_remove(struct Mesh *me,
                                          ReportList *reports,
                                          CustomDataLayer *layer)
 {
@@ -1669,12 +1669,12 @@ static void rna_def_mvert_group(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "VertexGroupElement", NULL);
-  RNA_def_struct_sdna(srna, "MDeformWeight");
-  RNA_def_struct_path_func(srna, "rna_VertexGroupElement_path");
-  RNA_def_struct_ui_text(
-      srna, "Vertex Group Element", "Weight value of a vertex in a vertex group");
-  RNA_def_struct_ui_icon(srna, ICON_GROUP_VERTEX);
+  sapi = api_def_struct(dapi, "VertexGroupElement", NULL);
+  spi_def_struct_stype(sapi, "MDeformWeight");
+  api_def_struct_path_fn(sapi, "rna_VertexGroupElement_path");
+  api_def_struct_ui_text(
+      sapi, "Vertex Group Element", "Weight value of a vertex in a vertex group");
+  api_def_struct_ui_icon(sapi, ICON_GROUP_VERTEX);
 
   /* we can't point to actual group, it is in the object and so
    * there is no unique group to point to, hence the index */
