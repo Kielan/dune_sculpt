@@ -1233,14 +1233,14 @@ void api_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop)
       func, "do_ui_user", true, "", "Make sure interface does not reference this library");
 }
 
-void RNA_def_main_screens(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_screens(ApiDune *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataScreens");
-  srna = RNA_def_struct(brna, "BlendDataScreens", NULL);
+  api_def_prop_sapi(cprop, "BlendDataScreens");
+  sapi = api_def_struct(brna, "BlendDataScreens", NULL);
   RNA_def_struct_sdna(srna, "Main");
   RNA_def_struct_ui_text(srna, "Main Screens", "Collection of screens");
 
