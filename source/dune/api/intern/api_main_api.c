@@ -1089,14 +1089,14 @@ void api_def_main_meshes(DuneApi *dapi, ApiProp *cprop)
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "BlendDataMeshes");
-  sapi = api_def_struct(brna, "BlendDataMeshes", NULL);
-  api_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Meshes", "Collection of meshes");
+  sapi = api_def_struct(dapi, "BlendDataMeshes", NULL);
+  api_def_struct_sdna(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Meshes", "Collection of meshes");
 
-  func = RNA_def_function(srna, "new", "rna_Main_meshes_new");
-  RNA_def_function_ui_description(func, "Add a new mesh to the main database");
-  parm = RNA_def_string(func, "name", "Mesh", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_meshes_new");
+  api_def_fn_ui_description(fn, "Add a new mesh to the main database");
+  parm = api_def_string(fn, "name", "Mesh", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
   parm = api_def_ptr(fn, "mesh", "Mesh", "", "New mesh data-block");
   api_def_fn_return(fn, parm);
@@ -1123,10 +1123,10 @@ void api_def_main_meshes(DuneApi *dapi, ApiProp *cprop)
       "Graph",
       "Evald dep graph which is required when preserve_all_data_layers is true");
   parm = api_def_ptr(fn,
-                         "mesh",
-                         "Mesh",
-                         "",
-                         "Mesh created from object, remove it if it is only used for export");
+                     "mesh",
+                     "Mesh",
+                     "",
+                     "Mesh created from object, remove it if it is only used for export");
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "remove", "api_Main_id_remove");
@@ -1194,7 +1194,7 @@ void api_def_main_lights(DuneApi *dapi, ApiProp *cprop)
                "",
                "Decrement user counter of all datablocks used by this light data");
   api_def_bool(
-      func, "do_ui_user", true, "", "Make sure interface does not reference this light data");
+      fn, "do_ui_user", true, "", "Make sure interface does not reference this light data");
 
   fn = api_def_fn(sapi, "tag", "api_Main_lights_tag");
   parm = api_def_bool(fn, "value", 0, "Value", "");
@@ -1208,29 +1208,29 @@ void api_def_main_libs(DuneApi *dapi, ApiProp *cprop)
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "BlendDataLibraries");
-  sapi = api_def_struct(brna, "BlendDataLibraries", NULL);
-  api_def_struct_sdna(srna, "Main");
-  api_def_struct_ui_text(srna, "Main Libraries", "Collection of libraries");
+  sapi = api_def_struct(dapi, "BlendDataLibraries", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Libraries", "Collection of libraries");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_libraries_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_libs_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a library from the current blendfile");
-  parm = RNA_def_pointer(func, "library", "Library", "", "Library to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(
-      func, "do_unlink", true, "", "Unlink all usages of this library before deleting it");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this library");
-  RNA_def_boolean(
-      func, "do_ui_user", true, "", "Make sure interface does not reference this library");
+  fn = api_def_fn(sapi, "remove", "rna_Main_ID_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(func, "Remove a library from the current blendfile");
+  parm = api_def_ptr(fn, "lib", "Library", "", "Library to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(
+      fn, "do_unlink", true, "", "Unlink all usages of this library before deleting it");
+  api_def_bool(fn,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this library");
+  api_def_bool(
+      fn, "do_ui_user", true, "", "Make sure interface does not ref this lib");
 }
 
 void api_def_main_screens(DuneApi *dapi, ApiProp *cprop)
@@ -1275,20 +1275,20 @@ void api_def_main_images(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_struct_stype(sapi, "Main");
   api_def_struct_ui_text(sapi, "Main Images", "Collection of images");
 
-  func = api_def_fn(sapi, "new", "api_Main_images_new");
-  RNA_def_fn_ui_description(fn, "Add a new image to the main database");
+  fn = api_def_fn(sapi, "new", "api_Main_images_new");
+  api_def_fn_ui_description(fn, "Add a new image to the main database");
   parm = api_def_string(fn, "name", "Image", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "width", 1024, 1, INT_MAX, "", "Width of the image", 1, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(fn, "height", 1024, 1, INT_MAX, "", "Height of the image", 1, INT_MAX);
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(fn, "alpha", 0, "Alpha", "Use alpha channel");
-  RNA_def_boolean(
-      func, "float_buffer", 0, "Float Buffer", "Create an image with floating-point color");
-  RNA_def_boolean(func, "stereo3d", 0, "Stereo 3D", "Create left and right views");
-  RNA_def_boolean(func, "is_data", 0, "Is Data", "Create image with non-color data color space");
-  RNA_def_boolean(func, "tiled", 0, "Tiled", "Create a tiled image");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "width", 1024, 1, INT_MAX, "", "Width of the image", 1, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "height", 1024, 1, INT_MAX, "", "Height of the image", 1, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "alpha", 0, "Alpha", "Use alpha channel");
+  api_def_bool(
+      fn, "float_buffer", 0, "Float Buffer", "Create an image with floating-point color");
+  api_def_bool(fn, "stereo3d", 0, "Stereo 3D", "Create left and right views");
+  api_def_bool(fn, "is_data", 0, "Is Data", "Create image with non-color data color space");
+  api_def_bool(fn, "tiled", 0, "Tiled", "Create a tiled image");
   /* return type */
   parm = api_def_ptr(fn, "image", "Image", "", "New image data-block");
   api_def_fn_return(fn, parm);
