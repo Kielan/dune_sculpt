@@ -883,11 +883,11 @@ static void api_Mesh_vertex_string_layers_begin(CollectionPropertyIterator *iter
 {
   CustomData *vdata = api_mesh_vdata(ptr);
   api_iter_array_begin(iter,
-                           (void *)vdata->layers,
-                           sizeof(CustomDataLayer),
-                           vdata->totlayer,
-                           0,
-                           api_string_layer_check);
+                       (void *)vdata->layers,
+                       sizeof(CustomDataLayer),
+                       vdata->totlayer,
+                       0,
+                       api_string_layer_check);
 }
 static void api_Mesh_polygon_string_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
@@ -900,24 +900,24 @@ static void api_Mesh_polygon_string_layers_begin(CollectionPropertyIterator *ite
                            api_string_layer_check);
 }
 
-static int api_Mesh_vertex_string_layers_length(PointerRNA *ptr)
+static int api_Mesh_vertex_string_layers_length(ApiPtr *ptr)
 {
-  return CustomData_number_of_layers(rna_mesh_vdata(ptr), CD_PROP_STRING);
+  return CustomData_number_of_layers(api_mesh_vdata(ptr), CD_PROP_STRING);
 }
-static int rna_Mesh_polygon_string_layers_length(PointerRNA *ptr)
+static int api_Mesh_polygon_string_layers_length(ApiPtr *ptr)
 {
-  return CustomData_number_of_layers(rna_mesh_pdata(ptr), CD_PROP_STRING);
+  return CustomData_number_of_layers(api_mesh_pdata(ptr), CD_PROP_STRING);
 }
 
 /* Skin vertices */
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(skin_vertice, vdata, CD_MVERT_SKIN)
 
-static char *rna_MeshSkinVertexLayer_path(PointerRNA *ptr)
+static char *api_MeshSkinVertexLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("skin_vertices[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("skin_vertices[\"%s\"]", name_esc);
 }
 
 static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type);
