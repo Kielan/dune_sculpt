@@ -1743,11 +1743,11 @@ static void rna_def_mvert(BlenderRNA *brna)
 
   prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshVertex_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this vertex");
+  api_def_prop_int_fns(prop, "rna_MeshVertex_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this vertex");
 
-  prop = RNA_def_property(srna, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 3);
+  prop = api_def_prop(sapi, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
   RNA_def_property_ui_text(
       prop,
       "Undeformed Location",
