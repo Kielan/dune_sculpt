@@ -891,11 +891,11 @@ void api_def_main_cameras(DuneApi *dapi, ApiProp *cprop)
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
   api_def_bool(fn,
-                  "do_unlink",
-                  true,
-                  "",
-                  "Unlink all usages of this camera before deleting it "
-                  "(WARNING: will also delete objects instancing that camera data)");
+               "do_unlink",
+               true,
+               "",
+               "Unlink all usages of this camera before deleting it "
+               "(WARNING: will also delete objects instancing that camera data)");
   api_def_bool(fn,
                "do_id_user",
                true,
@@ -948,26 +948,26 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
   ApiFn *fn;
   ApiProp *parm;
 
-  RNA_def_prop_sapo(cprop, "BlendDataObjects");
-  srna = api_def_struct(dapi, "BlendDataObjects", NULL);
-  RNA_def_struct_stype(sapi, "Main");
-  RNA_def_struct_ui_text(sapi, "Main Objects", "Collection of objects");
+  api_def_prop_sapo(cprop, "BlendDataObjects");
+  sapi = api_def_struct(dapi, "BlendDataObjects", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Objects", "Collection of objects");
 
-  func = RNA_def_function(srna, "new", "rna_Main_objects_new");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Add a new object to the main database");
-  parm = RNA_def_string(func, "name", "Object", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "object_data", "ID", "", "Object data or None for an empty object");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_objects_new");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Add a new object to the main database");
+  parm = api_def_string(func, "name", "Object", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "object_data", "ID", "", "Object data or None for an empty object");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* return type */
-  parm = RNA_def_pointer(func, "object", "Object", "", "New object data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "object", "Object", "", "New object data-block");
+  api_def_fn_return(fn, parm);
 
-  func = api_def_fn(sapi, "remove", "rna_Main_ID_remove");
-  RNA_def_fn_ui_description(fn, "Remove an object from the current blendfile");
-  RNA_def_fn_flag(fn, FN_USE_REPORTS);
+  fn = api_def_fn(sapi, "remove", "api_Main_id_remove");
+  api_def_fn_ui_description(fn, "Remove an object from the current blendfile");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
   parm = api_def_ptr(fn, "object", "Object", "", "Object to remove");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
   RNA_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
@@ -988,34 +988,34 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
 
 void api_def_main_materials(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *srna;
+  ApiFn *func;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataMaterials");
-  srna = RNA_def_struct(brna, "BlendDataMaterials", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Materials", "Collection of materials");
+  api_def_prop_sapi(cprop, "BlendDataMaterials");
+  sapi = api_def_struct(dapi, "BlendDataMaterials", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Materials", "Collection of materials");
 
-  func = RNA_def_function(srna, "new", "rna_Main_materials_new");
-  RNA_def_function_ui_description(func, "Add a new material to the main database");
-  parm = RNA_def_string(func, "name", "Material", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_materials_new");
+  api_def_fn_ui_description(fn, "Add a new material to the main database");
+  parm = api_def_string(fn, "name", "Material", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "material", "Material", "", "New material data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "material", "Material", "", "New material data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "create_gpencil_data", "rna_Main_materials_gpencil_data");
-  RNA_def_function_ui_description(func, "Add grease pencil material settings");
-  parm = RNA_def_pointer(func, "material", "Material", "", "Material");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(sapi, "create_pen_data", "api_Main_materials_pen_data");
+  api_def_fn_ui_description(fn, "Add pen material settings");
+  parm = api_def_ptr(fn, "material", "Material", "", "Material");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "remove_gpencil_data", "rna_Main_materials_gpencil_remove");
-  RNA_def_function_ui_description(func, "Remove grease pencil material settings");
-  parm = RNA_def_pointer(func, "material", "Material", "", "Material");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(sapi, "remove_gpencil_data", "api_Main_materials_pen_remove");
+  api_def_fn_ui_description(func, "Remove pen material settings");
+  parm = api_def_ptr(fn, "material", "Material", "", "Material");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
+  func = RNA_def_function(sapi, "remove", "api_Main_id_remove");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
   RNA_def_function_ui_description(func, "Remove a material from the current blendfile");
   parm = RNA_def_pointer(func, "material", "Material", "", "Material to remove");
