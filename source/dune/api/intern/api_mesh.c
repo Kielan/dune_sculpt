@@ -522,7 +522,7 @@ static void api_Mesh_texspace_size_get(Apitr *ptr, float values[3])
   copy_v3_v3(values, me->size);
 }
 
-static void api_Mesh_texspace_loc_get(PointerRNA *ptr, float values[3])
+static void api_Mesh_texspace_loc_get(ApiPtr *ptr, float values[3])
 {
   Mesh *me = (Mesh *)ptr->data;
 
@@ -531,7 +531,7 @@ static void api_Mesh_texspace_loc_get(PointerRNA *ptr, float values[3])
   copy_v3_v3(values, me->loc);
 }
 
-static void api_MeshVertex_groups_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshVertex_groups_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
 
@@ -563,7 +563,7 @@ static void api_MeshVertex_undeformed_co_get(Apitr *ptr, float values[3])
   }
 }
 
-static int api_CustomDataLayer_active_get(PointerRNA *ptr, CustomData *data, int type, bool render)
+static int api_CustomDataLayer_active_get(ApiPtr *ptr, CustomData *data, int type, bool render)
 {
   int n = ((CustomDataLayer *)ptr->data) - data->layers;
 
@@ -1322,7 +1322,7 @@ static char *api_MeshVertColor_path(PointerRNA *ptr)
   return api_VertCustomData_data_path(ptr, "sculpt_vertex_colors", CD_PROP_COLOR);
 }
 
-/**** Float Property Layer API ****/
+/**** Float Prop Layer API ****/
 static char *api_MeshVertexFloatPropLayer_path(PointerRNA *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
@@ -1352,10 +1352,10 @@ static void api_MeshVertexFloatPropLayer_data_begin(CollectionPropIter iter,
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  api_iter_array_begin(iter, layer->data, sizeof(MFloatProperty), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshFloatProp), me->totvert, 0, NULL);
 }
-static void api_MeshPolygonFloatPropertyLayer_data_begin(CollectionPropertyIterator *iter,
-                                                         PointerRNA *ptr)
+static void api_MeshPolygonFloatPropLayer_data_begin(CollectionPropIter *iter,
+                                                         ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
@@ -1401,7 +1401,7 @@ static char *api_MeshPolygonIntProp_path(ApiPtr *ptr)
 static void api_MeshVertexIntPropLayer_data_begin(CollectionPropIter *iter,
                                                   ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
   api_iter_array_begin(iter, layer->data, sizeof(MeshIntProp), me->totvert, 0, NULL);
 }
@@ -1639,7 +1639,7 @@ static bool api_Mesh_is_editmode_get(ApiPtr *ptr)
 }
 
 /* only to quiet warnings */
-static void UNUSED_FUNCTION(rna_mesh_unused)(void)
+static void UNUSED_FN(api_mesh_unused)(void)
 {
   /* unused functions made by macros */
   (void)api_Mesh_skin_vertice_index_range;
@@ -1741,7 +1741,7 @@ static void api_def_mvert(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Groups", "Weights for the vertex groups this vertex is member of");
 
-  prop = api_def_prop(srna, "index", PROP_INT, PROP_UNSIGNED);
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_int_fns(prop, "api_MeshVertex_index_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Index", "Index of this vertex");
@@ -1845,9 +1845,9 @@ static void api_def_mlooptri(DuneApi *dapi)
   RNA_def_prop_ui_text(prop, "Loops", "Indices of mesh loops that make up the triangle");
   RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "polygon_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "poly");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "polygon_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "poly");
+  api_def_prop_ui_text(
       prop, "Polygon", "Index of mesh polygon that the triangle is a part of");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
