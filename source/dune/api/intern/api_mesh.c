@@ -421,7 +421,7 @@ static void api_MeshPolygon_center_get(ApiPtr *ptr, float *values)
   dune_mesh_calc_poly_center(mp, me->mloop + mp->loopstart, me->mvert, values);
 }
 
-static float rna_MeshPolygon_area_get(ApiPtr *ptr)
+static float api_MeshPolygon_area_get(ApiPtr *ptr)
 {
   Mesh *me = (Mesh *)ptr->owner_id;
   MeshPoly *mp = (MPoly *)ptr->data;
@@ -548,8 +548,8 @@ static void api_MeshVertex_groups_begin(CollectionPropertyIterator *iter, Pointe
 
 static void api_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
 {
-  Mesh *me = rna_mesh(ptr);
-  MVert *mvert = (MVert *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshVert *mvert = (MVert *)ptr->data;
   float(*orco)[3] = CustomData_get_layer(&me->vdata, CD_ORCO);
 
   if (orco) {
@@ -1131,31 +1131,31 @@ static int api_MeshLoopTriangle_index_get(PointerRNA *ptr)
   return (int)(ltri - me->runtime.looptris.array);
 }
 
-static int rna_MeshLoopTriangle_material_index_get(PointerRNA *ptr)
+static int api_MeshLoopTriangle_material_index_get(PointerRNA *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   MLoopTri *ltri = (MLoopTri *)ptr->data;
   return me->mpoly[ltri->poly].mat_nr;
 }
 
-static bool rna_MeshLoopTriangle_use_smooth_get(PointerRNA *ptr)
+static bool api_MeshLoopTriangle_use_smooth_get(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoopTri *ltri = (MLoopTri *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoopTri *ltri = (MLoopTri *)ptr->data;
   return me->mpoly[ltri->poly].flag & ME_SMOOTH;
 }
 
-static int rna_MeshPolygon_index_get(PointerRNA *ptr)
+static int api_MeshPolygon_index_get(ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   MPoly *mpoly = (MPoly *)ptr->data;
   return (int)(mpoly - me->mpoly);
 }
 
-static int rna_MeshLoop_index_get(PointerRNA *ptr)
+static int api_MeshLoop_index_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *mloop = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MLoop *mloop = (MeshLoop *)ptr->data;
   return (int)(mloop - me->mloop);
 }
 
@@ -1164,7 +1164,7 @@ static int rna_MeshLoop_index_get(PointerRNA *ptr)
 static char *api_VertexGroupElement_path(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr); /* XXX not always! */
-  MeshDeformWeight *dw = (MDeformWeight *)ptr->data;
+  MeshDeformWeight *dw = (MeshDeformWeight *)ptr->data;
   MeshDeformVert *dvert;
   int a, b;
 
@@ -1181,10 +1181,10 @@ static char *api_VertexGroupElement_path(ApiPtr *ptr)
 
 static char *api_MeshPolygon_path(PointerRNA *ptr)
 {
-  return BLI_sprintfN("polygons[%d]", (int)((MPoly *)ptr->data - rna_mesh(ptr)->mpoly));
+  return lib_sprintfN("polygons[%d]", (int)((MPoly *)ptr->data - rna_mesh(ptr)->mpoly));
 }
 
-static char *rna_MeshLoopTriangle_path(PointerRNA *ptr)
+static char *api_MeshLoopTriangle_path(PointerRNA *ptr)
 {
   return BLI_sprintfN("loop_triangles[%d]",
                       (int)((MLoopTri *)ptr->data - rna_mesh(ptr)->runtime.looptris.array));
