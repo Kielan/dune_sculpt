@@ -1015,11 +1015,11 @@ void api_def_main_materials(DuneApi *dapi, ApiProp *cprop)
   parm = api_def_ptr(fn, "material", "Material", "", "Material");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(sapi, "remove", "api_Main_id_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a material from the current blendfile");
-  parm = RNA_def_pointer(func, "material", "Material", "", "Material to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(sapi, "remove", "api_Main_id_remove")
+  api_def_fn_flag(fn, FUNC_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a material from the current dunefile");
+  parm = api_def_pointer(fn, "material", "Material", "", "Material to remove");
+  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
   RNA_def_boolean(
       func, "do_unlink", true, "", "Unlink all usages of this material before deleting it");
