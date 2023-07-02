@@ -1891,31 +1891,31 @@ static void api_def_mlooptri(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Smooth", "");
 }
 
-static void rna_def_mloop(BlenderRNA *brna)
+static void rna_def_mloop(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "MeshLoop", NULL);
-  RNA_def_struct_sdna(srna, "MLoop");
-  RNA_def_struct_ui_text(srna, "Mesh Loop", "Loop in a Mesh data-block");
-  RNA_def_struct_path_func(srna, "rna_MeshLoop_path");
-  RNA_def_struct_ui_icon(srna, ICON_EDGESEL);
+  srna = RNA_def_struct(dapi, "MeshLoop", NULL);
+  RNA_def_struct_sdna(sapi, "MeshLoop");
+  RNA_def_struct_ui_text(sapi, "Mesh Loop", "Loop in a Mesh data-block");
+  RNA_def_struct_path_fn(sapi, "api_MeshLoop_path");
+  RNA_def_struct_ui_icon(sqpi, ICON_EDGESEL);
 
-  prop = RNA_def_property(srna, "vertex_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "v");
-  RNA_def_property_ui_text(prop, "Vertex", "Vertex index");
+  prop = api_def_prop(sapi, "vertex_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "v");
+  api_def_prop_ui_text(prop, "Vertex", "Vertex index");
 
-  prop = RNA_def_property(srna, "edge_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "e");
-  RNA_def_property_ui_text(prop, "Edge", "Edge index");
+  prop = api_def_prop(sapi, "edge_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "e");
+  api_def_prop_ui_text(prop, "Edge", "Edge index");
 
   prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshLoop_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this loop");
+  api_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_property_int_funcs(prop, "rna_MeshLoop_index_get", NULL, NULL);
+  api_def_property_ui_text(prop, "Index", "Index of this loop");
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
+  prop = api_def_prop(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
   RNA_def_property_array(prop, 3);
   RNA_def_property_range(prop, -1.0f, 1.0f);
   RNA_def_property_float_funcs(prop, "rna_MeshLoop_normal_get", "rna_MeshLoop_normal_set", NULL);
