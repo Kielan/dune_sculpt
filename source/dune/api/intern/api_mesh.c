@@ -6,10 +6,10 @@
 
 #include "mem_guardedalloc.h"
 
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_object.h"
 
 #include "lib_math_base.h"
 #include "lib_math_rotation.h"
@@ -209,53 +209,53 @@ static void api_Mesh_update_data_legacy_deg_tag_all(Main *UNUSED(bmain),
   wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static void rna_Mesh_update_geom_and_params(Main *UNUSED(bmain),
+static void api_Mesh_update_geom_and_params(Main *UNUSED(main),
                                             Scene *UNUSED(scene),
-                                            PointerRNA *ptr)
+                                            ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (id->us <= 0) { /* See note in section heading. */
     return;
   }
 
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PARAMETERS);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PARAMETERS);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static void rna_Mesh_update_data_edit_weight(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mesh_update_data_edit_weight(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  BKE_mesh_batch_cache_dirty_tag(rna_mesh(ptr), BKE_MESH_BATCH_DIRTY_ALL);
+  dune_mesh_batch_cache_dirty_tag(api_mesh(ptr), DUNE_MESH_BATCH_DIRTY_ALL);
 
-  rna_Mesh_update_data_legacy_deg_tag_all(bmain, scene, ptr);
+  api_Mesh_update_data_legacy_graph_tag_all(main, scene, ptr);
 }
 
-static void rna_Mesh_update_data_edit_active_color(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mesh_update_data_edit_active_color(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  BKE_mesh_batch_cache_dirty_tag(rna_mesh(ptr), BKE_MESH_BATCH_DIRTY_ALL);
+  dune_mesh_batch_cache_dirty_tag(api_mesh(ptr), DUNE_MESH_BATCH_DIRTY_ALL);
 
-  rna_Mesh_update_data_legacy_deg_tag_all(bmain, scene, ptr);
+  api_Mesh_update_data_legacy_deg_tag_all(main, scene, ptr);
 }
-static void rna_Mesh_update_select(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Mesh_update_select(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (id->us <= 0) { /* See note in section heading. */
     return;
   }
 
-  WM_main_add_notifier(NC_GEOM | ND_SELECT, id);
+  wm_main_add_notifier(NC_GEOM | ND_SELECT, id);
 }
 
-void rna_Mesh_update_draw(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+void api_Mesh_update_draw(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (id->us <= 0) { /* See note in section heading. */
     return;
   }
 
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static void rna_Mesh_update_vertmask(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mesh_update_vertmask(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Mesh *me = ptr->data;
   if ((me->editflag & ME_EDIT_PAINT_VERT_SEL) && (me->editflag & ME_EDIT_PAINT_FACE_SEL)) {
