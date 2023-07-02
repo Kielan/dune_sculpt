@@ -1849,22 +1849,22 @@ static void api_def_mlooptri(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "poly");
   api_def_prop_ui_text(
       prop, "Polygon", "Index of mesh polygon that the triangle is a part of");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoopTriangle_normal_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_normal_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Triangle Normal", "Local space unit length normal vector for this triangle");
 
-  prop = RNA_def_property(srna, "split_normals", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_multi_array(prop, 2, splitnor_dim);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoopTriangle_split_normals_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "split_normals", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_multi_array(prop, 2, splitnor_dim);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_split_normals_get", NULL, NULL);
+  apo_def_prop_ui_text(
       prop,
       "Split Normals",
       "Local space unit length split normals vectors of the vertices of this triangle "
