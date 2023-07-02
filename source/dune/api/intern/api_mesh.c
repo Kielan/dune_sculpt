@@ -1477,42 +1477,42 @@ static int rna_MeshPolygonStringPropertyLayer_data_length(PointerRNA *ptr)
 
 /* XXX, we don't have proper byte string support yet, so for now use the (bytes + 1)
  * bmesh API exposes correct python/byte-string access. */
-void rna_MeshStringProperty_s_get(PointerRNA *ptr, char *value)
+void api_MeshStringProp_s_get(ApiPtr *ptr, char *value)
 {
-  MStringProperty *ms = (MStringProperty *)ptr->data;
-  BLI_strncpy(value, ms->s, (int)ms->s_len + 1);
+  MeshStringProp *ms = (MeshStringProp *)ptr->data;
+  lib_strncpy(value, ms->s, (int)ms->s_len + 1);
 }
 
-int rna_MeshStringProperty_s_length(PointerRNA *ptr)
+int mesh_MeshStringProp_s_length(ApiPtr *ptr)
 {
-  MStringProperty *ms = (MStringProperty *)ptr->data;
+  MeshStringProp *ms = (MeshStringProp *)ptr->data;
   return (int)ms->s_len + 1;
 }
 
-void rna_MeshStringProperty_s_set(PointerRNA *ptr, const char *value)
+void rna_MeshStringProperty_s_set(ApiPtr *ptr, const char *value)
 {
   MStringProperty *ms = (MStringProperty *)ptr->data;
   BLI_strncpy(ms->s, value, sizeof(ms->s));
 }
 
-static char *rna_MeshFaceMap_path(PointerRNA *ptr)
+static char *api_MeshFaceMap_path(ApiPtr *ptr)
 {
-  return rna_PolyCustomData_data_path(ptr, "face_maps", CD_FACEMAP);
+  return api_PolyCustomData_data_path(ptr, "face_maps", CD_FACEMAP);
 }
 
 /***************************************/
 
-static int rna_Mesh_tot_vert_get(PointerRNA *ptr)
+static int api_Mesh_tot_vert_get(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totvertsel : 0;
 }
-static int rna_Mesh_tot_edge_get(PointerRNA *ptr)
+static int api_Mesh_tot_edge_get(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totedgesel : 0;
 }
-static int rna_Mesh_tot_face_get(PointerRNA *ptr)
+static int api_Mesh_tot_face_get(PointerRNA *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totfacesel : 0;
