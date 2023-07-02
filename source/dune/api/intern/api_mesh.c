@@ -1521,22 +1521,22 @@ static int rna_Mesh_tot_face_get(PointerRNA *ptr)
   return me->edit_mesh ? me->edit_mesh->bm->totfacesel : 0;
 }
 
-static PointerRNA rna_Mesh_vertex_color_new(struct Mesh *me,
+static ApiPtr api_Mesh_vertex_color_new(struct Mesh *me,
                                             ReportList *reports,
                                             const char *name,
                                             const bool do_init)
 {
-  PointerRNA ptr;
+  ApiPtr ptr;
   CustomData *ldata;
   CustomDataLayer *cdl = NULL;
-  int index = ED_mesh_color_add(me, name, false, do_init, reports);
+  int index = ed_mesh_color_add(me, name, false, do_init, reports);
 
   if (index != -1) {
-    ldata = rna_mesh_ldata_helper(me);
+    ldata = api_mesh_ldata_helper(me);
     cdl = &ldata->layers[CustomData_get_layer_index_n(ldata, CD_MLOOPCOL, index)];
   }
 
-  RNA_pointer_create(&me->id, &RNA_MeshLoopColorLayer, cdl, &ptr);
+  RNA_pointer_create(&me->id, &Api_MeshLoopColorLayer, cdl, &ptr);
   return ptr;
 }
 
@@ -1544,31 +1544,31 @@ static void rna_Mesh_vertex_color_remove(struct Mesh *me,
                                          ReportList *reports,
                                          CustomDataLayer *layer)
 {
-  if (ED_mesh_color_remove_named(me, layer->name) == false) {
-    BKE_reportf(reports, RPT_ERROR, "Vertex color '%s' not found", layer->name);
+  if (ed_mesh_color_remove_named(me, layer->name) == false) {
+    dune_reportf(reports, RPT_ERROR, "Vertex color '%s' not found", layer->name);
   }
 }
 
-static PointerRNA rna_Mesh_sculpt_vertex_color_new(struct Mesh *me,
-                                                   ReportList *reports,
-                                                   const char *name,
-                                                   const bool do_init)
+static ApiPtt api_Mesh_sculpt_vertex_color_new(struct Mesh *me,
+                                               ReportList *reports,
+                                               const char *name,
+                                               const bool do_init)
 {
-  PointerRNA ptr;
+  ApiPtr ptr;
   CustomData *vdata;
   CustomDataLayer *cdl = NULL;
-  int index = ED_mesh_sculpt_color_add(me, name, false, do_init, reports);
+  int index = ed_mesh_sculpt_color_add(me, name, false, do_init, reports);
 
   if (index != -1) {
-    vdata = rna_mesh_vdata_helper(me);
+    vdata = api_mesh_vdata_helper(me);
     cdl = &vdata->layers[CustomData_get_layer_index_n(vdata, CD_PROP_COLOR, index)];
   }
 
-  RNA_pointer_create(&me->id, &RNA_MeshVertColorLayer, cdl, &ptr);
+  api_ptr_create(&me->id, &RNA_MeshVertColorLayer, cdl, &ptr);
   return ptr;
 }
 
-static void rna_Mesh_sculpt_vertex_color_remove(struct Mesh *me,
+static void api_Mesh_sculpt_vertex_color_remove(struct Mesh *me,
                                                 ReportList *reports,
                                                 CustomDataLayer *layer)
 {
