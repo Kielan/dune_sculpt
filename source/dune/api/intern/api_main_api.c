@@ -979,7 +979,7 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
                "",
                "Decrement user counter of all datablocks used by this object");
    api_def_bool(
-      func, "do_ui_user", true, "", "Make sure interface does not reference this object");
+      fn, "do_ui_user", true, "", "Make sure interface does not reference this object");
 
   fn = api_def_fn(sapi, "tag", "api_Main_objects_tag");
   parm = api_def_bool(fn, "value", 0, "Value", "");
@@ -1010,62 +1010,62 @@ void api_def_main_materials(DuneApi *dapi, ApiProp *cprop)
   parm = api_def_ptr(fn, "material", "Material", "", "Material");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  fn = api_def_fn(sapi, "remove_gpencil_data", "api_Main_materials_pen_remove");
-  api_def_fn_ui_description(func, "Remove pen material settings");
+  fn = api_def_fn(sapi, "remove_pen_data", "api_Main_materials_pen_remove");
+  api_def_fn_ui_description(fn, "Remove pen material settings");
   parm = api_def_ptr(fn, "material", "Material", "", "Material");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
   fn = api_def_fn(sapi, "remove", "api_Main_id_remove")
-  api_def_fn_flag(fn, FUNC_USE_REPORTS);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_fn_ui_description(fn, "Remove a material from the current dunefile");
-  parm = api_def_pointer(fn, "material", "Material", "", "Material to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(
-      func, "do_unlink", true, "", "Unlink all usages of this material before deleting it");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this material");
-  RNA_def_boolean(
+  parm = api_def_ptr(fn, "material", "Material", "", "Material to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(
+      fn, "do_unlink", true, "", "Unlink all usages of this material before deleting it");
+  api_def_bool(fn,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this material");
+  api_def_bool(
       func, "do_ui_user", true, "", "Make sure interface does not reference this material");
 
-  fn = api_def_fn(sapi, "tag", "rna_Main_materials_tag");
-  parm = RNA_def_bool(func, "value", 0, "Value", "");
+  fn = api_def_fn(sapi, "tag", "api_Main_materials_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
-void RNA_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_node_groups(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem dummy_items[] = {
+  static const EnumPropItem dummy_items[] = {
       {0, "DUMMY", 0, "", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  RNA_def_property_srna(cprop, "BlendDataNodeTrees");
-  srna = RNA_def_struct(brna, "BlendDataNodeTrees", NULL);
-  RNA_def_struct_sdna(srna, "Main");
-  RNA_def_struct_ui_text(srna, "Main Node Trees", "Collection of node trees");
+  api_def_prop_sapi(cprop, "BlendDataNodeTrees");
+  sapi = api_def_struct(dapi, "BlendDataNodeTrees", NULL);
+  api_def_struct_stype(sapi, "Main");
+  api_def_struct_ui_text(sapi, "Main Node Trees", "Collection of node trees");
 
-  func = RNA_def_function(srna, "new", "rna_Main_nodetree_new");
-  RNA_def_function_ui_description(func, "Add a new node tree to the main database");
-  parm = RNA_def_string(func, "name", "NodeGroup", 0, "", "New name for the data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "type", dummy_items, 0, "Type", "The type of node_group to add");
-  RNA_def_property_enum_funcs(parm, NULL, NULL, "rna_Main_nodetree_type_itemf");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_Main_nodetree_new");
+  api_def_fn_ui_description(fn, "Add a new node tree to the main");
+  parm = api_def_string(fn, "name", "NodeGroup", 0, "", "New name for the data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "type", dummy_items, 0, "Type", "The type of node_group to add");
+  api_def_prop_enum_fns(parm, NULL, NULL, "api_Main_nodetree_type_itemf");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "tree", "NodeTree", "", "New node tree data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "tree", "NodeTree", "", "New node tree data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a node tree from the current blendfile");
-  parm = RNA_def_pointer(func, "tree", "NodeTree", "", "Node tree to remove");
+  fn = api_def_fn(sapi, "remove", "api_Main_id_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a node tree from the current blendfile");
+  parm = apo_def_ptr(fn, "tree", "NodeTree", "", "Node tree to remove");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
   RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
   RNA_def_boolean(
