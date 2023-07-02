@@ -459,28 +459,27 @@ static void api_MeshLoopTriangle_normal_get(ApiPtr *ptr, float *values)
   normal_tri_v3(values, me->mvert[v1].co, me->mvert[v2].co, me->mvert[v3].co);
 }
 
-static void rna_MeshLoopTriangle_split_normals_get(PointerRNA *ptr, float *values)
+static void api_MeshLoopTriangle_split_normals_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   const float(*lnors)[3] = CustomData_get_layer(&me->ldata, CD_NORMAL);
 
   if (!lnors) {
     zero_v3(values + 0);
     zero_v3(values + 3);
     zero_v3(values + 6);
-  }
-  else {
-    MLoopTri *lt = (MLoopTri *)ptr->data;
+  } else {
+    MeshLoopTri *lt = (MeshLoopTri *)ptr->data;
     copy_v3_v3(values + 0, lnors[lt->tri[0]]);
     copy_v3_v3(values + 3, lnors[lt->tri[1]]);
     copy_v3_v3(values + 6, lnors[lt->tri[2]]);
   }
 }
 
-static float rna_MeshLoopTriangle_area_get(PointerRNA *ptr)
+static float api_MeshLoopTriangle_area_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoopTri *lt = (MLoopTri *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoopTri *lt = (MeshLoopTri *)ptr->data;
   unsigned int v1 = me->mloop[lt->tri[0]].v;
   unsigned int v2 = me->mloop[lt->tri[1]].v;
   unsigned int v3 = me->mloop[lt->tri[2]].v;
@@ -488,9 +487,9 @@ static float rna_MeshLoopTriangle_area_get(PointerRNA *ptr)
   return area_tri_v3(me->mvert[v1].co, me->mvert[v2].co, me->mvert[v3].co);
 }
 
-static void rna_MeshLoopColor_color_get(PointerRNA *ptr, float *values)
+static void api_MeshLoopColor_color_get(ApiPtr *ptr, float *values)
 {
-  MLoopCol *mlcol = (MLoopCol *)ptr->data;
+  MeshLoopCol *mlcol = (MeshLoopCol *)ptr->data;
 
   values[0] = mlcol->r / 255.0f;
   values[1] = mlcol->g / 255.0f;
@@ -498,9 +497,9 @@ static void rna_MeshLoopColor_color_get(PointerRNA *ptr, float *values)
   values[3] = mlcol->a / 255.0f;
 }
 
-static void rna_MeshLoopColor_color_set(PointerRNA *ptr, const float *values)
+static void api_MeshLoopColor_color_set(ApiPtr *ptr, const float *values)
 {
-  MLoopCol *mlcol = (MLoopCol *)ptr->data;
+  MeshLoopCol *mlcol = (MeshLoopCol *)ptr->data;
 
   mlcol->r = round_fl_to_uchar_clamp(values[0] * 255.0f);
   mlcol->g = round_fl_to_uchar_clamp(values[1] * 255.0f);
@@ -508,26 +507,26 @@ static void rna_MeshLoopColor_color_set(PointerRNA *ptr, const float *values)
   mlcol->a = round_fl_to_uchar_clamp(values[3] * 255.0f);
 }
 
-static int rna_Mesh_texspace_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_Mesh_texspace_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   Mesh *me = (Mesh *)ptr->data;
   return (me->texflag & ME_AUTOSPACE) ? 0 : PROP_EDITABLE;
 }
 
-static void rna_Mesh_texspace_size_get(PointerRNA *ptr, float values[3])
+static void api_Mesh_texspace_size_get(Apitr *ptr, float values[3])
 {
   Mesh *me = (Mesh *)ptr->data;
 
-  BKE_mesh_texspace_ensure(me);
+  dune_mesh_texspace_ensure(me);
 
   copy_v3_v3(values, me->size);
 }
 
-static void rna_Mesh_texspace_loc_get(PointerRNA *ptr, float values[3])
+static void api_Mesh_texspace_loc_get(PointerRNA *ptr, float values[3])
 {
   Mesh *me = (Mesh *)ptr->data;
 
-  BKE_mesh_texspace_ensure(me);
+  dune_mesh_texspace_ensure(me);
 
   copy_v3_v3(values, me->loc);
 }
@@ -582,8 +581,8 @@ static int api_CustomDataLayer_clone_get(ApiPtr *ptr, CustomData *data, int type
   return (n == CustomData_get_clone_layer_index(data, type));
 }
 
-static void rna_CustomDataLayer_active_set(
-    PointerRNA *ptr, CustomData *data, int value, int type, int render)
+static void api_CustomDataLayer_active_set(
+    ApiPtr *ptr, CustomData *data, int value, int type, int render)
 {
   Mesh *me = (Mesh *)ptr->owner_id;
   int n = (((CustomDataLayer *)ptr->data) - data->layers) - CustomData_get_layer_index(data, type);
@@ -594,15 +593,14 @@ static void rna_CustomDataLayer_active_set(
 
   if (render) {
     CustomData_set_layer_render(data, type, n);
-  }
-  else {
+  } else {
     CustomData_set_layer_active(data, type, n);
   }
 
-  BKE_mesh_update_customdata_pointers(me, true);
+  dune_mesh_update_customdata_pointers(me, true);
 }
 
-static void rna_CustomDataLayer_clone_set(PointerRNA *ptr, CustomData *data, int value, int type)
+static void api_CustomDataLayer_clone_set(ApiPtr *ptr, CustomData *data, int value, int type)
 {
   int n = ((CustomDataLayer *)ptr->data) - data->layers;
 
@@ -613,19 +611,19 @@ static void rna_CustomDataLayer_clone_set(PointerRNA *ptr, CustomData *data, int
   CustomData_set_layer_clone_index(data, type, n);
 }
 
-static bool rna_MEdge_freestyle_edge_mark_get(PointerRNA *ptr)
+static bool api_MEdge_freestyle_edge_mark_get(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MEdge *medge = (MEdge *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   FreestyleEdge *fed = CustomData_get(&me->edata, (int)(medge - me->medge), CD_FREESTYLE_EDGE);
 
   return fed && (fed->flag & FREESTYLE_EDGE_MARK) != 0;
 }
 
-static void rna_MEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
+static void api_MEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
 {
-  Mesh *me = rna_mesh(ptr);
-  MEdge *medge = (MEdge *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshEdge *medge = (MeshEdge *)ptr->data;
   FreestyleEdge *fed = CustomData_get(&me->edata, (int)(medge - me->medge), CD_FREESTYLE_EDGE);
 
   if (!fed) {
@@ -633,25 +631,24 @@ static void rna_MEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
   }
   if (value) {
     fed->flag |= FREESTYLE_EDGE_MARK;
-  }
-  else {
+  } else {
     fed->flag &= ~FREESTYLE_EDGE_MARK;
   }
 }
 
-static bool rna_MPoly_freestyle_face_mark_get(PointerRNA *ptr)
+static bool api_MeshPoly_freestyle_face_mark_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mpoly = (MPoly *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mpoly = (MPoly *)ptr->data;
   FreestyleFace *ffa = CustomData_get(&me->pdata, (int)(mpoly - me->mpoly), CD_FREESTYLE_FACE);
 
   return ffa && (ffa->flag & FREESTYLE_FACE_MARK) != 0;
 }
 
-static void rna_MPoly_freestyle_face_mark_set(PointerRNA *ptr, int value)
+static void api_MeshPoly_freestyle_face_mark_set(ApiPtr *ptr, int value)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mpoly = (MPoly *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mpoly = (MPoly *)ptr->data;
   FreestyleFace *ffa = CustomData_get(&me->pdata, (int)(mpoly - me->mpoly), CD_FREESTYLE_FACE);
 
   if (!ffa) {
@@ -675,8 +672,7 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(uv_layer, ldata, CD_MLOOPUV, render, MeshUVLoopLayer)
 
 /* MeshUVLoopLayer */
-
-static char *rna_MeshUVLoopLayer_path(PointerRNA *ptr)
+static char *api_MeshUVLoopLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
