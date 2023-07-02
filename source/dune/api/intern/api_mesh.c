@@ -611,7 +611,7 @@ static void api_CustomDataLayer_clone_set(ApiPtr *ptr, CustomData *data, int val
   CustomData_set_layer_clone_index(data, type, n);
 }
 
-static bool api_MEdge_freestyle_edge_mark_get(PointerRNA *ptr)
+static bool api_MeshEdge_freestyle_edge_mark_get(PointerRNA *ptr)
 {
   Mesh *me = api_mesh(ptr);
   MeshEdge *medge = (MeshEdge *)ptr->data;
@@ -620,7 +620,7 @@ static bool api_MEdge_freestyle_edge_mark_get(PointerRNA *ptr)
   return fed && (fed->flag & FREESTYLE_EDGE_MARK) != 0;
 }
 
-static void api_MEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
+static void api_MeshEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
 {
   Mesh *me = api_mesh(ptr);
   MeshEdge *medge = (MeshEdge *)ptr->data;
@@ -730,47 +730,46 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION(vertex_color, ldata, CD_MLOOPCOL)
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
     vertex_color, ldata, CD_MLOOPCOL, active, MeshLoopColorLayer)
 
-static void rna_MeshLoopColorLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshLoopColorLayer_data_begin(CollectionPropIter iter, ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(
+  api_iter_array_begin(
       iter, layer->data, sizeof(MLoopCol), (me->edit_mesh) ? 0 : me->totloop, 0, NULL);
 }
 
-static int rna_MeshLoopColorLayer_data_length(PointerRNA *ptr)
+static int api_MeshLoopColorLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totloop;
 }
 
-static bool rna_MeshLoopColorLayer_active_render_get(PointerRNA *ptr)
+static bool api_MeshLoopColorLayer_active_render_get(ApiPtr *ptr)
 {
-  return rna_CustomDataLayer_active_get(ptr, rna_mesh_ldata(ptr), CD_MLOOPCOL, 1);
+  return api_CustomDataLayer_active_get(ptr, api_mesh_ldata(ptr), CD_MLOOPCOL, 1);
 }
 
-static bool rna_MeshLoopColorLayer_active_get(PointerRNA *ptr)
+static bool api_MeshLoopColorLayer_active_get(ApiPtr *ptr)
 {
-  return rna_CustomDataLayer_active_get(ptr, rna_mesh_ldata(ptr), CD_MLOOPCOL, 0);
+  return api_CustomDataLayer_active_get(ptr, api_mesh_ldata(ptr), CD_MLOOPCOL, 0);
 }
 
-static void rna_MeshLoopColorLayer_active_render_set(PointerRNA *ptr, bool value)
+static void api_MeshLoopColorLayer_active_render_set(ApiPtr *ptr, bool value)
 {
-  rna_CustomDataLayer_active_set(ptr, rna_mesh_ldata(ptr), value, CD_MLOOPCOL, 1);
+  api_CustomDataLayer_active_set(ptr, rna_mesh_ldata(ptr), value, CD_MLOOPCOL, 1);
 }
 
-static void rna_MeshLoopColorLayer_active_set(PointerRNA *ptr, bool value)
+static void api_MeshLoopColorLayer_active_set(ApiPtr *ptr, bool value)
 {
-  rna_CustomDataLayer_active_set(ptr, rna_mesh_ldata(ptr), value, CD_MLOOPCOL, 0);
+  api_CustomDataLayer_active_set(ptr, api_mesh_ldata(ptr), value, CD_MLOOPCOL, 0);
 }
 
 /* sculpt_vertex_color_layers */
-
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(sculpt_vertex_color, vdata, CD_PROP_COLOR)
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
     sculpt_vertex_color, vdata, CD_PROP_COLOR, active, MeshVertColorLayer)
 
-static void rna_MeshVertColorLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshVertColorLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
