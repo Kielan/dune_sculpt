@@ -1569,17 +1569,17 @@ static void api_Mesh_sculpt_vertex_color_remove(struct Mesh *me,
                                                 ReportList *reports,
                                                 CustomDataLayer *layer)
 {
-  if (ED_mesh_sculpt_color_remove_named(me, layer->name) == false) {
-    BKE_reportf(reports, RPT_ERROR, "Sculpt vertex color '%s' not found", layer->name);
+  if (ed_mesh_sculpt_color_remove_named(me, layer->name) == false) {
+    dune_reportf(reports, RPT_ERROR, "Sculpt vertex color '%s' not found", layer->name);
   }
 }
 
-#  define DEFINE_CUSTOMDATA_PROPERTY_API( \
+#  define DEFINE_CUSTOMDATA_PROP_API( \
       elemname, datatype, cd_prop_type, cdata, countvar, layertype) \
-    static PointerRNA rna_Mesh_##elemname##_##datatype##_property_new(struct Mesh *me, \
-                                                                      const char *name) \
+    static ApiPtr api_Mesh_##elemname##_##datatype##_prop_new(struct Mesh *me, \
+                                                                  const char *name) \
     { \
-      PointerRNA ptr; \
+      ApiPtr ptr; \
       CustomDataLayer *cdl = NULL; \
       int index; \
 \
@@ -1588,46 +1588,46 @@ static void api_Mesh_sculpt_vertex_color_remove(struct Mesh *me,
 \
       cdl = (index == -1) ? NULL : &(me->cdata.layers[index]); \
 \
-      RNA_pointer_create(&me->id, &RNA_##layertype, cdl, &ptr); \
+      api_ptr_create(&me->id, &Api_##layertype, cdl, &ptr); \
       return ptr; \
     }
 
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     vertex, float, CD_PROP_FLOAT, vdata, totvert, MeshVertexFloatPropertyLayer)
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     vertex, int, CD_PROP_INT32, vdata, totvert, MeshVertexIntPropertyLayer)
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     vertex, string, CD_PROP_STRING, vdata, totvert, MeshVertexStringPropertyLayer)
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     polygon, float, CD_PROP_FLOAT, pdata, totpoly, MeshPolygonFloatPropertyLayer)
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     polygon, int, CD_PROP_INT32, pdata, totpoly, MeshPolygonIntPropertyLayer)
-DEFINE_CUSTOMDATA_PROPERTY_API(
+DEFINE_CUSTOMDATA_PROP_API(
     polygon, string, CD_PROP_STRING, pdata, totpoly, MeshPolygonStringPropertyLayer)
-#  undef DEFINE_CUSTOMDATA_PROPERTY_API
+#  undef DEFINE_CUSTOMDATA_PROP_API
 
-static PointerRNA rna_Mesh_uv_layers_new(struct Mesh *me,
+static ApiPtr api_Mesh_uv_layers_new(struct Mesh *me,
                                          ReportList *reports,
                                          const char *name,
                                          const bool do_init)
 {
-  PointerRNA ptr;
+  ApiPtr ptr;
   CustomData *ldata;
   CustomDataLayer *cdl = NULL;
-  int index = ED_mesh_uv_texture_add(me, name, false, do_init, reports);
+  int index = ed_mesh_uv_texture_add(me, name, false, do_init, reports);
 
   if (index != -1) {
-    ldata = rna_mesh_ldata_helper(me);
+    ldata = api_mesh_ldata_helper(me);
     cdl = &ldata->layers[CustomData_get_layer_index_n(ldata, CD_MLOOPUV, index)];
   }
 
-  RNA_pointer_create(&me->id, &RNA_MeshUVLoopLayer, cdl, &ptr);
+  api_ptr_create(&me->id, &RNA_MeshUVLoopLayer, cdl, &ptr);
   return ptr;
 }
 
-static void rna_Mesh_uv_layers_remove(struct Mesh *me, ReportList *reports, CustomDataLayer *layer)
+static void api_Mesh_uv_layers_remove(struct Mesh *me, ReportList *reports, CustomDataLayer *layer)
 {
-  if (ED_mesh_uv_texture_remove_named(me, layer->name) == false) {
+  if (ed_mesh_uv_texture_remove_named(me, layer->name) == false) {
     BKE_reportf(reports, RPT_ERROR, "Texture layer '%s' not found", layer->name);
   }
 }
