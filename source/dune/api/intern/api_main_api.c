@@ -948,7 +948,7 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
   ApiFn *fn;
   ApiProp *parm;
 
-  api_def_prop_sapo(cprop, "BlendDataObjects");
+  api_def_prop_sapi(cprop, "BlendDataObjects");
   sapi = api_def_struct(dapi, "BlendDataObjects", NULL);
   api_def_struct_stype(sapi, "Main");
   api_def_struct_ui_text(sapi, "Main Objects", "Collection of objects");
@@ -956,7 +956,7 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
   fn = api_def_fn(sapi, "new", "api_Main_objects_new");
   api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_fn_ui_description(fn, "Add a new object to the main database");
-  parm = api_def_string(func, "name", "Object", 0, "", "New name for the data-block");
+  parm = api_def_string(fn, "name", "Object", 0, "", "New name for the data-block");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "object_data", "ID", "", "Object data or None for an empty object");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -970,7 +970,7 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_flag(fn, FN_USE_REPORTS);
   parm = api_def_ptr(fn, "object", "Object", "", "Object to remove");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
   api_def_bool(
       fn, "do_unlink", true, "", "Unlink all usages of this object before deleting it");
   api_def_bool(fb,
@@ -988,8 +988,8 @@ void api_def_main_objects(DuneApi *dapi, ApiProp *cprop)
 
 void api_def_main_materials(DuneApi *dapi, ApiProp *cprop)
 {
-  ApiStruct *srna;
-  ApiFn *func;
+  ApiStruct *sapi;
+  ApiFn *fn;
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "BlendDataMaterials");
@@ -1031,9 +1031,9 @@ void api_def_main_materials(DuneApi *dapi, ApiProp *cprop)
   RNA_def_boolean(
       func, "do_ui_user", true, "", "Make sure interface does not reference this material");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_materials_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "rna_Main_materials_tag");
+  parm = RNA_def_bool(func, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 void RNA_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop)
 {
