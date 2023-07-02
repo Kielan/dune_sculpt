@@ -639,7 +639,7 @@ static void api_MeshEdge_freestyle_edge_mark_set(PointerRNA *ptr, bool value)
 static bool api_MeshPoly_freestyle_face_mark_get(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
-  MeshPoly *mpoly = (MPoly *)ptr->data;
+  MeshPoly *mpoly = (MeshPoly *)ptr->data;
   FreestyleFace *ffa = CustomData_get(&me->pdata, (int)(mpoly - me->mpoly), CD_FREESTYLE_FACE);
 
   return ffa && (ffa->flag & FREESTYLE_FACE_MARK) != 0;
@@ -648,7 +648,7 @@ static bool api_MeshPoly_freestyle_face_mark_get(ApiPtr *ptr)
 static void api_MeshPoly_freestyle_face_mark_set(ApiPtr *ptr, int value)
 {
   Mesh *me = api_mesh(ptr);
-  MeshPoly *mpoly = (MPoly *)ptr->data;
+  MeshPoly *mpoly = (MeshPoly *)ptr->data;
   FreestyleFace *ffa = CustomData_get(&me->pdata, (int)(mpoly - me->mpoly), CD_FREESTYLE_FACE);
 
   if (!ffa) {
@@ -767,7 +767,7 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION(sculpt_vertex_color, vdata, CD_PROP_COLOR)
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
     sculpt_vertex_color, vdata, CD_PROP_COLOR, active, MeshVertColorLayer)
 
-static void api_MeshVertColorLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshVertColorLayer_data_begin(CollectionPropIter *iter, PointerRNA *ptr)
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
@@ -775,18 +775,18 @@ static void api_MeshVertColorLayer_data_begin(CollectionPropertyIterator *iter, 
       iter, layer->data, sizeof(MeshPropCol), (me->edit_mesh) ? 0 : me->totvert, 0, NULL);
 }
 
-static int api_MeshVertColorLayer_data_length(PointerRNA *ptr)
+static int api_MeshVertColorLayer_data_length(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totvert;
 }
 
-static bool api_MeshVertColorLayer_active_render_get(PointerRNA *ptr)
+static bool api_MeshVertColorLayer_active_render_get(ApiPtr *ptr)
 {
-  return api_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 1);
+  return api_CustomDataLayer_active_get(ptr, api_mesh_vdata(ptr), CD_PROP_COLOR, 1);
 }
 
-static bool api_MeshVertColorLayer_active_get(PointerRNA *ptr)
+static bool api_MeshVertColorLayer_active_get(ApiPtr *ptr)
 {
   return api_CustomDataLayer_active_get(ptr, rna_mesh_vdata(ptr), CD_PROP_COLOR, 0);
 }
@@ -1330,21 +1330,21 @@ static char *api_MeshVertexFloatPropLayer_path(PointerRNA *ptr)
   lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
   return lib_sprintfn("vertex_float_layers[\"%s\"]", name_esc);
 }
-static char *api_MeshPolygonFloatPropertyLayer_path(PointerRNA *ptr)
+static char *api_MeshPolygonFloatPropLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("polygon_float_layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("polygon_float_layers[\"%s\"]", name_esc);
 }
 
-static char *rna_MeshVertexFloatProperty_path(PointerRNA *ptr)
+static char *api_MeshVertexFloatProp_path(ApiPtr *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "vertex_layers_float", CD_PROP_FLOAT);
+  return api_VertCustomData_data_path(ptr, "vertex_layers_float", CD_PROP_FLOAT);
 }
-static char *rna_MeshPolygonFloatProperty_path(PointerRNA *ptr)
+static char *api_MeshPolygonFloatProp_path(ApiPtr *ptr)
 {
-  return rna_PolyCustomData_data_path(ptr, "polygon_layers_float", CD_PROP_FLOAT);
+  return api_PolyCustomData_data_path(ptr, "polygon_layers_float", CD_PROP_FLOAT);
 }
 
 static void api_MeshVertexFloatPropLayer_data_begin(CollectionPropIter iter,
@@ -1381,7 +1381,7 @@ static char *api_MeshVertexIntPropLayer_path(ApiPtr *ptr)
   lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
   return lib_sprintfn("vertex_int_layers[\"%s\"]", name_esc);
 }
-static char *api_MeshPolygonIntPropertyLayer_path(PointerRNA *ptr)
+static char *api_MeshPolygonIntPropLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
@@ -1398,19 +1398,19 @@ static char *api_MeshPolygonIntProp_path(ApiPtr *ptr)
   return api_PolyCustomData_data_path(ptr, "polygon_layers_int", CD_PROP_INT32);
 }
 
-static void api_MeshVertexIntPropLayer_data_begin(CollectionPropertyIterator *iter,
-                                                      PointerRNA *ptr)
+static void api_MeshVertexIntPropLayer_data_begin(CollectionPropIter *iter,
+                                                  ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  api_iter_array_begin(iter, layer->data, sizeof(MIntProperty), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshIntProp), me->totvert, 0, NULL);
 }
-static void api_MeshPolygonIntPropertyLayer_data_begin(CollectionPropertyIterator *iter,
-                                                       PointerRNA *ptr)
+static void api_MeshPolygonIntPropertyLayer_data_begin(CollectionPropIter *iter,
+                                                       ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MIntProperty), me->totpoly, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshIntProp), me->totpoly, 0, NULL);
 }
 
 static int rna_MeshVertexIntPropertyLayer_data_length(PointerRNA *ptr)
