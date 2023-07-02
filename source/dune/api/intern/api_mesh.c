@@ -1367,48 +1367,48 @@ static int api_MeshVertexFloatPropertyLayer_data_length(PointerRNA *ptr)
   Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
-static int api_MeshPolygonFloatPropertyLayer_data_length(PointerRNA *ptr)
+static int api_MeshPolygonFloatPropLayer_data_length(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   return me->totpoly;
 }
 
 /**** Int Property Layer API ****/
-static char *rna_MeshVertexIntPropertyLayer_path(PointerRNA *ptr)
+static char *api_MeshVertexIntPropLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("vertex_int_layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("vertex_int_layers[\"%s\"]", name_esc);
 }
-static char *rna_MeshPolygonIntPropertyLayer_path(PointerRNA *ptr)
+static char *api_MeshPolygonIntPropertyLayer_path(PointerRNA *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("polygon_int_layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("polygon_int_layers[\"%s\"]", name_esc);
 }
 
-static char *rna_MeshVertexIntProperty_path(PointerRNA *ptr)
+static char *api_MeshVertexIntProp_path(ApiPtr *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "vertex_layers_int", CD_PROP_INT32);
+  return api_VertCustomData_data_path(ptr, "vertex_layers_int", CD_PROP_INT32);
 }
-static char *rna_MeshPolygonIntProperty_path(PointerRNA *ptr)
+static char *api_MeshPolygonIntProp_path(ApiPtr *ptr)
 {
-  return rna_PolyCustomData_data_path(ptr, "polygon_layers_int", CD_PROP_INT32);
+  return api_PolyCustomData_data_path(ptr, "polygon_layers_int", CD_PROP_INT32);
 }
 
-static void rna_MeshVertexIntPropertyLayer_data_begin(CollectionPropertyIterator *iter,
+static void api_MeshVertexIntPropLayer_data_begin(CollectionPropertyIterator *iter,
                                                       PointerRNA *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MIntProperty), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MIntProperty), me->totvert, 0, NULL);
 }
-static void rna_MeshPolygonIntPropertyLayer_data_begin(CollectionPropertyIterator *iter,
+static void api_MeshPolygonIntPropertyLayer_data_begin(CollectionPropertyIterator *iter,
                                                        PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
   rna_iterator_array_begin(iter, layer->data, sizeof(MIntProperty), me->totpoly, 0, NULL);
 }
