@@ -679,7 +679,7 @@ static char *api_MeshUVLoopLayer_path(ApiPtr *ptr)
   return lib_sprintfn("uv_layers[\"%s\"]", name_esc);
 }
 
-static void api_MeshUVLoopLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshUVLoopLayer_data_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
@@ -1347,29 +1347,29 @@ static char *rna_MeshPolygonFloatProperty_path(PointerRNA *ptr)
   return rna_PolyCustomData_data_path(ptr, "polygon_layers_float", CD_PROP_FLOAT);
 }
 
-static void rna_MeshVertexFloatPropertyLayer_data_begin(CollectionPropertyIterator *iter,
-                                                        PointerRNA *ptr)
+static void api_MeshVertexFloatPropLayer_data_begin(CollectionPropIter iter,
+                                                    ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MFloatProperty), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MFloatProperty), me->totvert, 0, NULL);
 }
-static void rna_MeshPolygonFloatPropertyLayer_data_begin(CollectionPropertyIterator *iter,
+static void api_MeshPolygonFloatPropertyLayer_data_begin(CollectionPropertyIterator *iter,
                                                          PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MFloatProperty), me->totpoly, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MFloatProperty), me->totpoly, 0, NULL);
 }
 
-static int rna_MeshVertexFloatPropertyLayer_data_length(PointerRNA *ptr)
+static int api_MeshVertexFloatPropertyLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
-static int rna_MeshPolygonFloatPropertyLayer_data_length(PointerRNA *ptr)
+static int api_MeshPolygonFloatPropertyLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totpoly;
 }
 
