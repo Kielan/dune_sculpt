@@ -1196,18 +1196,18 @@ void RNA_def_main_lights(DuneApi *dapi, ApiProp *cprop)
   RNA_def_boolean(
       func, "do_ui_user", true, "", "Make sure interface does not reference this light data");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_lights_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_function(srna, "tag", "rna_Main_lights_tag");
+  parm = api_def_bool(func, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop)
+void api_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BlendDataLibraries");
+  api_def_prop_sapi(cprop, "BlendDataLibraries");
   srna = RNA_def_struct(brna, "BlendDataLibraries", NULL);
   RNA_def_struct_sdna(srna, "Main");
   RNA_def_struct_ui_text(srna, "Main Libraries", "Collection of libraries");
