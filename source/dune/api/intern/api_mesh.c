@@ -676,7 +676,7 @@ static char *api_MeshUVLoopLayer_path(ApiPtr *ptr)
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
   lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return lin_sprintfN("uv_layers[\"%s\"]", name_esc);
+  return lib_sprintfn("uv_layers[\"%s\"]", name_esc);
 }
 
 static void api_MeshUVLoopLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -1040,7 +1040,7 @@ static ApiPtr api_Mesh_face_map_new(struct Mesh *me, ReportList *reports, const 
   api_cd_layer_name_set(pdata, cdl, name);
 
   ApiPtr ptr;
-  api_ptr_create(&me->id, &RNA_MeshFaceMapLayer, cdl, &ptr);
+  api_ptr_create(&me->id, &Api_MeshFaceMapLayer, cdl, &ptr);
   return ptr;
 }
 
@@ -1068,7 +1068,6 @@ static void api_Mesh_face_map_remove(struct Mesh *me,
 }
 
 /* End face maps */
-
 /* poly.vertices - this is faked loop access for convenience */
 static int api_MeshPoly_vertices_get_length(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
@@ -1162,17 +1161,17 @@ static int rna_MeshLoop_index_get(PointerRNA *ptr)
 
 /* path construction */
 
-static char *rna_VertexGroupElement_path(PointerRNA *ptr)
+static char *api_VertexGroupElement_path(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr); /* XXX not always! */
-  MDeformWeight *dw = (MDeformWeight *)ptr->data;
-  MDeformVert *dvert;
+  Mesh *me = api_mesh(ptr); /* XXX not always! */
+  MeshDeformWeight *dw = (MDeformWeight *)ptr->data;
+  MeshDeformVert *dvert;
   int a, b;
 
   for (a = 0, dvert = me->dvert; a < me->totvert; a++, dvert++) {
     for (b = 0; b < dvert->totweight; b++) {
       if (dw == &dvert->dw[b]) {
-        return BLI_sprintfN("vertices[%d].groups[%d]", a, b);
+        return lib_sprintfn("vertices[%d].groups[%d]", a, b);
       }
     }
   }
@@ -1180,7 +1179,7 @@ static char *rna_VertexGroupElement_path(PointerRNA *ptr)
   return NULL;
 }
 
-static char *rna_MeshPolygon_path(PointerRNA *ptr)
+static char *api_MeshPolygon_path(PointerRNA *ptr)
 {
   return BLI_sprintfN("polygons[%d]", (int)((MPoly *)ptr->data - rna_mesh(ptr)->mpoly));
 }
