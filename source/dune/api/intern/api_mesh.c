@@ -162,22 +162,22 @@ static void api_MeshEdgeLayer_name_set(ApiPtr *ptr, const char *value)
   api_cd_layer_name_set(rna_mesh_edata(ptr), (CustomDataLayer *)ptr->data, value);
 }
 #  endif
-static void api_MeshPolyLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshPolyLayer_name_set(ApiPtr *ptr, const char *value)
 {
-  api_cd_layer_name_set(rna_mesh_pdata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(api_mesh_pdata(ptr), (CustomDataLayer *)ptr->data, value);
 }
-static void api_MeshLoopLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshLoopLayer_name_set(ApiPtr *ptr, const char *value)
 {
-  api_cd_layer_name_set(rna_mesh_ldata(ptr), (CustomDataLayer *)ptr->data, value);
+  api_cd_layer_name_set(api_mesh_ldata(ptr), (CustomDataLayer *)ptr->data, value);
 }
 /* only for layers shared between types */
-static void api_MeshAnyLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MeshAnyLayer_name_set(ApiPtr *ptr, const char *value)
 {
   CustomData *cd = api_cd_from_layer(ptr, (CustomDataLayer *)ptr->data);
   api_cd_layer_name_set(cd, (CustomDataLayer *)ptr->data, value);
 }
 
-static bool api_Mesh_has_custom_normals_get(PointerRNA *ptr)
+static bool api_Mesh_has_custom_normals_get(ApiPtr *ptr)
 {
   Mesh *me = ptr->data;
   return dune_mesh_has_custom_loop_normals(me);
@@ -920,22 +920,22 @@ static char *api_MeshSkinVertexLayer_path(ApiPtr *ptr)
   return lib_sprintfn("skin_vertices[\"%s\"]", name_esc);
 }
 
-static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type);
-static char *rna_MeshSkinVertex_path(PointerRNA *ptr)
+static char *api_VertCustomData_data_path(ApiPtr *ptr, const char *collection, int type);
+static char *api_MeshSkinVertex_path(ApiPtr *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "skin_vertices", CD_MVERT_SKIN);
+  return api_VertCustomData_data_path(ptr, "skin_vertices", CD_MVERT_SKIN);
 }
 
-static void rna_MeshSkinVertexLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshSkinVertexLayer_data_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MVertSkin), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MVertSkin), me->totvert, 0, NULL);
 }
 
-static int rna_MeshSkinVertexLayer_data_length(PointerRNA *ptr)
+static int api_MeshSkinVertexLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
 
@@ -944,22 +944,22 @@ static int rna_MeshSkinVertexLayer_data_length(PointerRNA *ptr)
 /* Vertex creases */
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(vertex_crease, vdata, CD_CREASE)
 
-static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type);
-static char *rna_MeshVertexCreaseLayer_path(PointerRNA *ptr)
+static char *api_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type);
+static char *api_MeshVertexCreaseLayer_path(PointerRNA *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "vertex_creases", CD_CREASE);
+  return api_VertCustomData_data_path(ptr, "vertex_creases", CD_CREASE);
 }
 
-static void rna_MeshVertexCreaseLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshVertexCreaseLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(float), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(float), me->totvert, 0, NULL);
 }
 
-static int rna_MeshVertexCreaseLayer_data_length(PointerRNA *ptr)
+static int api_MeshVertexCreaseLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
 
@@ -968,30 +968,30 @@ static int rna_MeshVertexCreaseLayer_data_length(PointerRNA *ptr)
 /* Paint mask */
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(vertex_paint_mask, vdata, CD_PAINT_MASK)
 
-static char *rna_MeshPaintMaskLayer_path(PointerRNA *ptr)
+static char *api_MeshPaintMaskLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("vertex_paint_masks[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("vertex_paint_masks[\"%s\"]", name_esc);
 }
 
-static char *rna_MeshPaintMask_path(PointerRNA *ptr)
+static char *api_MeshPaintMask_path(ApiPtr *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "vertex_paint_masks", CD_PAINT_MASK);
+  return api_VertCustomData_data_path(ptr, "vertex_paint_masks", CD_PAINT_MASK);
 }
 
-static void rna_MeshPaintMaskLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshPaintMaskLayer_data_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(
-      iter, layer->data, sizeof(MFloatProperty), (me->edit_mesh) ? 0 : me->totvert, 0, NULL);
+  api_iter_array_begin(
+      iter, layer->data, sizeof(MeshFloatProp), (me->edit_mesh) ? 0 : me->totvert, 0, NULL);
 }
 
-static int rna_MeshPaintMaskLayer_data_length(PointerRNA *ptr)
+static int api_MeshPaintMaskLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totvert;
 }
 
@@ -1003,44 +1003,44 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION(face_map, pdata, CD_FACEMAP)
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
     face_map, pdata, CD_FACEMAP, active, MeshFaceMapLayer)
 
-static char *rna_MeshFaceMapLayer_path(PointerRNA *ptr)
+static char *api_MeshFaceMapLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("face_maps[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("face_maps[\"%s\"]", name_esc);
 }
 
-static void rna_MeshFaceMapLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MeshFaceMapLayer_data_begin(CollectionPropIter iter, ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(
+  api_iter_array_begin(
       iter, layer->data, sizeof(int), (me->edit_mesh) ? 0 : me->totpoly, 0, NULL);
 }
 
-static int rna_MeshFaceMapLayer_data_length(PointerRNA *ptr)
+static int api_MeshFaceMapLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totpoly;
 }
 
-static PointerRNA rna_Mesh_face_map_new(struct Mesh *me, ReportList *reports, const char *name)
+static ApiPtr api_Mesh_face_map_new(struct Mesh *me, ReportList *reports, const char *name)
 {
-  if (BKE_mesh_ensure_facemap_customdata(me) == false) {
-    BKE_report(reports, RPT_ERROR, "Currently only single face map layers are supported");
-    return PointerRNA_NULL;
+  if (dune_mesh_ensure_facemap_customdata(me) == false) {
+    dune_report(reports, RPT_ERROR, "Currently only single face map layers are supported");
+    return ApiPtr_NULL;
   }
 
   CustomData *pdata = rna_mesh_pdata_helper(me);
 
   int index = CustomData_get_layer_index(pdata, CD_FACEMAP);
-  BLI_assert(index != -1);
+  lib_assert(index != -1);
   CustomDataLayer *cdl = &pdata->layers[index];
-  rna_cd_layer_name_set(pdata, cdl, name);
+  api_cd_layer_name_set(pdata, cdl, name);
 
-  PointerRNA ptr;
-  RNA_pointer_create(&me->id, &RNA_MeshFaceMapLayer, cdl, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(&me->id, &RNA_MeshFaceMapLayer, cdl, &ptr);
   return ptr;
 }
 
