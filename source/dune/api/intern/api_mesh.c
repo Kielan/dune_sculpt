@@ -11,22 +11,22 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
-#include "BLI_math_base.h"
-#include "BLI_math_rotation.h"
-#include "BLI_utildefines.h"
+#include "lib_math_base.h"
+#include "lib_math_rotation.h"
+#include "lib_utildefines.h"
 
-#include "BKE_editmesh.h"
+#include "dune_editmesh.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-#include "RNA_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
+#include "api_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_mesh_delimit_mode_items[] = {
+const EnumPropItem api_enum_mesh_delimit_mode_items[] = {
     {BMO_DELIM_NORMAL, "NORMAL", 0, "Normal", "Delimit by face directions"},
     {BMO_DELIM_MATERIAL, "MATERIAL", 0, "Material", "Delimit by face material"},
     {BMO_DELIM_SEAM, "SEAM", 0, "Seam", "Delimit by edge seams"},
@@ -35,37 +35,36 @@ const EnumPropertyItem rna_enum_mesh_delimit_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_mesh_remesh_mode_items[] = {
+static const EnumPropItem api_enum_mesh_remesh_mode_items[] = {
     {REMESH_VOXEL, "VOXEL", 0, "Voxel", "Use the voxel remesher"},
     {REMESH_QUAD, "QUAD", 0, "Quad", "Use the quad remesher"},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_scene_types.h"
+#  include "types_scene.h"
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "BKE_customdata.h"
-#  include "BKE_main.h"
-#  include "BKE_mesh.h"
-#  include "BKE_mesh_runtime.h"
-#  include "BKE_report.h"
+#  include "dune_customdata.h"
+#  include "dune_main.h"
+#  include "dune_mesh.h"
+#  include "dune_mesh_runtime.h"
+#  include "dune_report.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_mesh.h" /* XXX Bad level call */
+#  include "ed_mesh.h" /* XXX Bad level call */
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-#  include "rna_mesh_utils.h"
+#  include "api_mesh_utils.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Generic Helpers
- * \{ */
+/** Generic Helpers */
 
-static Mesh *rna_mesh(PointerRNA *ptr)
+static Mesh *api_mesh(ApiPtr *ptr)
 {
   Mesh *me = (Mesh *)ptr->owner_id;
   return me;
