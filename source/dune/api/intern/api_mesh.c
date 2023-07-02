@@ -1456,27 +1456,27 @@ static void rna_MeshVertexStringPropertyLayer_data_begin(CollectionPropertyItera
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
   rna_iterator_array_begin(iter, layer->data, sizeof(MStringProperty), me->totvert, 0, NULL);
 }
-static void rna_MeshPolygonStringPropertyLayer_data_begin(CollectionPropertyIterator *iter,
-                                                          PointerRNA *ptr)
+static void rna_MeshPolygonStringPropertyLayer_data_begin(CollectionPropIter *iter,
+                                                          ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MStringProperty), me->totpoly, 0, NULL);
+  rna_iterator_array_begin(iter, layer->data, sizeof(MeshStringProp), me->totpoly, 0, NULL);
 }
 
-static int rna_MeshVertexStringPropertyLayer_data_length(PointerRNA *ptr)
+static int rna_MeshVertexStringPropertyLayer_data_length(ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   return me->totvert;
 }
-static int rna_MeshPolygonStringPropertyLayer_data_length(PointerRNA *ptr)
+static int rna_MeshPolygonStringPropertyLayer_data_length(ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
   return me->totpoly;
 }
 
 /* XXX, we don't have proper byte string support yet, so for now use the (bytes + 1)
- * bmesh API exposes correct python/byte-string access. */
+ * mesh API exposes correct python/byte-string access. */
 void api_MeshStringProp_s_get(ApiPtr *ptr, char *value)
 {
   MeshStringProp *ms = (MeshStringProp *)ptr->data;
@@ -1489,10 +1489,10 @@ int mesh_MeshStringProp_s_length(ApiPtr *ptr)
   return (int)ms->s_len + 1;
 }
 
-void rna_MeshStringProperty_s_set(ApiPtr *ptr, const char *value)
+void api_MeshStringProp_s_set(ApiPtr *ptr, const char *value)
 {
-  MStringProperty *ms = (MStringProperty *)ptr->data;
-  BLI_strncpy(ms->s, value, sizeof(ms->s));
+  MeshStringProp *ms = (MeshStringProp)ptr->data;
+  lib_strncpy(ms->s, value, sizeof(ms->s));
 }
 
 static char *api_MeshFaceMap_path(ApiPtr *ptr)
@@ -1502,26 +1502,26 @@ static char *api_MeshFaceMap_path(ApiPtr *ptr)
 
 /***************************************/
 
-static int api_Mesh_tot_vert_get(PointerRNA *ptr)
+static int api_Mesh_tot_vert_get(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totvertsel : 0;
 }
-static int api_Mesh_tot_edge_get(PointerRNA *ptr)
+static int api_Mesh_tot_edge_get(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totedgesel : 0;
 }
-static int api_Mesh_tot_face_get(PointerRNA *ptr)
+static int api_Mesh_tot_face_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->edit_mesh ? me->edit_mesh->bm->totfacesel : 0;
 }
 
 static ApiPtr api_Mesh_vertex_color_new(struct Mesh *me,
-                                            ReportList *reports,
-                                            const char *name,
-                                            const bool do_init)
+                                        ReportList *reports,
+                                        const char *name,
+                                        const bool do_init)
 {
   ApiPtr ptr;
   CustomData *ldata;
