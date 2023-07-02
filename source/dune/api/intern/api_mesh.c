@@ -1044,56 +1044,56 @@ static ApiPtr api_Mesh_face_map_new(struct Mesh *me, ReportList *reports, const 
   return ptr;
 }
 
-static void rna_Mesh_face_map_remove(struct Mesh *me,
+static void api_Mesh_face_map_remove(struct Mesh *me,
                                      ReportList *reports,
                                      struct CustomDataLayer *layer)
 {
   /* just for sanity check */
   {
-    CustomData *pdata = rna_mesh_pdata_helper(me);
+    CustomData *pdata = api_mesh_pdata_helper(me);
     int index = CustomData_get_layer_index(pdata, CD_FACEMAP);
     if (index != -1) {
       CustomDataLayer *layer_test = &pdata->layers[index];
       if (layer != layer_test) {
         /* don't show name, its likely freed memory */
-        BKE_report(reports, RPT_ERROR, "Face map not in mesh");
+        dune_report(reports, RPT_ERROR, "Face map not in mesh");
         return;
       }
     }
   }
 
-  if (BKE_mesh_clear_facemap_customdata(me) == false) {
-    BKE_report(reports, RPT_ERROR, "Error removing face map");
+  if (dune_mesh_clear_facemap_customdata(me) == false) {
+    dune_report(reports, RPT_ERROR, "Error removing face map");
   }
 }
 
 /* End face maps */
 
 /* poly.vertices - this is faked loop access for convenience */
-static int rna_MeshPoly_vertices_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_MeshPoly_vertices_get_length(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
-  MPoly *mp = (MPoly *)ptr->data;
+  MeshPoly *mp = (MeshPoly *)ptr->data;
   /* NOTE: raw access uses dummy item, this _could_ crash,
    * watch out for this, mface uses it but it can't work here. */
   return (length[0] = mp->totloop);
 }
 
-static void rna_MeshPoly_vertices_get(PointerRNA *ptr, int *values)
+static void api_MeshPoly_vertices_get(ApiPtr *ptr, int *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mp = (MPoly *)ptr->data;
-  MLoop *ml = &me->mloop[mp->loopstart];
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mp = (MeshPoly *)ptr->data;
+  MeshLoop *ml = &me->mloop[mp->loopstart];
   unsigned int i;
   for (i = mp->totloop; i > 0; i--, values++, ml++) {
     *values = ml->v;
   }
 }
 
-static void rna_MeshPoly_vertices_set(PointerRNA *ptr, const int *values)
+static void api_MeshPoly_vertices_set(ApiPtr *ptr, const int *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mp = (MPoly *)ptr->data;
-  MLoop *ml = &me->mloop[mp->loopstart];
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mp = (MeshPoly *)ptr->data;
+  MeshLoop *ml = &me->mloop[mp->loopstart];
   unsigned int i;
   for (i = mp->totloop; i > 0; i--, values++, ml++) {
     ml->v = *values;
@@ -1102,33 +1102,33 @@ static void rna_MeshPoly_vertices_set(PointerRNA *ptr, const int *values)
 
 /* disabling, some importers don't know the total material count when assigning materials */
 #  if 0
-static void rna_MeshPoly_material_index_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void api_MeshPoly_material_index_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   *min = 0;
   *max = max_ii(0, me->totcol - 1);
 }
 #  endif
 
-static int rna_MeshVertex_index_get(PointerRNA *ptr)
+static int api_MeshVertex_index_get(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MVert *vert = (MVert *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshVert *vert = (MeshVert *)ptr->data;
   return (int)(vert - me->mvert);
 }
 
-static int rna_MeshEdge_index_get(PointerRNA *ptr)
+static int api_MeshEdge_index_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MEdge *edge = (MEdge *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshEdge *edge = (MeshEdge *)ptr->data;
   return (int)(edge - me->medge);
 }
 
-static int rna_MeshLoopTriangle_index_get(PointerRNA *ptr)
+static int api_MeshLoopTriangle_index_get(PointerRNA *ptr)
 {
   Mesh *me = rna_mesh(ptr);
-  MLoopTri *ltri = (MLoopTri *)ptr->data;
+  MeshLoopTri *ltri = (MLoopTri *)ptr->data;
   return (int)(ltri - me->runtime.looptris.array);
 }
 
