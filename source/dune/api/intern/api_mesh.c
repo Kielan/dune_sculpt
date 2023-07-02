@@ -893,11 +893,11 @@ static void api_Mesh_polygon_string_layers_begin(CollectionPropertyIterator *ite
 {
   CustomData *pdata = api_mesh_pdata(ptr);
   api_iter_array_begin(iter,
-                           (void *)pdata->layers,
-                           sizeof(CustomDataLayer),
-                           pdata->totlayer,
-                           0,
-                           api_string_layer_check);
+                       (void *)pdata->layers,
+                       sizeof(CustomDataLayer),
+                       pdata->totlayer,
+                       0,
+                       api_string_layer_check);
 }
 
 static int api_Mesh_vertex_string_layers_length(ApiPtr *ptr)
@@ -930,10 +930,10 @@ static void api_MeshSkinVertexLayer_data_begin(CollectionPropIter *iter, ApiPtr 
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  api_iter_array_begin(iter, layer->data, sizeof(MVertSkin), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshVertSkin), me->totvert, 0, NULL);
 }
 
-static int api_MeshSkinVertexLayer_data_length(PointerRNA *ptr)
+static int api_MeshSkinVertexLayer_data_length(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   return me->totvert;
@@ -1130,7 +1130,7 @@ static int api_MeshLoopTriangle_index_get(ApiPtr *ptr)
 
 static int api_MeshLoopTriangle_material_index_get(ApiPtr *ptr)
 {
-  Mesh *me = apo_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   MeshLoopTri *ltri = (MeshLoopTri *)ptr->data;
   return me->mpoly[ltri->poly].mat_nr;
 }
@@ -1413,65 +1413,65 @@ static void api_MeshPolygonIntPropertyLayer_data_begin(CollectionPropIter *iter,
   api_iter_array_begin(iter, layer->data, sizeof(MeshIntProp), me->totpoly, 0, NULL);
 }
 
-static int rna_MeshVertexIntPropertyLayer_data_length(PointerRNA *ptr)
+static int api_MeshVertexIntPropLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
-static int rna_MeshPolygonIntPropertyLayer_data_length(PointerRNA *ptr)
+static int api_MeshPolygonIntPropLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totpoly;
 }
 
-/**** String Property Layer API ****/
-static char *rna_MeshVertexStringPropertyLayer_path(PointerRNA *ptr)
+/**** String Prop Layer API ****/
+static char *api_MeshVertexStringPropLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("vertex_string_layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("vertex_string_layers[\"%s\"]", name_esc);
 }
-static char *rna_MeshPolygonStringPropertyLayer_path(PointerRNA *ptr)
+static char *api_MeshPolygonStringPropLayer_path(ApiPtr *ptr)
 {
   CustomDataLayer *cdl = ptr->data;
   char name_esc[sizeof(cdl->name) * 2];
-  BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-  return BLI_sprintfN("polygon_string_layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+  return lib_sprintfn("polygon_string_layers[\"%s\"]", name_esc);
 }
 
-static char *rna_MeshVertexStringProperty_path(PointerRNA *ptr)
+static char *api_MeshVertexStringProp_path(ApiPtr *ptr)
 {
-  return rna_VertCustomData_data_path(ptr, "vertex_layers_string", CD_PROP_STRING);
+  return api_VertCustomData_data_path(ptr, "vertex_layers_string", CD_PROP_STRING);
 }
-static char *rna_MeshPolygonStringProperty_path(PointerRNA *ptr)
+static char *api_MeshPolygonStringProp_path(ApiPtr *ptr)
 {
-  return rna_PolyCustomData_data_path(ptr, "polygon_layers_string", CD_PROP_STRING);
+  return api_PolyCustomData_data_path(ptr, "polygon_layers_string", CD_PROP_STRING);
 }
 
-static void rna_MeshVertexStringPropertyLayer_data_begin(CollectionPropertyIterator *iter,
-                                                         PointerRNA *ptr)
+static void api_MeshVertexStringPropLayer_data_begin(CollectionProIter *iter,
+                                                     ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MStringProperty), me->totvert, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshStringProp), me->totvert, 0, NULL);
 }
-static void rna_MeshPolygonStringPropertyLayer_data_begin(CollectionPropIter *iter,
+static void api_MeshPolygonStringPropertyLayer_data_begin(CollectionPropIter *iter,
                                                           ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
-  rna_iterator_array_begin(iter, layer->data, sizeof(MeshStringProp), me->totpoly, 0, NULL);
+  api_iter_array_begin(iter, layer->data, sizeof(MeshStringProp), me->totpoly, 0, NULL);
 }
 
-static int rna_MeshVertexStringPropertyLayer_data_length(ApiPtr *ptr)
+static int api_MeshVertexStringPropertyLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totvert;
 }
-static int rna_MeshPolygonStringPropertyLayer_data_length(ApiPtr *ptr)
+static int api_MeshPolygonStringPropLayer_data_length(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return me->totpoly;
 }
 
