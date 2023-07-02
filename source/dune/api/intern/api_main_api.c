@@ -1098,29 +1098,29 @@ void RNA_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop)
   parm = RNA_def_string(func, "name", "Mesh", 0, "", "New name for the data-block");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "mesh", "Mesh", "", "New mesh data-block");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "mesh", "Mesh", "", "New mesh data-block");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_from_object", "rna_Main_meshes_new_from_object");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "new_from_object", "api_Main_meshes_new_from_object");
+  api_def_fn_ui_description(
+      fn,
       "Add a new mesh created from given object (undeformed geometry if object is original, and "
       "final evaluated geometry, with all modifiers etc., if object is evaluated)");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "object", "Object", "", "Object to create mesh from");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  RNA_def_boolean(func,
-                  "preserve_all_data_layers",
-                  false,
-                  "",
-                  "Preserve all data layers in the mesh, like UV maps and vertex groups. "
-                  "By default Blender only computes the subset of data layers needed for viewport "
-                  "display and rendering, for better performance");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fb, "object", "Object", "", "Object to create mesh from");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_bool(fn,
+               "preserve_all_data_layers",
+               false,
+               "",
+               "Preserve all data layers in the mesh, like UV maps and vertex groups. "
+               "By default Blender only computes the subset of data layers needed for viewport "
+               "display and rendering, for better performance");
   RNA_def_pointer(
       func,
-      "depsgraph",
-      "Depsgraph",
-      "Dependency Graph",
+      "graph",
+      "Graph",
+      "Graph",
       "Evaluated dependency graph which is required when preserve_all_data_layers is true");
   parm = RNA_def_pointer(func,
                          "mesh",
