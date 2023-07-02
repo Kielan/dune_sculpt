@@ -563,7 +563,7 @@ static void api_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
   }
 }
 
-static int rna_CustomDataLayer_active_get(PointerRNA *ptr, CustomData *data, int type, bool render)
+static int api_CustomDataLayer_active_get(PointerRNA *ptr, CustomData *data, int type, bool render)
 {
   int n = ((CustomDataLayer *)ptr->data) - data->layers;
 
@@ -656,8 +656,7 @@ static void api_MeshPoly_freestyle_face_mark_set(ApiPtr *ptr, int value)
   }
   if (value) {
     ffa->flag |= FREESTYLE_FACE_MARK;
-  }
-  else {
+  } else {
     ffa->flag &= ~FREESTYLE_FACE_MARK;
   }
 }
@@ -690,13 +689,13 @@ static void api_MeshUVLoopLayer_data_begin(CollectionPropertyIterator *iter, Poi
 
 static int api_MeshUVLoopLayer_data_length(PointerRNA *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh) ? 0 : me->totloop;
 }
 
 static bool api_MeshUVLoopLayer_active_render_get(PointerRNA *ptr)
 {
-  return rna_CustomDataLayer_active_get(ptr, rna_mesh_ldata(ptr), CD_MLOOPUV, 1);
+  return api_CustomDataLayer_active_get(ptr, rna_mesh_ldata(ptr), CD_MLOOPUV, 1);
 }
 
 static bool api_MeshUVLoopLayer_active_get(PointerRNA *ptr)
@@ -820,49 +819,49 @@ static void api_Mesh_vertex_float_layers_begin(CollectionPropertyIterator *iter,
 }
 static void api_Mesh_polygon_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  CustomData *pdata = rna_mesh_pdata(ptr);
-  rna_iterator_array_begin(iter,
-                           (void *)pdata->layers,
-                           sizeof(CustomDataLayer),
-                           pdata->totlayer,
-                           0,
-                           rna_float_layer_check);
+  CustomData *pdata = api_mesh_pdata(ptr);
+  api_iter_array_begin(iter,
+                       (void *)pdata->layers,
+                       sizeof(CustomDataLayer),
+                       pdata->totlayer,
+                       0,
+                       api_float_layer_check);
 }
 
-static int rna_Mesh_vertex_float_layers_length(PointerRNA *ptr)
+static int api_Mesh_vertex_float_layers_length(PointerRNA *ptr)
 {
   return CustomData_number_of_layers(rna_mesh_vdata(ptr), CD_PROP_FLOAT);
 }
-static int rna_Mesh_polygon_float_layers_length(PointerRNA *ptr)
+static int api_Mesh_polygon_float_layers_length(PointerRNA *ptr)
 {
   return CustomData_number_of_layers(rna_mesh_pdata(ptr), CD_PROP_FLOAT);
 }
 
-static int rna_int_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_int_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
   CustomDataLayer *layer = (CustomDataLayer *)data;
   return (layer->type != CD_PROP_INT32);
 }
 
-static void rna_Mesh_vertex_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_vertex_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  CustomData *vdata = rna_mesh_vdata(ptr);
-  rna_iterator_array_begin(iter,
-                           (void *)vdata->layers,
-                           sizeof(CustomDataLayer),
-                           vdata->totlayer,
-                           0,
-                           rna_int_layer_check);
+  CustomData *vdata = api_mesh_vdata(ptr);
+  api_iter_array_begin(iter,
+                       (void *)vdata->layers,
+                       sizeof(CustomDataLayer),
+                       vdata->totlayer,
+                       0,
+                       api_int_layer_check);
 }
-static void rna_Mesh_polygon_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mesh_polygon_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-  CustomData *pdata = rna_mesh_pdata(ptr);
-  rna_iterator_array_begin(iter,
-                           (void *)pdata->layers,
-                           sizeof(CustomDataLayer),
-                           pdata->totlayer,
-                           0,
-                           rna_int_layer_check);
+  CustomData *pdata = api_mesh_pdata(ptr);
+  api_iter_array_begin(iter,
+                       (void *)pdata->layers,
+                       sizeof(CustomDataLayer),
+                       pdata->totlayer,
+                       0,
+                       api_int_layer_check);
 }
 
 static int rna_Mesh_vertex_int_layers_length(PointerRNA *ptr)
