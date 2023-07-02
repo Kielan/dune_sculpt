@@ -1910,158 +1910,158 @@ static void rna_def_mloop(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "e");
   api_def_prop_ui_text(prop, "Edge", "Edge index");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  api_def_property_clear_flag(prop, PROP_EDITABLE);
-  api_def_property_int_funcs(prop, "rna_MeshLoop_index_get", NULL, NULL);
-  api_def_property_ui_text(prop, "Index", "Index of this loop");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fms(prop, "api_MeshLoop_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this loop");
 
-  prop = api_def_prop(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoop_normal_get", "rna_MeshLoop_normal_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_float_fns(prop, "api_MeshLoop_normal_get", "rna_MeshLoop_normal_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Normal",
       "Local space unit length split normal vector of this vertex for this polygon "
       "(must be computed beforehand using calc_normals_split or calc_tangents)");
 
-  prop = RNA_def_property(srna, "tangent", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoop_tangent_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tangent", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoop_tangent_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop,
       "Tangent",
       "Local space unit length tangent vector of this vertex for this polygon "
       "(must be computed beforehand using calc_tangents)");
 
-  prop = RNA_def_property(srna, "bitangent_sign", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoop_bitangent_sign_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bitangent_sign", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoop_bitangent_sign_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop,
       "Bitangent Sign",
       "Sign of the bitangent vector of this vertex for this polygon (must be computed "
       "beforehand using calc_tangents, bitangent = bitangent_sign * cross(normal, tangent))");
 
-  prop = RNA_def_property(srna, "bitangent", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshLoop_bitangent_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bitangent", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshLoop_bitangent_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop,
       "Bitangent",
       "Bitangent vector of this vertex for this polygon (must be computed beforehand using "
       "calc_tangents, use it only if really needed, slower access than bitangent_sign)");
 }
 
-static void rna_def_mpolygon(BlenderRNA *brna)
+static void api_def_mpolygon(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiFn *fn;
 
-  srna = RNA_def_struct(brna, "MeshPolygon", NULL);
-  RNA_def_struct_sdna(srna, "MPoly");
-  RNA_def_struct_ui_text(srna, "Mesh Polygon", "Polygon in a Mesh data-block");
-  RNA_def_struct_path_func(srna, "rna_MeshPolygon_path");
-  RNA_def_struct_ui_icon(srna, ICON_FACESEL);
+  sapi = api_def_struct(dapi, "MeshPolygon", NULL);
+  api_def_struct_stype(sapi, "MPoly");
+  api_def_struct_ui_text(sapi, "Mesh Polygon", "Polygon in a Mesh data-block");
+  api_def_struct_path_fn(sapi, "api_MeshPolygon_path");
+  api_def_struct_ui_icon(sapi, ICON_FACESEL);
 
   /* Faked, actually access to loop vertex values, don't this way because manually setting up
    * vertex/edge per loop is very low level.
    * Instead we setup poly sizes, assign indices, then calc edges automatic when creating
    * meshes from rna/py. */
-  prop = RNA_def_property(srna, "vertices", PROP_INT, PROP_UNSIGNED);
+  prop = api_def_prop(sapi, "vertices", PROP_INT, PROP_UNSIGNED);
   /* Eek, this is still used in some cases but in fact we don't want to use it at all here. */
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_MeshPoly_vertices_get_length");
-  RNA_def_property_int_funcs(prop, "rna_MeshPoly_vertices_get", "rna_MeshPoly_vertices_set", NULL);
-  RNA_def_property_ui_text(prop, "Vertices", "Vertex indices");
+  api_def_prop_array(prop, 3);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(prop, "api_MeshPoly_vertices_get_length");
+  api_def_prop_int_funcs(prop, "api_MeshPoly_vertices_get", "rna_MeshPoly_vertices_set", NULL);
+  api_def_prop_ui_text(prop, "Vertices", "Vertex indices");
 
   /* these are both very low level access */
-  prop = RNA_def_property(srna, "loop_start", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "loopstart");
-  RNA_def_property_ui_text(prop, "Loop Start", "Index of the first loop of this polygon");
+  prop = api_def_prop(sapi, "loop_start", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "loopstart");
+  api_def_prop_ui_text(prop, "Loop Start", "Index of the first loop of this polygon");
   /* also low level */
-  prop = RNA_def_property(srna, "loop_total", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "totloop");
-  RNA_def_property_ui_text(prop, "Loop Total", "Number of loops used by this polygon");
+  prop = api_def_prop(sapi, "loop_total", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "totloop");
+  api_def_prop_ui_text(prop, "Loop Total", "Number of loops used by this polygon");
 
-  prop = RNA_def_property(srna, "material_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "mat_nr");
-  RNA_def_property_ui_text(prop, "Material Index", "Material slot index of this polygon");
+  prop = api_def_prop(sapi, "material_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "mat_nr");
+  api_def_prop_ui_text(prop, "Material Index", "Material slot index of this polygon");
 #  if 0
-  RNA_def_property_int_funcs(prop, NULL, NULL, "rna_MeshPoly_material_index_range");
+  api_def_prop_int_fns(prop, NULL, NULL, "api_MeshPoly_material_index_range");
 #  endif
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_FACE_SEL);
-  RNA_def_property_ui_text(prop, "Select", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_FACE_SEL);
+  api_def_prop_ui_text(prop, "Select", "");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_HIDE);
-  RNA_def_property_ui_text(prop, "Hide", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "hide", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flag", ME_HIDE);
+  api_def_prop_ui_text(prop, "Hide", "");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "use_smooth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_SMOOTH);
-  RNA_def_property_ui_text(prop, "Smooth", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "use_smooth", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_SMOOTH);
+  api_def_prop_ui_text(prop, "Smooth", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MPoly_freestyle_face_mark_get", "rna_MPoly_freestyle_face_mark_set");
-  RNA_def_property_ui_text(prop, "Freestyle Face Mark", "Face mark for Freestyle line rendering");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_MeshPoly_freestyle_face_mark_get", "rna_MPoly_freestyle_face_mark_set");
+  api_def_prop_ui_text(prop, "Freestyle Face Mark", "Face mark for Freestyle line rendering");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, -1.0f, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshPolygon_normal_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, -1.0f, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_MeshPolygon_normal_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Polygon Normal", "Local space unit length normal vector for this polygon");
 
-  prop = RNA_def_property(srna, "center", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshPolygon_center_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Polygon Center", "Center of this polygon");
+  prop = api_def_prop(sapi, "center", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_array(prop, 3);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_MeshPolygon_center_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Polygon Center", "Center of this polygon");
 
-  prop = RNA_def_property(srna, "area", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_MeshPolygon_area_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Polygon Area", "Read only area of this polygon");
+  prop = api_def_prop(sapi, "area", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_MeshPolygon_area_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Polygon Area", "Read only area of this polygon");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshPolygon_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this polygon");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "api_MeshPolygon_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this polygon");
 
-  func = RNA_def_function(srna, "flip", "rna_MeshPolygon_flip");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Invert winding of this polygon (flip its normal)");
+  fn = api_def_fn(sapi, "flip", "api_MeshPolygon_flip");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Invert winding of this polygon (flip its normal)");
 }
 
 /* mesh.loop_uvs */
-static void rna_def_mloopuv(BlenderRNA *brna)
+static void api_def_mloopuv(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MeshUVLoopLayer", NULL);
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_path_func(srna, "rna_MeshUVLoopLayer_path");
+  sapi = api_def_struct(dapi, "MeshUVLoopLayer", NULL);
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_path_fn(sapi, "api_MeshUVLoopLayer_path");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MeshUVLoop");
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MeshUVLoop");
+  api_def_prop_collection_fns(prop,
                                     "rna_MeshUVLoopLayer_data_begin",
                                     "rna_iterator_array_next",
                                     "rna_iterator_array_end",
