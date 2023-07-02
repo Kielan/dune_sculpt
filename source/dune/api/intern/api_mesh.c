@@ -262,12 +262,12 @@ static void api_Mesh_update_vertmask(Main *main, Scene *scene, ApiPtr *ptr)
     me->editflag &= ~ME_EDIT_PAINT_FACE_SEL;
   }
 
-  BKE_mesh_batch_cache_dirty_tag(me, BKE_MESH_BATCH_DIRTY_ALL);
+  dune_mesh_batch_cache_dirty_tag(me, DUNE_MESH_BATCH_DIRTY_ALL);
 
-  rna_Mesh_update_draw(bmain, scene, ptr);
+  api_Mesh_update_draw(main, scene, ptr);
 }
 
-static void rna_Mesh_update_facemask(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mesh_update_facemask(Main *main, Scene *scene, PointerRNA *ptr)
 {
   Mesh *me = ptr->data;
   if ((me->editflag & ME_EDIT_PAINT_VERT_SEL) && (me->editflag & ME_EDIT_PAINT_FACE_SEL)) {
@@ -284,7 +284,7 @@ static void rna_Mesh_update_facemask(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static void api_MeshVertex_normal_get(ApiPtr *ptr, float *value)
 {
-  Mesh *mesh = rna_mesh(ptr);
+  Mesh *mesh = api_mesh(ptr);
   const float(*vert_normals)[3] = dune_mesh_vertex_normals_ensure(mesh);
 
   const int index = (MeshVert *)ptr->data - mesh->mvert;
@@ -381,19 +381,19 @@ static void api_MeshLoop_tangent_get(PointerRNA *ptr, float *values)
   }
 }
 
-static float rna_MeshLoop_bitangent_sign_get(PointerRNA *ptr)
+static float api_MeshLoop_bitangent_sign_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *ml = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoop *ml = (MeshLoop *)ptr->data;
   const float(*vec)[4] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_MLOOPTANGENT);
 
   return (vec) ? (*vec)[3] : 0.0f;
 }
 
-static void rna_MeshLoop_bitangent_get(PointerRNA *ptr, float *values)
+static void api_MeshLoop_bitangent_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoop *ml = (MLoop *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoop *ml = (MeshLoop *)ptr->data;
   const float(*nor)[3] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_NORMAL);
   const float(*vec)[4] = CustomData_get(&me->ldata, (int)(ml - me->mloop), CD_MLOOPTANGENT);
 
@@ -406,53 +406,53 @@ static void rna_MeshLoop_bitangent_get(PointerRNA *ptr, float *values)
   }
 }
 
-static void rna_MeshPolygon_normal_get(PointerRNA *ptr, float *values)
+static void api_MeshPolygon_normal_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mp = (MPoly *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mp = (MeshPoly *)ptr->data;
 
-  BKE_mesh_calc_poly_normal(mp, me->mloop + mp->loopstart, me->mvert, values);
+  dune_mesh_calc_poly_normal(mp, me->mloop + mp->loopstart, me->mvert, values);
 }
 
-static void rna_MeshPolygon_center_get(PointerRNA *ptr, float *values)
+static void api_MeshPolygon_center_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MPoly *mp = (MPoly *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshPoly *mp = (MeshPoly *)ptr->data;
 
-  BKE_mesh_calc_poly_center(mp, me->mloop + mp->loopstart, me->mvert, values);
+  dune_mesh_calc_poly_center(mp, me->mloop + mp->loopstart, me->mvert, values);
 }
 
-static float rna_MeshPolygon_area_get(PointerRNA *ptr)
+static float rna_MeshPolygon_area_get(ApiPtr *ptr)
 {
   Mesh *me = (Mesh *)ptr->owner_id;
-  MPoly *mp = (MPoly *)ptr->data;
+  MeshPoly *mp = (MPoly *)ptr->data;
 
-  return BKE_mesh_calc_poly_area(mp, me->mloop + mp->loopstart, me->mvert);
+  return dune_mesh_calc_poly_area(mp, me->mloop + mp->loopstart, me->mvert);
 }
 
-static void rna_MeshPolygon_flip(ID *id, MPoly *mp)
+static void api_MeshPolygon_flip(Id *id, MPoly *mp)
 {
   Mesh *me = (Mesh *)id;
 
-  BKE_mesh_polygon_flip(mp, me->mloop, &me->ldata);
-  BKE_mesh_tessface_clear(me);
-  BKE_mesh_runtime_clear_geometry(me);
-  BKE_mesh_normals_tag_dirty(me);
+  dune_mesh_polygon_flip(mp, me->mloop, &me->ldata);
+  dune_mesh_tessface_clear(me);
+  dune_mesh_runtime_clear_geometry(me);
+  dune_mesh_normals_tag_dirty(me);
 }
 
-static void rna_MeshLoopTriangle_verts_get(PointerRNA *ptr, int *values)
+static void api_MeshLoopTriangle_verts_get(ApiPtr *ptr, int *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoopTri *lt = (MLoopTri *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoopTri *lt = (MeshLoopTri *)ptr->data;
   values[0] = me->mloop[lt->tri[0]].v;
   values[1] = me->mloop[lt->tri[1]].v;
   values[2] = me->mloop[lt->tri[2]].v;
 }
 
-static void rna_MeshLoopTriangle_normal_get(PointerRNA *ptr, float *values)
+static void api_MeshLoopTriangle_normal_get(ApiPtr *ptr, float *values)
 {
-  Mesh *me = rna_mesh(ptr);
-  MLoopTri *lt = (MLoopTri *)ptr->data;
+  Mesh *me = api_mesh(ptr);
+  MeshLoopTri *lt = (MeshLoopTri *)ptr->data;
   unsigned int v1 = me->mloop[lt->tri[0]].v;
   unsigned int v2 = me->mloop[lt->tri[1]].v;
   unsigned int v3 = me->mloop[lt->tri[2]].v;
