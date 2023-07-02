@@ -1116,45 +1116,45 @@ void RNA_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop)
                "Preserve all data layers in the mesh, like UV maps and vertex groups. "
                "By default Blender only computes the subset of data layers needed for viewport "
                "display and rendering, for better performance");
-  RNA_def_pointer(
-      func,
+  api_def_ptr(
+      fn,
       "graph",
       "Graph",
       "Graph",
-      "Evaluated dependency graph which is required when preserve_all_data_layers is true");
-  parm = RNA_def_pointer(func,
+      "Evald dep graph which is required when preserve_all_data_layers is true");
+  parm = api_def_ptr(fn,
                          "mesh",
                          "Mesh",
                          "",
                          "Mesh created from object, remove it if it is only used for export");
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a mesh from the current blendfile");
-  parm = RNA_def_pointer(func, "mesh", "Mesh", "", "Mesh to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_boolean(func,
-                  "do_unlink",
-                  true,
-                  "",
-                  "Unlink all usages of this mesh before deleting it "
-                  "(WARNING: will also delete objects instancing that mesh data)");
-  RNA_def_boolean(func,
-                  "do_id_user",
-                  true,
-                  "",
-                  "Decrement user counter of all datablocks used by this mesh data");
-  RNA_def_boolean(
-      func, "do_ui_user", true, "", "Make sure interface does not reference this mesh data");
+  fn = api_def_fn(sapi, "remove", "api_Main_id_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a mesh from the current blendfile");
+  parm = api_def_ptr(fn, "mesh", "Mesh", "", "Mesh to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_bool(fn,
+               "do_unlink",
+               true,
+               "",
+               "Unlink all usages of this mesh before deleting it "
+               "(WARNING: will also delete objects instancing that mesh data)");
+  api_def_bool(fb,
+               "do_id_user",
+               true,
+               "",
+               "Decrement user counter of all datablocks used by this mesh data");
+  api_def_bool(
+      fn, "do_ui_user", true, "", "Make sure interface does not reference this mesh data");
 
-  func = RNA_def_function(srna, "tag", "rna_Main_meshes_tag");
-  parm = RNA_def_boolean(func, "value", 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "tag", "api_Main_meshes_tag");
+  parm = api_def_bool(fn, "value", 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_def_main_lights(BlenderRNA *brna, PropertyRNA *cprop)
+void RNA_def_main_lights(DuneApi *dapi, ApiProp *cprop)
 {
   StructRNA *srna;
   FunctionRNA *func;
