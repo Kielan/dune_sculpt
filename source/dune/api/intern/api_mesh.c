@@ -1193,20 +1193,20 @@ static char *rna_MeshLoopTriangle_path(PointerRNA *ptr)
 
 static char *rna_MeshEdge_path(PointerRNA *ptr)
 {
-  return BLI_sprintfN("edges[%d]", (int)((MEdge *)ptr->data - rna_mesh(ptr)->medge));
+  return lib_sprintfn("edges[%d]", (int)((MEdge *)ptr->data - rna_mesh(ptr)->medge));
 }
 
-static char *rna_MeshLoop_path(PointerRNA *ptr)
+static char *api_MeshLoop_path(PointerRNA *ptr)
 {
-  return BLI_sprintfN("loops[%d]", (int)((MLoop *)ptr->data - rna_mesh(ptr)->mloop));
+  return lib_sprintfn("loops[%d]", (int)((MLoop *)ptr->data - rna_mesh(ptr)->mloop));
 }
 
-static char *rna_MeshVertex_path(PointerRNA *ptr)
+static char *api_MeshVertex_path(PointerRNA *ptr)
 {
-  return BLI_sprintfN("vertices[%d]", (int)((MVert *)ptr->data - rna_mesh(ptr)->mvert));
+  return lib_sprintfn("vertices[%d]", (int)((MVert *)ptr->data - rna_mesh(ptr)->mvert));
 }
 
-static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type)
+static char *api_VertCustomData_data_path(PointerRNA *ptr, const char *collection, int type)
 {
   CustomDataLayer *cdl;
   Mesh *me = rna_mesh(ptr);
@@ -1218,8 +1218,8 @@ static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collectio
       b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
       if (b >= 0 && b < totvert) {
         char name_esc[sizeof(cdl->name) * 2];
-        BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-        return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+        lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+        return lib_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
       }
     }
   }
@@ -1227,11 +1227,11 @@ static char *rna_VertCustomData_data_path(PointerRNA *ptr, const char *collectio
   return NULL;
 }
 
-static char *rna_PolyCustomData_data_path(PointerRNA *ptr, const char *collection, int type)
+static char *api_PolyCustomData_data_path(PointerRNA *ptr, const char *collection, int type)
 {
   CustomDataLayer *cdl;
-  Mesh *me = rna_mesh(ptr);
-  CustomData *pdata = rna_mesh_pdata(ptr);
+  Mesh *me = api_mesh(ptr);
+  CustomData *pdata = api_mesh_pdata(ptr);
   int a, b, totpoly = (me->edit_mesh) ? 0 : me->totpoly;
 
   for (cdl = pdata->layers, a = 0; a < pdata->totlayer; cdl++, a++) {
@@ -1239,8 +1239,8 @@ static char *rna_PolyCustomData_data_path(PointerRNA *ptr, const char *collectio
       b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
       if (b >= 0 && b < totpoly) {
         char name_esc[sizeof(cdl->name) * 2];
-        BLI_str_escape(name_esc, cdl->name, sizeof(name_esc));
-        return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+        lib_str_escape(name_esc, cdl->name, sizeof(name_esc));
+        return lib_sprintfn("%s[\"%s\"].data[%d]", collection, name_esc, b);
       }
     }
   }
