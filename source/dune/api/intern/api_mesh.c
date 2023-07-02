@@ -1621,20 +1621,20 @@ static ApiPtr api_Mesh_uv_layers_new(struct Mesh *me,
     cdl = &ldata->layers[CustomData_get_layer_index_n(ldata, CD_MLOOPUV, index)];
   }
 
-  api_ptr_create(&me->id, &RNA_MeshUVLoopLayer, cdl, &ptr);
+  api_ptr_create(&me->id, &Api_MeshUVLoopLayer, cdl, &ptr);
   return ptr;
 }
 
 static void api_Mesh_uv_layers_remove(struct Mesh *me, ReportList *reports, CustomDataLayer *layer)
 {
   if (ed_mesh_uv_texture_remove_named(me, layer->name) == false) {
-    BKE_reportf(reports, RPT_ERROR, "Texture layer '%s' not found", layer->name);
+    dune_reportf(reports, RPT_ERROR, "Texture layer '%s' not found", layer->name);
   }
 }
 
-static bool rna_Mesh_is_editmode_get(PointerRNA *ptr)
+static bool api_Mesh_is_editmode_get(ApiPtr *ptr)
 {
-  Mesh *me = rna_mesh(ptr);
+  Mesh *me = api_mesh(ptr);
   return (me->edit_mesh != NULL);
 }
 
@@ -1684,7 +1684,7 @@ static void api_def_mvert_group(DuneApi *dapi)
   prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Weight", "Vertex Weight");
-  RNA_def_property_update(prop, 0, "api_Mesh_update_data_edit_weight");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_edit_weight");
 }
 
 static void api_def_mvert(DuneApi *dapi)
@@ -1796,54 +1796,54 @@ static void api_def_medge(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Hide", "");
   api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "use_seam", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_SEAM);
-  RNA_def_property_ui_text(prop, "Seam", "Seam edge for UV unwrapping");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_select");
+  prop = api_def_prop(sapi, "use_seam", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_SEAM);
+  api_def_prop_ui_text(prop, "Seam", "Seam edge for UV unwrapping");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
-  prop = RNA_def_property(srna, "use_edge_sharp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_SHARP);
-  RNA_def_property_ui_text(prop, "Sharp", "Sharp edge for the Edge Split modifier");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "use_edge_sharp", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_SHARP);
+  api_def_prop_ui_text(prop, "Sharp", "Sharp edge for the Edge Split modifier");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "is_loose", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ME_LOOSEEDGE);
-  RNA_def_property_ui_text(prop, "Loose", "Loose edge");
+  prop = api_def_prop(sapi, "is_loose", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_LOOSEEDGE);
+  api_def_prop_ui_text(prop, "Loose", "Loose edge");
 
-  prop = RNA_def_property(srna, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MEdge_freestyle_edge_mark_get", "rna_MEdge_freestyle_edge_mark_set");
-  RNA_def_property_ui_text(prop, "Freestyle Edge Mark", "Edge mark for Freestyle line rendering");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_MeshEdge_freestyle_edge_mark_get", "api_MEdge_freestyle_edge_mark_set");
+  api_def_prop_ui_text(prop, "Freestyle Edge Mark", "Edge mark for Freestyle line rendering");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_MeshEdge_index_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Index", "Index of this edge");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "api_MeshEdge_index_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Index", "Index of this edge");
 }
 
-static void rna_def_mlooptri(BlenderRNA *brna)
+static void api_def_mlooptri(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
   const int splitnor_dim[] = {3, 3};
 
-  srna = RNA_def_struct(brna, "MeshLoopTriangle", NULL);
-  RNA_def_struct_sdna(srna, "MLoopTri");
-  RNA_def_struct_ui_text(srna, "Mesh Loop Triangle", "Tessellated triangle in a Mesh data-block");
-  RNA_def_struct_path_func(srna, "rna_MeshLoopTriangle_path");
-  RNA_def_struct_ui_icon(srna, ICON_FACESEL);
+  srna = api_def_struct(dapi, "MeshLoopTriangle", NULL);
+  api_def_struct_stype(sapi, "MLoopTri");
+  api_def_struct_ui_text(sapi, "Mesh Loop Triangle", "Tessellated triangle in a Mesh data-block");
+  api_def_struct_path_fn(sapi, "rna_MeshLoopTriangle_path");
+  api_def_struct_ui_icon(sapi, ICON_FACESEL);
 
-  prop = RNA_def_property(srna, "vertices", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_int_funcs(prop, "rna_MeshLoopTriangle_verts_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Vertices", "Indices of triangle vertices");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "vertices", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_array(prop, 3);
+  api_def_prop_int_fns(prop, "rna_MeshLoopTriangle_verts_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Vertices", "Indices of triangle vertices");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "loops", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "tri");
-  RNA_def_property_ui_text(prop, "Loops", "Indices of mesh loops that make up the triangle");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "loops", PROP_INT, PROP_UNSIGNED);
+  RNA_def_prop_int_stype(prop, NULL, "tri");
+  RNA_def_prop_ui_text(prop, "Loops", "Indices of mesh loops that make up the triangle");
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = RNA_def_property(srna, "polygon_index", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_sdna(prop, NULL, "poly");
