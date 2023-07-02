@@ -801,7 +801,7 @@ static void api_MeshVertColorLayer_active_set(ApiPtr *ptr, bool value)
   api_CustomDataLayer_active_set(ptr, api_mesh_vdata(ptr), value, CD_PROP_COLOR, 0);
 }
 
-static int api_float_layer_check(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_float_layer_check(CollectionPropIter *UNUSED(iter), void *data)
 {
   CustomDataLayer *layer = (CustomDataLayer *)data;
   return (layer->type != CD_PROP_FLOAT);
@@ -995,9 +995,7 @@ static int api_MeshPaintMaskLayer_data_length(PointerRNA *ptr)
 }
 
 /* End paint mask */
-
 /* Face maps */
-
 DEFINE_CUSTOMDATA_LAYER_COLLECTION(face_map, pdata, CD_FACEMAP)
 DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(
     face_map, pdata, CD_FACEMAP, active, MeshFaceMapLayer)
@@ -1130,14 +1128,14 @@ static int api_MeshLoopTriangle_index_get(PointerRNA *ptr)
   return (int)(ltri - me->runtime.looptris.array);
 }
 
-static int api_MeshLoopTriangle_material_index_get(PointerRNA *ptr)
+static int api_MeshLoopTriangle_material_index_get(ApiPtr *ptr)
 {
   Mesh *me = rna_mesh(ptr);
-  MLoopTri *ltri = (MLoopTri *)ptr->data;
+  MeshLoopTri *ltri = (MeshLoopTri *)ptr->data;
   return me->mpoly[ltri->poly].mat_nr;
 }
 
-static bool api_MeshLoopTriangle_use_smooth_get(PointerRNA *ptr)
+static bool api_MeshLoopTriangle_use_smooth_get(ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   MeshLoopTri *ltri = (MLoopTri *)ptr->data;
