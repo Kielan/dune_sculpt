@@ -1455,8 +1455,8 @@ static void api_MeshVertexStringPropLayer_data_begin(CollectionProIter *iter,
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
   api_iter_array_begin(iter, layer->data, sizeof(MeshStringProp), me->totvert, 0, NULL);
 }
-static void api_MeshPolygonStringPropertyLayer_data_begin(CollectionPropIter *iter,
-                                                          ApiPtr *ptr)
+static void api_MeshPolygonStringPropLayer_data_begin(CollectionPropIter *iter,
+                                                      ApiPtr *ptr)
 {
   Mesh *me = api_mesh(ptr);
   CustomDataLayer *layer = (CustomDataLayer *)ptr->data;
@@ -2208,18 +2208,18 @@ static void api_def_MPropCol(DuneApi *dapi)
       prop, "Active Render", "Sets the sculpt vertex color layer as active for rendering");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = api_def_prop(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MeshVertColor");
-  RNA_def_property_ui_text(prop, "Data", "");
-  RNA_def_property_collection_funcs(prop,
-                                    "api_MeshVertColorLayer_data_begin",
-                                    "api_iter_array_next",
-                                    "api_iter_array_end",
-                                    "api_iter _array_get",
-                                    "api_MeshVertColorLayer_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MeshVertColor");
+  api_def_prop_ui_text(prop, "Data", "");
+  api_def_prop_collection_fns(prop,
+                              "api_MeshVertColorLayer_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter _array_get",
+                              "api_MeshVertColorLayer_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
   sapi = api_def_struct(dapi, "MeshVertColor", NULL);
   api_def_struct_stype(sapi, "MeshPropCol");
@@ -2232,7 +2232,7 @@ static void api_def_MPropCol(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Color", "");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 }
-static void api_def_mproperties(BlenderRNA *brna)
+static void api_def_mproperties(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -2250,7 +2250,7 @@ static void api_def_mproperties(BlenderRNA *brna)
     api_def_struct_name_prop(sapi, prop); \
     api_def_prop_string_fns(prop, NULL, NULL, "api_MeshAnyLayer_name_set"); \
     api_def_prop_ui_text(prop, "Name", ""); \
-    api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_graph_tag_all"); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all"); \
 \
     prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE); \
     api_def_prop_struct_type(prop, "Mesh" elemname "FloatProp"); \
@@ -2276,130 +2276,130 @@ static void api_def_mproperties(BlenderRNA *brna)
     prop = api_def_prop(sapi, "value", PROP_FLOAT, PROP_NONE); \
     api_def_prop_float_stype(prop, NULL, "f"); \
     api_def_prop_ui_text(prop, "Value", ""); \
-    api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all"); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all"); \
     ((void)0)
 
   /* Int */
 #  define MESH_INT_PROP_LAYER(elemname) \
     sapi = api_def_struct(dapi, "Mesh" elemname "IntPropLayer", NULL); \
-    api_def_struct_stype(srna, "CustomDataLayer"); \
-    api_def_struct_ui_text(srna, \
+    api_def_struct_stype(sapi, "CustomDataLayer"); \
+    api_def_struct_ui_text(sapi, \
                            "Mesh " elemname " Int Prop Layer", \
                            "User defined layer of integer number values"); \
-    RNA_def_struct_path_func(srna, "rna_Mesh" elemname "IntPropLayer_path"); \
+    api_def_struct_path_fn(sapi, "api_Mesh" elemname "IntPropLayer_path"); \
 \
-    prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE); \
-    RNA_def_struct_name_property(srna, prop); \
-    RNA_def_property_string_funcs(prop, NULL, NULL, "api_MeshAnyLayer_name_set"); \
-    RNA_def_property_ui_text(prop, "Name", ""); \
-    RNA_def_property_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all"); \
+    prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE); \
+    api_def_struct_name_prop(sapi, prop); \
+    api_def_prop_string_fns(prop, NULL, NULL, "api_MeshAnyLayer_name_set"); \
+    api_def_prop_ui_text(prop, "Name", ""); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all"); \
 \
-    prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE); \
-    RNA_def_property_struct_type(prop, "Mesh" elemname "IntProperty"); \
-    RNA_def_property_ui_text(prop, "Data", ""); \
-    RNA_def_property_collection_funcs(prop, \
-                                      "rna_Mesh" elemname "IntPropertyLayer_data_begin", \
-                                      "rna_iterator_array_next", \
-                                      "rna_iterator_array_end", \
-                                      "rna_iterator_array_get", \
-                                      "rna_Mesh" elemname "IntPropertyLayer_data_length", \
-                                      NULL, \
-                                      NULL, \
-                                      NULL); \
+    prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE); \
+    api_def_prop_struct_type(prop, "Mesh" elemname "IntProp"); \
+    api_def_prop_ui_text(prop, "Data", ""); \
+    api_def_prop_collection_fns(prop, \
+                               "api_Mesh" elemname "IntPropLayer_data_begin", \
+                               "api_iter_array_next", \
+                               "api_iter_array_end", \
+                               "api_iter_array_get", \
+                               "api_Mesh" elemname "IntPropLayer_data_length", \
+                               NULL, \
+                               NULL, \
+                               NULL); \
 \
-    srna = RNA_def_struct(brna, "Mesh" elemname "IntProperty", NULL); \
-    RNA_def_struct_sdna(srna, "MIntProperty"); \
-    RNA_def_struct_ui_text(srna, \
-                           "Mesh " elemname " Int Property", \
+    sapi = api_def_struct(dapi, "Mesh" elemname "IntProp", NULL); \
+    api_def_struct_stype(sapi, "MeshIntProp"); \
+    api_def_struct_ui_text(sapi, \
+                           "Mesh " elemname " Int Prop", \
                            "User defined integer number value in an integer properties layer"); \
-    RNA_def_struct_path_func(srna, "rna_Mesh" elemname "IntProperty_path"); \
+    api_def_struct_path_fn(sapi, "api_Mesh" elemname "IntProp_path"); \
 \
-    prop = RNA_def_property(srna, "value", PROP_INT, PROP_NONE); \
-    RNA_def_property_int_sdna(prop, NULL, "i"); \
-    RNA_def_property_ui_text(prop, "Value", ""); \
-    RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all"); \
+    prop = api_def_prop(sapi, "value", PROP_INT, PROP_NONE); \
+    api_def_prop_int_stype(prop, NULL, "i"); \
+    api_def_prop_ui_text(prop, "Value", ""); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all"); \
     ((void)0)
 
   /* String */
-#  define MESH_STRING_PROPERTY_LAYER(elemname) \
-    srna = RNA_def_struct(brna, "Mesh" elemname "StringPropertyLayer", NULL); \
-    RNA_def_struct_sdna(srna, "CustomDataLayer"); \
-    RNA_def_struct_ui_text(srna, \
+#  define MESH_STRING_PROP_LAYER(elemname) \
+    sapi = api_def_struct(dapi, "Mesh" elemname "StringPropLayer", NULL); \
+    api_def_struct_stype(sapi, "CustomDataLayer"); \
+    api_def_struct_ui_text(sapi, \
                            "Mesh " elemname " String Property Layer", \
                            "User defined layer of string text values"); \
-    RNA_def_struct_path_func(srna, "rna_Mesh" elemname "StringPropertyLayer_path"); \
+    api_def_struct_path_fn(sapi, "api_Mesh" elemname "StringPropertyLayer_path"); \
 \
-    prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE); \
-    RNA_def_struct_name_property(srna, prop); \
-    RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MeshAnyLayer_name_set"); \
-    RNA_def_property_ui_text(prop, "Name", ""); \
-    RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all"); \
+    prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE); \
+    api_def_struct_name_prop(sapi, prop); \
+    api_def_prop_string_fns(prop, NULL, NULL, "rna_MeshAnyLayer_name_set"); \
+    api_def_prop_ui_text(prop, "Name", ""); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all"); \
 \
-    prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE); \
-    RNA_def_property_struct_type(prop, "Mesh" elemname "StringProperty"); \
-    RNA_def_property_ui_text(prop, "Data", ""); \
-    RNA_def_property_collection_funcs(prop, \
-                                      "rna_Mesh" elemname "StringPropertyLayer_data_begin", \
-                                      "rna_iterator_array_next", \
-                                      "rna_iterator_array_end", \
-                                      "rna_iterator_array_get", \
-                                      "rna_Mesh" elemname "StringPropertyLayer_data_length", \
-                                      NULL, \
-                                      NULL, \
-                                      NULL); \
+    prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE); \
+    api_def_prop_struct_type(prop, "Mesh" elemname "StringProperty"); \
+    api_def_prop_ui_text(prop, "Data", ""); \
+    api_def_prop_collection_fns(prop, \
+                                "api_Mesh" elemname "StringPropLayer_data_begin", \
+                                "api_iter_array_next", \
+                                "api_iter_array_end", \
+                                "api_iter_array_get", \
+                                "api_Mesh" elemname "StringPropLayer_data_length", \
+                                NULL, \
+                                NULL, \
+                                NULL); \
 \
-    srna = RNA_def_struct(brna, "Mesh" elemname "StringProperty", NULL); \
-    RNA_def_struct_sdna(srna, "MStringProperty"); \
-    RNA_def_struct_ui_text(srna, \
+    sapi = api_def_struct(dapi, "Mesh" elemname "StringProp", NULL); \
+    api_def_struct_stype(sapi, "MStringProp"); \
+    api_def_struct_ui_text(sapi, \
                            "Mesh " elemname " String Property", \
                            "User defined string text value in a string properties layer"); \
-    RNA_def_struct_path_func(srna, "rna_Mesh" elemname "StringProperty_path"); \
+    api_def_struct_path_fn(srna, "rna_Mesh" elemname "StringProperty_path"); \
 \
     /* low level mesh data access, treat as bytes */ \
-    prop = RNA_def_property(srna, "value", PROP_STRING, PROP_BYTESTRING); \
-    RNA_def_property_string_sdna(prop, NULL, "s"); \
-    RNA_def_property_string_funcs(prop, \
-                                  "rna_MeshStringProperty_s_get", \
-                                  "rna_MeshStringProperty_s_length", \
-                                  "rna_MeshStringProperty_s_set"); \
-    RNA_def_property_ui_text(prop, "Value", ""); \
-    RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+    prop = api_def_prop(sapi, "value", PROP_STRING, PROP_BYTESTRING); \
+    api_def_prop_string_stype(prop, NULL, "s"); \
+    api_def_prop_string_fns(prop, \
+                                "api_MeshStringProp_s_get", \
+                                "api_MeshStringProp_s_length", \
+                                "api_MeshStringProp_s_set"); \
+    api_def_prop_ui_text(prop, "Value", ""); \
+    api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  MESH_FLOAT_PROPERTY_LAYER("Vertex");
-  MESH_FLOAT_PROPERTY_LAYER("Polygon");
-  MESH_INT_PROPERTY_LAYER("Vertex");
-  MESH_INT_PROPERTY_LAYER("Polygon");
-  MESH_STRING_PROPERTY_LAYER("Vertex")
-  MESH_STRING_PROPERTY_LAYER("Polygon")
-#  undef MESH_PROPERTY_LAYER
+  MESH_FLOAT_PROP_LAYER("Vertex");
+  MESH_FLOAT_PROP_LAYER("Polygon");
+  MESH_INT_PROP_LAYER("Vertex");
+  MESH_INT_PROP_LAYER("Polygon");
+  MESH_STRING_PROP_LAYER("Vertex")
+  MESH_STRING_PROP_LAYER("Polygon")
+#  undef MESH_PROP_LAYER
 }
 
-void rna_def_texmat_common(StructRNA *srna, const char *texspace_editable)
+void api_def_texmat_common(ApiStruct *sapi, const char *texspace_editable)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* texture space */
-  prop = RNA_def_property(srna, "auto_texspace", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "texflag", ME_AUTOSPACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "auto_texspace", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "texflag", ME_AUTOSPACE);
+  api_def_prop_ui_text(
       prop,
       "Auto Texture Space",
       "Adjust active object's texture space automatically when transforming object");
 
-  prop = RNA_def_property(srna, "texspace_location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "loc");
-  RNA_def_property_ui_text(prop, "Texture Space Location", "Texture space location");
-  RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_loc_get", NULL, NULL);
-  RNA_def_property_editable_func(prop, texspace_editable);
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "texspace_location", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "loc");
+  api_def_prop_ui_text(prop, "Texture Space Location", "Texture space location");
+  api_def_prop_float_fns(prop, "api_Mesh_texspace_loc_get", NULL, NULL);
+  api_def_prop_editable_fn(prop, texspace_editable);
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "texspace_size", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "size");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_ui_text(prop, "Texture Space Size", "Texture space size");
-  RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_size_get", NULL, NULL);
-  RNA_def_property_editable_func(prop, texspace_editable);
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "texspace_size", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "size");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_ui_text(prop, "Texture Space Size", "Texture space size");
+  api_def_prop_float_fns(prop, "rna_Mesh_texspace_size_get", NULL, NULL);
+  api_def_prop_editable_fn(prop, texspace_editable);
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
   /* materials */
   prop = RNA_def_property(srna, "materials", PROP_COLLECTION, PROP_NONE);
