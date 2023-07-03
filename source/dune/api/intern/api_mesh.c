@@ -1728,14 +1728,14 @@ static void api_def_mvert(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "groups", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_fns(prop,
-                                    "api_MeshVertex_groups_begin",
-                                    "api_iter_array_next",
-                                    "api_iter_array_end",
-                                    "api_iter_array_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+                              "api_MeshVertex_groups_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   api_def_prop_struct_type(prop, "VertexGroupElement");
   api_def_prop_ui_text(
       prop, "Groups", "Weights for the vertex groups this vertex is member of");
@@ -1774,7 +1774,7 @@ static void api_def_medge(DuneApi *dapi)
   /* XXX allows creating invalid meshes */
 
   prop = api_def_prop(sapi, "crease", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_fns(prop, "api_MEdge_crease_get", "rna_MEdge_crease_set", NULL);
+  api_def_prop_float_fns(prop, "api_MeshEdge_crease_get", "rna_MEdge_crease_set", NULL);
   api_def_prop_ui_text(
       prop, "Crease", "Weight used by the Subdivision Surface modifier for creasing");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
@@ -1782,36 +1782,36 @@ static void api_def_medge(DuneApi *dapi)
   prop = api_def_prop(sapi, "bevel_weight", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_fns(
       prop, "api_MeshEdge_bevel_weight_get", "rna_MEdge_bevel_weight_set", NULL);
-  api_def_prop_ui_text(prop, "Bevel Weight", "Weight used by the Bevel modifier");
+  api_def_prop_ui_text(prop, "Bevel Weight", "Weight used by the Bevel mod");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
   api_def_prop_ui_text(prop, "Select", "");
   api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = api_def_prop(sapi, "hide", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
   api_def_prop_ui_text(prop, "Hide", "");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = api_def_prop(sapi, "use_seam", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_seam", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_SEAM);
   api_def_prop_ui_text(prop, "Seam", "Seam edge for UV unwrapping");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = api_def_prop(sapi, "use_edge_sharp", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_edge_sharp", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_SHARP);
   api_def_prop_ui_text(prop, "Sharp", "Sharp edge for the Edge Split modifier");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
-  prop = api_def_prop(sapi, "is_loose", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", ME_LOOSEEDGE);
+  prop = api_def_prop(sapi, "is_loose", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MESH_LOOSEEDGE);
   api_def_prop_ui_text(prop, "Loose", "Loose edge");
 
-  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_MeshEdge_freestyle_edge_mark_get", "api_MEdge_freestyle_edge_mark_set");
+      prop, "api_MeshEdge_freestyle_edge_mark_get", "api_MeshEdge_freestyle_edge_mark_set");
   api_def_prop_ui_text(prop, "Freestyle Edge Mark", "Edge mark for Freestyle line rendering");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
@@ -1884,9 +1884,9 @@ static void api_def_mlooptri(DuneApi *dapi)
   api_def_prop_int_fns(prop, "api_MeshLoopTriangle_material_index_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Material Index", "Material slot index of this triangle");
 
-  prop = api_def_prop(sapi, "use_smooth", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_smooth", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_bool_funcs(prop, "api_MeshLoopTriangle_use_smooth_get", NULL);
+  api_def_prop_bool_fqns(prop, "api_MeshLoopTriangle_use_smooth_get", NULL);
   api_def_prop_ui_text(prop, "Smooth", "");
 }
 
@@ -2001,7 +2001,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_FACE_SEL);
   api_def_prop_ui_text(prop, "Select", "");
-  api_def_prop_update(prop, 0, "apo_Mesh_update_select");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
   prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
@@ -2013,9 +2013,9 @@ static void api_def_mpolygon(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Smooth", "");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_freestyle_mark", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_MeshPoly_freestyle_face_mark_get", "rna_MPoly_freestyle_face_mark_set");
+      prop, "api_MeshPoly_freestyle_face_mark_get", "api_MeshPoly_freestyle_face_mark_set");
   api_def_prop_ui_text(prop, "Freestyle Face Mark", "Face mark for Freestyle line rendering");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
@@ -2062,9 +2062,9 @@ static void api_def_mloopuv(DuneApi *dapi)
   api_def_prop_struct_type(prop, "MeshUVLoop");
   api_def_prop_collection_fns(prop,
                               "api_MeshUVLoopLayer_data_begin",
-                              "api_iterator_array_next",
-                              "api_iterator_array_end",
-                              "api_iterator_array_get",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
                               "api_MeshUVLoopLayer_data_length",
                               NULL,
                               NULL,
@@ -2081,135 +2081,134 @@ static void api_def_mloopuv(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Active", "Set the map as active for display and editing");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = api_def_prop(srna, "active_render", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "active_render", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "active_rnd", 0);
   api_def_prop_bool_fns(
       prop, "api_MeshUVLoopLayer_active_render_get", "api_MeshUVLoopLayer_active_render_set");
   api_def_prop_ui_text(prop, "Active Render", "Set the map as active for rendering");
-  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
-  prop = api_def_prop(sapi, "active_clone", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "active_clone", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_styoe(prop, NULL, "active_clone", 0);
   api_def_prop_bool_fns(
       prop, "api_MeshUVLoopLayer_clone_get", "api_MeshUVLoopLayer_clone_set");
-  RNA_def_prop_ui_text(prop, "Active Clone", "Set the map as active for cloning");
-  RNA_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_ui_text(prop, "Active Clone", "Set the map as active for cloning");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  srna = RNA_def_struct(dapi, "MeshUVLoop", NULL);
-  RNA_def_struct_stype(sapi, "MLoopUV");
-  RNA_def_struct_path_fn(sapi, "api_MeshUVLoop_path");
+  sapi = api_def_struct(dapi, "MeshUVLoop", NULL);
+  api_def_struct_stype(sapi, "MeshLoopUV");
+  api_def_struct_path_fn(sapi, "api_MeshUVLoop_path");
 
-  prop = RNA_def_property(srna, "uv", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "uv", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "pin_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MLOOPUV_PINNED);
-  RNA_def_property_ui_text(prop, "UV Pinned", "");
+  prop = api_def_prop(sapi, "pin_uv", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MLOOPUV_PINNED);
+  api_def_prop_ui_text(prop, "UV Pinned", "");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MLOOPUV_VERTSEL);
-  RNA_def_property_ui_text(prop, "UV Select", "");
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MESHLOOPUV_VERTSEL);
+  api_def_prop_ui_text(prop, "UV Select", "");
 
-  prop = RNA_def_property(srna, "select_edge", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MLOOPUV_EDGESEL);
-  RNA_def_property_ui_text(prop, "UV Edge Select", "");
+  prop = api_def_prop(sapi, "select_edge", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MESHLOOPUV_EDGESEL);
+  api_def_prop_ui_text(prop, "UV Edge Select", "");
 }
 
-static void rna_def_mloopcol(BlenderRNA *brna)
+static void api_def_mloopcol(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  Apitruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MeshLoopColorLayer", NULL);
-  RNA_def_struct_ui_text(
+  srna = api_def_struct(dapi, "MeshLoopColorLayer", NULL);
+  api_def_struct_ui_text(
       srna, "Mesh Vertex Color Layer", "Layer of vertex colors in a Mesh data-block");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_path_func(srna, "rna_MeshLoopColorLayer_path");
-  RNA_def_struct_ui_icon(srna, ICON_GROUP_VCOL);
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_path_fn(sapi, "api_MeshLoopColorLayer_path");
+  api_def_struct_ui_icon(sapi, ICON_GROUP_VCOL);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MeshLoopLayer_name_set");
-  RNA_def_property_ui_text(prop, "Name", "Name of Vertex color layer");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MeshLoopLayer_name_set");
+  api_def_prop_ui_text(prop, "Name", "Name of Vertex color layer");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MeshLoopColorLayer_active_get", "rna_MeshLoopColorLayer_active_set");
-  RNA_def_property_ui_text(prop, "Active", "Sets the layer as active for display and editing");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "active", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_MeshLoopColorLayer_active_get", "api_MeshLoopColorLayer_active_set");
+  api_def_prop_ui_text(prop, "Active", "Sets the layer as active for display and editing");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
-  prop = RNA_def_property(srna, "active_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "active_rnd", 0);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_MeshLoopColorLayer_active_render_get",
-                                 "rna_MeshLoopColorLayer_active_render_set");
-  RNA_def_property_ui_text(prop, "Active Render", "Sets the layer as active for rendering");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "active_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "active_rnd", 0);
+  api_def_prop_bool_fns(prop,
+                        "api_MeshLoopColorLayer_active_render_get",
+                        "api_MeshLoopColorLayer_active_render_set");
+  api_def_prop_ui_text(prop, "Active Render", "Sets the layer as active for rendering");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MeshLoopColor");
-  RNA_def_property_ui_text(prop, "Data", "");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_MeshLoopColorLayer_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_MeshLoopColorLayer_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MeshLoopColor");
+  api_def_prop_ui_text(prop, "Data", "");
+  api_def_prop_collection_fns(prop,
+                              "api_MeshLoopColorLayer_data_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_MeshLoopColorLayer_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
-  srna = RNA_def_struct(brna, "MeshLoopColor", NULL);
-  RNA_def_struct_sdna(srna, "MLoopCol");
-  RNA_def_struct_ui_text(srna, "Mesh Vertex Color", "Vertex loop colors in a Mesh");
-  RNA_def_struct_path_func(srna, "rna_MeshColor_path");
+  sapi = api_def_struct(dapi, "MeshLoopColor", NULL);
+  api_def_struct_stype(sapi, "MeshLoopCol");
+  api_def_struct_ui_text(sapi, "Mesh Vertex Color", "Vertex loop colors in a Mesh");
+  api_def_struct_path_fn(sapi, "api_MeshColor_path");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_float_funcs(
-      prop, "rna_MeshLoopColor_color_get", "rna_MeshLoopColor_color_set", NULL);
-  RNA_def_property_ui_text(prop, "Color", "");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_array(prop, 4);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_float_fns(
+      prop, "api_MeshLoopColor_color_get", "api_MeshLoopColor_color_set", NULL);
+  api_def_prop_ui_text(prop, "Color", "");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 }
 
-static void rna_def_MPropCol(BlenderRNA *brna)
+static void api_def_MPropCol(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-
-  srna = RNA_def_struct(brna, "MeshVertColorLayer", NULL);
-  RNA_def_struct_ui_text(srna,
+  ApiStruct *sapi;
+  ApiProp prop;
+  sapi = api_def_struct(dapu, "MeshVertColorLayer", NULL);
+  api_def_struct_ui_text(sapi,
                          "Mesh Sculpt Vertex Color Layer",
                          "Layer of sculpt vertex colors in a Mesh data-block");
-  RNA_def_struct_sdna(srna, "CustomDataLayer");
-  RNA_def_struct_path_func(srna, "rna_MeshVertColorLayer_path");
-  RNA_def_struct_ui_icon(srna, ICON_GROUP_VCOL);
+  api_def_struct_stype(sapi, "CustomDataLayer");
+  api_def_struct_path_fn(sapi, "api_MeshVertColorLayer_path");
+  api_def_struct_ui_icon(sapi, ICON_GROUP_VCOL);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MeshVertexLayer_name_set");
-  RNA_def_property_ui_text(prop, "Name", "Name of Sculpt Vertex color layer");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MeshVertexLayer_name_set");
+  api_def_prop_ui_text(prop, "Name", "Name of Sculpt Vertex color layer");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
-  prop = RNA_def_property(srna, "active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MeshVertColorLayer_active_get", "rna_MeshVertColorLayer_active_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_MeshVertColorLayer_active_get", "api_MeshVertColorLayer_active_set");
+  api_def_prop_ui_text(
       prop, "Active", "Sets the sculpt vertex color layer as active for display and editing");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
-  prop = RNA_def_property(srna, "active_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "active_rnd", 0);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_MeshVertColorLayer_active_render_get",
-                                 "rna_MeshVertColorLayer_active_render_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "active_rnd", 0);
+  api_def_prop_bool_fns(prop,
+                        "api_MeshVertColorLayer_active_render_get",
+                        "api_MeshVertColorLayer_active_render_set");
+  api_def_prop_ui_text(
       prop, "Active Render", "Sets the sculpt vertex color layer as active for rendering");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
+  prop = api_def_prop(srna, "data", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_struct_type(prop, "MeshVertColor");
   RNA_def_property_ui_text(prop, "Data", "");
   RNA_def_property_collection_funcs(prop,
