@@ -1978,7 +1978,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   api_def_prop_array(prop, 3);
   api_def_prop_flag(prop, PROP_DYNAMIC);
   api_def_prop_dynamic_array_fns(prop, "api_MeshPoly_vertices_get_length");
-  api_def_prop_int_funcs(prop, "api_MeshPoly_vertices_get", "api_MeshPoly_vertices_set", NULL);
+  api_def_prop_int_fns(prop, "api_MeshPoly_vertices_get", "api_MeshPoly_vertices_set", NULL);
   api_def_prop_ui_text(prop, "Vertices", "Vertex indices");
 
   /* these are both very low level access */
@@ -2120,9 +2120,9 @@ static void api_def_mloopcol(DuneApi *dapi)
   Apitruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "MeshLoopColorLayer", NULL);
+  sapi = api_def_struct(dapi, "MeshLoopColorLayer", NULL);
   api_def_struct_ui_text(
-      srna, "Mesh Vertex Color Layer", "Layer of vertex colors in a Mesh data-block");
+      sapi, "Mesh Vertex Color Layer", "Layer of vertex colors in a Mesh data-block");
   api_def_struct_stype(sapi, "CustomDataLayer");
   api_def_struct_path_fn(sapi, "api_MeshLoopColorLayer_path");
   api_def_struct_ui_icon(sapi, ICON_GROUP_VCOL);
@@ -2391,104 +2391,103 @@ void api_def_texmat_common(ApiStruct *sapi, const char *texspace_editable)
   api_def_prop_ui_text(prop, "Texture Space Location", "Texture space location");
   api_def_prop_float_fns(prop, "api_Mesh_texspace_loc_get", NULL, NULL);
   api_def_prop_editable_fn(prop, texspace_editable);
-  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
   prop = api_def_prop(sapi, "texspace_size", PROP_FLOAT, PROP_XYZ);
   api_def_prop_float_stype(prop, NULL, "size");
   api_def_prop_flag(prop, PROP_PROPORTIONAL);
   api_def_prop_ui_text(prop, "Texture Space Size", "Texture space size");
-  api_def_prop_float_fns(prop, "rna_Mesh_texspace_size_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_Mesh_texspace_size_get", NULL, NULL);
   api_def_prop_editable_fn(prop, texspace_editable);
-  api_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_graph_tag_all");
 
   /* materials */
-  prop = RNA_def_property(srna, "materials", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "mat", "totcol");
-  RNA_def_property_struct_type(prop, "Material");
-  RNA_def_property_ui_text(prop, "Materials", "");
-  RNA_def_property_srna(prop, "IDMaterials"); /* see rna_ID.c */
-  RNA_def_property_collection_funcs(
-      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "rna_IDMaterials_assign_int");
+  prop = api_def_prop(sapi, "materials", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "mat", "totcol");
+  api_def_prop_struct_type(prop, "Material");
+  api_def_prop_ui_text(prop, "Materials", "");
+  api_def_prop_sapi(prop, "IdMaterials"); /* see api_id.c */
+  api_def_prop_collection_fns(
+      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "api_IdMaterials_assign_int");
 }
 
 /* scene.objects */
 /* mesh.vertices */
-static void rna_def_mesh_vertices(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_mesh_vertices(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
   /*  PropertyRNA *prop; */
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "MeshVertices");
-  srna = RNA_def_struct(brna, "MeshVertices", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(srna, "Mesh Vertices", "Collection of mesh vertices");
+  api_def_prop_sapi(cprop, "MeshVertices");
+  sapi = api_def_struct(dapi, "MeshVertices", NULL);
+  api_def_struct_stype(sapi, "Mesh");
+  api_def_struct_ui_text(sapi, "Mesh Vertices", "Collection of mesh vertices");
 
-  func = RNA_def_function(srna, "add", "ED_mesh_verts_add");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int(
-      func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-#  if 0 /* BMESH_TODO Remove until BMesh merge */
-  func = RNA_def_function(srna, "remove", "ED_mesh_verts_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "add", "ed_mesh_verts_add");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int(
+      fn, "count", 0, 0, INT_MAX, "Count", "Number of vertices to add", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+#  if 0 /* BMESH_TODO Remove until Mesh merge */
+  func = RNA_def_function(sapi, "remove", "ed_mesh_verts_remove");
+  RNA_def_function_flag(fn, FN_USE_REPORTS);
   RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of vertices to remove", 0, INT_MAX);
 #  endif
 }
 
 /* mesh.edges */
-static void rna_def_mesh_edges(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_mesh_edges(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  /*  PropertyRNA *prop; */
+  ApiStruct *sapi;
+  /*  ApiProp *prop; */
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "MeshEdges");
-  srna = RNA_def_struct(brna, "MeshEdges", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(srna, "Mesh Edges", "Collection of mesh edges");
+  api_def_prop_sapi(cprop, "MeshEdges");
+  sapi = api_def_struct(dapi, "MeshEdges", NULL);
+  api_def_struct_stype(sapi, "Mesh");
+  api_def_struct_ui_text(sapi, "Mesh Edges", "Collection of mesh edges");
 
-  func = RNA_def_function(srna, "add", "ED_mesh_edges_add");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of edges to add", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-#  if 0 /* BMESH_TODO Remove until BMesh merge */
-  func = RNA_def_function(srna, "remove", "ED_mesh_edges_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of edges to remove", 0, INT_MAX);
+  fn = api_def_fn(sapi, "add", "ed_mesh_edges_add");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int(fn, "count", 0, 0, INT_MAX, "Count", "Number of edges to add", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+#  if 0 /* MESH_TODO Remove until Mesh merge */
+  fn = api_def_fn(sapi, "remove", "ed_mesh_edges_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_int(fn, "count", 0, 0, INT_MAX, "Count", "Number of edges to remove", 0, INT_MAX);
 #  endif
 }
 
 /* mesh.loop_triangles */
-static void rna_def_mesh_looptris(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_mesh_looptris(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  RNA_def_property_srna(cprop, "MeshLoopTriangles");
-  srna = RNA_def_struct(brna, "MeshLoopTriangles", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(
-      srna, "Mesh Loop Triangles", "Tessellation of mesh polygons into triangles");
+  api_def_prop_sapi(cprop, "MeshLoopTriangles");
+  sapi = api_def_struct(dapi, "MeshLoopTriangles", NULL);
+  api_def_struct_stype(dapi, "Mesh");
+  api_def_struct_ui_text(
+      sapi, "Mesh Loop Triangles", "Tessellation of mesh polygons into triangles");
 }
 
 /* mesh.loops */
-static void rna_def_mesh_loops(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_mesh_loops(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  // PropertyRNA *prop;
+  // ApiProp *prop;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
-
-  RNA_def_property_srna(cprop, "MeshLoops");
-  srna = RNA_def_struct(brna, "MeshLoops", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(srna, "Mesh Loops", "Collection of mesh loops");
+  api_def_prop_sapi(cprop, "MeshLoops");
+  sapi = api_def_struct(dapi, "MeshLoops", NULL);
+  api_def_struct_stype(sapi, "Mesh");
+  api_def_struct_ui_text(sapi, "Mesh Loops", "Collection of mesh loops");
 
   func = RNA_def_function(srna, "add", "ED_mesh_loops_add");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
