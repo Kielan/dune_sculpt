@@ -1854,7 +1854,7 @@ static void api_def_mlooptri(DuneApi *dapi)
   api_def_prop_array(prop, 3);
   api_def_prop_range(prop, -1.0f, 1.0f);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_normal_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_MeshLoopTriangle_normal_get", NULL, NULL);
   api_def_prop_ui_text(
       prop, "Triangle Normal", "Local space unit length normal vector for this triangle");
 
@@ -1862,7 +1862,7 @@ static void api_def_mlooptri(DuneApi *dapi)
   api_def_prop_multi_array(prop, 2, splitnor_dim);
   api_def_prop_range(prop, -1.0f, 1.0f);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_split_normals_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_MeshLoopTriangle_split_normals_get", NULL, NULL);
   apo_def_prop_ui_text(
       prop,
       "Split Normals",
@@ -1871,22 +1871,22 @@ static void api_def_mlooptri(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "area", PROP_FLOAT, PROP_UNSIGNED);
   apu_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshLoopTriangle_area_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "spi_MeshLoopTriangle_area_get", NULL, NULL);
   apu_def_prop_ui_text(prop, "Triangle Area", "Area of this triangle");
 
   prop = api_def_prop(sapi, "index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_int_fns(prop, "rna_MeshLoopTriangle_index_get", NULL, NULL);
+  api_def_prop_int_fns(prop, "api_MeshLoopTriangle_index_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Index", "Index of this loop triangle");
 
   prop = api_def_prop(sapi, "material_index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_int_fns(prop, "rna_MeshLoopTriangle_material_index_get", NULL, NULL);
+  api_def_prop_int_fns(prop, "api_MeshLoopTriangle_material_index_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Material Index", "Material slot index of this triangle");
 
   prop = api_def_prop(sapi, "use_smooth", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_bool_funcs(prop, "rna_MeshLoopTriangle_use_smooth_get", NULL);
+  api_def_prop_bool_funcs(prop, "api_MeshLoopTriangle_use_smooth_get", NULL);
   api_def_prop_ui_text(prop, "Smooth", "");
 }
 
@@ -1928,7 +1928,7 @@ static void api_def_mloop(DuneApi *dapi)
   api_def_prop_array(prop, 3);
   api_def_prop_range(prop, -1.0f, 1.0f);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshLoop_tangent_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_MeshLoop_tangent_get", NULL, NULL);
   api_def_prop_ui_text(
       prop,
       "Tangent",
@@ -1938,7 +1938,7 @@ static void api_def_mloop(DuneApi *dapi)
   prop = api_def_prop(sapi, "bitangent_sign", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, -1.0f, 1.0f);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshLoop_bitangent_sign_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_MeshLoop_bitangent_sign_get", NULL, NULL);
   api_def_prop_ui_text(
       prop,
       "Bitangent Sign",
@@ -1964,7 +1964,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   ApiFn *fn;
 
   sapi = api_def_struct(dapi, "MeshPolygon", NULL);
-  api_def_struct_stype(sapi, "MPoly");
+  api_def_struct_stype(sapi, "MeshPoly");
   api_def_struct_ui_text(sapi, "Mesh Polygon", "Polygon in a Mesh data-block");
   api_def_struct_path_fn(sapi, "api_MeshPolygon_path");
   api_def_struct_ui_icon(sapi, ICON_FACESEL);
@@ -1978,7 +1978,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   api_def_prop_array(prop, 3);
   api_def_prop_flag(prop, PROP_DYNAMIC);
   api_def_prop_dynamic_array_fns(prop, "api_MeshPoly_vertices_get_length");
-  api_def_prop_int_funcs(prop, "api_MeshPoly_vertices_get", "rna_MeshPoly_vertices_set", NULL);
+  api_def_prop_int_funcs(prop, "api_MeshPoly_vertices_get", "api_MeshPoly_vertices_set", NULL);
   api_def_prop_ui_text(prop, "Vertices", "Vertex indices");
 
   /* these are both very low level access */
@@ -1998,17 +1998,17 @@ static void api_def_mpolygon(DuneApi *dapi)
 #  endif
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_FACE_SEL);
   api_def_prop_ui_text(prop, "Select", "");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
+  api_def_prop_update(prop, 0, "apo_Mesh_update_select");
 
-  prop = api_def_prop(sapi, "hide", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
   api_def_prop_ui_text(prop, "Hide", "");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_select");
+  api_def_prop_update(prop, 0, "api_Mesh_update_select");
 
-  prop = api_def_prop(sapi, "use_smooth", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_smooth", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", ME_SMOOTH);
   api_def_prop_ui_text(prop, "Smooth", "");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
@@ -2030,7 +2030,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   prop = api_def_prop(sapi, "center", PROP_FLOAT, PROP_XYZ);
   api_def_prop_array(prop, 3);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_float_fns(prop, "rna_MeshPolygon_center_get", NULL, NULL);
+  api_def_prop_float_fns(prop, "api_MeshPolygon_center_get", NULL, NULL);
   api_def_prop_ui_text(prop, "Polygon Center", "Center of this polygon");
 
   prop = api_def_prop(sapi, "area", PROP_FLOAT, PROP_UNSIGNED);
@@ -2061,39 +2061,39 @@ static void api_def_mloopuv(DuneApi *dapi)
   prop = api_def_prop(sapi, "data", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "MeshUVLoop");
   api_def_prop_collection_fns(prop,
-                                    "rna_MeshUVLoopLayer_data_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_MeshUVLoopLayer_data_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
+                              "api_MeshUVLoopLayer_data_begin",
+                              "api_iterator_array_next",
+                              "api_iterator_array_end",
+                              "api_iterator_array_get",
+                              "api_MeshUVLoopLayer_data_length",
+                              NULL,
+                              NULL,
+                              NULL);
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_struct_name_prop(sapi, prop);
-  api_def_prop_string_fns(prop, NULL, NULL, "rna_MeshLoopLayer_name_set");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MeshLoopLayer_name_set");
   api_def_prop_ui_text(prop, "Name", "Name of UV map");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
   prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_MeshUVLoopLayer_active_get", "rna_MeshUVLoopLayer_active_set");
+      prop, "api_MeshUVLoopLayer_active_get", "api_MeshUVLoopLayer_active_set");
   api_def_prop_ui_text(prop, "Active", "Set the map as active for display and editing");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
   prop = api_def_prop(srna, "active_render", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "active_rnd", 0);
   api_def_prop_bool_fns(
-      prop, "api_MeshUVLoopLayer_active_render_get", "rna_MeshUVLoopLayer_active_render_set");
+      prop, "api_MeshUVLoopLayer_active_render_get", "api_MeshUVLoopLayer_active_render_set");
   api_def_prop_ui_text(prop, "Active Render", "Set the map as active for rendering");
   api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
   prop = api_def_prop(sapi, "active_clone", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_styoe(prop, NULL, "active_clone", 0);
   api_def_prop_bool_fns(
-      prop, "api_MeshUVLoopLayer_clone_get", "rna_MeshUVLoopLayer_clone_set");
+      prop, "api_MeshUVLoopLayer_clone_get", "api_MeshUVLoopLayer_clone_set");
   RNA_def_prop_ui_text(prop, "Active Clone", "Set the map as active for cloning");
-  RNA_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  RNA_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
   srna = RNA_def_struct(dapi, "MeshUVLoop", NULL);
   RNA_def_struct_stype(sapi, "MLoopUV");
