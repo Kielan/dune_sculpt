@@ -1840,9 +1840,9 @@ static void api_def_mlooptri(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "loops", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_int_stype(prop, NULL, "tri");
-  RNA_def_prop_ui_text(prop, "Loops", "Indices of mesh loops that make up the triangle");
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_stype(prop, NULL, "tri");
+  api_def_prop_ui_text(prop, "Loops", "Indices of mesh loops that make up the triangle");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "polygon_index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_int_stype(prop, NULL, "poly");
@@ -1896,10 +1896,10 @@ static void api_def_mloop(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "MeshLoop", NULL);
-  api_def_struct_sdna(sapi, "MeshLoop");
-  RNA_def_struct_ui_text(sapi, "Mesh Loop", "Loop in a Mesh data-block");
-  RNA_def_struct_path_fn(sapi, "api_MeshLoop_path");
-  RNA_def_struct_ui_icon(sqpi, ICON_EDGESEL);
+  api_def_struct_stype(sapi, "MeshLoop");
+  api_def_struct_ui_text(sapi, "Mesh Loop", "Loop in a Mesh data-block");
+  api_def_struct_path_fn(sapi, "api_MeshLoop_path");
+  api_def_struct_ui_icon(sapi, ICON_EDGESEL);
 
   prop = api_def_prop(sapi, "vertex_index", PROP_INT, PROP_UNSIGNED);
   api_def_prop_int_stype(prop, NULL, "v");
@@ -2004,7 +2004,7 @@ static void api_def_mpolygon(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
   prop = api_def_prop(sapi, "hide", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "flag", ME_HIDE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ME_HIDE);
   api_def_prop_ui_text(prop, "Hide", "");
   api_def_prop_update(prop, 0, "rna_Mesh_update_select");
 
@@ -2070,35 +2070,34 @@ static void api_def_mloopuv(DuneApi *dapi)
                                     NULL,
                                     NULL);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MeshLoopLayer_name_set");
-  RNA_def_property_ui_text(prop, "Name", "Name of UV map");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_MeshLoopLayer_name_set");
+  api_def_prop_ui_text(prop, "Name", "Name of UV map");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_MeshUVLoopLayer_active_get", "rna_MeshUVLoopLayer_active_set");
+  api_def_prop_ui_text(prop, "Active", "Set the map as active for display and editing");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MeshUVLoopLayer_active_get", "rna_MeshUVLoopLayer_active_set");
-  RNA_def_property_ui_text(prop, "Active", "Set the map as active for display and editing");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(srna, "active_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "active_rnd", 0);
+  api_def_prop_bool_fns(
+      prop, "api_MeshUVLoopLayer_active_render_get", "rna_MeshUVLoopLayer_active_render_set");
+  api_def_prop_ui_text(prop, "Active Render", "Set the map as active for rendering");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "active_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "active_rnd", 0);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MeshUVLoopLayer_active_render_get", "rna_MeshUVLoopLayer_active_render_set");
-  RNA_def_property_ui_text(prop, "Active Render", "Set the map as active for rendering");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
+  prop = api_def_prop(sapi, "active_clone", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_styoe(prop, NULL, "active_clone", 0);
+  api_def_prop_bool_fns(
+      prop, "api_MeshUVLoopLayer_clone_get", "rna_MeshUVLoopLayer_clone_set");
+  RNA_def_prop_ui_text(prop, "Active Clone", "Set the map as active for cloning");
+  RNA_def_prop_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
 
-  prop = RNA_def_property(srna, "active_clone", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "active_clone", 0);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_MeshUVLoopLayer_clone_get", "rna_MeshUVLoopLayer_clone_set");
-  RNA_def_property_ui_text(prop, "Active Clone", "Set the map as active for cloning");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
-
-  srna = RNA_def_struct(brna, "MeshUVLoop", NULL);
-  RNA_def_struct_sdna(srna, "MLoopUV");
-  RNA_def_struct_path_func(srna, "rna_MeshUVLoop_path");
+  srna = RNA_def_struct(dapi, "MeshUVLoop", NULL);
+  RNA_def_struct_stype(sapi, "MLoopUV");
+  RNA_def_struct_path_fn(sapi, "api_MeshUVLoop_path");
 
   prop = RNA_def_property(srna, "uv", PROP_FLOAT, PROP_XYZ);
   RNA_def_property_update(prop, 0, "rna_Mesh_update_data_legacy_deg_tag_all");
