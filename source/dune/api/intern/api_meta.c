@@ -215,26 +215,26 @@ static void rna_def_metaelement(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
 
   prop = RNA_def_property(srna, "size_y", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "expy");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_range(prop, 0.0f, 20.0f);
-  RNA_def_property_ui_text(
+  api_def_prop_float_sdna(prop, NULL, "expy");
+  api_def_property_flag(prop, PROP_PROPORTIONAL);
+  api_def_property_range(prop, 0.0f, 20.0f);
+  api_def_property_ui_text(
       prop, "Size Y", "Size of element, use of components depends on element type");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "size_z", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_prop_float_sdna(prop, NULL, "expz");
-  RNA_def_prop_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_prop_range(prop, 0.0f, 20.0f);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "size_z", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "expz");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_range(prop, 0.0f, 20.0f);
+  api_def_prop_ui_text(
       prop, "Size Z", "Size of element, use of components depends on element type");
-  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
-  prop = RNA_def_prop(srna, "stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "s");
-  RNA_def_prop_range(prop, 0.0f, 10.0f);
-  RNA_def_prop_ui_text(prop, "Stiffness", "Stiffness defines how much of the element to fill");
-  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "stiffness", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "s");
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_text(prop, "Stiffness", "Stiffness defines how much of the element to fill");
+  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
   /* flags */
   prop = RNA_def_prop(srna, "use_negative", PROP_BOOLEAN, PROP_NONE);
