@@ -289,13 +289,13 @@ void api_mesh(ApiStruct *sapi)
                0,
                "Calculate Loose Edges",
                "Calculate the loose state of each edge");
-  RNA_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_flag(fn, FN_USE_CXT);
 
-  RNA_def_function(srna, "update_gpu_tag", "rna_Mesh_update_gpu_tag");
+  api_def_fn(sapi, "update_gpu_tag", "api_Mesh_update_gpu_tag");
 
-  func = RNA_def_function(srna, "unit_test_compare", "rna_Mesh_unit_test_compare");
-  RNA_def_pointer(func, "mesh", "Mesh", "", "Mesh to compare to");
-  RNA_def_float_factor(func,
+  fn = api_def_fn(sapi, "unit_test_compare", "rna_Mesh_unit_test_compare");
+  api_def_ptr(fn, "mesh", "Mesh", "", "Mesh to compare to");
+  api_def_float_factor(fn,
                        "threshold",
                        FLT_EPSILON * 60,
                        0.0f,
@@ -305,19 +305,19 @@ void api_mesh(ApiStruct *sapi)
                        0.0f,
                        FLT_MAX);
   /* return value */
-  parm = RNA_def_string(
-      func, "result", "nothing", 64, "Return value", "String description of result of comparison");
-  RNA_def_function_return(func, parm);
+  parm = api_def_string(
+      fn, "result", "nothing", 64, "Return value", "String description of result of comparison");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "clear_geometry", "rna_Mesh_clear_geometry");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "clear_geometry", "api_Mesh_clear_geometry");
+  api_def_fn_ui_description(
+      fn,
       "Remove all geometry from the mesh. Note that this does not free shape keys or materials");
 
-  func = apo_def_fn(sapi, "validate", "BKE_mesh_validate");
-  RNA_def_fn_ui_description(func,
-                                  "Validate geometry, return True when the mesh has had "
-                                  "invalid geometry corrected/removed");
+  fn = api_def_fn(sapi, "validate", "dune_mesh_validate");
+  api_def_fn_ui_description(fn,
+                            "Validate geometry, return True when the mesh has had "
+                            "invalid geometry corrected/removed");
   api_def_bool(fn, "verbose", false, "Verbose", "Output information about the errors found");
   api_def_bool(fn, "clean_customdata",
                true,
@@ -326,18 +326,18 @@ void api_mesh(ApiStruct *sapi)
   parm = api_def_bool(fn, "result", 0, "Result", "");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_function(srna, "validate_material_indices", "BKE_mesh_validate_material_indices");
-  api_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "validate_material_indices", "dune_mesh_validate_material_indices");
+  api_def_fn_ui_description(
+      fn,
       "Validate material indices of polygons, return True when the mesh has had "
       "invalid indices corrected (to default 0)");
   parm = api_def_bool(fn, "result", 0, "Result", "");
-  api_def_fn_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "count_selected_items", "rna_Mesh_count_selected_items ");
-  api_def_fn_ui_description(func, "Return the number of selected items (vert, edge, face)");
-  parm = RNA_def_int_vector(func, "result", 3, NULL, 0, INT_MAX, "Result", NULL, 0, INT_MAX);
-  RNA_def_function_output(func, parm);
+  fn = api_def_fn(sapi, "count_selected_items", "api_Mesh_count_selected_items ");
+  api_def_fn_ui_description(fn, "Return the number of selected items (vert, edge, face)");
+  parm = api_def_int_vector(fn, "result", 3, NULL, 0, INT_MAX, "Result", NULL, 0, INT_MAX);
+  api_def_fn_output(fn, parm);
 }
 
 #endif
