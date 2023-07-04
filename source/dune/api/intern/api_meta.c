@@ -1,41 +1,41 @@
 #include <stdlib.h>
 
-#include "DNA_mesh_types.h"
-#include "DNA_meta_types.h"
+#include "types_mesh.h"
+#include "types_meta.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "apo_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "DNA_object_types.h"
-#  include "DNA_scene_types.h"
+#  include "types_object.h"
+#  include "types_scene.h"
 
-#  include "BKE_main.h"
-#  include "BKE_mball.h"
-#  include "BKE_scene.h"
+#  include "dune_main.h"
+#  include "dune_mball.h"
+#  include "dune_scene.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static int rna_Meta_texspace_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_Meta_texspace_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   MetaBall *mb = (MetaBall *)ptr->data;
   return (mb->texflag & MB_AUTOSPACE) ? 0 : PROP_EDITABLE;
 }
 
-static void rna_Meta_texspace_loc_get(PointerRNA *ptr, float *values)
+static void api_Meta_texspace_loc_get(ApiPtr *ptr, float *values)
 {
   MetaBall *mb = (MetaBall *)ptr->data;
 
@@ -44,14 +44,14 @@ static void rna_Meta_texspace_loc_get(PointerRNA *ptr, float *values)
   copy_v3_v3(values, mb->loc);
 }
 
-static void rna_Meta_texspace_loc_set(PointerRNA *ptr, const float *values)
+static void api_Meta_texspace_loc_set(ApiPtr *ptr, const float *values)
 {
   MetaBall *mb = (MetaBall *)ptr->data;
 
   copy_v3_v3(mb->loc, values);
 }
 
-static void rna_Meta_texspace_size_get(PointerRNA *ptr, float *values)
+static void api_Meta_texspace_size_get(ApiPtr *ptr, float *values)
 {
   MetaBall *mb = (MetaBall *)ptr->data;
 
@@ -60,31 +60,31 @@ static void rna_Meta_texspace_size_get(PointerRNA *ptr, float *values)
   copy_v3_v3(values, mb->size);
 }
 
-static void rna_Meta_texspace_size_set(PointerRNA *ptr, const float *values)
+static void api_Meta_texspace_size_set(ApiPtr *ptr, const float *values)
 {
   MetaBall *mb = (MetaBall *)ptr->data;
 
   copy_v3_v3(mb->size, values);
 }
 
-static void rna_MetaBall_redraw_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_MetaBall_redraw_data(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
-  DEG_id_tag_update(id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 }
 
-static void rna_MetaBall_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_MetaBall_update_data(Main *main, Scene *scene, ApiPtr *ptr)
 {
   MetaBall *mb = (MetaBall *)ptr->owner_id;
   Object *ob;
 
   /* cheating way for importers to avoid slow updates */
   if (mb->id.us > 0) {
-    for (ob = bmain->objects.first; ob; ob = ob->id.next) {
+    for (ob = main->objects.first; ob; ob = ob->id.next) {
       if (ob->data == mb) {
-        BKE_mball_properties_copy(scene, ob);
+        dune_mball_props_copy(scene, ob);
       }
     }
 
@@ -93,54 +93,54 @@ static void rna_MetaBall_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
   }
 }
 
-static void rna_MetaBall_update_rotation(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_MetaBall_update_rotation(Main *main, Scene *scene, ApiPtr *ptr)
 {
   MetaElem *ml = ptr->data;
   normalize_qt(ml->quat);
-  rna_MetaBall_update_data(bmain, scene, ptr);
+  api_MetaBall_update_data(main, scene, ptr);
 }
 
-static MetaElem *rna_MetaBall_elements_new(MetaBall *mb, int type)
+static MetaElem *api_MetaBall_elements_new(MetaBall *mb, int type)
 {
-  MetaElem *ml = BKE_mball_element_add(mb, type);
+  MetaElem *ml = dune_mball_element_add(mb, type);
 
   /* cheating way for importers to avoid slow updates */
   if (mb->id.us > 0) {
-    DEG_id_tag_update(&mb->id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
+    graph_id_tag_update(&mb->id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
   }
 
   return ml;
 }
 
-static void rna_MetaBall_elements_remove(MetaBall *mb, ReportList *reports, PointerRNA *ml_ptr)
+static void api_MetaBall_elements_remove(MetaBall *mb, ReportList *reports, ApiPtr *ml_ptr)
 {
   MetaElem *ml = ml_ptr->data;
 
-  if (BLI_remlink_safe(&mb->elems, ml) == false) {
-    BKE_reportf(
+  if (lib_remlink_safe(&mb->elems, ml) == false) {
+    dune_reportf(
         reports, RPT_ERROR, "Metaball '%s' does not contain spline given", mb->id.name + 2);
     return;
   }
 
-  MEM_freeN(ml);
-  RNA_POINTER_INVALIDATE(ml_ptr);
+  mem_freen(ml);
+  API_PTR_INVALIDATE(ml_ptr);
 
   /* cheating way for importers to avoid slow updates */
   if (mb->id.us > 0) {
-    DEG_id_tag_update(&mb->id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
+    graph_id_tag_update(&mb->id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
   }
 }
 
-static void rna_MetaBall_elements_clear(MetaBall *mb)
+static void api_MetaBall_elements_clear(MetaBall *mb)
 {
-  BLI_freelistN(&mb->elems);
+  lib_freelistn(&mb->elems);
 
   /* cheating way for importers to avoid slow updates */
   if (mb->id.us > 0) {
-    DEG_id_tag_update(&mb->id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
+    graph_id_tag_update(&mb->id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, &mb->id);
   }
 }
 
