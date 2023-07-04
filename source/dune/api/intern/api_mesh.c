@@ -2535,18 +2535,18 @@ static void api_def_normal_layer_value(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 }
 
-static void api_def_loop_colors(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_loop_colors(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "LoopColors");
-  srna = RNA_def_struct(brna, "LoopColors", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(srna, "Loop Colors", "Collection of vertex colors");
+  api_def_prop_sapi(cprop, "LoopColors");
+  sapi = api_def_struct(dapi, "LoopColors", NULL);
+  api_def_struct_stype(sapi, "Mesh");
+  api_def_struct_ui_text(sapi, "Loop Colors", "Collection of vertex colors");
 
   fn = api_def_fn(sapi, "new", "api_Mesh_vertex_color_new");
   api_def_fn_ui_description(fn, "Add a vertex color layer to Mesh");
@@ -2607,37 +2607,37 @@ static void api_def_vert_colors(DuneApi *dapi, ApiProp *cprop)
                true,
                "",
                "Whether new layer's data should be initialized by copying current active one");
-  parm = api_def_ptr(func, "layer", "MeshVertColorLayer", "", "The newly created layer");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "layer", "MeshVertColorLayer", "", "The newly created layer");
+  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Mesh_sculpt_vertex_color_remove");
-  RNA_def_function_ui_description(func, "Remove a vertex color layer");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "layer", "MeshVertColorLayer", "", "The layer to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "remove", "api_Mesh_sculpt_vertex_color_remove");
+  api_def_fn_ui_description(fn, "Remove a vertex color layer");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "layer", "MeshVertColorLayer", "", "The layer to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MeshVertColorLayer");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_Mesh_sculpt_vertex_color_active_get",
-                                 "rna_Mesh_sculpt_vertex_color_active_set",
-                                 NULL,
-                                 NULL);
+  prop = api_def_prop(sapi, "active", PROP_TR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MeshVertColorLayer");
+  api_def_prop_ptr_fns(prop,
+                       "api_Mesh_sculpt_vertex_color_active_get",
+                       "api_Mesh_sculpt_vertex_color_active_set",
+                       NULL,
+                       NULL);
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Active Sculpt Vertex Color Layer", "Active sculpt vertex color layer");
-  RNA_def_property_update(prop, 0, "api_Mesh_update_data_edit_active_color");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_edit_active_color");
 
   prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_int_fns(prop,
+  api_def_prop_int_fns(prop,
                       "api_Mesh_sculpt_vertex_color_active_index_get",
                       "api_Mesh_sculpt_vertex_color_active_index_set",
                       "api_Mesh_sculpt_vertex_color_index_range");
   api_def_prop_ui_text(
       prop, "Active Sculpt Vertex Color Index", "Active sculpt vertex color index");
-  api_def_prop_update(prop, 0, "rna_Mesh_update_data_edit_active_color");
+  api_def_prop_update(prop, 0, "api_Mesh_update_data_edit_active_color");
 }
 
 static void api_def_uv_layers(BlenderRNA *brna, PropertyRNA *cprop)
@@ -2645,10 +2645,10 @@ static void api_def_uv_layers(BlenderRNA *brna, PropertyRNA *cprop)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "UVLoopLayers");
+  RNA_def_prop_srna(cprop, "UVLoopLayers");
   srna = RNA_def_struct(brna, "UVLoopLayers", NULL);
   RNA_def_struct_sdna(srna, "Mesh");
   RNA_def_struct_ui_text(srna, "UV Loop Layers", "Collection of uv loop layers");
