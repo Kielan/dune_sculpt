@@ -2625,25 +2625,25 @@ static void api_def_vert_colors(DuneApi *dapi, ApiProp *cprop)
                                  "rna_Mesh_sculpt_vertex_color_active_set",
                                  NULL,
                                  NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
   RNA_def_property_ui_text(
       prop, "Active Sculpt Vertex Color Layer", "Active sculpt vertex color layer");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_active_color");
+  RNA_def_property_update(prop, 0, "api_Mesh_update_data_edit_active_color");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_funcs(prop,
-                             "rna_Mesh_sculpt_vertex_color_active_index_get",
-                             "rna_Mesh_sculpt_vertex_color_active_index_set",
-                             "rna_Mesh_sculpt_vertex_color_index_range");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  RNA_def_prop_int_fns(prop,
+                      "api_Mesh_sculpt_vertex_color_active_index_get",
+                      "api_Mesh_sculpt_vertex_color_active_index_set",
+                      "api_Mesh_sculpt_vertex_color_index_range");
+  api_def_prop_ui_text(
       prop, "Active Sculpt Vertex Color Index", "Active sculpt vertex color index");
-  RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_active_color");
+  api_def_prop_update(prop, 0, "rna_Mesh_update_data_edit_active_color");
 }
 
-static void rna_def_uv_layers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_uv_layers(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   FunctionRNA *func;
   PropertyRNA *parm;
