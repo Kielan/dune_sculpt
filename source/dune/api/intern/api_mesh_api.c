@@ -1,31 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "DNA_customdata_types.h"
+#include "types_customdata.h"
 
-#include "BLI_sys_types.h"
+#include "lib_sys_types.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DNA_mesh_types.h"
+#  include "types_mesh.h"
 
-#  include "BKE_mesh.h"
-#  include "BKE_mesh_mapping.h"
-#  include "BKE_mesh_runtime.h"
-#  include "BKE_mesh_tangent.h"
-#  include "ED_mesh.h"
+#  include "dune_mesh.h"
+#  include "dune_mesh_mapping.h"
+#  include "dune_mesh_runtime.h"
+#  include "dune_mesh_tangent.h"
+#  include "ed_mesh.h"
 
-static const char *rna_Mesh_unit_test_compare(struct Mesh *mesh,
+static const char *api_Mesh_unit_test_compare(struct Mesh *mesh,
                                               struct Mesh *mesh2,
                                               float threshold)
 {
-  const char *ret = BKE_mesh_cmp(mesh, mesh2, threshold);
+  const char *ret = dune_mesh_cmp(mesh, mesh2, threshold);
 
   if (!ret) {
     ret = "Same";
@@ -34,7 +34,7 @@ static const char *rna_Mesh_unit_test_compare(struct Mesh *mesh,
   return ret;
 }
 
-static void rna_Mesh_create_normals_split(Mesh *mesh)
+static void api_Mesh_create_normals_split(Mesh *mesh)
 {
   if (!CustomData_has_layer(&mesh->ldata, CD_NORMAL)) {
     CustomData_add_layer(&mesh->ldata, CD_NORMAL, CD_CALLOC, NULL, mesh->totloop);
@@ -42,12 +42,12 @@ static void rna_Mesh_create_normals_split(Mesh *mesh)
   }
 }
 
-static void rna_Mesh_free_normals_split(Mesh *mesh)
+static void api_Mesh_free_normals_split(Mesh *mesh)
 {
   CustomData_free_layers(&mesh->ldata, CD_NORMAL, mesh->totloop);
 }
 
-static void rna_Mesh_calc_tangents(Mesh *mesh, ReportList *reports, const char *uvmap)
+static void api_Mesh_calc_tangents(Mesh *mesh, ReportList *reports, const char *uvmap)
 {
   float(*r_looptangents)[4];
 
@@ -63,27 +63,27 @@ static void rna_Mesh_calc_tangents(Mesh *mesh, ReportList *reports, const char *
 
   /* Compute loop normals if needed. */
   if (!CustomData_has_layer(&mesh->ldata, CD_NORMAL)) {
-    BKE_mesh_calc_normals_split(mesh);
+    dune_mesh_calc_normals_split(mesh);
   }
 
-  BKE_mesh_calc_loop_tangent_single(mesh, uvmap, r_looptangents, reports);
+  dune_mesh_calc_loop_tangent_single(mesh, uvmap, r_looptangents, reports);
 }
 
-static void rna_Mesh_free_tangents(Mesh *mesh)
+static void api_Mesh_free_tangents(Mesh *mesh)
 {
   CustomData_free_layers(&mesh->ldata, CD_MLOOPTANGENT, mesh->totloop);
 }
 
-static void rna_Mesh_calc_looptri(Mesh *mesh)
+static void api_Mesh_calc_looptri(Mesh *mesh)
 {
-  BKE_mesh_runtime_looptri_ensure(mesh);
+  dune_mesh_runtime_looptri_ensure(mesh);
 }
 
-static void rna_Mesh_calc_smooth_groups(
+static void api_Mesh_calc_smooth_groups(
     Mesh *mesh, bool use_bitflags, int *r_poly_group_len, int **r_poly_group, int *r_group_total)
 {
   *r_poly_group_len = mesh->totpoly;
-  *r_poly_group = BKE_mesh_calc_smoothgroups(mesh->medge,
+  *r_poly_group = dune_mesh_calc_smoothgroups(mesh->medge,
                                              mesh->totedge,
                                              mesh->mpoly,
                                              mesh->totpoly,
@@ -93,19 +93,18 @@ static void rna_Mesh_calc_smooth_groups(
                                              use_bitflags);
 }
 
-static void rna_Mesh_normals_split_custom_do(Mesh *mesh,
+static void api_Mesh_normals_split_custom_do(Mesh *mesh,
                                              float (*custom_loopnors)[3],
                                              const bool use_vertices)
 {
   if (use_vertices) {
-    BKE_mesh_set_custom_normals_from_vertices(mesh, custom_loopnors);
-  }
-  else {
-    BKE_mesh_set_custom_normals(mesh, custom_loopnors);
+    dune_mesh_set_custom_normals_from_vertices(mesh, custom_loopnors);
+  } else {
+    dune_mesh_set_custom_normals(mesh, custom_loopnors);
   }
 }
 
-static void rna_Mesh_normals_split_custom_set(Mesh *mesh,
+static void api_Mesh_normals_split_custom_set(Mesh *mesh,
                                               ReportList *reports,
                                               int normals_len,
                                               float *normals)
@@ -114,7 +113,7 @@ static void rna_Mesh_normals_split_custom_set(Mesh *mesh,
   const int numloops = mesh->totloop;
 
   if (normals_len != numloops * 3) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Number of custom normals is not number of loops (%f / %d)",
                 (float)normals_len / 3.0f,
@@ -122,12 +121,12 @@ static void rna_Mesh_normals_split_custom_set(Mesh *mesh,
     return;
   }
 
-  rna_Mesh_normals_split_custom_do(mesh, loopnors, false);
+  api_Mesh_normals_split_custom_do(mesh, loopnors, false);
 
-  DEG_id_tag_update(&mesh->id, 0);
+  graph_id_tag_update(&mesh->id, 0);
 }
 
-static void rna_Mesh_normals_split_custom_set_from_vertices(Mesh *mesh,
+static void api_Mesh_normals_split_custom_set_from_vertices(Mesh *mesh,
                                                             ReportList *reports,
                                                             int normals_len,
                                                             float *normals)
@@ -136,7 +135,7 @@ static void rna_Mesh_normals_split_custom_set_from_vertices(Mesh *mesh,
   const int numverts = mesh->totvert;
 
   if (normals_len != numverts * 3) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Number of custom normals is not number of vertices (%f / %d)",
                 (float)normals_len / 3.0f,
@@ -144,16 +143,16 @@ static void rna_Mesh_normals_split_custom_set_from_vertices(Mesh *mesh,
     return;
   }
 
-  rna_Mesh_normals_split_custom_do(mesh, vertnors, true);
+  api_Mesh_normals_split_custom_do(mesh, vertnors, true);
 
-  DEG_id_tag_update(&mesh->id, 0);
+  graph_id_tag_update(&mesh->id, 0);
 }
 
-static void rna_Mesh_transform(Mesh *mesh, float mat[16], bool shape_keys)
+static void api_Mesh_transform(Mesh *mesh, float mat[16], bool shape_keys)
 {
-  BKE_mesh_transform(mesh, (float(*)[4])mat, shape_keys);
+  dune_mesh_transform(mesh, (float(*)[4])mat, shape_keys);
 
-  DEG_id_tag_update(&mesh->id, 0);
+  graph_id_tag_update(&mesh->id, 0);
 }
 
 static void rna_Mesh_flip_normals(Mesh *mesh)
