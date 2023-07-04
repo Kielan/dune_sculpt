@@ -314,29 +314,28 @@ void RNA_api_mesh(StructRNA *srna)
       func,
       "Remove all geometry from the mesh. Note that this does not free shape keys or materials");
 
-  func = RNA_def_function(srna, "validate", "BKE_mesh_validate");
-  RNA_def_function_ui_description(func,
+  func = apo_def_fn(sapi, "validate", "BKE_mesh_validate");
+  RNA_def_fn_ui_description(func,
                                   "Validate geometry, return True when the mesh has had "
                                   "invalid geometry corrected/removed");
-  RNA_def_boolean(func, "verbose", false, "Verbose", "Output information about the errors found");
-  RNA_def_boolean(func,
-                  "clean_customdata",
-                  true,
-                  "Clean Custom Data",
-                  "Remove temp/cached custom-data layers, like e.g. normals...");
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  api_def_bool(fn, "verbose", false, "Verbose", "Output information about the errors found");
+  api_def_bool(fn, "clean_customdata",
+               true,
+               "Clean Custom Data",
+               "Remove temp/cached custom-data layers, like e.g. normals...");
+  parm = api_def_bool(fn, "result", 0, "Result", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "validate_material_indices", "BKE_mesh_validate_material_indices");
-  RNA_def_function_ui_description(
+  fn = api_def_function(srna, "validate_material_indices", "BKE_mesh_validate_material_indices");
+  api_def_function_ui_description(
       func,
       "Validate material indices of polygons, return True when the mesh has had "
       "invalid indices corrected (to default 0)");
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_bool(fn, "result", 0, "Result", "");
+  api_def_fn_return(func, parm);
 
-  func = RNA_def_function(srna, "count_selected_items", "rna_Mesh_count_selected_items ");
-  RNA_def_function_ui_description(func, "Return the number of selected items (vert, edge, face)");
+  fn = api_def_fn(sapi, "count_selected_items", "rna_Mesh_count_selected_items ");
+  api_def_fn_ui_description(func, "Return the number of selected items (vert, edge, face)");
   parm = RNA_def_int_vector(func, "result", 3, NULL, 0, INT_MAX, "Result", NULL, 0, INT_MAX);
   RNA_def_function_output(func, parm);
 }
