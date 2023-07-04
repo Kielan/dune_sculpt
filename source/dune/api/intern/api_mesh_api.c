@@ -54,8 +54,7 @@ static void api_Mesh_calc_tangents(Mesh *mesh, ReportList *reports, const char *
   if (CustomData_has_layer(&mesh->ldata, CD_MLOOPTANGENT)) {
     r_looptangents = CustomData_get_layer(&mesh->ldata, CD_MLOOPTANGENT);
     memset(r_looptangents, 0, sizeof(float[4]) * mesh->totloop);
-  }
-  else {
+  } else {
     r_looptangents = CustomData_add_layer(
         &mesh->ldata, CD_MLOOPTANGENT, CD_CALLOC, NULL, mesh->totloop);
     CustomData_set_layer_flag(&mesh->ldata, CD_MLOOPTANGENT, CD_FLAG_TEMPORARY);
@@ -196,10 +195,10 @@ void api_mesh(ApiStruct *sapi)
   ApiProp *parm;
   const int normals_array_dim[] = {1, 3};
 
-  fn = api_def_fn(sapi, "transform", "rna_Mesh_transform");
+  fn = api_def_fn(sapi, "transform", "api_Mesh_transform");
   api_def_fn_ui_description(fn,
-                                  "Transform mesh vertices by a matrix "
-                                  "(Warning: inverts normals if matrix is negative)");
+                            "Transform mesh vertices by a matrix "
+                            "(Warning: inverts normals if matrix is negative)");
   parm = api_def_float_matrix(fn, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   RNA_def_boolean(func, "shape_keys", 0, "", "Transform Shape Keys");
@@ -219,15 +218,15 @@ void api_mesh(ApiStruct *sapi)
   api_def_fn_ui_description(fn,
                                   "Calculate split vertex normals, which preserve sharp edges");
 
-  fn = api_def_function(sapi, "free_normals_split", "rna_Mesh_free_normals_split");
-  api_def_function_ui_description(fn, "Free split vertex normals");
+  fn = api_def_fn(sapi, "free_normals_split", "rna_Mesh_free_normals_split");
+  api_def_fn_ui_description(fn, "Free split vertex normals");
 
   fn = api_def_fn(sapi, "split_faces", "api_Mesh_split_faces");
   api_def_fn_ui_description(fn, "Split faces based on the edge angle");
   api_def_bool(
       fn, "free_loop_normals", 1, "Free Loop Normals", "Free loop normals custom data layer");
 
-  fn = api_def_fn(sapi, "calc_tangents", "rna_Mesh_calc_tangents");
+  fn = api_def_fn(sapi, "calc_tangents", "api_Mesh_calc_tangents");
   api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_fn_ui_description(
       fn,
@@ -278,7 +277,7 @@ void api_mesh(ApiStruct *sapi)
       "(use zero-vectors to keep auto ones)");
   api_def_fn_flag(fn, FN_USE_REPORTS);
   /* TODO: see how array size of 0 works, this shouldn't be used. */
-  parm = api_def_float_array(func, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
+  parm = api_def_float_array(fn, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
   api_def_prop_multi_array(parm, 2, normals_array_dim);
   apu_def_param_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
 
