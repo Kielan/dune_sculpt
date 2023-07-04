@@ -223,27 +223,27 @@ static void rna_def_metaelement(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
 
   prop = RNA_def_property(srna, "size_z", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "expz");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_range(prop, 0.0f, 20.0f);
-  RNA_def_property_ui_text(
+  RNA_def_prop_float_sdna(prop, NULL, "expz");
+  RNA_def_prop_flag(prop, PROP_PROPORTIONAL);
+  RNA_def_prop_range(prop, 0.0f, 20.0f);
+  RNA_def_prop_ui_text(
       prop, "Size Z", "Size of element, use of components depends on element type");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "stiffness", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "s");
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_text(prop, "Stiffness", "Stiffness defines how much of the element to fill");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = RNA_def_prop(srna, "stiffness", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_sdna(prop, NULL, "s");
+  RNA_def_prop_range(prop, 0.0f, 10.0f);
+  RNA_def_prop_ui_text(prop, "Stiffness", "Stiffness defines how much of the element to fill");
+  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
   /* flags */
-  prop = RNA_def_property(srna, "use_negative", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MB_NEGATIVE);
-  RNA_def_property_ui_text(prop, "Negative", "Set metaball as negative one");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = RNA_def_prop(srna, "use_negative", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MB_NEGATIVE);
+  RNA_def_prop_ui_text(prop, "Negative", "Set metaball as negative one");
+  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "use_scale_stiffness", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", MB_SCALE_RAD);
+  prop = api_def_prop(sapi, "use_scale_stiffness", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "flag", MB_SCALE_RAD);
   RNA_def_property_ui_text(prop, "Scale Stiffness", "Scale stiffness instead of radius");
   RNA_def_property_update(prop, 0, "rna_MetaBall_redraw_data");
 
