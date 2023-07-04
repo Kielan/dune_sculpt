@@ -176,14 +176,14 @@ static void rna_def_metaelement(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "MetaElement", NULL);
-  RNA_def_struct_sdna(srna, "MetaElem");
-  RNA_def_struct_ui_text(srna, "Metaball Element", "Blobby element in a metaball data-block");
-  RNA_def_struct_path_func(srna, "rna_MetaElement_path");
-  RNA_def_struct_ui_icon(srna, ICON_OUTLINER_DATA_META);
+  sapi = RNA_def_struct(dapi, "MetaElement", NULL);
+  api_def_struct_stype(sapi, "MetaElem");
+  api_def_struct_ui_text(sapi, "Metaball Element", "Blobby element in a metaball data-block");
+  api_def_struct_path_fn(sapi, "api_MetaElement_path");
+  api_def_struct_ui_icon(sapi, ICON_OUTLINER_DATA_META);
 
   /* enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
+  prop = RNA_def_prop(srna, "type", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, rna_enum_metaelem_type_items);
   RNA_def_property_ui_text(prop, "Type", "Metaball types");
   RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
