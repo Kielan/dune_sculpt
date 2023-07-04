@@ -195,16 +195,16 @@ static void rna_def_metaelement(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Location", "");
   RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_QUATERNION);
-  RNA_def_property_float_sdna(prop, NULL, "quat");
-  RNA_def_property_ui_text(prop, "Rotation", "Normalized quaternion rotation");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_rotation");
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_QUATERNION);
+  api_def_prop_float_stype(prop, NULL, "quat");
+  api_def_prop_ui_text(prop, "Rotation", "Normalized quaternion rotation");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_rotation");
 
-  prop = RNA_def_property(srna, "radius", PROP_FLOAT, PROP_UNSIGNED | PROP_UNIT_LENGTH);
-  RNA_def_property_float_sdna(prop, NULL, "rad");
-  RNA_def_property_ui_text(prop, "Radius", "");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "radius", PROP_FLOAT, PROP_UNSIGNED | PROP_UNIT_LENGTH);
+  RNA_def_prop_float_sdna(prop, NULL, "rad");
+  RNA_def_prop_ui_text(prop, "Radius", "");
+  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
+  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 
   prop = RNA_def_property(srna, "size_x", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "expx");
