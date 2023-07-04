@@ -3214,58 +3214,58 @@ static void rna_def_mesh(BlenderRNA *brna)
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MeshVertexFloatPropertyLayer");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_IGNORE);
-  RNA_def_property_ui_text(prop, "Float Property Layers", "");
-  rna_def_vertex_float_layers(brna, prop);
+  api_def_prop_struct_type(prop, "MeshVertexFloatPropLayer");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_IGNORE);
+  api_def_prop_ui_text(prop, "Float Property Layers", "");
+  api_def_vertex_float_layers(dapi, prop);
 
-  prop = RNA_def_property(srna, "vertex_layers_int", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "vdata.layers", "vdata.totlayer");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Mesh_vertex_int_layers_begin",
+  prop = api_def_prop(sapi, "vertex_layers_int", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "vdata.layers", "vdata.totlayer");
+  api_def_prop_collection_fns(prop,
+                              "api_Mesh_vertex_int_layers_begin",
+                              NULL,
+                              NULL,
+                              NULL,
+                              "api_Mesh_vertex_int_layers_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MeshVertexIntPropLayer");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_IGNORE);
+  api_def_prop_ui_text(prop, "Int Property Layers", "");
+  api_def_vertex_int_layers(dapi, prop);
+
+  prop = api_def_prop(sapi, "vertex_layers_string", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "vdata.layers", "vdata.totlayer");
+  api_def_prop_collection_fns(prop,
+                                    "api_Mesh_vertex_string_layers_begin",
                                     NULL,
                                     NULL,
                                     NULL,
-                                    "rna_Mesh_vertex_int_layers_length",
+                                    "api_Mesh_vertex_string_layers_length",
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MeshVertexIntPropertyLayer");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_IGNORE);
-  RNA_def_property_ui_text(prop, "Int Property Layers", "");
-  rna_def_vertex_int_layers(brna, prop);
+  api_def_prop_struct_type(prop, "MeshVertexStringPropertyLayer");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_IGNORE);
+  api_def_prop_ui_text(prop, "String Property Layers", "");
+  api_def_vertex_string_layers(dapi, prop);
 
-  prop = RNA_def_property(srna, "vertex_layers_string", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "vdata.layers", "vdata.totlayer");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Mesh_vertex_string_layers_begin",
+  prop = api_def_prop(sapi, "polygon_layers_float", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "pdata.layers", "pdata.totlayer");
+  api_def_prop_collection_fns(prop,
+                                    "api_Mesh_polygon_float_layers_begin",
                                     NULL,
                                     NULL,
                                     NULL,
-                                    "rna_Mesh_vertex_string_layers_length",
+                                    "api_Mesh_polygon_float_layers_length",
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MeshVertexStringPropertyLayer");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_IGNORE);
-  RNA_def_property_ui_text(prop, "String Property Layers", "");
-  rna_def_vertex_string_layers(brna, prop);
-
-  prop = RNA_def_property(srna, "polygon_layers_float", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "pdata.layers", "pdata.totlayer");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Mesh_polygon_float_layers_begin",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    "rna_Mesh_polygon_float_layers_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MeshPolygonFloatPropertyLayer");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_IGNORE);
-  RNA_def_property_ui_text(prop, "Float Property Layers", "");
-  rna_def_polygon_float_layers(brna, prop);
+  api_def_prop_struct_type(prop, "MeshPolygonFloatPropertyLayer");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_IGNORE);
+  api_def_prop_ui_text(prop, "Float Property Layers", "");
+  api_def_polygon_float_layers(dapi, prop);
 
   prop = RNA_def_property(srna, "polygon_layers_int", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_collection_sdna(prop, NULL, "pdata.layers", "pdata.totlayer");
