@@ -155,141 +155,141 @@ static void api_Mesh_transform(Mesh *mesh, float mat[16], bool shape_keys)
   graph_id_tag_update(&mesh->id, 0);
 }
 
-static void rna_Mesh_flip_normals(Mesh *mesh)
+static void api_Mesh_flip_normals(Mesh *mesh)
 {
-  BKE_mesh_polygons_flip(mesh->mpoly, mesh->mloop, &mesh->ldata, mesh->totpoly);
-  BKE_mesh_tessface_clear(mesh);
-  BKE_mesh_normals_tag_dirty(mesh);
-  BKE_mesh_runtime_clear_geometry(mesh);
+  dune_mesh_polygons_flip(mesh->mpoly, mesh->mloop, &mesh->ldata, mesh->totpoly);
+  dune_mesh_tessface_clear(mesh);
+  dune_mesh_normals_tag_dirty(mesh);
+  dune_mesh_runtime_clear_geometry(mesh);
 
-  DEG_id_tag_update(&mesh->id, 0);
+  graph_id_tag_update(&mesh->id, 0);
 }
 
-static void rna_Mesh_split_faces(Mesh *mesh, bool free_loop_normals)
+static void api_Mesh_split_faces(Mesh *mesh, bool free_loop_normals)
 {
-  BKE_mesh_split_faces(mesh, free_loop_normals != 0);
+  dune_mesh_split_faces(mesh, free_loop_normals != 0);
 }
 
-static void rna_Mesh_update_gpu_tag(Mesh *mesh)
+static void api_Mesh_update_gpu_tag(Mesh *mesh)
 {
-  BKE_mesh_batch_cache_dirty_tag(mesh, BKE_MESH_BATCH_DIRTY_ALL);
+  dune_mesh_batch_cache_dirty_tag(mesh, DUNE_MESH_BATCH_DIRTY_ALL);
 }
 
-static void rna_Mesh_count_selected_items(Mesh *mesh, int r_count[3])
+static void api_Mesh_count_selected_items(Mesh *mesh, int r_count[3])
 {
-  BKE_mesh_count_selected_items(mesh, r_count);
+  dune_mesh_count_selected_items(mesh, r_count);
 }
 
-static void rna_Mesh_clear_geometry(Mesh *mesh)
+static void api_Mesh_clear_geometry(Mesh *mesh)
 {
-  BKE_mesh_clear_geometry(mesh);
+  dune_mesh_clear_geometry(mesh);
 
-  DEG_id_tag_update(&mesh->id, ID_RECALC_GEOMETRY_ALL_MODES);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, mesh);
+  graph_id_tag_update(&mesh->id, ID_RECALC_GEOMETRY_ALL_MODES);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, mesh);
 }
 
 #else
 
-void RNA_api_mesh(StructRNA *srna)
+void api_mesh(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
   const int normals_array_dim[] = {1, 3};
 
-  func = RNA_def_function(srna, "transform", "rna_Mesh_transform");
-  RNA_def_function_ui_description(func,
+  fn = api_def_fn(sapi, "transform", "rna_Mesh_transform");
+  api_def_fn_ui_description(fn,
                                   "Transform mesh vertices by a matrix "
                                   "(Warning: inverts normals if matrix is negative)");
-  parm = RNA_def_float_matrix(func, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
+  parm = api_def_float_matrix(fn, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   RNA_def_boolean(func, "shape_keys", 0, "", "Transform Shape Keys");
 
-  func = RNA_def_function(srna, "flip_normals", "rna_Mesh_flip_normals");
-  RNA_def_function_ui_description(func,
-                                  "Invert winding of all polygons "
-                                  "(clears tessellation, does not handle custom normals)");
+  fn = api_def_fn(sapi, "flip_normals", "api_Mesh_flip_normals");
+  api_def_fn_ui_description(fn,
+                            "Invert winding of all polygons "
+                            "(clears tessellation, does not handle custom normals)");
 
-  func = RNA_def_function(srna, "calc_normals", "BKE_mesh_calc_normals");
-  RNA_def_function_ui_description(func, "Calculate vertex normals");
+  fn = api_def_fn(sapi, "calc_normals", "dune_mesh_calc_normals");
+  api_def_fn_ui_description(fn, "Calculate vertex normals");
 
-  func = RNA_def_function(srna, "create_normals_split", "rna_Mesh_create_normals_split");
-  RNA_def_function_ui_description(func, "Empty split vertex normals");
+  fn = api_def_fn(sapi, "create_normals_split", "rna_Mesh_create_normals_split");
+  api_def_fn_ui_description(fn, "Empty split vertex normals");
 
-  func = RNA_def_function(srna, "calc_normals_split", "BKE_mesh_calc_normals_split");
-  RNA_def_function_ui_description(func,
+  fn = api_def_fn(sapi, "calc_normals_split", "BKE_mesh_calc_normals_split");
+  api_def_fn_ui_description(fn,
                                   "Calculate split vertex normals, which preserve sharp edges");
 
-  func = RNA_def_function(srna, "free_normals_split", "rna_Mesh_free_normals_split");
-  RNA_def_function_ui_description(func, "Free split vertex normals");
+  fn = api_def_function(sapi, "free_normals_split", "rna_Mesh_free_normals_split");
+  api_def_function_ui_description(fn, "Free split vertex normals");
 
-  func = RNA_def_function(srna, "split_faces", "rna_Mesh_split_faces");
-  RNA_def_function_ui_description(func, "Split faces based on the edge angle");
-  RNA_def_boolean(
-      func, "free_loop_normals", 1, "Free Loop Normals", "Free loop normals custom data layer");
+  fn = api_def_fn(sapi, "split_faces", "api_Mesh_split_faces");
+  api_def_fn_ui_description(fn, "Split faces based on the edge angle");
+  api_def_bool(
+      fn, "free_loop_normals", 1, "Free Loop Normals", "Free loop normals custom data layer");
 
-  func = RNA_def_function(srna, "calc_tangents", "rna_Mesh_calc_tangents");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "calc_tangents", "rna_Mesh_calc_tangents");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(
+      fn,
       "Compute tangents and bitangent signs, to be used together with the split normals "
       "to get a complete tangent space for normal mapping "
       "(split normals are also computed if not yet present)");
-  parm = RNA_def_string(func,
+  parm = api_def_string(fn,
                         "uvmap",
                         NULL,
                         MAX_CUSTOMDATA_LAYER_NAME,
                         "",
                         "Name of the UV map to use for tangent space computation");
 
-  func = RNA_def_function(srna, "free_tangents", "rna_Mesh_free_tangents");
-  RNA_def_function_ui_description(func, "Free tangents");
+  fn = api_def_fn(sapi, "free_tangents", "api_Mesh_free_tangents");
+  api_def_fn_ui_description(fn, "Free tangents");
 
-  func = RNA_def_function(srna, "calc_loop_triangles", "rna_Mesh_calc_looptri");
-  RNA_def_function_ui_description(func,
-                                  "Calculate loop triangle tessellation (supports editmode too)");
+  fn = api_def_fn(sapi, "calc_loop_triangles", "api_Mesh_calc_looptri");
+  api_def_fn_ui_description(fn,
+                            "Calculate loop triangle tessellation (supports editmode too)");
 
-  func = RNA_def_function(srna, "calc_smooth_groups", "rna_Mesh_calc_smooth_groups");
-  RNA_def_function_ui_description(func, "Calculate smooth groups from sharp edges");
-  RNA_def_boolean(
-      func, "use_bitflags", false, "", "Produce bitflags groups instead of simple numeric values");
+  fn = api_def_fn(sapi, "calc_smooth_groups", "api_Mesh_calc_smooth_groups");
+  api_def_fn_ui_description(fn, "Calculate smooth groups from sharp edges");
+  api_def_bool(
+      fn, "use_bitflags", false, "", "Produce bitflags groups instead of simple numeric values");
   /* return values */
-  parm = RNA_def_int_array(func, "poly_groups", 1, NULL, 0, 0, "", "Smooth Groups", 0, 0);
-  RNA_def_parameter_flags(parm, PROP_DYNAMIC, PARM_OUTPUT);
-  parm = RNA_def_int(
-      func, "groups", 0, 0, INT_MAX, "groups", "Total number of groups", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_OUTPUT);
+  parm = api_def_int_array(fn, "poly_groups", 1, NULL, 0, 0, "", "Smooth Groups", 0, 0);
+  api_def_param_flags(parm, PROP_DYNAMIC, PARM_OUTPUT);
+  parm = api_def_int(
+      fn, "groups", 0, 0, INT_MAX, "groups", "Total number of groups", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_OUTPUT);
 
-  func = RNA_def_function(srna, "normals_split_custom_set", "rna_Mesh_normals_split_custom_set");
-  RNA_def_function_ui_description(func,
-                                  "Define custom split normals of this mesh "
-                                  "(use zero-vectors to keep auto ones)");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "normals_split_custom_set", "api_Mesh_normals_split_custom_set");
+  api_def_fn_ui_description(fn,
+                            "Define custom split normals of this mesh "
+                            "(use zero-vectors to keep auto ones)");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
   /* TODO: see how array size of 0 works, this shouldn't be used. */
-  parm = RNA_def_float_array(func, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
-  RNA_def_property_multi_array(parm, 2, normals_array_dim);
-  RNA_def_parameter_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
+  parm = api_def_float_array(fn, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
+  api_def_prop_multi_array(parm, 2, normals_array_dim);
+  api_def_param_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
 
-  func = RNA_def_function(srna,
-                          "normals_split_custom_set_from_vertices",
-                          "rna_Mesh_normals_split_custom_set_from_vertices");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi,
+                  "normals_split_custom_set_from_vertices",
+                  "api_Mesh_normals_split_custom_set_from_vertices");
+  api_def_fn_ui_description(
+      fn,
       "Define custom split normals of this mesh, from vertices' normals "
       "(use zero-vectors to keep auto ones)");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
   /* TODO: see how array size of 0 works, this shouldn't be used. */
-  parm = RNA_def_float_array(func, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
-  RNA_def_property_multi_array(parm, 2, normals_array_dim);
-  RNA_def_parameter_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
+  parm = api_def_float_array(func, "normals", 1, NULL, -1.0f, 1.0f, "", "Normals", 0.0f, 0.0f);
+  api_def_prop_multi_array(parm, 2, normals_array_dim);
+  apu_def_param_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "update", "ED_mesh_update");
-  RNA_def_boolean(func, "calc_edges", 0, "Calculate Edges", "Force recalculation of edges");
-  RNA_def_boolean(func,
-                  "calc_edges_loose",
-                  0,
-                  "Calculate Loose Edges",
-                  "Calculate the loose state of each edge");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "update", "ED_mesh_update");
+  api_def_bool(fn, "calc_edges", 0, "Calculate Edges", "Force recalculation of edges");
+  api_def_bool(fn,
+               "calc_edges_loose",
+               0,
+               "Calculate Loose Edges",
+               "Calculate the loose state of each edge");
+  RNA_def_fn_flag(fn, FN_USE_CXT);
 
   RNA_def_function(srna, "update_gpu_tag", "rna_Mesh_update_gpu_tag");
 
