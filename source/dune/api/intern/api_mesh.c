@@ -2489,56 +2489,56 @@ static void api_def_mesh_loops(DuneApi *dapi, ApiProp *cprop)
   api_def_struct_stype(sapi, "Mesh");
   api_def_struct_ui_text(sapi, "Mesh Loops", "Collection of mesh loops");
 
-  func = RNA_def_function(srna, "add", "ED_mesh_loops_add");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int(func, "count", 0, 0, INT_MAX, "Count", "Number of loops to add", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "add", "ED_mesh_loops_add");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int(fn, "count", 0, 0, INT_MAX, "Count", "Number of loops to add", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
 /* mesh.polygons */
-static void rna_def_mesh_polygons(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_mesh_polygons(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "MeshPolygons");
-  srna = RNA_def_struct(brna, "MeshPolygons", NULL);
-  RNA_def_struct_sdna(srna, "Mesh");
-  RNA_def_struct_ui_text(srna, "Mesh Polygons", "Collection of mesh polygons");
+  api_def_prop_sapi(cprop, "MeshPolygons");
+  sapi = api_def_struct(dapi, "MeshPolygons", NULL);
+  api_def_struct_stype(sapi, "Mesh");
+  api_def_struct_ui_text(sapi, "Mesh Polygons", "Collection of mesh polygons");
 
-  prop = RNA_def_property(srna, "active", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "act_face");
-  RNA_def_property_ui_text(prop, "Active Polygon", "The active polygon for this mesh");
+  prop = api_def_prop(sapi, "active", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "act_face");
+  api_def_prop_ui_text(prop, "Active Polygon", "The active polygon for this mesh");
 
-  func = RNA_def_function(srna, "add", "ED_mesh_polys_add");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int(
-      func, "count", 0, 0, INT_MAX, "Count", "Number of polygons to add", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "add", "ed_mesh_polys_add");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int(
+      fn, "count", 0, 0, INT_MAX, "Count", "Number of polygons to add", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
 /* Defines a read-only vector type since normals should not be modified manually. */
-static void rna_def_normal_layer_value(BlenderRNA *brna)
+static void api_def_normal_layer_value(DuneApi *dapi)
 {
-  StructRNA *srna = RNA_def_struct(brna, "MeshNormalValue", NULL);
-  RNA_def_struct_sdna(srna, "vec3f");
-  RNA_def_struct_ui_text(srna, "Mesh Normal Vector", "Vector in a mesh normal array");
+  ApiStruct *sapi = api_def_struct(dapi, "MeshNormalValue", NULL);
+  api_def_struct_stype(sapi, "vec3f");
+  api_def_struct_ui_text(sapi, "Mesh Normal Vector", "Vector in a mesh normal array");
 
-  PropertyRNA *prop = RNA_def_property(srna, "vector", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_ui_text(prop, "Vector", "3D vector");
-  RNA_def_property_float_sdna(prop, NULL, "x");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  ApiProp *prop = api_def_prop(sapi, "vector", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_ui_text(prop, "Vector", "3D vector");
+  api_def_prop_float_stype(prop, NULL, "x");
+  api_def_prop_array(prop, 3);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 }
 
-static void rna_def_loop_colors(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_loop_colors(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   FunctionRNA *func;
   PropertyRNA *parm;
