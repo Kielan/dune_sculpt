@@ -2,31 +2,31 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "DNA_armature_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_armature.h"
+#include "types_cachefile.h"
+#include "types_mesh.h"
+#include "types_modifier.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_animsys.h"
-#include "BKE_curveprofile.h"
-#include "BKE_data_transfer.h"
-#include "BKE_dynamicpaint.h"
-#include "BKE_effect.h"
-#include "BKE_fluid.h" /* For BKE_fluid_modifier_free & BKE_fluid_modifier_create_type_data */
-#include "BKE_idprop.h"
-#include "BKE_mesh_mapping.h"
-#include "BKE_mesh_remap.h"
-#include "BKE_multires.h"
-#include "BKE_ocean.h"
+#include "dune_animsys.h"
+#include "dune_curveprofile.h"
+#include "dune_data_transfer.h"
+#include "dune_dynamicpaint.h"
+#include "dune_effect.h"
+#include "dune_fluid.h" /* For BKE_fluid_modifier_free & BKE_fluid_modifier_create_type_data */
+#include "dune_idprop.h"
+#include "dune_mesh_mapping.h"
+#include "dune_mesh_remap.h"
+#include "dune_multires.h"
+#include "dune_ocean.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
