@@ -1008,15 +1008,15 @@ static void rna_UVProjector_object_set(PointerRNA *ptr,
 {
   Object **ob_p = (Object **)ptr->data;
   Object *ob = (Object *)value.data;
-  id_lib_extern((ID *)ob);
+  id_lib_extern((Id *)ob);
   *ob_p = ob;
 }
 
-#  undef RNA_MOD_OBJECT_SET
+#  undef API_MOD_OBJECT_SET
 
-/* Other rna callbacks */
+/* Other api callbacks */
 
-static void rna_fluid_set_type(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_fluid_set_type(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   FluidModifierData *fmd = (FluidModifierData *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
