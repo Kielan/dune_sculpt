@@ -88,8 +88,8 @@ static void api_MetaBall_update_data(Main *main, Scene *scene, ApiPtr *ptr)
       }
     }
 
-    DEG_id_tag_update(&mb->id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, mb);
+    graph_id_tag_update(&mb->id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, mb);
   }
 }
 
@@ -144,56 +144,56 @@ static void api_MetaBall_elements_clear(MetaBall *mb)
   }
 }
 
-static bool rna_Meta_is_editmode_get(PointerRNA *ptr)
+static bool api_Meta_is_editmode_get(PointerRNA *ptr)
 {
   MetaBall *mb = (MetaBall *)ptr->owner_id;
   return (mb->editelems != NULL);
 }
 
-static char *rna_MetaElement_path(PointerRNA *ptr)
+static char *api_MetaElement_path(PointerRNA *ptr)
 {
   MetaBall *mb = (MetaBall *)ptr->owner_id;
   MetaElem *ml = ptr->data;
   int index = -1;
 
   if (mb->editelems) {
-    index = BLI_findindex(mb->editelems, ml);
+    index = lib_findindex(mb->editelems, ml);
   }
   if (index == -1) {
-    index = BLI_findindex(&mb->elems, ml);
+    index = lib_findindex(&mb->elems, ml);
   }
   if (index == -1) {
     return NULL;
   }
 
-  return BLI_sprintfN("elements[%d]", index);
+  return lib_sprintfn("elements[%d]", index);
 }
 
 #else
 
-static void rna_def_metaelement(BlenderRNA *brna)
+static void api_def_metaelement(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  sapi = RNA_def_struct(dapi, "MetaElement", NULL);
+  sapi = api_def_struct(dapi, "MetaElement", NULL);
   api_def_struct_stype(sapi, "MetaElem");
   api_def_struct_ui_text(sapi, "Metaball Element", "Blobby element in a metaball data-block");
   api_def_struct_path_fn(sapi, "api_MetaElement_path");
   api_def_struct_ui_icon(sapi, ICON_OUTLINER_DATA_META);
 
   /* enums */
-  prop = RNA_def_prop(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_metaelem_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Metaball types");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_metaelem_type_items);
+  api_def_prop_ui_text(prop, "Type", "Metaball types");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   /* number values */
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "x");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "x");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_QUATERNION);
   api_def_prop_float_stype(prop, NULL, "quat");
@@ -201,26 +201,26 @@ static void rna_def_metaelement(BlenderRNA *brna)
   api_def_prop_update(prop, 0, "api_MetaBall_update_rotation");
 
   prop = api_def_prop(sapi, "radius", PROP_FLOAT, PROP_UNSIGNED | PROP_UNIT_LENGTH);
-  RNA_def_prop_float_sdna(prop, NULL, "rad");
-  RNA_def_prop_ui_text(prop, "Radius", "");
-  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
-  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_float_stype(prop, NULL, "rad");
+  api_def_prop_ui_text(prop, "Radius", "");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "size_x", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "expx");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_range(prop, 0.0f, 20.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "size_x", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "expx")(
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_range(prop, 0.0f, 20.0f);
+  api_def_prop_ui_text(
       prop, "Size X", "Size of element, use of components depends on element type");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "size_y", PROP_FLOAT, PROP_DISTANCE);
-  api_def_prop_float_sdna(prop, NULL, "expy");
-  api_def_property_flag(prop, PROP_PROPORTIONAL);
-  api_def_property_range(prop, 0.0f, 20.0f);
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "size_y", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "expy");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_range(prop, 0.0f, 20.0f);
+  api_def_prop_ui_text(
       prop, "Size Y", "Size of element, use of components depends on element type");
-  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   prop = api_def_prop(sapi, "size_z", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "expz");
@@ -228,81 +228,81 @@ static void rna_def_metaelement(BlenderRNA *brna)
   api_def_prop_range(prop, 0.0f, 20.0f);
   api_def_prop_ui_text(
       prop, "Size Z", "Size of element, use of components depends on element type");
-  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   prop = api_def_prop(sapi, "stiffness", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "s");
   api_def_prop_range(prop, 0.0f, 10.0f);
   api_def_prop_ui_text(prop, "Stiffness", "Stiffness defines how much of the element to fill");
-  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   /* flags */
-  prop = RNA_def_prop(srna, "use_negative", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MB_NEGATIVE);
-  RNA_def_prop_ui_text(prop, "Negative", "Set metaball as negative one");
-  RNA_def_prop_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "use_negative", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MB_NEGATIVE);
+  api_def_prop_ui_text(prop, "Negative", "Set metaball as negative one");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = api_def_prop(sapi, "use_scale_stiffness", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_scale_stiffness", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_sdna(prop, NULL, "flag", MB_SCALE_RAD);
-  RNA_def_property_ui_text(prop, "Scale Stiffness", "Scale stiffness instead of radius");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_redraw_data");
+  api_def_prop_ui_text(prop, "Scale Stiffness", "Scale stiffness instead of radius");
+  api_def_prop_update(prop, 0, "api_MetaBall_redraw_data");
 
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", 1); /* SELECT */
-  RNA_def_property_ui_text(prop, "Select", "Select element");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_redraw_data");
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", 1); /* SELECT */
+  api_def_prop_ui_text(prop, "Select", "Select element");
+  api_def_prop_update(prop, 0, "api_MetaBall_redraw_data");
 
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MB_HIDE);
-  RNA_def_property_ui_text(prop, "Hide", "Hide element");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MB_HIDE);
+  api_def_prop_ui_text(prop, "Hide", "Hide element");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 }
 
 /* mball.elements */
-static void rna_def_metaball_elements(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_metaball_elements(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   FunctionRNA *func;
   PropertyRNA *parm;
 
-  RNA_def_property_srna(cprop, "MetaBallElements");
-  srna = RNA_def_struct(brna, "MetaBallElements", NULL);
-  RNA_def_struct_sdna(srna, "MetaBall");
-  RNA_def_struct_ui_text(srna, "Metaball Elements", "Collection of metaball elements");
+  api_def_prop_sapi(cprop, "MetaBallElements");
+  sapi = api_def_struct(brna, "MetaBallElements", NULL);
+  api_def_struct_stype(srna, "MetaBall");
+  api_def_struct_ui_text(srna, "Metaball Elements", "Collection of metaball elements");
 
-  func = RNA_def_function(srna, "new", "rna_MetaBall_elements_new");
-  RNA_def_function_ui_description(func, "Add a new element to the metaball");
-  RNA_def_enum(func,
+  fn = api_def_fn(sapi, "new", "api_MetaBall_elements_new");
+  api_def_fn_ui_description(fn, "Add a new element to the metaball");
+  api_def_enum(fn,
                "type",
-               rna_enum_metaelem_type_items,
+               api_enum_metaelem_type_items,
                MB_BALL,
                "",
                "Type for the new metaball element");
-  parm = RNA_def_pointer(func, "element", "MetaElement", "", "The newly created metaball element");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "element", "MetaElement", "", "The newly created metaball element");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_MetaBall_elements_remove");
-  RNA_def_function_ui_description(func, "Remove an element from the metaball");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "element", "MetaElement", "", "The element to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_MetaBall_elements_remove");
+  api_def_fn_ui_description(fn, "Remove an element from the metaball");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "element", "MetaElement", "", "The element to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "clear", "rna_MetaBall_elements_clear");
-  RNA_def_function_ui_description(func, "Remove all elements from the metaball");
+  fn = api_def_fn(sapi, "clear", "rna_MetaBall_elements_clear");
+  api_def_fn_ui_description(fn, "Remove all elements from the metaball");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "lastelem");
-  RNA_def_property_ui_text(prop, "Active Element", "Last selected element");
+  prop = api_def_prop(sapi, "active", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "lastelem");
+  api_def_prop_ui_text(prop, "Active Element", "Last selected element");
 }
 
-static void rna_def_metaball(BlenderRNA *brna)
+static void api_def_metaball(Dune *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  static const EnumPropertyItem prop_update_items[] = {
+  ApiStruct *sapi;
+  ApiProp *prop;
+  static const EnumPropItem prop_update_items[] = {
       {MB_UPDATE_ALWAYS, "UPDATE_ALWAYS", 0, "Always", "While editing, update metaball always"},
       {MB_UPDATE_HALFRES,
        "HALFRES",
@@ -314,102 +314,102 @@ static void rna_def_metaball(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MetaBall", "ID");
-  RNA_def_struct_ui_text(srna, "MetaBall", "Metaball data-block to defined blobby surfaces");
-  RNA_def_struct_ui_icon(srna, ICON_META_DATA);
+  sapi = api_def_struct(dapi, "MetaBall", "ID");
+  api_def_struct_ui_text(dapi, "MetaBall", "Metaball data-block to defined blobby surfaces");
+  api_def_struct_ui_icon(sapi, ICON_META_DATA);
 
-  prop = RNA_def_property(srna, "elements", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "elems", NULL);
-  RNA_def_property_struct_type(prop, "MetaElement");
-  RNA_def_property_ui_text(prop, "Elements", "Metaball elements");
-  rna_def_metaball_elements(brna, prop);
+  prop = api_def_prop(sapi, "elements", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "elems", NULL);
+  api_def_prop_struct_type(prop, "MetaElement");
+  api_def_prop_ui_text(prop, "Elements", "Metaball elements");
+  api_def_metaball_elements(dapi, prop);
 
   /* enums */
-  prop = RNA_def_property(srna, "update_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_update_items);
-  RNA_def_property_ui_text(prop, "Update", "Metaball edit update behavior");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "update_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_update_items);
+  api_def_prop_ui_text(prop, "Update", "Metaball edit update behavior");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   /* number values */
-  prop = RNA_def_property(srna, "resolution", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "wiresize");
-  RNA_def_property_range(prop, 0.005f, 10000.0f);
-  RNA_def_property_ui_range(prop, 0.05f, 1000.0f, 2.5f, 3);
-  RNA_def_property_ui_text(prop, "Wire Size", "Polygonization resolution in the 3D viewport");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "resolution", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "wiresize");
+  api_def_prop_range(prop, 0.005f, 10000.0f);
+  api_def_prop_ui_range(prop, 0.05f, 1000.0f, 2.5f, 3);
+  api_def_prop_ui_text(prop, "Wire Size", "Polygonization resolution in the 3D viewport");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "render_resolution", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "rendersize");
-  RNA_def_property_range(prop, 0.005f, 10000.0f);
-  RNA_def_property_ui_range(prop, 0.025f, 1000.0f, 2.5f, 3);
-  RNA_def_property_ui_text(prop, "Render Size", "Polygonization resolution in rendering");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "render_resolution", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "rendersize");
+  api_def_prop_range(prop, 0.005f, 10000.0f);
+  api_def_prop_ui_range(prop, 0.025f, 1000.0f, 2.5f, 3);
+  api_def_prop_ui_text(prop, "Render Size", "Polygonization resolution in rendering");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "thresh");
-  RNA_def_property_range(prop, 0.0f, 5.0f);
-  RNA_def_property_ui_text(prop, "Threshold", "Influence of metaball elements");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "thresh");
+  api_def_prop_range(prop, 0.0f, 5.0f);
+  api_def_prop_ui_text(prop, "Threshold", "Influence of metaball elements");
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   /* texture space */
-  prop = RNA_def_property(srna, "use_auto_texspace", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "texflag", MB_AUTOSPACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_auto_texspace", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "texflag", MB_AUTOSPACE);
+  spi_def_prop_ui_text(
       prop,
       "Auto Texture Space",
       "Adjust active object's texture space automatically when transforming object");
 
-  prop = RNA_def_property(srna, "texspace_location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Texture Space Location", "Texture space location");
-  RNA_def_property_editable_func(prop, "rna_Meta_texspace_editable");
-  RNA_def_property_float_funcs(
-      prop, "rna_Meta_texspace_loc_get", "rna_Meta_texspace_loc_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "texspace_location", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Texture Space Location", "Texture space location");
+  api_def_prop_editable_fn(prop, "api_Meta_texspace_editable");
+  api_def_prop_float_fns(
+      prop, "api_Meta_texspace_loc_get", "api_Meta_texspace_loc_set", NULL);
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
-  prop = RNA_def_property(srna, "texspace_size", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_ui_text(prop, "Texture Space Size", "Texture space size");
-  RNA_def_property_editable_func(prop, "rna_Meta_texspace_editable");
-  RNA_def_property_float_funcs(
-      prop, "rna_Meta_texspace_size_get", "rna_Meta_texspace_size_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "texspace_size", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_array(prop, 3);
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_ui_text(prop, "Texture Space Size", "Texture space size");
+  api_def_prop_editable_fn(prop, "api_Meta_texspace_editable");
+  api_def_prop_float_fns(
+      prop, "api_Meta_texspace_size_get", "api_Meta_texspace_size_set", NULL);
+  api_def_prop_update(prop, 0, "api_MetaBall_update_data");
 
   /* not supported yet */
 #  if 0
-  prop = RNA_def_property(srna, "texspace_rot", PROP_FLOAT, PROP_EULER);
-  RNA_def_property_float(prop, NULL, "rot");
-  RNA_def_property_ui_text(prop, "Texture Space Rotation", "Texture space rotation");
-  RNA_def_property_editable_func(prop, "rna_Meta_texspace_editable");
-  RNA_def_property_update(prop, 0, "rna_MetaBall_update_data");
+  prop = api_def_prop(sapi, "texspace_rot", PROP_FLOAT, PROP_EULER);
+  api_def_prop_float(prop, NULL, "rot");
+  api_def_prop_ui_text(prop, "Texture Space Rotation", "Texture space rotation");
+  api_def_prop_editable_fn(prop, "rna_Meta_texspace_editable");
+  api_def_prop_update(prop, 0, "rna_MetaBall_update_data");
 #  endif
 
   /* materials */
-  prop = RNA_def_property(srna, "materials", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "mat", "totcol");
-  RNA_def_property_struct_type(prop, "Material");
-  RNA_def_property_ui_text(prop, "Materials", "");
-  RNA_def_property_srna(prop, "IDMaterials"); /* see rna_ID.c */
-  RNA_def_property_collection_funcs(
-      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "rna_IDMaterials_assign_int");
+  prop = api_def_prop(sapi, "materials", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "mat", "totcol");
+  api_def_prop_struct_type(prop, "Material");
+  api_def_prop_ui_text(prop, "Materials", "");
+  api_def_prop_srna(prop, "IdMaterials"); /* see api_id.c */
+  api_def_prop_collection_fns(
+      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "api_IdMaterials_assign_int");
 
-  prop = RNA_def_property(srna, "is_editmode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_Meta_is_editmode_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Is Editmode", "True when used in editmode");
+  prop = api_def_prop(sapi, "is_editmode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_Meta_is_editmode_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Is Editmode", "True when used in editmode");
 
   /* anim */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 
-  RNA_api_meta(srna);
+  api_api_meta(sapi);
 }
 
-void RNA_def_meta(BlenderRNA *brna)
+void api_def_meta(DuneApi *dapi)
 {
-  rna_def_metaelement(brna);
-  rna_def_metaball(brna);
+  api_def_metaelement(brna);
+  api_def_metaball(brna);
 }
 
 #endif
