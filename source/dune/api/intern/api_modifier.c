@@ -822,24 +822,24 @@ static void rna_ExplodeModifier_vgroup_set(PointerRNA *ptr, const char *value)
 /* UV layers */
 
 #  define RNA_MOD_UVLAYER_NAME_SET(_type, _prop) \
-    static void rna_##_type##Modifier_##_prop##_set(PointerRNA *ptr, const char *value) \
+    static void rna_##_type##Mod_##_prop##_set(ApiPtr *ptr, const char *value) \
     { \
-      _type##ModifierData *tmd = (_type##ModifierData *)ptr->data; \
-      rna_object_uvlayer_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
+      _type##ModData *tmd = (_type##ModData *)ptr->data; \
+      api_object_uvlayer_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
     }
 
-RNA_MOD_UVLAYER_NAME_SET(MappingInfo, uvlayer_name);
-RNA_MOD_UVLAYER_NAME_SET(UVProject, uvlayer_name);
-RNA_MOD_UVLAYER_NAME_SET(UVWarp, uvlayer_name);
-RNA_MOD_UVLAYER_NAME_SET(WeightVGEdit, mask_tex_uvlayer_name);
-RNA_MOD_UVLAYER_NAME_SET(WeightVGMix, mask_tex_uvlayer_name);
-RNA_MOD_UVLAYER_NAME_SET(WeightVGProximity, mask_tex_uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(MappingInfo, uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(UVProject, uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(UVWarp, uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(WeightVGEdit, mask_tex_uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(WeightVGMix, mask_tex_uvlayer_name);
+API_MOD_UVLAYER_NAME_SET(WeightVGProximity, mask_tex_uvlayer_name);
 
 #  undef RNA_MOD_UVLAYER_NAME_SET
 
 /* Objects */
 
-static void modifier_object_set(Object *self, Object **ob_p, int type, PointerRNA value)
+static void mod_object_set(Object *self, Object **ob_p, int type, ApiPtr value)
 {
   Object *ob = value.data;
 
@@ -851,71 +851,71 @@ static void modifier_object_set(Object *self, Object **ob_p, int type, PointerRN
   }
 }
 
-#  define RNA_MOD_OBJECT_SET(_type, _prop, _obtype) \
-    static void rna_##_type##Modifier_##_prop##_set( \
-        PointerRNA *ptr, PointerRNA value, struct ReportList *UNUSED(reports)) \
+#  define API_MOD_OBJECT_SET(_type, _prop, _obtype) \
+    static void api_##_type##Mod_##_prop##_set( \
+        ApiPtr *ptr, ApiPtr value, struct ReportList *UNUSED(reports)) \
     { \
-      _type##ModifierData *tmd = (_type##ModifierData *)ptr->data; \
-      modifier_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
+      _type##ModData *tmd = (_type##ModData *)ptr->data; \
+      mod_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
     }
 
-RNA_MOD_OBJECT_SET(Armature, object, OB_ARMATURE);
-RNA_MOD_OBJECT_SET(Array, start_cap, OB_MESH);
-RNA_MOD_OBJECT_SET(Array, end_cap, OB_MESH);
-RNA_MOD_OBJECT_SET(Array, curve_ob, OB_CURVES_LEGACY);
-RNA_MOD_OBJECT_SET(Boolean, object, OB_MESH);
-RNA_MOD_OBJECT_SET(Cast, object, OB_EMPTY);
-RNA_MOD_OBJECT_SET(Curve, object, OB_CURVES_LEGACY);
-RNA_MOD_OBJECT_SET(DataTransfer, ob_source, OB_MESH);
-RNA_MOD_OBJECT_SET(Lattice, object, OB_LATTICE);
-RNA_MOD_OBJECT_SET(Mask, ob_arm, OB_ARMATURE);
-RNA_MOD_OBJECT_SET(MeshDeform, object, OB_MESH);
-RNA_MOD_OBJECT_SET(NormalEdit, target, OB_EMPTY);
-RNA_MOD_OBJECT_SET(Shrinkwrap, target, OB_MESH);
-RNA_MOD_OBJECT_SET(Shrinkwrap, auxTarget, OB_MESH);
-RNA_MOD_OBJECT_SET(SurfaceDeform, target, OB_MESH);
+API_MOD_OBJECT_SET(Armature, object, OB_ARMATURE);
+API_MOD_OBJECT_SET(Array, start_cap, OB_MESH);
+API_MOD_OBJECT_SET(Array, end_cap, OB_MESH);
+API_MOD_OBJECT_SET(Array, curve_ob, OB_CURVES_LEGACY);
+API_MOD_OBJECT_SET(Bool, object, OB_MESH);
+API_MOD_OBJECT_SET(Cast, object, OB_EMPTY);
+API_MOD_OBJECT_SET(Curve, object, OB_CURVES_LEGACY);
+API_MOD_OBJECT_SET(DataTransfer, ob_source, OB_MESH);
+API_MOD_OBJECT_SET(Lattice, object, OB_LATTICE);
+API_MOD_OBJECT_SET(Mask, ob_arm, OB_ARMATURE);
+API_MOD_OBJECT_SET(MeshDeform, object, OB_MESH);
+API_MOD_OBJECT_SET(NormalEdit, target, OB_EMPTY);
+API_MOD_OBJECT_SET(Shrinkwrap, target, OB_MESH);
+API_MOD_OBJECT_SET(Shrinkwrap, auxTarget, OB_MESH);
+API_MOD_OBJECT_SET(SurfaceDeform, target, OB_MESH);
 
-static void rna_HookModifier_object_set(PointerRNA *ptr,
-                                        PointerRNA value,
-                                        struct ReportList *UNUSED(reports))
+static void api_HookMod_object_set(ApiPtr *ptr,
+                                   ApiPtr value,
+                                   struct ReportList *UNUSED(reports))
 {
   Object *owner = (Object *)ptr->owner_id;
-  HookModifierData *hmd = ptr->data;
+  HookModData *hmd = ptr->data;
   Object *ob = (Object *)value.data;
 
   hmd->object = ob;
-  id_lib_extern((ID *)ob);
-  BKE_object_modifier_hook_reset(owner, hmd);
+  id_lib_extern((Id *)ob);
+  dune_object_mod_hook_reset(owner, hmd);
 }
 
-static bool rna_HookModifier_object_override_apply(Main *UNUSED(bmain),
-                                                   PointerRNA *ptr_dst,
-                                                   PointerRNA *ptr_src,
-                                                   PointerRNA *ptr_storage,
-                                                   PropertyRNA *prop_dst,
-                                                   PropertyRNA *prop_src,
-                                                   PropertyRNA *UNUSED(prop_storage),
-                                                   const int len_dst,
-                                                   const int len_src,
-                                                   const int len_storage,
-                                                   PointerRNA *UNUSED(ptr_item_dst),
-                                                   PointerRNA *UNUSED(ptr_item_src),
-                                                   PointerRNA *UNUSED(ptr_item_storage),
-                                                   IDOverrideLibraryPropertyOperation *opop)
+static bool api_HookMod_object_override_apply(Main *UNUSED(main),
+                                              ApiPtr *ptr_dst,
+                                              ApiPtr *ptr_src,
+                                              ApiPtr *ptr_storage,
+                                              ApiProp *prop_dst,
+                                              ApiProp *prop_src,
+                                              ApiProp *UNUSED(prop_storage),
+                                              const int len_dst,
+                                              const int len_src,
+                                              const int len_storage,
+                                              ApiPtr *UNUSED(ptr_item_dst),
+                                              ApiPtr *UNUSED(ptr_item_src),
+                                              ApiPtr *UNUSED(ptr_item_storage),
+                                              IdOverrideLibPropOp *opop)
 {
-  BLI_assert(len_dst == len_src && (!ptr_storage || len_dst == len_storage) && len_dst == 0);
-  BLI_assert(opop->operation == IDOVERRIDE_LIBRARY_OP_REPLACE &&
-             "Unsupported RNA override operation on Hook modifier target object pointer");
+  lib_assert(len_dst == len_src && (!ptr_storage || len_dst == len_storage) && len_dst == 0);
+  lib_assert(opop->op == IDOVERRIDE_LIB_OP_REPLACE &&
+             "Unsupported api override op on Hook mod target object pointer");
   UNUSED_VARS_NDEBUG(ptr_storage, len_dst, len_src, len_storage, opop);
 
   /* We need a special handling here because setting hook target resets invert parent matrix,
    * which is evil in our case. */
-  HookModifierData *hmd = ptr_dst->data;
+  HookModData *hmd = ptr_dst->data;
   Object *owner = (Object *)ptr_dst->owner_id;
-  Object *target_dst = RNA_property_pointer_get(ptr_dst, prop_dst).data;
-  Object *target_src = RNA_property_pointer_get(ptr_src, prop_src).data;
+  Object *target_dst = api_prop_ptr_get(ptr_dst, prop_dst).data;
+  Object *target_src = api_prop_ptr_get(ptr_src, prop_src).data;
 
-  BLI_assert(target_dst == hmd->object);
+  lib_assert(target_dst == hmd->object);
 
   if (target_src == target_dst) {
     return false;
@@ -924,12 +924,12 @@ static bool rna_HookModifier_object_override_apply(Main *UNUSED(bmain),
   hmd->object = target_src;
   if (target_src == NULL) {
     /* The only case where we do want default behavior (with matrix reset). */
-    BKE_object_modifier_hook_reset(owner, hmd);
+    dune_object_mod_hook_reset(owner, hmd);
   }
   return true;
 }
 
-static void rna_HookModifier_subtarget_set(PointerRNA *ptr, const char *value)
+static void api_HookModifier_subtarget_set(PointerRNA *ptr, const char *value)
 {
   Object *owner = (Object *)ptr->owner_id;
   HookModifierData *hmd = ptr->data;
