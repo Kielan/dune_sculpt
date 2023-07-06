@@ -28,270 +28,270 @@
 #include "dune_multires.h"
 #include "dune_ocean.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "MOD_nodes.h"
+#include "mod_nodes.h"
 
-const EnumPropertyItem rna_enum_object_modifier_type_items[] = {
+const EnumPropItem api_enum_object_mod_type_items[] = {
     {0, "", 0, N_("Modify"), ""},
-    {eModifierType_DataTransfer,
+    {eModType_DataTransfer,
      "DATA_TRANSFER",
      ICON_MOD_DATA_TRANSFER,
      "Data Transfer",
      "Transfer several types of data (vertex groups, UV maps, vertex colors, custom normals) from "
      "one mesh to another"},
-    {eModifierType_MeshCache,
+    {eModType_MeshCache,
      "MESH_CACHE",
      ICON_MOD_MESHDEFORM,
      "Mesh Cache",
      "Deform the mesh using an external frame-by-frame vertex transform cache"},
-    {eModifierType_MeshSequenceCache,
+    {eModType_MeshSequenceCache,
      "MESH_SEQUENCE_CACHE",
      ICON_MOD_MESHDEFORM,
      "Mesh Sequence Cache",
      "Deform the mesh or curve using an external mesh cache in Alembic format"},
-    {eModifierType_NormalEdit,
+    {eModType_NormalEdit,
      "NORMAL_EDIT",
      ICON_MOD_NORMALEDIT,
      "Normal Edit",
      "Modify the direction of the surface normals"},
-    {eModifierType_WeightedNormal,
+    {eModType_WeightedNormal,
      "WEIGHTED_NORMAL",
      ICON_MOD_NORMALEDIT,
      "Weighted Normal",
      "Modify the direction of the surface normals using a weighting method"},
-    {eModifierType_UVProject,
+    {eModType_UVProject,
      "UV_PROJECT",
      ICON_MOD_UVPROJECT,
      "UV Project",
      "Project the UV map coordinates from the negative Z axis of another object"},
-    {eModifierType_UVWarp,
+    {eModType_UVWarp,
      "UV_WARP",
      ICON_MOD_UVPROJECT,
      "UV Warp",
      "Transform the UV map using the difference between two objects"},
-    {eModifierType_WeightVGEdit,
+    {eModType_WeightVGEdit,
      "VERTEX_WEIGHT_EDIT",
      ICON_MOD_VERTEX_WEIGHT,
      "Vertex Weight Edit",
      "Modify of the weights of a vertex group"},
-    {eModifierType_WeightVGMix,
+    {eModType_WeightVGMix,
      "VERTEX_WEIGHT_MIX",
      ICON_MOD_VERTEX_WEIGHT,
      "Vertex Weight Mix",
      "Mix the weights of two vertex groups"},
-    {eModifierType_WeightVGProximity,
+    {eModType_WeightVGProximity,
      "VERTEX_WEIGHT_PROXIMITY",
      ICON_MOD_VERTEX_WEIGHT,
      "Vertex Weight Proximity",
      "Set the vertex group weights based on the distance to another target object"},
     {0, "", 0, N_("Generate"), ""},
-    {eModifierType_Array,
+    {eModType_Array,
      "ARRAY",
      ICON_MOD_ARRAY,
      "Array",
      "Create copies of the shape with offsets"},
-    {eModifierType_Bevel,
+    {eModType_Bevel,
      "BEVEL",
      ICON_MOD_BEVEL,
      "Bevel",
      "Generate sloped corners by adding geometry to the mesh's edges or vertices"},
-    {eModifierType_Boolean,
-     "BOOLEAN",
-     ICON_MOD_BOOLEAN,
-     "Boolean",
+    {eModType_Bool,
+     "BOOL",
+     ICON_MOD_BOOL,
+     "Bool",
      "Use another shape to cut, combine or perform a difference operation"},
     {eModifierType_Build,
      "BUILD",
      ICON_MOD_BUILD,
      "Build",
      "Cause the faces of the mesh object to appear or disappear one after the other over time"},
-    {eModifierType_Decimate,
+    {eModType_Decimate,
      "DECIMATE",
      ICON_MOD_DECIM,
      "Decimate",
      "Reduce the geometry density"},
-    {eModifierType_EdgeSplit,
+    {eModType_EdgeSplit,
      "EDGE_SPLIT",
      ICON_MOD_EDGESPLIT,
      "Edge Split",
      "Split away joined faces at the edges"},
-    {eModifierType_Nodes, "NODES", ICON_NODETREE, "Geometry Nodes", ""},
-    {eModifierType_Mask,
+    {eModType_Nodes, "NODES", ICON_NODETREE, "Geometry Nodes", ""},
+    {eModType_Mask,
      "MASK",
      ICON_MOD_MASK,
      "Mask",
      "Dynamically hide vertices based on a vertex group or armature"},
-    {eModifierType_Mirror,
+    {eModType_Mirror,
      "MIRROR",
      ICON_MOD_MIRROR,
      "Mirror",
      "Mirror along the local X, Y and/or Z axes, over the object origin"},
-    {eModifierType_MeshToVolume,
+    {eModType_MeshToVolume,
      "MESH_TO_VOLUME",
      ICON_VOLUME_DATA,
      "Mesh to Volume",
      ""}, /* TODO: Use correct icon. */
-    {eModifierType_Multires,
+    {eModType_Multires,
      "MULTIRES",
      ICON_MOD_MULTIRES,
      "Multiresolution",
      "Subdivide the mesh in a way that allows editing the higher subdivision levels"},
-    {eModifierType_Remesh,
+    {eModType_Remesh,
      "REMESH",
      ICON_MOD_REMESH,
      "Remesh",
      "Generate new mesh topology based on the current shape"},
-    {eModifierType_Screw,
+    {eModType_Screw,
      "SCREW",
      ICON_MOD_SCREW,
      "Screw",
      "Lathe around an axis, treating the input mesh as a profile"},
-    {eModifierType_Skin,
+    {eModType_Skin,
      "SKIN",
      ICON_MOD_SKIN,
      "Skin",
      "Create a solid shape from vertices and edges, using the vertex radius to define the "
      "thickness"},
-    {eModifierType_Solidify, "SOLIDIFY", ICON_MOD_SOLIDIFY, "Solidify", "Make the surface thick"},
-    {eModifierType_Subsurf,
+    {eModType_Solidify, "SOLIDIFY", ICON_MOD_SOLIDIFY, "Solidify", "Make the surface thick"},
+    {eModType_Subsurf,
      "SUBSURF",
      ICON_MOD_SUBSURF,
      "Subdivision Surface",
      "Split the faces into smaller parts, giving it a smoother appearance"},
-    {eModifierType_Triangulate,
+    {eModType_Triangulate,
      "TRIANGULATE",
      ICON_MOD_TRIANGULATE,
      "Triangulate",
      "Convert all polygons to triangles"},
-    {eModifierType_VolumeToMesh,
+    {eModType_VolumeToMesh,
      "VOLUME_TO_MESH",
      ICON_VOLUME_DATA,
      "Volume to Mesh",
      ""}, /* TODO: Use correct icon. */
-    {eModifierType_Weld,
+    {eModType_Weld,
      "WELD",
      ICON_AUTOMERGE_OFF,
      "Weld",
      "Find groups of vertices closer than dist and merge them together"},
-    {eModifierType_Wireframe,
+    {eModType_Wireframe,
      "WIREFRAME",
      ICON_MOD_WIREFRAME,
      "Wireframe",
      "Convert faces into thickened edges"},
     {0, "", 0, N_("Deform"), ""},
-    {eModifierType_Armature,
+    {eModType_Armature,
      "ARMATURE",
      ICON_MOD_ARMATURE,
      "Armature",
      "Deform the shape using an armature object"},
-    {eModifierType_Cast,
+    {eModType_Cast,
      "CAST",
      ICON_MOD_CAST,
      "Cast",
      "Shift the shape towards a predefined primitive"},
-    {eModifierType_Curve, "CURVE", ICON_MOD_CURVE, "Curve", "Bend the mesh using a curve object"},
-    {eModifierType_Displace,
+    {eModType_Curve, "CURVE", ICON_MOD_CURVE, "Curve", "Bend the mesh using a curve object"},
+    {eModType_Displace,
      "DISPLACE",
      ICON_MOD_DISPLACE,
      "Displace",
      "Offset vertices based on a texture"},
-    {eModifierType_Hook, "HOOK", ICON_HOOK, "Hook", "Deform specific points using another object"},
-    {eModifierType_LaplacianDeform,
+    {eModType_Hook, "HOOK", ICON_HOOK, "Hook", "Deform specific points using another object"},
+    {eModType_LaplacianDeform,
      "LAPLACIANDEFORM",
      ICON_MOD_MESHDEFORM,
      "Laplacian Deform",
      "Deform based a series of anchor points"},
-    {eModifierType_Lattice,
+    {eModType_Lattice,
      "LATTICE",
      ICON_MOD_LATTICE,
      "Lattice",
      "Deform using the shape of a lattice object"},
-    {eModifierType_MeshDeform,
+    {eModType_MeshDeform,
      "MESH_DEFORM",
      ICON_MOD_MESHDEFORM,
      "Mesh Deform",
      "Deform using a different mesh, which acts as a deformation cage"},
-    {eModifierType_Shrinkwrap,
+    {eModType_Shrinkwrap,
      "SHRINKWRAP",
      ICON_MOD_SHRINKWRAP,
      "Shrinkwrap",
      "Project the shape onto another object"},
-    {eModifierType_SimpleDeform,
+    {eModType_SimpleDeform,
      "SIMPLE_DEFORM",
      ICON_MOD_SIMPLEDEFORM,
      "Simple Deform",
      "Deform the shape by twisting, bending, tapering or stretching"},
-    {eModifierType_Smooth,
+    {eModType_Smooth,
      "SMOOTH",
      ICON_MOD_SMOOTH,
      "Smooth",
      "Smooth the mesh by flattening the angles between adjacent faces"},
-    {eModifierType_CorrectiveSmooth,
+    {eModType_CorrectiveSmooth,
      "CORRECTIVE_SMOOTH",
      ICON_MOD_SMOOTH,
      "Smooth Corrective",
      "Smooth the mesh while still preserving the volume"},
-    {eModifierType_LaplacianSmooth,
+    {eModType_LaplacianSmooth,
      "LAPLACIANSMOOTH",
      ICON_MOD_SMOOTH,
      "Smooth Laplacian",
      "Reduce the noise on a mesh surface with minimal changes to its shape"},
-    {eModifierType_SurfaceDeform,
+    {eModType_SurfaceDeform,
      "SURFACE_DEFORM",
      ICON_MOD_MESHDEFORM,
      "Surface Deform",
      "Transfer motion from another mesh"},
-    {eModifierType_Warp,
+    {eModType_Warp,
      "WARP",
      ICON_MOD_WARP,
      "Warp",
      "Warp parts of a mesh to a new location in a very flexible way thanks to 2 specified "
      "objects"},
-    {eModifierType_Wave,
+    {eModType_Wave,
      "WAVE",
      ICON_MOD_WAVE,
      "Wave",
      "Adds a ripple-like motion to an object's geometry"},
-    {eModifierType_VolumeDisplace,
+    {eModType_VolumeDisplace,
      "VOLUME_DISPLACE",
      ICON_VOLUME_DATA,
      "Volume Displace",
      "Deform volume based on noise or other vector fields"}, /* TODO: Use correct icon. */
     {0, "", 0, N_("Physics"), ""},
-    {eModifierType_Cloth, "CLOTH", ICON_MOD_CLOTH, "Cloth", ""},
-    {eModifierType_Collision, "COLLISION", ICON_MOD_PHYSICS, "Collision", ""},
-    {eModifierType_DynamicPaint, "DYNAMIC_PAINT", ICON_MOD_DYNAMICPAINT, "Dynamic Paint", ""},
-    {eModifierType_Explode,
+    {eModType_Cloth, "CLOTH", ICON_MOD_CLOTH, "Cloth", ""},
+    {eModType_Collision, "COLLISION", ICON_MOD_PHYSICS, "Collision", ""},
+    {eModType_DynamicPaint, "DYNAMIC_PAINT", ICON_MOD_DYNAMICPAINT, "Dynamic Paint", ""},
+    {eModType_Explode,
      "EXPLODE",
      ICON_MOD_EXPLODE,
      "Explode",
      "Break apart the mesh faces and let them follow particles"},
-    {eModifierType_Fluid, "FLUID", ICON_MOD_FLUIDSIM, "Fluid", ""},
-    {eModifierType_Ocean, "OCEAN", ICON_MOD_OCEAN, "Ocean", "Generate a moving ocean surface"},
-    {eModifierType_ParticleInstance,
+    {eModType_Fluid, "FLUID", ICON_MOD_FLUIDSIM, "Fluid", ""},
+    {eModType_Ocean, "OCEAN", ICON_MOD_OCEAN, "Ocean", "Generate a moving ocean surface"},
+    {eModType_ParticleInstance,
      "PARTICLE_INSTANCE",
      ICON_MOD_PARTICLE_INSTANCE,
      "Particle Instance",
      ""},
-    {eModifierType_ParticleSystem,
+    {eModType_ParticleSystem,
      "PARTICLE_SYSTEM",
      ICON_MOD_PARTICLES,
      "Particle System",
      "Spawn particles from the shape"},
-    {eModifierType_Softbody, "SOFT_BODY", ICON_MOD_SOFT, "Soft Body", ""},
-    {eModifierType_Surface, "SURFACE", ICON_MODIFIER, "Surface", ""},
+    {eModType_Softbody, "SOFT_BODY", ICON_MOD_SOFT, "Soft Body", ""},
+    {eModType_Surface, "SURFACE", ICON_MOD, "Surface", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_modifier_triangulate_quad_method_items[] = {
+const EnumPropItem api_enum_mod_triangulate_quad_method_items[] = {
     {MOD_TRIANGULATE_QUAD_BEAUTY,
      "BEAUTY",
      0,
@@ -320,7 +320,7 @@ const EnumPropertyItem rna_enum_modifier_triangulate_quad_method_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_modifier_triangulate_ngon_method_items[] = {
+const EnumPropItem api_enum_mod_triangulate_ngon_method_items[] = {
     {MOD_TRIANGULATE_NGON_BEAUTY,
      "BEAUTY",
      0,
@@ -334,7 +334,7 @@ const EnumPropertyItem rna_enum_modifier_triangulate_ngon_method_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_modifier_shrinkwrap_mode_items[] = {
+const EnumPropItem api_enum_mod_shrinkwrap_mode_items[] = {
     {MOD_SHRINKWRAP_ON_SURFACE,
      "ON_SURFACE",
      0,
@@ -366,7 +366,7 @@ const EnumPropertyItem rna_enum_modifier_shrinkwrap_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_shrinkwrap_type_items[] = {
+const EnumPropItem api_enum_shrinkwrap_type_items[] = {
     {MOD_SHRINKWRAP_NEAREST_SURFACE,
      "NEAREST_SURFACEPOINT",
      0,
@@ -391,7 +391,7 @@ const EnumPropertyItem rna_enum_shrinkwrap_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_shrinkwrap_face_cull_items[] = {
+const EnumPropItem api_enum_shrinkwrap_face_cull_items[] = {
     {0, "OFF", 0, "Off", "No culling"},
     {MOD_SHRINKWRAP_CULL_TARGET_FRONTFACE,
      "FRONT",
@@ -402,9 +402,9 @@ const EnumPropertyItem rna_enum_shrinkwrap_face_cull_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 /* use eWarp_Falloff_*** & eHook_Falloff_***, they're in sync */
-static const EnumPropertyItem modifier_warp_falloff_items[] = {
+static const EnumPropItem mod_warp_falloff_items[] = {
     {eWarp_Falloff_None, "NONE", 0, "No Falloff", ""},
     {eWarp_Falloff_Curve, "CURVE", 0, "Curve", ""},
     {eWarp_Falloff_Smooth, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", ""},
@@ -419,8 +419,7 @@ static const EnumPropertyItem modifier_warp_falloff_items[] = {
 #endif
 
 /* ***** Data Transfer ***** */
-
-const EnumPropertyItem rna_enum_dt_method_vertex_items[] = {
+const EnumPropItem api_enum_dt_method_vertex_items[] = {
     {MREMAP_MODE_TOPOLOGY, "TOPOLOGY", 0, "Topology", "Copy from identical topology meshes"},
     {MREMAP_MODE_VERT_NEAREST, "NEAREST", 0, "Nearest Vertex", "Copy from closest vertex"},
     {MREMAP_MODE_VERT_EDGE_NEAREST,
@@ -452,7 +451,7 @@ const EnumPropertyItem rna_enum_dt_method_vertex_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_method_edge_items[] = {
+const EnumPropItem api_enum_dt_method_edge_items[] = {
     {MREMAP_MODE_TOPOLOGY, "TOPOLOGY", 0, "Topology", "Copy from identical topology meshes"},
     {MREMAP_MODE_EDGE_VERT_NEAREST,
      "VERT_NEAREST",
@@ -479,7 +478,7 @@ const EnumPropertyItem rna_enum_dt_method_edge_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_method_loop_items[] = {
+const EnumPropItem api_enum_dt_method_loop_items[] = {
     {MREMAP_MODE_TOPOLOGY, "TOPOLOGY", 0, "Topology", "Copy from identical topology meshes"},
     {MREMAP_MODE_LOOP_NEAREST_LOOPNOR,
      "NEAREST_NORMAL",
@@ -510,7 +509,7 @@ const EnumPropertyItem rna_enum_dt_method_loop_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_method_poly_items[] = {
+const EnumPropItem api_enum_dt_method_poly_items[] = {
     {MREMAP_MODE_TOPOLOGY, "TOPOLOGY", 0, "Topology", "Copy from identical topology meshes"},
     {MREMAP_MODE_POLY_NEAREST,
      "NEAREST",
@@ -531,7 +530,7 @@ const EnumPropertyItem rna_enum_dt_method_poly_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_mix_mode_items[] = {
+const EnumPropItem api_enum_dt_mix_mode_items[] = {
     {CDT_MIX_TRANSFER, "REPLACE", 0, "Replace", "Overwrite all elements' data"},
     {CDT_MIX_REPLACE_ABOVE_THRESHOLD,
      "ABOVE_THRESHOLD",
@@ -569,7 +568,7 @@ const EnumPropertyItem rna_enum_dt_mix_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_layers_select_src_items[] = {
+const EnumPropItem api_enum_dt_layers_select_src_items[] = {
     {DT_LAYERS_ACTIVE_SRC, "ACTIVE", 0, "Active Layer", "Only transfer active data layer"},
     {DT_LAYERS_ALL_SRC, "ALL", 0, "All Layers", "Transfer all data layers"},
     {DT_LAYERS_VGROUP_SRC_BONE_SELECT,
@@ -585,7 +584,7 @@ const EnumPropertyItem rna_enum_dt_layers_select_src_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_dt_layers_select_dst_items[] = {
+const EnumPropItem api_enum_dt_layers_select_dst_items[] = {
     {DT_LAYERS_ACTIVE_DST, "ACTIVE", 0, "Active Layer", "Affect active data layer of all targets"},
     {DT_LAYERS_NAME_DST, "NAME", 0, "By Name", "Match target data layers to affect by name"},
     {DT_LAYERS_INDEX_DST,
@@ -596,27 +595,27 @@ const EnumPropertyItem rna_enum_dt_layers_select_dst_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_axis_xy_items[] = {
+const EnumPropItem api_enum_axis_xy_items[] = {
     {0, "X", 0, "X", ""},
     {1, "Y", 0, "Y", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_axis_xyz_items[] = {
+const EnumPropItem api_enum_axis_xyz_items[] = {
     {0, "X", 0, "X", ""},
     {1, "Y", 0, "Y", ""},
     {2, "Z", 0, "Z", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_axis_flag_xyz_items[] = {
+const EnumPropItem api_enum_axis_flag_xyz_items[] = {
     {(1 << 0), "X", 0, "X", ""},
     {(1 << 1), "Y", 0, "Y", ""},
     {(1 << 2), "Z", 0, "Z", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_subdivision_uv_smooth_items[] = {
+const EnumPropItem api_enum_subdivision_uv_smooth_items[] = {
     {SUBSURF_UV_SMOOTH_NONE, "NONE", 0, "None", "UVs are not smoothed, boundaries are kept sharp"},
     {SUBSURF_UV_SMOOTH_PRESERVE_CORNERS,
      "PRESERVE_CORNERS",
@@ -644,7 +643,7 @@ const EnumPropertyItem rna_enum_subdivision_uv_smooth_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_subdivision_boundary_smooth_items[] = {
+const EnumPropItem api_enum_subdivision_boundary_smooth_items[] = {
     {SUBSURF_BOUNDARY_SMOOTH_PRESERVE_CORNERS,
      "PRESERVE_CORNERS",
      0,
@@ -654,95 +653,95 @@ const EnumPropertyItem rna_enum_subdivision_boundary_smooth_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-#  include "DNA_curve_types.h"
-#  include "DNA_fluid_types.h"
-#  include "DNA_particle_types.h"
+#ifdef API_RUNTIME
+#  include "types_curve_types.h"
+#  include "types_fluid_types.h"
+#  include "types_particle_types.h"
 
-#  include "BKE_cachefile.h"
-#  include "BKE_context.h"
-#  include "BKE_deform.h"
-#  include "BKE_mesh_runtime.h"
-#  include "BKE_modifier.h"
-#  include "BKE_object.h"
-#  include "BKE_particle.h"
+#  include "dune_cachefile.h"
+#  include "dune_context.h"
+#  include "dune_deform.h"
+#  include "dune_mesh_runtime.h"
+#  include "dune_modifier.h"
+#  include "dune_object.h"
+#  include "dune_particle.h"
 
-#  include "BLI_sort_utils.h"
+#  include "lib_sort_utils.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_query.h"
+#  include "graph.h"
+#  include "graph_build.h"
+#  include "graph_query.h"
 
 #  ifdef WITH_ALEMBIC
 #    include "ABC_alembic.h"
 #  endif
 
-static void rna_UVProject_projectors_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_UVProject_projectors_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  UVProjectModifierData *uvp = (UVProjectModifierData *)ptr->data;
-  rna_iterator_array_begin(
+  UVProjectModData *uvp = (UVProjectModData *)ptr->data;
+  api_iter_array_begin(
       iter, (void *)uvp->projectors, sizeof(Object *), uvp->num_projectors, 0, NULL);
 }
 
-static StructRNA *rna_Modifier_refine(struct PointerRNA *ptr)
+static ApiStruct *api_Mod_refine(struct ApiPtr *ptr)
 {
-  ModifierData *md = (ModifierData *)ptr->data;
-  const ModifierTypeInfo *modifier_type = BKE_modifier_get_info(md->type);
+  ModData *md = (ModData *)ptr->data;
+  const ModTypeInfo *mod_type = dune_mod_get_info(md->type);
   if (modifier_type != NULL) {
-    return modifier_type->srna;
+    return mod_type->srna;
   }
-  return &RNA_Modifier;
+  return &ApiMod;
 }
 
-static void rna_Modifier_name_set(PointerRNA *ptr, const char *value)
+static void api_Mod_name_set(ApiPtr *ptr, const char *value)
 {
-  ModifierData *md = ptr->data;
+  ModData *md = ptr->data;
   char oldname[sizeof(md->name)];
 
   /* make a copy of the old name first */
-  BLI_strncpy(oldname, md->name, sizeof(md->name));
+  lib_strncpy(oldname, md->name, sizeof(md->name));
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(md->name, value, sizeof(md->name));
+  lib_strncpy_utf8(md->name, value, sizeof(md->name));
 
   /* make sure the name is truly unique */
   if (ptr->owner_id) {
     Object *ob = (Object *)ptr->owner_id;
-    BKE_modifier_unique_name(&ob->modifiers, md);
+    dune_mod_unique_name(&ob->mods, md);
   }
 
   /* fix all the animation data which may link to this */
-  BKE_animdata_fix_paths_rename_all(NULL, "modifiers", oldname, md->name);
+  dune_animdata_fix_paths_rename_all(NULL, "mods", oldname, md->name);
 }
 
-static char *rna_Modifier_path(PointerRNA *ptr)
+static char *api_Mod_path(ApiPtr *ptr)
 {
-  ModifierData *md = ptr->data;
+  ModData *md = ptr->data;
   char name_esc[sizeof(md->name) * 2];
 
-  BLI_str_escape(name_esc, md->name, sizeof(name_esc));
-  return BLI_sprintfN("modifiers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, md->name, sizeof(name_esc));
+  return lib_sprintfn("mods[\"%s\"]", name_esc);
 }
 
-static void rna_Modifier_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Mod_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
 }
 
-static void rna_Modifier_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_Modifier_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_Mod_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Modifier_is_active_set(PointerRNA *ptr, bool value)
+static void api_Mod_is_active_set(ApiPtr *ptr, bool value)
 {
-  ModifierData *md = ptr->data;
+  ModData *md = ptr->data;
 
   if (value) {
     /* Disable the active flag of all other modifiers. */
-    for (ModifierData *prev_md = md->prev; prev_md != NULL; prev_md = prev_md->prev) {
+    for (ModData *prev_md = md->prev; prev_md != NULL; prev_md = prev_md->prev) {
       prev_md->flag &= ~eModifierFlag_Active;
     }
     for (ModifierData *next_md = md->next; next_md != NULL; next_md = next_md->next) {
