@@ -1461,12 +1461,12 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
         ldata = &me_dst->ldata;
         num_data = CustomData_number_of_layers(ldata, CD_MLOOPCOL);
 
-        RNA_enum_item_add_separator(&item, &totitem);
+        api_enum_item_add_separator(&item, &totitem);
 
         for (i = 0; i < num_data; i++) {
           tmp_item.value = i;
           tmp_item.identifier = tmp_item.name = CustomData_get_layer_name(ldata, CD_MLOOPCOL, i);
-          RNA_enum_item_add(&item, &totitem, &tmp_item);
+          api_enum_item_add(&item, &totitem, &tmp_item);
         }
       }
     }
@@ -1478,85 +1478,85 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
   return item;
 }
 
-static const EnumPropertyItem *rna_DataTransferModifier_mix_mode_itemf(bContext *C,
-                                                                       PointerRNA *ptr,
-                                                                       PropertyRNA *UNUSED(prop),
-                                                                       bool *r_free)
+static const EnumPropItem *api_DataTransferMod_mix_mode_itemf(Cxt *C,
+                                                                  ApiPtr *ptr,
+                                                                  ApiProp *UNUSED(prop),
+                                                                  bool *r_free)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
-  EnumPropertyItem *item = NULL;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
+  EnumPropItem *item = NULL;
   int totitem = 0;
 
   bool support_advanced_mixing, support_threshold;
 
   if (!C) { /* needed for docs and i18n tools */
-    return rna_enum_dt_mix_mode_items;
+    return api_enum_dt_mix_mode_items;
   }
 
-  RNA_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_TRANSFER);
+  api_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_TRANSFER);
 
-  BKE_object_data_transfer_get_dttypes_capacity(
+  dune_object_data_transfer_get_dttypes_capacity(
       dtmd->data_types, &support_advanced_mixing, &support_threshold);
 
   if (support_threshold) {
-    RNA_enum_items_add_value(
+    api_enum_items_add_value(
         &item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_REPLACE_ABOVE_THRESHOLD);
-    RNA_enum_items_add_value(
+    api_enum_items_add_value(
         &item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_REPLACE_BELOW_THRESHOLD);
   }
 
   if (support_advanced_mixing) {
-    RNA_enum_item_add_separator(&item, &totitem);
-    RNA_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_MIX);
-    RNA_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_ADD);
-    RNA_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_SUB);
-    RNA_enum_items_add_value(&item, &totitem, rna_enum_dt_mix_mode_items, CDT_MIX_MUL);
+    api_enum_item_add_separator(&item, &totitem);
+    api_enum_items_add_value(&item, &totitem, api_enum_dt_mix_mode_items, CDT_MIX_MIX);
+    api_enum_items_add_value(&item, &totitem, api_enum_dt_mix_mode_items, CDT_MIX_ADD);
+    api_enum_items_add_value(&item, &totitem, api_enum_dt_mix_mode_items, CDT_MIX_SUB);
+    api_enum_items_add_value(&item, &totitem, api_enum_dt_mix_mode_items, CDT_MIX_MUL);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static void rna_CorrectiveSmoothModifier_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_CorrectiveSmoothMod_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  CorrectiveSmoothModifierData *csmd = (CorrectiveSmoothModifierData *)ptr->data;
+  CorrectiveSmoothModData *csmd = (CorrectiveSmoothModData *)ptr->data;
 
   MEM_SAFE_FREE(csmd->delta_cache.deltas);
 
-  rna_Modifier_update(bmain, scene, ptr);
+  api_Mod_update(main, scene, ptr);
 }
 
-static void rna_CorrectiveSmoothModifier_rest_source_update(Main *bmain,
-                                                            Scene *scene,
-                                                            PointerRNA *ptr)
+static void api_CorrectiveSmoothMod_rest_source_update(Main *main,
+                                                       Scene *scene,
+                                                       ApiPtr *ptr)
 {
-  CorrectiveSmoothModifierData *csmd = (CorrectiveSmoothModifierData *)ptr->data;
+  CorrectiveSmoothModData *csmd = (CorrectiveSmoothModData *)ptr->data;
 
   if (csmd->rest_source != MOD_CORRECTIVESMOOTH_RESTSOURCE_BIND) {
     MEM_SAFE_FREE(csmd->bind_coords);
     csmd->bind_coords_num = 0;
   }
 
-  rna_CorrectiveSmoothModifier_update(bmain, scene, ptr);
+  api_CorrectiveSmoothMod_update(main, scene, ptr);
 }
 
-static bool rna_CorrectiveSmoothModifier_is_bind_get(PointerRNA *ptr)
+static bool api_CorrectiveSmoothMod_is_bind_get(ApiPtr *ptr)
 {
-  CorrectiveSmoothModifierData *csmd = (CorrectiveSmoothModifierData *)ptr->data;
+  CorrectiveSmoothModData *csmd = (CorrectiveSmoothModData *)ptr->data;
   return (csmd->bind_coords != NULL);
 }
 
-static bool rna_SurfaceDeformModifier_is_bound_get(PointerRNA *ptr)
+static bool api_SurfaceDeformMod_is_bound_get(ApiPtr *ptr)
 {
-  return (((SurfaceDeformModifierData *)ptr->data)->verts != NULL);
+  return (((SurfaceDeformModData *)ptr->data)->verts != NULL);
 }
 
-static bool rna_ParticleInstanceModifier_particle_system_poll(PointerRNA *ptr,
+static bool api_ParticleInstanceMod_particle_system_poll(PointerRNA *ptr,
                                                               const PointerRNA value)
 {
-  ParticleInstanceModifierData *psmd = ptr->data;
+  ParticleInstanceModData *psmd = ptr->data;
   ParticleSystem *psys = value.data;
 
   if (!psmd->ob) {
@@ -1564,12 +1564,12 @@ static bool rna_ParticleInstanceModifier_particle_system_poll(PointerRNA *ptr,
   }
 
   /* make sure psys is in the object */
-  return BLI_findindex(&psmd->ob->particlesystem, psys) != -1;
+  return lib_findindex(&psmd->ob->particlesystem, psys) != -1;
 }
 
-static PointerRNA rna_ParticleInstanceModifier_particle_system_get(PointerRNA *ptr)
+static ApiPtr api_ParticleInstanceMod_particle_system_get(ApiPtr *ptr)
 {
-  ParticleInstanceModifierData *psmd = ptr->data;
+  ParticleInstanceModData *psmd = ptr->data;
   ParticleSystem *psys;
   PointerRNA rptr;
 
