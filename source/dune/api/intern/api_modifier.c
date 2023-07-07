@@ -1220,13 +1220,13 @@ static void rna_DataTransferModifier_use_data_update(Main *bmain, Scene *scene, 
     dtmd->data_types &= ~DT_TYPE_POLY_ALL;
   }
 
-  rna_Modifier_dependency_update(bmain, scene, ptr);
+  api_Mod_dependency_update(main, scene, ptr);
 }
 
-static void rna_DataTransferModifier_data_types_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DataTransferMod_data_types_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
-  const int item_types = BKE_object_data_transfer_get_dttypes_item_types(dtmd->data_types);
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
+  const int item_types = dune_object_data_transfer_get_dttypes_item_types(dtmd->data_types);
 
   if (item_types & ME_VERT) {
     dtmd->flags |= MOD_DATATRANSFER_USE_VERT;
@@ -1241,150 +1241,150 @@ static void rna_DataTransferModifier_data_types_update(Main *bmain, Scene *scene
     dtmd->flags |= MOD_DATATRANSFER_USE_POLY;
   }
 
-  rna_Modifier_dependency_update(bmain, scene, ptr);
+  api_Mod_graph_update(main, scene, ptr);
 }
 
-static void rna_DataTransferModifier_verts_data_types_set(struct PointerRNA *ptr, int value)
+static void api_DataTransferMod_verts_data_types_set(struct ApiPtr *ptr, int value)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
 
   dtmd->data_types &= ~DT_TYPE_VERT_ALL;
   dtmd->data_types |= value;
 }
 
-static void rna_DataTransferModifier_edges_data_types_set(struct PointerRNA *ptr, int value)
+static void api_DataTransferMod_edges_data_types_set(struct ApiPtr *ptr, int value)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
 
   dtmd->data_types &= ~DT_TYPE_EDGE_ALL;
   dtmd->data_types |= value;
 }
 
-static void rna_DataTransferModifier_loops_data_types_set(struct PointerRNA *ptr, int value)
+static void api_DataTransferMod_loops_data_types_set(struct ApiPtr *ptr, int value)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
 
   dtmd->data_types &= ~DT_TYPE_LOOP_ALL;
   dtmd->data_types |= value;
 }
 
-static void rna_DataTransferModifier_polys_data_types_set(struct PointerRNA *ptr, int value)
+static void api_DataTransferMod_polys_data_types_set(struct ApiPtr *ptr, int value)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
 
   dtmd->data_types &= ~DT_TYPE_POLY_ALL;
   dtmd->data_types |= value;
 }
 
-static const EnumPropertyItem *rna_DataTransferModifier_layers_select_src_itemf(bContext *C,
-                                                                                PointerRNA *ptr,
-                                                                                PropertyRNA *prop,
-                                                                                bool *r_free)
+static const EnumPropItem *rna_DataTransferMod_layers_select_src_itemf(Cxt *C,
+                                                                       ApiPtr *ptr,
+                                                                       ApiProp *prop,
+                                                                       bool *r_free)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
-  EnumPropertyItem *item = NULL, tmp_item = {0};
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
+  EnumPropItem *item = NULL, tmp_item = {0};
   int totitem = 0;
 
   if (!C) { /* needed for docs and i18n tools */
-    return rna_enum_dt_layers_select_src_items;
+    return api_enum_dt_layers_select_src_items;
   }
 
   /* No active here! */
-  RNA_enum_items_add_value(
-      &item, &totitem, rna_enum_dt_layers_select_src_items, DT_LAYERS_ALL_SRC);
+  api_enum_items_add_value(
+      &item, &totitem, api_enum_dt_layers_select_src_items, DT_LAYERS_ALL_SRC);
 
-  if (STREQ(RNA_property_identifier(prop), "layers_vgroup_select_src")) {
+  if (STREQ(api_prop_id(prop), "layers_vgroup_select_src")) {
     Object *ob_src = dtmd->ob_source;
 
 #  if 0 /* XXX Don't think we want this in modifier version... */
-    if (BKE_object_pose_armature_get(ob_src)) {
-      RNA_enum_items_add_value(
+    if (dune_object_pose_armature_get(ob_src)) {
+      api_enum_items_add_value(
           &item, &totitem, rna_enum_dt_layers_select_src_items, DT_LAYERS_VGROUP_SRC_BONE_SELECT);
-      RNA_enum_items_add_value(
+      api_enum_items_add_value(
           &item, &totitem, rna_enum_dt_layers_select_src_items, DT_LAYERS_VGROUP_SRC_BONE_DEFORM);
     }
 #  endif
 
     if (ob_src) {
-      const bDeformGroup *dg;
+      const DeformGroup *dg;
       int i;
 
-      RNA_enum_item_add_separator(&item, &totitem);
+      api_enum_item_add_separator(&item, &totitem);
 
-      const ListBase *defbase = BKE_object_defgroup_list(ob_src);
+      const List *defbase = dune_object_defgroup_list(ob_src);
       for (i = 0, dg = defbase->first; dg; i++, dg = dg->next) {
         tmp_item.value = i;
-        tmp_item.identifier = tmp_item.name = dg->name;
-        RNA_enum_item_add(&item, &totitem, &tmp_item);
+        tmp_item.id = tmp_item.name = dg->name;
+        api_enum_item_add(&item, &totitem, &tmp_item);
       }
     }
   }
-  else if (STREQ(RNA_property_identifier(prop), "layers_shapekey_select_src")) {
+  else if (STREQ(api_prop_id(prop), "layers_shapekey_select_src")) {
     /* TODO */
   }
-  else if (STREQ(RNA_property_identifier(prop), "layers_uv_select_src")) {
+  else if (STREQ(api_prop_id(prop), "layers_uv_select_src")) {
     Object *ob_src = dtmd->ob_source;
 
     if (ob_src) {
       Mesh *me_eval;
       int num_data, i;
 
-      Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-      Scene *scene_eval = DEG_get_evaluated_scene(depsgraph);
-      Object *ob_src_eval = DEG_get_evaluated_object(depsgraph, ob_src);
+      Graph *graph = cxt_data_ensure_evaluated_depsgraph(C);
+      Scene *scene_eval = graph_get_evaluated_scene(graph);
+      Object *ob_src_eval = graph_get_evaluated_object(graph, ob_src);
 
       CustomData_MeshMasks cddata_masks = CD_MASK_BAREMESH;
       cddata_masks.lmask |= CD_MASK_MLOOPUV;
-      me_eval = mesh_get_eval_final(depsgraph, scene_eval, ob_src_eval, &cddata_masks);
+      me_eval = mesh_get_eval_final(graph, scene_eval, ob_src_eval, &cddata_masks);
       num_data = CustomData_number_of_layers(&me_eval->ldata, CD_MLOOPUV);
 
-      RNA_enum_item_add_separator(&item, &totitem);
+      api_enum_item_add_separator(&item, &totitem);
 
       for (i = 0; i < num_data; i++) {
         tmp_item.value = i;
-        tmp_item.identifier = tmp_item.name = CustomData_get_layer_name(
+        tmp_item.id = tmp_item.name = CustomData_get_layer_name(
             &me_eval->ldata, CD_MLOOPUV, i);
-        RNA_enum_item_add(&item, &totitem, &tmp_item);
+        api_enum_item_add(&item, &totitem, &tmp_item);
       }
     }
   }
-  else if (STREQ(RNA_property_identifier(prop), "layers_vcol_select_src")) {
+  else if (STREQ(api_prop_id(prop), "layers_vcol_select_src")) {
     Object *ob_src = dtmd->ob_source;
 
     if (ob_src) {
       Mesh *me_eval;
       int num_data, i;
 
-      Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-      Scene *scene_eval = DEG_get_evaluated_scene(depsgraph);
-      Object *ob_src_eval = DEG_get_evaluated_object(depsgraph, ob_src);
+      Graph *graph = cxt_data_ensure_eval_graph(C);
+      Scene *scene_eval = graph_get_eval_scene(graph);
+      Object *ob_src_eval = graph_get_eval_object(graph, ob_src);
 
       CustomData_MeshMasks cddata_masks = CD_MASK_BAREMESH;
       cddata_masks.lmask |= CD_MASK_MLOOPCOL;
-      me_eval = mesh_get_eval_final(depsgraph, scene_eval, ob_src_eval, &cddata_masks);
+      me_eval = mesh_get_eval_final(graph, scene_eval, ob_src_eval, &cddata_masks);
       num_data = CustomData_number_of_layers(&me_eval->ldata, CD_MLOOPCOL);
 
-      RNA_enum_item_add_separator(&item, &totitem);
+      api_enum_item_add_separator(&item, &totitem);
 
       for (i = 0; i < num_data; i++) {
         tmp_item.value = i;
-        tmp_item.identifier = tmp_item.name = CustomData_get_layer_name(
+        tmp_item.id = tmp_item.name = CustomData_get_layer_name(
             &me_eval->ldata, CD_MLOOPCOL, i);
-        RNA_enum_item_add(&item, &totitem, &tmp_item);
+        api_enum_item_add(&item, &totitem, &tmp_item);
       }
     }
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static const EnumPropertyItem *rna_DataTransferModifier_layers_select_dst_itemf(bContext *C,
-                                                                                PointerRNA *ptr,
-                                                                                PropertyRNA *prop,
-                                                                                bool *r_free)
+static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
+                                                                       ApiPtr *ptr,
+                                                                       ApiProp *prop,
+                                                                       bool *r_free)
 {
   DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
   EnumPropertyItem *item = NULL, tmp_item = {0};
