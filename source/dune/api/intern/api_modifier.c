@@ -1386,47 +1386,46 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
                                                                        ApiProp *prop,
                                                                        bool *r_free)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
-  EnumPropertyItem *item = NULL, tmp_item = {0};
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
+  EnumPropItem *item = NULL, tmp_item = {0};
   int totitem = 0;
 
   if (!C) { /* needed for docs and i18n tools */
-    return rna_enum_dt_layers_select_dst_items;
+    return api_enum_dt_layers_select_dst_items;
   }
 
   /* No active here! */
-  RNA_enum_items_add_value(
-      &item, &totitem, rna_enum_dt_layers_select_dst_items, DT_LAYERS_NAME_DST);
-  RNA_enum_items_add_value(
-      &item, &totitem, rna_enum_dt_layers_select_dst_items, DT_LAYERS_INDEX_DST);
+  api_enum_items_add_value(
+      &item, &totitem, api_enum_dt_layers_select_dst_items, DT_LAYERS_NAME_DST);
+  api_enum_items_add_value(
+      &item, &totitem, api_enum_dt_layers_select_dst_items, DT_LAYERS_INDEX_DST);
 
-  if (STREQ(RNA_property_identifier(prop), "layers_vgroup_select_dst")) {
+  if (STREQ(api_prop_id(prop), "layers_vgroup_select_dst")) {
     /* Only list destination layers if we have a single source! */
     if (dtmd->layers_select_src[DT_MULTILAYER_INDEX_MDEFORMVERT] >= 0) {
-      Object *ob_dst = CTX_data_active_object(C); /* XXX Is this OK? */
+      Object *ob_dst = cxt_data_active_object(C); /* XXX Is this OK? */
 
       if (ob_dst) {
-        const bDeformGroup *dg;
+        const DeformGroup *dg;
         int i;
 
-        RNA_enum_item_add_separator(&item, &totitem);
+        apj_enum_item_add_separator(&item, &totitem);
 
-        const ListBase *defbase = BKE_object_defgroup_list(ob_dst);
+        const List *defbase = dune_object_defgroup_list(ob_dst);
         for (i = 0, dg = defbase->first; dg; i++, dg = dg->next) {
           tmp_item.value = i;
-          tmp_item.identifier = tmp_item.name = dg->name;
-          RNA_enum_item_add(&item, &totitem, &tmp_item);
+          tmp_item.id = tmp_item.name = dg->name;
+          api_enum_item_add(&item, &totitem, &tmp_item);
         }
       }
     }
-  }
-  else if (STREQ(RNA_property_identifier(prop), "layers_shapekey_select_dst")) {
+  } else if (STREQ(api_prop_id(prop), "layers_shapekey_select_dst")) {
     /* TODO */
   }
-  else if (STREQ(RNA_property_identifier(prop), "layers_uv_select_dst")) {
+  else if (STREQ(api_prop_ident(prop), "layers_uv_select_dst")) {
     /* Only list destination layers if we have a single source! */
     if (dtmd->layers_select_src[DT_MULTILAYER_INDEX_UV] >= 0) {
-      Object *ob_dst = CTX_data_active_object(C); /* XXX Is this OK? */
+      Object *ob_dst = cxt_data_active_object(C); /* XXX Is this OK? */
 
       if (ob_dst && ob_dst->data) {
         Mesh *me_dst;
@@ -1437,20 +1436,20 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
         ldata = &me_dst->ldata;
         num_data = CustomData_number_of_layers(ldata, CD_MLOOPUV);
 
-        RNA_enum_item_add_separator(&item, &totitem);
+        api_enum_item_add_separator(&item, &totitem);
 
         for (i = 0; i < num_data; i++) {
           tmp_item.value = i;
           tmp_item.identifier = tmp_item.name = CustomData_get_layer_name(ldata, CD_MLOOPUV, i);
-          RNA_enum_item_add(&item, &totitem, &tmp_item);
+          api_enum_item_add(&item, &totitem, &tmp_item);
         }
       }
     }
   }
-  else if (STREQ(RNA_property_identifier(prop), "layers_vcol_select_dst")) {
+  else if (STREQ(api_prop_id(prop), "layers_vcol_select_dst")) {
     /* Only list destination layers if we have a single source! */
     if (dtmd->layers_select_src[DT_MULTILAYER_INDEX_VCOL] >= 0) {
-      Object *ob_dst = CTX_data_active_object(C); /* XXX Is this OK? */
+      Object *ob_dst = cxt_data_active_object(C); /* XXX Is this OK? */
 
       if (ob_dst && ob_dst->data) {
         Mesh *me_dst;
@@ -1472,7 +1471,7 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
     }
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -1571,22 +1570,22 @@ static ApiPtr api_ParticleInstanceMod_particle_system_get(ApiPtr *ptr)
 {
   ParticleInstanceModData *psmd = ptr->data;
   ParticleSystem *psys;
-  PointerRNA rptr;
+  ApiPtr rptr;
 
   if (!psmd->ob) {
-    return PointerRNA_NULL;
+    return ApiPtr_NULL;
   }
 
-  psys = BLI_findlink(&psmd->ob->particlesystem, psmd->psys - 1);
-  RNA_pointer_create((ID *)psmd->ob, &RNA_ParticleSystem, psys, &rptr);
+  psys = lib_findlink(&psmd->ob->particlesystem, psmd->psys - 1);
+  api_ptr_create((Id *)psmd->ob, &Api_ParticleSystem, psys, &rptr);
   return rptr;
 }
 
-static void rna_ParticleInstanceModifier_particle_system_set(PointerRNA *ptr,
-                                                             const PointerRNA value,
-                                                             struct ReportList *UNUSED(reports))
+static void api_ParticleInstanceMod_particle_system_set(ApiPtr *ptr,
+                                                        const ApiPtr value,
+                                                        struct ReportList *UNUSED(reports))
 {
-  ParticleInstanceModifierData *psmd = ptr->data;
+  ParticleInstanceModData *psmd = ptr->data;
 
   if (!psmd->ob) {
     return;
