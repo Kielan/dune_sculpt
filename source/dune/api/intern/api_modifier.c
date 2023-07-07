@@ -1591,17 +1591,16 @@ static void api_ParticleInstanceMod_particle_system_set(ApiPtr *ptr,
     return;
   }
 
-  psmd->psys = BLI_findindex(&psmd->ob->particlesystem, value.data) + 1;
+  psmd->psys = lib_findindex(&psmd->ob->particlesystem, value.data) + 1;
   CLAMP_MIN(psmd->psys, 1);
 }
 
 /**
  * Special set callback that just changes the first bit of the expansion flag.
- * This way the expansion state of all the sub-panels is not changed by RNA.
- */
-static void rna_Modifier_show_expanded_set(ApiPtr *ptr, bool value)
+ * This way the expansion state of all the sub-panels is not changed by api. */
+static void api_Mod_show_expanded_set(ApiPtr *ptr, bool value)
 {
-  ModifierData *md = ptr->data;
+  ModData *md = ptr->data;
   SET_FLAG_FROM_TEST(md->ui_expand_flag, value, UI_PANEL_DATA_EXPAND_ROOT);
 }
 
@@ -1630,9 +1629,9 @@ static void api_NodesMod_node_group_update(Main *main, Scene *scene, ApiPtr *ptr
 
 static IdProp **api_NodesMod_props(ApiPtr *ptr)
 {
-  NodesModifierData *nmd = ptr->data;
-  NodesModifierSettings *settings = &nmd->settings;
-  return &settings->properties;
+  NodesModData *nmd = ptr->data;
+  NodesModSettings *settings = &nmd->settings;
+  return &settings->props;
 }
 #else
 
@@ -1680,7 +1679,7 @@ static void api_def_mod_subsurf(DuneApi *dapi)
   api_def_struct_stype(sapi, "SubsurfModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SUBSURF);
 
-  api_def_prop_subdivision_common(srna);
+  api_def_prop_subdivision_common(sapi);
 
   api_define_lib_overridable(true);
 
@@ -1698,45 +1697,45 @@ static void api_def_mod_subsurf(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Levels", "Number of subdivisions to perform");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(sapi, "render_levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_int_stype(prop, NULL, "renderLevels");
-  RNA_def_prop_range(prop, 0, 11);
-  RNA_def_prop_ui_range(prop, 0, 6, 1, -1);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "render_levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "renderLevels");
+  api_def_prop_range(prop, 0, 11);
+  api_def_prop_ui_range(prop, 0, 6, 1, -1);
+  api_def_prop_ui_text(
       prop, "Render Levels", "Number of subdivisions to perform when rendering");
 
-  prop = api_def_prop(sapi, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModifierFlag_ControlEdges);
+  prop = api_def_prop(sapi, "show_only_control_edges", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eShaderModFlag_ControlEdges);
   api_def_prop_ui_text(prop, "Optimal Display", "Skip displaying interior subdivided edges");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "use_creases", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "flags", eSubsurfModifierFlag_UseCrease);
+  prop = api_def_prop(stype, "use_creases", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModFlag_UseCrease);
   api_def_prop_ui_text(
       prop, "Use Creases", "Use mesh crease information to sharpen edges or corners");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_custom_normals", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModifierFlag_UseCustomNormals);
+  prop = api_def_prop(sapi, "use_custom_normals", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModFlag_UseCustomNormals);
   api_def_prop_ui_text(
       prop, "Use Custom Normals", "Interpolates existing custom normals to resulting mesh");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "use_limit_surface", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(
-      prop, NULL, "flags", eSubsurfModifierFlag_UseRecursiveSubdivision);
-  RNA_def_property_ui_text(prop,
-                           "Use Limit Surface",
-                           "Place vertices at the surface that would be produced with infinite "
-                           "levels of subdivision (smoothest possible shape)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_limit_surface", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(
+      prop, NULL, "flags", eSubsurfModFlag_UseRecursiveSubdivision);
+  api_def_prop_ui_text(prop,
+                       "Use Limit Surface",
+                       "Place vertices at the surface that would be produced with infinite "
+                       "levels of subdivision (smoothest possible shape)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_generic_map_info(StructRNA *srna)
+static void api_def_mod_generic_map_info(ApiStruct *sapi)
 {
-  static const EnumPropertyItem prop_texture_coordinates_items[] = {
+  static const EnumPropItem prop_texture_coordinates_items[] = {
       {MOD_DISP_MAP_LOCAL,
        "LOCAL",
        0,
@@ -1756,14 +1755,14 @@ static void rna_def_modifier_generic_map_info(StructRNA *srna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "texture", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Texture", "");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "texture", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Texture", "");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
   prop = RNA_def_property(srna, "texture_coords", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "texmapping");
