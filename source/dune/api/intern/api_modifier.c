@@ -754,28 +754,27 @@ static void api_Mod_is_active_set(ApiPtr *ptr, bool value)
 }
 
 /* Vertex Groups */
-
-#  define RNA_MOD_VGROUP_NAME_SET(_type, _prop) \
-    static void rna_##_type##Modifier_##_prop##_set(PointerRNA *ptr, const char *value) \
+#  define API_MOD_VGROUP_NAME_SET(_type, _prop) \
+    static void api_##_type##Mod_##_prop##_set(ApiPtr *ptr, const char *value) \
     { \
-      _type##ModifierData *tmd = (_type##ModifierData *)ptr->data; \
-      rna_object_vgroup_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
+      _type##ModData *tmd = (_type##ModData *)ptr->data; \
+      apo_object_vgroup_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
     }
 
-RNA_MOD_VGROUP_NAME_SET(Armature, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Bevel, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Cast, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Curve, name);
-RNA_MOD_VGROUP_NAME_SET(DataTransfer, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Decimate, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(CorrectiveSmooth, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Displace, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Hook, name);
-RNA_MOD_VGROUP_NAME_SET(LaplacianDeform, anchor_grp_name);
-RNA_MOD_VGROUP_NAME_SET(LaplacianSmooth, defgrp_name);
-RNA_MOD_VGROUP_NAME_SET(Lattice, name);
-RNA_MOD_VGROUP_NAME_SET(Mask, vgroup);
-RNA_MOD_VGROUP_NAME_SET(MeshCache, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Armature, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Bevel, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Cast, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Curve, name);
+API_MOD_VGROUP_NAME_SET(DataTransfer, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Decimate, defgrp_name);
+API_MOD_VGROUP_NAME_SET(CorrectiveSmooth, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Displace, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Hook, name);
+API_MOD_VGROUP_NAME_SET(LaplacianDeform, anchor_grp_name);
+API_MOD_VGROUP_NAME_SET(LaplacianSmooth, defgrp_name);
+API_MOD_VGROUP_NAME_SET(Lattice, name);
+API_MOD_VGROUP_NAME_SET(Mask, vgroup);
+API_MOD_VGROUP_NAME_SET(MeshCache, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(MeshDeform, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(NormalEdit, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(Shrinkwrap, vgroup_name);
@@ -799,30 +798,29 @@ RNA_MOD_VGROUP_NAME_SET(WeightedNormal, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(Weld, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(Wireframe, defgrp_name);
 
-static void rna_ExplodeModifier_vgroup_get(PointerRNA *ptr, char *value)
+static void api_ExplodeMod_vgroup_get(ApiPointer *ptr, char *value)
 {
-  ExplodeModifierData *emd = (ExplodeModifierData *)ptr->data;
+  ExplodeModData *emd = (ExplodeModData *)ptr->data;
   rna_object_vgroup_name_index_get(ptr, value, emd->vgroup);
 }
 
-static int rna_ExplodeModifier_vgroup_length(PointerRNA *ptr)
+static int api_ExplodeMod_vgroup_length(ApiPtr *ptr)
 {
-  ExplodeModifierData *emd = (ExplodeModifierData *)ptr->data;
-  return rna_object_vgroup_name_index_length(ptr, emd->vgroup);
+  ExplodeModData *emd = (ExplodeModData *)ptr->data;
+  return api_object_vgroup_name_index_length(ptr, emd->vgroup);
 }
 
-static void rna_ExplodeModifier_vgroup_set(PointerRNA *ptr, const char *value)
+static void api_ExplodeMod_vgroup_set(ApiPtr *ptr, const char *value)
 {
-  ExplodeModifierData *emd = (ExplodeModifierData *)ptr->data;
-  rna_object_vgroup_name_index_set(ptr, value, &emd->vgroup);
+  ExplodeModData *emd = (ExplodeModData *)ptr->data;
+  api_object_vgroup_name_index_set(ptr, value, &emd->vgroup);
 }
 
-#  undef RNA_MOD_VGROUP_NAME_SET
+#  undef API_MOD_VGROUP_NAME_SET
 
 /* UV layers */
-
-#  define RNA_MOD_UVLAYER_NAME_SET(_type, _prop) \
-    static void rna_##_type##Mod_##_prop##_set(ApiPtr *ptr, const char *value) \
+#  define API_MOD_UVLAYER_NAME_SET(_type, _prop) \
+    static void api_##_type##Mod_##_prop##_set(ApiPtr *ptr, const char *value) \
     { \
       _type##ModData *tmd = (_type##ModData *)ptr->data; \
       api_object_uvlayer_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
@@ -929,61 +927,60 @@ static bool api_HookMod_object_override_apply(Main *UNUSED(main),
   return true;
 }
 
-static void api_HookModifier_subtarget_set(PointerRNA *ptr, const char *value)
+static void api_HookMod_subtarget_set(ApiPtr *ptr, const char *value)
 {
   Object *owner = (Object *)ptr->owner_id;
-  HookModifierData *hmd = ptr->data;
+  HookModData *hmd = ptr->data;
 
-  BLI_strncpy(hmd->subtarget, value, sizeof(hmd->subtarget));
-  BKE_object_modifier_hook_reset(owner, hmd);
+  lib_strncpy(hmd->subtarget, value, sizeof(hmd->subtarget));
+  dune_object_mod_hook_reset(owner, hmd);
 }
 
-static int rna_HookModifier_vertex_indices_get_length(PointerRNA *ptr,
-                                                      int length[RNA_MAX_ARRAY_DIMENSION])
+static int api_HookMod_vertex_indices_get_length(ApiPtr *ptr,
+                                                 int length[API_MAX_ARRAY_DIMENSION])
 {
-  HookModifierData *hmd = ptr->data;
+  HookModData *hmd = ptr->data;
   int totindex = hmd->indexar ? hmd->totindex : 0;
   return (length[0] = totindex);
 }
 
-static void rna_HookModifier_vertex_indices_get(PointerRNA *ptr, int *values)
+static void api_HookMod_vertex_indices_get(ApiPtr *ptr, int *values)
 {
-  HookModifierData *hmd = ptr->data;
+  HookModData *hmd = ptr->data;
   if (hmd->indexar != NULL) {
     memcpy(values, hmd->indexar, sizeof(int) * hmd->totindex);
   }
 }
 
-static void rna_HookModifier_vertex_indices_set(HookModifierData *hmd,
-                                                ReportList *reports,
-                                                int indices_len,
-                                                int *indices)
+static void api_HookMod_vertex_indices_set(HookModData *hmd,
+                                           ReportList *reports,
+                                           int indices_len,
+                                           int *indices)
 {
   if (indices_len == 0) {
     MEM_SAFE_FREE(hmd->indexar);
     hmd->totindex = 0;
-  }
-  else {
+  } else {
     /* Reject negative indices. */
     for (int i = 0; i < indices_len; i++) {
       if (indices[i] < 0) {
-        BKE_reportf(reports, RPT_ERROR, "Negative vertex index in vertex_indices_set");
+        dune_reportf(reports, RPT_ERROR, "Negative vertex index in vertex_indices_set");
         return;
       }
     }
 
     /* Copy and sort the index array. */
     size_t size = sizeof(int) * indices_len;
-    int *buffer = MEM_mallocN(size, "hook indexar");
+    int *buffer = mem_mallocn(size, "hook indexar");
     memcpy(buffer, indices, size);
 
-    qsort(buffer, indices_len, sizeof(int), BLI_sortutil_cmp_int);
+    qsort(buffer, indices_len, sizeof(int), lib_sortutil_cmp_int);
 
     /* Reject duplicate indices. */
     for (int i = 1; i < indices_len; i++) {
       if (buffer[i] == buffer[i - 1]) {
-        BKE_reportf(reports, RPT_ERROR, "Duplicate index %d in vertex_indices_set", buffer[i]);
-        MEM_freeN(buffer);
+        dune_reportf(reports, RPT_ERROR, "Duplicate index %d in vertex_indices_set", buffer[i]);
+        mem_freen(buffer);
         return;
       }
     }
@@ -995,14 +992,14 @@ static void rna_HookModifier_vertex_indices_set(HookModifierData *hmd,
   }
 }
 
-static PointerRNA rna_UVProjector_object_get(PointerRNA *ptr)
+static ApiPtr api_UVProjector_object_get(ApiPtr *ptr)
 {
   Object **ob = (Object **)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_Object, *ob);
+  return api_ptr_inherit_refine(ptr, &Api_Object, *ob);
 }
 
-static void rna_UVProjector_object_set(PointerRNA *ptr,
-                                       PointerRNA value,
+static void api_UVProjector_object_set(ApiPtr *ptr,
+                                       ApiPtr value,
                                        struct ReportList *UNUSED(reports))
 {
   Object **ob_p = (Object **)ptr->data;
@@ -1014,10 +1011,9 @@ static void rna_UVProjector_object_set(PointerRNA *ptr,
 #  undef API_MOD_OBJECT_SET
 
 /* Other api callbacks */
-
-static void api_fluid_set_type(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_fluid_set_type(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  FluidModifierData *fmd = (FluidModifierData *)ptr->data;
+  FluidModData *fmd = (FluidModData *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
 
   /* nothing changed */
@@ -1026,8 +1022,8 @@ static void api_fluid_set_type(Main *bmain, Scene *scene, PointerRNA *ptr)
   }
 
 #  ifdef WITH_FLUID
-  BKE_fluid_modifier_free(fmd);             /* XXX TODO: completely free all 3 pointers */
-  BKE_fluid_modifier_create_type_data(fmd); /* create regarding of selected type */
+  dune_fluid_mod_free(fmd);             /* XXX TODO: completely free all 3 pointers */
+  dune_fluid_mod_create_type_data(fmd); /* create regarding of selected type */
 #  endif
 
   switch (fmd->type) {
@@ -1042,19 +1038,19 @@ static void api_fluid_set_type(Main *bmain, Scene *scene, PointerRNA *ptr)
   }
 
   /* update dependency since a domain - other type switch could have happened */
-  rna_Modifier_dependency_update(bmain, scene, ptr);
+  api_Mod_dependency_update(main, scene, ptr);
 }
 
-static void rna_MultiresModifier_level_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_MultiMod_level_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
-  MultiresModifierData *mmd = (MultiresModifierData *)ptr->data;
+  MultiresModData *mmd = (MultiresModData *)ptr->data;
 
   *min = 0;
   *max = max_ii(0, mmd->totlvl); /* intentionally _not_ -1 */
 }
 
-static bool rna_MultiresModifier_external_get(PointerRNA *ptr)
+static bool api_MultiresMod_external_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   Mesh *me = ob->data;
@@ -1062,26 +1058,26 @@ static bool rna_MultiresModifier_external_get(PointerRNA *ptr)
   return CustomData_external_test(&me->ldata, CD_MDISPS);
 }
 
-static void rna_MultiresModifier_filepath_get(PointerRNA *ptr, char *value)
+static void api_MultiresMod_filepath_get(ApiPtr *ptr, char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
   CustomDataExternal *external = ((Mesh *)ob->data)->ldata.external;
 
-  BLI_strncpy(value, (external) ? external->filename : "", sizeof(external->filename));
+  lib_strncpy(value, (external) ? external->filename : "", sizeof(external->filename));
 }
 
-static void rna_MultiresModifier_filepath_set(PointerRNA *ptr, const char *value)
+static void api_MultiresMod_filepath_set(ApiPtr *ptr, const char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
   CustomDataExternal *external = ((Mesh *)ob->data)->ldata.external;
 
   if (external && !STREQ(external->filename, value)) {
-    BLI_strncpy(external->filename, value, sizeof(external->filename));
+    lib_strncpy(external->filename, value, sizeof(external->filename));
     multires_force_external_reload(ob);
   }
 }
 
-static int rna_MultiresModifier_filepath_length(PointerRNA *ptr)
+static int api_MultiresMod_filepath_length(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
   CustomDataExternal *external = ((Mesh *)ob->data)->ldata.external;
