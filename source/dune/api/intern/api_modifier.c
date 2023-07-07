@@ -1599,38 +1599,36 @@ static void api_ParticleInstanceMod_particle_system_set(ApiPtr *ptr,
  * Special set callback that just changes the first bit of the expansion flag.
  * This way the expansion state of all the sub-panels is not changed by RNA.
  */
-static void rna_Modifier_show_expanded_set(PointerRNA *ptr, bool value)
+static void rna_Modifier_show_expanded_set(ApiPtr *ptr, bool value)
 {
   ModifierData *md = ptr->data;
   SET_FLAG_FROM_TEST(md->ui_expand_flag, value, UI_PANEL_DATA_EXPAND_ROOT);
 }
 
-/**
- * Only check the first bit of the expansion flag for the main panel's expansion,
+/** Only check the first bit of the expansion flag for the main panel's expansion,
  * maintaining compatibility with older versions where there was only one expansion
- * value.
- */
-static bool rna_Modifier_show_expanded_get(PointerRNA *ptr)
+ * value. */
+static bool api_Mod_show_expanded_get(ApiPtr *ptr)
 {
-  ModifierData *md = ptr->data;
+  ModData *md = ptr->data;
   return md->ui_expand_flag & UI_PANEL_DATA_EXPAND_ROOT;
 }
 
-static bool rna_NodesModifier_node_group_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
+static bool api_NodesMod_node_group_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
 {
-  bNodeTree *ntree = value.data;
+  NodeTree *ntree = value.data;
   return ntree->type == NTREE_GEOMETRY;
 }
 
-static void rna_NodesModifier_node_group_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_NodesMod_node_group_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *object = (Object *)ptr->owner_id;
-  NodesModifierData *nmd = ptr->data;
-  rna_Modifier_dependency_update(bmain, scene, ptr);
-  MOD_nodes_update_interface(object, nmd);
+  NodesModData *nmd = ptr->data;
+  api_Mod_dependency_update(main, scene, ptr);
+  mod_nodes_update_interface(object, nmd);
 }
 
-static IDProperty **rna_NodesModifier_properties(PointerRNA *ptr)
+static IdProp **api_NodesMod_props(ApiPtr *ptr)
 {
   NodesModifierData *nmd = ptr->data;
   NodesModifierSettings *settings = &nmd->settings;
@@ -1638,93 +1636,93 @@ static IDProperty **rna_NodesModifier_properties(PointerRNA *ptr)
 }
 #else
 
-static void rna_def_property_subdivision_common(StructRNA *srna)
+static void api_def_prop_subdivision_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
-  RNA_define_lib_overridable(true);
+  ApiProp *prop;
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "uv_smooth", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "uv_smooth");
-  RNA_def_property_enum_items(prop, rna_enum_subdivision_uv_smooth_items);
-  RNA_def_property_ui_text(prop, "UV Smooth", "Controls how smoothing is applied to UVs");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "uv_smooth", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "uv_smooth");
+  api_def_prop_enum_items(prop, api_enum_subdivision_uv_smooth_items);
+  api_def_prop_ui_text(prop, "UV Smooth", "Controls how smoothing is applied to UVs");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "quality", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "quality");
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_range(prop, 1, 6, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "quality", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "quality");
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_range(prop, 1, 6, 1, -1);
+  api_def_prop_ui_text(
       prop, "Quality", "Accuracy of vertex positions, lower value is faster but less precise");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "boundary_smooth", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "boundary_smooth");
-  RNA_def_property_enum_items(prop, rna_enum_subdivision_boundary_smooth_items);
-  RNA_def_property_ui_text(prop, "Boundary Smooth", "Controls how open boundaries are smoothed");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "boundary_smooth", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "boundary_smooth");
+  api_def_prop_enum_items(prop, api_enum_subdivision_boundary_smooth_items);
+  api_def_prop_ui_text(prop, "Boundary Smooth", "Controls how open boundaries are smoothed");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_subsurf(BlenderRNA *brna)
+static void api_def_mod_subsurf(DuneApi *dapi)
 {
-  static const EnumPropertyItem prop_subdivision_type_items[] = {
+  static const EnumPropItem prop_subdivision_type_items[] = {
       {SUBSURF_TYPE_CATMULL_CLARK, "CATMULL_CLARK", 0, "Catmull-Clark", ""},
       {SUBSURF_TYPE_SIMPLE, "SIMPLE", 0, "Simple", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SubsurfModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Subdivision Surface Modifier", "Subdivision surface modifier");
-  RNA_def_struct_sdna(srna, "SubsurfModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SUBSURF);
+  sapi = api_def_struct(dapi, "SubsurfMod", "Modifier");
+  api_def_struct_ui_text(sapi, "Subdivision Surface Modifier", "Subdivision surface modifier");
+  api_def_struct_stype(sapi, "SubsurfModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SUBSURF);
 
-  rna_def_property_subdivision_common(srna);
+  api_def_prop_subdivision_common(srna);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "subdivision_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "subdivType");
-  RNA_def_property_enum_items(prop, prop_subdivision_type_items);
-  RNA_def_property_ui_text(prop, "Subdivision Type", "Select type of subdivision algorithm");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "subdivision_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "subdivType");
+  api_def_prop_enum_items(prop, prop_subdivision_type_items);
+  api_def_prop_ui_text(prop, "Subdivision Type", "Select type of subdivision algorithm");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* see CCGSUBSURF_LEVEL_MAX for max limit */
-  prop = RNA_def_property(srna, "levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "levels");
-  RNA_def_property_range(prop, 0, 11);
-  RNA_def_property_ui_range(prop, 0, 6, 1, -1);
-  RNA_def_property_ui_text(prop, "Levels", "Number of subdivisions to perform");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "levels");
+  api_def_prop_range(prop, 0, 11);
+  api_def_prop_ui_range(prop, 0, 6, 1, -1);
+  api_def_prop_ui_text(prop, "Levels", "Number of subdivisions to perform");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "render_levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "renderLevels");
-  RNA_def_property_range(prop, 0, 11);
-  RNA_def_property_ui_range(prop, 0, 6, 1, -1);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "render_levels", PROP_INT, PROP_UNSIGNED);
+  RNA_def_prop_int_stype(prop, NULL, "renderLevels");
+  RNA_def_prop_range(prop, 0, 11);
+  RNA_def_prop_ui_range(prop, 0, 6, 1, -1);
+  RNA_def_prop_ui_text(
       prop, "Render Levels", "Number of subdivisions to perform when rendering");
 
-  prop = RNA_def_property(srna, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eSubsurfModifierFlag_ControlEdges);
-  RNA_def_property_ui_text(prop, "Optimal Display", "Skip displaying interior subdivided edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModifierFlag_ControlEdges);
+  api_def_prop_ui_text(prop, "Optimal Display", "Skip displaying interior subdivided edges");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_creases", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eSubsurfModifierFlag_UseCrease);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "use_creases", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flags", eSubsurfModifierFlag_UseCrease);
+  api_def_prop_ui_text(
       prop, "Use Creases", "Use mesh crease information to sharpen edges or corners");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_custom_normals", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eSubsurfModifierFlag_UseCustomNormals);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_normals", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eSubsurfModifierFlag_UseCustomNormals);
+  api_def_prop_ui_text(
       prop, "Use Custom Normals", "Interpolates existing custom normals to resulting mesh");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_limit_surface", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(srna, "use_limit_surface", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_negative_sdna(
       prop, NULL, "flags", eSubsurfModifierFlag_UseRecursiveSubdivision);
   RNA_def_property_ui_text(prop,
