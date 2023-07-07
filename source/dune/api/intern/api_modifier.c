@@ -1091,50 +1091,50 @@ static int rna_ShrinkwrapModifier_face_cull_get(PointerRNA *ptr)
   return swm->shrinkOpts & MOD_SHRINKWRAP_CULL_TARGET_MASK;
 }
 
-static void rna_ShrinkwrapModifier_face_cull_set(struct PointerRNA *ptr, int value)
+static void api_ShrinkwrapMod_face_cull_set(struct ApiPtr *ptr, int value)
 {
-  ShrinkwrapModifierData *swm = (ShrinkwrapModifierData *)ptr->data;
+  ShrinkwrapModData *swm = (ShrinkwrapModData *)ptr->data;
   swm->shrinkOpts = (swm->shrinkOpts & ~MOD_SHRINKWRAP_CULL_TARGET_MASK) | value;
 }
 
-static bool rna_MeshDeformModifier_is_bound_get(PointerRNA *ptr)
+static bool api_MeshDeformMod_is_bound_get(ApiPtr *ptr)
 {
-  return (((MeshDeformModifierData *)ptr->data)->bindcagecos != NULL);
+  return (((MeshDeformModData *)ptr->data)->bindcagecos != NULL);
 }
 
-static PointerRNA rna_SoftBodyModifier_settings_get(PointerRNA *ptr)
+static ApiPtr api_SoftBodyMod_settings_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  return rna_pointer_inherit_refine(ptr, &RNA_SoftBodySettings, ob->soft);
+  return api_ptr_inherit_refine(ptr, &Api_SoftBodySettings, ob->soft);
 }
 
-static PointerRNA rna_SoftBodyModifier_point_cache_get(PointerRNA *ptr)
+static ApiPtr api_SoftBodyMod_point_cache_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  return rna_pointer_inherit_refine(ptr, &RNA_PointCache, ob->soft->shared->pointcache);
+  return api_ptr_inherit_refine(ptr, &Api_PointCache, ob->soft->shared->pointcache);
 }
 
-static PointerRNA rna_CollisionModifier_settings_get(PointerRNA *ptr)
+static ApiPtr api_CollisionMod_settings_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  return rna_pointer_inherit_refine(ptr, &RNA_CollisionSettings, ob->pd);
+  return api_ptr_inherit_refine(ptr, &Api_CollisionSettings, ob->pd);
 }
 
 /* Special update function for setting the number of segments of the modifier that also resamples
  * the segments in the custom profile. */
-static void rna_BevelModifier_update_segments(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_BevelMod_update_segments(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  BevelModifierData *bmd = (BevelModifierData *)ptr->data;
-  if (RNA_enum_get(ptr, "profile_type") == MOD_BEVEL_PROFILE_CUSTOM) {
-    short segments = (short)RNA_int_get(ptr, "segments");
-    BKE_curveprofile_init(bmd->custom_profile, segments);
+  BevelModData *bmd = (BevelModData *)ptr->data;
+  if (api_enum_get(ptr, "profile_type") == MOD_BEVEL_PROFILE_CUSTOM) {
+    short segments = (short)api_int_get(ptr, "segments");
+    dune_curveprofile_init(bmd->custom_profile, segments);
   }
-  rna_Modifier_update(bmain, scene, ptr);
+  api_Mod_update(main, scene, ptr);
 }
 
-static void rna_UVProjectModifier_num_projectors_set(PointerRNA *ptr, int value)
+static void api_UVProjectMod_num_projectors_set(PointerRNA *ptr, int value)
 {
-  UVProjectModifierData *md = (UVProjectModifierData *)ptr->data;
+  UVProjectModData *md = (UVProjectModData *)ptr->data;
   int a;
 
   md->num_projectors = CLAMPIS(value, 1, MOD_UVPROJECT_MAXPROJECTORS);
