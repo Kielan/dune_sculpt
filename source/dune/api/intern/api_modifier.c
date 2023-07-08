@@ -1825,84 +1825,84 @@ static void api_def_mod_warp(DunrApi *dapi)
   RNA_def_property_ui_text(prop, "Bone To", "Bone defining offset");
   RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -100, 100, 10, 2);
-  RNA_def_property_ui_text(prop, "Strength", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -100, 100, 10, 2);
+  api_def_prop_ui_text(prop, "Strength", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "falloff_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, modifier_warp_falloff_items);
-  RNA_def_property_ui_text(prop, "Falloff Type", "");
-  RNA_def_property_translation_context(prop,
-                                       BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "falloff_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, mod_warp_falloff_items);
+  api_def_prop_ui_text(prop, "Falloff Type", "");
+  api_def_prop_translation_context(prop,
+                                    BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_ui_text(prop, "Radius", "Radius to apply");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_ui_text(prop, "Radius", "Radius to apply");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "falloff_curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curfalloff");
-  RNA_def_property_ui_text(prop, "Falloff Curve", "Custom falloff curve");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "falloff_curve", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curfalloff");
+  api_def_prop_ui_text(prop, "Falloff Curve", "Custom falloff curve");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_volume_preserve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WARP_VOLUME_PRESERVE);
-  RNA_def_property_ui_text(prop, "Preserve Volume", "Preserve volume when rotations are used");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_volume_preserve", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WARP_VOLUME_PRESERVE);
+  api_def_prop_ui_text(prop, "Preserve Volume", "Preserve volume when rotations are used");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WarpModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WarpMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WARP_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WARP_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  rna_def_modifier_generic_map_info(srna);
+  api_def_mod_generic_map_info(sapi);
 }
 
-static void rna_def_modifier_multires(BlenderRNA *brna)
+static void api_def_mod_multires(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MultiresModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Multires Modifier", "Multiresolution mesh modifier");
-  RNA_def_struct_sdna(srna, "MultiresModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MULTIRES);
+  srna = api_def_struct(dapi, "MultiresModifier", "Modifier");
+  api_def_struct_ui_text(sapi, "Multires Modifier", "Multiresolution mesh modifier");
+  api_def_struct_stype(sapi, "MultiresModifierData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MULTIRES);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  rna_def_property_subdivision_common(srna);
+  api_def_prop_subdivision_common(sapi);
 
-  prop = RNA_def_property(srna, "levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "lvl");
-  RNA_def_property_ui_text(prop, "Levels", "Number of subdivisions to use in the viewport");
-  RNA_def_property_int_funcs(prop, NULL, NULL, "rna_MultiresModifier_level_range");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "lvl");
+  api_def_prop_ui_text(prop, "Levels", "Number of subdivisions to use in the viewport");
+  api_def_prop_int_fns(prop, NULL, NULL, "api_MultiresMod_level_range");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "sculpt_levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "sculptlvl");
-  RNA_def_property_ui_text(prop, "Sculpt Levels", "Number of subdivisions to use in sculpt mode");
-  RNA_def_property_int_funcs(prop, NULL, NULL, "rna_MultiresModifier_level_range");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "sculpt_levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "sculptlvl");
+  api_def_prop_ui_text(prop, "Sculpt Levels", "Number of subdivisions to use in sculpt mode");
+  api_def_prop_int_fns(prop, NULL, NULL, "api_MultiresMod_level_range");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "render_levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "renderlvl");
-  RNA_def_property_ui_text(prop, "Render Levels", "The subdivision level visible at render time");
-  RNA_def_property_int_funcs(prop, NULL, NULL, "rna_MultiresModifier_level_range");
+  prop = api_def_prop(sapi, "render_levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "renderlvl");
+  api_def_prop_ui_text(prop, "Render Levels", "The subdivision level visible at render time");
+  api_def_prop_int_fns(prop, NULL, NULL, "api_MultiresMod_level_range");
 
-  prop = RNA_def_property(srna, "total_levels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "totlvl");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "total_levels", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "totlvl");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Total Levels", "Number of subdivisions for which displacements are stored");
 
   prop = RNA_def_property(srna, "is_external", PROP_BOOLEAN, PROP_NONE);
