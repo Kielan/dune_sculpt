@@ -1794,12 +1794,12 @@ static void api_def_mod_warp(DunrApi *dapi)
   StructRNA *sapi;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "WarpModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Warp Modifier", "Warp modifier");
-  RNA_def_struct_sdna(srna, "WarpModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_WARP);
+  sapu = api_def_struct(dapu, "WarpModifier", "Modifier");
+  api_def_struct_ui_text(sapi, "Warp Modifier", "Warp modifier");
+  api_def_struct_sdna(sapi, "WarpModifierData");
+  api_def_struct_ui_icon(srna, ICON_MOD_WARP);
 
-  RNA_define_lib_overridable(true);
+  apu_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "object_from", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "object_from");
