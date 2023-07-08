@@ -1764,36 +1764,36 @@ static void api_def_mod_generic_map_info(ApiStruct *sapi)
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "texture_coords", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "texmapping");
-  RNA_def_property_enum_items(prop, prop_texture_coordinates_items);
-  RNA_def_property_ui_text(prop, "Texture Coordinates", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "texture_coords", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "texmapping");
+  api_def_prop_enum_items(prop, prop_texture_coordinates_items);
+  api_def_prop_ui_text(prop, "Texture Coordinates", "");
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "uv_layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "uvlayer_name");
-  RNA_def_property_ui_text(prop, "UV Map", "UV map name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MappingInfoModifier_uvlayer_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "uv_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "uvlayer_name");
+  api_def_prop_ui_text(prop, "UV Map", "UV map name");
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_MappingInfoModifier_uvlayer_name_set");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "texture_coords_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "map_object");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "texture_coords_object", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "map_object");
+  api_def_prop_ui_text(
       prop, "Texture Coordinate Object", "Object to set the texture coordinates");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "texture_coords_bone", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "map_bone");
-  RNA_def_property_ui_text(prop, "Texture Coordinate Bone", "Bone to set the texture coordinates");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "texture_coords_bone", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "map_bone");
+  api_def_prop_ui_text(prop, "Texture Coordinate Bone", "Bone to set the texture coordinates");
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_warp(BlenderRNA *brna)
+static void api_def_mod_warp(DunrApi *dapi)
 {
-  StructRNA *srna;
+  StructRNA *sapi;
   PropertyRNA *prop;
 
   srna = RNA_def_struct(brna, "WarpModifier", "Modifier");
