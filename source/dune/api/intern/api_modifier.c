@@ -1038,7 +1038,7 @@ static void api_fluid_set_type(Main *main, Scene *scene, ApiPtr *ptr)
   }
 
   /* update dependency since a domain - other type switch could have happened */
-  api_Mod_dependency_update(main, scene, ptr);
+  api_Mod_graph_update(main, scene, ptr);
 }
 
 static void api_MultiMod_level_range(
@@ -1153,7 +1153,7 @@ static void api_OceanMod_init_update(Main *main, Scene *scene, ApiPtr *ptr)
 
 static void api_OceanMod_ocean_chop_set(ApiPtr *ptr, float value)
 {
-  OceanModifierData *omd = (OceanModData *)ptr->data;
+  OceanMoData *omd = (OceanModData *)ptr->data;
   float old_value = omd->chop_amount;
 
   omd->chop_amount = value;
@@ -1163,7 +1163,7 @@ static void api_OceanMod_ocean_chop_set(ApiPtr *ptr, float value)
   }
 }
 
-static bool rna_LaplacianDeformMod_is_bind_get(Apitr *ptr)
+static bool api_LaplacianDeformMod_is_bind_get(Apitr *ptr)
 {
   LaplacianDeformModData *lmd = (LaplacianDeformModData *)ptr->data;
   return ((lmd->flag & MOD_LAPLACIANDEFORM_BIND) && (lmd->vertexco != NULL));
@@ -1176,7 +1176,7 @@ static bool rna_LaplacianDeformMod_is_bind_get(Apitr *ptr)
  * So what we do here is: if path was not calculated for target curve we
  * tag it for update. */
 
-static void apu_CurveMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
+static void api_CurveMod_graph_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   CurveModData *cmd = (CurveModData *)ptr->data;
   api_Mod_update(main, scene, ptr);
@@ -1189,11 +1189,11 @@ static void apu_CurveMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr
   }
 }
 
-static void rna_ArrayModifier_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ArrayMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  ArrayModifierData *amd = (ArrayModifierData *)ptr->data;
-  rna_Modifier_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  ArrayModData *amd = (ArrayModData *)ptr->data;
+  api_Mod_update(bmain, scene, ptr);
+  graph_relations_tag_update(main);
   if (amd->curve_ob != NULL) {
     Curve *curve = amd->curve_ob->data;
     if ((curve->flag & CU_PATH) == 0) {
@@ -1760,46 +1760,46 @@ static void api_def_mod_generic_map_info(ApiStruct *sapi)
   prop = api_def_prop(sapi, "texture", PROP_PTR, PROP_NONE);
   api_def_prop_ui_text(prop, "Texture", "");
   api_def_prop_flag(prop, PROP_EDITABLE);
-  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "texture_coords", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "texmapping");
   api_def_prop_enum_items(prop, prop_texture_coordinates_items);
   api_def_prop_ui_text(prop, "Texture Coordinates", "");
-  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "uv_layer", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "uvlayer_name");
   api_def_prop_ui_text(prop, "UV Map", "UV map name");
-  api_def_prop_string_fns(prop, NULL, NULL, "rna_MappingInfoModifier_uvlayer_name_set");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MappingInfoMod_uvlayer_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "texture_coords_object", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "map_object");
   api_def_prop_ui_text(
       prop, "Texture Coordinate Object", "Object to set the texture coordinates");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_dependency_update");
 
   prop = api_def_prop(sapi, "texture_coords_bone", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "map_bone");
   api_def_prop_ui_text(prop, "Texture Coordinate Bone", "Bone to set the texture coordinates");
-  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   api_define_lib_overridable(false);
 }
 
 static void api_def_mod_warp(DunrApi *dapi)
 {
-  StructRNA *sapi;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  sapu = api_def_struct(dapu, "WarpModifier", "Modifier");
+  sapi = api_def_struct(dapu, "WarpModifier", "Modifier");
   api_def_struct_ui_text(sapi, "Warp Modifier", "Warp modifier");
   api_def_struct_sdna(sapi, "WarpModifierData");
   api_def_struct_ui_icon(srna, ICON_MOD_WARP);
 
-  apu_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "object_from", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "object_from");
@@ -1868,7 +1868,7 @@ static void api_def_mod_warp(DunrApi *dapi)
 
 static void api_def_mod_multires(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   srna = api_def_struct(dapi, "MultiresModifier", "Modifier");
@@ -2059,25 +2059,25 @@ static void rna_def_modifier_build(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
   prop = RNA_def_property(srna, "frame_duration", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "length");
-  RNA_def_property_range(prop, 1, MAXFRAMEF);
-  RNA_def_property_ui_text(prop, "Length", "Total time the build effect requires");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_property_float_sdna(prop, NULL, "length");
+  api_def_property_range(prop, 1, MAXFRAMEF);
+  api_def_property_ui_text(prop, "Length", "Total time the build effect requires");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_reverse", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_REVERSE);
-  RNA_def_property_ui_text(prop, "Reversed", "Deconstruct the mesh instead of building it");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "use_reverse", PROP_BOOLEAN, PROP_NONE);
+  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_REVERSE);
+  api_def_property_ui_text(prop, "Reversed", "Deconstruct the mesh instead of building it");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_random_order", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_RANDOMIZE);
-  RNA_def_property_ui_text(prop, "Randomize", "Randomize the faces or edges during build");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "use_random_order", PROP_BOOLEAN, PROP_NONE);
+  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_RANDOMIZE);
+  api_def_property_ui_text(prop, "Randomize", "Randomize the faces or edges during build");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, MAXFRAMEF);
-  RNA_def_property_ui_text(prop, "Seed", "Seed for random if used");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "seed", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, MAXFRAMEF);
+  api_def_prop_ui_text(prop, "Seed", "Seed for random if used");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   RNA_define_lib_overridable(false);
 }
