@@ -1085,9 +1085,9 @@ static int api_MultiresMod_filepath_length(ApiPtr *ptr)
   return strlen((external) ? external->filename : "");
 }
 
-static int rna_ShrinkwrapModifier_face_cull_get(PointerRNA *ptr)
+static int api_ShrinkwrapMod_face_cull_get(ApiPtr *ptr)
 {
-  ShrinkwrapModifierData *swm = (ShrinkwrapModifierData *)ptr->data;
+  ShrinkwrapModData *swm = (ShrinkwrapModData *)ptr->data;
   return swm->shrinkOpts & MOD_SHRINKWRAP_CULL_TARGET_MASK;
 }
 
@@ -1143,29 +1143,29 @@ static void api_UVProjectMod_num_projectors_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_OceanModifier_init_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_OceanMod_init_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  OceanModifierData *omd = (OceanModifierData *)ptr->data;
+  OceanModData *omd = (OceanModData *)ptr->data;
 
-  BKE_ocean_free_modifier_cache(omd);
-  rna_Modifier_update(bmain, scene, ptr);
+  dune_ocean_free_mod_cache(omd);
+  api_Mod_update(main, scene, ptr);
 }
 
-static void rna_OceanModifier_ocean_chop_set(PointerRNA *ptr, float value)
+static void api_OceanMod_ocean_chop_set(ApiPtr *ptr, float value)
 {
-  OceanModifierData *omd = (OceanModifierData *)ptr->data;
+  OceanModifierData *omd = (OceanModData *)ptr->data;
   float old_value = omd->chop_amount;
 
   omd->chop_amount = value;
 
   if ((old_value == 0.0f && value > 0.0f) || (old_value > 0.0f && value == 0.0f)) {
-    BKE_ocean_free_modifier_cache(omd);
+    dune_ocean_free_mod_cache(omd);
   }
 }
 
-static bool rna_LaplacianDeformModifier_is_bind_get(PointerRNA *ptr)
+static bool rna_LaplacianDeformMod_is_bind_get(Apitr *ptr)
 {
-  LaplacianDeformModifierData *lmd = (LaplacianDeformModifierData *)ptr->data;
+  LaplacianDeformModData *lmd = (LaplacianDeformModData *)ptr->data;
   return ((lmd->flag & MOD_LAPLACIANDEFORM_BIND) && (lmd->vertexco != NULL));
 }
 
@@ -1174,18 +1174,17 @@ static bool rna_LaplacianDeformModifier_is_bind_get(PointerRNA *ptr)
  * but if curve was already evaluated we might miss path.
  *
  * So what we do here is: if path was not calculated for target curve we
- * tag it for update.
- */
+ * tag it for update. */
 
-static void rna_CurveModifier_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void apu_CurveMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  CurveModifierData *cmd = (CurveModifierData *)ptr->data;
-  rna_Modifier_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  CurveModData *cmd = (CurveModData *)ptr->data;
+  api_Mod_update(main, scene, ptr);
+  graph_relations_tag_update(bmain);
   if (cmd->object != NULL) {
     Curve *curve = cmd->object->data;
     if ((curve->flag & CU_PATH) == 0) {
-      DEG_id_tag_update(&curve->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&curve->id, ID_RECALC_GEOMETRY);
     }
   }
 }
@@ -1198,14 +1197,14 @@ static void rna_ArrayModifier_dependency_update(Main *bmain, Scene *scene, Point
   if (amd->curve_ob != NULL) {
     Curve *curve = amd->curve_ob->data;
     if ((curve->flag & CU_PATH) == 0) {
-      DEG_id_tag_update(&curve->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&curve->id, ID_RECALC_GEOMETRY);
     }
   }
 }
 
-static void rna_DataTransferModifier_use_data_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_DataTransferMod_use_data_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  DataTransferModifierData *dtmd = (DataTransferModifierData *)ptr->data;
+  DataTransferModData *dtmd = (DataTransferModData *)ptr->data;
 
   if (!(dtmd->flags & MOD_DATATRANSFER_USE_VERT)) {
     dtmd->data_types &= ~DT_TYPE_VERT_ALL;
@@ -1421,8 +1420,7 @@ static const EnumPropItem *api_DataTransferMod_layers_select_dst_itemf(Cxt *C,
     }
   } else if (STREQ(api_prop_id(prop), "layers_shapekey_select_dst")) {
     /* TODO */
-  }
-  else if (STREQ(api_prop_ident(prop), "layers_uv_select_dst")) {
+  } else if (STREQ(api_prop_ident(prop), "layers_uv_select_dst")) {
     /* Only list destination layers if we have a single source! */
     if (dtmd->layers_select_src[DT_MULTILAYER_INDEX_UV] >= 0) {
       Object *ob_dst = cxt_data_active_object(C); /* XXX Is this OK? */
@@ -1803,27 +1801,27 @@ static void api_def_mod_warp(DunrApi *dapi)
 
   RNA_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object_from", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "object_from");
-  RNA_def_property_ui_text(prop, "Object From", "Object to transform from");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object_from", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "object_from");
+  api_def_prop_ui_text(prop, "Object From", "Object to transform from");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "bone_from", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "bone_from");
-  RNA_def_property_ui_text(prop, "Bone From", "Bone to transform from");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "bone_from", PROP_STRING, PROP_NONE);
+  api_def_prop_string_sdna(prop, NULL, "bone_from");
+  api_def_prop_ui_text(prop, "Bone From", "Bone to transform from");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "object_to", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "object_to");
-  RNA_def_property_ui_text(prop, "Object To", "Object to transform to");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object_to", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "object_to");
+  api_def_prop_ui_text(prop, "Object To", "Object to transform to");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "bone_to", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "bone_to");
-  RNA_def_property_ui_text(prop, "Bone To", "Bone defining offset");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "bone_to", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "bone_to");
+  api_def_prop_ui_text(prop, "Bone To", "Bone defining offset");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
@@ -1836,7 +1834,7 @@ static void api_def_mod_warp(DunrApi *dapi)
   api_def_prop_ui_text(prop, "Falloff Type", "");
   api_def_prop_translation_context(prop,
                                     BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_ui_text(prop, "Radius", "Radius to apply");
@@ -1905,25 +1903,25 @@ static void api_def_mod_multires(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Total Levels", "Number of subdivisions for which displacements are stored");
 
-  prop = RNA_def_property(srna, "is_external", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_MultiresModifier_external_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_external", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_MultiresMod_external_get", NULL);
+  api_def_prop_ui_text(
       prop, "External", "Store multires displacements outside the .blend file, to save memory");
 
   prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
   RNA_def_property_string_funcs(prop,
-                                "rna_MultiresModifier_filepath_get",
-                                "rna_MultiresModifier_filepath_length",
-                                "rna_MultiresModifier_filepath_set");
+                                "api_MultiresMod_filepath_get",
+                                "api_MultiresMod_filepath_length",
+                                "api_MultiresMod_filepath_set");
   RNA_def_property_ui_text(prop, "File Path", "Path to external displacements file");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eMultiresModifierFlag_ControlEdges);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flags", eMultiresModifierFlag_ControlEdges);
+  RNA_def_prop_ui_text(
       prop, "Optimal Display", "Skip drawing/rendering of interior subdivided edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_prop_update(prop, 0, "api_Modifier_update");
 
   prop = RNA_def_property(srna, "use_creases", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flags", eMultiresModifierFlag_UseCrease);
