@@ -1909,91 +1909,91 @@ static void api_def_mod_multires(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "External", "Store multires displacements outside the .blend file, to save memory");
 
-  prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_funcs(prop,
+  prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_fns(prop,
                                 "api_MultiresMod_filepath_get",
                                 "api_MultiresMod_filepath_length",
                                 "api_MultiresMod_filepath_set");
-  RNA_def_property_ui_text(prop, "File Path", "Path to external displacements file");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_ui_text(prop, "File Path", "Path to external displacements file");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(sapi, "show_only_control_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flags", eMultiresModifierFlag_ControlEdges);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "show_only_control_edges", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eMultiresModFlag_ControlEdges);
+  api_def_prop_ui_text(
       prop, "Optimal Display", "Skip drawing/rendering of interior subdivided edges");
-  RNA_def_prop_update(prop, 0, "api_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_creases", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eMultiresModifierFlag_UseCrease);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_creases", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eMultiresModifierFlag_UseCrease);
+  api_def_prop_ui_text(
       prop, "Use Creases", "Use mesh crease information to sharpen edges or corners");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_custom_normals", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eMultiresModifierFlag_UseCustomNormals);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_normals", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eMultiresModFlag_UseCustomNormals);
+  api_def_prop_ui_text(
       prop, "Use Custom Normals", "Interpolates existing custom normals to resulting mesh");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_sculpt_base_mesh", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", eMultiresModifierFlag_UseSculptBaseMesh);
-  RNA_def_property_ui_text(prop,
-                           "Sculpt Base Mesh",
-                           "Make Sculpt Mode tools deform the base mesh while previewing the "
-                           "displacement of higher subdivision levels");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_sculpt_base_mesh", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", eMultiresModFlag_UseSculptBaseMesh);
+  api_def_prop_ui_text(prop,
+                       "Sculpt Base Mesh",
+                       "Make Sculpt Mode tools deform the base mesh while previewing the "
+                       "displacement of higher subdivision levels");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_lattice(BlenderRNA *brna)
+static void api_def_mod_lattice(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LatticeModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Lattice Modifier", "Lattice deformation modifier");
-  RNA_def_struct_sdna(srna, "LatticeModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_LATTICE);
+  sapi = api_def_struct(dapi, "LatticeMod", "Mod");
+  api_def_struct_ui_text(sapi, "Lattice Mod", "Lattice deformation mod");
+  api_def_struct_stype(sapi, "LatticeModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_LATTICE);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Lattice object to deform with");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_LatticeModifier_object_set", NULL, "rna_Lattice_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(srna, "object", PROP_POINTER, PROP_NONE);
+  apj_def_prop_ui_text(prop, "Object", "Lattice object to deform with");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_LatticeMod_object_set", NULL, "api_Lattice_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
-      "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_LatticeModifier_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+      "Name of Vertex Group which determines influence of mod per point");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_LatticeMod_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LATTICE_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LATTICE_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 10, 2);
-  RNA_def_property_ui_text(prop, "Strength", "Strength of modifier effect");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 10, 2);
+  api_def_prop_ui_text(prop, "Strength", "Strength of modifier effect");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_curve(BlenderRNA *brna)
+static void api_def_mod_curve(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_deform_axis_items[] = {
+  static const EnumPropItem prop_deform_axis_items[] = {
       {MOD_CURVE_POSX, "POS_X", 0, "X", ""},
       {MOD_CURVE_POSY, "POS_Y", 0, "Y", ""},
       {MOD_CURVE_POSZ, "POS_Z", 0, "Z", ""},
@@ -2003,134 +2003,134 @@ static void rna_def_modifier_curve(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "CurveModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Curve Modifier", "Curve deformation modifier");
-  RNA_def_struct_sdna(srna, "CurveModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_CURVE);
+  sapi = api_def_struct(dapi, "CurveMod", "Mod");
+  api_def_struct_ui_text(sapi, "Curve Mod", "Curve deformation mod");
+  api_def_struct_stype(sapi, "CurveModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_CURVE);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Curve object to deform with");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_CurveModifier_object_set", NULL, "rna_Curve_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_CurveModifier_dependency_update");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Object", "Curve object to deform with");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_CurveMod_object_set", NULL, "api_Curve_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_CurveMod_graph_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
-      "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_CurveModifier_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+      "Name of Vertex Group which determines influence of mod per point");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_CurveMod_name_set");
+  api_def_prop_update(prop, 0, "api_Modim_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CURVE_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CURVE_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "deform_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "defaxis");
-  RNA_def_property_enum_items(prop, prop_deform_axis_items);
-  RNA_def_property_ui_text(prop, "Deform Axis", "The axis that the curve deforms along");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "deform_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "defaxis");
+  api_def_prop_enum_items(prop, prop_deform_axis_items);
+  api_def_prop_ui_text(prop, "Deform Axis", "The axis that the curve deforms along");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_build(BlenderRNA *brna)
+static void api_def_mod_build(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "BuildModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Build Modifier", "Build effect modifier");
-  RNA_def_struct_sdna(srna, "BuildModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_BUILD);
+  sapi = api_def_struct(dapi, "BuildMod", "Mod");
+  api_def_struct_ui_text(sapi, "Build Mod", "Build effect mod");
+  api_def_struct_stype(sapi, "BuildModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_BUILD);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "frame_start", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "start");
-  RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  RNA_def_property_ui_text(prop, "Start Frame", "Start frame of the effect");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "frame_start", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "start");
+  api_def_prop_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_prop_ui_text(prop, "Start Frame", "Start frame of the effect");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "frame_duration", PROP_FLOAT, PROP_TIME);
-  api_def_property_float_sdna(prop, NULL, "length");
-  api_def_property_range(prop, 1, MAXFRAMEF);
-  api_def_property_ui_text(prop, "Length", "Total time the build effect requires");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "frame_duration", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_sdna(prop, NULL, "length");
+  api_def_prop_range(prop, 1, MAXFRAMEF);
+  api_def_prop_ui_text(prop, "Length", "Total time the build effect requires");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "use_reverse", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_REVERSE);
-  api_def_property_ui_text(prop, "Reversed", "Deconstruct the mesh instead of building it");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_reverse", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", MOD_BUILD_FLAG_REVERSE);
+  api_def_prop_ui_text(prop, "Reversed", "Deconstruct the mesh instead of building it");
+  api_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "use_random_order", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_BUILD_FLAG_RANDOMIZE);
-  api_def_property_ui_text(prop, "Randomize", "Randomize the faces or edges during build");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_random_order", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_BUILD_FLAG_RANDOMIZE);
+  api_def_prop_ui_text(prop, "Randomize", "Randomize the faces or edges during build");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(srna, "seed", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, 1, MAXFRAMEF);
   api_def_prop_ui_text(prop, "Seed", "Seed for random if used");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_mirror(BlenderRNA *brna)
+static void api_def_mod_mirror(DuneApi *dapu)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MirrorModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Mirror Modifier", "Mirroring modifier");
-  RNA_def_struct_sdna(srna, "MirrorModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MIRROR);
+  sapi = api_def_struct(dapi, "MirrorMod", "Modifier");
+  apu_def_struct_ui_text(sapi, "Mirror Mod", "Mirroring modifier");
+  api_def_struct_stype(sapi, "MirrorModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MIRROR);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_AXIS_X);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Mirror Axis", "Enable axis mirror");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_axis", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_AXIS_X);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Mirror Axis", "Enable axis mirror");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_bisect_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_BISECT_AXIS_X);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bisect Axis", "Cuts the mesh across the mirror plane");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_bisect_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_BISECT_AXIS_X);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bisect Axis", "Cuts the mesh across the mirror plane");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_bisect_flip_axis", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_bisect_flip_axis", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_BISECT_FLIP_AXIS_X);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Bisect Flip Axis", "Flips the direction of the slice");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_clip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_CLIPPING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_clip", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_CLIPPING);
+  api_def_prop_ui_text(
       prop, "Clip", "Prevent vertices from going through the mirror during transform");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_vertex_groups", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_VGROUP);
-  RNA_def_property_ui_text(prop, "Mirror Vertex Groups", "Mirror vertex groups (e.g. .R->.L)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_mirror_vertex_groups", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_VGROUP);
+  api_def_prop_ui_text(prop, "Mirror Vertex Groups", "Mirror vertex groups (e.g. .R->.L)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_merge", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", MOD_MIR_NO_MERGE);
-  RNA_def_property_ui_text(prop, "Merge Vertices", "Merge vertices within the merge threshold");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_mirror_merge", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", MOD_MIR_NO_MERGE);
+  api_def_prop_ui_text(prop, "Merge Vertices", "Merge vertices within the merge threshold");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_u", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_MIRROR_U);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mirror_u", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_U);
+  RNA_def_prop_ui_text(
       prop, "Mirror U", "Mirror the U texture coordinate around the flip offset point");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
