@@ -2548,11 +2548,11 @@ static void api_def_mod_hook(BlenderRNA *brna)
   api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = api_def_prop(sapo, "falloff_type", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_items(prop, modifier_warp_falloff_items); /* share the enum */
+  api_def_prop_enum_items(prop, mod_warp_falloff_items); /* share the enum */
   api_def_prop_ui_text(prop, "Falloff Type", "");
-  api_def_prop_translation_context(prop,
-                                       BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_translation_cxt(prop,
+                                       LANG_CXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_sdna(prop, NULL, "falloff");
@@ -2560,56 +2560,56 @@ static void api_def_mod_hook(BlenderRNA *brna)
   api_def_prop_ui_range(prop, 0, 100, 100, 2);
   api_def_prop_ui_text(
       prop, "Radius", "If not zero, the distance from the hook where influence ends");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "falloff_curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ptr_sdna(prop, NULL, "curfalloff");
-  RNA_def_property_ui_text(prop, "Falloff Curve", "Custom falloff curve");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "falloff_curve", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curfalloff");
+  api_def_prop_ui_text(prop, "Falloff Curve", "Custom falloff curve");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "center", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "cent");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "center", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "cent");
+  api_def_prop_ui_text(
       prop, "Hook Center", "Center of the hook, used for falloff and display");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "matrix_inverse", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "parentinv");
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "matrix_inverse", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "parentinv");
+  api_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+  api_def_prop_ui_text(
       prop, "Matrix", "Reverse the transformation between this object and its target");
-  RNA_def_property_update(prop, NC_OBJECT | ND_TRANSFORM, "rna_Modifier_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_TRANSFORM, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Object", "Parent Object for hook, also recalculates and clears offset");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_HookModifier_object_override_apply");
-  RNA_def_property_pointer_funcs(prop, NULL, "rna_HookModifier_object_set", NULL, NULL);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_override_fns(prop, NULL, NULL, "api_HookMod_object_override_apply");
+  api_def_prop_ptr_fns(prop, NULL, "api_HookMod_object_set", NULL, NULL);
+  api_def_prop_update(prop, 0, "apo_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "subtarget", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "subtarget");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "subtarget", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "subtarget");
+  api_def_prop_ui_text(
       prop,
       "Sub-Target",
       "Name of Parent Bone for hook (if applicable), also recalculates and clears offset");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_HookModifier_subtarget_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_string_f s(prop, NULL, NULL, "rna_HookModifier_subtarget_set");
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "use_falloff_uniform", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_HOOK_UNIFORM_SPACE);
-  RNA_def_property_ui_text(prop, "Uniform Falloff", "Compensate for non-uniform object scale");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "use_falloff_uniform", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_HOOK_UNIFORM_SPACE);
+  api_def_prop_ui_text(prop, "Uniform Falloff", "Compensate for non-uniform object scale");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
       "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_prop_string_funcs(prop, NULL, NULL, "apo_HookMod_name_set");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_string_funcs(prop, NULL, NULL, "apo_HookMod_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "vertex_indices", PROP_INT, PROP_UNSIGNED);
   api_def_prop_array(prop, API_MAX_ARRAY_LENGTH);
@@ -2728,50 +2728,49 @@ static void api_def_mod_bool(ApiDune *dapi)
       prop, "Collection", "Use mesh objects in this collection for Boolean operation");
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = api_def_prop(srna, "operation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_operation_items);
-  RNA_def_property_enum_default(prop, eBooleanModifierOp_Difference);
-  RNA_def_property_ui_text(prop, "Operation", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "operation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_op_items);
+  api_def_prop_enum_default(prop, eBoolModOp_Difference);
+  api_def_prop_ui_text(prop, "Op", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "operand_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_operand_items);
-  RNA_def_property_ui_text(prop, "Operand Type", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "operand_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_operand_items);
+  api_def_prop_ui_text(prop, "Operand Type", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "double_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "double_threshold");
-  RNA_def_property_range(prop, 0, 1.0f);
-  RNA_def_property_ui_range(prop, 0, 1, 1.0, 6);
-  RNA_def_property_ui_scale_type(prop, PROP_SCALE_LOG);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "double_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "double_threshold");
+  api_def_prop_range(prop, 0, 1.0f);
+  api_def_prop_ui_range(prop, 0, 1, 1.0, 6);
+  api_def_prop_ui_scale_type(prop, PROP_SCALE_LOG);
+  api_def_prop_ui_text(
       prop, "Overlap Threshold", "Threshold for checking overlapping geometry");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "solver", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_solver_items);
-  RNA_def_property_enum_default(prop, eBooleanModifierSolver_Exact);
-  RNA_def_property_ui_text(prop, "Solver", "Method for calculating booleans");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "solver", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_solver_items);
+  api_def_prop_enum_default(prop, eBoolModSolver_Exact);
+  api_def_prop_ui_text(prop, "Solver", "Method for calculating bools");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_self", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eBooleanModifierFlag_Self);
-  RNA_def_property_ui_text(prop, "Self Intersection", "Allow self-intersection in operands");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_self", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", eBoolModFlag_Self);
+  api_def_prop_ui_text(prop, "Self Intersection", "Allow self-intersection in operands");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_hole_tolerant", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eBooleanModifierFlag_HoleTolerant);
-  RNA_def_property_ui_text(prop, "Hole Tolerant", "Better results when there are holes (slower)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_hole_tolerant", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eBoolModFlag_HoleTolerant);
+  api_def_prop_ui_text(prop, "Hole Tolerant", "Better results when there are holes (slower)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  /* BMesh debugging options, only used when G_DEBUG is set */
-
-  /* BMesh intersection options */
-  static const EnumPropertyItem debug_items[] = {
-      {eBooleanModifierBMeshFlag_BMesh_Separate, "SEPARATE", 0, "Separate", ""},
-      {eBooleanModifierBMeshFlag_BMesh_NoDissolve, "NO_DISSOLVE", 0, "No Dissolve", ""},
-      {eBooleanModifierBMeshFlag_BMesh_NoConnectRegions,
+  /* Mesh debugging options, only used when G_DEBUG is set */
+  /* Mesh intersection options */
+  static const EnumPropItem debug_items[] = {
+      {eBoolModMeshFlag_Mesh_Separate, "SEPARATE", 0, "Separate", ""},
+      {eBoolModMeshFlag_Mesh_NoDissolve, "NO_DISSOLVE", 0, "No Dissolve", ""},
+      {eBoolModMeshFlag_Mesh_NoConnectRegions,
        "NO_CONNECT_REGIONS",
        0,
        "No Connect Regions",
@@ -2779,12 +2778,12 @@ static void api_def_mod_bool(ApiDune *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "debug_options", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, debug_items);
-  RNA_def_property_enum_sdna(prop, NULL, "bm_flag");
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG);
-  RNA_def_property_ui_text(prop, "Debug", "Debugging options, only when started with '-d'");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "debug_options", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, debug_items);
+  api_def_prop_enum_stype(prop, NULL, "bm_flag");
+  api_def_prop_flag(prop, PROP_ENUM_FLAG);
+  api_def_prop_ui_text(prop, "Debug", "Debugging options, only when started with '-d'");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   RNA_define_lib_overridable(false);
 }
