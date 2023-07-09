@@ -2608,16 +2608,16 @@ static void api_def_mod_hook(BlenderRNA *brna)
       prop,
       "Vertex Group",
       "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_HookModifier_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_prop_string_funcs(prop, NULL, NULL, "apo_HookMod_name_set");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_indices", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_array(prop, RNA_MAX_ARRAY_LENGTH);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_dynamic_array_funcs(prop, "rna_HookModifier_vertex_indices_get_length");
-  RNA_def_property_int_funcs(prop, "rna_HookModifier_vertex_indices_get", NULL, NULL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "vertex_indices", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_array(prop, API_MAX_ARRAY_LENGTH);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_dynamic_array_fns(prop, "api_HookMod_vertex_indices_get_length");
+  api_def_prop_int_fns(prop, "api_HookMod_vertex_indices_get", NULL, NULL);
+  api_def_prop_ui_text(prop,
                            "Vertex Indices",
                            "Indices of vertices bound to the modifier. For bezier curves, "
                            "handles count as additional vertices");
@@ -2633,47 +2633,47 @@ static void api_def_mod_hook(BlenderRNA *brna)
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_HOOK_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  apu_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_softbody(DuneApi *dapi)
+static void api_def_mod_softbody(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SoftBodyModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Soft Body Modifier", "Soft body simulation modifier");
-  RNA_def_struct_sdna(srna, "SoftbodyModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SOFT);
+  sapi= api_def_struct(dapi, "SoftBodyMod", "Mod");
+  api_def_struct_ui_text(sapi, "Soft Body Mod", "Soft body simulation modifier");
+  api_def_struct_stype(sapi, "SoftbodyModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SOFT);
 
-  prop = RNA_def_property(srna, "settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "SoftBodySettings");
-  RNA_def_property_pointer_funcs(prop, "rna_SoftBodyModifier_settings_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Soft Body Settings", "");
+  prop = api_def_prop(srna, "settings", PROP_PTR, PROP_NONE);
+  apu_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "SoftBodySettings");
+  api_def_prop_ptr_fns(prop, "rna_SoftBodyMod_settings_get", NULL, NULL, NULL);
+  apu_def_prop_ui_text(prop, "Soft Body Settings", "");
 
-  prop = RNA_def_property(srna, "point_cache", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PointCache");
-  RNA_def_property_pointer_funcs(prop, "rna_SoftBodyModifier_point_cache_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Soft Body Point Cache", "");
+  prop = api_def_prop(sapi, "point_cache", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PointCache");
+  api_def_prop_ptr_fns(prop, "api_SoftBodyMod_point_cache_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Soft Body Point Cache", "");
 }
 
-static void rna_def_modifier_boolean(BlenderRNA *brna)
+static void api_def_mod_bool(ApiDune *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_operand_items[] = {
-      {eBooleanModifierFlag_Object,
+  static const EnumPropItem prop_operand_items[] = {
+      {eBoolModFlag_Object,
        "OBJECT",
        0,
        "Object",
        "Use a mesh object as the operand for the Boolean operation"},
-      {eBooleanModifierFlag_Collection,
+      {eBoolModFlag_Collection,
        "COLLECTION",
        0,
        "Collection",
@@ -2681,14 +2681,14 @@ static void rna_def_modifier_boolean(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_operation_items[] = {
-      {eBooleanModifierOp_Intersect,
+  static const EnumPropItem prop_op_items[] = {
+      {eBoolModOp_Intersect,
        "INTERSECT",
        0,
        "Intersect",
        "Keep the part of the mesh that is common between all operands"},
-      {eBooleanModifierOp_Union, "UNION", 0, "Union", "Combine meshes in an additive way"},
-      {eBooleanModifierOp_Difference,
+      {eBoolModOp_Union, "UNION", 0, "Union", "Combine meshes in an additive way"},
+      {eBoolModOp_Difference,
        "DIFFERENCE",
        0,
        "Difference",
@@ -2696,39 +2696,39 @@ static void rna_def_modifier_boolean(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_solver_items[] = {
-      {eBooleanModifierSolver_Fast,
+  static const EnumPropItem prop_solver_items[] = {
+      {eBoolodSolver_Fast,
        "FAST",
        0,
        "Fast",
        "Simple solver for the best performance, without support for overlapping geometry"},
-      {eBooleanModifierSolver_Exact, "EXACT", 0, "Exact", "Advanced solver for the best result"},
+      {eBoolModSolver_Exact, "EXACT", 0, "Exact", "Advanced solver for the best result"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "BooleanModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Boolean Modifier", "Boolean operations modifier");
-  RNA_def_struct_sdna(srna, "BooleanModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_BOOLEAN);
+  sapi = api_def_struct(brna, "BooleanMod", "Mod");
+  api_def_struct_ui_text(srna, "Boolean Mod", "Book ops mod");
+  api_def_struct_sdna(srna, "BooleanModData");
+  api_def_struct_ui_icon(srna, ICON_MOD_BOOL);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Mesh object to use for Boolean operation");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_BooleanModifier_object_set", NULL, "rna_Mesh_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(srna, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Object", "Mesh object to use for Boolean operation");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_BoolMod_object_set", NULL, "api_Mesh_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "collection");
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "collection", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "collection");
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
+  api_def_prop_ui_text(
       prop, "Collection", "Use mesh objects in this collection for Boolean operation");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "operation", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(srna, "operation", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, prop_operation_items);
   RNA_def_property_enum_default(prop, eBooleanModifierOp_Difference);
   RNA_def_property_ui_text(prop, "Operation", "");
