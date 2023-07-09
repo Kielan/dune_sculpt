@@ -2622,24 +2622,24 @@ static void api_def_mod_hook(BlenderRNA *brna)
                            "Indices of vertices bound to the modifier. For bezier curves, "
                            "handles count as additional vertices");
 
-  func = RNA_def_function(srna, "vertex_indices_set", "rna_HookModifier_vertex_indices_set");
-  RNA_def_function_ui_description(
-      func, "Validates and assigns the array of vertex indices bound to the modifier");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_int_array(
-      func, "indices", 1, NULL, INT_MIN, INT_MAX, "", "Vertex Indices", 0, INT_MAX);
-  RNA_def_property_array(parm, RNA_MAX_ARRAY_LENGTH);
-  RNA_def_parameter_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "vertex_indices_set", "rna_HookModifier_vertex_indices_set");
+  api_def_fn_ui_description(
+      fn, "Validates and assigns the array of vertex indices bound to the modifier");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_int_array(
+      fn, "indices", 1, NULL, INT_MIN, INT_MAX, "", "Vertex Indices", 0, INT_MAX);
+  api_def_prop_array(parm, RNA_MAX_ARRAY_LENGTH);
+  api_def_param_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_HOOK_INVERT_VGROUP);
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_HOOK_INVERT_VGROUP);
   RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
   RNA_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_softbody(BlenderRNA *brna)
+static void rna_def_modifier_softbody(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
