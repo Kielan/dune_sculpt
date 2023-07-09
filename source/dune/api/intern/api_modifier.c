@@ -1794,21 +1794,21 @@ static void api_def_mod_warp(DunrApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapu, "WarpModifier", "Modifier");
-  api_def_struct_ui_text(sapi, "Warp Modifier", "Warp modifier");
-  api_def_struct_sdna(sapi, "WarpModifierData");
+  sapi = api_def_struct(dapu, "WarpMod", "Mod");
+  api_def_struct_ui_text(sapi, "Warp Mod", "Warp mod");
+  api_def_struct_stype(sapi, "WarpModifierData");
   api_def_struct_ui_icon(srna, ICON_MOD_WARP);
 
   api_define_lib_overridable(true);
 
-  prop = api_def_prop(sapi, "object_from", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "object_from", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "object_from");
   api_def_prop_ui_text(prop, "Object From", "Object to transform from");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "bone_from", PROP_STRING, PROP_NONE);
-  api_def_prop_string_sdna(prop, NULL, "bone_from");
+  api_def_prop_string_stype(prop, NULL, "bone_from");
   api_def_prop_ui_text(prop, "Bone From", "Bone to transform from");
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
@@ -1832,8 +1832,8 @@ static void api_def_mod_warp(DunrApi *dapi)
   prop = api_def_prop(sapi, "falloff_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, mod_warp_falloff_items);
   api_def_prop_ui_text(prop, "Falloff Type", "");
-  api_def_prop_translation_context(prop,
-                                    BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
+  api_def_prop_translation_cxt(prop,
+                               LANG_CXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
@@ -2106,11 +2106,11 @@ static void api_def_mod_mirror(DuneApi *dapu)
   api_def_prop_ui_text(prop, "Bisect Axis", "Cuts the mesh across the mirror plane");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_bisect_flip_axis", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_BISECT_FLIP_AXIS_X);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bisect Flip Axis", "Flips the direction of the slice");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(srna, "use_bisect_flip_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flag", MOD_MIR_BISECT_FLIP_AXIS_X);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bisect Flip Axis", "Flips the direction of the slice");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_clip", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_CLIPPING);
@@ -2129,16 +2129,16 @@ static void api_def_mod_mirror(DuneApi *dapu)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_mirror_u", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_U);
-  RNA_def_prop_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_U);
+  api_def_prop_ui_text(
       prop, "Mirror U", "Mirror the U texture coordinate around the flip offset point");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_v", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_MIRROR_V);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mirror_v", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_V);
+  api_def_prop_ui_text(
       prop, "Mirror V", "Mirror the V texture coordinate around the flip offset point");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_mirror_udim", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_UDIM);
@@ -2533,37 +2533,37 @@ static void api_def_mod_hook(BlenderRNA *brna)
   ApiFn *fn;
   ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "HookModifier", "Modifier");
-  RNA_def_struct_ui_text(
-      srna, "Hook Modifier", "Hook modifier to modify the location of vertices");
-  RNA_def_struct_sdna(srna, "HookModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_HOOK);
+  sapi = api_def_struct(dapi, "HookMod", "Mod");
+  api_def_struct_ui_text(
+      sapi, "Hook Mod", "Hook mod to modify the location of vertices");
+  api_def_struct_stype(sapi, "HookModData");
+  api_def_struct_ui_icon(sapi, ICON_HOOK);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "force");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Strength", "Relative force of the hook");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "force");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Strength", "Relative force of the hook");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "falloff_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, modifier_warp_falloff_items); /* share the enum */
-  RNA_def_property_ui_text(prop, "Falloff Type", "");
-  RNA_def_property_translation_context(prop,
+  prop = api_def_prop(sapo, "falloff_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, modifier_warp_falloff_items); /* share the enum */
+  api_def_prop_ui_text(prop, "Falloff Type", "");
+  api_def_prop_translation_context(prop,
                                        BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "falloff");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 100, 100, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_sdna(prop, NULL, "falloff");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 100, 100, 2);
+  api_def_prop_ui_text(
       prop, "Radius", "If not zero, the distance from the hook where influence ends");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "falloff_curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curfalloff");
+  prop = api_def_prop(sapi, "falloff_curve", PROP_POINTER, PROP_NONE);
+  RNA_def_property_ptr_sdna(prop, NULL, "curfalloff");
   RNA_def_property_ui_text(prop, "Falloff Curve", "Custom falloff curve");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
