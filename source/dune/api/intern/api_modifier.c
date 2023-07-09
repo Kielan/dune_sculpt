@@ -2123,91 +2123,91 @@ static void api_def_mod_mirror(DuneApi *dapu)
   api_def_prop_ui_text(prop, "Mirror Vertex Groups", "Mirror vertex groups (e.g. .R->.L)");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_mirror_merge", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_mirror_merge", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "flag", MOD_MIR_NO_MERGE);
   api_def_prop_ui_text(prop, "Merge Vertices", "Merge vertices within the merge threshold");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_mirror_u", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_mirror_u", PROP_BOOL, PROP_NONE);
   RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_U);
   RNA_def_prop_ui_text(
       prop, "Mirror U", "Mirror the U texture coordinate around the flip offset point");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_v", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_mirror_v", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_MIRROR_V);
   RNA_def_property_ui_text(
       prop, "Mirror V", "Mirror the V texture coordinate around the flip offset point");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_mirror_udim", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MIR_MIRROR_UDIM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mirror_udim", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MIR_MIRROR_UDIM);
+  api_def_prop_ui_text(
       prop, "Mirror UDIM", "Mirror the texture coordinate around each tile center");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mirror_offset_u", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "uv_offset[0]");
-  RNA_def_property_range(prop, -1, 1);
-  RNA_def_property_ui_range(prop, -1, 1, 2, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mirror_offset_u", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "uv_offset[0]");
+  api_def_prop_range(prop, -1, 1);
+  api_def_prop_ui_range(prop, -1, 1, 2, 4);
+  api_def_prop_ui_text(
       prop,
       "Flip U Offset",
       "Amount to offset mirrored UVs flipping point from the 0.5 on the U axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "mirror_offset_v", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "uv_offset[1]");
-  RNA_def_property_range(prop, -1, 1);
-  RNA_def_property_ui_range(prop, -1, 1, 2, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mirror_offset_v", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "uv_offset[1]");
+  api_def_prop_range(prop, -1, 1);
+  api_def_prop_ui_range(prop, -1, 1, 2, 4);
+  api_def_prop_ui_text(
       prop,
       "Flip V Offset",
       "Amount to offset mirrored UVs flipping point from the 0.5 point on the V axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  apo_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "offset_u", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "uv_offset_copy[0]");
-  RNA_def_property_range(prop, -10000.0f, 10000.0f);
-  RNA_def_property_ui_range(prop, -1, 1, 2, 4);
-  RNA_def_property_ui_text(prop, "U Offset", "Mirrored UV offset on the U axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "offset_u", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "uv_offset_copy[0]");
+  api_def_prop_range(prop, -10000.0f, 10000.0f);
+  api_def_prop_ui_range(prop, -1, 1, 2, 4);
+  api_def_prop_ui_text(prop, "U Offset", "Mirrored UV offset on the U axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "offset_v", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "uv_offset_copy[1]");
-  RNA_def_property_range(prop, -10000.0f, 10000.0f);
-  RNA_def_property_ui_range(prop, -1, 1, 2, 4);
-  RNA_def_property_ui_text(prop, "V Offset", "Mirrored UV offset on the V axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "offset_v", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "uv_offset_copy[1]");
+  api_def_prop_range(prop, -10000.0f, 10000.0f);
+  api_def_prop_ui_range(prop, -1, 1, 2, 4);
+  api_def_prop_ui_text(prop, "V Offset", "Mirrored UV offset on the V axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "tolerance");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 0.01, 6);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "tolerance");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 0.01, 6);
+  api_def_prop_ui_text(
       prop, "Merge Distance", "Distance within which mirrored vertices are merged");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "bisect_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "bisect_threshold");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 0.01, 6);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bisect_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "bisect_threshold");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 0.01, 6);
+  api_def_prop_ui_text(
       prop, "Bisect Distance", "Distance from the bisect plane within which vertices are removed");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mirror_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "mirror_ob");
-  RNA_def_property_ui_text(prop, "Mirror Object", "Object to use as mirror");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "mirror_object", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "mirror_ob");
+  api_def_prop_ui_text(prop, "Mirror Object", "Object to use as mirror");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_dependency_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_decimate(BlenderRNA *brna)
+static void api_def_mod_decimate(DuneApi *dapi)
 {
-  static const EnumPropertyItem modifier_decim_mode_items[] = {
+  static const EnumPropItem mod_decim_mode_items[] = {
       {MOD_DECIM_MODE_COLLAPSE, "COLLAPSE", 0, "Collapse", "Use edge collapsing"},
       {MOD_DECIM_MODE_UNSUBDIV, "UNSUBDIV", 0, "Un-Subdivide", "Use un-subdivide face reduction"},
       {MOD_DECIM_MODE_DISSOLVE,
@@ -2219,253 +2219,252 @@ static void rna_def_modifier_decimate(BlenderRNA *brna)
   };
 
   /* NOTE: keep in sync with operator 'MESH_OT_decimate'. */
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  sapi = api_def_struct(dapi, "DecimateMod", "Mod");
+  api_def_struct_ui_text(sapi, "Decimate Mod", "Decimation mod");
+  api_def_struct_sdna(sapi, "DecimateModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_DECIM);
 
-  srna = RNA_def_struct(brna, "DecimateModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Decimate Modifier", "Decimation modifier");
-  RNA_def_struct_sdna(srna, "DecimateModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_DECIM);
+  api_define_lib_overridable(true);
 
-  RNA_define_lib_overridable(true);
-
-  prop = RNA_def_property(srna, "decimate_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, modifier_decim_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "decimate_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, modifier_decim_mode_items);
+  api_def_prop_ui_text(prop, "Mode", "");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   /* (mode == MOD_DECIM_MODE_COLLAPSE) */
-  prop = RNA_def_property(srna, "ratio", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "percent");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_range(prop, 0, 1, 1, 4);
-  RNA_def_property_ui_text(prop, "Ratio", "Ratio of triangles to reduce to (collapse only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapo, "ratio", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "percent");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_range(prop, 0, 1, 1, 4);
+  api_def_prop_ui_text(prop, "Ratio", "Ratio of triangles to reduce to (collapse only)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* (mode == MOD_DECIM_MODE_UNSUBDIV) */
-  prop = RNA_def_property(srna, "iterations", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "iter");
-  RNA_def_property_range(prop, 0, SHRT_MAX);
-  RNA_def_property_ui_range(prop, 0, 100, 1, -1);
-  RNA_def_property_ui_text(
-      prop, "Iterations", "Number of times reduce the geometry (unsubdivide only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "iters", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "iter");
+  api_def_prop_range(prop, 0, SHRT_MAX);
+  api_def_prop_ui_range(prop, 0, 100, 1, -1);
+  api_def_prop_ui_text(
+      prop, "Iters", "Number of times reduce the geometry (unsubdivide only)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* (mode == MOD_DECIM_MODE_DISSOLVE) */
-  prop = RNA_def_property(srna, "angle_limit", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "angle");
-  RNA_def_property_range(prop, 0, DEG2RAD(180));
-  RNA_def_property_ui_range(prop, 0, DEG2RAD(180), 10, 2);
-  RNA_def_property_ui_text(prop, "Angle Limit", "Only dissolve angles below this (planar only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "angle_limit", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "angle");
+  api_def_prop_range(prop, 0, DEG2RAD(180));
+  api_def_prop_ui_range(prop, 0, DEG2RAD(180), 10, 2);
+  api_def_prop_ui_text(prop, "Angle Limit", "Only dissolve angles below this (planar only)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* (mode == MOD_DECIM_MODE_COLLAPSE) */
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name (collapse only)");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_DecimateModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name (collapse only)");
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_DecimateModifier_defgrp_name_set");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_DECIM_FLAG_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence (collapse only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_DECIM_FLAG_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence (collapse only)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_collapse_triangulate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_DECIM_FLAG_TRIANGULATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_collapse_triangulate", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_DECIM_FLAG_TRIANGULATE);
+  api_def_prop_ui_text(
       prop, "Triangulate", "Keep triangulated faces resulting from decimation (collapse only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_symmetry", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_DECIM_FLAG_SYMMETRY);
-  RNA_def_property_ui_text(prop, "Symmetry", "Maintain symmetry on an axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_symmetry", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_DECIM_FLAG_SYMMEnn     
+  api_def_prop_ui_text(prop, "Symmetry", "Maintain symmetry on an axis");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "symmetry_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "symmetry_axis");
-  RNA_def_property_enum_items(prop, rna_enum_axis_xyz_items);
-  RNA_def_property_ui_text(prop, "Axis", "Axis of symmetry");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "symmetry_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "symmetry_axis");
+  api_def_prop_enum_items(prop, api_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "Axis", "Axis of symmetry");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "defgrp_factor");
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_range(prop, 0, 10, 1, 4);
-  RNA_def_property_ui_text(prop, "Factor", "Vertex group strength");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "defgrp_factor");
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_range(prop, 0, 10, 1, 4);
+  api_def_prop_ui_text(prop, "Factor", "Vertex group strength");
+  api_def_prop_update(prop, 0, "api_Mod_update");
   /* end collapse-only option */
 
   /* (mode == MOD_DECIM_MODE_DISSOLVE) */
-  prop = RNA_def_property(srna, "use_dissolve_boundaries", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_dissolve_boundaries", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stypr(prop, NULL, "flag", MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS);
+  api_def_prop_ui_text(
       prop, "All Boundaries", "Dissolve all vertices in between face boundaries (planar only)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "delimit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG); /* important to run before default set */
-  RNA_def_property_enum_items(prop, rna_enum_mesh_delimit_mode_items);
-  RNA_def_property_ui_text(prop, "Delimit", "Limit merging geometry");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "delimit", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_ENUM_FLAG); /* important to run before default set */
+  api_def_prop_enum_items(prop, api_enum_mesh_delimit_mode_items);
+  api_def_prop_ui_text(prop, "Delimit", "Limit merging geometry");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* end dissolve-only option */
 
   /* all modes use this */
-  prop = RNA_def_property(srna, "face_count", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "face_count", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Face Count", "The current number of faces in the decimated mesh");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_wave(BlenderRNA *brna)
+static void api_def_mod_wave(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WaveModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Wave Modifier", "Wave effect modifier");
-  RNA_def_struct_sdna(srna, "WaveModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_WAVE);
+  sapi = api_def_struct(dapi, "WaveMod", "Mod");
+  api_def_struct_ui_text(sapi, "Wave Mod", "Wave effect mod");
+  api_def_struct_stype(sapi, "WaveModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_WAVE);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_X);
-  RNA_def_property_ui_text(prop, "X", "X axis motion");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_X);
+  api_def_prop_ui_text(prop, "X", "X axis motion");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_Y);
-  RNA_def_property_ui_text(prop, "Y", "Y axis motion");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_Y);
+  api_def_prop_ui_text(prop, "Y", "Y axis motion");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_CYCL);
-  RNA_def_property_ui_text(prop, "Cyclic", "Cyclic wave effect");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_CYCL);
+  api_def_prop_ui_text(prop, "Cyclic", "Cyclic wave effect");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_normal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM);
-  RNA_def_property_ui_text(prop, "Normals", "Displace along normals");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flag", MOD_WAVE_NORM);
+  api_def_prop_ui_text(prop, "Normals", "Displace along normals");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_normal_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM_X);
-  RNA_def_property_ui_text(prop, "X Normal", "Enable displacement along the X normal");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM_X);
+  api_def_prop_ui_text(prop, "X Normal", "Enable displacement along the X normal");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_normal_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM_Y);
-  RNA_def_property_ui_text(prop, "Y Normal", "Enable displacement along the Y normal");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM_Y);
+  api_def_prop_ui_text(prop, "Y Normal", "Enable displacement along the Y normal");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_normal_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM_Z);
-  RNA_def_property_ui_text(prop, "Z Normal", "Enable displacement along the Z normal");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "use_normal_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM_Z);
+  api_def_property_ui_text(prop, "Z Normal", "Enable displacement along the Z normal");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "time_offset", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "timeoffs");
-  RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  RNA_def_property_ui_text(
+  prop = api_def_property(srna, "time_offset", PROP_FLOAT, PROP_TIME);
+  api_def_property_float_sdna(prop, NULL, "timeoffs");
+  api_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_property_ui_text(
       prop,
       "Time Offset",
       "Either the starting frame (for positive speed) or ending frame (for negative speed.)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "lifetime", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "lifetime");
-  RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  RNA_def_property_ui_text(
+  prop = api_def_property(srna, "lifetime", PROP_FLOAT, PROP_TIME);
+  api_def_property_float_sdna(prop, NULL, "lifetime");
+  api_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_property_ui_text(
       prop, "Lifetime", "Lifetime of the wave in frames, zero means infinite");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "damping_time", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "damp");
-  RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "damping_time", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "damp");
+  api_def_prop_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_prop_ui_text(
       prop, "Damping Time", "Number of frames in which the wave damps out after it dies");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "falloff");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 100, 100, 2);
-  RNA_def_property_ui_text(prop, "Falloff Radius", "Distance after which it fades out");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "falloff_radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "falloff");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 100, 100, 2);
+  api_def_prop_ui_text(prop, "Falloff Radius", "Distance after which it fades out");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "start_position_x", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "startx");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -100, 100, 100, 2);
-  RNA_def_property_ui_text(prop, "Start Position X", "X coordinate of the start position");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "start_position_x", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "startx");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -100, 100, 100, 2);
+  api_def_prop_ui_text(prop, "Start Position X", "X coordinate of the start position");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "start_position_y", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "starty");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -100, 100, 100, 2);
-  RNA_def_property_ui_text(prop, "Start Position Y", "Y coordinate of the start position");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "start_position_y", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "starty");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -100, 100, 100, 2);
+  api_def_prop_ui_text(prop, "Start Position Y", "Y coordinate of the start position");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "start_position_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "objectcenter");
-  RNA_def_property_ui_text(prop, "Start Position Object", "Object which defines the wave center");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(srna, "start_position_object", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "objectcenter");
+  api_def_prop_ui_text(prop, "Start Position Object", "Object which defines the wave center");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the wave");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WaveModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the wave");
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_WaveModifier_defgrp_name_set");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "speed", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1, 1, 10, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "speed", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1, 1, 10, 2);
+  api_def_prop_ui_text(
       prop, "Speed", "Speed of the wave, towards the starting point when negative");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -2, 2, 10, 2);
-  RNA_def_property_ui_text(prop, "Height", "Height of the wave");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "height", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -2, 2, 10, 2);
+  aoj_def_prop_ui_text(prop, "Height", "Height of the wave");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "width", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 5, 10, 2);
-  RNA_def_property_ui_text(prop, "Width", "Distance between the waves");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "width", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 5, 10, 2);
+  api_def_prop_ui_text(prop, "Width", "Distance between the waves");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "narrowness", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "narrow");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 10, 10, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "narrowness", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "narrow");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 10, 10, 2);
+  api_def_prop_ui_text(
       prop,
       "Narrowness",
       "Distance between the top and the base of a wave, the higher the value, "
       "the more narrow the wave");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  rna_def_modifier_generic_map_info(srna);
+  api_def_mod_generic_map_info(sapi);
 }
 
-static void rna_def_modifier_armature(BlenderRNA *brna)
+static void api_def_mod_armature(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
