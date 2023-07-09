@@ -2349,7 +2349,7 @@ static void api_def_mod_wave(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = api_def_prop(sapi, "use_normal", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "flag", MOD_WAVE_NORM);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM);
   api_def_prop_ui_text(prop, "Normals", "Displace along normals");
   api_def_prop_update(prop, 0, "rna_Modifier_update");
 
@@ -2363,24 +2363,24 @@ static void api_def_mod_wave(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Y Normal", "Enable displacement along the Y normal");
   api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = api_def_property(srna, "use_normal_z", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", MOD_WAVE_NORM_Z);
-  api_def_property_ui_text(prop, "Z Normal", "Enable displacement along the Z normal");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM_Z);
+  api_def_prop_ui_text(prop, "Z Normal", "Enable displacement along the Z normal");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = api_def_property(srna, "time_offset", PROP_FLOAT, PROP_TIME);
-  api_def_property_float_sdna(prop, NULL, "timeoffs");
-  api_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "time_offset", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stypt(prop, NULL, "timeoffs");
+  api_def_prop_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_prop_ui_text(
       prop,
       "Time Offset",
       "Either the starting frame (for positive speed) or ending frame (for negative speed.)");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = api_def_property(srna, "lifetime", PROP_FLOAT, PROP_TIME);
-  api_def_property_float_sdna(prop, NULL, "lifetime");
-  api_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "lifetime", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "lifetime");
+  api_def_prop_range(prop, MINAFRAMEF, MAXFRAMEF);
+  api_def_prop_ui_text(
       prop, "Lifetime", "Lifetime of the wave in frames, zero means infinite");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
@@ -2412,17 +2412,17 @@ static void api_def_mod_wave(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Start Position Y", "Y coordinate of the start position");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "start_position_object", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "start_position_object", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "objectcenter");
   api_def_prop_ui_text(prop, "Start Position Object", "Object which defines the wave center");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "defgrp_name");
   api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the wave");
-  api_def_prop_string_fns(prop, NULL, NULL, "rna_WaveModifier_defgrp_name_set");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WaveMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_INVERT_VGROUP);
@@ -2466,72 +2466,72 @@ static void api_def_mod_wave(DuneApi *dapi)
 
 static void api_def_mod_armature(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ArmatureModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Armature Modifier", "Armature deformation modifier");
-  RNA_def_struct_sdna(srna, "ArmatureModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_ARMATURE);
+  sapi = api_def_struct(dapi, "ArmatureMod", "Mod");
+  api_def_struct_ui_text(sapi, "Armature Mod", "Armature deformation modifier");
+  api_def_struct_stype(sapi, "ArmatureModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_ARMATURE);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Armature object to deform with");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_ArmatureModifier_object_set", NULL, "rna_Armature_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Object", "Armature object to deform with");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_ArmatureMod_object_set", NULL, "rna_Armature_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "use_bone_envelopes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "deformflag", ARM_DEF_ENVELOPE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Use Bone Envelopes", "Bind Bone envelopes to armature modifier");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "use_bone_envelopes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "deformflag", ARM_DEF_ENVELOPE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Use Bone Envelopes", "Bind Bone envelopes to armature modifier");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "use_vertex_groups", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "deformflag", ARM_DEF_VGROUP);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Use Vertex Groups", "Bind vertex groups to armature modifier");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "use_vertex_groups", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "deformflag", ARM_DEF_VGROUP);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Use Vertex Groups", "Bind vertex groups to armature modifier");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "use_deform_preserve_volume", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "deformflag", ARM_DEF_QUATERNION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_deform_preserve_volume", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "deformflag", ARM_DEF_QUATERNION);
+  api_def_prop_ui_text(
       prop, "Preserve Volume", "Deform rotation interpolation with quaternions");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_multi_modifier", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "multi", 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_multi_mod", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "multi", 0);
+  api_def_prop_ui_text(
       prop,
-      "Multi Modifier",
+      "Multi Mod",
       "Use same input as previous modifier, and mix results using overall vgroup");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stupe(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
-      "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_ArmatureModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+      "Name of Vertex Group which determines influence of mod per point");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_ArmatureMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "deformflag", ARM_DEF_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_hook(BlenderRNA *brna)
+static void api_def_mod_hook(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiFn *fn;
+  ApiProp *parm;
 
   srna = RNA_def_struct(brna, "HookModifier", "Modifier");
   RNA_def_struct_ui_text(
