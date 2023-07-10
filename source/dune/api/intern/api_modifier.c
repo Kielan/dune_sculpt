@@ -2341,22 +2341,22 @@ static void api_def_mod_wave(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_y", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_Y);
   api_def_prop_ui_text(prop, "Y", "Y axis motion");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_CYCL);
   api_def_prop_ui_text(prop, "Cyclic", "Cyclic wave effect");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_normal", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM);
   api_def_prop_ui_text(prop, "Normals", "Displace along normals");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_normal_x", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM_X);
   api_def_prop_ui_text(prop, "X Normal", "Enable displacement along the X normal");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_normal_y", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WAVE_NORM_Y);
@@ -3359,34 +3359,34 @@ static void api_def_mod_laplaciansmooth(DuneApi *dapi)
   api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   api_def_prop_ui_range(prop, -1000.0, 1000.0, 5, 3);
   api_def_prop_ui_text(prop, "Lambda Factor", "Smooth factor effect");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "lambda_border", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_stype(prop, NULL, "lambda_border");
-  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_prop_ui_range(prop, -1000.0, 1000.0, 5, 3);
-  RNA_def_prop_ui_text(prop, "Lambda Border", "Lambda factor in border");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_float_stype(prop, NULL, "lambda_border");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1000.0, 1000.0, 5, 3);
+  api_def_prop_ui_text(prop, "Lambda Border", "Lambda factor in border");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "iterations", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "repeat");
-  RNA_def_prop_ui_range(prop, 0, 200, 1, -1);
-  RNA_def_prop_ui_text(prop, "Repeat", "");
-  RNA_def_prop_update(prop, 0, "apo_Mod_update");
+  api_def_prop_int_stype(prop, NULL, "repeat");
+  api_def_prop_ui_range(prop, 0, 200, 1, -1);
+  api_def_prop_ui_text(prop, "Repeat", "");
+  api_def_prop_update(prop, 0, "apo_Mod_update");
 
-  prop = RNA_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
       "Name of Vertex Group which determines influence of mod per point");
-  RNA_def_property_string_fns(prop, NULL, NULL, "api_LaplacianSmoothMod_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_LaplacianSmoothMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_INVERT_VGROUP);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   api_define_lib_overridable(false);
 }
@@ -3506,56 +3506,56 @@ static void api_def_mod_meshdeform(DuneApi *dapo)
   api_def_struct_stype(sapi, "MeshDeformModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_MESHDEFORM);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Mesh object to deform with");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_MeshDeformModifier_object_set", NULL, "rna_Mesh_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Object", "Mesh object to deform with");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_MeshDeformMod_object_set", NULL, "rna_Mesh_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "is_bound", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_MeshDeformModifier_is_bound_get", NULL);
-  RNA_def_property_ui_text(prop, "Bound", "Whether geometry has been bound to control cage");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "is_bound", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_MeshDeformMod_is_bound_get", NULL);
+  api_def_prop_ui_text(prop, "Bound", "Whether geometry has been bound to control cage");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MDEF_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", MOD_MDEF_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MeshDeformModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MeshDeformMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "precision", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "gridsize");
-  RNA_def_property_range(prop, 2, 10);
-  RNA_def_property_ui_text(prop, "Precision", "The grid size for binding");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "precision", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "gridsize");
+  api_def_prop_range(prop, 2, 10);
+  api_def_prop_ui_text(prop, "Precision", "The grid size for binding");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_dynamic_bind", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_MDEF_DYNAMIC_BIND);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_dynamic_bind", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_MDEF_DYNAMIC_BIND);
+  api_def_prop_ui_text(prop,
                            "Dynamic",
                            "Recompute binding dynamically on top of other deformers "
                            "(slower and more memory consuming)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
 #  if 0
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "Method of binding vertices are bound to cage mesh");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_mode_items);
+  api_def_prop_ui_text(prop, "Mode", "Method of binding vertices are bound to cage mesh");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 #  endif
 
   RNA_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_particlesystem(BlenderRNA *brna)
+static void api_def_mod_particlesystem(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
