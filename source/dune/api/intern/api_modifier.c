@@ -108,7 +108,7 @@ const EnumPropItem api_enum_object_mod_type_items[] = {
      ICON_MOD_BOOL,
      "Bool",
      "Use another shape to cut, combine or perform a difference operation"},
-    {eModifierType_Build,
+    {eModType_Build,
      "BUILD",
      ICON_MOD_BUILD,
      "Build",
@@ -3285,45 +3285,45 @@ static void api_def_mod_correctivesmooth(DuneApi *dapi)
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_CORRECTIVESMOOTH_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
-  api_def_prop_update(prop, 0, "rna_CorrectiveSmoothMod_update");
+  api_def_prop_update(prop, 0, "api_CorrectiveSmoothMod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(
       prop,
       "Vertex Group",
-      "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_CorrectiveSmoothModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_CorrectiveSmoothModifier_update");
+      "Name of Vertex Group which determines influence of mod per point");
+  api_def_prop_string_fns(prop, NULL, NULL, "apo_CorrectiveSmoothMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_CorrectiveSmoothMod_update");
 
-  prop = RNA_def_property(srna, "is_bind", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Bind current shape", "");
-  RNA_def_property_boolean_funcs(prop, "rna_CorrectiveSmoothModifier_is_bind_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "is_bind", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(prop, "Bind current shape", "");
+  api_def_prop_bool_fns(prop, "api_CorrectiveSmoothMod_is_bind_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_only_smooth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CORRECTIVESMOOTH_ONLY_SMOOTH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_only_smooth", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CORRECTIVESMOOTH_ONLY_SMOOTH);
+  api_def_prop_ui_text(
       prop, "Only Smooth", "Apply smoothing without reconstructing the surface");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_pin_boundary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CORRECTIVESMOOTH_PIN_BOUNDARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pin_boundary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CORRECTIVESMOOTH_PIN_BOUNDARY);
+  api_def_prop_ui_text(
       prop, "Pin Boundaries", "Excludes boundary vertices from being smoothed");
-  RNA_def_property_update(prop, 0, "rna_CorrectiveSmoothModifier_update");
+  api_def_prop_update(prop, 0, "api_CorrectiveSmoothMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_laplaciansmooth(BlenderRNA *brna)
+static void api_def_mod_laplaciansmooth(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LaplacianSmoothModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Laplacian Smooth Modifier", "Smoothing effect modifier");
+  sapi = RNA_def_struct(brna, "LaplacianSmoothModifier", "Modifier");
+  api_def_struct_ui_text(srna, "Laplacian Smooth Modifier", "Smoothing effect modifier");
   RNA_def_struct_sdna(srna, "LaplacianSmoothModifierData");
   RNA_def_struct_ui_icon(srna, ICON_MOD_SMOOTH);
 
