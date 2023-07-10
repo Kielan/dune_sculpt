@@ -3091,17 +3091,17 @@ static void api_def_mod_uvproject(DuneApi *dapi)
   api_def_prop_range(prop, 1, MOD_UVPROJECT_MAXPROJECTORS);
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(sapi, "projectors", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "UVProjector");
-  RNA_def_property_collection_fns(prop,
-                                    "api_UVProject_projectors_begin",
-                                    "api_iter_array_next",
-                                    "api_iter_array_end",
-                                    "api_iter_array_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "projectors", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "UVProjector");
+  api_def_prop_collection_fns(prop,
+                              "api_UVProject_projectors_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   RNA_def_property_ui_text(prop, "Projectors", "");
 
   prop = api_def_prop(sapi, "aspect_x", PROP_FLOAT, PROP_NONE);
@@ -3322,27 +3322,27 @@ static void api_def_mod_laplaciansmooth(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = RNA_def_struct(brna, "LaplacianSmoothModifier", "Modifier");
-  api_def_struct_ui_text(srna, "Laplacian Smooth Modifier", "Smoothing effect modifier");
-  RNA_def_struct_sdna(srna, "LaplacianSmoothModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SMOOTH);
+  sapi = api_def_struct(dapi, "LaplacianSmoothMod", "Mod");
+  api_def_struct_ui_text(sapi, "Laplacian Smooth Mod", "Smoothing effect modifier");
+  api_def_struct_stype(sapi, "LaplacianSmoothModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SMOOTH);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_X);
-  RNA_def_property_ui_text(prop, "X", "Smooth object along X axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_X);
+  api_def_prop_ui_text(prop, "X", "Smooth object along X axis");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_Y);
-  RNA_def_property_ui_text(prop, "Y", "Smooth object along Y axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_Y);
+  api_def_prop_ui_text(prop, "Y", "Smooth object along Y axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_z", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_Z);
-  RNA_def_property_ui_text(prop, "Z", "Smooth object along Z axis");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "use_z", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_Z);
+  api_def_prop_ui_text(prop, "Z", "Smooth object along Z axis");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_volume_preserve", PROP_BOOL, PROP_NONE);
   RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME);
