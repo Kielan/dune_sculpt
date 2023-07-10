@@ -2785,15 +2785,15 @@ static void api_def_mod_bool(ApiDune *dapi)
   api_def_prop_ui_text(prop, "Debug", "Debugging options, only when started with '-d'");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_array(BlenderRNA *brna)
+static void api_def_mod_array(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_fit_type_items[] = {
+  static const EnumPropItem prop_fit_type_items[] = {
       {MOD_ARR_FIXEDCOUNT,
        "FIXED_COUNT",
        0,
@@ -2808,37 +2808,37 @@ static void rna_def_modifier_array(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ArrayModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Array Modifier", "Array duplication modifier");
-  RNA_def_struct_sdna(srna, "ArrayModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_ARRAY);
+  sapi = api_def_struct(dapi, "ArrayMod", "Mod");
+  api_def_struct_ui_text(sapi, "Array Mod", "Array duplication mod");
+  api_def_struct_stype(sapi, "ArrayModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_ARRAY);
 
   RNA_define_lib_overridable(true);
 
   /* Length parameters */
-  prop = RNA_def_property(srna, "fit_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_fit_type_items);
-  RNA_def_property_ui_text(prop, "Fit Type", "Array length calculation method");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "fit_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_fit_type_items);
+  api_def_prop_ui_text(prop, "Fit Type", "Array length calculation method");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "count", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, INT_MAX);
-  RNA_def_property_ui_range(prop, 1, 1000, 1, -1);
-  RNA_def_property_ui_text(prop, "Count", "Number of duplicates to make");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "count", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, INT_MAX);
+  api_def_prop_ui_range(prop, 1, 1000, 1, -1);
+  api_def_prop_ui_text(prop, "Count", "Number of duplicates to make");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "fit_length", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "length");
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_range(prop, 0, 10000, 10, 2);
-  RNA_def_property_ui_text(prop, "Length", "Length to fit array within");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "fit_length", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "length");
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_range(prop, 0, 10000, 10, 2);
+  api_def_prop_ui_text(prop, "Length", "Length to fit array within");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "curve_ob");
-  RNA_def_property_ui_text(prop, "Curve", "Curve object to fit array length to");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_ArrayModifier_curve_ob_set", NULL, "rna_Curve_object_poll");
+  prop = api_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "curve_ob");
+  api_def_prop_ui_text(prop, "Curve", "Curve object to fit array length to");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_ArrayMod_curve_ob_set", NULL, "rna_Curve_object_poll");
   RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
   RNA_def_property_update(prop, 0, "rna_ArrayModifier_dependency_update");
 
