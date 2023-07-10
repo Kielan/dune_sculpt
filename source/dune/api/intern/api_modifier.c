@@ -3567,20 +3567,20 @@ static void api_def_mod_particlesystem(DuneApi *dapi)
 
   RNA_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "particle_system", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "psys");
-  RNA_def_property_ui_text(prop, "Particle System", "Particle System that this modifier controls");
+  prop = api_def_prop(sapi, "particle_system", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "psys");
+  api_def_prop_ui_text(prop, "Particle System", "Particle System that this modifier controls");
 
-  RNA_define_lib_overridable(false);
+api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_particleinstance(BlenderRNA *brna)
+static void api_def_mod_particleinstance(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static EnumPropertyItem particleinstance_space[] = {
+  static EnumPropItem particleinstance_space[] = {
       {eParticleInstanceSpace_Local,
        "LOCAL",
        0,
@@ -3594,33 +3594,33 @@ static void rna_def_modifier_particleinstance(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ParticleInstanceModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "ParticleInstance Modifier", "Particle system instancing modifier");
-  RNA_def_struct_sdna(srna, "ParticleInstanceModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_PARTICLES);
+  sapi = api_def_struct(dapi, "ParticleInstanceMod", "Mod");
+  api_def_struct_ui_text(sapi, "ParticleInstance Mod", "Particle system instancing modifier");
+  api_def_struct_stype(sapi, "ParticleInstanceModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_PARTICLES);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ob");
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Mesh_object_poll");
-  RNA_def_property_ui_text(prop, "Object", "Object that has the particle system");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "ob");
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_Mesh_object_poll");
+  api_def_prop_ui_text(prop, "Object", "Object that has the particle system");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  RNA_def_property_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "particle_system_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "psys");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Particle System Number", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "particle_system_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "psys");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Particle System Number", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "particle_system", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ParticleSystem");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_ParticleInstanceModifier_particle_system_get",
-                                 "rna_ParticleInstanceModifier_particle_system_set",
-                                 NULL,
-                                 "rna_ParticleInstanceModifier_particle_system_poll");
+  prop = api_def_prop(sapi, "particle_system", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "ParticleSystem");
+  api_def_prop_ptr_fns(prop,
+                      "api_ParticleInstanceMod_particle_system_get",
+                      "api_ParticleInstanceMod_particle_system_set",
+                      NULL,
+                      "api_ParticleInstanceMod_particle_system_poll");
   RNA_def_property_flag(prop, PROP_EDITABLE);
   RNA_def_property_ui_text(prop, "Particle System", "");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
