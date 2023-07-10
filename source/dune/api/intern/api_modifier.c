@@ -2838,51 +2838,51 @@ static void api_def_mod_array(DuneApi *dapi)
   api_def_prop_ptr_stype(prop, NULL, "curve_ob");
   api_def_prop_ui_text(prop, "Curve", "Curve object to fit array length to");
   api_def_prop_ptr_fns(
-      prop, NULL, "api_ArrayMod_curve_ob_set", NULL, "rna_Curve_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_ArrayModifier_dependency_update");
+      prop, NULL, "api_ArrayMod_curve_ob_set", NULL, "api_Curve_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_ArrayMod_graph_update");
 
   /* Offset parameters */
-  prop = RNA_def_property(srna, "use_constant_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "offset_type", MOD_ARR_OFF_CONST);
-  RNA_def_property_ui_text(prop, "Constant Offset", "Add a constant offset");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_constant_offset", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "offset_type", MOD_ARR_OFF_CONST);
+  api_def_prop_ui_text(prop, "Constant Offset", "Add a constant offset");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "constant_offset_displace", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "constant_offset_displace", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "offset");
+  api_def_prop_ui_text(
       prop, "Constant Offset Displacement", "Value for the distance between arrayed items");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_relative_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "offset_type", MOD_ARR_OFF_RELATIVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_relative_offset", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "offset_type", MOD_ARR_OFF_RELATIVE);
+  api_def_prop_ui_text(
       prop, "Relative Offset", "Add an offset relative to the object's bounding box");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* PROP_TRANSLATION causes units to be used which we don't want */
-  prop = RNA_def_property(srna, "relative_offset_displace", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "relative_offset_displace", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_ui_text(
       prop,
       "Relative Offset Displacement",
       "The size of the geometry will determine the distance between arrayed items");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* Vertex merging parameters */
-  prop = RNA_def_property(srna, "use_merge_vertices", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_ARR_MERGE);
-  RNA_def_property_ui_text(prop, "Merge Vertices", "Merge vertices in adjacent duplicates");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_merge_vertices", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_ARR_MERGE);
+  api_def_prop_i_text(prop, "Merge Vertices", "Merge vertices in adjacent duplicates");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_merge_vertices_cap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_ARR_MERGEFINAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_merge_vertices_cap", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_ARR_MERGEFINAL);
+  api_def_prop_ui_text(
       prop, "Merge End Vertices", "Merge vertices in first and last duplicates");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  prop = api_def_prop(sapi, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "merge_dist");
   RNA_def_property_range(prop, 0, FLT_MAX);
   RNA_def_property_ui_range(prop, 0, 1, 1, 4);
