@@ -3339,94 +3339,93 @@ static void rna_def_modifier_laplaciansmooth(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Y", "Smooth object along Y axis");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_z", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_z", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_Z);
   RNA_def_property_ui_text(prop, "Z", "Smooth object along Z axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_volume_preserve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME);
-  RNA_def_property_ui_text(prop, "Preserve Volume", "Apply volume preservation after smooth");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_volume_preserve", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME);
+  RNA_def_prop_ui_text(prop, "Preserve Volume", "Apply volume preservation after smooth");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_normalized", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_NORMALIZED);
-  RNA_def_property_ui_text(prop, "Normalized", "Improve and stabilize the enhanced shape");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normalized", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_NORMALIZED);
+  api_def_prop_ui_text(prop, "Normalized", "Improve and stabilize the enhanced shape");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "lambda_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "lambda");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1000.0, 1000.0, 5, 3);
-  RNA_def_property_ui_text(prop, "Lambda Factor", "Smooth factor effect");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "lambda_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "lambda");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1000.0, 1000.0, 5, 3);
+  api_def_prop_ui_text(prop, "Lambda Factor", "Smooth factor effect");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "lambda_border", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "lambda_border");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1000.0, 1000.0, 5, 3);
-  RNA_def_property_ui_text(prop, "Lambda Border", "Lambda factor in border");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "lambda_border", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_stype(prop, NULL, "lambda_border");
+  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  RNA_def_prop_ui_range(prop, -1000.0, 1000.0, 5, 3);
+  RNA_def_prop_ui_text(prop, "Lambda Border", "Lambda factor in border");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "repeat");
-  RNA_def_property_ui_range(prop, 0, 200, 1, -1);
-  RNA_def_property_ui_text(prop, "Repeat", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "iterations", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "repeat");
+  RNA_def_prop_ui_range(prop, 0, 200, 1, -1);
+  RNA_def_prop_ui_text(prop, "Repeat", "");
+  RNA_def_prop_update(prop, 0, "apo_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
+  prop = RNA_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
   RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
   RNA_def_property_ui_text(
       prop,
       "Vertex Group",
-      "Name of Vertex Group which determines influence of modifier per point");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_LaplacianSmoothModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+      "Name of Vertex Group which determines influence of mod per point");
+  RNA_def_property_string_fns(prop, NULL, NULL, "api_LaplacianSmoothMod_defgrp_name_set");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_cast(BlenderRNA *brna)
+static void api_def_mod_cast(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_cast_type_items[] = {
+  static const EnumPropItem prop_cast_type_items[] = {
       {MOD_CAST_TYPE_SPHERE, "SPHERE", 0, "Sphere", ""},
       {MOD_CAST_TYPE_CYLINDER, "CYLINDER", 0, "Cylinder", ""},
       {MOD_CAST_TYPE_CUBOID, "CUBOID", 0, "Cuboid", ""},
       {0, NULL, 0, NULL, NULL},
   };
+  sapi = api_def_struct(dapi, "CastModifier", "Mod");
+  api_def_struct_ui_text(sapi, "Cast Mod", "Mod to cast to other shapes");
+  api_def_struct_stype(sapi, "CastModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_CAST);
 
-  srna = RNA_def_struct(brna, "CastModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Cast Modifier", "Modifier to cast to other shapes");
-  RNA_def_struct_sdna(srna, "CastModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_CAST);
+  api_define_lib_overridable(true);
 
-  RNA_define_lib_overridable(true);
+  prop = apo_def_prop(sapi, "cast_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, prop_cast_type_items);
+  api_def_prop_ui_text(prop, "Shape", "Target object shape");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "cast_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, prop_cast_type_items);
-  RNA_def_property_ui_text(prop, "Shape", "Target object shape");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "Object",
       "Control object: if available, its location determines the center of the effect");
-  RNA_def_property_pointer_funcs(prop, NULL, "rna_CastModifier_object_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_ptr_fns(prop, NULL, "api_CastMod_object_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK)(
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_INVERT_VGROUP);
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_bool_stype(prop, NULL, "flag", MOD_CAST_INVERT_VGROUP);
   RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
