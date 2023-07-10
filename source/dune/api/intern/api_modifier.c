@@ -3425,86 +3425,86 @@ static void api_def_mod_cast(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_bool_stype(prop, NULL, "flag", MOD_CAST_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_X);
-  RNA_def_property_ui_text(prop, "X", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_X);
+  api_def_prop_ui_text(prop, "X", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_Y);
-  RNA_def_property_ui_text(prop, "Y", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_Y);
+  api_def_prop_ui_text(prop, "Y", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_Z);
-  RNA_def_property_ui_text(prop, "Z", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_z", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_Z);
+  api_def_prop_ui_text(prop, "Z", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_radius_as_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_SIZE_FROM_RADIUS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_radius_as_size", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_SIZE_FROM_RADIUS);
+  api_def_prop_ui_text(
       prop, "Size from Radius", "Use radius as size of projection shape (0 = auto)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_transform", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_CAST_USE_OB_TRANSFORM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_transform", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_CAST_USE_OB_TRANSFORM);
+  api_def_prop_ui_text(
       prop, "Use Transform", "Use object transform to control projection shape");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "fac");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -10, 10, 5, 2);
-  RNA_def_property_ui_text(prop, "Factor", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "fac");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -10, 10, 5, 2);
+  api_def_prop_ui_text(prop, "Factor", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 100, 5, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "radius", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 100, 5, 2);
+  api_def_prop_ui_text(
       prop,
       "Radius",
       "Only deform vertices within this distance from the center of the effect "
       "(leave as 0 for infinite.)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "size", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 100, 5, 2);
-  RNA_def_property_ui_text(prop, "Size", "Size of projection shape (leave as 0 for auto)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "size", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 100, 5, 2);
+  api_def_prop_ui_text(prop, "Size", "Size of projection shape (leave as 0 for auto)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_CastModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_CastMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_meshdeform(BlenderRNA *brna)
+static void api_def_mod_meshdeform(DuneApi *dapo)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 #  if 0
-  static const EnumPropertyItem prop_mode_items[] = {
+  static const EnumPropItem prop_mode_items[] = {
       {0, "VOLUME", 0, "Volume", "Bind to volume inside cage mesh"},
       {1, "SURFACE", 0, "Surface", "Bind to surface of cage mesh"},
       {0, NULL, 0, NULL, NULL},
   };
 #  endif
 
-  srna = RNA_def_struct(brna, "MeshDeformModifier", "Modifier");
-  RNA_def_struct_ui_text(
-      srna, "MeshDeform Modifier", "Mesh deformation modifier to deform with other meshes");
-  RNA_def_struct_sdna(srna, "MeshDeformModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MESHDEFORM);
+  sapi = api_def_struct(dapi, "MeshDeformMod", "Mod");
+  api_def_struct_ui_text(
+      sapi, "MeshDeform Mod", "Mesh deformation mod to deform with other meshes");
+  api_def_struct_stype(sapi, "MeshDeformModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MESHDEFORM);
 
   RNA_define_lib_overridable(true);
 
