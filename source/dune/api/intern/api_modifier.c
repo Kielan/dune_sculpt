@@ -3606,7 +3606,7 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_Mesh_object_poll");
   api_def_prop_ui_text(prop, "Object", "Object that has the particle system");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_prop_update(prop, 0, "api_Mod_graph_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "particle_system_index", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "psys");
@@ -3623,11 +3623,11 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
                       "api_ParticleInstanceMod_particle_system_poll");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Particle System", "");
-  api_def_pro_update(prop, 0, "rna_Mod_update");
+  api_def_pro_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "axis", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "axis");
-  api_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
+  api_def_prop_enum_items(prop, api_enum_axis_xyz_items);
   api_def_prop_ui_text(prop, "Axis", "Pole axis for rotation");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
@@ -3654,105 +3654,104 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "show_unborn", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Unborn);
-  RNA_def_prop_ui_text(prop, "Unborn", "Show instances when particles are unborn");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Unborn);
+  api_def_prop_ui_text(prop, "Unborn", "Show instances when particles are unborn");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "show_alive", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Alive);
-  RNA_def_prop_ui_text(prop, "Alive", "Show instances when particles are alive");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Alive);
+  api_def_prop_ui_text(prop, "Alive", "Show instances when particles are alive");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "show_dead", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Dead);
-  RNA_def_prop_ui_text(prop, "Dead", "Show instances when particles are dead");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Dead);
+  api_def_prop_ui_text(prop, "Dead", "Show instances when particles are dead");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_preserve_shape", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_KeepShape);
-  RNA_def_property_ui_text(prop, "Keep Shape", "Don't stretch the object");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_preserve_shape", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_KeepShape);
+  api_def_prop_ui_text(prop, "Keep Shape", "Don't stretch the object");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_UseSize);
-  RNA_def_property_ui_text(prop, "Size", "Use particle size to scale the instances");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_size", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_UseSize);
+  api_def_prop_ui_text(prop, "Size", "Use particle size to scale the instances");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "position", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "position");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Position", "Position along path");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "position", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "position");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Position", "Position along path");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "random_position", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "random_position");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Random Position", "Randomize position along path");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "random_position", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_sdna(prop, NULL, "random_position");
+  RNA_def_prop_range(prop, 0.0, 1.0);
+  RNA_def_prop_ui_text(prop, "Random Position", "Randomize position along path");
+  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "rotation");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Rotation", "Rotation around path");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "rotation");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Rotation", "Rotation around path");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "random_rotation", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "random_rotation");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Random Rotation", "Randomize rotation around path");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "random_rotation", PROP_FLOAT, PROP_FACTOR);
+  api_def_property_float_sdna(prop, NULL, "random_rotation");
+  api_def_property_range(prop, 0.0, 1.0);
+  api_def_property_ui_text(prop, "Random Rotation", "Randomize rotation around path");
+  api_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "particle_amount", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Particle Amount", "Amount of particles to use for instancing");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "particle_amount", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Particle Amount", "Amount of particles to use for instancing");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "particle_offset", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop,
-                           "Particle Offset",
-                           "Relative offset of particles to use for instancing, to avoid overlap "
-                           "of multiple instances");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "particle_offset", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop,
+                       "Particle Offset",
+                       "Relative offset of particles to use for instancing, to avoid overlap "
+                       "of multiple instances");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "index_layer_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "index_layer_name");
-  RNA_def_property_ui_text(prop, "Index Layer Name", "Custom data layer name for the index");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "index_layer_name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "index_layer_name");
+  api_def_prop_ui_text(prop, "Index Layer Name", "Custom data layer name for the index");
+  api_def_prop_update(prop, 0, "api_Modifier_update");
 
-  prop = RNA_def_property(srna, "value_layer_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "value_layer_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "value_layer_name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "value_layer_name");
+  api_def_prop_ui_text(
       prop, "Value Layer Name", "Custom data layer name for the randomized value");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_explode(BlenderRNA *brna)
+static void api_def_mod_explode(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  sapi = api_def_struct(dapi, "ExplodeMod", "Mod");
+  api_def_struct_ui_text(
+      srna, "Explode Mod", "Explosion effect mod based on a particle system");
+  api_def_struct_stype(sapi, "ExplodeModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_EXPLODE);
 
-  srna = RNA_def_struct(brna, "ExplodeModifier", "Modifier");
-  RNA_def_struct_ui_text(
-      srna, "Explode Modifier", "Explosion effect modifier based on a particle system");
-  RNA_def_struct_sdna(srna, "ExplodeModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_EXPLODE);
+  api_define_lib_overridable(true);
 
-  RNA_define_lib_overridable(true);
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop,
+                          "api_ExplodeMod_vgroup_get",
+                          "api_ExplodeMod_vgroup_length",
+                          "api_ExplodeMod_vgroup_set");
+  RNA_def_prop_ui_text(prop, "Vertex Group", "");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop,
-                                "rna_ExplodeModifier_vgroup_get",
-                                "rna_ExplodeModifier_vgroup_length",
-                                "rna_ExplodeModifier_vgroup_set");
-  RNA_def_property_ui_text(prop, "Vertex Group", "");
-
-  prop = RNA_def_property(srna, "protect", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Protect", "Clean vertex group edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "protect", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_range(prop, 0, 1);
+  RNA_def_prop_ui_text(prop, "Protect", "Clean vertex group edges");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "use_edge_cut", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_EdgeCut);
