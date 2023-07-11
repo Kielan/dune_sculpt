@@ -2224,7 +2224,7 @@ static void api_def_mod_decimate(DuneApi *dapi)
 
   sapi = api_def_struct(dapi, "DecimateMod", "Mod");
   api_def_struct_ui_text(sapi, "Decimate Mod", "Decimation mod");
-  api_def_struct_sdna(sapi, "DecimateModData");
+  api_def_struct_stype(sapi, "DecimateModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_DECIM);
 
   api_define_lib_overridable(true);
@@ -2545,7 +2545,7 @@ static void api_def_mod_hook(BlenderRNA *brna)
   api_def_prop_float_stype(prop, NULL, "force");
   api_def_prop_range(prop, 0, 1);
   api_def_prop_ui_text(prop, "Strength", "Relative force of the hook");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapo, "falloff_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, mod_warp_falloff_items); /* share the enum */
@@ -3552,7 +3552,7 @@ static void api_def_mod_meshdeform(DuneApi *dapo)
   api_def_prop_update(prop, 0, "api_Mod_update");
 #  endif
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 static void api_def_mod_particlesystem(DuneApi *dapi)
@@ -3606,7 +3606,7 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_Mesh_object_poll");
   api_def_prop_ui_text(prop, "Object", "Object that has the particle system");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "api_Mod_graph_update");
+  RNA_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(sapi, "particle_system_index", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "psys");
@@ -3637,10 +3637,10 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Space", "Space to use for copying mesh data");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_normal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Parents);
-  RNA_def_property_ui_text(prop, "Regular", "Create instances from normal particles");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Parents);
+  api_def_prop_ui_text(prop, "Regular", "Create instances from normal particles");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "use_children", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Children);
