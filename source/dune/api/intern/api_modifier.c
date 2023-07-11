@@ -3746,53 +3746,53 @@ static void api_def_mod_explode(DuneApi *dapi)
                           "api_ExplodeMod_vgroup_get",
                           "api_ExplodeMod_vgroup_length",
                           "api_ExplodeMod_vgroup_set");
-  RNA_def_prop_ui_text(prop, "Vertex Group", "");
+  api_def_prop_ui_text(prop, "Vertex Group", "");
 
   prop = api_def_prop(sapi, "protect", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_range(prop, 0, 1);
-  RNA_def_prop_ui_text(prop, "Protect", "Clean vertex group edges");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Protect", "Clean vertex group edges");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+
+  prop = api_def_prop(sapi, "use_edge_cut", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_EdgeCut);
+  api_def_prop_ui_text(prop, "Cut Edges", "Cut face edges for nicer shrapnel");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+
+  prop = api_def_prop(sapi, "show_unborn", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_Unborn);
+  api_def_prop_ui_text(prop, "Unborn", "Show mesh when particles are unborn");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+
+  prop = api_def_prop(sapi, "show_alive", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_Alive);
+  api_def_prop_ui_text(prop, "Alive", "Show mesh when particles are alive");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+
+  prop = api_def_prop(sapi, "show_dead", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_Dead);
+  api_def_prop_ui_text(prop, "Dead", "Show mesh when particles are dead");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
+
+  prop = RNA_def_prop(sapi, "use_size", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_PaSize);
+  RNA_def_prop_ui_text(prop, "Size", "Use particle size for the shrapnel");
   RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_edge_cut", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_EdgeCut);
-  RNA_def_property_ui_text(prop, "Cut Edges", "Cut face edges for nicer shrapnel");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(sapi, "particle_uv", PROP_STRING, PROP_NONE);
+  RNA_def_prop_string_stype(prop, NULL, "uvname");
+  RNA_def_prop_string_maxlength(prop, MAX_CUSTOMDATA_LAYER_NAME);
+  RNA_def_prop_ui_text(prop, "Particle UV", "UV map to change with particle age");
+  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "show_unborn", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_Unborn);
-  RNA_def_property_ui_text(prop, "Unborn", "Show mesh when particles are unborn");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_sdna(prop, NULL, "flag", eExplodeFlag_INVERT_VGROUP);
+  RNA_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "show_alive", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_Alive);
-  RNA_def_property_ui_text(prop, "Alive", "Show mesh when particles are alive");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "show_dead", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_Dead);
-  RNA_def_property_ui_text(prop, "Dead", "Show mesh when particles are dead");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "use_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_PaSize);
-  RNA_def_property_ui_text(prop, "Size", "Use particle size for the shrapnel");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "particle_uv", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "uvname");
-  RNA_def_property_string_maxlength(prop, MAX_CUSTOMDATA_LAYER_NAME);
-  RNA_def_property_ui_text(prop, "Particle UV", "UV map to change with particle age");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eExplodeFlag_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_cloth(BlenderRNA *brna)
+static void api_def_modifier_cloth(BlenderRNA *brna)
 {
   StructRNA *srna;
   PropertyRNA *prop;
