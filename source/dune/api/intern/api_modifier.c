@@ -2526,7 +2526,7 @@ static void api_def_mod_armature(DuneApi *dapi)
   api_define_lib_overridable(false);
 }
 
-static void api_def_mod_hook(BlenderRNA *brna)
+static void api_def_mod_hook(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -2649,7 +2649,7 @@ static void api_def_mod_softbody(DuneApi *dapi)
   api_def_struct_stype(sapi, "SoftbodyModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SOFT);
 
-  prop = api_def_prop(srna, "settings", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "settings", PROP_PTR, PROP_NONE);
   apu_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "SoftBodySettings");
   api_def_prop_ptr_fns(prop, "rna_SoftBodyMod_settings_get", NULL, NULL, NULL);
@@ -2813,7 +2813,7 @@ static void api_def_mod_array(DuneApi *dapi)
   api_def_struct_stype(sapi, "ArrayModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_ARRAY);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   /* Length parameters */
   prop = api_def_prop(sapi, "fit_type", PROP_ENUM, PROP_NONE);
@@ -3642,33 +3642,33 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Regular", "Create instances from normal particles");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_children", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Children);
-  RNA_def_property_ui_text(prop, "Children", "Create instances from child particles");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_PARTICLESETTINGS);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_children", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypr(prop, NULL, "flag", eParticleInstanceFlag_Children);
+  api_def_prop_ui_text(prop, "Children", "Create instances from child particles");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_PARTICLESETTINGS);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_path", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Path);
-  RNA_def_property_ui_text(prop, "Path", "Create instances along particle paths");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_path", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Path);
+  api_def_prop_ui_text(prop, "Path", "Create instances along particle paths");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "show_unborn", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Unborn);
-  RNA_def_property_ui_text(prop, "Unborn", "Show instances when particles are unborn");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "show_unborn", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Unborn);
+  RNA_def_prop_ui_text(prop, "Unborn", "Show instances when particles are unborn");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "show_alive", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Alive);
-  RNA_def_property_ui_text(prop, "Alive", "Show instances when particles are alive");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "show_alive", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Alive);
+  RNA_def_prop_ui_text(prop, "Alive", "Show instances when particles are alive");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "show_dead", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Dead);
-  RNA_def_property_ui_text(prop, "Dead", "Show instances when particles are dead");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "show_dead", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Dead);
+  RNA_def_prop_ui_text(prop, "Dead", "Show instances when particles are dead");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_preserve_shape", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_preserve_shape", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_KeepShape);
   RNA_def_property_ui_text(prop, "Keep Shape", "Don't stretch the object");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
