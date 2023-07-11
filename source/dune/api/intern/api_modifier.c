@@ -3102,7 +3102,7 @@ static void api_def_mod_uvproject(DuneApi *dapi)
                               NULL,
                               NULL,
                               NULL);
-  RNA_def_property_ui_text(prop, "Projectors", "");
+api_def_prop_ui_text(prop, "Projectors", "");
 
   prop = api_def_prop(sapi, "aspect_x", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "aspectx");
@@ -3345,9 +3345,9 @@ static void api_def_mod_laplaciansmooth(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_volume_preserve", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME);
-  RNA_def_prop_ui_text(prop, "Preserve Volume", "Apply volume preservation after smooth");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME);
+  api_def_prop_ui_text(prop, "Preserve Volume", "Apply volume preservation after smooth");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_normalized", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANSMOOTH_NORMALIZED);
@@ -3557,15 +3557,15 @@ static void api_def_mod_meshdeform(DuneApi *dapo)
 
 static void api_def_mod_particlesystem(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ParticleSystemModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "ParticleSystem Modifier", "Particle system simulation modifier");
-  RNA_def_struct_sdna(srna, "ParticleSystemModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_PARTICLES);
+  sapi = api_def_struct(dapi, "ParticleSystemMod", "Mod");
+  api_def_struct_ui_text(sapi, "ParticleSystem Mod", "Particle system simulation modifier");
+  api_def_struct_stype(sapi, "ParticleSystemModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_PARTICLES);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "particle_system", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
@@ -3575,7 +3575,7 @@ static void api_def_mod_particlesystem(DuneApi *dapi)
 api_define_lib_overridable(false);
 }
 
-static void api_def_mod_particleinstance(BlenderRNA *brna)
+static void api_def_mod_particleinstance(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -3621,23 +3621,23 @@ static void api_def_mod_particleinstance(BlenderRNA *brna)
                       "api_ParticleInstanceMod_particle_system_set",
                       NULL,
                       "api_ParticleInstanceMod_particle_system_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Particle System", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Particle System", "");
+  api_def_pro_update(prop, 0, "rna_Mod_update");
 
-  prop = RNA_def_property(srna, "axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "axis");
-  RNA_def_property_enum_items(prop, rna_enum_axis_xyz_items);
-  RNA_def_property_ui_text(prop, "Axis", "Pole axis for rotation");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "axis");
+  api_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "Axis", "Pole axis for rotation");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "space", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "space");
-  RNA_def_property_enum_items(prop, particleinstance_space);
-  RNA_def_property_ui_text(prop, "Space", "Space to use for copying mesh data");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "space", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "space");
+  api_def_prop_enum_items(prop, particleinstance_space);
+  api_def_prop_ui_text(prop, "Space", "Space to use for copying mesh data");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_normal", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_normal", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", eParticleInstanceFlag_Parents);
   RNA_def_property_ui_text(prop, "Regular", "Create instances from normal particles");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
