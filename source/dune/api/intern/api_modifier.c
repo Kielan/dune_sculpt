@@ -2299,12 +2299,12 @@ static void api_def_mod_decimate(DuneApi *dapi)
 
   /* (mode == MOD_DECIM_MODE_DISSOLVE) */
   prop = api_def_prop(sapi, "use_dissolve_boundaries", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stypr(prop, NULL, "flag", MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS);
   api_def_prop_ui_text(
       prop, "All Boundaries", "Dissolve all vertices in between face boundaries (planar only)");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "delimit", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "delimit", PROP_ENUM, PROP_NONE);
   api_def_prop_flag(prop, PROP_ENUM_FLAG); /* important to run before default set */
   api_def_prop_enum_items(prop, api_enum_mesh_delimit_mode_items);
   api_def_prop_ui_text(prop, "Delimit", "Limit merging geometry");
@@ -2597,7 +2597,7 @@ static void api_def_mod_hook(BlenderRNA *brna)
   api_def_prop_string_f s(prop, NULL, NULL, "rna_HookModifier_subtarget_set");
   api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = api_def_prop(srna, "use_falloff_uniform", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_falloff_uniform", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_HOOK_UNIFORM_SPACE);
   api_def_prop_ui_text(prop, "Uniform Falloff", "Compensate for non-uniform object scale");
   api_def_prop_update(prop, 0, "rna_Modifier_update");
@@ -2608,7 +2608,7 @@ static void api_def_mod_hook(BlenderRNA *brna)
       prop,
       "Vertex Group",
       "Name of Vertex Group which determines influence of modifier per point");
-  api_def_prop_string_funcs(prop, NULL, NULL, "apo_HookMod_name_set");
+  api_def_prop_string_fns(prop, NULL, NULL, "apo_HookMod_name_set");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "vertex_indices", PROP_INT, PROP_UNSIGNED);
@@ -2706,10 +2706,10 @@ static void api_def_mod_bool(ApiDune *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(brna, "BooleanMod", "Mod");
-  api_def_struct_ui_text(srna, "Boolean Mod", "Book ops mod");
-  api_def_struct_sdna(srna, "BooleanModData");
-  api_def_struct_ui_icon(srna, ICON_MOD_BOOL);
+  sapi = api_def_struct(dapi, "BooleanMod", "Mod");
+  api_def_struct_ui_text(sapi, "Boolean Mod", "Book ops mod");
+  api_def_struct_stype(sapi, "BooleanModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_BOOL);
 
   api_define_lib_overridable(true);
 
