@@ -4423,9 +4423,9 @@ static void api_def_mod_simpledeform(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "deform_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
-  RNA_def_prop_ui_text(prop, "Axis", "Deform around local axis");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "Axis", "Deform around local axis");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "origin", PROP_POINTER, PROP_NONE);
   api_def_prop_ui_text(prop, "Origin", "Offset the origin and orientation of the deformation");
@@ -4967,49 +4967,49 @@ static void rna_def_modifier_weightvg_mask(BlenderRNA *UNUSED(brna),
       prop, "Influence", "Global influence of current modifications on vgroup");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "mask_vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "mask_defgrp_name");
-  RNA_def_property_ui_text(prop, "Mask Vertex Group", "Masking vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, mask_vgroup_setter);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "mask_vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "mask_defgrp_name");
+  api_def_prop_ui_text(prop, "Mask Vertex Group", "Masking vertex group name");
+  RNA_def_prop_string_fns(prop, NULL, NULL, mask_vgroup_setter);
+  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "invert_mask_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, mask_flags, invert_vgroup_mask_flag);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group mask influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_mask_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, mask_flags, invert_vgroup_mask_flag);
+  ai_def_prop_ui_text(prop, "Invert", "Invert vertex group mask influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mask_texture", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Masking Tex", "Masking texture");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "mask_texture", PROP_POINTER, PROP_NONE);
+  api_def_prop_ui_text(prop, "Masking Tex", "Masking texture");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "mask_tex_use_channel", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, weightvg_mask_tex_used_items);
-  RNA_def_property_ui_text(prop, "Use Channel", "Which texture channel to use for masking");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "mask_tex_use_channel", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, weightvg_mask_tex_used_items);
+  api_def_prop_ui_text(prop, "Use Channel", "Which texture channel to use for masking");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "mask_tex_mapping", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, weightvg_mask_tex_map_items);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "mask_tex_mapping", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_items(prop, weightvg_mask_tex_map_items);
+  RNA_def_prop_ui_text(prop,
                            "Texture Coordinates",
                            "Which texture coordinates "
                            "to use for mapping");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  RNA_def_property_update(prop, 0, "api_Mod_graoh_update");
 
-  prop = RNA_def_property(srna, "mask_tex_uv_layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "mask_tex_uvlayer_name");
-  RNA_def_property_ui_text(prop, "UV Map", "UV map name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, mask_uvlayer_setter);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "mask_tex_uv_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_sdna(prop, NULL, "mask_tex_uvlayer_name");
+  api_def_prop_ui_text(prop, "UV Map", "UV map name");
+  api_def_property_string_funcs(prop, NULL, NULL, mask_uvlayer_setter);
+  api_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mask_tex_map_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "mask_tex_map_obj");
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "mask_tex_map_object", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "mask_tex_map_obj");
+  api_def_prop_ui_text(prop,
                            "Texture Coordinate Object",
                            "Which object to take texture "
                            "coordinates from");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  RNA_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
   prop = RNA_def_property(srna, "mask_tex_map_bone", PROP_STRING, PROP_NONE);
   RNA_def_property_string_sdna(prop, NULL, "mask_tex_map_bone");
