@@ -3684,25 +3684,25 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Position", "Position along path");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "random_position", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "random_position");
-  RNA_def_prop_range(prop, 0.0, 1.0);
-  RNA_def_prop_ui_text(prop, "Random Position", "Randomize position along path");
-  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "random_position", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "random_position");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Random Position", "Randomize position along path");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "rotation");
   api_def_prop_range(prop, 0.0, 1.0);
   api_def_prop_ui_text(prop, "Rotation", "Rotation around path");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "random_rotation", PROP_FLOAT, PROP_FACTOR);
-  api_def_property_float_sdna(prop, NULL, "random_rotation");
-  api_def_property_range(prop, 0.0, 1.0);
-  api_def_property_ui_text(prop, "Random Rotation", "Randomize rotation around path");
-  api_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "random_rotation", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "random_rotation");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Random Rotation", "Randomize rotation around path");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "particle_amount", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "particle_amount", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_range(prop, 0.0, 1.0);
   api_def_prop_ui_text(prop, "Particle Amount", "Amount of particles to use for instancing");
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -3735,7 +3735,7 @@ static void api_def_mod_explode(DuneApi *dapi)
   ApiProp *prop;
   sapi = api_def_struct(dapi, "ExplodeMod", "Mod");
   api_def_struct_ui_text(
-      srna, "Explode Mod", "Explosion effect mod based on a particle system");
+      sapi, "Explode Mod", "Explosion effect mod based on a particle system");
   api_def_struct_stype(sapi, "ExplodeModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_EXPLODE);
 
@@ -4095,160 +4095,160 @@ static void api_def_mod_bevel(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapu, "use_clamp_overlap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_negative_stype(prop, NULL, "flags", MOD_BEVEL_OVERLAP_OK);
-  RNA_def_prop_ui_text(prop, "Clamp Overlap", "Clamp the width to avoid overlap");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_negative_stype(prop, NULL, "flags", MOD_BEVEL_OVERLAP_OK);
+  api_def_prop_ui_text(prop, "Clamp Overlap", "Clamp the width to avoid overlap");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "offset_type", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_stype(prop, NULL, "val_flags");
-  RNA_def_prop_enum_items(prop, prop_val_type_items);
-  RNA_def_property_ui_text(prop, "Width Type", "What distance Width measures");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_enum_stype(prop, NULL, "val_flags");
+  api_def_prop_enum_items(prop, prop_val_type_items);
+  api_def_prop_ui_text(prop, "Width Type", "What distance Width measures");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "profile_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "profile_type");
-  RNA_def_property_enum_items(prop, prop_profile_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "profile_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "profile_type");
+  api_def_prop_enum_items(prop, prop_profile_type_items);
+  api_def_prop_ui_text(
       prop, "Profile Type", "The type of shape used to rebuild a beveled section");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "profile", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.05, 2);
-  RNA_def_property_ui_text(prop, "Profile", "The profile shape (0.5 = round)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "profile", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.05, 2);
+  api_def_prop_ui_text(prop, "Profile", "The profile shape (0.5 = round)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "material", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mat");
-  RNA_def_property_range(prop, -1, SHRT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "material", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mat");
+  api_def_prop_range(prop, -1, SHRT_MAX);
+  api_def_prop_ui_text(
       prop, "Material Index", "Material index of generated faces, -1 for automatic");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "loop_slide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flags", MOD_BEVEL_EVEN_WIDTHS);
-  RNA_def_property_ui_text(prop, "Loop Slide", "Prefer sliding along edges to having even widths");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "loop_slide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flags", MOD_BEVEL_EVEN_WIDTHS);
+  api_def_prop_ui_text(prop, "Loop Slide", "Prefer sliding along edges to having even widths");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mark_seam", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "mark_seam", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "edge_flags", MOD_BEVEL_MARK_SEAM);
   RNA_def_property_ui_text(prop, "Mark Seams", "Mark Seams along beveled edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mark_sharp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_flags", MOD_BEVEL_MARK_SHARP);
-  RNA_def_property_ui_text(prop, "Mark Sharp", "Mark beveled edges as sharp");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "mark_sharp", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_flags", MOD_BEVEL_MARK_SHARP);
+  api_def_prop_ui_text(prop, "Mark Sharp", "Mark beveled edges as sharp");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "harden_normals", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_BEVEL_HARDEN_NORMALS);
-  RNA_def_property_ui_text(prop, "Harden Normals", "Match normals of new faces to adjacent faces");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "harden_normals", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_BEVEL_HARDEN_NORMALS);
+  api_def_prop_ui_text(prop, "Harden Normals", "Match normals of new faces to adjacent faces");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "face_strength_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "face_str_mode");
-  RNA_def_property_enum_items(prop, prop_harden_normals_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "face_strength_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "face_str_mode");
+  api_def_prop_enum_items(prop, prop_harden_normals_items);
+  api_def_prop_ui_text(
       prop, "Face Strength", "Whether to set face strength, and which faces to set it on");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "miter_outer", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "miter_outer");
-  RNA_def_property_enum_items(prop, prop_miter_outer_items);
-  RNA_def_property_ui_text(prop, "Outer Miter", "Pattern to use for outside of miters");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "miter_outer", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "miter_outer");
+  api_def_prop_enum_items(prop, prop_miter_outer_items);
+  api_def_prop_ui_text(prop, "Outer Miter", "Pattern to use for outside of miters");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "miter_inner", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "miter_inner");
-  RNA_def_property_enum_items(prop, prop_miter_inner_items);
-  RNA_def_property_ui_text(prop, "Inner Miter", "Pattern to use for inside of miters");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "miter_inner", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "miter_inner");
+  api_def_prop_enum_items(prop, prop_miter_inner_items);
+  api_def_prop_ui_text(prop, "Inner Miter", "Pattern to use for inside of miters");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "spread", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "spread");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 0.1, 4);
-  RNA_def_property_ui_text(prop, "Spread", "Spread distance for inner miter arcs");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "spread", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "spread");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 0.1, 4);
+  api_def_prop_ui_text(prop, "Spread", "Spread distance for inner miter arcs");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "custom_profile", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "CurveProfile");
-  RNA_def_property_pointer_sdna(prop, NULL, "custom_profile");
-  RNA_def_property_ui_text(prop, "Custom Profile Path", "The path for the custom profile");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "custom_profile", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "CurveProfile");
+  api_def_prop_ptr_stype(prop, NULL, "custom_profile");
+  api_def_prop_ui_text(prop, "Custom Profile Path", "The path for the custom profile");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vmesh_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "vmesh_method");
-  RNA_def_property_enum_items(prop, prop_vmesh_method_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vmesh_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "vmesh_method");
+  api_def_prop_enum_items(prop, prop_vmesh_method_items);
+  api_def_prop_ui_text(
       prop, "Vertex Mesh Method", "The method to use to create the mesh at intersections");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_shrinkwrap(BlenderRNA *brna)
+static void api_def_mod_shrinkwrap(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ShrinkwrapModifier", "Modifier");
-  RNA_def_struct_ui_text(srna,
-                         "Shrinkwrap Modifier",
-                         "Shrink wrapping modifier to shrink wrap and object to a target");
-  RNA_def_struct_sdna(srna, "ShrinkwrapModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SHRINKWRAP);
+  sapi = api_def_struct(dapi, "ShrinkwrapMod",
+  api_def_struct_ui_text(sapi,
+                         "Shrinkwrap Mod",
+                         "Shrink wrapping mod to shrink wrap and object to a target");
+  api_def_struct_stype(sapi, "ShrinkwrapModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SHRINKWRAP);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "wrap_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "shrinkType");
-  RNA_def_property_enum_items(prop, rna_enum_shrinkwrap_type_items);
-  RNA_def_property_ui_text(prop, "Wrap Method", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "wrap_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "shrinkType");
+  api_def_prop_enum_items(prop, api_enum_shrinkwrap_type_items);
+  api_def_prop_ui_text(prop, "Wrap Method", "");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "wrap_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "shrinkMode");
-  RNA_def_property_enum_items(prop, rna_enum_modifier_shrinkwrap_mode_items);
-  RNA_def_property_ui_text(
+  prop = api_def_property(sapi, "wrap_mode", PROP_ENUM, PROP_NONE);
+  api_def_property_enum_stype(prop, NULL, "shrinkMode");
+  api_def_property_enum_items(prop, api_enum_mod_shrinkwrap_mode_items);
+  api_def_property_ui_text(
       prop, "Snap Mode", "Select how vertices are constrained to the target surface");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_property_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "cull_face", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "shrinkOpts");
-  RNA_def_property_enum_items(prop, rna_enum_shrinkwrap_face_cull_items);
-  RNA_def_property_enum_funcs(
-      prop, "rna_ShrinkwrapModifier_face_cull_get", "rna_ShrinkwrapModifier_face_cull_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "cull_face", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "shrinkOpts");
+  api_def_prop_enum_items(prop, api_enum_shrinkwrap_face_cull_items);
+  api_def_prop_enum_fns(
+      prop, "api_ShrinkwrapMod_face_cull_get", "api_ShrinkwrapMod_face_cull_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Face Cull",
       "Stop vertices from projecting to a face on the target when facing towards/away");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Target", "Mesh target to shrink to");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_ShrinkwrapModifier_target_set", NULL, "rna_Mesh_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "target", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Target", "Mesh target to shrink to");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_ShrinkwrapMod_target_set", NULL, "rna_Mesh_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "auxiliary_target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "auxTarget");
-  RNA_def_property_ui_text(prop, "Auxiliary Target", "Additional mesh target to shrink to");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_ShrinkwrapModifier_auxTarget_set", NULL, "rna_Mesh_object_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "auxiliary_target", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "auxTarget");
+  api_def_prop_ui_text(prop, "Auxiliary Target", "Additional mesh target to shrink to");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_ShrinkwrapMod_auxTarget_set", NULL, "api_Mesh_object_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgroup_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_ShrinkwrapModifier_vgroup_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "vgroup_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_ShrinkwrapMod_vgroup_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "keepDist");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_DISTANCE);
+  RNA_def_prop_float_stype(prop, NULL, "keepDist");
+  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   RNA_def_property_ui_range(prop, -100, 100, 1, 2);
   RNA_def_property_ui_text(prop, "Offset", "Distance to keep from the target");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
