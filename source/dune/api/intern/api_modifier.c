@@ -1979,7 +1979,7 @@ static void api_def_mod_lattice(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   api_def_prop_ui_range(prop, 0, 1, 10, 2);
   api_def_prop_ui_text(prop, "Strength", "Strength of modifier effect");
@@ -2058,8 +2058,8 @@ static void api_def_mod_build(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Start Frame", "Start frame of the effect");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "frame_duration", PROP_FLOAT, PROP_TIME);
-  api_def_prop_float_sdna(prop, NULL, "length");
+  prop = api_def_prop(sapi, "frame_duration", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "length");
   api_def_prop_range(prop, 1, MAXFRAMEF);
   api_def_prop_ui_text(prop, "Length", "Total time the build effect requires");
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -2067,7 +2067,7 @@ static void api_def_mod_build(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_reverse", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_sapi(prop, NULL, "flag", MOD_BUILD_FLAG_REVERSE);
   api_def_prop_ui_text(prop, "Reversed", "Deconstruct the mesh instead of building it");
-  api_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_random_order", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_BUILD_FLAG_RANDOMIZE);
@@ -4342,7 +4342,7 @@ static void api_def_mod_mask(DuneApi *dapi)
   api_def_prop_ptr_fns(
       prop, NULL, "api_MaskMod_ob_arm_set", NULL, "api_Armature_object_poll");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_prop_update(prop, 0, "api_Mod_graph_update");
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
   prop = api_def_prop(asapi, "vertex_group", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "vgroup");
@@ -4791,49 +4791,49 @@ static void api_def_mod_screw(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Flip", "Flip normals of lathed faces");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(saoi, "use_normal_calculate", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(saoi, "use_normal_calculate", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_NORMAL_CALC);
   api_def_prop_ui_text(
       prop, "Calculate Order", "Calculate the order of edges (needed for meshes, but not curves)");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_object_screw_offset", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_object_screw_offset", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_OBJECT_OFFSET);
   api_def_prop_ui_text(
       prop, "Object Screw", "Use the distance between the objects to make a screw");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* Vertex merging parameters */
-  prop = RNA_def_property(srna, "use_merge_vertices", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_merge_vertices", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_MERGE);
   RNA_def_property_ui_text(
       prop, "Merge Vertices", "Merge adjacent vertices (screw offset must be zero)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_smooth_shade", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_smooth_shade", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_SMOOTH_SHADING);
   RNA_def_property_ui_text(
       prop, "Smooth Shading", "Output faces with smooth shading rather than flat shaded");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_stretch_u", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_UV_STRETCH_U);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_stretch_u", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypr(prop, NULL, "flag", MOD_SCREW_UV_STRETCH_U);
+  api_def_prop_ui_text(
       prop, "Stretch U", "Stretch the U coordinates between 0 and 1 when UV's are present");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_stretch_v", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_UV_STRETCH_V);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapo, "use_stretch_v", PROP_BOOL, PROP_NONE);
+  api_def_mmpr_bool_stype(prop, NULL, "flag", MOD_SCREW_UV_STRETCH_V);
+  api_def_prop_ui_text(
       prop, "Stretch V", "Stretch the V coordinates between 0 and 1 when UV's are present");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
 #  if 0
-  prop = RNA_def_property(srna, "use_angle_object", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_OBJECT_ANGLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_angle_object", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_OBJECT_ANGLE);
+  api_def_prop_ui_text(
       prop, "Object Angle", "Use the angle between the objects rather than the fixed angle");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 #  endif
 
   RNA_define_lib_overridable(false);
