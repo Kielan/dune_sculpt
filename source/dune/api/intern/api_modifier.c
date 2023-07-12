@@ -3763,90 +3763,90 @@ static void api_def_mod_explode(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Unborn", "Show mesh when particles are unborn");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "show_alive", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_alive", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_Alive);
   api_def_prop_ui_text(prop, "Alive", "Show mesh when particles are alive");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "show_dead", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_dead", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_Dead);
   api_def_prop_ui_text(prop, "Dead", "Show mesh when particles are dead");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(sapi, "use_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_PaSize);
-  RNA_def_prop_ui_text(prop, "Size", "Use particle size for the shrapnel");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "use_size", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_PaSize);
+  api_def_prop_ui_text(prop, "Size", "Use particle size for the shrapnel");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(sapi, "particle_uv", PROP_STRING, PROP_NONE);
-  RNA_def_prop_string_stype(prop, NULL, "uvname");
-  RNA_def_prop_string_maxlength(prop, MAX_CUSTOMDATA_LAYER_NAME);
-  RNA_def_prop_ui_text(prop, "Particle UV", "UV map to change with particle age");
-  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "particle_uv", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "uvname");
+  api_def_prop_string_maxlength(prop, MAX_CUSTOMDATA_LAYER_NAME);
+  api_def_prop_ui_text(prop, "Particle UV", "UV map to change with particle age");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_sdna(prop, NULL, "flag", eExplodeFlag_INVERT_VGROUP);
-  RNA_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", eExplodeFlag_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   api_define_lib_overridable(false);
 }
 
-static void api_def_modifier_cloth(BlenderRNA *brna)
+static void api_def_mod_cloth(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ClothModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Cloth Modifier", "Cloth simulation modifier");
-  RNA_def_struct_sdna(srna, "ClothModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_CLOTH);
+  sapi = api_def_struct(dapi, "ClothMod", "Mod");
+  api_def_struct_ui_text(sapi, "Cloth Mod", "Cloth simulation modifier");
+  api_def_struct_stype(sapi, "ClothModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_CLOTH);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "sim_parms");
-  RNA_def_property_ui_text(prop, "Cloth Settings", "");
+  prop = api_def_prop(sapi, "settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "sim_parms");
+  api_def_prop_ui_text(prop, "Cloth Settings", "");
 
-  prop = RNA_def_property(srna, "collision_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "coll_parms");
-  RNA_def_property_ui_text(prop, "Cloth Collision Settings", "");
+  prop = api_def_prop(sapi, "collision_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stypes(prop, NULL, "coll_parms");
+  api_def_prop_ui_text(prop, "Cloth Collision Settings", "");
 
-  prop = RNA_def_property(srna, "solver_result", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ClothSolverResult");
-  RNA_def_property_pointer_sdna(prop, NULL, "solver_result");
-  RNA_def_property_ui_text(prop, "Solver Result", "");
+  prop = api_def_prop(sapi, "solver_result", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "ClothSolverResult");
+  api_def_prop_ptr_stype(prop, NULL, "solver_result");
+  api_def_prop_ui_text(prop, "Solver Result", "");
 
-  prop = RNA_def_property(srna, "point_cache", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Point Cache", "");
+  prop = api_def_prop(sapi, "point_cache", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Point Cache", "");
 
-  prop = RNA_def_property(srna, "hair_grid_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "hair_grid_min");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Hair Grid Minimum", "");
+  prop = api_def_prop(sapi, "hair_grid_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "hair_grid_min");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Hair Grid Minimum", "");
 
-  prop = RNA_def_property(srna, "hair_grid_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "hair_grid_max");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Hair Grid Maximum", "");
+  prop = api_def_prop(sapi, "hair_grid_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "hair_grid_max");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Hair Grid Maximum", "");
 
-  prop = RNA_def_property(srna, "hair_grid_resolution", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "hair_grid_res");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Hair Grid Resolution", "");
+  prop = api_def_prop(sapi, "hair_grid_resolution", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "hair_grid_res");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Hair Grid Resolution", "");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_fluid(BlenderRNA *brna)
+static void api_def_mod_fluid(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_fluid_type_items[] = {
+  static const EnumPropItem prop_fluid_type_items[] = {
       {0, "NONE", 0, "None", ""},
       {MOD_FLUID_TYPE_DOMAIN, "DOMAIN", 0, "Domain", ""},
       {MOD_FLUID_TYPE_FLOW, "FLOW", 0, "Flow", "Inflow/Outflow"},
@@ -3854,93 +3854,93 @@ static void rna_def_modifier_fluid(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "FluidModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Fluid Modifier", "Fluid simulation modifier");
-  RNA_def_struct_sdna(srna, "FluidModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_FLUIDSIM);
+  sapi = api_def_struct(dapi, "FluidMod", "Mod");
+  api_def_struct_ui_text(sapi, "Fluid Mod", "Fluid simulation mod");
+  api_def_struct_stype(sapi, "FluidModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_FLUIDSIM);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "domain_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "domain");
-  RNA_def_property_ui_text(prop, "Domain Settings", "");
+  prop = api_def_prop(sapi, "domain_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "domain");
+  api_def_prop_ui_text(prop, "Domain Settings", "");
 
-  prop = RNA_def_property(srna, "flow_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "flow");
-  RNA_def_property_ui_text(prop, "Flow Settings", "");
+  prop = api_def_prop(sapi, "flow_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "flow");
+  api_def_prop_ui_text(prop, "Flow Settings", "");
 
-  prop = RNA_def_property(srna, "effector_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "effector");
-  RNA_def_property_ui_text(prop, "Effector Settings", "");
+  prop = api_def_prop(sapi, "effector_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "effector");
+  api_def_prop_ui_text(prop, "Effector Settings", "");
 
-  prop = RNA_def_property(srna, "fluid_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, prop_fluid_type_items);
-  RNA_def_property_ui_text(prop, "Type", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_fluid_set_type");
+  prop = api_def_prop(sapi, "fluid_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sapi(prop, NULL, "type");
+  api_def_prop_enum_items(prop, prop_fluid_type_items);
+  api_def_prop_ui_text(prop, "Type", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_fluid_set_type");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_dynamic_paint(BlenderRNA *brna)
+static void api_def_mod_dynamic_paint(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "DynamicPaintModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Dynamic Paint Modifier", "Dynamic Paint modifier");
-  RNA_def_struct_sdna(srna, "DynamicPaintModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_DYNAMICPAINT);
+  sapi = api_def_struct(dapi, "DynamicPaintMod", "Mod");
+  api_def_struct_ui_text(sapi, "Dynamic Paint Mod", "Dynamic Paint mod");
+  api_def_struct_mstype(sapi, "DynamicPaintModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_DYNAMICPAINT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "canvas_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "canvas");
-  RNA_def_property_ui_text(prop, "Canvas Settings", "");
+  prop = api_def_prop(sapi, "canvas_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "canvas");
+  api_def_prop_ui_text(prop, "Canvas Settings", "");
 
-  prop = RNA_def_property(srna, "brush_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "brush");
-  RNA_def_property_ui_text(prop, "Brush Settings", "");
+  prop = api_def_prop(sapi, "brush_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "brush");
+  api_def_prop_ui_text(prop, "Brush Settings", "");
 
-  prop = RNA_def_property(srna, "ui_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_prop_dynamicpaint_type_items);
-  RNA_def_property_ui_text(prop, "Type", "");
+  prop = api_def_prop(sapi, "ui_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_prop_dynamicpaint_type_items);
+  api_def_prop_ui_text(prop, "Type", "");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_collision(BlenderRNA *brna)
+static void api_def_mod_collision(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "CollisionModifier", "Modifier");
-  RNA_def_struct_ui_text(srna,
-                         "Collision Modifier",
-                         "Collision modifier defining modifier stack position used for collision");
-  RNA_def_struct_sdna(srna, "CollisionModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_PHYSICS);
+  sapi = api_def_struct(dapi, "CollisionMod", "Mod");
+  api_def_struct_ui_text(sapi,
+                         "Collision Mod",
+                         "Collision mod defining mod stack position used for collision");
+  api_def_struct_stype(sapi, "CollisionModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_PHYSICS);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "CollisionSettings");
-  RNA_def_property_pointer_funcs(prop, "rna_CollisionModifier_settings_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Settings", "");
+  prop = api_def_prop(sapi, "settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "CollisionSettings");
+  api_def_prop_ptr_fns(prop, "api_CollisionMod_settings_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Settings", "");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_bevel(BlenderRNA *brna)
+static void api_def_mod_bevel(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_limit_method_items[] = {
+  static const EnumPropItem prop_limit_method_items[] = {
       {0, "NONE", 0, "None", "Bevel the entire mesh by a constant amount"},
       {MOD_BEVEL_ANGLE,
        "ANGLE",
@@ -3960,7 +3960,7 @@ static void rna_def_modifier_bevel(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_val_type_items[] = {
+  static const EnumPropItem prop_val_type_items[] = {
       {MOD_BEVEL_AMT_OFFSET, "OFFSET", 0, "Offset", "Amount is offset of new edges from original"},
       {MOD_BEVEL_AMT_WIDTH, "WIDTH", 0, "Width", "Amount is width of new face"},
       {MOD_BEVEL_AMT_DEPTH,
@@ -3981,7 +3981,7 @@ static void rna_def_modifier_bevel(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_profile_type_items[] = {
+  static const EnumPropItem prop_profile_type_items[] = {
       {MOD_BEVEL_PROFILE_SUPERELLIPSE,
        "SUPERELLIPSE",
        0,
@@ -3995,7 +3995,7 @@ static void rna_def_modifier_bevel(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static EnumPropertyItem prop_harden_normals_items[] = {
+  static EnumPropItem prop_harden_normals_items[] = {
       {MOD_BEVEL_FACE_STRENGTH_NONE, "FSTR_NONE", 0, "None", "Do not set face strength"},
       {MOD_BEVEL_FACE_STRENGTH_NEW, "FSTR_NEW", 0, "New", "Set face strength on new faces only"},
       {MOD_BEVEL_FACE_STRENGTH_AFFECTED,
@@ -4007,20 +4007,20 @@ static void rna_def_modifier_bevel(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_miter_outer_items[] = {
+  static const EnumPropItem prop_miter_outer_items[] = {
       {MOD_BEVEL_MITER_SHARP, "MITER_SHARP", 0, "Sharp", "Outside of miter is sharp"},
       {MOD_BEVEL_MITER_PATCH, "MITER_PATCH", 0, "Patch", "Outside of miter is squared-off patch"},
       {MOD_BEVEL_MITER_ARC, "MITER_ARC", 0, "Arc", "Outside of miter is arc"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_miter_inner_items[] = {
+  static const EnumPropItem prop_miter_inner_items[] = {
       {MOD_BEVEL_MITER_SHARP, "MITER_SHARP", 0, "Sharp", "Inside of miter is sharp"},
       {MOD_BEVEL_MITER_ARC, "MITER_ARC", 0, "Arc", "Inside of miter is arc"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static EnumPropertyItem prop_vmesh_method_items[] = {
+  static EnumPropItem prop_vmesh_method_items[] = {
       {MOD_BEVEL_VMESH_ADJ, "ADJ", 0, "Grid Fill", "Default patterned fill"},
       {MOD_BEVEL_VMESH_CUTOFF,
        "CUTOFF",
@@ -4030,78 +4030,78 @@ static void rna_def_modifier_bevel(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_affect_items[] = {
+  static const EnumPropItem prop_affect_items[] = {
       {MOD_BEVEL_AFFECT_VERTICES, "VERTICES", 0, "Vertices", "Affect only vertices"},
       {MOD_BEVEL_AFFECT_EDGES, "EDGES", 0, "Edges", "Affect only edges"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "BevelModifier", "Modifier");
-  RNA_def_struct_ui_text(
-      srna, "Bevel Modifier", "Bevel modifier to make edges and vertices more rounded");
-  RNA_def_struct_sdna(srna, "BevelModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_BEVEL);
+  sapi = api_def_struct(dapi, "BevelMod", "Mod");
+  api_def_struct_ui_text(
+      sapi, "Bevel Mod", "Bevel mod to make edges and vertices more rounded");
+  api_def_struct_stype(sapi, "BevelModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_BEVEL);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "width", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "value");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 0.1, 4);
-  RNA_def_property_ui_text(prop, "Width", "Bevel amount");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "width", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "value");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 0.1, 4);
+  api_def_prop_ui_text(prop, "Width", "Bevel amount");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "width_pct", PROP_FLOAT, PROP_PERCENTAGE);
-  RNA_def_property_float_sdna(prop, NULL, "value");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 5.0, 2);
-  RNA_def_property_ui_text(prop, "Width Percent", "Bevel amount for percentage method");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "width_pct", PROP_FLOAT, PROP_PERCENTAGE);
+  api_def_prop_float_stype(prop, NULL, "value");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 5.0, 2);
+  api_def_prop_ui_text(prop, "Width Percent", "Bevel amount for percentage method");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "segments", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "res");
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_text(prop, "Segments", "Number of segments for round edges/verts");
-  RNA_def_property_update(prop, 0, "rna_BevelModifier_update_segments");
+  prop = api_def_prop(sapi, "segments", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "res");
+  api_def_prop_range(prop, 1, 100);
+  api_def_prop_ui_text(prop, "Segments", "Number of segments for round edges/verts");
+  api_def_prop_update(prop, 0, "api_BevelMod_update_segments");
 
-  prop = RNA_def_property(srna, "affect", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_sdna(prop, NULL, "affect_type");
-  RNA_def_property_enum_items(prop, prop_affect_items);
-  RNA_def_property_ui_text(prop, "Affect", "Affect edges or vertices");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "affect", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_stype(prop, NULL, "affect_type");
+  api_def_prop_enum_items(prop, prop_affect_items);
+  api_def_prop_ui_text(prop, "Affect", "Affect edges or vertices");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "limit_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "lim_flags");
-  RNA_def_property_enum_items(prop, prop_limit_method_items);
-  RNA_def_property_ui_text(prop, "Limit Method", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "limit_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "lim_flags");
+  api_def_prop_enum_items(prop, prop_limit_method_items);
+  api_def_prop_ui_text(prop, "Limit Method", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "angle_limit", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "bevel_angle");
-  RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 2);
-  RNA_def_property_ui_text(prop, "Angle", "Angle above which to bevel edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "angle_limit", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "bevel_angle");
+  api_def_prop_range(prop, 0.0f, DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 2);
+  api_def_prop_ui_text(prop, "Angle", "Angle above which to bevel edges");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_BevelModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_BevelMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_BEVEL_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapo, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", MOD_BEVEL_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_clamp_overlap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flags", MOD_BEVEL_OVERLAP_OK);
-  RNA_def_property_ui_text(prop, "Clamp Overlap", "Clamp the width to avoid overlap");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapu, "use_clamp_overlap", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_negative_stype(prop, NULL, "flags", MOD_BEVEL_OVERLAP_OK);
+  RNA_def_prop_ui_text(prop, "Clamp Overlap", "Clamp the width to avoid overlap");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "offset_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "val_flags");
-  RNA_def_property_enum_items(prop, prop_val_type_items);
+  prop = api_def_prop(sapi, "offset_type", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_stype(prop, NULL, "val_flags");
+  RNA_def_prop_enum_items(prop, prop_val_type_items);
   RNA_def_property_ui_text(prop, "Width Type", "What distance Width measures");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
