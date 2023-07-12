@@ -4779,8 +4779,8 @@ static void api_def_mod_screw(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Screw", "Offset the revolution along its axis");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
-  api_def_prop_float_sdna(prop, NULL, "merge_dist");
+  prop = api_def_prop(sapi, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "merge_dist");
   api_def_prop_range(prop, 0, FLT_MAX);
   api_def_prop_ui_range(prop, 0, 1, 1, 4);
   api_def_prop_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
@@ -4804,17 +4804,17 @@ static void api_def_mod_screw(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* Vertex merging parameters */
-  prop = RNA_def_property(srna, "use_merge_vertices", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_MERGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_merge_vertices", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_MERGE);
+  api_def_prop_ui_text(
       prop, "Merge Vertices", "Merge adjacent vertices (screw offset must be zero)");
   RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_smooth_shade", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_SMOOTH_SHADING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_smooth_shade", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_SMOOTH_SHADING);
+  api_def_prop_ui_text(
       prop, "Smooth Shading", "Output faces with smooth shading rather than flat shaded");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_stretch_u", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stypr(prop, NULL, "flag", MOD_SCREW_UV_STRETCH_U);
@@ -4833,43 +4833,43 @@ static void api_def_mod_screw(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_OBJECT_ANGLE);
   api_def_prop_ui_text(
       prop, "Object Angle", "Use the angle between the objects rather than the fixed angle");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 #  endif
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_uvwarp(BlenderRNA *brna)
+static void api_def_mod_uvwarp(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "UVWarpModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "UVWarp Modifier", "Add target position to uv coordinates");
-  RNA_def_struct_sdna(srna, "UVWarpModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_UVPROJECT);
+  sapi = api_def_struct(dapi, "UVWarpMod", "Mod");
+  api_def_struct_ui_text(sapi, "UVWarp Mod", "Add target position to uv coordinates");
+  api_def_struct_stype(sapi, "UVWarpModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_UVPROJECT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "axis_u", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "axis_u");
-  RNA_def_property_enum_items(prop, rna_enum_axis_xyz_items);
-  RNA_def_property_ui_text(prop, "U-Axis", "Pole axis for rotation");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapo, "axis_u", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "axis_u");
+  api_def_prop_enum_items(prop, api_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "U-Axis", "Pole axis for rotation");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "axis_v", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "axis_v");
-  RNA_def_property_enum_items(prop, rna_enum_axis_xyz_items);
+  RNA_def_property_enum_items(prop, api_enum_axis_xyz_items);
   RNA_def_property_ui_text(prop, "V-Axis", "Pole axis for rotation");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "center", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "center");
-  RNA_def_property_ui_text(prop, "UV Center", "Center point for rotate/scale");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(srna, "center", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_stype(prop, NULL, "center");
+  RNA_def_prop_ui_text(prop, "UV Center", "Center point for rotate/scale");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_stype(prop, NULL, "offset");
   RNA_def_property_ui_text(prop, "Offset", "2D Offset for the warp");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
