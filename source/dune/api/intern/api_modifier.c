@@ -4738,46 +4738,46 @@ static void rna_def_modifier_screw(BlenderRNA *brna)
 
   RNA_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ob_axis");
-  RNA_def_property_ui_text(prop, "Object", "Object to define the screw axis");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
+  RNA_def_prop_ptr_stype(prop, NULL, "ob_axis");
+  RNA_def_prop_ui_text(prop, "Object", "Object to define the screw axis");
+  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  RNA_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "steps", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 512, 1, -1);
-  RNA_def_property_ui_text(prop, "Steps", "Number of steps in the revolution");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(sapi, "steps", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_range(prop, 1, 10000);
+  api_def_property_ui_range(prop, 1, 512, 1, -1);
+  api_def_property_ui_text(prop, "Steps", "Number of steps in the revolution");
+  api_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "render_steps", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 512, 1, -1);
-  RNA_def_property_ui_text(prop, "Render Steps", "Number of steps in the revolution");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "render_steps", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_range(prop, 1, 10000);
+  api_def_prop_ui_range(prop, 1, 512, 1, -1);
+  api_def_prop_ui_text(prop, "Render Steps", "Number of steps in the revolution");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "iterations", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "iter");
-  RNA_def_property_range(prop, 1, 10000);
-  RNA_def_property_ui_range(prop, 1, 100, 1, -1);
-  RNA_def_property_ui_text(prop, "Iterations", "Number of times to apply the screw operation");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "iterations", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "iter");
+  api_def_prop_range(prop, 1, 10000);
+  api_def_prop_ui_range(prop, 1, 100, 1, -1);
+  api_def_prop_ui_text(prop, "Iterations", "Number of times to apply the screw operation");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_axis_xyz_items);
-  RNA_def_property_ui_text(prop, "Axis", "Screw axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "Axis", "Screw axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_ui_range(prop, -M_PI * 2, M_PI * 2, 10, -1);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Angle", "Angle of revolution");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_ui_range(prop, -M_PI * 2, M_PI * 2, 10, -1);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_text(prop, "Angle", "Angle of revolution");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "screw_offset", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "screw_ofs");
-  RNA_def_property_ui_text(prop, "Screw", "Offset the revolution along its axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "screw_offset", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "screw_ofs");
+  api_def_prop_ui_text(prop, "Screw", "Offset the revolution along its axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = RNA_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "merge_dist");
