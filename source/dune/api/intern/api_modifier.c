@@ -4857,37 +4857,37 @@ static void api_def_mod_uvwarp(DuneApi *dapi)
   api_def_prop_ui_text(prop, "U-Axis", "Pole axis for rotation");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "axis_v", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "axis_v");
-  RNA_def_property_enum_items(prop, api_enum_axis_xyz_items);
-  RNA_def_property_ui_text(prop, "V-Axis", "Pole axis for rotation");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "axis_v", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "axis_v");
+  api_def_prop_enum_items(prop, api_enum_axis_xyz_items);
+  api_def_prop_ui_text(prop, "V-Axis", "Pole axis for rotation");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_prop(srna, "center", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_stype(prop, NULL, "center");
-  RNA_def_prop_ui_text(prop, "UV Center", "Center point for rotate/scale");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(srna, "center", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "center");
+  api_def_prop_ui_text(prop, "UV Center", "Center point for rotate/scale");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_stype(prop, NULL, "offset");
-  RNA_def_property_ui_text(prop, "Offset", "2D Offset for the warp");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_float_stype(prop, NULL, "offset");
+  api_def_prop_ui_text(prop, "Offset", "2D Offset for the warp");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_ui_text(prop, "Scale", "2D Scale for the warp");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_ui_text(prop, "Scale", "2D Scale for the warp");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "rotation");
-  RNA_def_property_ui_text(prop, "Rotation", "2D Rotation for the warp");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "rotation");
+  api_def_prop_ui_text(prop, "Rotation", "2D Rotation for the warp");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "object_from", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "object_src");
-  RNA_def_property_ui_text(prop, "Object From", "Object defining offset");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "object_from", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "object_src");
+  api_def_prop_ui_text(prop, "Object From", "Object defining offset");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
   prop = RNA_def_property(srna, "bone_from", PROP_STRING, PROP_NONE);
   RNA_def_property_string_sdna(prop, NULL, "bone_src");
