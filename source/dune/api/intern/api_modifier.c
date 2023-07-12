@@ -2628,15 +2628,15 @@ static void api_def_mod_hook(DuneApi *dapi)
   api_def_fn_flag(fn, FN_USE_REPORTS);
   parm = api_def_int_array(
       fn, "indices", 1, NULL, INT_MIN, INT_MAX, "", "Vertex Indices", 0, INT_MAX);
-  api_def_prop_array(parm, RNA_MAX_ARRAY_LENGTH);
+  api_def_prop_array(parm, API_MAX_ARRAY_LENGTH);
   api_def_param_flags(parm, PROP_DYNAMIC, PARM_REQUIRED);
 
-  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_HOOK_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  apu_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 static void api_def_mod_softbody(DuneApi *dapi)
@@ -2650,9 +2650,9 @@ static void api_def_mod_softbody(DuneApi *dapi)
   api_def_struct_ui_icon(sapi, ICON_MOD_SOFT);
 
   prop = api_def_prop(sapi, "settings", PROP_PTR, PROP_NONE);
-  apu_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "SoftBodySettings");
-  api_def_prop_ptr_fns(prop, "rna_SoftBodyMod_settings_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_SoftBodyMod_settings_get", NULL, NULL, NULL);
   apu_def_prop_ui_text(prop, "Soft Body Settings", "");
 
   prop = api_def_prop(sapi, "point_cache", PROP_PTR, PROP_NONE);
@@ -4544,19 +4544,19 @@ static void api_def_mod_solidify(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "SolidifyModifier", "Modifier");
+  sapi = api_def_struct(dapi, "SolidifyMod", "Mod");
   api_def_struct_ui_text(
       sapi, "Solidify Mod", "Create a solid skin, compensating for sharp angles");
-  api_def_struct_stype(sapi, "SolidifyModifierData");
+  api_def_struct_stype(sapi, "SolidifyModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SOLIDIFY);
 
   api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "solidify_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "Selects the used algorithm");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "solidify_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, mode_items);
+  api_def_prop_ui_text(prop, "Mode", "Selects the used algorithm");
+  apo_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = api_def_prop(sapi, "thickness", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "offset");
@@ -4573,17 +4573,17 @@ static void api_def_mod_solidify(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_thickness_angle_clamp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_OFFSET_ANGLE_CLAMP);
-  RNA_def_prop_ui_text(prop, "Angle Clamp", "Clamp thickness based on angles");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_OFFSET_ANGLE_CLAMP);
+  api_def_prop_ui_text(prop, "Angle Clamp", "Clamp thickness based on angles");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "thickness_vertex_group", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_float_stype(prop, NULL, "offset_fac_vg");
-  RNA_def_prop_range(prop, 0.0, 1.0);
-  RNA_def_prop_ui_range(prop, 0, 1, 0.1, 3);
-  RNA_def_prop_ui_text(
+  api_def_prop_float_stype(prop, NULL, "offset_fac_vg");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0, 1, 0.1, 3);
+  api_def_prop_ui_text(
       prop, "Vertex Group Factor", "Thickness factor to use for zero vertex group influence");
-  RNA_def_prop_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "offset_fac");
@@ -4633,7 +4633,7 @@ static void api_def_mod_solidify(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "shell_vertex_group", PROP_STRING, PROP_NONE);
-  api_def_prop_string_styoe(prop, NULL, "shell_defgrp_name");
+  api_def_prop_string_stype(prop, NULL, "shell_defgrp_name");
   api_def_prop_ui_text(prop,
                        "Shell Vertex Group",
                        "Vertex group that the generated shell geometry will be weighted to");
@@ -4657,98 +4657,98 @@ static void api_def_mod_solidify(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_pdate");
 
   prop = api_def_prop(sapi, "use_even_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_EVEN);
-  RNA_def_property_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_EVEN);
+  api_def_prop_ui_text(
       prop,
       "Even Thickness",
       "Maintain thickness by adjusting for sharp corners (slow, disable when not needed)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_quality_normals", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_NORMAL_CALC);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_quality_normals", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_NORMAL_CALC);
+  api_def_prop_ui_text(
       prop,
       "High Quality Normals",
       "Calculate normals which result in more even thickness (slow, disable when not needed)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_VGROUP_INV);
-  RNA_def_property_ui_text(prop, "Vertex Group Invert", "Invert the vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_VGROUP_INV);
+  api_def_prop_ui_text(prop, "Vertex Group Invert", "Invert the vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_flat_faces", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_NONMANIFOLD_FLAT_FACES);
-  RNA_def_property_ui_text(prop,
-                           "Flat Faces",
-                           "Make faces use the minimal vertex weight assigned to their vertices"
-                           "(ensures new faces remain parallel to their original ones, slow, "
-                           "disable when not needed)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_flat_faces", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_NONMANIFOLD_FLAT_FACES);
+  api_def_prop_ui_text(prop,
+                       "Flat Faces",
+                       "Make faces use the minimal vertex weight assigned to their vertices"
+                       "(ensures new faces remain parallel to their original ones, slow, "
+                       "disable when not needed)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_flip_normals", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_FLIP);
-  RNA_def_property_ui_text(prop, "Flip Normals", "Invert the face direction");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(swpi, "use_flip_normals", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_FLIP);
+  api_def_prop_ui_text(prop, "Flip Normals", "Invert the face direction");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_rim_only", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SOLIDIFY_NOSHELL);
-  RNA_def_property_ui_text(prop, "Only Rim", "Only add the rim to the original data");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_rim_only", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SOLIDIFY_NOSHELL);
+  api_def_prop_ui_text(prop, "Only Rim", "Only add the rim to the original data");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* Settings for #MOD_SOLIDIFY_MODE_NONMANIFOLD */
-  prop = RNA_def_property(srna, "nonmanifold_thickness_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "nonmanifold_offset_mode");
-  RNA_def_property_enum_items(prop, nonmanifold_thickness_mode_items);
-  RNA_def_property_ui_text(prop, "Thickness Mode", "Selects the used thickness algorithm");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "nonmanifold_thickness_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "nonmanifold_offset_mode");
+  api_def_prop_enum_items(prop, nonmanifold_thickness_mode_items);
+  api_def_prop_ui_text(prop, "Thickness Mode", "Selects the used thickness algorithm");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "nonmanifold_boundary_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, nonmanifold_boundary_mode_items);
-  RNA_def_property_ui_text(prop, "Boundary Shape", "Selects the boundary adjustment algorithm");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "nonmanifold_boundary_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, nonmanifold_boundary_mode_items);
+  api_def_prop_ui_text(prop, "Boundary Shape", "Selects the boundary adjustment algorithm");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "nonmanifold_merge_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "merge_tolerance");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.01, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "nonmanifold_merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "merge_tolerance");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.01, 4);
+  api_def_prop_ui_text(
       prop, "Merge Threshold", "Distance within which degenerated geometry is merged");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "bevel_convex", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bevel_convex");
-  RNA_def_property_range(prop, -1.0, 1.0);
-  RNA_def_property_ui_range(prop, -1.0, 1.0, 0.1, 3);
-  RNA_def_property_ui_text(prop, "Bevel Convex", "Edge bevel weight to be added to outside edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "bevel_convex", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "bevel_convex");
+  api_def_prop_range(prop, -1.0, 1.0);
+  api_def_prop_ui_range(prop, -1.0, 1.0, 0.1, 3);
+  api_def_prop_ui_text(prop, "Bevel Convex", "Edge bevel weight to be added to outside edges");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_screw(BlenderRNA *brna)
+static void api_def_mod_screw(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ScrewModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Screw Modifier", "Revolve edges");
-  RNA_def_struct_sdna(srna, "ScrewModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SCREW);
+  sapi = api_def_struct(dapi, "ScrewMod", "Mod");
+  api_def_struct_ui_text(sapi, "Screw Mod", "Revolve edges");
+  api_def_struct_sdna(sapi, "ScrewModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SCREW);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
-  RNA_def_prop_ptr_stype(prop, NULL, "ob_axis");
-  RNA_def_prop_ui_text(prop, "Object", "Object to define the screw axis");
-  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_prop_update(prop, 0, "api_Mod_graph_update");
+  api_def_prop_ptr_stype(prop, NULL, "ob_axis");
+  api_def_prop_ui_text(prop, "Object", "Object to define the screw axis");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_prop(sapi, "steps", PROP_INT, PROP_UNSIGNED);
+  prop = api_def_prop(sapi, "steps", PROP_INT, PROP_UNSIGNED);
   api_def_prop_range(prop, 1, 10000);
-  api_def_property_ui_range(prop, 1, 512, 1, -1);
-  api_def_property_ui_text(prop, "Steps", "Number of steps in the revolution");
-  api_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_ui_range(prop, 1, 512, 1, -1);
+  api_def_prop_ui_text(prop, "Steps", "Number of steps in the revolution");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "render_steps", PROP_INT, PROP_UNSIGNED);
   api_def_prop_range(prop, 1, 10000);
@@ -4761,47 +4761,47 @@ static void rna_def_modifier_screw(BlenderRNA *brna)
   api_def_prop_range(prop, 1, 10000);
   api_def_prop_ui_range(prop, 1, 100, 1, -1);
   api_def_prop_ui_text(prop, "Iterations", "Number of times to apply the screw operation");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "axis", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, rna_enum_axis_xyz_items);
   api_def_prop_ui_text(prop, "Axis", "Screw axis");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "angle", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_ui_range(prop, -M_PI * 2, M_PI * 2, 10, -1);
   api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   api_def_prop_ui_text(prop, "Angle", "Angle of revolution");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "screw_offset", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "screw_ofs");
   api_def_prop_ui_text(prop, "Screw", "Offset the revolution along its axis");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "merge_dist");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 1, 4);
-  RNA_def_property_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_sdna(prop, NULL, "merge_dist");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 1, 4);
+  api_def_prop_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_normal_flip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_NORMAL_FLIP);
-  RNA_def_property_ui_text(prop, "Flip", "Flip normals of lathed faces");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_normal_flip", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_NORMAL_FLIP);
+  api_def_prop_ui_text(prop, "Flip", "Flip normals of lathed faces");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_normal_calculate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_NORMAL_CALC);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(saoi, "use_normal_calculate", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_NORMAL_CALC);
+  api_def_prop_ui_text(
       prop, "Calculate Order", "Calculate the order of edges (needed for meshes, but not curves)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_object_screw_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SCREW_OBJECT_OFFSET);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_object_screw_offset", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SCREW_OBJECT_OFFSET);
+  api_def_prop_ui_text(
       prop, "Object Screw", "Use the distance between the objects to make a screw");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   /* Vertex merging parameters */
   prop = RNA_def_property(srna, "use_merge_vertices", PROP_BOOLEAN, PROP_NONE);
