@@ -5335,11 +5335,11 @@ static void api_def_mod_weightvgproximity(DuneApi *dapi)
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(sapi, "min_dist", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1000.0, 10, -1);
-  RNA_def_property_ui_text(prop, "Lowest", "Distance mapping to weight 0.0");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "min_dist", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1000.0, 10, -1);
+  api_def_prop_ui_text(prop, "Lowest", "Distance mapping to weight 0.0");
+  apo_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "max_dist", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_range(prop, 0.0, FLT_MAX);
@@ -5642,74 +5642,74 @@ static void api_def_mod_ocean(DuneApi *dapi)
       prop,
       "Spatial Size",
       "Size of the simulation domain (in meters), and of the generated geometry (in BU)");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = RNA_def_property(srna, "wind_velocity", PROP_FLOAT, PROP_VELOCITY);
-  RNA_def_property_float_sdna(prop, NULL, "wind_velocity");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Wind Velocity", "Wind speed");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  prop = api_def_prop(sapi, "wind_velocity", PROP_FLOAT, PROP_VELOCITY);
+  api_def_prop_float_stype(prop, NULL, "wind_velocity");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Wind Velocity", "Wind speed");
+  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = RNA_def_property(srna, "damping", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "damp");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "damping", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "damp");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Damping", "Damp reflected waves going in opposite direction to the wind");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
-  prop = RNA_def_property(srna, "wave_scale_min", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "smallest_wave");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Smallest Wave", "Shortest allowed wavelength");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  prop = api_def_prop(sapi, "wave_scale_min", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "smallest_wave");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_text(prop, "Smallest Wave", "Shortest allowed wavelength");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
-  prop = RNA_def_property(srna, "wave_alignment", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "wave_alignment");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Wave Alignment", "How much the waves are aligned to each other");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  prop = api_def_prop(sapi, "wave_alignment", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "wave_alignment");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Wave Alignment", "How much the waves are aligned to each other");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
-  prop = RNA_def_property(srna, "wave_direction", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "wave_direction");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "wave_direction", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "wave_direction");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  apu_def_prop_ui_text(
       prop, "Wave Direction", "Main direction of the waves when they are (partially) aligned");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
-  prop = RNA_def_property(srna, "wave_scale", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "wave_scale");
-  RNA_def_property_ui_text(prop, "Wave Scale", "Scale of the displacement effect");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "wave_scale", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "wave_scale");
+  api_def_prop_ui_text(prop, "Wave Scale", "Scale of the displacement effect");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "depth", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "depth");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Depth", "Depth of the solid ground below the water surface");
-  RNA_def_property_ui_range(prop, 0, 250, 1, -1);
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  prop = api_def_prop(sapi, "depth", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "depth");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Depth", "Depth of the solid ground below the water surface");
+  api_def_prop_ui_range(prop, 0, 250, 1, -1);
+  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = RNA_def_property(srna, "foam_coverage", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "foam_coverage");
-  RNA_def_property_ui_text(prop, "Foam Coverage", "Amount of generated foam");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "foam_coverage", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "foam_coverage");
+  api_def_prop_ui_text(prop, "Foam Coverage", "Amount of generated foam");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "bake_foam_fade", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "foam_fade");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bake_foam_fade", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "foam_fade");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Foam Fade", "How much foam accumulates over time (baked ocean only)");
-  RNA_def_property_ui_range(prop, 0.0, 10.0, 1, -1);
-  RNA_def_property_update(prop, 0, NULL);
+  api_def_prop_ui_range(prop, 0.0, 10.0, 1, -1);
+  api_def_prop_update(prop, 0, NULL);
 
-  prop = RNA_def_property(srna, "foam_layer_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "foamlayername");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "foam_layer_name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "foamlayername");
+  api_def_prop_ui_text(
       prop, "Foam Layer Name", "Name of the vertex color layer used for foam");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "choppiness", PROP_FLOAT, PROP_UNSIGNED);
+  prop = RNA_def_property(sapi, "choppiness", PROP_FLOAT, PROP_UNSIGNED);
   RNA_def_property_float_sdna(prop, NULL, "chop_amount");
   RNA_def_property_ui_text(
       prop,
