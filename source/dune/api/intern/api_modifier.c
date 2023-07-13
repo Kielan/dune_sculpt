@@ -3643,7 +3643,7 @@ static void api_def_mod_particleinstance(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "use_children", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stypr(prop, NULL, "flag", eParticleInstanceFlag_Children);
+  api_def_prop_bool_stype(prop, NULL, "flag", eParticleInstanceFlag_Children);
   api_def_prop_ui_text(prop, "Children", "Create instances from child particles");
   api_def_prop_translation_cxt(prop, LANG_CXT_ID_PARTICLESETTINGS);
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -5113,7 +5113,7 @@ static void api_def_mod_weightvgedit(DuneApi *dapu)
                            "Add Threshold",
                            "Lower bound for a vertex's weight "
                            "to be added to the vgroup");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "remove_threshold", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "rem_threshold");
@@ -5128,7 +5128,7 @@ static void api_def_mod_weightvgedit(DuneApi *dapu)
   api_define_lib_overridable(false);
 
   /* Common masking props. */
-  rna_def_mod_weightvg_mask(dapi,
+  api_def_mod_weightvg_mask(dapi,
                             sapi,
                             "edit_flags",
                             MOD_WVG_EDIT_INVERT_VGROUP_MASK,
@@ -5136,9 +5136,9 @@ static void api_def_mod_weightvgedit(DuneApi *dapu)
                             "api_WeightVGEditMod_mask_tex_uvlayer_name_set");
 }
 
-static void rna_def_modifier_weightvgmix(DuneApi *dapi)
+static void api_def_mod_weightvgmix(DuneApi *dapi)
 {
-  static const EnumPropertyItem weightvg_mix_modes_items[] = {
+  static const EnumPropItem weightvg_mix_modes_items[] = {
       {MOD_WVG_MIX_SET, "SET", 0, "Replace", "Replace VGroup A's weights by VGroup B's ones"},
       {MOD_WVG_MIX_ADD, "ADD", 0, "Add", "Add VGroup B's weights to VGroup A's ones"},
       {MOD_WVG_MIX_SUB, "SUB", 0, "Subtract", "Subtract VGroup B's weights from VGroup A's ones"},
@@ -5155,7 +5155,7 @@ static void rna_def_modifier_weightvgmix(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem weightvg_mix_set_items[] = {
+  static const EnumPropItem weightvg_mix_set_items[] = {
       {MOD_WVG_SET_ALL, "ALL", 0, "All", "Affect all vertices (might add some to VGroup A)"},
       {MOD_WVG_SET_A, "A", 0, "VGroup A", "Affect vertices in VGroup A"},
       {MOD_WVG_SET_B,
@@ -5172,91 +5172,90 @@ static void rna_def_modifier_weightvgmix(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "VertexWeightMixModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "WeightVG Mix Modifier", "Mix the weights of two vertex groups");
-  RNA_def_struct_sdna(srna, "WeightVGMixModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_VERTEX_WEIGHT);
+  sapi = api_def_struct(dapi, "VertexWeightMixMod", "Mod");
+  api_def_struct_ui_text(sapi, "WeightVG Mix Mod", "Mix the weights of two vertex groups");
+  api_def_struct_stype(sapi, "WeightVGMixModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_VERTEX_WEIGHT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "vertex_group_a", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name_a");
-  RNA_def_property_ui_text(prop, "Vertex Group A", "First vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WeightVGMixModifier_defgrp_name_a_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group_a", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name_a");
+  api_def_prop_ui_text(prop, "Vertex Group A", "First vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WeightVGMixMod_defgrp_name_a_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group_b", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name_b");
-  RNA_def_property_ui_text(prop, "Vertex Group B", "Second vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WeightVGMixModifier_defgrp_name_b_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group_b", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name_b");
+  api_def_prop_ui_text(prop, "Vertex Group B", "Second vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WeightVGMixMod_defgrp_name_b_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group_a", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WVG_MIX_INVERT_VGROUP_A);
-  RNA_def_property_ui_text(prop, "Invert Weights A", "Invert the influence of vertex group A");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group_a", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WVG_MIX_INVERT_VGROUP_A);
+  api_def_prop_ui_text(prop, "Invert Weights A", "Invert the influence of vertex group A");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group_b", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WVG_MIX_INVERT_VGROUP_B);
-  RNA_def_property_ui_text(prop, "Invert Weights B", "Invert the influence of vertex group B");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group_b", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WVG_MIX_INVERT_VGROUP_B);
+  api_def_prop_ui_text(prop, "Invert Weights B", "Invert the influence of vertex group B");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "default_weight_a", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, -1);
-  RNA_def_property_ui_text(prop,
-                           "Default Weight A",
-                           "Default weight a vertex will have if "
-                           "it is not in the first A vgroup");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "default_weight_a", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0, 1.0f);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, -1);
+  api_def_prop_ui_text(prop,
+                       "Default Weight A",
+                       "Default weight a vertex will have if "
+                       "it is not in the first A vgroup");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "default_weight_b", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0, 1.0f);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, -1);
+  api_def_prop_ui_text(prop,
+                       "Default Weight B",
+                       "Default weight a vertex will have if "
+                       "it is not in the second B vgroup");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "default_weight_b", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, -1);
-  RNA_def_property_ui_text(prop,
-                           "Default Weight B",
-                           "Default weight a vertex will have if "
-                           "it is not in the second B vgroup");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "mix_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, weightvg_mix_modes_items);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "mix_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, weightvg_mix_modes_items);
+  api_def_prop_ui_text(prop,
                            "Mix Mode",
                            "How weights from vgroup B affect weights "
                            "of vgroup A");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "mix_set", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, weightvg_mix_set_items);
-  RNA_def_property_ui_text(prop, "Vertex Set", "Which vertices should be affected");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "mix_set", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, weightvg_mix_set_items);
+  api_def_prop_ui_text(prop, "Vertex Set", "Which vertices should be affected");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "normalize", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WVG_MIX_WEIGHTS_NORMALIZE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "normalize", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WVG_MIX_WEIGHTS_NORMALIZE);
+  api_def_prop_ui_text(
       prop,
       "Normalize Weights",
       "Normalize the resulting weights (otherwise they are only clamped within 0.0 to 1.0 range)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
   /* Common masking properties. */
-  rna_def_modifier_weightvg_mask(brna,
-                                 srna,
-                                 "flag",
-                                 MOD_WVG_MIX_INVERT_VGROUP_MASK,
-                                 "rna_WeightVGMixModifier_mask_defgrp_name_set",
-                                 "rna_WeightVGMixModifier_mask_tex_uvlayer_name_set");
+  api_def_mod_weightvg_mask(dapi,
+                            sapi,
+                            "flag",
+                            MOD_WVG_MIX_INVERT_VGROUP_MASK,
+                            "api_WeightVGMixMod_mask_defgrp_name_set",
+                            "api_WeightVGMixMod_mask_tex_uvlayer_name_set");
 }
 
-static void rna_def_modifier_weightvgproximity(BlenderRNA *brna)
+static void api_def_mod_weightvgproximity(DuneApi *dapi)
 {
-  static const EnumPropertyItem weightvg_proximity_modes_items[] = {
+  static const EnumPropItem weightvg_proximity_modes_items[] = {
       {MOD_WVG_PROXIMITY_OBJECT,
        "OBJECT",
        0,
@@ -5271,14 +5270,14 @@ static void rna_def_modifier_weightvgproximity(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem proximity_geometry_items[] = {
+  static const EnumPropItem proximity_geometry_items[] = {
       {MOD_WVG_PROXIMITY_GEOM_VERTS, "VERTEX", 0, "Vertex", "Compute distance to nearest vertex"},
       {MOD_WVG_PROXIMITY_GEOM_EDGES, "EDGE", 0, "Edge", "Compute distance to nearest edge"},
       {MOD_WVG_PROXIMITY_GEOM_FACES, "FACE", 0, "Face", "Compute distance to nearest face"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem weightvg_proximity_falloff_type_items[] = {
+  static const EnumPropItem weightvg_proximity_falloff_type_items[] = {
       {MOD_WVG_MAPPING_NONE, "LINEAR", ICON_LINCURVE, "Linear", "Null action"},
       {MOD_WVG_MAPPING_CURVE, "CURVE", ICON_RNDCURVE, "Custom Curve", ""},
       {MOD_WVG_MAPPING_SHARP, "SHARP", ICON_SHARPCURVE, "Sharp", ""},
@@ -5294,49 +5293,49 @@ static void rna_def_modifier_weightvgproximity(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "VertexWeightProximityModifier", "Modifier");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "VertexWeightProximityModifier", "Modifier");
+  api_def_struct_ui_text(sapi,
                          "WeightVG Proximity Modifier",
                          "Set the weights of vertices in a group from a target object's "
                          "distance");
-  RNA_def_struct_sdna(srna, "WeightVGProximityModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_VERTEX_WEIGHT);
+  api_def_struct_stype(sapi, "WeightVGProximityModifierData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_VERTEX_WEIGHT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WeightVGProximityModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WeightVGProximityMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "proximity_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, weightvg_proximity_modes_items);
-  RNA_def_property_enum_default(prop, MOD_WVG_PROXIMITY_GEOMETRY);
-  RNA_def_property_ui_text(prop, "Proximity Mode", "Which distances to target object to use");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "proximity_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, weightvg_proximity_modes_items);
+  api_def_prop_enum_default(prop, MOD_WVG_PROXIMITY_GEOMETRY);
+  api_def_prop_ui_text(prop, "Proximity Mode", "Which distances to target object to use");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "proximity_geometry", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "proximity_flags");
-  RNA_def_property_enum_items(prop, proximity_geometry_items);
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG); /* important to run before default set */
-  RNA_def_property_enum_default(prop, MOD_WVG_PROXIMITY_GEOM_FACES);
-  RNA_def_property_ui_text(prop,
-                           "Proximity Geometry",
-                           "Use the shortest computed distance to target object's geometry "
-                           "as weight");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "proximity_geometry", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "proximity_flags");
+  api_def_prop_enum_items(prop, proximity_geometry_items);
+  api_def_prop_flag(prop, PROP_ENUM_FLAG); /* important to run before default set */
+  api_def_prop_enum_default(prop, MOD_WVG_PROXIMITY_GEOM_FACES);
+  api_def_prop_ui_text(prop,
+                       "Proximity Geometry",
+                       "Use the shortest computed distance to target object's geometry "
+                       "as weight");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "proximity_ob_target");
-  RNA_def_property_ui_text(prop, "Target Object", "Object to calculate vertices distances from");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(sapi, "target", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "proximity_ob_target");
+  api_def_prop_ui_text(prop, "Target Object", "Object to calculate vertices distances from");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "min_dist", PROP_FLOAT, PROP_DISTANCE);
+  prop = RNA_def_property(sapi, "min_dist", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_range(prop, 0.0, FLT_MAX);
   RNA_def_property_ui_range(prop, 0.0, 1000.0, 10, -1);
   RNA_def_property_ui_text(prop, "Lowest", "Distance mapping to weight 0.0");
