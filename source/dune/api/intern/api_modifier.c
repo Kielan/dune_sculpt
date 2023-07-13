@@ -4909,24 +4909,24 @@ static void api_def_mod_uvwarp(DuneApi *dapi)
   RNA_def_property_string_sdna(prop, NULL, "vgroup_name");
   RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name");
   RNA_def_property_string_funcs(prop, NULL, NULL, "rna_UVWarpModifier_vgroup_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_UVWARP_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = RNA_def_prop(sapi, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MOD_UVWARP_INVERT_VGROUP);
+  RNA_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  RNA_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "uv_layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "uvlayer_name");
-  RNA_def_property_ui_text(prop, "UV Layer", "UV Layer name");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_UVWarpModifier_uvlayer_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "uv_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "uvlayer_name");
+  api_def_prop_ui_text(prop, "UV Layer", "UV Layer name");
+  api_def_prop_string_funcs(prop, NULL, NULL, "rna_UVWarpModifier_uvlayer_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_weightvg_mask(BlenderRNA *UNUSED(brna),
-                                           StructRNA *srna,
+static void rna_def_modifier_weightvg_mask(DuneApi *UNUSED(dapo),
+                                           ApiStruct *sapi,
                                            const char *mask_flags,
                                            const int invert_vgroup_mask_flag,
                                            const char *mask_vgroup_setter,
@@ -4944,7 +4944,7 @@ static void rna_def_modifier_weightvg_mask(BlenderRNA *UNUSED(brna),
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem weightvg_mask_tex_used_items[] = {
+  static const EnumPropItem weightvg_mask_tex_used_items[] = {
       {MOD_WVG_MASK_TEX_USE_INT, "INT", 0, "Intensity", ""},
       {MOD_WVG_MASK_TEX_USE_RED, "RED", 0, "Red", ""},
       {MOD_WVG_MASK_TEX_USE_GREEN, "GREEN", 0, "Green", ""},
@@ -4956,29 +4956,29 @@ static void rna_def_modifier_weightvg_mask(BlenderRNA *UNUSED(brna),
       {0, NULL, 0, NULL, NULL},
   };
 
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "mask_constant", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mask_constant", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 1, -1);
+  api_def_prop_ui_text(
       prop, "Influence", "Global influence of current modifications on vgroup");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_property(srna, "mask_vertex_group", PROP_STRING, PROP_NONE);
+  prop = api_def_prop(sapi, "mask_vertex_group", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "mask_defgrp_name");
   api_def_prop_ui_text(prop, "Mask Vertex Group", "Masking vertex group name");
-  RNA_def_prop_string_fns(prop, NULL, NULL, mask_vgroup_setter);
-  RNA_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_string_fns(prop, NULL, NULL, mask_vgroup_setter);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "invert_mask_vertex_group", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, mask_flags, invert_vgroup_mask_flag);
   ai_def_prop_ui_text(prop, "Invert", "Invert vertex group mask influence");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "mask_texture", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "mask_texture", PROP_PTR, PROP_NONE);
   api_def_prop_ui_text(prop, "Masking Tex", "Masking texture");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_update(prop, 0, "api_Mod_graph_update");
@@ -4986,38 +4986,38 @@ static void rna_def_modifier_weightvg_mask(BlenderRNA *UNUSED(brna),
   prop = api_def_prop(sapi, "mask_tex_use_channel", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, weightvg_mask_tex_used_items);
   api_def_prop_ui_text(prop, "Use Channel", "Which texture channel to use for masking");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "mask_tex_mapping", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_items(prop, weightvg_mask_tex_map_items);
-  RNA_def_prop_ui_text(prop,
-                           "Texture Coordinates",
-                           "Which texture coordinates "
-                           "to use for mapping");
-  RNA_def_property_update(prop, 0, "api_Mod_graoh_update");
+  api_def_prop_enum_items(prop, weightvg_mask_tex_map_items);
+  api_def_prop_ui_text(prop,
+                       "Texture Coordinates",
+                       "Which texture coordinates "
+                       "to use for mapping");
+  api_def_prop_update(prop, 0, "api_Mod_graoh_update");
 
-  prop = api_def_property(srna, "mask_tex_uv_layer", PROP_STRING, PROP_NONE);
-  api_def_prop_string_sdna(prop, NULL, "mask_tex_uvlayer_name");
+  prop = api_def_prop(sapi, "mask_tex_uv_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "mask_tex_uvlayer_name");
   api_def_prop_ui_text(prop, "UV Map", "UV map name");
-  api_def_property_string_funcs(prop, NULL, NULL, mask_uvlayer_setter);
-  api_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_string_fns(prop, NULL, NULL, mask_uvlayer_setter);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "mask_tex_map_object", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "mask_tex_map_obj");
   api_def_prop_ui_text(prop,
-                           "Texture Coordinate Object",
-                           "Which object to take texture "
-                           "coordinates from");
-  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
+                       "Texture Coordinate Object",
+                       "Which object to take texture "
+                       "coordinates from");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_Mod_graph_update");
 
-  prop = RNA_def_property(srna, "mask_tex_map_bone", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "mask_tex_map_bone");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mask_tex_map_bone", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "mask_tex_map_bone");
+  api_def_prop_ui_text(
       prop, "Texture Coordinate Bone", "Which bone to take texture coordinates from");
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_Mod_fraph_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
 static void rna_def_modifier_weightvgedit(BlenderRNA *brna)
