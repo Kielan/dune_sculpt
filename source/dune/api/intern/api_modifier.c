@@ -1219,7 +1219,7 @@ static void api_DataTransferMod_use_data_update(Main *main, Scene *scene, ApiPtr
     dtmd->data_types &= ~DT_TYPE_POLY_ALL;
   }
 
-  api_Mod_dependency_update(main, scene, ptr);
+  api_Mod_graph_update(main, scene, ptr);
 }
 
 static void api_DataTransferMod_data_types_update(Main *main, Scene *scene, PointerRNA *ptr)
@@ -1317,11 +1317,9 @@ static const EnumPropItem *rna_DataTransferMod_layers_select_src_itemf(Cxt *C,
         api_enum_item_add(&item, &totitem, &tmp_item);
       }
     }
-  }
-  else if (STREQ(api_prop_id(prop), "layers_shapekey_select_src")) {
+  } else if (STREQ(api_prop_id(prop), "layers_shapekey_select_src")) {
     /* TODO */
-  }
-  else if (STREQ(api_prop_id(prop), "layers_uv_select_src")) {
+  } else if (STREQ(api_prop_id(prop), "layers_uv_select_src")) {
     Object *ob_src = dtmd->ob_source;
 
     if (ob_src) {
@@ -5601,13 +5599,13 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(
       prop, "Generate Spray Map", "Generate map of spray direction as a vertex color channel");
-  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
   prop = api_def_prop(sapi, "invert_spray", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_OCEAN_INVERT_SPRAY);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(prop, "Invert Spray", "Invert the spray direction map");
-  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
   prop = api_def_prop(sapi, "spray_layer_name", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "spraylayername");
@@ -5617,28 +5615,28 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
   prop = api_def_prop(sapi, "resolution", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_int_stype(prop, NULL, "resolution");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, 1024);
-  RNA_def_property_ui_range(prop, 1, 32, 1, -1);
-  RNA_def_property_ui_text(
+  api_def_prop_int_stype(prop, NULL, "resolution");
+  api_def_prop_clear_flag(prop, PROP_
+  api_def_prop_range(prop, 1, 1024);
+  api_def_prop_ui_range(prop, 1, 32, 1, -1);
+  api_def_prop_ui_text(
       prop, "Render Resolution", "Resolution of the generated surface for rendering and baking");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_property_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = RNA_def_property(srna, "viewport_resolution", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "viewport_resolution");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, 1024);
-  RNA_def_property_ui_range(prop, 1, 32, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "viewport_resolution", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "viewport_resolution");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1, 1024);
+  api_def_prop_ui_range(prop, 1, 32, 1, -1);
+  api_def_prop_ui_text(
       prop, "Viewport Resolution", "Viewport resolution of the generated surface");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = RNA_def_property(srna, "spatial_size", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "spatial_size");
-  RNA_def_property_ui_range(prop, 1, 512, 2, -1);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "spatial_size", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "spatial_size");
+  api_def_prop_ui_range(prop, 1, 512, 2, -1);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop,
       "Spatial Size",
       "Size of the simulation domain (in meters), and of the generated geometry (in BU)");
@@ -5715,25 +5713,25 @@ static void api_def_mod_ocean(DuneApi *dapi)
       prop,
       "Choppiness",
       "Choppiness of the wave's crest (adds some horizontal component to the displacement)");
-  RNA_def_property_ui_range(prop, 0.0, 4.0, 3, -1);
-  RNA_def_property_float_funcs(prop, NULL, "api_OceanMod_ocean_chop_set", NULL);
-  RNA_def_property_update(prop, 0, "apu_Mod_update");
+  api_def_prop_ui_range(prop, 0.0, 4.0, 3, -1);
+  api_def_prop_float_funcs(prop, NULL, "api_OceanMod_ocean_chop_set", NULL);
+  api_def_prop_update(prop, 0, "apu_Mod_update");
 
   prop = api_def_prop(sapi, "time", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_prop_float_stype(prop, NULL, "time");
-  RNA_def_prop_ui_text(prop, "Time", "Current time of the simulation");
-  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, -1);
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  api_def_prop_float_stype(prop, NULL, "time");
+  api_def_prop_ui_text(prop, "Time", "Current time of the simulation");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, -1);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "spectrum", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "spectrum");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, spectrum_items);
-  RNA_def_property_ui_text(prop, "Spectrum", "Spectrum to use");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  prop = api_def_prop(sapi, "spectrum", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "spectrum");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, spectrum_items);
+  api_def_prop_ui_text(prop, "Spectrum", "Spectrum to use");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
-  prop = RNA_def_property(srna, "fetch_jonswap", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "fetch_jonswap");
+  prop = api_def_prop(sapi, "fetch_jonswap", PROP_FLOAT, PROP_UNSIGNED);
+  RNA_def_prop_float_stupe(prop, NULL, "fetch_jonswap");
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_range(prop, 0.0, FLT_MAX);
   RNA_def_property_ui_text(
@@ -5742,23 +5740,23 @@ static void api_def_mod_ocean(DuneApi *dapi)
       "This is the distance from a lee shore, "
       "called the fetch, or the distance over which the wind blows with constant velocity. "
       "Used by 'JONSWAP' and 'TMA' models");
-  RNA_def_property_update(prop, 0, "rna_OceanModifier_init_update");
+  RNA_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = api_def_prop(srna, "sharpen_peak_jonswap", PROP_FLOAT, PROP_UNSIGNED);
-  api_def_prop_float_sdna(prop, NULL, "sharpen_peak_jonswap");
+  prop = api_def_prop(sapi, "sharpen_peak_jonswap", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "sharpen_peak_jonswap");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_range(prop, 0.0, 1.0);
   api_def_prop_ui_text(prop, "Sharpen peak", "Peak sharpening for 'JONSWAP' and 'TMA' models");
   api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
-  prop = api_def_prop(sapu, "random_seed", PROP_INT, PROP_UNSIGNED);
+  prop = api_def_prop(sapi, "random_seed", PROP_INT, PROP_UNSIGNED);
   api_def_prop_int_stype(prop, NULL, "seed");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(prop, "Random Seed", "Seed of the random generator");
   api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
 
   prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
-  api_def_prop_int_sdna(prop, NULL, "bakestart");
+  api_def_prop_int_stype(prop, NULL, "bakestart");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(prop, "Bake Start", "Start frame of the ocean baking");
   api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
@@ -5784,13 +5782,13 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_skin(BlenderRNA *brna)
+static void api_def_mod_skin(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  sapi = api_def_struct(brna, "SkinModifier", "Modifier");
-  api_def_struct_ui_text(sapi, "Skin Modifier", "Generate Skin");
+  sapi = api_def_struct(dapi, "SkinMod", "Mod");
+  api_def_struct_ui_text(sapi, "Skin Mod", "Generate Skin");
   api_def_struct_(sapi, "SkinModifierData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SKIN);
 
@@ -5807,12 +5805,12 @@ static void rna_def_modifier_skin(BlenderRNA *brna)
       prop, "Smooth Shading", "Output faces with smooth shading rather than flat shaded");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "use_x_symmetry", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(srna, "use_x_symmetry", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_X);
   api_def_prop_ui_text(prop, "X", "Avoid making unsymmetrical quads across the X axis");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_y_symmetry", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_y_symmetry", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_Y);
   api_def_prop_ui_text(prop, "Y", "Avoid making unsymmetrical quads across the Y axis");
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -5993,89 +5991,88 @@ static void api_def_mod_meshcache(DuneApi *dapi)
 
   /* -------------------------------------------------------------------- */
   /* Axis Conversion */
-  prop = RNA_def_property(srna, "forward_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "forward_axis");
-  RNA_def_property_enum_items(prop, rna_enum_object_axis_items);
-  RNA_def_property_ui_text(prop, "Forward", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "forward_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "forward_axis");
+  api_def_prop_enum_items(prop, api_enum_object_axis_items);
+  api_def_prop_ui_text(prop, "Forward", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "up_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "up_axis");
+  api_def_prop_enum_items(prop, api_enum_object_axis_items);
+  api_def_prop_ui_text(prop, "Up", "");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "up_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "up_axis");
-  RNA_def_property_enum_items(prop, rna_enum_object_axis_items);
-  RNA_def_property_ui_text(prop, "Up", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "flip_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "flip_axis");
-  RNA_def_property_enum_items(prop, rna_enum_axis_flag_xyz_items);
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG);
-  RNA_def_property_ui_text(prop, "Flip Axis", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "flip_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sapi(prop, NULL, "flip_axis");
+  api_def_prop_enum_items(prop, api_enum_axis_flag_xyz_items);
+  api_def_prop_flag(prop, PROP_ENUM_FLAG);
+  api_def_prop_ui_text(prop, "Flip Axis", "");
+  api_def_property_update(prop, 0, "api_Mod_update");
 
   /* -------------------------------------------------------------------- */
   /* For Scene time */
-  prop = RNA_def_property(srna, "frame_start", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "frame_start");
-  RNA_def_property_range(prop, -MAXFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "Frame Start", "Add this to the start frame");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "frame_start", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "frame_start");
+  api_def_prop_range(prop, -MAXFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "Frame Start", "Add this to the start frame");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "frame_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "frame_scale");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Frame Scale", "Evaluation time in seconds");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "frame_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "frame_scale");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Frame Scale", "Eval time in seconds");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   /* -------------------------------------------------------------------- */
   /* eval values depend on 'time_mode' */
-  prop = RNA_def_property(srna, "eval_frame", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "eval_frame");
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "Evaluation Frame", "The frame to evaluate (starting at 0)");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "eval_frame", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "eval_frame");
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "Evaluation Frame", "The frame to evaluate (starting at 0)");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "eval_time", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "eval_time");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Evaluation Time", "Evaluation time in seconds");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "eval_time", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "eval_time");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(prop, "Evaluation Time", "Evaluation time in seconds");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "eval_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "eval_factor");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Evaluation Factor", "Evaluation time in seconds");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "eval_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "eval_factor");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Evaluation Factor", "Evaluation time in seconds");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_meshseqcache(BlenderRNA *brna)
+static void api_def_mod_meshseqcache(DuneApi *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MeshSequenceCacheModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Cache Modifier", "Cache Mesh");
-  RNA_def_struct_sdna(srna, "MeshSeqCacheModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MESHDEFORM); /* XXX, needs own icon */
+  srna = api_def_struct(dapi, "MeshSeqCacheMod", "Mod");
+  api_def_struct_ui_text(sapi, "Cache Mod", "Cache Mesh");
+  api_def_struct_stype(sapi, "MeshSeqCacheModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MESHDEFORM); /* XXX, needs own icon */
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "cache_file", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "cache_file");
-  RNA_def_property_struct_type(prop, "CacheFile");
-  RNA_def_property_ui_text(prop, "Cache File", "");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
+  prop = api_def_prop(srna, "cache_file", PROP_POINTER, PROP_NONE);
+  api_def_prop_pointer_stype(prop, NULL, "cache_file");
+  api_def_prop_struct_type(prop, "CacheFile");
+  api_def_prop_ui_text(prop, "Cache File", "");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "rna_Modifier_dependency_update");
 
-  prop = RNA_def_property(srna, "object_path", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object_path", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "Object Path",
       "Path to the object in the Alembic archive used to lookup geometric data");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  static const EnumPropertyItem read_flag_items[] = {
+  static const EnumPropItem read_flag_items[] = {
       {MOD_MESHSEQ_READ_VERT, "VERT", 0, "Vertex", ""},
       {MOD_MESHSEQ_READ_POLY, "POLY", 0, "Faces", ""},
       {MOD_MESHSEQ_READ_UV, "UV", 0, "UV", ""},
@@ -6083,15 +6080,15 @@ static void rna_def_modifier_meshseqcache(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "read_data", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG);
-  RNA_def_property_enum_sdna(prop, NULL, "read_flag");
-  RNA_def_property_enum_items(prop, read_flag_items);
-  RNA_def_property_ui_text(prop, "Read Data", "Data to read from the cache");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "read_data", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_ENUM_FLAG);
+  api_def_prop_enum_stype(prop, NULL, "read_flag");
+  api_def_prop_enum_items(prop, read_flag_items);
+  api_def_prop_ui_text(prop, "Read Data", "Data to read from the cache");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_vertex_interpolation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "read_flag", MOD_MESHSEQ_INTERPOLATE_VERTICES);
+  prop = api_def_prop(sapi, "use_vertex_interpolation", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_bool_stype(prop, NULL, "read_flag", MOD_MESHSEQ_INTERPOLATE_VERTICES);
   RNA_def_property_ui_text(
       prop, "Vertex Interpolation", "Allow interpolation of vertex positions");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
