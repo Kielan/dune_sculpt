@@ -5789,31 +5789,31 @@ static void rna_def_modifier_skin(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "SkinModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Skin Modifier", "Generate Skin");
-  RNA_def_struct_sdna(srna, "SkinModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_SKIN);
+  sapi = api_def_struct(brna, "SkinModifier", "Modifier");
+  api_def_struct_ui_text(srna, "Skin Modifier", "Generate Skin");
+  api_def_struct_sdna(srna, "SkinModifierData");
+  api_def_struct_ui_icon(srna, ICON_MOD_SKIN);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "branch_smoothing", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_ui_text(prop, "Branch Smoothing", "Smooth complex geometry around branches");
-  RNA_def_property_ui_range(prop, 0, 1, 1, -1);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "branch_smoothing", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_ui_text(prop, "Branch Smoothing", "Smooth complex geometry around branches");
+  api_def_prop_ui_range(prop, 0, 1, 1, -1);
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_smooth_shade", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SKIN_SMOOTH_SHADING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_smooth_shade", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SKIN_SMOOTH_SHADING);
+  api_def_prop_ui_text(
       prop, "Smooth Shading", "Output faces with smooth shading rather than flat shaded");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_x_symmetry", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_X);
-  RNA_def_property_ui_text(prop, "X", "Avoid making unsymmetrical quads across the X axis");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(srna, "use_x_symmetry", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_X);
+  api_def_prop_ui_text(prop, "X", "Avoid making unsymmetrical quads across the X axis");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "use_y_symmetry", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_Y);
+  prop = api_def_prop(sapi, "use_y_symmetry", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_Y);
   RNA_def_property_ui_text(prop, "Y", "Avoid making unsymmetrical quads across the Y axis");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
