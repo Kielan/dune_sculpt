@@ -1619,7 +1619,7 @@ static void api_NodesMod_node_group_update(Main *main, Scene *scene, ApiPtr *ptr
 {
   Object *object = (Object *)ptr->owner_id;
   NodesModData *nmd = ptr->data;
-  api_Mod_dependency_update(main, scene, ptr);
+  api_Mod_graph_update(main, scene, ptr);
   mod_nodes_update_interface(object, nmd);
 }
 
@@ -5714,8 +5714,8 @@ static void api_def_mod_ocean(DuneApi *dapi)
       "Choppiness",
       "Choppiness of the wave's crest (adds some horizontal component to the displacement)");
   api_def_prop_ui_range(prop, 0.0, 4.0, 3, -1);
-  api_def_prop_float_funcs(prop, NULL, "api_OceanMod_ocean_chop_set", NULL);
-  api_def_prop_update(prop, 0, "apu_Mod_update");
+  api_def_prop_float_fns(prop, NULL, "api_OceanMod_ocean_chop_set", NULL);
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "time", PROP_FLOAT, PROP_UNSIGNED);
   api_def_prop_float_stype(prop, NULL, "time");
@@ -5724,17 +5724,17 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "spectrum", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "spectrum");
+  api_def_prop_enum_stype(prop, NULL, "spectrum");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_enum_items(prop, spectrum_items);
   api_def_prop_ui_text(prop, "Spectrum", "Spectrum to use");
   api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
   prop = api_def_prop(sapi, "fetch_jonswap", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_prop_float_stupe(prop, NULL, "fetch_jonswap");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(
+  api_def_prop_float_stype(prop, NULL, "fetch_jonswap");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_text(
       prop,
       "Fetch",
       "This is the distance from a lee shore, "
@@ -6058,8 +6058,8 @@ static void api_def_mod_meshseqcache(DuneApi *brna)
 
   api_define_lib_overridable(true);
 
-  prop = api_def_prop(srna, "cache_file", PROP_POINTER, PROP_NONE);
-  api_def_prop_pointer_stype(prop, NULL, "cache_file");
+  prop = api_def_prop(sapi, "cache_file", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "cache_file");
   api_def_prop_struct_type(prop, "CacheFile");
   api_def_prop_ui_text(prop, "Cache File", "");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
@@ -6087,20 +6087,20 @@ static void api_def_mod_meshseqcache(DuneApi *brna)
   api_def_prop_ui_text(prop, "Read Data", "Data to read from the cache");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_vertex_interpolation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_bool_stype(prop, NULL, "read_flag", MOD_MESHSEQ_INTERPOLATE_VERTICES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_vertex_interpolation", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "read_flag", MOD_MESHSEQ_INTERPOLATE_VERTICES);
+  api_def_prop_ui_text(
       prop, "Vertex Interpolation", "Allow interpolation of vertex positions");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "velocity_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "velocity_scale");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "velocity_scale", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_stype(prop, NULL, "velocity_scale");
+  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
+  RNA_def_prop_ui_text(
       prop,
       "Velocity Scale",
       "Multiplier used to control the magnitude of the velocity vectors for time effects");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
   RNA_define_lib_overridable(false);
 }
