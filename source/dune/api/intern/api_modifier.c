@@ -6156,24 +6156,24 @@ static void rna_def_modifier_weld(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "WeldModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Weld Modifier", "Weld modifier");
-  RNA_def_struct_sdna(srna, "WeldModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_AUTOMERGE_OFF);
+  sapi = api_def_struct(brna, "WeldModifier", "Modifier");
+  api_def_struct_ui_text(srna, "Weld Modifier", "Weld modifier");
+  api_def_struct_sdna(srna, "WeldModifierData");
+  api_def_struct_ui_icon(srna, ICON_AUTOMERGE_OFF);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "Mode defines the merge rule");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, mode_items);
+  api_def_prop_ui_text(prop, "Mode", "Mode defines the merge rule");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "merge_dist");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 0.001, 6);
-  RNA_def_property_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "merge_dist");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 0.001, 6);
+  api_def_prop_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
   RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
