@@ -5805,7 +5805,7 @@ static void api_def_mod_skin(DuneApi *dapi)
       prop, "Smooth Shading", "Output faces with smooth shading rather than flat shaded");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "use_x_symmetry", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "use_x_symmetry", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "symmetry_axes", MOD_SKIN_SYMM_X);
   api_def_prop_ui_text(prop, "X", "Avoid making unsymmetrical quads across the X axis");
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -5828,7 +5828,7 @@ static void api_def_mod_triangulate(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapu, "TriangulateMod", "Mod");
+  sapi = api_def_struct(dapi, "TriangulateMod", "Mod");
   api_def_struct_ui_text(sapi, "Triangulate Mod", "Triangulate Mesh");
   api_def_struct_stype(sapi, "TriangulateModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_TRIANGULATE);
@@ -6110,25 +6110,25 @@ static void rna_def_modifier_laplaciandeform(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "LaplacianDeformModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Laplacian Deform Modifier", "Mesh deform modifier");
-  RNA_def_struct_sdna(srna, "LaplacianDeformModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MESHDEFORM);
+  sapi = api_def_struct(dapi, "LaplacianDeformModifier", "Modifier");
+  api_def_struct_ui_text(sapi, "Laplacian Deform Modifier", "Mesh deform modifier");
+  api_def_struct_stype(sapi, "LaplacianDeformModifierData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MESHDEFORM);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "anchor_grp_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "anchor_grp_name");
+  api_def_prop_ui_text(
       prop, "Anchor Weights", "Name of Vertex Group which determines Anchors");
-  RNA_def_property_string_funcs(
+  api_def_prop_string_fns(
       prop, NULL, NULL, "rna_LaplacianDeformModifier_anchor_grp_name_set");
 
-  prop = RNA_def_property(srna, "iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "repeat");
-  RNA_def_property_ui_range(prop, 1, 50, 1, -1);
-  RNA_def_property_ui_text(prop, "Repeat", "");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "repeat");
+  api_def_prop_ui_range(prop, 1, 50, 1, -1);
+  api_def_prop_ui_text(prop, "Repeat", "");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
   prop = RNA_def_property(srna, "is_bind", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_funcs(prop, "rna_LaplacianDeformModifier_is_bind_get", NULL);
