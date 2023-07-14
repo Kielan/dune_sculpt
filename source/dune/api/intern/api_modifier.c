@@ -6200,11 +6200,10 @@ static void rna_def_modifier_wireframe(BlenderRNA *brna)
 {
   StructRNA *srna;
   PropertyRNA *prop;
-
-  srna = RNA_def_struct(brna, "WireframeModifier", "Modifier");
-  RNA_def_struct_ui_text(srna, "Wireframe Modifier", "Wireframe effect modifier");
-  RNA_def_struct_sdna(srna, "WireframeModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_WIREFRAME);
+  srna = sapi_def_struct(dapi, "WireframeModifier", "Modifier");
+  api_def_struct_ui_text(sapi, "Wireframe Modifier", "Wireframe effect modifier");
+  api_def_struct_stype(sapi, "WireframeModifierData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_WIREFRAME);
 
   RNA_define_lib_overridable(true);
 
@@ -6213,32 +6212,31 @@ static void rna_def_modifier_wireframe(BlenderRNA *brna)
   RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
   RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 4);
   RNA_def_property_ui_text(prop, "Thickness", "Thickness factor");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "thickness_vertex_group", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "offset_fac_vg");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0, 1, 0.1, 3);
-  RNA_def_property_ui_text(
+  prop = apk_def_prop(sapi, "thickness_vertex_group", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "offset_fac_vg");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0, 1, 0.1, 3);
+  api_def_prop_ui_text(
       prop, "Vertex Group Factor", "Thickness factor to use for zero vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "offset_fac");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1, 1, 0.1, 4);
-  RNA_def_property_ui_text(prop, "Offset", "Offset the thickness from the center");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "offset_fac");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1, 1, 0.1, 4);
+  api_def_prop_ui_text(prop, "Offset", "Offset the thickness from the center");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_replace", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_REPLACE);
-  RNA_def_property_ui_text(prop, "Replace", "Remove original geometry");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
-
-  prop = RNA_def_property(srna, "use_boundary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_BOUNDARY);
-  RNA_def_property_ui_text(prop, "Boundary", "Support face boundaries");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_replace", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_REPLACE);
+  api_def_prop_ui_text(prop, "Replace", "Remove original geometry");
+  api_def_prop_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "use_boundary", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_BOUNDARY);
+  api_def_prop_ui_text(prop, "Boundary", "Support face boundaries");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "use_even_offset", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_OFS_EVEN);
