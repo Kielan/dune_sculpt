@@ -4851,7 +4851,7 @@ static void api_def_mod_uvwarp(DuneApi *dapi)
 
   api_define_lib_overridable(true);
 
-  prop = api_def_prop(sapo, "axis_u", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "axis_u", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "axis_u");
   api_def_prop_enum_items(prop, api_enum_axis_xyz_items);
   api_def_prop_ui_text(prop, "U-Axis", "Pole axis for rotation");
@@ -4863,7 +4863,7 @@ static void api_def_mod_uvwarp(DuneApi *dapi)
   api_def_prop_ui_text(prop, "V-Axis", "Pole axis for rotation");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(srna, "center", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "center", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "center");
   api_def_prop_ui_text(prop, "UV Center", "Center point for rotate/scale");
   api_def_prop_update(prop, 0, "api_Mod_update");
@@ -5688,12 +5688,12 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(prop, "Depth", "Depth of the solid ground below the water surface");
   api_def_prop_ui_range(prop, 0, 250, 1, -1);
-  api_def_prop_update(prop, 0, "rna_OceanModifier_init_update");
+  api_def_prop_update(prop, 0, "api_OceanMod_init_update");
 
   prop = api_def_prop(sapi, "foam_coverage", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "foam_coverage");
   api_def_prop_ui_text(prop, "Foam Coverage", "Amount of generated foam");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "bake_foam_fade", PROP_FLOAT, PROP_UNSIGNED);
   api_def_prop_float_stype(prop, NULL, "foam_fade");
@@ -5707,23 +5707,23 @@ static void api_def_mod_ocean(DuneApi *dapi)
   api_def_prop_string_stype(prop, NULL, "foamlayername");
   api_def_prop_ui_text(
       prop, "Foam Layer Name", "Name of the vertex color layer used for foam");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(sapi, "choppiness", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "chop_amount");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "choppiness", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_stype(prop, NULL, "chop_amount");
+  api_def_prop_ui_text(
       prop,
       "Choppiness",
       "Choppiness of the wave's crest (adds some horizontal component to the displacement)");
   RNA_def_property_ui_range(prop, 0.0, 4.0, 3, -1);
-  RNA_def_property_float_funcs(prop, NULL, "rna_OceanModifier_ocean_chop_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  RNA_def_property_float_funcs(prop, NULL, "api_OceanMod_ocean_chop_set", NULL);
+  RNA_def_property_update(prop, 0, "apu_Mod_update");
 
-  prop = RNA_def_property(srna, "time", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_sdna(prop, NULL, "time");
-  RNA_def_property_ui_text(prop, "Time", "Current time of the simulation");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, -1);
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "time", PROP_FLOAT, PROP_UNSIGNED);
+  RNA_def_prop_float_stype(prop, NULL, "time");
+  RNA_def_prop_ui_text(prop, "Time", "Current time of the simulation");
+  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, -1);
+  RNA_def_property_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "spectrum", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "spectrum");
