@@ -798,10 +798,10 @@ RNA_MOD_VGROUP_NAME_SET(WeightedNormal, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(Weld, defgrp_name);
 RNA_MOD_VGROUP_NAME_SET(Wireframe, defgrp_name);
 
-static void api_ExplodeMod_vgroup_get(ApiPointer *ptr, char *value)
+static void api_ExplodeMod_vgroup_get(ApiPtr *ptr, char *value)
 {
   ExplodeModData *emd = (ExplodeModData *)ptr->data;
-  rna_object_vgroup_name_index_get(ptr, value, emd->vgroup);
+  api_object_vgroup_name_index_get(ptr, value, emd->vgroup);
 }
 
 static int api_ExplodeMod_vgroup_length(ApiPtr *ptr)
@@ -5837,13 +5837,13 @@ static void api_def_mod_triangulate(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "quad_method", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "quad_method");
-  api_def_prop_enum_items(prop, rna_enum_modifier_triangulate_quad_method_items);
+  api_def_prop_enum_items(prop, api_enum_mod_triangulate_quad_method_items);
   api_def_prop_ui_text(prop, "Quad Method", "Method for splitting the quads into triangles");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "ngon_method", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "ngon_method");
-  api_def_prop_enum_items(prop, rna_enum_modifier_triangulate_ngon_method_items);
+  api_def_prop_enum_items(prop, api_enum_mod_triangulate_ngon_method_items);
   api_def_prop_ui_text(prop, "N-gon Method", "Method for splitting the n-gons into triangles");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
@@ -5854,7 +5854,7 @@ static void api_def_mod_triangulate(DuneApi *dapi)
       prop,
       "Minimum Vertices",
       "Triangulate only polygons with vertex count greater than or equal to this number");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "keep_custom_normals", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_TRIANGULATE_KEEP_CUSTOMLOOP_NORMALS);
@@ -6130,91 +6130,91 @@ static void rna_def_modifier_laplaciandeform(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Repeat", "");
   api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "is_bind", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_LaplacianDeformModifier_is_bind_get", NULL);
-  RNA_def_property_ui_text(prop, "Bound", "Whether geometry has been bound to anchors");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "is_bind", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_LaplacianDeformMod_is_bind_get", NULL);
+  api_def_prop_ui_text(prop, "Bound", "Whether geometry has been bound to anchors");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_LAPLACIANDEFORM_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_LAPLACIANDEFORM_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 }
 
-static void rna_def_modifier_weld(BlenderRNA *brna)
+static void api_def_mod_weld(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem mode_items[] = {
+  static const EnumPropItem mode_items[] = {
       {MOD_WELD_MODE_ALL, "ALL", 0, "All", "Full merge by distance"},
       {MOD_WELD_MODE_CONNECTED, "CONNECTED", 0, "Connected", "Only merge along the edges"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(brna, "WeldModifier", "Modifier");
-  api_def_struct_ui_text(srna, "Weld Modifier", "Weld modifier");
-  api_def_struct_sdna(srna, "WeldModifierData");
-  api_def_struct_ui_icon(srna, ICON_AUTOMERGE_OFF);
+  sapi = api_def_struct(dapi, "WeldMod", "Mod");
+  api_def_struct_ui_text(sapi, "Weld Mod", "Weld mod");
+  api_def_struct_stype(sapi, "WeldModData");
+  api_def_struct_ui_icon(sapi, ICON_AUTOMERGE_OFF);
 
   api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, mode_items);
   api_def_prop_ui_text(prop, "Mode", "Mode defines the merge rule");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = api_def_prop(sapi, "merge_threshold", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "merge_dist");
   api_def_prop_range(prop, 0, FLT_MAX);
   api_def_prop_ui_range(prop, 0, 1, 0.001, 6);
   api_def_prop_ui_text(prop, "Merge Distance", "Limit below which to merge vertices");
-  api_def_prop_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(
       prop, "Vertex Group", "Vertex group name for selecting the affected areas");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WeldModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WeldMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WELD_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WELD_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "loose_edges", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WELD_LOOSE_EDGES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "loose_edges", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WELD_LOOSE_EDGES);
+  api_def_prop_ui_text(
       prop, "Only Loose Edges", "Collapse edges without faces, cloth sewing edges");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_wireframe(BlenderRNA *brna)
+static void api_def_mod_wireframe(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  srna = sapi_def_struct(dapi, "WireframeModifier", "Modifier");
-  api_def_struct_ui_text(sapi, "Wireframe Modifier", "Wireframe effect modifier");
-  api_def_struct_stype(sapi, "WireframeModifierData");
+  ApiStruct *sapi;
+  ApiProp *prop;
+  sapi = sapi_def_struct(dapi, "WireframeMod", "Mod");
+  api_def_struct_ui_text(sapi, "Wireframe Mod", "Wireframe effect mod");
+  api_def_struct_stype(sapi, "WireframeModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_WIREFRAME);
 
   RNA_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "thickness", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 4);
-  RNA_def_property_ui_text(prop, "Thickness", "Thickness factor");
-  RNA_def_property_update(prop, 0, "api_Mod_update");
+  prop = api_def_prop(sapi, "thickness", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "offset");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 4);
+  api_def_prop_ui_text(prop, "Thickness", "Thickness factor");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = apk_def_prop(sapi, "thickness_vertex_group", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "thickness_vertex_group", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "offset_fac_vg");
   api_def_prop_range(prop, 0.0, 1.0);
   api_def_prop_ui_range(prop, 0, 1, 0.1, 3);
@@ -6238,15 +6238,15 @@ static void rna_def_modifier_wireframe(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Boundary", "Support face boundaries");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_even_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_OFS_EVEN);
-  RNA_def_property_ui_text(prop, "Offset Even", "Scale the offset to give more even thickness");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_even_offset", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_OFS_EVEN);
+  api_def_prop_ui_text(prop, "Offset Even", "Scale the offset to give more even thickness");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_relative_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_OFS_RELATIVE);
-  RNA_def_property_ui_text(prop, "Offset Relative", "Scale the offset by surrounding geometry");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "use_relative_offset", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_OFS_RELATIVE);
+  api_def_prop_ui_text(prop, "Offset Relative", "Scale the offset by surrounding geometry");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   prop = RNA_def_property(srna, "use_crease", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_CREASE);
