@@ -458,67 +458,66 @@ static PointerRNA rna_Pose_active_bone_group_get(PointerRNA *ptr)
 {
   bPose *pose = (bPose *)ptr->data;
   return rna_pointer_inherit_refine(
-      ptr, &RNA_BoneGroup, BLI_findlink(&pose->agroups, pose->active_group - 1));
+      ptr, &Api_BoneGroup, lib_findlink(&pose->agroups, pose->active_group - 1));
 }
 
-static void rna_Pose_active_bone_group_set(PointerRNA *ptr,
-                                           PointerRNA value,
+static void api_Pose_active_bone_group_set(ApiPtr *ptr,
+                                           ApiPtr value,
                                            struct ReportList *UNUSED(reports))
 {
-  bPose *pose = (bPose *)ptr->data;
-  pose->active_group = BLI_findindex(&pose->agroups, value.data) + 1;
+  Pose *pose = (Pose *)ptr->data;
+  pose->active_group = lib_findindex(&pose->agroups, value.data) + 1;
 }
 
-static int rna_Pose_active_bone_group_index_get(PointerRNA *ptr)
+static int api_Pose_active_bone_group_index_get(ApiPtr *ptr)
 {
-  bPose *pose = (bPose *)ptr->data;
+  Pose *pose = (Pose *)ptr->data;
   return MAX2(pose->active_group - 1, 0);
 }
 
-static void rna_Pose_active_bone_group_index_set(PointerRNA *ptr, int value)
+static void api_Pose_active_bone_group_index_set(ApiPtr *ptr, int value)
 {
-  bPose *pose = (bPose *)ptr->data;
+  Pose *pose = (Pose *)ptr->data;
   pose->active_group = value + 1;
 }
 
-static void rna_Pose_active_bone_group_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_Pose_active_bone_group_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
-  bPose *pose = (bPose *)ptr->data;
+  Pose *pose = (Pose *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&pose->agroups) - 1);
+  *max = max_ii(0, lib_list_count(&pose->agroups) - 1);
 }
 
 #  if 0
-static void rna_pose_bgroup_name_index_get(PointerRNA *ptr, char *value, int index)
+static void api_pose_group_name_index_get(ApiPtr *ptr, char *value, int index)
 {
-  bPose *pose = (bPose *)ptr->data;
-  bActionGroup *grp;
+  Pose *pose = (Pose *)ptr->data;
+  ActionGroup *grp;
 
-  grp = BLI_findlink(&pose->agroups, index - 1);
+  grp = lib_findlink(&pose->agroups, index - 1);
 
   if (grp) {
-    BLI_strncpy(value, grp->name, sizeof(grp->name));
-  }
-  else {
+    lib_strncpy(value, grp->name, sizeof(grp->name));
+  } else {
     value[0] = '\0';
   }
 }
 
-static int rna_pose_bgroup_name_index_length(PointerRNA *ptr, int index)
+static int api_pose_group_name_index_length(ApiPtr *ptr, int index)
 {
-  bPose *pose = (bPose *)ptr->data;
-  bActionGroup *grp;
+  Pose *pose = (Pose *)ptr->data;
+  ActionGroup *grp;
 
-  grp = BLI_findlink(&pose->agroups, index - 1);
+  grp = lib_findlink(&pose->agroups, index - 1);
   return (grp) ? strlen(grp->name) : 0;
 }
 
-static void rna_pose_bgroup_name_index_set(PointerRNA *ptr, const char *value, short *index)
+static void api_pose_group_name_index_set(ApiPtr *ptr, const char *value, short *index)
 {
-  bPose *pose = (bPose *)ptr->data;
-  bActionGroup *grp;
+  Pose *pose = (Pose *)ptr->data;
+  ActionGroup *grp;
   int a;
 
   for (a = 1, grp = pose->agroups.first; grp; grp = grp->next, a++) {
@@ -531,14 +530,14 @@ static void rna_pose_bgroup_name_index_set(PointerRNA *ptr, const char *value, s
   *index = 0;
 }
 
-static void rna_pose_pgroup_name_set(PointerRNA *ptr, const char *value, char *result, int maxlen)
+static void api_pose_pgroup_name_set(ApiPtr *ptr, const char *value, char *result, int maxlen)
 {
-  bPose *pose = (bPose *)ptr->data;
-  bActionGroup *grp;
+  Pose *pose = (Pose *)ptr->data;
+  ActionGroup *grp;
 
   for (grp = pose->agroups.first; grp; grp = grp->next) {
     if (STREQ(grp->name, value)) {
-      BLI_strncpy(result, value, maxlen);
+      lib_strncpy(result, value, maxlen);
       return;
     }
   }
@@ -547,65 +546,65 @@ static void rna_pose_pgroup_name_set(PointerRNA *ptr, const char *value, char *r
 }
 #  endif
 
-static PointerRNA rna_PoseChannel_active_constraint_get(PointerRNA *ptr)
+static ApiPtr api_PoseChannel_active_constraint_get(ApiPtr *ptr)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  bConstraint *con = BKE_constraints_active_get(&pchan->constraints);
-  return rna_pointer_inherit_refine(ptr, &RNA_Constraint, con);
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  Constraint *con = dune_constraints_active_get(&pchan->constraints);
+  return api_ptr_inherit_refine(ptr, &Api_Constraint, con);
 }
 
-static void rna_PoseChannel_active_constraint_set(PointerRNA *ptr,
-                                                  PointerRNA value,
+static void api_PoseChannel_active_constraint_set(ApiPtr *ptr,
+                                                  ApiPtr value,
                                                   struct ReportList *UNUSED(reports))
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  BKE_constraints_active_set(&pchan->constraints, (bConstraint *)value.data);
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  dune_constraints_active_set(&pchan->constraints, (Constraint *)value.data);
 }
 
-static bConstraint *rna_PoseChannel_constraints_new(ID *id,
-                                                    bPoseChannel *pchan,
-                                                    Main *main,
-                                                    int type)
+static Constraint *api_PoseChannel_constraints_new(Id *id,
+                                                   PoseChannel *pchan,
+                                                   Main *main,
+                                                   int type)
 {
   Object *ob = (Object *)id;
-  bConstraint *new_con = BKE_constraint_add_for_pose(ob, pchan, NULL, type);
+  Constraint *new_con = dune_constraint_add_for_pose(ob, pchan, NULL, type);
 
-  ED_object_constraint_dependency_tag_update(main, ob, new_con);
-  WM_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_ADDED, id);
+  ed_object_constraint_graph_tag_update(main, ob, new_con);
+  wm_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_ADDED, id);
 
   return new_con;
 }
 
-static void rna_PoseChannel_constraints_remove(
-    ID *id, bPoseChannel *pchan, Main *bmain, ReportList *reports, PointerRNA *con_ptr)
+static void api_PoseChannel_constraints_remove(
+    Id *id, PoseChannel *pchan, Main *main, ReportList *reports, ApiPtr *con_ptr)
 {
-  bConstraint *con = con_ptr->data;
+  Constraint *con = con_ptr->data;
   const bool is_ik = ELEM(con->type, CONSTRAINT_TYPE_KINEMATIC, CONSTRAINT_TYPE_SPLINEIK);
   Object *ob = (Object *)id;
 
-  if (BLI_findindex(&pchan->constraints, con) == -1) {
-    BKE_reportf(
+  if (lib_findindex(&pchan->constraints, con) == -1) {
+    dune_reportf(
         reports, RPT_ERROR, "Constraint '%s' not found in pose bone '%s'", con->name, pchan->name);
     return;
   }
 
-  BKE_constraint_remove(&pchan->constraints, con);
-  RNA_POINTER_INVALIDATE(con_ptr);
+  dune_constraint_remove(&pchan->constraints, con);
+  API_PTR_INVALIDATE(con_ptr);
 
-  ED_object_constraint_update(bmain, ob);
+  ed_object_constraint_update(main, ob);
 
   /* XXX(Campbell): is this really needed? */
-  BKE_constraints_active_set(&pchan->constraints, NULL);
+  dune_constraints_active_set(&pchan->constraints, NULL);
 
-  WM_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_REMOVED, id);
+  wm_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_REMOVED, id);
 
   if (is_ik) {
     BIK_clear_data(ob->pose);
   }
 }
 
-static void rna_PoseChannel_constraints_move(
-    ID *id, bPoseChannel *pchan, Main *bmain, ReportList *reports, int from, int to)
+static void api_PoseChannel_constraints_move(
+    Id *id, PoseChannel *pchan, Main *main, ReportList *reports, int from, int to)
 {
   Object *ob = (Object *)id;
 
@@ -613,32 +612,32 @@ static void rna_PoseChannel_constraints_move(
     return;
   }
 
-  if (!BLI_listbase_move_index(&pchan->constraints, from, to)) {
-    BKE_reportf(reports, RPT_ERROR, "Could not move constraint from index '%d' to '%d'", from, to);
+  if (!lib_list_move_index(&pchan->constraints, from, to)) {
+    dune_reportf(reports, RPT_ERROR, "Could not move constraint from index '%d' to '%d'", from, to);
     return;
   }
 
-  ED_object_constraint_tag_update(bmain, ob, NULL);
-  WM_main_add_notifier(NC_OBJECT | ND_CONSTRAINT, ob);
+  ed_object_constraint_tag_update(main, ob, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_CONSTRAINT, ob);
 }
 
-static bConstraint *rna_PoseChannel_constraints_copy(ID *id,
-                                                     bPoseChannel *pchan,
-                                                     Main *bmain,
-                                                     PointerRNA *con_ptr)
+static Constraint *api_PoseChannel_constraints_copy(Id *id,
+                                                    PoseChannel *pchan,
+                                                    Main *main,
+                                                    ApiPtr *con_ptr)
 {
   Object *ob = (Object *)id;
-  bConstraint *con = con_ptr->data;
-  bConstraint *new_con = BKE_constraint_copy_for_pose(ob, pchan, con);
-  new_con->flag |= CONSTRAINT_OVERRIDE_LIBRARY_LOCAL;
+  Constraint *con = con_ptr->data;
+  Constraint *new_con = dune_constraint_copy_for_pose(ob, pchan, con);
+  new_con->flag |= CONSTRAINT_OVERRIDE_LIB_LOCAL;
 
-  ED_object_constraint_dependency_tag_update(bmain, ob, new_con);
-  WM_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_ADDED, id);
+  ed_object_constraint_graph_tag_update(main, ob, new_con);
+  wm_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_ADDED, id);
 
   return new_con;
 }
 
-bool rna_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
+bool api_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
                                                 PointerRNA *ptr_dst,
                                                 PointerRNA *ptr_src,
                                                 PointerRNA *UNUSED(ptr_storage),
@@ -648,16 +647,16 @@ bool rna_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
                                                 const int UNUSED(len_dst),
                                                 const int UNUSED(len_src),
                                                 const int UNUSED(len_storage),
-                                                PointerRNA *UNUSED(ptr_item_dst),
-                                                PointerRNA *UNUSED(ptr_item_src),
-                                                PointerRNA *UNUSED(ptr_item_storage),
-                                                IDOverrideLibraryPropertyOperation *opop)
+                                                ApiPtr *UNUSED(ptr_item_dst),
+                                                ApiPtr *UNUSED(ptr_item_src),
+                                                ApiPtr *UNUSED(ptr_item_storage),
+                                                IdOverrideLibPropOp *opop)
 {
-  BLI_assert(opop->operation == IDOVERRIDE_LIBRARY_OP_INSERT_AFTER &&
-             "Unsupported RNA override operation on constraints collection");
+  lib_assert(opop->operation == IDOVERRIDE_LIB_OP_INSERT_AFTER &&
+             "Unsupported api override operation on constraints collection");
 
-  bPoseChannel *pchan_dst = (bPoseChannel *)ptr_dst->data;
-  bPoseChannel *pchan_src = (bPoseChannel *)ptr_src->data;
+  PoseChannel *pchan_dst = (PoseChannel *)ptr_dst->data;
+  PoseChannel *pchan_src = (PoseChannel *)ptr_src->data;
 
   /* Remember that insertion operations are defined and stored in correct order, which means that
    * even if we insert several items in a row, we always insert first one, then second one, etc.
