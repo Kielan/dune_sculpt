@@ -636,13 +636,13 @@ static Constraint *api_PoseChannel_constraints_copy(Id *id,
   return new_con;
 }
 
-bool api_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
-                                                PointerRNA *ptr_dst,
-                                                PointerRNA *ptr_src,
-                                                PointerRNA *UNUSED(ptr_storage),
-                                                PropertyRNA *UNUSED(prop_dst),
-                                                PropertyRNA *UNUSED(prop_src),
-                                                PropertyRNA *UNUSED(prop_storage),
+bool api_PoseChannel_constraints_override_apply(Main *UNUSED(main),
+                                                ApiPtr *ptr_dst,
+                                                ApiPtr *ptr_src,
+                                                ApiPtr *UNUSED(ptr_storage),
+                                                ApiProp *UNUSED(prop_dst),
+                                                ApiProp *UNUSED(prop_src),
+                                                ApiProp *UNUSED(prop_storage),
                                                 const int UNUSED(len_dst),
                                                 const int UNUSED(len_src),
                                                 const int UNUSED(len_storage),
@@ -675,7 +675,7 @@ bool api_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
     return false;
   }
 
-  bConstraint *con_dst = dune_constraint_duplicate_ex(con_src, 0, true);
+  Constraint *con_dst = dune_constraint_duplicate_ex(con_src, 0, true);
 
   /* This handles NULL anchor as expected by adding at head of list. */
   lib_insertlinkafter(&pchan_dst->constraints, con_anchor, con_dst);
@@ -778,7 +778,7 @@ static int api_PoseBones_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_p
   Pose *pose = (Pose *)ptr->data;
   PoseChannel *pchan = dune_pose_channel_find_name(pose, key);
   if (pchan) {
-    RNA_pointer_create(ptr->owner_id, &RNA_PoseBone, pchan, r_ptr);
+    api_ptr_create(ptr->owner_id, &Api_PoseBone, pchan, r_ptr);
     return true;
   }
   else {
@@ -786,16 +786,16 @@ static int api_PoseBones_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_p
   }
 }
 
-static void rna_PoseChannel_matrix_basis_get(PointerRNA *ptr, float *values)
+static void api_PoseChannel_matrix_basis_get(ApiPtr *ptr, float *values)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  BKE_pchan_to_mat4(pchan, (float(*)[4])values);
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  dune_pchan_to_mat4(pchan, (float(*)[4])values);
 }
 
-static void rna_PoseChannel_matrix_basis_set(ApiPtr *ptr, const float *values)
+static void api_PoseChannel_matrix_basis_set(ApiPtr *ptr, const float *values)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  BKE_pchan_apply_mat4(pchan, (float(*)[4])values, false); /* no compat for predictable result */
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  dune_pchan_apply_mat4(pchan, (float(*)[4])values, false); /* no compat for predictable result */
 }
 
 static void api_PoseChannel_matrix_set(ApiPtr *ptr, const float *values)
@@ -907,67 +907,67 @@ static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
   ApiFn *fn;
   ApiProp *parm;
 
-  RNA_def_prop_srna(cprop, "PoseBoneConstraints");
-  srna = RNA_def_struct(brna, "PoseBoneConstraints", NULL);
-  RNA_def_struct_sdna(srna, "bPoseChannel");
-  RNA_def_struct_ui_text(srna, "PoseBone Constraints", "Collection of pose bone constraints");
+  api_def_prop_sapi(cprop, "PoseBoneConstraints");
+  srna = api_def_struct(dapi, "PoseBoneConstraints", NULL);
+  api_def_struct_sdna(sapi, "PoseChannel");
+  api_def_struct_ui_text(sapi, "PoseBone Constraints", "Collection of pose bone constraints");
 
   /* Collection active property */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Constraint");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_PoseChannel_active_constraint_get",
-                                 "rna_PoseChannel_active_constraint_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Active Constraint", "Active PoseChannel constraint");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Constraint");
+  api_def_prop_ptr_fns(prop,
+                       "api_PoseChannel_active_constraint_get",
+                       "api_PoseChannel_active_constraint_set",
+                       NULL,
+                       NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Active Constraint", "Active PoseChannel constraint");
 
   /* Constraint collection */
-  func = RNA_def_function(srna, "new", "rna_PoseChannel_constraints_new");
-  RNA_def_function_ui_description(func, "Add a constraint to this object");
-  RNA_def_function_flag(func,
-                        FUNC_USE_MAIN | FUNC_USE_SELF_ID); /* ID and Main needed for refresh */
+  fn = api_def_fn(sapi, "new", "api_PoseChannel_constraints_new");
+  api_def_fn_ui_description(fn, "Add a constraint to this object");
+  api_def_fn_flag(fn,
+                  FN_USE_MAIN | FN_USE_SELF_ID); /* ID and Main needed for refresh */
   /* return type */
-  parm = RNA_def_pointer(func, "constraint", "Constraint", "", "New constraint");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "constraint", "Constraint", "", "New constraint");
+  api_def_fn_return(fn, parm);
   /* constraint to add */
-  parm = RNA_def_enum(
-      func, "type", rna_enum_constraint_type_items, 1, "", "Constraint type to add");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(
+      fn, "type", api_enum_constraint_type_items, 1, "", "Constraint type to add");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "remove", "rna_PoseChannel_constraints_remove");
-  RNA_def_function_ui_description(func, "Remove a constraint from this object");
-  RNA_def_function_flag(
-      func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS); /* ID needed for refresh */
+  func = api_def_fn(sapi, "remove", "api_PoseChannel_constraints_remove");
+  api_def_fn_ui_description(fn, "Remove a constraint from this object");
+  api_def_fn_flag(
+      fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS); /* ID needed for refresh */
   /* constraint to remove */
-  parm = RNA_def_pointer(func, "constraint", "Constraint", "", "Removed constraint");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  parm = api_def_ptr(fn, "constraint", "Constraint", "", "Removed constraint");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "move", "rna_PoseChannel_constraints_move");
-  RNA_def_function_ui_description(func, "Move a constraint to a different position");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_int(
-      func, "from_index", -1, INT_MIN, INT_MAX, "From Index", "Index to move", 0, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "to_index", -1, INT_MIN, INT_MAX, "To Index", "Target index", 0, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "move", "api_PoseChannel_constraints_move");
+  api_def_fn_ui_description(fn, "Move a constraint to a different position");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS);
+  parm = api_def_int(
+      fn, "from_index", -1, INT_MIN, INT_MAX, "From Index", "Index to move", 0, 10000);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "to_index", -1, INT_MIN, INT_MAX, "To Index", "Target index", 0, 10000);
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "copy", "rna_PoseChannel_constraints_copy");
-  RNA_def_function_ui_description(func, "Add a new constraint that is a copy of the given one");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_SELF_ID);
+  fn = api_def_fn(sapi, "copy", "api_PoseChannel_constraints_copy");
+  api_def_fn_ui_description(fn, "Add a new constraint that is a copy of the given one");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_SELF_ID);
   /* constraint to copy */
-  parm = RNA_def_pointer(func,
-                         "constraint",
-                         "Constraint",
-                         "",
-                         "Constraint to copy - may belong to a different object");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  parm = api_def_ptr(fn,
+                     "constraint",
+                     "Constraint",
+                     "",
+                     "Constraint to copy - may belong to a different object");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
   /* return type */
-  parm = RNA_def_pointer(func, "new_constraint", "Constraint", "", "New constraint");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "new_constraint", "Constraint", "", "New constraint");
+  api_def_n_return(fn, parm);
 }
 
 static void rna_def_pose_channel(BlenderRNA *brna)
@@ -1389,38 +1389,38 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 
   /* XXX this is sub-optimal - it really should be included above, but due to technical reasons
    *     we can't do this! */
-  prop = RNA_def_property(srna, "lock_rotation_w", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "protectflag", OB_LOCK_ROTW);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "lock_rotation_w", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "protectflag", OB_LOCK_ROTW);
+  api_def_prop_ui_text(
       prop,
       "Lock Rotation (4D Angle)",
       "Lock editing of 'angle' component of four-component rotations when transforming");
-  RNA_def_property_ui_icon(prop, ICON_UNLOCKED, 1);
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_ui_icon(prop, ICON_UNLOCKED, 1);
+  api_def_prop_editable_fn(prop, "rna_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
   /* XXX this needs a better name */
-  prop = RNA_def_property(srna, "lock_rotations_4d", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "protectflag", OB_LOCK_ROT4D);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "lock_rotations_4d", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "protectflag", OB_LOCK_ROT4D);
+  api_def_prop_ui_text(
       prop,
       "Lock Rotations (4D)",
       "Lock editing of four component rotations by components (instead of as Eulers)");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
-  prop = RNA_def_property(srna, "lock_scale", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "protectflag", OB_LOCK_SCALEX);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Lock Scale", "Lock editing of scale when transforming");
-  RNA_def_property_ui_icon(prop, ICON_UNLOCKED, 1);
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  prop = api_def_prop(sapi, "lock_scale", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "protectflag", OB_LOCK_SCALEX);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Lock Scale", "Lock editing of scale when transforming");
+  api_def_prop_ui_icon(prop, ICON_UNLOCKED, 1);
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
-  RNA_api_pose_channel(srna);
+  api_api_pose_channel(sapi);
 }
 
-static void rna_def_pose_itasc(BlenderRNA *brna)
+static void api_def_pose_itasc(DuneApi *dapi)
 {
   static const EnumPropertyItem prop_itasc_mode_items[] = {
       {0,
