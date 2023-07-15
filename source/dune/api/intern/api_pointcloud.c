@@ -21,7 +21,7 @@
 #  include "wm_api.h"
 #  include "wm_types.h"
 
-static PointCloud *api_pointcloud(PointerRNA *ptr)
+static PointCloud *api_pointcloud(ApiPtr *ptr)
 {
   return (PointCloud *)ptr->owner_id;
 }
@@ -38,14 +38,14 @@ static void api_Point_location_get(ApiPtr *ptr, float value[3])
   copy_v3_v3(value, (const float *)ptr->data);
 }
 
-static void api_Point_location_set(PointerRNA *ptr, const float value[3])
+static void api_Point_location_set(ApiPtr *ptr, const float value[3])
 {
   copy_v3_v3((float *)ptr->data, value);
 }
 
-static float api_Point_radius_get(PointerRNA *ptr)
+static float api_Point_radius_get(ApiPtr *ptr)
 {
-  const PointCloud *pointcloud = rna_pointcloud(ptr);
+  const PointCloud *pointcloud = api_pointcloud(ptr);
   if (pointcloud->radius == NULL) {
     return 0.0f;
   }
@@ -90,7 +90,7 @@ static void api_def_point(DuneApi *dapi)
 
   sapi = api_def_struct(dapi, "Point", NULL);
   api_def_struct_ui_text(sapi, "Point", "Point in a point cloud");
-  api_def_struct_path_fn(sapi, "rna_Point_path");
+  api_def_struct_path_fn(sapi, "api_Point_path");
 
   prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_TRANSLATION);
   api_def_prop_array(prop, 3);
@@ -120,32 +120,32 @@ static void api_def_pointcloud(DuneApi *dapi)
 
   /* geometry */
   /* TODO: better solution for (*co)[3] parsing issue. */
-  api_define_verify_sdna(0);
-  prop = RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "co", "totpoint");
-  RNA_def_property_struct_type(prop, "Point");
-  RNA_def_property_ui_text(prop, "Points", "");
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(0);
+  prop = api_def_prop(sapi, "points", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "co", "totpoint");
+  api_def_prop_struct_type(prop, "Point");
+  api_def_prop_ui_text(prop, "Points", "");
+  api_define_verify_stype(1);
 
   /* materials */
-  prop = RNA_def_property(srna, "materials", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "mat", "totcol");
-  RNA_def_property_struct_type(prop, "Material");
-  RNA_def_property_ui_text(prop, "Materials", "");
-  RNA_def_property_srna(prop, "IDMaterials"); /* see rna_ID.c */
-  RNA_def_property_collection_funcs(
-      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "rna_IDMaterials_assign_int");
+  prop = api_def_prop(sapi, "materials", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "mat", "totcol");
+  api_def_prop_struct_type(prop, "Material");
+  api_def_prop_ui_text(prop, "Materials", "");
+  api_def_prop_sapi(prop, "IdMaterials"); /* see api_id.c */
+  api_def_prop_collection_fns(
+      prop, NULL, NULL, NULL, NULL, NULL, NULL, NULL, "api_IdMaterials_assign_int");
 
-  rna_def_attributes_common(srna);
+  api_def_attributes_common(sapi);
 
   /* common */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 }
 
-void RNA_def_pointcloud(BlenderRNA *brna)
+void api_def_pointcloud(DuneApi *dapi)
 {
-  rna_def_point(brna);
-  rna_def_pointcloud(brna);
+  api_def_point(dapi);
+  api_def_pointcloud(dapi);
 }
 
 #endif
