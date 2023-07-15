@@ -284,28 +284,28 @@ static float api_PoseChannel_length_get(PointerRNA *ptr)
 static void api_PoseChannel_name_set(PointerRNA *ptr, const char *value)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (bPoseChannel *)ptr->data;
   char oldname[sizeof(pchan->name)], newname[sizeof(pchan->name)];
 
   /* need to be on the stack */
-  BLI_strncpy_utf8(newname, value, sizeof(pchan->name));
-  BLI_strncpy(oldname, pchan->name, sizeof(pchan->name));
+  lib_strncpy_utf8(newname, value, sizeof(pchan->name));
+  lib_strncpy(oldname, pchan->name, sizeof(pchan->name));
 
-  BLI_assert(BKE_id_is_in_global_main(&ob->id));
-  BLI_assert(BKE_id_is_in_global_main(ob->data));
-  ED_armature_bone_rename(G_MAIN, ob->data, oldname, newname);
+  lib_assert(dune_id_is_in_global_main(&ob->id));
+  lib_assert(dune_id_is_in_global_main(ob->data));
+  ed_armature_bone_rename(G_MAIN, ob->data, oldname, newname);
 }
 
-/* See rna_Bone_update_renamed() */
-static void rna_PoseChannel_name_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+/* See api_Bone_update_renamed() */
+static void api_PoseChannel_name_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   /* redraw view */
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 
   /* update animation channels */
-  WM_main_add_notifier(NC_ANIMATION | ND_ANIMCHAN, id);
+  wm_main_add_notifier(NC_ANIMATION | ND_ANIMCHAN, id);
 }
 
 static PointerRNA rna_PoseChannel_bone_get(PointerRNA *ptr)
