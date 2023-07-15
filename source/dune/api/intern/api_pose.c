@@ -1057,99 +1057,99 @@ static void rna_def_pose_channel(BlenderRNA *brna)
                                "rna_PoseChannel_rotation_axis_angle_get",
                                "rna_PoseChannel_rotation_axis_angle_set",
                                NULL);
-  RNA_def_property_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
-  RNA_def_property_float_array_default(prop, rna_default_axis_angle);
-  RNA_def_property_ui_text(
+  api_def_prop_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
+  RNA_def_prop_float_array_default(prop, rna_default_axis_angle);
+  api_def_prop_ui_text(
       prop, "Axis-Angle Rotation", "Angle of Rotation for Axis-Angle rotation representation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
-  prop = RNA_def_property(srna, "rotation_euler", PROP_FLOAT, PROP_EULER);
-  RNA_def_property_float_sdna(prop, NULL, "eul");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_editable_array_func(prop, "rna_PoseChannel_rotation_euler_editable");
-  RNA_def_property_ui_text(prop, "Euler Rotation", "Rotation in Eulers");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  prop = api_def_prop(sapi, "rotation_euler", PROP_FLOAT, PROP_EULER);
+  api_def_prop_float_stype(prop, NULL, "eul");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_editable_array_fn(prop, "api_PoseChannel_rotation_euler_editable");
+  api_def_prop_ui_text(prop, "Euler Rotation", "Rotation in Eulers");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   prop = RNA_def_property(srna, "rotation_mode", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "rotmode");
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_enum_items(prop, rna_enum_object_rotation_mode_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_PoseChannel_rotation_mode_set", NULL);
+  RNA_def_property_enum_funcs(prop, NULL, "api_PoseChannel_rotation_mode_set", NULL);
   /* XXX... disabled, since proxy-locked layers are currently
    * used for ensuring proxy-syncing too */
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
+  RNA_def_property_editable_fn(prop, "api_PoseChannel_proxy_editable");
   RNA_def_property_ui_text(prop, "Rotation Mode", "");
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
   /* Curved bones settings - Applied on top of restpose values */
-  rna_def_bone_curved_common(srna, true, false);
+  rna_def_bone_curved_common(sapi, true, false);
 
   /* Custom BBone next/prev sources */
-  prop = RNA_def_property(srna, "bbone_custom_handle_start", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "bbone_prev");
-  RNA_def_property_struct_type(prop, "PoseBone");
-  RNA_def_property_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bbone_custom_handle_start", PROP_POINTER, PROP_NONE);
+  RNA_def_prop_ptr_stype(prop, NULL, "bbone_prev");
+  RNA_def_prop_struct_type(prop, "PoseBone");
+  RNA_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
+  RNA_def_prop_ui_text(
       prop, "B-Bone Start Handle", "Bone that serves as the start handle for the B-Bone curve");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
+  RNA_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
 
-  prop = RNA_def_property(srna, "bbone_custom_handle_end", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "bbone_next");
-  RNA_def_property_struct_type(prop, "PoseBone");
-  RNA_def_property_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bbone_custom_handle_end", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "bbone_next");
+  api_def_prop_struct_type(prop, "PoseBone");
+  api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
+  api_def_prop_ui_text(
       prop, "B-Bone End Handle", "Bone that serves as the end handle for the B-Bone curve");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
 
   /* transform matrices - should be read-only since these are set directly by AnimSys evaluation */
-  prop = RNA_def_property(srna, "matrix_channel", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "chan_mat");
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Channel Matrix", "4x4 matrix, before constraints");
+  prop = api_def_property(sapi, "matrix_channel", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "chan_mat");
+  api_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Channel Matrix", "4x4 matrix, before constraints");
 
   /* writable because it touches loc/scale/rot directly */
-  prop = RNA_def_property(srna, "matrix_basis", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "matrix_basis", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
+  api_def_prop_ui_text(
       prop,
       "Basis Matrix",
       "Alternative access to location/scale/rotation relative to the parent and own rest bone");
-  RNA_def_property_float_funcs(
-      prop, "rna_PoseChannel_matrix_basis_get", "rna_PoseChannel_matrix_basis_set", NULL);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_float_fns(
+      prop, "api_PoseChannel_matrix_basis_get", "api_PoseChannel_matrix_basis_set", NULL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* final matrix */
-  prop = RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "pose_mat");
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_float_funcs(prop, NULL, "rna_PoseChannel_matrix_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "matrix", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "pose_mat");
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
+  api_def_prop_float_fns(prop, NULL, "api_PoseChannel_matrix_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Pose Matrix",
       "Final 4x4 matrix after constraints and drivers are applied (object space)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* Head/Tail Coordinates (in Pose Space) - Automatically calculated... */
-  prop = RNA_def_property(srna, "head", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "pose_head");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Pose Head Position", "Location of head of the channel's bone");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  prop = api_def_prop(sapi, "head", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "pose_head");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Pose Head Position", "Location of head of the channel's bone");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
 
-  prop = RNA_def_property(srna, "tail", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "pose_tail");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Pose Tail Position", "Location of tail of the channel's bone");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  prop = api_def_prop(sapi, "tail", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "pose_tail");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Pose Tail Position", "Location of tail of the channel's bone");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
 
-  prop = RNA_def_property(srna, "length", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_funcs(prop, "rna_PoseChannel_length_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Length", "Length of the bone");
+  prop = api_def_prop(sapi, "length", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_fns(prop, "api_PoseChannel_length_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Length", "Length of the bone");
 
   /* IK Settings */
   prop = api_def_prop(srna, "is_in_ik_chain", PROP_BOOLEAN, PROP_NONE);
