@@ -6205,7 +6205,7 @@ static void api_def_mod_wireframe(DuneApi *dapi)
   api_def_struct_stype(sapi, "WireframeModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_WIREFRAME);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "thickness", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "offset");
@@ -6238,27 +6238,27 @@ static void api_def_mod_wireframe(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Boundary", "Support face boundaries");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_even_offset", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_even_offset", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_OFS_EVEN);
   api_def_prop_ui_text(prop, "Offset Even", "Scale the offset to give more even thickness");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "use_relative_offset", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_relative_offset", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_OFS_RELATIVE);
   api_def_prop_ui_text(prop, "Offset Relative", "Scale the offset by surrounding geometry");
   api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "use_crease", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_CREASE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_crease", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_CREASE);
+  api_def_prop_ui_text(
       prop, "Offset Relative", "Crease hub edges for improved subdivision surface");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "crease_weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "crease_weight");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 1);
-  RNA_def_property_ui_text(prop, "Weight", "Crease weight (if active)");
+  prop = api_def_prop(sapi, "crease_weight", PROP_FLOAT, PROP_NONE);
+  apj_def_prop_float_stype(prop, NULL, "crease_weight");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.1, 1);
+  api_def_prop_ui_text(prop, "Weight", "Crease weight (if active)");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
   prop = RNA_def_property(srna, "material_offset", PROP_INT, PROP_NONE);
