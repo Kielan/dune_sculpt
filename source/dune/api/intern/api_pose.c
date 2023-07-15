@@ -792,122 +792,122 @@ static void rna_PoseChannel_matrix_basis_get(PointerRNA *ptr, float *values)
   BKE_pchan_to_mat4(pchan, (float(*)[4])values);
 }
 
-static void rna_PoseChannel_matrix_basis_set(PointerRNA *ptr, const float *values)
+static void rna_PoseChannel_matrix_basis_set(ApiPtr *ptr, const float *values)
 {
   bPoseChannel *pchan = (bPoseChannel *)ptr->data;
   BKE_pchan_apply_mat4(pchan, (float(*)[4])values, false); /* no compat for predictable result */
 }
 
-static void rna_PoseChannel_matrix_set(PointerRNA *ptr, const float *values)
+static void api_PoseChannel_matrix_set(ApiPtr *ptr, const float *values)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
   float tmat[4][4];
 
-  BKE_armature_mat_pose_to_bone_ex(NULL, ob, pchan, (float(*)[4])values, tmat);
+  dune_armature_mat_pose_to_bone_ex(NULL, ob, pchan, (float(*)[4])values, tmat);
 
-  BKE_pchan_apply_mat4(pchan, tmat, false); /* no compat for predictable result */
+  dune_pchan_apply_mat4(pchan, tmat, false); /* no compat for predictable result */
 }
 
-static bPoseChannel *rna_PoseChannel_ensure_own_pchan(Object *ob,
+static PoseChannel *api_PoseChannel_ensure_own_pchan(Object *ob,
                                                       Object *ref_ob,
-                                                      bPoseChannel *ref_pchan)
+                                                      PoseChannel *ref_pchan)
 {
   if (ref_ob != ob) {
     /* We are trying to set a pchan from another object! Forbidden,
      * try to find by name, or abort. */
     if (ref_pchan != NULL) {
-      ref_pchan = BKE_pose_channel_find_name(ob->pose, ref_pchan->name);
+      ref_pchan = dune_pose_channel_find_name(ob->pose, ref_pchan->name);
     }
   }
   return ref_pchan;
 }
 
-static void rna_PoseChannel_custom_shape_transform_set(PointerRNA *ptr,
-                                                       PointerRNA value,
+static void api_PoseChannel_custom_shape_transform_set(ApiPtr *ptr,
+                                                       ApiPtr value,
                                                        struct ReportList *UNUSED(reports))
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
   Object *ob = (Object *)ptr->owner_id;
 
-  pchan->custom_tx = rna_PoseChannel_ensure_own_pchan(ob, (Object *)value.owner_id, value.data);
+  pchan->custom_tx = api_PoseChannel_ensure_own_pchan(ob, (Object *)value.owner_id, value.data);
 }
 
 #else
 
-void rna_def_actionbone_group_common(StructRNA *srna, int update_flag, const char *update_cb)
+void api_def_actionbone_group_common(ApiStruct *sapi, int update_flag, const char *update_cb)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* color set + colors */
-  prop = RNA_def_property(srna, "color_set", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "customCol");
-  RNA_def_property_enum_items(prop, rna_enum_color_sets_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_ActionGroup_colorset_set", NULL);
-  RNA_def_property_ui_text(prop, "Color Set", "Custom color set to use");
-  RNA_def_property_update(prop, update_flag, update_cb);
+  prop = api_def_prop(sapi, "color_set", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "customCol");
+  api_def_prop_enum_items(prop, api_enum_color_sets_items);
+  api_def_prop_enum_fns(prop, NULL, "api_ActionGroup_colorset_set", NULL);
+  api_def_prop_ui_text(prop, "Color Set", "Custom color set to use");
+  api_def_prop_update(prop, update_flag, update_cb);
 
-  prop = RNA_def_property(srna, "is_custom_color_set", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_ActionGroup_is_custom_colorset_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_custom_color_set", PROP_BOOLEAN, PROP_NONE);
+  woi_def_prop_bool_fns(prop, "api_ActionGroup_is_custom_colorset_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Custom Color Set", "Color set is user-defined instead of a fixed theme color set");
 
   /* TODO: editing the colors for this should result in changes to the color type... */
-  prop = RNA_def_property(srna, "colors", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "ThemeBoneColorSet");
+  prop = api_def_prop(sapi, "colors", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "ThemeBoneColorSet");
   /* NOTE: the DNA data is not really a pointer, but this code works :) */
-  RNA_def_property_pointer_sdna(prop, NULL, "cs");
-  RNA_def_property_ui_text(
+  api_def_prop_ptr_stype(prop, NULL, "cs");
+  api_def_prop_ui_text(
       prop, "Colors", "Copy of the colors associated with the group's color set");
-  RNA_def_property_update(prop, update_flag, update_cb);
+  api_def_prop_update(prop, update_flag, update_cb);
 }
 
-static void rna_def_bone_group(BlenderRNA *brna)
+static void api_def_bone_group(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* struct */
-  srna = RNA_def_struct(brna, "BoneGroup", NULL);
-  RNA_def_struct_sdna(srna, "bActionGroup");
-  RNA_def_struct_ui_text(srna, "Bone Group", "Groups of Pose Channels (Bones)");
-  RNA_def_struct_ui_icon(srna, ICON_GROUP_BONE);
+  sapi = api_def_struct(dapi, "BoneGroup", NULL);
+  api_def_struct_stype(sapi, "bActionGroup");
+  api_def_struct_ui_text(sapi, "Bone Group", "Groups of Pose Channels (Bones)");
+  api_def_struct_ui_icon(sapi, ICON_GROUP_BONE);
 
   /* name */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_BoneGroup_name_set");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "");
+  api_def_prop_string_fn(prop, NULL, NULL, "api_BoneGroup_name_set");
+  api_def_struct_name_prop(sapi, prop);
 
   /* TODO: add some runtime-collections stuff to access grouped bones. */
 
   /* color set */
-  rna_def_actionbone_group_common(srna, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_actionbone_group_common(srna, NC_OBJECT | ND_POSE, "rna_Pose_update");
 }
 
-static const EnumPropertyItem prop_iksolver_items[] = {
+static const EnumPropItem prop_iksolver_items[] = {
     {IKSOLVER_STANDARD, "LEGACY", 0, "Standard", "Original IK solver"},
     {IKSOLVER_ITASC, "ITASC", 0, "iTaSC", "Multi constraint, stateful IK solver"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem prop_solver_items[] = {
+static const EnumPropItem prop_solver_items[] = {
     {ITASC_SOLVER_SDLS, "SDLS", 0, "SDLS", "Selective Damped Least Square"},
     {ITASC_SOLVER_DLS, "DLS", 0, "DLS", "Damped Least Square with Numerical Filtering"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static void rna_def_pose_channel_constraints(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "PoseBoneConstraints");
+  RNA_def_prop_srna(cprop, "PoseBoneConstraints");
   srna = RNA_def_struct(brna, "PoseBoneConstraints", NULL);
   RNA_def_struct_sdna(srna, "bPoseChannel");
   RNA_def_struct_ui_text(srna, "PoseBone Constraints", "Collection of pose bone constraints");
