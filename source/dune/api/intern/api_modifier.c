@@ -6261,23 +6261,23 @@ static void api_def_mod_wireframe(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Weight", "Crease weight (if active)");
   RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "material_offset", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mat_ofs");
-  RNA_def_property_range(prop, SHRT_MIN, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Material Offset", "Offset material index of generated faces");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "material_offset", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mat_ofs");
+  api_def_prop_range(prop, SHRT_MIN, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Material Offset", "Offset material index of generated faces");
+  api_def_prop_update(prop, 0, "rna_Modifier_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "defgrp_name");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "defgrp_name");
+  api_def_prop_ui_text(
       prop, "Vertex Group", "Vertex group name for selecting the affected areas");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_WireframeModifier_defgrp_name_set");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_WireframeMod_defgrp_name_set");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_WIREFRAME_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert", "Invert vertex group influence");
-  RNA_def_property_update(prop, 0, "rna_Modifier_update");
+  prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_WIREFRAME_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Invert", "Invert vertex group influence");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
   RNA_define_lib_overridable(false);
 }
