@@ -308,60 +308,60 @@ static void api_PoseChannel_name_update(Main *UNUSED(bmain), Scene *UNUSED(scene
   wm_main_add_notifier(NC_ANIMATION | ND_ANIMCHAN, id);
 }
 
-static PointerRNA rna_PoseChannel_bone_get(PointerRNA *ptr)
+static ApiPtr api_PoseChannel_bone_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  PointerRNA tmp_ptr = *ptr;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  ApiPtr tmp_ptr = *ptr;
 
-  /* Replace the id_data pointer with the Armature ID. */
+  /* Replace the id_data pointer with the Armature Id. */
   tmp_ptr.owner_id = ob->data;
 
-  return rna_pointer_inherit_refine(&tmp_ptr, &RNA_Bone, pchan->bone);
+  return api_ptr_inherit_refine(&tmp_ptr, &Api_Bone, pchan->bone);
 }
 
-static bool rna_PoseChannel_has_ik_get(PointerRNA *ptr)
+static bool api_PoseChannel_has_ik_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
-  return BKE_pose_channel_in_IK_chain(ob, pchan);
+  return dune_pose_channel_in_IK_chain(ob, pchan);
 }
 
-static StructRNA *rna_IKParam_refine(PointerRNA *ptr)
+static StructRNA *rna_IKParam_refine(ApiPtr *ptr)
 {
-  bIKParam *param = (bIKParam *)ptr->data;
+  IKParam *param = (IKParam *)ptr->data;
 
   switch (param->iksolver) {
     case IKSOLVER_ITASC:
-      return &RNA_Itasc;
+      return &Api_Itasc;
     default:
-      return &RNA_IKParam;
+      return &Api_IKParam;
   }
 }
 
-static PointerRNA rna_Pose_ikparam_get(struct PointerRNA *ptr)
+static ApiPtr api_Pose_ikparam_get(struct ApiPtr *ptr)
 {
-  bPose *pose = (bPose *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_IKParam, pose->ikparam);
+  Pose *pose = (Pose *)ptr->data;
+  return api_ptr_inherit_refine(ptr, &Api_IKParam, pose->ikparam);
 }
 
-static StructRNA *rna_Pose_ikparam_typef(PointerRNA *ptr)
+static ApiStruct *api_Pose_ikparam_typef(ApiPtr *ptr)
 {
-  bPose *pose = (bPose *)ptr->data;
+  Pose *pose = (Pose *)ptr->data;
 
   switch (pose->iksolver) {
     case IKSOLVER_ITASC:
-      return &RNA_Itasc;
+      return &Api_Itasc;
     default:
-      return &RNA_IKParam;
+      return &Api_IKParam;
   }
 }
 
-static void rna_Itasc_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Itasc_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bItasc *itasc = ptr->data;
+  Itasc *itasc = ptr->data;
 
   /* verify values */
   if (itasc->precision < 0.0001f) {
@@ -387,77 +387,76 @@ static void rna_Itasc_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
   }
   BIK_update_param(ob->pose);
 
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
 }
 
-static void rna_Itasc_update_rebuild(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Itasc_update_rebuild(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPose *pose = ob->pose;
+  Pose *pose = ob->pose;
 
-  BKE_pose_tag_recalc(bmain, pose); /* checks & sorts pose channels */
-  rna_Itasc_update(bmain, scene, ptr);
+  dune_pose_tag_recalc(main, pose); /* checks & sorts pose channels */
+  api_Itasc_update(main, scene, ptr);
 }
 
-static PointerRNA rna_PoseChannel_bone_group_get(PointerRNA *ptr)
+static ApiPtr api_PoseChannel_bone_group_get(ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPose *pose = (ob) ? ob->pose : NULL;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-  bActionGroup *grp;
+  Pose *pose = (ob) ? ob->pose : NULL;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
+  ActionGroup *grp;
 
   if (pose) {
-    grp = BLI_findlink(&pose->agroups, pchan->agrp_index - 1);
-  }
-  else {
+    grp = lib_findlink(&pose->agroups, pchan->agrp_index - 1);
+  } else {
     grp = NULL;
   }
 
-  return rna_pointer_inherit_refine(ptr, &RNA_BoneGroup, grp);
+  return api_ptr_inherit_refine(ptr, &Api_BoneGroup, grp);
 }
 
-static void rna_PoseChannel_bone_group_set(PointerRNA *ptr,
-                                           PointerRNA value,
+static void api_PoseChannel_bone_group_set(ApiPtr *ptr,
+                                           ApiPtr value,
                                            struct ReportList *UNUSED(reports))
 {
   Object *ob = (Object *)ptr->owner_id;
-  bPose *pose = (ob) ? ob->pose : NULL;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  Pose *pose = (ob) ? ob->pose : NULL;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   if (pose) {
-    pchan->agrp_index = BLI_findindex(&pose->agroups, value.data) + 1;
+    pchan->agrp_index = lib_findindex(&pose->agroups, value.data) + 1;
   }
   else {
     pchan->agrp_index = 0;
   }
 }
 
-static int rna_PoseChannel_bone_group_index_get(PointerRNA *ptr)
+static int api_PoseChannel_bone_group_index_get(ApiPtr *ptr)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
   return MAX2(pchan->agrp_index - 1, 0);
 }
 
-static void rna_PoseChannel_bone_group_index_set(PointerRNA *ptr, int value)
+static void api_PoseChannel_bone_group_index_set(ApiPtr *ptr, int value)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
   pchan->agrp_index = value + 1;
 }
 
-static void rna_PoseChannel_bone_group_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_PoseChannel_bone_group_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   Object *ob = (Object *)ptr->owner_id;
   bPose *pose = (ob) ? ob->pose : NULL;
 
   *min = 0;
-  *max = pose ? max_ii(0, BLI_listbase_count(&pose->agroups) - 1) : 0;
+  *max = pose ? max_ii(0, lib_list_count(&pose->agroups) - 1) : 0;
 }
 
-static PointerRNA rna_Pose_active_bone_group_get(PointerRNA *ptr)
+static ApiPtr api_Pose_active_bone_group_get(ApiPtr *ptr)
 {
-  bPose *pose = (bPose *)ptr->data;
-  return rna_pointer_inherit_refine(
+  Pose *pose = (Pose *)ptr->data;
+  return api_ptr_inherit_refine(
       ptr, &Api_BoneGroup, lib_findlink(&pose->agroups, pose->active_group - 1));
 }
 
@@ -661,40 +660,40 @@ bool api_PoseChannel_constraints_override_apply(Main *UNUSED(bmain),
   /* Remember that insertion operations are defined and stored in correct order, which means that
    * even if we insert several items in a row, we always insert first one, then second one, etc.
    * So we should always find 'anchor' constraint in both _src *and* _dst */
-  const size_t name_offset = offsetof(bConstraint, name);
-  bConstraint *con_anchor = BLI_listbase_string_or_index_find(&pchan_dst->constraints,
-                                                              opop->subitem_reference_name,
-                                                              name_offset,
-                                                              opop->subitem_reference_index);
+  const size_t name_offset = offsetof(Constraint, name);
+  Constraint *con_anchor = lib_list_string_or_index_find(&pchan_dst->constraints,
+                                                         opop->subitem_ref_name,
+                                                         name_offset,
+                                                         opop->subitem_ref_index);
   /* If `con_anchor` is NULL, `con_src` will be inserted in first position. */
 
-  bConstraint *con_src = BLI_listbase_string_or_index_find(
+  Constraint *con_src = lib_list_string_or_index_find(
       &pchan_src->constraints, opop->subitem_local_name, name_offset, opop->subitem_local_index);
 
   if (con_src == NULL) {
-    BLI_assert(con_src != NULL);
+    lib_assert(con_src != NULL);
     return false;
   }
 
-  bConstraint *con_dst = BKE_constraint_duplicate_ex(con_src, 0, true);
+  bConstraint *con_dst = dune_constraint_duplicate_ex(con_src, 0, true);
 
   /* This handles NULL anchor as expected by adding at head of list. */
-  BLI_insertlinkafter(&pchan_dst->constraints, con_anchor, con_dst);
+  lib_insertlinkafter(&pchan_dst->constraints, con_anchor, con_dst);
 
   /* This should actually *not* be needed in typical cases.
    * However, if overridden source was edited,
    * we *may* have some new conflicting names. */
-  BKE_constraint_unique_name(con_dst, &pchan_dst->constraints);
+  dune_constraint_unique_name(con_dst, &pchan_dst->constraints);
 
   //  printf("%s: We inserted a constraint...\n", __func__);
   return true;
 }
 
-static int rna_PoseChannel_proxy_editable(PointerRNA *ptr, const char **r_info)
+static int api_PoseChannel_proxy_editable(ApjPtr *ptr, const char **r_info)
 {
   Object *ob = (Object *)ptr->owner_id;
-  bArmature *arm = ob->data;
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  Armature *arm = ob->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   if (false && pchan->bone && (pchan->bone->layer & arm->layer_protected)) {
     *r_info = "Can't edit property of a proxy on a protected layer";
@@ -704,80 +703,68 @@ static int rna_PoseChannel_proxy_editable(PointerRNA *ptr, const char **r_info)
   return PROP_EDITABLE;
 }
 
-static int rna_PoseChannel_location_editable(PointerRNA *ptr, int index)
+static int api_PoseChannel_location_editable(ApiPtr *ptr, int index)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   /* only if the axis in question is locked, not editable... */
   if ((index == 0) && (pchan->protectflag & OB_LOCK_LOCX)) {
     return 0;
-  }
-  else if ((index == 1) && (pchan->protectflag & OB_LOCK_LOCY)) {
+  } else if ((index == 1) && (pchan->protectflag & OB_LOCK_LOCY)) {
     return 0;
-  }
-  else if ((index == 2) && (pchan->protectflag & OB_LOCK_LOCZ)) {
+  } else if ((index == 2) && (pchan->protectflag & OB_LOCK_LOCZ)) {
     return 0;
-  }
-  else {
+  } else {
     return PROP_EDITABLE;
   }
 }
 
-static int rna_PoseChannel_scale_editable(PointerRNA *ptr, int index)
+static int api_PoseChannel_scale_editable(ApiPtr *ptr, int index)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   /* only if the axis in question is locked, not editable... */
   if ((index == 0) && (pchan->protectflag & OB_LOCK_SCALEX)) {
     return 0;
-  }
-  else if ((index == 1) && (pchan->protectflag & OB_LOCK_SCALEY)) {
+  } else if ((index == 1) && (pchan->protectflag & OB_LOCK_SCALEY)) {
     return 0;
-  }
-  else if ((index == 2) && (pchan->protectflag & OB_LOCK_SCALEZ)) {
+  } else if ((index == 2) && (pchan->protectflag & OB_LOCK_SCALEZ)) {
     return 0;
-  }
-  else {
+  } else {
     return PROP_EDITABLE;
   }
 }
 
-static int rna_PoseChannel_rotation_euler_editable(PointerRNA *ptr, int index)
+static int api_PoseChannel_rotation_euler_editable(ApiPtr *ptr, int index)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   /* only if the axis in question is locked, not editable... */
   if ((index == 0) && (pchan->protectflag & OB_LOCK_ROTX)) {
     return 0;
-  }
-  else if ((index == 1) && (pchan->protectflag & OB_LOCK_ROTY)) {
+  } else if ((index == 1) && (pchan->protectflag & OB_LOCK_ROTY)) {
     return 0;
-  }
-  else if ((index == 2) && (pchan->protectflag & OB_LOCK_ROTZ)) {
+  } else if ((index == 2) && (pchan->protectflag & OB_LOCK_ROTZ)) {
     return 0;
-  }
-  else {
+  } else {
     return PROP_EDITABLE;
   }
 }
 
-static int rna_PoseChannel_rotation_4d_editable(PointerRNA *ptr, int index)
+static int api_PoseChannel_rotation_4d_editable(ApiPtr *ptr, int index)
 {
-  bPoseChannel *pchan = (bPoseChannel *)ptr->data;
+  PoseChannel *pchan = (PoseChannel *)ptr->data;
 
   /* only consider locks if locking components individually... */
   if (pchan->protectflag & OB_LOCK_ROT4D) {
     /* only if the axis in question is locked, not editable... */
     if ((index == 0) && (pchan->protectflag & OB_LOCK_ROTW)) {
       return 0;
-    }
-    else if ((index == 1) && (pchan->protectflag & OB_LOCK_ROTX)) {
+    } else if ((index == 1) && (pchan->protectflag & OB_LOCK_ROTX)) {
       return 0;
-    }
-    else if ((index == 2) && (pchan->protectflag & OB_LOCK_ROTY)) {
+    } else if ((index == 2) && (pchan->protectflag & OB_LOCK_ROTY)) {
       return 0;
-    }
-    else if ((index == 3) && (pchan->protectflag & OB_LOCK_ROTZ)) {
+    } else if ((index == 3) && (pchan->protectflag & OB_LOCK_ROTZ)) {
       return 0;
     }
   }
@@ -786,10 +773,10 @@ static int rna_PoseChannel_rotation_4d_editable(PointerRNA *ptr, int index)
 }
 
 /* not essential, but much faster than the default lookup function */
-static int rna_PoseBones_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr)
+static int api_PoseBones_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_ptr)
 {
-  bPose *pose = (bPose *)ptr->data;
-  bPoseChannel *pchan = BKE_pose_channel_find_name(pose, key);
+  Pose *pose = (Pose *)ptr->data;
+  PoseChannel *pchan = dune_pose_channel_find_name(pose, key);
   if (pchan) {
     RNA_pointer_create(ptr->owner_id, &RNA_PoseBone, pchan, r_ptr);
     return true;
