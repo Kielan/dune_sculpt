@@ -425,8 +425,7 @@ static void api_PoseChannel_bone_group_set(ApiPtr *ptr,
 
   if (pose) {
     pchan->agrp_index = lib_findindex(&pose->agroups, value.data) + 1;
-  }
-  else {
+  } else {
     pchan->agrp_index = 0;
   }
 }
@@ -780,8 +779,7 @@ static int api_PoseBones_lookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_p
   if (pchan) {
     api_ptr_create(ptr->owner_id, &Api_PoseBone, pchan, r_ptr);
     return true;
-  }
-  else {
+  } else {
     return false;
   }
 }
@@ -810,8 +808,8 @@ static void api_PoseChannel_matrix_set(ApiPtr *ptr, const float *values)
 }
 
 static PoseChannel *api_PoseChannel_ensure_own_pchan(Object *ob,
-                                                      Object *ref_ob,
-                                                      PoseChannel *ref_pchan)
+                                                     Object *ref_ob,
+                                                     PoseChannel *ref_pchan)
 {
   if (ref_ob != ob) {
     /* We are trying to set a pchan from another object! Forbidden,
@@ -857,7 +855,7 @@ void api_def_actionbone_group_common(ApiStruct *sapi, int update_flag, const cha
   prop = api_def_prop(sapi, "colors", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "ThemeBoneColorSet");
-  /* NOTE: the DNA data is not really a pointer, but this code works :) */
+  /* NOTE: the types data is not really a pointer, but this code works :) */
   api_def_prop_ptr_stype(prop, NULL, "cs");
   api_def_prop_ui_text(
       prop, "Colors", "Copy of the colors associated with the group's color set");
@@ -909,7 +907,7 @@ static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
 
   api_def_prop_sapi(cprop, "PoseBoneConstraints");
   srna = api_def_struct(dapi, "PoseBoneConstraints", NULL);
-  api_def_struct_sdna(sapi, "PoseChannel");
+  api_def_struct_stype(sapi, "PoseChannel");
   api_def_struct_ui_text(sapi, "PoseBone Constraints", "Collection of pose bone constraints");
 
   /* Collection active property */
@@ -936,10 +934,10 @@ static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
       fn, "type", api_enum_constraint_type_items, 1, "", "Constraint type to add");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = api_def_fn(sapi, "remove", "api_PoseChannel_constraints_remove");
+  fn = api_def_fn(sapi, "remove", "api_PoseChannel_constraints_remove");
   api_def_fn_ui_description(fn, "Remove a constraint from this object");
   api_def_fn_flag(
-      fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS); /* ID needed for refresh */
+      fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS); /* Id needed for refresh */
   /* constraint to remove */
   parm = api_def_ptr(fn, "constraint", "Constraint", "", "Removed constraint");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
@@ -975,30 +973,30 @@ static void rna_def_pose_channel(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "PoseBone", NULL);
-  RNA_def_struct_sdna(srna, "bPoseChannel");
-  RNA_def_struct_ui_text(srna, "Pose Bone", "Channel defining pose data for a bone in a Pose");
-  RNA_def_struct_path_func(srna, "rna_PoseBone_path");
-  RNA_def_struct_idprops_func(srna, "rna_PoseBone_idprops");
-  RNA_def_struct_ui_icon(srna, ICON_BONE_DATA);
+  sapi = api_def_struct(dapi, "PoseBone", NULL);
+  api_def_struct_stype(sapi, "PoseChannel");
+  api_def_struct_ui_text(sapi, "Pose Bone", "Channel defining pose data for a bone in a Pose");
+  api_def_struct_path_fn(sapi, "api_PoseBone_path");
+  api_def_struct_idprops_fn(sapi, "api_PoseBone_idprops");
+  api_def_struct_ui_icon(sapi, ICON_BONE_DATA);
 
   /* Bone Constraints */
-  prop = RNA_def_property(srna, "constraints", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Constraint");
-  RNA_def_property_override_flag(
-      prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY | PROPOVERRIDE_LIBRARY_INSERTION);
-  RNA_def_property_ui_text(prop, "Constraints", "Constraints that act on this pose channel");
-  RNA_def_property_override_funcs(prop, NULL, NULL, "rna_PoseChannel_constraints_override_apply");
+  prop = api_def_prop(sapi, "constraints", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Constraint");
+  api_def_prop_override_flag(
+      prop, PROPOVERRIDE_OVERRIDABLE_LIB | PROPOVERRIDE_LIBRARY_INSERTION);
+  api_def_prop_ui_text(prop, "Constraints", "Constraints that act on this pose channel");
+  api_def_prop_override_fns(prop, NULL, NULL, "rna_PoseChannel_constraints_override_apply");
 
-  rna_def_pose_channel_constraints(brna, prop);
+  api_def_pose_channel_constraints(brna, prop);
 
   /* Name + Selection Status */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_PoseChannel_name_set");
-  RNA_def_property_ui_text(prop, "Name", "");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, 0, "rna_PoseChannel_name_update");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop, NULL, NULL, "api_PoseChannel_name_set");
+  api_def_prop_ui_text(prop, "Name", "");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, 0, "api_PoseChannel_name_update");
 
   /* Baked Bone Path cache data */
   rna_def_motionpath_common(srna);
@@ -1051,12 +1049,11 @@ static void rna_def_pose_channel(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
   /* XXX: for axis-angle, it would have been nice to have 2 separate fields for UI purposes, but
-   * having a single one is better for Keyframing and other property-management situations...
-   */
-  prop = RNA_def_property(srna, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_float_funcs(prop,
+   * having a single one is better for Keyframing and other property-management situations...  */
+  prop = api_def_property(srna, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_array(prop, 4);
+  api_def_prop_float_funcs(prop,
                                "rna_PoseChannel_rotation_axis_angle_get",
                                "rna_PoseChannel_rotation_axis_angle_set",
                                NULL);
