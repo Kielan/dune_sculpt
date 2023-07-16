@@ -845,26 +845,26 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
-  RNA_def_prop_int_stype(prop, NULL, "resolution_y");
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_stype(prop, NULL, "resolution_y");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "temporary_directory", PROP_STRING, PROP_NONE);
-  RNA_def_function_ui_description(func, "The temp directory used by Blender");
-  RNA_def_property_string_funcs(
-      prop, "rna_RenderEngine_tempdir_get", "rna_RenderEngine_tempdir_length", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "temp_dir", PROP_STRING, PROP_NONE);
+  api_def_fn_ui_description(fn, "The temp directory used by Dune");
+  api_def_prop_string_fns(
+      prop, "api_RenderEngine_tempdir_get", "rna_RenderEngine_tempdir_length", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* Render Data */
-  prop = RNA_def_property(srna, "render", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "RenderSettings");
-  RNA_def_property_pointer_funcs(prop, "rna_RenderEngine_render_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Render Data", "");
+  prop = api_def_prop(sapi, "render", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "RenderSettings");
+  api_def_prop_ptr_fns(prop, "api_RenderEngine_render_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Render Data", "");
 
-  prop = RNA_def_property(srna, "use_highlight_tiles", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_HIGHLIGHT_TILES);
+  prop = api_def_prop(sapi, "use_highlight_tiles", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_HIGHLIGHT_TILES);
 
-  func = api_def_fn(sapi, "register_pass", "RE_engine_register_pass");
-  RNA_def_fn_ui_description(
+  fn = api_def_fn(sapi, "register_pass", "RE_engine_register_pass");
+  api_def_fn_ui_description(
       fn, "Register a render pass that will be part of the render with the current settings");
   parm = api_def_ptr(fn, "scene", "Scene", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -878,10 +878,9 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_enum(fn, "type", render_pass_type_items, SOCK_FLOAT, "Type", "");
   api_def_prop_enum_native_type(parm, "eNodeSocketDatatype");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* registration */
-
   prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->idname");
   api_def_prop_flag(prop, PROP_REGISTER);
@@ -890,18 +889,18 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_prop_string_stype(prop, NULL, "type->name");
   api_def_prop_flag(prop, PROP_REGISTER);
 
-  prop = api_def_prop(sapi, "bl_use_preview", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "type->flag", RE_USE_PREVIEW);
+  prop = api_def_prop(sapi, "bl_use_preview", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_PREVIEW);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Use Preview Render",
       "Render engine supports being used for rendering previews of materials, lights and worlds");
 
-  prop = RNA_def_property(srna, "bl_use_postprocess", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "type->flag", RE_USE_POSTPROCESS);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop, "Use Post Processing", "Apply compositing on render results");
+  prop = api_def_prop(sapi, "bl_use_postprocess", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "type->flag", RE_USE_POSTPROCESS);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop, "Use Post Processing", "Apply compositing on render results");
 
   prop = RNA_def_property(srna, "bl_use_eevee_viewport", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_EEVEE_VIEWPORT);
