@@ -950,7 +950,7 @@ static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
       fn, "from_index", -1, INT_MIN, INT_MAX, "From Index", "Index to move", 0, 10000);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_int(fn, "to_index", -1, INT_MIN, INT_MAX, "To Index", "Target index", 0, 10000);
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   fn = api_def_fn(sapi, "copy", "api_PoseChannel_constraints_copy");
   api_def_fn_ui_description(fn, "Add a new constraint that is a copy of the given one");
@@ -968,10 +968,10 @@ static void api_def_pose_channel_constraints(DuneApi *dapi, ApiProp *cprop)
   api_def_n_return(fn, parm);
 }
 
-static void rna_def_pose_channel(BlenderRNA *brna)
+static void api_def_pose_channel(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "PoseBone", NULL);
   api_def_struct_stype(sapi, "PoseChannel");
@@ -999,36 +999,36 @@ static void rna_def_pose_channel(BlenderRNA *brna)
   api_def_prop_update(prop, 0, "api_PoseChannel_name_update");
 
   /* Baked Bone Path cache data */
-  rna_def_motionpath_common(srna);
+  api_def_motionpath_common(srna);
 
   /* Relationships to other bones */
-  prop = RNA_def_property(srna, "bone", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "Bone");
-  RNA_def_property_pointer_funcs(prop, "rna_PoseChannel_bone_get", NULL, NULL, NULL);
-  RNA_def_property_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Bone", "Bone associated with this PoseBone");
+  prop = api_def_prop(sapi, "bone", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "Bone");
+  api_def_prop_ptr_fns(prop, "rna_PoseChannel_bone_get", NULL, NULL, NULL);
+  api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Bone", "Bone associated with this PoseBone");
 
-  prop = RNA_def_property(srna, "parent", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "PoseBone");
-  RNA_def_property_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Parent", "Parent of this pose bone");
+  prop = api_def_prop(sapi, "parent", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "PoseBone");
+  api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Parent", "Parent of this pose bone");
 
-  prop = RNA_def_property(srna, "child", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "PoseBone");
-  RNA_def_property_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Child", "Child of this pose bone");
+  prop = api_def_prop(srna, "child", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "PoseBone");
+  api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Child", "Child of this pose bone");
 
   /* Transformation settings */
-  prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "loc");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_editable_array_func(prop, "rna_PoseChannel_location_editable");
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  prop = api_def_prop(sapi, "location", PROP_FLOAT, PROP_TRANSLATION);
+  RNA_def_pro_float_stype(prop, NULL, "loc");
+  RNA_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_prop_editable_array_func(prop, "rna_PoseChannel_location_editable");
+  RNA_def_prop_ui_text(prop, "Location", "");
+  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
   prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
@@ -1560,41 +1560,41 @@ static void api_def_pose_itasc(DuneApi *dapi)
 static void rna_def_pose_ikparam(BlenderRNA *brna)
 {
   StructRNA *srna;
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "IKParam", NULL);
-  RNA_def_struct_sdna(srna, "bIKParam");
-  RNA_def_struct_ui_text(srna, "IKParam", "Base type for IK solver parameters");
-  RNA_def_struct_refine_func(srna, "rna_IKParam_refine");
+  sapi = api_def_struct(dapi, "IKParam", NULL);
+  api_def_struct_stype(sapi, "bIKParam");
+  api_def_struct_ui_text(sapi, "IKParam", "Base type for IK solver parameters");
+  api_def_struct_refine_func(srna, "rna_IKParam_refine");
 
-  prop = RNA_def_property(srna, "ik_solver", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "iksolver");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, prop_iksolver_items);
-  RNA_def_property_ui_text(prop, "IK Solver", "IK solver for which these parameters are defined");
+  prop = api_def_prop(srna, "ik_solver", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "iksolver");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_items(prop, prop_iksolver_items);
+  api_def_prop_ui_text(prop, "IK Solver", "IK solver for which these parameters are defined");
 }
 
 /* pose.bone_groups */
-static void rna_def_bone_groups(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_bone_groups(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "BoneGroups");
-  srna = RNA_def_struct(brna, "BoneGroups", NULL);
-  RNA_def_struct_sdna(srna, "bPose");
-  RNA_def_struct_ui_text(srna, "Bone Groups", "Collection of bone groups");
+  api_def_prop_sapi(cprop, "BoneGroups");
+  srna = api_def_struct(dapi, "BoneGroups", NULL);
+  api_def_struct_stype(sapi, "bPose");
+  api_def_struct_ui_text(sapi, "Bone Groups", "Collection of bone groups");
 
-  func = RNA_def_function(srna, "new", "rna_bone_group_new");
-  RNA_def_function_ui_description(func, "Add a new bone group to the object");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_REPORTS); /* ID needed for refresh */
-  RNA_def_string(func, "name", "Group", MAX_NAME, "", "Name of the new group");
+  fn = api_def_fn(sapi, "new", "rna_bone_group_new");
+  api_def_fn_ui_description(fn, "Add a new bone group to the object");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FUNC_USE_REPORTS); /* ID needed for refresh */
+  api_def_string(fn, "name", "Group", MAX_NAME, "", "Name of the new group");
   /* return type */
-  parm = RNA_def_pointer(func, "group", "BoneGroup", "", "New bone group");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "group", "BoneGroup", "", "New bone group");
+  api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "remove", "api_bone_group_remove");
   api_def_fn_ui_description(fn, "Remove a bone group from this object");
