@@ -1265,18 +1265,18 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "ik_stiffness_z", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "stiffness[2]");
-  RNA_def_property_range(prop, 0.0f, 0.99f);
-  RNA_def_property_ui_text(prop, "IK Z Stiffness", "IK stiffness around the Z axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_stiffness_z", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "stiffness[2]");
+  api_def_prop_range(prop, 0.0f, 0.99f);
+  api_def_prop_ui_text(prop, "IK Z Stiffness", "IK stiffness around the Z axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_prop(sapi, "ik_stretch", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_float_stype(prop, NULL, "ikstretch");
-  RNA_def_prop_range(prop, 0.0f, 1.0f);
-  RNA_def_prop_ui_text(prop, "IK Stretch", "Allow scaling of the bone for IK");
-  RNA_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  prop = api_def_prop(sapi, "ik_stretch", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "ikstretch");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "IK Stretch", "Allow scaling of the bone for IK");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = api_def_prop(sapi, "ik_rotation_weight", PROP_FLOAT, PROP_FACTOR);
@@ -1286,12 +1286,12 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
-  prop = RNA_def_property(srna, "ik_linear_weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "iklinweight");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "IK Lin Weight", "Weight of scale constraint for IK");
-  RNA_def_property_editable_func(prop, "api_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
+  prop = api_def_prop(sapi, "ik_linear_weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_style(prop, NULL, "iklinweight");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "IK Lin Weight", "Weight of scale constraint for IK");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* custom bone shapes */
   prop = api_def_prop(sapi, "custom_shape", PROP_PTR, PROP_NONE);
@@ -1304,12 +1304,12 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_graph_update");
 
-  prop = RNA_def_property(srna, "custom_shape_scale_xyz", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "custom_scale_xyz");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_float_array_default(prop, rna_default_scale_3d);
-  RNA_def_property_ui_text(prop, "Custom Shape Scale", "Adjust the size of the custom shape");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
+  prop = api_def_prop(sapi, "custom_shape_scale_xyz", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "custom_scale_xyz");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_float_array_default(prop, rna_default_scale_3d);
+  api_def_prop_ui_text(prop, "Custom Shape Scale", "Adjust the size of the custom shape");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   prop = api_def_prop(sapi, "custom_shape_translation", PROP_FLOAT, PROP_XYZ);
   api_def_prop_float_stype(prop, NULL, "custom_translation");
@@ -1342,10 +1342,10 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_ptr_fns(
       prop, NULL, "api_PoseChannel_custom_shape_transform_set", NULL, NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* bone groups */
-  prop = api_def_prop(srna, "bone_group_index", PROP_INT, PROP_NONE);
+  prop = api_def_prop(sapi, "bone_group_index", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "agrp_index");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
@@ -1355,7 +1355,7 @@ static void api_def_pose_channel(DuneApi *dapi)
                        "api_PoseChannel_bone_group_index_range");
   api_def_prop_ui_text(
       prop, "Bone Group Index", "Bone group this pose channel belongs to (0 means no group)");
-  api_def_prop_editable_func(prop, "rna_PoseChannel_proxy_editable");
+  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   prop = api_def_prop(sapi, "bone_group", PROP_PRR, PROP_NONE);
@@ -1363,18 +1363,18 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ptr_funcs(
       prop, "api_PoseChannel_bone_group_get", "api_PoseChannel_bone_group_set", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Bone Group", "Bone group this pose channel belongs to");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
+  api_def_prop_ui_text(prop, "Bone Group", "Bone group this pose channel belongs to");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* transform locks */
-  prop = RNA_def_property(srna, "lock_location", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "protectflag", OB_LOCK_LOCX);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Lock Location", "Lock editing of location when transforming");
-  RNA_def_property_ui_icon(prop, ICON_UNLOCKED, 1);
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
+  prop = api_def_prop(sapi, "lock_location", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "protectflag", OB_LOCK_LOCX);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Lock Location", "Lock editing of location when transforming");
+  api_def_prop_ui_icon(prop, ICON_UNLOCKED, 1);
+  api_def_prop_editable_fn(prop, "rna_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   prop = api_def_prop(sapi, "lock_rotation", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "protectflag", OB_LOCK_ROTX);
@@ -1466,64 +1466,64 @@ static void api_def_pose_itasc(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Precision", "Precision of convergence in case of reiteration");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_prope(sapi, "iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "numiter");
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "numiter");
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(
       prop, "Iterations", "Maximum number of iterations for convergence in case of reiteration");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "step_count", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "numstep");
-  RNA_def_property_range(prop, 1.0f, 50.0f);
-  RNA_def_property_ui_text(prop, "Num Steps", "Divide the frame interval into this many steps");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  prop = api_def_prop(sapi, "step_count", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "numstep");
+  api_def_prop_range(prop, 1.0f, 50.0f);
+  api_def_prop_ui_text(prop, "Num Steps", "Divide the frame interval into this many steps");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_itasc_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", NULL);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update_rebuild");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_itasc_mode_items);
+  api_def_prop_ui_text(prop, "Mode", NULL);
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update_rebuild");
 
-  prop = RNA_def_property(srna, "reiteration_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_itasc_reiteration_items);
-  RNA_def_property_ui_text(prop,
-                           "Reiteration",
-                           "Defines if the solver is allowed to reiterate (converge until "
-                           "precision is met) on none, first or all frames");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  prop = api_def_prop(sapi, "reiteration_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_itasc_reiteration_items);
+  api_def_prop_ui_text(prop,
+                       "Reiteration",
+                       "Defines if the solver is allowed to reiterate (converge until "
+                       "precision is met) on none, first or all frames");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "use_auto_step", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ITASC_AUTO_STEP);
-  RNA_def_property_ui_text(prop,
-                           "Auto Step",
-                           "Automatically determine the optimal number of steps for best "
-                           "performance/accuracy trade off");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  prop = api_def_prop(sapi, "use_auto_step", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ITASC_AUTO_STEP);
+  api_def_prop_ui_text(prop,
+                       "Auto Step",
+                       "Automatically determine the optimal number of steps for best "
+                       "performance/accuracy trade off");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "step_min", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "minstep");
-  RNA_def_property_range(prop, 0.0f, 0.1f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "step_min", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "minstep");
+  api_def_prop_range(prop, 0.0f, 0.1f);
+  api_def_prop_ui_text(
       prop, "Min Step", "Lower bound for timestep in second in case of automatic substeps");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "step_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "maxstep");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "step_max", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "maxstep");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Max Step", "Higher bound for timestep in second in case of automatic substeps");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = RNA_def_property(srna, "feedback", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "feedback");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "feedback", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "feedback");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(
       prop,
       "Feedback",
       "Feedback coefficient for error correction, average response time is 1/feedback");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
   prop = api_def_prop(sapi, "velocity_max", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "maxvel");
@@ -1539,7 +1539,7 @@ static void api_def_pose_itasc(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update_rebuild");
 
   prop = api_def_prop(sapi, "damping_max", PROP_FLOAT, PROP_FACTOR);
-  api_def_prop_float_sdna(prop, NULL, "dampmax");
+  api_def_prop_float_stype(prop, NULL, "dampmax");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop,
                        "Damp",
@@ -1548,13 +1548,13 @@ static void api_def_pose_itasc(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
   prop = api_def_prop(sapi, "damping_epsilon", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_stype(prop, NULL, "dampeps");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop,
-                           "Epsilon",
-                           "Singular value under which damping is progressively applied "
-                           "(higher values produce results with more stability, less reactivity)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Itasc_update");
+  api_def_prop_float_stype(prop, NULL, "dampeps");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop,
+                       "Epsilon",
+                       "Singular value under which damping is progressively applied "
+                       "(higher values produce results with more stability, less reactivity)");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Itasc_update");
 }
 
 static void rna_def_pose_ikparam(BlenderRNA *brna)
