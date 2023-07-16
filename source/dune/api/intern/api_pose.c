@@ -1031,34 +1031,34 @@ static void api_def_pose_channel(DuneApi *dapi)
   RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "size");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_editable_array_func(prop, "rna_PoseChannel_scale_editable");
-  RNA_def_property_float_array_default(prop, rna_default_scale_3d);
-  RNA_def_property_ui_text(prop, "Scale", "");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = apu_def_prop(sapu, "scale", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "size");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_editable_array_func(prop, "rna_PoseChannel_scale_editable");
+  api_def_prop_float_array_default(prop, rna_default_scale_3d);
+  api_def_prop_ui_text(prop, "Scale", "");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "rotation_quaternion", PROP_FLOAT, PROP_QUATERNION);
-  RNA_def_property_float_sdna(prop, NULL, "quat");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
-  RNA_def_property_float_array_default(prop, rna_default_quaternion);
-  RNA_def_property_ui_text(prop, "Quaternion Rotation", "Rotation in Quaternions");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  prop = api_def_prop(sapi, "rotation_quaternion", PROP_FLOAT, PROP_QUATERNION);
+  api_def_prop_float_stype(prop, NULL, "quat");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
+  api_def_prop_float_array_default(prop, api_default_quaternion);
+  api_def_prop_ui_text(prop, "Quaternion Rotation", "Rotation in Quaternions");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   /* XXX: for axis-angle, it would have been nice to have 2 separate fields for UI purposes, but
    * having a single one is better for Keyframing and other property-management situations...  */
-  prop = api_def_property(srna, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
+  prop = api_def_prop(sapi, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_array(prop, 4);
-  api_def_prop_float_funcs(prop,
+  api_def_prop_float_fns(prop,
                                "rna_PoseChannel_rotation_axis_angle_get",
                                "rna_PoseChannel_rotation_axis_angle_set",
                                NULL);
   api_def_prop_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
-  RNA_def_prop_float_array_default(prop, rna_default_axis_angle);
+  api_def_prop_float_array_default(prop, rna_default_axis_angle);
   api_def_prop_ui_text(
       prop, "Axis-Angle Rotation", "Angle of Rotation for Axis-Angle rotation representation");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
@@ -1070,29 +1070,29 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Euler Rotation", "Rotation in Eulers");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
-  prop = RNA_def_property(srna, "rotation_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "rotmode");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_enum_items(prop, rna_enum_object_rotation_mode_items);
-  RNA_def_property_enum_funcs(prop, NULL, "api_PoseChannel_rotation_mode_set", NULL);
+  prop = api_def_prop(sapi, "rotation_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "rotmode");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_enum_items(prop, rna_enum_object_rotation_mode_items);
+  api_def_prop_enum_fns(prop, NULL, "api_PoseChannel_rotation_mode_set", NULL);
   /* XXX... disabled, since proxy-locked layers are currently
    * used for ensuring proxy-syncing too */
-  RNA_def_property_editable_fn(prop, "api_PoseChannel_proxy_editable");
-  RNA_def_property_ui_text(prop, "Rotation Mode", "");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_ui_text(prop, "Rotation Mode", "");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_update");
 
   /* Curved bones settings - Applied on top of restpose values */
-  rna_def_bone_curved_common(sapi, true, false);
+  api_def_bone_curved_common(sapi, true, false);
 
   /* Custom BBone next/prev sources */
   prop = api_def_prop(sapi, "bbone_custom_handle_start", PROP_POINTER, PROP_NONE);
-  RNA_def_prop_ptr_stype(prop, NULL, "bbone_prev");
-  RNA_def_prop_struct_type(prop, "PoseBone");
-  RNA_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_ptr_stype(prop, NULL, "bbone_prev");
+  api_def_prop_struct_type(prop, "PoseBone");
+  api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_override_flag(prop, PROPOVERRIDE_NO_COMPARISON);
-  RNA_def_prop_ui_text(
+  api_def_prop_ui_text(
       prop, "B-Bone Start Handle", "Bone that serves as the start handle for the B-Bone curve");
-  RNA_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
 
   prop = api_def_prop(sapi, "bbone_custom_handle_end", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "bbone_next");
@@ -1104,7 +1104,7 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_dependency_update");
 
   /* transform matrices - should be read-only since these are set directly by AnimSys evaluation */
-  prop = api_def_property(sapi, "matrix_channel", PROP_FLOAT, PROP_MATRIX);
+  prop = api_def_prop(sapi, "matrix_channel", PROP_FLOAT, PROP_MATRIX);
   api_def_prop_float_stype(prop, NULL, "chan_mat");
   api_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x4);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -1152,118 +1152,118 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Length", "Length of the bone");
 
   /* IK Settings */
-  prop = api_def_prop(srna, "is_in_ik_chain", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_fns(prop, "rna_PoseChannel_has_ik_get", NULL);
+  prop = api_def_prop(srna, "is_in_ik_chain", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_PoseChannel_has_ik_get", NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Has IK", "Is part of an IK chain");
-  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-  prop = api_def_prop(sapi, "lock_ik_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+  prop = api_def_prop(sapi, "lock_ik_x", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_NO_XDOF);
   api_def_prop_ui_icon(prop, ICON_UNLOCKED, true);
   api_def_prop_ui_text(prop, "IK X Lock", "Disallow movement around the X axis");
-  api_def_prop_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = api_def_prop(sapi, "lock_ik_y", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "lock_ik_y", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_NO_YDOF);
   api_def_prop_ui_icon(prop, ICON_UNLOCKED, true);
   api_def_prop_ui_text(prop, "IK Y Lock", "Disallow movement around the Y axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+
+  prop = api_def_prop(sapi, "lock_ik_z", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_NO_ZDOF);
+  api_def_prop_ui_icon(prop, ICON_UNLOCKED, true);
+  api_def_prop_ui_text(prop, "IK Z Lock", "Disallow movement around the Z axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+
+  prop = api_def_prop(sapi, "use_ik_limit_x", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_XLIMIT);
+  api_def_prop_ui_text(prop, "IK X Limit", "Limit movement around the X axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+
+  prop = api_def_prop(sapi, "use_ik_limit_y", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_YLIMIT);
+  api_def_prop_ui_text(prop, "IK Y Limit", "Limit movement around the Y axis");
+  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+
+  prop = api_def_prop(srna, "use_ik_limit_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_ZLIMIT);
+  api_def_prop_ui_text(prop, "IK Z Limit", "Limit movement around the Z axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+
+  prop = api_def_prop(sapi, "use_ik_rotation_control", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_ROTCTL);
+  api_def_prop_ui_text(prop, "IK Rotation Control", "Apply channel rotation as IK constraint");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+
+  prop = api_def_prop(sapi, "use_ik_linear_control", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_LINCTL);
+  api_def_prop_ui_text(
+      prop, "IK Linear Control", "Apply channel size as IK constraint if stretching is enabled");
   api_def_prop_editable_fn(prop, "rna_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "lock_ik_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_NO_ZDOF);
-  RNA_def_property_ui_icon(prop, ICON_UNLOCKED, true);
-  RNA_def_property_ui_text(prop, "IK Z Lock", "Disallow movement around the Z axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_min_x", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_sdna(prop, NULL, "limitmin[0]");
+  api_def_prop_range(prop, -M_PI, 0.0f);
+  api_def_prop_ui_text(prop, "IK X Minimum", "Minimum angles for IK Limit");
+  api_def_prop_editable_fn(prop, "rna_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "use_ik_limit_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_XLIMIT);
-  RNA_def_property_ui_text(prop, "IK X Limit", "Limit movement around the X axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_max_x", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limitmax[0]");
+  api_def_prop_range(prop, 0.0f, M_PI);
+  api_def_prop_ui_text(prop, "IK X Maximum", "Maximum angles for IK Limit");
+  api_def_prop_editable_fn(prop, "rna_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "use_ik_limit_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_YLIMIT);
-  RNA_def_property_ui_text(prop, "IK Y Limit", "Limit movement around the Y axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_min_y", PROP_FLOAT, PROP_ANGLE);
+  RNA_def_prop_float_stype(prop, NULL, "limitmin[1]");
+  RNA_def_prop_range(prop, -M_PI, 0.0f);
+  RNA_def_prop_ui_text(prop, "IK Y Minimum", "Minimum angles for IK Limit");
+  RNA_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  RNA_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "use_ik_limit_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_ZLIMIT);
-  RNA_def_property_ui_text(prop, "IK Z Limit", "Limit movement around the Z axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_max_y", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limitmax[1]");
+  api_def_prop_range(prop, 0.0f, M_PI);
+  api_def_prop_ui_text(prop, "IK Y Maximum", "Maximum angles for IK Limit");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "use_ik_rotation_control", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_ROTCTL);
-  RNA_def_property_ui_text(prop, "IK Rotation Control", "Apply channel rotation as IK constraint");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_min_z", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limitmin[2]");
+  api_def_prop_range(prop, -M_PI, 0.0f);
+  api_def_prop_ui_text(prop, "IK Z Minimum", "Minimum angles for IK Limit");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "use_ik_linear_control", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ikflag", BONE_IK_LINCTL);
-  RNA_def_property_ui_text(
-      prop, "IK Linear Control", "Apply channel size as IK constraint if stretching is enabled");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_min_x", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmin[0]");
-  RNA_def_property_range(prop, -M_PI, 0.0f);
-  RNA_def_property_ui_text(prop, "IK X Minimum", "Minimum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_max_x", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmax[0]");
-  RNA_def_property_range(prop, 0.0f, M_PI);
-  RNA_def_property_ui_text(prop, "IK X Maximum", "Maximum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_min_y", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmin[1]");
-  RNA_def_property_range(prop, -M_PI, 0.0f);
-  RNA_def_property_ui_text(prop, "IK Y Minimum", "Minimum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_max_y", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmax[1]");
-  RNA_def_property_range(prop, 0.0f, M_PI);
-  RNA_def_property_ui_text(prop, "IK Y Maximum", "Maximum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_min_z", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmin[2]");
-  RNA_def_property_range(prop, -M_PI, 0.0f);
-  RNA_def_property_ui_text(prop, "IK Z Minimum", "Minimum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
-
-  prop = RNA_def_property(srna, "ik_max_z", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "limitmax[2]");
-  RNA_def_property_range(prop, 0.0f, M_PI);
-  RNA_def_property_ui_text(prop, "IK Z Maximum", "Maximum angles for IK Limit");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_max_z", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limitmax[2]");
+  api_def_prop_range(prop, 0.0f, M_PI);
+  api_def_prop_ui_text(prop, "IK Z Maximum", "Maximum angles for IK Limit");
+  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = RNA_def_property(srna, "ik_stiffness_x", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "stiffness[0]");
   RNA_def_property_range(prop, 0.0f, 0.99f);
   RNA_def_property_ui_text(prop, "IK X Stiffness", "IK stiffness around the X axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
+  RNA_def_property_editable_func(prop, "api_PoseChannel_proxy_editable");
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "ik_stiffness_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "stiffness[1]");
-  RNA_def_property_range(prop, 0.0f, 0.99f);
-  RNA_def_property_ui_text(prop, "IK Y Stiffness", "IK stiffness around the Y axis");
-  RNA_def_property_editable_func(prop, "rna_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(sapi, "ik_stiffness_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "stiffness[1]");
+  api_def_prop_range(prop, 0.0f, 0.99f);
+  api_def_prop_ui_text(prop, "IK Y Stiffness", "IK stiffness around the Y axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = RNA_def_property(srna, "ik_stiffness_z", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "stiffness[2]");
