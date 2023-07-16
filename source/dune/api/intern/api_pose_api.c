@@ -115,10 +115,10 @@ void api_pose(StructRNA *srna)
       "Apply the given action to this pose by evaluating it at a specific time. Only updates the "
       "pose of selected bones, or all bones if none are selected.");
 
-  parm = RNA_def_pointer(func, "action", "Action", "Action", "The Action containing the pose");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "action", "Action", "Action", "The Action containing the pose");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  parm = RNA_def_float(func,
+  parm = api_def_float(fn,
                        "evaluation_time",
                        0.0f,
                        -FLT_MAX,
@@ -129,14 +129,14 @@ void api_pose(StructRNA *srna)
                        FLT_MAX);
 }
 
-void RNA_api_pose_channel(StructRNA *srna)
+void api_api_pose_channel(ApiStruct *sapi)
 {
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  func = RNA_def_function(srna, "evaluate_envelope", "rna_PoseBone_do_envelope");
-  RNA_def_function_ui_description(func, "Calculate bone envelope at given point");
-  parm = RNA_def_float_vector_xyz(func,
+  fn = api_def_fn(sapi, "evaluate_envelope", "api_PoseBone_do_envelope");
+  api_def_fn_ui_description(fn, "Calculate bone envelope at given point");
+  parm = api_def_float_vector_xyz(fn,
                                   "point",
                                   3,
                                   NULL,
@@ -153,16 +153,16 @@ void RNA_api_pose_channel(StructRNA *srna)
   api_def_fn_return(fn, parm);
 
   /* B-Bone segment matrices */
-  fn = api_def_function(sapi, "bbone_segment_matrix", "rna_PoseBone_bbone_segment_matrix");
-  api_def_function_ui_description(
+  fn = api_def_fn(sapi, "bbone_segment_matrix", "rna_PoseBone_bbone_segment_matrix");
+  api_def_fn_ui_description(
       fn, "Retrieve the matrix of the joint between B-Bone segments if available");
   api_def_fn_flag(fn, FN_USE_REPORTS);
-  parm = RNA_def_prop(fn, "matrix_return", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_prop_multi_array(parm, 2, api_matrix_dimsize_4x4);
-  RNA_def_prop_ui_text(parm, "", "The resulting matrix in bone local space");
-  RNA_def_fn_output(fn, parm);
+  parm = api_def_prop(fn, "matrix_return", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_multi_array(parm, 2, api_matrix_dimsize_4x4);
+  api_def_prop_ui_text(parm, "", "The resulting matrix in bone local space");
+  api_def_fn_output(fn, parm);
   parm = api_def_int(fn, "index", 0, 0, INT_MAX, "", "Index of the segment endpoint", 0, 10000);
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_bool(fn, "rest", false, "", "Return the rest pose matrix");
 
   /* B-Bone custom handle positions */
@@ -177,16 +177,16 @@ void RNA_api_pose_channel(StructRNA *srna)
   api_def_fn_output(fn, parm);
   parm = api_def_float(
       fn, "roll1", 0, -FLT_MAX, FLT_MAX, "", "Roll of the start handle", -FLT_MAX, FLT_MAX);
-  api_def_fn_output(func, parm);
+  api_def_fn_output(fn, parm);
   parm = api_def_prop(fn, "handle2", PROP_FLOAT, PROP_XYZ);
-  RNA_def_prop_array(parm, 3);
-  RNA_def_prop_ui_text(parm, "", "The direction vector of the end handle in bone local space");
-  RNA_def_fn_output(fn, parm);
-  parm = RNA_def_float(
-      func, "roll2", 0, -FLT_MAX, FLT_MAX, "", "Roll of the end handle", -FLT_MAX, FLT_MAX);
-  RNA_def_function_output(fn, parm);
-  parm = RNA_def_boolean(fn, "rest", false, "", "Return the rest pose state");
-  parm = RNA_def_boolean(fn, "ease", false, "", "Apply scale from ease values");
+  api_def_prop_array(parm, 3);
+  api_def_prop_ui_text(parm, "", "The direction vector of the end handle in bone local space");
+  api_def_fn_output(fn, parm);
+  parm = api_def_float(
+      fn, "roll2", 0, -FLT_MAX, FLT_MAX, "", "Roll of the end handle", -FLT_MAX, FLT_MAX);
+  api_def_fn_output(fn, parm);
+  parm = api_def_bool(fn, "rest", false, "", "Return the rest pose state");
+  parm = api_def_bool(fn, "ease", false, "", "Apply scale from ease values");
   parm = api_def_bool(
       fn, "offsets", false, "", "Apply roll and curve offsets from bone properties");
 }
