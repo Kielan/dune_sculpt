@@ -89,7 +89,6 @@ const EnumPropItem api_enum_bake_pass_type_items[] = {
 #  include "graph_query.h"
 
 /* RenderEngine Callbacks */
-
 static void engine_tag_redraw(RenderEngine *engine)
 {
   engine->flag |= RE_ENGINE_DO_DRAW;
@@ -125,14 +124,14 @@ static void engine_unbind_display_space_shader(RenderEngine *UNUSED(engine))
   gpu_shader_unbind();
 }
 
-static void engine_update(RenderEngine *engine, Main *bmain, Depsgraph *depsgraph)
+static void engine_update(RenderEngine *engine, Main *main, Graph *graph)
 {
   extern ApiFn api_RenderEngine_update_func;
   ApiPtr ptr;
   ApiParamList list;
   ApiFn *fn;
 
-  api_ptr_create(NULL, engine->type->rna_ext.srna, engine, &ptr);
+  api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
   fb = &api_RenderEngine_update_func;
 
   api_param_list_create(&list, &ptr, fn);
@@ -151,10 +150,10 @@ static void engine_render(RenderEngine *engine, Graph *graph)
   ApiFn *fn;
 
   api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
-  fn = &api_RenderEngine_render_func;
+  fn = &api_RenderEngine_render_fn;
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "depsgraph", &graph);
+  api_param_set_lookup(&list, "graph", &graph);
   engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
   api_param_list_free(&list);
@@ -187,7 +186,7 @@ static void engine_draw(RenderEngine *engine, const struct Cxt *cxt, Graph *grap
   fn = &api_RenderEngine_draw_fn;
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &cxt);
+  api_param_set_lookup(&list, "cxt", &cxt);
   api_param_set_lookup(&list, "graph", &graph);
   engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
@@ -255,7 +254,7 @@ static void engine_view_draw(RenderEngine *engine,
   fn = &api_RenderEngine_view_draw_func;
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &cxt);
+  api_param_set_lookup(&list, "cxt", &cxt);
   api_param_set_lookup(&list, "graph", &graph);
   engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
@@ -303,7 +302,6 @@ static void engine_update_render_passes(RenderEngine *engine,
 }
 
 /* RenderEngine registration */
-
 static void api_RenderEngine_unregister(Main *main, ApiStruct *type)
 {
   RenderEngineType *et = api_struct_dune_type_get(type);
@@ -357,7 +355,7 @@ static ApiStruct *api_RenderEngine_register(Main *main,
   for (et = R_engines.first; et; et = et->next) {
     if (STREQ(et->idname, dummyet.idname)) {
       if (et->api_ext.sapi) {
-        api_RenderEngine_unregister(bmain, et->api_ext.sapi);
+        api_RenderEngine_unregister(main, et->api_ext.sapi);
       }
       break;
     }
@@ -419,8 +417,7 @@ static ApiPtr api_RenderEngine_render_get(ApiPtr *ptr)
     RenderData *r = render_engine_get_render_data(engine->re);
 
     return api_ptr_inherit_refine(ptr, &ApiRenderSettings, r);
-  }
-  else {
+  } else {
     return api_ptr_inherit_refine(ptr, &ApiRenderSettings, NULL);
   }
 }
@@ -477,7 +474,7 @@ static void api_RenderLayer_passes_begin(CollectionPropIter *iter, ApiPtr *ptr)
   api_iter_list_begin(iter, &rl->passes, NULL);
 }
 
-static int api_RenderPass_rect_get_length(PointerRNA *ptr, int length[API_MAX_ARRAY_DIMENSION])
+static int api_RenderPass_rect_get_length(ApiPtr *ptr, int length[API_MAX_ARRAY_DIMENSION])
 {
   RenderPass *rpass = (RenderPass *)ptr->data;
 
@@ -509,7 +506,7 @@ static RenderPass *api_RenderPass_find_by_name(RenderLayer *rl, const char *name
   return render_pass_find_by_name(rl, name, view);
 }
 
-#else /* RNA_RUNTIME */
+#else /* API_RUNTIME */
 
 static void api_def_render_engine(DuneApi *dapi)
 {
@@ -531,9 +528,9 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_struct_ui_text(sapi, "Render Engine", "Render engine");
   api_def_struct_refine_fn(sapi, "api_RenderEngine_refine");
   api_def_struct_register_fns(sapi,
-                                "api_RenderEngine_register",
-                                "api_RenderEngine_unregister",
-                                "api_RenderEngine_instance");
+                              "api_RenderEngine_register",
+                              "api_RenderEngine_unregister",
+                              "api_RenderEngine_instance");
 
   /* final render callbacks */
   fn = api_def_fn(sapi, "update", NULL);
@@ -544,8 +541,8 @@ static void api_def_render_engine(DuneApi *dapi)
 
   func = api_def_fn(sapi, "render", NULL);
   api_def_fn_ui_description(fb, "Render scene into an image");
-  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "depsgraph", "Depsgraph", "", "");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "graph", "Graph", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   fn = api_def_fn(sapi, "render_frame_finish", NULL);
@@ -597,7 +594,7 @@ static void api_def_render_engine(DuneApi *dapi)
   fn = api_def_fn(sapi, "view_draw", NULL);
   api_def_fn_ui_description(fn, "Draw viewport render");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
-  parm = api_def_ptr(fn, "context", "Context", "", "");
+  parm = api_def_ptr(fn, "cxt", "Context", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = apu_def_ptr(fn, "graph", "Depsgraph", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -827,29 +824,29 @@ static void api_def_render_engine(DuneApi *dapi)
   fn = api_def_fn(sapi, "tile_highlight_clear_all", "render_engine_tile_highlight_clear_all");
   api_def_fn_ui_description(fn, "Clear highlight from all tiles");
 
-  api_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
   prop = api_def_prop(sapi, "is_animation", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_ANIMATION);
+  api_def_prop_bool_sdtype(prop, NULL, "flag", RE_ENGINE_ANIMATION);
 
-  prop = RNA_def_property(srna, "is_preview", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_PREVIEW);
+  prop = api_def_prop(sapi, "is_preview", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_PREVIEW);
 
-  prop = RNA_def_property(srna, "camera_override", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_funcs(prop, "rna_RenderEngine_camera_override_get", NULL, NULL, NULL);
-  RNA_def_property_struct_type(prop, "Object");
+  prop = api_def_prop(sapi, "camera_override", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_fns(prop, "api_RenderEngine_camera_override_get", NULL, NULL, NULL);
+  api_def_prop_struct_type(prop, "Object");
 
-  prop = RNA_def_property(srna, "layer_override", PROP_BOOLEAN, PROP_LAYER_MEMBER);
-  RNA_def_property_boolean_sdna(prop, NULL, "layer_override", 1);
-  RNA_def_property_array(prop, 20);
+  prop = api_def_prop(sapi, "layer_override", PROP_BOOLEAN, PROP_LAYER_MEMBER);
+  api_def_prop_bool_stype(prop, NULL, "layer_override", 1);
+  api_def_prop_array(prop, 20);
 
-  prop = RNA_def_property(srna, "resolution_x", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "resolution_x");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "resolution_x", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "resolution_x");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "resolution_y", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "resolution_y");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
+  RNA_def_prop_int_stype(prop, NULL, "resolution_y");
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = RNA_def_property(srna, "temporary_directory", PROP_STRING, PROP_NONE);
   RNA_def_function_ui_description(func, "The temp directory used by Blender");
