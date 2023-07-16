@@ -1248,15 +1248,15 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "limitmax[2]");
   api_def_prop_range(prop, 0.0f, M_PI);
   api_def_prop_ui_text(prop, "IK Z Maximum", "Maximum angles for IK Limit");
-  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = RNA_def_property(srna, "ik_stiffness_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "stiffness[0]");
-  RNA_def_property_range(prop, 0.0f, 0.99f);
-  RNA_def_property_ui_text(prop, "IK X Stiffness", "IK stiffness around the X axis");
-  RNA_def_property_editable_func(prop, "api_PoseChannel_proxy_editable");
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  prop = api_def_prop(srna, "ik_stiffness_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "stiffness[0]");
+  api_def_prop_range(prop, 0.0f, 0.99f);
+  api_def_prop_ui_text(prop, "IK X Stiffness", "IK stiffness around the X axis");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
   prop = api_def_prop(sapi, "ik_stiffness_y", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "stiffness[1]");
