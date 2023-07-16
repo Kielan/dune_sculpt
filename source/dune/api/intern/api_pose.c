@@ -1002,21 +1002,21 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_motionpath_common(srna);
 
   /* Relationships to other bones */
-  prop = api_def_prop(sapi, "bone", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "bone", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "Bone");
-  api_def_prop_ptr_fns(prop, "rna_PoseChannel_bone_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_PoseChannel_bone_get", NULL, NULL, NULL);
   api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Bone", "Bone associated with this PoseBone");
 
-  prop = api_def_prop(sapi, "parent", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "parent", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "PoseBone");
   api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Parent", "Parent of this pose bone");
 
-  prop = api_def_prop(srna, "child", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(srna, "child", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "PoseBone");
   api_def_prop_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -1024,26 +1024,26 @@ static void api_def_pose_channel(DuneApi *dapi)
 
   /* Transformation settings */
   prop = api_def_prop(sapi, "location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_pro_float_stype(prop, NULL, "loc");
-  RNA_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_prop_editable_array_func(prop, "rna_PoseChannel_location_editable");
-  RNA_def_prop_ui_text(prop, "Location", "");
-  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  api_def_pro_float_stype(prop, NULL, "loc");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_editable_array_func(prop, "api_PoseChannel_location_editable");
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = apu_def_prop(sapu, "scale", PROP_FLOAT, PROP_XYZ);
   api_def_prop_float_stype(prop, NULL, "size");
   api_def_prop_flag(prop, PROP_PROPORTIONAL);
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  api_def_prop_editable_array_func(prop, "rna_PoseChannel_scale_editable");
-  api_def_prop_float_array_default(prop, rna_default_scale_3d);
+  api_def_prop_editable_array_func(prop, "api_PoseChannel_scale_editable");
+  api_def_prop_float_array_default(prop, api_default_scale_3d);
   api_def_prop_ui_text(prop, "Scale", "");
-  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = api_def_prop(sapi, "rotation_quaternion", PROP_FLOAT, PROP_QUATERNION);
   api_def_prop_float_stype(prop, NULL, "quat");
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  api_def_prop_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
+  api_def_prop_editable_array_func(prop, "api_PoseChannel_rotation_4d_editable");
   api_def_prop_float_array_default(prop, api_default_quaternion);
   api_def_prop_ui_text(prop, "Quaternion Rotation", "Rotation in Quaternions");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
@@ -1054,9 +1054,9 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_array(prop, 4);
   api_def_prop_float_fns(prop,
-                               "rna_PoseChannel_rotation_axis_angle_get",
-                               "rna_PoseChannel_rotation_axis_angle_set",
-                               NULL);
+                         "api_PoseChannel_rotation_axis_angle_get",
+                         "api_PoseChannel_rotation_axis_angle_set",
+                         NULL);
   api_def_prop_editable_array_func(prop, "rna_PoseChannel_rotation_4d_editable");
   api_def_prop_float_array_default(prop, rna_default_axis_angle);
   api_def_prop_ui_text(
@@ -1224,11 +1224,11 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Pose_IK_update");
 
   prop = api_def_prop(sapi, "ik_min_y", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_prop_float_stype(prop, NULL, "limitmin[1]");
-  RNA_def_prop_range(prop, -M_PI, 0.0f);
-  RNA_def_prop_ui_text(prop, "IK Y Minimum", "Minimum angles for IK Limit");
-  RNA_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
-  RNA_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
+  api_def_prop_float_stype(prop, NULL, "limitmin[1]");
+  api_def_prop_range(prop, -M_PI, 0.0f);
+  api_def_prop_ui_text(prop, "IK Y Minimum", "Minimum angles for IK Limit");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
   prop = api_def_prop(sapi, "ik_max_y", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "limitmax[1]");
