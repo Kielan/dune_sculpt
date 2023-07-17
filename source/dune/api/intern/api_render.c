@@ -997,73 +997,73 @@ static void rna_def_render_result(BlenderRNA *brna)
 
   RNA_define_verify_sdna(0);
 
-  prop = RNA_def_property(srna, "resolution_x", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "rectx");
+  prop = api_def_prop(sapi, "resolution_x", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "rectx");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+
+  prop = RNA_def_property(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
+  RNA_def_property_int_stupe(prop, NULL, "recty");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "resolution_y", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "recty");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-
-  prop = RNA_def_property(srna, "layers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "RenderLayer");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_RenderResult_layers_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
+  prop = api_def_prop(sapi, "layers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "RenderLayer");
+  api_def_prop_collection_fns(prop,
+                              "api_RenderResult_layers_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
 
-  prop = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "RenderView");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_RenderResult_views_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  prop = api_def_prop(sapi, "views", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "RenderView");
+  api_def_prop_collection_fns(prop,
+                              "api_RenderResult_views_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_sdna(1);
 }
 
-static void rna_def_render_view(BlenderRNA *brna)
+static void api_def_render_view(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "RenderView", NULL);
-  RNA_def_struct_ui_text(srna, "Render View", "");
+  sapi = api_def_struct(dapi, "RenderView", NULL);
+  api_def_struct_ui_text(sapi, "Render View", "");
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_struct_name_prop(sapi, prop);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-static void rna_def_render_passes(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_render_passes(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "RenderPasses");
-  srna = RNA_def_struct(brna, "RenderPasses", NULL);
-  RNA_def_struct_sdna(srna, "RenderLayer");
-  RNA_def_struct_ui_text(srna, "Render Passes", "Collection of render passes");
+  api_def_property_sapi(cprop, "RenderPasses");
+  sapi = api_def_struct(dapi, "RenderPasses", NULL);
+  api_def_struct_stype(sapi, "RenderLayer");
+  api_def_struct_ui_text(sapi, "Render Passes", "Collection of render passes");
 
-  func = RNA_def_function(srna, "find_by_type", "rna_RenderPass_find_by_type");
-  RNA_def_function_ui_description(func, "Get the render pass for a given type and view");
+  fn = RNA_def_function(srna, "find_by_type", "rna_RenderPass_find_by_type");
+  api_def_function_ui_description(func, "Get the render pass for a given type and view");
   parm = RNA_def_enum(
       func, "pass_type", rna_enum_render_pass_type_items, SCE_PASS_COMBINED, "Pass", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
