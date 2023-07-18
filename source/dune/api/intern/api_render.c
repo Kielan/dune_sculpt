@@ -562,7 +562,7 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_fn_ui_description(fn, "Bake passes");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
   parm = api_def_ptr(fn, "graph", "Graph", "", "");
-  apu_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "object", "Object", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_enum(fb, "pass_type", api_enum_bake_pass_type_items, 0, "Pass", "Pass to bake");
@@ -860,7 +860,7 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_prop_ptr_fns(prop, "api_RenderEngine_render_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Render Data", "");
 
-  prop = api_def_prop(sapi, "use_highlight_tiles", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_highlight_tiles", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_HIGHLIGHT_TILES);
 
   fn = api_def_fn(sapi, "register_pass", "RE_engine_register_pass");
@@ -897,88 +897,88 @@ static void api_def_render_engine(DuneApi *dapi)
       "Use Preview Render",
       "Render engine supports being used for rendering previews of materials, lights and worlds");
 
-  prop = api_def_prop(sapi, "bl_use_postprocess", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "bl_use_postprocess", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "type->flag", RE_USE_POSTPROCESS);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   api_def_prop_ui_text(prop, "Use Post Processing", "Apply compositing on render results");
 
-  prop = RNA_def_property(srna, "bl_use_eevee_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_EEVEE_VIEWPORT);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_use_eevee_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_EEVEE_VIEWPORT);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop, "Use Eevee Viewport", "Uses Eevee for viewport shading in LookDev shading mode");
 
-  prop = RNA_def_property(srna, "bl_use_custom_freestyle", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_CUSTOM_FREESTYLE);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_use_custom_freestyle", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_CUSTOM_FREESTYLE);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop,
       "Use Custom Freestyle",
       "Handles freestyle rendering on its own, instead of delegating it to EEVEE");
 
-  prop = RNA_def_property(srna, "bl_use_image_save", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "type->flag", RE_USE_NO_IMAGE_SAVE);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_use_image_save", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "type->flag", RE_USE_NO_IMAGE_SAVE);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop,
       "Use Image Save",
       "Save images/movie to disk while rendering an animation. "
       "Disabling image saving is only supported when bl_use_postprocess is also disabled");
 
-  prop = RNA_def_property(srna, "bl_use_gpu_context", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_GPU_CONTEXT);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_use_gpu_context", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_GPU_CONTEXT);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop,
       "Use GPU Context",
       "Enable OpenGL context for the render method, for engines that render using OpenGL");
 
-  prop = RNA_def_property(srna, "bl_use_shading_nodes_custom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_SHADING_NODES_CUSTOM);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop,
-                           "Use Custom Shading Nodes",
-                           "Don't expose Cycles and Eevee shading nodes in the node editor user "
-                           "interface, so own nodes can be used instead");
+  prop = api_def_prop(sapi, "bl_use_shading_nodes_custom", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_SHADING_NODES_CUSTOM);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop,
+                       "Use Custom Shading Nodes",
+                       "Don't expose Cycles and Eevee shading nodes in the node editor user "
+                       "interface, so own nodes can be used instead");
 
-  prop = RNA_def_property(srna, "bl_use_spherical_stereo", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_SPHERICAL_STEREO);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop, "Use Spherical Stereo", "Support spherical stereo camera models");
+  prop = api_def_prop(sapi, "bl_use_spherical_stereo", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_SPHERICAL_STEREO);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop, "Use Spherical Stereo", "Support spherical stereo camera models");
 
-  prop = RNA_def_property(srna, "bl_use_stereo_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_STEREO_VIEWPORT);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop, "Use Stereo Viewport", "Support rendering stereo 3D viewport");
+  prop = api_def_prop(sapi, "bl_use_stereo_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_STEREO_VIEWPORT);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop, "Use Stereo Viewport", "Support rendering stereo 3D viewport");
 
-  prop = RNA_def_property(srna, "bl_use_alembic_procedural", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_ALEMBIC_PROCEDURAL);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_use_alembic_procedural", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_ALEMBIC_PROCEDURAL);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop, "Use Alembic Procedural", "Support loading Alembic data at render time");
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-static void rna_def_render_result(BlenderRNA *brna)
+static void api_def_render_result(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "RenderResult", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Render Result", "Result of rendering, including all layers and passes");
+  sapi = api_def_struct(dapi, "RenderResult", NULL);
+  api_def_struct_ui_text(
+      sapi, "Render Result", "Result of rendering, including all layers and passes");
 
-  func = RNA_def_function(srna, "load_from_file", "RE_result_load_from_file");
-  RNA_def_function_ui_description(func,
-                                  "Copies the pixels of this render result from an image file");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string_file_name(
+  fn = api_def_fn(sapi, "load_from_file", "RE_result_load_from_file");
+  api_def_fn_ui_description(fn,
+                            "Copies the pixels of this render result from an image file");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string_file_name(
       func,
       "filename",
       NULL,
@@ -986,24 +986,24 @@ static void rna_def_render_result(BlenderRNA *brna)
       "File Name",
       "Filename to load into this render tile, must be no smaller than "
       "the render result");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "stamp_data_add_field", "rna_RenderResult_stamp_data_add_field");
-  RNA_def_function_ui_description(func, "Add engine-specific stamp data to the result");
-  parm = RNA_def_string(func, "field", NULL, 1024, "Field", "Name of the stamp field to add");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "value", NULL, 0, "Value", "Value of the stamp data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "stamp_data_add_field", "rna_RenderResult_stamp_data_add_field");
+  api_def_fn_ui_description(fn, "Add engine-specific stamp data to the result");
+  parm = api_def_string(fn, "field", NULL, 1024, "Field", "Name of the stamp field to add");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "value", NULL, 0, "Value", "Value of the stamp data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
   prop = api_def_prop(sapi, "resolution_x", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "rectx");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_stupe(prop, NULL, "recty");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "recty");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "layers", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "RenderLayer");
@@ -1029,7 +1029,7 @@ static void rna_def_render_result(BlenderRNA *brna)
                               NULL,
                               NULL);
 
-  api_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
 static void api_def_render_view(DuneApi *dapi)
@@ -1057,37 +1057,37 @@ static void api_def_render_passes(DuneApi *dapi, ApiProp *cprop)
   ApiFn *fn;
   ApiProp *parm;
 
-  api_def_property_sapi(cprop, "RenderPasses");
+  api_def_prop_sapi(cprop, "RenderPasses");
   sapi = api_def_struct(dapi, "RenderPasses", NULL);
   api_def_struct_stype(sapi, "RenderLayer");
   api_def_struct_ui_text(sapi, "Render Passes", "Collection of render passes");
 
-  fn = RNA_def_function(srna, "find_by_type", "rna_RenderPass_find_by_type");
+  fn = api_def_fn(sapi, "find_by_type", "api_RenderPass_find_by_type");
   api_def_function_ui_description(func, "Get the render pass for a given type and view");
-  parm = RNA_def_enum(
-      func, "pass_type", rna_enum_render_pass_type_items, SCE_PASS_COMBINED, "Pass", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(
-      func, "view", NULL, 0, "View", "Render view to get pass from"); /* NULL ok here */
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "render_pass", "RenderPass", "", "The matching render pass");
-  RNA_def_function_return(func, parm);
+  parm = api_def_enum(
+      fn, "pass_type", api_enum_render_pass_type_items, SCE_PASS_COMBINED, "Pass", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(
+      fn, "view", NULL, 0, "View", "Render view to get pass from"); /* NULL ok here */
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "render_pass", "RenderPass", "", "The matching render pass");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "find_by_name", "rna_RenderPass_find_by_name");
-  RNA_def_function_ui_description(func, "Get the render pass for a given name and view");
-  parm = RNA_def_string(func, "name", RE_PASSNAME_COMBINED, 0, "Pass", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(
-      func, "view", NULL, 0, "View", "Render view to get pass from"); /* NULL ok here */
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "render_pass", "RenderPass", "", "The matching render pass");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find_by_name", "api_RenderPass_find_by_name");
+  api_def_fn_ui_description(fn, "Get the render pass for a given name and view");
+  parm = api_def_string(fn, "name", RE_PASSNAME_COMBINED, 0, "Pass", "");
+  apu_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(
+      fn, "view", NULL, 0, "View", "Render view to get pass from"); /* NULL ok here */
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "render_pass", "RenderPass", "", "The matching render pass");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_render_layer(BlenderRNA *brna)
+static void api_def_render_layer(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   FunctionRNA *func;
   PropertyRNA *parm;
