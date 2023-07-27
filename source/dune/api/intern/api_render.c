@@ -1135,43 +1135,43 @@ static void api_def_render_layer(DuneApi *dapi)
   api_def_prop_collection_fns(prop,
                               "api_RenderLayer_passes_begin",
                               "api_iter_list_next",
-                                    "api_iter_list_end",
-                                    "api_iter_list_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  rna_def_render_passes(brna, prop);
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_render_passes(dapi, prop);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-static void rna_def_render_pass(BlenderRNA *brna)
+static void rna_def_render_pass(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "RenderPass", NULL);
-  RNA_def_struct_ui_text(srna, "Render Pass", "");
+  sapi = api_def_struct(dapi, "RenderPass", NULL);
+  api_def_struct_ui_text(sapi, "Render Pass", "");
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
-  prop = RNA_def_property(srna, "fullname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "fullname");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "fullname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "fullname");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_struct_name_property(srna, prop);
+  prop = RNA_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "channel_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "chan_id");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "channel_id", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "chan_id");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "channels", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_sdna(prop, NULL, "channels");
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_stype(prop, NULL, "channels");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   prop = api_def_prop(sapi, "rect", PROP_FLOAT, PROP_NONE);
   api_def_prop_flag(prop, PROP_DYNAMIC);
