@@ -132,7 +132,7 @@ static void engine_update(RenderEngine *engine, Main *main, Graph *graph)
   ApiFn *fn;
 
   api_ptr_create(NULL, engine->type->api_ext.sapi, engine, &ptr);
-  fb = &api_RenderEngine_update_func;
+  fb = &api_RenderEngine_update_fn;
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "data", main);
@@ -596,13 +596,13 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
   parm = api_def_ptr(fn, "cxt", "Context", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = apu_def_ptr(fn, "graph", "Depsgraph", "", "");
+  parm = apu_def_ptr(fn, "graph", "Graph", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* shader script callbacks */
   fn = api_def_fn(sapi, "update_script_node", NULL);
   api_def_fn_ui_description(fn, "Compile shader script node");
-  api_def_fn_flag(fn, FB_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
   parm = api_def_ptr(fn, "node", "Node", "", "");
   api_def_param_flags(parm, 0, PARM_RNAPTR);
 
@@ -1084,30 +1084,30 @@ static void api_def_render_passes(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_return(fn, parm);
 }
 
-static void api_def_render_layer(BlenderRNA *brna)
+static void api_def_render_layer(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "RenderLayer", NULL);
-  RNA_def_struct_ui_text(srna, "Render Layer", "");
+  sapi = api_def_struct(dapi, "RenderLayer", NULL);
+  api_def_struct_ui_text(sapi, "Render Layer", "");
 
-  func = RNA_def_function(srna, "load_from_file", "RE_layer_load_from_file");
-  RNA_def_function_ui_description(func,
-                                  "Copies the pixels of this renderlayer from an image file");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(
-      func,
+  fn = api_def_fn(sapi, "load_from_file", "render_layer_load_from_file");
+  api_def_fn_ui_description(fn,
+                            "Copies the pixels of this renderlayer from an image file");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(
+      fn,
       "filename",
       NULL,
       0,
       "Filename",
       "Filename to load into this render tile, must be no smaller than the renderlayer");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn,
               "x",
               0,
               0,
@@ -1116,7 +1116,7 @@ static void api_def_render_layer(BlenderRNA *brna)
               "Offset the position to copy from if the image is larger than the render layer",
               0,
               INT_MAX);
-  RNA_def_int(func,
+  api_def_int(fn,
               "y",
               0,
               0,
@@ -1126,17 +1126,17 @@ static void api_def_render_layer(BlenderRNA *brna)
               0,
               INT_MAX);
 
-  RNA_define_verify_sdna(0);
+  api_define_verify_sdna(0);
 
-  rna_def_view_layer_common(brna, srna, false);
+  api_def_view_layer_common(dapi, sapi, false);
 
-  prop = RNA_def_property(srna, "passes", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "RenderPass");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_RenderLayer_passes_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
+  prop = api_def_prop(sapi, "passes", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "RenderPass");
+  api_def_prop_collection_fns(prop,
+                              "api_RenderLayer_passes_begin",
+                              "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_iter_list_get",
                                     NULL,
                                     NULL,
                                     NULL,
