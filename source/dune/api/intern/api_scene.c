@@ -392,9 +392,9 @@ const EnumPropItem api_enum_image_color_mode_items[] = {
 };
 
 #ifdef API_RUNTIME
-#  define IMAGE_COLOR_MODE_BW rna_enum_image_color_mode_items[0]
-#  define IMAGE_COLOR_MODE_RGB rna_enum_image_color_mode_items[1]
-#  define IMAGE_COLOR_MODE_RGBA rna_enum_image_color_mode_items[2]
+#  define IMAGE_COLOR_MODE_BW api_enum_image_color_mode_items[0]
+#  define IMAGE_COLOR_MODE_RGB api_enum_image_color_mode_items[1]
+#  define IMAGE_COLOR_MODE_RGBA api_enum_image_color_mode_items[2]
 #endif
 
 const EnumPropItem api_enum_image_color_depth_items[] = {
@@ -795,7 +795,7 @@ static void api_pen_vertex_mask_segment_update(Cxt *C, ApiPtr *ptr)
   ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_POINT;
   ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_STROKE;
 
-  ED_gpencil_tag_scene_pen(cxt_data_scene(C));
+  ed_pen_tag_scene_pen(cxt_data_scene(C));
 }
 
 /* Read-only Iterator of all the scene objects. */
@@ -828,7 +828,6 @@ static ApiPtr api_Scene_objects_get(CollectionPropIter *iter)
 }
 
 /* End of read-only Iterator of all the scene objects. */
-
 static void api_Scene_set_set(ApiPtr *ptr,
                               ApiPtr value,
                               struct ReportList *UNUSED(reports))
@@ -858,7 +857,7 @@ void api_Scene_set_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
   graph_relations_tag_update(main);
   graph_id_tag_update_ex(main, &scene->id, ID_RECALC_BASE_FLAGS);
   if (scene->set != NULL) {
-    /* Objects which are pulled into main scene's depsgraph needs to have
+    /* Objects which are pulled into main scene's graph needs to have
      * their base flags updated.
      */
     graph_id_tag_update_ex(main, &scene->set->id, ID_RECALC_BASE_FLAGS);
@@ -964,7 +963,7 @@ static void api_Scene_start_frame_set(ApiPtr *ptr, int value)
   }
 }
 
-static void api_Scene_end_frame_set(ApiPointer *ptr, int value)
+static void api_Scene_end_frame_set(ApiPtr *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
@@ -1107,8 +1106,7 @@ static void api_Scene_all_keyingsets_next(CollectionPropIter *iter)
    * jump over to the builtins list unless we're there already. */
   if ((ks->next == NULL) && (ks != builtin_keyingsets.last)) {
     internal->link = (Link *)builtin_keyingsets.first;
-  }
-  else {
+  } else {
     internal->link = (Link *)ks->next;
   }
 
@@ -1165,8 +1163,7 @@ static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
 
       if (&scene->r.im_format == imf) {
         return lib_strdup("render.image_settings");
-      }
-      else if (&scene->r.bake.im_format == imf) {
+      } else if (&scene->r.bake.im_format == imf) {
         return lib_strdup("render.bake.image_settings");
       }
       return lib_strdup("..");
@@ -1181,8 +1178,7 @@ static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
             char node_name_esc[sizeof(node->name) * 2];
             lib_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
             return lib_sprintfn("nodes[\"%s\"].format", node_name_esc);
-          }
-          else {
+          } else {
             NodeSocket *sock;
 
             for (sock = node->inputs.first; sock; sock = sock->next) {
@@ -1208,7 +1204,7 @@ static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
   }
 }
 
-static int api_RenderSettings_threads_get(PointerRNA *ptr)
+static int api_RenderSettings_threads_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
   return dune_render_num_threads(rd);
@@ -1221,8 +1217,7 @@ static int api_RenderSettings_threads_mode_get(ApiPtr *ptr)
 
   if (override > 0) {
     return R_FIXED_THREADS;
-  }
-  else {
+  } else {
     return (rd->mode & R_FIXED_THREADS);
   }
 }
@@ -1296,8 +1291,7 @@ static const EnumPropItem *api_ImageFormatSettings_file_format_itemf(Cxt *UNUSED
   Id *id = ptr->owner_id;
   if (id && GS(id->name) == ID_SCE) {
     return api_enum_image_type_items;
-  }
-  else {
+  } else {
     return image_only_type_items;
   }
 }
@@ -1335,8 +1329,7 @@ static const EnumPropItem *api_ImageFormatSettings_color_mode_itemf(Cxt *UNUSED(
 
   if (chan_flag == (IMA_CHAN_FLAG_BW | IMA_CHAN_FLAG_RGB | IMA_CHAN_FLAG_RGBA)) {
     return api_enum_image_color_mode_items;
-  }
-  else {
+  } else {
     int totitem = 0;
     EnumPropItem *item = NULL;
 
@@ -1399,8 +1392,7 @@ static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED
         tmp = *item_16bit;
         tmp.name = "Float (Half)";
         api_enum_item_add(&item, &totitem, &tmp);
-      }
-      else {
+      } else {
         api_enum_item_add(&item, &totitem, item_16bit);
       }
     }
@@ -1410,8 +1402,7 @@ static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED
         tmp = *item_32bit;
         tmp.name = "Float (Full)";
         api_enum_item_add(&item, &totitem, &tmp);
-      }
-      else {
+      } else {
         api_enum_item_add(&item, &totitem, item_32bit);
       }
     }
@@ -1430,14 +1421,11 @@ static const EnumPropItem *api_ImageFormatSettings_views_format_itemf(
 
   if (imf == NULL) {
     return api_enum_views_format_items;
-  }
-  else if (imf->imtype == R_IMF_IMTYPE_OPENEXR) {
+  } else if (imf->imtype == R_IMF_IMTYPE_OPENEXR) {
     return api_enum_views_format_multiview_items;
-  }
-  else if (imf->imtype == R_IMF_IMTYPE_MULTILAYER) {
+  } else if (imf->imtype == R_IMF_IMTYPE_MULTILAYER) {
     return api_enum_views_format_multilayer_items;
-  }
-  else {
+  } else {
     return api_enum_views_format_items;
   }
 }
@@ -1574,24 +1562,24 @@ static void api_RenderSettings_active_view_set(ApiPtr *ptr,
   }
 }
 
-static SceneRenderView *api_RenderView_new(ID *id, RenderData *UNUSED(rd), const char *name)
+static SceneRenderView *api_RenderView_new(Id *id, RenderData *UNUSED(rd), const char *name)
 {
   Scene *scene = (Scene *)id;
-  SceneRenderView *srv = BKE_scene_add_render_view(scene, name);
+  SceneRenderView *srv = dune_scene_add_render_view(scene, name);
 
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   return srv;
 }
 
-static void rna_RenderView_remove(
-    ID *id, RenderData *UNUSED(rd), Main *UNUSED(bmain), ReportList *reports, PointerRNA *srv_ptr)
+static void api_RenderView_remove(
+    Id *id, RenderData *UNUSED(rd), Main *UNUSED(bmain), ReportList *reports, PointerRNA *srv_ptr)
 {
   SceneRenderView *srv = srv_ptr->data;
   Scene *scene = (Scene *)id;
 
-  if (!BKE_scene_remove_render_view(scene, srv)) {
-    BKE_reportf(reports,
+  if (!dune_scene_remove_render_view(scene, srv)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Render view '%s' could not be removed from scene '%s'",
                 srv->name,
@@ -1599,12 +1587,12 @@ static void rna_RenderView_remove(
     return;
   }
 
-  RNA_POINTER_INVALIDATE(srv_ptr);
+  API_PTR_INVALIDATE(srv_ptr);
 
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
-static void rna_RenderSettings_views_format_set(PointerRNA *ptr, int value)
+static void api_RenderSettings_views_format_set(ApiPtr *ptr, int value)
 {
   RenderData *rd = (RenderData *)ptr->data;
 
@@ -1618,41 +1606,41 @@ static void rna_RenderSettings_views_format_set(PointerRNA *ptr, int value)
   rd->views_format = value;
 }
 
-static void rna_RenderSettings_engine_set(PointerRNA *ptr, int value)
+static void api_RenderSettings_engine_set(ApiPtr *ptr, int value)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  RenderEngineType *type = BLI_findlink(&R_engines, value);
+  RenderEngineType *type = lib_findlink(&R_engines, value);
 
   if (type) {
     STRNCPY_UTF8(rd->engine, type->idname);
-    DEG_id_tag_update(ptr->owner_id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update(ptr->owner_id, ID_RECALC_COPY_ON_WRITE);
   }
 }
 
-static const EnumPropertyItem *rna_RenderSettings_engine_itemf(bContext *UNUSED(C),
-                                                               PointerRNA *UNUSED(ptr),
-                                                               PropertyRNA *UNUSED(prop),
-                                                               bool *r_free)
+static const EnumPropItem *api_RenderSettings_engine_itemf(Cxt *UNUSED(C),
+                                                           ApiPtr *UNUSED(ptr),
+                                                           ApiProp *UNUSED(prop),
+                                                           bool *r_free)
 {
   RenderEngineType *type;
-  EnumPropertyItem *item = NULL;
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
   int a = 0, totitem = 0;
 
   for (type = R_engines.first; type; type = type->next, a++) {
     tmp.value = a;
     tmp.identifier = type->idname;
     tmp.name = type->name;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static int rna_RenderSettings_engine_get(PointerRNA *ptr)
+static int api_RenderSettings_engine_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
   RenderEngineType *type;
@@ -1667,100 +1655,100 @@ static int rna_RenderSettings_engine_get(PointerRNA *ptr)
   return 0;
 }
 
-static void rna_RenderSettings_engine_update(Main *bmain,
+static void api_RenderSettings_engine_update(Main *main,
                                              Scene *UNUSED(unused),
-                                             PointerRNA *UNUSED(ptr))
+                                             ApiPtr *UNUSED(ptr))
 {
-  ED_render_engine_changed(bmain, true);
+  ed_render_engine_changed(main, true);
 }
 
-static void rna_Scene_update_render_engine(Main *bmain)
+static void api_Scene_update_render_engine(Main *main)
 {
-  ED_render_engine_changed(bmain, true);
+  ed_render_engine_changed(main, true);
 }
 
-static bool rna_RenderSettings_multiple_engines_get(PointerRNA *UNUSED(ptr))
+static bool api_RenderSettings_multiple_engines_get(ApiPtr *UNUSED(ptr))
 {
-  return (BLI_listbase_count(&R_engines) > 1);
+  return (lib_list_count(&R_engines) > 1);
 }
 
-static bool rna_RenderSettings_use_spherical_stereo_get(PointerRNA *ptr)
-{
-  Scene *scene = (Scene *)ptr->owner_id;
-  return BKE_scene_use_spherical_stereo(scene);
-}
-
-void rna_Scene_render_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static bool api_RenderSettings_use_spherical_stereo_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
-
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  return dune_scene_use_spherical_stereo(scene);
 }
 
-static void rna_Scene_world_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+void api_Scene_render_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
+{
+  Scene *scene = (Scene *)ptr->owner_id;
+
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+}
+
+static void api_Scene_world_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Scene *screen = (Scene *)ptr->owner_id;
 
-  rna_Scene_render_update(bmain, scene, ptr);
-  WM_main_add_notifier(NC_WORLD | ND_WORLD, &screen->id);
-  DEG_relations_tag_update(bmain);
+  api_Scene_render_update(main, scene, ptr);
+  wm_main_add_notifier(NC_WORLD | ND_WORLD, &screen->id);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Scene_mesh_quality_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_mesh_quality_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
   FOREACH_SCENE_OBJECT_BEGIN (scene, ob) {
     if (ELEM(ob->type, OB_MESH, OB_CURVES_LEGACY, OB_VOLUME, OB_MBALL)) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
   FOREACH_SCENE_OBJECT_END;
 
-  rna_Scene_render_update(bmain, scene, ptr);
+  api_Scene_render_update(main, scene, ptr);
 }
 
-void rna_Scene_freestyle_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+void api_Scene_freestyle_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-void rna_Scene_use_freestyle_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+void api_Scene_use_freestyle_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 
   if (scene->nodetree) {
     ntreeCompositUpdateRLayers(scene->nodetree);
   }
 }
 
-void rna_Scene_use_view_map_cache_update(Main *UNUSED(bmain),
+void api_Scene_use_view_map_cache_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *UNUSED(ptr))
+                                         ApiPtr *UNUSED(ptr))
 {
 #  ifdef WITH_FREESTYLE
   FRS_free_view_map_cache();
 #  endif
 }
 
-void rna_ViewLayer_name_set(PointerRNA *ptr, const char *value)
+void api_ViewLayer_name_set(ApiPtr *ptr, const char *value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  BLI_assert(BKE_id_is_in_global_main(&scene->id));
-  BKE_view_layer_rename(G_MAIN, scene, view_layer, value);
+  lib_assert(dune_id_is_in_global_main(&scene->id));
+  dune_view_layer_rename(G_MAIN, scene, view_layer, value);
 }
 
-static void rna_SceneRenderView_name_set(PointerRNA *ptr, const char *value)
+static void api_SceneRenderView_name_set(ApiPtr *ptr, const char *value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   SceneRenderView *rv = (SceneRenderView *)ptr->data;
   STRNCPY_UTF8(rv->name, value);
-  BLI_uniquename(&scene->r.views,
+  lib_uniquename(&scene->r.views,
                  rv,
                  DATA_("RenderView"),
                  '.',
@@ -1768,14 +1756,14 @@ static void rna_SceneRenderView_name_set(PointerRNA *ptr, const char *value)
                  sizeof(rv->name));
 }
 
-void rna_ViewLayer_material_override_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+void api_ViewLayer_material_override_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
-  rna_Scene_render_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_Scene_render_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
-void rna_ViewLayer_pass_update(Main *bmain, Scene *activescene, PointerRNA *ptr)
+void api_ViewLayer_pass_update(Main *main, Scene *activescene, ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
@@ -1784,84 +1772,84 @@ void rna_ViewLayer_pass_update(Main *bmain, Scene *activescene, PointerRNA *ptr)
   }
 
   ViewLayer *view_layer = NULL;
-  if (ptr->type == &RNA_ViewLayer) {
+  if (ptr->type == &ApiViewLayer) {
     view_layer = (ViewLayer *)ptr->data;
   }
-  else if (ptr->type == &RNA_AOV) {
+  else if (ptr->type == &Api_AOV) {
     ViewLayerAOV *aov = (ViewLayerAOV *)ptr->data;
-    view_layer = BKE_view_layer_find_with_aov(scene, aov);
+    view_layer = dune_view_layer_find_with_aov(scene, aov);
   }
-  else if (ptr->type == &RNA_Lightgroup) {
+  else if (ptr->type == &ApiLightgroup) {
     ViewLayerLightgroup *lightgroup = (ViewLayerLightgroup *)ptr->data;
-    view_layer = BKE_view_layer_find_with_lightgroup(scene, lightgroup);
+    view_layer = dune_view_layer_find_with_lightgroup(scene, lightgroup);
   }
 
   if (view_layer) {
-    RenderEngineType *engine_type = RE_engines_find(scene->r.engine);
+    RenderEngineType *engine_type = render_engines_find(scene->r.engine);
     if (engine_type->update_render_passes) {
-      RenderEngine *engine = RE_engine_create(engine_type);
+      RenderEngine *engine = render_engine_create(engine_type);
       if (engine) {
-        BKE_view_layer_verify_aov(engine, scene, view_layer);
+        dune_view_layer_verify_aov(engine, scene, view_layer);
       }
-      RE_engine_free(engine);
+      render_engine_free(engine);
       engine = NULL;
     }
   }
 
-  rna_Scene_render_update(bmain, activescene, ptr);
+  api_Scene_render_update(main, activescene, ptr);
 }
 
-static char *rna_ViewLayerEEVEE_path(const PointerRNA *ptr)
+static char *api_ViewLayerEEVEE_path(const ApiPtr *ptr)
 {
   const ViewLayerEEVEE *view_layer_eevee = (ViewLayerEEVEE *)ptr->data;
   const ViewLayer *view_layer = (ViewLayer *)((uint8_t *)view_layer_eevee -
                                               offsetof(ViewLayer, eevee));
-  char rna_path[sizeof(view_layer->name) * 3];
+  char api_path[sizeof(view_layer->name) * 3];
 
-  const size_t view_layer_path_len = rna_ViewLayer_path_buffer_get(
-      view_layer, rna_path, sizeof(rna_path));
+  const size_t view_layer_path_len = api_ViewLayer_path_buffer_get(
+      view_layer, api_path, sizeof(api_path));
 
-  BLI_strncpy(rna_path + view_layer_path_len, ".eevee", sizeof(rna_path) - view_layer_path_len);
+  lib_strncpy(api_path + view_layer_path_len, ".eevee", sizeof(api_path) - view_layer_path_len);
 
-  return BLI_strdup(rna_path);
+  return lib_strdup(api_path);
 }
 
-static char *rna_SceneRenderView_path(const PointerRNA *ptr)
+static char *api_SceneRenderView_path(const ApiPtr *ptr)
 {
   const SceneRenderView *srv = (SceneRenderView *)ptr->data;
   char srv_name_esc[sizeof(srv->name) * 2];
-  BLI_str_escape(srv_name_esc, srv->name, sizeof(srv_name_esc));
-  return BLI_sprintfN("render.views[\"%s\"]", srv_name_esc);
+  lib_str_escape(srv_name_esc, srv->name, sizeof(srv_name_esc));
+  return lib_sprintfn("render.views[\"%s\"]", srv_name_esc);
 }
 
-static void rna_Scene_use_nodes_update(bContext *C, PointerRNA *ptr)
+static void api_Scene_use_nodes_update(Cxt *C, ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   if (scene->use_nodes && scene->nodetree == NULL) {
-    ED_node_composit_default(C, scene);
+    ed_node_composit_default(C, scene);
   }
-  DEG_relations_tag_update(CTX_data_main(C));
+  graph_relations_tag_update(cxt_data_main(C));
 }
 
-static void rna_Physics_relations_update(Main *bmain,
-                                         Scene *UNUSED(scene),
-                                         PointerRNA *UNUSED(ptr))
+static void api_Phys_relations_update(Main *main,
+                                      Scene *UNUSED(scene),
+                                      ApiPtr *UNUSED(ptr))
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(bmain);
 }
 
-static void rna_Physics_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Phys_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   FOREACH_SCENE_OBJECT_BEGIN (scene, ob) {
-    BKE_ptcache_object_reset(scene, ob, PTCACHE_RESET_DEPSGRAPH);
+    dune_ptcache_object_reset(scene, ob, PTCACHE_RESET_DEPSGRAPH);
   }
   FOREACH_SCENE_OBJECT_END;
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-static void rna_Scene_editmesh_select_mode_set(PointerRNA *ptr, const bool *value)
+static void api_Scene_editmesh_select_mode_set(ApiPtr *ptr, const bool *value)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
   int flag = (value[0] ? SCE_SELECT_VERTEX : 0) | (value[1] ? SCE_SELECT_EDGE : 0) |
@@ -1873,13 +1861,13 @@ static void rna_Scene_editmesh_select_mode_set(PointerRNA *ptr, const bool *valu
     /* Update select mode in all the workspaces in mesh edit mode. */
     wmWindowManager *wm = G_MAIN->wm.first;
     LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
-      const Scene *scene = WM_window_get_active_scene(win);
-      ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+      const Scene *scene = wm_window_get_active_scene(win);
+      ViewLayer *view_layer = wm_window_get_active_view_layer(win);
       if (view_layer) {
-        BKE_view_layer_synced_ensure(scene, view_layer);
-        Object *object = BKE_view_layer_active_object_get(view_layer);
+        dune_view_layer_synced_ensure(scene, view_layer);
+        Object *object = dune_view_layer_active_object_get(view_layer);
         if (object) {
-          Mesh *me = BKE_mesh_from_object(object);
+          Mesh *me = dune_mesh_from_object(object);
           if (me && me->edit_mesh && me->edit_mesh->selectmode != flag) {
             me->edit_mesh->selectmode = flag;
             EDBM_selectmode_set(me->edit_mesh);
@@ -1890,32 +1878,32 @@ static void rna_Scene_editmesh_select_mode_set(PointerRNA *ptr, const bool *valu
   }
 }
 
-static void rna_Scene_editmesh_select_mode_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_Scene_editmesh_select_mode_update(Cxt *C, ApiPtr *UNUSED(ptr))
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Mesh *me = NULL;
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *object = BKE_view_layer_active_object_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *object = dune_view_layer_active_object_get(view_layer);
   if (object) {
-    me = BKE_mesh_from_object(object);
+    me = dune_mesh_from_object(object);
     if (me && me->edit_mesh == NULL) {
       me = NULL;
     }
   }
 
   if (me) {
-    DEG_id_tag_update(&me->id, ID_RECALC_SELECT);
-    WM_main_add_notifier(NC_SCENE | ND_TOOLSETTINGS, NULL);
+    graph_id_tag_update(&me->id, ID_RECALC_SELECT);
+    wm_main_add_notifier(NC_SCENE | ND_TOOLSETTINGS, NULL);
   }
 }
 
-static void rna_Scene_uv_select_mode_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_Scene_uv_select_mode_update(Cxt *C, ApiPtr *UNUSED(ptr))
 {
   /* Makes sure that the UV selection states are consistent with the current UV select mode and
    * sticky mode. */
-  ED_uvedit_selectmode_clean_multi(C);
+  ed_uvedit_selectmode_clean_multi(C);
 }
 
 static void object_simplify_update(Object *ob)
@@ -1933,7 +1921,7 @@ static void object_simplify_update(Object *ob)
     if (ELEM(
             md->type, eModifierType_Subsurf, eModifierType_Multires, eModifierType_ParticleSystem))
     {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
 
@@ -1949,17 +1937,17 @@ static void object_simplify_update(Object *ob)
   }
 
   if (ob->type == OB_VOLUME) {
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
   }
 }
 
-static void rna_Scene_use_simplify_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_use_simplify_update(Main *main, Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Scene *sce = (Scene *)ptr->owner_id;
   Scene *sce_iter;
   Base *base;
 
-  BKE_main_id_tag_listbase(&bmain->objects, LIB_TAG_DOIT, true);
+  dune_main_id_tag_listbase(&main->objects, LIB_TAG_DOIT, true);
   FOREACH_SCENE_OBJECT_BEGIN (sce, ob) {
     object_simplify_update(ob);
   }
@@ -1969,70 +1957,69 @@ static void rna_Scene_use_simplify_update(Main *bmain, Scene *UNUSED(scene), Poi
     object_simplify_update(base->object);
   }
 
-  WM_main_add_notifier(NC_GEOM | ND_DATA, NULL);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
-  DEG_id_tag_update(&sce->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+  graph_id_tag_update(&sce->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-static void rna_Scene_simplify_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Scene_simplify_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Scene *sce = (Scene *)ptr->owner_id;
 
   if (sce->r.mode & R_SIMPLIFY) {
-    rna_Scene_use_simplify_update(bmain, scene, ptr);
+    api_Scene_use_simplify_update(main, scene, ptr);
   }
 }
 
-static void rna_Scene_use_persistent_data_update(Main *UNUSED(bmain),
+static void rna_Scene_use_persistent_data_update(Main *UNUSED(main),
                                                  Scene *UNUSED(scene),
-                                                 PointerRNA *ptr)
+                                                 ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
   if (!(scene->r.mode & R_PERSISTENT_DATA)) {
-    RE_FreePersistentData(scene);
+    render_FreePersistentData(scene);
   }
 }
 
 /* Scene.transform_orientation_slots */
-static void rna_Scene_transform_orientation_slots_begin(CollectionPropertyIterator *iter,
-                                                        PointerRNA *ptr)
+static void api_Scene_transform_orientation_slots_begin(CollectionPropIter *iter,
+                                                        ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   TransformOrientationSlot *orient_slot = &scene->orientation_slots[0];
-  rna_iterator_array_begin(
+  api_iter_array_begin(
       iter, orient_slot, sizeof(*orient_slot), ARRAY_SIZE(scene->orientation_slots), 0, NULL);
 }
 
-static int rna_Scene_transform_orientation_slots_length(PointerRNA *UNUSED(ptr))
+static int api_Scene_transform_orientation_slots_length(ApiPtr *UNUSED(ptr))
 {
   return ARRAY_SIZE(((Scene *)NULL)->orientation_slots);
 }
 
-static bool rna_Scene_use_audio_get(PointerRNA *ptr)
+static bool api_Scene_use_audio_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   return (scene->audio.flag & AUDIO_MUTE) != 0;
 }
 
-static void rna_Scene_use_audio_set(PointerRNA *ptr, bool value)
+static void api_Scene_use_audio_set(ApiPtr *ptr, bool value)
 {
   Scene *scene = (Scene *)ptr->data;
 
   if (value) {
     scene->audio.flag |= AUDIO_MUTE;
-  }
-  else {
+  } else {
     scene->audio.flag &= ~AUDIO_MUTE;
   }
 }
 
-static void rna_Scene_use_audio_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_use_audio_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_MUTE);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_MUTE);
 }
 
-static int rna_Scene_sync_mode_get(PointerRNA *ptr)
+static int api_Scene_sync_mode_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   if (scene->audio.flag & AUDIO_SYNC) {
