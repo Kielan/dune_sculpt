@@ -871,7 +871,7 @@ static void api_Scene_camera_update(Main *main, Scene *UNUSED(scene_unused), Api
 
   wm_windows_scene_data_sync(&wm->windows, scene);
   graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  graph_relations_tag_update(bmain);
+  graph_relations_tag_update(main);
 }
 
 static void api_Scene_fps_update(Main *main, Scene *UNUSED(active_scene), ApiPtr *ptr)
@@ -2159,7 +2159,7 @@ static KeyingSet *api_Scene_keying_set_new(Scene *sce,
   KeyingSet *ks = NULL;
 
   /* call the API func, and set the active keyingset index */
-  ks = dunr_keyingset_add(&sce->keyingsets, idname, name, KEYINGSET_ABSOLUTE, 0);
+  ks = dune_keyingset_add(&sce->keyingsets, idname, name, KEYINGSET_ABSOLUTE, 0);
 
   if (ks) {
     sce->active_keyingset = lib_list_count(&sce->keyingsets);
@@ -2463,60 +2463,60 @@ int rna_ViewLayer_active_aov_index_get(PointerRNA *ptr)
   return BLI_findindex(&view_layer->aovs, view_layer->active_aov);
 }
 
-void rna_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value)
+void rna_ViewLayer_active_aov_index_set(ApiPtr *ptr, int value)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   ViewLayerAOV *aov = BLI_findlink(&view_layer->aovs, value);
   view_layer->active_aov = aov;
 }
 
-void rna_ViewLayer_active_lightgroup_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+void api_ViewLayer_active_lightgroup_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&view_layer->lightgroups) - 1);
+  *max = max_ii(0, lib_list_count(&view_layer->lightgroups) - 1);
 }
 
-int rna_ViewLayer_active_lightgroup_index_get(PointerRNA *ptr)
+int api_ViewLayer_active_lightgroup_index_get(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  return BLI_findindex(&view_layer->lightgroups, view_layer->active_lightgroup);
+  return lib_findindex(&view_layer->lightgroups, view_layer->active_lightgroup);
 }
 
-void rna_ViewLayer_active_lightgroup_index_set(PointerRNA *ptr, int value)
+void api_ViewLayer_active_lightgroup_index_set(ApiPtr *ptr, int value)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  ViewLayerLightgroup *lightgroup = BLI_findlink(&view_layer->lightgroups, value);
+  ViewLayerLightgroup *lightgroup = lib_findlink(&view_layer->lightgroups, value);
   view_layer->active_lightgroup = lightgroup;
 }
 
-static void rna_ViewLayerLightgroup_name_get(PointerRNA *ptr, char *value)
+static void api_ViewLayerLightgroup_name_get(ApiPtr *ptr, char *value)
 {
   ViewLayerLightgroup *lightgroup = (ViewLayerLightgroup *)ptr->data;
   strcpy(value, lightgroup->name);
 }
 
-static int rna_ViewLayerLightgroup_name_length(PointerRNA *ptr)
+static int api_ViewLayerLightgroup_name_length(ApiPtt *ptr)
 {
   ViewLayerLightgroup *lightgroup = (ViewLayerLightgroup *)ptr->data;
   return strlen(lightgroup->name);
 }
 
-static void rna_ViewLayerLightgroup_name_set(PointerRNA *ptr, const char *value)
+static void api_ViewLayerLightgroup_name_set(ApiPtr *ptr, const char *value)
 {
   ViewLayerLightgroup *lightgroup = (ViewLayerLightgroup *)ptr->data;
   Scene *scene = (Scene *)ptr->owner_id;
-  ViewLayer *view_layer = BKE_view_layer_find_with_lightgroup(scene, lightgroup);
+  ViewLayer *view_layer = dune_view_layer_find_with_lightgroup(scene, lightgroup);
 
-  BKE_view_layer_rename_lightgroup(scene, view_layer, lightgroup, value);
+  dune_view_layer_rename_lightgroup(scene, view_layer, lightgroup, value);
 }
 
 /* Fake value, used internally (not saved to DNA). */
 #  define V3D_ORIENT_DEFAULT -1
 
-static int rna_TransformOrientationSlot_type_get(PointerRNA *ptr)
+static int api_TransformOrientationSlot_type_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   TransformOrientationSlot *orient_slot = ptr->data;
@@ -2537,73 +2537,71 @@ void rna_TransformOrientationSlot_type_set(PointerRNA *ptr, int value)
     if (value == V3D_ORIENT_DEFAULT) {
       orient_slot->flag &= ~SELECT;
       return;
-    }
-    else {
+    } else {
       orient_slot->flag |= SELECT;
     }
   }
 
-  BKE_scene_orientation_slot_set_index(orient_slot, value);
+  dune_scene_orientation_slot_set_index(orient_slot, value);
 }
 
-static PointerRNA rna_TransformOrientationSlot_get(PointerRNA *ptr)
+static ApiPtr api_TransformOrientationSlot_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   TransformOrientationSlot *orient_slot = ptr->data;
   TransformOrientation *orientation;
   if (orient_slot->type < V3D_ORIENT_CUSTOM) {
     orientation = NULL;
+  } else {
+    orientation = dune_scene_transform_orientation_find(scene, orient_slot->index_custom);
   }
-  else {
-    orientation = BKE_scene_transform_orientation_find(scene, orient_slot->index_custom);
-  }
-  return rna_pointer_inherit_refine(ptr, &RNA_TransformOrientation, orientation);
+  return api_ptr_inherit_refine(ptr, &ApiTransformOrientation, orientation);
 }
 
-static const EnumPropertyItem *rna_TransformOrientation_impl_itemf(Scene *scene,
-                                                                   const bool include_default,
-                                                                   bool *r_free)
+static const EnumPropItem *api_TransformOrientation_impl_itemf(Scene *scene,
+                                                               const bool include_default,
+                                                               bool *r_free)
 {
-  EnumPropertyItem tmp = {0, "", 0, "", ""};
-  EnumPropertyItem *item = NULL;
+  EnumPropItem tmp = {0, "", 0, "", ""};
+  EnumPropItem *item = NULL;
   int i = V3D_ORIENT_CUSTOM, totitem = 0;
 
   if (include_default) {
-    tmp.identifier = "DEFAULT";
+    tmp.id = "DEFAULT";
     tmp.name = N_("Default");
     tmp.description = N_("Use the scene orientation");
     tmp.value = V3D_ORIENT_DEFAULT;
     tmp.icon = ICON_OBJECT_ORIGIN;
-    RNA_enum_item_add(&item, &totitem, &tmp);
+    api_enum_item_add(&item, &totitem, &tmp);
     tmp.icon = 0;
 
-    RNA_enum_item_add_separator(&item, &totitem);
+    api_enum_item_add_separator(&item, &totitem);
   }
 
-  RNA_enum_items_add(&item, &totitem, rna_enum_transform_orientation_items);
+  api_enum_items_add(&item, &totitem, api_enum_transform_orientation_items);
 
-  const ListBase *transform_orientations = scene ? &scene->transform_spaces : NULL;
+  const List *transform_orientations = scene ? &scene->transform_spaces : NULL;
 
-  if (transform_orientations && (BLI_listbase_is_empty(transform_orientations) == false)) {
-    RNA_enum_item_add_separator(&item, &totitem);
+  if (transform_orientations && (lib_list_is_empty(transform_orientations) == false)) {
+    api_enum_item_add_separator(&item, &totitem);
 
-    LISTBASE_FOREACH (TransformOrientation *, ts, transform_orientations) {
-      tmp.identifier = ts->name;
+    LIST_FOREACH (TransformOrientation *, ts, transform_orientations) {
+      tmp.id = ts->name;
       tmp.name = ts->name;
       tmp.value = i++;
-      RNA_enum_item_add(&item, &totitem, &tmp);
+      api_enum_item_add(&item, &totitem, &tmp);
     }
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
-const EnumPropertyItem *rna_TransformOrientation_itemf(bContext *C,
-                                                       PointerRNA *ptr,
-                                                       PropertyRNA *UNUSED(prop),
-                                                       bool *r_free)
+const EnumPropItem *api_TransformOrientation_itemf(Cxt *C,
+                                                   ApiPtr *ptr,
+                                                   ApiProp *UNUSED(prop),
+                                                   bool *r_free)
 {
   if (C == NULL) {
     return rna_enum_transform_orientation_items;
