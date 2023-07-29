@@ -136,7 +136,7 @@ static void engine_update(RenderEngine *engine, Main *main, Graph *graph)
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "data", main);
-  apu_param_set_lookup(&list, "graph", &graph);
+  api_param_set_lookup(&list, "graph", &graph);
   engine->type->api_ext.call(NULL, &ptr, fn, &list);
 
   api_param_list_free(&list);
@@ -596,7 +596,7 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
   parm = api_def_ptr(fn, "cxt", "Context", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = apu_def_ptr(fn, "graph", "Graph", "", "");
+  parm = api_def_ptr(fn, "graph", "Graph", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* shader script callbacks */
@@ -827,7 +827,7 @@ static void api_def_render_engine(DuneApi *dapi)
   api_define_verify_stype(0);
 
   prop = api_def_prop(sapi, "is_animation", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_sdtype(prop, NULL, "flag", RE_ENGINE_ANIMATION);
+  api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_ANIMATION);
 
   prop = api_def_prop(sapi, "is_preview", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_PREVIEW);
@@ -863,7 +863,7 @@ static void api_def_render_engine(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_highlight_tiles", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RE_ENGINE_HIGHLIGHT_TILES);
 
-  fn = api_def_fn(sapi, "register_pass", "RE_engine_register_pass");
+  fn = api_def_fn(sapi, "register_pass", "render_engine_register_pass");
   api_def_fn_ui_description(
       fn, "Register a render pass that will be part of the render with the current settings");
   parm = api_def_ptr(fn, "scene", "Scene", "", "");
@@ -1063,7 +1063,7 @@ static void api_def_render_passes(DuneApi *dapi, ApiProp *cprop)
   api_def_struct_ui_text(sapi, "Render Passes", "Collection of render passes");
 
   fn = api_def_fn(sapi, "find_by_type", "api_RenderPass_find_by_type");
-  api_def_function_ui_description(func, "Get the render pass for a given type and view");
+  api_def_fn_ui_description(fn, "Get the render pass for a given type and view");
   parm = api_def_enum(
       fn, "pass_type", api_enum_render_pass_type_items, SCE_PASS_COMBINED, "Pass", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -1126,7 +1126,7 @@ static void api_def_render_layer(DuneApi *dapi)
               0,
               INT_MAX);
 
-  api_define_verify_sdna(0);
+  api_define_verify_stype(0);
 
   api_def_view_layer_common(dapi, sapi, false);
 
@@ -1146,10 +1146,10 @@ static void api_def_render_layer(DuneApi *dapi)
   api_define_verify_stype(1);
 }
 
-static void rna_def_render_pass(DuneApi *dapi)
+static void apu_def_render_pass(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "RenderPass", NULL);
   api_def_struct_ui_text(sapi, "Render Pass", "");
@@ -1160,7 +1160,7 @@ static void rna_def_render_pass(DuneApi *dapi)
   api_def_prop_string_stype(prop, NULL, "fullname");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "name");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_struct_name_prop(sapi, prop);
@@ -1176,23 +1176,23 @@ static void rna_def_render_pass(DuneApi *dapi)
   prop = api_def_prop(sapi, "rect", PROP_FLOAT, PROP_NONE);
   api_def_prop_flag(prop, PROP_DYNAMIC);
   api_def_prop_multi_array(prop, 2, NULL);
-  api_def_prop_dynamic_array_funcs(prop, "rna_RenderPass_rect_get_length");
-  api_def_prop_float_fns(prop, "rna_RenderPass_rect_get", "rna_RenderPass_rect_set", NULL);
+  api_def_prop_dynamic_array_fns(prop, "api_RenderPass_rect_get_length");
+  api_def_prop_float_fns(prop, "api_RenderPass_rect_get", "api_RenderPass_rect_set", NULL);
 
-  prop = api_def_prop(srna, "view_id", PROP_INT, PROP_NONE);
+  prop = api_def_prop(sapi, "view_id", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "view_id");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  api_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-void api_def_render(BlenderRNA *brna)
+void api_def_render(DuneApi *dapi)
 {
-  a_def_render_engine(brna);
-  a_def_render_result(brna);
-  a_def_render_view(brna);
-  a_def_render_layer(brna);
-  api_def_render_pass(brna);
+  api_def_render_engine(dapi);
+  api_def_render_result(dapi);
+  api_def_render_view(dapi);
+  api_def_render_layer(dapi);
+  api_def_render_pass(dapi);
 }
 
-#endif /* RNA_RUNTIME */
+#endif /* API_RUNTIME */
