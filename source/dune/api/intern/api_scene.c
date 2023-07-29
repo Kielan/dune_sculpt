@@ -2405,46 +2405,46 @@ void api_FreestyleSettings_module_remove(Id *id,
 
 static void api_Stereo3dFormat_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (id && GS(id->name) == ID_IM) {
     Image *ima = (Image *)id;
     ImBuf *ibuf;
     void *lock;
 
-    if (!BKE_image_is_stereo(ima)) {
+    if (!dune_image_is_stereo(ima)) {
       return;
     }
 
-    ibuf = BKE_image_acquire_ibuf(ima, NULL, &lock);
+    ibuf = dune_image_acquire_ibuf(ima, NULL, &lock);
 
     if (ibuf) {
-      BKE_image_signal(bmain, ima, NULL, IMA_SIGNAL_FREE);
+      dune_image_signal(main, ima, NULL, IMA_SIGNAL_FREE);
     }
-    BKE_image_release_ibuf(ima, ibuf, lock);
+    dune_image_release_ibuf(ima, ibuf, lock);
   }
 }
 
-static ViewLayer *rna_ViewLayer_new(ID *id, Scene *UNUSED(sce), Main *bmain, const char *name)
+static ViewLayer *api_ViewLayer_new(Id *id, Scene *UNUSED(sce), Main *main, const char *name)
 {
   Scene *scene = (Scene *)id;
-  ViewLayer *view_layer = BKE_view_layer_add(scene, name, NULL, VIEWLAYER_ADD_NEW);
+  ViewLayer *view_layer = dune_view_layer_add(scene, name, NULL, VIEWLAYER_ADD_NEW);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
-  DEG_relations_tag_update(bmain);
-  WM_main_add_notifier(NC_SCENE | ND_LAYER, NULL);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  graph_relations_tag_update(main);
+  wm_main_add_notifier(NC_SCENE | ND_LAYER, NULL);
 
   return view_layer;
 }
 
-static void rna_ViewLayer_remove(
-    ID *id, Scene *UNUSED(sce), Main *bmain, ReportList *reports, PointerRNA *sl_ptr)
+static void api_ViewLayer_remove(
+    Id *id, Scene *UNUSED(sce), Main *main, ReportList *reports, PointerRNA *sl_ptr)
 {
   Scene *scene = (Scene *)id;
   ViewLayer *view_layer = sl_ptr->data;
 
-  if (ED_scene_view_layer_delete(bmain, scene, view_layer, reports)) {
-    RNA_POINTER_INVALIDATE(sl_ptr);
+  if (ed_scene_view_layer_delete(bmain, scene, view_layer, reports)) {
+    API_PTR_INVALIDATE(sl_ptr);
   }
 }
 
