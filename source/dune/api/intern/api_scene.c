@@ -1917,9 +1917,9 @@ static void object_simplify_update(Object *ob)
 
   ob->id.tag &= ~LIB_TAG_DOIT;
 
-  for (md = ob->modifiers.first; md; md = md->next) {
+  for (md = ob->mods.first; md; md = md->next) {
     if (ELEM(
-            md->type, eModifierType_Subsurf, eModifierType_Multires, eModifierType_ParticleSystem))
+      md->type, eModType_Subsurf, eModType_Multires, eModType_ParticleSystem))
     {
       graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
@@ -1971,7 +1971,7 @@ static void api_Scene_simplify_update(Main *main, Scene *scene, ApiPtr *ptr)
   }
 }
 
-static void rna_Scene_use_persistent_data_update(Main *UNUSED(main),
+static void api_Scene_use_persistent_data_update(Main *UNUSED(main),
                                                  Scene *UNUSED(scene),
                                                  ApiPtr *ptr)
 {
@@ -2028,29 +2028,27 @@ static int api_Scene_sync_mode_get(ApiPtr *ptr)
   return scene->flag & SCE_FRAME_DROP;
 }
 
-static void rna_Scene_sync_mode_set(PointerRNA *ptr, int value)
+static void api_Scene_sync_mode_set(ApiPtr *ptr, int value)
 {
   Scene *scene = (Scene *)ptr->data;
 
   if (value == AUDIO_SYNC) {
     scene->audio.flag |= AUDIO_SYNC;
-  }
-  else if (value == SCE_FRAME_DROP) {
+  } else if (value == SCE_FRAME_DROP) {
     scene->audio.flag &= ~AUDIO_SYNC;
     scene->flag |= SCE_FRAME_DROP;
-  }
-  else {
+  } else {
     scene->audio.flag &= ~AUDIO_SYNC;
     scene->flag &= ~SCE_FRAME_DROP;
   }
 }
 
-static void rna_View3DCursor_rotation_mode_set(PointerRNA *ptr, int value)
+static void api_View3DCursor_rotation_mode_set(ApiPtr *ptr, int value)
 {
   View3DCursor *cursor = ptr->data;
 
   /* use API Method for conversions... */
-  BKE_rotMode_change_values(cursor->rotation_quaternion,
+  dune_rotMode_change_values(cursor->rotation_quaternion,
                             cursor->rotation_euler,
                             cursor->rotation_axis,
                             &cursor->rotation_angle,
@@ -2061,35 +2059,35 @@ static void rna_View3DCursor_rotation_mode_set(PointerRNA *ptr, int value)
   cursor->rotation_mode = value;
 }
 
-static void rna_View3DCursor_rotation_axis_angle_get(PointerRNA *ptr, float *value)
+static void api_View3DCursor_rotation_axis_angle_get(ApiPtr *ptr, float *value)
 {
   View3DCursor *cursor = ptr->data;
   value[0] = cursor->rotation_angle;
   copy_v3_v3(&value[1], cursor->rotation_axis);
 }
 
-static void rna_View3DCursor_rotation_axis_angle_set(PointerRNA *ptr, const float *value)
+static void api_View3DCursor_rotation_axis_angle_set(ApiPtr *ptr, const float *value)
 {
   View3DCursor *cursor = ptr->data;
   cursor->rotation_angle = value[0];
   copy_v3_v3(cursor->rotation_axis, &value[1]);
 }
 
-static void rna_View3DCursor_matrix_get(PointerRNA *ptr, float *values)
+static void api_View3DCursor_matrix_get(ApiPtr *ptr, float *values)
 {
   const View3DCursor *cursor = ptr->data;
-  BKE_scene_cursor_to_mat4(cursor, (float(*)[4])values);
+  dune_scene_cursor_to_mat4(cursor, (float(*)[4])values);
 }
 
-static void rna_View3DCursor_matrix_set(PointerRNA *ptr, const float *values)
+static void api_View3DCursor_matrix_set(ApiPtr *ptr, const float *values)
 {
   View3DCursor *cursor = ptr->data;
   float unit_mat[4][4];
   normalize_m4_m4(unit_mat, (const float(*)[4])values);
-  BKE_scene_cursor_from_mat4(cursor, unit_mat, false);
+  dune_scene_cursor_from_mat4(cursor, unit_mat, false);
 }
 
-static char *rna_TransformOrientationSlot_path(const PointerRNA *ptr)
+static char *api_TransformOrientationSlot_path(const ApiPtr *ptr)
 {
   const Scene *scene = (Scene *)ptr->owner_id;
   const TransformOrientationSlot *orientation_slot = ptr->data;
@@ -2097,40 +2095,40 @@ static char *rna_TransformOrientationSlot_path(const PointerRNA *ptr)
   if (!ELEM(NULL, scene, orientation_slot)) {
     for (int i = 0; i < ARRAY_SIZE(scene->orientation_slots); i++) {
       if (&scene->orientation_slots[i] == orientation_slot) {
-        return BLI_sprintfN("transform_orientation_slots[%d]", i);
+        return lib_sprintfn("transform_orientation_slots[%d]", i);
       }
     }
   }
 
   /* Should not happen, but in case, just return default path. */
-  BLI_assert_unreachable();
-  return BLI_strdup("transform_orientation_slots[0]");
+  lib_assert_unreachable();
+  return lib_strdup("transform_orientation_slots[0]");
 }
 
-static char *rna_View3DCursor_path(const PointerRNA *UNUSED(ptr))
+static char *api_View3DCursor_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("cursor");
+  return lib_strdup("cursor");
 }
 
-static TimeMarker *rna_TimeLine_add(Scene *scene, const char name[], int frame)
+static TimeMarker *api_TimeLine_add(Scene *scene, const char name[], int frame)
 {
-  TimeMarker *marker = MEM_callocN(sizeof(TimeMarker), "TimeMarker");
+  TimeMarker *marker = mem_callocn(sizeof(TimeMarker), "TimeMarker");
   marker->flag = SELECT;
   marker->frame = frame;
   STRNCPY_UTF8(marker->name, name);
-  BLI_addtail(&scene->markers, marker);
+  lib_addtail(&scene->markers, marker);
 
-  WM_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
-  WM_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
 
   return marker;
 }
 
-static void rna_TimeLine_remove(Scene *scene, ReportList *reports, PointerRNA *marker_ptr)
+static void api_TimeLine_remove(Scene *scene, ReportList *reports, ApiPtr *marker_ptr)
 {
   TimeMarker *marker = marker_ptr->data;
-  if (BLI_remlink_safe(&scene->markers, marker) == false) {
-    BKE_reportf(reports,
+  if (lib_remlink_safe(&scene->markers, marker) == false) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Timeline marker '%s' not found in scene '%s'",
                 marker->name,
@@ -2138,22 +2136,22 @@ static void rna_TimeLine_remove(Scene *scene, ReportList *reports, PointerRNA *m
     return;
   }
 
-  MEM_freeN(marker);
-  RNA_POINTER_INVALIDATE(marker_ptr);
+  mem_freen(marker);
+  API_PTR_INVALIDATE(marker_ptr);
 
-  WM_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
-  WM_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
 }
 
-static void rna_TimeLine_clear(Scene *scene)
+static void api_TimeLine_clear(Scene *scene)
 {
-  BLI_freelistN(&scene->markers);
+  lib_freelistn(&scene->markers);
 
-  WM_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
-  WM_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_SCENE | ND_MARKERS, NULL);
+  wm_main_add_notifier(NC_ANIMATION | ND_MARKERS, NULL);
 }
 
-static KeyingSet *rna_Scene_keying_set_new(Scene *sce,
+static KeyingSet *api_Scene_keying_set_new(Scene *sce,
                                            ReportList *reports,
                                            const char idname[],
                                            const char name[])
@@ -2161,91 +2159,90 @@ static KeyingSet *rna_Scene_keying_set_new(Scene *sce,
   KeyingSet *ks = NULL;
 
   /* call the API func, and set the active keyingset index */
-  ks = BKE_keyingset_add(&sce->keyingsets, idname, name, KEYINGSET_ABSOLUTE, 0);
+  ks = dunr_keyingset_add(&sce->keyingsets, idname, name, KEYINGSET_ABSOLUTE, 0);
 
   if (ks) {
-    sce->active_keyingset = BLI_listbase_count(&sce->keyingsets);
+    sce->active_keyingset = lib_list_count(&sce->keyingsets);
     return ks;
-  }
-  else {
-    BKE_report(reports, RPT_ERROR, "Keying set could not be added");
+  } else {
+    dune_report(reports, RPT_ERROR, "Keying set could not be added");
     return NULL;
   }
 }
 
-static void rna_UnifiedPaintSettings_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_UnifiedPaintSettings_update(Cxt *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Brush *br = BKE_paint_brush(BKE_paint_get_active(scene, view_layer));
-  WM_main_add_notifier(NC_BRUSH | NA_EDITED, br);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Brush *br = dune_paint_brush(dune_paint_get_active(scene, view_layer));
+  wm_main_add_notifier(NC_BRUSH | NA_EDITED, br);
 }
 
-static void rna_UnifiedPaintSettings_size_set(PointerRNA *ptr, int value)
+static void api_UnifiedPaintSettings_size_set(ApiPtr *ptr, int value)
 {
   UnifiedPaintSettings *ups = ptr->data;
 
   /* scale unprojected radius so it stays consistent with brush size */
-  BKE_brush_scale_unprojected_radius(&ups->unprojected_radius, value, ups->size);
+  dune_brush_scale_unprojected_radius(&ups->unprojected_radius, value, ups->size);
   ups->size = value;
 }
 
-static void rna_UnifiedPaintSettings_unprojected_radius_set(PointerRNA *ptr, float value)
+static void api_UnifiedPaintSettings_unprojected_radius_set(ApiPtr *ptr, float value)
 {
   UnifiedPaintSettings *ups = ptr->data;
 
   /* scale brush size so it stays consistent with unprojected_radius */
-  BKE_brush_scale_size(&ups->size, value, ups->unprojected_radius);
+  dune_brush_scale_size(&ups->size, value, ups->unprojected_radius);
   ups->unprojected_radius = value;
 }
 
-static void rna_UnifiedPaintSettings_radius_update(bContext *C, PointerRNA *ptr)
+static void api_UnifiedPaintSettings_radius_update(Cxt *C, PointerRNA *ptr)
 {
   /* changing the unified size should invalidate the overlay but also update the brush */
-  BKE_paint_invalidate_overlay_all();
-  rna_UnifiedPaintSettings_update(C, ptr);
+  dune_paint_invalidate_overlay_all();
+  api_UnifiedPaintSettings_update(C, ptr);
 }
 
-static char *rna_UnifiedPaintSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_UnifiedPaintSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.unified_paint_settings");
+  return lib_strdup("tool_settings.unified_paint_settings");
 }
 
-static char *rna_CurvePaintSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_CurvePaintSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.curve_paint_settings");
+  return lib_strdup("tool_settings.curve_paint_settings");
 }
 
-static char *rna_SequencerToolSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_SequencerToolSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.sequencer_tool_settings");
+  return lib_strdup("tool_settings.seq_tool_settings");
 }
 
 /* generic function to recalc geometry */
-static void rna_EditMesh_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_EditMesh_update(Cxt *C, ApiPtr *UNUSED(ptr))
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Mesh *me = NULL;
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *object = BKE_view_layer_active_object_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *object = dune_view_layer_active_object_get(view_layer);
   if (object) {
-    me = BKE_mesh_from_object(object);
+    me = dune_mesh_from_object(object);
     if (me && me->edit_mesh == NULL) {
       me = NULL;
     }
   }
 
   if (me) {
-    DEG_id_tag_update(&me->id, ID_RECALC_GEOMETRY);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+    graph_id_tag_update(&me->id, ID_RECALC_GEOMETRY);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, me);
   }
 }
 
-static char *rna_MeshStatVis_path(const PointerRNA *UNUSED(ptr))
+static char *api_MeshStatVis_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.statvis");
+  return lib_strdup("tool_settings.statvis");
 }
 
 /* NOTE: without this, when Multi-Paint is activated/deactivated, the colors
@@ -2253,12 +2250,12 @@ static char *rna_MeshStatVis_path(const PointerRNA *UNUSED(ptr))
  * is not for general use and only for the few cases where changing scene
  * settings and NOT for general purpose updates, possibly this should be
  * given its own notifier. */
-static void rna_Scene_update_active_object_data(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_Scene_update_active_object_data(Cxt *C, ApiPtr *UNUSED(ptr))
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
 
   if (ob) {
     DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
@@ -2271,32 +2268,32 @@ static void rna_SceneCamera_update(Main *UNUSED(bmain), Scene *UNUSED(scene), Po
   Scene *scene = (Scene *)ptr->owner_id;
   Object *camera = scene->camera;
 
-  SEQ_cache_cleanup(scene);
+  seq_cache_cleanup(scene);
 
   if (camera && (camera->type == OB_CAMERA)) {
-    DEG_id_tag_update(&camera->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&camera->id, ID_RECALC_GEOMETRY);
   }
 }
 
-static void rna_SceneSequencer_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_SceneSeq_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  SEQ_cache_cleanup((Scene *)ptr->owner_id);
+  seq_cache_cleanup((Scene *)ptr->owner_id);
 }
 
-static char *rna_ToolSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_ToolSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings");
+  return lib_strdup("tool_settings");
 }
 
-PointerRNA rna_FreestyleLineSet_linestyle_get(PointerRNA *ptr)
+ApiPtt api_FreestyleLineSet_linestyle_get(ApiPtr *ptr)
 {
   FreestyleLineSet *lineset = (FreestyleLineSet *)ptr->data;
 
-  return rna_pointer_inherit_refine(ptr, &RNA_FreestyleLineStyle, lineset->linestyle);
+  return api_ptr_inherit_refine(ptr, &ApiFreestyleLineStyle, lineset->linestyle);
 }
 
-void rna_FreestyleLineSet_linestyle_set(PointerRNA *ptr,
-                                        PointerRNA value,
+void api_FreestyleLineSet_linestyle_set(ApiPtr *ptr,
+                                        ApiPtr value,
                                         struct ReportList *UNUSED(reports))
 {
   FreestyleLineSet *lineset = (FreestyleLineSet *)ptr->data;
@@ -2308,106 +2305,105 @@ void rna_FreestyleLineSet_linestyle_set(PointerRNA *ptr,
   id_us_plus(&lineset->linestyle->id);
 }
 
-FreestyleLineSet *rna_FreestyleSettings_lineset_add(ID *id,
+FreestyleLineSet *api_FreestyleSettings_lineset_add(Id *id,
                                                     FreestyleSettings *config,
-                                                    Main *bmain,
+                                                    Main *main,
                                                     const char *name)
 {
   Scene *scene = (Scene *)id;
-  FreestyleLineSet *lineset = BKE_freestyle_lineset_add(bmain, (FreestyleConfig *)config, name);
+  FreestyleLineSet *lineset = dune_freestyle_lineset_add(main, (FreestyleConfig *)config, name);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   return lineset;
 }
 
-void rna_FreestyleSettings_lineset_remove(ID *id,
+void api_FreestyleSettings_lineset_remove(Id *id,
                                           FreestyleSettings *config,
                                           ReportList *reports,
-                                          PointerRNA *lineset_ptr)
+                                          ApiPtr *lineset_ptr)
 {
   FreestyleLineSet *lineset = lineset_ptr->data;
   Scene *scene = (Scene *)id;
 
-  if (!BKE_freestyle_lineset_delete((FreestyleConfig *)config, lineset)) {
-    BKE_reportf(reports, RPT_ERROR, "Line set '%s' could not be removed", lineset->name);
+  if (!dune_freestyle_lineset_delete((FreestyleConfig *)config, lineset)) {
+    dune_reportf(reports, RPT_ERROR, "Line set '%s' could not be removed", lineset->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(lineset_ptr);
+  API_PTR_INVALIDATE(lineset_ptr);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
-PointerRNA rna_FreestyleSettings_active_lineset_get(PointerRNA *ptr)
+ApiPtr api_FreestyleSettings_active_lineset_get(ApiPtr *ptr)
 {
   FreestyleConfig *config = (FreestyleConfig *)ptr->data;
-  FreestyleLineSet *lineset = BKE_freestyle_lineset_get_active(config);
-  return rna_pointer_inherit_refine(ptr, &RNA_FreestyleLineSet, lineset);
+  FreestyleLineSet *lineset = dune_freestyle_lineset_get_active(config);
+  return rna_pointer_inherit_refine(ptr, &ApiFreestyleLineSet, lineset);
 }
 
-void rna_FreestyleSettings_active_lineset_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+void api_FreestyleSettings_active_lineset_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   FreestyleConfig *config = (FreestyleConfig *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&config->linesets) - 1);
+  *max = max_ii(0, lib_list_count(&config->linesets) - 1);
 }
 
-int rna_FreestyleSettings_active_lineset_index_get(PointerRNA *ptr)
+int api_FreestyleSettings_active_lineset_index_get(ApiPtr *ptr)
 {
   FreestyleConfig *config = (FreestyleConfig *)ptr->data;
-  return BKE_freestyle_lineset_get_active_index(config);
+  return dune_freestyle_lineset_get_active_index(config);
 }
 
-void rna_FreestyleSettings_active_lineset_index_set(PointerRNA *ptr, int value)
+void api_FreestyleSettings_active_lineset_index_set(ApiPtr *ptr, int value)
 {
   FreestyleConfig *config = (FreestyleConfig *)ptr->data;
-  BKE_freestyle_lineset_set_active_index(config, value);
+  dune_freestyle_lineset_set_active_index(config, value);
 }
 
-FreestyleModuleConfig *rna_FreestyleSettings_module_add(ID *id, FreestyleSettings *config)
+FreestyleModuleConfig *api_FreestyleSettings_module_add(Id *id, FreestyleSettings *config)
 {
   Scene *scene = (Scene *)id;
-  FreestyleModuleConfig *module = BKE_freestyle_module_add((FreestyleConfig *)config);
+  FreestyleModuleConfig *module = dune_freestyle_module_add((FreestyleConfig *)config);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   return module;
 }
 
-void rna_FreestyleSettings_module_remove(ID *id,
+void api_FreestyleSettings_module_remove(Id *id,
                                          FreestyleSettings *config,
                                          ReportList *reports,
-                                         PointerRNA *module_ptr)
+                                         ApiPtr *module_ptr)
 {
   Scene *scene = (Scene *)id;
   FreestyleModuleConfig *module = module_ptr->data;
 
-  if (!BKE_freestyle_module_delete((FreestyleConfig *)config, module)) {
+  if (!dune_freestyle_module_delete((FreestyleConfig *)config, module)) {
     if (module->script) {
-      BKE_reportf(reports,
+      dune_reportf(reports,
                   RPT_ERROR,
                   "Style module '%s' could not be removed",
                   module->script->id.name + 2);
-    }
-    else {
-      BKE_report(reports, RPT_ERROR, "Style module could not be removed");
+    } else {
+      dune_report(reports, RPT_ERROR, "Style module could not be removed");
     }
     return;
   }
 
-  RNA_POINTER_INVALIDATE(module_ptr);
+  API_PTR_INVALIDATE(module_ptr);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
-static void rna_Stereo3dFormat_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Stereo3dFormat_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   ID *id = ptr->owner_id;
 
