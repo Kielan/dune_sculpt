@@ -359,7 +359,7 @@ const EnumPropItem api_enum_image_type_items[] = {
 
     IMAGE_TYPE_ITEMS_IMAGE_ONLY
 
-        API_ENUM_ITEM_HEADING(N_("Movie"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Movie"), NULL),
     {R_IMF_IMTYPE_AVIJPEG,
      "AVI_JPEG",
      ICON_FILE_MOVIE,
@@ -2443,13 +2443,13 @@ static void api_ViewLayer_remove(
   Scene *scene = (Scene *)id;
   ViewLayer *view_layer = sl_ptr->data;
 
-  if (ed_scene_view_layer_delete(bmain, scene, view_layer, reports)) {
+  if (ed_scene_view_layer_delete(main, scene, view_layer, reports)) {
     API_PTR_INVALIDATE(sl_ptr);
   }
 }
 
-void rna_ViewLayer_active_aov_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+void api_ViewLayer_active_aov_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
 
@@ -2457,13 +2457,13 @@ void rna_ViewLayer_active_aov_index_range(
   *max = max_ii(0, BLI_listbase_count(&view_layer->aovs) - 1);
 }
 
-int rna_ViewLayer_active_aov_index_get(PointerRNA *ptr)
+int api_ViewLayer_active_aov_index_get(PointerRNA *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
-  return BLI_findindex(&view_layer->aovs, view_layer->active_aov);
+  return lib_findindex(&view_layer->aovs, view_layer->active_aov);
 }
 
-void rna_ViewLayer_active_aov_index_set(ApiPtr *ptr, int value)
+void api_ViewLayer_active_aov_index_set(ApiPtr *ptr, int value)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   ViewLayerAOV *aov = BLI_findlink(&view_layer->aovs, value);
@@ -2525,10 +2525,10 @@ static int api_TransformOrientationSlot_type_get(ApiPtr *ptr)
       return V3D_ORIENT_DEFAULT;
     }
   }
-  return BKE_scene_orientation_slot_get_index(orient_slot);
+  return dune_scene_orientation_slot_get_index(orient_slot);
 }
 
-void rna_TransformOrientationSlot_type_set(PointerRNA *ptr, int value)
+void api_TransformOrientationSlot_type_set(ApiPtr *ptr, int value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   TransformOrientationSlot *orient_slot = ptr->data;
@@ -2604,7 +2604,7 @@ const EnumPropItem *api_TransformOrientation_itemf(Cxt *C,
                                                    bool *r_free)
 {
   if (C == NULL) {
-    return rna_enum_transform_orientation_items;
+    return api_enum_transform_orientation_items;
   }
 
   Scene *scene;
@@ -2612,127 +2612,126 @@ const EnumPropItem *api_TransformOrientation_itemf(Cxt *C,
     scene = (Scene *)ptr->owner_id;
   }
   else {
-    scene = CTX_data_scene(C);
+    scene = cxt_data_scene(C);
   }
-  return rna_TransformOrientation_impl_itemf(scene, false, r_free);
+  return api_TransformOrientation_impl_itemf(scene, false, r_free);
 }
 
-const EnumPropertyItem *rna_TransformOrientation_with_scene_itemf(bContext *C,
-                                                                  PointerRNA *ptr,
-                                                                  PropertyRNA *UNUSED(prop),
-                                                                  bool *r_free)
+const EnumPropItem *api_TransformOrientation_with_scene_itemf(Cxt *C,
+                                                              ApiPtr *ptr,
+                                                              ApiProp *UNUSED(prop),
+                                                              bool *r_free)
 {
   if (C == NULL) {
-    return rna_enum_transform_orientation_items;
+    return api_enum_transform_orientation_items;
   }
 
   Scene *scene = (Scene *)ptr->owner_id;
   TransformOrientationSlot *orient_slot = ptr->data;
   bool include_default = (orient_slot != &scene->orientation_slots[SCE_ORIENT_DEFAULT]);
-  return rna_TransformOrientation_impl_itemf(scene, include_default, r_free);
+  return api_TransformOrientation_impl_itemf(scene, include_default, r_free);
 }
 
 #  undef V3D_ORIENT_DEFAULT
 
-static const EnumPropertyItem *rna_UnitSettings_itemf_wrapper(const int system,
-                                                              const int type,
-                                                              bool *r_free)
+static const EnumProItem *api_UnitSettings_itemf_wrapper(const int system,
+                                                         const int type,
+                                                         bool *r_free)
 {
   const void *usys;
   int len;
-  BKE_unit_system_get(system, type, &usys, &len);
+  dune_unit_system_get(system, type, &usys, &len);
 
-  EnumPropertyItem *items = NULL;
+  EnumPropItem *items = NULL;
   int totitem = 0;
 
-  EnumPropertyItem adaptive = {0};
-  adaptive.identifier = "ADAPTIVE";
+  EnumPropItem adaptive = {0};
+  adaptive.id = "ADAPTIVE";
   adaptive.name = N_("Adaptive");
   adaptive.value = USER_UNIT_ADAPTIVE;
-  RNA_enum_item_add(&items, &totitem, &adaptive);
+  api_enum_item_add(&items, &totitem, &adaptive);
 
   for (int i = 0; i < len; i++) {
-    if (!BKE_unit_is_suppressed(usys, i)) {
-      EnumPropertyItem tmp = {0};
-      tmp.identifier = BKE_unit_identifier_get(usys, i);
-      tmp.name = BKE_unit_display_name_get(usys, i);
+    if (!dune_unit_is_suppressed(usys, i)) {
+      EnumPropItem tmp = {0};
+      tmp.id = dune_unit_identifier_get(usys, i);
+      tmp.name = dune_unit_display_name_get(usys, i);
       tmp.value = i;
-      RNA_enum_item_add(&items, &totitem, &tmp);
+      api_enum_item_add(&items, &totitem, &tmp);
     }
   }
 
-  RNA_enum_item_end(&items, &totitem);
+  api_enum_item_end(&items, &totitem);
   *r_free = true;
 
   return items;
 }
 
-const EnumPropertyItem *rna_UnitSettings_length_unit_itemf(bContext *UNUSED(C),
-                                                           PointerRNA *ptr,
-                                                           PropertyRNA *UNUSED(prop),
-                                                           bool *r_free)
+const EnumPropItem *api_UnitSettings_length_unit_itemf(Cxt *UNUSED(C),
+                                                       ApiPtr *ptr,
+                                                       ApiProp *UNUSED(prop),
+                                                       bool *r_free)
 {
   UnitSettings *units = ptr->data;
-  return rna_UnitSettings_itemf_wrapper(units->system, B_UNIT_LENGTH, r_free);
+  return api_UnitSettings_itemf_wrapper(units->system, B_UNIT_LENGTH, r_free);
 }
 
-const EnumPropertyItem *rna_UnitSettings_mass_unit_itemf(bContext *UNUSED(C),
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA *UNUSED(prop),
-                                                         bool *r_free)
+const EnumPropItem *api_UnitSettings_mass_unit_itemf(Cxt *UNUSED(C),
+                                                     ApiPtr *ptr,
+                                                     ApiProp *UNUSED(prop),
+                                                     bool *r_free)
 {
   UnitSettings *units = ptr->data;
-  return rna_UnitSettings_itemf_wrapper(units->system, B_UNIT_MASS, r_free);
+  return api_UnitSettings_itemf_wrapper(units->system, B_UNIT_MASS, r_free);
 }
 
-const EnumPropertyItem *rna_UnitSettings_time_unit_itemf(bContext *UNUSED(C),
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA *UNUSED(prop),
-                                                         bool *r_free)
+const EnumPropItem *api_UnitSettings_time_unit_itemf(Cxt *UNUSED(C),
+                                                     ApiPtr *ptr,
+                                                     ApiProp *UNUSED(prop),
+                                                     bool *r_free)
 {
   UnitSettings *units = ptr->data;
-  return rna_UnitSettings_itemf_wrapper(units->system, B_UNIT_TIME, r_free);
+  return api_UnitSettings_itemf_wrapper(units->system, B_UNIT_TIME, r_free);
 }
 
-const EnumPropertyItem *rna_UnitSettings_temperature_unit_itemf(bContext *UNUSED(C),
-                                                                PointerRNA *ptr,
-                                                                PropertyRNA *UNUSED(prop),
-                                                                bool *r_free)
+const EnumPropItem *api_UnitSettings_temperature_unit_itemf(Cxt *UNUSED(C),
+                                                            ApiPtr *ptr,
+                                                            ApiProp *UNUSED(prop),
+                                                            bool *r_free)
 {
   UnitSettings *units = ptr->data;
-  return rna_UnitSettings_itemf_wrapper(units->system, B_UNIT_TEMPERATURE, r_free);
+  return api_UnitSettings_itemf_wrapper(units->system, B_UNIT_TEMPERATURE, r_free);
 }
 
-static void rna_UnitSettings_system_update(Main *UNUSED(bmain),
+static void api_UnitSettings_system_update(Main *UNUSED(main),
                                            Scene *scene,
-                                           PointerRNA *UNUSED(ptr))
+                                           Apitr *UNUSED(ptr))
 {
   UnitSettings *unit = &scene->unit;
   if (unit->system == USER_UNIT_NONE) {
     unit->length_unit = USER_UNIT_ADAPTIVE;
     unit->mass_unit = USER_UNIT_ADAPTIVE;
-  }
-  else {
-    unit->length_unit = BKE_unit_base_of_type_get(unit->system, B_UNIT_LENGTH);
-    unit->mass_unit = BKE_unit_base_of_type_get(unit->system, B_UNIT_MASS);
+  } else {
+    unit->length_unit = dune_unit_base_of_type_get(unit->system, B_UNIT_LENGTH);
+    unit->mass_unit = dune_unit_base_of_type_get(unit->system, B_UNIT_MASS);
   }
 }
 
-static char *rna_UnitSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_UnitSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("unit_settings");
+  return lib_strdup("unit_settings");
 }
 
-static char *rna_FFmpegSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_FFmpegSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("render.ffmpeg");
+  return lib_strdup("render.ffmpeg");
 }
 
 #  ifdef WITH_FFMPEG
 /* FFMpeg Codec setting update hook. */
-static void rna_FFmpegSettings_codec_update(Main *UNUSED(bmain),
+static void api_FFmpegSettings_codec_update(Main *UNUSED(main),
                                             Scene *UNUSED(scene),
-                                            PointerRNA *ptr)
+                                            ApiPtr *ptr)
 {
   FFMpegCodecData *codec_data = (FFMpegCodecData *)ptr->data;
   if (!ELEM(codec_data->codec,
@@ -2743,8 +2742,7 @@ static void rna_FFmpegSettings_codec_update(Main *UNUSED(bmain),
   {
     /* Constant Rate Factor (CRF) setting is only available for H264,
      * MPEG4 and WEBM/VP9 codecs. So changing encoder quality mode to
-     * CBR as CRF is not supported.
-     */
+     * CBR as CRF is not supported. */
     codec_data->constant_rate_factor = FFM_CRF_NONE;
   }
 }
@@ -2753,156 +2751,155 @@ static void rna_FFmpegSettings_codec_update(Main *UNUSED(bmain),
 #else
 
 /* Grease Pencil Interpolation tool settings */
-static void rna_def_gpencil_interpolate(BlenderRNA *brna)
+static void api_def_pen_interpolate(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiSruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "GPencilInterpolateSettings", NULL);
-  RNA_def_struct_sdna(srna, "GP_Interpolate_Settings");
-  RNA_def_struct_ui_text(srna,
-                         "Grease Pencil Interpolate Settings",
-                         "Settings for Grease Pencil interpolation tools");
+  sapi = api_def_struct(dapi, "PenInterpolateSettings", NULL);
+  api_def_struct_stype(sapi, "Pen_Interpolate_Settings");
+  api_def_struct_ui_text(sapi,
+                         "Dune Pen Interpolate Settings",
+                         "Settings for Pen interpolation tools");
 
   /* Custom curve-map. */
-  prop = RNA_def_property(srna, "interpolation_curve", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "custom_ipo");
-  RNA_def_property_struct_type(prop, "CurveMapping");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "interpolation_curve", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "custom_ipo");
+  api_def_prop_struct_type(prop, "CurveMapping");
+  api_def_prop_ui_text(
       prop,
       "Interpolation Curve",
-      "Custom curve to control 'sequence' interpolation between Grease Pencil frames");
+      "Custom curve to control 'sequence' interpolation between Pen frames");
 }
 
-static void rna_def_transform_orientation(BlenderRNA *brna)
+static void api_def_transform_orientation(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "TransformOrientation", NULL);
+  sapi = api_def_struct(dapi, "TransformOrientation", NULL);
 
-  prop = RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "mat");
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_3x3);
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+  prop = api_def_prop(sapi, "matrix", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "mat");
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_3x3);
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_ui_text(prop, "Name", "Name of the custom transform orientation");
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_ui_text(prop, "Name", "Name of the custom transform orientation");
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
 }
 
-static void rna_def_transform_orientation_slot(BlenderRNA *brna)
+static void spi_def_transform_orientation_slot(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "TransformOrientationSlot", NULL);
-  RNA_def_struct_sdna(srna, "TransformOrientationSlot");
-  RNA_def_struct_path_func(srna, "rna_TransformOrientationSlot_path");
-  RNA_def_struct_ui_text(srna, "Orientation Slot", "");
+  sapi = api_def_struct(dapi, "TransformOrientationSlot", NULL);
+  api_def_struct_stype(sapi, "TransformOrientationSlot");
+  api_def_struct_path_fn(sapi, "api_TransformOrientationSlot_path");
+  api_def_struct_ui_text(sapi, "Orientation Slot", "");
 
   /* Orientations */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_transform_orientation_items);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_TransformOrientationSlot_type_get",
-                              "rna_TransformOrientationSlot_type_set",
-                              "rna_TransformOrientation_with_scene_itemf");
-  RNA_def_property_ui_text(prop, "Orientation", "Transformation orientation");
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
-
-  prop = RNA_def_property(srna, "custom_orientation", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "TransformOrientation");
-  RNA_def_property_pointer_funcs(prop, "rna_TransformOrientationSlot_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Current Transform Orientation", "");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_transform_orientation_items);
+  api_def_prop_enum_fns(prop,
+                              "api_TransformOrientationSlot_type_get",
+                              "api_TransformOrientationSlot_type_set",
+                              "api_TransformOrientation_with_scene_itemf");
+  api_def_prop_ui_text(prop, "Orientation", "Transformation orientation");
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+   
+  prop = api_def_prop(sapi, "custom_orientation", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "TransformOrientation");
+  api_def_prop_ptr_fns(prop, "api_TransformOrientationSlot_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Current Transform Orientation", "");
 
   /* flag */
-  prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Use", "Use scene orientation instead of a custom setting");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Use", "Use scene orientation instead of a custom setting");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 }
 
-static void rna_def_view3d_cursor(BlenderRNA *brna)
+static void api_def_view3d_cursor(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "View3DCursor", NULL);
-  RNA_def_struct_sdna(srna, "View3DCursor");
-  RNA_def_struct_path_func(srna, "rna_View3DCursor_path");
-  RNA_def_struct_ui_text(srna, "3D Cursor", "");
-  RNA_def_struct_ui_icon(srna, ICON_CURSOR);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
+  sapi = api_def_struct(dapi, "View3DCursor", NULL);
+  api_def_struct_stype(sapi, "View3DCursor");
+  api_def_struct_path_fn(sapi, "api_View3DCursor_path");
+  api_def_struct_ui_text(sapi, "3D Cursor", "");
+  api_def_struct_ui_icon(sapi, ICON_CURSOR);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
 
-  prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_XYZ_LENGTH);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "location");
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_ui_range(prop, -10000.0, 10000.0, 10, 4);
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "location", PROP_FLOAT, PROP_XYZ_LENGTH);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_sdna(prop, NULL, "location");
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_ui_range(prop, -10000.0, 10000.0, 10, 4);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "rotation_quaternion", PROP_FLOAT, PROP_QUATERNION);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "rotation_quaternion");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "rotation_quaternion", PROP_FLOAT, PROP_QUATERNION);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "rotation_quaternion");
+  api_def_prop_ui_text(
       prop, "Quaternion Rotation", "Rotation in quaternions (keep normalized)");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_float_funcs(prop,
-                               "rna_View3DCursor_rotation_axis_angle_get",
-                               "rna_View3DCursor_rotation_axis_angle_set",
-                               NULL);
-  RNA_def_property_float_array_default(prop, rna_default_axis_angle);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "rotation_axis_angle", PROP_FLOAT, PROP_AXISANGLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_array(prop, 4);
+  api_def_prop_float_fns(prop,
+                        "api_View3DCursor_rotation_axis_angle_get",
+                        "api_View3DCursor_rotation_axis_angle_set",
+                        NULL);
+  api_def_prop_float_array_default(prop, rna_default_axis_angle);
+  api_def_prop_ui_text(
       prop, "Axis-Angle Rotation", "Angle of Rotation for Axis-Angle rotation representation");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "rotation_euler", PROP_FLOAT, PROP_EULER);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "rotation_euler");
-  RNA_def_property_ui_text(prop, "Euler Rotation", "3D rotation");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "rotation_euler", PROP_FLOAT, PROP_EULER);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "rotation_euler");
+  api_def_prop_ui_text(prop, "Euler Rotation", "3D rotation");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "rotation_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "rotation_mode");
-  RNA_def_property_enum_items(prop, rna_enum_object_rotation_mode_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_View3DCursor_rotation_mode_set", NULL);
-  RNA_def_property_ui_text(prop, "Rotation Mode", "");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "rotation_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_stype(prop, NULL, "rotation_mode");
+  api_def_prop_enum_items(prop, api_enum_object_rotation_mode_items);
+  api_def_prop_enum_fns(prop, NULL, "api_View3DCursor_rotation_mode_set", NULL);
+  api_def_prop_ui_text(prop, "Rotation Mode", "");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
   /* Matrix access to avoid having to check current rotation mode. */
-  prop = RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_flag(prop, PROP_THICK_WRAP); /* no reference to original data */
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "matrix", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
+  api_def_prop_flag(prop, PROP_THICK_WRAP); /* no reference to original data */
+  api_def_prop_ui_text(
       prop, "Transform Matrix", "Matrix combining location and rotation of the cursor");
-  RNA_def_property_float_funcs(
-      prop, "rna_View3DCursor_matrix_get", "rna_View3DCursor_matrix_set", NULL);
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_float_fns(
+      prop, "api_View3DCursor_matrix_get", "api_View3DCursor_matrix_set", NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 }
 
-static void rna_def_tool_settings(BlenderRNA *brna)
+static void api_def_tool_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* the construction of this enum is quite special - everything is stored as bitflags,
    * with 1st position only for on/off (and exposed as boolean), while others are mutually
-   * exclusive options but which will only have any effect when autokey is enabled
-   */
-  static const EnumPropertyItem auto_key_items[] = {
+   * exclusive options but which will only have any effect when autokey is enabled  */
+  static const EnumPropItem auto_key_items[] = {
       {AUTOKEY_MODE_NORMAL & ~AUTOKEY_ON, "ADD_REPLACE_KEYS", 0, "Add & Replace", ""},
       {AUTOKEY_MODE_EDITKEYS & ~AUTOKEY_ON, "REPLACE_KEYS", 0, "Replace", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem draw_groupuser_items[] = {
+  static const EnumPropItem draw_groupuser_items[] = {
       {OB_DRAW_GROUPUSER_NONE, "NONE", 0, "None", ""},
       {OB_DRAW_GROUPUSER_ACTIVE,
        "ACTIVE",
@@ -2913,7 +2910,7 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem vertex_group_select_items[] = {
+  static const EnumPropItem vertex_group_select_items[] = {
       {WT_VGROUP_ALL, "ALL", 0, "All", "All Vertex Groups"},
       {WT_VGROUP_BONE_DEFORM,
        "BONE_DEFORM",
@@ -2928,23 +2925,23 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem gpencil_stroke_placement_items[] = {
-      {GP_PROJECT_VIEWSPACE,
+  static const EnumPropItem pen_stroke_placement_items[] = {
+      {PEN_PROJECT_VIEWSPACE,
        "ORIGIN",
        ICON_OBJECT_ORIGIN,
        "Origin",
        "Draw stroke at Object origin"},
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR,
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_CURSOR,
        "CURSOR",
        ICON_PIVOT_CURSOR,
        "3D Cursor",
        "Draw stroke at 3D cursor location"},
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_DEPTH_VIEW,
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_DEPTH_VIEW,
        "SURFACE",
        ICON_SNAP_FACE,
        "Surface",
        "Stick stroke to surfaces"},
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_DEPTH_STROKE,
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_DEPTH_STROKE,
        "STROKE",
        ICON_STROKE,
        "Stroke",
@@ -2952,34 +2949,33 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem gpencil_stroke_snap_items[] = {
+  static const EnumPropItem pen_stroke_snap_items[] = {
       {0, "NONE", 0, "All Points", "Snap to all points"},
-      {GP_PROJECT_DEPTH_STROKE_ENDPOINTS,
+      {PEN_PROJECT_DEPTH_STROKE_ENDPOINTS,
        "ENDS",
        0,
        "End Points",
        "Snap to first and last points and interpolate"},
-      {GP_PROJECT_DEPTH_STROKE_FIRST, "FIRST", 0, "First Point", "Snap to first point"},
+      {PEN_PROJECT_DEPTH_STROKE_FIRST, "FIRST", 0, "First Point", "Snap to first point"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem gpencil_selectmode_items[] = {
-      {GP_SELECTMODE_POINT, "POINT", ICON_GP_SELECT_POINTS, "Point", "Select only points"},
-      {GP_SELECTMODE_STROKE,
+  static const EnumPropItem pen_selectmode_items[] = {
+      {PEN_SELECTMODE_POINT, "POINT", ICON_PEN_SELECT_POINTS, "Point", "Select only points"},
+      {PEN_SELECTMODE_STROKE,
        "STROKE",
-       ICON_GP_SELECT_STROKES,
+       ICON_PEN_SELECT_STROKES,
        "Stroke",
        "Select all stroke points"},
-      {GP_SELECTMODE_SEGMENT,
-       "SEGMENT",
-       ICON_GP_SELECT_BETWEEN_STROKES,
+      {PEN_SELECTMODE_SEGMENT,
+       "SEGMENT", ICON_PEN_SELECT_BETWEEN_STROKES,
        "Segment",
        "Select all stroke points between other strokes"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem annotation_stroke_placement_view2d_items[] = {
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR,
+  static const EnumPropItem annotation_stroke_placement_view2d_items[] = {
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_CURSOR,
        "IMAGE",
        ICON_IMAGE_DATA,
        "Image",
@@ -3024,7 +3020,7 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = api_def_struct(dapi, "ToolSettings", NULL);
+  sapi = api_def_struct(dapi, "ToolSettings", NULL);
   api_def_struct_path_fn(sapi, "api_ToolSettings_path");
   api_def_struct_ui_text(sapi, "Tool Settings", "");
 
@@ -3040,32 +3036,32 @@ static void rna_def_tool_settings(BlenderRNA *brna)
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_bool_stype(prop, NULL, "auto_normalize", 1);
   api_def_prop_ui_text(prop,
-                           "Weight Paint Auto-Normalize",
-                           "Ensure all bone-deforming vertex groups add up "
-                           "to 1.0 while weight painting");
+                       "Weight Paint Auto-Normalize",
+                       "Ensure all bone-deforming vertex groups add up "
+                       "to 1.0 while weight painting");
   api_def_prop_update(prop, 0, "api_scene_update_active_object_data");
 
   prop = api_def_prop(sapi, "use_lock_relative", PROP_BOOL, PROP_NONE);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_bool_stype(prop, NULL, "wpaint_lock_relative", 1);
   api_def_prop_ui_text(prop,
-                           "Weight Paint Lock-Relative",
-                           "Display bone-deforming groups as if all locked deform groups "
-                           "were deleted, and the remaining ones were re-normalized");
+                       "Weight Paint Lock-Relative",
+                       "Display bone-deforming groups as if all locked deform groups "
+                       "were deleted, and the remaining ones were re-normalized");
   api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
   prop = api_def_prop(sapi, "use_multipaint", PROP_BOOL, PROP_NONE);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_bool_stype(prop, NULL, "multipaint", 1);
   api_def_prop_ui_text(prop,
-                           "Weight Paint Multi-Paint",
-                           "Paint across the weights of all selected bones, "
-                           "maintaining their relative influence");
+                       "Weight Paint Multi-Paint",
+                       "Paint across the weights of all selected bones, "
+                       "maintaining their relative influence");
   api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
   prop = api_def_prop(sapi, "vertex_group_user", PROP_ENUM, PROP_NONE);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
-  api_def_prop_enum_sdna(prop, NULL, "weightuser");
+  api_def_prop_enum_stype(prop, NULL, "weightuser");
   api_def_prop_enum_items(prop, draw_groupuser_items);
   api_def_prop_ui_text(prop, "Mask Non-Group Vertices", "Display unweighted vertices");
   api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
@@ -3089,408 +3085,408 @@ static void rna_def_tool_settings(BlenderRNA *brna)
   api_def_prop_ptr_stype(prop, NULL, "imapaint");
   api_def_prop_ui_text(prop, "Image Paint", "");
 
-  prop = RNA_def_property(srna, "paint_mode", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "paint_mode");
-  RNA_def_property_ui_text(prop, "Paint Mode", "");
+  prop = api_def_prop(sapi, "paint_mode", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "paint_mode");
+  api_def_prop_ui_text(prop, "Paint Mode", "");
 
-  prop = RNA_def_property(srna, "uv_sculpt", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "uvsculpt");
-  RNA_def_property_ui_text(prop, "UV Sculpt", "");
+  prop = api_def_prop(sapi, "uv_sculpt", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "uvsculpt");
+  api_def_prop_ui_text(prop, "UV Sculpt", "");
 
-  prop = RNA_def_property(srna, "gpencil_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_paint");
-  RNA_def_property_ui_text(prop, "Grease Pencil Paint", "");
+  prop = api_def_prop(sapi, "pen_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_paint");
+  api_def_prop_ui_text(prop, "Pen Paint", "");
 
-  prop = RNA_def_property(srna, "gpencil_vertex_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_vertexpaint");
-  RNA_def_property_ui_text(prop, "Grease Pencil Vertex Paint", "");
+  prop = api_def_prop(sapi, "pen_vertex_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_vertexpaint");
+  api_def_prop_ui_text(prop, "Pen Vertex Paint", "");
 
-  prop = RNA_def_property(srna, "gpencil_sculpt_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_sculptpaint");
-  RNA_def_property_ui_text(prop, "Grease Pencil Sculpt Paint", "");
+  prop = api_def_prop(sapi, "pen_sculpt_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_sculptpaint");
+  api_def_prop_ui_text(prop, "Pen Sculpt Paint", "");
 
-  prop = RNA_def_property(srna, "gpencil_weight_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_weightpaint");
-  RNA_def_property_ui_text(prop, "Grease Pencil Weight Paint", "");
+  prop = api_def_prop(sapi, "pen_weight_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_weightpaint");
+  api_def_prop_ui_text(prop, "Pen Weight Paint", "");
 
-  prop = RNA_def_property(srna, "particle_edit", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "particle");
-  RNA_def_property_ui_text(prop, "Particle Edit", "");
+  prop = api_def_prop(sapi, "particle_edit", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "particle");
+  api_def_prop_ui_text(prop, "Particle Edit", "");
 
-  prop = RNA_def_property(srna, "uv_sculpt_lock_borders", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uv_sculpt_settings", UV_SCULPT_LOCK_BORDERS);
-  RNA_def_property_ui_text(prop, "Lock Borders", "Disable editing of boundary edges");
+  prop = api_def_prop(sapi, "uv_sculpt_lock_borders", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uv_sculpt_settings", UV_SCULPT_LOCK_BORDERS);
+  api_def_prop_ui_text(prop, "Lock Borders", "Disable editing of boundary edges");
 
-  prop = RNA_def_property(srna, "uv_sculpt_all_islands", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uv_sculpt_settings", UV_SCULPT_ALL_ISLANDS);
-  RNA_def_property_ui_text(prop, "Sculpt All Islands", "Brush operates on all islands");
+  prop = api_def_prop(sapi, "uv_sculpt_all_islands", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uv_sculpt_settings", UV_SCULPT_ALL_ISLANDS);
+  api_def_prop_ui_text(prop, "Sculpt All Islands", "Brush operates on all islands");
 
-  prop = RNA_def_property(srna, "uv_relax_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "uv_relax_method");
-  RNA_def_property_enum_items(prop, uv_sculpt_relaxation_items);
-  RNA_def_property_ui_text(prop, "Relaxation Method", "Algorithm used for UV relaxation");
+  prop = api_def_prop(sapi, "uv_relax_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "uv_relax_method");
+  api_def_prop_enum_items(prop, uv_sculpt_relaxation_items);
+  api_def_prop_ui_text(prop, "Relaxation Method", "Algorithm used for UV relaxation");
 
-  prop = RNA_def_property(srna, "lock_object_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "object_flag", SCE_OBJECT_MODE_LOCK);
-  RNA_def_property_ui_text(prop,
-                           "Lock Object Modes",
-                           "Restrict selection to objects using the same mode as the active "
-                           "object, to prevent accidental mode switch when selecting");
+  prop = api_def_prop(sapi, "lock_object_mode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "object_flag", SCE_OBJECT_MODE_LOCK);
+  api_def_prop_ui_text(prop,
+                       "Lock Object Modes",
+                       "Restrict selection to objects using the same mode as the active "
+                       "object, to prevent accidental mode switch when selecting");
   RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  static const EnumPropertyItem workspace_tool_items[] = {
+  static const EnumPropItem workspace_tool_items[] = {
       {SCE_WORKSPACE_TOOL_DEFAULT, "DEFAULT", 0, "Active Tool", ""},
       {SCE_WORKSPACE_TOOL_FALLBACK, "FALLBACK", 0, "Select", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "workspace_tool_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "workspace_tool_type");
-  RNA_def_property_enum_items(prop, workspace_tool_items);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_EDITOR_VIEW3D);
-  RNA_def_property_ui_text(prop, "Drag", "Action when dragging in the viewport");
+  prop = RNA_def_prop(sapi, "workspace_tool_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "workspace_tool_type");
+  api_def_prop_enum_items(prop, workspace_tool_items);
+  api_def_prop_translation_cxt(prop, LANG_CXT_EDITOR_VIEW3D);
+  api_def_prop_ui_text(prop, "Drag", "Action when dragging in the viewport");
 
   /* Transform */
-  prop = RNA_def_property(srna, "use_proportional_edit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_edit", PROP_EDIT_USE);
-  RNA_def_property_ui_text(prop, "Proportional Editing", "Proportional edit mode");
-  RNA_def_property_ui_icon(prop, ICON_PROP_ON, 0);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_proportional_edit", PROP_BOOL, PROP_NONE);
+  apo_def_prop_bool_stype(prop, NULL, "proportional_edit", PROP_EDIT_USE);
+  api_def_prop_ui_text(prop, "Proportional Editing", "Proportional edit mode");
+  api_def_prop_ui_icon(prop, ICON_PROP_ON, 0);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_edit_objects", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_objects", 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_proportional_edit_objects", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "proportional_objects", 0);
+  api_def_prop_ui_text(
       prop, "Proportional Editing Objects", "Proportional editing object mode");
-  RNA_def_property_ui_icon(prop, ICON_PROP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_ui_icon(prop, ICON_PROP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_projected", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_edit", PROP_EDIT_PROJECTED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_proportional_projected", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "proportional_edit", PROP_EDIT_PROJECTED);
+  api_def_prop_ui_text(
       prop, "Projected from View", "Proportional Editing using screen space locations");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_connected", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_edit", PROP_EDIT_CONNECTED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_proportional_connected", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypr(prop, NULL, "proportional_edit", PROP_EDIT_CONNECTED);
+  api_def_prop_ui_text(
       prop, "Connected Only", "Proportional Editing using connected geometry only");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_edit_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_mask", 0);
-  RNA_def_property_ui_text(prop, "Proportional Editing Objects", "Proportional editing mask mode");
-  RNA_def_property_ui_icon(prop, ICON_PROP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_proportional_edit_mask", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "proportional_mask", 0);
+  api_def_prop_ui_text(prop, "Proportional Editing Objects", "Proportional editing mask mode");
+  api_def_prop_ui_icon(prop, ICON_PROP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_action", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_action", 0);
-  RNA_def_property_ui_text(
+  prop = api_de_prop(sapi, "use_proportional_action", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "proportional_action", 0);
+  api_def_prop_ui_text(
       prop, "Proportional Editing Actions", "Proportional editing in action editor");
-  RNA_def_property_ui_icon(prop, ICON_PROP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_ui_icon(prop, ICON_PROP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_proportional_fcurve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "proportional_fcurve", 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_proportional_fcurve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "proportional_fcurve", 0);
+  api_def_prop_ui_text(
       prop, "Proportional Editing F-Curves", "Proportional editing in F-Curve editor");
-  RNA_def_property_ui_icon(prop, ICON_PROP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_ui_icon(prop, ICON_PROP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "lock_markers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "lock_markers", 0);
-  RNA_def_property_ui_text(prop, "Lock Markers", "Prevent marker editing");
+  prop = api_def_prop(sapi, "lock_markers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "lock_markers", 0);
+  api_def_prop_ui_text(prop, "Lock Markers", "Prevent marker editing");
 
-  prop = RNA_def_property(srna, "proportional_edit_falloff", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "prop_mode");
-  RNA_def_property_enum_items(prop, rna_enum_proportional_falloff_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "proportional_edit_falloff", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "prop_mode");
+  api_def_prop_enum_items(prop, api_enum_proportional_falloff_items);
+  api_def_prop_ui_text(
       prop, "Proportional Editing Falloff", "Falloff type for proportional editing mode");
   /* Abusing id_curve :/ */
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_CURVE_LEGACY);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_CURVE_LEGACY);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "proportional_size", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "proportional_size");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "proportional_size", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "proportional_size");
+  api_def_prop_ui_text(
       prop, "Proportional Size", "Display size for proportional editing circle");
-  RNA_def_property_range(prop, 0.00001, 5000.0);
+  api_def_prop_range(prop, 0.00001, 5000.0);
 
-  prop = RNA_def_property(srna, "proportional_distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "proportional_size");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "proportional_distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "proportional_size");
+  api_def_prop_ui_text(
       prop, "Proportional Size", "Display size for proportional editing circle");
-  RNA_def_property_range(prop, 0.00001, 5000.0);
+  api_def_prop_range(prop, 0.00001, 5000.0);
 
-  prop = RNA_def_property(srna, "double_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "doublimit");
-  RNA_def_property_ui_text(prop, "Merge Threshold", "Threshold distance for Auto Merge");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0.0, 0.1, 0.01, 6);
+  prop = apo_def_prop(sapi, "double_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "doublimit");
+  api_def_prop_ui_text(prop, "Merge Threshold", "Threshold distance for Auto Merge");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0.0, 0.1, 0.01, 6);
 
   /* Pivot Point */
-  prop = RNA_def_property(srna, "transform_pivot_point", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "transform_pivot_point");
-  RNA_def_property_enum_items(prop, rna_enum_transform_pivot_items_full);
-  RNA_def_property_ui_text(prop, "Transform Pivot Point", "Pivot center for rotation/scaling");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "transform_pivot_point", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "transform_pivot_point");
+  api_def_prop_enum_items(prop, api_enum_transform_pivot_items_full);
+  api_def_prop_ui_text(prop, "Transform Pivot Point", "Pivot center for rotation/scaling");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_transform_pivot_point_align", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transform_flag", SCE_XFORM_AXIS_ALIGN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_transform_pivot_point_align", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transform_flag", SCE_XFORM_AXIS_ALIGN);
+  api_def_prop_ui_text(
       prop,
       "Only Locations",
       "Only transform object locations, without affecting rotation or scaling");
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
 
-  prop = RNA_def_property(srna, "use_transform_data_origin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transform_flag", SCE_XFORM_DATA_ORIGIN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_transform_data_origin", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transform_flag", SCE_XFORM_DATA_ORIGIN);
+  api_def_prop_ui_text(
       prop, "Transform Origins", "Transform object origins, while leaving the shape in place");
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
 
-  prop = RNA_def_property(srna, "use_transform_skip_children", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transform_flag", SCE_XFORM_SKIP_CHILDREN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_transform_skip_children", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transform_flag", SCE_XFORM_SKIP_CHILDREN);
+  api_def_prop_ui_text(
       prop, "Transform Parents", "Transform the parents, leaving the children in place");
-  RNA_def_property_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
 
-  prop = RNA_def_property(srna, "use_transform_correct_face_attributes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uvcalc_flag", UVCALC_TRANSFORM_CORRECT);
-  RNA_def_property_ui_text(prop,
-                           "Correct Face Attributes",
-                           "Correct data such as UVs and color attributes when transforming");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_transform_correct_face_attributes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uvcalc_flag", UVCALC_TRANSFORM_CORRECT);
+  api_def_prop_ui_text(prop,
+                      "Correct Face Attributes",
+                      "Correct data such as UVs and color attributes when transforming");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_transform_correct_keep_connected", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_transform_correct_keep_connected", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "uvcalc_flag", UVCALC_TRANSFORM_CORRECT_KEEP_CONNECTED);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Keep Connected",
       "During the Face Attributes correction, merge attributes connected to the same vertex");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_mesh_automerge", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "automerge", AUTO_MERGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mesh_automerge", PROP_BOOL
+      , PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "automerge", AUTO_MERGE);
+  api_def_prop_ui_text(
       prop, "Auto Merge Vertices", "Automatically merge vertices moved to the same location");
-  RNA_def_property_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_mesh_automerge_and_split", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "automerge", AUTO_MERGE_AND_SPLIT);
-  RNA_def_property_ui_text(prop, "Split Edges & Faces", "Automatically split edges and faces");
-  RNA_def_property_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_mesh_automerge_and_split", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "automerge", AUTO_MERGE_AND_SPLIT);
+  api_def_prop_ui_text(prop, "Split Edges & Faces", "Automatically split edges and faces");
+  api_def_prop_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP);
-  RNA_def_property_ui_text(prop, "Snap", "Snap during transform");
-  RNA_def_property_ui_icon(prop, ICON_SNAP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_snap", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_styoe(prop, NULL, "snap_flag", SCE_SNAP);
+  api_def_prop_ui_text(prop, "Snap", "Snap during transform");
+  api_def_prop_ui_icon(prop, ICON_SNAP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_node", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag_node", SCE_SNAP);
-  RNA_def_property_ui_text(prop, "Snap", "Snap Node during transform");
-  RNA_def_property_ui_icon(prop, ICON_SNAP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_snap_node", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag_node", SCE_SNAP);
+  api_def_prop_ui_text(prop, "Snap", "Snap Node during transform");
+  api_def_prop_ui_icon(prop, ICON_SNAP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_sequencer", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag_seq", SCE_SNAP);
-  RNA_def_property_ui_text(prop, "Use Snapping", "Snap to strip edges or current frame");
-  RNA_def_property_ui_icon(prop, ICON_SNAP_OFF, 1);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* Publish message-bus. */
+  prop = api_def_prop(sapi, "use_snap_sequencer", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag_seq", SCE_SNAP);
+  api_def_prop_ui_text(prop, "Use Snapping", "Snap to strip edges or current frame");
+  api_def_prop_ui_icon(prop, ICON_SNAP_OFF, 1);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* Publish message-bus. */
 
-  prop = RNA_def_property(srna, "use_snap_uv", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_uv_flag", SCE_SNAP);
-  RNA_def_property_ui_text(prop, "Snap", "Snap UV during transform");
-  RNA_def_property_ui_icon(prop, ICON_SNAP_OFF, 1);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_snap_uv", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_uv_flag", SCE_SNAP);
+  api_def_prop_ui_text(prop, "Snap", "Snap UV during transform");
+  api_def_prop_ui_icon(prop, ICON_SNAP_OFF, 1);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_align_rotation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_ROTATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_align_rotation", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_ROTATE);
+  api_def_prop_ui_text(
       prop, "Align Rotation to Target", "Align rotation with the snapping target");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_grid_absolute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_ABS_GRID);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_grid_absolute", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_ABS_GRID);
+  api_def_prop_ui_text(
       prop,
       "Absolute Grid Snap",
       "Absolute grid alignment while translating (based on the pivot center)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "snap_elements", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "snap_mode");
-  RNA_def_property_enum_items(prop, rna_enum_snap_element_items);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_ToolSettings_snap_mode_set", NULL);
-  RNA_def_property_flag(prop, PROP_ENUM_FLAG);
-  RNA_def_property_ui_text(prop, "Snap Element", "Type of element to snap to");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "snap_elements", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "snap_mode");
+  api_def_prop_enum_items(prop, api_enum_snap_element_items);
+  api_def_prop_enum_fns(prop, NULL, "api_ToolSettings_snap_mode_set", NULL);
+  api_def_prop_flag(prop, PROP_ENUM_FLAG);
+  api_def_prop_ui_text(prop, "Snap Element", "Type of element to snap to");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "snap_face_nearest_steps", PROP_INT, PROP_FACTOR);
-  RNA_def_property_int_sdna(prop, NULL, "snap_face_nearest_steps");
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "snap_face_nearest_steps", PROP_INT, PROP_FACTOR);
+  api_def_prop_int_stype(prop, NULL, "snap_face_nearest_steps");
+  api_def_prop_range(prop, 1, 100);
+  api_def_prop_ui_text(
       prop,
       "Face Nearest Steps",
       "Number of steps to break transformation into for face nearest snapping");
 
-  prop = RNA_def_property(srna, "use_snap_to_same_target", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_KEEP_ON_SAME_OBJECT);
-  RNA_def_property_ui_text(
+  prop = apj_def_prop(sapi, "use_snap_to_same_target", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_KEEP_ON_SAME_OBJECT);
+  api_def_prop_ui_text(
       prop,
       "Snap to Same Target",
       "Snap only to target that source was initially near (Face Nearest Only)");
 
   /* node editor uses own set of snap modes */
-  prop = RNA_def_property(srna, "snap_node_element", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "snap_node_mode");
-  RNA_def_property_enum_items(prop, rna_enum_snap_node_element_items);
-  RNA_def_property_ui_text(prop, "Snap Node Element", "Type of element to snap to");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "snap_node_element", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "snap_node_mode");
+  api_def_prop_enum_items(prop, api_enum_snap_node_element_items);
+  api_def_prop_ui_text(prop, "Snap Node Element", "Type of element to snap to");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
   /* image editor uses own set of snap modes */
-  prop = RNA_def_property(srna, "snap_uv_element", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "snap_uv_mode");
-  RNA_def_property_enum_items(prop, snap_uv_element_items);
-  RNA_def_property_ui_text(prop, "Snap UV Element", "Type of element to snap to");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "snap_uv_element", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "snap_uv_mode");
+  api_def_prop_enum_items(prop, snap_uv_element_items);
+  api_def_prop_ui_text(prop, "Snap UV Element", "Type of element to snap to");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_uv_grid_absolute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_uv_flag", SCE_SNAP_ABS_GRID);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_uv_grid_absolute", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_uv_flag", SCE_SNAP_ABS_GRID);
+  api_def_prop_ui_text(
       prop,
       "Absolute Grid Snap",
       "Absolute grid alignment while translating (based on the pivot center)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
   /* TODO(@gfxcoder): Rename `snap_target` to `snap_source` to avoid previous ambiguity of "target"
    * (now, "source" is geometry to be moved and "target" is geometry to which moved geometry is
    * snapped). */
-  prop = RNA_def_property(srna, "snap_target", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "snap_target");
-  RNA_def_property_enum_items(prop, rna_enum_snap_source_items);
-  RNA_def_property_ui_text(prop, "Snap Target", "Which part to snap onto the target");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = RNA_def_prop(sapi, "snap_target", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "snap_target");
+  api_def_prop_enum_items(prop, api_enum_snap_source_items);
+  api_def_prop_ui_text(prop, "Snap Target", "Which part to snap onto the target");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_peel_object", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_PEEL_OBJECT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_peel_object", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_PEEL_OBJECT);
+  api_def_prop_ui_text(
       prop, "Snap Peel Object", "Consider objects as whole when finding volume center");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_project", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_PROJECT);
-  RNA_def_property_ui_text(prop,
-                           "Project Individual Elements",
-                           "Project individual elements on the surface of other objects (Always "
-                           "enabled with Face Nearest)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_snap_project", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_PROJECT);
+  api_def_prop_ui_text(prop,
+                       "Project Individual Elements",
+                       "Project individual elements on the surface of other objects (Always "
+                       "enabled with Face Nearest)");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_backface_culling", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_BACKFACE_CULLING);
-  RNA_def_property_ui_text(prop, "Backface Culling", "Exclude back facing geometry from snapping");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "use_snap_backface_culling", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_BACKFACE_CULLING);
+  api_def_prop_ui_text(prop, "Backface Culling", "Exclude back facing geometry from snapping");
+  wpi_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  /* TODO(@gfxcoder): Rename `use_snap_self` to `use_snap_active`, because active is correct but
+  /* TODO: Rename `use_snap_self` to `use_snap_active`, because active is correct but
    * self is not (breaks API). This only makes a difference when more than one mesh is edited. */
-  prop = RNA_def_property(srna, "use_snap_self", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "snap_flag", SCE_SNAP_NOT_TO_ACTIVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_self", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "snap_flag", SCE_SNAP_NOT_TO_ACTIVE);
+  api_def_prop_ui_text(
       prop, "Snap onto Active", "Snap onto itself only if enabled (Edit Mode Only)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_edit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_TO_INCLUDE_EDITED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_edit", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_TO_INCLUDE_EDITED);
+  api_def_prop_ui_text(
       prop, "Snap onto Edited", "Snap onto non-active objects in Edit Mode (Edit Mode Only)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_nonedit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_TO_INCLUDE_NONEDITED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_nonedit", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_TO_INCLUDE_NONEDITED);
+  api_def_prop_ui_text(
       prop, "Snap onto Non-edited", "Snap onto objects not in Edit Mode (Edit Mode Only)");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_selectable", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SCE_SNAP_TO_ONLY_SELECTABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_selectable", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SCE_SNAP_TO_ONLY_SELECTABLE);
+  api_def_prop_ui_text(
       prop, "Snap onto Selectable Only", "Snap only onto objects that are selectable");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_translate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_snap_translate", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "snap_transform_mode_flag", SCE_SNAP_TRANSFORM_MODE_TRANSLATE);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Use Snap for Translation", "Move is affected by snapping settings");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_rotate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_snap_rotate", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "snap_transform_mode_flag", SCE_SNAP_TRANSFORM_MODE_ROTATE);
-  RNA_def_property_boolean_default(prop, false);
-  RNA_def_property_ui_text(
+  api_def_prop_bool_default(prop, false);
+  api_def_prop_ui_text(
       prop, "Use Snap for Rotation", "Rotate is affected by the snapping settings");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "use_snap_scale", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_snap_scale", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "snap_transform_mode_flag", SCE_SNAP_TRANSFORM_MODE_SCALE);
-  RNA_def_property_boolean_default(prop, false);
-  RNA_def_property_ui_text(prop, "Use Snap for Scale", "Scale is affected by snapping settings");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  api_def_prop_bool_default(prop, false);
+  api_def_prop_ui_text(prop, "Use Snap for Scale", "Scale is affected by snapping settings");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  /* Grease Pencil */
-  prop = RNA_def_property(srna, "use_gpencil_draw_additive", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_RETAIN_LAST);
-  RNA_def_property_ui_text(prop,
-                           "Use Additive Drawing",
-                           "When creating new frames, the strokes from the previous/active frame "
-                           "are included as the basis for the new one");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  /* Dune Pen */
+  prop = api_def_prop(sapi, "use_pen_draw_additive", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", PEN_TOOL_FLAG_RETAIN_LAST);
+  api_def_prop_ui_text(prop,
+                       "Use Additive Drawing",
+                       "When creating new frames, the strokes from the previous/active frame "
+                       "are included as the basis for the new one");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_gpencil_draw_onback", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_PAINT_ONBACK);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pen_draw_onback", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", GP_TOOL_FLAG_PAINT_ONBACK);
+  api_def_prop_ui_text(
       prop,
       "Draw Strokes on Back",
       "When draw new strokes, the new stroke is drawn below of all strokes in the layer");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_gpencil_thumbnail_list", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_THUMBNAIL_LIST);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pen_thumbnail_list", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "pen_flags", PEN_TOOL_FLAG_THUMBNAIL_LIST);
+  api_def_prop_ui_text(
       prop, "Compact List", "Show compact list of color instead of thumbnails");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+ api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_gpencil_weight_data_add", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_CREATE_WEIGHTS);
-  RNA_def_property_ui_text(prop,
-                           "Add weight data for new strokes",
-                           "When creating new strokes, the weight data is added according to the "
-                           "current vertex group and weight, "
+  prop = api_def_prop(sapi, "use_gpencil_weight_data_add", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", GP_TOOL_FLAG_CREATE_WEIGHTS);
+  api_def_prop_ui_text(prop,
+                       "Add weight data for new strokes",
+                       "When creating new strokes, the weight data is added according to the "
+                       "current vertex group and weight, "
                            "if no vertex group selected, weight is not added");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_gpencil_automerge_strokes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpencil_flags", GP_TOOL_FLAG_AUTOMERGE_STROKE);
-  RNA_def_property_boolean_default(prop, false);
-  RNA_def_property_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pen_automerge_strokes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", PEN_TOOL_FLAG_AUTOMERGE_STROKE);
+  api_def_prop_bool_default(prop, false);
+  api_def_prop_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
+  api_def_prop_ui_text(
       prop,
       "Automerge",
       "Join by distance last drawn stroke with previous strokes in the active layer");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
-
-  prop = RNA_def_property(srna, "gpencil_sculpt", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_sculpt");
-  RNA_def_property_struct_type(prop, "GPencilSculptSettings");
-  RNA_def_property_ui_text(
-      prop, "Grease Pencil Sculpt", "Settings for stroke sculpting tools and brushes");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "pen_sculpt", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_sculpt");
+  api_def_prop_struct_type(prop, "PenSculptSettings");
+  api_def_prop_ui_text(
+      prop, "Pen Sculpt", "Settings for stroke sculpting tools and brushes");
 
   prop = RNA_def_property(srna, "gpencil_interpolate", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "gp_interpolate");
