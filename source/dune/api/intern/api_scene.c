@@ -127,7 +127,6 @@ const EnumPropItem api_enum_proportional_falloff_curve_only_items[] = {
 };
 
 /* Keep for operators, not used here. */
-
 const EnumPropItem api_enum_mesh_select_mode_items[] = {
     {SCE_SELECT_VERTEX, "VERT", ICON_VERTEXSEL, "Vertex", "Vertex selection mode"},
     {SCE_SELECT_EDGE, "EDGE", ICON_EDGESEL, "Edge", "Edge selection mode"},
@@ -1513,8 +1512,7 @@ static void api_FFmpegSettings_lossless_output_set(ApiPtr *ptr, bool value)
 
   if (value) {
     rd->ffcodecdata.flags |= FFMPEG_LOSSLESS_OUTPUT;
-  }
-  else {
+  } else {
     rd->ffcodecdata.flags &= ~FFMPEG_LOSSLESS_OUTPUT;
   }
 }
@@ -2210,7 +2208,7 @@ static char *api_CurvePaintSettings_path(const ApiPtr *UNUSED(ptr))
   return lib_strdup("tool_settings.curve_paint_settings");
 }
 
-static char *api_SequencerToolSettings_path(const ApiPtr *UNUSED(ptr))
+static char *api_SeqToolSettings_path(const ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("tool_settings.seq_tool_settings");
 }
@@ -2282,7 +2280,7 @@ static char *api_ToolSettings_path(const ApiPtr *UNUSED(ptr))
   return lib_strdup("tool_settings");
 }
 
-ApiPtt api_FreestyleLineSet_linestyle_get(ApiPtr *ptr)
+ApiPtr api_FreestyleLineSet_linestyle_get(ApiPtr *ptr)
 {
   FreestyleLineSet *lineset = (FreestyleLineSet *)ptr->data;
 
@@ -2339,7 +2337,7 @@ ApiPtr api_FreestyleSettings_active_lineset_get(ApiPtr *ptr)
 {
   FreestyleConfig *config = (FreestyleConfig *)ptr->data;
   FreestyleLineSet *lineset = dune_freestyle_lineset_get_active(config);
-  return rna_pointer_inherit_refine(ptr, &ApiFreestyleLineSet, lineset);
+  return api_ptr_inherit_refine(ptr, &ApiFreestyleLineSet, lineset);
 }
 
 void api_FreestyleSettings_active_lineset_index_range(
@@ -3548,7 +3546,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_segment_update");
 
   /* Pen - Select mode Vertex Paint */
-  prop = api_def_prop(sapi, "use_gpencil_vertex_select_mask_point", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_pen_vertex_select_mask_point", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_POINT);
   api_def_prop_ui_text(prop, "Selection Mask", "Only paint selected stroke points");
@@ -6224,8 +6222,8 @@ static void api_def_scene_render_data(DuneApi *dapi)
       prop, "Resolution X", "Number of horizontal pixels in the rendered image");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneCamera_update");
 
-  prop = api_def_property(srna, "resolution_y", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "ysch");
+  prop = api_def_prop(sapi, "resolution_y", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "ysch");
   api_def_prop_flag(prop, PROP_PROPORTIONAL);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_range(prop, 4, 65536);
@@ -6242,13 +6240,13 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneSequencer_update");
 
   prop = api_def_prop(sapi, "preview_pixel_size", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "preview_pixel_size");
+  api_def_prop_enum_stype(prop, NULL, "preview_pixel_size");
   api_def_prop_enum_items(prop, pixel_size_items);
   api_def_prop_ui_text(prop, "Pixel Size", "Pixel size for viewport rendering");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(srna, "pixel_aspect_x", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "xasp");
+  prop = api_def_prop(sapi, "pixel_aspect_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "xasp");
   api_def_prop_flag(prop, PROP_PROPORTIONAL);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_range(prop, 1.0f, 200.0f);
@@ -6264,7 +6262,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_range(prop, 1.0f, 200.0f);
   api_def_prop_ui_text(
       prop, "Pixel Aspect Y", "Vertical aspect ratio - for anamorphic or non-square pixel output");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneCamera_update");
 
   prop = api_def_prop(sapi, "ffmpeg", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "FFmpegSettings");
@@ -6596,7 +6594,6 @@ static void api_def_scene_render_data(DuneApi *dapi)
                        "apply a user scale to the derivative map");
 
   /* stamp */
-
   prop = api_def_prop(sapi, "use_stamp_time", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "stamp", R_STAMP_TIME);
   api_def_prop_ui_text(
@@ -6721,7 +6718,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Background", "Color to use behind stamp text");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  /* sequencer draw options */
+  /* seq draw options */
   prop = api_def_prop(sapi, "seq_gl_preview", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "seq_prev_type");
   api_def_prop_enum_items(prop, rna_enum_shading_type_items);
@@ -6928,7 +6925,6 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_define_animate_stype(true);
 
   /* *** Animated *** */
-
   /* Scene API */
   api_api_scene_render(sapi);
 }
@@ -7034,8 +7030,8 @@ static void api_def_scene_keying_sets(DuneApi *dapi, ApiProp *cprop)
 
 static void api_def_scene_keying_sets_all(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   api_def_prop_sapi(cprop, "KeyingSetsAll");
   sapi = api_def_struct(dapi, "KeyingSetsAll", NULL);
@@ -7502,13 +7498,13 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(sapu, "use_gtao_bounce", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "use_gtao_bounce", PROP_BOOL, PROP_NONE);
   api_def_prop_bool(prop, NULL, "flag", SCE_EEVEE_GTAO_BOUNCE);
   api_def_prop_ui_text(prop,
                        "Bounces Approximation",
                        "An approximation to simulate light bounces "
                        "giving less occlusion on brighter objects");
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "gtao_factor", PROP_FLOAT, PROP_FACTOR);
@@ -7538,7 +7534,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
       prop, "Max Size", "Max size of the bokeh shape for the depth of field (lower is faster)");
   api_def_prop_range(prop, 0.0f, 2000.0f);
   api_def_prop_ui_range(prop, 0.0f, 200.0f, 100.0f, 1);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
 
   prop = api_def_prop(sapi, "bokeh_threshold", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(
@@ -7599,7 +7595,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(srna, "bloom_threshold", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "bloom_threshold", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Threshold", "Filters out pixels under this level of brightness");
   api_def_prop_range(prop, 0.0f, 100000.0f);
   api_def_prop_ui_range(prop, 0.0f, 10.0f, 1, 3);
@@ -7615,14 +7611,14 @@ static void api_def_scene_eevee(DuneApi *dapi)
   prop = api_def_prop(sapi, "bloom_knee", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Knee", "Makes transition between under/over-threshold gradual");
   api_def_prop_range(prop, 0.0f, 1.0f);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "bloom_radius", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Radius", "Bloom spread distance");
   api_def_prop_range(prop, 0.0f, 100.0f);
   api_def_prop_ui_range(prop, 0.0f, 10.0f, 1, 3);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "bloom_clamp", PROP_FLOAT, PROP_FACTOR);
@@ -7630,18 +7626,18 @@ static void api_def_scene_eevee(DuneApi *dapi)
       prop, "Clamp", "Maximum intensity a bloom pixel can have (0 to disable)");
   api_def_prop_range(prop, 0.0f, 100000.0f);
   api_def_prop_ui_range(prop, 0.0f, 1000.0f, 1, 3);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "bloom_intensity", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Intensity", "Blend factor");
   api_def_prop_range(prop, 0.0f, 10000.0f);
   api_def_prop_ui_range(prop, 0.0f, 0.1f, 1, 3);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   /* Motion blur */
-  prop = api_def_prop(sapi, "use_motion_blur", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_motion_blur", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", SCE_EEVEE_MOTION_BLUR_ENABLED);
   api_def_prop_ui_text(prop, "Motion Blur", "Enable motion blur effect (only in camera view)");
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
@@ -7661,65 +7657,65 @@ static void api_def_scene_eevee(DuneApi *dapi)
                        " bleeding onto foreground elements");
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.01f, 1000.0f, 1, 2);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+  prop = api_def_prop(sapi, "motion_blur_max", PROP_INT, PROP_PIXEL);
+  api_def_prop_ui_text(prop, "Max Blur", "Maximum blur distance a pixel can spread over");
+  api_def_prop_range(prop, 0, 2048);
+  api_def_prop_ui_range(prop, 0, 512, 1, -1);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+  prop = api_def_prop(sapi, "motion_blur_steps", PROP_INT, PROP_NONE);
+  api_def_prop_ui_text(prop,
+                       "Motion steps",
+                       "Controls accuracy of motion blur, "
+                       "more steps means longer render time");
+  api_def_prop_range(prop, 1, INT_MAX);
+  api_def_prop_ui_range(prop, 1, 64, 1, -1);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+  prop = api_def_prop(sapi, "motion_blur_position", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, eevee_motion_blur_position_items);
+  api_def_prop_ui_text(prop,
+                       "Motion Blur Position",
+                       "Offset for the shutter's time interval, "
+                       "allows to change the motion blur trails");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+  /* Shadows */
+  prop = api_def_prop(sapi, "use_shadows", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SCE_EEVEE_SHADOW_ENABLED);
+  api_def_prop_ui_text(prop, "Shadows", "Enable shadow casting from lights");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+  prop = api_def_prop(sapi, "shadow_cube_size", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, eevee_shadow_size_items);
+  api_def_prop_ui_text(
+      prop, "Cube Shadows Resolution", "Size of point and area light shadow maps");
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "motion_blur_max", PROP_INT, PROP_PIXEL);
-  RNA_def_property_ui_text(prop, "Max Blur", "Maximum blur distance a pixel can spread over");
-  RNA_def_property_range(prop, 0, 2048);
-  RNA_def_property_ui_range(prop, 0, 512, 1, -1);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-  prop = RNA_def_property(srna, "motion_blur_steps", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(prop,
-                           "Motion steps",
-                           "Controls accuracy of motion blur, "
-                           "more steps means longer render time");
-  RNA_def_property_range(prop, 1, INT_MAX);
-  RNA_def_property_ui_range(prop, 1, 64, 1, -1);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-  prop = RNA_def_property(srna, "motion_blur_position", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, eevee_motion_blur_position_items);
-  RNA_def_property_ui_text(prop,
-                           "Motion Blur Position",
-                           "Offset for the shutter's time interval, "
-                           "allows to change the motion blur trails");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-  /* Shadows */
-  prop = RNA_def_property(srna, "use_shadows", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SCE_EEVEE_SHADOW_ENABLED);
-  RNA_def_property_ui_text(prop, "Shadows", "Enable shadow casting from lights");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-  prop = RNA_def_property(srna, "shadow_cube_size", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, eevee_shadow_size_items);
-  RNA_def_property_ui_text(
-      prop, "Cube Shadows Resolution", "Size of point and area light shadow maps");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-  prop = RNA_def_property(srna, "shadow_cascade_size", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, eevee_shadow_size_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "shadow_cascade_size", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, eevee_shadow_size_items);
+  api_def_prop_ui_text(
       prop, "Directional Shadows Resolution", "Size of sun light shadow maps");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "shadow_pool_size", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, eevee_shadow_pool_size_items);
-  RNA_def_property_ui_text(prop,
-                           "Shadow Pool Size",
-                           "Size of the shadow pool, "
-                           "a bigger pool size allows for more shadows in the scene "
-                           "but might not fit into GPU memory");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(srna, "shadow_pool_size", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, eevee_shadow_pool_size_items);
+  api_def_prop_ui_text(prop,
+                       "Shadow Pool Size",
+                       "Size of the shadow pool, "
+                       "a bigger pool size allows for more shadows in the scene "
+                       "but might not fit into GPU memory");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = RNA_def_property(srna, "use_shadow_high_bitdepth", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", SCE_EEVEE_SHADOW_HIGH_BITDEPTH);
