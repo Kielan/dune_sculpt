@@ -2832,7 +2832,7 @@ static void api_def_view3d_cursor(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "location", PROP_FLOAT, PROP_XYZ_LENGTH);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_float_sdna(prop, NULL, "location");
+  api_def_prop_float_stype(prop, NULL, "location");
   api_def_prop_ui_text(prop, "Location", "");
   api_def_prop_ui_range(prop, -10000.0, 10000.0, 10, 4);
   api_def_prop_update(prop, NC_WINDOW, NULL);
@@ -3163,7 +3163,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
   prop = api_def_prop(sapi, "use_proportional_connected", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stypr(prop, NULL, "proportional_edit", PROP_EDIT_CONNECTED);
+  api_def_prop_bool_stype(prop, NULL, "proportional_edit", PROP_EDIT_CONNECTED);
   api_def_prop_ui_text(
       prop, "Connected Only", "Proportional Editing using connected geometry only");
   api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
@@ -4238,15 +4238,15 @@ static void api_def_view_layer_eevee(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_pass_volume_direct", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "render_passes", EEVEE_RENDER_PASS_VOLUME_LIGHT);
   api_def_prop_ui_text(prop, "Volume Light", "Deliver volume direct light pass");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
 
   prop = api_def_prop(sapi, "use_pass_bloom", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "render_passes", EEVEE_RENDER_PASS_BLOOM);
   api_def_prop_ui_text(prop, "Bloom", "Deliver bloom pass");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
 }
 
-static void api_def_view_layer_aovs(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_view_layer_aovs(DuneApi *dapi, PropertyRNA *cprop)
 {
   ApiStruct *sapi;
   // ApiProp *prop;
@@ -4266,7 +4266,7 @@ static void api_def_view_layer_aovs(BlenderRNA *brna, PropertyRNA *cprop)
   /* Defined in `api_layer.c`. */
   fn = api_def_fn(sapi, "remove", "api_ViewLayer_remove_aov");
   parm = api_def_ptr(fn, "aov", "AOV", "", "AOV to remove");
-  api_def_fn_ui_description(func, "Remove an AOV");
+  api_def_fn_ui_description(fn, "Remove an AOV");
   api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
@@ -4628,7 +4628,7 @@ void api_def_view_layer_common(DuneApi *dapi, ApiStruct *sapi, const bool scene)
     api_def_prop_clear_flag(prop, PROP_EDITABLE);
   }
 
-  prop = apj_def_prop(sapi, "use_pass_environment", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "use_pass_environment", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "passflag", SCE_PASS_ENVIRONMENT);
   api_def_prop_ui_text(prop, "Environment", "Deliver environment lighting pass");
   if (scene) {
@@ -4762,7 +4762,7 @@ static void api_def_freestyle_modules(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_ui_description(fn, "Add a style module to scene render layer Freestyle settings");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   parm = api_def_ptr(
-      func, "module", "FreestyleModuleSettings", "", "Newly created style module");
+      fn, "module", "FreestyleModuleSettings", "", "Newly created style module");
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "remove", "api_FreestyleSettings_module_remove");
@@ -5169,7 +5169,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
   api_def_prop_struct_type(prop, "Text");
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Style Module", "Python script to define a style module");
-  RNA_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
   prop = api_def_prop(sapi, "use", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "is_displayed", 1);
@@ -5317,9 +5317,9 @@ static void api_def_bake_data(DuneApi *dapi)
   api_def_prop_range(prop, 0.0, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0, 1.0, 1, 3);
   api_def_prop_ui_text(prop,
-                           "Max Ray Distance",
-                           "The maximum ray distance for matching points between the active and "
-                           "selected objects. If zero, there is no limit");
+                       "Max Ray Distance",
+                       "The maximum ray distance for matching points between the active and "
+                       "selected objects. If zero, there is no limit");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "cage_extrusion", PROP_FLOAT, PROP_DISTANCE);
@@ -5373,7 +5373,7 @@ static void api_def_bake_data(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Save Mode", "Where to save baked image textures");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = apu_def_prop(sapi, "view_from", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "view_from", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_bake_view_from_items);
   api_def_prop_ui_text(prop, "View From", "Source of reflection ray directions");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
@@ -5421,8 +5421,8 @@ static void api_def_bake_data(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "use_pass_indirect", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "pass_filter", R_BAKE_PASS_FILTER_INDIRECT);
-  RNA_def_prop_ui_text(prop, "Indirect", "Add indirect lighting contribution");
+  api_def_prop_bool_stype(prop, NULL, "pass_filter", R_BAKE_PASS_FILTER_INDIRECT);
+  api_def_prop_ui_text(prop, "Indirect", "Add indirect lighting contribution");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "use_pass_color", PROP_BOOL, PROP_NONE);
@@ -5464,95 +5464,95 @@ static void api_def_view_layers(DuneApi *dapi, ApiProp *cprop)
   api_def_struct_stype(sapi, "Scene");
   api_def_struct_ui_text(sapi, "Render Layers", "Collection of render layers");
 
-  func = api_def_fn(sapi, "new", "api_ViewLayer_new");
-  RNA_def_function_ui_description(fn, "Add a view layer to scene");
-  RNA_def_function_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN);
-  parm = RNA_def_string(
-      func, "name", "ViewLayer", 0, "", "New name for the view layer (not unique)");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "result", "ViewLayer", "", "Newly created view layer");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_ViewLayer_new");
+  api_def_fn_ui_description(fn, "Add a view layer to scene");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN);
+  parm = api_def_string(
+      fn, "name", "ViewLayer", 0, "", "New name for the view layer (not unique)");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "result", "ViewLayer", "", "Newly created view layer");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_ViewLayer_remove");
-  RNA_def_function_ui_description(func, "Remove a view layer");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "layer", "ViewLayer", "", "View layer to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_ViewLayer_remove");
+  api_def_fn_ui_description(fn, "Remove a view");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN | FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "layer", "ViewLayer", "", "View layer to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
 /* Render Views - MultiView */
-static void rna_def_scene_render_view(BlenderRNA *brna)
+static void api_def_scene_render_view(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SceneRenderView", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Scene Render View", "Render viewpoint for 3D stereo and multiview rendering");
-  RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
-  RNA_def_struct_path_func(srna, "rna_SceneRenderView_path");
+  sapi = api_def_struct(dapi, "SceneRenderView", NULL);
+  api_def_struct_ui_text(
+      sapi, "Scene Render View", "Render viewpoint for 3D stereo and multiview rendering");
+  api_def_struct_ui_icon(sapi, ICON_RESTRICT_RENDER_OFF);
+  api_def_struct_path_fn(sapi, "api_SceneRenderView_path");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_SceneRenderView_name_set");
-  RNA_def_property_ui_text(prop, "Name", "Render view name");
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  RNA_def_prop_string_fns(prop, NULL, NULL, "api_SceneRenderView_name_set");
+  RNA_def_prop_ui_text(prop, "Name", "Render view name");
+  RNA_def_struct_name_prop(sapi, prop);
+  RNA_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "file_suffix", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "suffix");
-  RNA_def_property_ui_text(prop, "File Suffix", "Suffix added to the render images for this view");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "file_suffix", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "suffix");
+  api_def_prop_ui_text(prop, "File Suffix", "Suffix added to the render images for this view");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "camera_suffix", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "suffix");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "camera_suffix", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "suffix");
+  api_def_prop_ui_text(
       prop,
       "Camera Suffix",
       "Suffix to identify the cameras to use, and added to the render images for this view");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "use", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Enabled", "Disable or enable the render view");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
-static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_render_views(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapo;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "RenderViews");
-  srna = RNA_def_struct(brna, "RenderViews", NULL);
-  RNA_def_struct_sdna(srna, "RenderData");
-  RNA_def_struct_ui_text(srna, "Render Views", "Collection of render views");
+  api_def_prop_sapi(cprop, "RenderViews");
+  sapi = api_def_struct(dapi, "RenderViews", NULL);
+  api_def_struct_stype(sapi, "RenderData");
+  api_def_struct_ui_text(sapi, "Render Views", "Collection of render views");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "actview");
-  RNA_def_property_int_funcs(prop,
-                             "rna_RenderSettings_active_view_index_get",
-                             "rna_RenderSettings_active_view_index_set",
-                             "rna_RenderSettings_active_view_index_range");
-  RNA_def_property_ui_text(prop, "Active View Index", "Active index in render view array");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "actview");
+  api_def_prop_int_fns(prop,
+                       "api_RenderSettings_active_view_index_get",
+                       "api_RenderSettings_active_view_index_set",
+                       "api_RenderSettings_active_view_index_range");
+  api_def_prop_ui_text(prop, "Active View Index", "Active index in render view array");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "SceneRenderView");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_RenderSettings_active_view_get",
-                                 "rna_RenderSettings_active_view_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Active Render View", "Active Render View");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "SceneRenderView");
+  api_def_prop_ptr_fns(prop,
+                       "api_RenderSettings_active_view_get",
+                       "api_RenderSettings_active_view_set",
+                       NULL,
+                       NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Active Render View", "Active Render View");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  func = RNA_def_function(srna, "new", "rna_RenderView_new");
+  func = RNA_def_function(sapi, "new", "rna_RenderView_new");
   RNA_def_function_ui_description(func, "Add a render view to scene");
   RNA_def_function_flag(func, FUNC_USE_SELF_ID);
   parm = RNA_def_string(func, "name", "RenderView", 0, "", "New name for the marker (not unique)");
