@@ -7697,7 +7697,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_enum_items(prop, eevee_shadow_size_items);
   api_def_prop_ui_text(
       prop, "Cube Shadows Resolution", "Size of point and area light shadow maps");
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "shadow_cascade_size", PROP_ENUM, PROP_NONE);
@@ -7707,7 +7707,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(srna, "shadow_pool_size", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "shadow_pool_size", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, eevee_shadow_pool_size_items);
   api_def_prop_ui_text(prop,
                        "Shadow Pool Size",
@@ -7717,79 +7717,79 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use_shadow_high_bitdepth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SCE_EEVEE_SHADOW_HIGH_BITDEPTH);
-  RNA_def_property_ui_text(prop, "High Bit Depth", "Use 32-bit shadows");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "use_shadow_high_bitdepth", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SCE_EEVEE_SHADOW_HIGH_BITDEPTH);
+  api_def_prop_ui_text(prop, "High Bit Depth", "Use 32-bit shadows");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use_soft_shadows", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SCE_EEVEE_SHADOW_SOFT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_soft_shadows", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SCE_EEVEE_SHADOW_SOFT);
+  api_def_prop_ui_text(
       prop, "Soft Shadows", "Randomize shadowmaps origin to create soft shadows");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "light_threshold", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(prop,
-                           "Light Threshold",
-                           "Minimum light intensity for a light to contribute to the lighting");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "light_threshold", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_ui_text(prop,
+                       "Light Threshold",
+                       "Minimum light intensity for a light to contribute to the lighting");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   /* Overscan */
-  prop = RNA_def_property(srna, "use_overscan", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SCE_EEVEE_OVERSCAN);
-  RNA_def_property_ui_text(prop,
-                           "Overscan",
-                           "Internally render past the image border to avoid "
-                           "screen-space effects disappearing");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  prop = api_def_prop(sapi, "use_overscan", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SCE_EEVEE_OVERSCAN);
+  api_def_prop_ui_text(prop,
+                       "Overscan",
+                       "Internally render past the image border to avoid "
+                       "screen-space effects disappearing");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
 
-  prop = RNA_def_property(srna, "overscan_size", PROP_FLOAT, PROP_PERCENTAGE);
-  RNA_def_property_float_sdna(prop, NULL, "overscan");
-  RNA_def_property_ui_text(prop,
-                           "Overscan Size",
-                           "Percentage of render size to add as overscan to the "
-                           "internal render buffers");
-  RNA_def_property_range(prop, 0.0f, 50.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 10.0f, 1, 2);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  prop = api_def_prop(sapi, "overscan_size", PROP_FLOAT, PROP_PERCENTAGE);
+  api_def_prop_float_stype(prop, NULL, "overscan");
+  api_def_prop_ui_text(prop,
+                       "Overscan Size",
+                       "Percentage of render size to add as overscan to the "
+                       "internal render buffers");
+  api_def_prop_range(prop, 0.0f, 50.0f);
+  api_def_prop_ui_range(prop, 0.0f, 10.0f, 1, 2);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
 }
 
-static void rna_def_scene_gpencil(BlenderRNA *brna)
+static void api_def_scene_pen(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "SceneGpencil", NULL);
-  RNA_def_struct_path_func(srna, "rna_SceneGpencil_path");
-  RNA_def_struct_ui_text(srna, "Grease Pencil Render", "Render settings");
+  sapi = api_def_struct(dapi, "ScenePen", NULL);
+  api_def_struct_path_fn(sapi, "api_ScenePen_path");
+  api_def_struct_ui_text(sapi, "Pen Render", "Render settings");
 
-  prop = RNA_def_property(srna, "antialias_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "smaa_threshold");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 2.0f, 1, 3);
-  RNA_def_property_ui_text(prop,
-                           "Anti-Aliasing Threshold",
-                           "Threshold for edge detection algorithm (higher values might over-blur "
-                           "some part of the image)");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "antialias_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "smaa_threshold");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 2.0f, 1, 3);
+  api_def_prop_ui_text(prop,
+                       "Anti-Aliasing Threshold",
+                       "Threshold for edge detection algorithm (higher values might over-blur "
+                       "some part of the image)");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
-void RNA_def_scene(BlenderRNA *brna)
+void api_def_scene(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem audio_distance_model_items[] = {
+  static const EnumPropItem audio_distance_model_items[] = {
       {0, "NONE", 0, "None", "No distance attenuation"},
       {1, "INVERSE", 0, "Inverse", "Inverse distance model"},
       {2, "INVERSE_CLAMPED", 0, "Inverse Clamped", "Inverse distance model with clamping"},
@@ -7804,7 +7804,7 @@ void RNA_def_scene(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem sync_mode_items[] = {
+  static const EnumPropItem sync_mode_items[] = {
       {0, "NONE", 0, "Play Every Frame", "Do not sync, play every frame"},
       {SCE_FRAME_DROP, "FRAME_DROP", 0, "Frame Dropping", "Drop frames if playback is too slow"},
       {AUDIO_SYNC, "AUDIO_SYNC", 0, "Sync to Audio", "Sync to audio playback, dropping frames"},
@@ -7812,42 +7812,42 @@ void RNA_def_scene(BlenderRNA *brna)
   };
 
   /* Struct definition */
-  srna = RNA_def_struct(brna, "Scene", "ID");
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "Scene", "ID");
+  api_def_struct_ui_text(sapi,
                          "Scene",
                          "Scene data-block, consisting in objects and "
                          "defining time and render related settings");
-  RNA_def_struct_ui_icon(srna, ICON_SCENE_DATA);
-  RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
+  api_def_struct_ui_icon(sapi, ICON_SCENE_DATA);
+  api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
 
   /* Global Settings */
-  prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
-  RNA_def_property_ui_text(prop, "Camera", "Active camera, used for rendering the scene");
-  RNA_def_property_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_camera_update");
+  prop = api_def_prop(sapi, "camera", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  RNA_def_prop_ptr_fns(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
+  RNA_def_prop_ui_text(prop, "Camera", "Active camera, used for rendering the scene");
+  RNA_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_camera_update");
 
-  prop = RNA_def_property(srna, "background_set", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "set");
-  RNA_def_property_struct_type(prop, "Scene");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_pointer_funcs(prop, NULL, "rna_Scene_set_set", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Background Scene", "Background set scene");
-  RNA_def_property_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_set_update");
+  prop = api_def_prop(sapi, "background_set", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "set");
+  api_def_prop_struct_type(prop, "Scene");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ptr_fns(prop, NULL, "rna_Scene_set_set", NULL, NULL);
+  api_def_prop_ui_text(prop, "Background Scene", "Background set scene");
+  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_set_update");
 
-  prop = RNA_def_property(srna, "world", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "World", "World used for rendering the scene");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_WORLD);
-  RNA_def_property_update(prop, NC_SCENE | ND_WORLD, "rna_Scene_world_update");
+  prop = api_def_prop(sapi, "world", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "World", "World used for rendering the scene");
+  api_def_prop_translation_cxt(prop, BLT_I18NCONTEXT_ID_WORLD);
+  api_def_prop_update(prop, NC_SCENE | ND_WORLD, "rna_Scene_world_update");
 
-  prop = RNA_def_property(srna, "objects", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_ui_text(prop, "Objects", "");
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_ui_text(prop, "Objects", "");
+  api_def_prop_collection_fns(prop,
                                     "rna_Scene_objects_begin",
                                     "rna_Scene_objects_next",
                                     "rna_Scene_objects_end",
