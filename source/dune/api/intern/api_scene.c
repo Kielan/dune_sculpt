@@ -2634,7 +2634,7 @@ const EnumPropItem *api_TransformOrientation_with_scene_itemf(Cxt *C,
 
 #  undef V3D_ORIENT_DEFAULT
 
-static const EnumProItem *api_UnitSettings_itemf_wrapper(const int system,
+static const EnumPropItem *api_UnitSettings_itemf_wrapper(const int system,
                                                          const int type,
                                                          bool *r_free)
 {
@@ -2749,8 +2749,7 @@ static void api_FFmpegSettings_codec_update(Main *UNUSED(main),
 #  endif
 
 #else
-
-/* Grease Pencil Interpolation tool settings */
+/* Pen Interpolation tool settings */
 static void api_def_pen_interpolate(DuneApi *dapi)
 {
   ApiSruct *sapi;
@@ -3078,7 +3077,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Vertex Paint", "");
 
   prop = api_def_prop(sapi, "weight_paint", PROP_PTR, PROP_NONE);
-  api_def_prop_pointer_stype(prop, NULL, "wpaint");
+  api_def_prop_ptr_stype(prop, NULL, "wpaint");
   api_def_prop_ui_text(prop, "Weight Paint", "");
 
   prop = api_def_prop(sapi, "image_paint", PROP_PTR, PROP_NONE);
@@ -3132,7 +3131,7 @@ static void api_def_tool_settings(DuneApi *dapi)
                        "Lock Object Modes",
                        "Restrict selection to objects using the same mode as the active "
                        "object, to prevent accidental mode switch when selecting");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   static const EnumPropItem workspace_tool_items[] = {
       {SCE_WORKSPACE_TOOL_DEFAULT, "DEFAULT", 0, "Active Tool", ""},
@@ -3140,7 +3139,7 @@ static void api_def_tool_settings(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_prop(sapi, "workspace_tool_type", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "workspace_tool_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "workspace_tool_type");
   api_def_prop_enum_items(prop, workspace_tool_items);
   api_def_prop_translation_cxt(prop, LANG_CXT_EDITOR_VIEW3D);
@@ -3488,105 +3487,105 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Pen Sculpt", "Settings for stroke sculpting tools and brushes");
 
-  prop = RNA_def_property(srna, "gpencil_interpolate", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gp_interpolate");
-  RNA_def_property_struct_type(prop, "GPencilInterpolateSettings");
-  RNA_def_property_ui_text(
-      prop, "Grease Pencil Interpolate", "Settings for Grease Pencil Interpolation tools");
+  prop = api_def_prop(sapi, "pen_interpolate", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "pen_interpolate");
+  api_def_prop_struct_type(prop, "PenInterpolateSettings");
+  api_def_prop_ui_text(
+      prop, "Pen Interpolate", "Settings for Pen Interpolation tools");
 
-  /* Grease Pencil - 3D View Stroke Placement */
-  prop = RNA_def_property(srna, "gpencil_stroke_placement_view3d", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "gpencil_v3d_align");
-  RNA_def_property_enum_items(prop, gpencil_stroke_placement_items);
-  RNA_def_property_ui_text(prop, "Stroke Placement (3D View)", "");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  /* Pen - 3D View Stroke Placement */
+  prop = api_def_prop(sapi, "pen_stroke_placement_view3d", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "pen_v3d_align");
+  api_def_prop_enum_items(prop, pen_stroke_placement_items);
+  api_def_prop_ui_text(prop, "Stroke Placement (3D View)", "");
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  prop = RNA_def_property(srna, "gpencil_stroke_snap_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "gpencil_v3d_align");
-  RNA_def_property_enum_items(prop, gpencil_stroke_snap_items);
-  RNA_def_property_ui_text(prop, "Stroke Snap", "");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
-
-  prop = RNA_def_property(srna, "use_gpencil_stroke_endpoints", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_v3d_align", GP_PROJECT_DEPTH_STROKE_ENDPOINTS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pen_stroke_snap_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "pen_v3d_align");
+  api_def_prop_enum_items(prop, pen_stroke_snap_items);
+  api_def_prop_ui_text(prop, "Stroke Snap", "");
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
+    
+  prop = api_def_prop(sapi, "use_pen_stroke_endpoints", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_v3d_align", PEN_PROJECT_DEPTH_STROKE_ENDPOINTS);
+  api_def_prop_ui_text(
       prop, "Only Endpoints", "Only use the first and last parts of the stroke for snapping");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
-  /* Grease Pencil - Select mode Edit */
-  prop = RNA_def_property(srna, "gpencil_selectmode_edit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpencil_selectmode_edit");
-  RNA_def_property_enum_items(prop, gpencil_selectmode_items);
-  RNA_def_property_ui_text(prop, "Select Mode", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_selectmode_update");
+  /* Pen - Select mode Edit */
+  prop = api_def_prop(sapi, "pen_selectmode_edit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "or _selectmode_edit");
+  api_def_prop_enum_items(prop, pen_selectmode_items);
+  api_def_prop_ui_text(prop, "Select Mode", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_selectmode_update");
 
-  /* Grease Pencil - Select mode Sculpt */
-  prop = RNA_def_property(srna, "use_gpencil_select_mask_point", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_sculpt", GP_SCULPT_MASK_SELECTMODE_POINT);
-  RNA_def_property_ui_text(prop, "Selection Mask", "Only sculpt selected stroke points");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_POINTS, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_point_update");
+  /* Pen - Select mode Sculpt */
+  prop = api_def_prop(sapi, "use_pen_select_mask_point", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sytype(
+      prop, NULL, "pen_selectmode_sculpt", PEN_SCULPT_MASK_SELECTMODE_POINT);
+  api_def_prop_ui_text(prop, "Selection Mask", "Only sculpt selected stroke points");
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_POINTS, 0);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_mask_point_update");
 
-  prop = RNA_def_property(srna, "use_gpencil_select_mask_stroke", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_sculpt", GP_SCULPT_MASK_SELECTMODE_STROKE);
-  RNA_def_property_ui_text(prop, "Selection Mask", "Only sculpt selected stroke");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_stroke_update");
+  prop = api_def_prop(sapi, "use_pen_select_mask_stroke", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_selectmode_sculpt", PEN_SCULPT_MASK_SELECTMODE_STROKE);
+  api_def_prop_ui_text(prop, "Selection Mask", "Only sculpt selected stroke");
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pe_mask_stroke_update");
 
-  prop = RNA_def_property(srna, "use_gpencil_select_mask_segment", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_sculpt", GP_SCULPT_MASK_SELECTMODE_SEGMENT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pen_select_mask_segment", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_selectmode_sculpt", PEN_SCULPT_MASK_SELECTMODE_SEGMENT);
+  api_def_prop_ui_text(
       prop, "Selection Mask", "Only sculpt selected stroke points between other strokes");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_BETWEEN_STROKES, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_segment_update");
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_BETWEEN_STROKES, 0);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_segment_update");
 
-  /* Grease Pencil - Select mode Vertex Paint */
-  prop = RNA_def_property(srna, "use_gpencil_vertex_select_mask_point", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_POINT);
-  RNA_def_property_ui_text(prop, "Selection Mask", "Only paint selected stroke points");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_POINTS, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(
+  /* Pen - Select mode Vertex Paint */
+  prop = api_def_prop(sapi, "use_gpencil_vertex_select_mask_point", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_POINT);
+  api_def_prop_ui_text(prop, "Selection Mask", "Only paint selected stroke points");
+  api_def_prop_ui_icon(prop, ICON_GP_SELECT_POINTS, 0);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_update(
       prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_point_update");
 
-  prop = RNA_def_property(srna, "use_gpencil_vertex_select_mask_stroke", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_STROKE);
-  RNA_def_property_ui_text(prop, "Selection Mask", "Only paint selected stroke");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(
-      prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_stroke_update");
+  prop = api_def_prop(sapi, "use_pen_vertex_select_mask_stroke", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_STROKE);
+  api_def_prop_ui_text(prop, "Selection Mask", "Only paint selected stroke");
+  api_def_prop_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_update(
+      prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_vertex_mask_stroke_update");
 
-  prop = RNA_def_property(srna, "use_gpencil_vertex_select_mask_segment", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "gpencil_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_SEGMENT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_pen_vertex_select_mask_segment", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_SEGMENT);
+  api_def_prop_ui_text(
       prop, "Selection Mask", "Only paint selected stroke points between other strokes");
-  RNA_def_property_ui_icon(prop, ICON_GP_SELECT_BETWEEN_STROKES, 0);
+  api_def_prop_ui_icon(prop, ICON_GP_SELECT_BETWEEN_STROKES, 0);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
   api_def_prop_update(
       prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_segment_update");
 
   /* Annotations - 2D Views Stroke Placement */
-  prop = RNA_def_property(srna, "annotation_stroke_placement_view2d", PROP_ENUM, PROP_NONE);
-  api_def_property_enum_bitflag_sdna(prop, NULL, "gpencil_v2d_align");
+  prop = api_def_prop(sapi, "annotation_stroke_placement_view2d", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "gpencil_v2d_align");
   api_def_prop_enum_items(prop, annotation_stroke_placement_view2d_items);
   api_def_prop_ui_text(prop, "Stroke Placement (2D View)", "");
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
@@ -3596,10 +3595,10 @@ static void api_def_tool_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "annotation_stroke_placement_view3d", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_bitflag_stype(prop, NULL, "annotate_v3d_align");
   api_def_prop_enum_items(prop, annotation_stroke_placement_view3d_items);
-  api_def_prop_enum_default(prop, PEN_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR);
+  api_def_prop_enum_default(prop, PEN_PROJECT_VIEWSPACE | PEN_PROJECT_CURSOR);
   api_def_prop_ui_text(prop,
-                           "Annotation Stroke Placement (3D View)",
-                           "How annotation strokes are orientated in 3D space");
+                       "Annotation Stroke Placement (3D View)",
+                       "How annotation strokes are orientated in 3D space");
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   /* Annotations - Stroke Thickness */
@@ -3610,37 +3609,37 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_update(prop, NC_PEN | ND_DATA, "api_pen_update");
 
   /* Auto Keying */
-  prop = api_def_prop(sapi, "use_keyframe_insert_auto", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_keyframe_insert_auto", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "autokey_mode", AUTOKEY_ON);
-  api_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Auto Keying", "Automatic keyframe insertion for Objects, Bones and Masks");
-  api_def_property_ui_icon(prop, ICON_REC, 0);
+  api_def_prop_ui_icon(prop, ICON_REC, 0);
 
   prop = api_def_prop(sapi, "auto_keying_mode", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_bitflag_stype(prop, NULL, "autokey_mode");
   api_def_prop_enum_items(prop, auto_key_items);
   api_def_prop_ui_text(prop,
-                           "Auto-Keying Mode",
-                           "Mode of automatic keyframe insertion for Objects, Bones and Masks");
+                       "Auto-Keying Mode",
+                       "Mode of automatic keyframe insertion for Objects, Bones and Masks");
 
-  prop = RNA_def_property(srna, "use_record_with_nla", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", ANIMRECORD_FLAG_WITHNLA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_record_with_nla", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", ANIMRECORD_FLAG_WITHNLA);
+  api_def_prop_ui_text(
       prop,
       "Layered",
       "Add a new NLA Track + Strip for every loop/pass made over the animation "
       "to allow non-destructive tweaking");
 
-  prop = RNA_def_property(srna, "use_keyframe_insert_keyingset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_ONLYKEYINGSET);
-  RNA_def_property_ui_text(prop,
-                           "Auto Keyframe Insert Keying Set",
-                           "Automatic keyframe insertion using active Keying Set only");
-  RNA_def_property_ui_icon(prop, ICON_KEYINGSET, 0);
+  prop = api_def_prop(sapi, "use_keyframe_insert_keyingset", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_ONLYKEYINGSET);
+  api_def_prop_ui_text(prop,
+                       "Auto Keyframe Insert Keying Set",
+                       "Automatic keyframe insertion using active Keying Set only");
+  api_def_prop_ui_icon(prop, ICON_KEYINGSET, 0);
 
-  prop = RNA_def_property(srna, "use_keyframe_cycle_aware", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_CYCLEAWARE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_keyframe_cycle_aware", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_CYCLEAWARE);
+  api_def_prop_ui_text(
       prop,
       "Cycle-Aware Keying",
       "For channels with cyclic extrapolation, keyframe insertion is automatically "
@@ -3648,98 +3647,95 @@ static void api_def_tool_settings(DuneApi *dapi)
       "actions with a Manual Frame Range and Cyclic Animation are automatically made cyclic");
 
   /* Keyframing */
-  prop = RNA_def_property(srna, "keyframe_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "keyframe_type");
-  RNA_def_property_enum_items(prop, rna_enum_beztriple_keyframe_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "keyframe_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "keyframe_type");
+  api_def_prop_enum_items(prop, api_enum_beztriple_keyframe_type_items);
+  api_def_prop_ui_text(
       prop, "New Keyframe Type", "Type of keyframes to create when inserting keyframes");
 
   /* UV */
-  prop = RNA_def_property(srna, "uv_select_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "uv_selectmode");
-  RNA_def_property_enum_items(prop, rna_enum_mesh_select_mode_uv_items);
-  RNA_def_property_ui_text(prop, "UV Selection Mode", "UV selection and display mode");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, "rna_Scene_uv_select_mode_update");
+  prop = api_def_prop(sapi, "uv_select_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_s(prop, NULL, "uv_selectmode");
+  api_def_prop_enum_items(prop, api_enum_mesh_select_mode_uv_items);
+  api_def_prop_ui_text(prop, "UV Selection Mode", "UV selection and display mode");
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Scene_uv_select_mode_update");
 
-  prop = RNA_def_property(srna, "uv_sticky_select_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "uv_sticky");
-  RNA_def_property_enum_items(prop, uv_sticky_mode_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "uv_sticky_select_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sapi(prop, NULL, "uv_sticky");
+  api_def_prop_enum_items(prop, uv_sticky_mode_items);
+  api_def_prop_ui_text(
       prop, "Sticky Selection Mode", "Method for extending UV vertex selection");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
 
-  prop = RNA_def_property(srna, "use_uv_select_sync", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uv_flag", UV_SYNC_SELECTION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_uv_select_sync", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uv_flag", UV_SYNC_SELECTION);
+  api_def_prop_ui_text(
       prop, "UV Sync Selection", "Keep UV and edit mode mesh selection in sync");
-  RNA_def_property_ui_icon(prop, ICON_UV_SYNC_SELECT, 0);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
+  api_def_prop_ui_icon(prop, ICON_UV_SYNC_SELECT, 0);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
 
-  prop = RNA_def_property(srna, "show_uv_local_view", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uv_flag", UV_SHOW_SAME_IMAGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(api, "show_uv_local_view", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "uv_flag", UV_SHOW_SAME_IMAGE);
+  api_def_prop_ui_text(
       prop, "UV Local View", "Display only faces with the currently displayed image assigned");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, NULL);
 
   /* Mesh */
-  prop = RNA_def_property(srna, "mesh_select_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "selectmode", 1);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Scene_editmesh_select_mode_set");
-  RNA_def_property_ui_text(prop, "Mesh Selection Mode", "Which mesh elements selection works on");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_Scene_editmesh_select_mode_update");
+  prop = api_def_prop(sapi, "mesh_select_mode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "selectmode", 1);
+  api_def_prop_array(prop, 3);
+  api_def_prop_bool_fns(prop, NULL, "api_Scene_editmesh_select_mode_set");
+  api_def_prop_ui_text(prop, "Mesh Selection Mode", "Which mesh elements selection works on");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_Scene_editmesh_select_mode_update");
 
-  prop = RNA_def_property(srna, "vertex_group_weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "vgroup_weight");
-  RNA_def_property_ui_text(prop, "Vertex Group Weight", "Weight to assign in vertex groups");
+  prop = api_def_prop(sapi, "vertex_group_weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "vgroup_weight");
+  api_def_prop_ui_text(prop, "Vertex Group Weight", "Weight to assign in vertex groups");
 
-  prop = RNA_def_property(srna, "use_edge_path_live_unwrap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_mode_live_unwrap", 1);
-  RNA_def_property_ui_text(prop, "Live Unwrap", "Changing edge seams recalculates UV unwrap");
+  prop = api_def_prop(sapi, "use_edge_path_live_unwrap", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_mode_live_unwrap", 1);
+  api_def_prop_ui_text(prop, "Live Unwrap", "Changing edge seams recalculates UV unwrap");
 
-  prop = RNA_def_property(srna, "normal_vector", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_ui_text(prop, "Normal Vector", "Normal Vector used to copy, add or multiply");
-  RNA_def_property_ui_range(prop, -10000.0, 10000.0, 1, 3);
+  prop = api_def_prop(sapi, "normal_vector", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_ui_text(prop, "Normal Vector", "Normal Vector used to copy, add or multiply");
+  api_def_prop_ui_range(prop, -10000.0, 10000.0, 1, 3);
 
   /* Unified Paint Settings */
-  prop = RNA_def_property(srna, "unified_paint_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "UnifiedPaintSettings");
-  RNA_def_property_ui_text(prop, "Unified Paint Settings", NULL);
+  prop = api_def_prop(sapi, "unified_paint_settings", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "UnifiedPaintSettings");
+  api_def_prop_ui_text(prop, "Unified Paint Settings", NULL);
 
   /* Curve Paint Settings */
-  prop = RNA_def_property(srna, "curve_paint_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "CurvePaintSettings");
-  RNA_def_property_ui_text(prop, "Curve Paint Settings", NULL);
+  prop = api_def_prop(sapi, "curve_paint_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "CurvePaintSettings");
+  api_def_prop_ui_text(prop, "Curve Paint Settings", NULL);
 
   /* Mesh Statistics */
-  prop = RNA_def_property(srna, "statvis", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "MeshStatVis");
-  RNA_def_property_ui_text(prop, "Mesh Statistics Visualization", NULL);
+  prop = api_def_prop(sapi, "statvis", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "MeshStatVis");
+  api_def_prop_ui_text(prop, "Mesh Statistics Visualization", NULL);
 
   /* CurveProfile */
-  prop = RNA_def_property(srna, "custom_bevel_profile_preset", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "custom_bevel_profile_preset");
-  RNA_def_property_struct_type(prop, "CurveProfile");
-  RNA_def_property_ui_text(prop, "Curve Profile Widget", "Used for defining a profile's path");
+  prop = api_def_prop(sapi, "custom_bevel_profile_preset", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "custom_bevel_profile_preset");
+  api_def_prop_struct_type(prop, "CurveProfile");
+  api_def_prop_ui_text(prop, "Curve Profile Widget", "Used for defining a profile's path");
 
   /* Sequencer tool settings */
-  prop = RNA_def_property(srna, "sequencer_tool_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "SequencerToolSettings");
-  RNA_def_property_ui_text(prop, "Sequencer Tool Settings", NULL);
+  prop = api_def_prop(sapi, "seq_tool_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "SeqToolSettings");
+  api_def_prop_ui_text(prop, "Sequencer Tool Settings", NULL);
 }
 
-static void rna_def_sequencer_tool_settings(BlenderRNA *brna)
+static void api_def_seq_tool_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-
-  static const EnumPropertyItem scale_fit_methods[] = {
+  EnumPropItem scale_fit_methods[] = {
       {SEQ_SCALE_TO_FIT, "FIT", 0, "Scale to Fit", "Scale image to fit within the canvas"},
       {SEQ_SCALE_TO_FILL, "FILL", 0, "Scale to Fill", "Scale image to completely fill the canvas"},
       {SEQ_STRETCH_TO_FILL, "STRETCH", 0, "Stretch to Fill", "Stretch image to fill the canvas"},
@@ -3751,7 +3747,7 @@ static void rna_def_sequencer_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem scale_overlap_modes[] = {
+  static const EnumPropItem scale_overlap_modes[] = {
       {SEQ_OVERLAP_EXPAND, "EXPAND", 0, "Expand", "Move strips so transformed strips fit"},
       {SEQ_OVERLAP_OVERWRITE,
        "OVERWRITE",
@@ -3766,7 +3762,7 @@ static void rna_def_sequencer_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem pivot_points[] = {
+  static const EnumPropItem pivot_points[] = {
       {V3D_AROUND_CENTER_BOUNDS, "CENTER", ICON_PIVOT_BOUNDBOX, "Bounding Box Center", ""},
       {V3D_AROUND_CENTER_MEDIAN, "MEDIAN", ICON_PIVOT_MEDIAN, "Median Point", ""},
       {V3D_AROUND_CURSOR, "CURSOR", ICON_PIVOT_CURSOR, "2D Cursor", "Pivot around the 2D cursor"},
@@ -3778,61 +3774,61 @@ static void rna_def_sequencer_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
 
   };
-  srna = RNA_def_struct(brna, "SequencerToolSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_SequencerToolSettings_path");
-  RNA_def_struct_ui_text(srna, "Sequencer Tool Settings", "");
+  sapi = api_def_struct(dapi, "SeqToolSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_SeqToolSettings_path");
+  api_def_struct_ui_text(sapi, "Seq Tool Settings", "");
 
   /* Add strip settings. */
-  prop = RNA_def_property(srna, "fit_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, scale_fit_methods);
-  RNA_def_property_ui_text(prop, "Fit Method", "Scale fit method");
+  prop = api_def_prop(sapi, "fit_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, scale_fit_methods);
+  api_def_prop_ui_text(prop, "Fit Method", "Scale fit method");
 
   /* Transform snapping. */
-  prop = RNA_def_property(srna, "snap_to_current_frame", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_mode", SEQ_SNAP_TO_CURRENT_FRAME);
-  RNA_def_property_ui_text(prop, "Current Frame", "Snap to current frame");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "snap_to_current_frame", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_mode", SEQ_SNAP_TO_CURRENT_FRAME);
+  api_def_prop_ui_text(prop, "Current Frame", "Snap to current frame");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "snap_to_hold_offset", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_mode", SEQ_SNAP_TO_STRIP_HOLD);
-  RNA_def_property_ui_text(prop, "Hold Offset", "Snap to strip hold offsets");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
+  prop = api_def_prop(sapi, "snap_to_hold_offset", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_mode", SEQ_SNAP_TO_STRIP_HOLD);
+  api_def_prop_ui_text(prop, "Hold Offset", "Snap to strip hold offsets");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "snap_ignore_muted", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_MUTED);
-  RNA_def_property_ui_text(prop, "Ignore Muted Strips", "Don't snap to hidden strips");
+  prop = api_def_prop(sapi, "snap_ignore_muted", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypr(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_MUTED);
+  api_def_prop_ui_text(prop, "Ignore Muted Strips", "Don't snap to hidden strips");
 
-  prop = RNA_def_property(srna, "snap_ignore_sound", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_SOUND);
-  RNA_def_property_ui_text(prop, "Ignore Sound Strips", "Don't snap to sound strips");
+  prop = api_def_prop(sapi, "snap_ignore_sound", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stupe(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_SOUND);
+  api_def_prop_ui_text(prop, "Ignore Sound Strips", "Don't snap to sound strips");
 
-  prop = RNA_def_property(srna, "use_snap_current_frame_to_strips", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "snap_flag", SEQ_SNAP_CURRENT_FRAME_TO_STRIPS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_snap_current_frame_to_strips", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SEQ_SNAP_CURRENT_FRAME_TO_STRIPS);
+  api_def_prop_ui_text(
       prop, "Snap Current Frame to Strips", "Snap current frame to strip start or end");
 
-  prop = RNA_def_property(srna, "snap_distance", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "snap_distance");
-  RNA_def_property_int_default(prop, 15);
-  RNA_def_property_ui_range(prop, 0, 50, 1, 1);
-  RNA_def_property_ui_text(prop, "Snapping Distance", "Maximum distance for snapping in pixels");
+  prop = api_def_prop(sapi, "snap_distance", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "snap_distance");
+  api_def_prop_int_default(prop, 15);
+  api_def_prop_ui_range(prop, 0, 50, 1, 1);
+  api_def_prop_ui_text(prop, "Snapping Distance", "Maximum distance for snapping in pixels");
 
   /* Transform overlap handling. */
-  prop = RNA_def_property(srna, "overlap_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, scale_overlap_modes);
-  RNA_def_property_ui_text(prop, "Overlap Mode", "How to resolve overlap after transformation");
+  prop = api_def_prop(sapi, "overlap_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, scale_overlap_modes);
+  api_def_prop_ui_text(prop, "Overlap Mode", "How to resolve overlap after transformation");
 
-  prop = RNA_def_property(srna, "pivot_point", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, pivot_points);
-  RNA_def_property_ui_text(prop, "Pivot Point", "Rotation or scaling pivot point");
+  prop = api_def_prop(sapi, "pivot_point", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, pivot_points);
+  api_def_prop_ui_text(prop, "Pivot Point", "Rotation or scaling pivot point");
 }
 
-static void rna_def_unified_paint_settings(BlenderRNA *brna)
+static void api_def_unified_paint_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem brush_size_unit_items[] = {
+  static const EnumPropItem brush_size_unit_items[] = {
       {0, "VIEW", 0, "View", "Measure brush size relative to the view"},
       {UNIFIED_PAINT_BRUSH_LOCK_SIZE,
        "SCENE",
@@ -3842,188 +3838,188 @@ static void rna_def_unified_paint_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "UnifiedPaintSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_UnifiedPaintSettings_path");
-  RNA_def_struct_ui_text(
-      srna, "Unified Paint Settings", "Overrides for some of the active brush's settings");
+  sapi = api_def_struct(dapi, "UnifiedPaintSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_UnifiedPaintSettings_path");
+  api_def_struct_ui_text(
+      sapi, "Unified Paint Settings", "Overrides for some of the active brush's settings");
 
   /* high-level flags to enable or disable unified paint settings */
-  prop = RNA_def_property(srna, "use_unified_size", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", UNIFIED_PAINT_SIZE);
-  RNA_def_property_ui_text(prop,
-                           "Use Unified Radius",
-                           "Instead of per-brush radius, the radius is shared across brushes");
+  prop = api_def_prop(sapi, "use_unified_size", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", UNIFIED_PAINT_SIZE);
+  api_def_prop_ui_text(prop,
+                       "Use Unified Radius",
+                       "Instead of per-brush radius, the radius is shared across brushes");
 
-  prop = RNA_def_property(srna, "use_unified_strength", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", UNIFIED_PAINT_ALPHA);
-  RNA_def_property_ui_text(prop,
-                           "Use Unified Strength",
-                           "Instead of per-brush strength, the strength is shared across brushes");
+  prop = api_def_prop(sapi, "use_unified_strength", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", UNIFIED_PAINT_ALPHA);
+  api_def_prop_ui_text(prop,
+                       "Use Unified Strength",
+                       "Instead of per-brush strength, the strength is shared across brushes");
 
-  prop = RNA_def_property(srna, "use_unified_weight", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", UNIFIED_PAINT_WEIGHT);
-  RNA_def_property_ui_text(prop,
-                           "Use Unified Weight",
-                           "Instead of per-brush weight, the weight is shared across brushes");
+  prop = api_def_prop(sapi, "use_unified_weight", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", UNIFIED_PAINT_WEIGHT);
+  api_def_prop_ui_text(prop,
+                       "Use Unified Weight",
+                       "Instead of per-brush weight, the weight is shared across brushes");
 
-  prop = RNA_def_property(srna, "use_unified_color", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", UNIFIED_PAINT_COLOR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_unified_color", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", UNIFIED_PAINT_COLOR);
+  api_def_prop_ui_text(
       prop, "Use Unified Color", "Instead of per-brush color, the color is shared across brushes");
 
   /* unified paint settings that override the equivalent settings
    * from the active brush */
-  prop = RNA_def_property(srna, "size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_funcs(prop, NULL, "rna_UnifiedPaintSettings_size_set", NULL);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
-  RNA_def_property_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
-  RNA_def_property_ui_text(prop, "Radius", "Radius of the brush");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
+  prop = api_def_prop(sapi, "size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_fns(prop, NULL, "api_UnifiedPaintSettings_size_set", NULL);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
+  api_def_prop_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
+  api_def_prop_ui_text(prop, "Radius", "Radius of the brush");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_radius_update");
 
-  prop = RNA_def_property(srna, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_funcs(
-      prop, NULL, "rna_UnifiedPaintSettings_unprojected_radius_set", NULL);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 0.001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001, 1, 1, -1);
-  RNA_def_property_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
+  prop = api_def_prop(sapi, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
+  aoi_def_prop_float_fns(
+      prop, NULL, "api_UnifiedPaintSettings_unprojected_radius_set", NULL);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_range(prop, 0.001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001, 1, 1, -1);
+  api_def_prop_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_radius_update");
 
-  prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "alpha");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "alpha");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(
       prop, "Strength", "How powerful the effect of the brush is when applied");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_update");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_update");
 
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "weight");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Weight", "Weight to assign in vertex groups");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_update");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "weight");
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
+  api_def_prop_ui_text(prop, "Weight", "Weight to assign in vertex groups");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_update");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "rgb");
-  RNA_def_property_ui_text(prop, "Color", "");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_update");
+  prop = api_def_prop(dapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "rgb");
+  api_def_prop_ui_text(prop, "Color", "");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_update");
 
-  prop = RNA_def_property(srna, "secondary_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "secondary_rgb");
-  RNA_def_property_ui_text(prop, "Secondary Color", "");
-  RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_update");
+  prop = api_def_prop(sapi, "secondary_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_sdna(prop, NULL, "secondary_rgb");
+  api_def_prop_ui_text(prop, "Secondary Color", "");
+  api_def_prop_update(prop, 0, "api_UnifiedPaintSettings_update");
 
-  prop = RNA_def_property(srna, "use_locked_size", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, brush_size_unit_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_locked_size", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, brush_size_unit_items);
+  api_def_prop_ui_text(
       prop, "Radius Unit", "Measure brush size relative to the view or the scene");
 }
 
-static void rna_def_curve_paint_settings(BlenderRNA *brna)
+static void api_def_curve_paint_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "CurvePaintSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_CurvePaintSettings_path");
-  RNA_def_struct_ui_text(srna, "Curve Paint Settings", "");
+  sapi = api_def_struct(dapi, "CurvePaintSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_CurvePaintSettings_path");
+  api_def_struct_ui_text(sapi, "Curve Paint Settings", "");
 
-  static const EnumPropertyItem curve_type_items[] = {
+  static const EnumPropItem curve_type_items[] = {
       {CU_POLY, "POLY", 0, "Poly", ""},
       {CU_BEZIER, "BEZIER", 0, "Bezier", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "curve_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "curve_type");
-  RNA_def_property_enum_items(prop, curve_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Type of curve to use for new strokes");
+  prop = api_def_prop(sapi, "curve_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "curve_type");
+  api_def_prop_enum_items(prop, curve_type_items);
+  api_def_prop_ui_text(prop, "Type", "Type of curve to use for new strokes");
 
-  prop = RNA_def_property(srna, "use_corners_detect", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CURVE_PAINT_FLAG_CORNERS_DETECT);
-  RNA_def_property_ui_text(prop, "Detect Corners", "Detect corners and use non-aligned handles");
+  prop = api_def_prop(sapi, "use_corners_detect", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CURVE_PAINT_FLAG_CORNERS_DETECT);
+  api_def_prop_ui_text(prop, "Detect Corners", "Detect corners and use non-aligned handles");
 
-  prop = RNA_def_property(srna, "use_pressure_radius", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CURVE_PAINT_FLAG_PRESSURE_RADIUS);
-  RNA_def_property_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
-  RNA_def_property_ui_text(prop, "Use Pressure", "Map tablet pressure to curve radius");
+  prop = api_def_prop(sapi, "use_pressure_radius", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CURVE_PAINT_FLAG_PRESSURE_RADIUS);
+  api_def_prop_ui_icon(prop, ICON_STYLUS_PRESSURE, 0);
+  api_def_prop_ui_text(prop, "Use Pressure", "Map tablet pressure to curve radius");
 
-  prop = RNA_def_property(srna, "use_stroke_endpoints", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CURVE_PAINT_FLAG_DEPTH_STROKE_ENDPOINTS);
-  RNA_def_property_ui_text(prop, "Only First", "Use the start of the stroke for the depth");
+  prop = api_def_prop(sapi, "use_stroke_endpoints", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CURVE_PAINT_FLAG_DEPTH_STROKE_ENDPOINTS);
+  api_def_prop_ui_text(prop, "Only First", "Use the start of the stroke for the depth");
 
-  prop = RNA_def_property(srna, "use_offset_absolute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", CURVE_PAINT_FLAG_DEPTH_STROKE_OFFSET_ABS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_offset_absolute", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", CURVE_PAINT_FLAG_DEPTH_STROKE_OFFSET_ABS);
+  api_def_prop_ui_text(
       prop, "Absolute Offset", "Apply a fixed offset (don't scale by the radius)");
 
-  prop = RNA_def_property(srna, "error_threshold", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_text(prop, "Tolerance", "Allow deviation for a smoother, less precise line");
+  prop = api_def_prop(sapi, "error_threshold", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 100);
+  api_def_prop_ui_text(prop, "Tolerance", "Allow deviation for a smoother, less precise line");
 
-  prop = RNA_def_property(srna, "fit_method", PROP_ENUM, PROP_PIXEL);
-  RNA_def_property_enum_sdna(prop, NULL, "fit_method");
-  RNA_def_property_enum_items(prop, rna_enum_curve_fit_method_items);
-  RNA_def_property_ui_text(prop, "Method", "Curve fitting method");
+  prop = api_def_prop(sapi, "fit_method", PROP_ENUM, PROP_PIXEL);
+  api_def_prop_enum_stype(prop, NULL, "fit_method");
+  api_def_prop_enum_items(prop, api_enum_curve_fit_method_items);
+  api_def_prop_ui_text(prop, "Method", "Curve fitting method");
 
-  prop = RNA_def_property(srna, "corner_angle", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, 0, M_PI);
-  RNA_def_property_ui_text(prop, "Corner Angle", "Angles above this are considered corners");
+  prop = api_def_prop(sapi, "corner_angle", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, 0, M_PI);
+  api_def_prop_ui_text(prop, "Corner Angle", "Angles above this are considered corners");
 
-  prop = RNA_def_property(srna, "radius_min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 100.0);
-  RNA_def_property_ui_range(prop, 0.0f, 10.0, 10, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "radius_min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 100.0);
+  api_def_prop_ui_range(prop, 0.0f, 10.0, 10, 2);
+  api_def_prop_ui_text(
       prop,
       "Radius Min",
       "Minimum radius when the minimum pressure is applied (also the minimum when tapering)");
 
-  prop = RNA_def_property(srna, "radius_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 100.0);
-  RNA_def_property_ui_range(prop, 0.0f, 10.0, 10, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "radius_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 100.0);
+  api_def_prop_ui_range(prop, 0.0f, 10.0, 10, 2);
+  api_def_prop_ui_text(
       prop,
       "Radius Max",
       "Radius to use when the maximum pressure is applied (or when a tablet isn't used)");
 
-  prop = RNA_def_property(srna, "radius_taper_start", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0, 1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "radius_taper_start", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0.0f, 1.0, 1, 2);
+  api_def_prop_ui_text(
       prop, "Radius Min", "Taper factor for the radius of each point along the curve");
 
-  prop = RNA_def_property(srna, "radius_taper_end", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 10.0);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0, 1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "radius_taper_end", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 10.0);
+  api_def_prop_ui_range(prop, 0.0f, 1.0, 1, 2);
+  api_def_prop_ui_text(
       prop, "Radius Max", "Taper factor for the radius of each point along the curve");
 
-  prop = RNA_def_property(srna, "surface_offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, -10.0, 10.0);
-  RNA_def_property_ui_range(prop, -1.0f, 1.0, 1, 2);
-  RNA_def_property_ui_text(prop, "Offset", "Offset the stroke from the surface");
+  prop = api_def_prop(sapi, "surface_offset", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, -10.0, 10.0);
+  api_def_prop_ui_range(prop, -1.0f, 1.0, 1, 2);
+  api_def_prop_ui_text(prop, "Offset", "Offset the stroke from the surface");
 
-  static const EnumPropertyItem depth_mode_items[] = {
+  static const EnumPropItem depth_mode_items[] = {
       {CURVE_PAINT_PROJECT_CURSOR, "CURSOR", 0, "Cursor", ""},
       {CURVE_PAINT_PROJECT_SURFACE, "SURFACE", 0, "Surface", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "depth_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "depth_mode");
-  RNA_def_property_enum_items(prop, depth_mode_items);
-  RNA_def_property_ui_text(prop, "Depth", "Method of projecting depth");
+  prop = api_def_prop(sapi, "depth_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "depth_mode");
+  api_def_prop_enum_items(prop, depth_mode_items);
+  api_def_prop_ui_text(prop, "Depth", "Method of projecting depth");
 
-  static const EnumPropertyItem surface_plane_items[] = {
+  static const EnumPropItem surface_plane_items[] = {
       {CURVE_PAINT_SURFACE_PLANE_NORMAL_VIEW,
        "NORMAL_VIEW",
        0,
@@ -4042,18 +4038,18 @@ static void rna_def_curve_paint_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "surface_plane", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "surface_plane");
-  RNA_def_property_enum_items(prop, surface_plane_items);
-  RNA_def_property_ui_text(prop, "Plane", "Plane for projected stroke");
+  prop = api_def_prop(sapi, "surface_plane", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "surface_plane");
+  api_def_prop_enum_items(prop, surface_plane_items);
+  api_def_prop_ui_text(prop, "Plane", "Plane for projected stroke");
 }
 
-static void rna_def_statvis(BlenderRNA *brna)
+static void api_def_statvis(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem stat_type[] = {
+  static const EnumPropItem stat_type[] = {
       {SCE_STATVIS_OVERHANG, "OVERHANG", 0, "Overhang", ""},
       {SCE_STATVIS_THICKNESS, "THICKNESS", 0, "Thickness", ""},
       {SCE_STATVIS_INTERSECT, "INTERSECT", 0, "Intersect", ""},
@@ -4062,279 +4058,280 @@ static void rna_def_statvis(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MeshStatVis", NULL);
-  RNA_def_struct_path_func(srna, "rna_MeshStatVis_path");
-  RNA_def_struct_ui_text(srna, "Mesh Visualize Statistics", "");
+  sapi = api_def_struct(dapi, "MeshStatVis", NULL);
+  api_def_struct_path_fn(sapi, "api_MeshStatVis_path");
+  api_def_struct_ui_text(sapi, "Mesh Visualize Statistics", "");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, stat_type);
-  RNA_def_property_ui_text(prop, "Type", "Type of data to visualize/check");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(spi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, stat_type);
+  api_def_prop_ui_text(prop, "Type", "Type of data to visualize/check");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
   /* overhang */
-  prop = RNA_def_property(srna, "overhang_min", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "overhang_min");
-  RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Overhang Min", "Minimum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "overhang_min", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "overhang_min");
+  api_def_prop_range(prop, 0.0f, DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Overhang Min", "Minimum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "overhang_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "overhang_max");
-  RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Overhang Max", "Maximum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "overhang_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "overhang_max");
+  api_def_prop_range(prop, 0.0f, DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Overhang Max", "Maximum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "overhang_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "overhang_axis");
-  RNA_def_property_enum_items(prop, rna_enum_object_axis_items);
-  RNA_def_property_ui_text(prop, "Axis", "");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "overhang_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "overhang_axis");
+  api_def_prop_enum_items(prop, api_enum_object_axis_items);
+  api_def_prop_ui_text(prop, "Axis", "");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
   /* thickness */
-  prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "thickness_min");
-  RNA_def_property_range(prop, 0.0f, 1000.0);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Thickness Min", "Minimum for measuring thickness");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "thickness_min", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "thickness_min");
+  api_def_prop_range(prop, 0.0f, 1000.0);
+  api_def_prop_ui_range(prop, 0.0f, 100.0, 0.001, 3);
+  api_def_prop_ui_text(prop, "Thickness Min", "Minimum for measuring thickness");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "thickness_max");
-  RNA_def_property_range(prop, 0.0f, 1000.0);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0, 0.001, 3);
-  RNA_def_property_ui_text(prop, "Thickness Max", "Maximum for measuring thickness");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = aoi_def_prop(sapi, "thickness_max", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "thickness_max");
+  api_def_prop_range(prop, 0.0f, 1000.0);
+  api_def_prop_ui_range(prop, 0.0f, 100.0, 0.001, 3);
+  api_def_prop_ui_text(prop, "Thickness Max", "Maximum for measuring thickness");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "thickness_samples", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "thickness_samples");
-  RNA_def_property_range(prop, 1, 32);
-  RNA_def_property_ui_text(prop, "Samples", "Number of samples to test per face");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "thickness_samples", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "thickness_samples");
+  api_def_prop_range(prop, 1, 32);
+  api_def_prop_ui_text(prop, "Samples", "Number of samples to test per face");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
   /* distort */
-  prop = RNA_def_property(srna, "distort_min", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "distort_min");
-  RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Distort Min", "Minimum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "distort_min", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "distort_min");
+  api_def_prop_range(prop, 0.0f, DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Distort Min", "Minimum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "distort_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "distort_max");
-  RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Distort Max", "Maximum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "distort_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "distort_max");
+  api_def_prop_range(prop, 0.0f, DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, 0.0f, DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Distort Max", "Maximum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
   /* sharp */
-  prop = RNA_def_property(srna, "sharp_min", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "sharp_min");
-  RNA_def_property_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Distort Min", "Minimum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "sharp_min", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "sharp_min");
+  api_def_prop_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Distort Min", "Minimum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 
-  prop = RNA_def_property(srna, "sharp_max", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "sharp_max");
-  RNA_def_property_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
-  RNA_def_property_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 10, 3);
-  RNA_def_property_ui_text(prop, "Distort Max", "Maximum angle to display");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+  prop = api_def_prop(sapi, "sharp_max", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "sharp_max");
+  api_def_prop_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
+  api_def_prop_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 10, 3);
+  api_def_prop_ui_text(prop, "Distort Max", "Maximum angle to display");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_update(prop, 0, "api_EditMesh_update");
 }
 
-static void rna_def_unit_settings(BlenderRNA *brna)
+static void api_def_unit_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem unit_systems[] = {
+  static const EnumPropItem unit_systems[] = {
       {USER_UNIT_NONE, "NONE", 0, "None", ""},
       {USER_UNIT_METRIC, "METRIC", 0, "Metric", ""},
       {USER_UNIT_IMPERIAL, "IMPERIAL", 0, "Imperial", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem rotation_units[] = {
+  static const EnumPropItem rotation_units[] = {
       {0, "DEGREES", 0, "Degrees", "Use degrees for measuring angles and rotations"},
       {USER_UNIT_ROT_RADIANS, "RADIANS", 0, "Radians", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "UnitSettings", NULL);
-  RNA_def_struct_ui_text(srna, "Unit Settings", "");
-  RNA_def_struct_nested(brna, srna, "Scene");
-  RNA_def_struct_path_func(srna, "rna_UnitSettings_path");
+  sapi = api_def_struct(dapi, "UnitSettings", NULL);
+  api_def_struct_ui_text(sapi, "Unit Settings", "");
+  api_def_struct_nested(dapi, sapi, "Scene");
+  api_def_struct_path_fn(sapi, "api_UnitSettings_path");
 
   /* Units */
-  prop = RNA_def_property(srna, "system", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, unit_systems);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "system", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, unit_systems);
+  api_def_prop_ui_text(
       prop, "Unit System", "The unit system to use for user interface controls");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_UnitSettings_system_update");
+  api_def_prop_update(prop, NC_WINDOW, "api_UnitSettings_system_update");
 
-  prop = RNA_def_property(srna, "system_rotation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rotation_units);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "system_rotation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, rotation_units);
+  api_def_prop_ui_text(
       prop, "Rotation Units", "Unit to use for displaying/editing rotation values");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "scale_length", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "scale_length", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_ui_text(
       prop,
       "Unit Scale",
       "Scale to use when converting between Blender units and dimensions."
       " When working at microscopic or astronomical scale, a small or large unit scale"
       " respectively can be used to avoid numerical precision problems");
-  RNA_def_property_range(prop, 1e-9f, 1e+9f);
-  RNA_def_property_ui_range(prop, 0.001, 100.0, 0.1, 6);
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_range(prop, 1e-9f, 1e+9f);
+  api_def_prop_ui_range(prop, 0.001, 100.0, 0.1, 6);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "use_separate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_UNIT_OPT_SPLIT);
-  RNA_def_property_ui_text(prop, "Separate Units", "Display units in pairs (e.g. 1m 0cm)");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "use_separate", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_UNIT_OPT_SPLIT);
+  api_def_prop_ui_text(prop, "Separate Units", "Display units in pairs (e.g. 1m 0cm)");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "length_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, DummyRNA_DEFAULT_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_UnitSettings_length_unit_itemf");
-  RNA_def_property_ui_text(prop, "Length Unit", "Unit that will be used to display length values");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "length_unit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, DummyApi_DEFAULT_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_UnitSettings_length_unit_itemf");
+  api_def_prop_ui_text(prop, "Length Unit", "Unit that will be used to display length values");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "mass_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, DummyRNA_DEFAULT_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_UnitSettings_mass_unit_itemf");
-  RNA_def_property_ui_text(prop, "Mass Unit", "Unit that will be used to display mass values");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "mass_unit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, DummyApi_DEFAULT_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_UnitSettings_mass_unit_itemf");
+  api_def_prop_ui_text(prop, "Mass Unit", "Unit that will be used to display mass values");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "time_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, DummyRNA_DEFAULT_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_UnitSettings_time_unit_itemf");
-  RNA_def_property_ui_text(prop, "Time Unit", "Unit that will be used to display time values");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  prop = api_def_prop(sapi, "time_unit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, DummyApi_DEFAULT_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "rna_UnitSettings_time_unit_itemf");
+  api_def_prop_ui_text(prop, "Time Unit", "Unit that will be used to display time values");
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "temperature_unit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, DummyRNA_DEFAULT_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_UnitSettings_temperature_unit_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "temperature_unit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, DummyApi_DEFAULT_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_UnitSettings_temperature_unit_itemf");
+  api_def_prop_ui_text(
       prop, "Temperature Unit", "Unit that will be used to display temperature values");
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 }
 
-static void rna_def_view_layer_eevee(BlenderRNA *brna)
+static void api_def_view_layer_eevee(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  srna = RNA_def_struct(brna, "ViewLayerEEVEE", NULL);
-  RNA_def_struct_path_func(srna, "rna_ViewLayerEEVEE_path");
-  RNA_def_struct_ui_text(srna, "Eevee Settings", "View layer settings for Eevee");
+  ApiStruct *sapi;
+  ApiProp *prop;
+  sapi = api_def_struct(dapi, "ViewLayerEEVEE", NULL);
+  api_def_struct_path_fn(sapi, "api_ViewLayerEEVEE_path");
+  api_def_struct_ui_text(sapi, "Eevee Settings", "View layer settings for Eevee");
 
-  prop = RNA_def_property(srna, "use_pass_volume_direct", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "render_passes", EEVEE_RENDER_PASS_VOLUME_LIGHT);
-  RNA_def_property_ui_text(prop, "Volume Light", "Deliver volume direct light pass");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
+  
+  prop = api_def_prop(sapi, "use_pass_volume_direct", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "render_passes", EEVEE_RENDER_PASS_VOLUME_LIGHT);
+  api_def_prop_ui_text(prop, "Volume Light", "Deliver volume direct light pass");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
 
-  prop = RNA_def_property(srna, "use_pass_bloom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "render_passes", EEVEE_RENDER_PASS_BLOOM);
-  RNA_def_property_ui_text(prop, "Bloom", "Deliver bloom pass");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
+  prop = api_def_prop(sapi, "use_pass_bloom", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "render_passes", EEVEE_RENDER_PASS_BLOOM);
+  api_def_prop_ui_text(prop, "Bloom", "Deliver bloom pass");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
 }
 
-static void rna_def_view_layer_aovs(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_view_layer_aovs(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  // PropertyRNA *prop;
+  ApiStruct *sapi;
+  // ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "AOVs");
-  srna = RNA_def_struct(brna, "AOVs", NULL);
-  RNA_def_struct_sdna(srna, "ViewLayer");
-  RNA_def_struct_ui_text(srna, "List of AOVs", "Collection of AOVs");
+  api_def_prop_sapi(cprop, "AOVs");
+  sapi = api_def_struct(dapi, "AOVs", NULL);
+  api_def_struct_stype(sapi, "ViewLayer");
+  api_def_struct_ui_text(sapi, "List of AOVs", "Collection of AOVs");
 
-  func = RNA_def_function(srna, "add", "BKE_view_layer_add_aov");
-  parm = RNA_def_pointer(func, "aov", "AOV", "", "Newly created AOV");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "add", "dune_view_layer_add_aov");
+  parm = api_def_ptr(fn, "aov", "AOV", "", "Newly created AOV");
+  api_def_fn_return(fn, parm);
 
-  /* Defined in `rna_layer.c`. */
-  func = RNA_def_function(srna, "remove", "rna_ViewLayer_remove_aov");
-  parm = RNA_def_pointer(func, "aov", "AOV", "", "AOV to remove");
-  RNA_def_function_ui_description(func, "Remove an AOV");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  /* Defined in `api_layer.c`. */
+  fn = api_def_fn(sapi, "remove", "api_ViewLayer_remove_aov");
+  parm = api_def_ptr(fn, "aov", "AOV", "", "AOV to remove");
+  api_def_fn_ui_description(func, "Remove an AOV");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_view_layer_aov(BlenderRNA *brna)
+static void api_def_view_layer_aov(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  srna = RNA_def_struct(brna, "AOV", NULL);
-  RNA_def_struct_sdna(srna, "ViewLayerAOV");
-  RNA_def_struct_ui_text(srna, "Shader AOV", "");
+  ApiStruct *sapi;
+  ApiProp *prop;
+  sapi = api_def_struct(dapi, "AOV", NULL);
+  api_def_struct_stype(sapi, "ViewLayerAOV");
+  api_def_struct_ui_text(sapi, "Shader AOV", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "name");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Name", "Name of the AOV");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "name");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Name", "Name of the AOV");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "is_valid", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", AOV_CONFLICT);
-  RNA_def_property_ui_text(prop, "Valid", "Is the name of the AOV conflicting");
+  prop = api_def_prop(sapi, "is_valid", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", AOV_CONFLICT);
+  api_def_prop_ui_text(prop, "Valid", "Is the name of the AOV conflicting");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_view_layer_aov_type_items);
-  RNA_def_property_enum_default(prop, AOV_TYPE_COLOR);
-  RNA_def_property_ui_text(prop, "Type", "Data type of the AOV");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_ViewLayer_pass_update");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  apj_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, rna_enum_view_layer_aov_type_items);
+  api_def_prop_enum_default(prop, AOV_TYPE_COLOR);
+  api_def_prop_ui_text(prop, "Type", "Data type of the AOV");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
 }
 
-static void rna_def_view_layer_lightgroups(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_view_layer_lightgroups(DuneApo *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  /*  PropertyRNA *prop; */
+  ApiStruct *sapi;
+  /*  ApiProp *prop; */
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiParam *parm;
 
-  RNA_def_property_srna(cprop, "Lightgroups");
-  srna = RNA_def_struct(brna, "Lightgroups", NULL);
-  RNA_def_struct_sdna(srna, "ViewLayer");
-  RNA_def_struct_ui_text(srna, "List of Lightgroups", "Collection of Lightgroups");
+  api_def_prop_sapi(cprop, "Lightgroups");
+  sapi = api_def_struct(dapi, "Lightgroups", NULL);
+  api_def_struct_stype(sapi, "ViewLayer");
+  api_def_struct_ui_text(sapi, "List of Lightgroups", "Collection of Lightgroups");
 
-  func = RNA_def_function(srna, "add", "BKE_view_layer_add_lightgroup");
-  parm = RNA_def_pointer(func, "lightgroup", "Lightgroup", "", "Newly created Lightgroup");
-  RNA_def_function_return(func, parm);
-  parm = RNA_def_string(func, "name", NULL, 0, "Name", "Name of newly created lightgroup");
+  fn = api_def_fn(sapi, "add", "dune_view_layer_add_lightgroup");
+  parm = api_def_ptr(fb, "lightgroup", "Lightgroup", "", "Newly created Lightgroup");
+  api_def_fn_return(fn, parm);
+  parm = api_def_string(fn, "name", NULL, 0, "Name", "Name of newly created lightgroup");
 }
 
-static void rna_def_view_layer_lightgroup(BlenderRNA *brna)
+static void api_def_view_layer_lightgroup(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  srna = RNA_def_struct(brna, "Lightgroup", NULL);
-  RNA_def_struct_sdna(srna, "ViewLayerLightgroup");
-  RNA_def_struct_ui_text(srna, "Light Group", "");
+  ApiStruct *sapi;
+  ApiProp *prop;
+  sapi = api_def_struct(dapi, "Lightgroup", NULL);
+  api_def_struct_stype(sapi, "ViewLayerLightgroup");
+  api_def_struct_ui_text(sapi, "Light Group", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_string_funcs(prop,
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_string_f s(prop,
                                 "rna_ViewLayerLightgroup_name_get",
                                 "rna_ViewLayerLightgroup_name_length",
                                 "rna_ViewLayerLightgroup_name_set");
