@@ -8,7 +8,7 @@
 #include "types_pen_modifier.h"
 #include "types_pen.h"
 #include "types_mesh.h"
-#include "typed_modifier.h"
+#include "typed_mod.h"
 #include "types_object_force.h"
 #include "types_object.h"
 #include "types_scene.h"
@@ -110,7 +110,7 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Armature",
      "Deform stroke points using armature object"},
     {ePenModType_Hook,
-     "GP_HOOK",
+     PEN_HOOK",
      ICON_HOOK,
      "Hook",
      "Deform stroke points using objects"},
@@ -300,7 +300,7 @@ static void api_PenMod_name_set(ApiPtr *ptr, const char *value)
   }
 
   /* Fix all the animation data which may link to this. */
-  dune_animdata_fix_paths_rename_all(NULL, "grease_pencil_modifiers", oldname, gmd->name);
+  dune_animdata_fix_paths_rename_all(NULL, "pen_mods", oldname, gmd->name);
 }
 
 static char *api_PenMod_path(ApiPtr *ptr)
@@ -312,22 +312,21 @@ static char *api_PenMod_path(ApiPtr *ptr)
   return lib_sprintfN("pen_mods[\"%s\"]", name_esc);
 }
 
-static void api_PenMod_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_PenMod_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ptr->owner_id);
+  wm_main_add_notifier(NC_OBJECT | ND_MOD, ptr->owner_id);
 }
 
-static void api_PenMod_dependency_update(Main *main, Scene *scene, ApiPtr *ptr)
+static void api_PenMod_dep_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   api_PenMod_update(main, scene, ptr);
   graph_relations_tag_update(main);
 }
 
 /* Vertex Groups */
-
 #  define API_PEN_MOD_VGROUP_NAME_SET(_type, _prop) \
-    static void api_##_type##PenMod_##_prop##_set(PointerRNA *ptr, const char *value) \
+    static void api_##_type##PenMod_##_prop##_set(ApiPtr *ptr, const char *value) \
     { \
       _type##PenModData *tmd = (_type##PenModData *)ptr->data; \
       api_object_vgroup_name_set(ptr, value, tmd->_prop, sizeof(tmd->_prop)); \
@@ -353,7 +352,6 @@ API_PEN_MOD_VGROUP_NAME_SET(Shrinkwrap, vgname);
 #  undef API_PEN_MOD_VGROUP_NAME_SET
 
 /* Objects */
-
 static void pen_mod_object_set(Object *self,
                                Object **ob_p,
                                int type,
@@ -363,7 +361,7 @@ static void pen_mod_object_set(Object *self,
 
   if (!self || ob != self) {
     if (!ob || type == OB_EMPTY || ob->type == type) {
-      id_lib_extern((ID *)ob);
+      id_lib_extern((Id *)ob);
       *ob_p = ob;
     }
   }
@@ -455,10 +453,10 @@ static void api_PenOpacity_max_set(ApiPtr *ptr, float value)
   }
 }
 
-static void api_PenMod_opacity_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_PenMod_opacity_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  OpacityPenModData *md = (OpacityGpencilModifierData *)ptr->data;
-  if (md->flag & GP_OPACITY_NORMALIZE) {
+  OpacityPenModData *md = (OpacityPenData *)ptr->data;
+  if (md->flag & PEN_OPACITY_NORMALIZE) {
     if (md->factor > 1.0f) {
       md->factor = 1.0f;
     }
@@ -476,9 +474,9 @@ bool api_PenMod_material_poll(ApiPtr *ptr, ApiPtr value)
 }
 
 static void api_PenMod_material_set(ApiPtr *ptr,
-                                             ApiPtr value,
-                                             Material **ma_target,
-                                             struct ReportList *reports)
+                                    ApiPtr value,
+                                    Material **ma_target,
+                                    struct ReportList *reports)
 {
   Object *ob = (Object *)ptr->owner_id;
   Material *ma = (Material *)value.owner_id;
@@ -538,9 +536,9 @@ static void api_SubdivPenMod_material_set(ApiPtr *ptr,
 
 static void api_SimplifyPenMod_material_set(ApiPtr *ptr,
                                             ApiPtr value,
-                                                     struct ReportList *reports)
+                                            struct ReportList *reports)
 {
-  SimplifyPenModData *smd = (SimplifyGpencilModifierData *)ptr->data;
+  SimplifyPenModData *smd = (SimplifyPenModData *)ptr->data;
   Material **ma_target = &smd->material;
 
   api_PenMod_material_set(ptr, value, ma_target, reports);
@@ -577,8 +575,8 @@ static void api_WeightAnglePenMod_material_set(ApiPtr *ptr,
 }
 
 static void api_OffsetPenMod_material_set(ApiPtr *ptr,
-                                                   ApiPtr value,
-                                                   struct ReportList *reports)
+                                          ApiPtr value,
+                                          struct ReportList *reports)
 {
   OffsetPenModData *omd = (OffsetPenModData *)ptr->data;
   Material **ma_target = &omd->material;
@@ -617,8 +615,8 @@ static void api_ArrayPenMod_material_set(ApiPtr *ptr,
 }
 
 static void api_PenMod_material_set(ApiPtr *ptr,
-                                                    ApiPtr value,
-                                                    struct ReportList *reports)
+                                    ApiPtr value,
+                                    struct ReportList *reports)
 {
   OpacityPenModData *omd = (OpacityPenModData *)ptr->data;
   Material **ma_target = &omd->material;
@@ -627,8 +625,8 @@ static void api_PenMod_material_set(ApiPtr *ptr,
 }
 
 static void api_PenMod_material_set(ApiPtr *ptr,
-                                                    ApiPtr value,
-                                                    struct ReportList *reports)
+                                    ApiPtr value,
+                                    struct ReportList *reports)
 {
   LatticePenModData *lmd = (LatticePenModData *)ptr->data;
   Material **ma_target = &lmd->material;
@@ -809,21 +807,21 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_range(prop, 0.0, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
   api_def_prop_ui_text(prop, "Offset Factor", "Amount of noise to apply");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "factor_strength", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "factor_strength");
   api_def_prop_range(prop, 0.0, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
   api_def_prop_ui_text(prop, "Strength Factor", "Amount of noise to apply to opacity");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = apo_def_prop(sapi, "factor_thickness", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "factor_thickness", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "factor_thickness");
   api_def_prop_range(prop, 0.0, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
   api_def_prop_ui_text(prop, "Thickness Factor", "Amount of noise to apply to thickness");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "factor_uvs", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "factor_uvs");
@@ -832,7 +830,7 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_ui_text(prop, "UV Factor", "Amount of noise to apply uv rotation");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "use_random", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_random", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_USE_RANDOM);
   api_def_prop_ui_text(prop, "Random", "Use random values over time");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -842,12 +840,12 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_float_stype(prop, NULL, "noise_scale");
-  RNA_def_prop_range(prop, 0.0, 1.0);
-  RNA_def_prop_ui_text(prop, "Noise Scale", "Scale the noise frequency");
-  RNA_def_prop_update(prop, 0, "api_PenMod_update");
+  api_def_prop_float_stype(prop, NULL, "noise_scale");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Noise Scale", "Scale the noise frequency");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "noise_offset", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(srna, "noise_offset", PROP_FLOAT, PROP_FACTOR);
   api_def_property_float_sdna(prop, NULL, "noise_offset");
   api_def_property_range(prop, 0.0, FLT_MAX);
   api_def_property_ui_range(prop, 0.0, 100.0, 0.1, 3);
