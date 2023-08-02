@@ -2797,9 +2797,9 @@ static void spi_def_transform_orientation_slot(DuneApi *dapi)
   prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_transform_orientation_items);
   api_def_prop_enum_fns(prop,
-                              "api_TransformOrientationSlot_type_get",
-                              "api_TransformOrientationSlot_type_set",
-                              "api_TransformOrientation_with_scene_itemf");
+                        "api_TransformOrientationSlot_type_get",
+                        "api_TransformOrientationSlot_type_set",
+                        "api_TransformOrientation_with_scene_itemf");
   api_def_prop_ui_text(prop, "Orientation", "Transformation orientation");
   api_def_prop_update(prop, NC_SCENE | ND_TRANSFORM, NULL);
    
@@ -3891,7 +3891,7 @@ static void api_def_unified_paint_settings(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "weight");
-  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.001, 3);
   api_def_prop_ui_text(prop, "Weight", "Weight to assign in vertex groups");
@@ -4290,7 +4290,7 @@ static void api_def_view_layer_aov(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   apj_def_prop_enum_stype(prop, NULL, "type");
-  api_def_prop_enum_items(prop, rna_enum_view_layer_aov_type_items);
+  api_def_prop_enum_items(prop, api_enum_view_layer_aov_type_items);
   api_def_prop_enum_default(prop, AOV_TYPE_COLOR);
   api_def_prop_ui_text(prop, "Type", "Data type of the AOV");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
@@ -4936,7 +4936,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
   api_def_struct_name_prop(sapi, prop);
 
-  prop = api_def_prop(sapi, "show_render", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_render", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", FREESTYLE_LINESET_ENABLED);
   api_def_prop_ui_text(
       prop, "Render", "Enable or disable this line set during stroke rendering");
@@ -4967,7 +4967,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
                        "Select feature edges by image border (less memory consumption)");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
-  prop = api_def_prop(sapi, "select_by_face_marks", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select_by_face_marks", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "selection", FREESTYLE_SEL_FACE_MARK);
   api_def_prop_ui_text(prop, "Selection by Face Marks", "Select feature edges by face marks");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
@@ -5268,7 +5268,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
 static void api_def_bake_data(DuneApi *dapi)
 {
   ApiStruct *sapi;
-  ApjProp *prop;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "BakeSettings", NULL);
   api_def_struct_stype(sapi, "BakeData");
@@ -5551,7 +5551,7 @@ static void api_def_render_views(DuneApi *dapi, ApiProp *cprop)
 
   func = api_def_fn(sapi, "new", "api_RenderView_new");
   api_def_fn_ui_description(fn, "Add a render view to scene");
-  api_def_function_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
   parm = api_def_string(fn, "name", "RenderView", 0, "", "New name for the marker (not unique)");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "result", "SceneRenderView", "", "Newly created render view");
@@ -5638,7 +5638,6 @@ static void api_def_image_format_stereo3d_format(DuneApi *dapi)
  * NOTE: there are some cases where the members act differently when this is
  * used from a scene, video formats can only be selected for render output
  * for example, this is checked by seeing if the ptr->owner_id is a Scene id */
-
 static void api_def_scene_image_format_data(DuneApi *dapi)
 {
 
@@ -6492,8 +6491,8 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Extension", "The file extension used for saving renders");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = api_def_prop(sapi, "is_movie_format", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_fns(prop, "rna_RenderSettings_is_movie_format_get", NULL);
+  prop = api_def_prop(sapi, "is_movie_format", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_RenderSettings_is_movie_format_get", NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Movie Format", "When true the format is a movie");
   prop = api_def_prop(sapi, "use_lock_interface", PROP_BOOLEAN, PROP_NONE);
@@ -7257,14 +7256,14 @@ static void api_def_scene_eevee(DuneApi *dapi)
   prop = api_def_prop(sapi, "gi_cubemap_resolution", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, eevee_shadow_size_items);
   api_def_prop_ui_text(prop, "Cubemap Size", "Size of every cubemaps");
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
 
   prop = api_def_prop(sapi, "gi_visibility_resolution", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, eevee_gi_visibility_size_items);
   api_def_prop_ui_text(prop,
                        "Irradiance Visibility Size",
                        "Size of the shadow map applied to each irradiance sample");
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
 
   prop = api_def_prop(sapi, "gi_irradiance_smoothing", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_range(prop, 0.0f, FLT_MAX);
@@ -7424,14 +7423,14 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Start", "Start distance of the volumetric effect");
   api_def_prop_range(prop, 1e-6f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "volumetric_end", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_ui_text(prop, "End", "End distance of the volumetric effect");
   api_def_prop_range(prop, 1e-6f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "volumetric_tile_size", PROP_ENUM, PROP_NONE);
@@ -7821,107 +7820,107 @@ void api_def_scene(DuneApi *dapi)
   api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
 
   /* Global Settings */
-  prop = api_def_prop(sapi, "camera", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "camera", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_prop_ptr_fns(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
-  RNA_def_prop_ui_text(prop, "Camera", "Active camera, used for rendering the scene");
-  RNA_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_camera_update");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "api_Camera_object_poll");
+  api_def_prop_ui_text(prop, "Camera", "Active camera, used for rendering the scene");
+  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "api_Scene_camera_update");
 
-  prop = api_def_prop(sapi, "background_set", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "background_set", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "set");
   api_def_prop_struct_type(prop, "Scene");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  api_def_prop_ptr_fns(prop, NULL, "rna_Scene_set_set", NULL, NULL);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ptr_fns(prop, NULL, "api_Scene_set_set", NULL, NULL);
   api_def_prop_ui_text(prop, "Background Scene", "Background set scene");
-  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_set_update");
+  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "api_Scene_set_update");
 
-  prop = api_def_prop(sapi, "world", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "world", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_ui_text(prop, "World", "World used for rendering the scene");
-  api_def_prop_translation_cxt(prop, BLT_I18NCONTEXT_ID_WORLD);
-  api_def_prop_update(prop, NC_SCENE | ND_WORLD, "rna_Scene_world_update");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_WORLD);
+  api_def_prop_update(prop, NC_SCENE | ND_WORLD, "api_Scene_world_update");
 
   prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "Object");
   api_def_prop_ui_text(prop, "Objects", "");
   api_def_prop_collection_fns(prop,
-                                    "rna_Scene_objects_begin",
-                                    "rna_Scene_objects_next",
-                                    "rna_Scene_objects_end",
-                                    "rna_Scene_objects_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  rna_def_scene_objects(brna, prop);
+                              "api_Scene_objects_begin",
+                              "api_Scene_objects_next",
+                              "api_Scene_objects_end",
+                              "api_Scene_objects_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_scene_objects(dapi, prop);
 
   /* Frame Range Stuff */
-  prop = RNA_def_property(srna, "frame_current", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "r.cfra");
-  RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
-  RNA_def_property_int_funcs(prop, NULL, "rna_Scene_frame_current_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "frame_current", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "r.cfra");
+  api_def_prop_range(prop, MINAFRAME, MAXFRAME);
+  api_def_prop_int_fns(prop, NULL, "api_Scene_frame_current_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Current Frame",
       "Current frame, to update animation data from python frame_set() instead");
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_frame_update");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "api_Scene_frame_update");
 
-  prop = RNA_def_property(srna, "frame_subframe", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_float_sdna(prop, NULL, "r.subframe");
-  RNA_def_property_ui_text(prop, "Current Subframe", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_frame_update");
+  prop = api_def_prop(sapi, "frame_subframe", PROP_FLOAT, PROP_TIME);
+  api_def_prop_float_stype(prop, NULL, "r.subframe");
+  api_def_prop_ui_text(prop, "Current Subframe", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 2);
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "api_Scene_frame_update");
 
-  prop = RNA_def_property(srna, "frame_float", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_ui_text(prop, "Current Subframe", "");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
-  RNA_def_property_ui_range(prop, MINAFRAME, MAXFRAME, 0.1, 2);
-  RNA_def_property_float_funcs(
-      prop, "rna_Scene_frame_float_get", "rna_Scene_frame_float_set", NULL);
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_frame_update");
+  prop = api_def_prop(sapi, "frame_float", PROP_FLOAT, PROP_TIME);
+  api_def_prop_ui_text(prop, "Current Subframe", "");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, MINAFRAME, MAXFRAME);
+  api_def_prop_ui_range(prop, MINAFRAME, MAXFRAME, 0.1, 2);
+  api_def_prop_float_fns(
+      prop, "api_Scene_frame_float_get", "api_Scene_frame_float_set", NULL);
+  wpi_def_prop_update(prop, NC_SCENE | ND_FRAME, "api_Scene_frame_update");
 
-  prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "r.sfra");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Scene_start_frame_set", NULL);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "Start Frame", "First frame of the playback/rendering range");
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME_RANGE, NULL);
+  prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "r.sfra");
+  api_def_prop_int_fns(prop, NULL, "api_Scene_start_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "Start Frame", "First frame of the playback/rendering range");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME_RANGE, NULL);
 
-  prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "r.efra");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Scene_end_frame_set", NULL);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "End Frame", "Final frame of the playback/rendering range");
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME_RANGE, NULL);
+  prop = api_def_prop(sapi, "frame_end", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "r.efra");
+  api_def_prop_int_fns(prop, NULL, "api_Scene_end_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "End Frame", "Final frame of the playback/rendering range");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME_RANGE, NULL);
 
-  prop = RNA_def_property(srna, "frame_step", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "r.frame_step");
-  RNA_def_property_range(prop, 0, MAXFRAME);
-  RNA_def_property_ui_range(prop, 1, 100, 1, -1);
-  RNA_def_property_ui_text(
-      propRNA_def_property(srna, "frame_current_final", PROP_FLOAT, PROP_TIME);
+  prop = api_def_prop(sapi, "frame_step", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "r.frame_step");
+  api_def_prop_range(prop, 0, MAXFRAME);
+  api_def_prop_ui_range(prop, 1, 100, 1, -1);
+  api_def_prop_ui_text();
+  api_def_prop(sapi, "frame_current_final", PROP_FLOAT, PROP_TIME);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE | PROP_EDITABLE);
   api_def_prop_range(prop, MINAFRAME, MAXFRAME);
-  api_def_property_float_funcs(prop, "rna_Scene_frame_current_final_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  api_def_prop_float_fns(prop, "rna_Scene_frame_current_final_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Current Frame Final", "Current frame with subframe and time remapping applied");
 
-  prop = api_def_property(srna, "lock_frame_selection_to_range", PROP_BOOLEAN, PROP_NONE);
-  _def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_boolean_sdna(prop, NULL, "r.flag", SCER_LOCK_FRAME_SELECTION);
-  RNA_def_prop_ui_text(prop,
-                           "Lock Frame Selection",
-                           "Don't allow frame to be selected with mouse outside of frame range");
+  prop = api_def_prop(sapi, "lock_frame_selection_to_range", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "r.flag", SCER_LOCK_FRAME_SELECTION);
+  api_def_prop_ui_text(prop,
+                       "Lock Frame Selection",
+                       "Don't allow frame to be selected with mouse outside of frame range");
   api_def_prop_update(prop, NC_SCENE | ND_FRAME, NULL);
 
   /* Preview Range (frame-range for UI playback) */
@@ -7942,15 +7941,15 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_int_fns(prop, NULL, "api_Scene_preview_range_start_frame_set", NULL);
   api_def_prop_ui_text(
       prop, "Preview Range Start Frame", "Alternative start frame for UI playback");
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, NULL);
 
   prop = api_def_prop(sapi, "frame_preview_end", PROP_INT, PROP_TIME);
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_int_stype(prop, NULL, "r.pefra");
-  RNA_def_prop_int_fns(prop, NULL, "api_Scene_preview_range_end_frame_set", NULL);
-  RNA_def_prop_ui_text(
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "r.pefra");
+  api_def_prop_int_fns(prop, NULL, "api_Scene_preview_range_end_frame_set", NULL);
+  api_def_prop_ui_text(
       prop, "Preview Range End Frame", "Alternative end frame for UI playback");
-  RNA_def_prop_update(prop, NC_SCENE | ND_FRAME, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, NULL);
 
   /* Sub-frame for motion-blur debug. */
   prop = api_def_prop(sapi, "show_subframe", PROP_BOOL, PROP_NONE);
@@ -7980,7 +7979,7 @@ void api_def_scene(DuneApi *dapi)
   api_def_animdata_common(srna);
 
   /* Readonly Properties */
-  prop = api_def_prop(sapi, "is_nla_tweakmode", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_nla_tweakmode", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", SCE_NLA_EDIT_ON);
   api_def_prop_clear_flag(prop, PROP_EDITABLE); /* DO NOT MAKE THIS EDITABLE, OR NLA EDITOR BREAKS */
   api_def_prop_ui_text(
@@ -8015,13 +8014,13 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "use_nodes", 1);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_ui_text(prop, "Use Nodes", "Enable the compositing node tree");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_use_nodes_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_use_nodes_update");
 
   /* Seq */
-  prop = api_def_prop(sapi, "sequence_editor", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "seq_editor", PROP_POINTER, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "ed");
-  api_def_prop_struct_type(prop, "SequenceEditor");
-  api_def_prop_ui_text(prop, "Sequence Editor", "");
+  api_def_prop_struct_type(prop, "SeqEditor");
+  api_def_prop_ui_text(prop, "Seq Editor", "");
 
   /* Keying Sets */
   prop = api_def_prop(sapi, "keying_sets", PROP_COLLECTION, PROP_NONE);
@@ -8031,104 +8030,105 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_KEYINGSET, NULL);
   api_def_scene_keying_sets(dapi, prop);
 
-  prop = RNA_def_prop(sapi, "keying_sets_all", PROP_COLLECTION, PROP_NONE);
+  prop = api_def_prop(sapi, "keying_sets_all", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_fns(prop,
                               "api_Scene_all_keyingsets_begin",
                               "api_Scene_all_keyingsets_next",
                               "api_iter_list_end",
-                                    "api_iter_list_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   api_def_prop_struct_type(prop, "KeyingSet");
   api_def_prop_ui_text(
       prop,
       "All Keying Sets",
       "All Keying Sets available for use (Builtins and Absolute Keying Sets for this Scene)");
   api_def_prop_update(prop, NC_SCENE | ND_KEYINGSET, NULL);
-  api_def_scene_keying_sets_all(brna, prop);
+  api_def_scene_keying_sets_all(dapi, prop);
 
   /* Rigid Body Simulation */
-  prop = RNA_def_property(srna, "rigidbody_world", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_stype(prop, NULL, "rigidbody_world");
-  RNA_def_property_struct_type(prop, "RigidBodyWorld");
-  RNA_def_property_ui_text(prop, "Rigid Body World", "");
-  RNA_def_property_update(prop, NC_SCENE, "rna_Physics_relations_update");
+  prop = api_def_prop(sapi, "rigidbody_world", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "rigidbody_world");
+  api_def_prop_struct_type(prop, "RigidBodyWorld");
+  api_def_prop_ui_text(prop, "Rigid Body World", "");
+  api_def_prop_update(prop, NC_SCENE, "api_Phys_relations_update");
 
   /* Tool Settings */
-  prop = RNA_def_property(srna, "tool_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "toolsettings");
-  RNA_def_property_struct_type(prop, "ToolSettings");
-  RNA_def_property_ui_text(prop, "Tool Settings", "");
+  prop = api_def_prop(sapi, "tool_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "toolsettings");
+  api_def_prop_struct_type(prop, "ToolSettings");
+  api_def_prop_ui_text(prop, "Tool Settings", "");
 
   /* Unit Settings */
-  prop = RNA_def_property(srna, "unit_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "unit");
-  RNA_def_property_struct_type(prop, "UnitSettings");
-  RNA_def_property_ui_text(prop, "Unit Settings", "Unit editing settings");
+  prop = api_def_prop(sapi, "unit_settings", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "unit");
+  api_def_prop_struct_type(prop, "UnitSettings");
+  api_def_prop_ui_text(prop, "Unit Settings", "Unit editing settings");
 
   /* Physics Settings */
-  prop = RNA_def_property(srna, "gravity", PROP_FLOAT, PROP_ACCELERATION);
-  RNA_def_property_float_sdna(prop, NULL, "physics_settings.gravity");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_range(prop, -200.0f, 200.0f, 1, 2);
-  RNA_def_property_ui_text(prop, "Gravity", "Constant acceleration in a given direction");
-  RNA_def_property_update(prop, 0, "rna_Physics_update");
+  prop = api_def_prop(sapi, "gravity", PROP_FLOAT, PROP_ACCELERATION);
+  api_def_prop_float_stype(prop, NULL, "physics_settings.gravity");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_range(prop, -200.0f, 200.0f, 1, 2);
+  api_def_prop_ui_text(prop, "Gravity", "Constant acceleration in a given direction");
+  api_def_prop_update(prop, 0, "api_Phys_update");
 
-  prop = RNA_def_property(srna, "use_gravity", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "physics_settings.flag", PHYS_GLOBAL_GRAVITY);
-  RNA_def_property_ui_text(prop, "Global Gravity", "Use global gravity for all dynamics");
-  RNA_def_property_update(prop, 0, "rna_Physics_update");
+  prop = api_def_prop(sapi, "use_gravity", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "phys_settings.flag", PHYS_GLOBAL_GRAVITY);
+  api_def_prop_ui_text(prop, "Global Gravity", "Use global gravity for all dynamics");
+  api_def_prop_update(prop, 0, "api_Phys_update");
 
   /* Render Data */
-  prop = RNA_def_property(srna, "render", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "r");
-  RNA_def_property_struct_type(prop, "RenderSettings");
-  RNA_def_property_ui_text(prop, "Render Data", "");
+  prop = api_def_prop(sapi, "render", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "r");
+  api_def_prop_struct_type(prop, "RenderSettings");
+  api_def_prop_ui_text(prop, "Render Data", "");
 
   /* Safe Areas */
-  prop = RNA_def_property(srna, "safe_areas", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "safe_areas");
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "DisplaySafeAreas");
-  RNA_def_property_ui_text(prop, "Safe Areas", "");
+  prop = api_def_prop(sapi, "safe_areas", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_
+      stype(prop, NULL, "safe_areas");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "DisplaySafeAreas");
+  api_def_prop_ui_text(prop, "Safe Areas", "");
 
   /* Markers */
-  prop = RNA_def_property(srna, "timeline_markers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "markers", NULL);
-  RNA_def_property_struct_type(prop, "TimelineMarker");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "timeline_markers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "markers", NULL);
+  api_def_prop_struct_type(prop, "TimelineMarker");
+  api_def_prop_ui_text(
       prop, "Timeline Markers", "Markers used in all timelines for the current scene");
-  rna_def_timeline_markers(brna, prop);
+  api_def_timeline_markers(dapi, prop);
 
   /* Transform Orientations */
-  prop = RNA_def_property(srna, "transform_orientation_slots", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Scene_transform_orientation_slots_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_Scene_transform_orientation_slots_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "TransformOrientationSlot");
-  RNA_def_property_ui_text(prop, "Transform Orientation Slots", "");
+  prop = api_def_prop(sapi, "transform_orientation_slots", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_Scene_transform_orientation_slots_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_Scene_transform_orientation_slots_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "TransformOrientationSlot");
+  api_def_prop_ui_text(prop, "Transform Orientation Slots", "");
 
   /* 3D View Cursor */
-  prop = RNA_def_property(srna, "cursor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "cursor");
-  RNA_def_property_struct_type(prop, "View3DCursor");
-  RNA_def_property_ui_text(prop, "3D Cursor", "");
+  prop = api_def_prop(sapi, "cursor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "cursor");
+  api_def_prop_struct_type(prop, "View3DCursor");
+  api_def_prop_ui_text(prop, "3D Cursor", "");
 
   /* Audio Settings */
-  prop = RNA_def_property(srna, "use_audio", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_Scene_use_audio_get", "rna_Scene_use_audio_set");
+  prop = api_def_property(srna, "use_audio", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(prop, "rna_Scene_use_audio_get", "rna_Scene_use_audio_set");
   RNA_def_property_ui_text(
       prop, "Audio Muted", "Play back of audio from Sequence Editor will be muted");
   RNA_def_property_update(prop, NC_SCENE, "rna_Scene_use_audio_update");
@@ -8157,146 +8157,146 @@ void api_def_scene(DuneApi *dapi)
       prop, "Speed of Sound", "Speed of sound for Doppler effect calculation");
   RNA_def_property_update(prop, NC_SCENE, "rna_Scene_listener_update");
 
-  prop = RNA_def_property(srna, "audio_doppler_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "audio.doppler_factor");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Doppler Factor", "Pitch factor for Doppler effect calculation");
-  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_listener_update");
+  prop = RNA_def_prop(sapi, "audio_doppler_factor", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_stype(prop, NULL, "audio.doppler_factor");
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_range(prop, 0.0, FLT_MAX);
+  RNA_def_prop_ui_text(prop, "Doppler Factor", "Pitch factor for Doppler effect calculation");
+  RNA_def_prop_update(prop, NC_SCENE, "rna_Scene_listener_update");
 
-  prop = RNA_def_property(srna, "audio_distance_model", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "audio.distance_model");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, audio_distance_model_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "audio_distance_model", PROP_ENUM, PROP_NONE);
+  apk_def_prop_enum_bitflag_sdna(prop, NULL, "audio.distance_model");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, audio_distance_model_items);
+  api_def_prop_ui_text(
       prop, "Distance Model", "Distance model for distance attenuation calculation");
-  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_listener_update");
+  api_def_prop_update(prop, NC_SCENE, "api_Scene_listener_update");
 
-  prop = RNA_def_property(srna, "audio_volume", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "audio.volume");
-  RNA_def_property_range(prop, 0.0f, 100.0f);
-  RNA_def_property_ui_text(prop, "Volume", "Audio volume");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
-  RNA_def_property_update(prop, NC_SCENE, NULL);
-  RNA_def_property_update(prop, NC_SCENE, "rna_Scene_volume_update");
+  prop = api_def_prop(sapi, "audio_volume", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "audio.volume");
+  api_def_prop_range(prop, 0.0f, 100.0f);
+  api_def_prop_ui_text(prop, "Volume", "Audio volume");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_SOUND);
+  api_def_prop_update(prop, NC_SCENE, NULL);
+  api_def_prop_update(prop, NC_SCENE, "api_Scene_volume_update");
 
-  func = RNA_def_function(srna, "update_render_engine", "rna_Scene_update_render_engine");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Trigger a render engine update");
+  fn = api_def_fn(sapi, "update_render_engine", "api_Scene_update_render_engine");
+  api_def_fn_flag(fn, FN_NO_SELF | FUNC_USE_MAIN);
+  api_def_fn_ui_description(fn, "Trigger a render engine update");
 
   /* Statistics */
-  func = RNA_def_function(srna, "statistics", "rna_Scene_statistics_string_get");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "view_layer", "ViewLayer", "View Layer", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "statistics", NULL, 0, "Statistics", "");
-  RNA_def_function_return(func, parm);
+  fn = apj_def_fn(sapi, "statistics", "api_Scene_statistics_string_get");
+  api_def_function_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
+  parm = api_def_pointer(fn, "view_layer", "ViewLayer", "View Layer", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "statistics", NULL, 0, "Statistics", "");
+  api_def_fn_return(fn, parm);
 
-  /* Grease Pencil */
-  prop = RNA_def_property(srna, "grease_pencil", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gpd");
-  RNA_def_property_struct_type(prop, "GreasePencil");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, NULL, NULL, "rna_GPencil_datablocks_annotations_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
-      prop, "Annotations", "Grease Pencil data-block used for annotations in the 3D view");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+  /* Pen */
+  prop = api_def_prop(sapi, "dune_pen", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "gpd");
+  api_def_prop_struct_type(prop, "Pen");
+  api_def_prop_ptr_fns(
+      prop, NULL, NULL, NULL, "api_pen_datablocks_annotations_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(
+      prop, "Annotations", "Dune Pen data-block used for annotations in the 3D view");
+  api_def_prop_update(prop, NC_PEN | ND_DATA | NA_EDITED, NULL);
 
   /* active MovieClip */
-  prop = RNA_def_property(srna, "active_clip", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "clip");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "MovieClip");
-  RNA_def_property_ui_text(prop,
-                           "Active Movie Clip",
-                           "Active Movie Clip that can be used by motion tracking constraints "
-                           "or as a camera's background image");
-  RNA_def_property_update(prop, NC_SCENE | ND_DRAW_RENDER_VIEWPORT, NULL);
+  prop = api_def_prop(sapi, "active_clip", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "clip");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "MovieClip");
+  api_def_prop_ui_text(prop,
+                       "Active Movie Clip",
+                       "Active Movie Clip that can be used by motion tracking constraints "
+                       "or as a camera's background image");
+  api_def_prop_update(prop, NC_SCENE | ND_DRAW_RENDER_VIEWPORT, NULL);
 
   /* color management */
-  prop = RNA_def_property(srna, "view_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "view_settings");
-  RNA_def_property_struct_type(prop, "ColorManagedViewSettings");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "view_settings");
+  api_def_prop_struct_type(prop, "ColorManagedViewSettings");
+  api_def_prop_ui_text(
       prop, "View Settings", "Color management settings applied on image before saving");
 
-  prop = RNA_def_property(srna, "display_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "display_settings");
-  RNA_def_property_struct_type(prop, "ColorManagedDisplaySettings");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "display_settings", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "display_settings");
+  api_def_prop_struct_type(prop, "ColorManagedDisplaySettings");
+  api_def_prop_ui_text(
       prop, "Display Settings", "Settings of device saved image would be displayed on");
 
-  prop = RNA_def_property(srna, "sequencer_colorspace_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "sequencer_colorspace_settings");
-  RNA_def_property_struct_type(prop, "ColorManagedSequencerColorspaceSettings");
-  RNA_def_property_ui_text(
-      prop, "Sequencer Color Space Settings", "Settings of color space sequencer is working in");
+  prop = api_def_prop(sapi, "seq_colorspace_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "seq_colorspace_settings");
+  api_def_prop_struct_type(prop, "ColorManagedSeqColorspaceSettings");
+  api_def_prop_ui_text(
+      prop, "Seq Color Space Settings", "Settings of color space sequencer is working in");
 
   /* Layer and Collections */
-  prop = RNA_def_property(srna, "view_layers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "view_layers", NULL);
-  RNA_def_property_struct_type(prop, "ViewLayer");
-  RNA_def_property_ui_text(prop, "View Layers", "");
-  rna_def_view_layers(brna, prop);
+  prop = api_def_prop(sapi, "view_layers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "view_layers", NULL);
+  api_def_prop_struct_type(prop, "ViewLayer");
+  api_def_prop_ui_text(prop, "View Layers", "");
+  api_def_view_layers(brna, prop);
 
-  prop = RNA_def_property(srna, "collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "master_collection");
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "collection", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "master_collection");
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop,
                            "Collection",
                            "Scene root collection that owns all the objects and other collections "
                            "instantiated in the scene");
 
   /* Scene Display */
-  prop = RNA_def_property(srna, "display", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "display");
-  RNA_def_property_struct_type(prop, "SceneDisplay");
-  RNA_def_property_ui_text(prop, "Scene Display", "Scene display settings for 3D viewport");
+  prop = api_def_prop(sapi, "display", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "display");
+  api_def_prop_struct_type(prop, "SceneDisplay");
+  api_def_prop_ui_text(prop, "Scene Display", "Scene display settings for 3D viewport");
 
   /* EEVEE */
-  prop = RNA_def_property(srna, "eevee", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "SceneEEVEE");
-  RNA_def_property_ui_text(prop, "Eevee", "Eevee settings for the scene");
+  prop = api_def_prop(sapi, "eevee", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "SceneEEVEE");
+  api_def_prop_ui_text(prop, "Eevee", "Eevee settings for the scene");
 
   /* Grease Pencil */
-  prop = RNA_def_property(srna, "grease_pencil_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "SceneGpencil");
-  RNA_def_property_ui_text(prop, "Grease Pencil", "Grease Pencil settings for the scene");
+  prop = api_def_prop(sapi, "grease_pencil_settings", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "SceneGpencil");
+  api_def_prop_ui_text(prop, "Grease Pencil", "Grease Pencil settings for the scene");
 
   /* Nestled Data. */
   /* *** Non-Animated *** */
-  RNA_define_animate_sdna(false);
-  rna_def_tool_settings(brna);
-  rna_def_gpencil_interpolate(brna);
-  rna_def_unified_paint_settings(brna);
-  api_def_curve_paint_settings(brna);
-  api_def_sequencer_tool_settings(brna);
-  api_def_statvis(brna);
-  api_def_unit_settings(brna);
-  api_def_scene_image_format_data(brna);
-  api_def_transform_orientation(brna);
-  api_def_transform_orientation_slot(brna);
-  rna_def_view3d_cursor(brna);
-  rna_def_selected_uv_element(brna);
-  rna_def_display_safe_areas(brna);
-  rna_def_scene_display(brna);
-  rna_def_scene_eevee(brna);
-  rna_def_view_layer_aov(brna);
-  rna_def_view_layer_lightgroup(brna);
-  rna_def_view_layer_eevee(brna);
-  rna_def_scene_gpencil(brna);
-  RNA_define_animate_sdna(true);
+  api_define_animate_stype(false);
+  api_def_tool_settings(dapi);
+  api_def_pen_interpolate(dapi);
+  api_def_unified_paint_settings(dapi);
+  api_def_curve_paint_settings(dapi);
+  api_def_seq_tool_settings(dapi);
+  api_def_statvis(dapi);
+  api_def_unit_settings(dapi);
+  api_def_scene_image_format_data(dapi);
+  api_def_transform_orientation(dapi);
+  api_def_transform_orientation_slot(dapi);
+  api_def_view3d_cursor(dapi);
+  api_def_selected_uv_element(dapi);
+  api_def_display_safe_areas(dapi);
+  api_def_scene_display(dapi);
+  api_def_scene_eevee(dapi);
+  api_def_view_layer_aov(dapi);
+  api_def_view_layer_lightgroup(dapi);
+  api_def_view_layer_eevee(dapi);
+  api_def_scene_pen(dapi);
+  api_define_animate_stype(true);
   /* *** Animated *** */
-  rna_def_scene_render_data(brna);
-  rna_def_scene_render_view(brna);
+  api_def_scene_render_data(dapi);
+  api_def_scene_render_view(dapi);
 
   /* Scene API */
-  RNA_api_scene(srna);
+  api_scene(sapi);
 }
 
 #endif
