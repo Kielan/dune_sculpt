@@ -138,7 +138,7 @@ const EnumPropItem api_enum_object_pen_mod_type_items[] = {
      "Change stroke thickness"},
     {0, "", 0, N_("Color"), ""},
     {ePenModType_Color,
-     "GP_COLOR",
+     "PEN_COLOR",
      ICON_MOD_HUE_SATURATION,
      "Hue/Saturation",
      "Apply changes to stroke colors"},
@@ -212,7 +212,7 @@ static const EnumPropItem pen_length_mode_items[] = {
 #  include "types_particle.h"
 
 #  include "dune_cachefile.h"
-#  include "dune_context.h"
+#  include "dune_cxt.h"
 #  include "dune_pen.h"
 #  include "dune_pen_mod.h"
 #  include "dune_object.h"
@@ -1442,7 +1442,7 @@ static void api_def_mod_penoffset(DuneApi *dapi)
   prop = api_def_prop(sapi, "random_scale", PROP_FLOAT, PROP_XYZ);
   api_def_prop_float_stype(prop, NULL, "rnd_scale");
   api_def_prop_ui_text(prop, "Scale", "Value for changes in scale");
-  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
@@ -1681,23 +1681,23 @@ static void api_def_mod_pentime(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_custom_frame_range", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", PEN_TIME_CUSTOM_RANGE);
-  RNA_def_prop_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TIME_CUSTOM_RANGE);
+  api_def_prop_ui_text(
       prop, "Custom Range", "Define a custom range of frames to use in modifier");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencilcolor(BlenderRNA *brna)
+static void api_def_mod_pencolor(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ColorGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Hue/Saturation Modifier", "Change Hue/Saturation modifier");
-  RNA_def_struct_sdna(srna, "ColorGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_TINT);
+  srna = api_def_struct(dapi, "ColorGpencilModifier", "GpencilModifier");
+  RNA_def_struct_ui_text(sapi, "Hue/Saturation Modifier", "Change Hue/Saturation modifier");
+  RNA_def_struct_sdna(sapi, "ColorGpencilModData");
+  RNA_def_struct_ui_icon(sapi, ICON_MOD_TINT);
 
   RNA_define_lib_overridable(true);
 
