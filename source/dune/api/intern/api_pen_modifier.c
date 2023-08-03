@@ -309,7 +309,7 @@ static char *api_PenMod_path(ApiPtr *ptr)
   char name_esc[sizeof(gmd->name) * 2];
 
   lib_str_escape(name_esc, gmd->name, sizeof(name_esc));
-  return lib_sprintfN("pen_mods[\"%s\"]", name_esc);
+  return lib_sprintfn("pen_mods[\"%s\"]", name_esc);
 }
 
 static void api_PenMod_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
@@ -587,7 +587,7 @@ static void api_OffsetPenMod_material_set(ApiPtr *ptr,
                                           ApiPtr value,
                                           struct ReportList *reports)
 {
-  TintPenModData *tmd = (TintOenModData *)ptr->data;
+  TintPenModData *tmd = (TintPenModData *)ptr->data;
   Material **ma_target = &tmd->material;
 
   api_PenMod_material_set(ptr, value, ma_target, reports);
@@ -950,7 +950,7 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_edit_position", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_LOCATION);
   api_def_prop_ui_text(
-      prop, "Affect Position", "The modifier affects the position of the point");
+      prop, "Affect Position", "The mod affects the position of the point");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_edit_strength", PROP_BOOL, PROP_NONE);
@@ -962,13 +962,13 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_edit_thickness", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_THICKNESS);
   api_def_prop_ui_text(
-      prop, "Affect Thickness", "The modifier affects the thickness of the point");
+      prop, "Affect Thickness", "The mod affects the thickness of the point");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_edit_uv", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_UV);
   api_def_prop_ui_text(
-      prop, "Affect UV", "The modifier affects the UV rotation factor of the point");
+      prop, "Affect UV", "The mod affects the UV rotation factor of the point");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
@@ -2158,29 +2158,29 @@ static void api_def_mod_penbuild(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   /* Time Limits */
-  prop = api_def_prop(sapi, "use_restrict_frame_range", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_restrict_frame_range", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_BUILD_RESTRICT_TIME);
   api_def_prop_ui_text(
       prop, "Restrict Frame Range", "Only modify strokes during the specified frame range");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   /* Use percentage */
-  prop = api_def_prop(srna, "use_percentage", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_BUILD_PERCENTAGE);
+  prop = api_def_prop(sapi, "use_percentage", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_BUILD_PERCENTAGE);
   api_def_prop_ui_text(
       prop, "Restrict Visible Points", "Use a percentage factor to determine the visible points");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_pdate");
 
   /* Percentage factor. */
-  prop = RNA_def_property(srna, "percentage_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "percentage_fac");
-  RNA_def_property_ui_text(prop, "Factor", "Defines how much of the stroke is visible");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "percentage_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "percentage_fac");
+  api_def_prop_ui_text(prop, "Factor", "Defines how much of the stroke is visible");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "frame_start", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "start_frame");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "frame_start", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "start_frame");
+  api_def_prop_ui_text(
       prop, "Start Frame", "Start Frame (when Restrict Frame Range is enabled)");
   RNA_def_property_range(prop, MINAFRAMEF, MAXFRAMEF);
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
