@@ -5,7 +5,7 @@
 #include "types_armature.h"
 #include "types_brush.h"
 #include "types_cachefile.h"
-#include "types_pen_modifier.h"
+#include "types_pen_mod.h"
 #include "types_pen.h"
 #include "types_mesh.h"
 #include "typed_mod.h"
@@ -484,8 +484,7 @@ static void api_PenMod_material_set(ApiPtr *ptr,
   if (ma == NULL || dune_pen_object_material_index_get(ob, ma) != -1) {
     id_lib_extern((Id *)ob);
     *ma_target = ma;
-  }
-  else {
+  } else {
     dune_reportf(
         reports,
         RPT_ERROR,
@@ -757,7 +756,7 @@ static void api_DashPenModSegment_name_set(ApiPtr *ptr, const char *value)
 
 static int api_ShrinkwrapPenMod_face_cull_get(ApiPtr *ptr)
 {
-   *swm = (ShrinkwrapPenModData *)ptr->data;
+  *swm = (ShrinkwrapPenModData *)ptr->data;
   return swm->shrink_opts & MOD_SHRINKWRAP_CULL_TARGET_MASK;
 }
 
@@ -831,7 +830,7 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_random", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_USE_RANDOM);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_USE_RANDOM);
   api_def_prop_ui_text(prop, "Random", "Use random values over time");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -845,20 +844,20 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Noise Scale", "Scale the noise frequency");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(srna, "noise_offset", PROP_FLOAT, PROP_FACTOR);
-  api_def_property_float_sdna(prop, NULL, "noise_offset");
-  api_def_property_range(prop, 0.0, FLT_MAX);
-  api_def_property_ui_range(prop, 0.0, 100.0, 0.1, 3);
-  api_def_property_ui_text(prop, "Noise Offset", "Offset the noise along the strokes");
-  api_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "noise_offset", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "noise_offset");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 100.0, 0.1, 3);
+  api_def_prop_ui_text(prop, "Noise Offset", "Offset the noise along the strokes");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_property(srna, "use_custom_curve", PROP_BOOLEAN, PROP_NONE);
-  api_def_property_boolean_sdna(prop, NULL, "flag", GP_NOISE_CUSTOM_CURVE);
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_curve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_CUSTOM_CURVE);
+  api_def_prop_ui_text(
       prop, "Custom Curve", "Use a custom curve to define noise effect along the strokes");
-  api_def_property_update(prop, 0, "api_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_intensity");
   api_def_prop_ui_text(prop, "Curve", "Custom curve to apply effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -867,40 +866,40 @@ static void api_def_mod_pennoise(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "api_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "step");
   api_def_prop_range(prop, 1, 100);
   api_def_prop_ui_text(
       prop, "Step", "Number of frames before recalculate random values again");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_Mod_update");
 
-  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_LAYER);
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_LAYER);
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_MATERIAL);
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_MATERIAL);
   api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_PASS);
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_PASS);
   api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_NOISE_INVERT_VGROUP);
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
-  api_def_prop_int_sdna(prop, NULL, "layer_pass");
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Layer pass index");
-  api_def_prop_update(prop, 0, "rna_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_NOISE_INVERT_LAYERPASS);
@@ -914,9 +913,9 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "SmoothGpencilModifier", "GpencilModifier");
-  api_def_struct_ui_text(sapi, "Smooth Modifier", "Smooth effect modifier");
-  apj_def_struct_sdna(sapi, "SmoothGpencilModifierData");
+  sapi = api_def_struct(dapi, "SmoothPenMod", "PenMod");
+  api_def_struct_ui_text(sapi, "Smooth Mod", "Smooth effect mod");
+  apj_def_struct_stype(sapi, "SmoothPenModData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SMOOTH);
 
   api_define_lib_overridable(true);
@@ -924,15 +923,15 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "layername");
   api_def_prop_ui_text(prop, "Layer", "Layer name");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ptr_fns(prop,
-                                 NULL,
-                                 "api_SmoothPenMod_material_set",
-                                 NULL,
-                                 "api_PenMod_material_poll");
+                       NULL,
+                       "api_SmoothPenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
   api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -957,7 +956,7 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_edit_strength", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_MOD_STRENGTH);
   api_def_prop_ui_text(
-      prop, "Affect Strength", "The modifier affects the color strength of the point");
+      prop, "Affect Strength", "The mod affects the color strength of the point");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_edit_thickness", PROP_BOOL, PROP_NONE);
@@ -990,39 +989,39 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sapi(prop, NULL, "flag", GP_SMOOTH_INVERT_MATERIAL);
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", PEN_SMOOTH_INVERT_MATERIAL);
   api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sapi(prop, NULL, "flag", GP_SMOOTH_INVERT_PASS);
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", PEN_SMOOTH_INVERT_PASS);
   api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_VGROUP);
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_INVERT_VGROUP);
   api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "api_PenModUpdate_update");
 
   prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_INVERT_LAYERPASS);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_INVERT_LAYERPASS);
   api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "use_custom_curve", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SMOOTH_CUSTOM_CURVE);
+  prop = api_def_prop(sapi, "use_custom_curve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_CUSTOM_CURVE);
   api_def_prop_ui_text(
       prop, "Custom Curve", "Use a custom curve to define smooth effect along the strokes");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "curve", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "curve", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "curve_intensity");
   api_def_prop_ui_text(prop, "Curve", "Custom curve to apply effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -1035,25 +1034,25 @@ static void api_def_mod_pensubdiv(DuneApi *dapi)
   ApiStruct *sapo;
   ApiProp *prop;
 
-  sapi = api_def_struct(brna, "SubdivGpencilModifier", "GpencilModifier");
-  api_def_struct_ui_text(srna, "Subdivision Modifier", "Subdivide Stroke modifier");
-  api_def_struct_sdna(srna, "SubdivGpencilModifierData");
-  api_def_struct_ui_icon(srna, ICON_MOD_SUBSURF);
+  sapi = api_def_struct(dapi, "Pen Modifier", "PenMod");
+  api_def_struct_ui_text(sapi, "Subdivision Mod", "Subdivide Stroke modifier");
+  api_def_struct_stype(sapi, "SubdivPenData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_SUBSUB);
 
   api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "layername");
   api_def_prop_ui_text(prop, "Layer", "Layer name");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "material", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ptr_fns(prop,
-                                 NULL,
-                                 "rna_SubdivGpencilModifier_material_set",
-                                 NULL,
-                                 "api_PenMod_material_poll");
+                       NULL,
+                       "api_l_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
   api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
