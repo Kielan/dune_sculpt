@@ -264,8 +264,8 @@ static ApiStruct *api_PenMod_refine(struct ApiPtr *ptr)
     case ePenModType_Offset:
       return &ApiOffsetPenMod;
     case ePenModType_Armature:
-      return &ApiArmaturePencilMod;
-    case eGpenModType_Multiply:
+      return &ApiArmaturePenMod;
+    case ePenModType_Multiply:
       return &ApiMultiplyPenMod;
     case ePenModType_Texture:
       return &ApiTexturePenMod;
@@ -1034,7 +1034,7 @@ static void api_def_mod_pensubdiv(DuneApi *dapi)
   ApiStruct *sapo;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "Pen Modifier", "PenMod");
+  sapi = api_def_struct(dapi, "Pen Mod", "PenMod");
   api_def_struct_ui_text(sapi, "Subdivision Mod", "Subdivide Stroke modifier");
   api_def_struct_stype(sapi, "SubdivPenData");
   api_def_struct_ui_icon(sapi, ICON_MOD_SUBSUB);
@@ -1064,7 +1064,7 @@ static void api_def_mod_pensubdiv(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "subdivision_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "type");
-  api_def_prop_enum_items(prop, gpencil_subdivision_type_items);
+  api_def_prop_enum_items(prop, pen_subdivision_type_items);
   api_def_prop_ui_text(prop, "Subdivision Type", "Select type of subdivision algorithm");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -1072,59 +1072,59 @@ static void api_def_mod_pensubdiv(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SUBDIV_INVERT_LAYER);
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SUBDIV_INVERT_LAYER);
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
+
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SUBDIV_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
+
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SUBDIV_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
+
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
   api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SUBDIV_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_SUBDIV_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SUBDIV_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
-
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
-
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SUBDIV_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
-
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
+static void api_def_mod_pensimplify(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static EnumPropertyItem prop_gpencil_simplify_mode_items[] = {
-      {GP_SIMPLIFY_FIXED,
+  static EnumPropItem prop_pen_simplify_mode_items[] = {
+      {PEN_SIMPLIFY_FIXED,
        "FIXED",
        ICON_IPO_CONSTANT,
        "Fixed",
        "Delete alternating vertices in the stroke, except extremes"},
-      {GP_SIMPLIFY_ADAPTIVE,
+      {PEN_SIMPLIFY_ADAPTIVE,
        "ADAPTIVE",
        ICON_IPO_EASE_IN_OUT,
        "Adaptive",
        "Use a Ramer-Douglas-Peucker algorithm to simplify the stroke preserving main shape"},
-      {GP_SIMPLIFY_SAMPLE,
+      {PEN_SIMPLIFY_SAMPLE,
        "SAMPLE",
        ICON_IPO_EASE_IN_OUT,
        "Sample",
        "Re-sample the stroke with segments of the specified length"},
-      {GP_SIMPLIFY_MERGE,
+      {PEN_SIMPLIFY_MERGE,
        "MERGE",
        ICON_IPO_EASE_IN_OUT,
        "Merge",
@@ -1133,24 +1133,24 @@ static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
   };
 
   sapi = api_def_struct(dapi, "SimplifyPenMod", "PenMod");
-  api_def_struct_ui_text(sapi, "Simplify Modifier", "Simplify Stroke modifier");
+  api_def_struct_ui_text(sapi, "Simplify Mod", "Simplify Stroke mod");
   api_def_struct_stype(sapi, "SimplifyPenModData");
-  api_def_struct_ui_icon(srna, ICON_MOD_SIMPLIFY);
+  api_def_struct_ui_icon(sapi, ICON_MOD_SIMPLIFY);
 
   api_define_lib_overridable(true);
 
   prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "layername");
   api_def_prop_ui_text(prop, "Layer", "Layer name");
-  api_def_prop_update(prop, 0, "rna_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_EDITABLE);
   api_def_prop_ptr_fns(prop,
-                                 NULL,
-                                 "api_SimplifyPenMod_material_set",
-                                 NULL,
-                                 "api_PenMod_material_poll");
+                       NULL,
+                       "api_SimplifyPenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
   api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -1159,140 +1159,140 @@ static void rna_def_modifier_gpencilsimplify(BlenderRNA *brna)
   api_def_prop_range(prop, 0, 100.0);
   api_def_prop_ui_range(prop, 0, 5.0f, 1.0f, 3);
   api_def_prop_ui_text(prop, "Factor", "Factor of Simplify");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SIMPLIFY_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_MATERIAL);
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SIMPLIFY_INVERT_MATERIAL);
   api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SIMPLIFY_INVERT_PASS);
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SIMPLIFY_INVERT_PASS);
   api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SIMPLIFY_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SIMPLIFY_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   /* Mode */
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, prop_gpencil_simplify_mode_items);
-  RNA_def_property_ui_text(prop, "Mode", "How to simplify the stroke");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, prop_pen_simplify_mode_items);
+  api_def_prop_ui_text(prop, "Mode", "How to simplify the stroke");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "step");
-  RNA_def_property_range(prop, 1, 50);
-  RNA_def_property_ui_text(prop, "Iterations", "Number of times to apply simplify");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "step");
+  api_def_prop_range(prop, 1, 50);
+  api_def_prop_ui_text(prop, "Iter", "Number of times to apply simplify");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   /* Sample */
-  prop = RNA_def_property(srna, "length", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "length");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1.0, 0.01, 3);
-  RNA_def_property_ui_text(prop, "Length", "Length of each segment");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "length", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "length");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1.0, 0.01, 3);
+  api_def_prop_ui_text(prop, "Length", "Length of each segment");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "sharp_threshold", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "sharp_threshold");
-  RNA_def_property_range(prop, 0, M_PI);
-  RNA_def_property_ui_range(prop, 0, M_PI, 1.0, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sharp_threshold", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "sharp_threshold");
+  api_def_prop_range(prop, 0, M_PI);
+  api_def_prop_ui_range(prop, 0, M_PI, 1.0, 1);
+  api_def_prop_ui_text(
       prop, "Sharp Threshold", "Preserve corners that have sharper angle than this threshold");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   /* Merge */
-  prop = RNA_def_property(srna, "distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "distance");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1.0, 0.01, 3);
-  RNA_def_property_ui_text(prop, "Distance", "Distance between points");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "distance");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 1.0, 0.01, 3);
+  api_def_prop_ui_text(prop, "Distance", "Distance between points");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencilthick(BlenderRNA *brna)
+static void api_def_mod_penthick(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThickGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Thick Modifier", "Subdivide and Smooth Stroke modifier");
-  RNA_def_struct_sdna(srna, "ThickGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_THICKNESS);
+  sapi = api_def_struct(dapi, "ThickPenMod", "PenMod");
+  api_def_struct_ui_text(sapi, "Thick Mod", "Subdivide and Smooth Stroke modifier");
+  api_def_struct_stype(sapi, "ThickPenModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_THICKNESS);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
-                                 NULL,
-                                 "rna_ThickGpencilModifier_material_set",
-                                 NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(prop, "Material", "Material used for filtering effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
+                       NULL,
+                       "api_ThickPenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
+  api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgname");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_ThickGpencilModifier_vgname_set");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "vgname");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_ThickPenMod_vgname_set");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "thickness", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "thickness");
-  RNA_def_property_range(prop, -100, 500);
-  RNA_def_property_ui_text(prop, "Thickness", "Absolute thickness to apply everywhere");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "thickness", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "thickness");
+  api_def_prop_range(prop, -100, 500);
+  api_def_prop_ui_text(prop, "Thickness", "Absolute thickness to apply everywhere");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "thickness_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "thickness_fac");
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0, 10.0, 0.1, 3);
-  RNA_def_property_ui_text(prop, "Thickness Factor", "Factor to multiply the thickness with");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "thickness_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "thickness_fac");
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 10.0, 0.1, 3);
+  api_def_prop_ui_text(prop, "Thickness Factor", "Factor to multiply the thickness with");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_weight_factor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_THICK_WEIGHT_FACTOR);
-  RNA_def_property_ui_text(prop, "Weighted", "Use weight to modulate effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapo, "use_weight_factor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_THICK_WEIGHT_FACTOR);
+  api_def_prop_ui_text(prop, "Weighted", "Use weight to modulate effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_THICK_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", GP_THICK_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_THICK_INVERT_MATERIAL);
