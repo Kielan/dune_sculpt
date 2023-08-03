@@ -1010,7 +1010,7 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Pass", "Layer pass index");
   api_def_prop_update(prop, 0, "api_PenModUpdate_update");
 
-  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_SMOOTH_INVERT_LAYERPASS);
   api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -1031,7 +1031,7 @@ static void api_def_mod_pensmooth(DuneApi *dapi)
 
 static void api_def_mod_pensubdiv(DuneApi *dapi)
 {
-  ApiStruct *sapo;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "Pen Mod", "PenMod");
@@ -1659,30 +1659,30 @@ static void api_def_mod_pentime(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_int_sdna(prop, NULL, "sfra");
-  RNA_def_prop_int_funcs(prop, NULL, "rna_TimeModifier_start_frame_set", NULL);
-  RNA_def_prop_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_prop_ui_text(prop, "Start Frame", "First frame of the range");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "sfra");
+  api_def_prop_int_fns(prop, NULL, "api_TimeMod_start_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "Start Frame", "First frame of the range");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "efra");
-  RNA_def_property_int_funcs(prop, NULL, "rna_TimeModifier_end_frame_set", NULL);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "End Frame", "Final frame of the range");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "frame_end", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "efra");
+  api_def_prop_int_fns(prop, NULL, "api_TimeMod_end_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "End Frame", "Final frame of the range");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_keep_loop", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TIME_KEEP_LOOP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_keep_loop", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TIME_KEEP_LOOP);
+  api_def_prop_ui_text(
       prop, "Keep Loop", "Retiming end frames and move to start of animation to keep loop");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_custom_frame_range", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TIME_CUSTOM_RANGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_frame_range", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", PEN_TIME_CUSTOM_RANGE);
+  RNA_def_prop_ui_text(
       prop, "Custom Range", "Define a custom range of frames to use in modifier");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
