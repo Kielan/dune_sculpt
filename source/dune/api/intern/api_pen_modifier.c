@@ -2565,7 +2565,7 @@ static void api_def_mod_penarmature(DuneApi *dapi)
       prop,
       "Vertex Group",
       "Name of Vertex Group which determines influence of mod per point");
-  api_def_prop_string_fns(prop, NULL, NULL, "api_ArmaturePeMod_vgname_set");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_ArmaturePenMod_vgname_set");
   api_def_prop_update(prop, 0, "api_PenMod_graph_update");
 
   prop = api_def_prop(sapi, "invert_vertex_group", PROP_BOOL, PROP_NONE);
@@ -2643,50 +2643,50 @@ static void api_def_mod_penmultiply(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "duplications");
   api_def_prop_range(prop, 0, 999);
   api_def_prop_ui_range(prop, 1, 10, 1, 1);
-  api_def_property_ui_text(prop, "Duplicates", "How many copies of strokes be displayed");
-  api_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_ui_text(prop, "Duplicates", "How many copies of strokes be displayed");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_property(srna, "distance", PROP_FLOAT, PROP_DISTANCE);
-  api_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  api_def_property_ui_range(prop, 0.0, 1.0, 0.01, 3);
-  api_def_property_ui_text(prop, "Distance", "Distance of duplications");
-  api_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.01, 3);
+  api_def_prop_ui_text(prop, "Distance", "Distance of duplications");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
-  api_def_property_ui_range(prop, -1, 1, 0.01, 3);
-  api_def_property_ui_text(prop, "Offset", "Offset of duplicates. -1 to 1: inner to outer");
-  api_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_range(prop, -1, 1, 0.01, 3);
+  api_def_prop_ui_text(prop, "Offset", "Offset of duplicates. -1 to 1: inner to outer");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "fading_thickness", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_range(prop, 0, 1);
-  RNA_def_prop_ui_text(prop, "Thickness", "Fade influence of stroke's thickness");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Thickness", "Fade influence of stroke's thickness");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(srna, "fading_opacity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Opacity", "Fade influence of stroke's opacity");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "fading_opacity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Opacity", "Fade influence of stroke's opacity");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "fading_center", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Center", "Fade center");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "fading_center", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Center", "Fade center");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpenciltexture(BlenderRNA *brna)
+static void api_def_mod_pentexture(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem fit_type_items[] = {
-      {GP_TEX_CONSTANT_LENGTH,
+  static const EnumPropItem fit_type_items[] = {
+      {PEN_TEX_CONSTANT_LENGTH,
        "CONSTANT_LENGTH",
        0,
        "Constant Length",
        "Keep the texture at a constant length regardless of the length of each stroke"},
-      {GP_TEX_FIT_STROKE,
+      {PEN_TEX_FIT_STROKE,
        "FIT_STROKE",
        0,
        "Stroke Length",
@@ -2694,7 +2694,7 @@ static void rna_def_modifier_gpenciltexture(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem mode_items[] = {
+  static const EnumPropItem mode_items[] = {
       {STROKE, "STROKE", 0, "Stroke", "Manipulate only stroke texture coordinates"},
       {FILL, "FILL", 0, "Fill", "Manipulate only fill texture coordinates"},
       {STROKE_AND_FILL,
@@ -2705,49 +2705,49 @@ static void rna_def_modifier_gpenciltexture(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "TextureGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(
-      srna, "Texture Modifier", "Transform stroke texture coordinates Modifier");
-  RNA_def_struct_sdna(srna, "TextureGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_UVPROJECT);
+  sapi = api_def_struct(dapi, "TexturePenMod", "PenMod");
+  api_def_struct_ui_text(
+      sapi, "Texture Mod", "Transform stroke texture coordinates Mod");
+  api_def_struct_stype(sapi, "TexturePenModData");
+  api_def_struct_ui_icon(sapo, ICON_MOD_UVPROJECT);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "layername");
-  RNA_def_property_ui_text(prop, "Layer", "Layer name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "layername");
+  api_def_prop_ui_text(prop, "Layer", "Layer name");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_LAYER);
-  RNA_def_property_ui_text(prop, "Inverse Layers", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_LAYER);
+  api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop,
-                                 NULL,
-                                 "rna_TextureGpencilModifier_material_set",
-                                 NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(prop, "Material", "Material used for filtering effect");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "material", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop,
+                       NULL,
+                       "api_TexturePenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
+  api_def_prop_ui_text(prop, "Material", "Material used for filtering effect");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgname");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_TextureGpencilModifier_vgname_set");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapo, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_sdna(prop, NULL, "vgname");
+  api_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
+  RNA_def_property_string_funcs(prop, NULL, NULL, "api_TexturePenMod_vgname_set");
+  RNA_def_property_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOL, PROP_NONE);
+  RNA_def_property_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_VGROUP);
+  RNA_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
+  RNA_def_prop_update(prop, 0, "apo_PenMod_update");
 
   prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
   RNA_def_property_int_sdna(prop, NULL, "pass_index");
