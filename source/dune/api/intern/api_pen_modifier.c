@@ -2753,26 +2753,26 @@ static void api_def_mod_pentexture(DuneApi *dapi)
   api_def_prop_int_sdna(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "uv_offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "uv_offset");
+  prop = api_def_prop(sapi, "uv_offset", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_stype(prop, NULL, "uv_offset");
   RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
   RNA_def_property_ui_range(prop, -100.0, 100.0, 0.1, 3);
   RNA_def_property_ui_text(prop, "UV Offset", "Offset value to add to stroke UVs");
