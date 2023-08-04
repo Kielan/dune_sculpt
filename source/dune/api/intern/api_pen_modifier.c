@@ -2739,21 +2739,21 @@ static void api_def_mod_pentexture(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapo, "vertex_group", PROP_STRING, PROP_NONE);
-  api_def_prop_string_sdna(prop, NULL, "vgname");
-  api_def_property_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "api_TexturePenMod_vgname_set");
-  RNA_def_property_update(prop, 0, "api_PenMod_update");
+  api_def_prop_string_stype(prop, NULL, "vgname");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for modulating the deform");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_TexturePenMod_vgname_set");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOL, PROP_NONE);
-  RNA_def_property_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_VGROUP);
-  RNA_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  RNA_def_prop_update(prop, 0, "apo_PenMod_update");
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_TEX_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "pass_index");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_int_sdna(prop, NULL, "pass_index");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Pass index");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_TEX_INVERT_PASS);
