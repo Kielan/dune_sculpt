@@ -3047,60 +3047,60 @@ static void api_def_mod_penweight_angle(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapo, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", GP_WEIGHT_INVERT_MATERIAL);
-  RNA_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapo, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_WEIGHT_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_WEIGHT_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_WEIGHT_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_WEIGHT_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_WEIGHT_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_WEIGHT_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_WEIGHT_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencillineart(BlenderRNA *brna)
+static void api_def_mod_penlineart(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem modifier_lineart_source_type[] = {
+  static const EnumPropItem mod_lineart_source_type[] = {
       {LRT_SOURCE_COLLECTION, "COLLECTION", 0, "Collection", ""},
       {LRT_SOURCE_OBJECT, "OBJECT", 0, "Object", ""},
       {LRT_SOURCE_SCENE, "SCENE", 0, "Scene", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "LineartGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(brna, "LineartPenMod", "PenMod");
+  api_def_struct_ui_text(
       srna, "Line Art Modifier", "Generate line art strokes from selected source");
-  RNA_def_struct_sdna(srna, "LineartGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_LINEART);
+  api_def_struct_sdna(srna, "LineartPenModData");
+  api_def_struct_ui_icon(srna, ICON_MOD_LINEART);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "use_custom_camera", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_USE_CUSTOM_CAMERA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_custom_camera", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_USE_CUSTOM_CAMERA);
+  api_def_prop_ui_text(
       prop, "Use Custom Camera", "Use custom camera instead of the active camera");
-  RNA_def_property_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
   prop = RNA_def_property(srna, "use_fuzzy_intersections", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_INTERSECTION_AS_CONTOUR);
