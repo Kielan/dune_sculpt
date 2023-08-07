@@ -371,7 +371,7 @@ static void pen_mod_object_set(Object *self,
     static void api_##_type##PenMod_##_prop##_set( \
         ApiPtr *ptr, ApiPtr value, struct ReportList *UNUSED(reports)) \
     { \
-      _type##PenModData *tmd = (_type##PenModeData *)ptr->data; \
+      _type##PenModData *tmd = (_type##PenModData *)ptr->data; \
       pen_mod_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
     }
 
@@ -2145,7 +2145,7 @@ static void api_def_mod_penbuild(DuneApi *dapi)
                        "Length",
                        "Maximum number of frames that the build effect can run for "
                        "(unless another Pen keyframe occurs before this time has elapsed)");
-  apu_def_prop_range(prop, 1, MAXFRAMEF);
+  api_def_prop_range(prop, 1, MAXFRAMEF);
   api_def_prop_ui_range(prop, 1, 1000, 1, -1);
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -2479,9 +2479,9 @@ static void api_def_mod_penhook(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "strength", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "force");
-  api_def_prop_range(prop, 0, 
+  api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Strength", "Relative force of the hook");
-  apo_def_prop_update(prop, 0, "api_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "falloff_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, mod_penhook_falloff_items); /* share the enum */
@@ -2749,8 +2749,8 @@ static void api_def_mod_pentexture(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_NONE);
-  api_def_prop_int_sdna(prop, NULL, "pass_index");
+  prop = api_def_prop(sapi, "pass_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "pass_index");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop, "Pass", "Pass index");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -3047,7 +3047,7 @@ static void api_def_mod_penweight_angle(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapo, "invert_materials", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PEN_WEIGHT_INVERT_MATERIAL);
   api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
   api_def_prop_update(prop, 0, "api_PenMod_update");
@@ -3088,11 +3088,11 @@ static void api_def_mod_penlineart(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(brna, "LineartPenMod", "PenMod");
+  sapi = api_def_struct(dapi, "LineartPenMod", "PenMod");
   api_def_struct_ui_text(
-      srna, "Line Art Modifier", "Generate line art strokes from selected source");
-  api_def_struct_sdna(srna, "LineartPenModData");
-  api_def_struct_ui_icon(srna, ICON_MOD_LINEART);
+      sapi, "Line Art Modifier", "Generate line art strokes from selected source");
+  api_def_struct_sdna(sapi, "LineartPenModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_LINEART);
 
   api_define_lib_overridable(true);
 
@@ -3102,9 +3102,9 @@ static void api_def_mod_penlineart(DuneApi *dapi)
       prop, "Use Custom Camera", "Use custom camera instead of the active camera");
   api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_fuzzy_intersections", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_INTERSECTION_AS_CONTOUR);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(srna, "use_fuzzy_intersections", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "calculation_flags", LRT_INTERSECTION_AS_CONTOUR);
+  RNA_def_prop_ui_text(prop,
                            "Intersection With Contour",
                            "Treat intersection and contour lines as if they were the same type so "
                            "they can be chained together");
@@ -4006,48 +4006,48 @@ void RNA_def_greasepencil_modifier(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
   RNA_def_property_ui_icon(prop, ICON_EDITMODE_HLT, 0);
 
-  prop = RNA_def_property(srna, "show_expanded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NO_DEG_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ui_expand_flag", 0);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Expanded", "Set modifier expanded in the user interface");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  prop = api_def_prop(sapi, "show_expanded", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "ui_expand_flag", 0);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Expanded", "Set modifier expanded in the user interface");
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
-  prop = RNA_def_boolean(srna,
-                         "is_override_data",
-                         false,
-                         "Override Modifier",
-                         "In a local override object, whether this modifier comes from the linked "
-                         "reference object, or is local to the override");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_negative_sdna(
-      prop, NULL, "flag", eGpencilModifierFlag_OverrideLibrary_Local);
+  prop = api_def_bool(sapi,
+                      "is_override_data",
+                      false,
+                      "Override Modifier",
+                      "In a local override object, whether this modifier comes from the linked "
+                      "reference object, or is local to the override");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_negative_stype(
+      prop, NULL, "flag", ePenModFlag_OverrideLib_Local);
 
   /* types */
-  rna_def_modifier_gpencilnoise(brna);
-  rna_def_modifier_gpencilsmooth(brna);
-  rna_def_modifier_gpencilsubdiv(brna);
-  rna_def_modifier_gpencilsimplify(brna);
-  rna_def_modifier_gpencilthick(brna);
-  rna_def_modifier_gpenciloffset(brna);
-  rna_def_modifier_gpenciltint(brna);
-  rna_def_modifier_gpenciltime(brna);
-  rna_def_modifier_gpencilcolor(brna);
-  rna_def_modifier_gpencilarray(brna);
-  rna_def_modifier_gpencilbuild(brna);
-  rna_def_modifier_gpencilopacity(brna);
-  rna_def_modifier_gpencillattice(brna);
-  rna_def_modifier_gpencilmirror(brna);
-  rna_def_modifier_gpencilhook(brna);
-  rna_def_modifier_gpencilarmature(brna);
-  rna_def_modifier_gpencilmultiply(brna);
-  rna_def_modifier_gpenciltexture(brna);
-  rna_def_modifier_gpencilweight_angle(brna);
-  rna_def_modifier_gpencilweight_proximity(brna);
-  rna_def_modifier_gpencillineart(brna);
-  rna_def_modifier_gpencillength(brna);
-  rna_def_modifier_gpencildash(brna);
-  rna_def_modifier_gpencilshrinkwrap(brna);
+  rna_def_mod_pennoise(dapi);
+  rna_def_mod_pensmooth(dapi);
+  rna_def_mod_pensubdiv(dapi);
+  rna_def_mod_pensimplify(dapi);
+  rna_def_mod_penthick(dapi);
+  rna_def_mod_penoffset(dapi);
+  rna_def_mod_pentint(dapi);
+  rna_def_mod_pentime(dapi);
+  rna_def_mod_pencolor(dapi);
+  rna_def_mod_penarray(dapi);
+  rna_def_mod_penbuild(dapi);
+  rna_def_mod_penopacity(dapi);
+  rna_def_mod_penlattice(dapi);
+  rna_def_mod_penmirror(dapi);
+  rna_def_mod_penhook(dapi);
+  rna_def_mod_penarmature(dapi);
+  rna_def_mod_penmultiply(dapi);
+  rna_def_mod_pentexture(dapi);
+  rna_def_mod_penweight_angle(dapi);
+  rna_def_mod_penweight_proximity(dapi);
+  rna_def_mod_penlineart(dapi);
+  rna_def_mod_penlength(dapi);
+  rna_def_mod_pendash(dapi);
+  rna_def_mod_penshrinkwrap(dapi);
 }
 
 #endif
