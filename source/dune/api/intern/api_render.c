@@ -604,7 +604,7 @@ static void api_def_render_engine(DuneApi *dapi)
   api_def_fn_ui_description(fn, "Compile shader script node");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
   parm = api_def_ptr(fn, "node", "Node", "", "");
-  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_param_flags(parm, 0, PARM_APIPTR);
 
   fn = api_def_fn(sapi, "update_render_passes", NULL);
   api_def_fn_ui_description(fn, "Update the render passes that will be generated");
@@ -927,7 +927,7 @@ static void api_def_render_engine(DuneApi *dapi)
       "Disabling image saving is only supported when bl_use_postprocess is also disabled");
 
   prop = api_def_prop(sapi, "bl_use_gpu_context", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_GPU_CONTEXT);
+  api_def_prop_bool_stype(prop, NULL, "type->flag", RE_USE_GPU_CXT);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   api_def_prop_ui_text(
       prop,
@@ -1012,10 +1012,10 @@ static void api_def_render_result(DuneApi *dapi)
                               "api_iter_list_next",
                               "api_iter_list_end",
                               "api_iter_list_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
 
   prop = api_def_prop(sapi, "views", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "RenderView");
@@ -1146,7 +1146,7 @@ static void api_def_render_layer(DuneApi *dapi)
   api_define_verify_stype(1);
 }
 
-static void apu_def_render_pass(DuneApi *dapi)
+static void api_def_render_pass(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
