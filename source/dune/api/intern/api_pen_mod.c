@@ -3114,7 +3114,7 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_EVERYTHING_AS_CONTOUR);
   api_def_prop_ui_text(
       prop, "All Lines", "Treat all lines as the same line type so they can be chained together");
-  api_def_prop_update(prop, NC_SCENE, "rna_PenMod_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_object_instances", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_ALLOW_DUPLI_OBJECTS);
@@ -3144,7 +3144,7 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   api_def_prop_ui_range(prop, 0.0f, DEG2RAD(180.0f), 0.01f, 1);
   api_def_prop_ui_text(
       prop, "Crease Threshold", "Angles smaller than this will be treated as creases");
-  api_def_prop_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "split_angle", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "angle_splitting_threshold");
@@ -3153,7 +3153,7 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   /* Don't allow value very close to PI, or we get a lot of small segments. */
   api_def_prop_ui_range(prop, 0.0f, DEG2RAD(179.5f), 0.01f, 1);
   api_def_prop_range(prop, 0.0f, DEG2RAD(180.0f));
-  api_def_prop_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "smooth_tolerance", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "chain_smooth_tolerance");
@@ -3161,75 +3161,75 @@ static void api_def_mod_penlineart(DuneApi *dapi)
       prop, "Smooth Tolerance", "Strength of smoothing applied on jagged chains");
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.05f, 4);
   api_def_prop_range(prop, 0.0f, 30.0f);
-  api_def_prop_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "use_remove_doubles", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_remove_doubles", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_REMOVE_DOUBLES);
   api_def_prop_ui_text(
       prop, "Remove Doubles", "Remove doubles from the source geometry before generating stokes");
-  RNA_def_prope_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_loose_as_contour", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_LOOSE_AS_CONTOUR);
-  RNA_def_property_ui_text(prop, "Loose As Contour", "Loose edges will have contour type");
-  RNA_def_property_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_loose_as_contour", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_LOOSE_AS_CONTOUR);
+  api_def_prop_ui_text(prop, "Loose As Contour", "Loose edges will have contour type");
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_source_vertex_group", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_GPENCIL_INVERT_SOURCE_VGROUP);
-  RNA_def_property_ui_text(prop, "Invert Vertex Group", "Invert source vertex group values");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_source_vertex_group", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_PEN_INVERT_SOURCE_VGROUP);
+  api_def_prop_ui_text(prop, "Invert Vertex Group", "Invert source vertex group values");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_output_vertex_group_match_by_name", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_GPENCIL_MATCH_OUTPUT_VGROUP);
-  RNA_def_property_ui_text(prop, "Match Output", "Match output vertex group based on name");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_output_vertex_group_match_by_name", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_PEN_MATCH_OUTPUT_VGROUP);
+  api_def_prop_ui_text(prop, "Match Output", "Match output vertex group based on name");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_face_mark", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_face_mark", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK);
+  api_def_prop_ui_text(
       prop, "Filter Face Marks", "Filter feature lines using freestyle face marks");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_face_mark_invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_INVERT);
-  RNA_def_property_ui_text(prop, "Invert", "Invert face mark filtering");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_face_mark_invert", PROP_BOOL, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_INVERT);
+  api_def_prop_ui_text(prop, "Invert", "Invert face mark filtering");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_face_mark_boundaries", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_BOUNDARIES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_face_mark_boundaries", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_BOUNDARIES);
+  api_def_prop_ui_text(
       prop, "Boundaries", "Filter feature lines based on face mark boundaries");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_face_mark_keep_contour", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_face_mark_keep_contour", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_KEEP_CONTOUR);
-  RNA_def_property_ui_text(prop, "Keep Contour", "Preserve contour lines while filtering");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_ui_text(prop, "Keep Contour", "Preserve contour lines while filtering");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "chaining_image_threshold", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "chaining_image_threshold", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_ui_text(
       prop,
       "Image Threshold",
       "Segments with an image distance smaller than this will be chained together");
-  RNA_def_property_ui_range(prop, 0.0f, 0.3f, 0.001f, 4);
-  RNA_def_property_range(prop, 0.0f, 0.3f);
-  RNA_def_property_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_ui_range(prop, 0.0f, 0.3f, 0.001f, 4);
+  api_def_prop_range(prop, 0.0f, 0.3f);
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_loose_edge_chain", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_LOOSE_EDGES);
-  RNA_def_property_ui_text(prop, "Chain Loose Edges", "Allow loose edges to be chained together");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = apo_def_prop(sapi, "use_loose_edge_chain", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_LOOSE_EDGES);
+  api_def_prop_ui_text(prop, "Chain Loose Edges", "Allow loose edges to be chained together");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_geometry_space_chain", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_CHAIN_GEOMETRY_SPACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_geometry_space_chain", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_GEOMETRY_SPACE);
+  api_def_prop_ui_text(
       prop, "Use Geometry Space", "Use geometry distance for chaining instead of image space");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "rna_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_detail_preserve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_CHAIN_PRESERVE_DETAILS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_detail_preserve", PROP_BOOL, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_PRESERVE_DETAILS);
+  RNA_def_prop_ui_text(
       prop, "Preserve Details", "Keep the zig-zag \"noise\" in initial chaining");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
@@ -3284,26 +3284,26 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_dependency_update");
 
   /* types */
-  prop = RNA_def_property(srna, "use_contour", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CONTOUR);
-  RNA_def_property_ui_text(prop, "Use Contour", "Generate strokes from contours lines");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(srna, "use_contour", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CONTOUR);
+  RNA_def_prop_ui_text(prop, "Use Contour", "Generate strokes from contours lines");
+  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "use_loose", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_LOOSE);
-  RNA_def_property_ui_text(prop, "Use Loose", "Generate strokes from loose edges");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = RNA_def_prop(srna, "use_loose", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_LOOSE);
+  RNA_def_prop_ui_text(prop, "Use Loose", "Generate strokes from loose edges");
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "use_crease", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CREASE);
-  RNA_def_property_ui_text(prop, "Use Crease", "Generate strokes from creased edges");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = RNA_def_prop(srna, "use_crease", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CREASE);
+  RNA_def_prop_ui_text(prop, "Use Crease", "Generate strokes from creased edges");
+  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
-  prop = RNA_def_property(srna, "use_material", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_MATERIAL);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(srna, "use_material", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_MATERIAL);
+  RNA_def_prop_ui_text(
       prop, "Use Material", "Generate strokes from borders between materials");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
 
   prop = RNA_def_property(srna, "use_edge_mark", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_EDGE_MARK);
