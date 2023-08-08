@@ -3456,7 +3456,7 @@ static void api_def_mod_penlineart(DuneApi *dapi)
       "different occlusion levels than when disabled");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(salk, "use_invert_collection", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "use_invert_collection", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", LRT_PEN_INVERT_COLLECTION);
   api_def_prop_ui_text(prop,
                        "Invert Collection Filtering",
@@ -3910,100 +3910,100 @@ static void api_def_mod_penshrinkwrap(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Pass", "Pass index");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = api_def_prop(sapi, "invert_layers", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", GP_SHRINKWRAP_INVERT_LAYER);
+  prop = api_def_prop(sapi, "invert_layers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SHRINKWRAP_INVERT_LAYER);
   api_def_prop_ui_text(prop, "Inverse Layers", "Inverse filter");
-  api_def_prop_update(prop, 0, "api_GpencilMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_materials", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SHRINKWRAP_INVERT_MATERIAL);
-  RNA_def_property_ui_text(prop, "Inverse Materials", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_materials", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SHRINKWRAP_INVERT_MATERIAL);
+  api_def_prop_ui_text(prop, "Inverse Materials", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_material_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SHRINKWRAP_INVERT_PASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_material_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SHRINKWRAP_INVERT_PASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_vertex", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MOD_SHRINKWRAP_INVERT_VGROUP);
-  RNA_def_property_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_vertex", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MOD_SHRINKWRAP_INVERT_VGROUP);
+  api_def_prop_ui_text(prop, "Inverse VertexGroup", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "layer_pass", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "layer_pass");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop, "Pass", "Layer pass index");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "layer_pass", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "layer_pass");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop, "Pass", "Layer pass index");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "invert_layer_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_SHRINKWRAP_INVERT_LAYERPASS);
-  RNA_def_property_ui_text(prop, "Inverse Pass", "Inverse filter");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "invert_layer_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_SHRINKWRAP_INVERT_LAYERPASS);
+  api_def_prop_ui_text(prop, "Inverse Pass", "Inverse filter");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "smooth_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "smooth_factor");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Smooth Factor", "Amount of smoothing to apply");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "smooth_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_property_float_stype(prop, NULL, "smooth_factor");
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Smooth Factor", "Amount of smoothing to apply");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "smooth_step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "smooth_step");
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "smooth_step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "smooth_step");
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_text(
       prop, "Step", "Number of times to apply smooth (high numbers can reduce FPS)");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-void RNA_def_greasepencil_modifier(BlenderRNA *brna)
+void api_def_pen_mod(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* data */
-  srna = RNA_def_struct(brna, "GpencilModifier", NULL);
-  RNA_def_struct_ui_text(srna, "GpencilModifier", "Modifier affecting the Grease Pencil object");
-  RNA_def_struct_refine_func(srna, "rna_GpencilModifier_refine");
-  RNA_def_struct_path_func(srna, "rna_GpencilModifier_path");
-  RNA_def_struct_sdna(srna, "GpencilModifierData");
+  sapi = api_def_struct(dapi, "PenMod", NULL);
+  api_def_struct_ui_text(sapi, "PenMod", "Modifier affecting the Grease Pencil object");
+  api_def_struct_refine_fn(sapi, "api_PenMod_refine");
+  api_def_struct_path_fn(sapi, "api_PenMod_path");
+  api_def_struct_stype(sapi, "PenModData");
 
   /* strings */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_GpencilModifier_name_set");
-  RNA_def_property_ui_text(prop, "Name", "Modifier name");
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER | NA_RENAME, NULL);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(prop, NULL, NULL, "api_PenMod_name_set");
+  api_def_prop_ui_text(prop, "Name", "Modifier name");
+  api_def_prop_update(prop, NC_OBJECT | ND_MOD | NA_RENAME, NULL);
+  api_def_struct_name_prop(sapi, prop);
 
   /* enums */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_object_greasepencil_modifier_type_items);
-  RNA_def_property_ui_text(prop, "Type", "");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_object_pen_mod_type_items);
+  api_def_prop_ui_text(prop, "Type", "");
 
   /* flags */
-  prop = RNA_def_property(srna, "show_viewport", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", eGpencilModifierMode_Realtime);
-  RNA_def_property_ui_text(prop, "Realtime", "Display modifier in viewport");
-  RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_VIEW_ON, 1);
+  prop = api_def_prop(sapi, "show_viewport", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mode", ePenModMode_Realtime);
+  api_def_prop_ui_text(prop, "Realtime", "Display modifier in viewport");
+  api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_VIEW_ON, 1);
 
-  prop = RNA_def_property(srna, "show_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", eGpencilModifierMode_Render);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Render", "Use modifier during render");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_RENDER_ON, 1);
-  RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, NULL);
+  prop = api_def_prop(sapi, "show_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "mode", ePenModMode_Render);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Render", "Use modifier during render");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_RENDER_ON, 1);
+  api_def_prop_update(prop, NC_OBJECT | ND_MODIFIER, NULL);
 
-  prop = RNA_def_property(srna, "show_in_editmode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", eGpencilModifierMode_Editmode);
-  RNA_def_property_ui_text(prop, "Edit Mode", "Display modifier in Edit mode");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
-  RNA_def_property_ui_icon(prop, ICON_EDITMODE_HLT, 0);
+  prop = api_def_prop(sapi, "show_in_editmode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mode", ePenModMode_Editmode);
+  api_def_prop_ui_text(prop, "Edit Mode", "Display modifier in Edit mode");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
+  api_def_prop_ui_icon(prop, ICON_EDITMODE_HLT, 0);
 
   prop = api_def_prop(sapi, "show_expanded", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_flag(prop, PROP_NO_DEG_UPDATE);
@@ -4023,30 +4023,30 @@ void RNA_def_greasepencil_modifier(BlenderRNA *brna)
       prop, NULL, "flag", ePenModFlag_OverrideLib_Local);
 
   /* types */
-  rna_def_mod_pennoise(dapi);
-  rna_def_mod_pensmooth(dapi);
-  rna_def_mod_pensubdiv(dapi);
-  rna_def_mod_pensimplify(dapi);
-  rna_def_mod_penthick(dapi);
-  rna_def_mod_penoffset(dapi);
-  rna_def_mod_pentint(dapi);
-  rna_def_mod_pentime(dapi);
-  rna_def_mod_pencolor(dapi);
-  rna_def_mod_penarray(dapi);
-  rna_def_mod_penbuild(dapi);
-  rna_def_mod_penopacity(dapi);
-  rna_def_mod_penlattice(dapi);
-  rna_def_mod_penmirror(dapi);
-  rna_def_mod_penhook(dapi);
-  rna_def_mod_penarmature(dapi);
-  rna_def_mod_penmultiply(dapi);
-  rna_def_mod_pentexture(dapi);
-  rna_def_mod_penweight_angle(dapi);
-  rna_def_mod_penweight_proximity(dapi);
-  rna_def_mod_penlineart(dapi);
-  rna_def_mod_penlength(dapi);
-  rna_def_mod_pendash(dapi);
-  rna_def_mod_penshrinkwrap(dapi);
+  api_def_mod_pennoise(dapi);
+  api_def_mod_pensmooth(dapi);
+  api_def_mod_pensubdiv(dapi);
+  api_def_mod_pensimplify(dapi);
+  api_def_mod_penthick(dapi);
+  api_def_mod_penoffset(dapi);
+  api_def_mod_pentint(dapi);
+  api_def_mod_pentime(dapi);
+  api_def_mod_pencolor(dapi);
+  api_def_mod_penarray(dapi);
+  api_def_mod_penbuild(dapi);
+  api_def_mod_penopacity(dapi);
+  api_def_mod_penlattice(dapi);
+  api_def_mod_penmirror(dapi);
+  api_def_mod_penhook(dapi);
+  api_def_mod_penarmature(dapi);
+  api_def_mod_penmultiply(dapi);
+  api_def_mod_pentexture(dapi);
+  api_def_mod_penweight_angle(dapi);
+  api_def_mod_penweight_proximity(dapi);
+  api_def_mod_penlineart(dapi);
+  api_def_mod_penlength(dapi);
+  api_def_mod_pendash(dapi);
+  api_def_mod_penshrinkwrap(dapi);
 }
 
 #endif
