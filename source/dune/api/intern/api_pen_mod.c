@@ -2709,7 +2709,7 @@ static void api_def_mod_pentexture(DuneApi *dapi)
   api_def_struct_ui_text(
       sapi, "Texture Mod", "Transform stroke texture coordinates Mod");
   api_def_struct_stype(sapi, "TexturePenModData");
-  api_def_struct_ui_icon(sapo, ICON_MOD_UVPROJECT);
+  api_def_struct_ui_icon(sapi, ICON_MOD_UVPROJECT);
 
   api_define_lib_overridable(true);
 
@@ -3191,7 +3191,7 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_face_mark_invert", PROP_BOOL, PROP_NONE);
-  api_def_prop_boolean_stype(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_INVERT);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_FILTER_FACE_MARK_INVERT);
   api_def_prop_ui_text(prop, "Invert", "Invert face mark filtering");
   api_def_prop_update(prop, 0, "api_PenMod_update");
 
@@ -3225,202 +3225,202 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_GEOMETRY_SPACE);
   api_def_prop_ui_text(
       prop, "Use Geometry Space", "Use geometry distance for chaining instead of image space");
-  api_def_prop_update(prop, 0, "rna_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
   prop = api_def_prop(sapi, "use_detail_preserve", PROP_BOOL, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_PRESERVE_DETAILS);
-  RNA_def_prop_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_CHAIN_PRESERVE_DETAILS);
+  api_def_prop_ui_text(
       prop, "Preserve Details", "Keep the zig-zag \"noise\" in initial chaining");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_overlap_edge_type_support", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_ALLOW_OVERLAP_EDGE_TYPES);
-  RNA_def_property_ui_text(prop,
-                           "Overlapping Edge Types",
-                           "Allow an edge to have multiple overlapping types. This will create a "
-                           "separate stroke for each overlapping type");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_overlap_edge_type_support", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_ALLOW_OVERLAP_EDGE_TYPES);
+  api_def_prop_ui_text(prop,
+                       "Overlapping Edge Types",
+                       "Allow an edge to have multiple overlapping types. This will create a "
+                       "separate stroke for each overlapping type");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "stroke_depth_offset", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_ui_text(prop,
-                           "Stroke Depth Offset",
-                           "Move strokes slightly towards the camera to avoid clipping while "
-                           "preserve depth for the viewport");
-  RNA_def_property_ui_range(prop, 0.0, 0.5, 0.001, 4);
-  RNA_def_property_range(prop, -0.1, FLT_MAX);
-  RNA_def_property_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "stroke_depth_offset", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_ui_text(prop,
+                       "Stroke Depth Offset",
+                       "Move strokes slightly towards the camera to avoid clipping while "
+                       "preserve depth for the viewport");
+  api_def_prop_ui_range(prop, 0.0, 0.5, 0.001, 4);
+  api_def_prop_range(prop, -0.1, FLT_MAX);
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_offset_towards_custom_camera", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LRT_GPENCIL_OFFSET_TOWARDS_CUSTOM_CAMERA);
-  RNA_def_property_ui_text(prop,
-                           "Offset Towards Custom Camera",
-                           "Offset strokes towards selected camera instead of the active camera");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_offset_towards_custom_camera", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LRT_PEN_OFFSET_TOWARDS_CUSTOM_CAMERA);
+  api_def_prop_ui_text(prop,
+                       "Offset Towards Custom Camera",
+                       "Offset strokes towards selected camera instead of the active camera");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "source_camera", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "source_camera", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(
       prop, "Camera Object", "Use specified camera object for generating line art");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_PenMod_dep_update");
 
-  prop = RNA_def_property(srna, "source_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, modifier_lineart_source_type);
-  RNA_def_property_ui_text(prop, "Source Type", "Line art stroke source type");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_dependency_update");
+  prop = api_def_prop(sapi, "source_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, modifier_lineart_source_type);
+  api_def_prop_ui_text(prop, "Source Type", "Line art stroke source type");
+  api_def_prop_update(prop, 0, "api_PenMod_dep_update");
 
-  prop = RNA_def_property(srna, "source_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_struct_type(prop, "Object");
-  RNA_def_property_ui_text(prop, "Object", "Generate strokes from this object");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_dependency_update");
+  prop = api_def_prop(sapi, "source_object", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_struct_type(prop, "Object");
+  api_def_prop_ui_text(prop, "Object", "Generate strokes from this object");
+  api_def_prop_update(prop, 0, "api_PenMod_dep_update");
 
-  prop = RNA_def_property(srna, "source_collection", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_struct_type(prop, "Collection");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "source_collection", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_struct_type(prop, "Collection");
+  api_def_prop_ui_text(
       prop, "Collection", "Generate strokes from the objects in this collection");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_dependency_update");
+  api_def_prop_update(prop, 0, "api_PenMod_dep_update");
 
   /* types */
-  prop = api_def_prop(srna, "use_contour", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CONTOUR);
-  RNA_def_prop_ui_text(prop, "Use Contour", "Generate strokes from contours lines");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_contour", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_CONTOUR);
+  api_def_prop_ui_text(prop, "Use Contour", "Generate strokes from contours lines");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_prop(srna, "use_loose", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_LOOSE);
-  RNA_def_prop_ui_text(prop, "Use Loose", "Generate strokes from loose edges");
-  api_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_loose", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_LOOSE);
+  api_def_prop_ui_text(prop, "Use Loose", "Generate strokes from loose edges");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_prop(srna, "use_crease", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_CREASE);
-  RNA_def_prop_ui_text(prop, "Use Crease", "Generate strokes from creased edges");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
-
-  prop = RNA_def_prop(srna, "use_material", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_MATERIAL);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "use_crease", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_CREASE);
+  api_def_prop_ui_text(prop, "Use Crease", "Generate strokes from creased edges");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
+    
+  prop = api_def_prop(sapi, "use_material", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_MATERIAL);
+  api_def_prop_ui_text(
       prop, "Use Material", "Generate strokes from borders between materials");
-  RNA_def_prop_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_edge_mark", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_EDGE_MARK);
-  RNA_def_property_ui_text(prop, "Use Edge Mark", "Generate strokes from freestyle marked edges");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_edge_mark", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_EDGE_MARK);
+  api_def_prop_ui_text(prop, "Use Edge Mark", "Generate strokes from freestyle marked edges");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_intersection", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edge_types", LRT_EDGE_FLAG_INTERSECTION);
-  RNA_def_property_ui_text(prop, "Use Intersection", "Generate strokes from intersections");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_intersection", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edge_types", LRT_EDGE_FLAG_INTERSECTION);
+  api_def_prop_ui_text(prop, "Use Intersection", "Generate strokes from intersections");
+  api_def_prop_update(prop, 0, "sapi_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_multiple_levels", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_multiple_levels", 0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_multiple_levels", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_multiple_levels", 0);
+  api_def_prop_ui_text(
       prop, "Use Occlusion Range", "Generate strokes from a range of occlusion levels");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "level_start", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "level_start", PROP_INT, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Level Start", "Minimum number of occlusions for the generated strokes");
-  RNA_def_property_range(prop, 0, 128);
-  RNA_def_property_int_funcs(prop, NULL, "rna_Lineart_start_level_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_range(prop, 0, 128);
+  api_def_prop_int_fns(prop, NULL, "api_Lineart_start_level_set", NULL);
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "level_end", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "level_end", PROP_INT, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Level End", "Maximum number of occlusions for the generated strokes");
-  RNA_def_property_range(prop, 0, 128);
-  RNA_def_property_int_funcs(prop, NULL, "rna_Lineart_end_level_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_range(prop, 0, 128);
+  api_def_prop_int_fns(prop, NULL, "api_Lineart_end_level_set", NULL);
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "target_material", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "Material");
-  RNA_def_property_pointer_funcs(prop,
-                                 NULL,
-                                 "rna_LineartGpencilModifier_material_set",
-                                 NULL,
-                                 "rna_GpencilModifier_material_poll");
-  RNA_def_property_ui_text(
-      prop, "Material", "Grease Pencil material assigned to the generated strokes");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "target_material", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "Material");
+  api_def_prop_ptr_fns(prop,
+                       NULL,
+                       "api_LineartPenMod_material_set",
+                       NULL,
+                       "api_PenMod_material_poll");
+  api_def_prop_ui_text(
+      prop, "Material", "Dune Pen material assigned to the generated strokes");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "target_layer", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Layer", "Grease Pencil layer assigned to the generated strokes");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "target_layer", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Layer", "Dune Pen layer assigned to the generated strokes");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "source_vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "source_vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "Source Vertex Group",
       "Match the beginning of vertex group names from mesh objects, match all when left empty");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "vgname");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_LineartGpencilModifier_vgname_set");
-  RNA_def_property_ui_text(prop, "Vertex Group", "Vertex group name for selected strokes");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "vertex_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "vgname");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_LineartPenMod_vgname_set");
+  api_def_prop_ui_text(prop, "Vertex Group", "Vertex group name for selected strokes");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "is_baked", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LRT_GPENCIL_IS_BAKED);
-  RNA_def_property_ui_text(prop, "Is Baked", "This modifier has baked data");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "is_baked", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LRT_PEN_IS_BAKED);
+  api_def_prop_ui_text(prop, "Is Baked", "This modifier has baked data");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_cache", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LRT_GPENCIL_USE_CACHE);
-  RNA_def_property_ui_text(prop,
-                           "Use Cache",
-                           "Use cached scene data from the first line art modifier in the stack. "
-                           "Certain settings will be unavailable");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_cache", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LRT_PEN_USE_CACHE);
+  api_def_prop_ui_text(prop,
+                       "Use Cache",
+                       "Use cached scene data from the first line art modifier in the stack. "
+                       "Certain settings will be unavailable");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "overscan", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "overscan", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "Overscan",
       "A margin to prevent strokes from ending abruptly at the edge of the image");
-  RNA_def_property_ui_range(prop, 0.0f, 0.5f, 0.01f, 3);
-  RNA_def_property_range(prop, 0.0f, 0.5f);
-  RNA_def_property_update(prop, NC_SCENE, "rna_GpencilModifier_update");
+  api_def_prop_ui_range(prop, 0.0f, 0.5f, 0.01f, 3);
+  api_def_prop_range(prop, 0.0f, 0.5f);
+  api_def_prop_update(prop, NC_SCENE, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "thickness", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Thickness", "The thickness for the generated strokes");
-  RNA_def_property_ui_range(prop, 1, 100, 1, 1);
-  RNA_def_property_range(prop, 1, 200);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "thickness", PROP_INT, PROP_NONE);
+  api_def_prop_ui_text(prop, "Thickness", "The thickness for the generated strokes");
+  api_def_prop_ui_range(prop, 1, 100, 1, 1);
+  api_def_prop_range(prop, 1, 200);
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "opacity", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_ui_text(prop, "Opacity", "The strength value for the generate strokes");
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01f, 2);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "opacity", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_ui_text(prop, "Opacity", "The strength value for the generate strokes");
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01f, 2);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_material_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mask_switches", LRT_GPENCIL_MATERIAL_MASK_ENABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_material_mask", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mask_switches", LRT_PEN_MATERIAL_MASK_ENABLE);
+  api_def_prop_ui_text(
       prop, "Use Material Mask", "Use material masks to filter out occluded strokes");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_material_mask_match", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mask_switches", LRT_GPENCIL_MATERIAL_MASK_MATCH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_material_mask_match", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mask_switches", LRT_PEN_MATERIAL_MASK_MATCH);
+  api_def_prop_ui_text(
       prop, "Match Masks", "Require matching all material masks instead of just one");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_material_mask_bits", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "material_mask_bits", 1);
-  RNA_def_property_array(prop, 8);
-  RNA_def_property_ui_text(prop, "Masks", "Mask bits to match from Material Line Art settings");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = apo_def_prop(sapi, "use_material_mask_bits", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "material_mask_bits", 1);
+  api_def_prop_array(prop, 8);
+  api_def_prop_ui_text(prop, "Masks", "Mask bits to match from Material Line Art settings");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_intersection_match", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mask_switches", LRT_GPENCIL_INTERSECTION_MATCH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_intersection_match", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mask_switches", LRT_PEN_INTERSECTION_MATCH);
+  api_def_prop_ui_text(
       prop, "Match Intersection", "Require matching all intersection masks instead of just one");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  RNA_def_property_update(prop, 0, "api_PenMod_update");
 
   prop = RNA_def_property(srna, "use_intersection_mask", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "intersection_mask", 1);
