@@ -83,7 +83,7 @@ static void api_Pose_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *pt
   wn_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
 }
 
-static void api_Pose_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_Pose_graph_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   graph_relations_tag_update(main);
 
@@ -91,7 +91,7 @@ static void api_Pose_dependency_update(Main *main, Scene *UNUSED(scene), ApiPtr 
   wm_main_add_notifier(NC_OBJECT | ND_POSE, ptr->owner_id);
 }
 
-static void rna_Pose_IK_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
+static void api_Pose_IK_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   /* XXX when to use this? ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK); */
   Object *ob = (Object *)ptr->owner_id;
@@ -117,7 +117,6 @@ static char *api_PoseBone_path(ApiPtr *ptr)
 }
 
 /* Bone groups only. */
-
 static bool api_bone_group_poll(Object *ob, ReportList *reports)
 {
   if (ID_IS_OVERRIDE_LIB(ob)) {
@@ -328,7 +327,7 @@ static bool api_PoseChannel_has_ik_get(ApiPtr *ptr)
   return dune_pose_channel_in_IK_chain(ob, pchan);
 }
 
-static StructRNA *rna_IKParam_refine(ApiPtr *ptr)
+static ApiStruct *api_IKParam_refine(ApiPtr *ptr)
 {
   IKParam *param = (IKParam *)ptr->data;
 
@@ -591,7 +590,7 @@ static void api_PoseChannel_constraints_remove(
 
   ed_object_constraint_update(main, ob);
 
-  /* XXX(Campbell): is this really needed? */
+  /* is this really needed? */
   dune_constraints_active_set(&pchan->constraints, NULL);
 
   wm_main_add_notifier(NC_OBJECT | ND_CONSTRAINT | NA_REMOVED, id);
@@ -1152,7 +1151,7 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Length", "Length of the bone");
 
   /* IK Settings */
-  prop = api_def_prop(srna, "is_in_ik_chain", PROP_BOOL, PROP_NONE);
+  prop = api_def_prop(sapi, "is_in_ik_chain", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(prop, "api_PoseChannel_has_ik_get", NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Has IK", "Is part of an IK chain");
@@ -1187,10 +1186,10 @@ static void api_def_pose_channel(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_ik_limit_y", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_YLIMIT);
   api_def_prop_ui_text(prop, "IK Y Limit", "Limit movement around the Y axis");
-  api_def_prop_editable_func(prop, "api_PoseChannel_proxy_editable");
+  api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = api_def_prop(srna, "use_ik_limit_z", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_ik_limit_z", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "ikflag", BONE_IK_ZLIMIT);
   api_def_prop_ui_text(prop, "IK Z Limit", "Limit movement around the Z axis");
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
@@ -1251,8 +1250,8 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_IK_update");
 
-  prop = api_def_prop(srna, "ik_stiffness_x", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "stiffness[0]");
+  prop = api_def_prop(sapi, "ik_stiffness_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "stiffness[0]");
   api_def_prop_range(prop, 0.0f, 0.99f);
   api_def_prop_ui_text(prop, "IK X Stiffness", "IK stiffness around the X axis");
   api_def_prop_editable_fn(prop, "api_PoseChannel_proxy_editable");
@@ -1326,7 +1325,7 @@ static void api_def_pose_channel(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
 
   prop = api_def_prop(sapi, "use_custom_shape_bone_size", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_negative_sdna(prop, NULL, "drawflag", PCHAN_DRAW_NO_CUSTOM_BONE_SIZE);
+  api_def_prop_bool_negative_stype(prop, NULL, "drawflag", PCHAN_DRAW_NO_CUSTOM_BONE_SIZE);
   api_def_prop_ui_text(
       prop, "Scale to Bone Length", "Scale the custom object by the bone length");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Pose_update");
@@ -1502,7 +1501,7 @@ static void api_def_pose_itasc(DuneApi *dapi)
                        "performance/accuracy trade off");
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "api_Itasc_update");
 
-  prop = api_def_prop(srna, "step_min", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "step_min", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "minstep");
   api_def_prop_range(prop, 0.0f, 0.1f);
   api_def_prop_ui_text(
@@ -1557,18 +1556,18 @@ static void api_def_pose_itasc(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POSE, "rna_Itasc_update");
 }
 
-static void rna_def_pose_ikparam(BlenderRNA *brna)
+static void api_def_pose_ikparam(BlenderRNA *brna)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "IKParam", NULL);
   api_def_struct_stype(sapi, "bIKParam");
   api_def_struct_ui_text(sapi, "IKParam", "Base type for IK solver parameters");
-  api_def_struct_refine_func(srna, "rna_IKParam_refine");
+  api_def_struct_refine_fn(sapi, "api_IKParam_refine");
 
-  prop = api_def_prop(srna, "ik_solver", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "iksolver");
+  prop = api_def_prop(sapi, "ik_solver", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "iksolver");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_enum_items(prop, prop_iksolver_items);
   api_def_prop_ui_text(prop, "IK Solver", "IK solver for which these parameters are defined");
@@ -1697,9 +1696,9 @@ static void api_def_pose(DuneApi *dapi)
   api_define_lib_overridable(false);
 
   /* animviz */
-  api_def_animviz_common(srna);
+  api_def_animviz_common(sapi);
 
-  api_api_pose(srna);
+  api_api_pose(sapi);
 }
 
 void api_def_pose(DuneApi *dapi)
