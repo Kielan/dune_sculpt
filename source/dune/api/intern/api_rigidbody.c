@@ -154,7 +154,7 @@ static void api_RigidBodyWorld_num_solver_iter_set(ApiPtr *ptr, int value)
 
 #  ifdef WITH_BULLET
   if (rbw->shared->phys_world) {
-    RB_dworld_set_solver_iterations(rbw->shared->physics_world, value);
+    RB_dworld_set_solver_iterations(rbw->shared->phys_world, value);
   }
 #  endif
 }
@@ -167,7 +167,7 @@ static void api_RigidBodyWorld_split_impulse_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   if (rbw->shared->physics_world) {
-    RB_dworld_set_split_impulse(rbw->shared->physics_world, value);
+    RB_dworld_set_split_impulse(rbw->shared->phys_world, value);
   }
 #  endif
 }
@@ -218,7 +218,7 @@ static void api_RigidBodyOb_shape_reset(Main *UNUSED(main), Scene *scene, ApiPtr
   }
 
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
-  if (rbo->shared->physics_shape) {
+  if (rbo->shared->phys_shape) {
     rbo->flag |= RBO_FLAG_NEEDS_RESHAPE;
   }
 }
@@ -293,7 +293,7 @@ static void api_RigidBodyOb_friction_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   if (rbo->shared->phys_object) {
-    rbody_set_friction(rbo->shared->physics_object, value);
+    rbody_set_friction(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -305,7 +305,7 @@ static void api_RigidBodyOb_restitution_set(ApiPtr *ptr, float value)
   rbo->restitution = value;
 #  ifdef WITH_BULLET
   if (rbo->shared->physics_object) {
-    rbody_set_restitution(rbo->shared->physics_object, value);
+    rbody_set_restitution(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -363,7 +363,7 @@ static void api_RigidBodyOb_activation_state_set(ApiPtr *ptr, bool value)
 #  ifdef WITH_BULLET
   /* update activation state if necessary - only active bodies can be deactivated */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    rbody_set_activation_state(rbo->shared->physics_object, value);
+    rbody_set_activation_state(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -390,13 +390,13 @@ static void api_RigidBodyOb_angular_sleepThresh_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   /* only active bodies need sleep threshold update */
-  if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    rbody_body_set_angular_sleep_thresh(rbo->shared->physics_object, value);
+  if ((rbo->shared->phys_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
+    rbody_body_set_angular_sleep_thresh(rbo->shared->phys_object, value);
   }
 #  endif
 }
 
-static void api_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_linear_damping_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -405,7 +405,7 @@ static void api_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need damping update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    rbody_set_linear_damping(rbo->shared->physics_object, value);
+    rbody_set_linear_damping(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -419,7 +419,7 @@ static void api_RigidBodyOb_angular_damping_set(ApiPtr *ptr, float value)
 #  ifdef WITH_BULLET
   /* only active bodies need damping update */
   if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    rbody_set_angular_damping(rbo->shared->physics_object, value);
+    rbody_set_angular_damping(rbo->shared->phys_object, value);
   }
 #  endif
 }
@@ -454,7 +454,7 @@ static void api_RigidBodyCon_enabled_set(ApiPtr *ptr, bool value)
 
 #  ifdef WITH_BULLET
   if (rbc->phys_constraint) {
-    rbody_constraint_set_enabled(rbc->physics_constraint, value);
+    rbody_constraint_set_enabled(rbc->phys_constraint, value);
   }
 #  endif
 }
@@ -803,7 +803,7 @@ static void api_RigidBodyWorld_convex_sweep_test(RigidBodyWorld *rbw,
 #  ifdef WITH_BULLET
   RigidBodyOb *rob = object->rigidbody_object;
 
-  if (rbw->shared->physics_world != NULL && rob->shared->phys_object != NULL) {
+  if (rbw->shared->phys_world != NULL && rob->shared->phys_object != NULL) {
     rbody_world_convex_sweep_test(rbw->shared->phys_world,
                                rob->shared->phys_object,
                                ray_start,
@@ -818,8 +818,7 @@ static void api_RigidBodyWorld_convex_sweep_test(RigidBodyWorld *rbw,
                  "A non convex collision shape was passed to the function, use only convex "
                  "collision shapes");
     }
-  }
-  else {
+  } else {
     *r_hit = -1;
     dune_report(reports,
                RPT_ERROR,
@@ -853,11 +852,11 @@ static void api_def_rigidbody_world(DuneApi *dapi)
   api_def_struct_path_fn(sapi, "api_RigidBodyWorld_path");
 
   /* groups */
-  prop = api_def_prop(sapi, "collection", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "collection", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "Collection");
   api_def_prop_ptr_stype(prop, NULL, "group");
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_ui_text(
       prop, "Collection", "Collection containing objects participating in this simulation");
   api_def_prop_update(prop, NC_SCENE, "api_RigidBodyWorld_objects_collection_update");
@@ -896,26 +895,26 @@ static void api_def_rigidbody_world(DuneApi *dapi)
       "Substeps Per Frame",
       "Number of simulation steps taken per frame (higher values are more accurate "
       "but slower)");
-  api_def_prop_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_update(prop, NC_SCENE, "api_RigidBodyWorld_reset");
 
   /* constraint solver iterations */
-  prop = api_def_prop(sapi, "solver_iterations", PROP_INT, PROP_NONE);
-  api_def_prop_int_stype(prop, NULL, "num_solver_iterations");
+  prop = api_def_prop(sapi, "solver_iters", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "num_solver_iters");
   api_def_prop_range(prop, 1, 1000);
   api_def_prop_ui_range(prop, 10, 100, 1, -1);
   api_def_prop_int_default(prop, 10);
-  api_def_prop_int_fns(prop, NULL, "rna_RigidBodyWorld_num_solver_iterations_set", NULL);
+  api_def_prop_int_fns(prop, NULL, "api_RigidBodyWorld_num_solver_iterations_set", NULL);
   api_def_prop_ui_text(
       prop,
       "Solver Iterations",
       "Number of constraint solver iterations made per simulation step (higher values are more "
       "accurate but slower)");
-  api_def_prop_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_update(prop, NC_SCENE, "api_RigidBodyWorld_reset");
 
   /* split impulse */
-  prop = api_def_prop(sapi, "use_split_impulse", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_split_impulse", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBW_FLAG_USE_SPLIT_IMPULSE);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyWorld_split_impulse_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyWorld_split_impulse_set");
   api_def_prop_ui_text(
       prop,
       "Split Impulse",
@@ -1017,7 +1016,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_enum_fns(prop, NULL, "api_RigidBodyOb_type_set", NULL);
   api_def_prop_ui_text(prop, "Type", "Role of object in Rigid Body Simulations");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "mesh_source", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "mesh_source");
@@ -1032,12 +1031,12 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_bool_negative_stype(prop, NULL, "flag", RBO_FLAG_DISABLED);
   api_def_prop_bool_fns(prop, NULL, "api_RigidBodyOb_disabled_set");
   api_def_prop_ui_text(prop, "Enabled", "Rigid Body actively participates to the simulation");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "collision_shape", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "shape");
   api_def_prop_enum_items(prop, api_enum_rigidbody_object_shape_items);
-  api_def_prop_enum_fns(prop, NULL, "rna_RigidBodyOb_shape_set", NULL);
+  api_def_prop_enum_fns(prop, NULL, "api_RigidBodyOb_shape_set", NULL);
   api_def_prop_ui_text(
       prop, "Collision Shape", "Collision Shape of object in Rigid Body Simulations");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
@@ -1045,7 +1044,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "kinematic", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_KINEMATIC);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyOb_kinematic_state_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyOb_kinematic_state_set");
   api_def_prop_ui_text(
       prop, "Kinematic", "Allow rigid body to be controlled by the animation system");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
@@ -1062,7 +1061,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_float_default(prop, 1.0f);
   api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_mass_set", NULL);
   api_def_prop_ui_text(prop, "Mass", "How much the object 'weighs' irrespective of gravity");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Dynamics Parameters - Activation */
   /* TODO: define and figure out how to implement these. */
@@ -1084,7 +1083,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Start Deactivated", "Deactivate rigid body at the start of the simulation");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "deactivate_linear_velocity", PROP_FLOAT, PROP_UNIT_VELOCITY);
   api_def_prop_float_stype(prop, NULL, "lin_sleep_thresh");
@@ -1106,7 +1105,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Angular Velocity Deactivation Threshold",
                        "Angular Velocity below which simulation stops simulating object");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Dynamics Parameters - Damping Parameters */
   prop = api_def_prop(sapi, "linear_damping", PROP_FLOAT, PROP_FACTOR);
@@ -1122,7 +1121,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "ang_damping");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_float_default(prop, 0.1f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_angular_damping_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_angular_damping_set", NULL);
   api_def_prop_ui_text(
       prop, "Angular Damping", "Amount of angular velocity that is lost over time");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
@@ -1133,7 +1132,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 1, 3);
   api_def_prop_float_default(prop, 0.5f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_friction_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_friction_set", NULL);
   api_def_prop_ui_text(prop, "Friction", "Resistance of object to movement");
   apia_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
@@ -1142,15 +1141,15 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 1, 3);
   api_def_prop_float_default(prop, 0.0f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_restitution_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_restitution_set", NULL);
   api_def_prop_ui_text(prop,
-                           "Restitution",
-                           "Tendency of object to bounce after colliding with another "
-                           "(0 = stays still, 1 = perfectly elastic)");
+                       "Restitution",
+                       "Tendency of object to bounce after colliding with another "
+                       "(0 = stays still, 1 = perfectly elastic)");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Collision Parameters - Sensitivity */
-  prop = api_def_prop(sapi, "use_margin", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_margin", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBO_FLAG_USE_MARGIN);
   api_def_prop_bool_default(prop, false);
   api_def_prop_ui_text(
@@ -1164,7 +1163,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01, 3);
   api_def_prop_float_default(prop, 0.04f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyOb_collision_margin_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyOb_collision_margin_set", NULL);
   api_def_prop_ui_text(
       prop,
       "Collision Margin",
@@ -1172,13 +1171,13 @@ static void api_def_rigidbody_object(DuneApi *dapi)
       "(best results when non-zero)");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_shape_reset");
 
-  prop = api_def_prop(sapi, "collision_collections", PROP_BOOLEAN, PROP_LAYER_MEMBER);
+  prop = api_def_prop(sapi, "collision_collections", PROP_BOOL, PROP_LAYER_MEMBER);
   api_def_prop_bool_stype(prop, NULL, "col_groups", 1);
   api_def_prop_array(prop, 20);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyOb_collision_collections_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyOb_collision_collections_set");
   api_def_prop_ui_text(
       prop, "Collision Collections", "Collision collections rigid body belongs to");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
   api_def_prop_flag(prop, PROP_LIB_EXCEPTION);
 }
 
@@ -1201,33 +1200,33 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_enum_fns(prop, NULL, "api_RigidBodyCon_type_set", NULL);
   api_def_prop_ui_text(prop, "Type", "Type of Rigid Body Constraint");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prope_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prope_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "spring_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "spring_type");
   api_def_prop_enum_items(prop, api_enum_rigidbody_constraint_spring_type_items);
-  api_def_prop_enum_fns(prop, NULL, "rna_RigidBodyCon_spring_type_set", NULL);
+  api_def_prop_enum_fns(prop, NULL, "api_RigidBodyCon_spring_type_set", NULL);
   api_def_prop_ui_text(prop, "Spring Type", "Which implementation of spring to use");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "enabled", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_ENABL
   api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_enabled_set");
   api_def_prop_ui_text(prop, "Enabled", "Enable this constraint");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "disable_collisions", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "disable_collisions", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_DISABLE_COLLISIONS);
   api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_disable_collisions_set");
   api_def_prop_ui_text(
       prop, "Disable Collisions", "Disable collisions between constrained rigid bodies");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "object1", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "ob1");
   api_def_prop_flag(prop, PROP_EDITABLE);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_ui_text(prop, "Object 1", "First Rigid Body Object to be constrained");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
@@ -1244,7 +1243,7 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_use_breaking_set");
   api_def_prop_ui_text(
       prop, "Breakable", "Constraint can be broken if it receives an impulse above the threshold");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "breaking_threshold", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stypes(prop, NULL, "breaking_threshold");
@@ -1255,23 +1254,23 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Breaking Threshold",
                        "Impulse threshold that must be reached for the constraint to break");
-  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Solver Iterations */
-  prop = api_def_prop(sapi, "use_override_solver_iterations", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_OVERRIDE_SOLVER_ITERATIONS);
-  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_override_solver_iterations_set");
+  prop = api_def_prop(sapi, "use_override_solver_iters", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_OVERRIDE_SOLVER_ITERS);
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_override_solver_iters_set");
   api_def_prop_ui_text(prop,
                        "Override Solver Iterations",
                        "Override the number of solver iterations for this constraint");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "solver_iterations", PROP_INT, PROP_NONE);
-  api_def_prop_int_stype(prop, NULL, "num_solver_iterations");
+  prop = api_def_prop(sapi, "solver_iters", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "num_solver_iters");
   api_def_prop_range(prop, 1, 1000);
   api_def_prop_ui_range(prop, 1, 100, 1, -1);
   api_def_prop_int_default(prop, 10);
-  api_def_prop_int_fns(prop, NULL, "api_RigidBodyCon_num_solver_iterations_set", NULL);
+  api_def_prop_int_fns(prop, NULL, "api_RigidBodyCon_num_solver_iters_set", NULL);
   api_def_prop_ui_text(
       prop,
       "Solver Iterations",
@@ -1302,12 +1301,12 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_limit_ang_y", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Y);
   api_def_prop_ui_text(prop, "Y Angle", "Limit rotation around Y axis");
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "use_limit_ang_z", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_LIMIT_ANG_Z);
   api_def_prop_ui_text(prop, "Z Angle", "Limit rotation around Z axis");
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "use_spring_x", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_X);
@@ -1319,37 +1318,37 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Y Spring", "Enable spring on Y axis");
   api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_spring_z", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_spring_z", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_Z)
   api_def_prop_ui_text(prop, "Z Spring", "Enable spring on Z axis");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_spring_ang_x", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_spring_ang_x", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_X);
   api_def_prop_ui_text(prop, "X Angle Spring", "Enable spring on X rotational axis");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_spring_ang_y", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_spring_ang_y", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_type(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Y);
   api_def_prop_ui_text(prop, "Y Angle Spring", "Enable spring on Y rotational axis");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_spring_ang_z", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_spring_ang_z", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_SPRING_ANG_Z);
   api_def_prop_ui_text(prop, "Z Angle Spring", "Enable spring on Z rotational axis");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_motor_lin", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_motor_lin", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_LIN);
-  apu_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_motor_lin_set");
+  apu_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_use_motor_lin_set");
   api_def_prop_ui_text(prop, "Linear Motor", "Enable linear motor");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
-  prop = api_def_prop(sapi, "use_motor_ang", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_motor_ang", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_MOTOR_ANG);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_motor_ang_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_use_motor_ang_set");
   api_def_prop_ui_text(prop, "Angular Motor", "Enable angular motor");
-  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "limit_lin_x_lower", PROP_FLOAT, PROP_UNIT_LENGTH);
   api_def_prop_float_stype(prop, NULL, "limit_lin_x_lower");
@@ -1413,21 +1412,21 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
   api_def_prop_float_default(prop, M_PI_4);
   api_def_prop_ui_text(prop, "Upper Y Angle Limit", "Upper limit of Y axis rotation");
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "limit_ang_z_lower", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "limit_ang_z_lower");
   api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
   api_def_prop_float_default(prop, -M_PI_4);
   api_def_prop_ui_text(prop, "Lower Z Angle Limit", "Lower limit of Z axis rotation");
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "limit_ang_z_upper", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "limit_ang_z_upper");
   api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
   api_def_prop_float_default(prop, M_PI_4)
   api_def_prop_ui_text(prop, "Upper Z Angle Limit", "Upper limit of Z axis rotation");
-  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "spring_stiffness_x", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "spring_stiffness_x");
@@ -1545,7 +1544,7 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
   api_def_prop_float_default(prop, 1.0f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_motor_lin_max_impulse_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyCon_motor_lin_max_impulse_set", NULL);
   api_def_prop_ui_text(prop, "Max Impulse", "Maximum linear motor impulse");
   api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
@@ -1554,7 +1553,7 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
   api_def_prop_ui_range(prop, -100.0f, 100.0f, 1, 3);
   api_def_prop_float_default(prop, 1.0f);
-  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_motor_ang_target_velocity_set", NULL);
+  api_def_prop_float_fns(prop, NULL, "api_RigidBodyCon_motor_ang_target_velocity_set", NULL);
   api_def_prop_ui_text(prop, "Target Velocity", "Target angular motor velocity");
   api_def_prop_update(prop, NC_OBJECT, "api_RigidBodyOb_reset");
 
