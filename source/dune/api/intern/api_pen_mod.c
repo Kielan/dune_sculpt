@@ -3420,125 +3420,125 @@ static void api_def_mod_penlineart(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "mask_switches", LRT_PEN_INTERSECTION_MATCH);
   api_def_prop_ui_text(
       prop, "Match Intersection", "Require matching all intersection masks instead of just one");
-  RNA_def_property_update(prop, 0, "api_PenMod_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_intersection_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "intersection_mask", 1);
-  RNA_def_property_array(prop, 8);
-  RNA_def_property_ui_text(prop, "Masks", "Mask bits to match from Collection Line Art settings");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_intersection_mask", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "intersection_mask", 1);
+  api_def_prop_array(prop, 8);
+  api_def_prop_ui_text(prop, "Masks", "Mask bits to match from Collection Line Art settings");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_crease_on_smooth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_crease_on_smooth", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "calculation_flags", LRT_USE_CREASE_ON_SMOOTH_SURFACES);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Crease On Smooth Surfaces", "Allow crease edges to show inside smooth surfaces");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_crease_on_sharp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_USE_CREASE_ON_SHARP_EDGES);
-  RNA_def_property_ui_text(prop, "Crease On Sharp Edges", "Allow crease to show on sharp edges");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_crease_on_sharp", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_USE_CREASE_ON_SHARP_EDGES);
+  api_def_prop_ui_text(prop, "Crease On Sharp Edges", "Allow crease to show on sharp edges");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_image_boundary_trimming", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_USE_IMAGE_BOUNDARY_TRIMMING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_image_boundary_trimming", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_USE_IMAGE_BOUNDARY_TRIMMING);
+  api_def_prop_ui_text(
       prop,
       "Image Boundary Trimming",
       "Trim all edges right at the boundary of image(including overscan region)");
 
-  prop = RNA_def_property(srna, "use_back_face_culling", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "calculation_flags", LRT_USE_BACK_FACE_CULLING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_back_face_culling", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "calculation_flags", LRT_USE_BACK_FACE_CULLING);
+  api_def_prop_ui_text(
       prop,
       "Back Face Culling",
       "Remove all back faces to speed up calculation, this will create edges in "
       "different occlusion levels than when disabled");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_invert_collection", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", LRT_GPENCIL_INVERT_COLLECTION);
-  RNA_def_property_ui_text(prop,
-                           "Invert Collection Filtering",
-                           "Select everything except lines from specified collection");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(salk, "use_invert_collection", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", LRT_PEN_INVERT_COLLECTION);
+  api_def_prop_ui_text(prop,
+                       "Invert Collection Filtering",
+                       "Select everything except lines from specified collection");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_modifier_gpencillength(BlenderRNA *brna)
+static void api_def_mod_penlength(DuneApi *dapi)
 {
-  ApiStruct *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "LengthGpencilModifier", "GpencilModifier");
-  RNA_def_struct_ui_text(srna, "Length Modifier", "Stretch or shrink strokes");
-  RNA_def_struct_sdna(srna, "LengthGpencilModifierData");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_LENGTH);
+  sapi = api_def_struct(dapi, "LengthPenMod", "PenMod");
+  api_def_struct_ui_text(sapi, "Length Modifier", "Stretch or shrink strokes");
+  api_def_struct_stype(sapi, "LengthPenModData");
+  api_def_struct_ui_icon(sapi, ICON_MOD_LENGTH);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "start_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "start_fac");
-  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 0.1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "start_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "start_fac");
+  api_def_prop_ui_range(prop, -10.0f, 10.0f, 0.1, 2);
+  api_def_prop_ui_text(
       prop, "Start Factor", "Added length to the start of each stroke relative to its length");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "end_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "end_fac");
-  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 0.1, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "end_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "end_fac");
+  api_def_prop_ui_range(prop, -10.0f, 10.0f, 0.1, 2);
+  api_def_prop_ui_text(
       prop, "End Factor", "Added length to the end of each stroke relative to its length");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "start_length", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "start_fac");
-  RNA_def_property_ui_range(prop, -100.0f, 100.0f, 0.1f, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "start_length", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "start_fac");
+  api_def_prop_ui_range(prop, -100.0f, 100.0f, 0.1f, 3);
+  api_def_prop_ui_text(
       prop, "Start Factor", "Absolute added length to the start of each stroke");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "end_length", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "end_fac");
-  RNA_def_property_ui_range(prop, -100.0f, 100.0f, 0.1f, 3);
-  RNA_def_property_ui_text(prop, "End Factor", "Absolute added length to the end of each stroke");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "end_length", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_stype(prop, NULL, "end_fac");
+  api_def_prop_ui_range(prop, -100.0f, 100.0f, 0.1f, 3);
+  api_def_prop_ui_text(prop, "End Factor", "Absolute added length to the end of each stroke");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "random_start_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "rand_start_fac");
-  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 0.1, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "random_start_factor", PROP_FLOAT, PROP_NONE);
+  apo_def_prop_float_stype(prop, NULL, "rand_start_fac");
+  api_def_prop_ui_range(prop, -10.0f, 10.0f, 0.1, 1);
+  api_def_prop_ui_text(
       prop, "Random Start Factor", "Size of random length added to the start of each stroke");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "random_end_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "rand_end_fac");
-  RNA_def_property_ui_range(prop, -10.0f, 10.0f, 0.1, 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "random_end_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "rand_end_fac");
+  api_def_prop_ui_range(prop, -10.0f, 10.0f, 0.1, 1);
+  api_def_prop_ui_text(
       prop, "Random End Factor", "Size of random length added to the end of each stroke");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "random_offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "rand_offset");
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 0.1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "random_offset", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "rand_offset");
+  api_def_prop_ui_range(prop, 0.0f, 100.0f, 0.1, 3);
+  api_def_prop_ui_text(
       prop, "Random Noise Offset", "Smoothly offset each stroke's random value");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "use_random", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", GP_LENGTH_USE_RANDOM);
-  RNA_def_property_ui_text(prop, "Random", "Use random values over time");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "use_random", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PEN_LENGTH_USE_RANDOM);
+  api_def_prop_ui_text(prop, "Random", "Use random values over time");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "seed", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(prop, "Seed", "Random seed");
-  RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
+  prop = api_def_prop(sapi, "seed", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(prop, "Seed", "Random seed");
+  api_def_prop_update(prop, 0, "api_PenMod_update");
 
-  prop = RNA_def_property(srna, "step", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "step");
-  RNA_def_property_range(prop, 1, 100);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "step", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "step");
+  api_def_prop_range(prop, 1, 100);
+  api_def_property_ui_text(
       prop, "Step", "Number of frames before recalculate random values again");
   RNA_def_property_update(prop, 0, "rna_GpencilModifier_update");
 
