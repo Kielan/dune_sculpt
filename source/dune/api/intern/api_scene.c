@@ -757,7 +757,7 @@ static void api_pen_mask_stroke_update(Cxt *C, ApiPtr *ptr)
   api_pen_extend_selection(C, ptr);
 }
 
-static void api_pen_mask_segment_update(bContext *UNUSED(C), PointerRNA *ptr)
+static void api_pen_mask_segment_update(Cxt *UNUSED(C), ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
@@ -1140,7 +1140,7 @@ static void api_RenderSettings_stereoViews_begin(CollectionPropIter *iter, ApiPt
   api_iter_list_begin(iter, &rd->views, api_RenderSettings_stereoViews_skip);
 }
 
-static char *api_RenderSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_RenderSettings_path(const ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("render");
 }
@@ -1570,7 +1570,7 @@ static SceneRenderView *api_RenderView_new(Id *id, RenderData *UNUSED(rd), const
 }
 
 static void api_RenderView_remove(
-    Id *id, RenderData *UNUSED(rd), Main *UNUSED(bmain), ReportList *reports, PointerRNA *srv_ptr)
+    Id *id, RenderData *UNUSED(rd), Main *UNUSED(main), ReportList *reports, ApiPtr *srv_ptr)
 {
   SceneRenderView *srv = srv_ptr->data;
   Scene *scene = (Scene *)id;
@@ -1626,7 +1626,7 @@ static const EnumPropItem *api_RenderSettings_engine_itemf(Cxt *UNUSED(C),
 
   for (type = R_engines.first; type; type = type->next, a++) {
     tmp.value = a;
-    tmp.identifier = type->idname;
+    tmp.id = type->idname;
     tmp.name = type->name;
     api_enum_item_add(&item, &totitem, &tmp);
   }
@@ -1936,7 +1936,7 @@ static void object_simplify_update(Object *ob)
   }
 }
 
-static void api_Scene_use_simplify_update(Main *main, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_use_simplify_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *sce = (Scene *)ptr->owner_id;
   Scene *sce_iter;
@@ -2191,7 +2191,7 @@ static void api_UnifiedPaintSettings_unprojected_radius_set(ApiPtr *ptr, float v
   ups->unprojected_radius = value;
 }
 
-static void api_UnifiedPaintSettings_radius_update(Cxt *C, PointerRNA *ptr)
+static void api_UnifiedPaintSettings_radius_update(Cxt *C, ApiPtr *ptr)
 {
   /* changing the unified size should invalidate the overlay but also update the brush */
   dune_paint_invalidate_overlay_all();
@@ -2433,7 +2433,7 @@ static ViewLayer *api_ViewLayer_new(Id *id, Scene *UNUSED(sce), Main *main, cons
 }
 
 static void api_ViewLayer_remove(
-    Id *id, Scene *UNUSED(sce), Main *main, ReportList *reports, PointerRNA *sl_ptr)
+    Id *id, Scene *UNUSED(sce), Main *main, ReportList *reports, ApiPtr *sl_ptr)
 {
   Scene *scene = (Scene *)id;
   ViewLayer *view_layer = sl_ptr->data;
@@ -2452,7 +2452,7 @@ void api_ViewLayer_active_aov_index_range(
   *max = max_ii(0, BLI_listbase_count(&view_layer->aovs) - 1);
 }
 
-int api_ViewLayer_active_aov_index_get(PointerRNA *ptr)
+int api_ViewLayer_active_aov_index_get(ApiPtr *ptr)
 {
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
   return lib_findindex(&view_layer->aovs, view_layer->active_aov);
@@ -3267,7 +3267,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
   api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = api_def_prop(sapi, "use_mesh_automerge_and_split", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_mesh_automerge_and_split", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "automerge", AUTO_MERGE_AND_SPLIT);
   api_def_prop_ui_text(prop, "Split Edges & Faces", "Automatically split edges and faces");
   api_def_prop_ui_icon(prop, ICON_AUTOMERGE_OFF, 1);
@@ -3443,7 +3443,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   prop = api_def_prop(sapi, "use_pen_draw_onback", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "pen_flags", GP_TOOL_FLAG_PAINT_ONBACK);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", PEN_TOOL_FLAG_PAINT_ONBACK);
   api_def_prop_ui_text(
       prop,
       "Draw Strokes on Back",
@@ -3457,7 +3457,7 @@ static void api_def_tool_settings(DuneApi *dapi)
  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   prop = api_def_prop(sapi, "use_gpencil_weight_data_add", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "pen_flags", GP_TOOL_FLAG_CREATE_WEIGHTS);
+  api_def_prop_bool_stype(prop, NULL, "pen_flags", PEN_TOOL_FLAG_CREATE_WEIGHTS);
   api_def_prop_ui_text(prop,
                        "Add weight data for new strokes",
                        "When creating new strokes, the weight data is added according to the "
@@ -3481,7 +3481,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Pen Sculpt", "Settings for stroke sculpting tools and brushes");
 
-  prop = api_def_prop(sapi, "pen_interpolate", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "pen_interpolate", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "pen_interpolate");
   api_def_prop_struct_type(prop, "PenInterpolateSettings");
   api_def_prop_ui_text(
@@ -3500,7 +3500,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Stroke Snap", "");
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
     
-  prop = api_def_prop(sapi, "use_pen_stroke_endpoints", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_pen_stroke_endpoints", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "pen_v3d_align", PEN_PROJECT_DEPTH_STROKE_ENDPOINTS);
   api_def_prop_ui_text(
@@ -3543,7 +3543,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_icon(prop, ICON_PEN_SELECT_BETWEEN_STROKES, 0);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
-  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_mask_segment_update");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_mask_segment_update");
 
   /* Pen - Select mode Vertex Paint */
   prop = api_def_prop(sapi, "use_pen_vertex_select_mask_point", PROP_BOOLEAN, PROP_NONE);
@@ -3568,18 +3568,18 @@ static void api_def_tool_settings(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "use_pen_vertex_select_mask_segment", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(
-      prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_SEGMENT);
+      prop, NULL, "pen_selectmode_vertex", PEN_VERTEX_MASK_SELECTMODE_SEGMENT);
   api_def_prop_ui_text(
       prop, "Selection Mask", "Only paint selected stroke points between other strokes");
-  api_def_prop_ui_icon(prop, ICON_GP_SELECT_BETWEEN_STROKES, 0);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_BETWEEN_STROKES, 0);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_update(
-      prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_segment_update");
+      prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_vertex_mask_segment_update");
 
   /* Annotations - 2D Views Stroke Placement */
   prop = api_def_prop(sapi, "annotation_stroke_placement_view2d", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_bitflag_sdna(prop, NULL, "gpencil_v2d_align");
+  api_def_prop_enum_bitflag_stype(prop, NULL, "gpencil_v2d_align");
   api_def_prop_enum_items(prop, annotation_stroke_placement_view2d_items);
   api_def_prop_ui_text(prop, "Stroke Placement (2D View)", "");
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
@@ -3631,7 +3631,7 @@ static void api_def_tool_settings(DuneApi *dapi)
                        "Automatic keyframe insertion using active Keying Set only");
   api_def_prop_ui_icon(prop, ICON_KEYINGSET, 0);
 
-  prop = api_def_prop(sapi, "use_keyframe_cycle_aware", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_keyframe_cycle_aware", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_CYCLEAWARE);
   api_def_prop_ui_text(
       prop,
@@ -3652,7 +3652,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_enum_s(prop, NULL, "uv_selectmode");
   api_def_prop_enum_items(prop, api_enum_mesh_select_mode_uv_items);
   api_def_prop_ui_text(prop, "UV Selection Mode", "UV selection and display mode");
-  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_update(prop, NC_SPACE | ND_SPACE_IMAGE, "api_Scene_uv_select_mode_update");
 
   prop = api_def_prop(sapi, "uv_sticky_select_mode", PROP_ENUM, PROP_NONE);
@@ -3697,7 +3697,7 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_ui_range(prop, -10000.0, 10000.0, 1, 3);
 
   /* Unified Paint Settings */
-  prop = api_def_prop(sapi, "unified_paint_settings", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "unified_paint_settings", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "UnifiedPaintSettings");
   api_def_prop_ui_text(prop, "Unified Paint Settings", NULL);
@@ -4185,7 +4185,7 @@ static void api_def_unit_settings(DuneApi *dapi)
   api_def_prop_ui_text(
       prop,
       "Unit Scale",
-      "Scale to use when converting between Blender units and dimensions."
+      "Scale to use when converting between Dune units and dimensions."
       " When working at microscopic or astronomical scale, a small or large unit scale"
       " respectively can be used to avoid numerical precision problems");
   api_def_prop_range(prop, 1e-9f, 1e+9f);
@@ -4296,7 +4296,7 @@ static void api_def_view_layer_aov(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_ViewLayer_pass_update");
 }
 
-static void api_def_view_layer_lightgroups(DuneApo *dapi, ApiProp *cprop)
+static void api_def_view_layer_lightgroups(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   /*  ApiProp *prop; */
@@ -4767,7 +4767,7 @@ static void api_def_freestyle_modules(DuneApi *dapi, ApiProp *cprop)
       fn, "Remove a style module from scene render layer Freestyle settings");
   api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_REPORTS);
   parm = api_def_ptr(fn, "module", "FreestyleModuleSettings", "", "Style module to remove");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
@@ -5051,13 +5051,13 @@ void api_def_freestyle_settings(DuneApi *dapi)
       prop,
       "Ridge & Valley",
       "Select ridges and valleys (boundary lines between convex and concave areas of surface)");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
   prop = api_def_prop(sapi, "select_suggestive_contour", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "edge_types", FREESTYLE_FE_SUGGESTIVE_CONTOUR);
   api_def_prop_ui_text(
       prop, "Suggestive Contour", "Select suggestive contours (almost silhouette/contour edges)");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
   prop = api_def_prop(sapi, "select_material_boundary", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "edge_types", FREESTYLE_FE_MATERIAL_BOUNDARY);
@@ -5202,7 +5202,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_suggestive_contours", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", FREESTYLE_SUGGESTIVE_CONTOURS_FLAG);
   api_def_prop_ui_text(prop, "Suggestive Contours", "Enable suggestive contours");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
   prop = api_def_prop(sapi, "use_ridges_and_valleys", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", FREESTYLE_RIDGES_AND_VALLEYS_FLAG);
@@ -6228,7 +6228,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_range(prop, 4, 65536);
   api_def_prop_ui_text(
       prop, "Resolution Y", "Number of vertical pixels in the rendered image");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneCamera_update");
 
   prop = api_def_prop(sapi, "resolution_percentage", PROP_INT, PROP_PERCENTAGE);
   api_def_prop_int_stype(prop, NULL, "size");
@@ -6236,7 +6236,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_range(prop, 1, SHRT_MAX);
   api_def_prop_ui_range(prop, 1, 100, 10, 1);
   api_def_prop_ui_text(prop, "Resolution %", "Percentage scale for render resolution");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneSequencer_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneSeq_update");
 
   prop = api_def_prop(sapi, "preview_pixel_size", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "preview_pixel_size");
@@ -6252,7 +6252,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Pixel Aspect X",
                        "Horizontal aspect ratio - for anamorphic or non-square pixel output");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneCamera_update");
 
   prop = api_def_prop(sapi, "pixel_aspect_y", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "yasp");
@@ -6275,7 +6275,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_range(prop, 1, SHRT_MAX);
   api_def_prop_ui_range(prop, 1, 240, 1, -1);
   api_def_prop_ui_text(prop, "FPS", "Framerate, expressed in frames per second");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_fps_update");
 
   prop = api_def_prop(sapi, "fps_base", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "frs_sec_base");
@@ -6284,7 +6284,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   /* Important to show at least 3 decimal points because multiple presets set this to 1.001. */
   api_def_prop_ui_range(prop, 0.1f, 120.0f, 2, 3);
   api_def_prop_ui_text(prop, "FPS Base", "Framerate base");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_fps_update");
 
   /* frame mapping */
   prop = api_def_prop(sapi, "frame_map_old", PROP_INT, PROP_NONE);
@@ -6292,14 +6292,14 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prope_range(prop, 1, 900);
   api_def_prop_ui_text(prop, "Frame Map Old", "Old mapping value in frames");
-  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_framelen_update");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "api_Scene_framelen_update");
 
   prop = api_def_prop(sapi, "frame_map_new", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "images");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_range(prop, 1, 900);
   api_def_prop_ui_text(prop, "Frame Map New", "How many frames the Map Old will last");
-  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_framelen_update");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "api_Scene_framelen_update");
 
   prop = api_def_prop(sapi, "dither_intensity", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "dither_intensity");
@@ -6363,9 +6363,9 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_range(prop, 0.01f, 1.0f, 1, 2);
   api_def_prop_ui_text(prop, "Shutter", "Time taken in frames between shutter open and close");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_render_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_render_update");
 
-  prop = api_def_prop(sapi, "motion_blur_shutter_curve", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "motion_blur_shutter_curve", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "mblur_shutter_curve");
   api_def_prop_struct_type(prop, "CurveMapping");
   api_def_prop_ui_text(
@@ -6467,7 +6467,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
                        "editor pipeline, if seq strips exist");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(sapi, "use_file_extension", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_file_extension", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "scemode", R_EXTENSION);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(
@@ -7154,7 +7154,7 @@ static void api_def_scene_display(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_set_update");
 
-  prop = api_def_prop(sapo, "matcap_ssao_distance", PROP_FLOAT, PROP_DISTANCE);
+  prop = api_def_prop(sapi, "matcap_ssao_distance", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_ui_text(
       prop, "Distance", "Distance of object that contribute to the Cavity/Edge effect");
   api_def_prop_range(prop, 0.0f, 100000.0f);
@@ -8222,7 +8222,7 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "View Settings", "Color management settings applied on image before saving");
 
-  prop = api_def_prop(sapi, "display_settings", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "display_settings", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "display_settings");
   api_def_prop_struct_type(prop, "ColorManagedDisplaySettings");
   api_def_prop_ui_text(
