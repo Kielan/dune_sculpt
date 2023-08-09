@@ -102,8 +102,7 @@ static void api_SceneRender_get_frame_path(
 
   if (dune_imtype_is_movie(rd->im_format.imtype)) {
     dune_movie_filepath_get(filepath, rd, preview != 0, suffix);
-  }
-  else {
+  } else {
     dune_image_path_from_imformat(filepath,
                                  rd->pic,
                                  dune_main_dunefile_path(main),
@@ -145,7 +144,7 @@ static void api_Scene_ray_cast(Scene *scene,
                                                      r_ob,
                                                      (float(*)[4])r_obmat);
 
-  ed_transform_snap_object_context_destroy(scxt);
+  ed_transform_snap_object_cxt_destroy(scxt);
 
   if (r_ob != NULL && *r_ob != NULL) {
     *r_ob = graph_get_original_object(*r_ob);
@@ -153,8 +152,7 @@ static void api_Scene_ray_cast(Scene *scene,
 
   if (ret) {
     *r_success = true;
-  }
-  else {
+  } else {
     *r_success = false;
 
     unit_m4((float(*)[4])r_obmat);
@@ -171,7 +169,7 @@ static void api_Scene_seq_editing_free(Scene *scene)
 #  ifdef WITH_ALEMBIC
 
 static void api_Scene_alembic_export(Scene *scene,
-                                     bContext *C,
+                                     Cxt *C,
                                      const char *filepath,
                                      int frame_start,
                                      int frame_end,
@@ -271,9 +269,9 @@ void api_scene(ApiStruct *sapi)
   parm = api_def_ptr(fn, "graph", "Graph", "", "The current dependency graph");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   /* ray start and end */
-  parm = api_def_float_vector(func, "origin", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  parm = api_def_float_vector(fn, "origin", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = api_def_float_vector(func, "direction", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  parm = api_def_float_vector(fn, "direction", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_float(fn,
                 "distance",
@@ -320,13 +318,13 @@ void api_scene(ApiStruct *sapi)
   api_def_fn_output(fn, parm);
 
   /* Sequencer. */
-  fn = api_def_fn(srna, "sequence_editor_create", "SEQ_editing_ensure");
+  fn = api_def_fn(sapi, "seq_editor_create", "seq_editing_ensure");
   api_def_fn_ui_description(fn, "Ensure sequence editor is valid in this scene");
   parm = api_def_ptr(
-      fn, "sequence_editor", "SequenceEditor", "", "New sequence editor data or NULL");
+      fn, "seq_editor", "SeqEditor", "", "New sequence editor data or NULL");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "sequence_editor_clear", "rna_Scene_sequencer_editing_free");
+  fn = api_def_fn(sapi, "seq_editor_clear", "api_Scene_seq_editing_free");
   api_def_fn_ui_description(fn, "Clear sequence editor in this scene");
 
 #  ifdef WITH_ALEMBIC
@@ -362,10 +360,10 @@ void api_scene(ApiStruct *sapi)
                   "Export only objects in visible layers");
   api_def_bool(fn, "face_sets", 0, "Facesets", "Export face sets");
   api_def_bool(fn,
-                  "subdiv_schema",
-                  0,
-                  "Use Alembic subdivision Schema",
-                  "Use Alembic subdivision Schema");
+               "subdiv_schema",
+               0,
+               "Use Alembic subdivision Schema",
+               "Use Alembic subdivision Schema");
   api_def_bool(
       fn, "export_hair", 1, "Export Hair", "Exports hair particle systems as animated curves");
   api_def_bool(
@@ -406,7 +404,7 @@ void api_scene_render(ApiStruct *sapi)
   ApiFn *fn;
   ApiProp *parm;
 
-  fn = api_def_fn(sapi, "frame_path", "rna_SceneRender_get_frame_path
+  fn = api_def_fn(sapi, "frame_path", "api_SceneRender_get_frame_path
   api_def_fn_flag(fn, FN_USE_MAIN);
   api_def_fn_ui_description(
       fn, "Return the absolute path to the filename to be written for a given frame");
