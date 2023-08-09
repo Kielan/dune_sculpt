@@ -1357,8 +1357,7 @@ static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED
 
   if (imf == NULL) {
     return api_enum_image_color_depth_items;
-  }
-  else {
+  } else {
     const int depth_ok = dune_imtype_valid_depths(imf->imtype);
     const int is_float = ELEM(
         imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER);
@@ -1855,7 +1854,7 @@ static void api_Scene_editmesh_select_mode_set(ApiPtr *ptr, const bool *value)
 
     /* Update select mode in all the workspaces in mesh edit mode. */
     wmWindowManager *wm = G_MAIN->wm.first;
-    LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
+    LIST_FOREACH (wmWindow *, win, &wm->windows) {
       const Scene *scene = wm_window_get_active_scene(win);
       ViewLayer *view_layer = wm_window_get_active_view_layer(win);
       if (view_layer) {
@@ -1903,7 +1902,7 @@ static void api_Scene_uv_select_mode_update(Cxt *C, ApiPtr *UNUSED(ptr))
 
 static void object_simplify_update(Object *ob)
 {
-  ModifierData *md;
+  ModData *md;
   ParticleSystem *psys;
 
   if ((ob->id.tag & LIB_TAG_DOIT) == 0) {
@@ -2449,7 +2448,7 @@ void api_ViewLayer_active_aov_index_range(
   ViewLayer *view_layer = (ViewLayer *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&view_layer->aovs) - 1);
+  *max = max_ii(0, lib_list_count(&view_layer->aovs) - 1);
 }
 
 int api_ViewLayer_active_aov_index_get(ApiPtr *ptr)
@@ -3554,15 +3553,15 @@ static void api_def_tool_settings(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
   api_def_prop_update(
-      prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_point_update");
+      prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_vertex_mask_point_update");
 
   prop = api_def_prop(sapi, "use_pen_vertex_select_mask_stroke", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(
-      prop, NULL, "pen_selectmode_vertex", GP_VERTEX_MASK_SELECTMODE_STROKE);
+      prop, NULL, "pen_selectmode_vertex", PEN_VERTEX_MASK_SELECTMODE_STROKE);
   api_def_prop_ui_text(prop, "Selection Mask", "Only paint selected stroke");
-  api_def_prop_ui_icon(prop, ICON_GP_SELECT_STROKES, 0);
+  api_def_prop_ui_icon(prop, ICON_PEN_SELECT_STROKES, 0);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_update(
       prop, NC_SPACE | ND_SPACE_VIEW3D, "api_pen_vertex_mask_stroke_update");
 
@@ -3579,7 +3578,7 @@ static void api_def_tool_settings(DuneApi *dapi)
 
   /* Annotations - 2D Views Stroke Placement */
   prop = api_def_prop(sapi, "annotation_stroke_placement_view2d", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_bitflag_stype(prop, NULL, "gpencil_v2d_align");
+  api_def_prop_enum_bitflag_stype(prop, NULL, "pen_v2d_align");
   api_def_prop_enum_items(prop, annotation_stroke_placement_view2d_items);
   api_def_prop_ui_text(prop, "Stroke Placement (2D View)", "");
   api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
@@ -3793,7 +3792,7 @@ static void api_def_seq_tool_settings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Ignore Muted Strips", "Don't snap to hidden strips");
 
   prop = api_def_prop(sapi, "snap_ignore_sound", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stupe(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_SOUND);
+  api_def_prop_bool_stype(prop, NULL, "snap_flag", SEQ_SNAP_IGNORE_SOUND);
   api_def_prop_ui_text(prop, "Ignore Sound Strips", "Don't snap to sound strips");
 
   prop = api_def_prop(sapi, "use_snap_current_frame_to_strips", PROP_BOOL, PROP_NONE);
@@ -4211,7 +4210,7 @@ static void api_def_unit_settings(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "time_unit", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, DummyApi_DEFAULT_items);
-  api_def_prop_enum_fns(prop, NULL, NULL, "rna_UnitSettings_time_unit_itemf");
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_UnitSettings_time_unit_itemf");
   api_def_prop_ui_text(prop, "Time Unit", "Unit that will be used to display time values");
   api_def_prop_update(prop, NC_WINDOW, NULL);
 
@@ -4928,7 +4927,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
                        NULL,
                        NULL);
   api_def_prop_ui_text(prop, "Line Style", "Line style settings");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "name");
@@ -5053,7 +5052,7 @@ void api_def_freestyle_settings(DuneApi *dapi)
       "Select ridges and valleys (boundary lines between convex and concave areas of surface)");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_freestyle_update");
 
-  prop = api_def_prop(sapi, "select_suggestive_contour", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select_suggestive_contour", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "edge_types", FREESTYLE_FE_SUGGESTIVE_CONTOUR);
   api_def_prop_ui_text(
       prop, "Suggestive Contour", "Select suggestive contours (almost silhouette/contour edges)");
@@ -5779,7 +5778,7 @@ static void api_def_scene_image_format_data(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   /* Cineon and DPX */
-  prop = api_def_prop(sapi, "use_cineon_log", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_cineon_log", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "cineon_flag", R_IMF_CINEON_FLAG_LOG);
   api_def_prop_ui_text(prop, "Log", "Convert to logarithmic color space");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
@@ -6062,7 +6061,7 @@ static void api_def_scene_ffmpeg_settings(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_lossless_output", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flags", FFMPEG_LOSSLESS_OUTPUT);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_bool_fns(prop, NULL, "rna_FFmpegSettings_lossless_output_set");
+  api_def_prop_bool_fns(prop, NULL, "api_FFmpegSettings_lossless_output_set");
   api_def_prop_ui_text(prop, "Lossless Output", "Use lossless output for video streams");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
@@ -6327,11 +6326,11 @@ static void api_def_scene_render_data(DuneApi *dapi)
       "World background is transparent, for compositing the render over another background");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_render_update");
 
-  prop = api_def_prop(sapi, "use_freestyle", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_freestyle", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_bool_stype(prop, NULL, "mode", R_EDGE_FRS);
   api_def_prop_ui_text(prop, "Edge", "Draw stylized strokes using Freestyle");
-  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_use_freestyle_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_use_freestyle_update");
 
   /* threads */
   prop = api_def_prop(sapi, "threads", PROP_INT, PROP_NONE);
@@ -6567,7 +6566,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Bake from Multires", "Bake directly from multires object");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = api_def_prop(sapi, "use_bake_lores_mesh", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_bake_lores_mesh", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "bake_flag", R_BAKE_LORES_MESH);
   api_def_prop_ui_text(
       prop, "Low Resolution Mesh", "Calculate heights against unsubdivided low resolution mesh");
@@ -7152,7 +7151,7 @@ static void api_def_scene_display(DuneApi *dapi)
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_range(prop, 0.0f, 1.0f, 1, 2);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "rna_Scene_set_update");
+  api_def_prop_update(prop, NC_SCENE | NA_EDITED, "api_Scene_set_update");
 
   prop = api_def_prop(sapi, "matcap_ssao_distance", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_ui_text(
@@ -7271,7 +7270,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Irradiance Smoothing",
                        "Smoother irradiance interpolation but introduce light bleeding");
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "gi_glossy_clamp", PROP_FLOAT, PROP_NONE);
@@ -7339,7 +7338,7 @@ static void api_def_scene_eevee(DuneApi *dapi)
   prop = api_def_prop(sapi, "taa_render_samples", PROP_INT, PROP_NONE);
   api_def_prop_ui_text(prop, "Render Samples", "Number of samples per pixel for rendering");
   api_def_prop_range(prop, 1, INT_MAX);
-  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBR);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
   api_def_prop_flag(prop, PROP_ANIMATABLE);
 
@@ -8017,7 +8016,7 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_Scene_use_nodes_update");
 
   /* Seq */
-  prop = api_def_prop(sapi, "seq_editor", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "seq_editor", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "ed");
   api_def_prop_struct_type(prop, "SeqEditor");
   api_def_prop_ui_text(prop, "Seq Editor", "");
@@ -8063,7 +8062,7 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Tool Settings", "");
 
   /* Unit Settings */
-  prop = api_def_prop(sapi, "unit_settings", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "unit_settings", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "unit");
   api_def_prop_struct_type(prop, "UnitSettings");
@@ -8083,7 +8082,7 @@ void api_def_scene(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Phys_update");
 
   /* Render Data */
-  prop = api_def_prop(sapi, "render", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "render", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "r");
   api_def_prop_struct_type(prop, "RenderSettings");
