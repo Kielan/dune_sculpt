@@ -168,7 +168,7 @@ static ApiStruct *api_Texture_refine(struct PointerRNA *ptr)
   }
 }
 
-static void api_Texture_update(Main *main, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Texture_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Id *id = ptr->owner_id;
 
@@ -553,7 +553,7 @@ static void api_def_colormapping(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ColorMapping", NULL);
-  RNA_def_struct_ui_text(sapi, "Color Mapping", "Color mapping settings");
+  api_def_struct_ui_text(sapi, "Color Mapping", "Color mapping settings");
 
   prop = api_def_prop(sapi, "use_color_ramp", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", COLORMAP_USE_RAMP);
@@ -1444,7 +1444,7 @@ static void api_def_texture_voronoi(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "vn_w3");
   api_def_prop_range(prop, -2, 2);
   api_def_prop_ui_text(prop, "Weight 3", "Voronoi feature weight 3");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "weight_4", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "vn_w4");
@@ -1465,13 +1465,13 @@ static void api_def_texture_voronoi(DuneApi *dapi)
       prop,
       "Distance Metric",
       "Algorithm used to calculate distance of sample points to feature points");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "color_mode", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "vn_coltype");
   api_def_prop_enum_items(prop, prop_coloring_items);
   api_def_prop_ui_text(prop, "Coloring", "");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "noise_intensity", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "ns_outscale");
@@ -1554,56 +1554,56 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Type", "");
   api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "use_clamp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", TEX_NO_CLAMP);
-  RNA_def_property_ui_text(prop,
-                           "Clamp",
-                           "Set negative texture RGB and intensity values to zero, for some uses "
-                           "like displacement this option can be disabled to get the full range");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_clamp", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "flag", TEX_NO_CLAMP);
+  api_def_prop_ui_text(prop,
+                       "Clamp",
+                       "Set negative texture RGB and intensity values to zero, for some uses "
+                       "like displacement this option can be disabled to get the full range");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "use_color_ramp", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_COLORBAND);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_Texture_use_color_ramp_set");
-  RNA_def_property_ui_text(prop,
-                           "Use Color Ramp",
-                           "Map the texture intensity to the color ramp. "
-                           "Note that the alpha value is used for image textures, "
-                           "enable \"Calculate Alpha\" for images without an alpha channel");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_color_ramp", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEX_COLORBAND);
+  api_def_prop_bool_fns(prop, NULL, "api_Texture_use_color_ramp_set");
+  api_def_prop_ui_text(prop,
+                       "Use Color Ramp",
+                       "Map the texture intensity to the color ramp. "
+                       "Note that the alpha value is used for image textures, "
+                       "enable \"Calculate Alpha\" for images without an alpha channel");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "color_ramp", PROP_POINTER, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "coba");
-  RNA_def_property_struct_type(prop, "ColorRamp");
-  RNA_def_property_ui_text(prop, "Color Ramp", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "color_ramp", PROP_PTR, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "coba");
+  api_def_prop_struct_type(prop, "ColorRamp");
+  api_def_prop_ui_text(prop, "Color Ramp", "");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bright");
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Brightness", "Adjust the brightness of the texture");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "intensity", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_stype(prop, NULL, "bright");
+  RNA_def_prop_range(prop, 0, 2);
+  RNA_def_prop_ui_range(prop, 0, 2, 1, 3);
+  RNA_def_prop_ui_text(prop, "Brightness", "Adjust the brightness of the texture");
+  RNA_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "contrast", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 5);
-  RNA_def_property_ui_range(prop, 0, 5, 1, 3);
-  RNA_def_property_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "contrast", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 5);
+  api_def_prop_ui_range(prop, 0, 5, 1, 3);
+  api_def_prop_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "saturation", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Saturation", "Adjust the saturation of colors in the texture");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "saturation", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  api_def_prop_ui_text(prop, "Saturation", "Adjust the saturation of colors in the texture");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   /* RGB Factor */
-  prop = RNA_def_property(srna, "factor_red", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "rfac");
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Factor Red", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "factor_red", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "rfac");
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  RNA_def_prop_ui_text(prop, "Factor Red", "");
+  RNA_def_prop_update(prop, 0, "apo_Texture_update");
 
   prop = RNA_def_property(srna, "factor_green", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "gfac");
@@ -1658,12 +1658,12 @@ static void api_def_texture(DuneApi *dapi)
   RNA_api_texture(srna);
 }
 
-void RNA_def_texture(BlenderRNA *brna)
+void api_def_texture(BlenderRNA *brna)
 {
-  rna_def_texture(brna);
-  rna_def_mtex(brna);
-  rna_def_texmapping(brna);
-  rna_def_colormapping(brna);
+  api_def_texture(dapi);
+  rna_def_mtex(dapi);
+  rna_def_texmapping(dapi);
+  rna_def_colormapping(dapi);
 }
 
 #endif
