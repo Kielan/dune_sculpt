@@ -25,8 +25,7 @@ static void api_Text_filepath_get(ApiPtr *ptr, char *value)
 
   if (text->filepath) {
     strcpy(value, text->filepath);
-  }
-  else {
+  } else {
     value[0] = '\0';
   }
 }
@@ -47,8 +46,7 @@ static void api_Text_filepath_set(ApiPtr *ptr, const char *value)
 
   if (value[0]) {
     text->filepath = lib_strdup(value);
-  }
-  else {
+  } else {
     text->filepath = NULL;
   }
 }
@@ -59,16 +57,16 @@ static bool api_Text_modified_get(ApiPtr *ptr)
   return dune_text_file_modified_check(text) != 0;
 }
 
-static int rna_Text_current_line_index_get(PointerRNA *ptr)
+static int api_Text_current_line_index_get(ApiPtr *ptr)
 {
   Text *text = (Text *)ptr->data;
-  return BLI_findindex(&text->lines, text->curl);
+  return lib_findindex(&text->lines, text->curl);
 }
 
-static void rna_Text_current_line_index_set(PointerRNA *ptr, int value)
+static void api_Text_current_line_index_set(ApiPtr *ptr, int value)
 {
   Text *text = ptr->data;
-  TextLine *line = BLI_findlink(&text->lines, value);
+  TextLine *line = lib_findlink(&text->lines, value);
   if (line == NULL) {
     line = text->lines.last;
   }
@@ -76,16 +74,16 @@ static void rna_Text_current_line_index_set(PointerRNA *ptr, int value)
   text->curc = 0;
 }
 
-static int rna_Text_select_end_line_index_get(PointerRNA *ptr)
+static int api_Text_select_end_line_index_get(ApiPtr *ptr)
 {
   Text *text = ptr->data;
-  return BLI_findindex(&text->lines, text->sell);
+  return lib_findindex(&text->lines, text->sell);
 }
 
-static void rna_Text_select_end_line_index_set(PointerRNA *ptr, int value)
+static void api_Text_select_end_line_index_set(ApiPtr *ptr, int value)
 {
   Text *text = ptr->data;
-  TextLine *line = BLI_findlink(&text->lines, value);
+  TextLine *line = lib_findlink(&text->lines, value);
   if (line == NULL) {
     line = text->lines.last;
   }
@@ -93,92 +91,91 @@ static void rna_Text_select_end_line_index_set(PointerRNA *ptr, int value)
   text->selc = 0;
 }
 
-static int rna_Text_current_character_get(PointerRNA *ptr)
+static int api_Text_current_character_get(ApiPtr *ptr)
 {
   Text *text = ptr->data;
-  return BLI_str_utf8_offset_to_index(text->curl->line, text->curc);
+  return lib_str_utf8_offset_to_index(text->curl->line, text->curc);
 }
 
-static void rna_Text_current_character_set(PointerRNA *ptr, int index)
+static void api_Text_current_character_set(ApiPtr *ptr, int index)
 {
   Text *text = ptr->data;
   TextLine *line = text->curl;
-  const int len_utf8 = BLI_strlen_utf8(line->line);
+  const int len_utf8 = lib_strlen_utf8(line->line);
   CLAMP_MAX(index, len_utf8);
-  text->curc = BLI_str_utf8_offset_from_index(line->line, index);
+  text->curc = lib_str_utf8_offset_from_index(line->line, index);
 }
 
-static int rna_Text_select_end_character_get(PointerRNA *ptr)
+static int api_Text_select_end_character_get(ApiPtr *ptr)
 {
   Text *text = ptr->data;
-  return BLI_str_utf8_offset_to_index(text->sell->line, text->selc);
+  return lib_str_utf8_offset_to_index(text->sell->line, text->selc);
 }
 
-static void rna_Text_select_end_character_set(PointerRNA *ptr, int index)
+static void api_Text_select_end_character_set(Apitr *ptr, int index)
 {
   Text *text = ptr->data;
   TextLine *line = text->sell;
-  const int len_utf8 = BLI_strlen_utf8(line->line);
+  const int len_utf8 = lib_strlen_utf8(line->line);
   CLAMP_MAX(index, len_utf8);
-  text->selc = BLI_str_utf8_offset_from_index(line->line, index);
+  text->selc = lib_str_utf8_offset_from_index(line->line, index);
 }
 
-static void rna_TextLine_body_get(PointerRNA *ptr, char *value)
+static void api_TextLine_body_get(ApiPtr *ptr, char *value)
 {
   TextLine *line = (TextLine *)ptr->data;
 
   if (line->line) {
     strcpy(value, line->line);
-  }
-  else {
+  } else {
     value[0] = '\0';
   }
 }
 
-static int rna_TextLine_body_length(PointerRNA *ptr)
+static int api_TextLine_body_length(ApiPtr *ptr)
 {
   TextLine *line = (TextLine *)ptr->data;
   return line->len;
 }
 
-static void rna_TextLine_body_set(PointerRNA *ptr, const char *value)
+static void api_TextLine_body_set(ApiPtr *ptr, const char *value)
 {
   TextLine *line = (TextLine *)ptr->data;
   int len = strlen(value);
 
   if (line->line) {
-    MEM_freeN(line->line);
+    mem_freen(line->line);
   }
 
-  line->line = MEM_mallocN((len + 1) * sizeof(char), "rna_text_body");
+  line->line = mem_mallocn((len + 1) * sizeof(char), "api_text_body");
   line->len = len;
   memcpy(line->line, value, len + 1);
 
   if (line->format) {
-    MEM_freeN(line->format);
+    mem_freen(line->format);
     line->format = NULL;
   }
 }
 
 #else
 
-static void rna_def_text_line(BlenderRNA *brna)
+static void api_def_text_line(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "TextLine", NULL);
-  RNA_def_struct_ui_text(srna, "Text Line", "Line of text in a Text data-block");
+  sapi = api_def_struct(dapi, "TextLine", NULL);
+  api_def_struct_ui_text(sapi, "Text Line", "Line of text in a Text data-block");
 
-  prop = RNA_def_property(srna, "body", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(
-      prop, "rna_TextLine_body_get", "rna_TextLine_body_length", "rna_TextLine_body_set");
-  RNA_def_property_ui_text(prop, "Line", "Text in the line");
-  RNA_def_property_update(prop, NC_TEXT | NA_EDITED, NULL);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_TEXT);
+  prop = api_def_prop(sapi, "body", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(
+      prop, "api_TextLine_body_get", "api_TextLine_body_length", "api_TextLine_body_set");
+  api_def_prop_ui_text(prop, "Line", "Text in the line");
+  api_def_prop_update(prop, NC_TEXT | NA_EDITED, NULL);
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_TEXT);
 }
 
-static void rna_def_text(BlenderRNA *brna)
+static void api_def_text(DuneApi *dapi)
 {
 
   static const EnumPropertyItem indentation_items[] = {
