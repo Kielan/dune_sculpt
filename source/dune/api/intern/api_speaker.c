@@ -123,8 +123,8 @@ static void api_def_speaker(DuneApi *dapi)
       "Inner Cone Angle",
       "Angle of the inner cone, in degrees, inside the cone the volume is 100%");
 #  if 0
-  api_def_prop_float_fns(prop, NULL, "rna_Speaker_cone_angle_inner_set", NULL
-  api_def_prop_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_cone_angle_inner_set", NULL
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
   prop = api_def_prop(sapi, "cone_volume_outer", PROP_FLOAT, PROP_FACTOR);
