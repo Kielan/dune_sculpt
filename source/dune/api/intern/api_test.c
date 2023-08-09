@@ -46,12 +46,12 @@
       ((void)0)
 
 #    define DEF_GET_SET_LEN(arr, max) \
-      static int rna_Test_##arr##_get_length(PointerRNA *ptr) \
+      static int api_Test_##arr##_get_length(ApiPtr *ptr) \
       { \
         return arr##_len; \
       } \
 \
-      static int rna_Test_##arr##_set_length(PointerRNA *ptr, int length) \
+      static int api_Test_##arr##_set_length(ApiPtr *ptr, int length) \
       { \
         if (length > max) { \
           return 0; \
@@ -92,29 +92,28 @@ DEF_GET_SET_LEN(bdmarr, DYNAMIC_MARRAY_SIZE(int));
 
 #else
 
-void RNA_def_test(BlenderRNA *brna)
+void api_def_test(DuneApi *dapi)
 {
 #  ifdef UNIT_TEST
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
   ushort dimsize[] = {MARRAY_DIMSIZE};
 
-  srna = RNA_def_struct(brna, "Test", NULL);
-  RNA_def_struct_sdna(srna, "Test");
+  sapi = api_def_struct(dapi, "Test", NULL);
+  api_def_struct_stype(sapi, "Test");
 
-  prop = RNA_def_float_array(
+  prop = api_def_float_array(
       srna, "farr", ARRAY_SIZE, NULL, 0.0f, 0.0f, "farr", "float array", 0.0f, 0.0f);
-  RNA_def_property_float_funcs(prop, "rna_Test_farr_get", "rna_Test_farr_set", NULL);
+  api_def_prop_float_fns(prop, "api_Test_farr_get", "api_Test_farr_set", NULL);
 
-  prop = RNA_def_int_array(srna, "iarr", ARRAY_SIZE, NULL, 0, 0, "iarr", "int array", 0, 0);
-  RNA_def_property_int_funcs(prop, "rna_Test_iarr_get", "rna_Test_iarr_set", NULL);
+  prop = api_def_int_array(sapi, "iarr", ARRAY_SIZE, NULL, 0, 0, "iarr", "int array", 0, 0);
+  api_def_prop_int_fns(prop, "api_Test_iarr_get", "api_Test_iarr_set", NULL);
 
-  prop = RNA_def_boolean_array(srna, "barr", ARRAY_SIZE, NULL, "barr", "boolean array");
-  RNA_def_property_boolean_funcs(prop, "rna_Test_barr_get", "rna_Test_barr_set");
+  prop = api_def_bool_array(sapi, "barr", ARRAY_SIZE, NULL, "barr", "bool array");
+  api_def_prop_bool_fns(prop, "api_Test_barr_get", "api_Test_barr_set");
 
   /* dynamic arrays */
-
-  prop = RNA_def_float_array(srna,
+  prop = api_def_float_array(sapi,
                              "fdarr",
                              DYNAMIC_ARRAY_SIZE,
                              NULL,
@@ -124,63 +123,62 @@ void RNA_def_test(BlenderRNA *brna)
                              "dynamic float array",
                              0.0f,
                              0.0f);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_fdarr_get_length", "rna_Test_fdarr_set_length");
-  RNA_def_property_float_funcs(prop, "rna_Test_fdarr_get", "rna_Test_fdarr_set", NULL);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_fdarr_get_length", "api_Test_fdarr_set_length");
+  api_def_prop_float_fns(prop, "api_Test_fdarr_get", "api_Test_fdarr_set", NULL);
 
-  prop = RNA_def_int_array(
+  prop = api_def_int_array(
       srna, "idarr", DYNAMIC_ARRAY_SIZE, NULL, 0, 0, "idarr", "int array", 0, 0);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_idarr_get_length", "rna_Test_idarr_set_length");
-  RNA_def_property_int_funcs(prop, "rna_Test_idarr_get", "rna_Test_idarr_set", NULL);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_idarr_get_length", "api_Test_idarr_set_length");
+  api_def_prop_int_fns(prop, "api_Test_idarr_get", "api_Test_idarr_set", NULL);
 
-  prop = RNA_def_boolean_array(srna, "bdarr", DYNAMIC_ARRAY_SIZE, NULL, "bdarr", "boolean array");
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_bdarr_get_length", "rna_Test_bdarr_set_length");
-  RNA_def_property_boolean_funcs(prop, "rna_Test_bdarr_get", "rna_Test_bdarr_set");
+  prop = api_def_bool_array(sapi, "bdarr", DYNAMIC_ARRAY_SIZE, NULL, "bdarr", "boolean array");
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_bdarr_get_length", "api_Test_bdarr_set_length");
+  api_def_prop_bool_fns(prop, "api_Test_bdarr_get", "api_Test_bdarr_set");
 
   /* multidimensional arrays */
 
-  prop = RNA_def_property(srna, "fmarr", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_multidimensional_array(prop, MARRAY_SIZE(float), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_float_funcs(prop, "rna_Test_fmarr_get", "rna_Test_fmarr_set", NULL);
+  prop = api_def_prop(sapi, "fmarr", PROP_FLOAT, PROP_NONE);
+  api_def_prop_multidimensional_array(prop, MARRAY_SIZE(float), MARRAY_TOTDIM, dimsize);
+  api_def_prop_float_fns(prop, "api_Test_fmarr_get", "api_Test_fmarr_set", NULL);
 
-  prop = RNA_def_property(srna, "imarr", PROP_INT, PROP_NONE);
-  RNA_def_property_multidimensional_array(prop, MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_int_funcs(prop, "rna_Test_imarr_get", "rna_Test_imarr_set", NULL);
+  prop = api_def_prop(sapi, "imarr", PROP_INT, PROP_NONE);
+  api_def_prop_multidimensional_array(prop, MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
+  Po_def_prop_int_fns(prop, "api_Test_imarr_get", "api_Test_imarr_set", NULL);
 
-  prop = RNA_def_property(srna, "bmarr", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_multidimensional_array(prop, MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_boolean_funcs(prop, "rna_Test_bmarr_get", "rna_Test_bmarr_set");
+  prop = api_def_prop(sapi, "bmarr", PROP_BOOL, PROP_NONE);
+  api_def_prop_multidimensional_array(prop, MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
+  api_def_prop_bool_fns(prop, "api_Test_bmarr_get", "api_Test_bmarr_set");
 
   /* dynamic multidimensional arrays */
-
-  prop = RNA_def_property(srna, "fdmarr", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_multidimensional_array(
+  prop = api_def_prop(sapi, "fdmarr", PROP_FLOAT, PROP_NONE);
+  api_def_prop_multidimensional_array(
       prop, DYNAMIC_MARRAY_SIZE(float), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_fdmarr_get_length", "rna_Test_fdmarr_set_length");
-  RNA_def_property_float_funcs(prop, "rna_Test_fdmarr_get", "rna_Test_fdmarr_set", NULL);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_fdmarr_get_length", "api_Test_fdmarr_set_length");
+  api_def_prop_float_fns(prop, "api_Test_fdmarr_get", "api_Test_fdmarr_set", NULL);
 
-  prop = RNA_def_property(srna, "idmarr", PROP_INT, PROP_NONE);
-  RNA_def_property_multidimensional_array(prop, DYNAMIC_MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_idmarr_get_length", "rna_Test_idmarr_set_length");
-  RNA_def_property_int_funcs(prop, "rna_Test_idmarr_get", "rna_Test_idmarr_set", NULL);
+  prop = api_def_prop(sapi, "idmarr", PROP_INT, PROP_NONE);
+  api_def_prop_multidimensional_array(prop, DYNAMIC_MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_idmarr_get_length", "api_Test_idmarr_set_length");
+  api_def_prop_int_fns(prop, "api_Test_idmarr_get", "api_Test_idmarr_set", NULL);
 
-  prop = RNA_def_property(srna, "bdmarr", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_multidimensional_array(prop, DYNAMIC_MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
-  RNA_def_property_flag(prop, PROP_DYNAMIC);
-  RNA_def_property_dynamic_array_funcs(
-      prop, "rna_Test_bdmarr_get_length", "rna_Test_bdmarr_set_length");
-  RNA_def_property_boolean_funcs(prop, "rna_Test_bdmarr_get", "rna_Test_bdmarr_set");
+  prop = api_def_prop(sapi, "bdmarr", PROP_BOOL, PROP_NONE);
+  api_def_prop_multidimensional_array(prop, DYNAMIC_MARRAY_SIZE(int), MARRAY_TOTDIM, dimsize);
+  api_def_prop_flag(prop, PROP_DYNAMIC);
+  api_def_prop_dynamic_array_fns(
+      prop, "api_Test_bdmarr_get_length", "api_Test_bdmarr_set_length");
+  api_def_prop_bool_fns(prop, "api_Test_bdmarr_get", "api_Test_bdmarr_set");
 #  else
-  (void)brna;
+  (void)dapi;
 #  endif
 }
 
