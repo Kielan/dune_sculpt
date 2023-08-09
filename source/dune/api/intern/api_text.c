@@ -178,113 +178,113 @@ static void api_def_text_line(DuneApi *dapi)
 static void api_def_text(DuneApi *dapi)
 {
 
-  static const EnumPropertyItem indentation_items[] = {
+  static const EnumPropItem indentation_items[] = {
       {0, "TABS", 0, "Tabs", "Indent using tabs"},
       {TXT_TABSTOSPACES, "SPACES", 0, "Spaces", "Indent using spaces"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Text", "ID");
-  RNA_def_struct_ui_text(
-      srna, "Text", "Text data-block referencing an external or packed text file");
-  RNA_def_struct_ui_icon(srna, ICON_TEXT);
-  RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
+  sapi = api_def_struct(dapi, "Text", "ID");
+  api_def_struct_ui_text(
+      sapi, "Text", "Text data-block referencing an external or packed text file");
+  api_def_struct_ui_icon(sapi, ICON_TEXT);
+  api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
 
-  prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(
-      prop, "rna_Text_filepath_get", "rna_Text_filepath_length", "rna_Text_filepath_set");
-  RNA_def_property_ui_text(prop, "File Path", "Filename of the text file");
+  prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(
+      prop, "api_Text_filepath_get", "api_Text_filepath_length", "api_Text_filepath_set");
+  api_def_prop_ui_text(prop, "File Path", "Filename of the text file");
 
-  prop = RNA_def_property(srna, "is_dirty", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", TXT_ISDIRTY);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Dirty", "Text file has been edited since last save");
+  prop = api_def_prop(sapi, "is_dirty", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", TXT_ISDIRTY);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Dirty", "Text file has been edited since last save");
 
-  prop = RNA_def_property(srna, "is_modified", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Text_modified_get", NULL);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_TEXT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_modified", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Text_modified_get", NULL);
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_TEXT);
+  api_def_prop_ui_text(
       prop, "Modified", "Text file on disk is different than the one in memory");
 
-  prop = RNA_def_property(srna, "is_in_memory", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", TXT_ISMEM);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_in_memory", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", TXT_ISMEM);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Memory", "Text file is in memory, without a corresponding file on disk");
+  
+  prop = api_def_prop(sapi, "use_module", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", TXT_ISSCRIPT);
+  api_def_prop_ui_text(prop, "Register", "Run this text as a Python script on loading");
 
-  prop = RNA_def_property(srna, "use_module", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", TXT_ISSCRIPT);
-  RNA_def_property_ui_text(prop, "Register", "Run this text as a Python script on loading");
+  prop = api_def_prop(sapi, "indentation", PROP_ENUM, PROP_NONE); /* as an enum */
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flags");
+  api_def_prop_enum_items(prop, indentation_items);
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_TEXT);
+  api_def_prop_ui_text(prop, "Indentation", "Use tabs or spaces for indentation");
 
-  prop = RNA_def_property(srna, "indentation", PROP_ENUM, PROP_NONE); /* as an enum */
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flags");
-  RNA_def_property_enum_items(prop, indentation_items);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_TEXT);
-  RNA_def_property_ui_text(prop, "Indentation", "Use tabs or spaces for indentation");
+  prop = api_def_prop(sapi, "lines", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "TextLine");
+  api_def_prop_ui_text(prop, "Lines", "Lines of text");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_TEXT);
 
-  prop = RNA_def_property(srna, "lines", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "TextLine");
-  RNA_def_property_ui_text(prop, "Lines", "Lines of text");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_TEXT);
-
-  prop = RNA_def_property(srna, "current_line", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "curl");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "TextLine");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "current_line", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "curl");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "TextLine");
+  api_def_prop_ui_text(
       prop, "Current Line", "Current line, and start line of selection if one exists");
 
-  prop = RNA_def_property(srna, "current_character", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_text(prop,
-                           "Current Character",
-                           "Index of current character in current line, and also start index of "
-                           "character in selection if one exists");
-  RNA_def_property_int_funcs(
-      prop, "rna_Text_current_character_get", "rna_Text_current_character_set", NULL);
-  RNA_def_property_update(prop, NC_TEXT | ND_CURSOR, NULL);
+  prop = api_def_prop(sapi, "current_character", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_text(prop,
+                       "Current Character",
+                       "Index of current character in current line, and also start index of "
+                       "character in selection if one exists");
+  api_def_prop_int_fns(
+      prop, "api_Text_current_character_get", "api_Text_current_character_set", NULL);
+  api_def_prop_update(prop, NC_TEXT | ND_CURSOR, NULL);
 
-  prop = RNA_def_property(srna, "current_line_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_funcs(
-      prop, "rna_Text_current_line_index_get", "rna_Text_current_line_index_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "current_line_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_fns(
+      prop, "api_Text_current_line_index_get", "api_Text_current_line_index_set", NULL);
+  api_def_prop_ui_text(
       prop, "Current Line Index", "Index of current TextLine in TextLine collection");
-  RNA_def_property_update(prop, NC_TEXT | ND_CURSOR, NULL);
+  api_def_prop_update(prop, NC_TEXT | ND_CURSOR, NULL);
 
-  prop = RNA_def_property(srna, "select_end_line", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "sell");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "TextLine");
-  RNA_def_property_ui_text(prop, "Selection End Line", "End line of selection");
+  prop = api_def_prop(sapi, "select_end_line", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "sell");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "TextLine");
+  api_def_prop_ui_text(prop, "Selection End Line", "End line of selection");
 
-  prop = RNA_def_property(srna, "select_end_line_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_funcs(
-      prop, "rna_Text_select_end_line_index_get", "rna_Text_select_end_line_index_set", NULL);
-  RNA_def_property_ui_text(prop, "Select End Line Index", "Index of last TextLine in selection");
-  RNA_def_property_update(prop, NC_TEXT | ND_CURSOR, NULL);
+  prop = api_def_prop(sapi, "select_end_line_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_fns(
+      prop, "api_Text_select_end_line_index_get", "api_Text_select_end_line_index_set", NULL);
+  api_def_prop_ui_text(prop, "Select End Line Index", "Index of last TextLine in selection");
+  api_def_prop_update(prop, NC_TEXT | ND_CURSOR, NULL);
 
-  prop = RNA_def_property(srna, "select_end_character", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_text(prop,
-                           "Selection End Character",
-                           "Index of character after end of selection in the selection end line");
-  RNA_def_property_int_funcs(
-      prop, "rna_Text_select_end_character_get", "rna_Text_select_end_character_set", NULL);
-  RNA_def_property_update(prop, NC_TEXT | ND_CURSOR, NULL);
+  prop = api_def_prop(sapi, "select_end_character", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_text(prop,
+                       "Selection End Character",
+                       "Index of character after end of selection in the selection end line");
+  api_def_prop_int_fns(
+      prop, "api_Text_select_end_character_get", "api_Text_select_end_character_set", NULL);
+  api_def_prop_update(prop, NC_TEXT | ND_CURSOR, NULL);
 
-  RNA_api_text(srna);
+  api_api_text(sapi);
 }
 
-void RNA_def_text(BlenderRNA *brna)
+void api_def_text(DuneApi *dapi)
 {
-  rna_def_text_line(brna);
-  rna_def_text(brna);
+  api_def_text_line(dapi);
+  api_def_text(dapi);
 }
 
 #endif
