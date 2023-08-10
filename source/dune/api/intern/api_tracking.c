@@ -714,29 +714,28 @@ static void api_trackingObject_remove(MovieTracking *tracking,
                                       ApiPtr *object_ptr)
 {
   MovieTrackingObject *tracking_object = object_ptr->data;
-  if (BKE_tracking_object_delete(tracking, tracking_object) == false) {
-    BKE_reportf(reports, RPT_ERROR, "MovieTracking '%s' cannot be removed", tracking_object->name);
+  if (dune_tracking_object_delete(tracking, tracking_object) == false) {
+    dune_reportf(reports, RPT_ERROR, "MovieTracking '%s' cannot be removed", tracking_object->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(object_ptr);
+  API_PTR_INVALIDATE(object_ptr);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
-static MovieTrackingMarker *rna_trackingMarkers_find_frame(MovieTrackingTrack *track,
+static MovieTrackingMarker *api_trackingMarkers_find_frame(MovieTrackingTrack *track,
                                                            int framenr,
                                                            bool exact)
 {
   if (exact) {
-    return BKE_tracking_marker_get_exact(track, framenr);
-  }
-  else {
-    return BKE_tracking_marker_get(track, framenr);
+    return dune_tracking_marker_get_exact(track, framenr);
+  } else {
+    return dune_tracking_marker_get(track, framenr);
   }
 }
 
-static MovieTrackingMarker *rna_trackingMarkers_insert_frame(MovieTrackingTrack *track,
+static MovieTrackingMarker *api_trackingMarkers_insert_frame(MovieTrackingTrack *track,
                                                              int framenr,
                                                              float co[2])
 {
@@ -747,43 +746,41 @@ static MovieTrackingMarker *rna_trackingMarkers_insert_frame(MovieTrackingTrack 
   copy_v2_v2(marker.pos, co);
 
   /* a bit arbitrary, but better than creating markers with zero pattern
-   * which is forbidden actually
-   */
+   * which is forbidden actually */
   copy_v2_v2(marker.pattern_corners[0], track->markers[0].pattern_corners[0]);
   copy_v2_v2(marker.pattern_corners[1], track->markers[0].pattern_corners[1]);
   copy_v2_v2(marker.pattern_corners[2], track->markers[0].pattern_corners[2]);
   copy_v2_v2(marker.pattern_corners[3], track->markers[0].pattern_corners[3]);
 
-  new_marker = BKE_tracking_marker_insert(track, &marker);
+  new_marker = dune_tracking_marker_insert(track, &marker);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 
   return new_marker;
 }
 
-static void rna_trackingMarkers_delete_frame(MovieTrackingTrack *track, int framenr)
+static void api_trackingMarkers_delete_frame(MovieTrackingTrack *track, int framenr)
 {
   if (track->markersnr == 1) {
     return;
   }
 
-  BKE_tracking_marker_delete(track, framenr);
+  dune_tracking_marker_delete(track, framenr);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
-static MovieTrackingPlaneMarker *rna_trackingPlaneMarkers_find_frame(
+static MovieTrackingPlaneMarker *api_trackingPlaneMarkers_find_frame(
     MovieTrackingPlaneTrack *plane_track, int framenr, bool exact)
 {
   if (exact) {
-    return BKE_tracking_plane_marker_get_exact(plane_track, framenr);
-  }
-  else {
-    return BKE_tracking_plane_marker_get(plane_track, framenr);
+    return dune_tracking_plane_marker_get_exact(plane_track, framenr);
+  } else {
+    return dune_tracking_plane_marker_get(plane_track, framenr);
   }
 }
 
-static MovieTrackingPlaneMarker *rna_trackingPlaneMarkers_insert_frame(
+static MovieTrackingPlaneMarker *api_trackingPlaneMarkers_insert_frame(
     MovieTrackingPlaneTrack *plane_track, int framenr)
 {
   MovieTrackingPlaneMarker plane_marker, *new_plane_marker;
@@ -797,9 +794,9 @@ static MovieTrackingPlaneMarker *rna_trackingPlaneMarkers_insert_frame(
   copy_v2_v2(plane_marker.corners[2], plane_track->markers[0].corners[2]);
   copy_v2_v2(plane_marker.corners[3], plane_track->markers[0].corners[3]);
 
-  new_plane_marker = BKE_tracking_plane_marker_insert(plane_track, &plane_marker);
+  new_plane_marker = dune_tracking_plane_marker_insert(plane_track, &plane_marker);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 
   return new_plane_marker;
 }
