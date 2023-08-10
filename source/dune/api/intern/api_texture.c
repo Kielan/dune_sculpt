@@ -708,7 +708,7 @@ static void api_def_filter_common(ApiStruct *sapi)
   api_def_prop_enum_stype(prop, NULL, "texfilter");
   api_def_prop_enum_items(prop, texture_filter_items);
   api_def_prop_ui_text(prop, "Filter", "Texture filter to use for sampling image");
-  RNA_def_prop_update(prop, 0, "api_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "filter_lightprobes", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "afmax");
@@ -1182,14 +1182,14 @@ static void api_def_texture_image(DuneApi *dapi)
   api_def_prop_enum_items(prop, prop_image_extension);
   api_def_prop_ui_text(
       prop, "Extension", "How the image is extrapolated past its original bounds");
-  RNA_def_prop_translation_cxt(prop, LANG_CXT_ID_IMAGE);
-  RNA_def_prop_update(prop, 0, "api_Texture_update");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_IMAGE);
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_prop(sapi, "repeat_x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_stype(prop, NULL, "xrepeat");
-  RNA_def_property_range(prop, 1, 512);
-  RNA_def_property_ui_text(prop, "Repeat X", "Repetition multiplier in the X direction");
-  RNA_def_property_update(prop, 0, "api_Texture_update");
+  prop = api_def_prop(sapi, "repeat_x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "xrepeat");
+  api_def_prop_range(prop, 1, 512);
+  api_def_prop_ui_text(prop, "Repeat X", "Repetition multiplier in the X direction");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "repeat_y", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "yrepeat");
@@ -1435,7 +1435,7 @@ static void api_def_texture_voronoi(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "weight_2", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_stype(prop, NULL, "vn_w2
+  api_def_prop_float_stype(prop, NULL, "vn_w2");
   api_def_prop_range(prop, -2, 2);
   api_def_prop_ui_text(prop, "Weight 2", "Voronoi feature weight 2");
   api_def_prop_update(prop, 0, "api_Texture_update");
