@@ -1637,25 +1637,25 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   api_def_prop_ui_text(prop, "Node Tree", "Node tree for node-based textures");
-  api_def_prop_update(prop, 0, "rna_Texture_nodes_update");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
-  api_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 
   /* specific types */
-  api_def_texture_clouds(brna);
-  a_def_texture_wood(brna);
-  a_def_texture_marble(brna);
-  a_def_texture_magic(brna);
-  api_def_texture_blend(brna);
-  api_def_texture_stucci(brna);
-  a_def_texture_noise(brna);
-  rna_def_texture_image(brna);
-  rna_def_texture_musgrave(brna);
-  rna_def_texture_voronoi(brna);
-  rna_def_texture_distorted_noise(brna);
+  api_def_texture_clouds(dapi);
+  api_def_texture_wood(dapi);
+  api_def_texture_marble(dapi);
+  api_def_texture_magic(dapi);
+  api_def_texture_blend(dapi);
+  api_def_texture_stucci(dapi);
+  api_def_texture_noise(dapi);
+  api_def_texture_image(dapi);
+  api_def_texture_musgrave(dapi);
+  api_def_texture_voronoi(dapi);
+  api_def_texture_distorted_noise(dapi);
   /* XXX add more types here. */
 
-  RNA_api_texture(srna);
+  api_texture(dapi);
 }
 
 void api_def_texture(BlenderRNA *brna)
