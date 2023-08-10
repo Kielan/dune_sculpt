@@ -1109,7 +1109,7 @@ static void api_def_texture_stucci(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Noise Type", "");
   api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = api_def_prop(sapi, "stucci_type", PROP_ENUM, PROP_NONE
+  prop = api_def_prop(sapi, "stucci_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "stype");
   api_def_prop_enum_items(prop, prop_stucci_stype);
   api_def_prop_ui_text(prop, "Pattern", "");
@@ -1503,7 +1503,7 @@ static void api_def_texture_distorted_noise(DuneApi *dapi)
   api_def_struct_stype(sapi, "Tex");
 
   prop = api_def_prop(sapi, "distortion", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "dist_amount");
+  api_def_prop_float_stype(prop, NULL, "dist_amount");
   api_def_prop_range(prop, 0, 10);
   api_def_prop_ui_text(prop, "Distortion Amount", "Amount of distortion");
   api_def_prop_update(prop, 0, "api_Texture_update");
@@ -1579,11 +1579,11 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_stype(prop, NULL, "bright");
-  RNA_def_prop_range(prop, 0, 2);
-  RNA_def_prop_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_prop_ui_text(prop, "Brightness", "Adjust the brightness of the texture");
-  RNA_def_prop_update(prop, 0, "api_Texture_update");
+  api_def_prop_float_stype(prop, NULL, "bright");
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  api_def_prop_ui_text(prop, "Brightness", "Adjust the brightness of the texture");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "contrast", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0, 5);
@@ -1626,18 +1626,18 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Texture_update");
 
   /* nodetree */
-  prop = RNA_def_prop(sapi, "use_nodes", PROP_BOOL, PROP_NONE);
-  api_def_prop_boolean_stype(prop, NULL, "use_nodes", 1);
+  prop = api_def_prop(sapi, "use_nodes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_nodes", 1);
   api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_ui_text(prop, "Use Nodes", "Make this a node-based texture");
   api_def_prop_update(prop, 0, "api_Texture_use_nodes_update");
 
-  prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
-  api_def_property_pointer_sdna(prop, NULL, "nodetree");
-  api_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  api_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  api_def_property_ui_text(prop, "Node Tree", "Node tree for node-based textures");
-  api_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "node_tree", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "nodetree");
+  api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "Node Tree", "Node tree for node-based textures");
+  api_def_prop_update(prop, 0, "rna_Texture_nodes_update");
 
   api_def_animdata_common(srna);
 
