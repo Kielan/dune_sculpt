@@ -1632,7 +1632,7 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Use Nodes", "Make this a node-based texture");
   api_def_prop_update(prop, 0, "api_Texture_use_nodes_update");
 
-  prop = api_def_prop(sapi, "node_tree", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "node_tree", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "nodetree");
   api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
   api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
@@ -1658,12 +1658,12 @@ static void api_def_texture(DuneApi *dapi)
   api_texture(dapi);
 }
 
-void api_def_texture(BlenderRNA *brna)
+void api_def_texture(DuneApi *dapi);
 {
   api_def_texture(dapi);
-  rna_def_mtex(dapi);
-  rna_def_texmapping(dapi);
-  rna_def_colormapping(dapi);
+  api_def_mtex(dapi);
+  api_def_texmapping(dapi);
+  api_def_colormapping(dapi);
 }
 
 #endif
