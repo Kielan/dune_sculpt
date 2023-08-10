@@ -653,7 +653,7 @@ static void api_def_mtex(DuneApi *api)
   prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
   api_def_prop_float_stype(prop, NULL, "r");
   api_def_prop_array(prop, 3);
-  api_def_prop_flag(prop, PROP_CXT_UPDATE
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_ui_text(
       prop,
       "Color",
@@ -1005,7 +1005,7 @@ static void api_def_texture_magic(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "MagicTexture", "Texture
+  sapi = api_def_struct(dapi, "MagicTexture", "Texture");
   api_def_struct_ui_text(sapi, "Magic Texture", "Procedural noise texture");
   api_def_struct_stype(sapi, "Tex");
 
@@ -1555,7 +1555,7 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "use_clamp", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_negative_sdna(prop, NULL, "flag", TEX_NO_CLAMP);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", TEX_NO_CLAMP);
   api_def_prop_ui_text(prop,
                        "Clamp",
                        "Set negative texture RGB and intensity values to zero, for some uses "
@@ -1602,35 +1602,35 @@ static void api_def_texture(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "rfac");
   api_def_prop_range(prop, 0, 2);
   api_def_prop_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_prop_ui_text(prop, "Factor Red", "");
-  RNA_def_prop_update(prop, 0, "apo_Texture_update");
+  api_def_prop_ui_text(prop, "Factor Red", "");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "factor_green", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "gfac");
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Factor Green", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "factor_green", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "gfac");
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  api_def_prop_ui_text(prop, "Factor Green", "");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "factor_blue", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bfac");
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Factor Blue", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "factor_blue", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "bfac");
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  api_def_prop_ui_text(prop, "Factor Blue", "");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   /* Alpha for preview render */
-  prop = api_def_prop(sapi, "use_preview_alpha", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_boolean_stype(prop, NULL, "flag", TEX_PRV_ALPHA);
+  prop = api_def_prop(sapi, "use_preview_alpha", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEX_PRV_ALPHA);
   api_def_prop_ui_text(prop, "Show Alpha", "Show Alpha in Preview Render");
   api_def_prop_update(prop, 0, "api_Texture_update");
 
   /* nodetree */
-  prop = RNA_def_property(srna, "use_nodes", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_boolean_sdna(prop, NULL, "use_nodes", 1);
-  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  prop = RNA_def_prop(sapi, "use_nodes", PROP_BOOL, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "use_nodes", 1);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
   api_def_prop_ui_text(prop, "Use Nodes", "Make this a node-based texture");
-  api_def_prop_update(prop, 0, "rna_Texture_use_nodes_update");
+  api_def_prop_update(prop, 0, "api_Texture_use_nodes_update");
 
   prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
   api_def_property_pointer_sdna(prop, NULL, "nodetree");
