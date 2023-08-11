@@ -521,46 +521,45 @@ static void api_trackingObject_tracks_begin(CollectionPropIter *iter, ApiPtr *pt
   api_iter_list_begin(iter, &tracking_object->tracks, NULL);
 }
 
-static void api_trackingObject_plane_tracks_begin(CollectionPropertyIterator *iter,
-                                                  PointerRNA *ptr)
+static void api_trackingObject_plane_tracks_begin(CollectionPropIter *iter,
+                                                  ApiPtr *ptr)
 {
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
-  rna_iterator_listbase_begin(iter, &tracking_object->plane_tracks, NULL);
+  api_iter_list_begin(iter, &tracking_object->plane_tracks, NULL);
 }
 
-static PointerRNA rna_trackingObject_reconstruction_get(PointerRNA *ptr)
+static ApiPtr api_trackingObject_reconstruction_get(ApiPtr *ptr)
 {
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_MovieTrackingReconstruction, &tracking_object->reconstruction);
+  return api_prr_inherit_refine(
+      ptr, &Api_MovieTrackingReconstruction, &tracking_object->reconstruction);
 }
 
-static PointerRNA rna_tracking_active_object_get(PointerRNA *ptr)
+static ApiPtr api_tracking_active_object_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  MovieTrackingObject *tracking_object = BLI_findlink(&clip->tracking.objects,
+  MovieTrackingObject *tracking_object = lib_findlink(&clip->tracking.objects,
                                                       clip->tracking.objectnr);
 
   return rna_pointer_inherit_refine(ptr, &RNA_MovieTrackingObject, tracking_object);
 }
 
-static void rna_tracking_active_object_set(PointerRNA *ptr,
-                                           PointerRNA value,
+static void api_tracking_active_object_set(ApiPtr *ptr,
+                                           ApiPtr value,
                                            struct ReportList *UNUSED(reports))
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)value.data;
-  const int index = BLI_findindex(&clip->tracking.objects, tracking_object);
+  const int index = lib_findindex(&clip->tracking.objects, tracking_object);
 
   if (index != -1) {
     clip->tracking.objectnr = index;
-  }
-  else {
+  } else {
     clip->tracking.objectnr = 0;
   }
 }
 
-static void api_trackingObject_name_set(PointerRNA *ptr, const char *value)
+static void api_trackingObject_name_set(ApiPtr *ptr, const char *value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
@@ -618,9 +617,9 @@ static void api_tracking_markerPattern_update(Main *UNUSED(main),
   dune_tracking_marker_clamp_search_size(marker);
 }
 
-static void api_tracking_markerSearch_update(Main *UNUSED(bmain),
+static void api_tracking_markerSearch_update(Main *UNUSED(main),
                                              Scene *UNUSED(scene),
-                                             PointerRNA *ptr)
+                                             ApiPtr *ptr)
 {
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
 
@@ -649,7 +648,6 @@ static void api_trackingDopesheet_tagUpdate(Main *UNUSED(main),
 }
 
 /* API */
-
 static MovieTrackingTrack *add_track_to_base(
     MovieClip *clip, MovieTracking *tracking, List *tracksbase, const char *name, int frame)
 {
@@ -801,22 +799,22 @@ static MovieTrackingPlaneMarker *api_trackingPlaneMarkers_insert_frame(
   return new_plane_marker;
 }
 
-static void rna_trackingPlaneMarkers_delete_frame(MovieTrackingPlaneTrack *plane_track,
+static void api_trackingPlaneMarkers_delete_frame(MovieTrackingPlaneTrack *plane_track,
                                                   int framenr)
 {
   if (plane_track->markersnr == 1) {
     return;
   }
 
-  BKE_tracking_plane_marker_delete(plane_track, framenr);
+  dune_tracking_plane_marker_delete(plane_track, framenr);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
 static MovieTrackingObject *find_object_for_reconstruction(
     MovieTracking *tracking, MovieTrackingReconstruction *reconstruction)
 {
-  LISTBASE_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
+  LIST_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
     if (&tracking_object->reconstruction == reconstruction) {
       return tracking_object;
     }
@@ -826,15 +824,15 @@ static MovieTrackingObject *find_object_for_reconstruction(
 }
 
 static MovieReconstructedCamera *rna_trackingCameras_find_frame(
-    ID *id, MovieTrackingReconstruction *reconstruction, int framenr)
+    Id *id, MovieTrackingReconstruction *reconstruction, int framenr)
 {
   MovieClip *clip = (MovieClip *)id;
   MovieTracking *tracking = &clip->tracking;
   MovieTrackingObject *tracking_object = find_object_for_reconstruction(tracking, reconstruction);
-  return BKE_tracking_camera_get_reconstructed(tracking, tracking_object, framenr);
+  return dune_tracking_camera_get_reconstructed(tracking, tracking_object, framenr);
 }
 
-static void rna_trackingCameras_matrix_from_frame(ID *id,
+static void api_trackingCameras_matrix_from_frame(Id *id,
                                                   MovieTrackingReconstruction *reconstruction,
                                                   int framenr,
                                                   float matrix[16])
@@ -844,14 +842,14 @@ static void rna_trackingCameras_matrix_from_frame(ID *id,
   MovieClip *clip = (MovieClip *)id;
   MovieTracking *tracking = &clip->tracking;
   MovieTrackingObject *tracking_object = find_object_for_reconstruction(tracking, reconstruction);
-  BKE_tracking_camera_get_reconstructed_interpolate(tracking, tracking_object, framenr, mat);
+  dune_tracking_camera_get_reconstructed_interpolate(tracking, tracking_object, framenr, mat);
 
   memcpy(matrix, mat, sizeof(float[4][4]));
 }
 
 #else
 
-static const EnumPropertyItem tracker_motion_model[] = {
+static const EnumPropItem tracker_motion_model[] = {
     {TRACK_MOTION_MODEL_HOMOGRAPHY,
      "Perspective",
      0,
@@ -885,7 +883,7 @@ static const EnumPropertyItem tracker_motion_model[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem pattern_match_items[] = {
+static const EnumPropItem pattern_match_items[] = {
     {TRACK_MATCH_KEYFRAME, "KEYFRAME", 0, "Keyframe", "Track pattern from keyframe to next frame"},
     {TRACK_MATCH_PREVIOS_FRAME,
      "PREV_FRAME",
@@ -895,12 +893,12 @@ static const EnumPropertyItem pattern_match_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static void rna_def_trackingSettings(BlenderRNA *brna)
+static void api_def_trackingSettings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem speed_items[] = {
+  static const EnumPropItem speed_items[] = {
       {0, "FASTEST", 0, "Fastest", "Track as fast as possible"},
       {TRACKING_SPEED_DOUBLE, "DOUBLE", 0, "Double", "Track with double speed"},
       {TRACKING_SPEED_REALTIME, "REALTIME", 0, "Realtime", "Track with realtime speed"},
@@ -909,7 +907,7 @@ static void rna_def_trackingSettings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem cleanup_items[] = {
+  static const EnumPropItem cleanup_items[] = {
       {TRACKING_CLEAN_SELECT, "SELECT", 0, "Select", "Select unclean tracks"},
       {TRACKING_CLEAN_DELETE_TRACK, "DELETE_TRACK", 0, "Delete Track", "Delete unclean tracks"},
       {TRACKING_CLEAN_DELETE_SEGMENT,
@@ -920,39 +918,38 @@ static void rna_def_trackingSettings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MovieTrackingSettings", NULL);
-  RNA_def_struct_ui_text(srna, "Movie tracking settings", "Match moving settings");
+  sapi = api_def_struct(dapi, "MovieTrackingSettings", NULL);
+  api_def_struct_ui_text(sapi, "Movie tracking settings", "Match moving settings");
 
   /* speed */
-  prop = RNA_def_property(srna, "speed", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, speed_items);
-  RNA_def_property_ui_text(prop,
-                           "Speed",
-                           "Limit speed of tracking to make visual feedback easier "
-                           "(this does not affect the tracking quality)");
+  prop = api_def_prop(sapi, "speed", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, speed_items);
+  api_def_prop_ui_text(prop,
+                       "Speed",
+                       "Limit speed of tracking to make visual feedback easier "
+                       "(this does not affect the tracking quality)");
 
   /* use keyframe selection */
-  prop = RNA_def_property(srna, "use_keyframe_selection", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_keyframe_selection", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(
       prop, NULL, "reconstruction_flag", TRACKING_USE_KEYFRAME_SELECTION);
-  RNA_def_property_ui_text(prop,
-                           "Keyframe Selection",
-                           "Automatically select keyframes when solving camera/object motion");
+  api_def_prop_ui_text(prop,
+                       "Keyframe Selection",
+                       "Automatically select keyframes when solving camera/object motion");
 
   /* intrinsics refinement during bundle adjustment */
-
-  prop = RNA_def_property(srna, "refine_intrinsics_focal_length", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "refine_camera_intrinsics", REFINE_FOCAL_LENGTH);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "refine_intrinsics_focal_length", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "refine_camera_intrinsics", REFINE_FOCAL_LENGTH);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Refine Focal Length", "Refine focal length during camera solving");
 
-  prop = RNA_def_property(srna, "refine_intrinsics_principal_point", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "refine_camera_intrinsics", REFINE_PRINCIPAL_POINT);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "refine_intrinsics_principal_point", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "refine_camera_intrinsics", REFINE_PRINCIPAL_POINT);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Refine Principal Point", "Refine principal point during camera solving");
 
   prop = RNA_def_property(srna, "refine_intrinsics_radial_distortion", PROP_BOOLEAN, PROP_NONE);
