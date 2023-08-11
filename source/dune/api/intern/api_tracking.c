@@ -822,7 +822,7 @@ static MovieTrackingObject *find_object_for_reconstruction(
   return NULL;
 }
 
-static MovieReconstructedCamera *rna_trackingCameras_find_frame(
+static MovieReconstructedCamera *api_trackingCameras_find_frame(
     Id *id, MovieTrackingReconstruction *reconstruction, int framenr)
 {
   MovieClip *clip = (MovieClip *)id;
@@ -997,35 +997,35 @@ static void api_def_trackingSettings(DuneApi *dapi)
       prop, "Reprojection Error", "Effect on tracks which have a larger re-projection error");
 
   /* cleanup action */
-  prop = RNA_def_prop(sapi, "clean_action", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_sdna(prop, NULL, "clean_action");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_enum_items(prop, cleanup_items);
-  RNA_def_prop_ui_text(prop, "Action", "Cleanup action to execute");
+  prop = api_def_prop(sapi, "clean_action", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "clean_action");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, cleanup_items);
+  api_def_prop_ui_text(prop, "Action", "Cleanup action to execute");
 
   /* solver settings */
-  prop = RNA_def_property(srna, "use_tripod_solver", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "motion_flag", TRACKING_MOTION_TRIPOD);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_tripod_solver", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "motion_flag", TRACKING_MOTION_TRIPOD);
+  api_def_prop_ui_text(
       prop,
       "Tripod Motion",
       "Use special solver to track a stable camera position, such as a tripod");
 
   /* default_limit_frames */
-  prop = RNA_def_property(srna, "default_frames_limit", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "default_frames_limit");
-  RNA_def_property_range(prop, 0, SHRT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "default_frames_limit", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "default_frames_limit");
+  api_def_prop_range(prop, 0, SHRT_MAX);
+  api_def_prop_ui_text(
       prop, "Frames Limit", "Every tracking cycle, this number of frames are tracked");
 
   /* default_pattern_match */
-  prop = RNA_def_property(srna, "default_pattern_match", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_sdna(prop, NULL, "default_pattern_match");
-  RNA_def_property_enum_items(prop, pattern_match_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "default_pattern_match", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_sdna(prop, NULL, "default_pattern_match");
+  api_def_prop_enum_items(prop, pattern_match_items);
+  api_def_prop_ui_text(
       prop, "Pattern Match", "Track pattern from given frame when tracking marker to next frame");
 
   /* default_margin */
