@@ -1409,28 +1409,28 @@ static void rna_def_trackingMarker(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_markerSearch_update");
 
   /* is marker keyframed */
-  prop = RNA_def_property(srna, "is_keyed", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", MARKER_TRACKED);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "is_keyed", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_boolean_negative_stype(prop, NULL, "flag", MARKER_TRACKED);
+  api_def_prop_ui_text(
       prop, "Keyframed", "Whether the position of the marker is keyframed or tracked");
 }
 
-static void rna_def_trackingMarkers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_trackingMarkers(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiFn *func;
   PropertyRNA *parm;
 
-  RNA_def_property_srna(cprop, "MovieTrackingMarkers");
-  srna = RNA_def_struct(brna, "MovieTrackingMarkers", NULL);
-  RNA_def_struct_sdna(srna, "MovieTrackingTrack");
+  api_def_prop_sapi(cprop, "MovieTrackingMarkers");
+  srna = api_def_struct(dapi, "MovieTrackingMarkers", NULL);
+  RNA_def_struct_sdna(sapi, "MovieTrackingTrack");
   RNA_def_struct_ui_text(
       srna, "Movie Tracking Markers", "Collection of markers for movie tracking track");
 
-  func = RNA_def_function(srna, "find_frame", "rna_trackingMarkers_find_frame");
-  RNA_def_function_ui_description(func, "Get marker for specified frame");
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "find_frame", "api_trackingMarkers_find_frame");
+  api_def_fn_ui_description(fn, "Get marker for specified frame");
+  parm = api_def_int(fn,
                      "frame",
                      1,
                      MINFRAME,
@@ -1439,8 +1439,8 @@ static void rna_def_trackingMarkers(BlenderRNA *brna, PropertyRNA *cprop)
                      "Frame number to find marker for",
                      MINFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn,
                   "exact",
                   true,
                   "Exact",
