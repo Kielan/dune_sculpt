@@ -1255,17 +1255,17 @@ static void rna_def_trackingCamera(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
 
   /* Division distortion parameters */
-  prop = RNA_def_property(srna, "division_k1", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_range(prop, -10, 10, 0.1, 3);
-  RNA_def_property_ui_text(prop, "K1", "First coefficient of second order division distortion");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
+  prop = RNA_def_prop(sapi, "division_k1", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_ui_range(prop, -10, 10, 0.1, 3);
+  RNA_def_prop_ui_text(prop, "K1", "First coefficient of second order division distortion");
+  RNA_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
 
-  prop = RNA_def_property(srna, "division_k2", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_range(prop, -10, 10, 0.1, 3);
-  RNA_def_property_ui_text(prop, "K2", "Second coefficient of second order division distortion");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
+  prop = RNA_def_prop(sapi, "division_k2", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_ui_range(prop, -10, 10, 0.1, 3);
+  RNA_def_prop_ui_text(prop, "K2", "Second coefficient of second order division distortion");
+  RNA_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
 
   /* Nuke distortion parameters */
   prop = RNA_def_property(srna, "nuke_k1", PROP_FLOAT, PROP_NONE);
@@ -2537,17 +2537,17 @@ static void rna_def_tracking(BlenderRNA *brna)
   StructRNA *srna;
   PropertyRNA *prop;
 
-  rna_def_trackingSettings(brna);
-  rna_def_trackingCamera(brna);
-  rna_def_trackingTrack(brna);
-  rna_def_trackingPlaneTrack(brna);
-  rna_def_trackingTracks(brna);
-  rna_def_trackingPlaneTracks(brna);
-  rna_def_trackingObjectTracks(brna);
-  rna_def_trackingObjectPlaneTracks(brna);
-  rna_def_trackingStabilization(brna);
-  rna_def_trackingReconstructedCameras(brna);
-  rna_def_trackingReconstruction(brna);
+  rna_def_trackingSettings(dapi);
+  rna_def_trackingCamera(dapi);
+  rna_def_trackingTrack(dapi);
+  rna_def_trackingPlaneTrack(dapi);
+  rna_def_trackingTracks(dapi);
+  rna_def_trackingPlaneTracks(dapi);
+  rna_def_trackingObjectTracks(dapi);
+  rna_def_trackingObjectPlaneTracks(dapi);
+  rna_def_trackingStabilization(dapi);
+  rna_def_trackingReconstructedCameras(dapi);
+  rna_def_trackingReconstruction(dapi);
   rna_def_trackingObject(brna);
   rna_def_trackingDopesheet(brna);
 
