@@ -286,8 +286,7 @@ static void api_trackingTrack_select_set(ApiPtr *ptr, bool value)
     track->flag |= SELECT;
     track->pat_flag |= SELECT;
     track->search_flag |= SELECT;
-  }
-  else {
+  } else {
     track->flag &= ~SELECT;
     track->pat_flag &= ~SELECT;
     track->search_flag &= ~SELECT;
@@ -940,31 +939,31 @@ static void api_def_trackingSettings(DuneApi *dapi)
                        "Automatically select keyframes when solving camera/object motion");
 
   /* intrinsics refinement during bundle adjustment */
-  prop = api_def_prop(sapi, "refine_intrinsics_focal_length", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "refine_intrinsics_focal_length", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "refine_camera_intrinsics", REFINE_FOCAL_LENGTH);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(
       prop, "Refine Focal Length", "Refine focal length during camera solving");
 
-  prop = api_def_prop(sapi, "refine_intrinsics_principal_point", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "refine_intrinsics_principal_point", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "refine_camera_intrinsics", REFINE_PRINCIPAL_POINT);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_ui_text(
       prop, "Refine Principal Point", "Refine principal point during camera solving");
 
-  prop = RNA_def_property(srna, "refine_intrinsics_radial_distortion", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "refine_camera_intrinsics", REFINE_RADIAL_DISTORTION);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "refine_intrinsics_radial_distortion", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "refine_camera_intrinsics", REFINE_RADIAL_DISTORTION);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop,
                            "Refine Radial",
                            "Refine radial coefficients of distortion model during camera solving");
 
-  prop = RNA_def_property(
-      srna, "refine_intrinsics_tangential_distortion", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(
+      sapi, "refine_intrinsics_tangential_distortion", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "refine_camera_intrinsics", REFINE_TANGENTIAL_DISTORTION);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop,
       "Refine Tangential",
       "Refine tangential coefficients of distortion model during camera solving");
@@ -972,37 +971,37 @@ static void api_def_trackingSettings(DuneApi *dapi)
   /* tool settings */
 
   /* distance */
-  prop = RNA_def_property(srna, "distance", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "dist");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "dist");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(
       prop, "Distance", "Distance between two bundles used for scene scaling");
 
   /* frames count */
-  prop = RNA_def_property(srna, "clean_frames", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "clean_frames");
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "clean_frames", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "clean_frames");
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_text(
       prop,
       "Tracked Frames",
       "Effect on tracks which are tracked less than the specified amount of frames");
 
   /* re-projection error */
-  prop = RNA_def_property(srna, "clean_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "clean_error");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "clean_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "clean_error");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_text(
       prop, "Reprojection Error", "Effect on tracks which have a larger re-projection error");
 
   /* cleanup action */
-  prop = RNA_def_property(srna, "clean_action", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "clean_action");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, cleanup_items);
-  RNA_def_property_ui_text(prop, "Action", "Cleanup action to execute");
+  prop = RNA_def_prop(sapi, "clean_action", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_sdna(prop, NULL, "clean_action");
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_enum_items(prop, cleanup_items);
+  RNA_def_prop_ui_text(prop, "Action", "Cleanup action to execute");
 
   /* solver settings */
   prop = RNA_def_property(srna, "use_tripod_solver", PROP_BOOLEAN, PROP_NONE);
@@ -1730,13 +1729,13 @@ static void rna_def_trackingTrack(BlenderRNA *brna)
   /* offset */
   prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_TRANSLATION);
   RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
   RNA_def_property_float_sdna(prop, NULL, "offset");
   RNA_def_property_ui_text(prop, "Offset", "Offset of track from the parenting point");
   RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
-static void rna_def_trackingPlaneMarker(BlenderRNA *brna)
+static void rna_def_trackingPlaneMarker(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
@@ -1746,47 +1745,47 @@ static void rna_def_trackingPlaneMarker(BlenderRNA *brna)
       srna, "Movie Tracking Plane Marker Data", "Match-moving plane marker data for tracking");
 
   /* frame */
-  prop = RNA_def_property(srna, "frame", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "framenr");
+  prop = RNA_def_property(sapi, "frame", PROP_INT, PROP_NONE);
+  RNA_def_property_int_stype(prop, NULL, "framenr");
   RNA_def_property_ui_text(prop, "Frame", "Frame number marker is keyframed on");
   RNA_def_property_int_funcs(prop, NULL, "rna_trackingPlaneMarker_frame_set", NULL);
   RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Corners */
-  prop = RNA_def_property(srna, "corners", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "corners");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x2);
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_ui_text(prop,
+  prop = RNA_def_prop(sapi, "corners", PROP_FLOAT, PROP_MATRIX);
+  RNA_def_prop_float_stype(prop, NULL, "corners");
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x2);
+  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  RNA_def_prop_ui_text(prop,
                            "Corners",
                            "Array of coordinates which represents UI rectangle corners in "
                            "frame normalized coordinates");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* enable */
-  prop = RNA_def_property(srna, "mute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PLANE_MARKER_DISABLED);
-  RNA_def_property_ui_text(prop, "Mode", "Is marker muted for current frame");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "mute", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PLANE_MARKER_DISABLED);
+  api_def_prop_ui_text(prop, "Mode", "Is marker muted for current frame");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
-static void rna_def_trackingPlaneMarkers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_trackingPlaneMarkers(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "MovieTrackingPlaneMarkers");
-  srna = RNA_def_struct(brna, "MovieTrackingPlaneMarkers", NULL);
-  RNA_def_struct_sdna(srna, "MovieTrackingPlaneTrack");
-  RNA_def_struct_ui_text(srna,
+  api_def_prop_sapi(cprop, "MovieTrackingPlaneMarkers");
+  sapi = api_def_struct(dapi, "MovieTrackingPlaneMarkers", NULL);
+  api_def_struct_stype(sapi, "MovieTrackingPlaneTrack");
+  api_def_struct_ui_text(sapi,
                          "Movie Tracking Plane Markers",
                          "Collection of markers for movie tracking plane track");
 
-  func = RNA_def_function(srna, "find_frame", "rna_trackingPlaneMarkers_find_frame");
-  RNA_def_function_ui_description(func, "Get plane marker for specified frame");
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "find_frame", "api_trackingPlaneMarkers_find_frame");
+  api_def_fn_ui_description(fn, "Get plane marker for specified frame");
+  parm = api_def_int(fn,
                      "frame",
                      1,
                      MINFRAME,
@@ -1801,13 +1800,13 @@ static void rna_def_trackingPlaneMarkers(BlenderRNA *brna, PropertyRNA *cprop)
                   true,
                   "Exact",
                   "Get plane marker at exact frame number rather than get estimated marker");
-  parm = RNA_def_pointer(
+  parm = api_def_pointer(
       func, "plane_marker", "MovieTrackingPlaneMarker", "", "Plane marker for specified frame");
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "insert_frame", "rna_trackingPlaneMarkers_insert_frame");
-  RNA_def_function_ui_description(func, "Insert a new plane marker at the specified frame");
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "insert_frame", "api_trackingPlaneMarkers_insert_frame");
+  api_def_fn_ui_description(fn, "Insert a new plane marker at the specified frame");
+  parm = api_def_int(fn,
                      "frame",
                      1,
                      MINFRAME,
@@ -1816,10 +1815,10 @@ static void rna_def_trackingPlaneMarkers(BlenderRNA *brna, PropertyRNA *cprop)
                      "Frame number to insert marker to",
                      MINFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "plane_marker", "MovieTrackingPlaneMarker", "", "Newly created plane marker");
-  RNA_def_function_return(func, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "plane_marker", "MovieTrackingPlaneMarker", "", "Newly created plane marker");
+  api_def_fn_return(func, parm);
 
   func = RNA_def_function(srna, "delete_frame", "rna_trackingPlaneMarkers_delete_frame");
   RNA_def_function_ui_description(func, "Delete plane marker at specified frame");
