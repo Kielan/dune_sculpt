@@ -1029,7 +1029,7 @@ static void api_def_trackingSettings(DuneApi *dapi)
       prop, "Pattern Match", "Track pattern from given frame when tracking marker to next frame");
 
   /* default_margin */
-  prop = RNA_def_property(srna, "default_margin", PROP_INT, PROP_PIXEL);
+  prop = RNA_def_property(sapi, "default_margin", PROP_INT, PROP_PIXEL);
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_int_sdna(prop, NULL, "default_margin");
   RNA_def_property_range(prop, 0, 300);
@@ -1037,42 +1037,42 @@ static void api_def_trackingSettings(DuneApi *dapi)
       prop, "Margin", "Default distance from image boundary at which marker stops tracking");
 
   /* default_tracking_motion_model */
-  prop = RNA_def_property(srna, "default_motion_model", PROP_ENUM, PROP_NONE);
+  prop = RNA_def_prop(sapi, "default_motion_model", PROP_ENUM, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_enum_items(prop, tracker_motion_model);
   RNA_def_property_ui_text(prop, "Motion Model", "Default motion model to use for tracking");
 
   /* default_use_brute */
-  prop = RNA_def_property(srna, "use_default_brute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = RNA_def_property(sapi, "use_default_brute", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_BRUTE);
   RNA_def_property_ui_text(
       prop, "Prepass", "Use a brute-force translation-only initialization when tracking");
   RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_brute */
-  prop = RNA_def_property(srna, "use_default_mask", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "use_default_mask", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_MASK);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Use Mask",
       "Use a grease pencil data-block as a mask to use only specified areas of pattern "
       "when tracking");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_normalization */
-  prop = RNA_def_property(srna, "use_default_normalization", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = RNA_def_prop(sapi, "use_default_normalization", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_NORMALIZATION);
-  RNA_def_property_ui_text(
+  RNA_def_prop_ui_text(
       prop, "Normalize", "Normalize light intensities while tracking (slower)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default minimal correlation */
-  prop = RNA_def_property(srna, "default_correlation_min", PROP_FLOAT, PROP_NONE);
+  prop = RNA_def_prop(sapi, "default_correlation_min", PROP_FLOAT, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "default_minimum_correlation");
+  RNA_def_prop_float_sdna(prop, NULL, "default_minimum_correlation");
   RNA_def_property_range(prop, 0.0f, 1.0f);
   RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.05, 3);
   RNA_def_property_ui_text(
