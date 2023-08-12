@@ -52,7 +52,7 @@ const EnumPropItem api_enum_uilist_layout_type_items[] = {
 
 #  include "lib_dynstr.h"
 
-#  include "dune_ctx.h"
+#  include "dune_cxt.h"
 #  include "dune_report.h"
 #  include "dune_screen.h"
 
@@ -81,8 +81,7 @@ static ARegionType *region_type_find(ReportList *reports, int space_type, int re
 }
 
 /* Panel */
-
-static bool panel_poll(const Ctx *C, PanelType *pt)
+static bool panel_poll(const Cxt *C, PanelType *pt)
 {
   extern ApiFn api_Panel_poll_fn;
 
@@ -97,7 +96,7 @@ static bool panel_poll(const Ctx *C, PanelType *pt)
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  pt->api_ext.call((Ctx *)C, &ptr, fn, &list);
+  pt->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
@@ -107,9 +106,9 @@ static bool panel_poll(const Ctx *C, PanelType *pt)
   return visible;
 }
 
-static void panel_draw(const Ctx *C, Panel *panel)
+static void panel_draw(const Cxt *C, Panel *panel)
 {
-  extern ApiFn api_Panel_draw_func;
+  extern ApiFn api_Panel_draw_fn;
 
   ApiPtr ptr;
   ParamList list;
@@ -120,12 +119,12 @@ static void panel_draw(const Ctx *C, Panel *panel)
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
+  panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
 
-static void panel_draw_header(const Ctx *C, Panel *panel)
+static void panel_draw_header(const Cxt *C, Panel *panel)
 {
   extern ApiFn api_Panel_draw_header_fn;
 
@@ -138,12 +137,12 @@ static void panel_draw_header(const Ctx *C, Panel *panel)
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
+  panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
 
-static void panel_draw_header_preset(const Ctx *C, Panel *panel)
+static void panel_draw_header_preset(const Cxt *C, Panel *panel)
 {
   extern ApiFn api_Panel_draw_header_preset_fn;
 
@@ -151,12 +150,12 @@ static void panel_draw_header_preset(const Ctx *C, Panel *panel)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  api_ptr_create(&cxt_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
   fn = &api_Panel_draw_header_preset_fn;
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
+  panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -254,7 +253,7 @@ static ApiStruct *api_Panel_register(Main *main,
   api_ptr_create(NULL, &ApiPanel, &dummy_panel, &dummy_panel_ptr);
 
   /* We have to set default context! Else we get a void string... */
-  strcpy(dummy_pt.translation_context, LANG_CTX_DEFAULT_BPYRNA);
+  strcpy(dummy_pt.translation_context, LANG_CXT_DEFAULT_BPYAPI);
 
   /* validate the python class */
   if (validate(&dummy_panel_ptr, data, have_fn) != 0) {
@@ -302,7 +301,7 @@ static ApiStruct *api_Panel_register(Main *main,
   for (pt = art->paneltypes.first; pt; pt = pt->next) {
     if (STREQ(pt->idname, dummy_pt.idname)) {
       PanelType *pt_next = pt->next;
-      ApiStruct *srna = pt->api_ext.sapi;
+      ApiStruct *sapi = pt->api_ext.sapi;
       if (sapi) {
         if (!api_Panel_unregister(main, sapi)) {
           dune_reportf(reports,
@@ -363,8 +362,7 @@ static ApiStruct *api_Panel_register(Main *main,
     char *buf = (char *)(pt + 1);
     memcpy(buf, _panel_descr, description_size);
     pt->description = buf;
-  }
-  else {
+  } else {
     pt->description = NULL;
   }
 
@@ -479,7 +477,7 @@ static int api_UIList_list_id_length(ApiPtr *ptr)
 }
 
 static void uilist_draw_item(uiList *ui_list,
-                             const Ctx *C,
+                             const Cxt *C,
                              uiLayout *layout,
                              ApiPtr *dataptr,
                              ApiPtr *itemptr,
@@ -495,10 +493,10 @@ static void uilist_draw_item(uiList *ui_list,
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
-  func = &api_UIList_draw_item_func; /* RNA_struct_find_function(&ul_ptr, "draw_item"); */
+  api_ptr_create(&cxt_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
+  func = &api_UIList_draw_item_fn; /* api_struct_find_function(&ul_ptr, "draw_item"); */
 
-  api_param_list_create(&list, &ul_ptr, func);
+  api_param_list_create(&list, &ul_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "layout", &layout);
   api_param_set_lookup(&list, "data", dataptr);
@@ -508,7 +506,7 @@ static void uilist_draw_item(uiList *ui_list,
   api_param_set_lookup(&list, "active_property", &active_propname);
   api_param_set_lookup(&list, "index", &index);
   api_param_set_lookup(&list, "flt_flag", &flt_flag);
-  ui_list->type->api_ext.call((Ctx *)C, &ul_ptr, fn, &list);
+  ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -521,10 +519,10 @@ static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *lay
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
-  fn = &api_UIList_draw_filter_fn; /* RNA_struct_find_function(&ul_ptr, "draw_filter"); */
+  api_ptr_create(&cxt_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
+  fn = &api_UIList_draw_filter_fn; /* api_struct_find_function(&ul_ptr, "draw_filter"); */
 
-  api_param_list_create(&list, &ul_ptr, func);
+  api_param_list_create(&list, &ul_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "layout", &layout);
   ui_list->type->rna_ext.call((Ctx *)C, &ul_ptr, func, &list);
