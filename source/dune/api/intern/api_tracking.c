@@ -1174,7 +1174,7 @@ static void api_def_trackingCamera(DuneApi *dapi)
   api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_tracking_resetIntrinsics");
 
   /* Sensor */
-  prop = api_def_prop(salo, "sensor_width", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "sensor_width", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "sensor_width");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_range(prop, 0.0f, 500.0f);
@@ -2372,7 +2372,7 @@ static void api_def_trackingObject(DuneApi *dapi)
 
   /* tracks */
   prop = api_def_prop(sapi, "tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_prop_collection_fns(prop,
+  api_def_prop_collection_fns(prop,
                               "api_trackingObject_tracks_begin",
                               "api_iter_list_next",
                               "api_iter_list_end",
@@ -2381,101 +2381,101 @@ static void api_def_trackingObject(DuneApi *dapi)
                               NULL,
                               NULL,
                               NULL);
-  RNA_def_prop_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_prop_ui_text(prop, "Tracks", "Collection of tracks in this tracking data object");
-  RNA_def_prop_sap(prop, "MovieTrackingObjectTracks");
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ui_text(prop, "Tracks", "Collection of tracks in this tracking data object");
+  api_def_prop_sap(prop, "MovieTrackingObjectTracks");
 
   /* plane tracks */
-  prop = RNA_def_property(srna, "plane_tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_trackingObject_plane_tracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
+  prop = api_def_prop(sapi, "plane_tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                                    "api_trackingObject_plane_tracks_begin",
+                                    "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_iter_list_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingPlaneTrack");
-  RNA_def_property_ui_text(
+  api_def_prop_struct_type(prop, "MovieTrackingPlaneTrack");
+  api_def_prop_ui_text(
       prop, "Plane Tracks", "Collection of plane tracks in this tracking data object");
-  RNA_def_property_srna(prop, "MovieTrackingObjectPlaneTracks");
+  api_def_prop_sapi(prop, "MovieTrackingObjectPlaneTracks");
 
   /* reconstruction */
-  prop = RNA_def_property(srna, "reconstruction", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingReconstruction");
-  RNA_def_property_pointer_funcs(prop, "rna_trackingObject_reconstruction_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "reconstruction", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingReconstruction");
+  api_def_prop_ptr_fns(prop, "api_trackingObject_reconstruction_get", NULL, NULL, NULL);
 
   /* scale */
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_range(prop, 0.0001f, 10000.0f);
-  RNA_def_property_ui_range(prop, 0.0001f, 10000.0, 1, 4);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(prop, "Scale", "Scale of object solution in camera space");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingObject_flushUpdate");
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_range(prop, 0.0001f, 10000.0f);
+  api_def_prop_ui_range(prop, 0.0001f, 10000.0, 1, 4);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(prop, "Scale", "Scale of object solution in camera space");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_trackingObject_flushUpdate");
 
   /* keyframe_a */
-  prop = RNA_def_property(srna, "keyframe_a", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "keyframe1");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "keyframe_a", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "keyframe1");
+  api_def_prop_ui_text(
       prop, "Keyframe A", "First keyframe used for reconstruction initialization");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* keyframe_b */
-  prop = RNA_def_property(srna, "keyframe_b", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "keyframe2");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "keyframe_b", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "keyframe2");
+  api_def_prop_ui_text(
       prop, "Keyframe B", "Second keyframe used for reconstruction initialization");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 }
 
-static void rna_def_trackingObjects(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_trackingObjects(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "MovieTrackingObjects");
-  srna = RNA_def_struct(brna, "MovieTrackingObjects", NULL);
-  RNA_def_struct_sdna(srna, "MovieTracking");
-  RNA_def_struct_ui_text(srna, "Movie Objects", "Collection of movie tracking objects");
+  api_def_prop_sapi(cprop, "MovieTrackingObjects");
+  sapi = api_def_struct(dapi, "MovieTrackingObjects", NULL);
+  api_def_struct_stype(sapi, "MovieTracking");
+  api_def_struct_ui_text(sapi, "Movie Objects", "Collection of movie tracking objects");
 
-  func = RNA_def_function(srna, "new", "rna_trackingObject_new");
-  RNA_def_function_ui_description(func, "Add tracking object to this movie clip");
-  parm = RNA_def_string(func, "name", NULL, 0, "", "Name of new object");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "object", "MovieTrackingObject", "", "New motion tracking object");
-  RNA_def_function_return(func, parm);
+  fn = api_def_function(sapi, "new", "rna_trackingObject_new");
+  api_def_fn_ui_description(fn, "Add tracking object to this movie clip");
+  parm = api_def_string(fn, "name", NULL, 0, "", "Name of new object");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "object", "MovieTrackingObject", "", "New motion tracking object");
+  apu_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_trackingObject_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove tracking object from this movie clip");
-  parm = RNA_def_pointer(
-      func, "object", "MovieTrackingObject", "", "Motion tracking object to be removed");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_trackingObject_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove tracking object from this movie clip");
+  parm = api_def_ptr(
+      fn, "object", "MovieTrackingObject", "", "Motion tracking object to be removed");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* active object */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingObject");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_tracking_active_object_get", "rna_tracking_active_object_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Object", "Active object in this tracking data object");
+  prop = api_def_prop(sapi, "active", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingObject");
+  api_def_prop_ptr_fns(
+      prop, "api_tracking_active_object_get", "api_tracking_active_object_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Object", "Active object in this tracking data object");
 }
 
-static void rna_def_trackingDopesheet(BlenderRNA *brna)
+static void api_def_trackingDopesheet(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem sort_items[] = {
+  static const EnumPropItem sort_items[] = {
       {TRACKING_DOPE_SORT_NAME, "NAME", 0, "Name", "Sort channels by their names"},
       {TRACKING_DOPE_SORT_LONGEST,
        "LONGEST",
@@ -2497,152 +2497,152 @@ static void rna_def_trackingDopesheet(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MovieTrackingDopesheet", NULL);
-  RNA_def_struct_ui_text(srna, "Movie Tracking Dopesheet", "Match-moving dopesheet data");
+  sapi = api_def_struct(dapi, "MovieTrackingDopesheet", NULL);
+  api_def_struct_ui_text(sapi, "Movie Tracking Dopesheet", "Match-moving dopesheet data");
 
   /* dopesheet sort */
-  prop = RNA_def_property(srna, "sort_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "sort_method");
-  RNA_def_property_enum_items(prop, sort_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sort_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "sort_method");
+  api_def_prop_enum_items(prop, sort_items);
+  api_def_prop_ui_text(
       prop, "Dopesheet Sort Field", "Method to be used to sort channels in dopesheet view");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingDopesheet_tagUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_trackingDopesheet_tagUpdate");
 
   /* invert_dopesheet_sort */
-  prop = RNA_def_property(srna, "use_invert_sort", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_DOPE_SORT_INVERSE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_invert_sort", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_DOPE_SORT_INVERSE);
+  api_def_prop_ui_text(
       prop, "Invert Dopesheet Sort", "Invert sort order of dopesheet channels");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingDopesheet_tagUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_trackingDopesheet_tagUpdate");
 
   /* show_only_selected */
-  prop = RNA_def_property(srna, "show_only_selected", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_DOPE_SELECTED_ONLY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_only_selected", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_DOPE_SELECTED_ONLY);
+  api_def_prop_ui_text(
       prop, "Only Show Selected", "Only include channels relating to selected objects and data");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, 0);
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingDopesheet_tagUpdate");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, 0);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingDopesheet_tagUpdate");
 
   /* show_hidden */
-  prop = RNA_def_property(srna, "show_hidden", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_DOPE_SHOW_HIDDEN);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_hidden", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_DOPE_SHOW_HIDDEN);
+  api_def_prop_ui_text(
       prop, "Display Hidden", "Include channels from objects/bone that aren't visible");
-  RNA_def_property_ui_icon(prop, ICON_GHOST_ENABLED, 0);
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_trackingDopesheet_tagUpdate");
+  api_def_prop_ui_icon(prop, ICON_GHOST_ENABLED, 0);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_trackingDopesheet_tagUpdate");
 }
 
-static void rna_def_tracking(BlenderRNA *brna)
+static void api_def_tracking(DuneApi *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_trackingSettings(dapi);
-  rna_def_trackingCamera(dapi);
-  rna_def_trackingTrack(dapi);
-  rna_def_trackingPlaneTrack(dapi);
-  rna_def_trackingTracks(dapi);
-  rna_def_trackingPlaneTracks(dapi);
-  rna_def_trackingObjectTracks(dapi);
-  rna_def_trackingObjectPlaneTracks(dapi);
-  rna_def_trackingStabilization(dapi);
-  rna_def_trackingReconstructedCameras(dapi);
-  rna_def_trackingReconstruction(dapi);
-  rna_def_trackingObject(brna);
-  rna_def_trackingDopesheet(brna);
+  api_def_trackingSettings(dapi);
+  api_def_trackingCamera(dapi);
+  api_def_trackingTrack(dapi);
+  api_def_trackingPlaneTrack(dapi);
+  api_def_trackingTracks(dapi);
+  api_def_trackingPlaneTracks(dapi);
+  api_def_trackingObjectTracks(dapi);
+  api_def_trackingObjectPlaneTracks(dapi);
+  api_def_trackingStabilization(dapi);
+  api_def_trackingReconstructedCameras(dapi);
+  api_def_trackingReconstruction(dapi);
+  api_def_trackingObject(brna);
+  api_def_trackingDopesheet(brna);
 
-  srna = RNA_def_struct(brna, "MovieTracking", NULL);
-  RNA_def_struct_path_func(srna, "rna_tracking_path");
-  RNA_def_struct_ui_text(srna, "Movie tracking data", "Match-moving data for tracking");
+  sapi = api_def_struct(dapi, "MovieTracking", NULL);
+  api_def_struct_path_fn(sapi, "rna_tracking_path");
+  api_def_struct_ui_text(sapi, "Movie tracking data", "Match-moving data for tracking");
 
   /* settings */
-  prop = RNA_def_property(srna, "settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingSettings");
+  prop = api_def_prop(sapi, "settings", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingSettings");
 
   /* camera properties */
-  prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingCamera");
+  prop = api_def_prop(sapi, "camera", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingCamera");
 
   /* tracks */
-  prop = RNA_def_property(srna, "tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_trackingTracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_trackingTracks_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ui_text(prop,
                            "Tracks",
                            "Collection of tracks in this tracking data object. "
                            "Deprecated, use objects[name].tracks");
-  RNA_def_property_srna(prop, "MovieTrackingTracks");
+  api_def_prop_sapi(prop, "MovieTrackingTracks");
 
   /* tracks */
-  prop = RNA_def_property(srna, "plane_tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_trackingPlaneTracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
+  prop = api_def_prop(sapi, "plane_tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                                    "api_trackingPlaneTracks_begin",
+                                    "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_iter_list_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingPlaneTrack");
-  RNA_def_property_ui_text(prop,
-                           "Plane Tracks",
-                           "Collection of plane tracks in this tracking data object. "
-                           "Deprecated, use objects[name].plane_tracks");
-  RNA_def_property_srna(prop, "MovieTrackingPlaneTracks");
+  api_def_prop_struct_type(prop, "MovieTrackingPlaneTrack");
+  api_def_prop_ui_text(prop,
+                       "Plane Tracks",
+                       "Collection of plane tracks in this tracking data object. "
+                       "Deprecated, use objects[name].plane_tracks");
+  api_def_prop_sapi(prop, "MovieTrackingPlaneTracks");
 
   /* stabilization */
-  prop = RNA_def_property(srna, "stabilization", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingStabilization");
+  prop = api_def_prop(sapi, "stabilization", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingStabilization");
 
   /* reconstruction */
-  prop = RNA_def_property(srna, "reconstruction", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "reconstruction_legacy");
-  RNA_def_property_pointer_funcs(prop, "rna_trackingReconstruction_get", NULL, NULL, NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingReconstruction");
+  prop = api_def_prop(sapi, "reconstruction", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "reconstruction_legacy");
+  api_def_prop_ptr_fns(prop, "api_trackingReconstruction_get", NULL, NULL, NULL);
+  api_def_prop_struct_type(prop, "MovieTrackingReconstruction");
 
   /* objects */
-  prop = RNA_def_property(srna, "objects", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_trackingObjects_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingObject");
-  RNA_def_property_ui_text(prop, "Objects", "Collection of objects in this tracking data object");
-  rna_def_trackingObjects(brna, prop);
+  prop = api_def_prop(sapi, "objects", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_trackingObjects_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MovieTrackingObject");
+  api_def_prop_ui_text(prop, "Objects", "Collection of objects in this tracking data object");
+  api_def_trackingObjects(dapi, prop);
 
   /* active object index */
-  prop = RNA_def_property(srna, "active_object_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "objectnr");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_tracking_active_object_index_get",
-                             "rna_tracking_active_object_index_set",
-                             "rna_tracking_active_object_index_range");
-  RNA_def_property_ui_text(prop, "Active Object Index", "Index of active object");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "active_object_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "objectnr");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_tracking_active_object_index_get",
+                       "api_tracking_active_object_index_set",
+                       "api_tracking_active_object_index_range");
+  api_def_prop_ui_text(prop, "Active Object Index", "Index of active object");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* dopesheet */
-  prop = RNA_def_property(srna, "dopesheet", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingDopesheet");
+  prop = api_def_prop(sapi, "dopesheet", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingDopesheet");
 }
 
-void RNA_def_tracking(BlenderRNA *brna)
+void api_def_tracking(DuneApi *dapi)
 {
-  rna_def_tracking(brna);
+  api_def_tracking(dapi);
 }
 
 #endif
