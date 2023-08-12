@@ -1043,7 +1043,7 @@ static void api_def_trackingSettings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Motion Model", "Default motion model to use for tracking");
 
   /* default_use_brute */
-  prop = api_def_prop(sapi, "use_default_brute", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_default_brute", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_BRUTE);
   api_def_prop_ui_text(
@@ -1051,7 +1051,7 @@ static void api_def_trackingSettings(DuneApi *dapi)
   api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_brute */
-  prop = api_def_prop(sapi, "use_default_mask", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_default_mask", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_MASK);
   api_def_prop_ui_text(
@@ -1062,7 +1062,7 @@ static void api_def_trackingSettings(DuneApi *dapi)
   api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_normalization */
-  prop = api_def_prop(sapi, "use_default_normalization", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_default_normalization", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(
       prop, NULL, "default_algorithm_flag", TRACK_ALGORITHM_FLAG_USE_NORMALIZATION);
   api_def_prop_ui_text(
@@ -1072,22 +1072,22 @@ static void api_def_trackingSettings(DuneApi *dapi)
   /* default minimal correlation */
   prop = api_def_prop(sapi, "default_correlation_min", PROP_FLOAT, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_float_sdna(prop, NULL, "default_minimum_correlation");
-  RNA_def_prop_range(prop, 0.0f, 1.0f);
-  RNA_def_prop_ui_range(prop, 0.0f, 1.0f, 0.05, 3);
-  RNA_def_prop_ui_text(
+  api_def_prop_float_stype(prop, NULL, "default_minimum_correlation");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.05, 3);
+  api_def_prop_ui_text(
       prop,
       "Correlation",
       "Default minimum value of correlation between matched pattern and reference "
       "that is still treated as successful tracking");
 
   /* default pattern size */
-  prop = RNA_def_prop(sapi, "default_pattern_size", PROP_INT, PROP_NONE);
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_int_stype(prop, NULL, "default_pattern_size");
-  RNA_def_prop_range(prop, 5, 1000);
-  RNA_def_prop_update(prop, 0, "api_tracking_defaultSettings_patternUpdate");
-  RNA_def_prop_ui_text(prop, "Pattern Size", "Size of pattern area for newly created tracks");
+  prop = api_def_prop(sapi, "default_pattern_size", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "default_pattern_size");
+  api_def_prop_range(prop, 5, 1000);
+  api_def_prop_update(prop, 0, "api_tracking_defaultSettings_patternUpdate");
+  api_def_prop_ui_text(prop, "Pattern Size", "Size of pattern area for newly created tracks");
 
   /* default search size */
   prop = api_def_prop(sapi, "default_search_size", PROP_INT, PROP_NONE);
@@ -1098,47 +1098,47 @@ static void api_def_trackingSettings(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Search Size", "Size of search area for newly created tracks");
 
   /* default use_red_channel */
-  prop = RNA_def_prop(sapi, "use_default_red_channel", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_negative_stype(prop, NULL, "default_flag", TRACK_DISABLE_RED);
-  RNA_def_prop_ui_text(prop, "Use Red Channel", "Use red channel from footage for tracking");
-  RNA_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "use_default_red_channel", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "default_flag", TRACK_DISABLE_RED);
+  api_def_prop_ui_text(prop, "Use Red Channel", "Use red channel from footage for tracking");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_green_channel */
-  prop = RNA_def_prop(srna, "use_default_green_channel", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_negative_sdna(prop, NULL, "default_flag", TRACK_DISABLE_GREEN);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "use_default_green_channel", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "default_flag", TRACK_DISABLE_GREEN);
+  api_def_prop_ui_text(
       prop, "Use Green Channel", "Use green channel from footage for tracking");
-  RNA_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* default_use_blue_channel */
-  prop = api_def_prop(sapi, "use_default_blue_channel", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_default_blue_channel", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "default_flag", TRACK_DISABLE_BLUE);
   api_def_prop_ui_text(prop, "Use Blue Channel", "Use blue channel from footage for tracking");
-  RNA_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
-  prop = RNA_def_prop(sapi, "default_weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_prop_range(prop, 0.0f, 1.0f);
-  RNA_def_prop_ui_text(prop, "Weight", "Influence of newly created track on a final solution");
+  prop = api_def_prop(sapi, "default_weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Weight", "Influence of newly created track on a final solution");
 
   /* ** object tracking ** */
 
   /* object distance */
-  prop = RNA_def_property(srna, "object_distance", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_sdna(prop, NULL, "object_distance");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object_distance", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_stype(prop, NULL, "object_distance");
+  api_def_prop_ui_text(
       prop, "Distance", "Distance between two bundles used for object scaling");
-  RNA_def_property_range(prop, 0.001, 10000);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_range(prop, 0.001, 10000.0, 1, 3);
+  api_def_prop_range(prop, 0.001, 10000);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_range(prop, 0.001, 10000.0, 1, 3);
 }
 
-static void rna_def_trackingCamera(BlenderRNA *brna)
+static void api_def_trackingCamera(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem distortion_model_items[] = {
+  static const EnumPropItem distortion_model_items[] = {
       {TRACKING_DISTORTION_MODEL_POLYNOMIAL,
        "POLYNOMIAL",
        0,
@@ -1155,99 +1155,99 @@ static void rna_def_trackingCamera(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem camera_units_items[] = {
+  static const EnumPropItem camera_units_items[] = {
       {CAMERA_UNITS_PX, "PIXELS", 0, "px", "Use pixels for units of focal length"},
       {CAMERA_UNITS_MM, "MILLIMETERS", 0, "mm", "Use millimeters for units of focal length"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MovieTrackingCamera", NULL);
-  RNA_def_struct_path_func(srna, "rna_trackingCamera_path");
-  RNA_def_struct_ui_text(
-      srna, "Movie tracking camera data", "Match-moving camera data for tracking");
+  sapi = api_def_struct(dapi, "MovieTrackingCamera", NULL);
+  api_def_struct_path_fn(sapi, "api_trackingCamera_path");
+  api_def_struct_ui_text(
+      sapi, "Movie tracking camera data", "Match-moving camera data for tracking");
 
   /* Distortion model */
-  prop = RNA_def_property(srna, "distortion_model", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, distortion_model_items);
-  RNA_def_property_ui_text(prop, "Distortion Model", "Distortion model used for camera lenses");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_resetIntrinsics");
+  prop = api_def_prop(sapi, "distortion_model", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, distortion_model_items);
+  api_def_prop_ui_text(prop, "Distortion Model", "Distortion model used for camera lenses");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_tracking_resetIntrinsics");
 
   /* Sensor */
-  prop = RNA_def_property(srna, "sensor_width", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "sensor_width");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 500.0f);
-  RNA_def_property_ui_text(prop, "Sensor", "Width of CCD sensor in millimeters");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(salo, "sensor_width", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "sensor_width");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 500.0f);
+  api_def_prop_ui_text(prop, "Sensor", "Width of CCD sensor in millimeters");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Focal Length */
-  prop = RNA_def_property(srna, "focal_length", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "focal");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0001f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001f, 5000.0f, 1, 2);
-  RNA_def_property_float_funcs(
-      prop, "rna_trackingCamera_focal_mm_get", "rna_trackingCamera_focal_mm_set", NULL);
-  RNA_def_property_ui_text(prop, "Focal Length", "Camera's focal length");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "focal_length", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "focal");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0001f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001f, 5000.0f, 1, 2);
+  api_def_prop_float_fns(
+      prop, "api_trackingCamera_focal_mm_get", "api_trackingCamera_focal_mm_set", NULL);
+  api_def_prop_ui_text(prop, "Focal Length", "Camera's focal length");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Focal Length in pixels */
-  prop = RNA_def_property(srna, "focal_length_pixels", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "focal");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 5000.0f, 1, 2);
-  RNA_def_property_ui_text(prop, "Focal Length", "Camera's focal length");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "focal_length_pixels", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "focal");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0f, 5000.0f, 1, 2);
+  api_def_prop_ui_text(prop, "Focal Length", "Camera's focal length");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Units */
-  prop = RNA_def_property(srna, "units", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "units");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, camera_units_items);
-  RNA_def_property_ui_text(prop, "Units", "Units used for camera focal length");
+  prop = api_def_prop(sapi, "units", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "units");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, camera_units_items);
+  api_def_prop_ui_text(prop, "Units", "Units used for camera focal length");
 
   /* Principal Point */
-  prop = RNA_def_property(srna, "principal_point", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_float_sdna(prop, NULL, "principal_point");
-  RNA_def_property_range(prop, -1, 1);
-  RNA_def_property_ui_range(prop, -1, 1, 0.1, 3);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Principal Point", "Optical center of lens");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "principal_point", PROP_FLOAT, PROP_NONE);
+  api_def_prop_array(prop, 2);
+  api_def_prop_float_stype(prop, NULL, "principal_point");
+  api_def_prop_range(prop, -1, 1);
+  api_def_prop_ui_range(prop, -1, 1, 0.1, 3);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Principal Point", "Optical center of lens");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Principal Point, in pixels */
-  prop = RNA_def_property(srna, "principal_point_pixels", PROP_FLOAT, PROP_PIXEL);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_float_funcs(prop,
-                               "rna_trackingCamera_principal_point_pixels_get",
-                               "rna_trackingCamera_principal_point_pixels_set",
-                               NULL);
-  RNA_def_property_ui_text(prop, "Principal Point", "Optical center of lens in pixels");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "principal_point_pixels", PROP_FLOAT, PROP_PIXEL);
+  api_def_prop_array(prop, 2);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_float_fns(prop,
+                         "api_trackingCamera_principal_point_pixels_get",
+                         "api_trackingCamera_principal_point_pixels_set",
+                         NULL);
+  api_def_prop_ui_text(prop, "Principal Point", "Optical center of lens in pixels");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Radial distortion parameters */
-  prop = RNA_def_property(srna, "k1", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "k1");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_range(prop, -10, 10, 0.1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "k1", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "k1");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_range(prop, -10, 10, 0.1, 3);
+  api_def_prop_ui_text(
       prop, "K1", "First coefficient of third order polynomial radial distortion");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_tracking_flushUpdate");
 
-  prop = RNA_def_property(srna, "k2", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "k2");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_range(prop, -10, 10, 0.1, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "k2", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "k2");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_range(prop, -10, 10, 0.1, 3);
+  api_def_prop_ui_text(
       prop, "K2", "Second coefficient of third order polynomial radial distortion");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, "api_tracking_flushUpdate");
 
-  prop = RNA_def_property(srna, "k3", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "k3");
+  prop = RNA_def_prop(sapi, "k3", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_stype(prop, NULL, "k3");
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_ui_range(prop, -10, 10, 0.1, 3);
   RNA_def_property_ui_text(
