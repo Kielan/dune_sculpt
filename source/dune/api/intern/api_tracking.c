@@ -1643,124 +1643,124 @@ static void api_def_trackingTrack(DuneApi *dapi)
   api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
 
   /* hide */
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACK_HIDDEN);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Hide", "Track is hidden");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACK_HIDDEN);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Hide", "Track is hidden");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* select */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_trackingTrack_select_get", "rna_trackingTrack_select_set");
-  RNA_def_property_ui_text(prop, "Select", "Track is selected");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_trackingTrack_select_get", "api_trackingTrack_select_set");
+  api_def_prop_ui_text(prop, "Select", "Track is selected");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* select_anchor */
-  prop = RNA_def_property(srna, "select_anchor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select Anchor", "Track's anchor point is selected");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "select_anchor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Select Anchor", "Track's anchor point is selected");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* select_pattern */
-  prop = RNA_def_property(srna, "select_pattern", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "pat_flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select Pattern", "Track's pattern area is selected");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "select_pattern", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pat_flag", SELECT);
+  api_def_prop_ui_text(prop, "Select Pattern", "Track's pattern area is selected");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* select_search */
-  prop = RNA_def_property(srna, "select_search", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "search_flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select Search", "Track's search area is selected");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "select_search", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "search_flag", SELECT);
+  api_def_prop_ui_text(prop, "Select Search", "Track's search area is selected");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* locked */
-  prop = RNA_def_property(srna, "lock", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACK_LOCKED);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Lock", "Track is locked and all changes to it are disabled");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "lock", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACK_LOCKED);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Lock", "Track is locked and all changes to it are disabled");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* custom color */
-  prop = RNA_def_property(srna, "use_custom_color", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACK_CUSTOMCOLOR);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Custom Color", "Use custom color instead of theme-defined");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "use_custom_color", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACK_CUSTOMCOLOR);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Custom Color", "Use custom color instead of theme-defined");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* color */
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop,
       "Color",
       "Color of the track in the Movie Clip Editor and the 3D viewport after a solve");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* average error */
-  prop = RNA_def_property(srna, "average_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Average Error", "Average error of re-projection");
+  prop = api_def_prop(sapi, "average_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Average Error", "Average error of re-projection");
 
-  /* grease pencil */
-  prop = RNA_def_property(srna, "grease_pencil", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "gpd");
-  RNA_def_property_struct_type(prop, "GreasePencil");
-  RNA_def_property_pointer_funcs(
-      prop, NULL, NULL, NULL, "rna_GPencil_datablocks_annotations_poll");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
-  RNA_def_property_ui_text(prop, "Grease Pencil", "Grease pencil data for this track");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  /* dune pen */
+  prop = api_def_prop(sapi, "pen", PROP_PTR, PROP_NONE);
+  RNA_def_prop_ptr_stype(prop, NULL, "gpd");
+  RNA_def_prop_struct_type(prop, "Pen");
+  RNA_def_prop_ptr_fns(
+      prop, NULL, NULL, NULL, "api_Pen_datablocks_annotations_poll");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_REFCOUNT);
+  api_def_prop_ui_text(prop, "Pen", "Pen data for this track");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* weight */
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "weight");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Weight", "Influence of this track on a final solution");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "weight");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Weight", "Influence of this track on a final solution");
 
   /* weight_stab */
-  prop = RNA_def_property(srna, "weight_stab", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "weight_stab");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Stab Weight", "Influence of this track on 2D stabilization");
+  prop = api_def_prop(sapi, "weight_stab", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "weight_stab");
+  RNA_def_prop_range(prop, 0.0f, 1.0f);
+  RNA_def_prop_ui_text(prop, "Stab Weight", "Influence of this track on 2D stabilization");
 
   /* offset */
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_float_sdna(prop, NULL, "offset");
-  RNA_def_property_ui_text(prop, "Offset", "Offset of track from the parenting point");
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_TRANSLATION);
+  RNA_def_prop_array(prop, 2);
+  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
+  RNA_def_prop_float_stype(prop, NULL, "offset");
+  RNA_def_prop_ui_text(prop, "Offset", "Offset of track from the parenting point");
+  RNA_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
-static void rna_def_trackingPlaneMarker(DuneApi *dapi)
+static void api_def_trackingPlaneMarker(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MovieTrackingPlaneMarker", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Movie Tracking Plane Marker Data", "Match-moving plane marker data for tracking");
+  sapi = api_def_struct(dapi, "MovieTrackingPlaneMarker", NULL);
+  api_def_struct_ui_text(
+      sapi, "Movie Tracking Plane Marker Data", "Match-moving plane marker data for tracking");
 
   /* frame */
-  prop = RNA_def_property(sapi, "frame", PROP_INT, PROP_NONE);
-  RNA_def_property_int_stype(prop, NULL, "framenr");
-  RNA_def_property_ui_text(prop, "Frame", "Frame number marker is keyframed on");
-  RNA_def_property_int_funcs(prop, NULL, "rna_trackingPlaneMarker_frame_set", NULL);
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "frame", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "framenr");
+  api_def_prop_ui_text(prop, "Frame", "Frame number marker is keyframed on");
+  api_def_prop_int_fns(prop, NULL, "api_trackingPlaneMarker_frame_set", NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* Corners */
-  prop = RNA_def_prop(sapi, "corners", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_prop_float_stype(prop, NULL, "corners");
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x2);
-  RNA_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_prop_ui_text(prop,
-                           "Corners",
-                           "Array of coordinates which represents UI rectangle corners in "
-                           "frame normalized coordinates");
+  prop = api_def_prop(sapi, "corners", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "corners");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x2);
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_ui_text(prop,
+                       "Corners",
+                       "Array of coordinates which represents UI rectangle corners in "
+                       "frame normalized coordinates");
   api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
   /* enable */
@@ -1794,13 +1794,13 @@ static void api_def_trackingPlaneMarkers(DuneApi *dapi, ApiProp *cprop)
                      "Frame number to find marker for",
                      MINFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func,
-                  "exact",
-                  true,
-                  "Exact",
-                  "Get plane marker at exact frame number rather than get estimated marker");
-  parm = api_def_pointer(
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn,
+               "exact",
+               true,
+               "Exact",
+               "Get plane marker at exact frame number rather than get estimated marker");
+  parm = api_def_ptr(
       func, "plane_marker", "MovieTrackingPlaneMarker", "", "Plane marker for specified frame");
   api_def_fn_return(fn, parm);
 
@@ -1818,11 +1818,11 @@ static void api_def_trackingPlaneMarkers(DuneApi *dapi, ApiProp *cprop)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(
       fn, "plane_marker", "MovieTrackingPlaneMarker", "", "Newly created plane marker");
-  api_def_fn_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "delete_frame", "rna_trackingPlaneMarkers_delete_frame");
-  RNA_def_function_ui_description(func, "Delete plane marker at specified frame");
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "delete_frame", "api_trackingPlaneMarkers_delete_frame");
+  api_def_fn_ui_description(fn, "Delete plane marker at specified frame");
+  parm = api_def_int(fn,
                      "frame",
                      1,
                      MINFRAME,
@@ -1831,73 +1831,73 @@ static void api_def_trackingPlaneMarkers(DuneApi *dapi, ApiProp *cprop)
                      "Frame number to delete plane marker from",
                      MINFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-static void rna_def_trackingPlaneTrack(BlenderRNA *brna)
+static void api_def_trackingPlaneTrack(DuneApi *dapu)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_trackingPlaneMarker(brna);
+  api_def_trackingPlaneMarker(dapi);
 
-  srna = RNA_def_struct(brna, "MovieTrackingPlaneTrack", NULL);
-  RNA_def_struct_path_func(srna, "rna_trackingPlaneTrack_path");
-  RNA_def_struct_ui_text(
+  srna = api_def_struct(dapi, "MovieTrackingPlaneTrack", NULL);
+  api_def_struct_path_fn(sapi, "api_trackingPlaneTrack_path");
+  api_def_struct_ui_text(
       srna, "Movie tracking plane track data", "Match-moving plane track data for tracking");
-  RNA_def_struct_ui_icon(srna, ICON_ANIM_DATA);
+  api_def_struct_ui_icon(sapi, ICON_ANIM_DATA);
 
   /* name */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Unique name of track");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_trackingPlaneTrack_name_set");
-  RNA_def_property_string_maxlength(prop, MAX_ID_NAME - 2);
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Unique name of track");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_trackingPlaneTrack_name_set");
+  api_def_prop_string_maxlength(prop, MAX_ID_NAME - 2);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  api_def_struct_name_prop(sapi, prop);
 
   /* markers */
-  prop = RNA_def_property(srna, "markers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingPlaneMarker");
-  RNA_def_property_collection_sdna(prop, NULL, "markers", "markersnr");
-  RNA_def_property_ui_text(prop, "Markers", "Collection of markers in track");
-  rna_def_trackingPlaneMarkers(brna, prop);
+  prop = api_def_prop(sapi, "markers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingPlaneMarker");
+  api_def_prop_collection_stype(prop, NULL, "markers", "markersnr");
+  api_def_prop_ui_text(prop, "Markers", "Collection of markers in track");
+  api_def_trackingPlaneMarkers(dapi, prop);
 
   /* select */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select", "Plane track is selected");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Select", "Plane track is selected");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* auto keyframing */
-  prop = RNA_def_property(srna, "use_auto_keying", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PLANE_TRACK_AUTOKEY);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_auto_keying", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PLANE_TRACK_AUTOKEY);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Auto Keyframe", "Automatic keyframe insertion when moving plane corners");
-  RNA_def_property_ui_icon(prop, ICON_REC, 0);
+  api_def_prop_ui_icon(prop, ICON_REC, 0);
 
   /* image */
-  prop = RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Image");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "image", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Image");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Image", "Image displayed in the track during editing in clip editor");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* image opacity */
-  prop = RNA_def_property(srna, "image_opacity", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Image Opacity", "Opacity of the image");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "image_opacity", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Image Opacity", "Opacity of the image");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 }
 
-static void rna_def_trackingStabilization(BlenderRNA *brna)
+static void api_def_trackingStabilization(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem filter_items[] = {
+  static const EnumPropItem filter_items[] = {
       {TRACKING_FILTER_NEAREST,
        "NEAREST",
        0,
@@ -1912,237 +1912,237 @@ static void rna_def_trackingStabilization(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MovieTrackingStabilization", NULL);
-  RNA_def_struct_path_func(srna, "rna_trackingStabilization_path");
-  RNA_def_struct_ui_text(
-      srna, "Movie tracking stabilization data", "2D stabilization based on tracking markers");
+  sapi = api_def_struct(dapi, "MovieTrackingStabilization", NULL);
+  api_def_struct_path_fn(sapi, "api_trackingStabilization_path");
+  api_def_struct_ui_text(
+      sapi, "Movie tracking stabilization data", "2D stabilization based on tracking markers");
 
   /* 2d stabilization */
-  prop = RNA_def_property(srna, "use_2d_stabilization", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_2D_STABILIZATION);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Use 2D Stabilization", "Use 2D stabilization for footage");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  prop = api_def_prop(sapi, "use_2d_stabilization", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_2D_STABILIZATION);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Use 2D Stabilization", "Use 2D stabilization for footage");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* use_stabilize_rotation */
-  prop = RNA_def_property(srna, "use_stabilize_rotation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_STABILIZE_ROTATION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_stabilize_rotation", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_STABILIZE_ROTATION);
+  api_def_prop_ui_text(
       prop, "Stabilize Rotation", "Stabilize detected rotation around center of frame");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* use_stabilize_scale */
-  prop = RNA_def_property(srna, "use_stabilize_scale", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_STABILIZE_SCALE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_stabilize_scale", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_STABILIZE_SCALE);
+  api_def_prop_ui_text(
       prop, "Stabilize Scale", "Compensate any scale changes relative to center of rotation");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* tracks */
-  prop = RNA_def_property(srna, "tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_tracking_stabTracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_tracking_stabTracks_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ui_text(
       prop, "Translation Tracks", "Collection of tracks used for 2D stabilization (translation)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* active track index */
-  prop = RNA_def_property(srna, "active_track_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "act_track");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_tracking_stabTracks_active_index_get",
-                             "rna_tracking_stabTracks_active_index_set",
-                             "rna_tracking_stabTracks_active_index_range");
-  RNA_def_property_ui_text(prop,
-                           "Active Track Index",
-                           "Index of active track in translation stabilization tracks list");
+  prop = api_def_prop(sapi, "active_track_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "act_track");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_tracking_stabTracks_active_index_get",
+                       "apu_tracking_stabTracks_active_index_set",
+                       "api_tracking_stabTracks_active_index_range");
+  api_def_prop_ui_text(prop,
+                       "Active Track Index",
+                       "Index of active track in translation stabilization tracks list");
 
   /* tracks used for rotation stabilization */
-  prop = RNA_def_property(srna, "rotation_tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_tracking_stabRotTracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "rotation_tracks", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_tracking_stabRotTracks_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ui_text(
       prop, "Rotation Tracks", "Collection of tracks used for 2D stabilization (translation)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* active rotation track index */
-  prop = RNA_def_property(srna, "active_rotation_track_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "act_rot_track");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_tracking_stabRotTracks_active_index_get",
-                             "rna_tracking_stabRotTracks_active_index_set",
-                             "rna_tracking_stabRotTracks_active_index_range");
-  RNA_def_property_ui_text(prop,
-                           "Active Rotation Track Index",
-                           "Index of active track in rotation stabilization tracks list");
+  prop = api_def_prop(sapi, "active_rotation_track_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "act_rot_track");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_tracking_stabRotTracks_active_index_get",
+                       "api_tracking_stabRotTracks_active_index_set",
+                       "api_tracking_stabRotTracks_active_index_range");
+  api_def_prop_ui_text(prop,
+                       "Active Rotation Track Index",
+                       "Index of active track in rotation stabilization tracks list");
 
   /* anchor frame */
-  prop = RNA_def_property(srna, "anchor_frame", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "anchor_frame");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop,
-                           "Anchor Frame",
-                           "Reference point to anchor stabilization "
-                           "(other frames will be adjusted relative to this frame's position)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  prop = api_def_prop(sapi, "anchor_frame", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "anchor_frame");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop,
+                       "Anchor Frame",
+                       "Reference point to anchor stabilization "
+                       "(other frames will be adjusted relative to this frame's position)");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
 
   /* target position */
-  prop = RNA_def_property(srna, "target_position", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_range(
+  prop = api_def_prop(sapi, "target_position", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_range(
       prop, -FLT_MAX, FLT_MAX, 1, 3); /* increment in steps of 0.01 and show 3 digit after point */
-  RNA_def_property_float_sdna(prop, NULL, "target_pos");
-  RNA_def_property_ui_text(prop,
-                           "Expected Position",
-                           "Known relative offset of original shot, will be subtracted "
-                           "(e.g. for panning shot, can be animated)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_float_stype(prop, NULL, "target_pos");
+  api_def_prop_ui_text(prop,
+                       "Expected Position",
+                       "Known relative offset of original shot, will be subtracted "
+                       "(e.g. for panning shot, can be animated)");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* target rotation */
-  prop = RNA_def_property(srna, "target_rotation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "target_rot");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 10.0f, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "target_rotation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "target_rot");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 10.0f, 3);
+  api_def_prop_ui_text(
       prop,
       "Expected Rotation",
       "Rotation present on original shot, will be compensated (e.g. for deliberate tilting)");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* target scale */
-  prop = RNA_def_property(srna, "target_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_range(prop, FLT_EPSILON, FLT_MAX);
-  RNA_def_property_ui_range(
+  prop = api_def_prop(sapi, "target_scale", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_range(prop, FLT_EPSILON, FLT_MAX);
+  api_def_prop_ui_range(
       prop, 0.01f, 10.0f, 0.001f, 3); /* increment in steps of 0.001. Show 3 digit after point */
-  RNA_def_property_ui_text(prop,
+  api_def_prop_ui_text(prop,
                            "Expected Scale",
                            "Explicitly scale resulting frame to compensate zoom of original shot");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* Auto-scale. */
-  prop = RNA_def_property(srna, "use_autoscale", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_AUTOSCALE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_autoscale", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_AUTOSCALE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(
       prop, "Autoscale", "Automatically scale footage to cover unfilled areas when stabilizing");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* max scale */
-  prop = RNA_def_property(srna, "scale_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "maxscale");
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_text(prop, "Maximal Scale", "Limit the amount of automatic scaling");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  prop = api_def_prop(sapi, "scale_max", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "maxscale");
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_text(prop, "Maximal Scale", "Limit the amount of automatic scaling");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* influence_location */
-  prop = RNA_def_property(srna, "influence_location", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "locinf");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "influence_location", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_style(prop, NULL, "locinf");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Location Influence", "Influence of stabilization algorithm on footage location");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* influence_scale */
-  prop = RNA_def_property(srna, "influence_scale", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "scaleinf");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "influence_scale", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "scaleinf");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Scale Influence", "Influence of stabilization algorithm on footage scale");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* influence_rotation */
-  prop = RNA_def_property(srna, "influence_rotation", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "rotinf");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "influence_rotation", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "rotinf");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Rotation Influence", "Influence of stabilization algorithm on footage rotation");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* filter */
-  prop = RNA_def_property(srna, "filter_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "filter");
-  RNA_def_property_enum_items(prop, filter_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "filter_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "filter");
+  api_def_prop_enum_items(prop, filter_items);
+  api_def_prop_ui_text(
       prop,
       "Interpolate",
       "Interpolation to use for sub-pixel shifts and rotations due to stabilization");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_tracking_flushUpdate");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, "api_tracking_flushUpdate");
 
   /* UI display : show participating tracks */
-  prop = RNA_def_property(srna, "show_tracks_expanded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_SHOW_STAB_TRACKS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_tracks_expanded", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_SHOW_STAB_TRACKS);
+  api_def_prop_ui_text(
       prop, "Show Tracks", "Show UI list of tracks participating in stabilization");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 }
 
-static void rna_def_reconstructedCamera(BlenderRNA *brna)
+static void api_def_reconstructedCamera(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MovieReconstructedCamera", NULL);
-  RNA_def_struct_ui_text(srna,
+  sapi = api_def_struct(dapi, "MovieReconstructedCamera", NULL);
+  api_def_struct_ui_text(sapi,
                          "Movie tracking reconstructed camera data",
                          "Match-moving reconstructed camera data from tracker");
 
   /* frame */
-  prop = RNA_def_property(srna, "frame", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_sdna(prop, NULL, "framenr");
-  RNA_def_property_ui_text(prop, "Frame", "Frame number marker is keyframed on");
+  prop = api_def_prop(sapi, "frame", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_stype(prop, NULL, "framenr");
+  api_def_prop_ui_text(prop, "Frame", "Frame number marker is keyframed on");
 
   /* matrix */
-  prop = RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_float_sdna(prop, NULL, "mat");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_ui_text(prop, "Matrix", "Worldspace transformation matrix");
+  prop = api_def_prop(sapi, "matrix", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_float_stype(prop, NULL, "mat");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
+  api_def_prop_ui_text(prop, "Matrix", "Worldspace transformation matrix");
 
   /* average_error */
-  prop = RNA_def_property(srna, "average_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Average Error", "Average error of reconstruction");
+  prop = api_def_prop(sapi, "average_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Average Error", "Average error of reconstruction");
 }
 
-static void rna_def_trackingReconstructedCameras(BlenderRNA *brna)
+static void api_def_trackingReconstructedCameras(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "MovieTrackingReconstructedCameras", NULL);
-  RNA_def_struct_sdna(srna, "MovieTrackingReconstruction");
-  RNA_def_struct_ui_text(srna, "Reconstructed Cameras", "Collection of solved cameras");
+  sapi = api_def_struct(dapi, "MovieTrackingReconstructedCameras", NULL);
+  api_def_struct_stype(sapi, "MovieTrackingReconstruction");
+  api_def_struct_ui_text(sapi, "Reconstructed Cameras", "Collection of solved cameras");
 
-  func = RNA_def_function(srna, "find_frame", "rna_trackingCameras_find_frame");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Find a reconstructed camera for a give frame number");
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "find_frame", "rna_trackingCameras_find_frame");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Find a reconstructed camera for a give frame number");
+  api_def_int(fn,
               "frame",
               1,
               MINFRAME,
@@ -2151,14 +2151,14 @@ static void rna_def_trackingReconstructedCameras(BlenderRNA *brna)
               "Frame number to find camera for",
               MINFRAME,
               MAXFRAME);
-  parm = RNA_def_pointer(
+  parm = api_def_ptr(
       func, "camera", "MovieReconstructedCamera", "", "Camera for a given frame");
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "matrix_from_frame", "rna_trackingCameras_matrix_from_frame");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Return interpolated camera matrix for a given frame");
-  RNA_def_int(func,
+  fn = api_def_function(sapi, "matrix_from_frame", "api_trackingCameras_matrix_from_frame");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Return interpolated camera matrix for a given frame");
+  api_def_int(fn,
               "frame",
               1,
               MINFRAME,
@@ -2167,7 +2167,7 @@ static void rna_def_trackingReconstructedCameras(BlenderRNA *brna)
               "Frame number to find camera for",
               MINFRAME,
               MAXFRAME);
-  parm = RNA_def_float_matrix(func,
+  parm = api_def_float_matrix(fn,
                               "matrix",
                               4,
                               4,
@@ -2178,58 +2178,58 @@ static void rna_def_trackingReconstructedCameras(BlenderRNA *brna)
                               "Interpolated camera matrix for a given frame",
                               -FLT_MAX,
                               FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
+  api_def_fn_output(fn, parm);
 }
 
-static void rna_def_trackingReconstruction(BlenderRNA *brna)
+static void api_def_trackingReconstruction(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_reconstructedCamera(brna);
+  api_def_reconstructedCamera(dapi);
 
-  srna = RNA_def_struct(brna, "MovieTrackingReconstruction", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Movie tracking reconstruction data", "Match-moving reconstruction data from tracker");
+  sapi = api_def_struct(dapi, "MovieTrackingReconstruction", NULL);
+  api_def_struct_ui_text(
+      sapi, "Movie tracking reconstruction data", "Match-moving reconstruction data from tracker");
 
   /* is_valid */
-  prop = RNA_def_property(srna, "is_valid", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_RECONSTRUCTED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_valid", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_RECONSTRUCTED);
+  api_def_prop_ui_text(
       prop, "Reconstructed", "Is tracking data contains valid reconstruction information");
 
   /* average_error */
-  prop = RNA_def_property(srna, "average_error", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "error");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Average Error", "Average error of reconstruction");
+  prop = api_def_prop(sapi, "average_error", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "error");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Average Error", "Average error of reconstruction");
 
   /* cameras */
-  prop = RNA_def_property(srna, "cameras", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieReconstructedCamera");
-  RNA_def_property_collection_sdna(prop, NULL, "cameras", "camnr");
-  RNA_def_property_ui_text(prop, "Cameras", "Collection of solved cameras");
-  RNA_def_property_srna(prop, "MovieTrackingReconstructedCameras");
+  prop = api_def_prop(sapi, "cameras", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieReconstructedCamera");
+  api_def_prop_collection_stype(prop, NULL, "cameras", "camnr");
+  api_def_prop_ui_text(prop, "Cameras", "Collection of solved cameras");
+  api_def_prop_sapi(prop, "MovieTrackingReconstructedCameras");
 }
 
-static void rna_def_trackingTracks(BlenderRNA *brna)
+static void api_def_trackingTracks(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *prop;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "MovieTrackingTracks", NULL);
-  RNA_def_struct_sdna(srna, "MovieTracking");
-  RNA_def_struct_ui_text(srna, "Movie Tracks", "Collection of movie tracking tracks");
+  sapi = api_def_struct(dapi, "MovieTrackingTracks", NULL);
+  api_def_struct_stype(sapi, "MovieTracking");
+  api_def_struct_ui_text(sapi, "Movie Tracks", "Collection of movie tracking tracks");
 
-  func = RNA_def_function(srna, "new", "rna_trackingTracks_new");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Create new motion track in this movie clip");
-  RNA_def_string(func, "name", NULL, 0, "", "Name of new track");
-  RNA_def_int(func,
+  fn = api_def_function(sapi, "new", "api_trackingTracks_new");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Create new motion track in this movie clip");
+  api_def_string(fn, "name", NULL, 0, "", "Name of new track");
+  api_def_int(fn,
               "frame",
               1,
               MINFRAME,
@@ -2238,66 +2238,66 @@ static void rna_def_trackingTracks(BlenderRNA *brna)
               "Frame number to add track on",
               MINFRAME,
               MAXFRAME);
-  parm = RNA_def_pointer(func, "track", "MovieTrackingTrack", "", "Newly created track");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "track", "MovieTrackingTrack", "", "Newly created track");
+  api_def_fn_return(fn, parm);
 
   /* active track */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_tracking_active_track_get", "rna_tracking_active_track_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop,
-                           "Active Track",
-                           "Active track in this tracking data object. "
-                           "Deprecated, use objects[name].tracks.active");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_MOVIECLIP);
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ptr_fns(
+      prop, "api_tracking_active_track_get", "rna_tracking_active_track_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop,
+                       "Active Track",
+                       "Active track in this tracking data object. "
+                       "Deprecated, use objects[name].tracks.active");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_MOVIECLIP);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
 }
 
-static void rna_def_trackingPlaneTracks(BlenderRNA *brna)
+static void api_def_trackingPlaneTracks(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MovieTrackingPlaneTracks", NULL);
-  RNA_def_struct_sdna(srna, "MovieTracking");
-  RNA_def_struct_ui_text(srna, "Movie Plane Tracks", "Collection of movie tracking plane tracks");
+  sapi = api_def_struct(dapi, "MovieTrackingPlaneTracks", NULL);
+  api_def_struct_stype(sapi, "MovieTracking");
+  api_def_struct_ui_text(sapi, "Movie Plane Tracks", "Collection of movie tracking plane tracks");
 
-  /* TODO(sergey): Add API to create new plane tracks */
+  /* TODO: Add API to create new plane tracks */
 
   /* active plane track */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingPlaneTrack");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_tracking_active_plane_track_get",
-                                 "rna_tracking_active_plane_track_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop,
-                           "Active Plane Track",
-                           "Active plane track in this tracking data object. "
-                           "Deprecated, use objects[name].plane_tracks.active");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingPlaneTrack");
+  api_def_prop_ptr_fns(prop,
+                           "api_tracking_active_plane_track_get",
+                           "api_tracking_active_plane_track_set",
+                           NULL,
+                           NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop,
+                       "Active Plane Track",
+                       "Active plane track in this tracking data object. "
+                       "Deprecated, use objects[name].plane_tracks.active");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
 }
 
-static void rna_def_trackingObjectTracks(BlenderRNA *brna)
+static void api_def_trackingObjectTracks(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *prop;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "MovieTrackingObjectTracks", NULL);
-  RNA_def_struct_sdna(srna, "MovieTrackingObject");
-  RNA_def_struct_ui_text(srna, "Movie Tracks", "Collection of movie tracking tracks");
+  sapi = api_def_struct(dapi, "MovieTrackingObjectTracks", NULL);
+  api_def_struct_stype(sapi, "MovieTrackingObject");
+  api_def_struct_ui_text(sapi, "Movie Tracks", "Collection of movie tracking tracks");
 
-  func = RNA_def_function(srna, "new", "rna_trackingObject_tracks_new");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "create new motion track in this movie clip");
-  RNA_def_string(func, "name", NULL, 0, "", "Name of new track");
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "new", "api_trackingObject_tracks_new");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "create new motion track in this movie clip");
+  api_def_string(fn, "name", NULL, 0, "", "Name of new track");
+  api_def_int(fn,
               "frame",
               1,
               MINFRAME,
@@ -2306,84 +2306,84 @@ static void rna_def_trackingObjectTracks(BlenderRNA *brna)
               "Frame number to add tracks on",
               MINFRAME,
               MAXFRAME);
-  parm = RNA_def_pointer(func, "track", "MovieTrackingTrack", "", "Newly created track");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "track", "MovieTrackingTrack", "", "Newly created track");
+  api_def_fn_return(fn, parm);
 
   /* active track */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_tracking_object_active_track_get",
-                                 "rna_tracking_object_active_track_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Track", "Active track in this tracking data object");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_MOVIECLIP);
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ptr_fns(prop,
+                      "api_tracking_object_active_track_get",
+                      "api_tracking_object_active_track_set",
+                      NULL,
+                      NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Track", "Active track in this tracking data object");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_MOVIECLIP);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
 }
 
-static void rna_def_trackingObjectPlaneTracks(BlenderRNA *brna)
+static void api_def_trackingObjectPlaneTracks(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MovieTrackingObjectPlaneTracks", NULL);
-  RNA_def_struct_sdna(srna, "MovieTrackingObject");
-  RNA_def_struct_ui_text(srna, "Plane Tracks", "Collection of tracking plane tracks");
+  sapi = api_def_struct(dapi, "MovieTrackingObjectPlaneTracks", NULL);
+  api_def_struct_stype(sapi, "MovieTrackingObject");
+  api_def_struct_ui_text(sapi, "Plane Tracks", "Collection of tracking plane tracks");
 
   /* active track */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_tracking_object_active_plane_track_get",
-                                 "rna_tracking_object_active_plane_track_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Track", "Active track in this tracking data object");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_MOVIECLIP);
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MovieTrackingTrack");
+  api_def_prop_ptr_fns(prop,
+                       "api_tracking_object_active_plane_track_get",
+                       "api_tracking_object_active_plane_track_set",
+                       NULL,
+                       NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Track", "Active track in this tracking data object");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_MOVIECLIP);
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_SELECT, NULL);
 }
 
-static void rna_def_trackingObject(BlenderRNA *brna)
+static void api_def_trackingObject(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MovieTrackingObject", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Movie tracking object data", "Match-moving object tracking and reconstruction data");
+  sapi = api_def_struct(dapi, "MovieTrackingObject", NULL);
+  api_def_struct_ui_text(
+      sapi, "Movie tracking object data", "Match-moving object tracking and reconstruction data");
 
   /* name */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Unique name of object");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_trackingObject_name_set");
-  RNA_def_property_string_maxlength(prop, MAX_ID_NAME - 2);
-  RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Unique name of object");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_trackingObject_name_set");
+  api_def_prop_string_maxlength(prop, MAX_ID_NAME - 2);
+  api_def_prop_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
+  api_def_struct_name_prop(sapi, prop);
 
   /* is_camera */
-  prop = RNA_def_property(srna, "is_camera", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TRACKING_OBJECT_CAMERA);
-  RNA_def_property_ui_text(prop, "Camera", "Object is used for camera tracking");
-  RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+  prop = api_def_prop(sapi, "is_camera", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TRACKING_OBJECT_CAMERA);
+  api_def_prop_ui_text(prop, "Camera", "Object is used for camera tracking");
+  api_def_prop_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
 
   /* tracks */
-  prop = RNA_def_property(srna, "tracks", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_trackingObject_tracks_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MovieTrackingTrack");
-  RNA_def_property_ui_text(prop, "Tracks", "Collection of tracks in this tracking data object");
-  RNA_def_property_srna(prop, "MovieTrackingObjectTracks");
+  prop = api_def_prop(sapi, "tracks", PROP_COLLECTION, PROP_NONE);
+  RNA_def_prop_collection_fns(prop,
+                              "api_trackingObject_tracks_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  RNA_def_prop_struct_type(prop, "MovieTrackingTrack");
+  RNA_def_prop_ui_text(prop, "Tracks", "Collection of tracks in this tracking data object");
+  RNA_def_prop_sap(prop, "MovieTrackingObjectTracks");
 
   /* plane tracks */
   prop = RNA_def_property(srna, "plane_tracks", PROP_COLLECTION, PROP_NONE);
