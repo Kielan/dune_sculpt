@@ -637,8 +637,7 @@ static void uilist_filter_items(uiList *ui_list,
           }
         }
       }
-    }
-    else {
+    } else {
       flt_data->items_shown = len;
 
       if (filter_neworder) {
@@ -900,7 +899,7 @@ static bool menu_poll(const Ctx *C, MenuType *pt)
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  pt->api_ext.call((Ctx *)C, &ptr, fn, &list);
+  pt->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
@@ -910,7 +909,7 @@ static bool menu_poll(const Ctx *C, MenuType *pt)
   return visible;
 }
 
-static void menu_draw(const Ctx *C, Menu *menu)
+static void menu_draw(const Cxt *C, Menu *menu)
 {
   extern ApiFn api_Menu_draw_fn;
 
@@ -918,12 +917,12 @@ static void menu_draw(const Ctx *C, Menu *menu)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, menu->type->rna_ext.srna, menu, &mtr);
-  fn = &api_Menu_draw_fn; /* RNA_struct_find_function(&mtr, "draw"); */
+  api_ptr_create(&cxt_wm_screen(C)->id, menu->type->api_ext.sapi, menu, &mtr);
+  fn = &api_Menu_draw_fn; /* api_struct_find_fn(&mtr, "draw"); */
 
   api_param_list_create(&list, &mtr, fn);
   api_param_set_lookup(&list, "context", &C);
-  menu->type->api_ext.call((Ctx *)C, &mtr, fx, &list);
+  menu->type->api_ext.call((Cxt *)C, &mtr, fx, &list);
 
   api_param_list_free(&list);
 }
@@ -970,10 +969,10 @@ static ApiStruct *api_Menu_register(Main *main,
   api_ptr_create(NULL, &ApiMenu, &dummy_menu, &dummy_menu_ptr);
 
   /* We have to set default context! Else we get a void string... */
-  strcpy(dummy_mt.translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  strcpy(dummy_mt.translation_context, LANG_CXT_DEFAULT_BPYAPI);
 
   /* validate the python class */
-  if (validate(&dummy_menu_ptr, data, have_function) != 0) {
+  if (validate(&dummy_menu_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
@@ -1027,8 +1026,8 @@ static ApiStruct *api_Menu_register(Main *main,
     mt->description = NULL;
   }
 
-  mt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, mt->idname, &RNA_Menu);
-  api_def_struct_translation_ctx(mt->api_ext.sapi, mt->translation_context);
+  mt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, mt->idname, &Api_Menu);
+  api_def_struct_translation_cxt(mt->api_ext.sapi, mt->translation_cxt);
   mt->api_ext.data = data;
   mt->api_ext.call = call;
   mt->api_ext.free = free;
@@ -1084,7 +1083,6 @@ static void api_Menu_bl_description_set(ApiPtr *ptr, const char *value)
 }
 
 /* UILayout */
-
 static bool api_UILayout_active_get(ApiPtr *ptr)
 {
   return uiLayoutGetActive(ptr->data);
@@ -1411,9 +1409,9 @@ static void api_def_panel(DuneApi *dapi)
   sapi = api_def_struct(dapi, "Panel", NULL);
   api_def_struct_ui_text(sapi, "Panel", "Panel containing UI elements");
   api_def_struct_stype(sapi, "Panel");
-  api_def_struct_refine_fn(sapi, "rna_Panel_refine");
-  api_def_struct_register_fns(sapi, "rna_Panel_register", "rna_Panel_unregister", NULL);
-  api_def_struct_translation_ctx(sapi, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  api_def_struct_refine_fn(sapi, "api_Panel_refine");
+  api_def_struct_register_fns(sapi, "api_Panel_register", "api_Panel_unregister", NULL);
+  api_def_struct_translation_ctx(sapi, LANG_CXT_DEFAULT_BPYAPI);
   api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* poll */
@@ -1480,8 +1478,8 @@ static void api_def_panel(DuneApi *dapi)
                            "triangle used to collapse the panel");
 
   prop = api_def_prop(sapi, "bl_translation_context", PROP_STRING, PROP_NONE);
-  api_def_prop_string_stype(prop, NULL, "type->translation_context");
-  api_def_prop_string_default(prop, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  api_def_prop_string_stype(prop, NULL, "type->translation_cxt");
+  api_def_prop_string_default(prop, LANG_CXT_DEFAULT_BPYAPI);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   api_def_prop_ui_text(prop,
                            "",
@@ -1492,9 +1490,9 @@ static void api_def_panel(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "bl_description", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->description");
-  api_def_prop_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
-  api_def_prop_string_fns(prop, NULL, NULL, "rna_Panel_bl_description_set");
-  // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_maxlength(prop, API_DYN_DESCR_MAX); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop, NULL, NULL, "api_Panel_bl_description_set");
+  // api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
   api_def_prop_ui_text(prop, "", "The panel tooltip");
@@ -1524,7 +1522,7 @@ static void api_def_panel(DuneApi *dapi)
       prop, "Region Type", "The region where the panel is going to be used in");
 
   prop = api_def_prop(sapi, "bl_context", PROP_STRING, PROP_NONE);
-  api_def_prop_string_stype(prop, NULL, "type->context");
+  api_def_prop_string_stype(prop, NULL, "type->cxt");
   apu_def_prop_flag(
       prop, PROP_REGISTER_OPTIONAL); /* Only used in Properties Editor and 3D View - Thomas */
   api_def_prop_ui_text(prop,
@@ -1678,7 +1676,7 @@ static void api_def_uilist(DuneApi *dapi)
                         "Identifier of prop in active_data, for the active element");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_int(fn, "index", 0, 0, INT_MAX, "", "Index of the item in the collection", 0, INT_MAX);
-  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFN_OPTIONAL);
   prop = api_def_prop(fn, "flt_flag", PROP_INT, PROP_UNSIGNED);
   api_def_prop_ui_text(prop, "", "The filter-flag result for this item");
   api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFN_OPTIONAL);
