@@ -867,11 +867,11 @@ static void api_ui_item_common(ApiFn *fn)
   api_def_prop_ui_text(prop, "Icon", "Override automatic icon of the item");
 }
 
-static void api_ui_item_op(FunctionRNA *func)
+static void api_ui_item_op(ApiFn *fn)
 {
-  PropertyRNA *parm;
-  parm = RNA_def_string(func, "operator", NULL, 0, "", "Identifier of the operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  ApiProp *parm;
+  parm = api_def_string(fn, "operator", NULL, 0, "", "Identifier of the operator");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
 static void api_ui_item_op_common(ApiFn *fn)
@@ -884,18 +884,18 @@ static void api_ui_item_api_common(ApiFn *fn)
 {
   ApiProp *parm;
 
-  parm = api_def_ptr(func, "data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take property");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "property", NULL, 0, "", "Identifier of property in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_api_ui_layout(StructRNA *srna)
+void api_api_ui_layout(ApiStruct *sapu)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem curve_type_items[] = {
+  static const EnumPropItem curve_type_items[] = {
       {0, "NONE", 0, "None", ""},
       {'v', "VECTOR", 0, "Vector", ""},
       {'c', "COLOR", 0, "Color", ""},
@@ -903,13 +903,13 @@ void RNA_api_ui_layout(StructRNA *srna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem id_template_filter_items[] = {
+  static const EnumPropItem id_template_filter_items[] = {
       {UI_TEMPLATE_ID_FILTER_ALL, "ALL", 0, "All", ""},
       {UI_TEMPLATE_ID_FILTER_AVAILABLE, "AVAILABLE", 0, "Available", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem asset_view_template_options[] = {
+  static const EnumPropItem asset_view_template_options[] = {
       {UI_TEMPLATE_ASSET_DRAW_NO_NAMES,
        "NO_NAMES",
        0,
@@ -920,8 +920,8 @@ void RNA_api_ui_layout(StructRNA *srna)
        0,
        "",
        "Do not display buttons for filtering the available assets"},
-      {UI_TEMPLATE_ASSET_DRAW_NO_LIBRARY,
-       "NO_LIBRARY",
+      {UI_TEMPLATE_ASSET_DRAW_NO_LIB,
+       "NO_LIB",
        0,
        "",
        "Do not display buttons to choose or refresh an asset library"},
@@ -931,14 +931,14 @@ void RNA_api_ui_layout(StructRNA *srna)
   static float node_socket_color_default[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
   /* simple layout specifiers */
-  func = RNA_def_function(srna, "row", "rna_uiLayoutRowWithHeading");
-  parm = RNA_def_pointer(func, "layout", "UILayout", "", "Sub-layout to put items in");
-  RNA_def_function_return(func, parm);
-  RNA_def_function_ui_description(
+  fn = api_def_fn(sapi, "row", "api_uiLayoutRowWithHeading");
+  parm = api_def_ptr(fn, "layout", "UILayout", "", "Sub-layout to put items in");
+  api_def_fn_return(fn, parm);
+  api_def_fn_ui_description(
       func,
       "Sub-layout. Items placed in this sublayout are placed next to each other "
       "in a row");
-  RNA_def_boolean(func, "align", false, "", "Align buttons to each other");
+  api_def_bool(fn, "align", false, "", "Align buttons to each other");
   api_ui_item_common_heading(func);
 
   fn = api_def_fn(sapi, "column", "rna_uiLayoutColumnWithHeading");
@@ -1001,35 +1001,35 @@ void RNA_api_ui_layout(StructRNA *srna)
   api_def_bool(fn, "align", false, "", "Align buttons to each other");
 
   /* radial/pie layout */
-  func = api_def_function(srna, "menu_pie", "uiLayoutRadial");
-  parm = RNA_def_pointer(func, "layout", "UILayout", "", "Sub-layout to put items in");
-  RNA_def_function_return(func, parm);
-  RNA_def_function_ui_description(func,
-                                  "Sublayout. Items placed in this sublayout are placed "
-                                  "in a radial fashion around the menu center)");
+  fn = api_def_fn(sapi, "menu_pie", "uiLayoutRadial");
+  parm = api_def_ptr(fn, "layout", "UILayout", "", "Sub-layout to put items in");
+  api_def_fn_return(fn, parm);
+  api_def_fn_ui_description(fn,
+                            "Sublayout. Items placed in this sublayout are placed "
+                            "in a radial fashion around the menu center)");
 
-  /* Icon of a rna pointer */
-  func = RNA_def_function(srna, "icon", "rna_ui_get_rnaptr_icon");
-  parm = RNA_def_int(func, "icon_value", ICON_NONE, 0, INT_MAX, "", "Icon identifier", 0, INT_MAX);
-  RNA_def_function_return(func, parm);
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take the icon");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_function_ui_description(func,
+  /* Icon of an apa pointer */
+  fn = api_def_fn(sapi, "icon", "api_ui_get_rnaptr_icon");
+  parm = api_def_int(fn, "icon_value", ICON_NONE, 0, INT_MAX, "", "Icon identifier", 0, INT_MAX);
+  api_def_fn_return(fn, parm);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take the icon");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_fn_ui_description(fn,
                                   "Return the custom icon for this data, "
                                   "use it e.g. to get materials or texture icons");
 
   /* UI name, description and icon of an enum item */
-  func = RNA_def_function(srna, "enum_item_name", "rna_ui_get_enum_name");
-  parm = RNA_def_string(func, "name", NULL, 0, "", "UI name of the enum item");
-  RNA_def_function_return(func, parm);
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
+  func = RNA_def_function(sapi, "enum_item_name", "api_ui_get_enum_name");
+  parm = RNA_def_string(fn, "name", NULL, 0, "", "UI name of the enum item");
+  RNA_def_function_return(fn, parm);
+  RNA_def_function_flag(fn, FUNC_NO_SELF | FN_USE_CXT);
   api_ui_item_rna_common(func);
   parm = RNA_def_string(func, "identifier", NULL, 0, "", "Identifier of the enum item");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   RNA_def_function_ui_description(func, "Return the UI name for this enum item");
 
-  func = RNA_def_function(srna, "enum_item_description", "rna_ui_get_enum_description");
+  func = RNA_def_function(srna, "enum_item_description", "api_ui_get_enum_description");
   parm = RNA_def_string(func, "description", NULL, 0, "", "UI description of the enum item");
   RNA_def_function_return(func, parm);
   RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
@@ -1861,18 +1861,18 @@ void RNA_api_ui_layout(StructRNA *srna)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_fn_flag(func, FUNC_USE_CONTEXT);
 
-  func = api_def_fn(
+  fn = api_def_fn(
       sapi, "template_event_from_keymap_item", "rna_uiTemplateEventFromKeymapItem");
-  api_def_function_ui_description(fn, "Display keymap item as icons/text");
-  parm = api_def_prop(fn, "item", PROP_POINTER, PROP_NONE);
+  api_def_fn_ui_description(fn, "Display keymap item as icons/text");
+  parm = api_def_prop(fn, "item", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(parm, "KeyMapItem");
   api_def_prop_ui_text(parm, "Item", "");
-  apu_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   api_ui_item_common_text(func);
 
   func = api_def_fn(sapi, "template_asset_view", "rna_uiTemplateAssetView");
   api_def_fn_ui_description(fn, "Item. A scrollable list of assets in a grid view");
-  api_def_fn_flag(func, FN_USE_CONTEXT);
+  api_def_fn_flag(func, FN_USE_CXT);
   parm = api_def_string(func,
                         "list_id",
                         NULL,
