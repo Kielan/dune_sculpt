@@ -547,64 +547,64 @@ void rna_uiTemplateList(uiLayout *layout,
                  flags);
 }
 
-static void rna_uiTemplateCacheFile(uiLayout *layout,
-                                    bContext *C,
-                                    PointerRNA *ptr,
+static void api_uiTemplateCacheFile(uiLayout *layout,
+                                    Cxt *C,
+                                    ApiPtr *ptr,
                                     const char *propname)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("property not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   uiTemplateCacheFile(layout, C, ptr, propname);
 }
 
-static void rna_uiTemplateCacheFileVelocity(uiLayout *layout,
-                                            PointerRNA *ptr,
+static void api_uiTemplateCacheFileVelocity(uiLayout *layout,
+                                            ApiPtr *ptr,
                                             const char *propname)
 {
-  PointerRNA fileptr;
-  if (!uiTemplateCacheFilePointer(ptr, propname, &fileptr)) {
+  ApiPtr fileptr;
+  if (!uiTemplateCacheFilePtr(ptr, propname, &fileptr)) {
     return;
   }
 
   uiTemplateCacheFileVelocity(layout, &fileptr);
 }
 
-static void rna_uiTemplateCacheFileProcedural(uiLayout *layout,
-                                              bContext *C,
-                                              PointerRNA *ptr,
+static void api_uiTemplateCacheFileProcedural(uiLayout *layout,
+                                              Cxt *C,
+                                              ApiPtr *ptr,
                                               const char *propname)
 {
-  PointerRNA fileptr;
-  if (!uiTemplateCacheFilePointer(ptr, propname, &fileptr)) {
+  ApiPtr fileptr;
+  if (!uiTemplateCacheFilePtr(ptr, propname, &fileptr)) {
     return;
   }
 
   uiTemplateCacheFileProcedural(layout, C, &fileptr);
 }
 
-static void rna_uiTemplateCacheFileTimeSettings(uiLayout *layout,
-                                                PointerRNA *ptr,
+static void api_uiTemplateCacheFileTimeSettings(uiLayout *layout,
+                                                ApiPtr *ptr,
                                                 const char *propname)
 {
-  PointerRNA fileptr;
-  if (!uiTemplateCacheFilePointer(ptr, propname, &fileptr)) {
+  ApiPtr fileptr;
+  if (!uiTemplateCacheFilePtr(ptr, propname, &fileptr)) {
     return;
   }
 
   uiTemplateCacheFileTimeSettings(layout, &fileptr);
 }
 
-static void rna_uiTemplateCacheFileLayers(uiLayout *layout,
-                                          bContext *C,
-                                          PointerRNA *ptr,
+static void api_uiTemplateCacheFileLayers(uiLayout *layout,
+                                          Cxt *C,
+                                          ApiPtr *ptr,
                                           const char *propname)
 {
-  PointerRNA fileptr;
+  ApiPtr fileptr;
   if (!uiTemplateCacheFilePointer(ptr, propname, &fileptr)) {
     return;
   }
@@ -612,29 +612,29 @@ static void rna_uiTemplateCacheFileLayers(uiLayout *layout,
   uiTemplateCacheFileLayers(layout, C, &fileptr);
 }
 
-static void rna_uiTemplatePathBuilder(uiLayout *layout,
-                                      PointerRNA *ptr,
+static void api_uiTemplatePathBuilder(uiLayout *layout,
+                                      ApiPtr *ptr,
                                       const char *propname,
-                                      PointerRNA *root_ptr,
+                                      ApiPtr *root_ptr,
                                       const char *name,
-                                      const char *text_ctxt,
+                                      const char *text_cxt,
                                       bool translate)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("property not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
 
   /* XXX This will search property again :( */
   uiTemplatePathBuilder(layout, ptr, propname, root_ptr, name);
 }
 
-static void rna_uiTemplateEventFromKeymapItem(
+static void api_uiTemplateEventFromKeymapItem(
     uiLayout *layout, wmKeyMapItem *kmi, const char *name, const char *text_ctxt, bool translate)
 {
   /* Get translated name (label). */
@@ -643,13 +643,13 @@ static void rna_uiTemplateEventFromKeymapItem(
 }
 
 static void rna_uiTemplateAssetView(uiLayout *layout,
-                                    bContext *C,
+                                    Cxt *C,
                                     const char *list_id,
-                                    PointerRNA *asset_library_dataptr,
-                                    const char *asset_library_propname,
-                                    PointerRNA *assets_dataptr,
+                                    ApiPtr *asset_lib_dataptr,
+                                    const char *asset_lib_propname,
+                                    ApiPtr *assets_dataptr,
                                     const char *assets_propname,
-                                    PointerRNA *active_dataptr,
+                                    Apitr *active_dataptr,
                                     const char *active_propname,
                                     int filter_id_types,
                                     int display_flags,
