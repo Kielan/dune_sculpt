@@ -459,7 +459,7 @@ static void api_uiItemPopoverPanelFromGroup(uiLayout *layout,
   uiItemPopoverPanelFromGroup(layout, C, space_id, region_id, cxt, category);
 }
 
-static void api_uiTemplateID(uiLayout *layout,
+static void api_uiTemplateId(uiLayout *layout,
                              Cxt *C,
                              ApiPtr *ptr,
                              const char *propname,
@@ -490,7 +490,7 @@ static void api_uiTemplateAnyId(uiLayout *layout,
                                 const char *propname,
                                 const char *proptypename,
                                 const char *name,
-                                const char *text_ctxt,
+                                const char *text_cxt,
                                 bool translate)
 {
   ApiProp *prop = api_struct_find_prop(ptr, propname);
@@ -501,13 +501,13 @@ static void api_uiTemplateAnyId(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
   /* XXX This will search property again :( */
   uiTemplateAnyId(layout, ptr, propname, proptypename, name);
 }
 
-void rna_uiTemplateList(uiLayout *layout,
+void api_uiTemplateList(uiLayout *layout,
                         struct Cxt *C,
                         const char *listtype_name,
                         const char *list_id,
@@ -628,7 +628,7 @@ static void api_uiTemplatePathBuilder(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
   /* XXX This will search property again :( */
   uiTemplatePathBuilder(layout, ptr, propname, root_ptr, name);
@@ -791,7 +791,7 @@ static const char *api_ui_get_enum_description(Cxt *C,
   return desc;
 }
 
-static int api_ui_get_enum_icon(Ctx *C,
+static int api_ui_get_enum_icon(Cxt *C,
                                 ApiPtr *ptr,
                                 const char *propname,
                                 const char *id)
@@ -843,7 +843,7 @@ static void api_ui_item_common_heading(FunctionRNA *func)
       fn, "translate", true, "", "Translate the given heading, when UI translation is enabled");
 }
 
-static void api_ui_item_common_text(FunctionRNA *func)
+static void api_ui_item_common_text(ApiFn *fn)
 {
   ApiProp *prop;
 
@@ -860,11 +860,11 @@ static void api_ui_item_common(ApiFn *fn)
 {
   ApiProp *prop;
 
-  api_ui_item_common_text(func);
+  api_ui_item_common_text(fn);
 
-  prop = RNA_def_property(func, "icon", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_icon_items);
-  RNA_def_property_ui_text(prop, "Icon", "Override automatic icon of the item");
+  prop = api_def_prop(fn, "icon", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_icon_items);
+  api_def_prop_ui_text(prop, "Icon", "Override automatic icon of the item");
 }
 
 static void api_ui_item_op(FunctionRNA *func)
