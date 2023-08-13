@@ -582,8 +582,7 @@ static void uilist_filter_items(uiList *ui_list,
            len);
     /* NOTE: we cannot return here, we would let flt_data in inconsistent state... see #38356. */
     filter_neworder = NULL;
-  }
-  else {
+  } else {
     api_param_get(&list, parm, &ret2);
     filter_neworder = (int *)ret2;
   }
@@ -1016,8 +1015,7 @@ static ApiStruct *api_Menu_register(Main *main,
     char *buf = (char *)(mt + 1);
     memcpy(buf, _menu_descr, description_size);
     mt->description = buf;
-  }
-  else {
+  } else {
     mt->description = NULL;
   }
 
@@ -1070,8 +1068,7 @@ static void api_Menu_bl_description_set(ApiPtr *ptr, const char *value)
   char *str = (char *)data->type->description;
   if (!str[0]) {
     lib_strncpy(str, value, API_DYN_DESCR_MAX); /* utf8 already ensured */
-  }
-  else {
+  } else {
     lib_assert_msg(0, "setting the bl_description on a non-builtin menu");
   }
 }
@@ -1092,17 +1089,17 @@ static bool api_UILayout_active_default_get(ApiPtr *ptr)
   return uiLayoutGetActiveDefault(ptr->data);
 }
 
-static void api_UILayout_active_default_set(PointerRNA *ptr, bool value)
+static void api_UILayout_active_default_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetActiveDefault(ptr->data, value);
 }
 
-static bool api_UILayout_activate_init_get(PointerRNA *ptr)
+static bool api_UILayout_activate_init_get(ApiPrr *ptr)
 {
   return uiLayoutGetActivateInit(ptr->data);
 }
 
-static void api_UILayout_activate_init_set(PointerRNA *ptr, bool value)
+static void api_UILayout_activate_init_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetActivateInit(ptr->data, value);
 }
@@ -1127,7 +1124,7 @@ static int api_UILayout_op_ctx_get(ApiPtr *ptr)
   return uiLayoutGetOpCxt(ptr->data);
 }
 
-static bool api_UILayout_enabled_get(PointerRNA *ptr)
+static bool api_UILayout_enabled_get(ApiPtr *ptr)
 {
   return uiLayoutGetEnabled(ptr->data);
 }
