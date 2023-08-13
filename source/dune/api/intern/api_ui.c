@@ -174,7 +174,7 @@ static void panel_type_clear_recursive(Panel *panel, const PanelType *type)
 static bool api_Panel_unregister(Main *main, ApiStruc *type)
 {
   ARegionType *art;
-  PanelType *pt = api_struct_dunr_type_get(type);
+  PanelType *pt = api_struct_dune_type_get(type);
 
   if (!pt) {
     return false;
@@ -253,7 +253,7 @@ static ApiStruct *api_Panel_register(Main *main,
   api_ptr_create(NULL, &ApiPanel, &dummy_panel, &dummy_panel_ptr);
 
   /* We have to set default context! Else we get a void string... */
-  strcpy(dummy_pt.translation_context, LANG_CXT_DEFAULT_BPYAPI);
+  strcpy(dummy_pt.translation_cxt, LANG_CXT_DEFAULT_BPYAPI);
 
   /* validate the python class */
   if (validate(&dummy_panel_ptr, data, have_fn) != 0) {
@@ -311,8 +311,7 @@ static ApiStruct *api_Panel_register(Main *main,
                       id,
                       dummy_pt.idname);
         }
-      }
-      else {
+      } else {
         lib_freelinkn(&art->paneltypes, pt);
       }
 
@@ -367,7 +366,7 @@ static ApiStruct *api_Panel_register(Main *main,
   }
 
   pt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, pt->idname, &ApiPanel);
-  api_def_struct_translation_ctx(pt->api_ext.sapi, pt->translation_ctx);
+  api_def_struct_translation_cxt(pt->api_ext.sapi, pt->translation_ctx);
   pt->api_ext.data = data;
   pt->api_ext.call = call;
   pt->api_ext.free = free;
@@ -884,7 +883,7 @@ static ApiStruct *api_Header_refine(ApiPtr *htr)
 
 /* Menu */
 
-static bool menu_poll(const Ctx *C, MenuType *pt)
+static bool menu_poll(const Cxt *C, MenuType *pt)
 {
   extern ApiFn api_Menu_poll_fn;
 
@@ -1032,7 +1031,7 @@ static ApiStruct *api_Menu_register(Main *main,
   mt->api_ext.call = call;
   mt->api_ext.free = free;
   api_struct_dune_type_set(mt->api_ext.sapi, mt);
-  api_def_struct_flag(mt->api_ext.sapi, STRUCT_NO_IDPROPERTIES);
+  api_def_struct_flag(mt->api_ext.sapi, STRUCT_NO_IDPROPS);
 
   mt->poll = (have_fn[0]) ? menu_poll : NULL;
   mt->draw = (have_fn[1]) ? menu_draw : NULL;
@@ -1064,8 +1063,7 @@ static void api_Panel_bl_description_set(ApiPtr *ptr, const char *value)
   char *str = (char *)data->type->description;
   if (!str[0]) {
     lib_strncpy(str, value, API_DYN_DESCR_MAX); /* utf8 already ensured */
-  }
-  else {
+  } else {
     lib_assert_msg(0, "setting the bl_description on a non-builtin panel");
   }
 }
@@ -1125,12 +1123,12 @@ static void api_UILayout_alert_set(ApiPtr *ptr, bool value)
 
 static void api_UILayout_op_ctx_set(ApiPtr *ptr, int value)
 {
-  uiLayoutSetOpCtx(ptr->data, value);
+  uiLayoutSetOpCxt(ptr->data, value);
 }
 
 static int api_UILayout_op_ctx_get(ApiPtr *ptr)
 {
-  return uiLayoutGetOpCtx(ptr->data);
+  return uiLayoutGetOpCxt(ptr->data);
 }
 
 static bool api_UILayout_enabled_get(PointerRNA *ptr)
@@ -1302,19 +1300,19 @@ static void api_def_ui_layout(DuneApi *dapi)
       "When true, an operator button defined after this will be activated when pressing return"
       "(use with popup dialogs)");
 
-  prop = api_def_prop(sapi, "activate_init", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "activate_init", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_UILayout_activate_init_get", "rna_UILayout_activate_init_set");
+      prop, "api_UILayout_activate_init_get", "api_UILayout_activate_init_set");
   api_def_prop_ui_text(
       prop,
       "Activate on Init",
       "When true, buttons defined in popups will be activated on first display "
       "(use so you can type into a field without having to click on it first)");
 
-  prop = api_def_prop(sapi, "op_ctx", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_items(prop, api_enum_op_ctx_items);
+  prop = api_def_prop(sapi, "op_cxt", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_op_cxt_items);
   api_def_prop_enum_fns(
-      prop, "api_UILayout_op_ctx_get", "api_UILayout_op_ctx_set", NULL);
+      prop, "api_UILayout_op_cxt_get", "api_UILayout_op_cxt_set", NULL);
 
   prop = api_def_prop(sapi, "enabled", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(prop, "api_UILayout_enabled_get", "api_UILayout_enabled_set");
@@ -1326,11 +1324,11 @@ static void api_def_ui_layout(DuneApi *dapi)
   prop = api_def_prop(sapi, "alignment", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, alignment_items);
   api_def_prop_enum_fns(
-      prop, "api_UILayout_alignment_get", "rna_UILayout_alignment_set", NULL);
+      prop, "api_UILayout_alignment_get", "api_UILayout_alignment_set", NULL);
 
   prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, direction_items);
-  api_def_prop_enum_fns(prop, "rna_UILayout_direction_get", NULL, NULL);
+  api_def_prop_enum_fns(prop, "api_UILayout_direction_get", NULL, NULL);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
 #  if 0
@@ -1340,37 +1338,36 @@ static void api_def_ui_layout(DuneApi *dapi)
 #  endif
 
   prop = api_def_prop(sapi, "scale_x", PROP_FLOAT, PROP_UNSIGNED);
-  api_def_prop_float_fns(prop, "rna_UILayout_scale_x_get", "rna_UILayout_scale_x_set", NULL);
+  api_def_prop_float_fns(prop, "api_UILayout_scale_x_get", "api_UILayout_scale_x_set", NULL);
   api_def_prop_ui_text(
       prop, "Scale X", "Scale factor along the X for items in this (sub)layout");
 
   prop = api_def_prop(sapi, "scale_y", PROP_FLOAT, PROP_UNSIGNED);
-  api_def_prop_float_fns(prop, "rna_UILayout_scale_y_get", "rna_UILayout_scale_y_set", NULL);
+  api_def_prop_float_fns(prop, "api_UILayout_scale_y_get", "rna_UILayout_scale_y_set", NULL);
   api_def_prop_ui_text(
       prop, "Scale Y", "Scale factor along the Y for items in this (sub)layout");
 
   prop = api_def_prop(sapi, "ui_units_x", PROP_FLOAT, PROP_UNSIGNED);
-  api_def_prop_float_fns(prop, "api_UILayout_units_x_get", "rna_UILayout_units_x_set", NULL);
+  api_def_prop_float_fns(prop, "api_UILayout_units_x_get", "api_UILayout_units_x_set", NULL);
   api_def_prop_ui_text(
       prop, "Units X", "Fixed size along the X for items in this (sub)layout");
 
   prop = api_def_prop(sapi, "ui_units_y", PROP_FLOAT, PROP_UNSIGNED);
-  api_def_prop_float_fns(prop, "rna_UILayout_units_y_get", "rna_UILayout_units_y_set", NULL);
+  api_def_prop_float_fns(prop, "api_UILayout_units_y_get", "api_UILayout_units_y_set", NULL);
   api_def_prop_ui_text(
       prop, "Units Y", "Fixed size along the Y for items in this (sub)layout");
   api_api_ui_layout(sapi);
 
   prop = api_def_prop(sapi, "emboss", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, emboss_items);
-  api_def_prop_enum_fns(prop, "api_UILayout_emboss_get", "rna_UILayout_emboss_set", NULL);
+  api_def_prop_enum_fns(prop, "api_UILayout_emboss_get", "api_UILayout_emboss_set", NULL);
 
-  prop = api_def_prop(sapi, "use_prop_split", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_prop_split", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_UILayout_prop_split_get", "rna_UILayout_property_split_set");
-
-  prop = api_def_prop(sapi, "use_prop_decorate", PROP_BOOLEAN, PROP_NONE);
+      prop, "api_UILayout_prop_split_get", "api_UILayout_prop_split");
+  prop = api_def_prop(sapi, "use_prop_decorate", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "api_UILayout_prop_decorate_get", "rna_UILayout_property_decorate_set");
+      prop, "api_UILayout_prop_decorate_get", "api_UILayout_prop_decorate_set");
 }
 
 static void api_def_panel(DuneApi *dapi)
@@ -1411,7 +1408,7 @@ static void api_def_panel(DuneApi *dapi)
   api_def_struct_stype(sapi, "Panel");
   api_def_struct_refine_fn(sapi, "api_Panel_refine");
   api_def_struct_register_fns(sapi, "api_Panel_register", "api_Panel_unregister", NULL);
-  api_def_struct_translation_ctx(sapi, LANG_CXT_DEFAULT_BPYAPI);
+  api_def_struct_translation_cxt(sapi, LANG_CXT_DEFAULT_BPYAPI);
   api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* poll */
@@ -1473,18 +1470,18 @@ static void api_def_panel(DuneApi *dapi)
   api_def_prop_string_stype(prop, NULL, "type->label");
   api_def_prop_flag(prop, PROP_REGISTER);
   api_def_prop_ui_text(prop,
-                           "Label",
-                           "The panel label, shows up in the panel header at the right of the "
-                           "triangle used to collapse the panel");
+                       "Label",
+                       "The panel label, shows up in the panel header at the right of the "
+                       "triangle used to collapse the panel");
 
   prop = api_def_prop(sapi, "bl_translation_context", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->translation_cxt");
   api_def_prop_string_default(prop, LANG_CXT_DEFAULT_BPYAPI);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
   api_def_prop_ui_text(prop,
-                           "",
-                           "Specific translation context, only define when the label needs to be "
-                           "disambiguated from others using the exact same label");
+                       "",
+                       "Specific translation context, only define when the label needs to be "
+                       "disambiguated from others using the exact same label");
 
   api_define_verify_stype(true);
 
@@ -1555,13 +1552,13 @@ static void api_def_panel(DuneApi *dapi)
       "Order",
       "Panels with lower numbers are default ordered before panels with higher numbers");
 
-  prop = api_def_prop(sapi, "use_pin", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_pin", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PNL_PIN);
   api_def_prop_ui_text(prop, "Pin", "Show the panel on all tabs");
   /* XXX, should only tag region for redraw */
   api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = api_def_prop(sapi, "is_popover", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_popover", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", PNL_POPOVER);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Popover", "");
@@ -1580,7 +1577,7 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_struct_refine_fn(sapi, "api_UIList_refine");
   api_def_struct_register_fns(sapi, "api_UIList_register", "api_UIList_unregister", NULL);
   api_def_struct_idprops_fn(sapi, "api_UIList_idprops");
-  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPS | STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* Registration */
   prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
@@ -1598,7 +1595,7 @@ static void api_def_uilist(DuneApi *dapi)
    * which differs from the (internal) `uiList.list_id`. */
   prop = api_def_prop(sapi, "list_id", PROP_STRING, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_string_fns(prop, "api_UIList_list_id_get", "rna_UIList_list_id_length", NULL);
+  api_def_prop_string_fns(prop, "api_UIList_list_id_get", "api_UIList_list_id_length", NULL);
   api_def_prop_ui_text(prop,
                        "List Name",
                        "Id of the list, if any was passed to the \"list_id\" "
@@ -1614,7 +1611,7 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Show Filter", "Show filtering options");
 
   prop = api_def_prop(sapi, "filter_name", PROP_STRING, PROP_NONE);
-  api_def_prop_string_sdna(prop, NULL, "filter_byname");
+  api_def_prop_string_stype(prop, NULL, "filter_byname");
   api_def_prop_flag(prop, PROP_TEXTEDIT_UPDATE);
   api_def_prop_ui_text(
       prop, "Filter by Name", "Only show items matching this name (use '*' as wildcard)");
@@ -1627,8 +1624,7 @@ static void api_def_uilist(DuneApi *dapi)
    * should even be an enum in full logic (of two values, sort by index and sort by name).
    * But for default UIList, it's nicer (better UI-wise) to show this as a boolean bit-flag option,
    * avoids having to define custom setters/getters using UILST_FLT_SORT_MASK to mask out
-   * actual bitflags on same var, etc.
-   */
+   * actual bitflags on same var, etc. */
   prop = api_def_prop(sapi, "use_filter_sort_alpha", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_ALPHA);
   api_def_prop_ui_icon(prop, ICON_SORTALPHA, 0);
@@ -1722,13 +1718,13 @@ static void api_def_uilist(DuneApi *dapi)
       "",
       "An array of indices, one for each item in the collection, mapping the org "
       "index to the new one");
-  RNA_def_function_output(func, prop);
+  api_def_fn_output(fn, prop);
 
   /* "Constants"! */
   RNA_define_verify_sdna(0); /* not in sdna */
 
-  prop = RNA_def_property(srna, "bitflag_filter_item", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "bitflag_filter_item", PROP_INT, PROP_UNSIGNED);
+  RNA_def_prop_ui_text(
       prop,
       "FILTER_ITEM",
       "The value of the reserved bitflag 'FILTER_ITEM' (in filter_flags values)");
@@ -1775,29 +1771,29 @@ static void rna_def_header(BlenderRNA *brna)
                            "class name is \"OBJECT_HT_hello\", and bl_idname is not set by the "
                            "script, then bl_idname = \"OBJECT_HT_hello\"");
 
-  prop = RNA_def_property(srna, "bl_space_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->space_type");
-  RNA_def_property_enum_items(prop, rna_enum_space_type_items);
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "bl_space_type", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_stype(prop, NULL, "type->space_type");
+  RNA_def_prop_enum_items(prop, api_enum_space_type_items);
+  RNA_def_prop_flag(prop, PROP_REGISTER);
+  RNA_def_prop_ui_text(
       prop, "Space Type", "The space where the header is going to be used in");
 
-  prop = RNA_def_property(srna, "bl_region_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->region_type");
-  RNA_def_property_enum_default(prop, RGN_TYPE_HEADER);
-  RNA_def_property_enum_items(prop, rna_enum_region_type_items);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop,
-                           "Region Type",
-                           "The region where the header is going to be used in "
-                           "(defaults to header region)");
+  prop = RNA_def_prop(sapi, "bl_region_type", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_stype(prop, NULL, "type->region_type");
+  RNA_def_prop_enum_default(prop, RGN_TYPE_HEADER);
+  RNA_def_prop_enum_items(prop, api_enum_region_type_items);
+  RNA_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  RNA_def_prop_ui_text(prop,
+                       "Region Type",
+                       "The region where the header is going to be used in "
+                       "(defaults to header region)");
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-static void rna_def_menu(BlenderRNA *brna)
+static void api_def_menu(DuneApi *dapi)
 {
-  StructRNA *srna;
+  ApiStructRNA *srna;
   PropertyRNA *prop;
   PropertyRNA *parm;
   FunctionRNA *func;
