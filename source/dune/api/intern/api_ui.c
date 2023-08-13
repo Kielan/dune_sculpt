@@ -1714,69 +1714,69 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_fn_output(fn, prop);
 
   /* "Constants"! */
-  RNA_define_verify_sdna(0); /* not in sdna */
+  api_define_verify_stype(0); /* not in sdna */
 
-  prop = RNA_def_prop(sapi, "bitflag_filter_item", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "bitflag_filter_item", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(
       prop,
       "FILTER_ITEM",
       "The value of the reserved bitflag 'FILTER_ITEM' (in filter_flags values)");
-  RNA_def_property_int_funcs(prop, "rna_UIList_filter_const_FILTER_ITEM_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "spi_UIList_filter_const_FILTER_ITEM_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 }
 
-static void rna_def_header(BlenderRNA *brna)
+static void api_def_header(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  srna = RNA_def_struct(brna, "Header", NULL);
-  RNA_def_struct_ui_text(srna, "Header", "Editor header containing UI elements");
-  RNA_def_struct_sdna(srna, "Header");
-  RNA_def_struct_refine_func(srna, "rna_Header_refine");
-  RNA_def_struct_register_funcs(srna, "rna_Header_register", "rna_Header_unregister", NULL);
-  RNA_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  sapi = api_def_struct(dapi, "Header", NULL);
+  api_def_struct_ui_text(sapi, "Header", "Editor header containing UI elements");
+  api_def_struct_stype(sapi, "Header");
+  api_def_struct_refine_fn(sapi, "api_Header_refine");
+  api_def_struct_register_fns(sapi, "api_Header_register", "api_Header_unregister", NULL);
+  api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* draw */
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw UI elements into the header UI layout");
-  RNA_def_function_flag(func, FUNC_REGISTER);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw UI elements into the header UI layout");
+  api_def_fn_flag(fn, FN_REGISTER);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  RNA_define_verify_sdna(0); /* not in sdna */
+  api_define_verify_stype(0); /* not in sdna */
 
-  prop = RNA_def_property(srna, "layout", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "layout");
-  RNA_def_property_struct_type(prop, "UILayout");
-  RNA_def_property_ui_text(prop, "Layout", "Structure of the header in the UI");
+  prop = api_def_prop(sapi, "layout", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "layout");
+  api_def_prop_struct_type(prop, "UILayout");
+  api_def_prop_ui_text(prop, "Layout", "Structure of the header in the UI");
 
   /* registration */
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop,
-                           "ID Name",
-                           "If this is set, the header gets a custom ID, otherwise it takes the "
-                           "name of the class used to define the panel; for example, if the "
-                           "class name is \"OBJECT_HT_hello\", and bl_idname is not set by the "
-                           "script, then bl_idname = \"OBJECT_HT_hello\"");
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop,
+                       "ID Name",
+                       "If this is set, the header gets a custom id, otherwise it takes the "
+                       "name of the class used to define the panel; for example, if the "
+                       "class name is \"OBJECT_HT_hello\", and bl_idname is not set by the "
+                       "script, then bl_idname = \"OBJECT_HT_hello\"");
 
-  prop = RNA_def_prop(sapi, "bl_space_type", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_stype(prop, NULL, "type->space_type");
-  RNA_def_prop_enum_items(prop, api_enum_space_type_items);
-  RNA_def_prop_flag(prop, PROP_REGISTER);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "bl_space_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->space_type");
+  api_def_prop_enum_items(prop, api_enum_space_type_items);
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(
       prop, "Space Type", "The space where the header is going to be used in");
 
-  prop = RNA_def_prop(sapi, "bl_region_type", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_stype(prop, NULL, "type->region_type");
-  RNA_def_prop_enum_default(prop, RGN_TYPE_HEADER);
-  RNA_def_prop_enum_items(prop, api_enum_region_type_items);
-  RNA_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_prop_ui_text(prop,
+  prop = api_def_prop(sapi, "bl_region_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->region_type");
+  api_def_prop_enum_default(prop, RGN_TYPE_HEADER);
+  api_def_prop_enum_items(prop, api_enum_region_type_items);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop,
                        "Region Type",
                        "The region where the header is going to be used in "
                        "(defaults to header region)");
@@ -1786,85 +1786,85 @@ static void rna_def_header(BlenderRNA *brna)
 
 static void api_def_menu(DuneApi *dapi)
 {
-  ApiStructRNA *srna;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  srna = RNA_def_struct(brna, "Menu", NULL);
-  RNA_def_struct_ui_text(srna, "Menu", "Editor menu containing buttons");
-  RNA_def_struct_sdna(srna, "Menu");
-  RNA_def_struct_refine_func(srna, "rna_Menu_refine");
-  RNA_def_struct_register_funcs(srna, "rna_Menu_register", "rna_Menu_unregister", NULL);
-  RNA_def_struct_translation_context(srna, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  RNA_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  sapi = api_def_struct(dapi, "Menu", NULL);
+  api_def_struct_ui_text(sapi, "Menu", "Editor menu containing buttons");
+  api_def_struct_stype(sapi, "Menu");
+  api_def_struct_refine_fn(sapi, "api_Menu_refine");
+  api_def_struct_register_fns(sapi, "api_Menu_register", "api_Menu_unregister", NULL);
+  api_def_struct_translation_cxt(sapi, LANG_CXT_DEFAULT_BPYAPI);
+  api_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* poll */
-  func = RNA_def_function(srna, "poll", NULL);
-  RNA_def_function_ui_description(
-      func, "If this method returns a non-null output, then the menu can be drawn");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_REGISTER_OPTIONAL);
-  RNA_def_function_return(func, RNA_def_boolean(func, "visible", 1, "", ""));
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  func = api_def_fn(sapi, "poll", NULL);
+  api_def_fn_ui_description(
+      fn, "If this method returns a non-null output, then the menu can be drawn");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
+  api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* draw */
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw UI elements into the menu UI layout");
-  RNA_def_function_flag(func, FUNC_REGISTER);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw UI elements into the menu UI layout");
+  api_def_fn_flag(fn, FN_REGISTER);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  RNA_define_verify_sdna(false); /* not in sdna */
+  api_define_verify_stype(false); /* not in sdna */
 
-  prop = RNA_def_property(srna, "layout", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "layout");
-  RNA_def_property_struct_type(prop, "UILayout");
-  RNA_def_property_ui_text(prop, "Layout", "Defines the structure of the menu in the UI");
+  prop = api_def_prop(sapi, "layout", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "layout");
+  api_def_prop_struct_type(prop, "UILayout");
+  api_def_prop_ui_text(prop, "Layout", "Defines the structure of the menu in the UI");
 
   /* registration */
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop,
-                           "ID Name",
-                           "If this is set, the menu gets a custom ID, otherwise it takes the "
-                           "name of the class used to define the menu (for example, if the "
-                           "class name is \"OBJECT_MT_hello\", and bl_idname is not set by the "
-                           "script, then bl_idname = \"OBJECT_MT_hello\")");
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop,
+                       "ID Name",
+                       "If this is set, the menu gets a custom ID, otherwise it takes the "
+                       "name of the class used to define the menu (for example, if the "
+                       "class name is \"OBJECT_MT_hello\", and bl_idname is not set by the "
+                       "script, then bl_idname = \"OBJECT_MT_hello\")");
 
-  prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->label");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop, "Label", "The menu label");
+  prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->label");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop, "Label", "The menu label");
 
-  prop = RNA_def_property(srna, "bl_translation_context", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->translation_context");
-  RNA_def_property_string_default(prop, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_lang_cxt", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->lang_cxt");
+  api_def_prop_string_default(prop, LANG_CXT_DEFAULT_BPYAPI);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
 
-  prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->description");
-  RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Menu_bl_description_set");
-  // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
+  prop = api_def_prop(sapi, "bl_description", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->description");
+  api_def_prop_string_maxlength(prop, API_DYN_DESCR_MAX); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop, NULL, NULL, "api_Menu_bl_description_set");
+  // api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
 
-  prop = RNA_def_property(srna, "bl_owner_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_stype(prop, NULL, "type->owner_id");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_owner_id", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->owner_id");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
 
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(1);
 }
 
-void RNA_def_ui(Api *api)
+void api_def_ui(Api *api)
 {
-  rna_def_ui_layout(api);
-  rna_def_panel(api);
-  rna_def_uilist(api);
-  rna_def_header(api);
-  rna_def_menu(api);
+  api_def_ui_layout(api);
+  api_def_panel(api);
+  api_def_uilist(api);
+  api_def_header(api);
+  api_def_menu(api);
 }
 
-#endif /* RNA_RUNTIME */
+#endif /* API_RUNTIME */
