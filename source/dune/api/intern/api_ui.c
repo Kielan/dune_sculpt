@@ -21,7 +21,7 @@
 #include "wm_types.h"
 
 /* see WM_types.h */
-const EnumPropItem api_enum_op_ctx_items[] = {
+const EnumPropItem api_enum_op_cxt_items[] = {
     {WM_OP_INVOKE_DEFAULT, "INVOKE_DEFAULT", 0, "Invoke Default", ""},
     {WM_OP_INVOKE_REGION_WIN, "INVOKE_REGION_WIN", 0, "Invoke Region Window", ""},
     {WM_OP_INVOKE_REGION_CHANNELS, "INVOKE_REGION_CHANNELS", 0, "Invoke Region Channels", ""},
@@ -114,7 +114,7 @@ static void panel_draw(const Cxt *C, Panel *panel)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  api_ptr_create(&cxt_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
   fn = &api_Panel_draw_fn; /* api_struct_find_function(&ptr, "draw"); */
 
   api_param_list_create(&list, &ptr, fn);
@@ -512,19 +512,19 @@ static void uilist_draw_item(uiList *ui_list,
 
 static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *layout)
 {
-  extern ApiFn api_UIList_draw_filter_func;
+  extern ApiFn api_UIList_draw_filter_fn;
 
   ApiPtr ul_ptr;
   ParamList list;
   ApiFn *fn;
 
   api_ptr_create(&cxt_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
-  fn = &api_UIList_draw_filter_fn; /* api_struct_find_function(&ul_ptr, "draw_filter"); */
+  fn = &api_UIList_draw_filter_fn; /* api_struct_find_fn(&ul_ptr, "draw_filter"); */
 
   api_param_list_create(&list, &ul_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "layout", &layout);
-  ui_list->type->rna_ext.call((Ctx *)C, &ul_ptr, func, &list);
+  ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, func, &list);
 
   api_param_list_free(&list);
 }
@@ -547,7 +547,7 @@ static void uilist_filter_items(uiList *ui_list,
   int ret_len;
   int len = flt_data->items_len = api_collection_length(dataptr, propname);
 
-  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
+  api_ptr_create(&cxt_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
   fn = &api_UIList_filter_items_fn; /* api_struct_find_fn(&ul_ptr, "filter_items"); */
 
   api_param_list_create(&list, &ul_ptr, fn);
@@ -555,7 +555,7 @@ static void uilist_filter_items(uiList *ui_list,
   api_param_set_lookup(&list, "data", dataptr);
   api_param_set_lookup(&list, "property", &propname);
 
-  ui_list->type->api_ext.call((Ctx *)C, &ul_ptr, fn, &list);
+  ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, fn, &list);
 
   parm = api_fn_find_param(NULL, fn, "filter_flags");
   ret_len = api_param_dynamic_length_get(&list, parm);
@@ -567,13 +567,12 @@ static void uilist_filter_items(uiList *ui_list,
            len);
     /* NOTE: we cannot return here, we would let flt_data in inconsistent state... see #38356. */
     filter_flags = NULL;
-  }
-  else {
+  } else {
     api_param_get(&list, parm, &ret1);
     filter_flags = (int *)ret1;
   }
 
-  parm = api_fn_find_param(NULL, func, "filter_neworder");
+  parm = api_fn_find_param(NULL, fn, "filter_neworder");
   ret_len = api_param_dynamic_length_get(&list, parm);
   if (!ELEM(ret_len, len, 0)) {
     printf("%s: Error, py fn returned %d items in %s, %d or none were expected.\n",
@@ -593,7 +592,7 @@ static void uilist_filter_items(uiList *ui_list,
   {
     int i, filter_exclude = ui_list->filter_flag & UILST_FLT_EXCLUDE;
     if (filter_flags) {
-      flt_data->items_filter_flags = MEM_mallocN(sizeof(int) * len, __func__);
+      flt_data->items_filter_flags = mem_mallocn(sizeof(int) * len, __func__);
       memcpy(flt_data->items_filter_flags, filter_flags, sizeof(int) * len);
 
       if (filter_neworder) {
@@ -609,7 +608,7 @@ static void uilist_filter_items(uiList *ui_list,
           }
         }
         items_shown = flt_data->items_shown = shown_idx;
-        flt_data->items_filter_neworder = MEM_mallocN(sizeof(int) * items_shown, __func__);
+        flt_data->items_filter_neworder = mem_mallocn(sizeof(int) * items_shown, __func__);
         /* And now, bring back new indices into the [0, items_shown[ range!
          * XXX This is O(N^2). :/
          */
@@ -626,8 +625,7 @@ static void uilist_filter_items(uiList *ui_list,
             flt_data->items_filter_neworder[t_idx] = shown_idx;
           }
         }
-      }
-      else {
+      } else {
         /* we still have to set flt_data->items_shown... */
         flt_data->items_shown = 0;
         for (i = 0; i < len; i++) {
@@ -640,7 +638,7 @@ static void uilist_filter_items(uiList *ui_list,
       flt_data->items_shown = len;
 
       if (filter_neworder) {
-        flt_data->items_filter_neworder = MEM_mallocN(sizeof(int) * len, __func__);
+        flt_data->items_filter_neworder = mem_mallocn(sizeof(int) * len, __func__);
         memcpy(flt_data->items_filter_neworder, filter_neworder, sizeof(int) * len);
       }
     }
@@ -753,8 +751,7 @@ static ApiStruct *api_UIList_refine(ApiPtr *ptr)
 }
 
 /* Header */
-
-static void header_draw(const Ctx *C, Header *hdr)
+static void header_draw(const Cxt *C, Header *hdr)
 {
   extern ApiFn api_Header_draw_fn;
 
@@ -762,12 +759,12 @@ static void header_draw(const Ctx *C, Header *hdr)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, hdr->type->api_ext.sapi, hdr, &htr);
+  api_ptr_create(&cxt_wm_screen(C)->id, hdr->type->api_ext.sapi, hdr, &htr);
   func = &api_Header_draw_fn; /* api_struct_find_fn(&htr, "draw"); */
 
   api_param_list_create(&list, &htr, fn);
   api_param_set_lookup(&list, "context", &C);
-  hdr->type->api_ext.call((Ctx *)C, &htr, fn, &list);
+  hdr->type->api_ext.call((Cxt *)C, &htr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -860,7 +857,7 @@ static ApiStruct *api_Header_register(Main *main,
   ht = mem_mallocn(sizeof(HeaderType), "python buttons header");
   memcpy(ht, &dummy_ht, sizeof(dummy_ht));
 
-  ht->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, ht->idname, &RNA_Header);
+  ht->api_ext.sapi = api_def_struct_ptr(&DUNE_API, ht->idname, &Api_Header);
   ht->api_ext.data = data;
   ht->api_ext.call = call;
   ht->api_ext.free = free;
@@ -878,11 +875,10 @@ static ApiStruct *api_Header_register(Main *main,
 static ApiStruct *api_Header_refine(ApiPtr *htr)
 {
   Header *hdr = (Header *)htr->data;
-  return (hdr->type && hdr->type->api_ext.sapi) ? hdr->type->rna_ext.srna : &RNA_Header;
+  return (hdr->type && hdr->type->api_ext.sapi) ? hdr->type->api_ext.sapi : &Api_Header;
 }
 
 /* Menu */
-
 static bool menu_poll(const Cxt *C, MenuType *pt)
 {
   extern ApiFn api_Menu_poll_fn;
@@ -939,7 +935,7 @@ static bool api_Menu_unregister(Main *UNUSED(main), ApiStruct *type)
 
   wm_menutype_freelink(mt);
 
-  /* update while blender is running */
+  /* update while dune is running */
   wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
@@ -968,7 +964,7 @@ static ApiStruct *api_Menu_register(Main *main,
   api_ptr_create(NULL, &ApiMenu, &dummy_menu, &dummy_menu_ptr);
 
   /* We have to set default context! Else we get a void string... */
-  strcpy(dummy_mt.translation_context, LANG_CXT_DEFAULT_BPYAPI);
+  strcpy(dummy_mt.translation_cxt, LANG_CXT_DEFAULT_BPYAPI);
 
   /* validate the python class */
   if (validate(&dummy_menu_ptr, data, have_fn) != 0) {
@@ -989,7 +985,7 @@ static ApiStruct *api_Menu_register(Main *main,
   mt = wm_menutype_find(dummy_mt.idname, true);
   if (mt) {
     ApiStruct *sapi = mt->api_ext.sapi;
-    if (!(sapi && api_Menu_unregisterbmain, sapi))) {
+    if (!(sapi && api_Menu_unregistermain, sapi))) {
       dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
