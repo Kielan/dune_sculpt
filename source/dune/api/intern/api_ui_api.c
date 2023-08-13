@@ -329,7 +329,7 @@ static ApiPtr api_uiItemO(uiLayout *layout,
 static ApiPtr api_uiItemOMenuHold(uiLayout *layout,
                                  const char *opname,
                                  const char *name,
-                                 const char *text_ctxt,
+                                 const char *text_cxt,
                                  bool translate,
                                  int icon,
                                  bool emboss,
@@ -367,11 +367,11 @@ static void api_uiItemsEnumO(uiLayout *layout,
 }
 
 static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
-                                  Ctx *C,
+                                  Cxt *C,
                                   const char *opname,
                                   const char *propname,
                                   const char *name,
-                                  const char *text_ctxt,
+                                  const char *text_cxt,
                                   bool translate,
                                   int icon)
 {
@@ -392,13 +392,13 @@ static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
 
 static void api_uiItemL(uiLayout *layout,
                         const char *name,
-                        const char *text_ctxt,
+                        const char *text_cxt,
                         bool translate,
                         int icon,
                         int icon_value)
 {
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -410,13 +410,13 @@ static void api_uiItemL(uiLayout *layout,
 static void api_uiItemM(uiLayout *layout,
                         const char *menuname,
                         const char *name,
-                        const char *text_ctxt,
+                        const char *text_cxt,
                         bool translate,
                         int icon,
                         int icon_value)
 {
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -431,16 +431,16 @@ static void api_uiItemM_contents(uiLayout *layout, const char *menuname)
 }
 
 static void api_uiItemPopoverPanel(uiLayout *layout,
-                                   bContext *C,
+                                   Cxt *C,
                                    const char *panel_type,
                                    const char *name,
-                                   const char *text_ctxt,
+                                   const char *text_cxt,
                                    bool translate,
                                    int icon,
                                    int icon_value)
 {
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -450,18 +450,18 @@ static void api_uiItemPopoverPanel(uiLayout *layout,
 }
 
 static void api_uiItemPopoverPanelFromGroup(uiLayout *layout,
-                                            bContext *C,
+                                            Cxt *C,
                                             int space_id,
                                             int region_id,
-                                            const char *context,
+                                            const char *cxt,
                                             const char *category)
 {
-  uiItemPopoverPanelFromGroup(layout, C, space_id, region_id, context, category);
+  uiItemPopoverPanelFromGroup(layout, C, space_id, region_id, cxt, category);
 }
 
 static void api_uiTemplateID(uiLayout *layout,
-                             bContext *C,
-                             PointerRNA *ptr,
+                             Cxt *C,
+                             ApiPtr *ptr,
                              const char *propname,
                              const char *newop,
                              const char *openop,
@@ -469,7 +469,7 @@ static void api_uiTemplateID(uiLayout *layout,
                              int filter,
                              const bool live_icon,
                              const char *name,
-                             const char *text_ctxt,
+                             const char *text_cxt,
                              bool translate)
 {
   ApiProp *prop = api_struct_find_prop(ptr, propname);
@@ -480,40 +480,40 @@ static void api_uiTemplateID(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
-  uiTemplateID(layout, C, ptr, propname, newop, openop, unlinkop, filter, live_icon, name);
+  uiTemplateId(layout, C, ptr, propname, newop, openop, unlinkop, filter, live_icon, name);
 }
 
-static void rna_uiTemplateAnyID(uiLayout *layout,
-                                PointerRNA *ptr,
+static void api_uiTemplateAnyId(uiLayout *layout,
+                                ApiPtr *ptr,
                                 const char *propname,
                                 const char *proptypename,
                                 const char *name,
                                 const char *text_ctxt,
                                 bool translate)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("property not found: %s.%s", api_struct_identifier(ptr->type), propname);
     return;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
 
   /* XXX This will search property again :( */
-  uiTemplateAnyID(layout, ptr, propname, proptypename, name);
+  uiTemplateAnyId(layout, ptr, propname, proptypename, name);
 }
 
 void rna_uiTemplateList(uiLayout *layout,
-                        struct bContext *C,
+                        struct Cxt *C,
                         const char *listtype_name,
                         const char *list_id,
-                        struct PointerRNA *dataptr,
+                        struct ApiPtr *dataptr,
                         const char *propname,
-                        struct PointerRNA *active_dataptr,
+                        struct ApiPtr *active_dataptr,
                         const char *active_propname,
                         const char *item_dyntip_propname,
                         const int rows,
@@ -605,7 +605,7 @@ static void api_uiTemplateCacheFileLayers(uiLayout *layout,
                                           const char *propname)
 {
   ApiPtr fileptr;
-  if (!uiTemplateCacheFilePointer(ptr, propname, &fileptr)) {
+  if (!uiTemplateCacheFilePtr(ptr, propname, &fileptr)) {
     return;
   }
 
@@ -638,11 +638,11 @@ static void api_uiTemplateEventFromKeymapItem(
     uiLayout *layout, wmKeyMapItem *kmi, const char *name, const char *text_ctxt, bool translate)
 {
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, NULL, translate);
   uiTemplateEventFromKeymapItem(layout, name, kmi, true);
 }
 
-static void rna_uiTemplateAssetView(uiLayout *layout,
+static void api_uiTemplateAssetView(uiLayout *layout,
                                     Cxt *C,
                                     const char *list_id,
                                     ApiPtr *asset_lib_dataptr,
@@ -654,9 +654,9 @@ static void rna_uiTemplateAssetView(uiLayout *layout,
                                     int filter_id_types,
                                     int display_flags,
                                     const char *activate_opname,
-                                    PointerRNA *r_activate_op_properties,
+                                    ApiPtr *r_activate_op_properties,
                                     const char *drag_opname,
-                                    PointerRNA *r_drag_op_properties)
+                                    ApiPtr *r_drag_op_properties)
 {
   AssetFilterSettings filter_settings = {
       .id_types = filter_id_types ? filter_id_types : FILTER_ID_ALL,
@@ -679,24 +679,22 @@ static void rna_uiTemplateAssetView(uiLayout *layout,
                       r_drag_op_props);
 }
 
-/**
- * XXX Remove filter items that require more than 32 bits for storage. RNA enums don't support
- * that currently.
- */
+/** XXX Remove filter items that require more than 32 bits for storage. Api enums don't support
+ * that currently */
 static const EnumPropItem *api_uiTemplateAssetView_filter_id_types_itemf(
-    Ctx *UNUSED(C), PtrRNA *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
+    Cxt *UNUSED(C), ApiPtr *UNUSED(ptr), ApiProp *UNUSED(prop), bool *r_free)
 {
   EnumPropItem *items = NULL;
   int totitem = 0;
 
-  for (int i = 0; rna_enum_id_type_filter_items[i].identifier; i++) {
+  for (int i = 0; api_enum_id_type_filter_items[i].identifier; i++) {
     if (api_enum_id_type_filter_items[i].flag > (1ULL << 31)) {
       continue;
     }
 
     EnumPropItem tmp = {0, "", 0, "", ""};
     tmp.value = api_enum_id_type_filter_items[i].flag;
-    tmp.identifier = api_enum_id_type_filter_items[i].identifier;
+    tmp.id = api_enum_id_type_filter_items[i].id;
     tmp.icon = api_enum_id_type_filter_items[i].icon;
     tmp.name = api_enum_id_type_filter_items[i].name;
     tmp.description = api_enum_id_type_filter_items[i].description;
@@ -709,15 +707,15 @@ static const EnumPropItem *api_uiTemplateAssetView_filter_id_types_itemf(
 }
 
 static uiLayout *api_uiLayoutRowWithHeading(
-    uiLayout *layout, bool align, const char *heading, const char *heading_ctxt, bool translate)
+    uiLayout *layout, bool align, const char *heading, const char *heading_cxt, bool translate)
 {
   /* Get translated heading. */
-  heading = rna_translate_ui_text(heading, heading_ctxt, NULL, NULL, translate);
+  heading = api_translate_ui_text(heading, heading_cxt, NULL, NULL, translate);
   return uiLayoutRowWithHeading(layout, align, heading);
 }
 
 static uiLayout *api_uiLayoutColumnWithHeading(
-    uiLayout *layout, bool align, const char *heading, const char *heading_ctxt, bool translate)
+    uiLayout *layout, bool align, const char *heading, const char *heading_cxt, bool translate)
 {
   /* Get translated heading. */
   heading = api_translate_ui_text(heading, heading_ctxt, NULL, NULL, translate);
@@ -739,17 +737,17 @@ static const char *api_ui_get_enum_name(bContext *C,
   bool free;
   const char *name = "";
 
-  prop = RNA_struct_find_property(ptr, propname);
-  if (!prop || (RNA_property_type(prop) != PROP_ENUM)) {
-    RNA_warning(
-        "Property not found or not an enum: %s.%s", RNA_struct_identifier(ptr->type), propname);
+  prop = api_struct_find_prop(ptr, propname);
+  if (!prop || (api_prop_type(prop) != PROP_ENUM)) {
+    api_warning(
+        "Property not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return name;
   }
 
   api_prop_enum_items_gettexted(C, ptr, prop, &items, NULL, &free);
 
   if (items) {
-    const int index = RNA_enum_from_identifier(items, identifier);
+    const int index = api_enum_from_id(items, id);
     if (index != -1) {
       name = items[index].name;
     }
@@ -761,10 +759,10 @@ static const char *api_ui_get_enum_name(bContext *C,
   return name;
 }
 
-static const char *api_ui_get_enum_description(bContext *C,
-                                               PointerRNA *ptr,
+static const char *api_ui_get_enum_description(Cxt *C,
+                                               ApiPtr *ptr,
                                                const char *propname,
-                                               const char *identifier)
+                                               const char *id)
 {
   ApiProp *prop = NULL;
   const EnumPropItem *items = NULL;
@@ -854,13 +852,13 @@ static void api_ui_item_common_text(FunctionRNA *func)
   prop = api_def_string(
       func, "text_ctxt", NULL, 0, "", "Override automatic translation context of the given text");
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL);
-  RNA_def_boolean(
-      func, "translate", true, "", "Translate the given text, when UI translation is enabled");
+  api_def_bool(
+      fn, "translate", true, "", "Translate the given text, when UI translation is enabled");
 }
 
-static void api_ui_item_common(FunctionRNA *func)
+static void api_ui_item_common(ApiFn *fn)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   api_ui_item_common_text(func);
 
