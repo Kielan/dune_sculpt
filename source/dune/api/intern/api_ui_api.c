@@ -623,7 +623,7 @@ static void api_uiTemplatePathBuilder(uiLayout *layout,
   ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    api_warning("property not found: %s.%s", api_struct_id(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
@@ -1484,20 +1484,20 @@ void api_api_ui_layout(ApiStruct *sapi)
 
   func = RNA_def_function(srna, "template_constraint_header", "uiTemplateConstraintHeader");
   RNA_def_function_ui_description(func, "Generates the header for constraint panels");
-  parm = RNA_def_pointer(func, "data", "Constraint", "", "Constraint data");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_ptr(fn, "data", "Constraint", "", "Constraint data");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "template_preview", "uiTemplatePreview");
-  RNA_def_function_ui_description(
-      func, "Item. A preview window for materials, textures, lights or worlds");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "id", "ID", "", "ID data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "show_buttons", true, "", "Show preview buttons?");
-  RNA_def_pointer(func, "parent", "ID", "", "ID data-block");
-  RNA_def_pointer(func, "slot", "TextureSlot", "", "Texture slot");
-  RNA_def_string(
-      func,
+  fn = api_def_fn(sapi, "template_preview", "uiTemplatePreview");
+  RNA_def_n_ui_description(
+      fn, "Item. A preview window for materials, textures, lights or worlds");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_ptr(fn, "id", "Id", "", "Id data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "show_buttons", true, "", "Show preview buttons?");
+  api_def_ptr(fn, "parent", "Id", "", "Id data-block");
+  api_def_ptr(fn, "slot", "TextureSlot", "", "Texture slot");
+  api_def_string(
+      fn,
       "preview_id",
       NULL,
       0,
@@ -1505,30 +1505,30 @@ void api_api_ui_layout(ApiStruct *sapi)
       "Identifier of this preview widget, if not set the ID type will be used "
       "(i.e. all previews of materials without explicit ID will have the same size...)");
 
-  func = RNA_def_function(srna, "template_curve_mapping", "uiTemplateCurveMapping");
-  RNA_def_function_ui_description(
-      func, "Item. A curve mapping widget used for e.g falloff curves for lights");
-  api_ui_item_rna_common(func);
-  RNA_def_enum(func, "type", curve_type_items, 0, "Type", "Type of curves to display");
-  RNA_def_boolean(func, "levels", false, "", "Show black/white levels");
-  RNA_def_boolean(func, "brush", false, "", "Show brush options");
-  RNA_def_boolean(func, "use_negative_slope", false, "", "Use a negative slope by default");
-  RNA_def_boolean(func, "show_tone", false, "", "Show tone options");
+  fn = api_def_fn(sapi, "template_curve_mapping", "uiTemplateCurveMapping");
+  api_def_fn_ui_description(
+      fn, "Item. A curve mapping widget used for e.g falloff curves for lights");
+  api_ui_item_api_common(fn);
+  api_def_enum(fn, "type", curve_type_items, 0, "Type", "Type of curves to display");
+  api_def_bool(fn, "levels", false, "", "Show black/white levels");
+  api_def_bool(fn, "brush", false, "", "Show brush options");
+  api_def_bool(fn, "use_negative_slope", false, "", "Use a negative slope by default");
+  api_def_bool(fn, "show_tone", false, "", "Show tone options");
 
-  func = RNA_def_function(srna, "template_curveprofile", "uiTemplateCurveProfile");
-  RNA_def_function_ui_description(func, "A profile path editor used for custom profiles");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_curveprofile", "uiTemplateCurveProfile");
+  api_def_fn_ui_description(fn, "A profile path editor used for custom profiles");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "template_color_ramp", "uiTemplateColorRamp");
-  RNA_def_function_ui_description(func, "Item. A color ramp widget");
-  api_ui_item_rna_common(func);
-  RNA_def_boolean(func, "expand", false, "", "Expand button to show more detail");
+  fn = api_def_fn(sapi, "template_color_ramp", "uiTemplateColorRamp");
+  api_def_fn_ui_description(fn, "Item. A color ramp widget");
+  api_ui_item_api_common(fn);
+  api_def_bool(fn, "expand", false, "", "Expand button to show more detail");
 
-  func = RNA_def_function(srna, "template_icon", "uiTemplateIcon");
-  RNA_def_function_ui_description(func, "Display a large icon");
-  parm = RNA_def_int(func, "icon_value", 0, 0, INT_MAX, "Icon to display", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_float(func,
+  fn = api_def_fn(sapi, "template_icon", "uiTemplateIcon");
+  api_def_fn_ui_description(fn, "Display a large icon");
+  parm = api_def_int(fn, "icon_value", 0, 0, INT_MAX, "Icon to display", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_float(fn,
                 "scale",
                 1.0f,
                 1.0f,
@@ -1538,11 +1538,11 @@ void api_api_ui_layout(ApiStruct *sapi)
                 1.0f,
                 100.0f);
 
-  func = RNA_def_function(srna, "template_icon_view", "uiTemplateIconView");
-  RNA_def_function_ui_description(func, "Enum. Large widget showing Icon previews");
-  api_ui_item_rna_common(func);
-  RNA_def_boolean(func, "show_labels", false, "", "Show enum label in preview buttons");
-  RNA_def_float(func,
+  fn = api_def_fn(sapi, "template_icon_view", "uiTemplateIconView");
+  api_def_fn_ui_description(fn, "Enum. Large widget showing Icon previews");
+  api_ui_item_api_common(fn);
+  api_def_bool(fn, "show_labels", false, "", "Show enum label in preview buttons");
+  api_def_float(fn,
                 "scale",
                 6.0f,
                 1.0f,
@@ -1551,7 +1551,7 @@ void api_api_ui_layout(ApiStruct *sapi)
                 "Scale the button icon size (by the button size)",
                 1.0f,
                 100.0f);
-  RNA_def_float(func,
+  api_def_float(fn,
                 "scale_popup",
                 5.0f,
                 1.0f,
@@ -1561,24 +1561,24 @@ void api_api_ui_layout(ApiStruct *sapi)
                 1.0f,
                 100.0f);
 
-  func = RNA_def_function(srna, "template_histogram", "uiTemplateHistogram");
-  RNA_def_function_ui_description(func, "Item. A histogramm widget to analyze imaga data");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_histogram", "uiTemplateHistogram");
+  api_def_fn_ui_description(fn, "Item. A histogramm widget to analyze imaga data");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "template_waveform", "uiTemplateWaveform");
-  RNA_def_function_ui_description(func, "Item. A waveform widget to analyze imaga data");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_waveform", "uiTemplateWaveform");
+  api_def_fn_ui_description(fn, "Item. A waveform widget to analyze imaga data");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "template_vectorscope", "uiTemplateVectorscope");
-  RNA_def_function_ui_description(func, "Item. A vectorscope widget to analyze imaga data");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_vectorscope", "uiTemplateVectorscope");
+  api_def_fn_ui_description(fn, "Item. A vectorscope widget to analyze imaga data");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "template_layers", "uiTemplateLayers");
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(
-      func, "used_layers_data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
+  fn = api_def_fn(sapi, "template_layers", "uiTemplateLayers");
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(
+      fn, "used_layers_data", "AnyType", "", "Data from which to take property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_string(
       func, "used_layers_property", NULL, 0, "", "Identifier of property in data");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_int(func, "active_layer", 0, 0, INT_MAX, "Active Layer", "", 0, INT_MAX);
