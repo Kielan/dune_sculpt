@@ -772,7 +772,7 @@ static const char *api_ui_get_enum_description(Cxt *C,
   prop = api_struct_find_prop(ptr, propname);
   if (!prop || (api_prop_type(prop) != PROP_ENUM)) {
     api_warning(
-        "Property not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
+        "Prop not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return desc;
   }
 
@@ -850,7 +850,7 @@ static void api_ui_item_common_text(ApiFn *fn)
   prop = api_def_string(fn, "text", NULL, 0, "", "Override automatic text of the item");
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL);
   prop = api_def_string(
-      func, "text_ctxt", NULL, 0, "", "Override automatic translation context of the given text");
+      fn, "text_ctxt", NULL, 0, "", "Override automatic translation context of the given text");
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL);
   api_def_bool(
       fn, "translate", true, "", "Translate the given text, when UI translation is enabled");
@@ -1224,11 +1224,11 @@ void api_api_ui_layout(ApiStruct *sapi)
                      INT_MAX);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  fn = api_def_fn(srna, "operator_float", "uiItemFloatO");
-  api_ui_item_op_common(func);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  fn = api_def_fn(srna, "op_float", "uiItemFloatO");
+  api_ui_item_op_common(fn);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Identifier of property in operator");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "value",
                        0,
                        -FLT_MAX,
@@ -1254,12 +1254,12 @@ void api_api_ui_layout(ApiStruct *sapi)
   parm = api_def_prop(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
   api_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
 
-  func = RNA_def_fn(sapi, "menu", "api_uiItemM");
-  parm = RNA_def_string(fn, "menu", NULL, 0, "", "Identifier of the menu");
+  fn = api_def_fn(sapi, "menu", "api_uiItemM");
+  parm = api_def_string(fn, "menu", NULL, 0, "", "Id of the menu");
   api_ui_item_common(fn);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(parm, "Icon Value", "Override automatic icon of the item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
 
   fn = api_def_fn(sapi, "menu_contents", "api_uiItemM_contents");
   parm = api_def_string(fn, "menu", NULL, 0, "", "Id of the menu");
@@ -1326,7 +1326,7 @@ void api_api_ui_layout(ApiStruct *sapi)
                UI_TEMPLATE_ID_FILTER_ALL,
                "",
                "Optionally limit the items which can be selected");
-  RNA_def_boolean(fn, "live_icon", false, "", "Show preview instead of fixed icon");
+  api_def_bool(fn, "live_icon", false, "", "Show preview instead of fixed icon");
   api_ui_item_common_text(fn);
 
   fn = api_def_fn(sapi, "template_id_preview", "uiTemplateIDPreview");
@@ -1353,74 +1353,74 @@ void api_api_ui_layout(ApiStruct *sapi)
                UI_TEMPLATE_ID_FILTER_ALL,
                "",
                "Optionally limit the items which can be selected");
-  RNA_def_boolean(func, "hide_buttons", false, "", "Show only list, no buttons");
+  api_def_bool(fn, "hide_buttons", false, "", "Show only list, no buttons");
 
-  func = RNA_def_function(srna, "template_any_ID", "rna_uiTemplateAnyID");
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func,
-                        "type_property",
+  func = api_def_fn(sapi, "template_any_id", "api_uiTemplateAnyId");
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take prop");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn,
+                        "type_prop",
                         NULL,
                         0,
                         "",
                         "Identifier of property in data giving the type of the ID-blocks to use");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  api_ui_item_common_text(func);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_ui_item_common_text(fn);
 
-  func = RNA_def_function(srna, "template_ID_tabs", "uiTemplateIDTabs");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  RNA_def_string(func, "new", NULL, 0, "", "Operator identifier to create a new ID block");
-  RNA_def_string(func, "menu", NULL, 0, "", "Context menu identifier");
-  RNA_def_enum(func,
+  fn = api_def_fn(sapi, "template_id_tabs", "uiTemplateIdTabs");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  api_def_string(fn, "new", NULL, 0, "", "Operator identifier to create a new ID block");
+  api_def_string(fn, "menu", NULL, 0, "", "Context menu id");
+  api_def_enum(fn,
                "filter",
                id_template_filter_items,
                UI_TEMPLATE_ID_FILTER_ALL,
                "",
                "Optionally limit the items which can be selected");
 
-  func = RNA_def_function(srna, "template_search", "uiTemplateSearch");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(
+  fn = api_def_fn(sapi, "template_search", "uiTemplateSearch");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(
       func, "search_data", "AnyType", "", "Data from which to take collection to search in");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "search_property", NULL, 0, "", "Identifier of search collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(
-      func, "new", NULL, 0, "", "Operator identifier to create a new item for the collection");
-  RNA_def_string(func,
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(
+      func, "search_prop", NULL, 0, "", "Id of search collection prop");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(
+      fn, "new", NULL, 0, "", "Op id to create a new item for the collection");
+  api_def_string(fn,
                  "unlink",
                  NULL,
                  0,
                  "",
-                 "Operator identifier to unlink or delete the active "
+                 "Op id to unlink or delete the active "
                  "item from the collection");
 
-  func = RNA_def_function(srna, "template_search_preview", "uiTemplateSearchPreview");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(
-      func, "search_data", "AnyType", "", "Data from which to take collection to search in");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "search_property", NULL, 0, "", "Identifier of search collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(
-      func, "new", NULL, 0, "", "Operator identifier to create a new item for the collection");
-  RNA_def_string(func,
+  fn = api_def_fn(sapi, "template_search_preview", "uiTemplateSearchPreview");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(
+      fn, "search_data", "AnyType", "", "Data from which to take collection to search in");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(
+      fn, "search_prop", NULL, 0, "", "Id of search collection prop");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(
+      fn, "new", NULL, 0, "", "Op id to create a new item for the collection");
+  api_def_string(fn,
                  "unlink",
                  NULL,
                  0,
                  "",
-                 "Operator identifier to unlink or delete the active "
+                 "Op id to unlink or delete the active "
                  "item from the collection");
-  RNA_def_int(
-      func, "rows", 0, 0, INT_MAX, "Number of thumbnail preview rows to display", "", 0, INT_MAX);
-  RNA_def_int(func,
+  api_def_int(
+      fn, "rows", 0, 0, INT_MAX, "Number of thumbnail preview rows to display", "", 0, INT_MAX);
+  api_def_int(fn,
               "cols",
               0,
               0,
@@ -1430,43 +1430,42 @@ void api_api_ui_layout(ApiStruct *sapi)
               0,
               INT_MAX);
 
-  func = RNA_def_function(srna, "template_path_builder", "rna_uiTemplatePathBuilder");
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "root", "ID", "", "ID-block from which path is evaluated from");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  api_ui_item_common_text(func);
+  fn = api_def_fn(sapi, "template_path_builder", "api_uiTemplatePathBuilder");
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take prop");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of property in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "root", "ID", "", "ID-block from which path is evaluated from");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  api_ui_item_common_text(fn);
 
-  func = RNA_def_function(srna, "template_modifiers", "uiTemplateModifiers");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Generates the UI layout for the modifier stack");
+  fn = api_def_fn(sapi, "template_mods", "uiTemplateModifiers");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Generates the UI layout for the modifier stack");
 
-  func = RNA_def_function(srna, "template_constraints", "uiTemplateConstraints");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Generates the panels for the constraint stack");
-  RNA_def_boolean(func,
-                  "use_bone_constraints",
-                  true,
-                  "",
-                  "Add panels for bone constraints instead of object constraints");
+  fn = api_def_fn(sapi, "template_constraints", "uiTemplateConstraints");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Generates the panels for the constraint stack");
+  api_def_bool(fn,
+               "use_bone_constraints",
+               true,
+               "",
+               "Add panels for bone constraints instead of object constraints");
 
-  func = RNA_def_function(srna, "template_grease_pencil_modifiers", "uiTemplateGpencilModifiers");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func,
-                                  "Generates the panels for the grease pencil modifier stack");
+  fn = api_def_fn(sapi, "template_grease_pencil_modifiers", "uiTemplatePenMod");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Generates the panels for the pen modifier stack");
 
-  func = RNA_def_function(srna, "template_shaderfx", "uiTemplateShaderFx");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Generates the panels for the shader effect stack");
+  fn = api_def_function(sapi, "template_shaderfx", "uiTemplateShaderFx");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Generates the panels for the shader effect stack");
 
-  func = RNA_def_function(srna, "template_greasepencil_color", "uiTemplateGpencilColorPreview");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  RNA_def_int(
-      func, "rows", 0, 0, INT_MAX, "Number of thumbnail preview rows to display", "", 0, INT_MAX);
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "template_pen_color", "uiTemplatePenColorPreview");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  api_def_int(
+      fn, "rows", 0, 0, INT_MAX, "Number of thumbnail preview rows to display", "", 0, INT_MAX);
+  apip_def_int(fn,
               "cols",
               0,
               0,
