@@ -38,8 +38,8 @@ const char *api_translate_ui_text(
   }
 
   /* If a text_ctxt is specified, use it! */
-  if (text_ctxt && text_ctxt[0]) {
-    return lang_pgettext(text_ctxt, text);
+  if (text_cxt && text_cxt[0]) {
+    return lang_pgettext(text_cxt, text);
   }
 
   /* Else, if an api type or prop is specified, use its context. */
@@ -62,14 +62,14 @@ const char *api_translate_ui_text(
   }
 
   /* Else, default context! */
-  return lang_pgettext(BLT_I18NCONTEXT_DEFAULT, text);
+  return lang_pgettext(LANG_CXT_DEFAULT, text);
 }
 
 static void api_uiItemR(uiLayout *layout,
                         ApiPtr *ptr,
                         const char *propname,
                         const char *name,
-                        const char *text_ctxt,
+                        const char *text_cxt,
                         bool translate,
                         int icon,
                         bool expand,
@@ -119,7 +119,7 @@ static void api_uiItemR_with_popover(uiLayout *layout,
                                      struct ApiPtr *ptr,
                                      const char *propname,
                                      const char *name,
-                                     const char *text_ctxt,
+                                     const char *text_cxt,
                                      bool translate,
                                      int icon,
                                      bool icon_only,
@@ -143,7 +143,7 @@ static void api_uiItemR_with_popover(uiLayout *layout,
   flag |= (icon_only) ? UI_ITEM_R_ICON_ONLY : 0;
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
   uiItemFullR_with_popover(layout, ptr, prop, -1, 0, flag, name, icon, panel_type);
 }
 
@@ -151,7 +151,7 @@ static void api_uiItemR_with_menu(uiLayout *layout,
                                   struct ApiPtr *ptr,
                                   const char *propname,
                                   const char *name,
-                                  const char *text_ctxt,
+                                  const char *text_cxt,
                                   bool translate,
                                   int icon,
                                   bool icon_only,
@@ -172,7 +172,7 @@ static void api_uiItemR_with_menu(uiLayout *layout,
   flag |= (icon_only) ? UI_ITEM_R_ICON_ONLY : 0;
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
   uiItemFullR_with_menu(layout, ptr, prop, -1, 0, flag, name, icon, menu_type);
 }
 
@@ -180,7 +180,7 @@ static void api_uiItemMenuEnumR(uiLayout *layout,
                                 struct ApiPtr *ptr,
                                 const char *propname,
                                 const char *name,
-                                const char *text_ctxt,
+                                const char *text_cxt,
                                 bool translate,
                                 int icon)
 {
@@ -192,12 +192,12 @@ static void api_uiItemMenuEnumR(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
   uiItemMenuEnumR_prop(layout, ptr, prop, name, icon);
 }
 
 static void api_uiItemTabsEnumR(uiLayout *layout,
-                                Ctx *C,
+                                Cxt *C,
                                 struct ApiPtr *ptr,
                                 const char *propname,
                                 struct ApiPtr *ptr_highlight,
@@ -247,7 +247,7 @@ static void api_uiItemEnumR_string(uiLayout *layout,
                                    const char *propname,
                                    const char *value,
                                    const char *name,
-                                   const char *text_ctxt,
+                                   const char *text_cxt,
                                    bool translate,
                                    int icon)
 {
@@ -259,7 +259,7 @@ static void api_uiItemEnumR_string(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
   uiItemEnumR_string_prop(layout, ptr, prop, value, name, icon);
 }
@@ -270,7 +270,7 @@ static void api_uiItemPtrR(uiLayout *layout,
                            struct ApiPtr *searchptr,
                            const char *searchpropname,
                            const char *name,
-                           const char *text_ctxt,
+                           const char *text_cxt,
                            bool translate,
                            int icon,
                            const bool results_are_suggestions)
@@ -288,7 +288,7 @@ static void api_uiItemPtrR(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
   uiItemPtrR_prop(
       layout, ptr, prop, searchptr, searchprop, name, icon, results_are_suggestions);
@@ -297,7 +297,7 @@ static void api_uiItemPtrR(uiLayout *layout,
 static ApiPtr api_uiItemO(uiLayout *layout,
                           const char *opname,
                           const char *name,
-                          const char *text_ctxt,
+                          const char *text_cxt,
                           bool translate,
                           int icon,
                           bool emboss,
@@ -383,7 +383,7 @@ static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, ot->srna, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, ot->sapi, NULL, translate);
 
   ApiPtr opptr;
   uiItemMenuEnumFullO_ptr(layout, C, ot, propname, name, icon, &opptr);
@@ -654,9 +654,9 @@ static void api_uiTemplateAssetView(uiLayout *layout,
                                     int filter_id_types,
                                     int display_flags,
                                     const char *activate_opname,
-                                    ApiPtr *r_activate_op_properties,
+                                    ApiPtr *r_activate_op_props,
                                     const char *drag_opname,
-                                    ApiPtr *r_drag_op_properties)
+                                    ApiPtr *r_drag_op_props)
 {
   AssetFilterSettings filter_settings = {
       .id_types = filter_id_types ? filter_id_types : FILTER_ID_ALL,
@@ -665,8 +665,8 @@ static void api_uiTemplateAssetView(uiLayout *layout,
   uiTemplateAssetView(layout,
                       C,
                       list_id,
-                      asset_library_dataptr,
-                      asset_library_propname,
+                      asset_lib_dataptr,
+                      asset_lib_propname,
                       assets_dataptr,
                       assets_propname,
                       active_dataptr,
@@ -687,7 +687,7 @@ static const EnumPropItem *api_uiTemplateAssetView_filter_id_types_itemf(
   EnumPropItem *items = NULL;
   int totitem = 0;
 
-  for (int i = 0; api_enum_id_type_filter_items[i].identifier; i++) {
+  for (int i = 0; api_enum_id_type_filter_items[i].id; i++) {
     if (api_enum_id_type_filter_items[i].flag > (1ULL << 31)) {
       continue;
     }
@@ -718,17 +718,17 @@ static uiLayout *api_uiLayoutColumnWithHeading(
     uiLayout *layout, bool align, const char *heading, const char *heading_cxt, bool translate)
 {
   /* Get translated heading. */
-  heading = api_translate_ui_text(heading, heading_ctxt, NULL, NULL, translate);
+  heading = api_translate_ui_text(heading, heading_cxt, NULL, NULL, translate);
   return uiLayoutColumnWithHeading(layout, align, heading);
 }
 
-static int api_ui_get_apiptr_icon(bContext *C, PointerRNA *ptr_icon)
+static int api_ui_get_apiptr_icon(Cxt *C, ApiPtr *ptr_icon)
 {
-  return ui_icon_from_apiptr(C, ptr_icon, RNA_struct_ui_icon(ptr_icon->type), false);
+  return ui_icon_from_apiptr(C, ptr_icon, api_struct_ui_icon(ptr_icon->type), false);
 }
 
-static const char *api_ui_get_enum_name(bContext *C,
-                                        PointerRNA *ptr,
+static const char *api_ui_get_enum_name(Cxt *C,
+                                        ApiPtr *ptr,
                                         const char *propname,
                                         const char *identifier)
 {
@@ -874,17 +874,17 @@ static void api_ui_item_op(FunctionRNA *func)
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
 }
 
-static void api_ui_item_op_common(FunctionRNA *func)
+static void api_ui_item_op_common(ApiFn *fn)
 {
-  api_ui_item_op(func);
-  api_ui_item_common(func);
+  api_ui_item_op(fn);
+  api_ui_item_common(fn);
 }
 
-static void api_ui_item_rna_common(FunctionRNA *func)
+static void api_ui_item_api_common(ApiFn *fn)
 {
-  PropertyRNA *parm;
+  ApiProp *parm;
 
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
+  parm = api_def_ptr(func, "data", "AnyType", "", "Data from which to take property");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
   parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
