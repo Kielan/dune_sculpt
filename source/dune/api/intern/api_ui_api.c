@@ -353,7 +353,7 @@ static ApiPtr api_uiItemOMenuHold(uiLayout *layout,
 
   ApiPtr opptr;
   uiItemFullOMenuHold_ptr(
-      layout, ot, name, icon, NULL, uiLayoutGetOpCtx(layout), flag, menu, &opptr);
+      layout, ot, name, icon, NULL, uiLayoutGetOpCxt(layout), flag, menu, &opptr);
   return opptr;
 }
 
@@ -1009,52 +1009,52 @@ void api_api_ui_layout(ApiStruct *sapu)
                             "in a radial fashion around the menu center)");
 
   /* Icon of an apa pointer */
-  fn = api_def_fn(sapi, "icon", "api_ui_get_rnaptr_icon");
+  fn = api_def_fn(sapi, "icon", "api_ui_get_apiptr_icon");
   parm = api_def_int(fn, "icon_value", ICON_NONE, 0, INT_MAX, "", "Icon identifier", 0, INT_MAX);
   api_def_fn_return(fn, parm);
   api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take the icon");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   api_def_fn_ui_description(fn,
-                                  "Return the custom icon for this data, "
-                                  "use it e.g. to get materials or texture icons");
+                            "Return the custom icon for this data, "
+                            "use it e.g. to get materials or texture icons");
 
   /* UI name, description and icon of an enum item */
-  func = RNA_def_function(sapi, "enum_item_name", "api_ui_get_enum_name");
-  parm = RNA_def_string(fn, "name", NULL, 0, "", "UI name of the enum item");
-  RNA_def_function_return(fn, parm);
-  RNA_def_function_flag(fn, FUNC_NO_SELF | FN_USE_CXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_string(func, "identifier", NULL, 0, "", "Identifier of the enum item");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Return the UI name for this enum item");
+  fn = api_def_fn(sapi, "enum_item_name", "api_ui_get_enum_name");
+  parm = api_def_string(fn, "name", NULL, 0, "", "UI name of the enum item");
+  api_def_fn_return(fn, parm);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_string(fn, "id", NULL, 0, "", "Id of the enum item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Return the UI name for this enum item");
 
-  func = RNA_def_function(srna, "enum_item_description", "api_ui_get_enum_description");
-  parm = RNA_def_string(func, "description", NULL, 0, "", "UI description of the enum item");
-  RNA_def_function_return(func, parm);
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_string(func, "identifier", NULL, 0, "", "Identifier of the enum item");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Return the UI description for this enum item");
+  fn = api_def_fn(sapi, "enum_item_description", "api_ui_get_enum_description");
+  parm = api_def_string(fn, "description", NULL, 0, "", "UI description of the enum item");
+  api_def_fn_return(fn, parm);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_string(fn, "id", NULL, 0, "", "Identifier of the enum item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Return the UI description for this enum item");
 
-  func = RNA_def_function(srna, "enum_item_icon", "rna_ui_get_enum_icon");
-  parm = RNA_def_int(func, "icon_value", ICON_NONE, 0, INT_MAX, "", "Icon identifier", 0, INT_MAX);
-  RNA_def_function_return(func, parm);
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_string(func, "identifier", NULL, 0, "", "Identifier of the enum item");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Return the icon for this enum item");
+  fn = api_def_fn(sapi, "enum_item_icon", "api_ui_get_enum_icon");
+  parm = api_def_int(fn, "icon_value", ICON_NONE, 0, INT_MAX, "", "Icon id", 0, INT_MAX);
+  api_def_fn_return(fn, parm);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_string(fn, "identifier", NULL, 0, "", "Identifier of the enum item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Return the icon for this enum item");
 
   /* items */
-  func = RNA_def_function(srna, "prop", "rna_uiItemR");
-  RNA_def_function_ui_description(func, "Item. Exposes an RNA item and places it into the layout");
-  api_ui_item_rna_common(func);
-  api_ui_item_common(func);
-  RNA_def_boolean(func, "expand", false, "", "Expand button to show more detail");
-  RNA_def_boolean(func, "slider", false, "", "Use slider widget for numeric values");
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "prop", "rna_uiItemR");
+  api_def_fn_ui_description(fn, "Item. Exposes an RNA item and places it into the layout");
+  api_ui_item_api_common(fn);
+  api_ui_item_common(fn);
+  api_def_bool(fn, "expand", false, "", "Expand button to show more detail");
+  api_def_bool(fn, "slider", false, "", "Use slider widget for numeric values");
+  api_def_int(fn,
               "toggle",
               -1,
               -1,
@@ -1065,19 +1065,19 @@ void api_api_ui_layout(ApiStruct *sapu)
               "(the default is -1 which uses toggle only when an icon is displayed)",
               -1,
               1);
-  RNA_def_boolean(func, "icon_only", false, "", "Draw only icons in buttons, no text");
-  RNA_def_boolean(func, "event", false, "", "Use button to input key events");
-  RNA_def_boolean(
-      func, "full_event", false, "", "Use button to input full events including modifiers");
-  RNA_def_boolean(func,
-                  "emboss",
-                  true,
-                  "",
-                  "Draw the button itself, not just the icon/text. When false, corresponds to the "
-                  "'NONE_OR_STATUS' layout emboss type");
-  RNA_def_int(func,
+  api_def_bool(fn, "icon_only", false, "", "Draw only icons in buttons, no text");
+  api_def_bool(fn, "event", false, "", "Use button to input key events");
+  api_def_bool(
+      fn, "full_event", false, "", "Use button to input full events including modifiers");
+  api_def_bool(fn,
+                "emboss",
+                true,
+                "",
+                "Draw the button itself, not just the icon/text. When false, corresponds to the "
+                "'NONE_OR_STATUS' layout emboss type");
+  api_def_int(fn,
               "index",
-              /* RNA_NO_INDEX == -1 */
+              /* API_NO_INDEX == -1 */
               -1,
               -2,
               INT_MAX,
@@ -1086,64 +1086,64 @@ void api_api_ui_layout(ApiStruct *sapu)
               "when set to -1 all array members are used",
               -2,
               INT_MAX);
-  parm = RNA_def_property(func, "icon_value", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(parm, "Icon Value", "Override automatic icon of the item");
-  RNA_def_boolean(func, "invert_checkbox", false, "", "Draw checkbox value inverted");
+  parm = api_def_prop(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
+  api_def_bool(fn, "invert_checkbox", false, "", "Draw checkbox value inverted");
 
-  func = RNA_def_function(srna, "props_enum", "uiItemsEnumR");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "props_enum", "uiItemsEnumR");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "prop_menu_enum", "rna_uiItemMenuEnumR");
-  api_ui_item_rna_common(func);
-  api_ui_item_common(func);
+  fn = api_def_fn(sapi, "prop_menu_enum", "api_uiItemMenuEnumR");
+  api_ui_item_api_common(fn);
+  api_ui_item_common(fn);
 
-  func = RNA_def_function(srna, "prop_with_popover", "rna_uiItemR_with_popover");
-  api_ui_item_rna_common(func);
-  api_ui_item_common(func);
-  RNA_def_boolean(func, "icon_only", false, "", "Draw only icons in tabs, no text");
-  parm = RNA_def_string(func, "panel", NULL, 0, "", "Identifier of the panel");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "prop_with_popover", "api_uiItemR_with_popover");
+  api_ui_item_api_common(fn);
+  api_ui_item_common(fn);
+  api_def_bool(fn, "icon_only", false, "", "Draw only icons in tabs, no text");
+  parm = api_def_string(fn, "panel", NULL, 0, "", "Id of the panel");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "prop_with_menu", "rna_uiItemR_with_menu");
-  api_ui_item_rna_common(func);
-  api_ui_item_common(func);
-  RNA_def_boolean(func, "icon_only", false, "", "Draw only icons in tabs, no text");
-  parm = RNA_def_string(func, "menu", NULL, 0, "", "Identifier of the menu");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "prop_with_menu", "api_uiItemR_with_menu");
+  api_ui_item_api_common(fn);
+  api_ui_item_common(fn);
+  api_def_bool(fn, "icon_only", false, "", "Draw only icons in tabs, no text");
+  parm = api_def_string(fn, "menu", NULL, 0, "", "Id of the menu");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "prop_tabs_enum", "rna_uiItemTabsEnumR");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(
-      func, "data_highlight", "AnyType", "", "Data from which to take highlight property");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "property_highlight", NULL, 0, "", "Identifier of highlight property in data");
-  RNA_def_boolean(func, "icon_only", false, "", "Draw only icons in tabs, no text");
+  fn = api_def_fn(sapi, "prop_tabs_enum", "api_uiItemTabsEnumR");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(
+      fn, "data_highlight", "AnyType", "", "Data from which to take highlight prop");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  parm = api_def_string(
+      fn, "prop_highlight", NULL, 0, "", "Identifier of highlight prop in data");
+  api_def_bool(fn, "icon_only", false, "", "Draw only icons in tabs, no text");
 
-  func = RNA_def_function(srna, "prop_enum", "rna_uiItemEnumR_string");
-  api_ui_item_rna_common(func);
-  parm = RNA_def_string(func, "value", NULL, 0, "", "Enum property value");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  api_ui_item_common(func);
+  fn = api_def_fn(sapi, "prop_enum", "api_uiItemEnumR_string");
+  api_ui_item_api_common(fn);
+  parm = api_def_string(fn, "value", NULL, 0, "", "Enum prop value");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_ui_item_common(fn);
 
-  func = RNA_def_function(srna, "prop_search", "rna_uiItemPointerR");
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(
-      func, "search_data", "AnyType", "", "Data from which to take collection to search in");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "search_property", NULL, 0, "", "Identifier of search collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  api_ui_item_common(func);
-  RNA_def_boolean(
-      func, "results_are_suggestions", false, "", "Accept inputs that do not match any item");
+  func = api_def_fn(sapi, "prop_search", "api_uiItemPtrR");
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(
+      fn, "search_data", "AnyType", "", "Data from which to take collection to search in");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_string(
+      fn, "search_property", NULL, 0, "", "Identifier of search collection property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_ui_item_common(fn);
+  api_def_bool(
+      fn, "results_are_suggestions", false, "", "Accept inputs that do not match any item");
 
-  func = RNA_def_function(srna, "prop_decorator", "uiItemDecoratorR");
-  api_ui_item_rna_common(func);
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "prop_decorator", "uiItemDecoratorR");
+  api_ui_item_api_common(fn);
+  api_def_int(fn,
               "index",
-              /* RNA_NO_INDEX == -1 */
+              /* API_NO_INDEX == -1 */
               -1,
               -2,
               INT_MAX,
@@ -1154,16 +1154,16 @@ void api_api_ui_layout(ApiStruct *sapu)
               INT_MAX);
 
   for (int is_menu_hold = 0; is_menu_hold < 2; is_menu_hold++) {
-    func = (is_menu_hold) ? RNA_def_function(srna, "operator_menu_hold", "rna_uiItemOMenuHold") :
-                            RNA_def_function(srna, "operator", "rna_uiItemO");
-    api_ui_item_op_common(func);
-    RNA_def_boolean(func, "emboss", true, "", "Draw the button itself, not just the icon/text");
-    RNA_def_boolean(func, "depress", false, "", "Draw pressed in");
-    parm = RNA_def_property(func, "icon_value", PROP_INT, PROP_UNSIGNED);
-    RNA_def_property_ui_text(parm, "Icon Value", "Override automatic icon of the item");
+    func = (is_menu_hold) ? api_def_fn(sapi, "op_menu_hold", "api_uiItemOMenuHold") :
+                            api_def_fn(sapi, "op", "api_uiItemO");
+    api_ui_item_op_common(fn);
+    RNA_def_bool(fn, "emboss", true, "", "Draw the button itself, not just the icon/text");
+    RNA_def_bool(fn, "depress", false, "", "Draw pressed in");
+    parm = api_def_prop(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
+    RNA_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
     if (is_menu_hold) {
-      parm = RNA_def_string(func, "menu", NULL, 0, "", "Identifier of the menu");
-      RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+      parm = api_def_string(fn, "menu", NULL, 0, "", "Id of the menu");
+      RNA_def_param_flags(parm, 0, PARM_REQUIRED);
     }
     parm = RNA_def_pointer(
         func, "properties", "OperatorProperties", "", "Operator properties to fill in");
