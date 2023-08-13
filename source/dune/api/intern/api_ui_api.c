@@ -30,7 +30,7 @@ const EnumPropItem api_enum_icon_items[] = {
 #  include "types_asset.h"
 
 const char *api_translate_ui_text(
-    const char *text, const char *text_ctxt, ApiStruct *type, ApiProp *prop, bool translate)
+    const char *text, const char *text_cxt, ApiStruct *type, ApiProp *prop, bool translate)
 {
   /* Also return text if UI labels translation is disabled. */
   if (!text || !text[0] || !translate || !lang_translate_iface()) {
@@ -211,12 +211,12 @@ static void api_uiItemTabsEnumR(uiLayout *layout,
     return;
   }
   if (api_prop_type(prop) != PROP_ENUM) {
-    apu_warning("prop is not an enum: %s.%s", api_struct_id(ptr->type), propname);
+    api_warning("prop is not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   /* Get the highlight property used to gray out some of the tabs. */
-  ApuProp *prop_highlight = NULL;
+  ApiProp *prop_highlight = NULL;
   if (!api_ptr_is_null(ptr_highlight)) {
     prop_highlight = api_struct_find_prop(ptr_highlight, propname_highlight);
     if (!prop_highlight) {
@@ -313,7 +313,7 @@ static ApiPtr api_uiItemO(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, ot->sapi, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, ot->sapi, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -363,7 +363,7 @@ static void api_uiItemsEnumO(uiLayout *layout,
                              const bool icon_only)
 {
   int flag = icon_only ? UI_ITEM_R_ICON_ONLY : 0;
-  uiItemsFullEnumO(layout, opname, propname, NULL, uiLayoutGetOperatorContext(layout), flag);
+  uiItemsFullEnumO(layout, opname, propname, NULL, uiLayoutGetOpCxt(layout), flag);
 }
 
 static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
@@ -630,7 +630,7 @@ static void api_uiTemplatePathBuilder(uiLayout *layout,
   /* Get translated name (label). */
   name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
-  /* XXX This will search property again :( */
+  /* XXX This will search prop again :( */
   uiTemplatePathBuilder(layout, ptr, propname, root_ptr, name);
 }
 
@@ -730,7 +730,7 @@ static int api_ui_get_apiptr_icon(Cxt *C, ApiPtr *ptr_icon)
 static const char *api_ui_get_enum_name(Cxt *C,
                                         ApiPtr *ptr,
                                         const char *propname,
-                                        const char *identifier)
+                                        const char *id)
 {
   ApiProp *prop = NULL;
   const EnumPropItem *items = NULL;
@@ -740,7 +740,7 @@ static const char *api_ui_get_enum_name(Cxt *C,
   prop = api_struct_find_prop(ptr, propname);
   if (!prop || (api_prop_type(prop) != PROP_ENUM)) {
     api_warning(
-        "Property not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
+        "Prop not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return name;
   }
 
@@ -870,7 +870,7 @@ static void api_ui_item_common(ApiFn *fn)
 static void api_ui_item_op(ApiFn *fn)
 {
   ApiProp *parm;
-  parm = api_def_string(fn, "operator", NULL, 0, "", "Identifier of the operator");
+  parm = api_def_string(fn, "op", NULL, 0, "", "Id of the op");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
@@ -886,11 +886,11 @@ static void api_ui_item_api_common(ApiFn *fn)
 
   parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take property");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
-  parm = api_def_string(fn, "property", NULL, 0, "", "Identifier of property in data");
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in data");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void api_api_ui_layout(ApiStruct *sapu)
+void api_api_ui_layout(ApiStruct *sapi)
 {
   ApiFn *fn;
   ApiProp *parm;
@@ -924,7 +924,7 @@ void api_api_ui_layout(ApiStruct *sapu)
        "NO_LIB",
        0,
        "",
-       "Do not display buttons to choose or refresh an asset library"},
+       "Do not display buttons to choose or refresh an asset lib"},
       {0, NULL, 0, NULL, NULL},
   };
 
@@ -1048,7 +1048,7 @@ void api_api_ui_layout(ApiStruct *sapu)
   api_def_fn_ui_description(fn, "Return the icon for this enum item");
 
   /* items */
-  fn = api_def_fn(sapi, "prop", "rna_uiItemR");
+  fn = api_def_fn(sapi, "prop", "api_uiItemR");
   api_def_fn_ui_description(fn, "Item. Exposes an RNA item and places it into the layout");
   api_ui_item_api_common(fn);
   api_ui_item_common(fn);
@@ -1157,64 +1157,64 @@ void api_api_ui_layout(ApiStruct *sapu)
     func = (is_menu_hold) ? api_def_fn(sapi, "op_menu_hold", "api_uiItemOMenuHold") :
                             api_def_fn(sapi, "op", "api_uiItemO");
     api_ui_item_op_common(fn);
-    RNA_def_bool(fn, "emboss", true, "", "Draw the button itself, not just the icon/text");
-    RNA_def_bool(fn, "depress", false, "", "Draw pressed in");
+    api_def_bool(fn, "emboss", true, "", "Draw the button itself, not just the icon/text");
+    api_def_bool(fn, "depress", false, "", "Draw pressed in");
     parm = api_def_prop(fn, "icon_value", PROP_INT, PROP_UNSIGNED);
-    RNA_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
+    api_def_prop_ui_text(parm, "Icon Value", "Override automatic icon of the item");
     if (is_menu_hold) {
       parm = api_def_string(fn, "menu", NULL, 0, "", "Id of the menu");
-      RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+      api_def_param_flags(parm, 0, PARM_REQUIRED);
     }
-    parm = RNA_def_pointer(
-        func, "properties", "OperatorProperties", "", "Operator properties to fill in");
-    RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-    RNA_def_function_return(func, parm);
-    RNA_def_function_ui_description(func,
+    parm = api_def_ptr(
+        fn, "props", "OpProps", "", "Op props to fill in");
+    api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+    api_def_fn_return(fn, parm);
+    api_def_fn_ui_description(fn,
                                     "Item. Places a button into the layout to call an Operator");
   }
 
-  func = RNA_def_function(srna, "operator_enum", "rna_uiItemsEnumO");
-  parm = RNA_def_string(func, "operator", NULL, 0, "", "Identifier of the operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "icon_only", false, "", "Draw only icons in buttons, no text");
+  fn = api_def_fn(sapi, "op_enum", "api_uiItemsEnumO");
+  parm = api_def_string(fn, "op", NULL, 0, "", "Id of the op");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in op");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "icon_only", false, "", "Draw only icons in buttons, no text");
 
-  func = RNA_def_function(srna, "operator_menu_enum", "rna_uiItemMenuEnumO");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "op_menu_enum", "api_uiItemMenuEnumO");
+  api_def_fn_flag(fn, FN_USE_CXT);
   /* Can't use #api_ui_item_op_common because property must come right after. */
-  api_ui_item_op(func);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  api_ui_item_common(func);
-  parm = RNA_def_pointer(
-      func, "properties", "OperatorProperties", "", "Operator properties to fill in");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  api_ui_item_op(fn);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in op");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_ui_item_common(fn);
+  parm = api_def_ptr(
+      fn, "props", "OpProps", "", "Op props to fill in");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  api_def_fn_return(fn, parm);
 
   /* useful in C but not in python */
 #  if 0
 
-  func = RNA_def_function(srna, "operator_enum_single", "uiItemEnumO_string");
-  api_ui_item_op_common(func);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "value", NULL, 0, "", "Enum property value");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "op_enum_single", "uiItemEnumO_string");
+  api_ui_item_op_common(fn);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Ident of prop in op");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "value", NULL, 0, "", "Enum prop value");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "operator_boolean", "uiItemBooleanO");
-  api_ui_item_op_common(func);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(
-      func, "value", false, "", "Value of the property to call the operator with");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "op_bool", "uiItemBoolO");
+  api_ui_item_op_common(fn);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in operator");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(
+      fn, "value", false, "", "Value of the prop to call the op with");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "operator_int", "uiItemIntO");
-  api_ui_item_op_common(func);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "op_int", "uiItemIntO");
+  api_ui_item_op_common(fn);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in operator");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn,
                      "value",
                      0,
                      INT_MIN,
@@ -1223,9 +1223,9 @@ void api_api_ui_layout(ApiStruct *sapu)
                      "Value of the property to call the operator with",
                      INT_MIN,
                      INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "operator_float", "uiItemFloatO");
+  fn = api_def_fn(srna, "operator_float", "uiItemFloatO");
   api_ui_item_op_common(func);
   parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in operator");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
