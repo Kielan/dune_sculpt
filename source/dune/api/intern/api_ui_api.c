@@ -45,20 +45,19 @@ const char *api_translate_ui_text(
   /* Else, if an api type or prop is specified, use its context. */
 #  if 0
   /* XXX Disabled for now. Unfortunately, their is absolutely no way from py code to get the RNA
-   *     struct corresponding to the 'data' (in functions like prop() & co),
+   *     struct corresponding to the 'data' (in fns like prop() & co),
    *     as this is pure runtime data. Hence, messages extraction script can't determine the
-   *     correct context it should use for such 'text' messages...
-   *     So for now, one have to explicitly specify the 'text_ctxt' when using prop() etc.
-   *     functions, if default context is not suitable.
-   */
+   *     correct cxt it should use for such 'text' messages...
+   *     So for now, one have to explicitly specify the 'text_cxt' when using prop() etc.
+   *     functions, if default context is not suitable.  */
   if (prop) {
-    return lang_pgettext(api_prop_translation_ctx(prop), text);
+    return lang_pgettext(api_prop_translation_cxt(prop), text);
   }
 #  else
   (void)prop;
 #  endif
   if (type) {
-    return lang_pgettext(api_struct_translation_ctx(type), text);
+    return lang_pgettext(api_struct_translation_cxt(type), text);
   }
 
   /* Else, default context! */
@@ -96,7 +95,7 @@ static void api_uiItemR(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
   flag |= (slider) ? UI_ITEM_R_SLIDER : 0;
   flag |= (expand) ? UI_ITEM_R_EXPAND : 0;
@@ -220,7 +219,7 @@ static void api_uiItemTabsEnumR(uiLayout *layout,
   if (!api_ptr_is_null(ptr_highlight)) {
     prop_highlight = api_struct_find_prop(ptr_highlight, propname_highlight);
     if (!prop_highlight) {
-      api_warning("property not found: %s.%s",
+      api_warning("prop not found: %s.%s",
                   api_struct_id(ptr_highlight->type),
                   propname_highlight);
       return;
@@ -322,7 +321,7 @@ static ApiPtr api_uiItemO(uiLayout *layout,
   flag |= (depress) ? UI_ITEM_O_DEPRESS : 0;
 
   ApiPtr opptr;
-  uiItemFullO_ptr(layout, ot, name, icon, NULL, uiLayoutGetOperatorContext(layout), flag, &opptr);
+  uiItemFullO_ptr(layout, ot, name, icon, NULL, uiLayoutGetOpCxt(layout), flag, &opptr);
   return opptr;
 }
 
@@ -344,7 +343,7 @@ static ApiPtr api_uiItemOMenuHold(uiLayout *layout,
   }
 
   /* Get translated name (label). */
-  name = api_translate_ui_text(name, text_ctxt, ot->sapi, NULL, translate);
+  name = api_translate_ui_text(name, text_cxt, ot->sapi, NULL, translate);
   if (icon_value && !icon) {
     icon = icon_value;
   }
@@ -496,14 +495,14 @@ static void api_uiTemplateAnyId(uiLayout *layout,
   ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    api_warning("prop not found: %s.%s", api_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   /* Get translated name (label). */
   name = api_translate_ui_text(name, text_cxt, NULL, prop, translate);
 
-  /* XXX This will search property again :( */
+  /* XXX This will search prop again :( */
   uiTemplateAnyId(layout, ptr, propname, proptypename, name);
 }
 
@@ -804,7 +803,7 @@ static int api_ui_get_enum_icon(Cxt *C,
   prop = api_struct_find_prop(ptr, propname);
   if (!prop || (api_prop_type(prop) != PROP_ENUM)) {
     api_warning(
-        "Property not found or not an enum: %s.%s", api_struct_identifier(ptr->type), propname);
+        "Prop not found or not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return icon;
   }
 
@@ -840,7 +839,7 @@ static void api_ui_item_common_heading(FunctionRNA *func)
                  "",
                  "Override automatic translation context of the given heading");
   api_def_bool(
-      fn, "translate", true, "", "Translate the given heading, when UI translation is enabled");
+      fn, "translate", true, "", "Translate the given heading, when ui translation is enabled");
 }
 
 static void api_ui_item_common_text(ApiFn *fn)
@@ -850,10 +849,10 @@ static void api_ui_item_common_text(ApiFn *fn)
   prop = api_def_string(fn, "text", NULL, 0, "", "Override automatic text of the item");
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL);
   prop = api_def_string(
-      fn, "text_ctxt", NULL, 0, "", "Override automatic translation context of the given text");
+      fn, "text_ctxt", NULL, 0, "", "Override automatic translation cxt of the given text");
   api_def_prop_clear_flag(prop, PROP_NEVER_NULL);
   api_def_bool(
-      fn, "translate", true, "", "Translate the given text, when UI translation is enabled");
+      fn, "translate", true, "", "Translate the given text, when ui translation is enabled");
 }
 
 static void api_ui_item_common(ApiFn *fn)
@@ -1118,7 +1117,7 @@ void api_api_ui_layout(ApiStruct *sapi)
       fn, "data_highlight", "AnyType", "", "Data from which to take highlight prop");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   parm = api_def_string(
-      fn, "prop_highlight", NULL, 0, "", "Identifier of highlight prop in data");
+      fn, "prop_highlight", NULL, 0, "", "Id of highlight prop in data");
   api_def_bool(fn, "icon_only", false, "", "Draw only icons in tabs, no text");
 
   fn = api_def_fn(sapi, "prop_enum", "api_uiItemEnumR_string");
@@ -1154,8 +1153,8 @@ void api_api_ui_layout(ApiStruct *sapi)
               INT_MAX);
 
   for (int is_menu_hold = 0; is_menu_hold < 2; is_menu_hold++) {
-    func = (is_menu_hold) ? api_def_fn(sapi, "op_menu_hold", "api_uiItemOMenuHold") :
-                            api_def_fn(sapi, "op", "api_uiItemO");
+    fn = (is_menu_hold) ? api_def_fn(sapi, "op_menu_hold", "api_uiItemOMenuHold") :
+                        api_def_fn(sapi, "op", "api_uiItemO");
     api_ui_item_op_common(fn);
     api_def_bool(fn, "emboss", true, "", "Draw the button itself, not just the icon/text");
     api_def_bool(fn, "depress", false, "", "Draw pressed in");
@@ -1224,7 +1223,7 @@ void api_api_ui_layout(ApiStruct *sapi)
                      INT_MAX);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  fn = api_def_fn(srna, "op_float", "uiItemFloatO");
+  fn = api_def_fn(sapi, "op_float", "uiItemFloatO");
   api_ui_item_op_common(fn);
   parm = api_def_string(fn, "prop", NULL, 0, "", "Identifier of property in operator");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -1315,11 +1314,11 @@ void api_api_ui_layout(ApiStruct *sapi)
 
   fn = api_def_fn(sapi, "template_ID", "api_uiTemplateID");
   api_def_fn_flag(fn, FN_USE_CXT);
-  api_ui_item_rna_common(fn);
-  api_def_string(fn, "new", NULL, 0, "", "Operator identifier to create a new ID block");
+  api_ui_item_api_common(fn);
+  api_def_string(fn, "new", NULL, 0, "", "Op id to create a new Id block");
   api_def_string(
-      func, "open", NULL, 0, "", "Operator identifier to open a file for creating a new ID block");
-  api_def_string(fn, "unlink", NULL, 0, "", "Operator identifier to unlink the ID block");
+      fn, "open", NULL, 0, "", "Op id to open a file for creating a new Id block");
+  api_def_string(fn, "unlink", NULL, 0, "", "Op id to unlink the Id block");
   api_def_enum(fn,
                "filter",
                id_template_filter_items,
@@ -1329,13 +1328,13 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_bool(fn, "live_icon", false, "", "Show preview instead of fixed icon");
   api_ui_item_common_text(fn);
 
-  fn = api_def_fn(sapi, "template_id_preview", "uiTemplateIDPreview");
+  fn = api_def_fn(sapi, "template_id_preview", "uiTemplateIdPreview");
   api_def_fn_flag(fn, FN_USE_CXT);
   api_ui_item_api_common(fn);
-  api_def_string(fn, "new", NULL, 0, "", "Op id to create a new ID block");
+  api_def_string(fn, "new", NULL, 0, "", "Op id to create a new Id block");
   api_def_string(
-      fn, "open", NULL, 0, "", "Op id to open a file for creating a new ID block");
-  api_def_string(fn, "unlink", NULL, 0, "", "Op id to unlink the ID block");
+      fn, "open", NULL, 0, "", "Op id to open a file for creating a new Id block");
+  api_def_string(fn, "unlink", NULL, 0, "", "Op id to unlink the Id block");
   api_def_int(
       fn, "rows", 0, 0, INT_MAX, "Number of thumbnail preview rows to display", "", 0, INT_MAX);
   api_def_int(fn,
@@ -1365,15 +1364,15 @@ void api_api_ui_layout(ApiStruct *sapi)
                         NULL,
                         0,
                         "",
-                        "Identifier of property in data giving the type of the ID-blocks to use");
+                        "Identifier of prop in data giving the type of the ID-blocks to use");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_ui_item_common_text(fn);
 
   fn = api_def_fn(sapi, "template_id_tabs", "uiTemplateIdTabs");
   api_def_fn_flag(fn, FN_USE_CXT);
   api_ui_item_api_common(fn);
-  api_def_string(fn, "new", NULL, 0, "", "Operator identifier to create a new ID block");
-  api_def_string(fn, "menu", NULL, 0, "", "Context menu id");
+  api_def_string(fn, "new", NULL, 0, "", "Op id to create a new Id block");
+  api_def_string(fn, "menu", NULL, 0, "", "Cxt menu id");
   api_def_enum(fn,
                "filter",
                id_template_filter_items,
@@ -1385,10 +1384,10 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_fn_flag(fn, FN_USE_CXT);
   api_ui_item_api_common(fn);
   parm = api_def_ptr(
-      func, "search_data", "AnyType", "", "Data from which to take collection to search in");
+      fn, "search_data", "AnyType", "", "Data from which to take collection to search in");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(
-      func, "search_prop", NULL, 0, "", "Id of search collection prop");
+      fn, "search_prop", NULL, 0, "", "Id of search collection prop");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_string(
       fn, "new", NULL, 0, "", "Op id to create a new item for the collection");
@@ -1435,7 +1434,7 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(fn, "prop", NULL, 0, "", "Id of property in data");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = api_def_ptr(fn, "root", "ID", "", "ID-block from which path is evaluated from");
+  parm = api_def_ptr(fn, "root", "Id", "", "ID-block from which path is evaluated from");
   api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
   api_ui_item_common_text(fn);
 
@@ -1452,9 +1451,9 @@ void api_api_ui_layout(ApiStruct *sapi)
                "",
                "Add panels for bone constraints instead of object constraints");
 
-  fn = api_def_fn(sapi, "template_grease_pencil_modifiers", "uiTemplatePenMod");
+  fn = api_def_fn(sapi, "template_pen_mod", "uiTemplatePenMod");
   api_def_fn_flag(fn, FN_USE_CXT);
-  api_def_fn_ui_description(fn, "Generates the panels for the pen modifier stack");
+  api_def_fn_ui_description(fn, "Generates the panels for the pen mod stack");
 
   fn = api_def_function(sapi, "template_shaderfx", "uiTemplateShaderFx");
   api_def_fn_flag(fn, FN_USE_CXT);
@@ -1474,21 +1473,21 @@ void api_api_ui_layout(ApiStruct *sapi)
               "",
               0,
               INT_MAX);
-  RNA_def_float(func, "scale", 1.0f, 0.1f, 1.5f, "Scale of the image thumbnails", "", 0.5f, 1.0f);
-  RNA_def_enum(func,
+  api_def_float(fn, "scale", 1.0f, 0.1f, 1.5f, "Scale of the image thumbnails", "", 0.5f, 1.0f);
+  api_def_enum(fn,
                "filter",
                id_template_filter_items,
                UI_TEMPLATE_ID_FILTER_ALL,
                "",
                "Optionally limit the items which can be selected");
 
-  func = RNA_def_function(srna, "template_constraint_header", "uiTemplateConstraintHeader");
-  RNA_def_function_ui_description(func, "Generates the header for constraint panels");
+  fn = api_def_fn(sapi, "template_constraint_header", "uiTemplateConstraintHeader");
+  api_def_fn_ui_description(fn, "Generates the header for constraint panels");
   parm = api_def_ptr(fn, "data", "Constraint", "", "Constraint data");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
   fn = api_def_fn(sapi, "template_preview", "uiTemplatePreview");
-  RNA_def_n_ui_description(
+  api_def_n_ui_description(
       fn, "Item. A preview window for materials, textures, lights or worlds");
   api_def_fn_flag(fn, FN_USE_CXT);
   parm = api_def_ptr(fn, "id", "Id", "", "Id data-block");
@@ -1588,7 +1587,7 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_fn_ui_description(fn, "Item. A color wheel widget to pick colors");
   api_ui_item_api_common(fn);
   api_def_bool(
-      func, "value_slider", false, "", "Display the value slider to the right of the color wheel");
+      fn, "value_slider", false, "", "Display the value slider to the right of the color wheel");
   api_def_bool(fn,
                "lock",
                false,
@@ -1666,10 +1665,10 @@ void api_api_ui_layout(ApiStruct *sapi)
   fn = api_def_fn(sapi, "template_list", "api_uiTemplateList");
   api_def_fn_ui_description(fn, "Item. A list widget to display data, e.g. vertexgroups.");
   api_def_fn_flag(fn, FN_USE_CXT);
-  parm = api_def_string(fn, "listtype_name", NULL, 0, "", "Identifier of the list type to use");
+  parm = api_def_string(fn, "listtype_name", NULL, 0, "", "Id of the list type to use");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_string(
-      func,
+      fn,
       "list_id",
       NULL,
       0,
@@ -1758,7 +1757,7 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_fn_flag(fn, FN_USE_CXT);
 
   fn = api_def_fn(sapi, "template_node_link", "uiTemplateNodeLink");
-  api_def_function_flag(fn, FN_USE_CXT);
+  api_def_fn_flag(fn, FN_USE_CXT);
   parm = api_def_ptr(fn, "ntree", "NodeTree", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "node", "Node", "", "");
@@ -1823,7 +1822,7 @@ void api_api_ui_layout(ApiStruct *sapi)
   fn = api_def_fn(sapi, "template_cache_file", "api_uiTemplateCacheFile");
   api_def_fn_ui_description(
       fn, "Item(s). User interface for selecting cache files and their source paths");
-  api_def_fn_flag(f, FN_USE_CXT);
+  api_def_fn_flag(fn, FN_USE_CXT);
   api_ui_item_api_common(fn);
 
   fn = api_def_fn(sapi, "template_cache_file_velocity", "api_uiTemplateCacheFileVelocity");
@@ -1847,31 +1846,30 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_ui_item_api_common(fn);
 
   fn = api_def_fn(sapi, "template_recent_files", "uiTemplateRecentFiles");
-  api_def_fn_ui_description(func, "Show list of recently saved .dune files");
+  api_def_fn_ui_description(fn, "Show list of recently saved .dune files");
   api_def_int(fn, "rows", 5, 1, INT_MAX, "", "Maximum number of items to show", 1, INT_MAX);
   parm = api_def_int(fn, "found", 0, 0, INT_MAX, "", "Number of items drawn", 0, INT_MAX);
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "template_file_select_path", "uiTemplateFileSelectPath");
-  api_def_fn_ui_description(func,
-                                  "Item. A text button to set the active file browser path.");
+  api_def_fn_ui_description(fn, "Item. A text button to set the active file browser path.");
   parm = api_def_ptr(fn, "params", "FileSelectParams", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_fn_flag(fn, FN_USE_CXT);
 
   fn = api_def_fn(
-      sapi, "template_event_from_keymap_item", "rna_uiTemplateEventFromKeymapItem");
+      sapi, "template_event_from_keymap_item", "api_uiTemplateEventFromKeymapItem");
   api_def_fn_ui_description(fn, "Display keymap item as icons/text");
   parm = api_def_prop(fn, "item", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(parm, "KeyMapItem");
   api_def_prop_ui_text(parm, "Item", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  api_ui_item_common_text(func);
+  api_ui_item_common_text(fn);
 
-  func = api_def_fn(sapi, "template_asset_view", "rna_uiTemplateAssetView");
+  fn = api_def_fn(sapi, "template_asset_view", "api_uiTemplateAssetView");
   api_def_fn_ui_description(fn, "Item. A scrollable list of assets in a grid view");
-  api_def_fn_flag(func, FN_USE_CXT);
-  parm = api_def_string(func,
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_string(fn,
                         "list_id",
                         NULL,
                         0,
@@ -1884,13 +1882,13 @@ void api_api_ui_layout(ApiStruct *sapi)
                      "AnyType",
                      "",
                      "Data from which to take the active asset lib prop");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(
       fn, "asset_lib_propname", NULL, 0, "", "Id of the asset lib prop");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(
       fn, "assets_dataptr", "AnyType", "", "Data from which to take the asset list property");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(
       fn, "assets_propname", NULL, 0, "", "Identifier of the asset list property");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -1899,9 +1897,9 @@ void api_api_ui_layout(ApiStruct *sapi)
                      "AnyType",
                      "",
                      "Data from which to take the integer prop, index of the active item");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(
-      func,
+      fn,
       "active_propname",
       NULL,
       0,
@@ -1910,7 +1908,7 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_prop(fn, "filter_id_types", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(parm, DummyApi_NULL_items);
-  apu_def_prop_enum_funcs(parm, NULL, NULL, "api_uiTemplateAssetView_filter_id_types_itemf");
+  apu_def_prop_enum_fns(parm, NULL, NULL, "api_uiTemplateAssetView_filter_id_types_itemf");
   api_def_prop_flag(parm, PROP_ENUM_FLAG);
   api_def_enum_flag(fn,
                     "display_options",
@@ -1930,7 +1928,7 @@ void api_api_ui_layout(ApiStruct *sapi)
       "OpProps",
       "",
       "Op props to fill in for the custom activate operator passed to the template");
-  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_param_flags(parm, 0, PARM_APIPTR);
   api_def_fn_output(fn, parm);
   apu_def_string(fn,
                  "drag_op",
@@ -1946,7 +1944,7 @@ void api_api_ui_layout(ApiStruct *sapi)
       "OpProps",
       "",
       "Op props to fill in for the custom drag op passed to the template");
-  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_param_flags(parm, 0, PARM_APIPTR);
   api_def_fn_output(fn, parm);
 }
 
