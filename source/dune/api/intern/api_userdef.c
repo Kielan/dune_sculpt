@@ -1589,7 +1589,7 @@ static void api_def_userdef_theme_ui(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "widget_text_cursor", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_property_float_sapi(prop, NULL, "widget_text_cursor");
+  api_def_prop_float_sapi(prop, NULL, "widget_text_cursor");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text Cursor", "Color of the text insertion cursor (caret)");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1701,7 +1701,7 @@ static void api_def_userdef_theme_ui(DuneApi *dapi)
   prop = api_def_prop(sapi, "icon_object_data", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "icon_object_data");
   api_def_prop_array(prop, 4);
-  api_def_prop_ui_text(prop, "Object Data", ""
+  api_def_prop_ui_text(prop, "Object Data", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_mod", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -1772,7 +1772,7 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* buttons */
-  // if (!ELEM(spacetype, SPACE_PROPERTIES, SPACE_OUTLINER)) {
+  // if (!ELEM(spacetype, SPACE_PROPS, SPACE_OUTLINER)) {
   prop = api_def_prop(sapi, "btn", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Region Background", "");
@@ -1798,7 +1798,7 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Navigation Bar Background", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapo, "execution_btns", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "execution_btns", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Execution Region Background", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1955,9 +1955,9 @@ static void api_def_userdef_theme_spaces_vertex(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Vertex Bevel", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "vertex_unreferenced", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "vertex_unrefd", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
-  api_def_prop_ui_text(prop, "Vertex Group Unreferenced", "");
+  api_def_prop_ui_text(prop, "Vertex Group Unrefd", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
@@ -2217,11 +2217,11 @@ static void api_def_userdef_theme_space_view3d(DuneApi *dapi)
 
   /* space_view3d */
   sapi = api_def_struct(dapi, "ThemeView3D", NULL);
-  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme 3D Viewport", "Theme settings for the 3D viewport");
 
-  api_def_userdef_theme_spaces_gradient(srna);
+  api_def_userdef_theme_spaces_gradient(sapi);
 
   /* General Viewport options */
   prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -2276,8 +2276,8 @@ static void api_def_userdef_theme_space_view3d(DuneApi *dapi)
   prop = api_prop(sapi"text_keyframe", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "time_keyframe");
   apif_prop_array(prop, 3);
-  apif_prop_ui_text(prop, "Object Keyframe", "Color for indicating object keyframes");
-  apif_prop_update(prop, 0, "api_userdef_theme_update");
+  api_prop_ui_text(prop, "Object Keyframe", "Color for indicating object keyframes");
+  api_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Object type options */
   prop = api_def_prop(sapi, "camera", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -2339,7 +2339,7 @@ static void api_def_userdef_theme_space_view3d(DuneApi *dapi)
   prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Face Normal", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "vertex_normal", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
@@ -2796,7 +2796,7 @@ static void api_def_userdef_theme_space_text(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "syntax_special", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "syntaxv");
+  api_def_prop_float_stype(prop, NULL, "syntaxv");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Syntax Special", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -2839,9 +2839,9 @@ static void api_def_userdef_theme_space_node(DuneApi *dapi)
 
   /* space_node */
   sapi = api_def_struct(dapi, "ThemeNodeEditor", NULL);
-  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
-  api_def_struct_ui_text(srna, "Theme Node Editor", "Theme settings for the Node Editor");
+  api_def_struct_ui_text(sapi, "Theme Node Editor", "Theme settings for the Node Editor");
 
   api_def_userdef_theme_spaces_main(sapi);
   api_def_userdef_theme_spaces_list_main(sapi);
@@ -2975,124 +2975,122 @@ static void api_def_userdef_theme_space_node(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "vector_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_property_float_stype(prop, NULL, "nodeclass_vector");
-  api_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Vector Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_float_stype(prop, NULL, "nodeclass_vector");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Vector Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "texture_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_texture");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Texture Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "texture_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_texture");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Texture Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "shader_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_shader");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Shader Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "shader_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_shader");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Shader Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "script_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_script");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Script Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "script_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_script");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Script Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "pattern_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_pattern");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Pattern Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "pattern_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_pattern");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Pattern Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "layout_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_layout");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Layout Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "layout_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_layout");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Layout Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "geometry_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_geometry");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Geometry Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "geometry_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_geometry");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Geometry Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "attribute_node", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nodeclass_attribute");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Attribute Node", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "attribute_node", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nodeclass_attribute");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Attribute Node", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "simulation_zone", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "node_zone_simulation");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Simulation Zone", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "simulation_zone", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "node_zone_simulation");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Simulation Zone", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_buts(BlenderRNA *brna)
+static void api_def_userdef_theme_space_btns(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_buts */
+  sapi = api_def_struct(dapi, "ThemeProps", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Props", "Theme settings for the Properties");
 
-  srna = RNA_def_struct(brna, "ThemeProperties", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Properties", "Theme settings for the Properties");
+  prop = api_def_prop(sapi, "match", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Search Match", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "match", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Search Match", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "active_mod", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "active");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Active Mod Outline", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "active_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "active");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Active Modifier Outline", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  rna_def_userdef_theme_spaces_main(srna);
+  api_def_userdef_theme_spaces_main(sapi);
 }
 
-static void rna_def_userdef_theme_space_image(BlenderRNA *brna)
+static void api_def_userdef_theme_space_image(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_image */
+  sapi = api_def_struct(dapi, "ThemeImageEditor", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Image Editor", "Theme settings for the Image Editor");
 
-  srna = RNA_def_struct(brna, "ThemeImageEditor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Image Editor", "Theme settings for the Image Editor");
+  api_def_userdef_theme_spaces_main(sapi);
 
-  rna_def_userdef_theme_spaces_main(srna);
+  prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Grid", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Grid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_userdef_theme_spaces_vertex(sapi);
+  api_def_userdef_theme_spaces_face(sapi);
 
-  rna_def_userdef_theme_spaces_vertex(srna);
-  rna_def_userdef_theme_spaces_face(srna);
+  prop = api_def_prop(sapi, "editmesh_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Active Vertex/Edge/Face", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "editmesh_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Active Vertex/Edge/Face", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wire_edit", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Wire Edit", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wire_edit", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Wire Edit", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "edge_width", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 32);
+  api_def_prop_ui_text(prop, "Edge Width", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "edge_width", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 32);
-  RNA_def_property_ui_text(prop, "Edge Width", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "edge_select", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(srna, "edge_select", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Edge Select", "");
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
