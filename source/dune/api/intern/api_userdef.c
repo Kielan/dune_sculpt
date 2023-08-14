@@ -884,7 +884,7 @@ static ApiStruct *api_AddonPref_register(Main *main,
   /* Check if we have registered this add-on preference type before, and remove it. */
   apt = dune_addon_pref_type_find(dummy_addon.module, true);
   if (apt) {
-    ApiStruct *sapi = apt->api_ext.srna;
+    ApiStruct *sapi = apt->api_ext.sapi;
     if (!(sapi && api_AddonPref_unregister(main, sapi))) {
       dune_reportf(reports,
                   RPT_ERROR,
@@ -2436,7 +2436,7 @@ static void api_def_userdef_theme_space_graph(DuneApi *dapi)
   ApiProp *prop;
 
   /* space_graph */
-  srna = api_def_struct(dapi, "ThemeGraphEditor", NULL);
+  sapi = api_def_struct(dapi, "ThemeGraphEditor", NULL);
   api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme Graph Editor", "Theme settings for the graph editor");
@@ -3091,41 +3091,41 @@ static void api_def_userdef_theme_space_image(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "edge_select", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
+  RNA_def_prop(prop, 3);
   RNA_def_property_ui_text(prop, "Edge Select", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "scope_back", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "preview_back");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Scope Region Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = RNA_def_prop(sapi, "scope_back", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "preview_back");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Scope Region Background", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_stitch_face", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "preview_stitch_face");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Stitch Preview Face", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "preview_stitch_face", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "preview_stitch_face");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Stitch Preview Face", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_stitch_edge", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "preview_stitch_edge");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Stitch Preview Edge", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = RNA_def_prop(sapi, "preview_stitch_edge", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_float_stype(prop, NULL, "preview_stitch_edge");
+  RNA_def_prop_array(prop, 4);
+  RNA_def_prop_ui_text(prop, "Stitch Preview Edge", "");
+  RNA_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_stitch_vert", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "preview_stitch_vert");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Stitch Preview Vertex", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = RNA_def_prop(sapi, "preview_stitch_vert", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_float_sdna(prop, NULL, "preview_stitch_vert");
+  RNA_def_prop_array(prop, 4);
+  RNA_def_prop_ui_text(prop, "Stitch Preview Vertex", "");
+  RNA_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_stitch_stitchable", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = RNA_def_prop(sapi, "preview_stitch_stitchable", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "preview_stitch_stitchable");
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Stitch Preview Stitchable", "");
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_stitch_unstitchable", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = RNA_def_prop(srna, "preview_stitch_unstitchable", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "preview_stitch_unstitchable");
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Stitch Preview Unstitchable", "");
