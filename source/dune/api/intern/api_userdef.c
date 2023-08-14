@@ -180,7 +180,7 @@ static const EnumPropItem api_enum_pref_gpu_backend_items[] = {
 #    include "sdlew.h"
 #  endif
 
-static void api_userdef_version_get(PointerRNA *ptr, int *value)
+static void api_userdef_version_get(ApiPtr *ptr, int *value)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   value[0] = userdef->versionfile / 100;
@@ -189,7 +189,7 @@ static void api_userdef_version_get(PointerRNA *ptr, int *value)
 }
 
 /** Mark the preferences as being changed so they are saved on exit. */
-#  define USERDEF_TAG_DIRTY rna_userdef_is_dirty_update_impl()
+#  define USERDEF_TAG_DIRTY api_userdef_is_dirty_update_impl()
 
 void api_userdef_is_dirty_update_impl(void)
 {
@@ -201,29 +201,29 @@ void api_userdef_is_dirty_update_impl(void)
   }
 }
 
-void api_userdef_is_dirty_update(Main *UNUSED(bmain),
+void api_userdef_is_dirty_update(Main *UNUSED(main),
                                  Scene *UNUSED(scene),
-                                 PointerRNA *UNUSED(ptr))
+                                 ApiPtr *UNUSED(ptr))
 {
   /* WARNING: never use 'ptr' unless its type is checked. */
   api_userdef_is_dirty_update_impl();
 }
 
 /** Take care not to use this if we expect 'is_dirty' to be tagged. */
-static void api_userdef_ui_update(Main *UNUSED(bmain),
+static void api_userdef_ui_update(Main *UNUSED(main),
                                   Scene *UNUSED(scene),
-                                  PointerRNA *UNUSED(ptr))
+                                  ApiPtr *UNUSED(ptr))
 {
   wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-static void api_userdef_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
+static void api_userdef_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *UNUSED(ptr))
 {
   wm_main_add_notifier(NC_WINDOW, NULL);
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_theme_update(Main *main, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   /* Recreate gizmos when changing themes. */
   wm_reinit_gizmomap_all(main);
@@ -231,33 +231,33 @@ static void api_userdef_theme_update(Main *main, Scene *scene, PointerRNA *ptr)
   api_userdef_update(main, scene, ptr);
 }
 
-static void api_userdef_theme_text_style_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_text_style_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   const uiStyle *style = UI_style_get();
   BLF_default_size(style->widgetlabel.points);
 
-  api_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-static void api_userdef_gizmo_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_gizmo_update(Main *bmain, Scene *scene, ApiPtr *ptr)
 {
-  wm_reinit_gizmomap_all(bmain);
+  wm_reinit_gizmomap_all(main);
 
-  api_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-static void api_userdef_theme_update_icons(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_update_icons(Main *main, Scene *scene, ApiPtr *ptr)
 {
   if (!G.background) {
     ui_icons_reload_internal_textures();
   }
-  api_userdef_theme_update(bmain, scene, ptr);
+  api_userdef_theme_update(main, scene, ptr);
 }
 
 /* also used by buffer swap switching */
-static void api_userdef_dpi_update(Main *UNUSED(bmain),
+static void api_userdef_dpi_update(Main *UNUSED(main),
                                    Scene *UNUSED(scene),
-                                   PointerRNA *UNUSED(ptr))
+                                   ApiPtr *UNUSED(ptr))
 {
   /* font's are stored at each DPI level, without this we can easy load 100's of fonts */
   BLF_cache_clear();
@@ -267,29 +267,29 @@ static void api_userdef_dpi_update(Main *UNUSED(bmain),
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_screen_update(Main *UNUSED(bmain),
+static void api_userdef_screen_update(Main *UNUSED(main),
                                       Scene *UNUSED(scene),
-                                      PointerRNA *UNUSED(ptr))
+                                      ApiPtr *UNUSED(ptr))
 {
   wm_main_add_notifier(NC_WINDOW, NULL);
   wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL); /* refresh region sizes */
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_screen_update_header_default(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_screen_update_header_default(Main *main, Scene *scene, ApiPtr *ptr)
 {
   if (U.uiflag & USER_HEADER_FROM_PREF) {
     for (Screen *screen = main->screens.first; screen; screen = screen->id.next) {
       dune_screen_header_alignment_reset(screen);
     }
-    api_userdef_screen_update(bmain, scene, ptr);
+    api_userdef_screen_update(main, scene, ptr);
   }
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_font_update(Main *UNUSED(bmain),
+static void api_userdef_font_update(Main *UNUSED(main),
                                     Scene *UNUSED(scene),
-                                    PointerRNA *UNUSED(ptr))
+                                    ApiPtr *UNUSED(ptr))
 {
   BLF_cache_clear();
   ui_reinit_font();
@@ -304,21 +304,20 @@ static void api_userdef_lang_update(Main *UNUSED(main),
   const char *uilng = lang_get();
   if (STREQ(uilng, "en_US")) {
     U.transopts &= ~(USER_TR_IFACE | USER_TR_TOOLTIPS | USER_TR_NEWDATANAME);
-  }
-  else {
+  } else {
     U.transopts |= (USER_TR_IFACE | USER_TR_TOOLTIPS | USER_TR_NEWDATANAME);
   }
 
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_asset_lib_name_set(PointerRNA *ptr, const char *value)
+static void api_userdef_asset_lib_name_set(ApiPtr *ptr, const char *value)
 {
   UserAssetLib *lib = (UserAssetLib *)ptr->data;
-  dune_pref_asset_lib_name_set(&U, library, value);
+  dune_pref_asset_lib_name_set(&U, lib, value);
 }
 
-static void api_userdef_asset_lib_path_set(PointerRNA *ptr, const char *value)
+static void api_userdef_asset_lib_path_set(ApiPtr *ptr, const char *value)
 {
   UserAssetLib *lib = UserAssetLib *)ptr->data;
   dune_pref_asset_lib_path_set(lib, value);
@@ -331,8 +330,7 @@ static void api_userdef_script_autoexec_update(Main *UNUSED(main),
   UserDef *userdef = (UserDef *)ptr->data;
   if (userdef->flag & USER_SCRIPT_AUTOEX_DISABLE) {
     G.f &= ~G_FLAG_SCRIPT_AUTOEX;
-  }
-  else {
+  } else {
     G.f |= G_FLAG_SCRIPT_AUTOEX;
   }
 
@@ -385,20 +383,19 @@ static void api_userdef_script_dir_remove(ReportList *reports, ApiPtr *ptr)
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_load_ui_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPointerRNA *ptr)
+static void api_userdef_load_ui_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   if (userdef->flag & USER_FILENOUI) {
     G.fileflags |= G_FILE_NO_UI;
-  }
-  else {
+  } else {
     G.fileflags &= ~G_FILE_NO_UI;
   }
 
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA *ptr)
+static void api_userdef_anisotropic_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   gpu_samplers_update();
   api_userdef_update(main, scene, ptr);
@@ -437,8 +434,7 @@ static void api_userdef_autokeymode_set(ApiPtr *ptr, int value)
   if (value == AUTOKEY_MODE_NORMAL) {
     userdef->autokey_mode |= (AUTOKEY_MODE_NORMAL - AUTOKEY_ON);
     userdef->autokey_mode &= ~(AUTOKEY_MODE_EDITKEYS - AUTOKEY_ON);
-  }
-  else if (value == AUTOKEY_MODE_EDITKEYS) {
+  } else if (value == AUTOKEY_MODE_EDITKEYS) {
     userdef->autokey_mode |= (AUTOKEY_MODE_EDITKEYS - AUTOKEY_ON);
     userdef->autokey_mode &= ~(AUTOKEY_MODE_NORMAL - AUTOKEY_ON);
   }
@@ -455,7 +451,7 @@ static void api_userdef_anim_update(Main *UNUSED(main),
 
 static void api_userdef_input_devices(Main *UNUSED(main),
                                       Scene *UNUSED(scene),
-                                      PointerRNA *UNUSED(ptr))
+                                      ApiPtr *UNUSED(ptr))
 {
   wm_init_input_devices();
   USERDEF_TAG_DIRTY;
@@ -526,10 +522,10 @@ static int api_UserDef_mouse_emulate_3_btn_mod_get(ApiPtr *ptr)
 #  endif
 }
 
-static const EnumPropItem *api_UseDef_active_section_itemf(Ctx *UNUSED(C),
+static const EnumPropItem *api_UseDef_active_section_itemf(Cxt *UNUSED(C),
                                                            ApiPtr *ptr,
-                                                               PropertyRNA *UNUSED(prop),
-                                                               bool *r_free)
+                                                           ApiProp *UNUSED(prop),
+                                                           bool *r_free)
 {
   UserDef *userdef = ptr->data;
 
@@ -541,7 +537,7 @@ static const EnumPropItem *api_UseDef_active_section_itemf(Ctx *UNUSED(C),
   EnumPropItem *items = NULL;
   int totitem = 0;
 
-  for (const EnumPropItem *it = api_enum_pref_section_items; it->identifier != NULL;
+  for (const EnumPropItem *it = api_enum_pref_section_items; it->id != NULL;
        it++) {
     if (it->value == USER_SECTION_EXPERIMENTAL) {
       continue;
@@ -549,7 +545,7 @@ static const EnumPropItem *api_UseDef_active_section_itemf(Ctx *UNUSED(C),
     api_enum_item_add(&items, &totitem, it);
   }
 
-  apu_enum_item_end(&items, &totitem);
+  api_enum_item_end(&items, &totitem);
 
   *r_free = true;
   return items;
@@ -618,20 +614,20 @@ static void api_Userdef_memcache_update(Main *UNUSED(main),
   USERDEF_TAG_DIRTY;
 }
 
-static void api_Userdef_disk_cache_dir_update(Main *UNUSED(bmain),
+static void api_Userdef_disk_cache_dir_update(Main *UNUSED(main),
                                               Scene *UNUSED(scene),
-                                              PointerRNA *UNUSED(ptr))
+                                              ApiPtr *UNUSED(ptr))
 {
-  if (U.sequencer_disk_cache_dir[0] != '\0') {
-    lib_path_abs(U.sequencer_disk_cache_dir, BKE_main_blendfile_path_from_global());
-    lib_path_slash_ensure(U.sequencer_disk_cache_dir, sizeof(U.sequencer_disk_cache_dir));
-    lib_path_make_safe(U.sequencer_disk_cache_dir);
+  if (U.seq_disk_cache_dir[0] != '\0') {
+    lib_path_abs(U.seq_disk_cache_dir, dune_main_dunefile_path_from_global());
+    lib_path_slash_ensure(U.seq_disk_cache_dir, sizeof(U.seq_disk_cache_dir));
+    lib_path_make_safe(U.seq_disk_cache_dir);
   }
 
   USERDEF_TAG_DIRTY;
 }
 
-static void api_UserDef_weight_color_update(Main *main, Scene *scene, PointerRNA *ptr)
+static void api_UserDef_weight_color_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob;
 
@@ -644,7 +640,7 @@ static void api_UserDef_weight_color_update(Main *main, Scene *scene, PointerRNA
   api_userdef_update(main, scene, ptr);
 }
 
-static void api_UserDef_viewport_lights_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_UserDef_viewport_lights_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   /* If all lights are off gpu_draw resets them all, see: #27627,
    * so disallow them all to be disabled. */
@@ -707,7 +703,7 @@ static PathCompare *api_userdef_pathcompare_new(void)
   return path_cmp;
 }
 
-static void api_userdef_pathcompare_remove(ReportList *reports, ApiPointer *path_cmp_ptr)
+static void api_userdef_pathcompare_remove(ReportList *reports, ApiPtr *path_cmp_ptr)
 {
   PathCompare *path_cmp = path_cmp_ptr->data;
   if (lib_findindex(&U.autoex_paths, path_cmp) == -1) {
@@ -753,12 +749,12 @@ static ApiPtr api_Theme_space_gradient_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &ApiThemeSpaceGradient, ptr->data);
 }
 
-static ApiPtr rna_Theme_space_list_generic_get(ApiPtr *ptr)
+static ApiPtr api_Theme_space_list_generic_get(ApiPtr *ptr)
 {
   return api_ptr_inherit_refine(ptr, &ApiThemeSpaceListGeneric, ptr->data);
 }
 
-static const EnumPropItem *api_userdef_audio_device_itemf(Ctx *UNUSED(C),
+static const EnumPropItem *api_userdef_audio_device_itemf(Cxt *UNUSED(C),
                                                           ApiPtr *UNUSED(ptr),
                                                           ApiProp *UNUSED(prop),
                                                           bool *r_free)
@@ -793,7 +789,7 @@ static const EnumPropItem *api_userdef_audio_device_itemf(Ctx *UNUSED(C),
 }
 
 #  ifdef WITH_INTERNATIONAL
-static const EnumPropItem *api_lang_enum_properties_itemf(Ctx *UNUSED(C),
+static const EnumPropItem *api_lang_enum_props_itemf(Cxt *UNUSED(C),
                                                           ApiPtr *UNUSED(ptr),
                                                           ApiProp *UNUSED(prop),
                                                           bool *UNUSED(r_free))
@@ -827,7 +823,7 @@ static ApiPtr api_Addon_pref_get(ApiPtr *ptr)
       IdPropTemplate val = {0};
       addon->prop = IDP_New(IDP_GROUP, &val, addon->module); /* name is unimportant. */
     }
-    return api_ptr_inherit_refine(ptr, apt->api_ext.srna, addon->prop);
+    return api_ptr_inherit_refine(ptr, apt->api_ext.sapi, addon->prop);
   }
   else {
     return ApiPtr_NULL;
@@ -860,11 +856,11 @@ static ApiStruct *api_AddonPref_register(Main *main,
                                          StructCbFn call,
                                          StructFreeFb free)
 {
-  const char *error_prefix = "Registering add-on preferences class:";
+  const char *error_prefix = "Registering add-on prefs class:";
   AddonPrefType *apt, dummy_apt = {{'\0'}};
   Addon dummy_addon = {NULL};
   ApiPtr dummy_addon_ptr;
-  // bool have_function[1];
+  // bool have_fn[1];
 
   /* Setup dummy add-on preference and it's type to store static properties in. */
   api_ptr_create(NULL, &ApiAddonPrefs, &dummy_addon, &dummy_addon_ptr);
@@ -888,15 +884,15 @@ static ApiStruct *api_AddonPref_register(Main *main,
   /* Check if we have registered this add-on preference type before, and remove it. */
   apt = dune_addon_pref_type_find(dummy_addon.module, true);
   if (apt) {
-    ApiStruct *srna = apt->api_ext.srna;
-    if (!(srna && api_AddonPref_unregister(main, srna))) {
+    ApiStruct *sapi = apt->api_ext.srna;
+    if (!(sapi && api_AddonPref_unregister(main, sapi))) {
       dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
                   id,
                   dummy_apt.idname,
-                  srna ? "is built-in" : "could not be unregistered");
+                  sapi ? "is built-in" : "could not be unregistered");
 
       return NULL;
     }
@@ -907,24 +903,23 @@ static ApiStruct *api_AddonPref_register(Main *main,
   memcpy(apt, &dummy_apt, sizeof(dummy_apt));
   dune_addon_pref_type_add(apt);
 
-  apt->api_ext.srna = api_def_struct_ptr(&DUNE_API, id, &ApiAddonPreferences);
+  apt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, id, &ApiAddonPrefs);
   apt->api_ext.data = data;
   apt->api_ext.call = call;
   apt->api_ext.free = free;
-  api_struct_dune_type_set(apt->api_ext.srna, apt);
+  api_struct_dune_type_set(apt->api_ext.sapi, apt);
 
-  //  apt->draw = (have_function[0]) ? header_draw : NULL;
-
-  /* update while blender is running */
+  //  apt->draw = (have_fn[0]) ? header_draw : NULL;
+  /* update while dune is running */
   wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return apt->api_ext.srna;
+  return apt->api_ext.sapi;
 }
 
 /* placeholder, doesn't do anything useful yet */
-static ApiStruct *api_AddonPref_refine(PointerRNA *ptr)
+static ApiStruct *api_AddonPref_refine(ApiPtr *ptr)
 {
-  return (ptr->type) ? ptr->type : &RNA_AddonPreferences;
+  return (ptr->type) ? ptr->type : &ApiAddonPrefs;
 }
 
 static float api_ThemeUI_roundness_get(ApiPtr *ptr)
@@ -944,7 +939,7 @@ static void api_ThemeUI_roundness_set(ApiPtr *ptr, float value)
 static void api_UserDef_studiolight_begin(CollectionPropIter *iter,
                                           ApiPtr *UNUSED(ptr))
 {
-  api_iter_list_begin(iter, dune_studiolight_listbase(), NULL);
+  api_iter_list_begin(iter, dune_studiolight_list(), NULL);
 }
 
 static void api_StudioLights_refresh(UserDef *UNUSED(userdef))
@@ -969,7 +964,7 @@ static StudioLight *api_StudioLights_new(UserDef *userdef, const char *filepath)
 }
 
 /* StudioLight.name */
-static void api_UserDef_studiolight_name_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_name_get(ApiPtr *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   strcpy(value, sl->name);
@@ -988,7 +983,7 @@ static void api_UserDef_studiolight_path_get(ApiPtr *ptr, char *value)
   strcpy(value, sl->filepath);
 }
 
-static int api_UserDef_studiolight_path_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_length(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return strlen(sl->filepath);
@@ -1000,8 +995,7 @@ static void api_UserDef_studiolight_path_irr_cache_get(ApiPtr *ptr, char *value)
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_irr_cache) {
     strcpy(value, sl->path_irr_cache);
-  }
-  else {
+  } else {
     value[0] = '\0';
   }
 }
@@ -1021,13 +1015,12 @@ static void api_UserDef_studiolight_path_sh_cache_get(ApiPtr *ptr, char *value)
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_sh_cache) {
     strcpy(value, sl->path_sh_cache);
-  }
-  else {
+  } else {
     value[0] = '\0';
   }
 }
 
-static int api_UserDef_studiolight_path_sh_cache_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_sh_cache_length(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_sh_cache) {
@@ -1058,7 +1051,6 @@ static bool api_UserDef_studiolight_has_specular_highlight_pass_get(ApiPtr *ptr)
 }
 
 /* StudioLight.type */
-
 static int api_UserDef_studiolight_type_get(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
@@ -1077,7 +1069,6 @@ static void api_UserDef_studiolight_spherical_harmonics_coefficients_get(ApiPtr 
 }
 
 /* StudioLight.solid_lights */
-
 static void api_UserDef_studiolight_solid_lights_begin(CollectionPropIter *iter,
                                                        ApiPtr *ptr)
 {
@@ -1091,8 +1082,7 @@ static int api_UserDef_studiolight_solid_lights_length(ApiPtr *UNUSED(ptr))
 }
 
 /* StudioLight.light_ambient */
-
-static void api_UserDef_studiolight_light_ambient_get(SpuPtr *ptr, float *values)
+static void api_UserDef_studiolight_light_ambient_get(ApiPtr *ptr, float *values)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   copy_v3_v3(values, sl->light_ambient);
@@ -1103,7 +1093,7 @@ int api_show_statusbar_vram_editable(struct ApiPtr *UNUSED(ptr), const char **UN
   return gpu_mem_stats_supported() ? PROP_EDITABLE : 0;
 }
 
-static const EnumPropItem *api_pref_gpu_backend_itemf(struct Ctx *UNUSED(C),
+static const EnumPropItem *api_pref_gpu_backend_itemf(struct Cxt *UNUSED(C),
                                                       ApiPtr *UNUSED(ptr),
                                                       ApiProp *UNUSED(prop),
                                                       bool *r_free)
@@ -1137,9 +1127,8 @@ static const EnumPropItem *api_pref_gpu_backend_itemf(struct Ctx *UNUSED(C),
 
 #  define USERDEF_TAG_DIRTY_PROP_UPDATE_DISABLE api_define_fallback_prop_update(0, NULL)
 
-/* TODO: This technically belongs to blenlib, but we don't link
- * makesapi against it.
- */
+/* TODO: This technically belongs to dunelib, but we don't link
+ * makesapi against it. */
 
 /* Get maximum addressable memory in megabytes, */
 static size_t max_memory_in_megabytes(void)
@@ -1172,7 +1161,7 @@ static void api_def_userdef_theme_ui_font_style(DuneApi *dapi)
   api_def_prop_range(prop, 6.0f, 32.0f);
   api_def_prop_ui_range(prop, 8.0f, 20.0f, 10.0f, 1);
   api_def_prop_ui_text(prop, "Points", "Font size in points");
-  api_def_prop_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
   prop = api_def_prop(sapi, "shadow", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 0, 5);
@@ -1198,7 +1187,7 @@ static void api_def_userdef_theme_ui_font_style(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
   prop = api_def_prop(sapi, "shadow_value", PROP_FLOAT, PROP_FACTOR);
-  api_def_prop_float_sdna(prop, NULL, "shadowcolor");
+  api_def_prop_float_stype(prop, NULL, "shadowcolor");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Shadow Brightness", "Shadow color in gray value");
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
@@ -1209,21 +1198,21 @@ static void api_def_userdef_theme_ui_style(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  api_def_userdef_theme_ui_font_style(bapi);
+  api_def_userdef_theme_ui_font_style(dapi);
 
   srna = api_def_struct(dapi, "ThemeStyle", NULL);
   api_def_struct_sapi(sapi, "uiStyle");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Style", "Theme settings for style sets");
 
-  prop = api_def_prop(sapi, "panel_title", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "panel_title", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_sapi(prop, NULL, "paneltitle");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
   api_def_prop_ui_text(prop, "Panel Title Font", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "widget_label", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "widget_label", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_sapi(prop, NULL, "widgetlabel");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
@@ -1268,7 +1257,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Item", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "text", PROP_FLOAT, PROP_COLOR_GAMMA
+  prop = api_def_prop(sapi, "text", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1278,7 +1267,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Text Selected", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "show_shaded", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_shaded", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "shaded", 1);
   api_def_prop_ui_text(prop, "Shaded", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1300,7 +1289,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void api_def_userdef_theme_ui_wcol_state(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_wcol_state(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -1433,13 +1422,13 @@ static void api_def_userdef_theme_ui_gradient(DuneApi *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "back_grad");
+  api_def_prop_float_stype(prop, NULL, "back_grad");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Gradient Low", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void api_def_userdef_theme_ui(DuneApi *bapi)
+static void api_def_userdef_theme_ui(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -1460,37 +1449,37 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop, "Regular Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_tool", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_tool", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Tool Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_toolbar_item", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_toolbar_item", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Toolbar Item Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_radio", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_radio", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Radio Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_text", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_text", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Text Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_option", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_option", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Option Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_toggle", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_toggle", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Toggle Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_num", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_num", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Number Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1500,67 +1489,67 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop, "Slider Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_box", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_box", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Box Backdrop Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_menu", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_menu", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Menu Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_pulldown", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_pulldown", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Pulldown Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_menu_back", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_menu_back", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Menu Backdrop Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_pie_menu", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_pie_menu", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Pie Menu Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_tooltip", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_tooltip", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Tooltip Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_menu_item", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_menu_item", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Menu Item Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_scroll", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_scroll", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Scroll Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_progress", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_progress", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Progress Bar Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_list_item", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_list_item", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "List Item Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_view_item", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_view_item", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Data-View Item Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_state", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_state", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "State Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "wcol_tab", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "wcol_tab", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Tab Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1571,7 +1560,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "menu_shadow_width", PROP_INT, PROP_PIXEL);
-  api_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Menu Shadow Width", "Width of menu shadows, set to zero to disable");
   api_def_prop_range(prop, 0.0f, 24.0f);
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1592,7 +1581,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
       prop, "Widget Emboss", "Color of the 1px shadow line underlying widgets");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "editor_outline", PROP_FLOAT, PROP_COLOR_GAMMA);m
+  prop = api_def_prop(sapi, "editor_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sapi(prop, NULL, "editor_outline");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
@@ -1601,7 +1590,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
 
   prop = api_def_prop(sapi, "widget_text_cursor", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_property_float_sapi(prop, NULL, "widget_text_cursor");
-  api_def_prop_array(prop, 
+  api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text Cursor", "Color of the text insertion cursor (caret)");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
@@ -1620,12 +1609,12 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
       prop, "Primary Color", "Primary color of checkerboard pattern indicating transparent areas");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "transparent_checker_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "transparent_checker_secondary");
+  prop = api_def_prop(sapi, "transparent_checker_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "transparent_checker_secondary");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop,
-                           "Secondary Color",
-                           "Secondary color of checkerboard pattern indicating transparent areas");
+                       "Secondary Color",
+                       "Secondary color of checkerboard pattern indicating transparent areas");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "transparent_checker_size", PROP_INT, PROP_PIXEL);
@@ -1661,7 +1650,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "gizmo_primary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "gizmo_primary");
+  api_def_prop_float_stype(prop, NULL, "gizmo_primary");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Gizmo Primary", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1716,7 +1705,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "icon_modifier");
+  api_def_prop_float_stype(prop, NULL, "icon_mod");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Modifier", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1748,17 +1737,17 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   prop = api_def_prop(sapi, "title", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Title", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "text", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text Highlight", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* header */
   prop = api_def_prop(sapi, "header", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -1777,29 +1766,29 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* panel settings */
-  prop = api_def_prop(sapi, "panelcolors", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "panelcolors", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Panel Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* buttons */
   // if (!ELEM(spacetype, SPACE_PROPERTIES, SPACE_OUTLINER)) {
-  prop = api_def_prop(sapi, "button", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "btn", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Region Background", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "button_title", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "btn_title", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Region Text Titles", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "button_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "btn_text", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Region Text", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sapi, "button_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "btn_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Region Text Highlight", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1836,17 +1825,17 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void api_def_userdef_theme_space_gradient(BlenderRNA *brna)
+static void api_def_userdef_theme_space_gradient(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ThemeSpaceGradient", NULL);
-  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
   /* gradient/background settings */
-  prop = api_def_prop(sapi, "gradients", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "gradients", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "ThemeGradientColors");
   api_def_prop_ptr_fns(prop, "api_Theme_gradient_colors_get", NULL, NULL, NULL);
@@ -1904,36 +1893,36 @@ static void api_def_userdef_theme_space_list_generic(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void api_def_userdef_theme_spaces_main(StructRNA *srna)
+static void api_def_userdef_theme_spaces_main(ApiStruct *sapi)
 {
   ApiProp *prop;
 
-  prop = api_def_prop(srna, "space", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapo, "space", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "ThemeSpaceGeneric");
   api_def_prop_ptr_fns(prop, "api_Theme_space_generic_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Theme Space", "Settings for space");
 }
 
-static void api_def_userdef_theme_spaces_gradient(StructRNA *srna)
+static void api_def_userdef_theme_spaces_gradient(ApiStruct *sapi)
 {
   ApiProp *prop;
 
-  prop = api_def_prop(sapi, "space", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "space", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "ThemeSpaceGradient");
   api_def_prop_ptr_fns(prop, "api_Theme_space_gradient_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Theme Space", "Settings for space");
 }
 
-static void api_def_userdef_theme_spaces_list_main(StructRNA *srna)
+static void api_def_userdef_theme_spaces_list_main(ApiStruct *sapi)
 {
   ApiProp *prop;
 
-  prop = api_def_prop(sapi, "space_list", PROP_POINTER, PROP_NONE);
-  api_def_prop_flag(prop, PROP_NEVER_NUL
+  prop = api_def_prop(sapi, "space_list", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "ThemeSpaceListGeneric");
-  api_def_prop_ptr_fns(prop, "rna_Theme_space_list_generic_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_Theme_space_list_generic_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Theme Space List", "Settings for space list");
 }
 
@@ -1951,15 +1940,15 @@ static void api_def_userdef_theme_spaces_vertex(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Vertex Select", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "vertex_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Active Vertex", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "vertex_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Active Vertex", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "vertex_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 32);
-  RNA_def_property_ui_text(prop, "Vertex Size", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "vertex_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 32);
+  api_def_prop_ui_text(prop, "Vertex Size", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "vertex_bevel", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
@@ -1972,7 +1961,7 @@ static void api_def_userdef_theme_spaces_vertex(ApiStruct *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void api_def_userdef_theme_spaces_edge(StructRNA *srna)
+static void api_def_userdef_theme_spaces_edge(ApiStruct *sapi)
 {
   ApiProp *prop;
 
@@ -1994,7 +1983,7 @@ static void api_def_userdef_theme_spaces_edge(StructRNA *srna)
   prop = api_def_prop(sapi, "edge_crease", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Edge Crease", "");
-  api_def_prop_translation_ctx(prop, BLT_I18NCONTEXT_ID_WINDOWMANAGER);
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_WINDOWMANAGER);
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "edge_bevel", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -2010,27 +1999,27 @@ static void api_def_userdef_theme_spaces_edge(StructRNA *srna)
   prop = api_def_prop(sapi, "freestyle_edge_mark", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Freestyle Edge Mark", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_spaces_face(StructRNA *srna)
+static void api_def_userdef_theme_spaces_face(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "face", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Face", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "face", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Face", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "face_select", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Face Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "face_select", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Face Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "face_dot", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Face Dot Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "face_dot", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Face Dot Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "facedot_size", PROP_INT, PROP_PIXEL);
   RNA_def_property_range(prop, 1, 10);
