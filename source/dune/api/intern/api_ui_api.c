@@ -496,7 +496,7 @@ static void api_uiTemplateAnyId(uiLayout *layout,
   ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    api_warning("property not found: %s.%s", api_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_identifier(ptr->type), propname);
     return;
   }
 
@@ -1577,137 +1577,137 @@ void api_api_ui_layout(ApiStruct *sapi)
   api_ui_item_api_common(fn);
   parm = api_def_ptr(
       fn, "used_layers_data", "AnyType", "", "Data from which to take property");
-  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_string(
-      func, "used_layers_property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "active_layer", 0, 0, INT_MAX, "Active Layer", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+      fn, "used_layers_prop", NULL, 0, "", "Identifier of property in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "active_layer", 0, 0, INT_MAX, "Active Layer", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "template_color_picker", "uiTemplateColorPicker");
-  RNA_def_function_ui_description(func, "Item. A color wheel widget to pick colors");
-  api_ui_item_rna_common(func);
-  RNA_def_boolean(
+  fn = api_def_fn(sapi, "template_color_picker", "uiTemplateColorPicker");
+  api_def_fn_ui_description(fn, "Item. A color wheel widget to pick colors");
+  api_ui_item_api_common(fn);
+  api_def_bool(
       func, "value_slider", false, "", "Display the value slider to the right of the color wheel");
-  RNA_def_boolean(func,
-                  "lock",
-                  false,
-                  "",
-                  "Lock the color wheel display to value 1.0 regardless of actual color");
-  RNA_def_boolean(
-      func, "lock_luminosity", false, "", "Keep the color at its original vector length");
-  RNA_def_boolean(func, "cubic", false, "", "Cubic saturation for picking values close to white");
+  api_def_bool(fn,
+               "lock",
+               false,
+               "",
+               "Lock the color wheel display to value 1.0 regardless of actual color");
+  api_def_bool(
+      fn, "lock_luminosity", false, "", "Keep the color at its original vector length");
+  api_def_bool(fn, "cubic", false, "", "Cubic saturation for picking values close to white");
 
-  func = RNA_def_function(srna, "template_palette", "uiTemplatePalette");
-  RNA_def_function_ui_description(func, "Item. A palette used to pick colors");
-  api_ui_item_rna_common(func);
-  RNA_def_boolean(func, "color", 0, "", "Display the colors as colors or values");
+  fn = api_def_fn(sapi, "template_palette", "uiTemplatePalette");
+  api_def_fn_ui_description(fn, "Item. A palette used to pick colors");
+  api_ui_item_api_common(fn);
+  api_def_bool(fn, "color", 0, "", "Display the colors as colors or values");
 
-  func = RNA_def_function(srna, "template_image_layers", "uiTemplateImageLayers");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "image", "Image", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "image_user", "ImageUser", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "template_image_layers", "uiTemplateImageLayers");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_ptr(fn, "image", "Image", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "image_user", "ImageUser", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "template_image", "uiTemplateImage");
-  RNA_def_function_ui_description(
+  fn = api_def_fn(sapi, "template_image", "uiTemplateImage");
+  api_def_fn_ui_description(
       func, "Item(s). User interface for selecting images and their source paths");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(func, "image_user", "ImageUser", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_boolean(func, "compact", false, "", "Use more compact layout");
-  RNA_def_boolean(func, "multiview", false, "", "Expose Multi-View options");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(fn, "image_user", "ImageUser", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_bool(fn, "compact", false, "", "Use more compact layout");
+  api_def_bool(fn, "multiview", false, "", "Expose Multi-View options");
 
-  func = RNA_def_function(srna, "template_image_settings", "uiTemplateImageSettings");
-  RNA_def_function_ui_description(func, "User interface for setting image format options");
-  parm = RNA_def_pointer(func, "image_settings", "ImageFormatSettings", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_boolean(func, "color_management", false, "", "Show color management settings");
+  fn = api_def_fn(sapi, "template_image_settings", "uiTemplateImageSettings");
+  api_def_fn_ui_description(fn, "User interface for setting image format options");
+  parm = api_def_ptr(fn, "image_settings", "ImageFormatSettings", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_bool(fn, "color_management", false, "", "Show color management settings");
 
-  func = RNA_def_function(srna, "template_image_stereo_3d", "uiTemplateImageStereo3d");
-  RNA_def_function_ui_description(func, "User interface for setting image stereo 3d options");
-  parm = RNA_def_pointer(func, "stereo_3d_format", "Stereo3dFormat", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_function(sapi, "template_image_stereo_3d", "uiTemplateImageStereo3d");
+  api_def_fn_ui_description(fn, "User interface for setting image stereo 3d options");
+  parm = api_def_ptr(fn, "stereo_3d_format", "Stereo3dFormat", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "template_image_views", "uiTemplateImageViews");
-  RNA_def_function_ui_description(func, "User interface for setting image views output options");
-  parm = RNA_def_pointer(func, "image_settings", "ImageFormatSettings", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(sapi, "template_image_views", "uiTemplateImageViews");
+  api_def_fn_ui_description(fn, "User interface for setting image views output options");
+  parm = api_def_ptr(fn, "image_settings", "ImageFormatSettings", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "template_movieclip", "uiTemplateMovieClip");
-  RNA_def_function_ui_description(
-      func, "Item(s). User interface for selecting movie clips and their source paths");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
-  RNA_def_boolean(func, "compact", false, "", "Use more compact layout");
+  fn = api_def_fn(sapi, "template_movieclip", "uiTemplateMovieClip");
+  api_def_fn_ui_description(
+      fn, "Item(s). User interface for selecting movie clips and their source paths");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
+  api_def_bool(fn, "compact", false, "", "Use more compact layout");
 
-  func = RNA_def_function(srna, "template_track", "uiTemplateTrack");
-  RNA_def_function_ui_description(func, "Item. A movie-track widget to preview tracking image.");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_track", "uiTemplateTrack");
+  api_def_fn_ui_description(fn, "Item. A movie-track widget to preview tracking image.");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(srna, "template_marker", "uiTemplateMarker");
-  RNA_def_function_ui_description(func, "Item. A widget to control single marker settings.");
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(func, "clip_user", "MovieClipUser", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_pointer(func, "track", "MovieTrackingTrack", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_boolean(func, "compact", false, "", "Use more compact layout");
+  fn = api_def_fn(sapi, "template_marker", "uiTemplateMarker");
+  api_def_fn_ui_description(fn, "Item. A widget to control single marker settings.");
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(fn, "clip_user", "MovieClipUser", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_ptr(fn, "track", "MovieTrackingTrack", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_bool(fn, "compact", false, "", "Use more compact layout");
 
-  func = RNA_def_function(
-      srna, "template_movieclip_information", "uiTemplateMovieclipInformation");
-  RNA_def_function_ui_description(func, "Item. Movie clip information data.");
-  api_ui_item_rna_common(func);
-  parm = RNA_def_pointer(func, "clip_user", "MovieClipUser", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(
+      sapi, "template_movieclip_information", "uiTemplateMovieclipInformation");
+  api_def_fn_ui_description(fn, "Item. Movie clip information data.");
+  api_ui_item_api_common(fn);
+  parm = api_def_ptr(fn, "clip_user", "MovieClipUser", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "template_list", "rna_uiTemplateList");
-  RNA_def_function_ui_description(func, "Item. A list widget to display data, e.g. vertexgroups.");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "listtype_name", NULL, 0, "", "Identifier of the list type to use");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(
+  fn = api_def_fn(sapi, "template_list", "api_uiTemplateList");
+  api_def_fn_ui_description(fn, "Item. A list widget to display data, e.g. vertexgroups.");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_string(fn, "listtype_name", NULL, 0, "", "Identifier of the list type to use");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(
       func,
       "list_id",
       NULL,
       0,
       "",
-      "Identifier of this list widget (mandatory when using default \"" UI_UL_DEFAULT_CLASS_NAME
+      "Id of this list widget (mandatory when using default \"" UI_UL_DEFAULT_CLASS_NAME
       "\" class). "
-      "If this not an empty string, the uilist gets a custom ID, otherwise it takes the "
+      "If this not an empty string, the uilist gets a custom Id, otherwise it takes the "
       "name of the class used to define the uilist (for example, if the "
       "class name is \"OBJECT_UL_vgroups\", and list_id is not set by the "
       "script, then bl_idname = \"OBJECT_UL_vgroups\")");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "dataptr", "AnyType", "", "Data from which to take the Collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "propname", NULL, 0, "", "Identifier of the Collection property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func,
-                         "active_dataptr",
-                         "AnyType",
-                         "",
-                         "Data from which to take the integer property, index of the active item");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "dataptr", "AnyType", "", "Data from which to take the Collection prop");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(
+      fn, "propname", NULL, 0, "", "Id of the Collection prop in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn,
+                     "active_dataptr",
+                     "AnyType",
+                     "",
+                     "Data from which to take the integer property, index of the active item");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(
+      fn,
       "active_propname",
       NULL,
       0,
       "",
-      "Identifier of the integer property in active_data, index of the active item");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(func,
+      "Id of the integer prop in active_data, index of the active item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(fn,
                  "item_dyntip_propname",
                  NULL,
                  0,
                  "",
-                 "Identifier of a string property in items, to use as tooltip content");
-  RNA_def_int(func,
+                 "Id of a string prop in items, to use as tooltip content");
+  api_def_int(fn,
               "rows",
               5,
               0,
@@ -1716,15 +1716,15 @@ void api_api_ui_layout(ApiStruct *sapi)
               "Default and minimum number of rows to display",
               0,
               INT_MAX);
-  RNA_def_int(
-      func, "maxrows", 5, 0, INT_MAX, "", "Default maximum number of rows to display", 0, INT_MAX);
-  RNA_def_enum(func,
+  api_def_int(
+      fn, "maxrows", 5, 0, INT_MAX, "", "Default maximum number of rows to display", 0, INT_MAX);
+  api_def_enum(fn,
                "type",
-               rna_enum_uilist_layout_type_items,
+               api_enum_uilist_layout_type_items,
                UILST_LAYOUT_DEFAULT,
                "Type",
                "Type of layout to use");
-  RNA_def_int(func,
+  api_def_int(fn,
               "columns",
               9,
               0,
@@ -1733,131 +1733,131 @@ void api_api_ui_layout(ApiStruct *sapi)
               "Number of items to display per row, for GRID layout",
               0,
               INT_MAX);
-  RNA_def_boolean(func, "sort_reverse", false, "", "Display items in reverse order by default");
-  RNA_def_boolean(func, "sort_lock", false, "", "Lock display order to default value");
+  api_def_bool(fn, "sort_reverse", false, "", "Display items in reverse order by default");
+  api_def_bool(fn, "sort_lock", false, "", "Lock display order to default value");
 
-  func = RNA_def_function(srna, "template_running_jobs", "uiTemplateRunningJobs");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_function(sapi, "template_running_jobs", "uiTemplateRunningJobs");
+  api_def_fn_flag(fn, FN_USE_CXT);
 
-  RNA_def_function(srna, "template_operator_search", "uiTemplateOperatorSearch");
-  RNA_def_function(srna, "template_menu_search", "uiTemplateMenuSearch");
+  api_def_fn(sapi, "template_op_search", "uiTemplateOpSearch");
+  api_def_fn(sapi, "template_menu_search", "uiTemplateMenuSearch");
 
-  func = RNA_def_function(srna, "template_header_3D_mode", "uiTemplateHeader3D_mode");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "");
+  func = api_def_fn(sapi, "template_header_3D_mode", "uiTemplateHeader3D_mode");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(fn, "");
 
-  func = RNA_def_function(srna, "template_edit_mode_selection", "uiTemplateEditModeSelection");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(
-      func, "Inserts common 3DView Edit modes header UI (selector for selection mode)");
+  fn = api_def_fn(sapi, "template_edit_mode_selection", "uiTemplateEditModeSelection");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_fn_ui_description(
+      fn, "Inserts common 3DView Edit modes header UI (selector for selection mode)");
 
-  func = RNA_def_function(srna, "template_reports_banner", "uiTemplateReportsBanner");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_function(sapi, "template_reports_banner", "uiTemplateReportsBanner");
+  api_def_fn_flag(fn, FN_USE_CXT);
 
-  func = RNA_def_function(srna, "template_input_status", "uiTemplateInputStatus");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "template_input_status", "uiTemplateInputStatus");
+  api_def_fn_flag(fn, FN_USE_CXT);
 
-  func = RNA_def_function(srna, "template_node_link", "uiTemplateNodeLink");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "ntree", "NodeTree", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "node", "Node", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "socket", "NodeSocket", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "template_node_link", "uiTemplateNodeLink");
+  api_def_function_flag(fn, FN_USE_CXT);
+  parm = api_def_ptr(fn, "ntree", "NodeTree", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "node", "Node", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "socket", "NodeSocket", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "template_node_view", "uiTemplateNodeView");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "ntree", "NodeTree", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "node", "Node", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "socket", "NodeSocket", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "template_node_view", "uiTemplateNodeView");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_ptr(fn, "ntree", "NodeTree", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "node", "Node", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "socket", "NodeSocket", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "template_node_asset_menu_items", "uiTemplateNodeAssetMenuItems");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "catalog_path", NULL, 0, "", "");
+  fn = api_def_fn(sapi, "template_node_asset_menu_items", "uiTemplateNodeAssetMenuItems");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_string(fn, "catalog_path", NULL, 0, "", "");
 
-  func = RNA_def_function(srna, "template_texture_user", "uiTemplateTextureUser");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "template_texture_user", "uiTemplateTextureUser");
+  api_def_fn_flag(fn, FN_USE_CXT);
 
-  func = RNA_def_function(
-      srna, "template_keymap_item_properties", "uiTemplateKeymapItemProperties");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(
+      sapi, "template_keymap_item_properties", "uiTemplateKeymapItemProps");
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 
-  func = RNA_def_function(srna, "template_component_menu", "uiTemplateComponentMenu");
-  RNA_def_function_ui_description(func, "Item. Display expanded property in a popup menu");
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_string(func, "name", NULL, 0, "", "");
+  fn = api_def_fn(sapi, "template_component_menu", "uiTemplateComponentMenu");
+  api_def_fn_ui_description(fn, "Item. Display expanded prop in a popup menu");
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take prop");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Id of prop in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_string(fn, "name", NULL, 0, "", "");
 
   /* color management templates */
-  func = RNA_def_function(srna, "template_colorspace_settings", "uiTemplateColorspaceSettings");
-  RNA_def_function_ui_description(func, "Item. A widget to control input color space settings.");
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(sapi, "template_colorspace_settings", "uiTemplateColorspaceSettings");
+  api_def_fn_ui_description(fn, "Item. A widget to control input color space settings.");
+  api_ui_item_api_common(fn);
 
-  func = RNA_def_function(
-      srna, "template_colormanaged_view_settings", "uiTemplateColormanagedViewSettings");
-  RNA_def_function_ui_description(func, "Item. A widget to control color managed view settings.");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  api_ui_item_rna_common(func);
+  fn = api_def_fn(
+      sapi, "template_colormanaged_view_settings", "uiTemplateColormanagedViewSettings");
+  api_def_fn_ui_description(fn, "Item. A widget to control color managed view settings.");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_ui_item_api_common(fn);
 #  if 0
-  RNA_def_boolean(func,
-                  "show_global_settings",
-                  false,
-                  "",
-                  "Show widgets to control global color management settings");
+  api_def_bool(fn,
+               "show_global_settings",
+               false,
+               "",
+               "Show widgets to control global color management settings");
 #  endif
 
   /* node socket icon */
-  func = RNA_def_function(srna, "template_node_socket", "uiTemplateNodeSocket");
-  RNA_def_function_ui_description(func, "Node Socket Icon");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  RNA_def_float_array(
-      func, "color", 4, node_socket_color_default, 0.0f, 1.0f, "Color", "", 0.0f, 1.0f);
+  fn = api_def_fn(sapi, "template_node_socket", "uiTemplateNodeSocket");
+  api_def_fn_ui_description(fn, "Node Socket Icon");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  api_def_float_array(
+      fn, "color", 4, node_socket_color_default, 0.0f, 1.0f, "Color", "", 0.0f, 1.0f);
 
-  func = RNA_def_function(srna, "template_cache_file", "rna_uiTemplateCacheFile");
-  RNA_def_function_ui_description(
-      func, "Item(s). User interface for selecting cache files and their source paths");
-  api_def_fn_flag(f, FN_USE_CONTEXT);
+  fn = api_def_fn(sapi, "template_cache_file", "api_uiTemplateCacheFile");
+  api_def_fn_ui_description(
+      fn, "Item(s). User interface for selecting cache files and their source paths");
+  api_def_fn_flag(f, FN_USE_CXT);
   api_ui_item_api_common(fn);
 
-  fn = api_def_fn(sapi, "template_cache_file_velocity", "rna_uiTemplateCacheFileVelocity");
+  fn = api_def_fn(sapi, "template_cache_file_velocity", "api_uiTemplateCacheFileVelocity");
   api_def_fn_ui_description(fn, "Show cache files velocity properties");
   api_ui_item_api_common(fn);
 
-  func = api_def_fn(
+  fn = api_def_fn(
       sapi, "template_cache_file_procedural", "api_uiTemplateCacheFileProcedural");
   api_def_fn_ui_description(fn, "Show cache files render procedural properties");
   api_def_fn_flag(fn, FN_USE_CTX);
   api_ui_item_api_common(fn);
 
-  func = api_def_fn(
+  fn = api_def_fn(
       sapi, "template_cache_file_time_settings", "api_uiTemplateCacheFileTimeSettings");
-  api_def_fn_ui_description(func, "Show cache files time settings");
+  api_def_fn_ui_description(fn, "Show cache files time settings");
   api_ui_item_api_common(fn);
 
   fn = api_def_fn(sapi, "template_cache_file_layers", "api_uiTemplateCacheFileLayers");
   api_def_fn_ui_description(fn, "Show cache files override layers properties");
-  api_def_fn_flag(fn, FN_USE_CONTEXT);
+  api_def_fn_flag(fn, FN_USE_CXT);
   api_ui_item_api_common(fn);
 
   fn = api_def_fn(sapi, "template_recent_files", "uiTemplateRecentFiles");
-  api_def_fn_ui_description(func, "Show list of recently saved .blend files");
+  api_def_fn_ui_description(func, "Show list of recently saved .dune files");
   api_def_int(fn, "rows", 5, 1, INT_MAX, "", "Maximum number of items to show", 1, INT_MAX);
   parm = api_def_int(fn, "found", 0, 0, INT_MAX, "", "Number of items drawn", 0, INT_MAX);
   api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "template_file_select_path", "uiTemplateFileSelectPath");
-  RNA_def_function_ui_description(func,
+  fn = api_def_fn(sapi, "template_file_select_path", "uiTemplateFileSelectPath");
+  api_def_fn_ui_description(func,
                                   "Item. A text button to set the active file browser path.");
   parm = api_def_ptr(fn, "params", "FileSelectParams", "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
-  api_def_fn_flag(func, FUNC_USE_CONTEXT);
+  api_def_fn_flag(fn, FN_USE_CXT);
 
   fn = api_def_fn(
       sapi, "template_event_from_keymap_item", "rna_uiTemplateEventFromKeymapItem");
