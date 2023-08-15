@@ -3472,121 +3472,121 @@ static void api_def_userdef_theme_space_action(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Jitter Keyframe Selected", "Color of selected jitter keyframe");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_prop(sapi, "keyframe_movehold", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_stype(prop, NULL, "keytype_movehold");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Moving Hold Keyframe", "Color of moving hold keyframe");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "keyframe_movehold", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keytype_movehold");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Moving Hold Keyframe", "Color of moving hold keyframe");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_movehold_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "keytype_movehold_select");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "keyframe_movehold_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keytype_movehold_select");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Moving Hold Keyframe Selected", "Color of selected moving hold keyframe");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_border", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "keyborder");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Keyframe Border", "Color of keyframe border");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "keyframe_border", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keyborder");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Keyframe Border", "Color of keyframe border");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_border_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "keyborder_select");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Keyframe Border Selected", "Color of selected keyframe border");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "keyframe_border_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keyborder_select");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Keyframe Border Selected", "Color of selected keyframe border");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_scale_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "keyframe_scale_fac");
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "keyframe_scale_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "keyframe_scale_fac");
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_ui_text(
       prop, "Keyframe Scale Factor", "Scale factor for adjusting the height of keyframes");
   /* NOTE: These limits prevent buttons overlapping (min), and excessive size... (max). */
-  RNA_def_property_range(prop, 0.8f, 5.0f);
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_DOPESHEET, "rna_userdef_theme_update");
+  api_def_prop_range(prop, 0.8f, 5.0f);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_DOPESHEET, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "summary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "anim_active");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Summary", "Color of summary channel");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "summary", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "anim_active");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Summary", "Color of summary channel");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_range", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "anim_preview_range");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Preview Range", "Color of preview range overlay");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "preview_range", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "anim_preview_range");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Preview Range", "Color of preview range overlay");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "interpolation_line", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "ds_ipoline");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "interpolation_line", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "ds_ipoline");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(
       prop, "Interpolation Line", "Color of lines showing non-bezier interpolation modes");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "simulated_frames", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "simulated_frames");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Simulated Frames", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "simulated_frames", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "simulated_frames");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Simulated Frames", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_nla(BlenderRNA *brna)
+static void api_def_userdef_theme_space_nla(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_nla */
-  srna = RNA_def_struct(brna, "ThemeNLAEditor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Nonlinear Animation", "Theme settings for the NLA Editor");
+  sapi = api_def_struct(dapi, "ThemeNLAEditor", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Nonlinear Animation", "Theme settings for the NLA Editor");
 
-  rna_def_userdef_theme_spaces_main(srna);
-  rna_def_userdef_theme_spaces_list_main(srna);
+  api_def_userdef_theme_spaces_main(sapi);
+  api_def_userdef_theme_spaces_list_main(sapi);
 
-  prop = RNA_def_property(srna, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Grid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Grid", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "view_sliders", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "view_sliders", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "shade1");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "View Sliders", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "dopesheet_channel", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "ds_channel");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Channel", "Nonlinear Animation Channel");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "nla_track", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_track");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Track", "Nonlinear Animation Track");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "nla_track", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_track");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Track", "Nonlinear Animation Track");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "active_action", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "anim_active");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Active Action", "Animation data-block has active action");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "active_action", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "anim_active");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Active Action", "Animation data-block has active action");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "active_action_unset", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "anim_non_active");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active_action_unset", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "anim_non_active");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(
       prop, "No Active Action", "Animation data-block doesn't have active action");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "preview_range", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "anim_preview_range");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Preview Range", "Color of preview range overlay");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "preview_range", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "anim_preview_range");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Preview Range", "Color of preview range overlay");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "strips", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "strip");
