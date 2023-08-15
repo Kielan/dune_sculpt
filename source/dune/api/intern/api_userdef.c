@@ -2273,7 +2273,7 @@ static void api_def_userdef_theme_space_view3d(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Active Object", "");
   api_def_prop_update(prop, 0, "apiserdef_theme_update");
 
-  prop = api_prop(sapi"text_keyframe", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_prop(sapi, "text_keyframe", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "time_keyframe");
   apif_prop_array(prop, 3);
   api_prop_ui_text(prop, "Object Keyframe", "Color for indicating object keyframes");
@@ -3965,7 +3965,7 @@ static void api_def_userdef_themes(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_ui_text(prop, "Name", "Name of the theme");
-  api_def_struct_name_prop(srna, prop);
+  api_def_struct_name_prop(sapi, prop);
   /* XXX: for now putting this in presets is silly - its just Default */
   api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
@@ -3975,7 +3975,7 @@ static void api_def_userdef_themes(DuneApi *dapi)
   api_def_prop_enum_items(prop, active_theme_area);
   api_def_prop_ui_text(prop, "Active Theme Area", "");
 
-  prop = api_def_prop(sapi, "user_interface", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "user_interface", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "tui");
   api_def_prop_struct_type(prop, "ThemeUserInterface");
@@ -4264,18 +4264,18 @@ static void api_def_userdef_studiolight(BlenderRNA *brna)
                                 "api_UserDef_studiolight_path_sh_cache_get",
                                 "api_UserDef_studiolight_path_sh_cache_length",
                                 NULL);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "SH Cache Path", "Path where the spherical harmonics cache is stored");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   const int spherical_harmonics_dim[] = {STUDIOLIGHT_SH_EFFECTIVE_COEFS_LEN, 3};
-  prop = RNA_def_property(srna, "spherical_harmonics_coefficients", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_multi_array(prop, 2, spherical_harmonics_dim);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(
-      prop, "rna_UserDef_studiolight_spherical_harmonics_coefficients_get", NULL, NULL);
+  prop = api_def_prop(sapi, "spherical_harmonics_coefficients", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_multi_array(prop, 2, spherical_harmonics_dim);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(
+      prop, "api_UserDef_studiolight_spherical_harmonics_coefficients_get", NULL, NULL);
 
-  RNA_define_verify_sdna(true);
+  RNA_define_verify_stype(true);
 }
 
 static void rna_def_userdef_pathcompare(BlenderRNA *brna)
