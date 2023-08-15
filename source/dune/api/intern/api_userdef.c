@@ -239,7 +239,7 @@ static void api_userdef_theme_text_style_update(Main *main, Scene *scene, ApiPtr
   api_userdef_update(main, scene, ptr);
 }
 
-static void api_userdef_gizmo_update(Main *bmain, Scene *scene, ApiPtr *ptr)
+static void api_userdef_gizmo_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   wm_reinit_gizmomap_all(main);
 
