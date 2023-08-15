@@ -3887,7 +3887,6 @@ static void api_def_userdef_theme_space_topbar(DuneApi *dapi)
   ApiStruct *sapi;
 
   /* space_topbar */
-
   sapi = api_def_struct(dapi, "ThemeTopBar", NULL);
   api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
@@ -4199,71 +4198,71 @@ static void api_def_userdef_studiolight(BlenderRNA *brna)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "User Defined", "");
 
-  prop = api_def_prop(srna, "has_specular_highlight_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_UserDef_studiolight_has_specular_highlight_pass_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "has_specular_highlight_pass", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_UserDef_studiolight_has_specular_highlight_pass_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop,
       "Has Specular Highlight",
       "Studio light image file has separate \"diffuse\" and \"specular\" passes");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_studio_light_type_items);
-  RNA_def_property_enum_funcs(prop, "rna_UserDef_studiolight_type_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Type", "");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_LIGHT);
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_studio_light_type_items);
+  api_def_prop_enum_fns(prop, "api_UserDef_studiolight_type_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Type", "");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_LIGHT);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(
-      prop, "rna_UserDef_studiolight_name_get", "rna_UserDef_studiolight_name_length", NULL);
-  RNA_def_property_ui_text(prop, "Name", "");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(
+      prop, "api_UserDef_studiolight_name_get", "api_UserDef_studiolight_name_length", NULL);
+  api_def_prop_ui_text(prop, "Name", "");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "path", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_funcs(
-      prop, "rna_UserDef_studiolight_path_get", "rna_UserDef_studiolight_path_length", NULL);
-  RNA_def_property_ui_text(prop, "Path", "");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "path", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_fns(
+      prop, "api_UserDef_studiolight_path_get", "api_UserDef_studiolight_path_length", NULL);
+  api_def_prop_ui_text(prop, "Path", "");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "solid_lights", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "light_param", "");
-  RNA_def_property_struct_type(prop, "UserSolidLight");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_UserDef_studiolight_solid_lights_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    "rna_UserDef_studiolight_solid_lights_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "solid_lights", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "light_param", "");
+  api_def_prop_struct_type(prop, "UserSolidLight");
+  api_def_prop_collection_fns(prop,
+                              "api_UserDef_studiolight_solid_lights_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              "api_UserDef_studiolight_solid_lights_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(
       prop, "Solid Lights", "Lights user to display objects in solid draw mode");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "light_ambient", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_funcs(prop, "rna_UserDef_studiolight_light_ambient_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "light_ambient", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_fns(prop, "api_UserDef_studiolight_light_ambient_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Ambient Color", "Color of the ambient light that uniformly lit the scene");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "path_irr_cache", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_funcs(prop,
-                                "rna_UserDef_studiolight_path_irr_cache_get",
-                                "rna_UserDef_studiolight_path_irr_cache_length",
-                                NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "path_irr_cache", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_fns(prop,
+                          "api_UserDef_studiolight_path_irr_cache_get",
+                          "api_UserDef_studiolight_path_irr_cache_length",
+                          NULL);
+  api_def_prop_ui_text(
       prop, "Irradiance Cache Path", "Path where the irradiance cache is stored");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "path_sh_cache", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_funcs(prop,
-                                "rna_UserDef_studiolight_path_sh_cache_get",
-                                "rna_UserDef_studiolight_path_sh_cache_length",
+  prop = api_def_prop(sapi, "path_sh_cache", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_fns(prop,
+                                "api_UserDef_studiolight_path_sh_cache_get",
+                                "api_UserDef_studiolight_path_sh_cache_length",
                                 NULL);
   RNA_def_property_ui_text(
       prop, "SH Cache Path", "Path where the spherical harmonics cache is stored");
