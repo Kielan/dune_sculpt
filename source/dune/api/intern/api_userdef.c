@@ -3588,144 +3588,144 @@ static void api_def_userdef_theme_space_nla(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Preview Range", "Color of preview range overlay");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "strips", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "strip");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Strips", "Unselected Action-Clip Strip");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "strips", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "strip");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Strips", "Unselected Action-Clip Strip");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "strip_select");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Strips Selected", "Selected Action-Clip Strip");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "strip_select");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Strips Selected", "Selected Action-Clip Strip");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "transition_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_transition");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Transitions", "Unselected Transition Strip");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "transition_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_transition");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Transitions", "Unselected Transition Strip");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "transition_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_transition_sel");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Transitions Selected", "Selected Transition Strip");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "transition_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_transition_sel");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Transitions Selected", "Selected Transition Strip");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "meta_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_meta");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "meta_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_meta");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Meta Strips", "Unselected Meta Strip (for grouping related strips)");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "meta_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_meta_sel");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "meta_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_meta_sel");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Meta Strips Selected", "Selected Meta Strip (for grouping related strips)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "rna_userdef_update");
 
-  prop = RNA_def_property(srna, "sound_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_sound");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sound_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_sound");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Sound Strips", "Unselected Sound Strip (for timing speaker sounds)");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "sound_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_sound_sel");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sound_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_sound_sel");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Sound Strips Selected", "Selected Sound Strip (for timing speaker sounds)");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "tweak", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_tweaking");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Tweak", "Color for strip/action being \"tweaked\" or edited");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "tweak", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_tweaking");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Tweak", "Color for strip/action being \"tweaked\" or edited");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "tweak_duplicate", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "nla_tweakdupli");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tweak_duplicate", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "nla_tweakdupli");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop,
       "Tweak Duplicate Flag",
       "Warning/error indicator color for strips referencing the strip being tweaked");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_border", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "keyborder");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Keyframe Border", "Color of keyframe border");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "keyframe_border", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keyborder");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Keyframe Border", "Color of keyframe border");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "keyframe_border_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "keyborder_select");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Keyframe Border Selected", "Color of selected keyframe border");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "keyframe_border_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "keyborder_select");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Keyframe Border Selected", "Color of selected keyframe border");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "cframe");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Current Frame", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "cframe");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Current Frame", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_scrub_background", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Scrubbing/Markers Region", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "time_scrub_background", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Scrubbing/Markers Region", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_marker_line", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Marker Line", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "time_marker_line", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Marker Line", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_marker_line_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Marker Line Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "time_marker_line_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Marker Line Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_colorset(BlenderRNA *brna)
+static void api_def_userdef_theme_colorset(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeBoneColorSet", NULL);
-  RNA_def_struct_sdna(srna, "ThemeWireColor");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Bone Color Set", "Theme settings for bone color sets");
+  sapi = api_def_struct(dapi, "ThemeBoneColorSet", NULL);
+  api_def_struct_stype(sapi, "ThemeWireColor");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Bone Color Set", "Theme settings for bone color sets");
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "solid");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Regular", "Color used for the surface of bones");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "solid");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Regular", "Color used for the surface of bones");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "select", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "select");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Select", "Color used for selected bones");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "select", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "select");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Select", "Color used for selected bones");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Active", "Color used for active bones");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Active", "Color used for active bones");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "show_colored_constraints", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TH_WIRECOLOR_CONSTCOLS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_colored_constraints", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TH_WIRECOLOR_CONSTCOLS);
+  api_def_prop_ui_text(
       prop, "Colored Constraints", "Allow the use of colors indicating constraints/keyed status");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_collection_color(BlenderRNA *brna)
+static void api_def_userdef_theme_collection_color(BlenderRNA *brna)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
   PropertyRNA *prop;
 
   srna = RNA_def_struct(brna, "ThemeCollectionColor", NULL);
