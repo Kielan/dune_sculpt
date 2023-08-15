@@ -3983,223 +3983,223 @@ static void api_def_userdef_themes(DuneApi *dapi)
   api_def_prop_ui_text(prop, "User Interface", "");
 
   /* Space Types */
-  prop = api_def_prop(sapi, "view_3d", PROP_POINTER, PROP_NONE);
-  RNA_def_prop_flag(prop, PROP_NEVER_NULL);
-  RNA_def_prop_ptr_stype(prop, NULL, "space_view3d");
-  RNA_def_property_struct_type(prop, "ThemeView3D");
-  RNA_def_property_ui_text(prop, "3D Viewport", "");
+  prop = api_def_prop(sapi, "view_3d", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_view3d");
+  api_def_prop_struct_type(prop, "ThemeView3D");
+  api_def_prop_ui_text(prop, "3D Viewport", "");
 
-  prop = RNA_def_property(srna, "graph_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_graph");
-  RNA_def_property_struct_type(prop, "ThemeGraphEditor");
-  RNA_def_property_ui_text(prop, "Graph Editor", "");
+  prop = api_def_prop(sapi, "graph_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_graph");
+  api_def_prop_struct_type(prop, "ThemeGraphEditor");
+  api_def_prop_ui_text(prop, "Graph Editor", "");
 
-  prop = RNA_def_property(srna, "file_browser", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_file");
-  RNA_def_property_struct_type(prop, "ThemeFileBrowser");
-  RNA_def_property_ui_text(prop, "File Browser", "");
+  prop = api_def_prop(sapo, "file_browser", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_file");
+  api_def_prop_struct_type(prop, "ThemeFileBrowser");
+  api_def_prop_ui_text(prop, "File Browser", "");
 
-  prop = RNA_def_property(srna, "nla_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_nla");
-  RNA_def_property_struct_type(prop, "ThemeNLAEditor");
-  RNA_def_property_ui_text(prop, "Nonlinear Animation", "");
+  prop = api_def_prop(sapi, "nla_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_nla");
+  api_def_prop_struct_type(prop, "ThemeNLAEditor");
+  api_def_prop_ui_text(prop, "Nonlinear Animation", "");
 
-  prop = RNA_def_property(srna, "dopesheet_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_action");
-  RNA_def_property_struct_type(prop, "ThemeDopeSheet");
-  RNA_def_property_ui_text(prop, "Dope Sheet", "");
+  prop = api_def_prop(sapi, "dopesheet_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_action");
+  api_def_prop_struct_type(prop, "ThemeDopeSheet");
+  api_def_prop_ui_text(prop, "Dope Sheet", "");
 
-  prop = RNA_def_property(srna, "image_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_image");
-  RNA_def_property_struct_type(prop, "ThemeImageEditor");
-  RNA_def_property_ui_text(prop, "Image Editor", "");
+  prop = api_def_prop(sapi, "image_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_image");
+  api_def_prop_struct_type(prop, "ThemeImageEditor");
+  api_def_prop_ui_text(prop, "Image Editor", "");
 
-  prop = RNA_def_property(srna, "sequence_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_sequencer");
-  RNA_def_property_struct_type(prop, "ThemeSequenceEditor");
-  RNA_def_property_ui_text(prop, "Sequence Editor", "");
+  prop = api_def_prop(sapi, "seq_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_seq");
+  api_def_prop_struct_type(prop, "ThemeSeqEditor");
+  api_def_prop_ui_text(prop, "Seq Editor", "");
 
-  prop = RNA_def_property(srna, "properties", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_properties");
-  RNA_def_property_struct_type(prop, "ThemeProperties");
-  RNA_def_property_ui_text(prop, "Properties", "");
+  prop = api_def_prop(sapi, "props", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_props");
+  api_def_prop_struct_type(prop, "ThemeProps");
+  api_def_prop_ui_text(prop, "Props", "");
 
-  prop = RNA_def_property(srna, "text_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_text");
-  RNA_def_property_struct_type(prop, "ThemeTextEditor");
-  RNA_def_property_ui_text(prop, "Text Editor", "");
+  prop = api_def_prop(sapi, "text_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_text");
+  api_def_prop_struct_type(prop, "ThemeTextEditor");
+  api_def_prop_ui_text(prop, "Text Editor", "");
 
-  prop = RNA_def_property(srna, "node_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_node");
-  RNA_def_property_struct_type(prop, "ThemeNodeEditor");
-  RNA_def_property_ui_text(prop, "Node Editor", "");
+  prop = api_def_prop(sapi, "node_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_node");
+  api_def_prop_struct_type(prop, "ThemeNodeEditor");
+  api_def_prop_ui_text(prop, "Node Editor", "");
 
-  prop = RNA_def_property(srna, "outliner", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_outliner");
-  RNA_def_property_struct_type(prop, "ThemeOutliner");
-  RNA_def_property_ui_text(prop, "Outliner", "");
+  prop = api_def_prop(sapi, "outliner", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_outliner");
+  api_def_prop_struct_type(prop, "ThemeOutliner");
+  api_def_prop_ui_text(prop, "Outliner", "");
 
-  prop = RNA_def_property(srna, "info", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_info");
-  RNA_def_property_struct_type(prop, "ThemeInfo");
-  RNA_def_property_ui_text(prop, "Info", "");
+  prop = api_def_prop(sapi, "info", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_info");
+  api_def_prop_struct_type(prop, "ThemeInfo");
+  api_def_prop_ui_text(prop, "Info", "");
 
-  prop = RNA_def_property(srna, "preferences", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_preferences");
-  RNA_def_property_struct_type(prop, "ThemePreferences");
-  RNA_def_property_ui_text(prop, "Preferences", "");
+  prop = api_def_prop(sapi, "prefs", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_prefs");
+  api_def_prop_struct_type(prop, "ThemePrefs");
+  api_def_prop_ui_text(prop, "Prefs", "");
 
-  prop = RNA_def_property(srna, "console", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_console");
-  RNA_def_property_struct_type(prop, "ThemeConsole");
-  RNA_def_property_ui_text(prop, "Console", "");
+  prop = api_def_prop(sapi, "console", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_console");
+  api_def_prop_struct_type(prop, "ThemeConsole");
+  api_def_prop_ui_text(prop, "Console", "");
 
-  prop = RNA_def_property(srna, "clip_editor", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_clip");
-  RNA_def_property_struct_type(prop, "ThemeClipEditor");
-  RNA_def_property_ui_text(prop, "Clip Editor", "");
+  prop = api_def_prop(sapi, "clip_editor", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_clip");
+  api_def_prop_struct_type(prop, "ThemeClipEditor");
+  api_def_prop_ui_text(prop, "Clip Editor", "");
 
-  prop = RNA_def_property(srna, "topbar", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_topbar");
-  RNA_def_property_struct_type(prop, "ThemeTopBar");
-  RNA_def_property_ui_text(prop, "Top Bar", "");
+  prop = api_def_prop(sapi, "topbar", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_topbar");
+  api_def_prop_struct_type(prop, "ThemeTopBar");
+  api_def_prop_ui_text(prop, "Top Bar", "");
 
-  prop = RNA_def_property(srna, "statusbar", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_statusbar");
-  RNA_def_property_struct_type(prop, "ThemeStatusBar");
-  RNA_def_property_ui_text(prop, "Status Bar", "");
+  prop = api_def_prop(sapi, "statusbar", PROP_POTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_statusbar");
+  api_def_prop_struct_type(prop, "ThemeStatusBar");
+  api_def_prop_ui_text(prop, "Status Bar", "");
 
-  prop = RNA_def_property(srna, "spreadsheet", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "space_spreadsheet");
-  RNA_def_property_struct_type(prop, "ThemeSpreadsheet");
-  RNA_def_property_ui_text(prop, "Spreadsheet", "");
+  prop = api_def_prop(sapi, "spreadsheet", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "space_spreadsheet");
+  api_def_prop_struct_type(prop, "ThemeSpreadsheet");
+  api_def_prop_ui_text(prop, "Spreadsheet", "");
   /* end space types */
 
-  prop = RNA_def_property(srna, "bone_color_sets", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_collection_sdna(prop, NULL, "tarm", "");
-  RNA_def_property_struct_type(prop, "ThemeBoneColorSet");
-  RNA_def_property_ui_text(prop, "Bone Color Sets", "");
+  prop = api_def_prop(sapi, "bone_color_sets", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_collection_stype(prop, NULL, "tarm", "");
+  api_def_prop_struct_type(prop, "ThemeBoneColorSet");
+  api_def_prop_ui_text(prop, "Bone Color Sets", "");
 
-  prop = RNA_def_property(srna, "collection_color", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_collection_sdna(prop, NULL, "collection_color", "");
-  RNA_def_property_struct_type(prop, "ThemeCollectionColor");
-  RNA_def_property_ui_text(prop, "Collection Color", "");
+  prop = api_def_prop(sapi, "collection_color", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_collection_stype(prop, NULL, "collection_color", "");
+  api_def_prop_struct_type(prop, "ThemeCollectionColor");
+  api_def_prop_ui_text(prop, "Collection Color", "");
 
-  prop = RNA_def_property(srna, "strip_color", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_collection_sdna(prop, NULL, "strip_color", "");
-  RNA_def_property_struct_type(prop, "ThemeStripColor");
-  RNA_def_property_ui_text(prop, "Strip Color", "");
+  prop = api_def_prop(sapi, "strip_color", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_collection_stype(prop, NULL, "strip_color", "");
+  api_def_prop_struct_type(prop, "ThemeStripColor");
+  api_def_prop_ui_text(prop, "Strip Color", "");
 }
 
-static void rna_def_userdef_addon(BlenderRNA *brna)
+static void api_def_userdef_addon(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Addon", NULL);
-  RNA_def_struct_sdna(srna, "bAddon");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Add-on", "Python add-ons to be loaded automatically");
+  sapi = api_def_struct(dapi, "Addon", NULL);
+  api_def_struct_stype(sapi, "bAddon");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Add-on", "Python add-ons to be loaded automatically");
 
-  prop = RNA_def_property(srna, "module", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Module", "Module name");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "module", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Module", "Module name");
+  api_def_struct_name_prop(sapi, prop);
 
-  /* Collection active property */
-  prop = RNA_def_property(srna, "preferences", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "AddonPreferences");
-  RNA_def_property_pointer_funcs(prop, "rna_Addon_preferences_get", NULL, NULL, NULL);
+  /* Collection active prop */
+  prop = api_def_prop(sapi, "prefs", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "AddonPrefs");
+  api_def_prop_ptr_fns(prop, "api_Addon_prefs_get", NULL, NULL, NULL);
 }
 
-static void rna_def_userdef_studiolights(BlenderRNA *brna)
+static void api_def_userdef_studiolights(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "StudioLights", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_ui_text(srna, "Studio Lights", "Collection of studio lights");
+  sapi = api_def_struct(dapi, "StudioLights", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_ui_text(sapi, "Studio Lights", "Collection of studio lights");
 
-  func = RNA_def_function(srna, "load", "rna_StudioLights_load");
-  RNA_def_function_ui_description(func, "Load studiolight from file");
-  parm = RNA_def_string(
-      func, "path", NULL, 0, "File Path", "File path where the studio light file can be found");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func,
+  fn = api_def_fn(sapi, "load", "api_StudioLights_load");
+  api_def_fn_ui_description(fn, "Load studiolight from file");
+  parm = api_def_string(
+      fn, "path", NULL, 0, "File Path", "File path where the studio light file can be found");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn,
                       "type",
-                      rna_enum_studio_light_type_items,
+                      api_enum_studio_light_type_items,
                       STUDIOLIGHT_TYPE_WORLD,
                       "Type",
                       "The type for the new studio light");
-  RNA_def_property_translation_context(parm, BLT_I18NCONTEXT_ID_LIGHT);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "studio_light", "StudioLight", "", "Newly created StudioLight");
-  RNA_def_function_return(func, parm);
+  api_def_prop_lang_cxt(parm, LANG_CXT_ID_LIGHT);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "studio_light", "StudioLight", "", "Newly created StudioLight");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new", "rna_StudioLights_new");
-  RNA_def_function_ui_description(func, "Create studiolight from default lighting");
-  parm = RNA_def_string(
-      func,
+  fn = api_def_fn(sapi, "new", "api_StudioLights_new");
+  api_def_fn_ui_description(fn, "Create studiolight from default lighting");
+  parm = api_def_string(
+      fn,
       "path",
       NULL,
       0,
       "Path",
       "Path to the file that will contain the lighting info (without extension)");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "studio_light", "StudioLight", "", "Newly created StudioLight");
-  RNA_def_function_return(func, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "studio_light", "StudioLight", "", "Newly created StudioLight");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_StudioLights_remove");
-  RNA_def_function_ui_description(func, "Remove a studio light");
-  parm = RNA_def_pointer(func, "studio_light", "StudioLight", "", "The studio light to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "remove", "apu_StudioLights_remove");
+  api_def_fn_ui_description(fn, "Remove a studio light");
+  parm = api_def_ptr(fn, "studio_light", "StudioLight", "", "The studio light to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "refresh", "rna_StudioLights_refresh");
-  RNA_def_function_ui_description(func, "Refresh Studio Lights from disk");
+  fn = api_def_fn(sapi, "refresh", "api_StudioLights_refresh");
+  api_def_fn_ui_description(fn, "Refresh Studio Lights from disk");
 }
 
-static void rna_def_userdef_studiolight(BlenderRNA *brna)
+static void api_def_userdef_studiolight(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  RNA_define_verify_sdna(false);
-  srna = RNA_def_struct(brna, "StudioLight", NULL);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Studio Light", "Studio light");
+  api_define_verify_stype(false);
+  sapi = api_def_struct(dapi, "StudioLight", NULL);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Studio Light", "Studio light");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_funcs(prop, "rna_UserDef_studiolight_index_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Index", "");
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_NONE);
+  api_def_prop_int_fns(prop, "api_UserDef_studiolight_index_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Index", "");
 
-  prop = RNA_def_property(srna, "is_user_defined", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_UserDef_studiolight_is_user_defined_get", NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "User Defined", "");
+  prop = api_def_prop(sapi, "is_user_defined", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_UserDef_studiolight_is_user_defined_get", NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "User Defined", "");
 
-  prop = RNA_def_property(srna, "has_specular_highlight_pass", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(srna, "has_specular_highlight_pass", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_funcs(
       prop, "rna_UserDef_studiolight_has_specular_highlight_pass_get", NULL);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
