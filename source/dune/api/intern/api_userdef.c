@@ -3728,154 +3728,153 @@ static void api_def_userdef_theme_collection_color(BlenderRNA *brna)
   ApiStruct *sapi;
   PropertyRNA *prop;
 
-  srna = RNA_def_struct(brna, "ThemeCollectionColor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeCollectionColor");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Collection Color", "Theme settings for collection colors");
+  sapi = api_def_struct(dapi, "ThemeCollectionColor", NULL);
+  api_def_struct_stype(sapi, "ThemeCollectionColor");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Collection Color", "Theme settings for collection colors");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "color");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Color", "Collection Color Tag");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "color");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Color", "Collection Color Tag");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_strip_color(BlenderRNA *brna)
+static void api_def_userdef_theme_strip_color(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeStripColor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeStripColor");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Strip Color", "Theme settings for strip colors");
+  sapi = api_def_struct(dapi, "ThemeStripColor", NULL);
+  api_def_struct_stype(sapi, "ThemeStripColor");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Strip Color", "Theme settings for strip colors");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "color");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Color", "Strip Color");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "color");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Color", "Strip Color");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_clip(BlenderRNA *brna)
+static void api_def_userdef_theme_space_clip(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_clip */
+  sapi = api_def_struct(dapi, "ThemeClipEditor", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Clip Editor", "Theme settings for the Movie Clip Editor");
 
-  srna = RNA_def_struct(brna, "ThemeClipEditor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Clip Editor", "Theme settings for the Movie Clip Editor");
+  api_def_userdef_theme_spaces_main(sapi);
+  api_def_userdef_theme_spaces_list_main(sapi);
 
-  rna_def_userdef_theme_spaces_main(srna);
-  rna_def_userdef_theme_spaces_list_main(srna);
+  prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Grid", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Grid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "marker_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "marker_outline");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Marker Outline", "Color of marker's outline");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "marker_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "marker_outline");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Marker Outline", "Color of marker's outline");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "marker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "marker");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Marker", "Color of marker");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "marker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "marker");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Marker", "Color of marker");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "active_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "act_marker");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Active Marker", "Color of active marker");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "active_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "act_marker");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Active Marker", "Color of active marker");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "selected_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "sel_marker");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Selected Marker", "Color of selected marker");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "selected_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "sel_marker");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Selected Marker", "Color of selected marker");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "disabled_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "dis_marker");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Disabled Marker", "Color of disabled marker");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "disabled_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "dis_marker");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Disabled Marker", "Color of disabled marker");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "locked_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "lock_marker");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Locked Marker", "Color of locked marker");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "locked_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "lock_marker");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Locked Marker", "Color of locked marker");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "path_before", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "path_before");
+  RNA_def_property_float_stype(prop, NULL, "path_before");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Path Before", "Color of path before current frame");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "path_after", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "path_after");
+  prop = RNA_def_property(sapi, "path_after", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_property_float_stype(prop, NULL, "path_after");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Path After", "Color of path after current frame");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "path_keyframe_before", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Path Before", "Color of path before current frame");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  RNA_def_property_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "path_keyframe_after", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Path After", "Color of path after current frame");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = RNA_def_prop(sapi, "path_keyframe_after", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_array(prop, 3);
+  RNA_def_prop_ui_text(prop, "Path After", "Color of path after current frame");
+  RNA_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "cframe");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Current Frame", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = RNA_def_prop(sapi, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_float_stype(prop, NULL, "cframe");
+  RNA_def_prop_array(prop, 3);
+  RNA_def_prop_ui_text(prop, "Current Frame", "");
+  RNA_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_scrub_background", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Scrubbing/Markers Region", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "time_scrub_background", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Scrubbing/Markers Region", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_marker_line", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Marker Line", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "time_marker_line", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Marker Line", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "time_marker_line_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Marker Line Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "time_marker_line_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Marker Line Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "strips", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "strip");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Strips", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "strips", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "strip");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Strips", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "strip_select");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Strips Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "strip_select");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Strips Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "metadatabg", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "metadatabg");
+  prop = RNA_def_property(sapi, "metadatabg", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_property_float_stype(prop, NULL, "metadatabg");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Metadata Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "metadatatext", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "metadatatext");
+  prop = api_def_prop(sapi, "metadatatext", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_float_stype(prop, NULL, "metadatatext");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Metadata Text", "");
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
