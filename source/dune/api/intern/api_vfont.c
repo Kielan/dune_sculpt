@@ -1,67 +1,67 @@
 #include <stdlib.h>
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_vfont_types.h"
+#include "types_vfont.h"
 
-#include "WM_types.h"
+#include "types_wm.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_vfont.h"
-#  include "DNA_object_types.h"
+#  include "dune_vfont.h"
+#  include "type_object.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-/* Matching function in rna_ID.c */
-static int rna_VectorFont_filepath_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+/* Matching function in api_id.c */
+static int api_VectorFont_filepath_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   VFont *vfont = (VFont *)ptr->owner_id;
-  if (BKE_vfont_is_builtin(vfont)) {
+  if (dune_vfont_is_builtin(vfont)) {
     return 0;
   }
   return PROP_EDITABLE;
 }
 
-static void rna_VectorFont_reload_update(Main *UNUSED(bmain),
+static void api_VectorFont_reload_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *ptr)
+                                         ApiPtr *ptr)
 {
   VFont *vf = (VFont *)ptr->owner_id;
-  BKE_vfont_free_data(vf);
+  dune_vfont_free_data(vf);
 
   /* update */
-  WM_main_add_notifier(NC_GEOM | ND_DATA, NULL);
-  DEG_id_tag_update(&vf->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, NULL);
+  graph_id_tag_update(&vf->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
 }
 
 #else
 
-void RNA_def_vfont(BlenderRNA *brna)
+void api_def_vfont(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "VectorFont", "ID");
-  RNA_def_struct_ui_text(srna, "Vector Font", "Vector font for Text objects");
-  RNA_def_struct_sdna(srna, "VFont");
-  RNA_def_struct_ui_icon(srna, ICON_FILE_FONT);
+  sapi = api_def_struct(dapi, "VectorFont", "ID");
+  api_def_struct_ui_text(sapi, "Vector Font", "Vector font for Text objects");
+  api_def_struct_stype(sapi, "VFont");
+  api_def_struct_ui_icon(sapi, ICON_FILE_FONT);
 
-  prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "filepath");
-  RNA_def_property_editable_func(prop, "rna_VectorFont_filepath_editable");
-  RNA_def_property_ui_text(prop, "File Path", "");
-  RNA_def_property_update(prop, NC_GEOM | ND_DATA, "rna_VectorFont_reload_update");
+  prop = api_def_prop(sapi, "filepath", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "filepath");
+  api_def_prop_editable_fn(prop, "api_VectorFont_filepath_editable");
+  api_def_prop_ui_text(prop, "File Path", "");
+  api_def_prop_update(prop, NC_GEOM | ND_DATA, "api_VectorFont_reload_update");
 
-  prop = RNA_def_property(srna, "packed_file", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "packedfile");
-  RNA_def_property_ui_text(prop, "Packed File", "");
+  prop = api_def_prop(sapi, "packed_file", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "packedfile");
+  api_def_prop_ui_text(prop, "Packed File", "");
 
-  RNA_api_vfont(srna);
+  api_api_vfont(sapi);
 }
 
 #endif
