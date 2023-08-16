@@ -3774,7 +3774,7 @@ static void api_def_userdef_theme_space_clip(DuneApi *dapi)
   prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Grid", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "marker_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "marker_outline");
@@ -3798,7 +3798,7 @@ static void api_def_userdef_theme_space_clip(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "sel_marker");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Selected Marker", "Color of selected marker");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "disabled_marker", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "dis_marker");
@@ -5503,156 +5503,151 @@ static void api_def_userdef_system(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(dapi, "PreferencesSystem", NULL);
-  api_def_struct_sdna(sapi, "UserDef");
-  api_def_struct_nested(dapi, sapi, "Preferences");
+  sapi = api_def_struct(dapi, "PrefsSystem", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "System & OpenGL", "Graphics driver and operating system settings");
 
   /* UI settings. */
-
   prop = api_def_prop(sapi, "ui_scale", PROP_FLOAT, PROP_NONE);
-  api_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_sdna(prop, NULL, "scale_factor");
-  RNA_def_property_ui_text(
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_stype(prop, NULL, "scale_factor");
+  api_def_prop_ui_text(
       prop,
       "UI Scale",
       "Size multiplier to use when displaying custom user interface elements, so that "
       "they are scaled correctly on screens with different DPI. This value is based "
-      "on operating system DPI settings and Blender display scale");
+      "on operating system DPI settings and Dune display scale");
 
-  prop = RNA_def_property(srna, "ui_line_width", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_sdna(prop, NULL, "pixelsize");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ui_line_width", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_stype(prop, NULL, "pixelsize");
+  api_def_prop_ui_text(
       prop,
       "UI Line Width",
       "Suggested line thickness and point size in pixels, for add-ons displaying custom "
-      "user interface elements, based on operating system settings and Blender UI scale");
+      "user interface elements, based on operating system settings and Dune UI scale");
 
-  prop = RNA_def_property(srna, "dpi", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "dpi", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "pixel_size", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_sdna(prop, NULL, "pixelsize");
+  prop = api_def_prop(sapi, "pixel_size", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_stypr(prop, NULL, "pixelsize");
 
   /* Memory */
-
-  prop = RNA_def_property(srna, "memory_cache_limit", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "memcachelimit");
-  RNA_def_property_range(prop, 0, max_memory_in_megabytes_int());
-  RNA_def_property_ui_text(prop, "Memory Cache Limit", "Memory cache limit (in megabytes)");
-  RNA_def_property_update(prop, 0, "rna_Userdef_memcache_update");
+  prop = api_def_prop(sapi, "memory_cache_limit", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "memcachelimit");
+  api_def_prop_range(prop, 0, max_memory_in_megabytes_int());
+  api_def_prop_ui_text(prop, "Memory Cache Limit", "Memory cache limit (in megabytes)");
+  api_def_prop_update(prop, 0, "api_Userdef_memcache_update");
 
   /* Sequencer disk cache */
+  prop = api_def_prop(sapi, "use_seq_disk_cache", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
+      prop, NULL, "seq_disk_cache_flag", SEQ_CACHE_DISK_CACHE_ENABLE);
+  api_def_prop_ui_text(prop, "Use Disk Cache", "Store cached images to disk");
 
-  prop = RNA_def_property(srna, "use_sequencer_disk_cache", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
-      prop, NULL, "sequencer_disk_cache_flag", SEQ_CACHE_DISK_CACHE_ENABLE);
-  RNA_def_property_ui_text(prop, "Use Disk Cache", "Store cached images to disk");
+  prop = api_def_prop(sapi, "seq_disk_cache_dir", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "seq_disk_cache_dir");
+  api_def_prop_update(prop, 0, "api_Userdef_disk_cache_dir_update");
+  api_def_prop_ui_text(prop, "Disk Cache Directory", "Override default directory");
 
-  prop = RNA_def_property(srna, "sequencer_disk_cache_dir", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "sequencer_disk_cache_dir");
-  RNA_def_property_update(prop, 0, "rna_Userdef_disk_cache_dir_update");
-  RNA_def_property_ui_text(prop, "Disk Cache Directory", "Override default directory");
+  prop = api_def_prop(sapi, "seq_disk_cache_size_limit", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "seq_disk_cache_size_limit");
+  api_def_prop_range(prop, 0, INT_MAX);
+  api_def_prop_ui_text(prop, "Disk Cache Limit", "Disk cache limit (in gigabytes)");
 
-  prop = RNA_def_property(srna, "sequencer_disk_cache_size_limit", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "sequencer_disk_cache_size_limit");
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_text(prop, "Disk Cache Limit", "Disk cache limit (in gigabytes)");
-
-  prop = RNA_def_property(srna, "sequencer_disk_cache_compression", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, seq_disk_cache_compression_levels);
-  RNA_def_property_enum_sdna(prop, NULL, "sequencer_disk_cache_compression");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "seq_disk_cache_compression", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, seq_disk_cache_compression_levels);
+  api_def_prop_enum_stype(prop, NULL, "seq_disk_cache_compression");
+  api_def_prop_ui_text(
       prop,
       "Disk Cache Compression Level",
       "Smaller compression will result in larger files, but less decoding overhead");
 
   /* Sequencer proxy setup */
+  prop = api_def_prop(srna, "seq_proxy_setup", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, seq_proxy_setup_options);
+  api_def_prop_enum_stype(prop, NULL, "seq_proxy_setup");
+  api_def_prop_ui_text(prop, "Proxy Setup", "When and how proxies are created");
 
-  prop = RNA_def_property(srna, "sequencer_proxy_setup", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, seq_proxy_setup_options);
-  RNA_def_property_enum_sdna(prop, NULL, "sequencer_proxy_setup");
-  RNA_def_property_ui_text(prop, "Proxy Setup", "When and how proxies are created");
-
-  prop = RNA_def_property(srna, "scrollback", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "scrollback");
-  RNA_def_property_range(prop, 32, 32768);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "scrollback", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "scrollback");
+  api_def_prop_range(prop, 32, 32768);
+  api_def_prop_ui_text(
       prop, "Scrollback", "Maximum number of lines to store for the console buffer");
 
   /* OpenGL */
 
   /* Viewport anti-aliasing */
-  prop = RNA_def_property(srna, "use_overlay_smooth_wire", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpu_flag", USER_GPU_FLAG_OVERLAY_SMOOTH_WIRE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_overlay_smooth_wire", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "gpu_flag", USER_GPU_FLAG_OVERLAY_SMOOTH_WIRE);
+  api_def_prop_ui_text(
       prop, "Overlay Smooth Wires", "Enable overlay smooth wires, reducing aliasing");
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
-  prop = RNA_def_property(srna, "use_edit_mode_smooth_wire", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(
+  prop = api_def_prop(sapi, "use_edit_mode_smooth_wire", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(
       prop, NULL, "gpu_flag", USER_GPU_FLAG_NO_EDIT_MODE_SMOOTH_WIRE);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Edit Mode Smooth Wires",
       "Enable edit mode edge smoothing, reducing aliasing (requires restart)");
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
-  prop = RNA_def_property(srna, "use_region_overlap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag2", USER_REGION_OVERLAP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_region_overlap", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag2", USER_REGION_OVERLAP);
+  api_def_prop_ui_text(
       prop, "Region Overlap", "Display tool/property regions over the main region");
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "rna_userdef_dpi_update");
 
-  prop = RNA_def_property(srna, "viewport_aa", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_userdef_viewport_aa_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "viewport_aa", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_userdef_viewport_aa_items);
+  api_def_prop_ui_text(
       prop, "Viewport Anti-Aliasing", "Method of anti-aliasing in 3d viewport");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "solid_lights", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "light_param", "");
-  RNA_def_property_struct_type(prop, "UserSolidLight");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "solid_lights", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "light_param", "");
+  api_def_prop_struct_type(prop, "UserSolidLight");
+  api_def_prop_ui_text(
       prop, "Solid Lights", "Lights used to display objects in solid shading mode");
 
-  prop = RNA_def_property(srna, "light_ambient", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "light_ambient");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "light_ambient", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "light_ambient");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Ambient Color", "Color of the ambient light that uniformly lit the scene");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "use_studio_light_edit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "edit_studio_light", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_studio_light_edit", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "edit_studio_light", 1);
+  api_def_prop_ui_text(
       prop, "Edit Studio Light", "View the result of the studio light editor in the viewport");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "gl_clip_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "glalphaclip");
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "gl_clip_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "glalphaclip");
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Clip Alpha", "Clip alpha below this threshold in the 3D textured view");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* Textures */
-
-  prop = RNA_def_property(srna, "image_draw_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, image_draw_methods);
-  RNA_def_property_enum_sdna(prop, NULL, "image_draw_method");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "image_draw_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, image_draw_methods);
+  api_def_prop_enum_stype(prop, NULL, "image_draw_method");
+  api_def_prop_ui_text(
       prop, "Image Display Method", "Method used for displaying images on the screen");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "anisotropic_filter", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "anisotropic_filter");
-  RNA_def_property_enum_items(prop, anisotropic_items);
-  RNA_def_property_enum_default(prop, 1);
+  prop = api_def_prop(sapi, "anisotropic_filter", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "anisotropic_filter");
+  RNA_def_prop_enum_items(prop, anisotropic_items);
+  RNA_def_prop_enum_default(prop, 1);
   RNA_def_property_ui_text(prop, "Anisotropic Filtering", "Quality of anisotropic filtering");
   RNA_def_property_update(prop, 0, "rna_userdef_anisotropic_update");
 
