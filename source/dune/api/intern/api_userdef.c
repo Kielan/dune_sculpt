@@ -3252,7 +3252,7 @@ static void api_def_userdef_theme_space_seq(DuneApi *dapi)
   prop = api_def_prop(sapi, "active_strip", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Active Strip", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "selected_strip", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
@@ -6415,28 +6415,28 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
 
   /* Autosave. */
   prop = api_def_prop(sapi, "save_version", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "versions");
-  RNA_def_prop_range(prop, 0, 32);
-  RNA_def_prop_ui_text(
+  api_def_prop_int_stype(prop, NULL, "versions");
+  api_def_prop_range(prop, 0, 32);
+  api_def_prop_ui_text(
       prop,
       "Save Versions",
       "The number of old versions to maintain in the current directory, when manually saving");
 
   prop = api_def_prop(sapi, "use_auto_save_temporary_files", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", USER_AUTOSAVE);
-  RNA_def_prop_ui_text(prop,
-                           "Auto Save Temporary Files",
-                           "Automatic saving of temporary files in temp directory, "
-                           "uses process ID.\n"
-                           "Warning: Sculpt and edit mode data won't be saved");
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_AUTOSAVE);
+  api_def_prop_ui_text(prop,
+                       "Auto Save Temporary Files",
+                       "Automatic saving of temporary files in temp directory, "
+                       "uses process ID.\n"
+                       "Warning: Sculpt and edit mode data won't be saved");
   api_def_prop_update(prop, 0, "api_userdef_autosave_update");
 
-  prop = RNA_def_prop(sapi, "auto_save_time", PROP_INT, PROP_NONE);
-  RNA_def_prop_int_stype(prop, NULL, "savetime");
-  RNA_def_prop_range(prop, 1, 60);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "auto_save_time", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "savetime");
+  api_def_prop_range(prop, 1, 60);
+  api_def_prop_ui_text(
       prop, "Auto Save Time", "The time (in minutes) to wait between automatic temporary saves");
-  RNA_def_prop_update(prop, 0, "api_userdef_autosave_update");
+  api_def_prop_update(prop, 0, "api_userdef_autosave_update");
 
   prop = api_def_prop(sapi, "recent_files", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, 0, 30);
@@ -6455,8 +6455,8 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "active_asset_lib", PROP_INT, PROP_NONE);
   apis_def_prop_ui_text(prop,
-                           "Active Asset Lib",
-                           "Index of the asset lib being edited in the Preferences UI");
+                        "Active Asset Lib",
+                        "Index of the asset lib being edited in the Preferences UI");
   /* Tag for UI-only update, meaning preferences will not be tagged as changed. */
   api_def_prop_update(prop, 0, "api_userdef_ui_update");
 }
@@ -6495,266 +6495,266 @@ static void api_def_userdef_experimental(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PreferencesExperimental", NULL);
-  RNA_def_struct_sdna(srna, "UserDef_Experimental");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Experimental", "Experimental features");
+  sapi = api_def_struct(dapi, "PrefsExperimental", NULL);
+  api_def_struct_stype(sapi, "UserDef_Experimental");
+  api_def_struct_nested(dapi, sapi, "Prefs");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Experimental", "Experimental features");
 
-  prop = RNA_def_property(srna, "use_undo_legacy", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_undo_legacy", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_undo_legacy", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_undo_legacy", 1);
+  api_def_prop_ui_text(
       prop,
       "Undo Legacy",
       "Use legacy undo (slower than the new default one, but may be more stable in some cases)");
 
-  prop = RNA_def_property(srna, "override_auto_resync", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "no_override_auto_resync", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "override_auto_resync", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "no_override_auto_resync", 1);
+  api_def_prop_ui_text(
       prop,
       "Override Auto Resync",
       "Enable library overrides automatic resync detection and process on file load. Disable when "
-      "dealing with older .blend files that need manual Resync (Enforce) handling");
+      "dealing with older .dune files that need manual Resync (Enforce) handling");
 
-  prop = RNA_def_property(srna, "use_new_point_cloud_type", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_new_point_cloud_type", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_new_point_cloud_type", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_new_point_cloud_type", 1);
+  api_def_prop_ui_text(
       prop, "New Point Cloud Type", "Enable the new point cloud type in the ui");
 
-  prop = RNA_def_property(srna, "use_full_frame_compositor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_full_frame_compositor", 1);
-  RNA_def_property_ui_text(prop,
-                           "Full Frame Compositor",
-                           "Enable compositor full frame execution mode option (no tiling, "
-                           "reduces execution time and memory usage)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "use_full_frame_compositor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_full_frame_compositor", 1);
+  api_def_prop_ui_text(prop,
+                       "Full Frame Compositor",
+                       "Enable compositor full frame execution mode option (no tiling, "
+                       "reduces execution time and memory usage)");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "use_new_curves_tools", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_new_curves_tools", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_new_curves_tools", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_new_curves_tools", 1);
+  api_def_prop_ui_text(
       prop, "New Curves Tools", "Enable additional features for the new curves data block");
 
-  prop = RNA_def_property(srna, "use_cycles_debug", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_cycles_debug", 1);
-  RNA_def_property_ui_text(prop, "Cycles Debug", "Enable Cycles debugging options for developers");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "use_cycles_debug", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_cycles_debug", 1);
+  api_def_prop_ui_text(prop, "Cycles Debug", "Enable Cycles debugging options for developers");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "use_sculpt_tools_tilt", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_sculpt_tools_tilt", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_sculpt_tools_tilt", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_sculpt_tools_tilt", 1);
+  api_def_prop_ui_text(
       prop, "Sculpt Mode Tilt Support", "Support for pen tablet tilt events in Sculpt Mode");
 
-  prop = RNA_def_property(srna, "use_sculpt_texture_paint", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_sculpt_texture_paint", 1);
-  RNA_def_property_ui_text(prop, "Sculpt Texture Paint", "Use texture painting in Sculpt Mode");
+  prop = api_def_prop(sapi, "use_sculpt_texture_paint", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_sculpt_texture_paint", 1);
+  api_def_prop_ui_text(prop, "Sculpt Texture Paint", "Use texture painting in Sculpt Mode");
 
-  prop = RNA_def_property(srna, "use_extended_asset_browser", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(prop,
-                           "Extended Asset Browser",
-                           "Enable Asset Browser editor and operators to manage regular "
-                           "data-blocks as assets, not just poses");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(sapi, "use_extended_asset_browser", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(prop,
+                       "Extended Asset Browser",
+                       "Enable Asset Browser editor and operators to manage regular "
+                       "data-blocks as assets, not just poses");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
-  prop = RNA_def_property(srna, "show_asset_debug_info", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(prop,
-                           "Asset Debug Info",
-                           "Enable some extra fields in the Asset Browser to aid in debugging");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(sapi, "show_asset_debug_info", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(prop,
+                       "Asset Debug Info",
+                       "Enable some extra fields in the Asset Browser to aid in debugging");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
-  prop = RNA_def_property(srna, "use_asset_indexing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "no_asset_indexing", 1);
-  RNA_def_property_ui_text(prop,
-                           "Asset Indexing",
-                           "Disabling the asset indexer forces every asset library refresh to "
-                           "completely reread assets from disk");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(sapi, "use_asset_indexing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "no_asset_indexing", 1);
+  api_def_prop_ui_text(prop,
+                       "Asset Indexing",
+                       "Disabling the asset indexer forces every asset library refresh to "
+                       "completely reread assets from disk");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
-  prop = RNA_def_property(srna, "use_override_templates", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_override_templates", 1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_override_templates", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_override_templates", 1);
+  api_def_prop_ui_text(
       prop, "Override Templates", "Enable library override template in the python API");
 
-  prop = RNA_def_property(srna, "enable_eevee_next", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "enable_eevee_next", 1);
-  RNA_def_property_ui_text(prop, "EEVEE Next", "Enable the new EEVEE codebase, requires restart");
+  prop = api_def_prop(sapi, "enable_eevee_next", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "enable_eevee_next", 1);
+  api_def_prop_ui_text(prop, "EEVEE Next", "Enable the new EEVEE codebase, requires restart");
 
-  prop = RNA_def_property(srna, "enable_workbench_next", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "enable_workbench_next", 1);
-  RNA_def_property_ui_text(prop,
-                           "Workbench Next",
-                           "Enable the new Workbench codebase, requires "
-                           "restart");
+  prop = api_def_prop(sapi, "enable_workbench_next", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "enable_workbench_next", 1);
+  api_def_prop_ui_text(prop,
+                       "Workbench Next",
+                       "Enable the new Workbench codebase, requires "
+                       "restart");
 
-  prop = RNA_def_property(srna, "use_viewport_debug", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_viewport_debug", 1);
-  RNA_def_property_ui_text(prop,
-                           "Viewport Debug",
-                           "Enable viewport debugging options for developers in the overlays "
-                           "pop-over");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(sapi, "use_viewport_debug", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_viewport_debug", 1);
+  api_def_prop_ui_text(prop,
+                       "Viewport Debug",
+                       "Enable viewport debugging options for developers in the overlays "
+                       "pop-over");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
-  prop = RNA_def_property(srna, "use_all_linked_data_direct", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_all_linked_data_direct", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "All Linked Data Direct",
       "Forces all linked data to be considered as directly linked. Workaround for current "
-      "issues/limitations in BAT (Blender studio pipeline tool)");
+      "issues/limitations in BAT (Dune studio pipeline tool)");
 
-  prop = RNA_def_property(srna, "use_new_volume_nodes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_new_volume_nodes", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "New Volume Nodes", "Enables visibility of the new Volume nodes in the UI");
 }
 
-static void rna_def_userdef_addon_collection(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_userdef_addon_collection(DuneApi *dapi, DuneApi *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "Addons");
-  srna = RNA_def_struct(brna, "Addons", NULL);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "User Add-ons", "Collection of add-ons");
+  api_def_prop_sapi(cprop, "Addons");
+  sapi = api_def_struct(dapi, "Addons", NULL);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "User Add-ons", "Collection of add-ons");
 
-  func = RNA_def_function(srna, "new", "rna_userdef_addon_new");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  RNA_def_function_ui_description(func, "Add a new add-on");
+  fn = api_def_fn(sapi, "new", "api_userdef_addon_new");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  api_def_fn_ui_description(fn, "Add a new add-on");
   /* return type */
-  parm = RNA_def_pointer(func, "addon", "Addon", "", "Add-on data");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "addon", "Addon", "", "Add-on data");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_userdef_addon_remove");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove add-on");
-  parm = RNA_def_pointer(func, "addon", "Addon", "", "Add-on to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_userdef_addon_remove");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove add-on");
+  parm = api_def_ptr(fn, "addon", "Addon", "", "Add-on to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_userdef_autoexec_path_collection(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_userdef_autoexec_path_collection(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "PathCompareCollection");
-  srna = RNA_def_struct(brna, "PathCompareCollection", NULL);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Paths Compare", "Collection of paths");
+  api_def_prop_sapi(cprop, "PathCompareCollection");
+  sapi = api_def_struct(dapi, "PathCompareCollection", NULL);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Paths Compare", "Collection of paths");
 
-  func = RNA_def_function(srna, "new", "rna_userdef_pathcompare_new");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  RNA_def_function_ui_description(func, "Add a new path");
+  fn = api_def_fn(sapi, "new", "api_userdef_pathcompare_new");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  api_def_fn_ui_description(fn, "Add a new path");
   /* return type */
-  parm = RNA_def_pointer(func, "pathcmp", "PathCompare", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "pathcmp", "PathCompare", "", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_userdef_pathcompare_remove");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove path");
-  parm = RNA_def_pointer(func, "pathcmp", "PathCompare", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_userdef_pathcompare_remove");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove path");
+  parm = api_def_ptr(fn, "pathcmp", "PathCompare", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-void RNA_def_userdef(BlenderRNA *brna)
+void api_def_userdef(DuneApi *dapi)
 {
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_ENABLE;
+  USERDEF_TAG_DIRTY_PROP_UPDATE_ENABLE;
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_userdef_dothemes(brna);
-  rna_def_userdef_solidlight(brna);
-  rna_def_userdef_walk_navigation(brna);
+  api_def_userdef_dothemes(dapi);
+  api_def_userdef_solidlight(dapi);
+  api_def_userdef_walk_navigation(dapi);
 
-  srna = RNA_def_struct(brna, "Preferences", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Preferences", "Global preferences");
+  sapi = api_def_struct(dapi, "Prefs", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Prefs", "Global prefs");
 
-  prop = RNA_def_property(srna, "active_section", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "space_data.section_active");
-  RNA_def_property_enum_items(prop, rna_enum_preference_section_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_UseDef_active_section_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active_section", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "space_data.section_active");
+  api_def_prop_enum_items(prop, api_enum_pref_section_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_UseDef_active_section_itemf");
+  api_def_prop_ui_text(
       prop, "Active Section", "Active section of the preferences shown in the user interface");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
   /* don't expose this directly via the UI, modify via an operator */
-  prop = RNA_def_property(srna, "app_template", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "app_template");
-  RNA_def_property_ui_text(prop, "Application Template", "");
+  prop = api_def_prop(sapi, "app_template", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "app_template");
+  api_def_prop_ui_text(prop, "Application Template", "");
 
-  prop = RNA_def_property(srna, "themes", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "themes", NULL);
-  RNA_def_property_struct_type(prop, "Theme");
-  RNA_def_property_ui_text(prop, "Themes", "");
+  prop = api_def_prop(sapi, "themes", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "themes", NULL);
+  api_def_prop_struct_type(prop, "Theme");
+  api_def_prop_ui_text(prop, "Themes", "");
 
-  prop = RNA_def_property(srna, "ui_styles", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "uistyles", NULL);
-  RNA_def_property_struct_type(prop, "ThemeStyle");
-  RNA_def_property_ui_text(prop, "Styles", "");
+  prop = api_def_prop(sapi, "ui_styles", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "uistyles", NULL);
+  api_def_prop_struct_type(prop, "ThemeStyle");
+  api_def_prop_ui_text(prop, "Styles", "");
 
-  prop = RNA_def_property(srna, "addons", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "addons", NULL);
-  RNA_def_property_struct_type(prop, "Addon");
-  RNA_def_property_ui_text(prop, "Add-on", "");
-  rna_def_userdef_addon_collection(brna, prop);
+  prop = api_def_prop(sapi, "addons", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "addons", NULL);
+  api_def_prop_struct_type(prop, "Addon");
+  api_def_prop_ui_text(prop, "Add-on", "");
+  api_def_userdef_addon_collection(dapi, prop);
 
-  prop = RNA_def_property(srna, "autoexec_paths", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "autoexec_paths", NULL);
-  RNA_def_property_struct_type(prop, "PathCompare");
-  RNA_def_property_ui_text(prop, "Auto-Execution Paths", "");
-  rna_def_userdef_autoexec_path_collection(brna, prop);
+  prop = api_def_prop(sapi, "autoexec_paths", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "autoexec_paths", NULL);
+  api_def_prop_struct_type(prop, "PathCompare");
+  api_def_prop_ui_text(prop, "Auto-Execution Paths", "");
+  api_def_userdef_autoexec_path_collection(dapi, prop);
 
   /* nested structs */
-  prop = RNA_def_property(srna, "view", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesView");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_view_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "View & Controls", "Preferences related to viewing data");
+  prop = api_def_prop(sapi, "view", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PrefsView");
+  api_def_prop_ptr_fns(prop, "api_UserDef_view_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "View & Controls", "Preferences related to viewing data");
 
-  prop = RNA_def_property(srna, "edit", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesEdit");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_edit_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Edit Methods", "Settings for interacting with Blender data");
+  prop = api_def_prop(sapi, "edit", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PrefsEdit");
+  api_def_prop_ptr_fns(prop, "api_UserDef_edit_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Edit Methods", "Settings for interacting with Blender data");
 
-  prop = RNA_def_property(srna, "inputs", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesInput");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_input_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "inputs", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PrefsInput");
+  api_def_prop_ptr_fns(prop, "api_UserDef_input_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Inputs", "Settings for input devices");
 
   prop = api_def_prop(sapi, "keymap", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_struct_type(prop, "PreferencesKeymap");
+  api_def_prop_struct_type(prop, "PrefsKeymap");
   api_def_prop_ptr_fns(prop, "api_UserDef_keymap_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Keymap", "Shortcut setup for keyboards and other input devices");
 
   prop = api_def_prop(sapi, "filepaths", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_struct_type(prop, "PreferencesFilePaths");
+  api_def_prop_struct_type(prop, "PrefsFilePaths");
   api_def_prop_ptr_fns(prop, "api_UserDef_filepaths_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "File Paths", "Default paths for external files");
 
   prop = api_def_prop(sapi, "system", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_struct_type(prop, "PreferencesSystem");
+  api_def_prop_struct_type(prop, "PrefsSystem");
   api_def_prop_ptr_fns(prop, "api_UserDef_system_get", NULL, NULL, NULL);
   api_def_prop_ui_text(
       prop, "System & OpenGL", "Graphics driver and operating system settings");
 
   prop = api_def_prop(sapi, "apps", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_struct_type(prop, "PreferencesApps");
+  api_def_prop_struct_type(prop, "PrefsApps");
   api_def_prop_ptr_fns(prop, "api_UserDef_apps_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Apps", "Preferences that work only for apps");
 
-  prop = api_def_prop(srna, "experimental", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "experimental", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_struct_type(prop, "PreferencesExperimental");
+  api_def_prop_struct_type(prop, "PrefsExperimental");
   api_def_prop_ui_text(
       prop,
       "Experimental",
@@ -6779,14 +6779,14 @@ void RNA_def_userdef(BlenderRNA *brna)
   api_def_prop_struct_type(prop, "StudioLight");
   api_def_prop_sapi(prop, "StudioLights");
   api_def_prop_collection_fns(prop,
-                                "api_UserDef_studiolight_begin",
-                                "api_iter_list_next",
-                                "api_iter_list_end",
-                                "api_iter_list_get",
-                                NULL,
-                                NULL,
-                                NULL,
-                                NULL);
+                              "api_UserDef_studiolight_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   api_def_prop_ui_text(prop, "Studio Lights", "");
 
   /* Preferences Flags */
@@ -6794,13 +6794,13 @@ void RNA_def_userdef(BlenderRNA *brna)
   api_def_prop_bool_stype(prop, NULL, "pref_flag", USER_PREF_FLAG_SAVE);
   api_def_prop_ui_text(prop,
                        "Save on Exit",
-                        "Save preferences on exit when modified "
-                        "(unless factory settings have been loaded)");
+                       "Save preferences on exit when modified "
+                       "(unless factory settings have been loaded)");
 
   prop = api_def_prop(sapi, "is_dirty", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "runtime.is_dirty", 0);
-  api_def_prop_ui_text(prop, "Dirty", "Preferences have changv
-  api_def_prop_update(prop, 0, "rna_userdef_ui_update");
+  api_def_prop_ui_text(prop, "Dirty", "Preferences have change");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 
   api_def_userdef_view(dapi);
   api_def_userdef_edit(dapi);
