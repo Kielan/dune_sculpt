@@ -15,12 +15,11 @@ static void api_VectorFont_pack(VFont *vfont, Main *main, ReportList *reports)
       reports, vfont->filepath, ID_DUNE_PATH(main, &vfont->id));
 }
 
-static void rna_VectorFont_unpack(VFont *vfont, Main *bmain, ReportList *reports, int method)
+static void api_VectorFont_unpack(VFont *vfont, Main *main, ReportList *reports, int method)
 {
   if (!vfont->packedfile) {
     dune_report(reports, RPT_ERROR, "Font not packed");
-  }
-  else {
+  } else {
     /* reports its own error on failure */
     dune_packedfile_unpack_vfont(main, reports, vfont, method);
   }
@@ -32,11 +31,11 @@ void api_vfont(ApiStruct *sapi)
 {
   ApiFn *fn;
 
-  fn = api_def_fn(sapi, "pack", "rna_VectorFont_pack");
+  fn = api_def_fn(sapi, "pack", "api_VectorFont_pack");
   api_def_fn_ui_description(fn, "Pack the font into the current dune file");
   api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
 
-  func = api_def_fn(sapi, "unpack", "rna_VectorFont_unpack");
+  fn = api_def_fn(sapi, "unpack", "api_VectorFont_unpack");
   api_def_fn_ui_description(fn, "Unpack the font to the samples filename");
   api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
   api_def_enum(
