@@ -84,7 +84,6 @@ static void api_Volume_velocity_grid_set(ApiPtr *ptr, const char *value)
 }
 
 /* Grid */
-
 static void api_VolumeGrid_name_get(ApiPtr *ptr, char *value)
 {
   VolumeGrid *grid = ptr->data;
@@ -166,7 +165,6 @@ static int api_Volume_grids_length(ApiPtr *ptr)
 }
 
 /* Active Grid */
-
 static void api_VolumeGrids_active_index_range(
     ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
@@ -191,7 +189,6 @@ static void api_VolumeGrids_active_index_set(ApiPtr *ptr, int value)
 }
 
 /* Loading */
-
 static bool api_VolumeGrids_is_loaded_get(ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->data;
@@ -199,7 +196,6 @@ static bool api_VolumeGrids_is_loaded_get(ApiPtr *ptr)
 }
 
 /* Error Message */
-
 static void api_VolumeGrids_error_message_get(ApiPtr *ptr, char *value)
 {
   Volume *volume = (Volume *)ptr->data;
@@ -261,20 +257,20 @@ static void api_def_volume_grid(DuneApi *api)
   api_def_prop_translation_cxt(prop, LANG_CXT_ID_VOLUME);
 
   prop = api_def_prop(sapi, "channels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_int_fns(prop, "rna_VolumeGrid_channels_get", NULL, NULL);
-  RNA_def_prop_ui_text(prop, "Channels", "Number of dimensions of the grid data type");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_int_fns(prop, "api_VolumeGrid_channels_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Channels", "Number of dimensions of the grid data type");
 
   prop = api_def_prop(sapi, "matrix_object", PROP_FLOAT, PROP_MATRIX);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  api_def_prop_float_fns(prop, "rna_VolumeGrid_matrix_object_get", NULL, NULL);
+  api_def_prop_multi_array(prop, 2, api_matrix_dimsize_4x4);
+  api_def_prop_float_fns(prop, "api_VolumeGrid_matrix_object_get", NULL, NULL);
   api_def_prop_ui_text(
       prop, "Matrix Object", "Transformation matrix from voxel index to object space");
 
-  prop = api_def_prop(sapi, "is_loaded", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_loaded", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_bool_fns(prop, "rna_VolumeGrid_is_loaded_get", NULL);
+  api_def_prop_bool_fns(prop, "api_VolumeGrid_is_loaded_get", NULL);
   api_def_prop_ui_text(prop, "Is Loaded", "Grid tree is loaded in memory");
 
   /* API */
@@ -345,22 +341,22 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
   ApiFn *fn;
   ApiProp *parm;
 
-  fn = api_def_fn(sapi, "load", "rna_Volume_load");
+  fn = api_def_fn(sapi, "load", "api_Volume_load");
   api_def_fn_ui_description(fn, "Load list of grids and metadata from file");
   api_def_fn_flag(fn, FN_USE_MAIN);
   parm = api_def_bool(fn, "success", 0, "", "True if grid list was successfully loaded");
   api_def_fn_return(fn parm);
 
-  fn = api_def_fn(srna, "unload", "BKE_volume_unload");
-  api_def_fn_ui_description(func, "Unload all grid and voxel data from memory");
+  fn = api_def_fn(sapi, "unload", "dune_volume_unload");
+  api_def_fn_ui_description(fn, "Unload all grid and voxel data from memory");
 
-  func = RNA_def_function(srna, "save", "rna_Volume_save");
-  RNA_def_function_ui_description(func, "Save grids and metadata to file");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  parm = RNA_def_string_file_path(func, "filepath", NULL, 0, "", "File path to save to");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "success", 0, "", "True if grid list was successfully loaded");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "save", "api_Volume_save");
+  api_def_fn_ui_description(fn, "Save grids and metadata to file");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
+  parm = api_def_string_file_path(fn, "filepath", NULL, 0, "", "File path to save to");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "success", 0, "", "True if grid list was successfully loaded");
+  RNA_def_function_return(fn, parm);
 }
 
 static void rna_def_volume_display(BlenderRNA *brna)
