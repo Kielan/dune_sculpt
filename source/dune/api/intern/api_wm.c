@@ -1466,7 +1466,6 @@ static char *api_op_description_cb(Ctx *C, wmOpType *ot, ApiPtr *prop_ptr)
 static bool api_op_unregister(struct Main *main, ApiStruct *type);
 
 /* bpy_oper_wrap.c */
-
 extern void BPY_api_op_wrapper(wmOpType *ot, void *userdata);
 extern void BPY_api_op_macro_wrapper(wmOpType *ot, void *userdata);
 
@@ -1488,7 +1487,7 @@ static ApiStruct *api_op_register(Main *main,
     char idname[OP_MAX_TYPENAME];
     char name[OP_MAX_TYPENAME];
     char description[API_DYN_DESCR_MAX];
-    char lang_ctx[DUNE_ST_MAXNAME];
+    char lang_cxt[DUNE_ST_MAXNAME];
     char undo_group[OP_MAX_TYPENAME];
   } temp_buffers;
 
@@ -1541,8 +1540,8 @@ static ApiStruct *api_op_register(Main *main,
   }
 
   /* We have to set default context if the class doesn't define it. */
-  if (temp_buffers.translation_ctx[0] == '\0') {
-    STRNCPY(temp_buffers.translation_ctx, LANG_OP_DEFAULT);
+  if (temp_buffers.translation_cxt[0] == '\0') {
+    STRNCPY(temp_buffers.translation_cxt, LANG_OP_DEFAULT);
   }
 
   /* Convert foo.bar to FOO_OT_bar
@@ -1571,12 +1570,12 @@ static ApiStruct *api_op_register(Main *main,
    * for now just remove from dir(bpy.types) */
 
   /* create a new operator type */
-  dummy_ot.api_ext.sapi = api_def_struct_ptr(&DUNE_API, dummy_ot.idname, &RNA_Operator);
+  dummy_ot.api_ext.sapi = api_def_struct_ptr(&DUNE_API, dummy_ot.idname, &Api_Op);
 
   /* Operator properties are registered separately. */
   api_def_struct_flag(dummy_ot.api_ext.sapi, STRUCT_NO_IDPROPS);
 
-  api_def_struct_pr_tags(dummy_ot.api_ext.sapi, api_enum_operator_property_tags);
+  api_def_struct_pr_tags(dummy_ot.api_ext.sapi, api_enum_op_prop_tags);
   api_def_struct_translation_context(dummy_ot.api_ext.sapi, dummy_ot.translation_context);
   dummy_ot.api_ext.data = data;
   dummy_ot.api_ext.call = call;
@@ -1592,7 +1591,7 @@ static ApiStruct *api_op_register(Main *main,
   dummy_ot.get_description = (have_fn[7]) ? api_op_description_cb : NULL;
   wm_optype_append_ptr(BPY_api_op_wrapper, (void *)&dummy_ot);
 
-  /* update while blender is running */
+  /* update while dune sculpt is running */
   wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
 
   return dummy_ot.api_ext.sapi;
@@ -1718,7 +1717,7 @@ static ApiStruct *api_MacroOp_register(Main *main,
         idname_conv,
         temp_buffers.name,
         temp_buffers.description,
-        temp_buffers.translation_ctx,
+        temp_buffers.lang_cxt,
         temp_buffers.undo_group,
     };
     char *strings_table[ARRAY_SIZE(strings)];
@@ -1835,10 +1834,8 @@ static void api_KeyMapItem_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiP
 
 #else /* API_RUNTIME */
 
-/**
- * expose `Op.options` as its own type so we can control each flags use
- * (some are read-only).
- */
+/* expose `Op.options` as its own type so we can control each flags use
+ * (some are read-only). */
 static void api_def_op_options_runtime(DuneApi *dapi)
 {
   ApiStruct *sapi;
@@ -1869,7 +1866,7 @@ static void api_def_op_options_runtime(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Repeat Call", "True when run from the operator 'Repeat Last'");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = api_def_prop(sapi, "use_cursor_region", PROP_BOOLEAN, PROP_BOOLEAN);
+  prop = api_def_prop(sapi, "use_cursor_region", PROP_BOOL, PROP_BOOL);
   api_def_prop_bool_stype(prop, NULL, "flag", OP_IS_MODAL_CURSOR_REGION);
   api_def_prop_ui_text(
       prop, "Focus Region", "Enable to use the region under the cursor for modal execution");
@@ -2022,7 +2019,7 @@ static void api_def_macro_op(DuneApi *dapi)
   api_def_struct_register_fns(
       sapi, "api_MacroOp_register", "api_op_unregister", "api_op_instance");
 #  endif
-  api_def_struct_translation_context(sapi, LANG_OP_DEFAULT);
+  api_def_struct_translation_cxt(sapi, LANG_OP_DEFAULT);
   api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   api_def_op_common(sapi);
@@ -2038,7 +2035,7 @@ static void api_def_op_type_macro(DuneApi *dapi)
   srna = api_def_struct(dapi, "OpMacro", NULL);
   api_def_struct_ui_text(
       sapi, "Operator Macro", "Storage of a sub operator in a macro after it has been added");
-  api_def_struct_stype(sapi, "wmOperatorTypeMacro");
+  api_def_struct_stype(sapi, "wmOpTypeMacro");
 
 #  if 0
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
@@ -2060,17 +2057,17 @@ static void api_def_op_utils(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "OperatorMousePath", "PropertyGroup");
+  srna = api_def_struct(dapi, "OpMousePath", "PropGroup");
   api_def_struct_ui_text(
       sapi, "Op Mouse Path", "Mouse path values for operators that record such paths");
 
   prop = api_def_prop(sapi, "loc", PROP_FLOAT, PROP_XYZ);
-  api_def_prop_flag(prop, PROP_IDPROPERTY);
+  api_def_prop_flag(prop, PROP_IDPROP);
   api_def_prop_array(prop, 2);
   api_def_prop_ui_text(prop, "Location", "Mouse location");
 
   prop = api_def_prop(sapi, "time", PROP_FLOAT, PROP_NONE);
-  api_def_prop_flag(prop, PROP_IDPROPERTY);
+  api_def_prop_flag(prop, PROP_IDPROP);
   api_def_prop_ui_text(prop, "Time", "Time of mouse location");
 }
 
@@ -2106,8 +2103,8 @@ static void api_def_event(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "unicode", PROP_STRING, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_string_funcs(prop, "api_Event_unicode_get", "api_Event_unicode_length", NULL);
-  RNA_def_property_ui_text(prop, "Unicode", "Single unicode character for this event");
+  api_def_prop_string_fns(prop, "api_Event_unicode_get", "api_Event_unicode_length", NULL);
+  api_def_prop_ui_text(prop, "Unicode", "Single unicode character for this event");
 
   /* enums */
   prop = api_def_prop(sapi, "value", PROP_ENUM, PROP_NONE);
@@ -2132,7 +2129,7 @@ static void api_def_event(DuneApi *dapi)
   prop = api_def_prop(sapi, "type_prev", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "prev_type");
   api_def_prop_enum_items(prop, api_enum_event_type_items);
-  api_def_prop_translation_ctx(prop, LANG_UI_EVENTS);
+  api_def_prop_translation_cxt(prop, LANG_UI_EVENTS);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Previous Type", "");
 
