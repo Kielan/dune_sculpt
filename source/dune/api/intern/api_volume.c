@@ -345,7 +345,7 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_fn_ui_description(fn, "Load list of grids and metadata from file");
   api_def_fn_flag(fn, FN_USE_MAIN);
   parm = api_def_bool(fn, "success", 0, "", "True if grid list was successfully loaded");
-  api_def_fn_return(fn parm);
+  api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "unload", "dune_volume_unload");
   api_def_fn_ui_description(fn, "Unload all grid and voxel data from memory");
@@ -356,27 +356,27 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
   parm = api_def_string_file_path(fn, "filepath", NULL, 0, "", "File path to save to");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_bool(fn, "success", 0, "", "True if grid list was successfully loaded");
-  RNA_def_function_return(fn, parm);
+  api_def_n_return(fn, parm);
 }
 
-static void rna_def_volume_display(BlenderRNA *brna)
+static void api_def_volume_display(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "VolumeDisplay", NULL);
-  RNA_def_struct_ui_text(srna, "Volume Display", "Volume object display settings for 3D viewport");
-  RNA_def_struct_sdna(srna, "VolumeDisplay");
-  RNA_def_struct_path_func(srna, "rna_VolumeDisplay_path");
+  sapi = api_def_struct(dapi, "VolumeDisplay", NULL);
+  api_def_struct_ui_text(sapi, "Volume Display", "Volume object display settings for 3D viewport");
+  api_def_struct_stype(sapi, "VolumeDisplay");
+  api_def_struct_path_fn(sapi, "api_VolumeDisplay_path");
 
-  prop = RNA_def_property(srna, "density", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.00001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.1, 100.0, 1, 3);
-  RNA_def_property_ui_text(prop, "Density", "Thickness of volume display in the viewport");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "density", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.00001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.1, 100.0, 1, 3);
+  api_def_prop_ui_text(prop, "Density", "Thickness of volume display in the viewport");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  static const EnumPropertyItem wireframe_type_items[] = {
+  static const EnumPropItem wireframe_type_items[] = {
       {VOLUME_WIREFRAME_NONE, "NONE", 0, "None", "Don't display volume in wireframe mode"},
       {VOLUME_WIREFRAME_BOUNDS,
        "BOUNDS",
@@ -396,7 +396,7 @@ static void rna_def_volume_display(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem wireframe_detail_items[] = {
+  static const EnumPropItem wireframe_detail_items[] = {
       {VOLUME_WIREFRAME_COARSE,
        "COARSE",
        0,
@@ -410,7 +410,7 @@ static void rna_def_volume_display(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem interpolation_method_items[] = {
+  static const EnumPropItem interpolation_method_items[] = {
       {VOLUME_DISPLAY_INTERP_LINEAR, "LINEAR", 0, "Linear", "Good smoothness and speed"},
       {VOLUME_DISPLAY_INTERP_CUBIC,
        "CUBIC",
@@ -421,7 +421,7 @@ static void rna_def_volume_display(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem axis_slice_position_items[] = {
+  static const EnumPropItem axis_slice_position_items[] = {
       {VOLUME_SLICE_AXIS_AUTO,
        "AUTO",
        0,
@@ -433,43 +433,43 @@ static void rna_def_volume_display(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "wireframe_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, wireframe_type_items);
-  RNA_def_property_ui_text(prop, "Wireframe", "Type of wireframe display");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "wireframe_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, wireframe_type_items);
+  api_def_prop_ui_text(prop, "Wireframe", "Type of wireframe display");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  prop = RNA_def_property(srna, "wireframe_detail", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, wireframe_detail_items);
-  RNA_def_property_ui_text(prop, "Wireframe Detail", "Amount of detail for wireframe display");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "wireframe_detail", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, wireframe_detail_items);
+  api_def_prop_ui_text(prop, "Wireframe Detail", "Amount of detail for wireframe display");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  prop = RNA_def_property(srna, "interpolation_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, interpolation_method_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "interpolation_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, interpolation_method_items);
+  api_def_prop_ui_text(
       prop, "Interpolation", "Interpolation method to use for volumes in solid mode");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  prop = RNA_def_property(srna, "use_slice", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "axis_slice_method", VOLUME_AXIS_SLICE_SINGLE);
-  RNA_def_property_ui_text(prop, "Slice", "Perform a single slice of the domain object");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "use_slice", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "axis_slice_method", VOLUME_AXIS_SLICE_SINGLE);
+  api_def_prop_ui_text(prop, "Slice", "Perform a single slice of the domain object");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  prop = RNA_def_property(srna, "slice_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, axis_slice_position_items);
-  RNA_def_property_ui_text(prop, "Axis", "");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "slice_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, axis_slice_position_items);
+  api_def_prop_ui_text(prop, "Axis", "");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 
-  prop = RNA_def_property(srna, "slice_depth", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 3);
-  RNA_def_property_ui_text(prop, "Position", "Position of the slice");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  prop = api_def_prop(sapi, "slice_depth", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 3);
+  api_def_prop_ui_text(prop, "Position", "Position of the slice");
+  api_def_prop_update(prop, 0, "api_Volume_update_display");
 }
 
-static void rna_def_volume_render(BlenderRNA *brna)
+static void api_def_volume_render(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "VolumeRender", NULL);
   RNA_def_struct_ui_text(srna, "Volume Render", "Volume object render settings");
