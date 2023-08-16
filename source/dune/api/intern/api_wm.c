@@ -985,12 +985,12 @@ static const EnumPropItem *api_KeyMapItem_type_itemf(Ctx *UNUSED(C),
   }
 }
 
-static const EnumPropItem *api_KeyMapItem_propvalue_itemf(bContext *C,
-                                                              PointerRNA *ptr,
-                                                              PropertyRNA *UNUSED(prop),
-                                                              bool *UNUSED(r_free))
+static const EnumPropItem *api_KeyMapItem_propvalue_itemf(Cxt *C,
+                                                          ApiPtr *ptr,
+                                                          ApiProp *UNUSED(prop),
+                                                          bool *UNUSED(r_free))
 {
-  wmWindowManager *wm = ctx_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   wmKeyConfig *kc;
   wmKeyMap *km;
 
@@ -1011,14 +1011,13 @@ static const EnumPropItem *api_KeyMapItem_propvalue_itemf(bContext *C,
   return api_enum_keymap_propvalue_items; /* ERROR */
 }
 
-static bool api_KeyMapItem_any_get(PointerRNA *ptr)
+static bool api_KeyMapItem_any_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
 
   if (kmi->shift == KM_ANY && kmi->ctrl == KM_ANY && kmi->alt == KM_ANY && kmi->oskey == KM_ANY) {
     return 1;
-  }
-  else {
+  } else {
     return 0;
   }
 }
@@ -1029,19 +1028,18 @@ static void api_KeyMapItem_any_set(ApiPtr *ptr, bool value)
 
   if (value) {
     kmi->shift = kmi->ctrl = kmi->alt = kmi->oskey = KM_ANY;
-  }
-  else {
+  } else {
     kmi->shift = kmi->ctrl = kmi->alt = kmi->oskey = 0;
   }
 }
 
-static bool api_KeyMapItem_shift_get(PointerRNA *ptr)
+static bool api_KeyMapItem_shift_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->shift != 0;
 }
 
-static bool api_KeyMapItem_ctrl_get(PointerRNA *ptr)
+static bool api_KeyMapItem_ctrl_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->ctrl != 0;
@@ -1264,7 +1262,7 @@ static ApiPtr api_WindowManager_xr_session_state_get(ApiPtr *ptr)
 
 #  ifdef WITH_PYTHON
 
-static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
+static bool api_op_poll_cb(Cxt *C, wmOpType *ot)
 {
   extern ApiFn api_ap_poll_fb;
 
@@ -1275,10 +1273,10 @@ static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
   bool visible;
 
   api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
-  fn = &api_op_poll_fn; /* RNA_struct_find_function(&ptr, "poll"); */
+  fn = &api_op_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   ot->api_ext.call(C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "visible", &ret);
@@ -1289,7 +1287,7 @@ static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
   return visible;
 }
 
-static int api_op_ex_cb(Ctx *C, wmOp *op)
+static int api_op_ex_cb(Cxt *C, wmOp *op)
 {
   extern apiFn api_op_ex_fn;
 
@@ -1302,9 +1300,9 @@ static int api_op_ex_cb(Ctx *C, wmOp *op)
   api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
   fn = &api_op_ex_fn; /* api_struct_find_fn(&opr, "execute"); */
 
-  api_param_list_create(&list, &opr, func);
-  api_param_set_lookup(&list, "context", &C);
-  op->type->api_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "cxt", &C);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
   api_param_get_lookup(&list, "result", &ret);
   result = *(int *)ret;
@@ -1315,7 +1313,7 @@ static int api_op_ex_cb(Ctx *C, wmOp *op)
 }
 
 /* same as execute() but no return value */
-static bool api_op_check_cb(Ctx *C, wmOp *op)
+static bool api_op_check_cb(Cxt *C, wmOp *op)
 {
   extern ApiFn api_op_check_fn;
 
@@ -1326,10 +1324,10 @@ static bool api_op_check_cb(Ctx *C, wmOp *op)
   bool result;
 
   api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
-  fn = &api_op_check_fn; /* RNA_struct_find_function(&opr, "check"); */
+  fn = &api_op_check_fn; /* api_struct_find_fn(&opr, "check"); */
 
   api_param_list_create(&list, &opr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   op->type->api_ext.call(C, &opr, fn, &list);
 
   api_param_get_lookup(&list, "result", &ret);
@@ -1340,7 +1338,7 @@ static bool api_op_check_cb(Ctx *C, wmOp *op)
   return result;
 }
 
-static int api_op_invoke_cb(Ctx *C, wmOp *op, const wmEvent *event)
+static int api_op_invoke_cb(Cxt *C, wmOp *op, const wmEvent *event)
 {
   extern ApiFn api_op_invoke_fb;
 
@@ -1354,7 +1352,7 @@ static int api_op_invoke_cb(Ctx *C, wmOp *op, const wmEvent *event)
   fn = &ap_op_invoke_fn; /* api_struct_find_fn(&opr, "invoke"); */
 
   api_param_list_create(&list, &opr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "event", &event);
   op->type->api_ext.call(C, &opr, fn, &list);
 
@@ -1367,7 +1365,7 @@ static int api_op_invoke_cb(Ctx *C, wmOp *op, const wmEvent *event)
 }
 
 /* same as invoke */
-static int api_op_modal_cb(Ctx *C, wmOp *op, const wmEvent *event)
+static int api_op_modal_cb(Cxt *C, wmOp *op, const wmEvent *event)
 {
   extern ApiFn api_op_modal_fn;
 
@@ -1381,7 +1379,7 @@ static int api_op_modal_cb(Ctx *C, wmOp *op, const wmEvent *event)
   fn = &api_op_modal_fn; /* api_struct_find_fn(&opr, "modal"); */
 
   api_param_list_create(&list, &opr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "event", &event);
   op->type->api_ext.call(C, &opr, fn, &list);
 
@@ -1393,7 +1391,7 @@ static int api_op_modal_cb(Ctx *C, wmOp *op, const wmEvent *event)
   return result;
 }
 
-static void api_op_draw_cb(Ctx *C, wmOp *op)
+static void api_op_draw_cb(Cxt *C, wmOp *op)
 {
   extern ApiFn api_op_draw_fn;
 
@@ -1405,14 +1403,14 @@ static void api_op_draw_cb(Ctx *C, wmOp *op)
   fn = &api_op_draw_fn; /* api_struct_find_function(&opr, "draw"); */
 
   api_param_list_create(&list, &opr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   op->type->api_ext.call(C, &opr, fn, &list);
 
   api_param_list_free(&list);
 }
 
 /* same as exec(), but call cancel */
-static void api_op_cancel_cb(Ctx *C, wmOp *op)
+static void api_op_cancel_cb(Cxt *C, wmOp *op)
 {
   extern ApiFn api_op_cancel_fn;
 
@@ -1424,13 +1422,13 @@ static void api_op_cancel_cb(Ctx *C, wmOp *op)
   fn = &api_op_cancel_fn; /* api_struct_find_fn(&opr, "cancel"); */
 
   api_param_list_create(&list, &opr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   op->type->api_ext.call(C, &opr, fn, &list);
 
   api_param_list_free(&list);
 }
 
-static char *api_op_description_cb(Ctx *C, wmOpType *ot, ApiPtr *prop_ptr)
+static char *api_op_description_cb(Cxt *C, wmOpType *ot, ApiPtr *prop_ptr)
 {
   extern ApiFn api_op_description_fn;
 
@@ -1441,11 +1439,11 @@ static char *api_op_description_cb(Ctx *C, wmOpType *ot, ApiPtr *prop_ptr)
   char *result;
 
   api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
-  fn = &api_op_description_fn; /* RNA_struct_find_function(&ptr, "description"); */
+  fn = &api_op_description_fn; /* api_struct_find_function(&ptr, "description"); */
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
-  api_param_set_lookup(&list, "properties", prop_ptr);
+  api_param_set_lookup(&list, "cxt", &C);
+  api_param_set_lookup(&list, "props", prop_ptr);
   ot->api_ext.call(C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "result", &ret);
@@ -1453,8 +1451,7 @@ static char *api_op_description_cb(Ctx *C, wmOpType *ot, ApiPtr *prop_ptr)
 
   if (result && result[0]) {
     result = lib_strdup(result);
-  }
-  else {
+  } else {
     result = NULL;
   }
 
@@ -1477,7 +1474,7 @@ static ApiStruct *api_op_register(Main *main,
                                   StructCbFn call,
                                   StructFreeFn free)
 {
-  const char *error_prefix = "Registering operator class:";
+  const char *error_prefix = "Registering op class:";
   wmOpType dummy_ot = {NULL};
   wmOp dummy_op = {NULL};
   ApiPtr dummy_op_ptr;
@@ -1496,14 +1493,14 @@ static ApiStruct *api_op_register(Main *main,
   dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
   dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
   dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.lang_ctx =
-      temp_buffers.translation_context;          /* only assign the pointer, string is NULL'd */
+  dummy_ot.lang_cxt =
+      temp_buffers.lang_cxt;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
   api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_op_ptr);
 
   /* clear in case they are left unset */
   temp_buffers.idname[0] = temp_buffers.name[0] = temp_buffers.description[0] =
-      temp_buffers.undo_group[0] = temp_buffers.translation_ctx[0] = '\0';
+      temp_buffers.undo_group[0] = temp_buffers.lang_cxt[0] = '\0';
 
   /* validate the python class */
   if (validate(&dummy_op_ptr, data, have_fn) != 0) {
@@ -1540,8 +1537,8 @@ static ApiStruct *api_op_register(Main *main,
   }
 
   /* We have to set default context if the class doesn't define it. */
-  if (temp_buffers.translation_cxt[0] == '\0') {
-    STRNCPY(temp_buffers.translation_cxt, LANG_OP_DEFAULT);
+  if (temp_buffers.lang_cxt[0] == '\0') {
+    STRNCPY(temp_buffers.lang_cxt, LANG_OP_DEFAULT);
   }
 
   /* Convert foo.bar to FOO_OT_bar
@@ -1561,7 +1558,7 @@ static ApiStruct *api_op_register(Main *main,
     dummy_ot.idname = strings_table[0]; /* allocated string stored here */
     dummy_ot.name = strings_table[1];
     dummy_ot.description = *strings_table[2] ? strings_table[2] : NULL;
-    dummy_ot.translation_ctx = strings_table[3];
+    dummy_ot.lang_cxt = strings_table[3];
     dummy_ot.undo_group = strings_table[4];
     lib_assert(ARRAY_SIZE(strings) == 5);
   }
@@ -1662,8 +1659,8 @@ static ApiStruct *api_MacroOp_register(Main *main,
   dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
   dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
   dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.translation_ctx =
-      temp_buffers.translation_ctx;          /* only assign the pointer, string is NULL'd */
+  dummy_ot.lang_cxt =
+      temp_buffers.translation_cxt;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
   api_ptr_create(NULL, &ApiMacro, &dummy_op, &dummy_op_ptr);
 
@@ -1727,7 +1724,7 @@ static ApiStruct *api_MacroOp_register(Main *main,
     dummy_ot.idname = strings_table[0]; /* allocated string stored here */
     dummy_ot.name = strings_table[1];
     dummy_ot.description = *strings_table[2] ? strings_table[2] : NULL;
-    dummy_ot.translation_ctx = strings_table[3];
+    dummy_ot.lang_cxt = strings_table[3];
     dummy_ot.undo_group = strings_table[4];
     lib_assert(ARRAY_SIZE(strings) == 5);
   }
@@ -1737,7 +1734,7 @@ static ApiStruct *api_MacroOp_register(Main *main,
 
   /* create a new operator type */
   dummy_ot.api_ext.sapi = api_def_struct_ptr(&DUNE_API, dummy_ot.idname, &ApiOp);
-  api_def_struct_translation_ctx(dummy_ot.api_ext.sapi, dummy_ot.translation_ctx);
+  api_def_struct_lang_cxt(dummy_ot.api_ext.sapi, dummy_ot.translation_ctx);
   dummy_ot.api_ext.data = data;
   dummy_ot.api_ext.call = call;
   dummy_ot.api_ext.free = free;
