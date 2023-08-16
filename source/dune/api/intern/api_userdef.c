@@ -4931,7 +4931,6 @@ static void api_def_userdef_view(DuneApi *dapi)
   api_def_prop_update(prop, NC_WINDOW, "api_userdef_font_update");
 
   /* Language. */
-
   prop = api_def_prop(sapi, "language", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_language_default_items);
 #  ifdef WITH_INTERNATIONAL
@@ -5246,117 +5245,117 @@ static void api_def_userdef_edit(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Duplicate Mesh", "Causes mesh data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_surface", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_SURF);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_surface", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_SURF);
+  api_def_prop_ui_text(
       prop, "Duplicate Surface", "Causes surface data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_curve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_CURVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_curve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_CURVE);
+  api_def_prop_ui_text(
       prop, "Duplicate Curve", "Causes curve data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_lattice", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_LATTICE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_lattice", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_LATTICE);
+  api_def_prop_ui_text(
       prop, "Duplicate Lattice", "Causes lattice data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_text", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_FONT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_text", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_FONT);
+  api_def_prop_ui_text(
       prop, "Duplicate Text", "Causes text data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_metaball", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_MBALL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_metaball", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_MBALL);
+  api_def_prop_ui_text(
       prop, "Duplicate Metaball", "Causes metaball data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_armature", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_ARM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_armature", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_ARM);
+  api_def_prop_ui_text(
       prop, "Duplicate Armature", "Causes armature data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_camera", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_CAMERA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_camera", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_CAMERA);
+  api_def_prop_ui_text(
       prop, "Duplicate Camera", "Causes camera data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_speaker", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_SPEAKER);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_speaker", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_SPEAKER);
+  api_def_prop_ui_text(
       prop, "Duplicate Speaker", "Causes speaker data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_light", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_LAMP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_light", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_LAMP);
+  api_def_prop_ui_text(
       prop, "Duplicate Light", "Causes light data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_material", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_MAT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_material", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_MAT);
+  api_def_prop_ui_text(
       prop, "Duplicate Material", "Causes material data to be duplicated with the object");
 
   /* Not implemented, keep because this is useful functionality. */
-#  if 0
-  prop = RNA_def_property(srna, "use_duplicate_texture", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_TEX);
-  RNA_def_property_ui_text(
+#  if
+  prop = api_def_prop(sapi, "use_duplicate_texture", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_TEX);
+  api_def_prop_ui_text(
       prop, "Duplicate Texture", "Causes texture data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_fcurve", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_FCURVE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_fcurve", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_FCURVE);
+  api_def_prop_ui_text(
       prop, "Duplicate F-Curve", "Causes F-Curve data to be duplicated with the object");
 #  endif
 
-  prop = RNA_def_property(srna, "use_duplicate_action", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_ACT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_action", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_ACT);
+  api_def_prop_ui_text(
       prop, "Duplicate Action", "Causes actions to be duplicated with the data-blocks");
 
-  prop = RNA_def_property(srna, "use_duplicate_particle", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_PSYS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_particle", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_PSYS);
+  api_def_prop_ui_text(
       prop, "Duplicate Particle", "Causes particle systems to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_lightprobe", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_LIGHTPROBE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_lightprobe", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_LIGHTPROBE);
+  api_def_prop_ui_text(
       prop, "Duplicate Light Probe", "Causes light probe data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_grease_pencil", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_GPENCIL);
-  RNA_def_property_ui_text(
-      prop, "Duplicate GPencil", "Causes grease pencil data to be duplicated with the object");
+  prop = api_def_prop(sapi, "use_duplicate_pen", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_PEN);
+  api_def_prop_ui_text(
+      prop, "Duplicate Pen", "Causes grease pen data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_curves", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_CURVES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_curves", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_CURVES);
+  api_def_prop_ui_text(
       prop, "Duplicate Curves", "Causes curves data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_pointcloud", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_POINTCLOUD);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_pointcloud", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_POINTCLOUD);
+  api_def_prop_ui_text(
       prop, "Duplicate Point Cloud", "Causes point cloud data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_volume", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_VOLUME);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_volume", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_VOLUME);
+  api_def_prop_ui_text(
       prop, "Duplicate Volume", "Causes volume data to be duplicated with the object");
 
-  prop = RNA_def_property(srna, "use_duplicate_node_tree", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_NTREE);
-  RNA_def_property_ui_text(prop,
-                           "Duplicate Node Tree",
-                           "Make copies of node groups when duplicating nodes in the node editor");
+  prop = api_def_prop(sapi, "use_duplicate_node_tree", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_NTREE);
+  api_def_prop_ui_text(prop,
+                       "Duplicate Node Tree",
+                       "Make copies of node groups when duplicating nodes in the node editor");
 
   /* Currently only used for insert offset (aka auto-offset),
    * maybe also be useful for later stuff though. */
-  prop = RNA_def_property(srna, "node_margin", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "node_margin");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "node_margin", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "node_margin");
+  api_def_prop_ui_text(
       prop, "Auto-offset Margin", "Minimum distance between nodes for Auto-offsetting nodes");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* cursor */
   prop = api_def_prop(sapi, "use_cursor_lock_adjust", PROP_BOOL, PROP_NONE);
@@ -5646,39 +5645,39 @@ static void api_def_userdef_system(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "anisotropic_filter", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "anisotropic_filter");
-  RNA_def_prop_enum_items(prop, anisotropic_items);
-  RNA_def_prop_enum_default(prop, 1);
-  RNA_def_property_ui_text(prop, "Anisotropic Filtering", "Quality of anisotropic filtering");
-  RNA_def_property_update(prop, 0, "rna_userdef_anisotropic_update");
+  api_def_prop_enum_items(prop, anisotropic_items);
+  api_def_prop_enum_default(prop, 1);
+  api_def_prop_ui_text(prop, "Anisotropic Filtering", "Quality of anisotropic filtering");
+  api_def_prop_update(prop, 0, "api_userdef_anisotropic_update");
 
-  prop = RNA_def_property(srna, "gl_texture_limit", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "glreslimit");
-  RNA_def_property_enum_items(prop, gl_texture_clamp_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "gl_texture_limit", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "glreslimit");
+  api_def_prop_enum_items(prop, gl_texture_clamp_items);
+  api_def_prop_ui_text(
       prop, "GL Texture Limit", "Limit the texture size to save graphics memory");
-  RNA_def_property_update(prop, 0, "rna_userdef_gl_texture_limit_update");
+  api_def_prop_update(prop, 0, "api_userdef_gl_texture_limit_update");
 
-  prop = RNA_def_property(srna, "texture_time_out", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "textimeout");
-  RNA_def_property_range(prop, 0, 3600);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "texture_time_out", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "textimeout");
+  api_def_prop_range(prop, 0, 3600);
+  api_def_prop_ui_text(
       prop,
       "Texture Time Out",
       "Time since last access of a GL texture in seconds after which it is freed "
       "(set to 0 to keep textures allocated)");
 
-  prop = RNA_def_property(srna, "texture_collection_rate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "texcollectrate");
-  RNA_def_property_range(prop, 1, 3600);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "texture_collection_rate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "texcollectrate");
+  api_def_prop_range(prop, 1, 3600);
+  api_def_prop_ui_text(
       prop,
       "Texture Collection Rate",
       "Number of seconds between each run of the GL texture garbage collector");
 
-  prop = RNA_def_property(srna, "vbo_time_out", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "vbotimeout");
-  RNA_def_property_range(prop, 0, 3600);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vbo_time_out", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "vbotimeout");
+  api_def_prop_range(prop, 0, 3600);
+  api_def_prop_ui_text(
       prop,
       "VBO Time Out",
       "Time since last access of a GL vertex buffer object in seconds after which it is freed "
@@ -5693,13 +5692,12 @@ static void api_def_userdef_system(DuneApi *dapi)
       "Number of seconds between each run of the GL vertex buffer object garbage collector");
 
   /* Select */
-
   prop = api_def_prop(sapi, "use_select_pick_depth", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "gpu_flag", USER_GPU_FLAG_NO_DEPT_PICK);
   api_def_prop_ui_text(prop,
-                           "GPU Depth Picking",
-                           "When making a selection in 3D View, use the GPU depth buffer to "
-                           "ensure the frontmost object is selected first");
+                       "GPU Depth Picking",
+                       "When making a selection in 3D View, use the GPU depth buffer to "
+                       "ensure the frontmost object is selected first");
 
   /* GPU subdivision evaluation. */
 
@@ -5722,7 +5720,6 @@ static void api_def_userdef_system(DuneApi *dapi)
       "GPU backend to use (requires restarting Blender for changes to take effect)");
 
   /* Audio */
-
   prop = api_def_prop(sapi, "audio_mixing_buffer", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "mixbufsize");
   api_def_prop_enum_items(prop, audio_mixing_samples_items);
@@ -5854,7 +5851,7 @@ static void api_def_userdef_input(DuneApi *dapi)
   api_def_struct_ui_text(sapi, "Input", "Settings for input devices");
 
   prop = api_def_prop(sapi, "view_zoom_method", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "viewzoom");
+  api_def_prop_enum_stype(prop, NULL, "viewzoom");
   api_def_prop_enum_items(prop, view_zoom_styles);
   api_def_prop_ui_text(prop, "Zoom Style", "Which style to use for viewport scaling");
 
@@ -5920,15 +5917,15 @@ static void api_def_userdef_input(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_drag_immediately", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", USER_RELEASECONFIRM);
   api_def_prop_ui_text(prop,
-                           "Release Confirms",
-                           "Moving things with a mouse drag confirms when releasing the button");
+                       "Release Confirms",
+                       "Moving things with a mouse drag confirms when releasing the button");
 
   prop = api_def_prop(sapi, "use_numeric_input_advanced", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", USER_FLAG_NUMINPUT_ADVANCED);
   api_def_prop_ui_text(prop,
                        "Default to Advanced Numeric Input",
                        "When entering numbers while transforming, "
-                        "default to advanced mode for full math expression evaluation");
+                       "default to advanced mode for full math expression evaluation");
 
   /* View Navigation */
   prop = api_def_prop(sapi, "navigation_mode", PROP_ENUM, PROP_NONE);
@@ -5966,10 +5963,10 @@ static void api_def_userdef_input(DuneApi *dapi)
   prop = api_def_prop(sapi, "drag_threshold_tablet", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 1, 255);
   api_def_prop_ui_text(prop,
-                           "Tablet Drag Threshold",
-                           "Number of pixels to drag before a drag event is triggered "
-                           "for tablet input "
-                           "(otherwise click events are detected)");
+                       "Tablet Drag Threshold",
+                       "Number of pixels to drag before a drag event is triggered "
+                       "for tablet input "
+                       "(otherwise click events are detected)");
 
   prop = api_def_prop(sapi, "drag_threshold", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 1, 255);
@@ -6152,9 +6149,9 @@ static void api_def_userdef_keymap(DuneApi *dapi)
 {
   ApiProp *prop;
 
-  ApiStruct *sapi = api_def_struct(dapi, "PreferencesKeymap", NULL);
-  api_def_struct_sdna(sapi, "UserDef");
-  api_def_struct_nested(dapi, sapi, "Preferences");
+  ApiStruct *sapi = api_def_struct(dapi, "PrefsKeymap", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Keymap", "Shortcut setup for keyboards and other input devices");
 
@@ -6168,31 +6165,31 @@ static void api_def_userdef_keymap(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Key Config", "The name of the active key configuration");
 }
 
-static void rna_def_userdef_filepaths_asset_library(BlenderRNA *brna)
+static void api_def_userdef_filepaths_asset_lib(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "UserAssetLibrary", NULL);
-  RNA_def_struct_sdna(srna, "bUserAssetLibrary");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(
-      srna, "Asset Library", "Settings to define a reusable library for Asset Browsers to use");
+  sapi = api_def_struct(dapi, "UserAssetLib", NULL);
+  api_def_struct_stype(sapi, "bUserAssetLib");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(
+      srna, "Asset Lib", "Settings to define a reusable lib for Asset Browsers to use");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
-      prop, "Name", "Identifier (not necessarily unique) for the asset library");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_userdef_asset_library_name_set");
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
+      prop, "Name", "Id (not necessarily unique) for the asset lib");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_userdef_asset_lib_name_set");
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "path", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_ui_text(
-      prop, "Path", "Path to a directory with .blend files to use as an asset library");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_userdef_asset_library_path_set");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "path", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_ui_text(
+      prop, "Path", "Path to a directory with .dune files to use as an asset lib");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_userdef_asset_lib_path_set");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  static const EnumPropertyItem import_method_items[] = {
+  static const EnumPropItem import_method_items[] = {
       {ASSET_IMPORT_LINK, "LINK", 0, "Link", "Import the assets as linked data-block"},
       {ASSET_IMPORT_APPEND,
        "APPEND",
@@ -6209,38 +6206,38 @@ static void rna_def_userdef_filepaths_asset_library(BlenderRNA *brna)
        "the asset share the data instead"},
       {0, NULL, 0, NULL, NULL},
   };
-  prop = RNA_def_property(srna, "import_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, import_method_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "import_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, import_method_items);
+  api_def_prop_ui_text(
       prop,
       "Default Import Method",
       "Determine how the asset will be imported, unless overridden by the Asset Browser");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "use_relative_path", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", ASSET_LIBRARY_RELATIVE_PATH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_relative_path", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", ASSET_LIB_RELATIVE_PATH);
+  api_def_prop_ui_text(
       prop, "Relative Path", "Use relative path when linking assets from this asset library");
 }
 
-static void rna_def_userdef_script_directory(BlenderRNA *brna)
+static void api_def_userdef_script_directory(DuneApi *dapi)
 {
-  StructRNA *srna = RNA_def_struct(brna, "ScriptDirectory", NULL);
-  RNA_def_struct_sdna(srna, "bUserScriptDirectory");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Python Scripts Directory", "");
+  ApiStruct *sapi = api_def_struct(dapi, "ScriptDirectory", NULL);
+  api_def_struct_stype(sapi, "UserScriptDirectory");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Python Scripts Directory", "");
 
-  PropertyRNA *prop;
+  ApuProp *prop;
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Identifier for the Python scripts directory");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_userdef_script_directory_name_set");
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Id for the Python scripts directory");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_userdef_script_directory_name_set");
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "dir_path");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "dir_path");
+  api_def_prop_ui_text(
       prop,
       "Python Scripts Directory",
       "Alternate script path, matching the default layout with sub-directories: startup, add-ons, "
@@ -6248,38 +6245,38 @@ static void rna_def_userdef_script_directory(BlenderRNA *brna)
   /* TODO: editing should reset sys.path! */
 }
 
-static void rna_def_userdef_script_directory_collection(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_userdef_script_directory_collection(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "ScriptDirectoryCollection");
-  srna = RNA_def_struct(brna, "ScriptDirectoryCollection", NULL);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Python Scripts Directories", "");
+  api_def_prop_sapi(cprop, "ScriptDirectoryCollection");
+  sapi = api_def_struct(dapi, "ScriptDirectoryCollection", NULL);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Python Scripts Directories", "");
 
-  func = RNA_def_function(srna, "new", "rna_userdef_script_directory_new");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  RNA_def_function_ui_description(func, "Add a new python script directory");
+  fn = api_def_fn(sapi, "new", "api_userdef_script_directory_new");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  api_def_fn_ui_description(fn, "Add a new python script directory");
   /* return type */
-  parm = RNA_def_pointer(func, "script_directory", "ScriptDirectory", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "script_directory", "ScriptDirectory", "", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_userdef_script_directory_remove");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove a python script directory");
-  parm = RNA_def_pointer(func, "script_directory", "ScriptDirectory", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_userdef_script_directory_remove");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove a python script directory");
+  parm = api_def_ptr(fn, "script_directory", "ScriptDirectory", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_userdef_filepaths(BlenderRNA *brna)
+static void api_def_userdef_filepaths(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  AoiStruct *sapi;
 
-  static const EnumPropertyItem anim_player_presets[] = {
+  static const EnumPropItem anim_player_presets[] = {
       {0, "INTERNAL", 0, "Internal", "Built-in animation player"},
       {2, "DJV", 0, "DJV", "Open source frame player"},
       {3, "FRAMECYCLER", 0, "FrameCycler", "Frame player from IRIDAS"},
@@ -6289,7 +6286,7 @@ static void rna_def_userdef_filepaths(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem preview_type_items[] = {
+  static const EnumPropItem preview_type_items[] = {
       {USER_FILE_PREVIEW_NONE, "NONE", 0, "None", "Do not create blend previews"},
       {USER_FILE_PREVIEW_AUTO, "AUTO", 0, "Auto", "Automatically select best preview type"},
       {USER_FILE_PREVIEW_SCREENSHOT, "SCREENSHOT", 0, "Screenshot", "Capture the entire window"},
@@ -6297,35 +6294,35 @@ static void rna_def_userdef_filepaths(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "PreferencesFilePaths", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "File Paths", "Default paths for external files");
+  sapi = api_def_struct(dapi, "PrefsFilePaths", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "File Paths", "Default paths for external files");
 
-  prop = RNA_def_property(srna, "show_hidden_files_datablocks", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_HIDE_DOT);
-  RNA_def_property_ui_text(prop,
-                           "Show Hidden Files/Data-Blocks",
-                           "Show files and data-blocks that are normally hidden");
+  prop = api_def_prop(sapi, "show_hidden_files_datablocks", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_HIDE_DOT);
+  api_def_prop_ui_text(prop,
+                       "Show Hidden Files/Data-Blocks",
+                       "Show files and data-blocks that are normally hidden");
 
-  prop = RNA_def_property(srna, "use_filter_files", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_FILTERFILEEXTS);
-  RNA_def_property_ui_text(prop, "Filter Files", "Enable filtering of files in the File Browser");
+  prop = api_def_prop(sapi, "use_filter_files", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_FILTERFILEEXTS);
+  api_def_prop_ui_text(prop, "Filter Files", "Enable filtering of files in the File Browser");
 
-  prop = RNA_def_property(srna, "show_recent_locations", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_HIDE_RECENT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_recent_locations", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_HIDE_RECENT);
+  api_def_prop_ui_text(
       prop, "Show Recent Locations", "Show Recent locations list in the File Browser");
 
-  prop = RNA_def_property(srna, "show_system_bookmarks", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_HIDE_SYSTEM_BOOKMARKS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_system_bookmarks", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_HIDE_SYSTEM_BOOKMARKS);
+  api_def_prop_ui_text(
       prop, "Show System Locations", "Show System locations list in the File Browser");
 
-  prop = RNA_def_property(srna, "use_relative_paths", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_RELPATHS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_relative_paths", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_RELPATHS);
+  api_def_prop_ui_text(
       prop,
       "Relative Paths",
       "Default relative path option for the file selector, when no path is defined yet");
