@@ -4410,54 +4410,54 @@ static void api_def_userdef_walk_navigation(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = RNA_def_struct(dapi, "WalkNavigation", NULL);
-  RNA_def_struct_sdna(sapi, "WalkNavigation");
-  RNA_def_struct_clear_flag(sapi, STRUCT_UNDO);
-  RNA_def_struct_ui_text(sapi, "Walk Navigation", "Walk navigation settings");
+  sapi = api_def_struct(dapi, "WalkNavigation", NULL);
+  api_def_struct_stype(sapi, "WalkNavigation");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Walk Navigation", "Walk navigation settings");
 
   prop = api_def_prop(sapi, "mouse_speed", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_range(prop, 0.01f, 10.0f);
-  RNA_def_prop_ui_text(
+  api_def_prop_range(prop, 0.01f, 10.0f);
+  api_def_prop_ui_text(
       prop,
       "Mouse Sensitivity",
       "Speed factor for when looking around, high values mean faster mouse movement");
 
-  prop = RNA_def_property(srna, "walk_speed", PROP_FLOAT, PROP_VELOCITY);
-  RNA_def_property_range(prop, 0.01f, 100.0f);
-  RNA_def_property_ui_text(prop, "Walk Speed", "Base speed for walking and flying");
+  prop = api_def_prop(sapi, "walk_speed", PROP_FLOAT, PROP_VELOCITY);
+  api_def_prop_range(prop, 0.01f, 100.0f);
+  api_def_prop_ui_text(prop, "Walk Speed", "Base speed for walking and flying");
 
-  prop = RNA_def_property(srna, "walk_speed_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.01f, 10.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "walk_speed_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.01f, 10.0f);
+  api_def_prop_ui_text(
       prop, "Speed Factor", "Multiplication factor when using the fast or slow modifiers");
 
-  prop = RNA_def_property(srna, "view_height", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_ui_range(prop, 0.1f, 10.0f, 0.1, 2);
-  RNA_def_property_range(prop, 0.0f, 1000.0f);
-  RNA_def_property_ui_text(prop, "View Height", "View distance from the floor when walking");
+  prop = api_def_prop(sapi, "view_height", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_ui_range(prop, 0.1f, 10.0f, 0.1, 2);
+  api_def_prop_range(prop, 0.0f, 1000.0f);
+  api_def_prop_ui_text(prop, "View Height", "View distance from the floor when walking");
 
-  prop = RNA_def_property(srna, "jump_height", PROP_FLOAT, PROP_UNIT_LENGTH);
-  RNA_def_property_ui_range(prop, 0.1f, 10.0f, 0.1, 2);
-  RNA_def_property_range(prop, 0.1f, 100.0f);
-  RNA_def_property_ui_text(prop, "Jump Height", "Maximum height of a jump");
+  prop = api_def_prop(sapi, "jump_height", PROP_FLOAT, PROP_UNIT_LENGTH);
+  api_def_prop_ui_range(prop, 0.1f, 10.0f, 0.1, 2);
+  api_def_prop_range(prop, 0.1f, 100.0f);
+  api_def_prop_ui_text(prop, "Jump Height", "Maximum height of a jump");
 
-  prop = RNA_def_property(srna, "teleport_time", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0f, 10.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapo, "teleport_time", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0f, 10.0f);
+  api_def_prop_ui_text(
       prop, "Teleport Duration", "Interval of time warp when teleporting in navigation mode");
 
-  prop = RNA_def_property(srna, "use_gravity", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_WALK_GRAVITY);
-  RNA_def_property_ui_text(prop, "Gravity", "Walk with gravity, or free navigate");
+  prop = api_def_prop(sapi, "use_gravity", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_WALK_GRAVITY);
+  api_def_prop_ui_text(prop, "Gravity", "Walk with gravity, or free navigate");
 
-  prop = RNA_def_property(srna, "use_mouse_reverse", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_WALK_MOUSE_REVERSE);
-  RNA_def_property_ui_text(prop, "Reverse Mouse", "Reverse the vertical movement of the mouse");
+  prop = api_def_prop(sapi, "use_mouse_reverse", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_WALK_MOUSE_REVERSE);
+  api_def_prop_ui_text(prop, "Reverse Mouse", "Reverse the vertical movement of the mouse");
 }
 
-static void rna_def_userdef_view(BlenderRNA *brna)
+static void api_def_userdef_view(DuneApi *dapi)
 {
-  static const EnumPropertyItem timecode_styles[] = {
+  static const EnumPropItem timecode_styles[] = {
       {USER_TIMECODE_MINIMAL,
        "MINIMAL",
        0,
@@ -4489,7 +4489,7 @@ static void rna_def_userdef_view(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem color_picker_types[] = {
+  static const EnumPropItem color_picker_types[] = {
       {USER_CP_CIRCLE_HSV,
        "CIRCLE_HSV",
        0,
@@ -4520,21 +4520,21 @@ static void rna_def_userdef_view(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem zoom_frame_modes[] = {
+  static const EnumPropItem zoom_frame_modes[] = {
       {ZOOM_FRAME_MODE_KEEP_RANGE, "KEEP_RANGE", 0, "Keep Range", ""},
       {ZOOM_FRAME_MODE_SECONDS, "SECONDS", 0, "Seconds", ""},
       {ZOOM_FRAME_MODE_KEYFRAMES, "KEYFRAMES", 0, "Keyframes", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem line_width[] = {
+  static const EnumPropItem line_width[] = {
       {-1, "THIN", 0, "Thin", "Thinner lines than the default"},
       {0, "AUTO", 0, "Default", "Automatic line width based on UI scale"},
       {1, "THICK", 0, "Thick", "Thicker lines than the default"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem render_display_types[] = {
+  static const EnumPropItem render_display_types[] = {
       {USER_RENDER_DISPLAY_NONE,
        "NONE",
        0,
@@ -4557,7 +4557,7 @@ static void rna_def_userdef_view(BlenderRNA *brna)
        "Images are rendered in a new window"},
       {0, NULL, 0, NULL, NULL},
   };
-  static const EnumPropertyItem temp_space_display_types[] = {
+  static const EnumPropItem temp_space_display_types[] = {
       {USER_TEMP_SPACE_DISPLAY_FULLSCREEN,
        "SCREEN", /* Could be FULLSCREEN, but keeping it consistent with render_display_types */
        0,
@@ -4571,18 +4571,18 @@ static void rna_def_userdef_view(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  srna = RNA_def_struct(brna, "PreferencesView", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "View & Controls", "Preferences related to viewing data");
+  sapi = api_def_struct(dapi, "PrefsView", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "View & Controls", "Preferences related to viewing data");
 
   /* View. */
-  prop = RNA_def_property(srna, "ui_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "ui_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "UI Scale", "Changes the size of the fonts and widgets in the interface");
   RNA_def_property_range(prop, 0.25f, 4.0f);
   RNA_def_property_ui_range(prop, 0.5f, 2.0f, 1, 2);
