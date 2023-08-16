@@ -54,7 +54,7 @@ const EnumPropItem api_enum_window_cursor_items[] = {
 
 #ifdef API_RUNTIME
 
-#  include "dune_ctx.h"
+#  include "dune_cxt.h"
 #  include "dune_undo_system.h"
 
 #  include "wm_types.h"
@@ -72,18 +72,18 @@ static void api_KeyMapItem_to_string(wmKeyMapItem *kmi, bool compact, char *resu
 
 static wmKeyMap *api_keymap_active(wmKeyMap *km, Ctx *C)
 {
-  wmWindowManager *wm = ctx_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   return wm_keymap_active(wm, km);
 }
 
-static void api_keymap_restore_to_default(wmKeyMap *km, bContext *C)
+static void api_keymap_restore_to_default(wmKeyMap *km, Cxt *C)
 {
-  wm_keymap_restore_to_default(km, ctx_wm_manager(C));
+  wm_keymap_restore_to_default(km, cxt_wm_manager(C));
 }
 
-static void api_keymap_restore_item_to_default(wmKeyMap *km, Ctx *C, wmKeyMapItem *kmi)
+static void api_keymap_restore_item_to_default(wmKeyMap *km, Cxt *C, wmKeyMapItem *kmi)
 {
-  wm_keymap_item_restore_to_default(ctx_wm_manager(C), km, kmi);
+  wm_keymap_item_restore_to_default(cxt_wm_manager(C), km, kmi);
 }
 
 static void api_op_report(wmOp *op, int type, const char *msg)
@@ -91,18 +91,18 @@ static void api_op_report(wmOp *op, int type, const char *msg)
   dune_report(op->reports, type, msg);
 }
 
-static bool api_op_is_repeat(wmOp *op, Ctx *C)
+static bool api_op_is_repeat(wmOp *op, Cxt *C)
 {
   return wm_op_is_repeat(C, op);
 }
 
 /* since event isn't needed... */
-static void api_op_enum_search_invoke(Ctx *C, wmOp *op)
+static void api_op_enum_search_invoke(Cxt *C, wmOp *op)
 {
   wm_enum_search_invoke(C, op, NULL);
 }
 
-static bool api_event_modal_handler_add(struct Ctx *C, struct wmOp *op)
+static bool api_event_modal_handler_add(struct Cxt *C, struct wmOp *op)
 {
   return wm_event_add_modal_handler(C, op) != NULL;
 }
@@ -163,8 +163,7 @@ static void api_progress_begin(struct wmWindowManager *UNUSED(wm), float min, fl
     wm_progress_state.min = min;
     wm_progress_state.max = max;
     wm_progress_state.is_valid = true;
-  }
-  else {
+  } else {
     wm_progress_state.is_valid = false;
   }
 }
@@ -194,11 +193,11 @@ static void api_progress_end(struct wmWindowManager *wm)
 }
 
 /* wrap these because of 'const wmEvent *' */
-static int api_op_confirm(Ctx *C, wmOp *op, wmEvent *event)
+static int api_op_confirm(Cxt *C, wmOp *op, wmEvent *event)
 {
   return wm_op_confirm(C, op, event);
 }
-static int api_op_props_popup(Ctx *C, wmOp *op, wmEvent *event)
+static int api_op_props_popup(Cxt *C, wmOp *op, wmEvent *event)
 {
   return wm_op_props_popup(C, op, event);
 }
@@ -212,29 +211,25 @@ static int keymap_item_mod_flag_from_args(bool any, int shift, int ctrl, int alt
   else {
     if (shift == KM_MOD_HELD) {
       mod |= KM_SHIFT;
-    }
-    else if (shift == KM_ANY) {
+    } else if (shift == KM_ANY) {
       mod |= KM_SHIFT_ANY;
     }
 
     if (ctrl == KM_MOD_HELD) {
       mod |= KM_CTRL;
-    }
-    else if (ctrl == KM_ANY) {
+    } else if (ctrl == KM_ANY) {
       mod |= KM_CTRL_ANY;
     }
 
     if (alt == KM_MOD_HELD) {
       mod |= KM_ALT;
-    }
-    else if (alt == KM_ANY) {
+    } else if (alt == KM_ANY) {
       mod |= KM_ALT_ANY;
     }
 
     if (oskey == KM_MOD_HELD) {
       mod |= KM_OSKEY;
-    }
-    else if (oskey == KM_ANY) {
+    } else if (oskey == KM_ANY) {
       mod |= KM_OSKEY_ANY;
     }
   }
@@ -262,7 +257,7 @@ static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
     return NULL;
   }
 
-  // wmWindowManager *wm = CTX_wm_manager(C);
+  // wmWindowManager *wm = cxt_wm_manager(C);
   wmKeyMapItem *kmi = NULL;
   char idname_bl[OP_MAX_TYPENAME];
   const int mod = keymap_item_mod_flag_from_args(any, shift, ctrl, alt, oskey);
@@ -299,7 +294,7 @@ static wmKeyMapItem *api_KeyMap_item_new_from_item(wmKeyMap *km,
                                                    wmKeyMapItem *kmi_src,
                                                    bool head)
 {
-  // wmWindowManager *wm = CTX_wm_manager(C);
+  // wmWindowManager *wm = cxt_wm_manager(C);
 
   if ((km->flag & KEYMAP_MODAL) == (kmi_src->idname[0] != '\0')) {
     dune_report(reports, RPT_ERROR, "Can not mix modal/non-modal items");
@@ -307,7 +302,7 @@ static wmKeyMapItem *api_KeyMap_item_new_from_item(wmKeyMap *km,
   }
 
   /* create keymap item */
-  wmKeyMapItem *kmi = em_keymap_add_item_copy(km, kmi_src);
+  wmKeyMapItem *kmi = wm_keymap_add_item_copy(km, kmi_src);
   if (head) {
     lib_remlink(&km->items, kmi);
     lib_addhead(&km->items, kmi);
@@ -350,10 +345,9 @@ static wmKeyMapItem *api_KeyMap_item_new_modal(wmKeyMap *km,
   /* not initialized yet, do delayed lookup */
   if (!km->modal_items) {
     kmi = wm_modalkeymap_add_item_str(km, &params, propvalue_str);
-  }
-  else {
+  } else {
     if (api_enum_value_from_id(km->modal_items, propvalue_str, &propvalue) == 0) {
-      dune_report(reports, RPT_WARNING, "Property value not in enumeration");
+      dune_report(reports, RPT_WARNING, "Prop value not in enumeration");
     }
     kmi = wm_modalkeymap_add_item(km, &params, propvalue);
   }
@@ -398,7 +392,7 @@ static ApiPtr api_KeyMap_item_find_from_op(Id *id,
   return kmi_ptr;
 }
 
-static ApiPtr api_KeyMap_item_match_event(Id *id, wmKeyMap *km, Ctx *C, wmEvent *event)
+static ApiPtr api_KeyMap_item_match_event(Id *id, wmKeyMap *km, Cxt *C, wmEvent *event)
 {
   wmKeyMapItem *kmi = wm_event_match_keymap_item(C, km, event);
   ApiPtr kmi_ptr;
@@ -431,8 +425,7 @@ static wmKeyMap *api_keymap_new(wmKeyConfig *keyconf,
 
   if (modal == 0) {
     keymap = wm_keymap_ensure(keyconf, idname, spaceid, regionid);
-  }
-  else {
+  } else {
     keymap = wm_modalkeymap_ensure(keyconf, idname, NULL); /* items will be lazy init */
   }
 
@@ -457,8 +450,7 @@ static wmKeyMap *api_keymap_find_modal(wmKeyConfig *UNUSED(keyconf), const char 
 
   if (!ot) {
     return NULL;
-  }
-  else {
+  } else {
     return ot->modalkeymap;
   }
 }
@@ -488,7 +480,7 @@ static void api_KeyConfig_remove(wmWindowManager *wm, ReportList *reports, ApiPt
 }
 
 static ApiPtr api_KeyConfig_find_item_from_op(wmWindowManager *wm,
-                                              Ctx *C,
+                                              Cxt *C,
                                               const char *idname,
                                               int opctx,
                                               ApiPtr *props,
@@ -514,7 +506,7 @@ static void api_KeyConfig_update(wmWindowManager *wm)
 }
 
 /* popup menu wrapper */
-static ApiPtr api_PopMenuBegin(Ctx *C, const char *title, int icon)
+static ApiPtr api_PopMenuBegin(Cxt *C, const char *title, int icon)
 {
   ApiPtr r_ptr;
   void *data;
@@ -526,31 +518,31 @@ static ApiPtr api_PopMenuBegin(Ctx *C, const char *title, int icon)
   return r_ptr;
 }
 
-static void api_PopMenuEnd(Ctx *C, ApiPtr *handle)
+static void api_PopMenuEnd(Cxt *C, ApiPtr *handle)
 {
   ui_popup_menu_end(C, handle->data);
 }
 
 /* popover wrapper */
-static ApiPtr api_PopoverBegin(Ctx *C, int ui_units_x, bool from_active_btn)
+static ApiPtr api_PopoverBegin(Cxt *C, int ui_units_x, bool from_active_btn)
 {
   ApiPtr r_ptr;
   void *data;
 
-  data = (void *)ui_popover_begin(C, U.widget_unit * ui_units_x, from_active_button);
+  data = (void *)ui_popover_begin(C, U.widget_unit * ui_units_x, from_active_btn);
 
   api_ptr_create(NULL, &ApiUIPopover, data, &r_ptr);
 
   return r_ptr;
 }
 
-static void api_PopoverEnd(Ctx *C, ApiPtr *handle, wmKeyMap *keymap)
+static void api_PopoverEnd(Cxt *C, ApiPtr *handle, wmKeyMap *keymap)
 {
   ui_popover_end(C, handle->data, keymap);
 }
 
 /* pie menu wrapper */
-static ApiPtr api_PieMenuBegin(Ctx *C, const char *title, int icon, ApiPtr *event)
+static ApiPtr api_PieMenuBegin(Cxt *C, const char *title, int icon, ApiPtr *event)
 {
   ApiPtr r_ptr;
   void *data;
@@ -562,7 +554,7 @@ static ApiPtr api_PieMenuBegin(Ctx *C, const char *title, int icon, ApiPtr *even
   return r_ptr;
 }
 
-static void api_PieMenuEnd(Ctx *C, ApiPtr *handler)
+static void api_PieMenuEnd(Cxt *C, ApiPtr *handler)
 {
   ui_pie_menu_end(C, handle->data);
 }
