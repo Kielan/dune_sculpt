@@ -2328,11 +2328,11 @@ static void api_def_piemenu(DuneApi *dapi)
 
 static void api_def_window_stereo3d(DuneApi dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   srna = api_def_struct(dapi, "Stereo3dDisplay", NULL);
-  api_def_struct_stupe(sapi, "Stereo3dFormat");
+  api_def_struct_stype(sapi, "Stereo3dFormat");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Stereo 3D Display", "Settings for stereo 3D display");
 
@@ -2383,7 +2383,7 @@ static void api_def_window(DuneApi *dapi)
   api_def_prop_struct_type(prop, "WorkSpace");
   api_def_prop_ui_text(prop, "Workspace", "Active workspace showing in the window");
   api_def_prop_ptr_fns(
-      prop, "rna_Window_workspace_get", "rna_Window_workspace_set", NULL, NULL);
+      prop, "api_Window_workspace_get", "rna_Window_workspace_set", NULL, NULL);
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
   api_def_prop_update(prop, 0, "rna_Window_workspace_update");
 
@@ -2395,9 +2395,9 @@ static void api_def_window(DuneApi *dapi)
                        "api_Window_screen_set",
                        NULL,
                        "api_Window_screen_assign_poll");
-  api_def_prop_translation_ctx(prop, BLT_I18NCONTEXT_ID_SCREEN);
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_SCREEN);
   api_def_prop_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  api_def_prop_update(prop, 0, "rna_workspace_screen_update");
+  api_def_prop_update(prop, 0, "api_workspace_screen_update");
 
   prop = api_def_prop(sapi, "view_layer", PROP_POINTER, PROP_NONE);
   api_def_prop_struct_type(prop, "ViewLayer");
@@ -2438,7 +2438,7 @@ static void api_def_window(DuneApi *dapi)
 }
 
 /* curve.splines */
-static void api_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_wm_keyconfigs(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -2446,7 +2446,7 @@ static void api_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_prop_sapi(cprop, "KeyConfigurations");
   sapi = api_def_struct(dapi, "KeyConfigurations", NULL);
   api_def_struct_stype(sapi, "wmWindowManager");
-  api_def_struct_ui_text(srna, "KeyConfigs", "Collection of KeyConfigs");
+  api_def_struct_ui_text(sapi, "KeyConfigs", "Collection of KeyConfigs");
 
   prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "KeyConfig");
@@ -2463,7 +2463,7 @@ static void api_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_prop_struct_type(prop, "KeyConfig");
   api_def_prop_ui_text(prop, "Default Key Configuration", "Default builtin key configuration");
 
-  prop = api_def_prop(sapi, "addon", PROP_POINTER, PROP_NEVER_NULL);
+  prop = api_def_prop(sapi, "addon", PROP_PTR, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "addonconf");
   api_def_prop_struct_type(prop, "KeyConfig");
   api_def_prop_ui_text(
@@ -2497,9 +2497,9 @@ static void api_def_windowmanager(DuneApi *dapi)
   api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
   api_def_struct_stype(sapi, "wmWindowManager");
 
-  prop = api_def_prop(sapi, "operators", PROP_COLLECTION, PROP_NONE);
-  api_def_prop_struct_type(prop, "Operator");
-  api_def_prop_ui_text(prop, "Operators", "Operator registry");
+  prop = api_def_prop(sapi, "ops", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Op");
+  api_def_prop_ui_text(prop, "Ops", "Operator registry");
 
   prop = api_def_prop(sapi, "windows", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "Window");
@@ -2555,7 +2555,7 @@ static void api_def_keyconfig_prefs(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "KeyConfigPrefs", NULL);
+  sapi = api_def_struct(dapi, "KeyConfigPrefs", NULL);
   api_def_struct_ui_text(sapi, "Key-Config Prefs", "");
   api_def_struct_stype(sapi, "wmKeyConfigPref"); /* WARNING: only a bAddon during registration */
 
@@ -2633,7 +2633,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   prop = api_def_prop(sapi, "space_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "spaceid");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_enum_items(prop, rna_enum_space_type_items);
+  api_def_prop_enum_items(prop, api_enum_space_type_items);
   api_def_prop_ui_text(prop, "Space Type", "Optional space type keymap is associated with");
 
   prop = api_def_prop(sapi, "region_type", PROP_ENUM, PROP_NONE);
@@ -2641,7 +2641,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_enum_items(prop, api_enum_region_type_items);
 
-    api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
+  api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
 
   prop = api_def_prop(sapi, "keymap_items", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_stype(prop, NULL, "items", NULL);
@@ -2662,7 +2662,7 @@ static void api_def_keyconfig(DuneApi *dapi)
       "Modal Keymap",
       "Indicates that a keymap is used for translate modal events for an operator");
 
-  prop = api_def_prop(sapi, "show_expanded_items", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_expanded_items", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_EXPANDED);
   api_def_prop_ui_text(prop, "Items Expanded", "Expanded in the user interface");
   api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
@@ -2674,16 +2674,16 @@ static void api_def_keyconfig(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "modal_event_values", PROP_COLLECTION, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_struct_type(prop, "EnumPropertyItem");
-  api_def_prop_collection_funcs(prop,
-                                    "rna_KeyMap_modal_event_values_items_begin",
-                                    "rna_iterator_array_next",
-                                    "rna_iterator_array_end",
-                                    "rna_iterator_array_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  api_def_prop_struct_type(prop, "EnumPropItem");
+  api_def_prop_collection_fns(prop,
+                              "api_KeyMap_modal_event_values_items_begin",
+                              "api_iter_array_next",
+                              "api_iter_array_end",
+                              "api_iter_array_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   api_def_prop_ui_text(prop,
                        "Modal Events",
                        "Give access to the possible event values of this modal keymap's items "
@@ -2709,8 +2709,8 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_struct_name_prop(sapi, prop);
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  /* this is in fact the operator name, but if the operator can't be found we
-   * fallback on the operator ID */
+  /* this is in fact the op name, but if the op can't be found we
+   * fallback on the op ID */
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Name", "Name of op (translated) to call on input event");
@@ -2723,27 +2723,27 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Props", "Props to set when the op is called");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = api_def_prop(sapi, "map_type", PROP_ENUM, PROP_NONE)(
+  prop = api_def_prop(sapi, "map_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "maptype");
   api_def_prop_enum_items(prop, map_type_items);
   api_def_prop_enum_fns(
-      prop, "api_wmKeyMapItem_map_type_get", "rna_wmKeyMapItem_map_type_set", NULL);
+      prop, "api_wmKeyMapItem_map_type_get", "api_wmKeyMapItem_map_type_set", NULL);
   api_def_prop_ui_text(prop, "Map Type", "Type of event mapping");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "type");
   api_def_prop_enum_items(prop, api_enum_event_type_items);
-  api_def_prop_translation_ctx(prop, LANG_CTX_UI_EVENTS);
+  api_def_prop_lang_cxt(prop, LANG_CTX_UI_EVENTS);
   api_def_prop_enum_fns(prop, NULL, NULL, "rna_KeyMapItem_type_itemf");
   api_def_prop_ui_text(prop, "Type", "Type of event");
-  api_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "value", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "val");
   api_def_prop_enum_items(prop, api_enum_event_value_items);
   api_def_prop_ui_text(prop, "Value", "");
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "direction");
@@ -2754,11 +2754,11 @@ static void api_def_keyconfig(DuneApi *dapi)
   prop = api_def_prop(sapi, "id", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "id");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
-  api_def_prop_ui_text(prop, "ID", "ID of the item");
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_ui_text(prop, "ID", "Id of the item");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "any", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_fns(prop, "rna_KeyMapItem_any_get", "rna_KeyMapItem_any_set");
+  api_def_prop_bool_fns(prop, "api_KeyMapItem_any_get", "rna_KeyMapItem_any_set");
   api_def_prop_ui_text(prop, "Any", "Any modifier keys pressed");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
@@ -2766,8 +2766,8 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "shift");
   api_def_prop_range(prop, KM_ANY, KM_MOD_HELD);
   api_def_prop_ui_text(prop, "Shift", "Shift key pressed, -1 for any state");
-  api_def_prop_translation_context(prop, LANG_CTX_ID_WINDOWMANAGER);
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_WINDOWMANAGER);
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "ctrl", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "ctrl");
@@ -2794,8 +2794,8 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_bool_fns(prop, "api_KeyMapItem_shift_get", NULL);
   /* api_def_prop_enum_items(prop, keymap_mod_items); */
   api_def_prop_ui_text(prop, "Shift", "Shift key pressed");
-  api_def_prop_translation_ctx(prop, LANG_CTX_ID_WINDOWMANAGER);
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_WM);
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "ctrl_ui", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "ctrl", 0);
@@ -2822,7 +2822,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   prop = api_def_prop(sapi, "key_mod", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "keymod");
   api_def_prop_enum_items(prop, api_enum_event_type_items);
-  api_def_prop_translation_ctx(prop, LANG_CTX_UI_EVENTS);
+  api_def_prop_lang_cxt(prop, LANG_CXT_UI_EVENTS);
   api_def_prop_enum_fns(prop, NULL, "api_wmKeyMapItem_keymod_set", NULL);
   api_def_prop_ui_text(prop, "Key Modifier", "Regular key pressed as a modifier");
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
@@ -2839,7 +2839,7 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Expanded", "Show key map event and property details in the user interface");
   api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "propvalue", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "propvalue");
@@ -2847,27 +2847,27 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_enum_fns(prop, NULL, NULL, "api_KeyMapItem_propvalue_itemf");
   api_def_prop_ui_text(
       prop, "Prop Value", "The value this event translates to in a modal keymap");
-  api_def_prop_translation_ctx(prop, LANG_CTX_ID_WINDOWMANAGER);
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_WM);
   api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
   prop = api_def_prop(sapi, "active", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "flag", KMI_INACTIVE);
   api_def_prop_ui_text(prop, "Active", "Activate or deactivate item");
   api_def_prop_ui_icon(prop, ICON_CHECKBOX_DEHLT, 1);
-  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = api_def_prop(sapi, "is_user_modified", PROP_BOOL, PROP_NONE);
-  api_def_prop_bool_stype(prop, NULL, "flag", KMI_USER_MODIFIED);
+  prop = api_def_prop(sapi, "is_user_mod", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KMI_USER_MOD);
   api_def_prop_clear_flag(prop, PROP_EDITABLE
   api_def_prop_ui_text(prop, "User Modified", "Is this keymap item modified by the user");
 
-  prop = api_def_prop(srna, "is_user_defined", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "is_user_defined", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(
       prop,
       "User Defined",
       "Is this keymap item user defined (doesn't just replace a builtin item)");
-  api_def_prop_bool_fns(prop, "rna_KeyMapItem_userdefined_get", NULL);
+  api_def_prop_bool_fns(prop, "api_KeyMapItem_userdefined_get", NULL);
 
   api_api_keymapitem(sapi);
 }
