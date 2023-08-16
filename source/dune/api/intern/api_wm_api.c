@@ -717,7 +717,7 @@ void api_window(ApiStruct *sapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_fn_ui_description(fn, "Set the cursor, so the previous cursor can be restored");
 
-  api_def_fn(sapi, "cursor_modal_restore", "WM_cursor_modal_restore");
+  api_def_fn(sapi, "cursor_modal_restore", "wm_cursor_modal_restore");
   api_def_fn_ui_description(
       fn, "Restore the previous cursor after calling ``cursor_modal_set``");
 
@@ -792,7 +792,7 @@ void api_wm(ApiStruct *sapi)
       sapi, "gizmo_group_type_unlink_delayed", "api_gizmo_group_type_unlink_delayed");
   api_def_fn_ui_description(fn,
                             "Unlink a widget group (when the persistent option is set)");
-  api_def_fn_flag(func, FN_NO_SELF | FN_USE_REPORTS);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
   parm = api_def_string(fn, "identifier", NULL, 0, "", "Gizmo group type name");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
@@ -851,31 +851,31 @@ void api_wm(ApiStruct *sapi)
   fn = api_def_fn(sapi, "invoke_confirm", "api_op_confirm");
   api_def_fn_ui_description(
       fn,
-      "Operator confirmation popup "
+      "Op confirmation popup "
       "(only to let user confirm the execution, no op props shown)");
   api_generic_op_invoke(fn, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
 
   /* wrap UI_popup_menu_begin */
   fn = api_def_fn(sapi, "popmenu_begin__internal", "api_PopMenuBegin");
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_string(fn, "title", NULL, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_prop(fn, "icon", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(parm, api_enum_icon_items);
   /* return */
   parm = api_def_ptr(fn, "menu", "UIPopupMenu", "", "");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   api_def_fn_return(fn, parm);
 
   /* wrap UI_popup_menu_end */
   fn = api_def_fn(sapi, "popmenu_end__internal", "api_PopMenuEnd");
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_ptr(fn, "menu", "UIPopupMenu", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR | PARM_REQUIRED);
 
   /* wrap UI_popover_begin */
   sapi = api_def_fn(sapi, "popover_begin__internal", "api_PopoverBegin");
-  api_def_fn_flag(fn, FUNC_NO_SELF | FN_USE_CTX);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   api_def_prop(fn, "ui_units_x", PROP_INT, PROP_UNSIGNED);
   /* return */
   parm = api_def_ptr(fn, "menu", "UIPopover", "", "");
@@ -886,14 +886,14 @@ void api_wm(ApiStruct *sapi)
 
   /* wrap UI_popover_end */
   func = api_def_fn(sapi, "popover_end__internal", "api_PopoverEnd");
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_ptr(fn, "menu", "UIPopover", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
   api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Active key map");
 
   /* wrap uiPieMenuBegin */
   fb = api_def_fn(sapi, "piemenu_begin__internal", "api_PieMenuBegin");
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_string(fn, "title", NULL, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_prop(fn, "icon", PROP_ENUM, PROP_NONE);
@@ -919,13 +919,13 @@ void api_wm(ApiStruct *sapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
   parm = api_def_ptr(fn, "result", "OperatorProperties", "", "");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   api_def_fn_return(fn, parm);
 
-  api_def_fn(sapi, "print_undo_steps", "rna_WindowManager_print_undo_steps");
+  api_def_fn(sapi, "print_undo_steps", "api_WindowManager_print_undo_steps");
 
   /* Used by (#SCRIPT_OT_reload). */
-  fn = api_def_fn(sapi, "tag_script_reload", "rna_WindowManager_tag_script_reload");
+  fn = api_def_fn(sapi, "tag_script_reload", "api_WindowManager_tag_script_reload");
   api_def_fn_ui_description(
       func, "Tag for refreshing the interface after scripts have been reloaded");
   api_def_fn_flag(fb, FN_NO_SELF);
@@ -978,8 +978,8 @@ void api_op(ApiStruct *sapi)
 
   /* better name? */
   parm = api_def_enum_flag(
-      func, "result", api_enum_op_return_items, OPERATOR_FINISHED, "result", "");
-  api_def_fn_return(func, parm);
+      func, "result", api_enum_op_return_items, OP_FINISHED, "result", "");
+  api_def_fn_return(fn, parm);
 
   /* check */
   fn = api_def_fn(sapi, "check", NULL);
@@ -993,7 +993,7 @@ void api_op(ApiStruct *sapi)
   api_def_fn_return(fn, parm);
 
   /* invoke */
-  func = api_def_fn(srna, "invoke", NULL);
+  func = api_def_fn(sapi, "invoke", NULL);
   api_def_fn_ui_description(fn, "Invoke the operator");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
   parm = api_def_ptr(fn, "context", "Context", "", "");
@@ -1120,57 +1120,57 @@ void api_keymapitem(ApiStruct *sapi)
   api_def_fn_output(fn, parm);
 }
 
-void api_api_keymapitems(StructRNA *srna)
+void api_api_keymapitems(ApiStruct *sapi)
 {
   ApiFn *fn;
   ApiProp *parm;
 
-  fn = api_def_fn(sapi, "new", "rna_KeyMap_item_new");
+  fn = api_def_fn(sapi, "new", "api_KeyMap_item_new");
   api_def_fn_flag(fn, FN_USE_REPORTS);
-  parm = api_def_string(fn, "idname", NULL, 0, "Operator Identifier", "");
+  parm = api_def_string(fn, "idname", NULL, 0, "Op Id", "");
   ap_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_enum(fn, "type", api_enum_event_type_items, 0, "Type", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_enum(fn, "value", api_enum_event_value_items, 0, "Value", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_bool(fn, "any", 0, "Any", "");
-  apj_def_int(fn, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
+  api_def_enum(fn, "key_mod", api_enum_event_type_items, 0, "Key Modifier", "");
+  api_def_enum(fn, "direction", api_enum_event_direction_items, KM_ANY, "Direction", "");
+  api_def_bool(fn, "repeat", false, "Repeat", "When set, accept key-repeat events");
+  api_def_bool(fn,
+               "head",
+               0,
+               "At Head",
+               "Force item to be added at start (not end) of key map so that "
+               "it doesn't get blocked by an existing key map item");
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Added key map item");
+  api_def_fn_return(fn, parm);
+
+  fn = api_def_fn(sapi, "new_modal", "api_KeyMap_item_new_modal");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "propvalue", NULL, 0, "Property Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "type", api_enum_event_type_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "value", api_enum_event_value_items, 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "any", 0, "Any", "");
+  api_def_int(fn, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
   api_def_enum(fn, "key_modifier", api_enum_event_type_items, 0, "Key Modifier", "");
   api_def_enum(fn, "direction", api_enum_event_direction_items, KM_ANY, "Direction", "");
   api_def_bool(fn, "repeat", false, "Repeat", "When set, accept key-repeat events");
-  api_def_bool(fn,
-                  "head",
-                  0,
-                  "At Head",
-                  "Force item to be added at start (not end) of key map so that "
-                  "it doesn't get blocked by an existing key map item");
   parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Added key map item");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "new_modal", "rna_KeyMap_item_new_modal");
-  api_def_fn_flag(fn, FUNC_USE_REPORTS);
-  parm = api_def_string(fn, "propvalue", NULL, 0, "Property Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "type", rna_enum_event_type_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "value", rna_enum_event_value_items, 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "any", 0, "Any", "");
-  RNA_def_int(func, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_enum(func, "key_modifier", rna_enum_event_type_items, 0, "Key Modifier", "");
-  RNA_def_enum(func, "direction", rna_enum_event_direction_items, KM_ANY, "Direction", "");
-  RNA_def_boolean(func, "repeat", false, "Repeat", "When set, accept key-repeat events");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "Added key map item");
-  RNA_def_function_return(func, parm);
-
-  func = RNA_def_function(srna, "new_from_item", "rna_KeyMap_item_new_from_item");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "new_from_item", "api_KeyMap_item_new_from_item");
+  RNA_def_function_flag(func, FN_USE_REPORTS);
   parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "Item to use as a reference");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   RNA_def_boolean(func, "head", 0, "At Head", "");
