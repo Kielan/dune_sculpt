@@ -3138,7 +3138,7 @@ static void api_def_userdef_theme_space_image(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "uv_shadow", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_style(prop, NULL, "uv_shadow");
+  api_def_prop_float_stype(prop, NULL, "uv_shadow");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Texture Paint/Modifier UVs", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -3314,7 +3314,7 @@ static void api_def_userdef_theme_space_seq(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "anim_preview_range");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Preview Range", "Color of preview range overlay");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "row_alternate", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
@@ -3994,7 +3994,7 @@ static void api_def_userdef_themes(DuneApi *dapi)
   api_def_prop_struct_type(prop, "ThemeGraphEditor");
   api_def_prop_ui_text(prop, "Graph Editor", "");
 
-  prop = api_def_prop(sapo, "file_browser", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "file_browser", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_stype(prop, NULL, "space_file");
   api_def_prop_struct_type(prop, "ThemeFileBrowser");
@@ -4441,7 +4441,7 @@ static void api_def_userdef_walk_navigation(DuneApi *dapi)
   api_def_prop_range(prop, 0.1f, 100.0f);
   api_def_prop_ui_text(prop, "Jump Height", "Maximum height of a jump");
 
-  prop = api_def_prop(sapo, "teleport_time", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "teleport_time", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.0f, 10.0f);
   api_def_prop_ui_text(
       prop, "Teleport Duration", "Interval of time warp when teleporting in navigation mode");
@@ -4581,131 +4581,130 @@ static void api_def_userdef_view(DuneApi *dapi)
   api_def_struct_ui_text(sapi, "View & Controls", "Preferences related to viewing data");
 
   /* View. */
-  prop = api_def_prop(srna, "ui_scale", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "ui_scale", PROP_FLOAT, PROP_NONE);
   api_def_prop_ui_text(
       prop, "UI Scale", "Changes the size of the fonts and widgets in the interface");
-  RNA_def_property_range(prop, 0.25f, 4.0f);
-  RNA_def_property_ui_range(prop, 0.5f, 2.0f, 1, 2);
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_range(prop, 0.25f, 4.0f);
+  api_def_prop_ui_range(prop, 0.5f, 2.0f, 1, 2);
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
-  prop = RNA_def_property(srna, "ui_line_width", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, line_width);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ui_line_width", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, line_width);
+  api_def_prop_ui_text(
       prop,
       "UI Line Width",
       "Changes the thickness of widget outlines, lines and dots in the interface");
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
   /* display */
-  prop = RNA_def_property(srna, "show_tooltips", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_TOOLTIPS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_tooltips", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_TOOLTIPS);
+  api_def_prop_ui_text(
       prop, "Tooltips", "Display tooltips (when disabled, hold Alt to force display)");
 
-  prop = RNA_def_property(srna, "show_tooltips_python", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_TOOLTIPS_PYTHON);
-  RNA_def_property_ui_text(prop, "Python Tooltips", "Show Python references in tooltips");
+  prop = api_def_prop(sapi, "show_tooltips_python", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_TOOLTIPS_PYTHON);
+  api_def_prop_ui_text(prop, "Python Tooltips", "Show Python references in tooltips");
 
-  prop = RNA_def_property(srna, "show_developer_ui", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_DEVELOPER_UI);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_developer_ui", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_DEVELOPER_UI);
+  api_def_prop_ui_text(
       prop,
       "Developer Extras",
       "Show options for developers (edit source in context menu, geometry indices)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_object_info", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_DRAWVIEWINFO);
-  RNA_def_property_ui_text(prop,
-                           "Display Object Info",
-                           "Include the name of the active object and the current frame number in "
-                           "the text info overlay");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_object_info", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_DRAWVIEWINFO);
+  api_def_prop_ui_text(prop,
+                       "Display Object Info",
+                       "Include the name of the active object and the current frame number in "
+                       "the text info overlay");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_view_name", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_SHOW_VIEWPORTNAME);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "show_view_name", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_SHOW_VIEWPORTNAME);
+  api_def_prop_ui_text(prop,
                            "Display View Name",
                            "Include the name of the view orientation in the text info overlay");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_splash", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_SPLASH_DISABLE);
-  RNA_def_property_ui_text(prop, "Show Splash", "Display splash screen on startup");
+  prop = api_def_prop(sapi, "show_splash", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_SPLASH_DISABLE);
+  api_def_prop_ui_text(prop, "Show Splash", "Display splash screen on startup");
 
-  prop = RNA_def_property(srna, "show_playback_fps", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_SHOW_FPS);
-  RNA_def_property_ui_text(prop,
-                           "Display Playback Frame Rate (FPS)",
-                           "Include the number of frames displayed per second in the text info "
-                           "overlay while animation is played back");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_playback_fps", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_SHOW_FPS);
+  api_def_prop_ui_text(prop,
+                       "Display Playback Frame Rate (FPS)",
+                       "Include the number of frames displayed per second in the text info "
+                       "overlay while animation is played back");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_DISABLE;
-  prop = RNA_def_property(srna, "show_addons_enabled_only", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  USERDEF_TAG_DIRTY_PROP_UPDATE_DISABLE;
+  prop = api_def_prop(sapi, "show_addons_enabled_only", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "space_data.flag", USER_SPACEDATA_ADDONS_SHOW_ONLY_ENABLED);
-  RNA_def_property_ui_text(prop,
-                           "Enabled Add-ons Only",
-                           "Only show enabled add-ons. Un-check to see all installed add-ons");
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_ENABLE;
+  api_def_prop_ui_text(prop,
+                       "Enabled Add-ons Only",
+                       "Only show enabled add-ons. Un-check to see all installed add-ons");
+  USERDEF_TAG_DIRTY_PROP_UPDATE_ENABLE;
 
-  static const EnumPropertyItem factor_display_items[] = {
+  static const EnumPropItem factor_display_items[] = {
       {USER_FACTOR_AS_FACTOR, "FACTOR", 0, "Factor", "Display factors as values between 0 and 1"},
       {USER_FACTOR_AS_PERCENTAGE, "PERCENTAGE", 0, "Percentage", "Display factors as percentages"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "factor_display_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, factor_display_items);
-  RNA_def_property_ui_text(prop, "Factor Display Type", "How factor values are displayed");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "factor_display_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, factor_display_items);
+  api_def_prop_ui_text(prop, "Factor Display Type", "How factor values are displayed");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* Weight Paint */
-
-  prop = RNA_def_property(srna, "use_weight_color_range", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_CUSTOM_RANGE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_weight_color_range", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_CUSTOM_RANGE);
+  api_def_prop_ui_text(
       prop,
       "Use Weight Color Range",
       "Enable color range used for weight visualization in weight painting mode");
-  RNA_def_property_update(prop, 0, "rna_UserDef_weight_color_update");
+  api_def_prop_update(prop, 0, "api_UserDef_weight_color_update");
 
-  prop = RNA_def_property(srna, "weight_color_range", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "coba_weight");
-  RNA_def_property_struct_type(prop, "ColorRamp");
-  RNA_def_property_ui_text(prop,
-                           "Weight Color Range",
-                           "Color range used for weight visualization in weight painting mode");
-  RNA_def_property_update(prop, 0, "rna_UserDef_weight_color_update");
+  prop = api_def_prop(sapi, "weight_color_range", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "coba_weight");
+  api_def_prop_struct_type(prop, "ColorRamp");
+  api_def_prop_ui_text(prop,
+                       "Weight Color Range",
+                       "Color range used for weight visualization in weight painting mode");
+  api_def_prop_update(prop, 0, "api_UserDef_weight_color_update");
 
-  prop = RNA_def_property(srna, "show_navigate_ui", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_SHOW_GIZMO_NAVIGATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_navigate_ui", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_SHOW_GIZMO_NAVIGATE);
+  api_def_prop_ui_text(
       prop,
       "Navigation Controls",
       "Show navigation controls in 2D and 3D views which do not have scroll bars");
-  RNA_def_property_update(prop, 0, "rna_userdef_gizmo_update");
+  api_def_prop_update(prop, 0, "api_userdef_gizmo_update");
 
   /* menus */
-  prop = RNA_def_property(srna, "use_mouse_over_open", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_MENUOPENAUTO);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mouse_over_open", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_MENUOPENAUTO);
+  api_def_prop_ui_text(
       prop,
       "Open on Mouse Over",
       "Open menu buttons and pulldowns automatically when the mouse is hovering");
 
-  prop = RNA_def_property(srna, "open_toplevel_delay", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "menuthreshold1");
-  RNA_def_property_range(prop, 1, 40);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "open_toplevel_delay", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "menuthreshold1");
+  api_def_prop_range(prop, 1, 40);
+  api_def_prop_ui_text(
       prop,
       "Top Level Menu Open Delay",
       "Time delay in 1/10 seconds before automatically opening top level menus");
 
-  prop = pief_prop(sapi, "open_sublevel_delay", PROP_INT, PROP_NONE);
-  api_def_prop_int_sdna(prop, NULL, "menuthreshold2");
+  prop = api_def_prop(sapi, "open_sublevel_delay", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "menuthreshold2");
   api_def_prop_range(prop, 1, 40);
   api_def_prop_ui_text(
       prop,
@@ -4714,7 +4713,7 @@ static void api_def_userdef_view(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "color_picker_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, color_picker_types);
-  api_def_prop_enum_sdna(prop, NULL, "color_picker_type");
+  api_def_prop_enum_stype(prop, NULL, "color_picker_type");
   api_def_prop_ui_text(
       prop, "Color Picker Type", "Different styles of displaying the color picker widget");
   api_def_prop_update(prop, 0, "api_userdef_update");
@@ -4754,8 +4753,8 @@ static void api_def_userdef_view(DuneApi *dapi)
   prop = api_def_prop(sapi, "pie_menu_confirm", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 0, 1000);
   api_def_prop_ui_text(prop,
-                           "Confirm Threshold",
-                           "Distance threshold after which selection is made (zero to disable)");
+                       "Confirm Threshold",
+                       "Distance threshold after which selection is made (zero to disable)");
 
   prop = api_def_prop(sapi, "use_save_prompt", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "uiflag", USER_SAVE_PROMPT);
@@ -4769,9 +4768,9 @@ static void api_def_userdef_view(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_directional_menus", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_MENUFIXEDORDER);
   api_def_prop_ui_text(prop,
-                           "Contents Follow Opening Direction",
-                           "Otherwise menus, etc will always be top to bottom, left to right, "
-                           "no matter opening direction");
+                       "Contents Follow Opening Direction",
+                       "Otherwise menus, etc will always be top to bottom, left to right, "
+                       "no matter opening direction");
 
   static const EnumPropItem header_align_items[] = {
       {0, "NONE", 0, "Keep Existing", "Keep existing header alignment"},
@@ -4824,7 +4823,7 @@ static void api_def_userdef_view(DuneApi *dapi)
       "Show small rotating 3D axes in the top right corner of the 3D viewport");
   api_def_prop_update(prop, 0, "api_userdef_gizmo_update");
 
-  prop = api_def_property(srna, "mini_axis_size", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "mini_axis_size", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "rvisize");
   api_def_prop_range(prop, 10, 64);
   api_def_prop_ui_text(prop, "Mini Axes Size", "The axes icon's size");
@@ -4834,7 +4833,7 @@ static void api_def_userdef_view(DuneApi *dapi)
   api_def_prop_int_stype(prop, NULL, "rvibright");
   api_def_prop_range(prop, 0, 10);
   api_def_prop_ui_text(prop, "Mini Axes Brightness", "Brightness of the icon");
-  api_def_prop_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   prop = api_def_prop(sapi, "smooth_view", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "smooth_viewtx");
@@ -4855,7 +4854,7 @@ static void api_def_userdef_view(DuneApi *dapi)
   api_def_prop_update(prop, 0, "pia_userdef_update");
 
   prop = api_def_prop(sapi, "gizmo_size", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "gizmo_size");
+  api_def_prop_int_stype(prop, NULL, "gizmo_size");
   api_def_prop_range(prop, 10, 200);
   api_def_prop_ui_text(prop, "Gizmo Size", "Diameter of the gizmo");
   api_def_prop_update(prop, 0, "api_userdef_update");
@@ -4874,24 +4873,24 @@ static void api_def_userdef_view(DuneApi *dapi)
 
   /* View2D Grid Displays */
   prop = api_def_prop(sapi, "view2d_grid_spacing_min", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "v2d_min_gridsize");
+  api_def_prop_int_stype(prop, NULL, "v2d_min_gridsize");
   api_def_prop_range(
       prop, 1, 500); /* XXX: perhaps the lower range should only go down to 5? */
   api_def_prop_ui_text(prop,
-                           "2D View Minimum Grid Spacing",
-                           "Minimum number of pixels between each gridline in 2D Viewports");
+                       "2D View Minimum Grid Spacing",
+                       "Minimum number of pixels between each gridline in 2D Viewports");
   api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* TODO: add a setter for this, so that we can bump up the minimum size as necessary... */
   prop = api_def_prop(sapi, "timecode_style", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, timecode_styles);
-  api_def_prop_enum_sdna(prop, NULL, "timecode_style");
-  api_def_prop_enum_funcs(prop, NULL, "api_userdef_timecode_style_set", NULL);
+  api_def_prop_enum_stype(prop, NULL, "timecode_style");
+  api_def_prop_enum_fns(prop, NULL, "api_userdef_timecode_style_set", NULL);
   api_def_prop_ui_text(
       prop,
       "Timecode Style",
       "Format of timecode displayed when not displaying timing in terms of frames");
-  api_def_prop_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   prop = api_def_prop(sapi, "view_frame_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, zoom_frame_modes);
@@ -4908,7 +4907,6 @@ static void api_def_userdef_view(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Zoom Seconds", "Seconds around cursor that we zoom around");
 
   /* Text. */
-
   prop = api_def_prop(sapi, "use_text_antialiasing", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "text_render", USER_TEXT_DISABLE_AA);
   api_def_prop_ui_text(
@@ -5035,14 +5033,13 @@ static void api_def_userdef_edit(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  sapi = api_def_struct(dapi, "PreferencesEdit", NULL);
+  sapi = api_def_struct(dapi, "PrefsEdit", NULL);
   api_def_struct_stype(sapi, "UserDef");
-  api_def_struct_nested(dapi, sapi, "Preferences");
+  api_def_struct_nested(dapi, sapi, "Prefs");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Edit Methods", "Settings for interacting with Blender data");
 
   /* Edit Methods */
-
   prop = api_def_prop(sapi, "material_link", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
   api_def_prop_enum_items(prop, material_link_items);
@@ -5069,7 +5066,6 @@ static void api_def_userdef_edit(DuneApi *dapi)
                        "Display size of the empty when new collection instances are created");
 
   /* Text Editor */
-
   prop = api_def_prop(sapi, "use_text_edit_auto_close", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "text_flag", USER_TEXT_EDIT_AUTO_CLOSE);
   api_def_prop_ui_text(
@@ -5083,12 +5079,12 @@ static void api_def_userdef_edit(DuneApi *dapi)
   prop = api_def_prop(sapi, "undo_steps", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "undosteps");
   api_def_prop_range(prop, 0, 256);
-  api_def_prop_int_fns(prop, NULL, "rna_userdef_undo_steps_set", NULL);
+  api_def_prop_int_fns(prop, NULL, "api_userdef_undo_steps_set", NULL);
   api_def_prop_ui_text(
       prop, "Undo Steps", "Number of undo steps available (smaller values conserve memory)");
 
-  prop = api_def_property(sapi, "undo_memory_limit", PROP_INT, PROP_NONE);
-  api_def_prop_int_sdna(prop, NULL, "undomemory");
+  prop = api_def_prop(sapi, "undo_memory_limit", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "undomemory");
   api_def_prop_range(prop, 0, max_memory_in_megabytes_int());
   api_def_prop_ui_text(
       prop, "Undo Memory Size", "Maximum memory usage in megabytes (0 means unlimited)");
@@ -5105,18 +5101,18 @@ static void api_def_userdef_edit(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_auto_keying", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "autokey_mode", AUTOKEY_ON);
   api_def_prop_ui_text(prop,
-                           "Auto Keying Enable",
-                           "Automatic keyframe insertion for Objects and Bones "
-                           "(default setting used for new Scenes)");
+                       "Auto Keying Enable",
+                       "Automatic keyframe insertion for Objects and Bones "
+                       "(default setting used for new Scenes)");
 
   prop = api_def_prop(sapi, "auto_keying_mode", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, auto_key_modes);
   api_def_prop_enum_fns(
       prop, "api_userdef_autokeymode_get", "api_userdef_autokeymode_set", NULL);
   api_def_prop_ui_text(prop,
-                           "Auto Keying Mode",
-                           "Mode of automatic keyframe insertion for Objects and Bones "
-                           "(default setting used for new Scenes)");
+                       "Auto Keying Mode",
+                       "Mode of automatic keyframe insertion for Objects and Bones "
+                       "(default setting used for new Scenes)");
 
   prop = api_def_prop(sapi, "use_keyframe_insert_available", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTAVAIL);
@@ -5132,47 +5128,47 @@ static void api_def_userdef_edit(DuneApi *dapi)
       "Show warning indicators when transforming objects and bones if auto keying is enabled");
 
   /* keyframing settings */
-  prop = RNA_def_property(srna, "use_keyframe_insert_needed", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTNEEDED);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_keyframe_insert_needed", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTNEEDED);
+  api_def_prop_ui_text(
       prop, "Keyframe Insert Needed", "Keyframe insertion only when keyframe needed");
 
-  prop = RNA_def_property(srna, "use_visual_keying", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_AUTOMATKEY);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_visual_keying", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_AUTOMATKEY);
+  api_def_prop_ui_text(
       prop, "Visual Keying", "Use Visual keying automatically for constrained objects");
 
-  prop = RNA_def_property(srna, "use_insertkey_xyz_to_rgb", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_XYZ2RGB);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_insertkey_xyz_to_rgb", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_XYZ2RGB);
+  api_def_prop_ui_text(
       prop,
       "New F-Curve Colors - XYZ to RGB",
       "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
       "and also Color is based on the transform axis");
 
-  prop = RNA_def_property(srna, "use_anim_channel_group_colors", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "animation_flag", USER_ANIM_SHOW_CHANNEL_GROUP_COLORS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_anim_channel_group_colors", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "animation_flag", USER_ANIM_SHOW_CHANNEL_GROUP_COLORS);
+  api_def_prop_ui_text(
       prop,
       "Channel Group Colors",
       "Use animation channel group colors; generally this is used to show bone group colors");
-  RNA_def_property_update(prop, 0, "rna_userdef_anim_update");
+  api_def_prop_update(prop, 0, "api_userdef_anim_update");
 
-  prop = RNA_def_property(srna, "fcurve_new_auto_smoothing", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_fcurve_auto_smoothing_items);
-  RNA_def_property_enum_sdna(prop, NULL, "auto_smoothing_new");
-  RNA_def_property_ui_text(prop,
-                           "New Curve Smoothing Mode",
-                           "Auto Handle Smoothing mode used for newly added F-Curves");
+  prop = api_def_prop(sapi, "fcurve_new_auto_smoothing", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_fcurve_auto_smoothing_items);
+  api_def_prop_enum_stype(prop, NULL, "auto_smoothing_new");
+  api_def_prop_ui_text(prop,
+                       "New Curve Smoothing Mode",
+                       "Auto Handle Smoothing mode used for newly added F-Curves");
 
-  prop = RNA_def_property(srna, "keyframe_new_interpolation_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_beztriple_interpolation_mode_items);
-  RNA_def_property_enum_sdna(prop, NULL, "ipo_new");
-  RNA_def_property_ui_text(prop,
-                           "New Interpolation Type",
-                           "Interpolation mode used for first keyframe on newly added F-Curves "
-                           "(subsequent keyframes take interpolation from preceding keyframe)");
-  api_def_prop_translation_ctx(prop, LANG_CTX_ID_ACTION);
+  prop = api_def_prop(sapi, "keyframe_new_interpolation_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_beztriple_interpolation_mode_items);
+  api_def_prop_enum_stype(prop, NULL, "ipo_new");
+  api_def_prop_ui_text(prop,
+                       "New Interpolation Type",
+                       "Interpolation mode used for first keyframe on newly added F-Curves "
+                       "(subsequent keyframes take interpolation from preceding keyframe)");
+  api_def_prop_translation_ctx(prop, LANG_CXT_ID_ACTION);
 
   prop = api_def_prop(sapi, "keyframe_new_handle_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_keyframe_handle_type_items);
@@ -5214,24 +5210,24 @@ static void api_def_userdef_edit(DuneApi *dapi)
   api_def_prop_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
 
   /* grease pencil */
-  prop = api_def_prop(sapi, "dune_pen_manhattan_distance", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "pen_manhattan_distance", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "pen_manhattandist");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop,
                        "Dune Pen Manhattan Distance",
                        "Pixels moved by mouse per axis when drawing stroke");
 
-  prop = api_def_prop(sapi, "grease_pencil_euclidean_distance", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "pen_euclidean_distance", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "pen_euclideandist");
   api_def_prop_range(prop, 0, 100);
   api_def_prop_ui_text(prop,
-                           "Pen Euclidean Distance",
-                           "Distance moved by mouse when drawing stroke to include");
+                      "Pen Euclidean Distance",
+                      "Distance moved by mouse when drawing stroke to include");
 
   prop = api_def_prop(sapi, "pen_eraser_radius", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "gp_eraser");
   api_def_prop_range(prop, 1, 500);
-  api_def_prop_ui_text(prop, "Grease Pencil Eraser Radius", "Radius of eraser 'brush'");
+  api_def_prop_ui_text(prop, "Pen Eraser Radius", "Radius of eraser 'brush'");
 
   prop = api_def_prop(sapi, "pen_default_color", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "pen_new_layer_col");
@@ -5239,16 +5235,15 @@ static void api_def_userdef_edit(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Annotation Default Color", "Color of new annotation layers");
 
   /* sculpt and paint */
-
-  prop = RNA_def_property(srna, "sculpt_paint_overlay_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "sculpt_paint_overlay_col");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Sculpt/Paint Overlay Color", "Color of texture overlay");
+  prop = api_def_prop(sapi, "sculpt_paint_overlay_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "sculpt_paint_overlay_col");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Sculpt/Paint Overlay Color", "Color of texture overlay");
 
   /* duplication linking */
-  prop = RNA_def_property(srna, "use_duplicate_mesh", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "dupflag", USER_DUP_MESH);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_duplicate_mesh", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "dupflag", USER_DUP_MESH);
+  api_def_prop_ui_text(
       prop, "Duplicate Mesh", "Causes mesh data to be duplicated with the object");
 
   prop = RNA_def_property(srna, "use_duplicate_surface", PROP_BOOLEAN, PROP_NONE);
