@@ -618,13 +618,13 @@ static void api_Event_ascii_get(ApiPtr *ptr, char *value)
   value[1] = '\0';
 }
 
-static int api_Event_ascii_length(PointerRNA *ptr)
+static int api_Event_ascii_length(ApiPtr *ptr)
 {
   const wmEvent *event = ptr->data;
   return wm_event_utf8_to_ascii(event) ? 1 : 0;
 }
 
-static void api_Event_unicode_get(PointerRNA *ptr, char *value)
+static void api_Event_unicode_get(ApiPtr *ptr, char *value)
 {
   /* utf8 buf isn't \0 terminated */
   const wmEvent *event = ptr->data;
@@ -664,7 +664,7 @@ static bool api_Event_is_consecutive_get(ApiPtr *ptr)
   return (event->flag & WM_EVENT_IS_CONSECUTIVE) != 0;
 }
 
-static float api_Event_pressure_get(PointerRNA *ptr)
+static float api_Event_pressure_get(ApiPtr *ptr)
 {
   const wmEvent *event = ptr->data;
   return wm_event_tablet_data(event, NULL, NULL);
@@ -740,9 +740,9 @@ static void api_window_scene_set(ApiPtr *ptr,
   win->new_scene = value.data;
 }
 
-static void api_Window_scene_update(Ctx *C, PointerRNA *ptr)
+static void api_Window_scene_update(Cxt *C, ApiPtr *ptr)
 {
-  Main *main = ctx_data_main(C);
+  Main *main = cxt_data_main(C);
   wmWindow *win = ptr->data;
 
   /* Exception: must use context so notifier gets to the right window. */
@@ -757,7 +757,7 @@ static void api_Window_scene_update(Ctx *C, PointerRNA *ptr)
     BPy_END_ALLOW_THREADS;
 #  endif
 
-    wmWindowManager *wm = ctx_wm_manager(C);
+    wmWindowManager *wm = cxt_wm_manager(C);
     wm_event_add_notifier_ex(wm, win, NC_SCENE | ND_SCENEBROWSE, win->new_scene);
 
     if (G.debug & G_DEBUG) {
@@ -793,7 +793,7 @@ static void api_Window_workspace_set(ApiPtr *ptr,
   win->workspace_hook->temp_workspace_store = value.data;
 }
 
-static void api_Window_workspace_update(Ctx *C, ApiPtr *ptr)
+static void api_Window_workspace_update(Cxt *C, ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
   WorkSpace *new_workspace = win->workspace_hook->temp_workspace_store;
@@ -801,7 +801,7 @@ static void api_Window_workspace_update(Ctx *C, ApiPtr *ptr)
   /* exception: can't set screens inside of area/region handlers,
    * and must use context so notifier gets to the right window */
   if (new_workspace) {
-    wmWindowManager *wm = ctx_wm_manager(C);
+    wmWindowManager *wm = cxt_wm_manager(C);
     wm_event_add_notifier_ex(wm, win, NC_SCREEN | ND_WORKSPACE_SET, new_workspace);
     win->workspace_hook->temp_workspace_store = NULL;
   }
@@ -842,7 +842,7 @@ static bool api_Window_screen_assign_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
   return !screen->temp;
 }
 
-static void api_workspace_screen_update(Ctx *C, ApiPtr *ptr)
+static void api_workspace_screen_update(Cxt *C, ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
   WorkSpaceLayout *layout_new = win->workspace_hook->temp_layout_store;
@@ -850,7 +850,7 @@ static void api_workspace_screen_update(Ctx *C, ApiPtr *ptr)
   /* exception: can't set screens inside of area/region handlers,
    * and must use context so notifier gets to the right window */
   if (layout_new) {
-    wmWindowManager *wm = ctx_wm_manager(C);
+    wmWindowManager *wm = cxt_wm_manager(C);
     wm_event_add_notifier_ex(wm, win, NC_SCREEN | ND_LAYOUTBROWSE, layout_new);
     win->workspace_hook->temp_layout_store = NULL;
   }
@@ -901,7 +901,7 @@ static ApiPtr api_KeyMapItem_props_get(ApiPtr *ptr)
     return *(kmi->ptr);
   }
 
-  // return rna_pointer_inherit_refine(ptr, &ApiOpProps, op->props);
+  // return api_ptr_inherit_refine(ptr, &ApiOpProps, op->props);
   return ApiPtr_NULL;
 }
 
@@ -943,7 +943,7 @@ static void api_wmKeyMapItem_map_type_set(ApiPtr *ptr, int value)
   }
 }
 
-/** Assumes value to be an enum from rna_enum_event_type_items.
+/** Assumes value to be an enum from api_enum_event_type_items.
  * Function makes sure key-modifiers are only valid keys, ESC keeps it unaltered */
 static void api_wmKeyMapItem_keymod_set(ApiPtr *ptr, int value)
 {
@@ -954,11 +954,9 @@ static void api_wmKeyMapItem_keymod_set(ApiPtr *ptr, int value)
    * a good precedent, don't do this unless you have a good reason! */
   if (value == EVT_ESCKEY) {
     /* pass */
-  }
-  else if (ISKEYBOARD(value) && !ISKEYMODIFIER(value)) {
+  } else if (ISKEYBOARD(value) && !ISKEYMODIFIER(value)) {
     kmi->keymod = value;
-  }
-  else {
+  } else {
     kmi->keymod = 0;
   }
 }
@@ -1089,7 +1087,6 @@ static void api_WindowManager_active_keyconfig_set(ApiPtr *ptr,
 
 /* -------------------------------------------------------------------- */
 /** Key Config Preferences **/
-
 static ApiPtr api_wmKeyConfig_prefs_get(ApiPtr *ptr)
 {
   wmKeyConfig *kc = ptr->data;
@@ -1097,8 +1094,7 @@ static ApiPtr api_wmKeyConfig_prefs_get(ApiPtr *ptr)
   if (kpt_rt) {
     wmKeyConfigPref *kpt = dune_keyconfig_pref_ensure(&U, kc->idname);
     return api_ptr_inherit_refine(ptr, kpt_rt->api_ext.sapi, kpt->prop);
-  }
-  else {
+  } else {
     return ApiPtr_NULL;
   }
 }
@@ -1492,7 +1488,7 @@ static ApiStruct *api_op_register(Main *main,
     char idname[OP_MAX_TYPENAME];
     char name[OP_MAX_TYPENAME];
     char description[API_DYN_DESCR_MAX];
-    char translation_ctx[DUNE_ST_MAXNAME];
+    char lang_ctx[DUNE_ST_MAXNAME];
     char undo_group[OP_MAX_TYPENAME];
   } temp_buffers;
 
@@ -1501,7 +1497,7 @@ static ApiStruct *api_op_register(Main *main,
   dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
   dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
   dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.translation_ctx =
+  dummy_ot.lang_ctx =
       temp_buffers.translation_context;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
   api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_op_ptr);
@@ -1556,7 +1552,7 @@ static ApiStruct *api_op_register(Main *main,
         idname_conv,
         temp_buffers.name,
         temp_buffers.description,
-        temp_buffers.translation_context,
+        temp_buffers.translation_cxt,
         temp_buffers.undo_group,
     };
     char *strings_table[ARRAY_SIZE(strings)];
@@ -1711,8 +1707,8 @@ static ApiStruct *api_MacroOp_register(Main *main,
   }
 
   /* We have to set default context if the class doesn't define it. */
-  if (temp_buffers.translation_ctx[0] == '\0') {
-    STRNCPY(temp_buffers.translation_ctx, LANG_OP_DEFAULT);
+  if (temp_buffers.lang_cxt[0] == '\0') {
+    STRNCPY(temp_buffers.lang_cxt, LANG_OP_DEFAULT);
   }
 
   /* Convert foo.bar to FOO_OT_bar
@@ -1811,7 +1807,7 @@ static void api_op_bl_label_set(ApiPtr *ptr, const char *value)
       } \
       else { \
         lib_assert( \
-            !"setting the bl_" STRINGIFY(translation_ctx) " on a non-builtin operator"); \
+            !"setting the bl_" STRINGIFY(lang_cxt) " on a non-builtin operator"); \
       } \
     } \
     static void api_op_bl_##attr##_get(ApiPtr *ptr, char *value) \
