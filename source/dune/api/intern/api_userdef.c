@@ -3617,34 +3617,34 @@ static void api_def_userdef_theme_space_nla(DuneApi *dapi)
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Meta Strips", "Unselected Meta Strip (for grouping related strips)");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "meta_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "nla_meta_sel");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Meta Strips Selected", "Selected Meta Strip (for grouping related strips)");
-  api_def_prop_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   prop = api_def_prop(sapi, "sound_strips", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "nla_sound");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Sound Strips", "Unselected Sound Strip (for timing speaker sounds)");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "sound_strips_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "nla_sound_sel");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Sound Strips Selected", "Selected Sound Strip (for timing speaker sounds)");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "tweak", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "nla_tweaking");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Tweak", "Color for strip/action being \"tweaked\" or edited");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "tweak_duplicate", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "nla_tweakdupli");
@@ -6227,7 +6227,7 @@ static void api_def_userdef_script_directory(DuneApi *dapi)
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Python Scripts Directory", "");
 
-  ApuProp *prop;
+  ApiProp *prop;
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_ui_text(prop, "Name", "Id for the Python scripts directory");
@@ -6320,30 +6320,30 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Show System Locations", "Show System locations list in the File Browser");
 
-  prop = api_def_prop(sapi, "use_relative_paths", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_relative_paths", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", USER_RELPATHS);
   api_def_prop_ui_text(
       prop,
       "Relative Paths",
       "Default relative path option for the file selector, when no path is defined yet");
 
-  prop = RNA_def_property(srna, "use_file_compression", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_FILECOMPRESS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_file_compression", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_FILECOMPRESS);
+  api_def_prop_ui_text(
       prop, "Compress File", "Enable file compression when saving .blend files");
 
-  prop = RNA_def_property(srna, "use_load_ui", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", USER_FILENOUI);
-  RNA_def_property_ui_text(prop, "Load UI", "Load user interface setup when loading .blend files");
-  RNA_def_property_update(prop, 0, "rna_userdef_load_ui_update");
+  prop = api_def_prop(sapi, "use_load_ui", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", USER_FILENOUI);
+  api_def_prop_ui_text(prop, "Load UI", "Load user interface setup when loading .blend files");
+  api_def_prop_update(prop, 0, "api_userdef_load_ui_update");
 
-  prop = RNA_def_property(srna, "use_scripts_auto_execute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", USER_SCRIPT_AUTOEXEC_DISABLE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_scripts_auto_execute", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", USER_SCRIPT_AUTOEXEC_DISABLE);
+  api_def_prop_ui_text(prop,
                            "Auto Run Python Scripts",
-                           "Allow any .blend file to run scripts automatically "
+                           "Allow any .dune file to run scripts automatically "
                            "(unsafe with blend files from an untrusted source)");
-  RNA_def_property_update(prop, 0, "rna_userdef_script_autoexec_update");
+  RNA_def_property_update(prop, 0, "api_userdef_script_autoexec_update");
 
   prop = RNA_def_property(srna, "use_tabs_as_spaces", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", USER_TXT_TABSTOSPACES_DISABLE);
@@ -6353,45 +6353,44 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
       "Automatically convert all new tabs into spaces for new and loaded text files");
 
   /* Directories. */
-
-  prop = RNA_def_property(srna, "font_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "fontdir");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "font_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "fontdir");
+  api_def_prop_ui_text(
       prop, "Fonts Directory", "The default directory to search for loading fonts");
 
-  prop = RNA_def_property(srna, "texture_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "textudir");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "texture_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "textudir");
+  api_def_prop_ui_text(
       prop, "Textures Directory", "The default directory to search for textures");
 
-  prop = RNA_def_property(srna, "render_output_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "renderdir");
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "render_output_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "renderdir");
+  api_def_prop_ui_text(prop,
                            "Render Output Directory",
                            "The default directory for rendering output, for new scenes");
 
-  rna_def_userdef_script_directory(brna);
+  api_def_userdef_script_directory(dapi);
 
-  prop = RNA_def_property(srna, "script_directories", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ScriptDirectory");
-  RNA_def_property_ui_text(prop, "Python Scripts Directory", "");
-  rna_def_userdef_script_directory_collection(brna, prop);
+  prop = api_def_prop(sapi, "script_directories", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "ScriptDirectory");
+  api_def_prop_ui_text(prop, "Python Scripts Directory", "");
+  api_def_userdef_script_directory_collection(dapi, prop);
 
-  prop = RNA_def_property(srna, "i18n_branches_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "i18ndir");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "i18n_branches_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "i18ndir");
+  RNA_def_prop_ui_text(
       prop,
       "Translation Branches Directory",
       "The path to the '/branches' directory of your local svn-translation copy, "
       "to allow translating from the UI");
 
-  prop = RNA_def_property(srna, "sound_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "sounddir");
-  RNA_def_property_ui_text(prop, "Sounds Directory", "The default directory to search for sounds");
+  prop = RNA_def_prop(srna, "sound_directory", PROP_STRING, PROP_DIRPATH);
+  RNA_def_prop_string_stype(prop, NULL, "sounddir");
+  RNA_def_prop_ui_text(prop, "Sounds Directory", "The default directory to search for sounds");
 
-  prop = RNA_def_property(srna, "temporary_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "tempdir");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "temporary_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "tempdir");
+  api_def_prop_ui_text(
       prop, "Temporary Directory", "The directory for storing temporary save files");
   RNA_def_property_update(prop, 0, "rna_userdef_temp_update");
 
