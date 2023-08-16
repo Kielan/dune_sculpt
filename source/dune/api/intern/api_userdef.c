@@ -2204,7 +2204,7 @@ static void api_def_userdef_theme_spaces_pen(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Pen Vertex Select", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(sap[i, "pen_vertex_size", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "pen_vertex_size", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 1, 10);
   api_def_prop_ui_text(prop, "Pen Vertex Size", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -4261,9 +4261,9 @@ static void api_def_userdef_studiolight(BlenderRNA *brna)
 
   prop = api_def_prop(sapi, "path_sh_cache", PROP_STRING, PROP_DIRPATH);
   api_def_prop_string_fns(prop,
-                                "api_UserDef_studiolight_path_sh_cache_get",
-                                "api_UserDef_studiolight_path_sh_cache_length",
-                                NULL);
+                          "api_UserDef_studiolight_path_sh_cache_get",
+                          "api_UserDef_studiolight_path_sh_cache_length",
+                          NULL);
   api_def_prop_ui_text(
       prop, "SH Cache Path", "Path where the spherical harmonics cache is stored");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -4275,149 +4275,149 @@ static void api_def_userdef_studiolight(BlenderRNA *brna)
   api_def_prop_float_fns(
       prop, "api_UserDef_studiolight_spherical_harmonics_coefficients_get", NULL, NULL);
 
-  RNA_define_verify_stype(true);
+  api_define_verify_stype(true);
 }
 
-static void rna_def_userdef_pathcompare(BlenderRNA *brna)
+static void api_def_userdef_pathcompare(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PathCompare", NULL);
-  RNA_def_struct_sdna(srna, "bPathCompare");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Path Compare", "Match paths against this value");
+  srna = api_def_struct(dapi, "PathCompare", NULL);
+  api_def_struct_stype(sapi, "bPathCompare");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Path Compare", "Match paths against this value");
 
-  prop = RNA_def_property(srna, "path", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_ui_text(prop, "Path", "");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "path", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_ui_text(prop, "Path", "");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "use_glob", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_PATHCMP_GLOB);
-  RNA_def_property_ui_text(prop, "Use Wildcard", "Enable wildcard globbing");
+  prop = api_def_prop(sapi, "use_glob", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_PATHCMP_GLOB);
+  api_def_prop_ui_text(prop, "Use Wildcard", "Enable wildcard globbing");
 }
 
-static void rna_def_userdef_addon_pref(BlenderRNA *brna)
+static void api_def_userdef_addon_pref(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "AddonPreferences", NULL);
-  RNA_def_struct_ui_text(srna, "Add-on Preferences", "");
-  RNA_def_struct_sdna(srna, "bAddon"); /* WARNING: only a bAddon during registration */
+  sapi = api_def_struct(dapi, "AddonPrefs", NULL);
+  api_def_struct_ui_text(sapi, "Add-on Prefs", "");
+  api_def_struct_stype(sapi, "bAddon"); /* WARNING: only a bAddon during registration */
 
-  RNA_def_struct_refine_func(srna, "rna_AddonPref_refine");
-  RNA_def_struct_register_funcs(srna, "rna_AddonPref_register", "rna_AddonPref_unregister", NULL);
-  RNA_def_struct_idprops_func(srna, "rna_AddonPref_idprops");
-  RNA_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES); /* Mandatory! */
+  api_def_struct_refine_fn(sapi, "api_AddonPref_refine");
+  api_def_struct_register_fns(sapi, "api_AddonPref_register", "api_AddonPref_unregister", NULL);
+  api_def_struct_idprops_fn(sapi, "api_AddonPref_idprops");
+  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPS); /* Mandatory! */
 
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_DISABLE;
+  USERDEF_TAG_DIRTY_PROP_UPDATE_DISABLE;
 
   /* registration */
-  RNA_define_verify_sdna(0);
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "module");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(0);
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "module");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_define_verify_stype(1);
 
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_ENABLE;
+  USERDEF_TAG_DIRTY_PROP_UPDATE_ENABLE;
 }
 
-static void rna_def_userdef_dothemes(BlenderRNA *brna)
+static void api_def_userdef_dothemes(DuneApi *dapi)
 {
 
-  rna_def_userdef_theme_ui_style(brna);
-  rna_def_userdef_theme_ui(brna);
+  api_def_userdef_theme_ui_style(dapi);
+  api_def_userdef_theme_ui(dapi);
 
-  rna_def_userdef_theme_space_generic(brna);
-  rna_def_userdef_theme_space_gradient(brna);
-  rna_def_userdef_theme_space_list_generic(brna);
+  api_def_userdef_theme_space_generic(dapi);
+  api_def_userdef_theme_space_gradient(dapi);
+  api_def_userdef_theme_space_list_generic(dapi);
 
-  rna_def_userdef_theme_space_view3d(brna);
-  rna_def_userdef_theme_space_graph(brna);
-  rna_def_userdef_theme_space_file(brna);
-  rna_def_userdef_theme_space_nla(brna);
-  rna_def_userdef_theme_space_action(brna);
-  rna_def_userdef_theme_space_image(brna);
-  rna_def_userdef_theme_space_seq(brna);
-  rna_def_userdef_theme_space_buts(brna);
-  rna_def_userdef_theme_space_text(brna);
-  rna_def_userdef_theme_space_node(brna);
-  rna_def_userdef_theme_space_outliner(brna);
-  rna_def_userdef_theme_space_info(brna);
-  rna_def_userdef_theme_space_userpref(brna);
-  rna_def_userdef_theme_space_console(brna);
-  rna_def_userdef_theme_space_clip(brna);
-  rna_def_userdef_theme_space_topbar(brna);
-  rna_def_userdef_theme_space_statusbar(brna);
-  rna_def_userdef_theme_space_spreadsheet(brna);
-  rna_def_userdef_theme_colorset(brna);
-  rna_def_userdef_theme_collection_color(brna);
-  rna_def_userdef_theme_strip_color(brna);
-  rna_def_userdef_themes(brna);
+  api_def_userdef_theme_space_view3d(dapi);
+  api_def_userdef_theme_space_graph(dapi);
+  api_def_userdef_theme_space_file(dapi);
+  api_def_userdef_theme_space_nla(dapi);
+  api_def_userdef_theme_space_action(dapi);
+  api_def_userdef_theme_space_image(dapi);
+  api_def_userdef_theme_space_seq(dapi);
+  api_def_userdef_theme_space_buts(dapi);
+  api_def_userdef_theme_space_text(dapi);
+  api_def_userdef_theme_space_node(dapi);
+  api_def_userdef_theme_space_outliner(dapi);
+  api_def_userdef_theme_space_info(dapi);
+  api_def_userdef_theme_space_userpref(dapi);
+  api_def_userdef_theme_space_console(dapi);
+  api_def_userdef_theme_space_clip(dapi);
+  api_def_userdef_theme_space_topbar(dapi);
+  api_def_userdef_theme_space_statusbar(dapi);
+  api_def_userdef_theme_space_spreadsheet(dapi);
+  api_def_userdef_theme_colorset(dapi);
+  api_def_userdef_theme_collection_color(dapi);
+  api_def_userdef_theme_strip_color(dapi);
+  api_def_userdef_themes(dapi);
 }
 
-static void rna_def_userdef_solidlight(BlenderRNA *brna)
+static void api_def_userdef_solidlight(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
   static float default_dir[3] = {0.0f, 0.0f, 1.0f};
   static float default_col[3] = {0.8f, 0.8f, 0.8f};
 
-  srna = RNA_def_struct(brna, "UserSolidLight", NULL);
-  RNA_def_struct_sdna(srna, "SolidLight");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(
-      srna, "Solid Light", "Light used for Studio lighting in solid shading mode");
+  sapi = api_def_struct(dapi, "UserSolidLight", NULL);
+  api_def_struct_stype(sapi, "SolidLight");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(
+      sapi, "Solid Light", "Light used for Studio lighting in solid shading mode");
 
-  prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", 1);
-  RNA_def_property_boolean_default(prop, true);
-  RNA_def_property_ui_text(prop, "Enabled", "Enable this light in solid shading mode");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  prop = api_def_prop(sapi, "use", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", 1);
+  api_def_prop_bool_default(prop, true);
+  api_def_prop_ui_text(prop, "Enabled", "Enable this light in solid shading mode");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "smooth", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "smooth");
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Smooth", "Smooth the lighting from this light");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  prop = api_def_prop(sapi, "smooth", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "smooth");
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Smooth", "Smooth the lighting from this light");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "direction", PROP_FLOAT, PROP_DIRECTION);
-  RNA_def_property_float_sdna(prop, NULL, "vec");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_array_default(prop, default_dir);
-  RNA_def_property_ui_text(prop, "Direction", "Direction that the light is shining");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  prop = api_def_prop(sapi, "direction", PROP_FLOAT, PROP_DIRECTION);
+  api_def_prop_float_stype(prop, NULL, "vec");
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_array_default(prop, default_dir);
+  api_def_prop_ui_text(prop, "Direction", "Direction that the light is shining");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "specular_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "spec");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_array_default(prop, default_col);
-  RNA_def_property_ui_text(prop, "Specular Color", "Color of the light's specular highlight");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  prop = api_def_prop(sapi, "specular_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "spec");
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_array_default(prop, default_col);
+  api_def_prop_ui_text(prop, "Specular Color", "Color of the light's specular highlight");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 
-  prop = RNA_def_property(srna, "diffuse_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "col");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_array_default(prop, default_col);
-  RNA_def_property_ui_text(prop, "Diffuse Color", "Color of the light's diffuse highlight");
-  RNA_def_property_update(prop, 0, "rna_UserDef_viewport_lights_update");
+  prop = api_def_prop(sapi, "diffuse_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "col");
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_array_default(prop, default_col);
+  api_def_prop_ui_text(prop, "Diffuse Color", "Color of the light's diffuse highlight");
+  api_def_prop_update(prop, 0, "api_UserDef_viewport_lights_update");
 }
 
-static void rna_def_userdef_walk_navigation(BlenderRNA *brna)
+static void api_def_userdef_walk_navigation(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WalkNavigation", NULL);
-  RNA_def_struct_sdna(srna, "WalkNavigation");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Walk Navigation", "Walk navigation settings");
+  sapi = RNA_def_struct(dapi, "WalkNavigation", NULL);
+  RNA_def_struct_sdna(sapi, "WalkNavigation");
+  RNA_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  RNA_def_struct_ui_text(sapi, "Walk Navigation", "Walk navigation settings");
 
-  prop = RNA_def_property(srna, "mouse_speed", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.01f, 10.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_speed", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_range(prop, 0.01f, 10.0f);
+  RNA_def_prop_ui_text(
       prop,
       "Mouse Sensitivity",
       "Speed factor for when looking around, high values mean faster mouse movement");
