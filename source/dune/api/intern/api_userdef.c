@@ -5600,7 +5600,7 @@ static void api_def_userdef_system(DuneApi *dapi)
   api_def_prop_bool_stype(prop, NULL, "uiflag2", USER_REGION_OVERLAP);
   api_def_prop_ui_text(
       prop, "Region Overlap", "Display tool/property regions over the main region");
-  api_def_prop_update(prop, 0, "rna_userdef_dpi_update");
+  api_def_prop_update(prop, 0, "api_userdef_dpi_update");
 
   prop = api_def_prop(sapi, "viewport_aa", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_userdef_viewport_aa_items);
@@ -5730,7 +5730,7 @@ static void api_def_userdef_system(DuneApi *dapi)
   prop = api_def_prop(sapi, "audio_device", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "audiodevice");
   api_def_prop_enum_items(prop, audio_device_items);
-  api_def_prop_enum_funcs(prop, NULL, NULL, "api_userdef_audio_device_itemf");
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_userdef_audio_device_itemf");
   api_def_prop_ui_text(prop, "Audio Device", "Audio output device");
   api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
@@ -6340,14 +6340,14 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
   prop = api_def_prop(sapi, "use_scripts_auto_execute", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_negative_stype(prop, NULL, "flag", USER_SCRIPT_AUTOEXEC_DISABLE);
   api_def_prop_ui_text(prop,
-                           "Auto Run Python Scripts",
-                           "Allow any .dune file to run scripts automatically "
-                           "(unsafe with blend files from an untrusted source)");
-  RNA_def_property_update(prop, 0, "api_userdef_script_autoexec_update");
+                       "Auto Run Python Scripts",
+                       "Allow any .dune file to run scripts automatically "
+                       "(unsafe with blend files from an untrusted source)");
+  api_def_prop_update(prop, 0, "api_userdef_script_autoexec_update");
 
-  prop = RNA_def_property(srna, "use_tabs_as_spaces", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", USER_TXT_TABSTOSPACES_DISABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_tabs_as_spaces", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", USER_TXT_TABSTOSPACES_DISABLE);
+  api_def_prop_ui_text(
       prop,
       "Tabs as Spaces",
       "Automatically convert all new tabs into spaces for new and loaded text files");
@@ -6366,8 +6366,8 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
   prop = api_def_prop(sapi, "render_output_directory", PROP_STRING, PROP_DIRPATH);
   api_def_prop_string_stype(prop, NULL, "renderdir");
   api_def_prop_ui_text(prop,
-                           "Render Output Directory",
-                           "The default directory for rendering output, for new scenes");
+                       "Render Output Directory",
+                       "The default directory for rendering output, for new scenes");
 
   api_def_userdef_script_directory(dapi);
 
@@ -6376,125 +6376,124 @@ static void api_def_userdef_filepaths(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Python Scripts Directory", "");
   api_def_userdef_script_directory_collection(dapi, prop);
 
-  prop = api_def_prop(sapi, "i18n_branches_directory", PROP_STRING, PROP_DIRPATH);
+  prop = api_def_prop(sapi, "lang_branches_directory", PROP_STRING, PROP_DIRPATH);
   api_def_prop_string_stype(prop, NULL, "i18ndir");
-  RNA_def_prop_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Translation Branches Directory",
       "The path to the '/branches' directory of your local svn-translation copy, "
       "to allow translating from the UI");
 
-  prop = RNA_def_prop(srna, "sound_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_prop_string_stype(prop, NULL, "sounddir");
-  RNA_def_prop_ui_text(prop, "Sounds Directory", "The default directory to search for sounds");
+  prop = api_def_prop(sapi, "sound_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "sounddir");
+  api_def_prop_ui_text(prop, "Sounds Directory", "The default directory to search for sounds");
 
   prop = api_def_prop(sapi, "temporary_directory", PROP_STRING, PROP_DIRPATH);
   api_def_prop_string_stype(prop, NULL, "tempdir");
   api_def_prop_ui_text(
       prop, "Temporary Directory", "The directory for storing temporary save files");
-  RNA_def_property_update(prop, 0, "rna_userdef_temp_update");
+  api_def_prop_update(prop, 0, "api_userdef_temp_update");
 
-  prop = RNA_def_property(srna, "render_cache_directory", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "render_cachedir");
-  RNA_def_property_ui_text(prop, "Render Cache Path", "Where to cache raw render results");
+  prop = api_def_prop(sapi, "render_cache_directory", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "render_cachedir");
+  api_def_prop_ui_text(prop, "Render Cache Path", "Where to cache raw render results");
 
-  prop = RNA_def_property(srna, "image_editor", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "image_editor");
-  RNA_def_property_ui_text(prop, "Image Editor", "Path to an image editor");
+  prop = api_def_prop(sapi, "image_editor", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "image_editor");
+  api_def_prop_ui_text(prop, "Image Editor", "Path to an image editor");
 
-  prop = RNA_def_property(srna, "animation_player", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "anim_player");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "animation_player", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "anim_player");
+  api_def_prop_ui_text(
       prop, "Animation Player", "Path to a custom animation/frame sequence player");
 
-  prop = RNA_def_property(srna, "animation_player_preset", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "anim_player_preset");
-  RNA_def_property_enum_items(prop, anim_player_presets);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "animation_player_preset", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "anim_player_preset");
+  api_def_prop_enum_items(prop, anim_player_presets);
+  api_def_prop_ui_text(
       prop, "Animation Player Preset", "Preset configs for external animation players");
 
   /* Autosave. */
-
-  prop = RNA_def_property(srna, "save_version", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "versions");
-  RNA_def_property_range(prop, 0, 32);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "save_version", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "versions");
+  RNA_def_prop_range(prop, 0, 32);
+  RNA_def_prop_ui_text(
       prop,
       "Save Versions",
       "The number of old versions to maintain in the current directory, when manually saving");
 
-  prop = RNA_def_property(srna, "use_auto_save_temporary_files", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_AUTOSAVE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_auto_save_temporary_files", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", USER_AUTOSAVE);
+  RNA_def_prop_ui_text(prop,
                            "Auto Save Temporary Files",
                            "Automatic saving of temporary files in temp directory, "
                            "uses process ID.\n"
                            "Warning: Sculpt and edit mode data won't be saved");
-  RNA_def_property_update(prop, 0, "rna_userdef_autosave_update");
+  api_def_prop_update(prop, 0, "api_userdef_autosave_update");
 
-  prop = RNA_def_property(srna, "auto_save_time", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "savetime");
-  RNA_def_property_range(prop, 1, 60);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "auto_save_time", PROP_INT, PROP_NONE);
+  RNA_def_prop_int_stype(prop, NULL, "savetime");
+  RNA_def_prop_range(prop, 1, 60);
+  RNA_def_prop_ui_text(
       prop, "Auto Save Time", "The time (in minutes) to wait between automatic temporary saves");
-  RNA_def_property_update(prop, 0, "rna_userdef_autosave_update");
+  RNA_def_prop_update(prop, 0, "api_userdef_autosave_update");
 
-  prop = RNA_def_property(srna, "recent_files", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 30);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "recent_files", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 0, 30);
+  api_def_prop_ui_text(
       prop, "Recent Files", "Maximum number of recently opened files to remember");
 
-  prop = RNA_def_property(srna, "file_preview_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, preview_type_items);
-  RNA_def_property_ui_text(prop, "File Preview Type", "What type of blend preview to create");
+  prop = api_def_prop(sapi, "file_preview_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, preview_type_items);
+  api_def_prop_ui_text(prop, "File Preview Type", "What type of blend preview to create");
 
-  rna_def_userdef_filepaths_asset_library(brna);
+  api_def_userdef_filepaths_asset_lib(dapi);
 
-  prop = RNA_def_property(srna, "asset_libraries", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "UserAssetLibrary");
-  RNA_def_property_ui_text(prop, "Asset Libraries", "");
+  prop = api_def_prop(sapi, "asset_libs", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "UserAssetLib");
+  api_def_prop_ui_text(prop, "Asset Libs", "");
 
-  prop = RNA_def_property(srna, "active_asset_library", PROP_INT, PROP_NONE);
-  RNA_def_property_ui_text(prop,
-                           "Active Asset Library",
-                           "Index of the asset library being edited in the Preferences UI");
+  prop = api_def_prop(sapi, "active_asset_lib", PROP_INT, PROP_NONE);
+  apis_def_prop_ui_text(prop,
+                           "Active Asset Lib",
+                           "Index of the asset lib being edited in the Preferences UI");
   /* Tag for UI-only update, meaning preferences will not be tagged as changed. */
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  api_def_prop_update(prop, 0, "api_userdef_ui_update");
 }
 
-static void rna_def_userdef_apps(BlenderRNA *brna)
+static void api_def_userdef_apps(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  srna = RNA_def_struct(brna, "PreferencesApps", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Apps", "Preferences that work only for apps");
+  sapi = api_def_struct(dapi, "PrefsApps", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Apps", "Preferences that work only for apps");
 
-  prop = RNA_def_property(srna, "show_corner_split", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "app_flag", USER_APP_LOCK_CORNER_SPLIT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_corner_split", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "app_flag", USER_APP_LOCK_CORNER_SPLIT);
+  api_def_prop_ui_text(
       prop, "Corner Splitting", "Split and join editors by dragging from corners");
-  RNA_def_property_update(prop, 0, "rna_userdef_screen_update");
+  api_def_prop_update(prop, 0, "api_userdef_screen_update");
 
-  prop = RNA_def_property(srna, "show_edge_resize", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "app_flag", USER_APP_LOCK_EDGE_RESIZE);
-  RNA_def_property_ui_text(prop, "Edge Resize", "Resize editors by dragging from the edges");
-  RNA_def_property_update(prop, 0, "rna_userdef_screen_update");
+  prop = api_def_prop(sapi, "show_edge_resize", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "app_flag", USER_APP_LOCK_EDGE_RESIZE);
+  api_def_prop_ui_text(prop, "Edge Resize", "Resize editors by dragging from the edges");
+  api_def_prop_update(prop, 0, "api_userdef_screen_update");
 
-  prop = RNA_def_property(srna, "show_regions_visibility_toggle", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "app_flag", USER_APP_HIDE_REGION_TOGGLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_regions_visibility_toggle", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "app_flag", USER_APP_HIDE_REGION_TOGGLE);
+  api_def_prop_ui_text(
       prop, "Regions Visibility Toggle", "Header and side bars visibility toggles");
-  RNA_def_property_update(prop, 0, "rna_userdef_screen_update");
+  api_def_prop_update(prop, 0, "api_userdef_screen_update");
 }
 
-static void rna_def_userdef_experimental(BlenderRNA *brna)
+static void api_def_userdef_experimental(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "PreferencesExperimental", NULL);
   RNA_def_struct_sdna(srna, "UserDef_Experimental");
