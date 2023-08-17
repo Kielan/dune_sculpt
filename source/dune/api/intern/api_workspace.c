@@ -240,7 +240,7 @@ static void api_def_workspace_owner_ids(DuneApi *dapi, ApiProp *cprop)
   parm = api_def_string(fn, "name", "Name", 0, "", "New name for the tag");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = api_def_ptr(fn, "owner_id", "wmOwnerID", "", "");
+  parm = api_def_ptr(fn, "owner_id", "wmOwnerId", "", "");
   api_def_fn_return(fn, parm);
 
   /* remove owner_id */
@@ -338,7 +338,7 @@ static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_return(fb, parm);
 
   fn = api_def_fn(
-      sapi, "from_space_image_mode", "rna_WorkSpace_tools_from_space_image_mode");
+      sapi, "from_space_image_mode", "api_WorkSpace_tools_from_space_image_mode");
   api_def_fn_ui_description(fn, "");
   parm = api_def_enum(fn, "mode", api_enum_space_image_mode_all_items, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -347,7 +347,7 @@ static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
   parm = api_def_ptr(fn, "result", "WorkSpaceTool", "", "");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "from_space_node", "rna_WorkSpace_tools_from_space_node");
+  fn = api_def_fn(sapi, "from_space_node", "api_WorkSpace_tools_from_space_node");
   api_def_fn_ui_description(fn, "");
   api_def_bool(fn, "create", false, "Create", "");
   /* return type */
@@ -355,9 +355,9 @@ static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(
-      sapi, "from_space_sequencer", "api_WorkSpace_tools_from_space_sequencer");
+      sapi, "from_space_seq", "api_WorkSpace_tools_from_space_seq");
   api_def_fn_ui_description(fn, "");
-  parm = api_def_enum(fn, "mode", api_enum_space_sequencer_view_type_items, 0, "", "");
+  parm = api_def_enum(fn, "mode", api_enum_space_seq_view_type_items, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_bool(fn, "create", false, "Create", "");
   /* return type */
