@@ -51,7 +51,7 @@
 /** Gizmo API **/
 
 #  ifdef WITH_PYTHON
-static void api_gizmo_draw_cb(const struct Ctx *C, struct wmGizmo *gz)
+static void api_gizmo_draw_cb(const struct Cxt *C, struct wmGizmo *gz)
 {
   extern ApiFn api_Gizmo_draw_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
@@ -69,7 +69,7 @@ static void api_gizmo_draw_cb(const struct Ctx *C, struct wmGizmo *gz)
   gpu_bgl_end();
 }
 
-static void api_gizmo_draw_select_cb(const struct Ctx *C, struct wmGizmo *gz, int select_id)
+static void api_gizmo_draw_select_cb(const struct Cxt *C, struct wmGizmo *gz, int select_id)
 {
   extern ApiFn api_Gizmo_draw_select_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
@@ -80,15 +80,15 @@ static void api_gizmo_draw_select_cb(const struct Ctx *C, struct wmGizmo *gz, in
   /* Reference `RNA_struct_find_function(&gz_ptr, "draw_select")` directly. */
   func = &api_Gizmo_draw_select_fn;
   (&list, &gz_ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "select_id", &select_id);
-  gzgroup->type->api_ext.call((Ctx *)C, &gz_ptr, fn, &list);
+  gzgroup->type->api_ext.call((Cxt *)C, &gz_ptr, fn, &list);
   api_param_list_free(&list);
   /* This callback may have called bgl functions. */
   gpu_bgl_end();
 }
 
-static int api_gizmo_test_select_cb(struct Ctx *C, struct wmGizmo *gz, const int location[2])
+static int api_gizmo_test_select_cb(struct Cxt *C, struct wmGizmo *gz, const int location[2])
 {
   extern ApiFn api_Gizmo_test_select_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
@@ -98,10 +98,10 @@ static int api_gizmo_test_select_cb(struct Ctx *C, struct wmGizmo *gz, const int
   api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "test_select")` directly. */
   fn = &api_Gizmo_test_select_fn;
-  api_param_list_create(&list, &gz_ptr, func);
+  api_param_list_create(&list, &gz_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "location", location);
-  gzgroup->type->api_ext.call((Ctx *)C, &gz_ptr, fn, &list);
+  gzgroup->type->api_ext.call((Cxt *)C, &gz_ptr, fn, &list);
 
   void *ret;
   api_param_get_lookup(&list, "intersect_id", &ret);
@@ -111,7 +111,7 @@ static int api_gizmo_test_select_cb(struct Ctx *C, struct wmGizmo *gz, const int
   return intersect_id;
 }
 
-static int api_gizmo_modal_cb(struct Ctx *C,
+static int api_gizmo_modal_cb(struct Cxt *C,
                               struct wmGizmo *gz,
                               const struct wmEvent *event,
                               eWM_GizmoFlagTweak tweak_flag)
@@ -124,18 +124,18 @@ static int api_gizmo_modal_cb(struct Ctx *C,
   const int tweak_flag_int = tweak_flag;
   api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "modal")` directly. */
-  fn = &rna_Gizmo_modal_func;
-  api_param_list_create(&list, &gz_ptr, func);
+  fn = &api_Gizmo_modal_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "event", &event);
-  RNA_parameter_set_lookup(&list, "tweak", &tweak_flag_int);
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
+  api_param_set_lookup(&list, "event", &event);
+  api_param_set_lookup(&list, "tweak", &tweak_flag_int);
+  gzgroup->type->api_ext.call((Cxt *)C, &gz_ptr, fn, &list);
 
   void *ret;
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   int ret_enum = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
   return ret_enum;
 }
 
