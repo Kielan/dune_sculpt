@@ -493,7 +493,7 @@ static ApiPtr api_KeyConfig_find_item_from_op(wmWindowManager *wm,
 
   wmKeyMap *km = NULL;
   wmKeyMapItem *kmi = wm_key_event_op(
-      C, idname_bl, opctx, props->data, include_mask, exclude_mask, &km);
+      C, idname_bl, opcxt, props->data, include_mask, exclude_mask, &km);
   ApiPtr kmi_ptr;
   api_ptr_create(&wm->id, &ApiKeyMap, km, km_ptr);
   api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &kmi_ptr);
@@ -570,7 +570,7 @@ static void api_WindowManager_tag_script_reload(void)
   wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-static ApiPtr api_WindoManager_oper_props_last(const char *idname)
+static ApiPtr api_WindowManager_oper_props_last(const char *idname)
 {
   wmOpType *ot = wm_optype_find(idname, true);
 
@@ -673,7 +673,7 @@ static void api_generic_op_invoke(ApiFn *fn, int flag)
 {
   ApiProp *parm;
 
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_ptr(fn, "op", "Op", "", "Op to call");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
@@ -902,23 +902,23 @@ void api_wm(ApiStruct *sapi)
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   /* return */
   parm = api_def_ptr(fn, "menu_pie", "UIPieMenu", "", "");
-  api_def_patam_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   api_def_fn_return(fn, parm);
 
   /* wrap uiPieMenuEnd */
   fn = api_def_fn(sapi, "piemenu_end__internal", "rna_PieMenuEnd");
-  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
   parm = api_def_ptr(fn, "menu", "UIPieMenu", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
 
   /* access last operator options (optionally create). */
   fn = api_def_fn(
-      sapi, "op_props_last", "api_WindoManager_op_props_last");
+      sapi, "op_props_last", "api_WindowManager_op_props_last");
   api_def_fn_flag(fn, FN_NO_SELF);
   parm = api_def_string(fn, "operator", NULL, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = api_def_ptr(fn, "result", "OperatorProperties", "", "");
+  parm = api_def_ptr(fn, "result", "OperatorProps", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   api_def_fn_return(fn, parm);
 
@@ -954,7 +954,7 @@ void api_op(ApiStruct *sapi)
 
   /* utility, not for registering */
   fn = api_def_fn(sapi, "is_repeat", "api_op_is_repeat");
-  api_def_fn_flag(fn, FN_USE_CTX);
+  api_def_fn_flag(fn, FN_USE_CXT);
   /* return */
   parm = api_def_bool(fn, "result", 0, "result", "");
   api_def_fn_return(fn, parm);
@@ -966,14 +966,14 @@ void api_op(ApiStruct *sapi)
   api_def_fn_ui_description(fn, "Test if the operator can be called or not");
   api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
   api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
-  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* exec */
   fn = api_def_fn(sapi, "execute", NULL);
-  api_def_fn_ui_description(fn, "Execute the operator");
+  api_def_fn_ui_description(fn, "Execute the op");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "context", "Context", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* better name? */
@@ -984,18 +984,18 @@ void api_op(ApiStruct *sapi)
   /* check */
   fn = api_def_fn(sapi, "check", NULL);
   api_def_fn_ui_description(
-      fn, "Check the operator settings, return True to signal a change to redraw");
+      fn, "Check the op settings, return True to signal a change to redraw");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   parm = api_def_bool(fn, "result", 0, "result", ""); /* better name? */
   api_def_fn_return(fn, parm);
 
   /* invoke */
-  func = api_def_fn(sapi, "invoke", NULL);
-  api_def_fn_ui_description(fn, "Invoke the operator");
-  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  fn = api_def_fn(sapi, "invoke", NULL);
+  api_def_fn_ui_description(fn, "Invoke the op");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
   parm = api_def_ptr(fn, "context", "Context", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = api_def_ptr(fn, "event", "Event", "", "");
@@ -1007,9 +1007,9 @@ void api_op(ApiStruct *sapi)
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "modal", NULL); /* same as invoke */
-  api_def_fn_ui_description(fn, "Modal operator function");
-  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_fn_ui_description(fn, "Modal op fn");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = api_def_ptr(fn, "event", "Event", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
@@ -1021,16 +1021,16 @@ void api_op(ApiStruct *sapi)
 
   /* draw */
   fn = api_def_fn(sapi, "draw", NULL);
-  api_def_fn_ui_description(fn, "Draw function for the operator");
+  api_def_fn_ui_description(fn, "Draw function for the op");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
-  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* cancel */
-  func = api_def_fn(sapi, "cancel", NULL);
-  api_def_fn_ui_description(fn, "Called when the operator is canceled");
+  fn = api_def_fn(sapi, "cancel", NULL);
+  api_def_fn_ui_description(fn, "Called when the op is canceled");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
-  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* description */
@@ -1041,10 +1041,10 @@ void api_op(ApiStruct *sapi)
   api_def_param_clear_flags(parm, PROP_NEVER_NULL, 0);
   api_def_param_flags(parm, PROP_THICK_WRAP, 0);
   api_def_fn_output(fn, parm);
-  parm = api_def_ptr(fn, "context", "Context", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = api_def_ptr(fn, "properties", "OperatorProperties", "", "");
-  api_def_par_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_ptr(fn, "props", "OpProps", "", "");
+  api_def_par_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
 }
 
 void api_macro(ApiStruct *sapi)
@@ -1053,8 +1053,8 @@ void api_macro(ApiStruct *sapi)
   ApiProp *parm;
 
   /* utility, not for registering */
-  func = api_def_fn(sapi, "report", "rna_Operator_report");
-  parm = api_def_enum_flag(fn, "type", rna_enum_wm_report_items, 0, "Type", "");
+  fn = api_def_fn(sapi, "report", "api_Op_report");
+  parm = api_def_enum_flag(fn, "type", api_enum_wm_report_items, 0, "Type", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_string(fn, "message", NULL, 0, "Report Message", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -1063,23 +1063,23 @@ void api_macro(ApiStruct *sapi)
 
   /* poll */
   fn = api_def_fn(sapi, "poll", NULL);
-  api_def_fn_ui_description(fn, "Test if the operator can be called or not");
+  api_def_fn_ui_description(fn, "Test if the op can be called or not");
   api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
   api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
-  parm = api_def_ptr(fn, "context", "Context", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* draw */
   fn = api_def_fn(sapi, "draw", NULL);
   api_def_fn_ui_description(fn, "Draw function for the operator");
   api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
-  parm = api_def_ptr(fn, "ctx", "Cyx", "", "");
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
 
 void api_keyconfig(ApiStruct *UNUSED(sapi))
 {
-  /* ApiFn *func; */
+  /* ApiFn *fn; */
   /* ApiProp *parm; */
 }
 
@@ -1089,15 +1089,15 @@ void api_keymap(ApiStruct *sapi
   ApiProp *parm;
 
   fn = api_def_fn(sapi, "active", "api_keymap_active");
-  api_def_fn_flag(fn, FN_USE_CTX);
+  api_def_fn_flag(fn, FN_USE_CXT);
   parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Active key map");
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "restore_to_default", "api_keymap_restore_to_default");
-  api_def_fn_flag(fn, FN_USE_CTX);
+  api_def_fn_flag(fn, FN_USE_CXT);
 
   fn = api_def_fn(sapi, "restore_item_to_default", "api_keymap_restore_item_to_default");
-  api_def_fn_flag(fn, FN_USE_CTX);
+  api_def_fn_flag(fn, FN_USE_CXT);
   parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
@@ -1138,7 +1138,7 @@ void api_api_keymapitems(ApiStruct *sapi)
   api_def_int(fn, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
-  api_def_enum(fn, "key_mod", api_enum_event_type_items, 0, "Key Modifier", "");
+  api_def_enum(fn, "key_mod", api_enum_event_type_items, 0, "Key Mod", "");
   api_def_enum(fn, "direction", api_enum_event_direction_items, KM_ANY, "Direction", "");
   api_def_bool(fn, "repeat", false, "Repeat", "When set, accept key-repeat events");
   api_def_bool(fn,
@@ -1152,7 +1152,7 @@ void api_api_keymapitems(ApiStruct *sapi)
 
   fn = api_def_fn(sapi, "new_modal", "api_KeyMap_item_new_modal");
   api_def_fn_flag(fn, FN_USE_REPORTS);
-  parm = api_def_string(fn, "propvalue", NULL, 0, "Property Value", "");
+  parm = api_def_string(fn, "propvalue", NULL, 0, "Prop Value", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_enum(fn, "type", api_enum_event_type_items, 0, "Type", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
@@ -1163,53 +1163,53 @@ void api_api_keymapitems(ApiStruct *sapi)
   api_def_int(fn, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
   api_def_int(fn, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
-  api_def_enum(fn, "key_modifier", api_enum_event_type_items, 0, "Key Modifier", "");
+  api_def_enum(fn, "key_mod", api_enum_event_type_items, 0, "Key Mod", "");
   api_def_enum(fn, "direction", api_enum_event_direction_items, KM_ANY, "Direction", "");
   api_def_bool(fn, "repeat", false, "Repeat", "When set, accept key-repeat events");
   parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Added key map item");
   api_def_fn_return(fn, parm);
 
   fn = api_def_fn(sapi, "new_from_item", "api_KeyMap_item_new_from_item");
-  RNA_def_function_flag(func, FN_USE_REPORTS);
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "Item to use as a reference");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  RNA_def_boolean(func, "head", 0, "At Head", "");
-  parm = RNA_def_pointer(func, "result", "KeyMapItem", "Item", "Added key map item");
-  RNA_def_function_return(func, parm);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Item to use as a ref");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_bool(fn, "head", 0, "At Head", "");
+  parm = api_def_ptr(fn, "result", "KeyMapItem", "Item", "Added key map item");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_KeyMap_item_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_KeyMap_item_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "from_id", "WM_keymap_item_find_id");
-  parm = RNA_def_property(func, "id", PROP_INT, PROP_NONE);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_ui_text(parm, "id", "ID of the item");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "from_id", "wm_keymap_item_find_id");
+  parm = api_def_prop(fn, "id", PROP_INT, PROP_NONE);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_ui_text(parm, "id", "ID of the item");
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "");
+  api_def_fn_return(fn, parm);
 
   /* Keymap introspection
    * Args follow: KeyConfigs.find_item_from_operator */
-  func = RNA_def_function(srna, "find_from_operator", "rna_KeyMap_item_find_from_operator");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  parm = RNA_def_string(func, "idname", NULL, 0, "Operator Identifier", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "properties", "OperatorProperties", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_enum_flag(
-      func, "include", rna_enum_event_type_mask_items, EVT_TYPE_MASK_ALL, "Include", "");
-  RNA_def_enum_flag(func, "exclude", rna_enum_event_type_mask_items, 0, "Exclude", "");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find_from_op", "api_KeyMap_item_find_from_op");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  parm = api_def_string(fn, "idname", NULL, 0, "Op Id", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "props", "OpProps", "", "");
+  api_def_param_flags(parm, 0, PARM_APIPTR);
+  api_def_enum_flag(
+      fn, "include", api_enum_event_type_mask_items, EVT_TYPE_MASK_ALL, "Include", "");
+  api_def_enum_flag(fn, "exclude", api_enum_event_type_mask_items, 0, "Exclude", "");
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "", "");
+  api_def_param_flags(parm, 0, PARM_APIPTR);
+  api_def_n_return(fn, parm);
 
-  func = RNA_def_function(srna, "match_event", "rna_KeyMap_item_match_event");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "event", "Event", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "", "");
+  fn = api_def_fn(sapi, "match_event", "api_KeyMap_item_match_event");
+  RNA_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_CXT);
+  parm = api_def_ptr(fn, "event", "Event", "", "");
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = RNA_def_ptr(fn, "item", "KeyMapItem", "", "");
   RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
   RNA_def_function_return(func, parm);
 }
