@@ -147,11 +147,11 @@ static void api_gizmo_setup_cb(struct wmGizmo *gz)
   ParamList list;
   ApiFn *fn;
   api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_fn(&gz_ptr, "setup")` directly. */
-  func = &rna_Gizmo_setup_func;
-  RNA_parameter_list_create(&list, &gz_ptr, fn);
-  gzgroup->type->rna_ext.call((bContext *)NULL, &gz_ptr, fn, &list);
-  RNA_parameter_list_free(&list);
+  /* Reference `api_struct_find_fn(&gz_ptr, "setup")` directly. */
+  fn = &api_Gizmo_setup_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
+  gzgroup->type->api_ext.call((Cxt *)NULL, &gz_ptr, fn, &list);
+  api_param_list_free(&list);
 }
 
 static int api_gizmo_invoke_cb(struct Cxt *C, struct wmGizmo *gz, const struct wmEvent *event)
@@ -161,8 +161,8 @@ static int api_gizmo_invoke_cb(struct Cxt *C, struct wmGizmo *gz, const struct w
   ApiPtr gz_ptr;
   ParamList list;
   ApiFn *fn;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
-  /* Reference `api_struct_find_function(&gz_ptr, "invoke")` directly. */
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
+  /* Reference `api_struct_find_fn(&gz_ptr, "invoke")` directly. */
   fn = &api_Gizmo_invoke_fn;
   api_param_list_create(&list, &gz_ptr, fn);
   api_param_set_lookup(&list, "cxt", &C);
@@ -184,16 +184,16 @@ static void api_gizmo_exit_cb(struct Ctx *C, struct wmGizmo *gz, bool cancel)
   ApiPtr gz_ptr;
   ParamList list;
   ApiFn *fn;
-  api_ptr_create(NULL, gz->type->rna_ext.sapi, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_function(&gz_ptr, "exit")` directly. */
-  fn = &api_Gizmo_exit_func;
-  api_param_list_create(&list, &gz_ptr, func);
-  api_param_set_lookup(&list, "context", &C);
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
+  /* Reference `api_struct_find_fn(&gz_ptr, "exit")` directly. */
+  fn = &api_Gizmo_exit_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
+  api_param_set_lookup(&list, "cxt", &C);
   {
     int cancel_i = cancel;
     api_param_set_lookup(&list, "cancel", &cancel_i);
   }
-  gzgroup->type->api_ext.call((bContext *)C, &gz_ptr, fn, &list);
+  gzgroup->type->api_ext.call((Cxt *)C, &gz_ptr, fn, &list);
   api_param_list_free(&list);
 }
 
@@ -204,11 +204,11 @@ static void api_gizmo_select_refresh_cb(struct wmGizmo *gz)
   ApiPtr gz_ptr;
   ParamList list;
   ApiFn *fn;
-  api_ptr_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_function(&gz_ptr, "select_refresh")` directly. */
-  fn = &rna_Gizmo_select_refresh_func;
-  api_param_list_create(&list, &gz_ptr, func);
-  gzgroup->type->api_ext.call((bContext *)NULL, &gz_ptr, func, &list);
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
+  /* Reference `api_struct_find_fn(&gz_ptr, "select_refresh")` directly. */
+  fn = &api_Gizmo_select_refresh_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
+  gzgroup->type->api_ext.call((Cxt *)NULL, &gz_ptr, fn, &list);
   api_param_list_free(&list);
 }
 
@@ -223,32 +223,32 @@ static void api_Gizmo_bl_idname_set(ApiPtr *ptr, const char *value)
     lib_strncpy(str, value, MAX_NAME); /* utf8 already ensured */
   }
   else {
-    lib_assert_msg(0, "setting the bl_idname on a non-builtin operator");
+    lib_assert_msg(0, "setting the bl_idname on a non-builtin op");
   }
 }
 
-static void api_Gizmo_update_redraw(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Gizmo_update_redraw(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   wmGizmo *gizmo = ptr->data;
   gizmo->do_draw = true;
 }
 
-static wmGizmo *rna_GizmoProperties_find_operator(PointerRNA *ptr)
+static wmGizmo *api_GizmoProps_find_op(ApiPtr *ptr)
 {
 #  if 0
   wmWindowManager *wm = (wmWindowManager *)ptr->owner_id;
 #  endif
 
   /* We could try workaround this lookup, but not trivial. */
-  for (bScreen *screen = G_MAIN->screens.first; screen; screen = screen->id.next) {
-    IDProperty *properties = ptr->data;
-    LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
-      LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+  for (Screen *screen = G_MAIN->screens.first; screen; screen = screen->id.next) {
+    IdProp *props = ptr->data;
+    LIST_FOREACH (ScrArea *, area, &screen->areabase) {
+      LIST_FOREACH (ARegion *, region, &area->regionbase) {
         if (region->gizmo_map) {
           wmGizmoMap *gzmap = region->gizmo_map;
-          LISTBASE_FOREACH (wmGizmoGroup *, gzgroup, WM_gizmomap_group_list(gzmap)) {
-            LISTBASE_FOREACH (wmGizmo *, gz, &gzgroup->gizmos) {
-              if (gz->properties == properties) {
+          LIST_FOREACH (wmGizmoGroup *, gzgroup, wm_gizmomap_group_list(gzmap)) {
+            LIST_FOREACH (wmGizmo *, gz, &gzgroup->gizmos) {
+              if (gz->props == props) {
                 return gz;
               }
             }
@@ -260,27 +260,27 @@ static wmGizmo *rna_GizmoProperties_find_operator(PointerRNA *ptr)
   return NULL;
 }
 
-static StructRNA *rna_GizmoProperties_refine(PointerRNA *ptr)
+static ApiStruct *api_GizmoProps_refine(ApiPtr *ptr)
 {
-  wmGizmo *gz = rna_GizmoProperties_find_operator(ptr);
+  wmGizmo *gz = api_GizmoProps_find_op(ptr);
 
   if (gz) {
-    return gz->type->srna;
+    return gz->type->sapi;
   }
   else {
     return ptr->type;
   }
 }
 
-static IDProperty **rna_GizmoProperties_idprops(PointerRNA *ptr)
+static IdProp **api_GizmoProps_idprops(ApiPtr *ptr)
 {
-  return (IDProperty **)&ptr->data;
+  return (IdProp **)&ptr->data;
 }
 
 static ApiPtr api_Gizmo_props_get(ApiPtr *ptr)
 {
   wmGizmo *gz = ptr->data;
-  return rna_pointer_inherit_refine(ptr, gz->type->sapi, gz->properties);
+  return api_ptr_inherit_refine(ptr, gz->type->sapi, gz->props);
 }
 
 /* wmGizmo.float */
@@ -295,13 +295,13 @@ static ApiPtr api_Gizmo_props_get(ApiPtr *ptr)
       wmGizmo *gz = ptr->data; \
       gz->member_id = value; \
     }
-#  define RNA_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(func_id, member_id, index) \
-    static float api_Gizmo_##func_id##_get(ApiPtr *ptr) \
+#  define API_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(fn_id, member_id, index) \
+    static float api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return gz->member_id[index]; \
     } \
-    static void api_Gizmo_##func_id##_set(PointerRNA *ptr, float value) \
+    static void api_Gizmo_##fn_id##_set(ApiPtr *ptr, float value) \
     { \
       wmGizmo *gz = ptr->data; \
       gz->member_id[index] = value; \
@@ -320,7 +320,7 @@ static ApiPtr api_Gizmo_props_get(ApiPtr *ptr)
     }
 
 /* wmGizmo.flag */
-#  define API_GIZMO_GENERIC_FLAG_RW_DEF(func_id, member_id, flag_value) \
+#  define API_GIZMO_GENERIC_FLAG_RW_DEF(fn_id, member_id, flag_value) \
     static bool api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
@@ -339,14 +339,14 @@ static ApiPtr api_Gizmo_props_get(ApiPtr *ptr)
       wmGizmo *gz = ptr->data; \
       return (gz->member_id & flag_value) == 0; \
     } \
-    static void API_Gizmo_##func_id##_set(PointerRNA *ptr, bool value) \
+    static void API_Gizmo_##fn_id##_set(ApiPtr *ptr, bool value) \
     { \
       wmGizmo *gz = ptr->data; \
       SET_FLAG_FROM_TEST(gz->member_id, !value, flag_value); \
     }
 
-#  define API_GIZMO_FLAG_RO_DEF(func_id, member_id, flag_value) \
-    static bool api_Gizmo_##func_id##_get(PointerRNA *ptr) \
+#  define API_GIZMO_FLAG_RO_DEF(fn_id, member_id, flag_value) \
+    static bool api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return (gz->member_id & flag_value) != 0; \
@@ -362,7 +362,7 @@ API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_space, matrix_space, 16);
 API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_basis, matrix_basis, 16);
 API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_offset, matrix_offset, 16);
 
-static void api_Gizmo_matrix_world_get(PointerRNA *ptr, float value[16])
+static void api_Gizmo_matrix_world_get(ApiPtr *ptr, float value[16])
 {
   wmGizmo *gz = ptr->data;
   wm_gizmo_calc_matrix_final(gz, (float(*)[4])value);
@@ -393,31 +393,31 @@ API_GIZMO_FLAG_RO_DEF(state_is_highlight, state, WM_GIZMO_STATE_HIGHLIGHT);
 API_GIZMO_FLAG_RO_DEF(state_is_modal, state, WM_GIZMO_STATE_MODAL);
 RNA_GIZMO_FLAG_RO_DEF(state_select, state, WM_GIZMO_STATE_SELECT);
 
-static void rna_Gizmo_state_select_set(struct PointerRNA *ptr, bool value)
+static void api_Gizmo_state_select_set(struct ApiPtr *ptr, bool value)
 {
   wmGizmo *gz = ptr->data;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  WM_gizmo_select_set(gzgroup->parent_gzmap, gz, value);
+  wm_gizmo_select_set(gzgroup->parent_gzmap, gz, value);
 }
 
-static PointerRNA rna_Gizmo_group_get(PointerRNA *ptr)
+static ApiPtr api_Gizmo_group_get(ApiPtr *ptr)
 {
   wmGizmo *gz = ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_GizmoGroup, gz->parent_gzgroup);
+  return api_ptr_inherit_refine(ptr, &ApiGizmoGroup, gz->parent_gzgroup);
 }
 
 #  ifdef WITH_PYTHON
 
-static bool rna_Gizmo_unregister(struct Main *bmain, StructRNA *type);
-void BPY_RNA_gizmo_wrapper(wmGizmoType *gzgt, void *userdata);
+static bool api_Gizmo_unregister(struct Main *main, ApiStruct *type);
+void BPY_api_gizmo_wrapper(wmGizmoType *gzgt, void *userdata);
 
-static StructRNA *rna_Gizmo_register(Main *bmain,
+static StructRNA *api_Gizmo_register(Main *main,
                                      ReportList *reports,
                                      void *data,
-                                     const char *identifier,
-                                     StructValidateFunc validate,
-                                     StructCallbackFunc call,
-                                     StructFreeFunc free)
+                                     const char *id,
+                                     StructValidateFn validate,
+                                     StructCbFn call,
+                                     StructFreeFn free)
 {
   const char *error_prefix = "Registering gizmo class:";
   struct {
@@ -426,15 +426,15 @@ static StructRNA *rna_Gizmo_register(Main *bmain,
 
   wmGizmoType dummy_gt = {NULL};
   wmGizmo dummy_gizmo = {NULL};
-  PointerRNA dummy_gizmo_ptr;
+  ApiPtr dummy_gizmo_ptr;
 
   /* Two sets of functions. */
-  bool have_function[8];
+  bool have_fn[8];
 
   /* setup dummy gizmo & gizmo type to store static properties in */
   dummy_gizmo.type = &dummy_gt;
   dummy_gt.idname = temp_buffers.idname;
-  RNA_pointer_create(NULL, &RNA_Gizmo, &dummy_gizmo, &dummy_gizmo_ptr);
+  api_ptr_create(NULL, &RNA_Gizmo, &dummy_gizmo, &dummy_gizmo_ptr);
 
   /* Clear so we can detect if it's left unset. */
   temp_buffers.idname[0] = '\0';
