@@ -147,27 +147,27 @@ static void api_gizmo_setup_cb(struct wmGizmo *gz)
   ParamList list;
   ApiFn *fn;
   api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_function(&gz_ptr, "setup")` directly. */
+  /* Reference `RNA_struct_find_fn(&gz_ptr, "setup")` directly. */
   func = &rna_Gizmo_setup_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  gzgroup->type->rna_ext.call((bContext *)NULL, &gz_ptr, func, &list);
+  RNA_parameter_list_create(&list, &gz_ptr, fn);
+  gzgroup->type->rna_ext.call((bContext *)NULL, &gz_ptr, fn, &list);
   RNA_parameter_list_free(&list);
 }
 
-static int rna_gizmo_invoke_cb(struct bContext *C, struct wmGizmo *gz, const struct wmEvent *event)
+static int api_gizmo_invoke_cb(struct Cxt *C, struct wmGizmo *gz, const struct wmEvent *event)
 {
-  extern FunctionRNA rna_Gizmo_invoke_func;
+  extern ApiFn api_Gizmo_invoke_fb;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
   RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_function(&gz_ptr, "invoke")` directly. */
-  func = &rna_Gizmo_invoke_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
+  /* Reference `api_struct_find_function(&gz_ptr, "invoke")` directly. */
+  fn = &api_Gizmo_invoke_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "event", &event);
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
+  gzgroup->type->rna_ext.call((Cxt *)C, &gz_ptr, fn, &list);
 
   void *ret;
   api_param_get_lookup(&list, "result", &ret);
