@@ -139,14 +139,14 @@ static int api_gizmo_modal_cb(struct Cxt *C,
   return ret_enum;
 }
 
-static void rna_gizmo_setup_cb(struct wmGizmo *gz)
+static void api_gizmo_setup_cb(struct wmGizmo *gz)
 {
-  extern FunctionRNA rna_Gizmo_setup_func;
+  extern ApiFn api_Gizmo_setup_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "setup")` directly. */
   func = &rna_Gizmo_setup_func;
   RNA_parameter_list_create(&list, &gz_ptr, func);
