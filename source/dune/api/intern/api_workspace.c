@@ -45,9 +45,9 @@ void api_workspace_screens_begin(CollectionPropIter *iter, ApiPtr *ptr)
   api_iter_list_begin(iter, &workspace->layouts, NULL);
 }
 
-static ApiPtr api_workspace_screens_item_get(CollectionPropertyIterator *iter)
+static ApiPtr api_workspace_screens_item_get(CollectionPropIter *iter)
 {
-  WorkSpaceLayout *layout = rna_iterator_listbase_get(iter);
+  WorkSpaceLayout *layout = api_iter_list_get(iter);
   Screen *screen = dune_workspace_layout_screen_get(layout);
 
   return api_ptr_inherit_refine(&iter->parent, &ApiScreen, screen);
@@ -55,7 +55,7 @@ static ApiPtr api_workspace_screens_item_get(CollectionPropertyIterator *iter)
 
 /* workspace.owner_ids */
 
-static wmOwnerID *api_WorkSpace_owner_ids_new(WorkSpace *workspace, const char *name)
+static wmOwnerId *api_WorkSpace_owner_ids_new(WorkSpace *workspace, const char *name)
 {
   wmOwnerId *owner_id = mem_callocn(sizeof(*owner_id), __func__);
   lib_addtail(&workspace->owner_ids, owner_id);
@@ -72,7 +72,7 @@ static void api_WorkSpace_owner_ids_remove(WorkSpace *workspace,
   if (lib_remlink_safe(&workspace->owner_ids, owner_id) == false) {
     dune_reportf(reports,
                 RPT_ERROR,
-                "wmOwnerID '%s' not in workspace '%s'",
+                "wmOwnerId '%s' not in workspace '%s'",
                 owner_id->name,
                 workspace->id.name + 2);
     return;
@@ -87,7 +87,7 @@ static void api_WorkSpace_owner_ids_remove(WorkSpace *workspace,
 static void api_WorkSpace_owner_ids_clear(WorkSpace *workspace)
 {
   lib_freelistn(&workspace->owner_ids);
-  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER | NA_REMOVED, workspace);
+  wm_main_add_notifier(NC_OBJECT | ND_MOD | NA_REMOVED, workspace);
 }
 
 static int api_WorkSpace_asset_library_get(ApiPtr *ptr)
@@ -141,15 +141,15 @@ static ToolRef *api_WorkSpace_tools_from_space_image_mode(WorkSpace *workspace,
 static ToolRef *api_WorkSpace_tools_from_space_node(WorkSpace *workspace, bool create)
 {
   return api_WorkSpace_tools_from_tkey(workspace,
-                                       &(bToolKey){
+                                       &(ToolKey){
                                            .space_type = SPACE_NODE,
                                            .mode = 0,
                                        },
                                        create);
 }
-static ToolRef *api_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
-                                                         int mode,
-                                                         bool create)
+static ToolRef *api_WorkSpace_tools_from_space_seq(WorkSpace *workspace,
+                                                   int mode,
+                                                   bool create)
 {
   return api_WorkSpace_tools_from_tkey(workspace,
                                        &(ToolKey){
@@ -158,7 +158,7 @@ static ToolRef *api_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
                                        },
                                        create);
 }
-const EnumPropItem *api_WorkSpace_tools_mode_itemf(Ctx *UNUSED(C),
+const EnumPropItem *api_WorkSpace_tools_mode_itemf(Cxt *UNUSED(C),
                                                    ApiPtr *ptr,
                                                    ApiProp *UNUSED(prop),
                                                    bool *UNUSED(r_free))
@@ -166,7 +166,7 @@ const EnumPropItem *api_WorkSpace_tools_mode_itemf(Ctx *UNUSED(C),
   ToolRef *tref = ptr->data;
   switch (tref->space_type) {
     case SPACE_VIEW3D:
-      return api_enum_ctx_mode_items;
+      return api_enum_cxt_mode_items;
     case SPACE_IMAGE:
       return api_enum_space_image_mode_all_items;
     case SPACE_SEQ:
@@ -212,8 +212,8 @@ static void api_def_workspace_owner(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "wmOwnerID", NULL);
-  api_def_struct_stype(sapi, "wmOwnerID");
+  sapi = api_def_struct(dapi, "wmOwnerId", NULL);
+  api_def_struct_stype(sapi, "wmOwnerId");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Work Space UI Tag", "");
 
@@ -231,7 +231,7 @@ static void api_def_workspace_owner_ids(DuneApi *dapi, ApiProp *cprop)
 
   api_def_prop_sapi(cprop, "wmOwnerIds");
   sapi = api_def_struct(dapi, "wmOwnerIds", NULL);
-  api_def_struct_sdna(sapi, "WorkSpace");
+  api_def_struct_stype(sapi, "WorkSpace");
   api_def_struct_ui_text(sapi, "WorkSpace UI Tags", "");
 
   /* add owner_id */
@@ -248,8 +248,8 @@ static void api_def_workspace_owner_ids(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_flag(fn, FN_USE_REPORTS);
   api_def_fn_ui_description(fn, "Remove ui tag");
   /* owner_id to remove */
-  parm = api_def_ptr(fn, "owner_id", "wmOwnerID", "", "Tag to remove");
-  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_ptr(fn, "owner_id", "wmOwnerId", "", "Tag to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* clear all modifiers */
@@ -263,16 +263,16 @@ static void api_def_workspace_tool(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(sapi, "WorkSpaceTool", NULL);
-  api_def_struct_stype(sapi, "bToolRef");m
+  api_def_struct_stype(sapi, "bToolRef");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Work Space Tool", "");
 
   prop = api_def_prop(sapi, "idname", PROP_STRING, PROP_NONE);
-  api_def_property_ui_text(prop, "Identifier", "");
+  api_def_prop_ui_text(prop, "Id", "");
   api_def_struct_name_prop(sapi, prop);
 
   prop = api_def_prop(sapi, "idname_fallback", PROP_STRING, PROP_NONE);
-  api_def_prop_ui_text(prop, "Identifier Fallback", "");
+  api_def_prop_ui_text(prop, "Id Fallback", "");
 
   prop = api_def_prop(sapi, "index", PROP_INT, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -302,7 +302,7 @@ static void api_def_workspace_tool(DuneApi *dapi)
   prop = api_def_prop(sapi, "has_datablock", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_ui_text(prop, "Has Data-Block", "");
-  api_def_prop_bool_fns(prop, "rna_WorkSpaceTool_has_datablock_get", NULL
+  api_def_prop_bool_fns(prop, "api_WorkSpaceTool_has_datablock_get", NULL
   api_define_verify_stype(1);
 
   prop = api_def_prop(sapi, "widget", PROP_STRING, PROP_NONE);
@@ -324,13 +324,13 @@ static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
   api_def_prop_sapi(cprop, "wmTools");
   sapi = api_def_struct(dapi, "wmTools", NULL);
   api_def_struct_stype(sapi, "WorkSpace");
-  RNA_def_struct_ui_text(sapi, "WorkSpace UI Tags", "");
+  api_def_struct_ui_text(sapi, "WorkSpace UI Tags", "");
 
   /* add owner_id */
   fn = api_def_fn(
       sapi, "from_space_view3d_mode", "api_WorkSpace_tools_from_space_view3d_mode"
   api_def_fn_ui_description(fn, "");
-  parm = wm_def_enum(fn, "mode", api_enum_ctx_mode_items, 0, "", "");
+  parm = wm_def_enum(fn, "mode", api_enum_cxt_mode_items, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_bool(fn, "create", false, "Create", "");
   /* return type */
@@ -367,7 +367,7 @@ static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
 
 static void api_def_workspace(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "WorkSpace", "Id");
@@ -378,9 +378,9 @@ static void api_def_workspace(DuneApi *dapi)
   api_def_struct_ui_icon(srna, ICON_WORKSPACE);
 
   prop = api_def_prop(sapi, "screens", PROP_COLLECTION, PROP_NONE);
-  RNA_def_prop_collection_stype(prop, NULL, "layouts", NULL);
-  RNA_def_prop_struct_type(prop, "Screen");
-  RNA_def_prop_collection_fns(prop,
+  api_def_prop_collection_stype(prop, NULL, "layouts", NULL);
+  api_def_prop_struct_type(prop, "Screen");
+  api_def_prop_collection_fns(prop,
                               "api_workspace_screens_begin",
                               NULL,
                               NULL,
@@ -394,11 +394,11 @@ static void api_def_workspace(DuneApi *dapi)
   prop = api_def_prop(sapi, "owner_ids", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "wmOwnerID");
   api_def_prop_ui_text(prop, "UI Tags", "");
-  api_def_workspace_owner_ids(brna, prop);
+  api_def_workspace_owner_ids(dapi, prop);
 
   prop = api_def_prop(sapi, "tools", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_stype(prop, NULL, "tools", NULL);
-  api_def_prop_struct_type(prop, "WorkSpaceTool"
+  api_def_prop_struct_type(prop, "WorkSpaceTool");
   api_def_prop_ui_text(prop, "Tools", "");
   api_def_workspace_tools(dapi, prop);
 
