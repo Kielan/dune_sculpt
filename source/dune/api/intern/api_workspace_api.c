@@ -3,27 +3,27 @@
 #include <string.h>
 #include <time.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "DNA_object_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_workspace_types.h"
+#include "types_object.h"
+#include "types_wm.h"
+#include "types_workspace.h"
 
-#include "RNA_enum_types.h" /* own include */
+#include "api_enum_types.h" /* own include */
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_paint.h"
+#  include "dune_paint.h"
 
-#  include "ED_screen.h"
+#  include "ed_screen.h"
 
-static void rna_WorkSpaceTool_setup(ID *id,
-                                    bToolRef *tref,
-                                    bContext *C,
+static void api_WorkSpaceTool_setup(Id *id,
+                                    ToolRef *tref,
+                                    Cxt *C,
                                     const char *idname,
                                     /* Args for: 'bToolRef_Runtime'. */
                                     int cursor,
@@ -36,7 +36,7 @@ static void rna_WorkSpaceTool_setup(ID *id,
                                     const char *idname_fallback,
                                     const char *keymap_fallback)
 {
-  bToolRef_Runtime tref_rt = {0};
+  ToolRef_Runtime tref_rt = {0};
 
   tref_rt.cursor = cursor;
   STRNCPY(tref_rt.keymap, keymap);
@@ -51,99 +51,97 @@ static void rna_WorkSpaceTool_setup(ID *id,
   STRNCPY(tref->idname_fallback, idname_fallback);
   STRNCPY(tref_rt.keymap_fallback, keymap_fallback);
 
-  WM_toolsystem_ref_set_from_runtime(C, (WorkSpace *)id, tref, &tref_rt, idname);
+  wm_toolsystem_ref_set_from_runtime(C, (WorkSpace *)id, tref, &tref_rt, idname);
 }
 
-static void rna_WorkSpaceTool_refresh_from_context(ID *id, bToolRef *tref, Main *bmain)
+static void api_WorkSpaceTool_refresh_from_cxt(Id *id, ToolRef *tref, Main *main)
 {
-  WM_toolsystem_ref_sync_from_context(bmain, (WorkSpace *)id, tref);
+  wm_toolsystem_ref_sync_from_cxt(main, (WorkSpace *)id, tref);
 }
 
-static PointerRNA rna_WorkSpaceTool_operator_properties(bToolRef *tref,
-                                                        ReportList *reports,
-                                                        const char *idname)
+static ApiPtr api_WorkSpaceTool_op_props(ToolRef *tref,
+                                         ReportList *reports,
+                                         const char *idname)
 {
-  wmOperatorType *ot = WM_operatortype_find(idname, true);
+  wmOpType *ot = wm_optype_find(idname, true);
 
   if (ot != NULL) {
-    PointerRNA ptr;
-    WM_toolsystem_ref_properties_ensure_from_operator(tref, ot, &ptr);
+    ApiPtr ptr;
+    wm_toolsystem_ref_props_ensure_from_op(tref, ot, &ptr);
     return ptr;
+  } else {
+    dune_reportf(reports, RPT_ERROR, "Op '%s' not found!", idname);
   }
-  else {
-    BKE_reportf(reports, RPT_ERROR, "Operator '%s' not found!", idname);
-  }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static PointerRNA rna_WorkSpaceTool_gizmo_group_properties(bToolRef *tref,
-                                                           ReportList *reports,
-                                                           const char *idname)
+static ApiPtr api_WorkSpaceTool_gizmo_group_props(ToolRef *tref,
+                                                  ReportList *reports,
+                                                  const char *idname)
 {
-  wmGizmoGroupType *gzgt = WM_gizmogrouptype_find(idname, false);
+  wmGizmoGroupType *gzgt = wm_gizmogrouptype_find(idname, false);
   if (gzgt != NULL) {
-    PointerRNA ptr;
-    WM_toolsystem_ref_properties_ensure_from_gizmo_group(tref, gzgt, &ptr);
+    ApiPtr ptr;
+    wm_toolsystem_ref_props_ensure_from_gizmo_group(tref, gzgt, &ptr);
     return ptr;
+  } else {
+    dune_reportf(reports, RPT_ERROR, "Gizmo group '%s' not found!", idname);
   }
-  else {
-    BKE_reportf(reports, RPT_ERROR, "Gizmo group '%s' not found!", idname);
-  }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
 #else
 
-void RNA_api_workspace(StructRNA *srna)
+void api_workspace(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "status_text_set_internal", "ED_workspace_status_text");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(
-      func, "Set the status bar text, typically key shortcuts for modal operators");
-  parm = RNA_def_string(
-      func, "text", NULL, 0, "Text", "New string for the status bar, None clears the text");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_clear_flag(parm, PROP_NEVER_NULL);
+  fn = api_def_fn(sapi, "status_text_set_internal", "ed_workspace_status_text");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CXT);
+  api_def_fn_ui_description(
+      fn, "Set the status bar text, typically key shortcuts for modal operators");
+  parm = api_def_string(
+      fn, "text", NULL, 0, "Text", "New string for the status bar, None clears the text");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_clear_flag(parm, PROP_NEVER_NULL);
 }
 
-void RNA_api_workspace_tool(StructRNA *srna)
+void api_workspace_tool(ApiStruct *sapi)
 {
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  static EnumPropertyItem options_items[] = {
+  static EnumPropItem options_items[] = {
       {TOOLREF_FLAG_FALLBACK_KEYMAP, "KEYMAP_FALLBACK", 0, "Fallback", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  func = RNA_def_function(srna, "setup", "rna_WorkSpaceTool_setup");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Set the tool settings");
+  fn = api_def_fn(sapi, "setup", "api_WorkSpaceTool_setup");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Set the tool settings");
 
-  parm = RNA_def_string(func, "idname", NULL, MAX_NAME, "Identifier", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "idname", NULL, MAX_NAME, "Id", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  /* 'bToolRef_Runtime' */
-  parm = RNA_def_property(func, "cursor", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_window_cursor_items);
-  RNA_def_string(func, "keymap", NULL, KMAP_MAX_NAME, "Key Map", "");
-  RNA_def_string(func, "gizmo_group", NULL, MAX_NAME, "Gizmo Group", "");
-  RNA_def_string(func, "data_block", NULL, MAX_NAME, "Data Block", "");
-  RNA_def_string(func, "operator", NULL, MAX_NAME, "Operator", "");
-  RNA_def_int(func, "index", 0, INT_MIN, INT_MAX, "Index", "", INT_MIN, INT_MAX);
-  RNA_def_enum_flag(func, "options", options_items, 0, "Tool Options", "");
+  /* 'ToolRef_Runtime' */
+  parm = api_def_prop(fn, "cursor", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_window_cursor_items);
+  api_def_string(fn, "keymap", NULL, KMAP_MAX_NAME, "Key Map", "");
+  api_def_string(fn, "gizmo_group", NULL, MAX_NAME, "Gizmo Group", "");
+  api_def_string(fn, "data_block", NULL, MAX_NAME, "Data Block", "");
+  api_def_string(fn, "op", NULL, MAX_NAME, "Op", "");
+  api_def_int(fn, "index", 0, INT_MIN, INT_MAX, "Index", "", INT_MIN, INT_MAX);
+  api_def_enum_flag(fn, "options", options_items, 0, "Tool Options", "");
 
-  RNA_def_string(func, "idname_fallback", NULL, MAX_NAME, "Fallback Identifier", "");
-  RNA_def_string(func, "keymap_fallback", NULL, KMAP_MAX_NAME, "Fallback Key Map", "");
+  api_def_string(fn, "idname_fallback", NULL, MAX_NAME, "Fallback Id", "");
+  api_def_string(fn, "keymap_fallback", NULL, KMAP_MAX_NAME, "Fallback Key Map", "");
 
   /* Access tool operator options (optionally create). */
-  func = RNA_def_function(srna, "operator_properties", "rna_WorkSpaceTool_operator_properties");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "operator", NULL, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "op_props", "api_WorkSpaceTool_op_props");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "operator", NULL, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
   parm = RNA_def_pointer(func, "result", "OperatorProperties", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
