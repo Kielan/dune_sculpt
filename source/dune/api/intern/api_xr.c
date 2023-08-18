@@ -1227,7 +1227,7 @@ static int api_XrEventData_user_path_other_length(ApiPtr *ptr)
 #  endif
 }
 
-static int api_XrEventData_type_get(Apitr *ptr)
+static int api_XrEventData_type_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1238,7 +1238,7 @@ static int api_XrEventData_type_get(Apitr *ptr)
 #  endif
 }
 
-static void rna_XrEventData_state_get(PointerRNA *ptr, float r_values[2])
+static void api_XrEventData_state_get(ApiPtr *ptr, float r_values[2])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1249,7 +1249,7 @@ static void rna_XrEventData_state_get(PointerRNA *ptr, float r_values[2])
 #  endif
 }
 
-static void rna_XrEventData_state_other_get(PointerRNA *ptr, float r_values[2])
+static void api_XrEventData_state_other_get(ApiPtr *ptr, float r_values[2])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1260,7 +1260,7 @@ static void rna_XrEventData_state_other_get(PointerRNA *ptr, float r_values[2])
 #  endif
 }
 
-static float rna_XrEventData_float_threshold_get(PointerRNA *ptr)
+static float api_XrEventData_float_threshold_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1271,7 +1271,7 @@ static float rna_XrEventData_float_threshold_get(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrEventData_controller_location_get(PointerRNA *ptr, float r_values[3])
+static void api_XrEventData_controller_location_get(ApiPtr *ptr, float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1282,7 +1282,7 @@ static void rna_XrEventData_controller_location_get(PointerRNA *ptr, float r_val
 #  endif
 }
 
-static void rna_XrEventData_controller_rotation_get(PointerRNA *ptr, float r_values[4])
+static void api_XrEventData_controller_rotation_get(PointerRNA *ptr, float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1293,7 +1293,7 @@ static void rna_XrEventData_controller_rotation_get(PointerRNA *ptr, float r_val
 #  endif
 }
 
-static void rna_XrEventData_controller_location_other_get(PointerRNA *ptr, float r_values[3])
+static void api_XrEventData_controller_location_other_get(ApiPtr *ptr, float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1304,7 +1304,7 @@ static void rna_XrEventData_controller_location_other_get(PointerRNA *ptr, float
 #  endif
 }
 
-static void rna_XrEventData_controller_rotation_other_get(PointerRNA *ptr, float r_values[4])
+static void api_XrEventData_controller_rotation_other_get(ApiPtr *ptr, float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1315,7 +1315,7 @@ static void rna_XrEventData_controller_rotation_other_get(PointerRNA *ptr, float
 #  endif
 }
 
-static bool rna_XrEventData_bimanual_get(PointerRNA *ptr)
+static bool api_XrEventData_bimanual_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1328,11 +1328,11 @@ static bool rna_XrEventData_bimanual_get(PointerRNA *ptr)
 
 /** \} */
 
-#else /* RNA_RUNTIME */
+#else /* API_RUNTIME */
 
 /* -------------------------------------------------------------------- */
 
-static const EnumPropertyItem rna_enum_xr_action_types[] = {
+static const EnumPropItem api_enum_xr_action_types[] = {
     {XR_FLOAT_INPUT,
      "FLOAT",
      0,
@@ -1356,22 +1356,22 @@ static const EnumPropertyItem rna_enum_xr_action_types[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_xr_op_flags[] = {
+static const EnumPropItem api_enum_xr_op_flags[] = {
     {XR_OP_PRESS,
      "PRESS",
      0,
      "Press",
-     "Execute operator on button press (non-modal operators only)"},
+     "Execute op on button press (non-modal ops only)"},
     {XR_OP_RELEASE,
      "RELEASE",
      0,
      "Release",
-     "Execute operator on button release (non-modal operators only)"},
-    {XR_OP_MODAL, "MODAL", 0, "Modal", "Use modal execution (modal operators only)"},
+     "Execute op on btn release (non-modal ops only)"},
+    {XR_OP_MODAL, "MODAL", 0, "Modal", "Use modal execution (modal ops only)"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_xr_haptic_flags[] = {
+static const EnumPropItem api_enum_xr_haptic_flags[] = {
     {XR_HAPTIC_PRESS, "PRESS", 0, "Press", "Apply haptics on button press"},
     {XR_HAPTIC_RELEASE, "RELEASE", 0, "Release", "Apply haptics on button release"},
     {XR_HAPTIC_PRESS | XR_HAPTIC_RELEASE,
@@ -1387,23 +1387,23 @@ static const EnumPropertyItem rna_enum_xr_haptic_flags[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_xr_axis0_flags[] = {
-    {0, "ANY", 0, "Any", "Use any axis region for operator execution"},
+static const EnumPropItem api_enum_xr_axis0_flags[] = {
+    {0, "ANY", 0, "Any", "Use any axis region for op execution"},
     {XR_AXIS0_POS,
      "POSITIVE",
      0,
      "Positive",
-     "Use positive axis region only for operator execution"},
+     "Use positive axis region only for op execution"},
     {XR_AXIS0_NEG,
      "NEGATIVE",
      0,
      "Negative",
-     "Use negative axis region only for operator execution"},
+     "Use negative axis region only for op execution"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_xr_axis1_flags[] = {
-    {0, "ANY", 0, "Any", "Use any axis region for operator execution"},
+static const EnumPropItem api_enum_xr_axis1_flags[] = {
+    {0, "ANY", 0, "Any", "Use any axis region for op execution"},
     {XR_AXIS1_POS,
      "POSITIVE",
      0,
@@ -1418,125 +1418,124 @@ static const EnumPropertyItem rna_enum_xr_axis1_flags[] = {
 };
 
 /* -------------------------------------------------------------------- */
-/** \name XR Action Map
- * \{ */
+/** XR Action Map **/
 
-static void rna_def_xr_component_paths(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_xr_component_paths(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "XrComponentPaths");
-  srna = RNA_def_struct(brna, "XrComponentPaths", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMapBinding");
-  RNA_def_struct_ui_text(srna, "XR Component Paths", "Collection of OpenXR component paths");
+  api_def_prop_sapi(cprop, "XrComponentPaths");
+  sapi = api_def_struct(dapi, "XrComponentPaths", NULL);
+  api_def_struct_stype(sapi, "XrActionMapBinding");
+  api_def_struct_ui_text(sapi, "XR Component Paths", "Collection of OpenXR component paths");
 
-  func = RNA_def_function(srna, "new", "rna_XrComponentPath_new");
-  parm = RNA_def_string(
-      func, "path", NULL, XR_MAX_COMPONENT_PATH_LENGTH, "Path", "OpenXR component path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "component_path", "XrComponentPath", "Component Path", "Added component path");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_XrComponentPath_new");
+  parm = api_def_string(
+      fn, "path", NULL, XR_MAX_COMPONENT_PATH_LENGTH, "Path", "OpenXR component path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "component_path", "XrComponentPath", "Component Path", "Added component path");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_XrComponentPath_remove");
-  parm = RNA_def_pointer(func, "component_path", "XrComponentPath", "Component Path", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_XrComponentPath_remove");
+  parm = api_def_ptr(fn, "component_path", "XrComponentPath", "Component Path", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_XrComponentPath_find");
-  parm = RNA_def_string(
-      func, "path", NULL, XR_MAX_COMPONENT_PATH_LENGTH, "Path", "OpenXR component path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func,
-                         "component_path",
-                         "XrComponentPath",
-                         "Component Path",
-                         "The component path with the given path");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find", "api_XrComponentPath_find");
+  parm = api_def_string(
+      fn, "path", NULL, XR_MAX_COMPONENT_PATH_LENGTH, "Path", "OpenXR component path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn,
+                     "component_path",
+                     "XrComponentPath",
+                     "Component Path",
+                     "The component path with the given path");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_xr_actionmap_bindings(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_xr_actionmap_bindings(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "XrActionMapBindings");
-  srna = RNA_def_struct(brna, "XrActionMapBindings", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMapItem");
-  RNA_def_struct_ui_text(srna, "XR Action Map Bindings", "Collection of XR action map bindings");
+  api_def_prop_sapi(cprop, "XrActionMapBindings");
+  sapi = api_def_struct(dapi, "XrActionMapBindings", NULL);
+  api_def_struct_stype(sapi, "XrActionMapItem");
+  api_def_struct_ui_text(sapi, "XR Action Map Bindings", "Collection of XR action map bindings");
 
-  func = RNA_def_function(srna, "new", "rna_XrActionMapBinding_new");
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name of the action map binding", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func,
-                         "replace_existing",
-                         true,
-                         "Replace Existing",
-                         "Replace any existing binding with the same name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "binding", "XrActionMapBinding", "Binding", "Added action map binding");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_XrActionMapBinding_new");
+  parm = api_def_string(fb, "name", NULL, MAX_NAME, "Name of the action map binding", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn,
+                      "replace_existing",
+                      true,
+                      "Replace Existing",
+                      "Replace any existing binding with the same name");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "binding", "XrActionMapBinding", "Binding", "Added action map binding");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_from_binding", "rna_XrActionMapBinding_new_from_binding");
-  parm = RNA_def_pointer(
-      func, "binding", "XrActionMapBinding", "Binding", "Binding to use as a reference");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "result", "XrActionMapBinding", "Binding", "Added action map binding");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new_from_binding", "api_XrActionMapBinding_new_from_binding");
+  parm = api_def_ptr(
+      fn, "binding", "XrActionMapBinding", "Binding", "Binding to use as a ref");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "result", "XrActionMapBinding", "Binding", "Added action map binding");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_XrActionMapBinding_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "binding", "XrActionMapBinding", "Binding", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "rna_XrActionMapBinding_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "binding", "XrActionMapBinding", "Binding", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_XrActionMapBinding_find");
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func,
-                         "binding",
-                         "XrActionMapBinding",
-                         "Binding",
-                         "The action map binding with the given name");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find", "api_XrActionMapBinding_find");
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn,
+                     "binding",
+                     "XrActionMapBinding",
+                     "Binding",
+                     "The action map binding with the given name");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_xr_user_paths(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_xr_user_paths(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "XrUserPaths");
-  srna = RNA_def_struct(brna, "XrUserPaths", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMapItem");
-  RNA_def_struct_ui_text(srna, "XR User Paths", "Collection of OpenXR user paths");
+  api_def_prop_sapi(cprop, "XrUserPaths");
+  sapi = RNA_def_struct(dapi, "XrUserPaths", NULL);
+  api_def_struct_stype(sapi, "XrActionMapItem");
+  api_def_struct_ui_text(sapi, "XR User Paths", "Collection of OpenXR user paths");
 
-  func = RNA_def_function(srna, "new", "rna_XrUserPath_new");
-  parm = RNA_def_string(func, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "user_path", "XrUserPath", "User Path", "Added user path");
-  RNA_def_function_return(func, parm);
+  func = RNA_def_fn(sapi, "new", "api_XrUserPath_new");
+  parm = RNA_def_string(fn, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = RNA_def_ptr(fn, "user_path", "XrUserPath", "User Path", "Added user path");
+  RNA_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_XrUserPath_remove");
-  parm = RNA_def_pointer(func, "user_path", "XrUserPath", "User Path", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  func = RNA_def_fn(sapi, "remove", "rna_XrUserPath_remove");
+  parm = RNA_def_ptr(fn, "user_path", "XrUserPath", "User Path", "");
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  RNA_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_XrUserPath_find");
-  parm = RNA_def_string(func, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "user_path", "XrUserPath", "User Path", "The user path with the given path");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find", "rna_XrUserPath_find");
+  parm = api_def_string(fn, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "user_path", "XrUserPath", "User Path", "The user path with the given path");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_xr_actionmap_items(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_xr_actionmap_items(DuneApi *dapi, ApiProp *cprop)
 {
   StructRNA *srna;
   FunctionRNA *func;
