@@ -557,7 +557,7 @@ static void api_XrActionMapItem_update(Main *UNUSED(main), Scene *UNUSED(scene),
 static XrActionMap *api_XrActionMap_new(ApiPtr *ptr, const char *name, bool replace_existing)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = a_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   return wm_xr_actionmap_new(xr->runtime, name, replace_existing);
 #  else
   UNUSED_VARS(ptr, name, replace_existing);
@@ -1172,7 +1172,7 @@ static void api_XrEventData_action_get(ApiPtr *ptr, char *r_value)
 #  endif
 }
 
-static int rna_XrEventData_action_length(ApiPtr *ptr)
+static int api_XrEventData_action_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1194,7 +1194,7 @@ static void r_XrEventData_user_path_get(PointerRNA *ptr, char *r_value)
 #  endif
 }
 
-static int rna_XrEventData_user_path_length(PointerRNA *ptr)
+static int api_XrEventData_user_path_length(ApPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1205,7 +1205,7 @@ static int rna_XrEventData_user_path_length(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrEventData_user_path_other_get(PointerRNA *ptr, char *r_value)
+static void api_XrEventData_user_path_other_get(Apitr *ptr, char *r_value)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1216,7 +1216,7 @@ static void rna_XrEventData_user_path_other_get(PointerRNA *ptr, char *r_value)
 #  endif
 }
 
-static int rna_XrEventData_user_path_other_length(PointerRNA *ptr)
+static int api_XrEventData_user_path_other_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1227,7 +1227,7 @@ static int rna_XrEventData_user_path_other_length(PointerRNA *ptr)
 #  endif
 }
 
-static int rna_XrEventData_type_get(PointerRNA *ptr)
+static int api_XrEventData_type_get(Apitr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
