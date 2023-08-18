@@ -955,12 +955,12 @@ static void rn_XrSessionState_controller_grip_rotation_get(bContext *C,
 #  endif
 }
 
-static void rna_XrSessionState_controller_aim_location_get(bContext *C,
+static void api_XrSessionState_controller_aim_location_get(Cxt *C,
                                                            int index,
                                                            float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = CTX_wm_manager(C);
+  const wmWindowManager *wm = c_wm_manager(C);
   WM_xr_session_state_controller_aim_location_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
@@ -1161,7 +1161,7 @@ static int rna_XrEventData_action_set_length(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrEventData_action_get(PointerRNA *ptr, char *r_value)
+static void api_XrEventData_action_get(ApiPtr *ptr, char *r_value)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1172,7 +1172,7 @@ static void rna_XrEventData_action_get(PointerRNA *ptr, char *r_value)
 #  endif
 }
 
-static int rna_XrEventData_action_length(PointerRNA *ptr)
+static int rna_XrEventData_action_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1183,7 +1183,7 @@ static int rna_XrEventData_action_length(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrEventData_user_path_get(PointerRNA *ptr, char *r_value)
+static void r_XrEventData_user_path_get(PointerRNA *ptr, char *r_value)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
