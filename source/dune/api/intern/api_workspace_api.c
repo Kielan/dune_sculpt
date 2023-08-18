@@ -25,7 +25,7 @@ static void api_WorkSpaceTool_setup(Id *id,
                                     ToolRef *tref,
                                     Cxt *C,
                                     const char *idname,
-                                    /* Args for: 'bToolRef_Runtime'. */
+                                    /* Args for: 'ToolRef_Runtime'. */
                                     int cursor,
                                     const char *keymap,
                                     const char *gizmo_group,
@@ -143,23 +143,23 @@ void api_workspace_tool(ApiStruct *sapi)
   parm = api_def_string(fn, "operator", NULL, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = api_def_ptr(fn, "result", "OperatorProperties", "", "");
+  parm = api_def_ptr(fn, "result", "Oprops", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   api_def_fn_return(fn, parm);
 
   /* Access gizmo-group options (optionally create). */
   fn = api_def_fn(
-      sapi, "gizmo_group_props", "api_WorkSpaceTool_gizmo_group_properties");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "group", NULL, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+      sapi, "gizmo_group_props", "api_WorkSpaceTool_gizmo_group_props");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "group", NULL, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = RNA_def_pointer(func, "result", "GizmoGroupProperties", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "GizmoGroupProps", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "refresh_from_context", "rna_WorkSpaceTool_refresh_from_context");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  fn = api_def_fn(sapi, "refresh_from_cxt", "api_WorkSpaceTool_refresh_from_cxt");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN);
 }
 
 #endif
