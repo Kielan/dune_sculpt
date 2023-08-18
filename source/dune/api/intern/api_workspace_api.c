@@ -143,13 +143,13 @@ void api_workspace_tool(ApiStruct *sapi)
   parm = api_def_string(fn, "operator", NULL, 0, "", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = RNA_def_pointer(func, "result", "OperatorProperties", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "OperatorProperties", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  api_def_fn_return(fn, parm);
 
   /* Access gizmo-group options (optionally create). */
-  func = RNA_def_function(
-      srna, "gizmo_group_properties", "rna_WorkSpaceTool_gizmo_group_properties");
+  fn = api_def_fn(
+      sapi, "gizmo_group_props", "api_WorkSpaceTool_gizmo_group_properties");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
   parm = RNA_def_string(func, "group", NULL, 0, "", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
