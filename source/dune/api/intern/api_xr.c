@@ -557,7 +557,7 @@ static void api_XrActionMapItem_update(Main *UNUSED(main), Scene *UNUSED(scene),
 static XrActionMap *api_XrActionMap_new(ApiPtr *ptr, const char *name, bool replace_existing)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = a_XrSession_wm_xr_data_get(ptr);
   return wm_xr_actionmap_new(xr->runtime, name, replace_existing);
 #  else
   UNUSED_VARS(ptr, name, replace_existing);
@@ -751,7 +751,7 @@ static bool api_XrSessionState_action_create(Cxt *C,
   IdProp *op_props = NULL;
   int64_t haptic_duration_msec;
 
-  if (is_button_action) {
+  if (is_btn_action) {
     if (ami->op[0]) {
       char idname[OP_MAX_TYPENAME];
       wm_op_bl_idname(idname, ami->op);
@@ -832,7 +832,7 @@ static bool api_XrSessionState_action_binding_create(Cxt *C,
 #  endif
 }
 
-bool api_XrSessionState_active_action_set_set(bContext *C, const char *action_set_name)
+bool api_XrSessionState_active_action_set_set(Cxt *C, const char *action_set_name)
 {
 #  ifdef WITH_XR_OPENXR
   wmWindowManager *wm = cxt_wm_manager(C);
@@ -849,7 +849,7 @@ bool api_XrSessionState_controller_pose_actions_set(Cxt *C,
                                                     const char *aim_action_name)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   return wm_xr_controller_pose_actions_set(
       &wm->xr, action_set_name, grip_action_name, aim_action_name);
 #  else
@@ -858,19 +858,19 @@ bool api_XrSessionState_controller_pose_actions_set(Cxt *C,
 #  endif
 }
 
-void rna_XrSessionState_action_state_get(bContext *C,
+void api_XrSessionState_action_state_get(Cxt *C,
                                          const char *action_set_name,
                                          const char *action_name,
                                          const char *user_path,
                                          float r_state[2])
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   wmXrActionState state;
-  if (WM_xr_action_state_get(&wm->xr, action_set_name, action_name, user_path, &state)) {
+  if (wm_xr_action_state_get(&wm->xr, action_set_name, action_name, user_path, &state)) {
     switch (state.type) {
-      case XR_BOOLEAN_INPUT:
-        r_state[0] = (float)state.state_boolean;
+      case XR_BOOL_INPUT:
+        r_state[0] = (float)state.state_bool;
         r_state[1] = 0.0f;
         return;
       case XR_FLOAT_INPUT:
@@ -882,7 +882,7 @@ void rna_XrSessionState_action_state_get(bContext *C,
         return;
       case XR_POSE_INPUT:
       case XR_VIBRATION_OUTPUT:
-        BLI_assert_unreachable();
+        lib_assert_unreachable();
         break;
     }
   }
@@ -892,7 +892,7 @@ void rna_XrSessionState_action_state_get(bContext *C,
   zero_v2(r_state);
 }
 
-bool rna_XrSessionState_haptic_action_apply(bContext *C,
+bool api_XrSessionState_haptic_action_apply(Cxt *C,
                                             const char *action_set_name,
                                             const char *action_name,
                                             const char *user_path,
@@ -903,7 +903,7 @@ bool rna_XrSessionState_haptic_action_apply(bContext *C,
 #  ifdef WITH_XR_OPENXR
   wmWindowManager *wm = CTX_wm_manager(C);
   int64_t duration_msec = (int64_t)(duration * 1000.0f);
-  return WM_xr_haptic_action_apply(&wm->xr,
+  return wm_xr_haptic_action_apply(&wm->xr,
                                    action_set_name,
                                    action_name,
                                    user_path[0] ? user_path : NULL,
@@ -916,33 +916,33 @@ bool rna_XrSessionState_haptic_action_apply(bContext *C,
 #  endif
 }
 
-void rna_XrSessionState_haptic_action_stop(bContext *C,
+void api_XrSessionState_haptic_action_stop(Cxt *C,
                                            const char *action_set_name,
                                            const char *action_name,
                                            const char *user_path)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
-  WM_xr_haptic_action_stop(&wm->xr, action_set_name, action_name, user_path[0] ? user_path : NULL);
+  wmWindowManager *wm = cxt_wm_manager(C);
+  wm_xr_haptic_action_stop(&wm->xr, action_set_name, action_name, user_path[0] ? user_path : NULL);
 #  else
   UNUSED_VARS(C, action_set_name, action_name, user_path);
 #  endif
 }
 
-static void rna_XrSessionState_controller_grip_location_get(bContext *C,
+static void api_XrSessionState_controller_grip_location_get(Cxt *C,
                                                             int index,
                                                             float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = CTX_wm_manager(C);
-  WM_xr_session_state_controller_grip_location_get(&wm->xr, index, r_values);
+  const wmWindowManager *wm = cxt_wm_manager(C);
+  wm_xr_session_state_controller_grip_location_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
   zero_v3(r_values);
 #  endif
 }
 
-static void rna_XrSessionState_controller_grip_rotation_get(bContext *C,
+static void rn_XrSessionState_controller_grip_rotation_get(bContext *C,
                                                             int index,
                                                             float r_values[4])
 {
@@ -968,46 +968,46 @@ static void rna_XrSessionState_controller_aim_location_get(bContext *C,
 #  endif
 }
 
-static void rna_XrSessionState_controller_aim_rotation_get(bContext *C,
+static void api_XrSessionState_controller_aim_rotation_get(Cxt *C,
                                                            int index,
                                                            float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = CTX_wm_manager(C);
-  WM_xr_session_state_controller_aim_rotation_get(&wm->xr, index, r_values);
+  const wmWindowManager *wm = cxt_wm_manager(C);
+  wm_xr_session_state_controller_aim_rotation_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
   unit_qt(r_values);
 #  endif
 }
 
-static void rna_XrSessionState_viewer_pose_location_get(PointerRNA *ptr, float *r_values)
+static void api_XrSessionState_viewer_pose_location_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_viewer_pose_location_get(xr, r_values);
+  wm_xr_session_state_viewer_pose_location_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
   zero_v3(r_values);
 #  endif
 }
 
-static void rna_XrSessionState_viewer_pose_rotation_get(PointerRNA *ptr, float *r_values)
+static void api_XrSessionState_viewer_pose_rotation_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_viewer_pose_rotation_get(xr, r_values);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_viewer_pose_rotation_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
   unit_qt(r_values);
 #  endif
 }
 
-static void rna_XrSessionState_nav_location_get(PointerRNA *ptr, float *r_values)
+static void rna_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_location_get(xr, r_values);
+  _xr_session_state_nav_location_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
   zero_v3(r_values);
