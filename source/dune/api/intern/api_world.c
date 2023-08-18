@@ -32,12 +32,12 @@ static ApiPtr api_world_lighting_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &ApiWorldLighting, ptr->owner_id);
 }
 
-static ApiPtr api_World_mist_get(PointerRNA *ptr)
+static ApiPtr api_World_mist_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_WorldMistSettings, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &Api_WorldMistSettings, ptr->owner_id);
 }
 
-static void api_World_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
@@ -46,7 +46,7 @@ static void api_World_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
 }
 
 #  if 0
-static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
@@ -55,7 +55,7 @@ static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), Poin
 }
 #  endif
 
-static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
@@ -68,7 +68,7 @@ static void api_World_use_nodes_update(bContext *C, PointerRNA *ptr)
 {
   World *wrld = (World *)ptr->data;
   Main *main = cxt_data_main(C);
-  Scene *scene = ctx_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   if (wrld->use_nodes && wrld->nodetree == NULL) {
     ed_node_shader_default(C, &wrld->id);
@@ -93,7 +93,7 @@ int api_world_lightgroup_length(ApiPtr *ptr)
   return dune_lightgroup_membership_length(lgm);
 }
 
-void api_World_lightgroup_set(PointerRNA *ptr, const char *value)
+void api_World_lightgroup_set(ApiPtr *ptr, const char *value)
 {
   dune_lightgroup_membership_set(&((World *)ptr->owner_id)->lightgroup, value);
 }
@@ -106,7 +106,7 @@ static void api_def_lighting(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(sapi, "WorldLighting", NULL);
-  api_def_struct_sdna(sapi, "World");
+  api_def_struct_stype(sapi, "World");
   api_def_struct_nested(dapi, sapi, "World");
   api_def_struct_ui_text(sapi, "Lighting", "Lighting for a World data-block");
 
@@ -117,21 +117,21 @@ static void api_def_lighting(DuneApi *dapi)
       prop,
       "Use Ambient Occlusion",
       "Use Ambient Occlusion to add shadowing based on distance between objects");
-  api_def_prop_update(prop, 0, "rna_World_update");
+  api_def_prop_update(prop, 0, "api_World_update");
 
   prop = api_def_prop(sapi, "ao_factor", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_stype(prop, NULL, "aoenergy");
   api_def_prope_range(prop, 0, INT_MAX);
   api_def_prop_ui_range(prop, 0, 1, 0.1, 2);
   api_def_prop_ui_text(prop, "Factor", "Factor for ambient occlusion blending");
-  api_def_prop_update(prop, 0, "rna_World_update");
+  api_def_prop_update(prop, 0, "api_World_update");
 
   prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_DISTANCE);
-  api_def_pro_float_sdna(prop, NULL, "aodist");
-  api_def_prop_range(prop, 0, FLT_M
+  api_def_pro_float_stype(prop, NULL, "aodist");
+  api_def_prop_range(prop, 0, FLT_M);
   api_def_prop_ui_text(
       prop, "Distance", "Length of rays, defines how far away other faces give occlusion effect");
-  api_def_prop_update(prop, 0, "rna_World_update");
+  api_def_prop_update(prop, 0, "api_World_update");
 }
 
 static void api_def_world_mist(DuneApi *dapi)
@@ -177,7 +177,7 @@ static void api_def_world_mist(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "depth", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_float_stype(prop, NULL, "mistdist");
-  api_def_prop_range(prop, 0, FLT_MAX)
+  api_def_prop_range(prop, 0, FLT_MAX);
   api_def_prop_ui_range(prop, 0, 10000, 10, 2);
   api_def_prop_ui_text(prop, "Depth", "Distance over which the mist effect fades in");
   api_def_prop_update(prop, 0, "rna_World_draw_update");
@@ -202,7 +202,7 @@ void api_def_world(DuneApi *dapi)
 
   static float default_world_color[] = {0.05f, 0.05f, 0.05f};
 
-  sapi = api_def_struct(dapi, "World", "ID");
+  sapi = api_def_struct(dapi, "World", "Id");
   api_def_struct_ui_text(
       sapi,
       "World",
