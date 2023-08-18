@@ -2007,133 +2007,132 @@ static void rna_def_xr_session_settings(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
   prop = RNA_def_property(srna, "clip_start", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(prop, "Clip Start", "VR viewport near clipping distance");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  RNA_def_prop_range(prop, 1e-6f, FLT_MAX);
+  RNA_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  RNA_def_prop_ui_text(prop, "Clip Start", "VR viewport near clipping distance");
+  RNA_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "clip_end", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_ui_text(prop, "Clip End", "VR viewport far clipping distance");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = RNA_def_prop(sapi, "clip_end", PROP_FLOAT, PROP_DISTANCE);
+  RNA_def_prop_range(prop, 1e-6f, FLT_MAX);
+  RNA_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  RNA_def_prop_ui_text(prop, "Clip End", "VR viewport far clipping distance");
+  RNA_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "use_positional_tracking", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_XrSessionSettings_use_positional_tracking_get",
-                                 "rna_XrSessionSettings_use_positional_tracking_set");
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "use_positional_tracking", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop,
+                        "api_XrSessionSettings_use_positional_tracking_get",
+                        "api_XrSessionSettings_use_positional_tracking_set");
+  api_def_prop_ui_text(
       prop,
       "Positional Tracking",
       "Allow VR headsets to affect the location in virtual space, in addition to the rotation");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "use_absolute_tracking", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_XrSessionSettings_use_absolute_tracking_get",
-                                 "rna_XrSessionSettings_use_absolute_tracking_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_absolute_tracking", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop,
+                        "api_XrSessionSettings_use_absolute_tracking_get",
+                        "api_XrSessionSettings_use_absolute_tracking_set");
+  api_def_prop_ui_text(
       prop,
       "Absolute Tracking",
       "Allow the VR tracking origin to be defined independently of the headset location");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  rna_def_object_type_visibility_flags_common(srna, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_object_type_visibility_flags_common(srna, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
   /* Helper for drawing the icon. */
-  prop = RNA_def_property(srna, "icon_from_show_object_viewport", PROP_INT, PROP_NONE);
-  RNA_def_property_int_funcs(
-      prop, "rna_XrSessionSettings_icon_from_show_object_viewport_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Visibility Icon", "");
+  prop = api_def_prop(sapi, "icon_from_show_object_viewport", PROP_INT, PROP_NONE);
+  api_def_prop_int_fns(
+      prop, "api_XrSessionSettings_icon_from_show_object_viewport_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Visibility Icon", "");
 }
 
 /** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name XR Session State
- * \{ */
+/** XR Session State **/
 
-static void rna_def_xr_session_state(BlenderRNA *brna)
+static void api_def_xr_session_state(ApiDune *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm, *prop;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm, *prop;
 
-  srna = RNA_def_struct(brna, "XrSessionState", NULL);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Session State", "Runtime state information about the VR session");
+  sapi = api_def_struct(dapi, "XrSessionState", NULL);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Session State", "Runtime state information about the VR session");
 
-  func = RNA_def_function(srna, "is_running", "rna_XrSessionState_is_running");
-  RNA_def_function_ui_description(func, "Query if the VR session is currently running");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = RNA_def_fn(sapi, "is_running", "rna_XrSessionState_is_running");
+  RNA_def_function_ui_description(fn, "Query if the VR session is currently running");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "context", "Context", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  parm = RNA_def_boolean(fn, "result", 0, "Result", "");
+  RNA_def_function_return(fn, parm);
 
-  func = RNA_def_function(srna, "reset_to_base_pose", "rna_XrSessionState_reset_to_base_pose");
-  RNA_def_function_ui_description(func, "Force resetting of position and rotation deltas");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = RNA_def_function(sapi, "reset_to_base_pose", "rna_XrSessionState_reset_to_base_pose");
+  RNA_def_function_ui_description(fn, "Force resetting of position and rotation deltas");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "cxt", "Context", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "action_set_create", "rna_XrSessionState_action_set_create");
-  RNA_def_function_ui_description(func, "Create a VR action set");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = RNA_def_function(sapi, "action_set_create", "rna_XrSessionState_action_set_create");
+  RNA_def_function_ui_description(fn, "Create a VR action set");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "cxt", "Cxt", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap", "XrActionMap", "", "");
+  parm = RNA_def_pointer(fn, "actionmap", "XrActionMap", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  parm = RNA_def_boolean(fn, "result", 0, "Result", "");
+  RNA_def_function_return(fn, parm);
 
-  func = RNA_def_function(srna, "action_create", "rna_XrSessionState_action_create");
-  RNA_def_function_ui_description(func, "Create a VR action");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = RNA_def_function(sapi, "action_create", "rna_XrSessionState_action_create");
+  RNA_def_function_ui_description(fn, "Create a VR action");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "context", "Context", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap", "XrActionMap", "", "");
+  parm = RNA_def_pointer(fn, "actionmap", "XrActionMap", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap_item", "XrActionMapItem", "", "");
+  parm = RNA_def_pointer(fn, "actionmap_item", "XrActionMapItem", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  parm = RNA_def_boolean(fn, "result", 0, "Result", "");
+  RNA_def_function_return(fn, parm);
 
-  func = RNA_def_function(
-      srna, "action_binding_create", "rna_XrSessionState_action_binding_create");
-  RNA_def_function_ui_description(func, "Create a VR action binding");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = api_def_fn(
+      srna, "action_binding_create", "api_XrSessionState_action_binding_create");
+  RNA_def_function_ui_description(fn, "Create a VR action binding");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "cxt", "Context", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap", "XrActionMap", "", "");
+  parm = RNA_def_pointer(fn, "actionmap", "XrActionMap", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap_item", "XrActionMapItem", "", "");
+  parm = RNA_def_pointer(fn, "actionmap_item", "XrActionMapItem", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap_binding", "XrActionMapBinding", "", "");
+  parm = RNA_def_pointer(fn, "actionmap_binding", "XrActionMapBinding", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
-
-  func = RNA_def_function(
-      srna, "active_action_set_set", "rna_XrSessionState_active_action_set_set");
-  RNA_def_function_ui_description(func, "Set the active VR action set");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  parm = RNA_def_bool(fn, "result", 0, "Result", "");
+  RNA_def_function_return(fn, parm);
 
   func = RNA_def_function(
+      srna, "active_action_set_set", "api_XrSessionState_active_action_set_set");
+  RNA_def_function_ui_description(fn, "Set the active VR action set");
+  RNA_def_function_flag(func, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "cxt", "Context", "", "");
+  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = RNA_def_string(fn, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
+  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = RNA_def_boolean(fn, "result", 0, "Result", "");
+  RNA_def_function_return(fn, parm);
+
+  func = RNA_def_fn(
       srna, "controller_pose_actions_set", "rna_XrSessionState_controller_pose_actions_set");
-  RNA_def_function_ui_description(func, "Set the actions that determine the VR controller poses");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  RNA_def_fn_ui_description(func, "Set the actions that determine the VR controller poses");
+  RNA_def_fn_flag(fn, FUNC_NO_SELF);
+  parm = RNA_def_ptr(fn, "context", "Context", "", "");
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(func, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = RNA_def_string(func,
                         "grip_action",
                         NULL,
