@@ -263,7 +263,7 @@ static void api_def_workspace_tool(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(sapi, "WorkSpaceTool", NULL);
-  api_def_struct_stype(sapi, "bToolRef");
+  api_def_struct_stype(sapi, "ToolRef");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Work Space Tool", "");
 
@@ -371,7 +371,7 @@ static void api_def_workspace(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "WorkSpace", "Id");
-  api_def_struct_sdna(srna, "WorkSpace");
+  api_def_struct_stype(sapi, "WorkSpace");
   api_def_struct_ui_text(
       sapi, "Workspace", "Workspace data-block, defining the working environment for the user");
   /* TODO: real icon, just to show something */
@@ -392,7 +392,7 @@ static void api_def_workspace(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Screens", "Screen layouts of a workspace");
 
   prop = api_def_prop(sapi, "owner_ids", PROP_COLLECTION, PROP_NONE);
-  api_def_prop_struct_type(prop, "wmOwnerID");
+  api_def_prop_struct_type(prop, "wmOwnerId");
   api_def_prop_ui_text(prop, "UI Tags", "");
   api_def_workspace_owner_ids(dapi, prop);
 
@@ -427,7 +427,7 @@ static void api_def_workspace(DuneApi *dapi)
   api_def_prop_ui_text(prop,
                        "Asset Lib",
                        "Active asset lib to show in the UI, not used by the Asset Browser "
-                       "(which has its own active asset library)");
+                       "(which has its own active asset lib)");
   api_def_prop_update(prop, NC_ASSET | ND_ASSET_LIST_READING, NULL);
 
   api_workspace(sapi);
