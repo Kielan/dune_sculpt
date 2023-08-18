@@ -134,7 +134,7 @@ static void api_XrActionMapBinding_component_paths_begin(CollectionPropIter *ite
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = (XrActionMapBinding *)ptr->data;
-  api_iterator_list_begin(iter, &amb->component_paths, NULL);
+  api_iter_list_begin(iter, &amb->component_paths, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
@@ -208,7 +208,7 @@ static void api_XrActionMapBinding_axis1_region_set(ApiPtr *ptr, int value)
 static void api_XrActionMapBinding_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWM *wm = main->wm.first;
+  WM *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
     List *actionmaps = wm_xr_actionmaps_get(wm->xr.runtime);
     short idx = wm_xr_actionmap_selected_index_get(wm->xr.runtime);
@@ -921,7 +921,7 @@ void api_XrSessionState_haptic_action_stop(Cxt *C,
                                            const char *user_path)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   wm_xr_haptic_action_stop(&wm->xr, action_set_name, action_name, user_path[0] ? user_path : NULL);
 #  else
   UNUSED_VARS(C, action_set_name, action_name, user_path);
@@ -946,8 +946,8 @@ static void rn_XrSessionState_controller_grip_rotation_get(Cxt *C,
                                                             float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = CTX_wm_manager(C);
-  WM_xr_session_state_controller_grip_rotation_get(&wm->xr, index, r_values);
+  const WM *wm = cxt_wm_manager(C);
+  wm_xr_session_state_controller_grip_rotation_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
   unit_qt(r_values);
@@ -972,7 +972,7 @@ static void api_XrSessionState_controller_aim_rotation_get(Cxt *C,
                                                            float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = cxt_wm_manager(C);
+  const WM *wm = cxt_wm_manager(C);
   wm_xr_session_state_controller_aim_rotation_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
@@ -1735,54 +1735,54 @@ static void api_def_xr_actionmap(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Bimanual", "The action depends on the states/poses of both user paths");
 
-  prop = api_def_prop(sapi, "pose_is_controller_grip", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_bool_fns(prop,
-                                 "rna_XrActionMapItem_pose_is_controller_grip_get",
-                                 "rna_XrActionMapItem_pose_is_controller_grip_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pose_is_controller_grip", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop,
+                        "api_XrActionMapItem_pose_is_controller_grip_get",
+                        "api_XrActionMapItem_pose_is_controller_grip_set");
+  api_def_prop_ui_text(
       prop, "Is Controller Grip", "The action poses will be used for the VR controller grips");
 
-  prop = RNA_def_property(srna, "pose_is_controller_aim", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_XrActionMapItem_pose_is_controller_aim_get",
-                                 "rna_XrActionMapItem_pose_is_controller_aim_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pose_is_controller_aim", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop,
+                                 "api_XrActionMapItem_pose_is_controller_aim_get",
+                                 "api_XrActionMapItem_pose_is_controller_aim_set");
+  api_def_prop_ui_text(
       prop, "Is Controller Aim", "The action poses will be used for the VR controller aims");
 
-  prop = RNA_def_property(srna, "haptic_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "haptic_name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Haptic Name", "Name of the haptic action to apply when executing this action");
 
-  prop = RNA_def_property(srna, "haptic_match_user_paths", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop,
-                                 "rna_XrActionMapItem_haptic_match_user_paths_get",
-                                 "rna_XrActionMapItem_haptic_match_user_paths_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "haptic_match_user_paths", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop,
+                        "api_XrActionMapItem_haptic_match_user_paths_get",
+                        "api_XrActionMapItem_haptic_match_user_paths_set");
+  api_def_prop_ui_text(
       prop,
       "Haptic Match User Paths",
       "Apply haptics to the same user paths for the haptic action and this action");
 
-  prop = RNA_def_property(srna, "haptic_duration", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(prop,
-                           "Haptic Duration",
-                           "Haptic duration in seconds. 0.0 is the minimum supported duration");
+  prop = api_def_prop(sapi, "haptic_duration", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_text(prop,
+                       "Haptic Duration",
+                       "Haptic duration in seconds. 0.0 is the minimum supported duration");
 
-  prop = RNA_def_property(srna, "haptic_frequency", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(prop,
-                           "Haptic Frequency",
-                           "Frequency of the haptic vibration in hertz. 0.0 specifies the OpenXR "
-                           "runtime's default frequency");
+  prop = api_def_prop(sapi, "haptic_frequency", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, FLT_MAX);
+  api_def_prop_ui_text(prop,
+                       "Haptic Frequency",
+                       "Frequency of the haptic vibration in hertz. 0.0 specifies the OpenXR "
+                       "runtime's default frequency");
 
-  prop = RNA_def_property(srna, "haptic_amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "haptic_amplitude", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(
       prop, "Haptic Amplitude", "Intensity of the haptic vibration, ranging from 0.0 to 1.0");
 
-  prop = RNA_def_property(srna, "haptic_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_xr_haptic_flags);
-  RNA_def_property_enum_funcs(
+  prop = RNA_def_prop(sapi, "haptic_mode", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_items(prop, api_enum_xr_haptic_flags);
+  RNA_def_prop_enum_fns(
       prop, "rna_XrActionMapItem_haptic_mode_get", "rna_XrActionMapItem_haptic_mode_set", NULL);
   RNA_def_property_ui_text(prop, "Haptic mode", "Haptic application mode");
 
