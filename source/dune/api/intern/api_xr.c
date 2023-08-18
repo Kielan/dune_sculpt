@@ -1599,108 +1599,108 @@ static void api_def_xr_actionmaps(BlenderRNA *brna, PropertyRNA *cprop)
                          true,
                          "Replace Existing",
                          "Replace any existing actionmap with the same name");
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_ptr(fn, "actionmap", "XrActionMap", "Action Map", "Added action map");
-  RNA_def_fn_return(fn, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_fn(sapi, "new_from_actionmap", "api_XrActionMap_new_from_actionmap");
-  RNA_def_fn_flag(fn, FN_NO_SELF);
-  parm = RNA_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
-  parm = RNA_def_ptr(
-      func, "actionmap", "XrActionMap", "Action Map", "Action map to use as a reference");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_ptr(fn, "result", "XrActionMap", "Action Map", "Added action map");
-  RNA_def_fn_return(fn, parm);
+  fn = api_def_fn(sapi, "new_from_actionmap", "api_XrActionMap_new_from_actionmap");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_ptr(
+      fn, "actionmap", "XrActionMap", "Action Map", "Action map to use as a reference");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "result", "XrActionMap", "Action Map", "Added action map");
+  api_def_fn_return(fn, parm);
 
-  func = api_def_fn(sapi, "remove", "api_XrActionMap_remove");
-  RNA_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
-  parm = RNA_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  fn = api_def_fn(sapi, "remove", "api_XrActionMap_remove");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   parm = api_def_ptr(fn, "actionmap", "XrActionMap", "Action Map", "Removed action map");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   fn = api_def_fn(sapi, "find", "api_XrActionMap_find");
-  RNA_def_function_flag(fn, FN_NO_SELF);
-  parm = RNA_def_pointer(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "actionmap", "XrActionMap", "Action Map", "The action map with the given name");
-  RNA_def_function_return(func, parm);
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "actionmap", "XrActionMap", "Action Map", "The action map with the given name");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_xr_actionmap(BlenderRNA *brna)
+static void api_def_xr_actionmap(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* XrActionMap */
-  srna = RNA_def_struct(brna, "XrActionMap", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMap");
-  RNA_def_struct_ui_text(srna, "XR Action Map", "");
+  sapi = api_def_struct(dapi, "XrActionMap", NULL);
+  api_def_struct_stype(sapi, "XrActionMap");
+  api_def_struct_ui_text(sapi, "XR Action Map", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Name of the action map");
-  RNA_def_property_update(prop, 0, "rna_XrActionMap_name_update");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Name of the action map");
+  api_def_prop_update(prop, 0, "api_XrActionMap_name_update");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "actionmap_items", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "items", NULL);
-  RNA_def_property_struct_type(prop, "XrActionMapItem");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_XrActionMap_items_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    "rna_XrActionMap_items_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "actionmap_items", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "items", NULL);
+  api_def_prop_struct_type(prop, "XrActionMapItem");
+  api_def_prop_collection_fns(prop,
+                              "api_XrActionMap_items_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              "api_XrActionMap_items_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(
       prop,
       "Items",
-      "Items in the action map, mapping an XR event to an operator, pose, or haptic output");
-  rna_def_xr_actionmap_items(brna, prop);
+      "Items in the action map, mapping an XR event to an op, pose, or haptic output");
+  api_def_xr_actionmap_items(brna, prop);
 
-  prop = RNA_def_property(srna, "selected_item", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "selitem");
-  RNA_def_property_ui_text(prop, "Selected Item", "");
+  prop = api_def_prop(sapi, "selected_item", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "selitem");
+  api_def_prop_ui_text(prop, "Selected Item", "");
 
   /* XrUserPath */
-  srna = RNA_def_struct(brna, "XrUserPath", NULL);
-  RNA_def_struct_sdna(srna, "XrUserPath");
-  RNA_def_struct_ui_text(srna, "XR User Path", "");
+  sapi = api_def_struct(dapi, "XrUserPath", NULL);
+  api_def_struct_stype(sapi, "XrUserPath");
+  api_def_struct_ui_text(sapi, "XR User Path", "");
 
-  prop = RNA_def_property(srna, "path", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_maxlength(prop, XR_MAX_USER_PATH_LENGTH);
-  RNA_def_property_ui_text(prop, "Path", "OpenXR user path");
+  prop = api_def_prop(sapi, "path", PROP_STRING, PROP_NONE);
+  api_def_prop_string_maxlength(prop, XR_MAX_USER_PATH_LENGTH);
+  api_def_prop_ui_text(prop, "Path", "OpenXR user path");
 
   /* XrActionMapItem */
-  srna = RNA_def_struct(brna, "XrActionMapItem", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMapItem");
-  RNA_def_struct_ui_text(srna, "XR Action Map Item", "");
+  sapi = api_def_struct(dapi, "XrActionMapItem", NULL);
+  api_def_struct_stype(sapi, "XrActionMapItem");
+  api_def_struct_ui_text(sapi, "XR Action Map Item", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Name of the action map item");
-  RNA_def_property_update(prop, 0, "rna_XrActionMapItem_name_update");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Name of the action map item");
+  api_def_prop_update(prop, 0, "api_XrActionMapItem_name_update");
+  api_def_struct_name_prop(srna, prop);
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_xr_action_types);
-  RNA_def_property_ui_text(prop, "Type", "Action type");
-  RNA_def_property_update(prop, 0, "rna_XrActionMapItem_update");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_items(prop, api_enum_xr_action_types);
+  RNA_def_prop_ui_text(prop, "Type", "Action type");
+  RNA_def_prop_update(prop, 0, "api_XrActionMapItem_update");
 
-  prop = RNA_def_property(srna, "user_paths", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "XrUserPath");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_XrActionMapItem_user_paths_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    "rna_XrActionMapItem_user_paths_length",
+  prop = RNA_def_prop(sapi, "user_paths", PROP_COLLECTION, PROP_NONE);
+  RNA_def_prop_struct_type(prop, "XrUserPath");
+  RNA_def_prop_collection_fns(prop,
+                                    "api_XrActionMapItem_user_paths_begin",
+                                    "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_iter_list_get",
+                                    "api_XrActionMapItem_user_paths_length",
                                     NULL,
                                     NULL,
                                     NULL);
@@ -1713,22 +1713,22 @@ static void rna_def_xr_actionmap(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_XrActionMapItem_update");
 
   prop = RNA_def_property(srna, "op_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
-      prop, "Operator Name", "Name of operator (translated) to call on action event");
-  RNA_def_property_string_funcs(
-      prop, "rna_XrActionMapItem_op_name_get", "rna_XrActionMapItem_op_name_length", NULL);
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_ui_text(
+      prop, "Operator Name", "Name of op (translated) to call on action event");
+  RNA_def_prop_string_fns(
+      prop, "rna_XrActionMapItem_op_name_get", "api_XrActionMapItem_op_name_length", NULL);
 
-  prop = RNA_def_property(srna, "op_properties", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "OperatorProperties");
-  RNA_def_property_pointer_funcs(prop, "rna_XrActionMapItem_op_properties_get", NULL, NULL, NULL);
+  prop = RNA_def_property(srna, "op_properties", PROP_PTR, PROP_NONE);
+  RNA_def_property_struct_type(prop, "OpProps");
+  RNA_def_property_pointer_funcs(prop, "api_XrActionMapItem_op_properties_get", NULL, NULL, NULL);
   RNA_def_property_ui_text(
       prop, "Operator Properties", "Properties to set when the operator is called");
-  RNA_def_property_update(prop, 0, "rna_XrActionMapItem_update");
+  RNA_def_property_update(prop, 0, "api_XrActionMapItem_update");
 
   prop = RNA_def_property(srna, "op_mode", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "op_flag");
-  RNA_def_property_enum_items(prop, rna_enum_xr_op_flags);
+  RNA_def_property_enum_items(prop, api_enum_xr_op_flags);
   RNA_def_property_ui_text(prop, "Operator Mode", "Operator execution mode");
 
   prop = RNA_def_property(srna, "bimanual", PROP_BOOLEAN, PROP_NONE);
