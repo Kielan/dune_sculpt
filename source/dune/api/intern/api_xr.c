@@ -1537,95 +1537,95 @@ static void api_def_xr_user_paths(DuneApi *dapi, ApiProp *cprop)
 
 static void api_def_xr_actionmap_items(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "XrActionMapItems");
-  srna = RNA_def_struct(brna, "XrActionMapItems", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMap");
-  RNA_def_struct_ui_text(srna, "XR Action Map Items", "Collection of XR action map items");
+  api_def_prop_sapi(cprop, "XrActionMapItems");
+  sapi = api_def_struct(dapi, "XrActionMapItems", NULL);
+  api_def_struct_stype(sapi, "XrActionMap");
+  api_def_struct_ui_text(sapi, "XR Action Map Items", "Collection of XR action map items");
 
-  func = RNA_def_function(srna, "new", "rna_XrActionMapItem_new");
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name of the action map item", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func,
-                         "replace_existing",
-                         true,
-                         "Replace Existing",
-                         "Replace any existing item with the same name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "item", "XrActionMapItem", "Item", "Added action map item");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_XrActionMapItem_new");
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name of the action map item", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn,
+                      "replace_existing",
+                      true,
+                      "Replace Existing",
+                      "Replace any existing item with the same name");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "item", "XrActionMapItem", "Item", "Added action map item");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_from_item", "rna_XrActionMapItem_new_from_item");
-  parm = RNA_def_pointer(func, "item", "XrActionMapItem", "Item", "Item to use as a reference");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "result", "XrActionMapItem", "Item", "Added action map item");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new_from_item", "api_XrActionMapItem_new_from_item");
+  parm = api_def_ptr(fn, "item", "XrActionMapItem", "Item", "Item to use as a reference");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "result", "XrActionMapItem", "Item", "Added action map item");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_XrActionMapItem_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "item", "XrActionMapItem", "Item", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_XrActionMapItem_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "item", "XrActionMapItem", "Item", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_XrActionMapItem_find");
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "item", "XrActionMapItem", "Item", "The action map item with the given name");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "find", "api_XrActionMapItem_find");
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "item", "XrActionMapItem", "Item", "The action map item with the given name");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_xr_actionmaps(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_xr_actionmaps(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "XrActionMaps");
-  srna = RNA_def_struct(brna, "XrActionMaps", NULL);
-  RNA_def_struct_ui_text(srna, "XR Action Maps", "Collection of XR action maps");
+  api_def_prop_sapi(cprop, "XrActionMaps");
+  sapi = api_def_struct(dapi, "XrActionMaps", NULL);
+  api_def_struct_ui_text(sapi, "XR Action Maps", "Collection of XR action maps");
 
-  func = RNA_def_function(srna, "new", "rna_XrActionMap_new");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func,
+  fn = api_def_fn(sapi, "new", "api_XrActionMap_new");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn,
                          "replace_existing",
                          true,
                          "Replace Existing",
                          "Replace any existing actionmap with the same name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "actionmap", "XrActionMap", "Action Map", "Added action map");
-  RNA_def_function_return(func, parm);
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "actionmap", "XrActionMap", "Action Map", "Added action map");
+  RNA_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_from_actionmap", "rna_XrActionMap_new_from_actionmap");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_pointer(
+  func = RNA_def_fn(sapi, "new_from_actionmap", "api_XrActionMap_new_from_actionmap");
+  RNA_def_fn_flag(fn, FN_NO_SELF);
+  parm = RNA_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = RNA_def_ptr(
       func, "actionmap", "XrActionMap", "Action Map", "Action map to use as a reference");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "result", "XrActionMap", "Action Map", "Added action map");
-  RNA_def_function_return(func, parm);
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = RNA_def_ptr(fn, "result", "XrActionMap", "Action Map", "Added action map");
+  RNA_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_XrActionMap_remove");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "xr_session_state", "XrSessionState", "XR Session State", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_pointer(func, "actionmap", "XrActionMap", "Action Map", "Removed action map");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  func = api_def_fn(sapi, "remove", "api_XrActionMap_remove");
+  RNA_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  parm = RNA_def_ptr(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
+  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_ptr(fn, "actionmap", "XrActionMap", "Action Map", "Removed action map");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_XrActionMap_find");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "xr_session_state", "XrSessionState", "XR Session State", "");
+  fn = api_def_fn(sapi, "find", "api_XrActionMap_find");
+  RNA_def_function_flag(fn, FN_NO_SELF);
+  parm = RNA_def_pointer(fn, "xr_session_state", "XrSessionState", "XR Session State", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "name", NULL, MAX_NAME, "Name", "");
+  parm = RNA_def_string(fn, "name", NULL, MAX_NAME, "Name", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_pointer(
       func, "actionmap", "XrActionMap", "Action Map", "The action map with the given name");
