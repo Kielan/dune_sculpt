@@ -1068,18 +1068,18 @@ static void rna_XrSessionState_nav_scale_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_XrSessionState_actionmaps_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_XrSessionState_actionmaps_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  ListBase *lb = WM_xr_actionmaps_get(xr->runtime);
-  rna_iterator_listbase_begin(iter, lb, NULL);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  List *lb = wm_xr_actionmaps_get(xr->runtime);
+  api_iter_list_begin(iter, lb, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
 }
 
-static int rna_XrSessionState_actionmaps_length(PointerRNA *ptr)
+static int api_XrSessionState_actionmaps_length(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
