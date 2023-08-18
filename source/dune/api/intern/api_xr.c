@@ -901,7 +901,7 @@ bool api_XrSessionState_haptic_action_apply(Cxt *C,
                                             float amplitude)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   int64_t duration_msec = (int64_t)(duration * 1000.0f);
   return wm_xr_haptic_action_apply(&wm->xr,
                                    action_set_name,
@@ -942,7 +942,7 @@ static void api_XrSessionState_controller_grip_location_get(Cxt *C,
 #  endif
 }
 
-static void rn_XrSessionState_controller_grip_rotation_get(bContext *C,
+static void rn_XrSessionState_controller_grip_rotation_get(Cxt *C,
                                                             int index,
                                                             float r_values[4])
 {
@@ -984,7 +984,7 @@ static void api_XrSessionState_controller_aim_rotation_get(Cxt *C,
 static void api_XrSessionState_viewer_pose_location_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   wm_xr_session_state_viewer_pose_location_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
@@ -1003,10 +1003,10 @@ static void api_XrSessionState_viewer_pose_rotation_get(ApiPtr *ptr, float *r_va
 #  endif
 }
 
-static void rna_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
+static void api_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   _xr_session_state_nav_location_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
@@ -1014,7 +1014,7 @@ static void rna_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
 #  endif
 }
 
-static void rna_XrSessionState_nav_location_set(PointerRNA *ptr, const float *values)
+static void api_XrSessionState_nav_location_set(ApiPtr *ptr, const float *values)
 {
 #  ifdef WITH_XR_OPENXR
   wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
@@ -1024,33 +1024,33 @@ static void rna_XrSessionState_nav_location_set(PointerRNA *ptr, const float *va
 #  endif
 }
 
-static void rna_XrSessionState_nav_rotation_get(PointerRNA *ptr, float *r_values)
+static void api_XrSessionState_nav_rotation_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_rotation_get(xr, r_values);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_nav_rotation_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
   unit_qt(r_values);
 #  endif
 }
 
-static void rna_XrSessionState_nav_rotation_set(PointerRNA *ptr, const float *values)
+static void api_XrSessionState_nav_rotation_set(ApiPtr *ptr, const float *values)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_rotation_set(xr, values);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_nav_rotation_set(xr, values);
 #  else
   UNUSED_VARS(ptr, values);
 #  endif
 }
 
-static float rna_XrSessionState_nav_scale_get(PointerRNA *ptr)
+static float rna_XrSessionState_nav_scale_get(ApiPtr *ptr)
 {
   float value;
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_scale_get(xr, &value);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_nav_scale_get(xr, &value);
 #  else
   UNUSED_VARS(ptr);
   value = 1.0f;
@@ -1058,11 +1058,11 @@ static float rna_XrSessionState_nav_scale_get(PointerRNA *ptr)
   return value;
 }
 
-static void rna_XrSessionState_nav_scale_set(PointerRNA *ptr, float value)
+static void api_XrSessionState_nav_scale_set(ApiPtr *ptr, float value)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_scale_set(xr, value);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_nav_scale_set(xr, value);
 #  else
   UNUSED_VARS(ptr, value);
 #  endif
@@ -1079,51 +1079,51 @@ static void api_XrSessionState_actionmaps_begin(CollectionPropIter *iter, ApiPtr
 #  endif
 }
 
-static int api_XrSessionState_actionmaps_length(PointerRNA *ptr)
+static int api_XrSessionState_actionmaps_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  ListBase *lb = WM_xr_actionmaps_get(xr->runtime);
-  return BLI_listbase_count(lb);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  List *lb = wm_xr_actionmaps_get(xr->runtime);
+  return lib_list_count(lb);
 #  else
   UNUSED_VARS(ptr);
   return 0;
 #  endif
 }
 
-static int rna_XrSessionState_active_actionmap_get(PointerRNA *ptr)
+static int api_XrSessionState_active_actionmap_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return WM_xr_actionmap_active_index_get(xr->runtime);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  return wm_xr_actionmap_active_index_get(xr->runtime);
 #  else
   UNUSED_VARS(ptr);
   return -1;
 #  endif
 }
 
-static void rna_XrSessionState_active_actionmap_set(PointerRNA *ptr, int value)
+static void api_XrSessionState_active_actionmap_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_actionmap_active_index_set(xr->runtime, (short)value);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_actionmap_active_index_set(xr->runtime, (short)value);
 #  else
   UNUSED_VARS(ptr, value);
 #  endif
 }
 
-static int rna_XrSessionState_selected_actionmap_get(PointerRNA *ptr)
+static int api_XrSessionState_selected_actionmap_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return WM_xr_actionmap_selected_index_get(xr->runtime);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  return wm_xr_actionmap_selected_index_get(xr->runtime);
 #  else
   UNUSED_VARS(ptr);
   return -1;
 #  endif
 }
 
-static void rna_XrSessionState_selected_actionmap_set(PointerRNA *ptr, int value)
+static void api_XrSessionState_selected_actionmap_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
   wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
