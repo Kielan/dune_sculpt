@@ -933,7 +933,7 @@ static void api_XrSessionState_controller_grip_location_get(Cxt *C,
                                                             float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = cxt_wm_manager(C);
+  const WM *wm = cxt_wm_manager(C);
   wm_xr_session_state_controller_grip_location_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
@@ -942,8 +942,8 @@ static void api_XrSessionState_controller_grip_location_get(Cxt *C,
 }
 
 static void rn_XrSessionState_controller_grip_rotation_get(Cxt *C,
-                                                            int index,
-                                                            float r_values[4])
+                                                           int index,
+                                                           float r_values[4])
 {
 #  ifdef WITH_XR_OPENXR
   const WM *wm = cxt_wm_manager(C);
@@ -1006,7 +1006,7 @@ static void api_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
-  _xr_session_state_nav_location_get(xr, r_values);
+  wm_xr_session_state_nav_location_get(xr, r_values);
 #  else
   UNUSED_VARS(ptr);
   zero_v3(r_values);
@@ -1780,110 +1780,109 @@ static void api_def_xr_actionmap(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Haptic Amplitude", "Intensity of the haptic vibration, ranging from 0.0 to 1.0");
 
-  prop = RNA_def_prop(sapi, "haptic_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_items(prop, api_enum_xr_haptic_flags);
-  RNA_def_prop_enum_fns(
-      prop, "rna_XrActionMapItem_haptic_mode_get", "rna_XrActionMapItem_haptic_mode_set", NULL);
-  RNA_def_property_ui_text(prop, "Haptic mode", "Haptic application mode");
+  prop = api_def_prop(sapi, "haptic_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_xr_haptic_flags);
+  api_def_prop_enum_fns(
+      prop, "api_XrActionMapItem_haptic_mode_get", "rna_XrActionMapItem_haptic_mode_set", NULL);
+  api_def_prop_ui_text(prop, "Haptic mode", "Haptic application mode");
 
-  prop = RNA_def_property(srna, "bindings", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "XrActionMapBinding");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_XrActionMapItem_bindings_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    "rna_XrActionMapItem_bindings_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bindings", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "XrActionMapBinding");
+  api_def_prop_collection_fns(prop,
+                              "api_XrActionMapItem_bindings_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              "api_XrActionMapItem_bindings_length",
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(
       prop, "Bindings", "Bindings for the action map item, mapping the action to an XR input");
-  rna_def_xr_actionmap_bindings(brna, prop);
+  api_def_xr_actionmap_bindings(dapi, prop);
 
-  prop = RNA_def_property(srna, "selected_binding", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "selbinding");
-  RNA_def_property_ui_text(prop, "Selected Binding", "Currently selected binding");
+  prop = api_def_prop(sapi, "selected_binding", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "selbinding");
+  api_def_prop_ui_text(prop, "Selected Binding", "Currently selected binding");
 
   /* XrComponentPath */
-  srna = RNA_def_struct(brna, "XrComponentPath", NULL);
-  RNA_def_struct_sdna(srna, "XrComponentPath");
-  RNA_def_struct_ui_text(srna, "XR Component Path", "");
+  sapi = api_def_struct(dapi, "XrComponentPath", NULL);
+  api_def_struct_stype(sapi, "XrComponentPath");
+  api_def_struct_ui_text(sapi, "XR Component Path", "");
 
-  prop = RNA_def_property(srna, "path", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_maxlength(prop, XR_MAX_COMPONENT_PATH_LENGTH);
-  RNA_def_property_ui_text(prop, "Path", "OpenXR component path");
+  prop = api_def_prop(sapi, "path", PROP_STRING, PROP_NONE);
+  api_def_prop_string_maxlength(prop, XR_MAX_COMPONENT_PATH_LENGTH);
+  api_def_prop_ui_text(prop, "Path", "OpenXR component path");
 
   /* XrActionMapBinding */
-  srna = RNA_def_struct(brna, "XrActionMapBinding", NULL);
-  RNA_def_struct_sdna(srna, "XrActionMapBinding");
-  RNA_def_struct_ui_text(srna, "XR Action Map Binding", "Binding in an XR action map item");
+  sapi = api_def_struct(dapi, "XrActionMapBinding", NULL);
+  api_def_struct_stype(sapi, "XrActionMapBinding");
+  api_def_struct_ui_text(srna, "XR Action Map Binding", "Binding in an XR action map item");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Name of the action map binding");
-  RNA_def_property_update(prop, 0, "rna_XrActionMapBinding_name_update");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Name of the action map binding");
+  api_def_prop_update(prop, 0, "api_XrActionMapBinding_name_update");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "profile", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_maxlength(prop, 256);
-  RNA_def_property_ui_text(prop, "Profile", "OpenXR interaction profile path");
+  prop = api_def_prop(sapi, "profile", PROP_STRING, PROP_NONE);
+  api_def_prop_string_maxlength(prop, 256);
+  api_def_prop_ui_text(prop, "Profile", "OpenXR interaction profile path");
 
-  prop = RNA_def_property(srna, "component_paths", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "XrComponentPath");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_XrActionMapBinding_component_paths_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    "rna_XrActionMapBinding_component_paths_length",
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "Component Paths", "OpenXR component paths");
-  rna_def_xr_component_paths(brna, prop);
-
-  prop = RNA_def_property(srna, "threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "float_threshold");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Threshold", "Input threshold for button/axis actions");
-
-  prop = RNA_def_property(srna, "axis0_region", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_xr_axis0_flags);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_XrActionMapBinding_axis0_region_get",
-                              "rna_XrActionMapBinding_axis0_region_set",
+  prop = api_def_prop(sapi, "component_paths", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "XrComponentPath");
+  api_def_prop_collection_fns(prop,
+                              "api_XrActionMapBinding_component_paths_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              "api_XrActionMapBinding_component_paths_length",
+                              NULL,
+                              NULL,
                               NULL);
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(prop, "Component Paths", "OpenXR component paths");
+  api_def_xr_component_paths(dapi, prop);
+
+  prop = api_def_prop(sapi, "threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "float_threshold");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Threshold", "Input threshold for button/axis actions");
+
+  prop = api_def_prop(sapi, "axis0_region", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_xr_axis0_flags);
+  api_def_prop_enum_fns(prop,
+                        "api_XrActionMapBinding_axis0_region_get",
+                        "api_XrActionMapBinding_axis0_region_set",
+                        NULL);
+  api_def_prop_ui_text(
       prop, "Axis 0 Region", "Action execution region for the first input axis");
 
-  prop = RNA_def_property(srna, "axis1_region", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_xr_axis1_flags);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_XrActionMapBinding_axis1_region_get",
-                              "rna_XrActionMapBinding_axis1_region_set",
-                              NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "axis1_region", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_enum_items(prop, api_enum_xr_axis1_flags);
+  RNA_def_prop_enum_fns(prop,
+                        "api_XrActionMapBinding_axis1_region_get",
+                        "api_XrActionMapBinding_axis1_region_set",
+                        NULL);
+  api_def_prop_ui_text(
       prop, "Axis 1 Region", "Action execution region for the second input axis");
 
-  prop = RNA_def_property(srna, "pose_location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_ui_text(prop, "Pose Location Offset", "");
+  prop = api_def_prop(sapi, "pose_location", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_ui_text(prop, "Pose Location Offset", "");
 
-  prop = RNA_def_property(srna, "pose_rotation", PROP_FLOAT, PROP_EULER);
-  RNA_def_property_ui_text(prop, "Pose Rotation Offset", "");
+  prop = api_def_prop(sapi, "pose_rotation", PROP_FLOAT, PROP_EULER);
+  api_def_prop_ui_text(prop, "Pose Rotation Offset", "");
 }
 
 /** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name XR Session Settings
- * \{ */
+/** XR Session Settings **/
 
-static void rna_def_xr_session_settings(BlenderRNA *brna)
+static void api_def_xr_session_settings(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem base_pose_types[] = {
+  static const EnumPropItem base_pose_types[] = {
       {XR_BASE_POSE_SCENE_CAMERA,
        "SCENE_CAMERA",
        0,
@@ -1902,7 +1901,7 @@ static void rna_def_xr_session_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem controller_draw_styles[] = {
+  static const EnumPropItem controller_draw_styles[] = {
       {XR_CONTROLLER_DRAW_DARK, "DARK", 0, "Dark", "Draw dark controller"},
       {XR_CONTROLLER_DRAW_LIGHT, "LIGHT", 0, "Light", "Draw light controller"},
       {XR_CONTROLLER_DRAW_DARK_RAY,
@@ -1918,7 +1917,7 @@ static void rna_def_xr_session_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "XrSessionSettings", NULL);
+  sapi = api_def_struct(dapi, "XrSessionSettings", NULL);
   RNA_def_struct_ui_text(srna, "XR Session Settings", "");
 
   prop = RNA_def_property(srna, "shading", PROP_POINTER, PROP_NONE);
