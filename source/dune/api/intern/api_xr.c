@@ -29,7 +29,7 @@ static wmXrData *api_XrSession_wm_xr_data_get(ApiPtr *ptr)
 
   lib_assert(ELEM(ptr->type, &api_XrSessionSettings, &api_XrSessionState));
 
-  wmWindowManager *wm = (wmWindowManager *)ptr->owner_id;
+  WM *wm = (WM *)ptr->owner_id;
   lib_assert(wm && (GS(wm->id.name) == ID_WM));
 
   return &wm->xr;
@@ -208,7 +208,7 @@ static void api_XrActionMapBinding_axis1_region_set(ApiPtr *ptr, int value)
 static void api_XrActionMapBinding_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = main->wm.first;
+  wmWM *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
     List *actionmaps = wm_xr_actionmaps_get(wm->xr.runtime);
     short idx = wm_xr_actionmap_selected_index_get(wm->xr.runtime);
@@ -626,7 +626,7 @@ static int api_XrActionMap_items_length(ApiPtr *ptr)
 static void api_XrActionMap_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = main->wm.first;
+  WM *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
     XrActionMap *actionmap = ptr->data;
     wm_xr_actionmap_ensure_unique(wm->xr.runtime, actionmap);
@@ -702,11 +702,10 @@ static int api_XrSessionSettings_icon_from_show_object_viewport_get(ApiPtr *ptr)
 
 /* -------------------------------------------------------------------- */
 /** XR Session State **/
-
 static bool api_XrSessionState_is_running(Cxt *C)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = cxt_wm_manager(C);
+  const WM *wm = cxt_wm_manager(C);
   return wm_xr_session_exists(&wm->xr);
 #  else
   UNUSED_VARS(C);
@@ -717,7 +716,7 @@ static bool api_XrSessionState_is_running(Cxt *C)
 static void api_XrSessionState_reset_to_base_pose(Cxt *C)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   wm_xr_session_base_pose_reset(&wm->xr);
 #  else
   UNUSED_VARS(C);
@@ -727,7 +726,7 @@ static void api_XrSessionState_reset_to_base_pose(Cxt *C)
 static bool api_XrSessionState_action_set_create(Cxt *C, XrActionMap *actionmap)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   return wm_xr_action_set_create(&wm->xr, actionmap->name);
 #  else
   UNUSED_VARS(C, actionmap);
@@ -740,7 +739,7 @@ static bool api_XrSessionState_action_create(Cxt *C,
                                              XrActionMapItem *ami)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   if (lib_is_empty(&ami->user_paths)) {
     return false;
   }
@@ -790,7 +789,7 @@ static bool api_XrSessionState_action_binding_create(Cxt *C,
                                                      XrActionMapBinding *amb)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   const int count_user_paths = lib_list_count(&ami->user_paths);
   const int count_component_paths = lib_list_count(&amb->component_paths);
   if (count_user_paths < 1 || (count_user_paths != count_component_paths)) {
@@ -835,7 +834,7 @@ static bool api_XrSessionState_action_binding_create(Cxt *C,
 bool api_XrSessionState_active_action_set_set(Cxt *C, const char *action_set_name)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   return wm_xr_active_action_set_set(&wm->xr, action_set_name, true);
 #  else
   UNUSED_VARS(C, action_set_name);
@@ -849,7 +848,7 @@ bool api_XrSessionState_controller_pose_actions_set(Cxt *C,
                                                     const char *aim_action_name)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   return wm_xr_controller_pose_actions_set(
       &wm->xr, action_set_name, grip_action_name, aim_action_name);
 #  else
@@ -865,7 +864,7 @@ void api_XrSessionState_action_state_get(Cxt *C,
                                          float r_state[2])
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   wmXrActionState state;
   if (wm_xr_action_state_get(&wm->xr, action_set_name, action_name, user_path, &state)) {
     switch (state.type) {
@@ -901,7 +900,7 @@ bool api_XrSessionState_haptic_action_apply(Cxt *C,
                                             float amplitude)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = cxt_wm_manager(C);
+  WM *wm = cxt_wm_manager(C);
   int64_t duration_msec = (int64_t)(duration * 1000.0f);
   return wm_xr_haptic_action_apply(&wm->xr,
                                    action_set_name,
