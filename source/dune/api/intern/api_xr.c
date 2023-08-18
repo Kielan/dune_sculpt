@@ -960,8 +960,8 @@ static void api_XrSessionState_controller_aim_location_get(Cxt *C,
                                                            float r_values[3])
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = c_wm_manager(C);
-  WM_xr_session_state_controller_aim_location_get(&wm->xr, index, r_values);
+  const WM *wm = cxt_wm_manager(C);
+  wm_xr_session_state_controller_aim_location_get(&wm->xr, index, r_values);
 #  else
   UNUSED_VARS(C, index);
   zero_v3(r_values);
@@ -1017,8 +1017,8 @@ static void api_XrSessionState_nav_location_get(ApiPtr *ptr, float *r_values)
 static void api_XrSessionState_nav_location_set(ApiPtr *ptr, const float *values)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  WM_xr_session_state_nav_location_set(xr, values);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  wm_xr_session_state_nav_location_set(xr, values);
 #  else
   UNUSED_VARS(ptr, values);
 #  endif
@@ -1045,7 +1045,7 @@ static void api_XrSessionState_nav_rotation_set(ApiPtr *ptr, const float *values
 #  endif
 }
 
-static float rna_XrSessionState_nav_scale_get(ApiPtr *ptr)
+static float api_XrSessionState_nav_scale_get(ApiPtr *ptr)
 {
   float value;
 #  ifdef WITH_XR_OPENXR
@@ -1126,7 +1126,7 @@ static int api_XrSessionState_selected_actionmap_get(ApiPtr *ptr)
 static void api_XrSessionState_selected_actionmap_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   wm_xr_actionmap_selected_index_set(xr->runtime, (short)value);
 #  else
   UNUSED_VARS(ptr, value);
@@ -1149,7 +1149,7 @@ static void api_XrEventData_action_set_get(ApiPtr *ptr, char *r_value)
 #  endif
 }
 
-static int rna_XrEventData_action_set_length(ApiPtr *ptr)
+static int api_XrEventData_action_set_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   const wmXrActionData *data = ptr->data;
@@ -1511,20 +1511,20 @@ static void api_def_xr_user_paths(DuneApi *dapi, ApiProp *cprop)
   ApiProp *parm;
 
   api_def_prop_sapi(cprop, "XrUserPaths");
-  sapi = RNA_def_struct(dapi, "XrUserPaths", NULL);
+  sapi = api_def_struct(dapi, "XrUserPaths", NULL);
   api_def_struct_stype(sapi, "XrActionMapItem");
   api_def_struct_ui_text(sapi, "XR User Paths", "Collection of OpenXR user paths");
 
-  func = RNA_def_fn(sapi, "new", "api_XrUserPath_new");
-  parm = RNA_def_string(fn, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_ptr(fn, "user_path", "XrUserPath", "User Path", "Added user path");
-  RNA_def_fn_return(fn, parm);
+  fn = api_def_fn(sapi, "new", "api_XrUserPath_new");
+  parm = api_def_string(fn, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "user_path", "XrUserPath", "User Path", "Added user path");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_fn(sapi, "remove", "api_XrUserPath_remove");
-  parm = RNA_def_ptr(fn, "user_path", "XrUserPath", "User Path", "");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_XrUserPath_remove");
+  parm = api_def_ptr(fn, "user_path", "XrUserPath", "User Path", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   fn = api_def_fn(sapi, "find", "api_XrUserPath_find");
   parm = api_def_string(fn, "path", NULL, XR_MAX_USER_PATH_LENGTH, "Path", "OpenXR user path");
