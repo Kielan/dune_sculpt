@@ -1918,93 +1918,93 @@ static void api_def_xr_session_settings(DuneApi *dapi)
   };
 
   sapi = api_def_struct(dapi, "XrSessionSettings", NULL);
-  RNA_def_struct_ui_text(srna, "XR Session Settings", "");
+  api_def_struct_ui_text(sapi, "XR Session Settings", "");
 
-  prop = RNA_def_property(srna, "shading", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Shading Settings", "");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "shading", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Shading Settings", "");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "base_pose_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, base_pose_types);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "base_pose_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, base_pose_types);
+  api_def_prop_ui_text(
       prop,
       "Base Pose Type",
       "Define where the location and rotation for the VR view come from, to which "
       "translation and rotation deltas from the VR headset will be applied to");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "base_pose_object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "base_pose_object", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop,
                            "Base Pose Object",
                            "Object to take the location and rotation to which translation and "
                            "rotation deltas from the VR headset will be applied to");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "base_pose_location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "base_pose_location", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_ui_text(prop,
                            "Base Pose Location",
                            "Coordinates to apply translation deltas from the VR headset to");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "base_pose_angle", PROP_FLOAT, PROP_AXISANGLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "base_pose_angle", PROP_FLOAT, PROP_AXISANGLE);
+  api_def_prop_ui_text(
       prop,
       "Base Pose Angle",
       "Rotation angle around the Z-Axis to apply the rotation deltas from the VR headset to");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "base_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Base Scale", "Uniform scale to apply to VR view");
-  RNA_def_property_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "base_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(prop, "Base Scale", "Uniform scale to apply to VR view");
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_floor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_GRIDFLOOR);
-  RNA_def_property_ui_text(prop, "Display Grid Floor", "Show the ground plane grid");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "show_floor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_GRIDFLOOR);
+  api_def_prop_ui_text(prop, "Display Grid Floor", "Show the ground plane grid");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_annotation", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_ANNOTATION);
-  RNA_def_property_ui_text(prop, "Show Annotation", "Show annotations for this view");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "show_annotation", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_ANNOTATION);
+  api_def_prop_ui_text(prop, "Show Annotation", "Show annotations for this view");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_selection", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_SELECTION);
-  RNA_def_property_ui_text(prop, "Show Selection", "Show selection outlines");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "show_selection", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_SELECTION);
+  api_def_prop_ui_text(prop, "Show Selection", "Show selection outlines");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_controllers", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_XR_SHOW_CONTROLLERS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_controllers", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_XR_SHOW_CONTROLLERS);
+  api_def_prop_ui_text(
       prop, "Show Controllers", "Show VR controllers (requires VR actions for controller poses)");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_custom_overlays", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_XR_SHOW_CUSTOM_OVERLAYS);
-  RNA_def_property_ui_text(prop, "Show Custom Overlays", "Show custom VR overlays");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "show_custom_overlays", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_XR_SHOW_CUSTOM_OVERLAYS);
+  api_def_prop_ui_text(prop, "Show Custom Overlays", "Show custom VR overlays");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "show_object_extras", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_OBJECT_EXTRAS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_object_extras", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "draw_flags", V3D_OFSDRAW_SHOW_OBJECT_EXTRAS);
+  api_def_prop_ui_text(
       prop, "Show Object Extras", "Show object extras, including empties, lights, and cameras");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "controller_draw_style", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, controller_draw_styles);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "controller_draw_style", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, controller_draw_styles);
+  api_def_prop_ui_text(
       prop, "Controller Draw Style", "Style to use when drawing VR controllers");
-  RNA_def_property_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_property(srna, "clip_start", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_prop_range(prop, 1e-6f, FLT_MAX);
+  prop = api_def_prop(sapi, "clip_start", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
   RNA_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
   RNA_def_prop_ui_text(prop, "Clip Start", "VR viewport near clipping distance");
   RNA_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
@@ -2076,8 +2076,8 @@ static void api_def_xr_session_state(ApiDune *dapi)
 
   func = RNA_def_function(sapi, "action_set_create", "rna_XrSessionState_action_set_create");
   RNA_def_function_ui_description(fn, "Create a VR action set");
-  RNA_def_function_flag(fn, FN_NO_SELF);
-  parm = RNA_def_pointer(fn, "cxt", "Cxt", "", "");
+  RNA_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_pointer(fn, "cxt", "Cxt", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = RNA_def_pointer(fn, "actionmap", "XrActionMap", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
