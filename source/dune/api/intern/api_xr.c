@@ -1857,8 +1857,8 @@ static void api_def_xr_actionmap(DuneApi *dapi)
       prop, "Axis 0 Region", "Action execution region for the first input axis");
 
   prop = api_def_prop(sapi, "axis1_region", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_enum_items(prop, api_enum_xr_axis1_flags);
-  RNA_def_prop_enum_fns(prop,
+  api_def_prop_enum_items(prop, api_enum_xr_axis1_flags);
+  api_def_prop_enum_fns(prop,
                         "api_XrActionMapBinding_axis1_region_get",
                         "api_XrActionMapBinding_axis1_region_set",
                         NULL);
@@ -2005,15 +2005,15 @@ static void api_def_xr_session_settings(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "clip_start", PROP_FLOAT, PROP_DISTANCE);
   api_def_prop_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_prop_ui_text(prop, "Clip Start", "VR viewport near clipping distance");
-  RNA_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_ui_text(prop, "Clip Start", "VR viewport near clipping distance");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
-  prop = RNA_def_prop(sapi, "clip_end", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_prop_range(prop, 1e-6f, FLT_MAX);
-  RNA_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
-  RNA_def_prop_ui_text(prop, "Clip End", "VR viewport far clipping distance");
-  RNA_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
+  prop = api_def_prop(sapi, "clip_end", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_range(prop, 1e-6f, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.001f, FLT_MAX, 10, 3);
+  api_def_prop_ui_text(prop, "Clip End", "VR viewport far clipping distance");
+  api_def_prop_update(prop, NC_WM | ND_XR_DATA_CHANGED, NULL);
 
   prop = RNA_def_prop(sapi, "use_positional_tracking", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(prop,
@@ -2147,20 +2147,20 @@ static void api_def_xr_session_state(ApiDune *dapi)
   parm = api_def_bool(fn, "result", 0, "Result", "");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_function(sapi, "action_state_get", "rna_XrSessionState_action_state_get");
-  RNA_def_function_ui_description(fn, "Get the current state of a VR action");
-  RNA_def_function_flag(fn, FN_NO_SELF);
-  parm = RNA_def_ptr(fn, "cxt", "Cxt", "", "");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_name", NULL, MAX_NAME, "Action", "Action name");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "action_state_get", "rna_XrSessionState_action_state_get");
+  api_def_fn_ui_description(fn, "Get the current state of a VR action");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_name", NULL, MAX_NAME, "Action", "Action name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = api_def_string(
-      func, "user_path", NULL, XR_MAX_USER_PATH_LENGTH, "User Path", "OpenXR user path");
-  RNA_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_float_array(
-      func,
+      fn, "user_path", NULL, XR_MAX_USER_PATH_LENGTH, "User Path", "OpenXR user path");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_float_array(
+      fn,
       "state",
       2,
       NULL,
@@ -2170,26 +2170,26 @@ static void api_def_xr_session_state(ApiDune *dapi)
       "Current state of the VR action. Second float value is only set for 2D vector type actions",
       -FLT_MAX,
       FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
 
-  func = RNA_def_function(srna, "haptic_action_apply", "rna_XrSessionState_haptic_action_apply");
-  RNA_def_function_ui_description(func, "Apply a VR haptic action");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_name", NULL, MAX_NAME, "Action", "Action name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(
-      func,
+  fn = api_def_fn(sapi, "haptic_action_apply", "api_XrSessionState_haptic_action_apply");
+  api_def_fn_ui_description(fn, "Apply a VR haptic action");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_name", NULL, MAX_NAME, "Action", "Action name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(
+      fn,
       "user_path",
       NULL,
       XR_MAX_USER_PATH_LENGTH,
       "User Path",
       "Optional OpenXR user path. If not set, the action will be applied to all paths");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "duration",
                        0.0f,
                        0.0f,
@@ -2198,8 +2198,8 @@ static void api_def_xr_session_state(ApiDune *dapi)
                        "Haptic duration in seconds. 0.0 is the minimum supported duration",
                        0.0f,
                        FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "frequency",
                        0.0f,
                        0.0f,
@@ -2209,8 +2209,8 @@ static void api_def_xr_session_state(ApiDune *dapi)
                        "runtime's default frequency",
                        0.0f,
                        FLT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func,
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn,
                        "amplitude",
                        1.0f,
                        0.0f,
@@ -2219,38 +2219,38 @@ static void api_def_xr_session_state(ApiDune *dapi)
                        "Haptic amplitude, ranging from 0.0 to 1.0",
                        0.0f,
                        1.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Result", "");
-  RNA_def_function_return(func, parm);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "result", 0, "Result", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "haptic_action_stop", "rna_XrSessionState_haptic_action_stop");
-  RNA_def_function_ui_description(func, "Stop a VR haptic action");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(func, "action_name", NULL, MAX_NAME, "Action", "Action name");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_string(
-      func,
+  fn = api_def_fn(sapi, "haptic_action_stop", "api_XrSessionState_haptic_action_stop");
+  api_def_fn_ui_description(fn, "Stop a VR haptic action");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_set_name", NULL, MAX_NAME, "Action Set", "Action set name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(fn, "action_name", NULL, MAX_NAME, "Action", "Action name");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_string(
+      fn,
       "user_path",
       NULL,
       XR_MAX_USER_PATH_LENGTH,
       "User Path",
       "Optional OpenXR user path. If not set, the action will be stopped for all paths");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(
-      srna, "controller_grip_location_get", "rna_XrSessionState_controller_grip_location_get");
-  RNA_def_function_ui_description(func,
-                                  "Get the last known controller grip location in world space");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(func, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_translation(func,
+  fn = api_def_fn(
+      sapi, "controller_grip_location_get", "api_XrSessionState_controller_grip_location_get");
+  api_def_fn_ui_description(fn,
+                            "Get the last known controller grip location in world space");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(fn, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_translation(fb,
                                    "location",
                                    3,
                                    NULL,
@@ -2260,18 +2260,18 @@ static void api_def_xr_session_state(ApiDune *dapi)
                                    "Controller grip location",
                                    -FLT_MAX,
                                    FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
 
-  func = RNA_def_function(
-      srna, "controller_grip_rotation_get", "rna_XrSessionState_controller_grip_rotation_get");
-  RNA_def_function_ui_description(
+  fn = api_def_fn(
+      sapi, "controller_grip_rotation_get", "api_XrSessionState_controller_grip_rotation_get");
+  api_def_fn_ui_description(
       func, "Get the last known controller grip rotation (quaternion) in world space");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(func, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func,
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(fn, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_vector(fn,
                               "rotation",
                               4,
                               NULL,
@@ -2282,19 +2282,19 @@ static void api_def_xr_session_state(ApiDune *dapi)
                               -FLT_MAX,
                               FLT_MAX);
   parm->subtype = PROP_QUATERNION;
-  RNA_def_property_ui_range(parm, -FLT_MAX, FLT_MAX, 1, 5);
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
+  api_def_prop_ui_range(parm, -FLT_MAX, FLT_MAX, 1, 5);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
 
-  func = RNA_def_function(
-      srna, "controller_aim_location_get", "rna_XrSessionState_controller_aim_location_get");
-  RNA_def_function_ui_description(func,
-                                  "Get the last known controller aim location in world space");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(func, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_translation(func,
+  fn = api_def_fn(
+      sapi, "controller_aim_location_get", "api_XrSessionState_controller_aim_location_get");
+  api_def_fn_ui_description(fn,
+                            "Get the last known controller aim location in world space");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(fn, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_translation(fn,
                                    "location",
                                    3,
                                    NULL,
@@ -2304,18 +2304,18 @@ static void api_def_xr_session_state(ApiDune *dapi)
                                    "Controller aim location",
                                    -FLT_MAX,
                                    FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
 
-  func = RNA_def_function(
-      srna, "controller_aim_rotation_get", "rna_XrSessionState_controller_aim_rotation_get");
-  RNA_def_function_ui_description(
-      func, "Get the last known controller aim rotation (quaternion) in world space");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(func, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func,
+  fn = api_def_fn(
+      sapi, "controller_aim_rotation_get", "api_XrSessionState_controller_aim_rotation_get");
+  api_def_fn_ui_description(
+      fn, "Get the last known controller aim rotation (quaternion) in world space");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_ptr(fn, "cxt", "Cxt", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(fn, "index", 0, 0, 255, "Index", "Controller index", 0, 255);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_vector(fn,
                               "rotation",
                               4,
                               NULL,
@@ -2326,7 +2326,7 @@ static void api_def_xr_session_state(ApiDune *dapi)
                               -FLT_MAX,
                               FLT_MAX);
   parm->subtype = PROP_QUATERNION;
-  RNA_def_property_ui_range(parm, -FLT_MAX, FLT_MAX, 1, 5);
+  api_def_prop_ui_range(parm, -FLT_MAX, FLT_MAX, 1, 5);
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_OUTPUT);
 
   prop = RNA_def_property(srna, "viewer_pose_location", PROP_FLOAT, PROP_TRANSLATION);
