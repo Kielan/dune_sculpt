@@ -2128,9 +2128,9 @@ static void api_def_xr_session_state(ApiDune *dapi)
   api_def_fn_flag(fn, FN_NO_SELF);
   parm = api_def_ptr(fn, "context", "Context", "", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = api_def_string(func, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
+  parm = api_def_string(fn, "action_set", NULL, MAX_NAME, "Action Set", "Action set name");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = api_def_string(func,
+  parm = api_def_string(fn,
                         "grip_action",
                         NULL,
                         MAX_NAME,
@@ -2427,93 +2427,93 @@ static void api_def_xr_eventdata(DuneApi *dapi)
       prop, "api_XrEventData_action_get", "api_XrEventData_action_length", NULL);
   RNA_def_prop_ui_text(prop, "Action", "XR action name");
 
-  prop = RNA_def_property(srna, "user_path", PROP_STRING, PROP_NONE);
+  prop = RNA_def_property(sapi, "user_path", PROP_STRING, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(
-      prop, "rna_XrEventData_user_path_get", "rna_XrEventData_user_path_length", NULL);
+  RNA_def_property_string_fns(
+      prop, "rna_XrEventData_user_path_get", "api_XrEventData_user_path_length", NULL);
   RNA_def_property_ui_text(prop, "User Path", "User path of the action. E.g. \"/user/hand/left\"");
 
   prop = RNA_def_property(srna, "user_path_other", PROP_STRING, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
   RNA_def_property_string_funcs(
-      prop, "rna_XrEventData_user_path_other_get", "rna_XrEventData_user_path_other_length", NULL);
+      prop, "rna_XrEventData_user_path_other_get", "api_XrEventData_user_path_other_length", NULL);
   RNA_def_property_ui_text(
       prop, "User Path Other", "Other user path, for bimanual actions. E.g. \"/user/hand/right\"");
 
   prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, rna_enum_xr_action_types);
-  RNA_def_property_enum_funcs(prop, "rna_XrEventData_type_get", NULL, NULL);
+  RNA_def_property_enum_items(prop, api_enum_xr_action_types);
+  RNA_def_property_enum_funcs(prop, "api_XrEventData_type_get", NULL, NULL);
   RNA_def_property_ui_text(prop, "Type", "XR action type");
 
   prop = RNA_def_property(srna, "state", PROP_FLOAT, PROP_NONE);
   RNA_def_property_array(prop, 2);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_XrEventData_state_get", NULL, NULL);
+  RNA_def_property_float_funcs(prop, "api_XrEventData_state_get", NULL, NULL);
   RNA_def_property_ui_text(prop, "State", "XR action values corresponding to type");
 
-  prop = RNA_def_property(srna, "state_other", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_XrEventData_state_other_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = RNA_def_prop(sapi, "state_other", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_array(prop, 2);
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_float_fns(prop, "api_XrEventData_state_other_get", NULL, NULL);
+  RNA_def_prop_ui_text(
       prop, "State Other", "State of the other user path for bimanual actions");
 
-  prop = RNA_def_prop(sapi, "float_threshold", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_fns(prop, "rna_XrEventData_float_threshold_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Float Threshold", "Input threshold for float/2D vector actions");
+  prop = api_def_prop(sapi, "float_threshold", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "rna_XrEventData_float_threshold_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Float Threshold", "Input threshold for float/2D vector actions");
 
-  prop = RNA_def_prop(sapi, "controller_location", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_prop_array(prop, 3);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_float_fns(prop, "rna_XrEventData_controller_location_get", NULL, NULL);
-  RNA_def_prop_ui_text(prop,
-                           "Controller Location",
-                           "Location of the action's corresponding controller aim in world space");
+  prop = api_def_prop(sapi, "controller_location", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_XrEventData_controller_location_get", NULL, NULL);
+  api_def_prop_ui_text(prop,
+                       "Controller Location",
+                       "Location of the action's corresponding controller aim in world space");
 
-  prop = RNA_def_prop(sapi, "controller_rotation", PROP_FLOAT, PROP_QUATERNION);
-  RNA_def_prop_array(prop, 4);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_float_fns(prop, "rna_XrEventData_controller_rotation_get", NULL, NULL);
-  RNA_def_prop_ui_text(prop,
-                           "Controller Rotation",
-                           "Rotation of the action's corresponding controller aim in world space");
+  prop = api_def_prop(sapi, "controller_rotation", PROP_FLOAT, PROP_QUATERNION);
+  api_def_prop_array(prop, 4);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_XrEventData_controller_rotation_get", NULL, NULL);
+  api_def_prop_ui_text(prop,
+                       "Controller Rotation",
+                       "Rotation of the action's corresponding controller aim in world space");
 
-  prop = RNA_def_prop(sapi, "controller_location_other", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_prop_array(prop, 3);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_float_funcs(prop, "rna_XrEventData_controller_location_other_get", NULL, NULL);
-  RNA_def_prop_ui_text(prop,
-                           "Controller Location Other",
-                           "Controller aim location of the other user path for bimanual actions");
+  prop = api_def_prop(sapi, "controller_location_other", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 3);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_float_fns(prop, "api_XrEventData_controller_location_other_get", NULL, NULL);
+  api_def_prop_ui_text(prop,
+                       "Controller Location Other",
+                       "Controller aim location of the other user path for bimanual actions");
 
-  prop = RNA_def_property(srna, "controller_rotation_other", PROP_FLOAT, PROP_QUATERNION);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_XrEventData_controller_rotation_other_get", NULL, NULL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "controller_rotation_other", PROP_FLOAT, PROP_QUATERNION);
+  api_def_prop_array(prop, 4);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_XrEventData_controller_rotation_other_get", NULL, NULL);
+  api_def_prop_ui_text(prop,
                            "Controller Rotation Other",
                            "Controller aim rotation of the other user path for bimanual actions");
 
-  prop = RNA_def_property(srna, "bimanual", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_XrEventData_bimanual_get", NULL);
-  RNA_def_property_ui_text(prop, "Bimanual", "Whether bimanual interaction is occurring");
+  prop = api_def_prop(sapi, "bimanual", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_XrEventData_bimanual_get", NULL);
+  api_def_prop_ui_text(prop, "Bimanual", "Whether bimanual interaction is occurring");
 }
 
 /** \} */
 
-void RNA_def_xr(BlenderRNA *brna)
+void api_def_xr(DuneApi *dapi)
 {
-  RNA_define_animate_sdna(false);
+  api_define_animate_stype(false);
 
-  rna_def_xr_actionmap(brna);
-  rna_def_xr_session_settings(brna);
-  rna_def_xr_session_state(brna);
-  rna_def_xr_eventdata(brna);
+  api_def_xr_actionmap(brna);
+  api_def_xr_session_settings(brna);
+  api_def_xr_session_state(brna);
+  api_def_xr_eventdata(brna);
 
-  RNA_define_animate_sdna(true);
+  api_define_animate_sdna(true);
 }
 
 #endif /* RNA_RUNTIME */
