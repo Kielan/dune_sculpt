@@ -35,9 +35,9 @@ static LogRef LOG = {"api"};
  * - 0 = no output, except errors
  * - 1 = detail actions
  */
-static int debugSRNA = 0;
+static int debugSAPI = 0;
 
-/* stub for BLI_abort() */
+/* stub for lib_abort() */
 #ifndef NDEBUG
 void lib_system_backtrace(FILE *fp)
 {
@@ -53,7 +53,7 @@ void lib_system_backtrace(FILE *fp)
 static int file_older(const char *file1, const char *file2)
 {
   struct stat st1, st2;
-  if (debugSRNA > 0) {
+  if (debugSAPI > 0) {
     printf("compare: %s %s\n", file1, file2);
   }
 
@@ -148,7 +148,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
       REN_IF_DIFF;
     }
 
-    if (file_older(orgfile, makesrna_path)) {
+    if (file_older(orgfile, makesapi_path)) {
       REN_IF_DIFF;
     }
 
@@ -284,13 +284,13 @@ static int cmp_def_struct(const void *a, const void *b)
   const ApiStructDef *dsa = *(const ApiStructDef **)a;
   const ApiStructDef *dsb = *(const ApiStructDef **)b;
 
-  return cmp_struct(&dsa->srna, &dsb->srna);
+  return cmp_struct(&dsa->sapi, &dsb->sapi);
 }
 
 static int cmp_def_prop(const void *a, const void *b)
 {
-  const ApiPropDef *dpa = *(const PropDefRNA **)a;
-  const ApiPropDef *dpb = *(const PropDefRNA **)b;
+  const ApiPropDef *dpa = *(const ApiPropDef **)a;
+  const ApiPropDef *dpb = *(const ApiPropDef **)b;
 
   return cmp_prop(&dpa->prop, &dpb->prop);
 }
@@ -309,14 +309,14 @@ static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
     size++;
   }
 
-  array = mem_mallocn(sizeof(void *) * size, "rna_sortlist");
+  array = mem_mallocn(sizeof(void *) * size, "api_sortlist");
   for (a = 0, link = list->first; link; link = link->next, a++) {
     array[a] = link;
   }
 
   qsort(array, size, sizeof(void *), cmp);
 
-  listbase->first = listbase->last = NULL;
+  list->first = list->last = NULL;
   for (a = 0; a < size; a++) {
     link = array[a];
     link->next = link->prev = NULL;
@@ -366,8 +366,7 @@ static void api_print_data_get(FILE *f, ApiPropDef *dp)
             dp->typestructname,
             dp->typestructfromname,
             dp->typestructfromprop);
-  }
-  else {
+  } else {
     fprintf(f, "    %s *data = (%s *)(ptr->data);\n", dp->typestructname, dp->typestructname);
   }
 }
@@ -388,8 +387,7 @@ static void api_construct_wrapper_fn_name(
 {
   if (type == NULL || type[0] == '\0') {
     snprintf(buffer, size, "%s_%s", structname, propname);
-  }
-  else {
+  } else {
     snprintf(buffer, size, "%s_%s_%s", structname, propname, type);
   }
 }
@@ -425,8 +423,8 @@ static ApiStruct *api_find_struct(const char *id)
   ApiStructDef *ds;
 
   for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
-    if (STREQ(ds->srna->id, id)) {
-      return ds->srna;
+    if (STREQ(ds->sapi->id, id)) {
+      return ds->sapi;
     }
   }
 
@@ -438,8 +436,8 @@ static const char *api_find_type(const char *type)
   ApiStructDef *ds;
 
   for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
-    if (ds->dnaname && STREQ(ds->dnaname, type)) {
-      return ds->srna->identifier;
+    if (ds->typesname && STREQ(ds->typesname, type)) {
+      return ds->sapi->id;
     }
   }
 
@@ -451,8 +449,8 @@ static const char *api_find_dna_type(const char *type)
   ApiStructDef *ds;
 
   for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
-    if (STREQ(ds->srna->id, type)) {
-      return ds->dnaname;
+    if (STREQ(ds->sapi->id, type)) {
+      return ds->typesname;
     }
   }
 
@@ -517,37 +515,37 @@ static const char *api_param_type_name(ApiProp *parm)
 {
   const char *type;
 
-  type = rna_type_type_name(parm);
+  type = api_type_type_name(parm);
 
   if (type) {
     return type;
   }
 
   switch (parm->type) {
-    case PROP_POINTER: {
-      PointerPropertyRNA *pparm = (PointerPropertyRNA *)parm;
+    case PROP_PTR: {
+      PtrProp *pparm = (ApiPtrProp *)parm;
 
-      if (parm->flag_parameter & PARM_RNAPTR) {
-        return "PointerRNA";
+      if (parm->flag_param & PARM_APIPTR) {
+        return "ApiPtr";
       }
-      return rna_find_dna_type((const char *)pparm->type);
+      return api_find_types_type((const char *)pparm->type);
     }
     case PROP_COLLECTION: {
-      return "CollectionListBase";
+      return "CollectionList";
     }
     default:
       return "<error, no type specified>";
   }
 }
 
-static int rna_enum_bitmask(PropertyRNA *prop)
+static int api_enum_bitmask(ApiProp *prop)
 {
-  EnumPropertyRNA *eprop = (EnumPropertyRNA *)prop;
+  ApiEnumProp *eprop = (ApiEnumProp *)prop;
   int a, mask = 0;
 
   if (eprop->item) {
     for (a = 0; a < eprop->totitem; a++) {
-      if (eprop->item[a].identifier[0]) {
+      if (eprop->item[a].id[0]) {
         mask |= eprop->item[a].value;
       }
     }
@@ -556,35 +554,35 @@ static int rna_enum_bitmask(PropertyRNA *prop)
   return mask;
 }
 
-static int rna_color_quantize(PropertyRNA *prop, PropertyDefRNA *dp)
+static int api_color_quantize(PropertyRNA *prop, PropertyDefRNA *dp)
 {
   return ((prop->type == PROP_FLOAT) && (ELEM(prop->subtype, PROP_COLOR, PROP_COLOR_GAMMA)) &&
           (IS_DNATYPE_FLOAT_COMPAT(dp->dnatype) == 0));
 }
 
 /**
- * Return the identifier for an enum which is defined in "RNA_enum_items.h".
+ * Return the id for an enum which is defined in api_enum_items.h".
  *
  * Prevents expanding duplicate enums bloating the binary size.
  */
-static const char *rna_enum_id_from_pointer(const EnumPropertyItem *item)
+static const char *api_enum_id_from_ptr(const EnumPropItem *item)
 {
-#define RNA_MAKESRNA
+#define API_MAKESAPI
 #define DEF_ENUM(id) \
   if (item == id) { \
     return STRINGIFY(id); \
   }
-#include "RNA_enum_items.h"
-#undef RNA_MAKESRNA
+#include "api_enum_items.h"
+#undef API_MAKESAPI
   return NULL;
 }
 
-static const char *rna_function_string(const void *func)
+static const char *api_fn_string(const void *fn)
 {
-  return (func) ? (const char *)func : "NULL";
+  return (fn) ? (const char *)fn : "NULL";
 }
 
-static void rna_float_print(FILE *f, float num)
+static void api_float_print(FILE *f, float num)
 {
   if (num == -FLT_MAX) {
     fprintf(f, "-FLT_MAX");
@@ -600,24 +598,19 @@ static void rna_float_print(FILE *f, float num)
   }
 }
 
-static void rna_int_print(FILE *f, int64_t num)
+static void api_int_print(FILE *f, int64_t num)
 {
   if (num == INT_MIN) {
     fprintf(f, "INT_MIN");
-  }
-  else if (num == INT_MAX) {
+  } else if (num == INT_MAX) {
     fprintf(f, "INT_MAX");
-  }
-  else if (num == INT64_MIN) {
+  } else if (num == INT64_MIN) {
     fprintf(f, "INT64_MIN");
-  }
-  else if (num == INT64_MAX) {
+  } else if (num == INT64_MAX) {
     fprintf(f, "INT64_MAX");
-  }
-  else if (num < INT_MIN || num > INT_MAX) {
+  } else if (num < INT_MIN || num > INT_MAX) {
     fprintf(f, "%" PRId64 "LL", num);
-  }
-  else {
+  } else {
     fprintf(f, "%d", (int)num);
   }
 }
@@ -633,7 +626,7 @@ static char *api_def_prop_get_fn(
 
   if (!manualfn) {
     if (!dp->typestructname || !dp->typename) {
-      LOG_ERROR(&LOG, "%s.%s has no valid dna info.", srna->identifier, prop->identifier);
+      LOG_ERROR(&LOG, "%s.%s has no valid types info.", sapi->id, prop->id);
       ApiDef.error = true;
       return NULL;
     }
@@ -656,15 +649,15 @@ static char *api_def_prop_get_fn(
           }
         }
       }
-      else if (prop->type == PROP_BOOLEAN) {
-        if (IS_DNATYPE_BOOLEAN_COMPAT(dp->dnatype) == 0) {
+      else if (prop->type == PROP_BOOL) {
+        if (IS_DNATYPE_BOOL_COMPAT(dp->type) == 0) {
           CLOG_ERROR(&LOG,
                      "%s.%s is a '%s' but wrapped as type '%s'.",
-                     srna->identifier,
-                     prop->identifier,
+                     srna->id,
+                     prop->id,
                      dp->dnatype,
-                     RNA_property_typename(prop->type));
-          DefRNA.error = true;
+                     api_prop_typename(prop->type));
+          ApiDef.error = true;
           return NULL;
         }
       }
