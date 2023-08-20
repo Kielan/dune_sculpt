@@ -138,7 +138,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
    * assumes dep_files is in the same dir as makesrna.c, which is true for now. */
   if (1) {
     /* first check if makesrna.c is newer than generated files
-     * for development on makesrna.c you may want to disable this */
+     * for development on makesapi.c you may want to disable this */
     if (file_older(orgfile, __FILE__)) {
       REN_IF_DIFF;
     }
@@ -546,7 +546,7 @@ static int api_enum_bitmask(ApiProp *prop)
   return mask;
 }
 
-static int api_color_quantize(PropertyRNA *prop, PropertyDefRNA *dp)
+static int api_color_quantize(ApiProp *prop, ApiPropDef *dp)
 {
   return ((prop->type == PROP_FLOAT) && (ELEM(prop->subtype, PROP_COLOR, PROP_COLOR_GAMMA)) &&
           (IS_DNATYPE_FLOAT_COMPAT(dp->dnatype) == 0));
@@ -643,7 +643,7 @@ static char *api_def_prop_get_fn(
         if (IS_TYPE_BOOL_COMPAT(dp->type) == 0) {
           CLOG_ERROR(&LOG,
                      "%s.%s is a '%s' but wrapped as type '%s'.",
-                     srna->id,
+                     sapi->id,
                      prop->id,
                      dp->type,
                      api_prop_typename(prop->type));
@@ -964,7 +964,7 @@ static void api_clamp_value_range_check(FILE *f,
 static void api_clamp_value(FILE *f, ApiProp *prop, int array)
 {
   if (prop->type == PROP_INT) {
-    IntPropertyRNA *iprop = (ApiIntProp *)prop;
+    ApiIntProp *iprop = (ApiIntProp *)prop;
 
     if (iprop->hardmin != INT_MIN || iprop->hardmax != INT_MAX || iprop->range) {
       if (array) {
@@ -1160,7 +1160,7 @@ static char *api_def_prop_set_fn(
             fprintf(f, "    for (i = 0; i < %u; i++) {\n", prop->totarraylength);
           }
 
-          if (dp->dnaarraylength == 1) {
+          if (dp->typesarraylength == 1) {
             if (prop->type == PROP_BOOL && dp->boolbit) {
               fprintf(f,
                       "        if (%svalues[i]) { data->%s |= (",
@@ -1235,7 +1235,7 @@ static char *api_def_prop_set_fn(
           fprintf(f, "    %s(ptr, value);\n", manualfunc);
         }
         else {
-          rna_print_data_get(f, dp);
+          api_print_data_get(f, dp);
           if (prop->type == PROP_BOOL && dp->boolbit) {
             fprintf(f,
                     "    if (%svalue) { data->%s |= ",
@@ -1254,15 +1254,15 @@ static char *api_def_prop_set_fn(
             fprintf(f, "    data->%s |= value;\n", dp->typesname);
           }
           else {
-            rna_clamp_value_range(f, prop);
+            api_clamp_value_range(f, prop);
             fprintf(f, "    data->%s = %s", dp->typesname, (dp->boolnegative) ? "!" : "");
-            rna_clamp_value(f, prop, 0);
+            api_clamp_value(f, prop, 0);
           }
         }
 
 #ifdef USE_API_RANGE_CHECK
         if (dp->typesname && manualfn == NULL) {
-          api_clamp_value_range_check(f, prop, "data->", dp->dnaname);
+          api_clamp_value_range_check(f, prop, "data->", dp->typesname);
         }
 #endif
 
@@ -1275,7 +1275,7 @@ static char *api_def_prop_set_fn(
 }
 
 static char *api_def_prop_set_fn(
-    FILE *f, ApiStruct *sapi, ApiProp *prop, ApiPropertyDef *dp, const char *manualfn)
+    FILE *f, ApiStruct *sapi, ApiProp *prop, ApiPropDef *dp, const char *manualfn)
 {
   char *func;
 
@@ -1313,10 +1313,10 @@ static char *api_def_prop_set_fn(
                 "BLI_strncpy" :
                 "BLI_strncpy_utf8";
 
-        rna_print_data_get(f, dp);
+        api_print_data_get(f, dp);
 
-        if (dp->dnapointerlevel == 1) {
-          /* Handle allocated char pointer properties. */
+        if (dp->typesptrlevel == 1) {
+          /* Handle allocated char ptr props. */
           fprintf(
               f, "    if (data->%s != NULL) { mem_freen(data->%s); }\n", dp->typesname, dp->typesname);
           fprintf(f, "    const int length = strlen(value);\n");
@@ -1324,7 +1324,7 @@ static char *api_def_prop_set_fn(
           fprintf(f, "    %s(data->%s, value, length + 1);\n", string_copy_func, dp->typesname);
         }
         else {
-          /* Handle char array properties. */
+          /* Handle char array props. */
           if (sprop->maxlength) {
             fprintf(f,
                     "    %s(data->%s, value, %d);\n",
@@ -1351,10 +1351,10 @@ static char *api_def_prop_set_fn(
         fprintf(f, "    %s(ptr, value, reports);\n", manualfn);
       }
       else {
-        rna_print_data_get(f, dp);
+        api_print_data_get(f, dp);
 
         if (prop->flag & PROP_ID_SELF_CHECK) {
-          rna_print_id_get(f, dp);
+          api_print_id_get(f, dp);
           fprintf(f, "    if (id == value.data) {\n");
           fprintf(f, "      return;\n");
           fprintf(f, "    }\n");
@@ -1544,13 +1544,13 @@ static char *api_def_prop_length_fn(
   if (prop->type == PROP_STRING) {
     if (!manualfn) {
       if (!dp->typestructname || !dp->typesname) {
-        CLOG_ERROR(&LOG, "%s.%s has no valid dna info.", srna->identifier, prop->identifier);
+        CLOG_ERROR(&LOG, "%s.%s has no valid types info.", sapi->id, prop->id);
         ApiDef.error = true;
         return NULL;
       }
     }
 
-    fn = api_alloc_fn_name(srna->id, api_safe_id(prop->id), "length");
+    fn = api_alloc_fn_name(sapi->id, api_safe_id(prop->id), "length");
 
     fprintf(f, "int %s(ApiPtr *ptr)\n", fn);
     fprintf(f, "{\n");
@@ -1676,14 +1676,14 @@ static char *api_def_prop_begin_fn(
       fprintf(f, "\n    api_iter_list_begin(iter, &data->%s, NULL);\n", dp->typesname);
     }
     else {
-      fprintf(f, "\n    api_iter_list_begin(iter, data->%s, NULL);\n", dp->dnaname);
+      fprintf(f, "\n    api_iter_list_begin(iter, data->%s, NULL);\n", dp->typesname);
     }
   }
 
   getfn = api_alloc_fn_name(sapi->id, api_safe_id(prop->id), "get");
 
   fprintf(f, "\n    if (iter->valid) {\n");
-  fprintf(f, "        iter->ptr = %s(iter);", getfunc);
+  fprintf(f, "        iter->ptr = %s(iter);", getfn);
   fprintf(f, "\n    }\n");
 
   fprintf(f, "}\n\n");
@@ -1751,7 +1751,7 @@ static char *api_def_prop_lookup_int_fn(FILE *f,
     fprintf(f, "        }\n");
     fprintf(f, "        else if (internal->skip) {\n");
     fprintf(f, "            while (index-- > 0 && iter.valid) {\n");
-    fprintf(f, "                rna_iterator_array_next(&iter);\n");
+    fprintf(f, "                api_iter_array_next(&iter);\n");
     fprintf(f, "            }\n");
     fprintf(f, "            found = (index == -1 && iter.valid);\n");
     fprintf(f, "        }\n");
@@ -1978,7 +1978,7 @@ static char *api_def_prop_end_fn(FILE *f,
 {
   char *func;
 
-  if (prop->flag & PROP_IDPROPERTY && manualfn == NULL) {
+  if (prop->flag & PROP_IDPROP && manualfn == NULL) {
     return NULL;
   }
 
@@ -1987,7 +1987,7 @@ static char *api_def_prop_end_fn(FILE *f,
   fprintf(f, "void %s(CollectionPropIter *iter)\n", fn);
   fprintf(f, "{\n");
   if (manualfn) {
-    fprintf(f, "    %s(iter);\n", manualfunc);
+    fprintf(f, "    %s(iter);\n", manualfn);
   }
   fprintf(f, "}\n\n");
 
@@ -2032,31 +2032,31 @@ static void api_set_raw_offset(FILE *f, ApiStruct *sapi, ApiProp *prop)
   fprintf(f, "\toffsetof(%s, %s), %d", dp->typestructname, dp->typesname, prop->rawtype);
 }
 
-static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
+static void api_def_prop_fns(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   prop = dp->prop;
 
   switch (prop->type) {
-    case PROP_BOOLEAN: {
-      BoolPropertyRNA *bprop = (ApiBoolProp *)prop;
+    case PROP_BOOL: {
+      ApiBoolProp *bprop = (ApiBoolProp *)prop;
 
       if (!prop->arraydimension) {
         if (!bprop->get && !bprop->set && !dp->boolbit) {
-          rna_set_raw_property(dp, prop);
+          api_set_raw_prop(dp, prop);
         }
 
         bprop->get = (void *)api_def_prop_get_fn(
-            f, srna, prop, dp, (const char *)bprop->get);
+            f, sapi, prop, dp, (const char *)bprop->get);
         bprop->set = (void *)api_def_prop_set_fn(
-            f, srna, prop, dp, (const char *)bprop->set);
+            f, sapi, prop, dp, (const char *)bprop->set);
       }
       else {
         bprop->getarray = (void *)api_def_prop_get_fn(
-            f, srna, prop, dp, (const char *)bprop->getarray);
+            f, sapi, prop, dp, (const char *)bprop->getarray);
         bprop->setarray = (void *)api_def_prop_set_fn(
-            f, srna, prop, dp, (const char *)bprop->setarray);
+            f, sapi, prop, dp, (const char *)bprop->setarray);
       }
       break;
     }
@@ -2079,9 +2079,9 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
         }
 
         iprop->getarray = (void *)api_def_prop_get_fn(
-            f, srna, prop, dp, (const char *)iprop->getarray);
+            f, sapi, prop, dp, (const char *)iprop->getarray);
         iprop->setarray = (void *)api_def_prop_set_fn(
-            f, srna, prop, dp, (const char *)iprop->setarray);
+            f, sapi, prop, dp, (const char *)iprop->setarray);
       }
       break;
     }
@@ -2090,11 +2090,11 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 
       if (!prop->arraydimension) {
         if (!fprop->get && !fprop->set) {
-          rna_set_raw_property(dp, prop);
+          rna_set_raw_prop(dp, prop);
         }
 
         fprop->get = (void *)api_def_prop_get_fn(
-            f, srna, prop, dp, (const char *)fprop->get);
+            f, sapi, prop, dp, (const char *)fprop->get);
         fprop->set = (void *)api_def_prop_set_fn(
             f, sapi, prop, dp, (const char *)fprop->set);
       }
@@ -2111,10 +2111,10 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
       break;
     }
     case PROP_ENUM: {
-      EnumPropertyRNA *eprop = (ApiEnumProp *)prop;
+      ApiEnumProp *eprop = (ApiEnumProp *)prop;
 
       if (!eprop->get && !eprop->set) {
-        rna_set_raw_property(dp, prop);
+        api_set_raw_prop(dp, prop);
       }
 
       eprop->get = (void *)api_def_prop_get_fn(f, sapi, prop, dp, (const char *)eprop->get);
@@ -2122,12 +2122,12 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
       break;
     }
     case PROP_STRING: {
-      StringPropertyRNA *sprop = (ApiStringProp *)prop;
+      ApiStringProp *sprop = (ApiStringProp *)prop;
 
-      sprop->get = (void *)rna_def_prop_get_fn(f, sapi, prop, dp, (const char *)sprop->get);
-      sprop->length = (void *)rna_def_prop_length_fn(
+      sprop->get = (void *)api_def_prop_get_fn(f, sapi, prop, dp, (const char *)sprop->get);
+      sprop->length = (void *)api_def_prop_length_fn(
           f, srna, prop, dp, (const char *)sprop->length);
-      sprop->set = (void *)rna_def_prop_set_fn(f, sapi, prop, dp, (const char *)sprop->set);
+      sprop->set = (void *)api_def_prop_set_fn(f, sapi, prop, dp, (const char *)sprop->set);
       break;
     }
     case PROP_POINTER: {
@@ -2137,7 +2137,7 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
       pprop->set = (void *)api_def_prop_set_fn(f, sapi, prop, dp, (const char *)pprop->set);
       if (!pprop->type) {
         CLOG_ERROR(
-            &LOG, "%s.%s, pointer must have a struct type.", srna->identifier, prop->identifier);
+            &LOG, "%s.%s, ptr must have a struct type.", srna->id, prop->id);
         ApiDef.error = true;
       }
       break;
@@ -2149,15 +2149,15 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 
       if (cprop->length) {
         /* always generate if we have a manual implementation */
-        cprop->length = (void *)rna_def_property_length_fna(
-            f, srna, prop, dp, (const char *)cprop->length);
+        cprop->length = (void *)api_def_prop_length_fna(
+            f, sapi, prop, dp, (const char *)cprop->length);
       }
-      else if (dp->dnatype && STREQ(dp->type, "List")) {
+      else if (dp->type && STREQ(dp->type, "List")) {
         /* pass */
       }
-      else if (dp->dnalengthname || dp->typelengthfixed) {
+      else if (dp->typeslengthname || dp->typelengthfixed) {
         cprop->length = (void *)api_def_prop_length_fn(
-            f, srna, prop, dp, (const char *)cprop->length);
+            f, sapi, prop, dp, (const char *)cprop->length);
       }
 
       /* test if we can allow raw array access, if it is using our standard
@@ -2171,14 +2171,14 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 
       cprop->get = (void *)api_def_prop_get_fn(fn, sapi, prop, dp, (const char *)cprop->get);
       cprop->begin = (void *)api_def_prop_begin_fn(
-          f, srna, prop, dp, (const char *)cprop->begin);
+          f, sapi, prop, dp, (const char *)cprop->begin);
       cprop->next = (void *)api_def_prop_next_fn(
-          f, srna, prop, dp, (const char *)cprop->next);
+          f, sapi, prop, dp, (const char *)cprop->next);
       cprop->end = (void *)api_def_prop_end_fn(f, srna, prop, dp, (const char *)cprop->end);
       cprop->lookupint = (void *)api_def_prop_lookup_int_fn(
-          f, srna, prop, dp, (const char *)cprop->lookupint, nextfn);
+          f, sapi, prop, dp, (const char *)cprop->lookupint, nextfn);
       cprop->lookupstring = (void *)rna_def_prop_lookup_string_fn(
-          f, srna, prop, dp, (const char *)cprop->lookupstring, item_type);
+          f, sapi, prop, dp, (const char *)cprop->lookupstring, item_type);
 
       if (!(prop->flag & PROP_IDPROP)) {
         if (!cprop->begin) {
@@ -2186,115 +2186,115 @@ static void rna_def_property_funcs(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
                      "%s.%s, collection must have a begin function.",
                      sapi->id,
                      prop->id);
-          DefRNA.error = true;
+          ApiDef.error = true;
         }
         if (!cprop->next) {
           CLOG_ERROR(&LOG,
-                     "%s.%s, collection must have a next function.",
+                     "%s.%s, collection must have a next fn.",
                      sapi->id,
                      prop->id);
           ApiDef.error = true;
         }
         if (!cprop->get) {
           CLOG_ERROR(&LOG,
-                     "%s.%s, collection must have a get function.",
-                     srna->identifier,
-                     prop->identifier);
-          DefRNA.error = true;
+                     "%s.%s, collection must have a get fn.",
+                     sapi->id,
+                     prop->id);
+          ApiDef.error = true;
         }
       }
       if (!cprop->item_type) {
         CLOG_ERROR(&LOG,
                    "%s.%s, collection must have a struct type.",
-                   srna->identifier,
-                   prop->identifier);
-        DefRNA.error = true;
+                   srna->id,
+                   prop->id);
+        ApiDef.error = true;
       }
       break;
     }
   }
 }
 
-static void rna_def_property_funcs_header(FILE *f, StructRNA *srna, PropertyDefRNA *dp)
+static void api_def_prop_fns_header(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 {
-  PropertyRNA *prop;
-  const char *func;
+  ApiProp *prop;
+  const char *fn;
 
   prop = dp->prop;
 
-  if (prop->flag & PROP_IDPROPERTY || prop->flag_internal & PROP_INTERN_BUILTIN) {
+  if (prop->flag & PROP_IDPROP || prop->flag_internal & PROP_INTERN_BUILTIN) {
     return;
   }
 
-  func = rna_alloc_function_name(srna->identifier, rna_safe_id(prop->identifier), "");
+  fn = api_alloc_fn_name(sapi->id, api_safe_id(prop->id), "");
 
   switch (prop->type) {
-    case PROP_BOOLEAN: {
+    case PROP_BOOL: {
       if (!prop->arraydimension) {
-        fprintf(f, "bool %sget(PointerRNA *ptr);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, bool value);\n", func);
+        fprintf(f, "bool %sget(ApiPtr *ptr);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, bool value);\n", fn);
       }
       else if (prop->arraydimension && prop->totarraylength) {
-        fprintf(f, "void %sget(PointerRNA *ptr, bool values[%u]);\n", func, prop->totarraylength);
+        fprintf(f, "void %sget(ApiPtr *ptr, bool values[%u]);\n", fn, prop->totarraylength);
         fprintf(f,
-                "void %sset(PointerRNA *ptr, const bool values[%u]);\n",
-                func,
+                "void %sset(ApiPtr *ptr, const bool values[%u]);\n",
+                fn,
                 prop->totarraylength);
       }
       else {
-        fprintf(f, "void %sget(PointerRNA *ptr, bool values[]);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, const bool values[]);\n", func);
+        fprintf(f, "void %sget(ApiPtr *ptr, bool values[]);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, const bool values[]);\n", fn);
       }
       break;
     }
     case PROP_INT: {
       if (!prop->arraydimension) {
-        fprintf(f, "int %sget(PointerRNA *ptr);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, int value);\n", func);
+        fprintf(f, "int %sget(ApiPtr *ptr);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, int value);\n", fn);
       }
       else if (prop->arraydimension && prop->totarraylength) {
-        fprintf(f, "void %sget(PointerRNA *ptr, int values[%u]);\n", func, prop->totarraylength);
+        fprintf(f, "void %sget(ApiPtr *ptr, int values[%u]);\n", fn, prop->totarraylength);
         fprintf(
-            f, "void %sset(PointerRNA *ptr, const int values[%u]);\n", func, prop->totarraylength);
+            f, "void %sset(ApiPtr *ptr, const int values[%u]);\n", fn, prop->totarraylength);
       }
       else {
-        fprintf(f, "void %sget(PointerRNA *ptr, int values[]);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, const int values[]);\n", func);
+        fprintf(f, "void %sget(ApiPtr *ptr, int values[]);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, const int values[]);\n", fn);
       }
       break;
     }
     case PROP_FLOAT: {
       if (!prop->arraydimension) {
-        fprintf(f, "float %sget(PointerRNA *ptr);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, float value);\n", func);
+        fprintf(f, "float %sget(ApiPtr *ptr);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, float value);\n", fn);
       }
       else if (prop->arraydimension && prop->totarraylength) {
-        fprintf(f, "void %sget(PointerRNA *ptr, float values[%u]);\n", func, prop->totarraylength);
+        fprintf(f, "void %sget(ApiPtr *ptr, float values[%u]);\n", fn, prop->totarraylength);
         fprintf(f,
-                "void %sset(PointerRNA *ptr, const float values[%u]);\n",
-                func,
+                "void %sset(ApiPtr *ptr, const float values[%u]);\n",
+                fn,
                 prop->totarraylength);
       }
       else {
-        fprintf(f, "void %sget(PointerRNA *ptr, float values[]);\n", func);
-        fprintf(f, "void %sset(PointerRNA *ptr, const float values[]);", func);
+        fprintf(f, "void %sget(ApiPtr *ptr, float values[]);\n", fn);
+        fprintf(f, "void %sset(ApiPtr *ptr, const float values[]);", fn);
       }
       break;
     }
     case PROP_ENUM: {
-      EnumPropertyRNA *eprop = (EnumPropertyRNA *)prop;
+      ApiEnumProp *eprop = (ApiEnumProp *)prop;
       int i;
 
       if (eprop->item && eprop->totitem) {
         fprintf(f, "enum {\n");
 
         for (i = 0; i < eprop->totitem; i++) {
-          if (eprop->item[i].identifier[0]) {
+          if (eprop->item[i].id[0]) {
             fprintf(f,
                     "\t%s_%s_%s = %d,\n",
-                    srna->identifier,
-                    prop->identifier,
-                    eprop->item[i].identifier,
+                    sapi->id,
+                    prop->id,
+                    eprop->item[i].id,
                     eprop->item[i].value);
           }
         }
@@ -2302,77 +2302,79 @@ static void rna_def_property_funcs_header(FILE *f, StructRNA *srna, PropertyDefR
         fprintf(f, "};\n\n");
       }
 
-      fprintf(f, "int %sget(PointerRNA *ptr);\n", func);
-      fprintf(f, "void %sset(PointerRNA *ptr, int value);\n", func);
+
+      
+      fprintf(f, "int %sget(ApiPtr *ptr);\n", fn);
+      fprintf(f, "void %sset(ApiPtr *ptr, int value);\n", fn);
 
       break;
     }
     case PROP_STRING: {
-      StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
+      ApiStringProp *sprop = (ApiStringProp *)prop;
 
       if (sprop->maxlength) {
         fprintf(
-            f, "#define %s_%s_MAX %d\n\n", srna->identifier, prop->identifier, sprop->maxlength);
+            f, "#define %s_%s_MAX %d\n\n", sapi->id, prop->id, sprop->maxlength);
       }
 
-      fprintf(f, "void %sget(PointerRNA *ptr, char *value);\n", func);
-      fprintf(f, "int %slength(PointerRNA *ptr);\n", func);
-      fprintf(f, "void %sset(PointerRNA *ptr, const char *value);\n", func);
+      fprintf(f, "void %sget(ApiPtr *ptr, char *value);\n", fn);
+      fprintf(f, "int %slength(ApiPtr *ptr);\n", fn);
+      fprintf(f, "void %sset(ApiPtr *ptr, const char *value);\n", fn);
 
       break;
     }
-    case PROP_POINTER: {
-      fprintf(f, "PointerRNA %sget(PointerRNA *ptr);\n", func);
-      /*fprintf(f, "void %sset(PointerRNA *ptr, PointerRNA value);\n", func); */
+    case PROP_PTR: {
+      fprintf(f, "ApiPtr %sget(ApiPtr *ptr);\n", fn);
+      /*fprintf(f, "void %sset(ApiPtr *ptr, ApiPtr value);\n", fn); */
       break;
     }
     case PROP_COLLECTION: {
-      CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)prop;
-      fprintf(f, "void %sbegin(CollectionPropertyIterator *iter, PointerRNA *ptr);\n", func);
-      fprintf(f, "void %snext(CollectionPropertyIterator *iter);\n", func);
-      fprintf(f, "void %send(CollectionPropertyIterator *iter);\n", func);
+      ApiCollectionProp *cprop = (ApiCollectionProp *)prop;
+      fprintf(f, "void %sbegin(CollectionPropIter *iter, ApiPtr *ptr);\n", fn);
+      fprintf(f, "void %snext(CollectionPropIter *iter);\n", fn);
+      fprintf(f, "void %send(CollectionPropIter *iter);\n", fn);
       if (cprop->length) {
-        fprintf(f, "int %slength(PointerRNA *ptr);\n", func);
+        fprintf(f, "int %slength(ApiPtr *ptr);\n", fn);
       }
       if (cprop->lookupint) {
-        fprintf(f, "int %slookup_int(PointerRNA *ptr, int key, PointerRNA *r_ptr);\n", func);
+        fprintf(f, "int %slookup_int(ApiPtr *ptr, int key, ApiPtr *r_ptr);\n", fn);
       }
       if (cprop->lookupstring) {
         fprintf(f,
-                "int %slookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr);\n",
-                func);
+                "int %slookup_string(ApiPtr *ptr, const char *key, ApiPtr *r_ptr);\n",
+                fn);
       }
       break;
     }
   }
 
   if (prop->getlength) {
-    char funcname[2048];
-    rna_construct_wrapper_function_name(
-        funcname, sizeof(funcname), srna->identifier, prop->identifier, "get_length");
-    fprintf(f, "int %s(PointerRNA *ptr, int *arraylen);\n", funcname);
+    char fnname[2048];
+    api_construct_wrapper_fn_name(
+        fnname, sizeof(fnname), sapi->id, prop->id, "get_length");
+    fprintf(f, "int %s(ApiPtr *ptr, int *arraylen);\n", fnname);
   }
 
   fprintf(f, "\n");
 }
 
-static void rna_def_function_funcs_header(FILE *f, StructRNA *srna, FunctionDefRNA *dfunc)
+static void api_def_fn_fns_header(FILE *f, ApiStruct *sapi, ApiFnDef *dfn)
 {
-  FunctionRNA *func = dfunc->func;
-  char funcname[2048];
+  ApiFn *fn = dfn->fn;
+  char fnname[2048];
 
-  rna_construct_wrapper_function_name(
-      funcname, sizeof(funcname), srna->identifier, func->identifier, "func");
-  rna_generate_static_parameter_prototypes(f, srna, dfunc, funcname, 1);
+  api_construct_wrapper_fn_name(
+      fnname, sizeof(fnname), sapi->id, fn->id, "fn");
+  api_generate_static_param_prototypes(f, sapi, dfn, fnname, 1);
 }
 
-static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, PropertyDefRNA *dp)
+static void api_def_prop_fns_header_cpp(FILE *f, ApiStruct *sapi, ApiPropDef *dp)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   prop = dp->prop;
 
-  if (prop->flag & PROP_IDPROPERTY || prop->flag_internal & PROP_INTERN_BUILTIN) {
+  if (prop->flag & PROP_IDPROP || prop->flag_internal & PROP_INTERN_BUILTIN) {
     return;
   }
 
@@ -2390,82 +2392,82 @@ static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, Property
 #endif
 
   switch (prop->type) {
-    case PROP_BOOLEAN: {
+    case PROP_BOOL: {
       if (!prop->arraydimension) {
-        fprintf(f, "\tinline bool %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(bool value);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline bool %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(bool value);", api_safe_id(prop->id));
       }
       else if (prop->totarraylength) {
         fprintf(f,
                 "\tinline Array<bool, %u> %s(void);\n",
                 prop->totarraylength,
-                rna_safe_id(prop->identifier));
+                api_safe_id(prop->id));
         fprintf(f,
                 "\tinline void %s(bool values[%u]);",
-                rna_safe_id(prop->identifier),
+                api_safe_id(prop->id),
                 prop->totarraylength);
       }
       else if (prop->getlength) {
-        fprintf(f, "\tinline DynamicArray<bool> %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(bool values[]);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline DynamicArray<bool> %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(bool values[]);", api_safe_id(prop->id));
       }
       break;
     }
     case PROP_INT: {
       if (!prop->arraydimension) {
-        fprintf(f, "\tinline int %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(int value);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline int %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(int value);", api_safe_id(prop->id));
       }
       else if (prop->totarraylength) {
         fprintf(f,
                 "\tinline Array<int, %u> %s(void);\n",
                 prop->totarraylength,
-                rna_safe_id(prop->identifier));
+                api_safe_id(prop->id));
         fprintf(f,
                 "\tinline void %s(int values[%u]);",
-                rna_safe_id(prop->identifier),
+                api_safe_id(prop->id),
                 prop->totarraylength);
       }
       else if (prop->getlength) {
-        fprintf(f, "\tinline DynamicArray<int> %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(int values[]);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline DynamicArray<int> %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(int values[]);", api_safe_id(prop->id));
       }
       break;
     }
     case PROP_FLOAT: {
       if (!prop->arraydimension) {
-        fprintf(f, "\tinline float %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(float value);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline float %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(float value);", api_safe_id(prop->id));
       }
       else if (prop->totarraylength) {
         fprintf(f,
                 "\tinline Array<float, %u> %s(void);\n",
                 prop->totarraylength,
-                rna_safe_id(prop->identifier));
+                api_safe_id(prop->id));
         fprintf(f,
                 "\tinline void %s(float values[%u]);",
-                rna_safe_id(prop->identifier),
+                api_safe_id(prop->id),
                 prop->totarraylength);
       }
       else if (prop->getlength) {
-        fprintf(f, "\tinline DynamicArray<float> %s(void);\n", rna_safe_id(prop->identifier));
-        fprintf(f, "\tinline void %s(float values[]);", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline DynamicArray<float> %s(void);\n", api_safe_id(prop->id));
+        fprintf(f, "\tinline void %s(float values[]);", api_safe_id(prop->id));
       }
       break;
     }
     case PROP_ENUM: {
-      EnumPropertyRNA *eprop = (EnumPropertyRNA *)prop;
+      ApiEnumProp *eprop = (ApiEnumProp *)prop;
       int i;
 
       if (eprop->item) {
-        fprintf(f, "\tenum %s_enum {\n", rna_safe_id(prop->identifier));
+        fprintf(f, "\tenum %s_enum {\n", api_safe_id(prop->id));
 
         for (i = 0; i < eprop->totitem; i++) {
-          if (eprop->item[i].identifier[0]) {
+          if (eprop->item[i].id[0]) {
             fprintf(f,
                     "\t\t%s_%s = %d,\n",
-                    rna_safe_id(prop->identifier),
-                    eprop->item[i].identifier,
+                    api_safe_id(prop->id),
+                    eprop->item[i].id,
                     eprop->item[i].value);
           }
         }
@@ -2475,58 +2477,58 @@ static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, Property
 
       fprintf(f,
               "\tinline %s_enum %s(void);\n",
-              rna_safe_id(prop->identifier),
-              rna_safe_id(prop->identifier));
+              api_safe_id(prop->id),
+              api_safe_id(prop->id));
       fprintf(f,
               "\tinline void %s(%s_enum value);",
-              rna_safe_id(prop->identifier),
-              rna_safe_id(prop->identifier));
+              api_safe_id(prop->id),
+              api_safe_id(prop->id));
       break;
     }
     case PROP_STRING: {
-      fprintf(f, "\tinline std::string %s(void);\n", rna_safe_id(prop->identifier));
-      fprintf(f, "\tinline void %s(const std::string& value);", rna_safe_id(prop->identifier));
+      fprintf(f, "\tinline std::string %s(void);\n", api_safe_id(prop->id));
+      fprintf(f, "\tinline void %s(const std::string& value);", api_safe_id(prop->id));
       break;
     }
-    case PROP_POINTER: {
-      PointerPropertyRNA *pprop = (PointerPropertyRNA *)dp->prop;
+    case PROP_PTR: {
+      ApiPtrProp *pprop = (ApiPtrProp *)dp->prop;
 
       if (pprop->type) {
         fprintf(
-            f, "\tinline %s %s(void);", (const char *)pprop->type, rna_safe_id(prop->identifier));
+            f, "\tinline %s %s(void);", (const char *)pprop->type, api_safe_id(prop->id));
       }
       else {
-        fprintf(f, "\tinline %s %s(void);", "UnknownType", rna_safe_id(prop->identifier));
+        fprintf(f, "\tinline %s %s(void);", "UnknownType", api_safe_id(prop->id));
       }
       break;
     }
     case PROP_COLLECTION: {
-      CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)dp->prop;
-      const char *collection_funcs = "DefaultCollectionFunctions";
+      ApiCollectionProp *cprop = (ApiCollectionProp *)dp->prop;
+      const char *collection_fns = "DefaultCollectionFns";
 
-      if (!(dp->prop->flag & PROP_IDPROPERTY || dp->prop->flag_internal & PROP_INTERN_BUILTIN) &&
-          cprop->property.srna) {
-        collection_funcs = (char *)cprop->property.srna;
+      if (!(dp->prop->flag & PROP_IDPROP || dp->prop->flag_internal & PROP_INTERN_BUILTIN) &&
+          cprop->prop.sapi) {
+        collection_fns = (char *)cprop->prop.sapi;
       }
 
       if (cprop->item_type) {
         fprintf(f,
-                "\tCOLLECTION_PROPERTY(%s, %s, %s, %s, %s, %s, %s)",
-                collection_funcs,
+                "\tCOLLECTION_PROP(%s, %s, %s, %s, %s, %s, %s)",
+                collection_fns,
                 (const char *)cprop->item_type,
-                srna->identifier,
-                rna_safe_id(prop->identifier),
+                sapi->id,
+                api_safe_id(prop->id),
                 (cprop->length ? "true" : "false"),
                 (cprop->lookupint ? "true" : "false"),
                 (cprop->lookupstring ? "true" : "false"));
       }
       else {
         fprintf(f,
-                "\tCOLLECTION_PROPERTY(%s, %s, %s, %s, %s, %s, %s)",
-                collection_funcs,
+                "\tCOLLECTION_PROP(%s, %s, %s, %s, %s, %s, %s)",
+                collection_fns,
                 "UnknownType",
-                srna->identifier,
-                rna_safe_id(prop->identifier),
+                sapi->id,
+                api_safe_id(prop->id),
                 (cprop->length ? "true" : "false"),
                 (cprop->lookupint ? "true" : "false"),
                 (cprop->lookupstring ? "true" : "false"));
@@ -2538,61 +2540,61 @@ static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, Property
   fprintf(f, "\n");
 }
 
-static const char *rna_parameter_type_cpp_name(PropertyRNA *prop)
+static const char *api_param_type_cpp_name(ApiProp *prop)
 {
-  if (prop->type == PROP_POINTER) {
-    /* for cpp api we need to use RNA structures names for pointers */
-    PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+  if (prop->type == PROP_PTR) {
+    /* for cpp api we need to use api structures names for ptrs */
+    ApiPtrProp *pprop = (ApiPtrProp *)prop;
 
     return (const char *)pprop->type;
   }
-  return rna_parameter_type_name(prop);
+  return api_param_type_name(prop);
 }
 
-static void rna_def_struct_function_prototype_cpp(FILE *f,
-                                                  StructRNA *UNUSED(srna),
-                                                  FunctionDefRNA *dfunc,
+static void api_def_struct_fn_prototype_cpp(FILE *f,
+                                                  ApiStruct *UNUSED(sapi),
+                                                  ApiFnDef *dfn,
                                                   const char *namespace,
                                                   int close_prototype)
 {
-  PropertyDefRNA *dp;
-  FunctionRNA *func = dfunc->func;
+  ApiPropDef *dp;
+  ApiFn *fn = dfn->fn;
 
   int first = 1;
   const char *retval_type = "void";
 
-  if (func->c_ret) {
-    dp = rna_find_parameter_def(func->c_ret);
-    retval_type = rna_parameter_type_cpp_name(dp->prop);
+  if (fn->c_ret) {
+    dp = api_find_param_def(fn->c_ret);
+    retval_type = api_param_type_cpp_name(dp->prop);
   }
 
   if (namespace && namespace[0]) {
-    fprintf(f, "\tinline %s %s::%s(", retval_type, namespace, rna_safe_id(func->identifier));
+    fprintf(f, "\tinline %s %s::%s(", retval_type, namespace, api_safe_id(fn->id));
   }
   else {
-    fprintf(f, "\tinline %s %s(", retval_type, rna_safe_id(func->identifier));
+    fprintf(f, "\tinline %s %s(", retval_type, api_safe_id(fn->id));
   }
 
-  if (func->flag & FUNC_USE_MAIN) {
+  if (fn->flag & FN_USE_MAIN) {
     WRITE_PARAM("void *main");
   }
 
-  if (func->flag & FUNC_USE_CONTEXT) {
+  if (fn->flag & FN_USE_CXT) {
     WRITE_PARAM("Context C");
   }
 
-  for (dp = dfunc->cont.properties.first; dp; dp = dp->next) {
-    int type, flag, flag_parameter, pout;
+  for (dp = dfn->cont.props.first; dp; dp = dp->next) {
+    int type, flag, flag_param, pout;
     const char *ptrstr;
 
-    if (dp->prop == func->c_ret) {
+    if (dp->prop == fn->c_ret) {
       continue;
     }
 
     type = dp->prop->type;
     flag = dp->prop->flag;
-    flag_parameter = dp->prop->flag_parameter;
-    pout = (flag_parameter & PARM_OUTPUT);
+    flag_param = dp->prop->flag_param;
+    pout = (flag_param & PARM_OUTPUT);
 
     if (flag & PROP_DYNAMIC) {
       if (type == PROP_STRING) {
