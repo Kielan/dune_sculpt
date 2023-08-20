@@ -29,12 +29,10 @@
 
 static LogRef LOG = {"api"};
 
-/**
- * Variable to control debug output of makesapi.
- * debugSRNA:
+/** Variable to control debug output of makesapi.
+ * Sapidebug:
  * - 0 = no output, except errors
- * - 1 = detail actions
- */
+ * - 1 = detail action */
 static int debugSAPI = 0;
 
 /* stub for lib_abort() */
@@ -48,7 +46,7 @@ void lib_system_backtrace(FILE *fp)
 /* Replace if different */
 #define TMP_EXT ".tmp"
 
-/* copied from BLI_file_older */
+/* copied from lib_file_older */
 #include <sys/stat.h>
 static int file_older(const char *file1, const char *file2)
 {
@@ -95,7 +93,6 @@ static void api_generate_static_param_prototypes(FILE *f,
 static int replace_if_different(const char *tmpfile, const char *dep_files[])
 {
   /* return 0; */ /* use for testing had edited rna */
-
 #define REN_IF_DIFF \
   { \
     FILE *file_test = fopen(orgfile, "rb"); \
@@ -121,7 +118,6 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
   return 1
 
   /* end REN_IF_DIFF */
-
   FILE *fp_new = NULL, *fp_org = NULL;
   int len_new, len_org;
   char *arr_new, *arr_org;
@@ -140,7 +136,6 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
 
   /* XXX, trick to work around dependency problem
    * assumes dep_files is in the same dir as makesrna.c, which is true for now. */
-
   if (1) {
     /* first check if makesrna.c is newer than generated files
      * for development on makesrna.c you may want to disable this */
@@ -171,7 +166,6 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
     }
   }
   /* XXX end dep trick */
-
   fp_new = fopen(tmpfile, "rb");
 
   if (fp_new == NULL) {
@@ -227,7 +221,6 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
 }
 
 /* Helper to solve keyword problems with C/C++ */
-
 static const char *api_safe_id(const char *id)
 {
   if (STREQ(id, "default")) {
@@ -248,7 +241,6 @@ static const char *api_safe_id(const char *id)
 }
 
 /* Sorting */
-
 static int cmp_struct(const void *a, const void *b)
 {
   const ApiStruct *structa = *(const ApiStruct **)a;
@@ -320,7 +312,7 @@ static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
   for (a = 0; a < size; a++) {
     link = array[a];
     link->next = link->prev = NULL;
-    api_addtail(listbase, link);
+    api_addtail(list, link);
   }
 
   mem_freen(array);
@@ -444,7 +436,7 @@ static const char *api_find_type(const char *type)
   return NULL;
 }
 
-static const char *api_find_dna_type(const char *type)
+static const char *api_find_type(const char *type)
 {
   ApiStructDef *ds;
 
@@ -465,7 +457,7 @@ static const char *api_type_type_name(ApiProp *prop)
     case PROP_INT:
       return "int";
     case PROP_ENUM: {
-      EnumSpiProp *eprop = (EnumApiProp *)prop;
+      EnumApiProp *eprop = (EnumApiProp *)prop;
       if (eprop->native_enum_type) {
         return eprop->native_enum_type;
       }
@@ -648,12 +640,12 @@ static char *api_def_prop_get_fn(
         }
       }
       else if (prop->type == PROP_BOOL) {
-        if (IS_DNATYPE_BOOL_COMPAT(dp->type) == 0) {
+        if (IS_TYPE_BOOL_COMPAT(dp->type) == 0) {
           CLOG_ERROR(&LOG,
                      "%s.%s is a '%s' but wrapped as type '%s'.",
                      srna->id,
                      prop->id,
-                     dp->dnatype,
+                     dp->type,
                      api_prop_typename(prop->type));
           ApiDef.error = true;
           return NULL;
@@ -667,7 +659,7 @@ static char *api_def_prop_get_fn(
                      prop->id,
                      dp->type,
                      api_prop_typename(prop->type));
-          DefRNA.error = true;
+          ApiDef.error = true;
           return NULL;
         }
       }
@@ -675,11 +667,11 @@ static char *api_def_prop_get_fn(
 
     /* Check log scale sliders for negative range. */
     if (prop->type == PROP_FLOAT) {
-      FloatPropertyRNA *fprop = (FloatPropertyRNA *)prop;
+      ApiFloatProp *fprop = (ApiFloatProp *)prop;
       /* NOTE: UI_BTYPE_NUM_SLIDER can't have a softmin of zero. */
       if ((fprop->ui_scale_type == PROP_SCALE_LOG) && (fprop->hardmin < 0 || fprop->softmin < 0)) {
         CLOG_ERROR(
-            &LOG, "\"%s.%s\", range for log scale < 0.", srna->identifier, prop->identifier);
+            &LOG, "\"%s.%s\", range for log scale < 0.", sapi->id, prop->id);
         DefRNA.error = true;
         return NULL;
       }
@@ -702,7 +694,7 @@ static char *api_def_prop_get_fn(
   switch (prop->type) {
     case PROP_STRING: {
       ApiStringProp *sprop = (ApiStringProp *)prop;
-      fprintf(f, "void %s(PointerRNA *ptr, char *value)\n", func);
+      fprintf(f, "void %s(ApiPtr *ptr, char *value)\n", func);
       fprintf(f, "{\n");
       if (manualfn) {
         fprintf(f, "    %s(ptr, value);\n", manualfunc);
@@ -725,8 +717,8 @@ static char *api_def_prop_get_fn(
           fprintf(f,
                   "    %s(value, data->%s, strlen(data->%s) + 1);\n",
                   string_copy_fn,
-                  dp->dnaname,
-                  dp->dnaname);
+                  dp->typesname,
+                  dp->typesname);
         }
         else {
           /* Handle char array properties. */
@@ -760,15 +752,15 @@ static char *api_def_prop_get_fn(
         api_print_data_get(f, dp);
         if (dp->typeptrlevel == 0) {
           fprintf(f,
-                  "    return api_ptr_inherit_refine(ptr, &Api_%s, &data->%s);\n",
+                  "    return api_ptr_inherit_refine(ptr, &Api%s, &data->%s);\n",
                   (const char *)pprop->type,
-                  dp->dnaname);
+                  dp->typesname);
         }
         else {
           fprintf(f,
-                  "    return api_ptr_inherit_refine(ptr, &Api_%s, data->%s);\n",
+                  "    return api_ptr_inherit_refine(ptr, &Api%s, data->%s);\n",
                   (const char *)pprop->type,
-                  dp->dnaname);
+                  dp->typesname);
         }
       }
       fprintf(f, "}\n\n");
