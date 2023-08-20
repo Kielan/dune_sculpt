@@ -1,11 +1,11 @@
 #pragma once
 
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
-#include "DNA_vec_types.h"
-#include "DNA_view2d_types.h"
+#include "types_defs.h"
+#include "types_list.h"
+#include "types_vec.h"
+#include "types_view2d.h"
 
-#include "DNA_ID.h"
+#include "types_id.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +14,7 @@ extern "C" {
 struct ARegion;
 struct ARegionType;
 struct PanelType;
-struct PointerRNA;
+struct ApiPtr;
 struct Scene;
 struct SpaceLink;
 struct SpaceType;
@@ -26,24 +26,24 @@ struct wmTimer;
 struct wmTooltipState;
 
 /* TODO: Doing this is quite ugly :)
- * Once the top-bar is merged bScreen should be refactored to use ScrAreaMap. */
-#define AREAMAP_FROM_SCREEN(screen) ((ScrAreaMap *)&(screen)->vertbase)
+ * Once the top-bar is merged Screen should be refactored to use ScrAreaMap. */
+#define AREAMAP_FROM_SCREEN(screen) ((ScrAreaMap *)&(screen)->vertlist)
 
-typedef struct bScreen {
-  ID id;
+typedef struct Screen {
+  Id id;
 
   /* TODO: Should become ScrAreaMap now.
    * NOTE: KEEP ORDER IN SYNC WITH #ScrAreaMap! (see AREAMAP_FROM_SCREEN macro above). */
   /** Screens have vertices/edges to define areas. */
-  ListBase vertbase;
-  ListBase edgebase;
-  ListBase areabase;
+  List vertlist;
+  List edgelist;
+  List arealist;
   /* End variables that must be in sync with #ScrAreaMap. */
 
   /** Screen level regions (menus), runtime only. */
-  ListBase regionbase;
+  List regionbase;
 
-  struct Scene *scene DNA_DEPRECATED;
+  struct Scene *scene TYPES_DEPRECATED;
 
   /** General flags. */
   short flag;
@@ -77,14 +77,14 @@ typedef struct bScreen {
 
   /** If set, screen has timer handler added in window. */
   struct wmTimer *animtimer;
-  /** Context callback. */
-  void /*bContextDataCallback*/ *context;
+  /** Cxt cb. */
+  void /*CxtDataCb*/ *cxt;
 
   /** Runtime. */
   struct wmTooltipState *tool_tip;
 
   PreviewImage *preview;
-} bScreen;
+} Screen;
 
 typedef struct ScrVert {
   struct ScrVert *next, *prev, *newv;
@@ -106,11 +106,11 @@ typedef struct ScrAreaMap {
   /* ** NOTE: KEEP ORDER IN SYNC WITH LISTBASES IN bScreen! ** */
 
   /** ScrVert - screens have vertices/edges to define areas. */
-  ListBase vertbase;
+  List vertlist;
   /** ScrEdge. */
-  ListBase edgebase;
+  List edgelist;
   /** ScrArea. */
-  ListBase areabase;
+  List arealist;
 } ScrAreaMap;
 
 typedef struct Panel_Runtime {
@@ -119,11 +119,11 @@ typedef struct Panel_Runtime {
 
   char _pad[4];
 
-  /* Pointer for storing which data the panel corresponds to.
+  /* Ptr for storing which data the panel corresponds to.
    * Useful when there can be multiple instances of the same panel type.
    *
-   * A panel and its sub-panels share the same custom data pointer.
-   * This avoids freeing the same pointer twice when panels are removed. */
+   * A panel and its sub-panels share the same custom data ptr.
+   * This avoids freeing the same ptr twice when panels are removed. */
   struct ApiPtr *custom_data_ptr;
 
   /* Ptr to the panel's block. Useful when changes to panel #uiBlocks
@@ -169,7 +169,7 @@ typedef struct Panel {
 /* Used for passing expansion between instanced panel data and the panels themselves.
  * There are 16 defines because the expansion data is typically stored in a short.
  *
- * \note Expansion for instanced panels is stored in depth first order. For example, the value of
+ * note Expansion for instanced panels is stored in depth first order. For example, the value of
  * UI_SUBPANEL_DATA_EXPAND_2 correspond to mean the expansion of the second subpanel or the first
  * subpanel's first subpanel. */
 typedef enum uiPanelDataExpansion {
@@ -192,8 +192,7 @@ typedef enum uiPanelDataExpansion {
   UI_SUBPANEL_DATA_EXPAND_16 = (1 << 16),
 } uiPanelDataExpansion;
 
-/**
- * Notes on Panel Categories:
+/* Notes on Panel Categories:
  *
  * - #ARegion.panels_category (#PanelCategoryDyn)
  *   is a runtime only list of categories collected during draw.
@@ -202,7 +201,7 @@ typedef enum uiPanelDataExpansion {
  *   is basically a list of strings (category id's).
  *
  * Clicking on a tab moves it to the front of region->panels_category_active,
- * If the context changes so this tab is no longer displayed,
+ * If the cxt changes so this tab is no longer displayed,
  * then the first-most tab in #ARegion.panels_category_active is used.
  *
  * This way you can change modes and always have the tab you last clicked on. */
@@ -298,7 +297,7 @@ typedef struct uiList { /* some list UI data need to be saved in file */
    * custom_activate_opname above). */
   const char *custom_drag_opname;
 
-  /* Custom sub-classes properties. */
+  /* Custom sub-classes props. */
   IdProp *props;
 
   /* Dynamic data (runtime). */
@@ -361,7 +360,7 @@ typedef struct ScrArea {
   /** Ordered (bottom-left, top-left, top-right, bottom-right). */
   ScrVert *v1, *v2, *v3, *v4;
   /** If area==full, this is the parent. */
-  bScreen *full;
+  Screen *full;
 
   /** Rect bound by v1 v2 v3 v4. */
   rcti totrct;
@@ -403,7 +402,7 @@ typedef struct ScrArea {
   /* NOTE: This region list is the one from the active/visible editor (first item in
    * spacedata list). Use SpaceLink.regionbase if it's inactive (but only then) */
   /** #ARegion. */
-  List regionbase;
+  List regionlist;
   /** #wmEventHandler. */
   List handlers;
 
@@ -469,19 +468,19 @@ typedef struct ARegion {
   struct ARegionType *type;
 
   /** #uiBlock. */
-  ListBase uiblocks;
+  List uiblocks;
   /** Panel. */
-  ListBase panels;
+  List panels;
   /** Stack of panel categories. */
-  ListBase panels_category_active;
+  List panels_category_active;
   /** #uiList. */
-  ListBase ui_lists;
+  List ui_lists;
   /** #uiPreview. */
-  ListBase ui_previews;
+  List ui_previews;
   /** #wmEventHandler. */
-  ListBase handlers;
+  List handlers;
   /** Panel categories runtime. */
-  ListBase panels_category;
+  List panels_category;
 
   /** Gizmo-map of this region. */
   struct wmGizmoMap *gizmo_map;
@@ -537,7 +536,7 @@ enum {
   SCREENFULL = 2,      /* one editor taking over the screen with no bare-minimum UI elements */
 };
 
-/** #bScreen.redraws_flag */
+/** #Screen.redraws_flag */
 typedef enum eScreen_Redraws_Flag {
   TIME_REGION = (1 << 0),
   TIME_ALL_3D_WIN = (1 << 1),
@@ -546,7 +545,7 @@ typedef enum eScreen_Redraws_Flag {
   // TIME_WITH_SEQ_AUDIO    = (1 << 4), /* DEPRECATED */
   TIME_SEQ = (1 << 5),
   TIME_ALL_IMAGE_WIN = (1 << 6),
-  // TIME_CONTINUE_PHYSICS  = (1 << 7), /* UNUSED */
+  // TIME_CONTINUE_PHYS  = (1 << 7), /* UNUSED */
   TIME_NODES = (1 << 8),
   TIME_CLIPS = (1 << 9),
 
@@ -587,8 +586,8 @@ enum {
 #define UI_LIST_AUTO_SIZE_THRESHOLD 1
 
 /* uiList filter flags (dyn_data) */
-/* WARNING! Those values are used by integer RNA too, which does not handle well values > INT_MAX.
- *          So please do not use 32nd bit here. */
+/* WARNING! Those values are used by integer API too, which does not handle well values > INT_MAX.
+ * So please do not use 32nd bit here. */
 enum {
   UILST_FLT_ITEM = 1 << 30, /* This item has passed the filter process successfully. */
 };
@@ -615,10 +614,8 @@ enum {
 
 #define UILST_FLT_SORT_MASK (((unsigned int)(UILST_FLT_SORT_REVERSE | UILST_FLT_SORT_LOCK)) - 1)
 
-/**
- * regiontype, first two are the default set.
- * warning Do NOT change order, append on end. Types are hard-coded needed.
- */
+/* regiontype, first two are the default set.
+ * warning Do NOT change order, append on end. Types are hard-coded needed. */
 typedef enum eRegion_Type {
   RGN_TYPE_WINDOW = 0,
   RGN_TYPE_HEADER = 1,
