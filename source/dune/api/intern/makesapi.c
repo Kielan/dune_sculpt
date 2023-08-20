@@ -3032,62 +3032,61 @@ static void api_def_fn_wrapper_fns(FILE *f, ApiStructDef *dsapi, ApiFnDef *dfn)
   fprintf(f, "}\n\n");
 }
 
-static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA *dfunc)
+static void api_def_fn_fns(FILE *f, ApiStructDef *dsapi, ApiFnDef *dfn)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyDefRNA *dparm;
-  PropertyType type;
-  const char *funcname, *valstr;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiPropDef *dparm;
+  PropType type;
+  const char *fnname, *valstr;
   const char *ptrstr;
-  const bool has_data = (dfunc->cont.properties.first != NULL);
-  int flag, flag_parameter, pout, cptr, first;
+  const bool has_data = (dfn->cont.props.first != NULL);
+  int flag, flag_param, pout, cptr, first;
 
-  srna = dsrna->srna;
-  func = dfunc->func;
+  sapi = dsapi->sapi;
+  fn = dfn->fn;
 
-  if (!dfunc->call) {
+  if (!dfn->call) {
     return;
   }
 
-  funcname = rna_alloc_function_name(srna->identifier, func->identifier, "call");
+  fnname = api_alloc_fn_name(sapi->id, fn->id, "call");
 
-  /* function definition */
+  /* fn definition */
   fprintf(f,
-          "void %s(bContext *C, ReportList *reports, PointerRNA *_ptr, ParameterList *_parms)",
-          funcname);
+          "void %s(Cxt *C, ReportList *reports, ApiPtr *_ptr, ParamList *_parms)",
+          fname);
   fprintf(f, "\n{\n");
 
   /* variable definitions */
-
-  if (func->flag & FUNC_USE_SELF_ID) {
-    fprintf(f, "\tstruct ID *_selfid;\n");
+  if (fn->flag & FN_USE_SELF_ID) {
+    fprintf(f, "\tstruct Id *_selfid;\n");
   }
 
-  if ((func->flag & FUNC_NO_SELF) == 0) {
-    if (dsrna->dnafromprop) {
-      fprintf(f, "\tstruct %s *_self;\n", dsrna->dnafromname);
+  if ((fn->flag & FN_NO_SELF) == 0) {
+    if (dsapi->typefromprop) {
+      fprintf(f, "\tstruct %s *_self;\n", dsapi->typefromname);
     }
-    else if (dsrna->dnaname) {
-      fprintf(f, "\tstruct %s *_self;\n", dsrna->dnaname);
+    else if (dsapi->typesname) {
+      fprintf(f, "\tstruct %s *_self;\n", dsapi->typesname);
     }
     else {
-      fprintf(f, "\tstruct %s *_self;\n", srna->identifier);
+      fprintf(f, "\tstruct %s *_self;\n", sapi->id);
     }
   }
-  else if (func->flag & FUNC_USE_SELF_TYPE) {
-    fprintf(f, "\tstruct StructRNA *_type;\n");
+  else if (fn->flag & FN_USE_SELF_TYPE) {
+    fprintf(f, "\tstruct ApiStruct *_type;\n");
   }
 
-  dparm = dfunc->cont.properties.first;
+  dparm = dfn->cont.props.first;
   for (; dparm; dparm = dparm->next) {
     type = dparm->prop->type;
     flag = dparm->prop->flag;
-    flag_parameter = dparm->prop->flag_parameter;
-    pout = (flag_parameter & PARM_OUTPUT);
-    cptr = ((type == PROP_POINTER) && !(flag_parameter & PARM_RNAPTR));
+    flag_param = dparm->prop->flag_param;
+    pout = (flag_param & PARM_OUTPUT);
+    cptr = ((type == PROP_PTR) && !(flag_param & PARM_APIPTR));
 
-    if (dparm->prop == func->c_ret) {
+    if (dparm->prop == fn->c_ret) {
       ptrstr = cptr || dparm->prop->arraydimension ? "*" : "";
       /* XXX only arrays and strings are allowed to be dynamic, is this checked anywhere? */
     }
@@ -3098,13 +3097,13 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       else {
         ptrstr = pout ? "**" : "*";
       }
-      /* Fixed size arrays and RNA pointers are pre-allocated on the ParameterList stack,
-       * pass a pointer to it. */
+      /* Fixed size arrays and api ptrs are pre-allocated on the ParamList stack,
+       * pass a ptr to it. */
     }
-    else if (type == PROP_POINTER || dparm->prop->arraydimension) {
+    else if (type == PROP_PTR || dparm->prop->arraydimension) {
       ptrstr = "*";
     }
-    else if ((type == PROP_POINTER) && (flag_parameter & PARM_RNAPTR) &&
+    else if ((type == PROP_PTR) && (flag_param & PARM_APIPTR) &&
              !(flag & PROP_THICK_WRAP)) {
       ptrstr = "*";
       /* PROP_THICK_WRAP strings are pre-allocated on the ParameterList stack,
@@ -3117,22 +3116,22 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       ptrstr = pout ? "*" : "";
     }
 
-    /* for dynamic parameters we pass an additional int for the length of the parameter */
+    /* for dynamic params we pass an additional int for the length of the param */
     if (flag & PROP_DYNAMIC) {
-      fprintf(f, "\tint %s%s_len;\n", pout ? "*" : "", dparm->prop->identifier);
+      fprintf(f, "\tint %s%s_len;\n", pout ? "*" : "", dparm->prop->id);
     }
 
     fprintf(f,
             "\t%s%s %s%s;\n",
-            rna_type_struct(dparm->prop),
-            rna_parameter_type_name(dparm->prop),
+            api_type_struct(dparm->prop),
+            api_param_type_name(dparm->prop),
             ptrstr,
-            dparm->prop->identifier);
+            dparm->prop->id);
   }
 
   if (has_data) {
     fprintf(f, "\tchar *_data");
-    if (func->c_ret) {
+    if (fn->c_ret) {
       fprintf(f, ", *_retdata");
     }
     fprintf(f, ";\n");
@@ -3140,22 +3139,22 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
   }
 
   /* assign self */
-  if (func->flag & FUNC_USE_SELF_ID) {
-    fprintf(f, "\t_selfid = (struct ID *)_ptr->owner_id;\n");
+  if (fn->flag & FN_USE_SELF_ID) {
+    fprintf(f, "\t_selfid = (struct Id *)_ptr->owner_id;\n");
   }
 
-  if ((func->flag & FUNC_NO_SELF) == 0) {
-    if (dsrna->dnafromprop) {
-      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsrna->dnafromname);
+  if ((fn->flag & FN_NO_SELF) == 0) {
+    if (dsapi->typefromprop) {
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsapi->typefromname);
     }
-    else if (dsrna->dnaname) {
-      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsrna->dnaname);
+    else if (dsapi->typesname) {
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsapi->typesname);
     }
     else {
-      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", srna->identifier);
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", sapi->id);
     }
   }
-  else if (func->flag & FUNC_USE_SELF_TYPE) {
+  else if (fn->flag & FN_USE_SELF_TYPE) {
     fprintf(f, "\t_type = _ptr->type;\n");
   }
 
@@ -3163,15 +3162,15 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
     fprintf(f, "\t_data = (char *)_parms->data;\n");
   }
 
-  dparm = dfunc->cont.properties.first;
+  dparm = dfn->cont.props.first;
   for (; dparm; dparm = dparm->next) {
     type = dparm->prop->type;
     flag = dparm->prop->flag;
-    flag_parameter = dparm->prop->flag_parameter;
-    pout = (flag_parameter & PARM_OUTPUT);
-    cptr = ((type == PROP_POINTER) && !(flag_parameter & PARM_RNAPTR));
+    flag_param = dparm->prop->flag_param;
+    pout = (flag_param & PARM_OUTPUT);
+    cptr = ((type == PROP_PTR) && !(flag_param & PARM_RNAPTR));
 
-    if (dparm->prop == func->c_ret) {
+    if (dparm->prop == fn->c_ret) {
       fprintf(f, "\t_retdata = _data;\n");
     }
     else {
@@ -3186,11 +3185,11 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
           valstr = "*";
         }
       }
-      else if ((type == PROP_POINTER) && !(flag & PROP_THICK_WRAP)) {
+      else if ((type == PROP_PTR) && !(flag & PROP_THICK_WRAP)) {
         ptrstr = "**";
         valstr = "*";
       }
-      else if (type == PROP_POINTER || dparm->prop->arraydimension) {
+      else if (type == PROP_PTR || dparm->prop->arraydimension) {
         ptrstr = "*";
         valstr = "";
       }
@@ -3203,19 +3202,19 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
         valstr = "*";
       }
 
-      /* This must be kept in sync with RNA_parameter_dynamic_length_get_data and
-       * RNA_parameter_get, we could just call the function directly, but this is faster. */
+      /* This must be kept in sync with api_param_dynamic_length_get_data and
+       * api_param_get, we could just call the fn directly, but this is faster. */
       if (flag & PROP_DYNAMIC) {
         fprintf(f,
-                "\t%s_len = %s((ParameterDynAlloc *)_data)->array_tot;\n",
-                dparm->prop->identifier,
+                "\t%s_len = %s((ParamDynAlloc *)_data)->array_tot;\n",
+                dparm->prop->id,
                 pout ? "(int *)&" : "(int)");
-        data_str = "(&(((ParameterDynAlloc *)_data)->array))";
+        data_str = "(&(((ParamDynAlloc *)_data)->array))";
       }
       else {
         data_str = "_data";
       }
-      fprintf(f, "\t%s = ", dparm->prop->identifier);
+      fprintf(f, "\t%s = ", dparm->prop->id);
 
       if (!pout) {
         fprintf(f, "%s", valstr);
@@ -3223,40 +3222,40 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
 
       fprintf(f,
               "((%s%s %s)%s);\n",
-              rna_type_struct(dparm->prop),
-              rna_parameter_type_name(dparm->prop),
+              api_type_struct(dparm->prop),
+              api_param_type_name(dparm->prop),
               ptrstr,
               data_str);
     }
 
     if (dparm->next) {
-      fprintf(f, "\t_data += %d;\n", rna_parameter_size(dparm->prop));
+      fprintf(f, "\t_data += %d;\n", api_param_size(dparm->prop));
     }
   }
 
-  if (dfunc->call) {
+  if (dfn->call) {
     fprintf(f, "\t\n");
     fprintf(f, "\t");
-    if (func->c_ret) {
-      fprintf(f, "%s = ", func->c_ret->identifier);
+    if (fn->c_ret) {
+      fprintf(f, "%s = ", fn->c_ret->id);
     }
-    fprintf(f, "%s(", dfunc->call);
+    fprintf(f, "%s(", dfn->call);
 
     first = 1;
 
-    if (func->flag & FUNC_USE_SELF_ID) {
+    if (fn->flag & FN_USE_SELF_ID) {
       fprintf(f, "_selfid");
       first = 0;
     }
 
-    if ((func->flag & FUNC_NO_SELF) == 0) {
+    if ((fn->flag & FN_NO_SELF) == 0) {
       if (!first) {
         fprintf(f, ", ");
       }
       fprintf(f, "_self");
       first = 0;
     }
-    else if (func->flag & FUNC_USE_SELF_TYPE) {
+    else if (fn->flag & FN_USE_SELF_TYPE) {
       if (!first) {
         fprintf(f, ", ");
       }
@@ -3264,15 +3263,15 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       first = 0;
     }
 
-    if (func->flag & FUNC_USE_MAIN) {
+    if (fn->flag & FN_USE_MAIN) {
       if (!first) {
         fprintf(f, ", ");
       }
       first = 0;
-      fprintf(f, "CTX_data_main(C)"); /* may have direct access later */
+      fprintf(f, "cxt_data_main(C)"); /* may have direct access later */
     }
 
-    if (func->flag & FUNC_USE_CONTEXT) {
+    if (fn->flag & FN_USE_CXT) {
       if (!first) {
         fprintf(f, ", ");
       }
@@ -3280,7 +3279,7 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       fprintf(f, "C");
     }
 
-    if (func->flag & FUNC_USE_REPORTS) {
+    if (fn->flag & FN_USE_REPORTS) {
       if (!first) {
         fprintf(f, ", ");
       }
@@ -3288,9 +3287,9 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       fprintf(f, "reports");
     }
 
-    dparm = dfunc->cont.properties.first;
+    dparm = dfn->cont.props.first;
     for (; dparm; dparm = dparm->next) {
-      if (dparm->prop == func->c_ret) {
+      if (dparm->prop == fn->c_ret) {
         continue;
       }
 
@@ -3300,34 +3299,34 @@ static void api_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
       first = 0;
 
       if (dparm->prop->flag & PROP_DYNAMIC) {
-        fprintf(f, "%s_len, %s", dparm->prop->identifier, dparm->prop->identifier);
+        fprintf(f, "%s_len, %s", dparm->prop->id, dparm->prop->id);
       }
       else {
-        fprintf(f, "%s", dparm->prop->identifier);
+        fprintf(f, "%s", dparm->prop->id);
       }
     }
 
     fprintf(f, ");\n");
 
-    if (func->c_ret) {
-      dparm = rna_find_parameter_def(func->c_ret);
-      ptrstr = (((dparm->prop->type == PROP_POINTER) &&
-                 !(dparm->prop->flag_parameter & PARM_RNAPTR)) ||
+    if (fn->c_ret) {
+      dparm = api_find_param_def(func->c_ret);
+      ptrstr = (((dparm->prop->type == PROP_PTR) &&
+                 !(dparm->prop->flag_param & PARM_APIPTR)) ||
                 (dparm->prop->arraydimension)) ?
                    "*" :
                    "";
       fprintf(f,
               "\t*((%s%s %s*)_retdata) = %s;\n",
-              rna_type_struct(dparm->prop),
-              rna_parameter_type_name(dparm->prop),
+              api_type_struct(dparm->prop),
+              api_param_type_name(dparm->prop),
               ptrstr,
-              func->c_ret->identifier);
+              fn->c_ret->id);
     }
   }
 
   fprintf(f, "}\n\n");
 
-  dfunc->gencall = funcname;
+  dfunc->gencall = fnname;
 }
 
 
