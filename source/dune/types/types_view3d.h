@@ -590,8 +590,8 @@ enum {
 enum {
   /** All gizmos. */
   V3D_GIZMO_HIDE = (1 << 0),
-  V3D_GIZMO_HIDE_NAVIGATE = (1 << 1),
-  V3D_GIZMO_HIDE_CONTEXT = (1 << 2),
+  V3D_GIZMO_HIDE_NAV = (1 << 1),
+  V3D_GIZMO_HIDE_CXT = (1 << 2),
   V3D_GIZMO_HIDE_TOOL = (1 << 3),
 };
 
@@ -629,7 +629,7 @@ enum {
 #define RV3D_CAMZOOM_MIN -30
 #define RV3D_CAMZOOM_MAX 600
 
-/** #BKE_screen_view3d_zoom_to_fac() values above */
+/** #dune_screen_view3d_zoom_to_fac() values above */
 #define RV3D_CAMZOOM_MIN_FACTOR 0.1657359312880714853f
 #define RV3D_CAMZOOM_MAX_FACTOR 44.9852813742385702928f
 
