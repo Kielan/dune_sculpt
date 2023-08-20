@@ -941,7 +941,7 @@ static void api_clamp_value_range(FILE *f, ApiProp *prop)
               "prop_soft_max;\n");
       fprintf(f,
               "    %s(ptr, &prop_clamp_min, &prop_clamp_max, &prop_soft_min, &prop_soft_max);\n",
-              rna_function_string(iprop->range));
+              api_fn_string(iprop->range));
     }
   }
 }
@@ -1027,108 +1027,108 @@ static void api_clamp_value(FILE *f, ApiProp *prop, int array)
 static char *api_def_prop_set_fn(
     FILE *f, ApiStruct *sapi, ApiProp *prop, ApiPropDef *dp, const char *manualfn)
 {
-  char *func;
+  char *fn;
 
   if (!(prop->flag & PROP_EDITABLE)) {
     return NULL;
   }
-  if (prop->flag & PROP_IDPROPERTY && manualfunc == NULL) {
+  if (prop->flag & PROP_IDPROP && manualfn == NULL) {
     return NULL;
   }
 
-  if (!manualfunc) {
-    if (!dp->dnastructname || !dp->dnaname) {
+  if (!manualfn) {
+    if (!dp->typestructname || !dp->typesname) {
       if (prop->flag & PROP_EDITABLE) {
         CLOG_ERROR(&LOG, "%s.%s has no valid dna info.", sapi->id, prop->id);
-        DefRNA.error = true;
+        ApiDef.error = true;
       }
       return NULL;
     }
   }
 
-  func = rna_alloc_function_name(srna->id, api_safe_id(prop->id), "set");
+  fn = api_alloc_fn_name(sapi->id, api_safe_id(prop->id), "set");
 
   switch (prop->type) {
     case PROP_STRING: {
-      StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
-      fprintf(f, "void %s(PointerRNA *ptr, const char *value)\n", func);
+      ApiStringProp *sprop = (ApiStringProp *)prop;
+      fprintf(f, "void %s(ApiPtr *ptr, const char *value)\n", fn);
       fprintf(f, "{\n");
-      if (manualfunc) {
-        fprintf(f, "    %s(ptr, value);\n", manualfunc);
+      if (manualfn) {
+        fprintf(f, "    %s(ptr, value);\n", manualfn);
       }
       else {
-        const PropertySubType subtype = prop->subtype;
-        const char *string_copy_func =
+        const PropSubType subtype = prop->subtype;
+        const char *string_copy_fn =
             ELEM(subtype, PROP_FILEPATH, PROP_DIRPATH, PROP_FILENAME, PROP_BYTESTRING) ?
-                "BLI_strncpy" :
-                "BLI_strncpy_utf8";
+                "lib_strncpy" :
+                "lib_strncpy_utf8";
 
-        rna_print_data_get(f, dp);
+        api_print_data_get(f, dp);
 
-        if (dp->dnapointerlevel == 1) {
-          /* Handle allocated char pointer properties. */
+        if (dp->typeptrlevel == 1) {
+          /* Handle allocated char ptr props. */
           fprintf(
-              f, "    if (data->%s != NULL) { MEM_freeN(data->%s); }\n", dp->dnaname, dp->dnaname);
+              f, "    if (data->%s != NULL) { mem_freen(data->%s); }\n", dp->dnaname, dp->dnaname);
           fprintf(f, "    const int length = strlen(value);\n");
-          fprintf(f, "    data->%s = MEM_mallocN(length + 1, __func__);\n", dp->dnaname);
+          fprintf(f, "    data->%s = mem_mallocn(length + 1, __func__);\n", dp->dnaname);
           fprintf(f, "    %s(data->%s, value, length + 1);\n", string_copy_func, dp->dnaname);
         }
         else {
-          /* Handle char array properties. */
+          /* Handle char array props. */
           if (sprop->maxlength) {
             fprintf(f,
                     "    %s(data->%s, value, %d);\n",
-                    string_copy_func,
-                    dp->dnaname,
+                    string_copy_fn,
+                    dp->typesname,
                     sprop->maxlength);
           }
           else {
             fprintf(f,
                     "    %s(data->%s, value, sizeof(data->%s));\n",
-                    string_copy_func,
-                    dp->dnaname,
-                    dp->dnaname);
+                    string_copy_fn,
+                    dp->typesname,
+                    dp->typesname);
           }
         }
       }
       fprintf(f, "}\n\n");
       break;
     }
-    case PROP_POINTER: {
-      fprintf(f, "void %s(PointerRNA *ptr, PointerRNA value, struct ReportList *reports)\n", func);
+    case PROP_PTR: {
+      fprintf(f, "void %s(ApiPtr *ptr, ApiPtr value, struct ReportList *reports)\n", fn);
       fprintf(f, "{\n");
-      if (manualfunc) {
-        fprintf(f, "    %s(ptr, value, reports);\n", manualfunc);
+      if (manualfn) {
+        fprintf(f, "    %s(ptr, value, reports);\n", manualfn);
       }
       else {
-        rna_print_data_get(f, dp);
+        api_print_data_get(f, dp);
 
         if (prop->flag & PROP_ID_SELF_CHECK) {
-          rna_print_id_get(f, dp);
+          api_print_id_get(f, dp);
           fprintf(f, "    if (id == value.data) {\n");
           fprintf(f, "      return;\n");
           fprintf(f, "    }\n");
         }
 
         if (prop->flag & PROP_ID_REFCOUNT) {
-          fprintf(f, "\n    if (data->%s) {\n", dp->dnaname);
-          fprintf(f, "        id_us_min((ID *)data->%s);\n", dp->dnaname);
+          fprintf(f, "\n    if (data->%s) {\n", dp->typesname);
+          fprintf(f, "        id_us_min((Id *)data->%s);\n", dp->typesname);
           fprintf(f, "    }\n");
           fprintf(f, "    if (value.data) {\n");
-          fprintf(f, "        id_us_plus((ID *)value.data);\n");
+          fprintf(f, "        id_us_plus((Id *)value.data);\n");
           fprintf(f, "    }\n");
         }
         else {
-          PointerPropertyRNA *pprop = (PointerPropertyRNA *)dp->prop;
-          StructRNA *type = (pprop->type) ? rna_find_struct((const char *)pprop->type) : NULL;
+          ApiPtrProp *pprop = (ApiPtrProp *)dp->prop;
+          ApiStruct *type = (pprop->type) ? api_find_struct((const char *)pprop->type) : NULL;
           if (type && (type->flag & STRUCT_ID)) {
             fprintf(f, "    if (value.data) {\n");
-            fprintf(f, "        id_lib_extern((ID *)value.data);\n");
+            fprintf(f, "        id_lib_extern((Id *)value.data);\n");
             fprintf(f, "    }\n");
           }
         }
 
-        fprintf(f, "    data->%s = value.data;\n", dp->dnaname);
+        fprintf(f, "    data->%s = value.data;\n", dp->typesname);
       }
       fprintf(f, "}\n\n");
       break;
@@ -1136,99 +1136,99 @@ static char *api_def_prop_set_fn(
     default:
       if (prop->arraydimension) {
         if (prop->flag & PROP_DYNAMIC) {
-          fprintf(f, "void %s(PointerRNA *ptr, const %s values[])\n", func, rna_type_type(prop));
+          fprintf(f, "void %s(ApiPtr *ptr, const %s values[])\n", func, rna_type_type(prop));
         }
         else {
           fprintf(f,
-                  "void %s(PointerRNA *ptr, const %s values[%u])\n",
-                  func,
-                  rna_type_type(prop),
+                  "void %s(ApiPtr *ptr, const %s values[%u])\n",
+                  fn,
+                  api_type_type(prop),
                   prop->totarraylength);
         }
         fprintf(f, "{\n");
 
-        if (manualfunc) {
-          fprintf(f, "    %s(ptr, values);\n", manualfunc);
+        if (manualfn) {
+          fprintf(f, "    %s(ptr, values);\n", manualfn);
         }
         else {
-          rna_print_data_get(f, dp);
+          api_print_data_get(f, dp);
 
           if (prop->flag & PROP_DYNAMIC) {
-            char *lenfunc = rna_alloc_function_name(
-                srna->identifier, rna_safe_id(prop->identifier), "set_length");
-            fprintf(f, "    unsigned int i, arraylen[RNA_MAX_ARRAY_DIMENSION];\n");
-            fprintf(f, "    unsigned int len = %s(ptr, arraylen);\n\n", lenfunc);
-            rna_clamp_value_range(f, prop);
+            char *lenfn = api_alloc_fn_name(
+                sapi->id, api_safe_id(prop->id), "set_length");
+            fprintf(f, "    unsigned int i, arraylen[API_MAX_ARRAY_DIMENSION];\n");
+            fprintf(f, "    unsigned int len = %s(ptr, arraylen);\n\n", lenfn);
+            api_clamp_value_range(f, prop);
             fprintf(f, "    for (i = 0; i < len; i++) {\n");
-            MEM_freeN(lenfunc);
+            mem_freen(lenfn);
           }
           else {
             fprintf(f, "    unsigned int i;\n\n");
-            rna_clamp_value_range(f, prop);
+            api_clamp_value_range(f, prop);
             fprintf(f, "    for (i = 0; i < %u; i++) {\n", prop->totarraylength);
           }
 
           if (dp->dnaarraylength == 1) {
-            if (prop->type == PROP_BOOLEAN && dp->booleanbit) {
+            if (prop->type == PROP_BOOL && dp->boolbit) {
               fprintf(f,
                       "        if (%svalues[i]) { data->%s |= (",
-                      (dp->booleannegative) ? "!" : "",
-                      dp->dnaname);
-              rna_int_print(f, dp->booleanbit);
+                      (dp->boolnegative) ? "!" : "",
+                      dp->typesname);
+              api_int_print(f, dp->boolebit);
               fprintf(f, " << i); }\n");
-              fprintf(f, "        else { data->%s &= ~(", dp->dnaname);
-              rna_int_print(f, dp->booleanbit);
+              fprintf(f, "        else { data->%s &= ~(", dp->typesname);
+              api_int_print(f, dp->booleanbit);
               fprintf(f, " << i); }\n");
             }
             else {
               fprintf(
-                  f, "        (&data->%s)[i] = %s", dp->dnaname, (dp->booleannegative) ? "!" : "");
-              rna_clamp_value(f, prop, 1);
+                  f, "        (&data->%s)[i] = %s", dp->typesname, (dp->boolnegative) ? "!" : "");
+              api_clamp_value(f, prop, 1);
             }
           }
           else {
-            if (prop->type == PROP_BOOLEAN && dp->booleanbit) {
+            if (prop->type == PROP_BOOL && dp->boolbit) {
               fprintf(f,
                       "        if (%svalues[i]) { data->%s[i] |= ",
-                      (dp->booleannegative) ? "!" : "",
-                      dp->dnaname);
-              rna_int_print(f, dp->booleanbit);
+                      (dp->boolnegative) ? "!" : "",
+                      dp->typesname);
+              api_int_print(f, dp->boolbit);
               fprintf(f, "; }\n");
-              fprintf(f, "        else { data->%s[i] &= ~", dp->dnaname);
-              rna_int_print(f, dp->booleanbit);
+              fprintf(f, "        else { data->%s[i] &= ~", dp->typesname);
+              api_int_print(f, dp->boolbit);
               fprintf(f, "; }\n");
             }
-            else if (rna_color_quantize(prop, dp)) {
+            else if (api_color_quantize(prop, dp)) {
               fprintf(
                   f, "        data->%s[i] = unit_float_to_uchar_clamp(values[i]);\n", dp->dnaname);
             }
             else {
-              if (dp->dnatype) {
+              if (dp->typestype) {
                 fprintf(f,
                         "        ((%s *)data->%s)[i] = %s",
-                        dp->dnatype,
-                        dp->dnaname,
-                        (dp->booleannegative) ? "!" : "");
+                        dp->type,
+                        dp->typesname,
+                        (dp->boolnegative) ? "!" : "");
               }
               else {
                 fprintf(f,
                         "        (data->%s)[i] = %s",
-                        dp->dnaname,
-                        (dp->booleannegative) ? "!" : "");
+                        dp->typesname,
+                        (dp->boolnegative) ? "!" : "");
               }
-              rna_clamp_value(f, prop, 1);
+              api_clamp_value(f, prop, 1);
             }
           }
           fprintf(f, "    }\n");
         }
 
-#ifdef USE_RNA_RANGE_CHECK
-        if (dp->dnaname && manualfunc == NULL) {
-          if (dp->dnaarraylength == 1) {
-            rna_clamp_value_range_check(f, prop, "data->", dp->dnaname);
+#ifdef USE_API_RANGE_CHECK
+        if (dp->typesname && manualfn == NULL) {
+          if (dp->typesarraylength == 1) {
+            api_clamp_value_range_check(f, prop, "data->", dp->typesname);
           }
           else {
-            rna_clamp_value_range_check(f, prop, "*data->", dp->dnaname);
+            api_clamp_value_range_check(f, prop, "*data->", dp->typesname);
           }
         }
 #endif
@@ -1236,41 +1236,41 @@ static char *api_def_prop_set_fn(
         fprintf(f, "}\n\n");
       }
       else {
-        fprintf(f, "void %s(PointerRNA *ptr, %s value)\n", func, rna_type_type(prop));
+        fprintf(f, "void %s(ApiPtr *ptr, %s value)\n", fn, api_type_type(prop));
         fprintf(f, "{\n");
 
-        if (manualfunc) {
+        if (manualfn) {
           fprintf(f, "    %s(ptr, value);\n", manualfunc);
         }
         else {
           rna_print_data_get(f, dp);
-          if (prop->type == PROP_BOOLEAN && dp->booleanbit) {
+          if (prop->type == PROP_BOOL && dp->boolbit) {
             fprintf(f,
                     "    if (%svalue) { data->%s |= ",
-                    (dp->booleannegative) ? "!" : "",
-                    dp->dnaname);
-            rna_int_print(f, dp->booleanbit);
+                    (dp->boolnegative) ? "!" : "",
+                    dp->typesname);
+            api_int_print(f, dp->boolbit);
             fprintf(f, "; }\n");
-            fprintf(f, "    else { data->%s &= ~", dp->dnaname);
-            rna_int_print(f, dp->booleanbit);
+            fprintf(f, "    else { data->%s &= ~", dp->typesname);
+            rna_int_print(f, dp->boolbit);
             fprintf(f, "; }\n");
           }
           else if (prop->type == PROP_ENUM && dp->enumbitflags) {
-            fprintf(f, "    data->%s &= ~", dp->dnaname);
-            rna_int_print(f, rna_enum_bitmask(prop));
+            fprintf(f, "    data->%s &= ~", dp->typesname);
+            api_int_print(f, api_enum_bitmask(prop));
             fprintf(f, ";\n");
-            fprintf(f, "    data->%s |= value;\n", dp->dnaname);
+            fprintf(f, "    data->%s |= value;\n", dp->typesname);
           }
           else {
             rna_clamp_value_range(f, prop);
-            fprintf(f, "    data->%s = %s", dp->dnaname, (dp->booleannegative) ? "!" : "");
+            fprintf(f, "    data->%s = %s", dp->typesname, (dp->boolnegative) ? "!" : "");
             rna_clamp_value(f, prop, 0);
           }
         }
 
-#ifdef USE_RNA_RANGE_CHECK
-        if (dp->dnaname && manualfunc == NULL) {
-          rna_clamp_value_range_check(f, prop, "data->", dp->dnaname);
+#ifdef USE_API_RANGE_CHECK
+        if (dp->typesname && manualfn == NULL) {
+          api_clamp_value_range_check(f, prop, "data->", dp->dnaname);
         }
 #endif
 
@@ -1279,43 +1279,43 @@ static char *api_def_prop_set_fn(
       break;
   }
 
-  return func;
+  return fn;
 }
 
-static char *rna_def_property_set_func(
-    FILE *f, StructRNA *srna, PropertyRNA *prop, PropertyDefRNA *dp, const char *manualfunc)
+static char *api_def_prop_set_fn(
+    FILE *f, ApiStruct *sapi, ApiProp *prop, ApiPropertyDef *dp, const char *manualfn)
 {
   char *func;
 
   if (!(prop->flag & PROP_EDITABLE)) {
     return NULL;
   }
-  if (prop->flag & PROP_IDPROPERTY && manualfunc == NULL) {
+  if (prop->flag & PROP_IDPROP && manualfn == NULL) {
     return NULL;
   }
 
-  if (!manualfunc) {
-    if (!dp->dnastructname || !dp->dnaname) {
+  if (!manualfn) {
+    if (!dp->typestructname || !dp->typesname) {
       if (prop->flag & PROP_EDITABLE) {
-        CLOG_ERROR(&LOG, "%s.%s has no valid dna info.", srna->identifier, prop->identifier);
-        DefRNA.error = true;
+        CLOG_ERROR(&LOG, "%s.%s has no valid type info.", sapi->id, prop->id);
+        ApiDef.error = true;
       }
       return NULL;
     }
   }
 
-  func = rna_alloc_function_name(srna->identifier, rna_safe_id(prop->identifier), "set");
+  fn = api_alloc_fn_name(sapi->id, api_safe_id(prop->id), "set");
 
   switch (prop->type) {
     case PROP_STRING: {
-      StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
-      fprintf(f, "void %s(PointerRNA *ptr, const char *value)\n", func);
+      ApiStringProp *sprop = (ApiStringProp *)prop;
+      fprintf(f, "void %s(ApiPtr *ptr, const char *value)\n", fn);
       fprintf(f, "{\n");
-      if (manualfunc) {
-        fprintf(f, "    %s(ptr, value);\n", manualfunc);
+      if (manualfn) {
+        fprintf(f, "    %s(ptr, value);\n", manualfn);
       }
       else {
-        const PropertySubType subtype = prop->subtype;
+        const PropSubType subtype = prop->subtype;
         const char *string_copy_func =
             ELEM(subtype, PROP_FILEPATH, PROP_DIRPATH, PROP_FILENAME, PROP_BYTESTRING) ?
                 "BLI_strncpy" :
