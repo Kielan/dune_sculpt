@@ -5,11 +5,9 @@
 #include "types_userdef_enums.h"
 
 /* Themes; defines in `BIF_resource.h`. */
-
 struct ColorBand;
 
 /* ************************ style definitions ******************** */
-
 #define MAX_STYLE_NAME 64
 
 /** Default offered by Dune.
@@ -56,7 +54,6 @@ typedef struct uiFontStyle {
 } uiFontStyle;
 
 /* this is fed to the layout engine and widget code */
-
 typedef struct uiStyle {
   struct uiStyle *next, *prev;
 
@@ -78,8 +75,8 @@ typedef struct uiStyle {
   short columnspace;
   short templatespace;
   short boxspace;
-  short buttonspacex;
-  short buttonspacey;
+  short btnspacex;
+  short btnspacey;
   short panelspace;
   short panelouter;
 
@@ -214,11 +211,11 @@ typedef struct ThemeSpace {
 
   /* button/tool regions */
   /** Region background. */
-  unsigned char button[4];
+  unsigned char btn[4];
   /** Panel title. */
-  unsigned char button_title[4];
-  unsigned char button_text[4];
-  unsigned char button_text_hi[4];
+  unsigned char btn_title[4];
+  unsigned char btn_text[4];
+  unsigned char btn_text_hi[4];
 
   /* listview regions */
   /** Region background. */
@@ -230,7 +227,7 @@ typedef struct ThemeSpace {
 
   /* navigation bar regions */
   /** Region background. */
-  unsigned char navigation_bar[4];
+  unsigned char nav_bar[4];
   /** Region background. */
   unsigned char execution_buts[4];
 
@@ -337,8 +334,8 @@ typedef struct ThemeSpace {
   unsigned char camera_path[4];
   unsigned char _pad1[6];
 
-  unsigned char gp_vertex_size;
-  unsigned char gp_vertex[4], gp_vertex_select[4];
+  unsigned char pen_vertex_size;
+  unsigned char pen_vertex[4], pen_vertex_select[4];
 
   unsigned char preview_back[4];
   unsigned char preview_stitch_face[4];
@@ -407,7 +404,6 @@ typedef struct ThemeSpace {
 } ThemeSpace;
 
 /* Viewport Background Gradient Types. */
-
 typedef enum eBackgroundGradientTypes {
   TH_BACKGROUND_SINGLE_COLOR = 0,
   TH_BACKGROUND_GRADIENT_LINEAR = 1,
@@ -506,7 +502,7 @@ typedef struct duneUserMenu {
   char _pad0[7];
   char context[64];
   /* duneUserMenuItem */
-  ListBase items;
+  List items;
 } duneUserMenu;
 
 /** May be part of duneUserMenu or other list. */
@@ -559,7 +555,7 @@ typedef struct SolidLight {
   float col[4], spec[4], vec[4];
 } SolidLight;
 
-typedef struct WalkNavigation {
+typedef struct WalkNav {
   /** Speed factor for look around. */
   float mouse_speed;
   float walk_speed;
@@ -570,7 +566,7 @@ typedef struct WalkNavigation {
   float teleport_time;
   short flag;
   char _pad0[6];
-} WalkNavigation;
+} WalkNav;
 
 typedef struct UserDefRuntime {
   /** Mark as changed so the preferences are saved on exit. */
@@ -636,10 +632,10 @@ typedef struct UserDef {
   int flag;
   /** eDupliIdFlags. */
   unsigned int dupflag;
-  /** eUserPrefPrefFlag preferences for the preferences. */
+  /** eUserPrefPrefFlag prefs for the preferences. */
   char pref_flag;
   char savetime;
-  char mouse_emulate_3_button_modifier;
+  char mouse_emulate_3_btn_mod;
   char _pad4[1];
   /** FILE_MAXDIR length. */
   char tempdir[768];
@@ -650,8 +646,7 @@ typedef struct UserDef {
   /** 768 = FILE_MAXDIR. */
   char render_cachedir[768];
   char textudir[768];
-  /**
-   * Optional user location for scripts.
+  /* Optional user location for scripts.
    *
    * This supports the same layout as Dune's scripts directory `release/scripts`.
    *
@@ -663,11 +658,10 @@ typedef struct UserDef {
    * Although this is partially supported as the `sys.path` is refreshed when loading preferences.
    * This is done to support PREFERENCES_OT_copy_prev which is available to the user when they
    * launch with a new version of Dune. In this case setting the script path on top of
-   * factory settings will work without problems.
-   */
+   * factory settings will work without problems. */
   char pythondir[768];
   char sounddir[768];
-  char i18ndir[768];
+  char langdir[768];
   /** 1024 = FILE_MAX. */
   char image_editor[1024];
   /** 1024 = FILE_MAX. */
@@ -751,7 +745,7 @@ typedef struct UserDef {
   /** Generic gizmo size. */
   char gizmo_size;
   /** Navigate gizmo size. */
-  char gizmo_size_navigate_v3d;
+  char gizmo_size_nav_v3d;
   char _pad3[5];
   short edit_studio_light;
   short lookdev_sphere_size;
@@ -818,7 +812,7 @@ typedef struct UserDef {
   short animation_flag;
   /** Options for text rendering. */
   char text_render;
-  char navigation_mode;
+  char nav_mode;
   /** Turn-table rotation amount per-pixel in radians. Scaled with DPI. */
   float view_rotate_sensitivity_turntable;
   /** Track-ball rotation scale. */
@@ -862,11 +856,11 @@ typedef struct UserDef {
   char render_display_type;      /* eUserpref_RenderDisplayType */
   char filebrowser_display_type; /* eUserpref_TempSpaceDisplayType */
 
-  char sequencer_disk_cache_dir[1024];
-  int sequencer_disk_cache_compression; /* eUserpref_DiskCacheCompression */
-  int sequencer_disk_cache_size_limit;
-  short sequencer_disk_cache_flag;
-  short sequencer_proxy_setup; /* eUserpref_SeqProxySetup */
+  char seq_disk_cache_dir[1024];
+  int seq_disk_cache_compression; /* eUserpref_DiskCacheCompression */
+  int seq_disk_cache_size_limit;
+  short seq_disk_cache_flag;
+  short seq_proxy_setup; /* eUserpref_SeqProxySetup */
 
   float collection_instance_empty_size;
   char text_flag;
@@ -875,7 +869,7 @@ typedef struct UserDef {
   char file_preview_type; /* eUserpref_File_Preview_Type */
   char statusbar_flag;    /* eUserpref_StatusBar_Flag */
 
-  struct WalkNavigation walk_navigation;
+  struct WalkNav walk_nav;
 
   /** The UI for the user preferences. */
   UserDefSpaceData space_data;
@@ -994,7 +988,7 @@ typedef enum eViewZoomStyle {
 } eViewZoomStyle;
 
 /** UserDef.navigation_mode */
-typedef enum eViewNavigationMethod {
+typedef enum eViewNavMethod {
   VIEW_NAVIGATION_WALK = 0,
   VIEW_NAVIGATION_FLY = 1,
 } eViewNavigationMethod;
@@ -1007,7 +1001,7 @@ typedef enum eUserprefMiniAxisType {
 } eUserprefMiniAxisType;
 
 /** UserDef.flag */
-typedef enum eWalkNavigationFlag {
+typedef enum eWalkNavFlag {
   USER_WALK_GRAVITY = (1 << 0),
   USER_WALK_MOUSE_REVERSE = (1 << 1),
 } eWalkNavigationFlag;
@@ -1067,7 +1061,7 @@ typedef enum eUserprefGPUFlag {
   USER_GPU_FLAG_NO_DEPT_PICK = (1 << 0),
   USER_GPU_FLAG_NO_EDIT_MODE_SMOOTH_WIRE = (1 << 1),
   USER_GPU_FLAG_OVERLAY_SMOOTH_WIRE = (1 << 2),
-  USER_GPU_FLAG_SUBDIVISION_EVALUATION = (1 << 3),
+  USER_GPU_FLAG_SUBDIVISION_EVAL = (1 << 3),
 } eUserprefGPUFlag;
 
 /** UserDef.tablet_api */
@@ -1098,10 +1092,8 @@ typedef enum eAutokeyMode {
   /* AUTOKEY_ON is a bitflag */
   AUTOKEY_ON = 1,
 
-  /**
-   * AUTOKEY_ON + 2**n...  (i.e. AUTOKEY_MODE_NORMAL = AUTOKEY_ON + 2)
-   * to preserve setting, even when auto-key turned off.
-   */
+  /* AUTOKEY_ON + 2**n...  (i.e. AUTOKEY_MODE_NORMAL = AUTOKEY_ON + 2)
+   * to preserve setting, even when auto-key turned off. */
   AUTOKEY_MODE_NORMAL = 3,
   AUTOKEY_MODE_EDITKEYS = 5,
 } eAutokeyMode;
@@ -1114,12 +1106,10 @@ typedef enum eZoomFrame_Mode {
   ZOOM_FRAME_MODE_KEYFRAMES = 2,
 } eZoomFrame_Mode;
 
-/**
- * Auto-Keying flag
+/* Auto-Keying flag
  * UserDef.autokey_flag (not strictly used when autokeying only -
  * is also used when keyframing these days).
- * eAutokey_Flag is used with a macro, search for lines like IS_AUTOKEY_FLAG(INSERTAVAIL).
- */
+ * eAutokey_Flag is used with a macro, search for lines like IS_AUTOKEY_FLAG(INSERTAVAIL) */
 typedef enum eAutokeyFlag {
   AUTOKEY_FLAG_INSERTAVAIL = (1 << 0),
   AUTOKEY_FLAG_INSERTNEEDED = (1 << 1),
@@ -1134,7 +1124,7 @@ typedef enum eAutokeyFlag {
 } eAutokeyFlag;
 
 /** Animation flags
- * UserDef.animation_flag, used for animation flags that aren't covered by more specific flags
+ * UserDef.anim_flag, used for animation flags that aren't covered by more specific flags
  * (like eAutokey_Flag). */
 typedef enum eUserprefAnimFlags {
   USER_ANIM_SHOW_CHANNEL_GROUP_COLORS = (1 << 0),
@@ -1169,7 +1159,7 @@ typedef enum eTextDrawOptions {
 } eTextDrawOptions;
 
 /* Pen Settings.
- * UserDef.gp_settings */
+ * UserDef.pen_settings */
 typedef enum ePenUserdefSettings {
   PEN_PAINT_UNUSED_0 = (1 << 0),
 } ePenUserdefSettings;
@@ -1178,7 +1168,7 @@ enum {
   USER_GIZMO_DRAW = (1 << 0),
 };
 
-/** Color Picker Types.
+/* Color Picker Types.
  * UserDef.color_picker_type */
 typedef enum eColorPickerTypes {
   USER_CP_CIRCLE_HSV = 0,
@@ -1191,10 +1181,8 @@ typedef enum eColorPickerTypes {
 /** Time-code display styles.
  * UserDef.timecode_style */
 typedef enum eTimecodeStyles {
-  /**
-   * As little info as is necessary to show relevant info with '+' to denote the frames
-   * i.e. HH:MM:SS+FF, MM:SS+FF, SS+FF, or MM:SS.
-   */
+  /* As little info as is necessary to show relevant info with '+' to denote the frames
+   * i.e. HH:MM:SS+FF, MM:SS+FF, SS+FF, or MM:SS. */
   USER_TIMECODE_MINIMAL = 0,
   /** Reduced SMPTE - (HH:)MM:SS:FF */
   USER_TIMECODE_SMPTE_MSF = 1,
@@ -1204,10 +1192,8 @@ typedef enum eTimecodeStyles {
   USER_TIMECODE_MILLISECONDS = 3,
   /** Seconds only. */
   USER_TIMECODE_SECONDS_ONLY = 4,
-  /**
-   * Private (not exposed as generic choices) options.
-   * milliseconds for sub-frames, SubRip format- HH:MM:SS,sss.
-   */
+  /* Private (not exposed as generic choices) options.
+   * milliseconds for sub-frames, SubRip format- HH:MM:SS,sss. */
   USER_TIMECODE_SUBRIP = 100,
 } eTimecodeStyles;
 
@@ -1223,7 +1209,7 @@ typedef enum eNdofFlag {
   NDOF_SHOULD_ZOOM = (1 << 4),
   NDOF_SHOULD_ROTATE = (1 << 5),
 
-  /* Orbit navigation modes. */
+  /* Orbit nav modes. */
 
   NDOF_MODE_ORBIT = (1 << 6),
 
@@ -1311,8 +1297,8 @@ typedef enum eUserprefSeqProxySetup {
 } eUserprefSeqProxySetup;
 
 /* Locale Ids. Auto will try to get local from OS. Our default is English though. */
-/** UserDef.language */
+/** UserDef.lang */
 enum {
-  ULANGUAGE_AUTO = 0,
-  ULANGUAGE_ENGLISH = 1,
+  ULANG_AUTO = 0,
+  ULANG_ENGLISH = 1,
 };
