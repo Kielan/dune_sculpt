@@ -1,13 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2001-2002 NaN Holding BV. All rights reserved. */
-
-/** \file
- * \ingroup DNA
- */
-
 #pragma once
 
-#include "DNA_defs.h"
+#include "types_defs.h"
 
 /* XXX(campbell): temp feature. */
 #define DURIAN_CAMERA_SWITCH
@@ -16,13 +9,13 @@
  * libs can cause this case which is normally prevented, see (T#####) */
 #define USE_SETSCENE_CHECK
 
-#include "DNA_ID.h"
-#include "DNA_color_types.h"      /* color management */
-#include "DNA_customdata_types.h" /* Scene's runtime custom-data masks. */
-#include "DNA_layer_types.h"
-#include "DNA_listBase.h"
-#include "DNA_vec_types.h"
-#include "DNA_view3d_types.h"
+#include "types_id.h"
+#include "types_color.h" /* color management */
+#include "_customdata.h" /* Scene's runtime custom-data masks. */
+#include "types_layer.h"
+#include "types_list.h"
+#include "types_vec.h"
+#include "types_view3d.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,8 +35,8 @@ struct Object;
 struct Scene;
 struct SceneCollection;
 struct World;
-struct bGPdata;
-struct bNodeTree;
+struct PenData;
+struct NodeTree;
 
 /* ************************************************************* */
 /* Scene Data */
@@ -83,7 +76,7 @@ typedef struct AviCodecData {
 typedef enum eFFMpegPreset {
   FFM_PRESET_NONE = 0,
 
-#ifdef DNA_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
   /* Previously used by h.264 to control encoding speed vs. file size. */
   FFM_PRESET_ULTRAFAST = 1, /* DEPRECATED */
   FFM_PRESET_SUPERFAST = 2, /* DEPRECATED */
@@ -181,35 +174,35 @@ typedef struct SceneRenderLayer {
   struct SceneRenderLayer *next, *prev;
 
   /** MAX_NAME. */
-  char name[64] DNA_DEPRECATED;
+  char name[64] TYPES_DEPRECATED;
 
   /** Converted to ViewLayer setting. */
-  struct Material *mat_override DNA_DEPRECATED;
+  struct Material *mat_override TYPES_DEPRECATED;
 
   /** Converted to LayerCollection cycles camera visibility override. */
-  unsigned int lay DNA_DEPRECATED;
+  unsigned int lay TYPES_DEPRECATED;
   /** Converted to LayerCollection cycles holdout override. */
-  unsigned int lay_zmask DNA_DEPRECATED;
-  unsigned int lay_exclude DNA_DEPRECATED;
+  unsigned int lay_zmask TYPES_DEPRECATED;
+  unsigned int lay_exclude TYPES_DEPRECATED;
   /** Converted to ViewLayer layflag and flag. */
-  int layflag DNA_DEPRECATED;
+  int layflag TYPES_DEPRECATED;
 
   /* pass_xor has to be after passflag */
   /** Pass_xor has to be after passflag. */
-  int passflag DNA_DEPRECATED;
+  int passflag TYPES_DEPRECATED;
   /** Converted to ViewLayer passflag and flag. */
-  int pass_xor DNA_DEPRECATED;
+  int pass_xor TYPES_DEPRECATED;
 
   /** Converted to ViewLayer setting. */
-  int samples DNA_DEPRECATED;
+  int samples TYPES_DEPRECATED;
   /** Converted to ViewLayer pass_alpha_threshold. */
-  float pass_alpha_threshold DNA_DEPRECATED;
+  float pass_alpha_threshold TYPES_DEPRECATED;
 
-  /** Converted to ViewLayer id_properties. */
-  IDProperty *prop DNA_DEPRECATED;
+  /** Converted to ViewLayer id_props. */
+  IdProp *prop TYPES_DEPRECATED;
 
   /** Converted to ViewLayer freestyleConfig. */
-  struct FreestyleConfig freestyleConfig DNA_DEPRECATED;
+  struct FreestyleConfig freestyleConfig TYPES_DEPRECATED;
 } SceneRenderLayer;
 
 /** #SceneRenderLayer.layflag */
@@ -382,12 +375,12 @@ typedef enum eStereo3dInterlaceType {
  *
  * NOTE: its a bit strange that even though this is an image format struct
  * the imtype can still be used to select video formats.
- * RNA ensures these enum's are only selectable for render output.
+ * API ensures these enum's are only selectable for render output.
  */
 typedef struct ImageFormatData {
   /**
    * R_IMF_IMTYPE_PNG, R_...
-   * \note Video types should only ever be set from this structure when used from #RenderData.
+   * note Video types should only ever be set from this structure when used from #RenderData.
    */
   char imtype;
   /**
@@ -470,7 +463,7 @@ typedef struct ImageFormatData {
 #define R_IMF_FLAG_ZBUF (1 << 0)
 #define R_IMF_FLAG_PREVIEW_JPG (1 << 1)
 
-/* Return values from #BKE_imtype_valid_depths, note this is depths per channel. */
+/* Return values from #dune_imtype_valid_depths, note this is depths per channel. */
 /** #ImageFormatData.depth */
 typedef enum eImageFormatDepth {
   /* 1bits  (unused) */
@@ -620,7 +613,7 @@ typedef struct RenderData {
   int frame_step;
 
   /** Standalone player stereo settings */ /* XXX deprecated since .2.5 */
-  short stereomode DNA_DEPRECATED;
+  short stereomode TYPES_DEPRECATED;
 
   /** For the dimensions presets menu. */
   short dimensionspreset;
@@ -631,45 +624,33 @@ typedef struct RenderData {
   char _pad6[2];
 
   /* from buttons: */
-  /**
-   * The desired number of pixels in the x direction
-   */
+  /** The desired number of pixels in the x direction */
   int xsch;
-  /**
-   * The desired number of pixels in the y direction
-   */
+  /** The desired number of pixels in the y direction */
   int ysch;
 
-  /**
-   * render tile dimensions
-   */
-  int tilex DNA_DEPRECATED;
-  int tiley DNA_DEPRECATED;
+  /** render tile dimensions */
+  int tilex TYPES_DEPRECATED;
+  int tiley TYPES_DEPRECATED;
 
-  short planes DNA_DEPRECATED;
-  short imtype DNA_DEPRECATED;
-  short subimtype DNA_DEPRECATED;
-  short quality DNA_DEPRECATED;
+  short planes TYPES_DEPRECATED;
+  short imtype TYPES_DEPRECATED;
+  short subimtype TYPES_DEPRECATED;
+  short quality TYPES_DEPRECATED;
 
   char use_lock_interface;
   char _pad7[3];
 
-  /**
-   * Flags for render settings. Use bit-masking to access the settings.
-   */
+  /* Flags for render settings. Use bit-masking to access the settings. */
   int scemode;
 
-  /**
-   * Flags for render settings. Use bit-masking to access the settings.
-   */
+  /** Flags for render settings. Use bit-masking to access the settings. */
   int mode;
 
   short frs_sec;
 
-  /**
-   * What to do with the sky/background.
-   * Picks sky/premul blending for the background.
-   */
+  /* What to do with the sky/background.
+   * Picks sky/premul blending for the background. */
   char alphamode;
 
   char _pad0[1];
@@ -679,21 +660,17 @@ typedef struct RenderData {
 
   /* information on different layers to be rendered */
   /** Converted to Scene->view_layers. */
-  ListBase layers DNA_DEPRECATED;
+  List layers TYPES_DEPRECATED;
   /** Converted to Scene->active_layer. */
-  short actlay DNA_DEPRECATED;
+  short actlay TYPES_DEPRECATED;
   char _pad1[2];
 
-  /**
-   * Adjustment factors for the aspect ratio in the x direction, was a short in 2.45
-   */
+  /* Adjustment factors for the aspect ratio in the x direction, was a short in 2.45 */
   float xasp, yasp;
 
   float frs_sec_base;
 
-  /**
-   * Value used to define filter size for all filter options.
-   */
+  /* Value used to define filter size for all filter options */
   float gauss;
 
   /* color management settings - color profiles, gamma correction, etc */
@@ -711,12 +688,12 @@ typedef struct RenderData {
 
   /* path to render output */
   /** 1024 = FILE_MAX. */
-  /* NOTE: Excluded from `BKE_bpath_foreach_path_` / `scene_foreach_path` code. */
+  /* NOTE: Excluded from `dune_bpath_foreach_path_` / `scene_foreach_path` code. */
   char pic[1024];
 
   /* stamps flags. */
   int stamp;
-  /** Select one of blenders bitmap fonts. */
+  /** Select one of dunes bitmap fonts. */
   short stamp_font_id;
   char _pad3[2];
 
@@ -727,18 +704,18 @@ typedef struct RenderData {
   float fg_stamp[4];
   float bg_stamp[4];
 
-  /* sequencer options */
+  /* seq options */
   char seq_prev_type;
   /** UNUSED. */
   char seq_rend_type;
-  /** Flag use for sequence render/draw. */
+  /** Flag use for seq render/draw. */
   char seq_flag;
   char _pad5[3];
 
   /* render simplify */
   short simplify_subsurf;
   short simplify_subsurf_render;
-  short simplify_gpencil;
+  short simplify_pen;
   float simplify_particles;
   float simplify_particles_render;
   float simplify_volumes;
@@ -765,7 +742,7 @@ typedef struct RenderData {
 
   /* MultiView */
   /** SceneRenderView. */
-  ListBase views;
+  List views;
   short actview;
   short views_format;
 
@@ -846,7 +823,7 @@ typedef struct TimeMarker {
 #define PAINT_MAX_INPUT_SAMPLES 64
 
 typedef struct Paint_Runtime {
-  /* Avoid having to compare with scene pointer everywhere. */
+  /* Avoid having to compare with scene ptr everywhere. */
   unsigned int tool_offset;
   unsigned short ob_mode;
   char _pad[2];
@@ -1016,40 +993,40 @@ typedef struct UvSculpt {
   Paint paint;
 } UvSculpt;
 
-/** Grease pencil drawing brushes. */
-typedef struct GpPaint {
+/** Dune Pen drawing brushes. */
+typedef struct PenPaint {
   Paint paint;
   int flag;
   /* Mode of paint (Materials or Vertex Color). */
   int mode;
-} GpPaint;
+} PenPaint;
 
-/** #GpPaint.flag */
+/** #PenPaint.flag */
 enum {
-  GPPAINT_FLAG_USE_MATERIAL = 0,
-  GPPAINT_FLAG_USE_VERTEXCOLOR = 1,
+  PENPAINT_FLAG_USE_MATERIAL = 0,
+  PENPAINT_FLAG_USE_VERTEXCOLOR = 1,
 };
 
-/** Grease pencil vertex paint. */
-typedef struct GpVertexPaint {
+/** Dune pen vertex paint. */
+typedef struct PenVertexPaint {
   Paint paint;
   int flag;
   char _pad[4];
-} GpVertexPaint;
+} PenVertexPaint;
 
-/** Grease pencil sculpt paint. */
-typedef struct GpSculptPaint {
+/** Dune pen sculpt paint. */
+typedef struct PenSculptPaint {
   Paint paint;
   int flag;
   char _pad[4];
-} GpSculptPaint;
+} PenSculptPaint;
 
-/** Grease pencil weight paint. */
-typedef struct GpWeightPaint {
+/** Dune pen weight paint. */
+typedef struct PenWeightPaint {
   Paint paint;
   int flag;
   char _pad[4];
-} GpWeightPaint;
+} PenWeightPaint;
 
 /* ------------------------------------------- */
 /* Vertex Paint */
@@ -1070,16 +1047,16 @@ enum {
 };
 
 /* ------------------------------------------- */
-/* GPencil Stroke Sculpting */
+/* Pen Stroke Sculpting */
 
-/** #GP_Sculpt_Settings.lock_axis */
-typedef enum eGP_Lockaxis_Types {
-  GP_LOCKAXIS_VIEW = 0,
-  GP_LOCKAXIS_X = 1,
-  GP_LOCKAXIS_Y = 2,
-  GP_LOCKAXIS_Z = 3,
-  GP_LOCKAXIS_CURSOR = 4,
-} eGP_Lockaxis_Types;
+/** #Pen_Sculpt_Settings.lock_axis */
+typedef enum ePen_Lockaxis_Types {
+  PEN_LOCKAXIS_VIEW = 0,
+  PEN_LOCKAXIS_X = 1,
+  PEN_LOCKAXIS_Y = 2,
+  PEN_LOCKAXIS_Z = 3,
+  PEN_LOCKAXIS_CURSOR = 4,
+} ePen_Lockaxis_Types;
 
 /** Settings for a GPencil Speed Guide. */
 typedef struct GP_Sculpt_Guide {
