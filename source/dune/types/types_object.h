@@ -1,17 +1,17 @@
 #pragma once
 
-#include "DNA_object_enums.h"
+#include "types_object_enums.h"
 
-#include "DNA_customdata_types.h"
-#include "DNA_defs.h"
-#include "DNA_lineart_types.h"
-#include "DNA_listBase.h"
+#include "types_customdata.h"
+#include "types_defs.h"
+#include "types_lineart.h"
+#include "types_list.h"
 
-#include "DNA_ID.h"
-#include "DNA_action_types.h" /* bAnimVizSettings */
-#include "DNA_customdata_types.h"
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
+#include "types_id.h"
+#include "types_action.h" /* AnimVizSettings */
+#include "types_customdata.h"
+#include "types_defs.h"
+#include "types_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,36 +31,33 @@ struct Path;
 struct RigidBodyOb;
 struct SculptSession;
 struct SoftBody;
-struct bGPdata;
+struct PenData;
 
-/** Vertex Groups - Name Info */
-typedef struct bDeformGroup {
-  struct bDeformGroup *next, *prev;
-  /** MAX_VGROUP_NAME. */
+/* Vertex Groups - Name Info */
+typedef struct DeformGroup {
+  struct DeformGroup *next, *prev;
+  /* MAX_VGROUP_NAME. */
   char name[64];
   /* need this flag for locking weights */
   char flag, _pad0[7];
-} bDeformGroup;
+} DeformGroup;
 
-/** Face Maps. */
-typedef struct bFaceMap {
-  struct bFaceMap *next, *prev;
-  /** MAX_VGROUP_NAME. */
+/* Face Maps. */
+typedef struct FaceMap {
+  struct FaceMap *next, *prev;
+  /* MAX_VGROUP_NAME. */
   char name[64];
   char flag;
   char _pad0[7];
-} bFaceMap;
+} FaceMap;
 
 #define MAX_VGROUP_NAME 64
 
-/* bDeformGroup->flag */
+/* DeformGroup->flag */
 #define DG_LOCK_WEIGHT 1
 
-/**
- * The following illustrates the orientation of the
+/* The following illustrates the orientation of the
  * bounding box in local space
- *
- * <pre>
  *
  * Z  Y
  * | /
@@ -75,7 +72,6 @@ typedef struct bFaceMap {
  *  | /        | /
  *  |/         |/
  *  0----------4
- * </pre>
  */
 typedef struct BoundBox {
   float vec[8][3];
@@ -83,7 +79,7 @@ typedef struct BoundBox {
   char _pad0[4];
 } BoundBox;
 
-/** #BoundBox.flag */
+/* BoundBox.flag */
 enum {
   BOUNDBOX_DISABLED = (1 << 0),
   BOUNDBOX_DIRTY = (1 << 1),
@@ -91,103 +87,81 @@ enum {
 
 struct CustomData_MeshMasks;
 
-/** Not saved in file! */
+/* Not saved in file! */
 typedef struct Object_Runtime {
-  /**
-   * The custom data layer mask that was last used
-   * to calculate data_eval and mesh_deform_eval.
-   */
+  /* The custom data layer mask that was last used
+   * to calculate data_eval and mesh_deform_eval. */
   CustomData_MeshMasks last_data_mask;
 
-  /** Did last modifier stack generation need mapping support? */
+  /* Did last mod stack generation need mapping support? */
   char last_need_mapping;
 
-  /** Opaque data reserved for management of objects in collection context.
+  /* Opaque data reserved for management of objects in collection cxt.
    *  E.g. used currently to check for potential duplicates of objects in a collection, after
    * remapping process. */
   char collection_management;
 
   char _pad0[2];
 
-  /** Only used for drawing the parent/child help-line. */
+  /* Only used for drawing the parent/child help-line. */
   float parent_display_origin[3];
 
-  /**
-   * Selection id of this object. It might differ between an evaluated and its original object,
-   * when the object is being instanced.
-   */
+  /* Selection id of this object. It might differ between an evaluated and its original object,
+   * when the object is being instanced.  */
   int select_id;
   char _pad1[3];
 
-  /**
-   * Denotes whether the evaluated data is owned by this object or is referenced and owned by
-   * somebody else.
-   */
+  /* Denotes whether the evaluated data is owned by this object or is referenced and owned by
+   * somebody else. */
   char is_data_eval_owned;
 
-  /** Start time of the mode transfer overlay animation. */
+  /* Start time of the mode transfer overlay animation. */
   double overlay_mode_transfer_start_time;
 
-  /** Axis aligned bound-box (in local-space). */
+  /* Axis aligned bound-box (in local-space). */
   struct BoundBox *bb;
 
-  /**
-   * Original data pointer, before object->data was changed to point
+  /* Original data ptr, before object->data was changed to point
    * to data_eval.
-   * Is assigned by dependency graph's copy-on-write evaluation.
-   */
-  struct ID *data_orig;
-  /**
-   * Object data structure created during object evaluation. It has all modifiers applied.
-   * The type is determined by the type of the original object.
-   */
-  struct ID *data_eval;
+   * Is assigned by dependency graph's copy-on-write evaluation. */
+  struct Id *data_orig;
+  /* Object data structure created during object evaluation. It has all modifiers applied.
+   * The type is determined by the type of the original object. */
+  struct Id *data_eval;
 
-  /**
-   * Objects can evaluate to a geometry set instead of a single ID. In those cases, the evaluated
-   * geometry set will be stored here. An ID of the correct type is still stored in #data_eval.
-   * #geometry_set_eval might reference the ID pointed to by #data_eval as well, but does not own
-   * the data.
-   */
+  /* Objects can evaluate to a geometry set instead of a single ID. In those cases, the evaluated
+   * geometry set will be stored here. An ID of the correct type is still stored in data_eval.
+   * geometry_set_eval might ref the ID pointed to by data_eval as well, but does not own
+   * the data. */
   struct GeometrySet *geometry_set_eval;
 
-  /**
-   * Mesh structure created during object evaluation.
-   * It has deformation only modifiers applied on it.
-   */
+  /* Mesh structure created during object evaluation.
+   * It has deformation only modifiers applied on it. */
   struct Mesh *mesh_deform_eval;
 
   /* Evaluated mesh cage in edit mode. */
   struct Mesh *editmesh_eval_cage;
 
-  /** Cached cage bounding box of `editmesh_eval_cage` for selection. */
+  /* Cached cage bounding box of `editmesh_eval_cage` for selection. */
   struct BoundBox *editmesh_bb_cage;
 
-  /**
-   * Original grease pencil bGPdata pointer, before object->data was changed to point
-   * to gpd_eval.
-   * Is assigned by dependency graph's copy-on-write evaluation.
-   */
-  struct bGPdata *gpd_orig;
-  /**
-   * bGPdata structure created during object evaluation.
-   * It has all modifiers applied.
-   */
-  struct bGPdata *gpd_eval;
+  /* Original pen PenData ptr, before object->data was changed to point
+   * to pd_eval.
+   * Is assigned by dependency graph's copy-on-write evaluation. */
+  struct PenData *pd_orig;
+  /* PenData structure created during object evaluation.
+   * It has all modifiers applied. */
+  struct PenData *pd_eval;
 
-  /**
-   * This is a mesh representation of corresponding object.
-   * It created when Python calls `object.to_mesh()`.
-   */
+  /* This is a mesh representation of corresponding object.
+   * It created when Python calls `object.to_mesh()`.  */
   struct Mesh *object_as_temp_mesh;
 
-  /**
-   * This is a curve representation of corresponding object.
-   * It created when Python calls `object.to_curve()`.
-   */
+  /* This is a curve representation of corresponding object.
+   * It created when Python calls `object.to_curve()`. */
   struct Curve *object_as_temp_curve;
 
-  /** Runtime evaluated curve-specific data, not stored in the file. */
+  /* Runtime evaluated curve-specific data, not stored in the file. */
   struct CurveCache *curve_cache;
 
   unsigned short local_collections_bits;
@@ -208,9 +182,7 @@ typedef struct ObjectLineArt {
   float crease_threshold;
 } ObjectLineArt;
 
-/**
- * \warning while the values seem to be flags, they aren't treated as flags.
- */
+/* warning while the values seem to be flags, they aren't treated as flags. */
 enum eObjectLineArt_Usage {
   OBJECT_LRT_INHERIT = 0,
   OBJECT_LRT_INCLUDE = (1 << 0),
@@ -225,10 +197,10 @@ enum eObjectLineArt_Flags {
 };
 
 typedef struct Object {
-  ID id;
-  /** Animation data (must be immediately after id for utilities to use it). */
+  Id id;
+  /* Animation data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
-  /** Runtime (must be immediately after id for utilities to use it). */
+  /* Runtime (must be immediately after id for utilities to use it). */
   struct DrawDataList drawdata;
 
   struct SculptSession *sculpt;
@@ -236,66 +208,66 @@ typedef struct Object {
   short type, partype;
   /** Can be vertexnrs. */
   int par1, par2, par3;
-  /** String describing subobject info, MAX_ID_NAME-2. */
+  /* String describing subobject info, MAX_ID_NAME-2. */
   char parsubstr[64];
   struct Object *parent, *track;
   /* Proxy pointer are deprecated, only kept for conversion to liboverrides. */
-  struct Object *proxy DNA_DEPRECATED;
-  struct Object *proxy_group DNA_DEPRECATED;
-  struct Object *proxy_from DNA_DEPRECATED;
-  /** Old animation system, deprecated for 2.5. */
-  struct Ipo *ipo DNA_DEPRECATED;
+  struct Object *proxy TYPES_DEPRECATED;
+  struct Object *proxy_group TYPES_DEPRECATED;
+  struct Object *proxy_from TYPES_DEPRECATED;
+  /* Old animation system, deprecated for 2.5. */
+  struct Ipo *ipo TYPES_DEPRECATED;
   /* struct Path *path; */
-  struct bAction *action DNA_DEPRECATED; /* XXX deprecated... old animation system */
-  struct bAction *poselib;
+  struct Action *action TYPES_DEPRECATED; /* XXX deprecated... old animation system */
+  struct Action *poselib;
   /** Pose data, armature objects only. */
-  struct bPose *pose;
-  /** Pointer to objects data - an 'ID' or NULL. */
+  struct Pose *pose;
+  /* Ptr to objects data - an 'Id' or NULL. */
   void *data;
 
-  /** Grease Pencil data. */
-  struct bGPdata *gpd
-      DNA_DEPRECATED; /* XXX deprecated... replaced by gpencil object, keep for readfile */
+  /* Pen data. */
+  struct PenData *pd
+      TYPES_DEPRECATED; /* XXX deprecated... replaced by Pen object, keep for readfile */
 
   /** Settings for visualization of object-transform animation. */
-  bAnimVizSettings avs;
-  /** Motion path cache for this object. */
-  bMotionPath *mpath;
+  AnimVizSettings avs;
+  /* Motion path cache for this object. */
+  MotionPath *mpath;
   void *_pad0;
 
-  ListBase constraintChannels DNA_DEPRECATED; /* XXX deprecated... old animation system */
-  ListBase effect DNA_DEPRECATED;             /* XXX deprecated... keep for readfile */
-  ListBase defbase DNA_DEPRECATED;            /* Only for versioning, moved to object data. */
-  /** List of ModifierData structures. */
-  ListBase modifiers;
-  /** List of GpencilModifierData structures. */
-  ListBase greasepencil_modifiers;
-  /** List of facemaps. */
-  ListBase fmaps;
-  /** List of viewport effects. Actually only used by grease pencil. */
-  ListBase shader_fx;
+  List constraintChannels TYPES_DEPRECATED; /* XXX deprecated... old animation system */
+  List effect TYPES_DEPRECATED;             /* XXX deprecated... keep for readfile */
+  List defbase TYPES_DEPRECATED;            /* Only for versioning, moved to object data. */
+  /* List of ModData structures. */
+  List mods;
+  /* List of PenModData structures. */
+  List pen_mods;
+  /* List of facemaps. */
+  List fmaps;
+  /* List of viewport effects. Actually only used by grease pencil. */
+  List shader_fx;
 
-  /** Local object mode. */
+  /* Local object mode. */
   int mode;
   int restore_mode;
 
   /* materials */
-  /** Material slots. */
+  /* Material slots. */
   struct Material **mat;
-  /** A boolean field, with each byte 1 if corresponding material is linked to object. */
+  /* A bool field, with each byte 1 if corresponding material is linked to object. */
   char *matbits;
-  /** Copy of mesh, curve & meta struct member of same name (keep in sync). */
+  /* Copy of mesh, curve & meta struct member of same name (keep in sync). */
   int totcol;
-  /** Currently selected material in the UI. */
+  /* Currently selected material in the UI. */
   int actcol;
 
   /* rot en drot have to be together! (transform('r' en 's')) */
   float loc[3], dloc[3];
   /** Scale (can be negative). */
   float scale[3];
-  /** DEPRECATED, 2.60 and older only. */
+  /* DEPRECATED, 2.60 and older only. */
   float dsize[3] DNA_DEPRECATED;
-  /** Ack!, changing. */
+  /* Ack!, changing. */
   float dscale[3];
   /** Euler rotation. */
   float rot[3], drot[3];
