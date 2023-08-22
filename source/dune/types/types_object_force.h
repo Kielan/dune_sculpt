@@ -1,7 +1,7 @@
 #pragma once
 
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
+#include "types_defs.h"
+#include "types_list.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,35 +9,35 @@ extern "C" {
 
 struct BodySpring;
 
-/** #PartDeflect.forcefield: Effector Fields types. */
+/* PartDeflect.forcefield: Effector Fields types. */
 typedef enum ePFieldType {
-  /** (this is used for general effector weight). */
+  /* (this is used for general effector weight). */
   PFIELD_NULL = 0,
-  /** Force away/towards a point depending on force strength. */
+  /* Force away/towards a point depending on force strength. */
   PFIELD_FORCE = 1,
-  /** Force around the effector normal. */
+  /* Force around the effector normal. */
   PFIELD_VORTEX = 2,
-  /** Force from the cross product of effector normal and point velocity. */
+  /* Force from the cross product of effector normal and point velocity. */
   PFIELD_MAGNET = 3,
-  /** Force away and towards a point depending which side of the effector normal the point is. */
+  /* Force away and towards a point depending which side of the effector normal the point is. */
   PFIELD_WIND = 4,
-  /** Force along curve for dynamics, a shaping curve for hair paths. */
+  /* Force along curve for dynamics, a shaping curve for hair paths. */
   PFIELD_GUIDE = 5,
-  /** Force based on texture values calculated at point coordinates. */
+  /* Force based on texture values calculated at point coordinates. */
   PFIELD_TEXTURE = 6,
-  /** Force of a harmonic (damped) oscillator. */
+  /* Force of a harmonic (damped) oscillator. */
   PFIELD_HARMONIC = 7,
-  /** Force away/towards a point depending on point charge. */
+  /* Force away/towards a point depending on point charge. */
   PFIELD_CHARGE = 8,
-  /** Force due to a Lennard-Jones potential. */
+  /* Force due to a Lennard-Jones potential. */
   PFIELD_LENNARDJ = 9,
   /** Defines predator / goal for boids. */
   PFIELD_BOID = 10,
-  /** Force defined by BLI_noise_generic_turbulence. */
+  /* Force defined by lib_noise_generic_turbulence. */
   PFIELD_TURBULENCE = 11,
-  /** Linear & quadratic drag. */
+  /* Linear & quadratic drag. */
   PFIELD_DRAG = 12,
-  /** Force based on fluid simulation velocities. */
+  /* Force based on fluid simulation velocities. */
   PFIELD_FLUIDFLOW = 13,
 
   /* Keep last. */
@@ -45,37 +45,36 @@ typedef enum ePFieldType {
 } ePFieldType;
 
 typedef struct PartDeflect {
-  /** General settings flag. */
+  /* General settings flag. */
   int flag;
-  /** Deflection flag - does mesh deflect particles. */
+  /* Deflection flag - does mesh deflect particles. */
   short deflect;
-  /** Force field type, do the vertices attract / repel particles? */
+  /* Force field type, do the vertices attract / repel particles? */
   short forcefield;
-  /** Fall-off type. */
+  /* Fall-off type. */
   short falloff;
-  /** Point, plane or surface. */
+  /* Point, plane or surface. */
   short shape;
-  /** Texture effector. */
+  /* Texture effector. */
   short tex_mode;
-  /** For curve guide. */
+  /* For curve guide. */
   short kink, kink_axis;
   short zdir;
 
   /* Main effector values */
-  /** The strength of the force (+ or - ). */
+  /* The strength of the force (+ or - ). */
   float f_strength;
-  /** Damping ratio of the harmonic effector. */
+  /* Damping ratio of the harmonic effector. */
   float f_damp;
-  /**
-   * How much force is converted into "air flow", i.e.
+  /* How much force is converted into "air flow", i.e.
    * force used as the velocity of surrounding medium. */
   float f_flow;
-  /** How much force is reduced when acting parallel to a surface, e.g. cloth. */
+  /* How much force is reduced when acting parallel to a surface, e.g. cloth. */
   float f_wind_factor;
 
   char _pad0[4];
 
-  /** Noise size for noise effector, restlength for harmonic effector. */
+  /* Noise size for noise effector, restlength for harmonic effector. */
   float f_size;
 
   /* fall-off */
@@ -92,7 +91,7 @@ typedef struct PartDeflect {
   float minrad;
 
   /* particle collisions */
-  /** Damping factor for particle deflection. */
+  /* Damping factor for particle deflection. */
   float pdef_damp;
   /** Random element of damping for deflection. */
   float pdef_rdamp;
@@ -121,35 +120,35 @@ typedef struct PartDeflect {
   float kink_freq, kink_shape, kink_amp, free_end;
 
   /* texture effector */
-  /** Used for calculating partial derivatives. */
+  /* Used for calculating partial derivatives. */
   float tex_nabla;
-  /** Texture of the texture effector. */
+  /* Texture of the texture effector. */
   struct Tex *tex;
 
   /* effector noise */
-  /** Random noise generator for e.g. wind. */
+  /* Random noise generator for e.g. wind. */
   struct RNG *rng;
-  /** Noise of force. */
+  /* Noise of force. */
   float f_noise;
-  /** Noise random seed. */
+  /* Noise random seed. */
   int seed;
 
   /* Display Size */
-  /** Runtime only : start of the curve or draw scale. */
+  /* Runtime only : start of the curve or draw scale. */
   float drawvec1[4];
-  /** Runtime only : end of the curve. */
+  /* Runtime only : end of the curve. */
   float drawvec2[4];
-  /** Runtime only. */
+  /* Runtime only. */
   float drawvec_falloff_min[3];
   char _pad1[4];
-  /** Runtime only. */
+  /* Runtime only. */
   float drawvec_falloff_max[3];
   char _pad2[4];
 
-  /** Force source object. */
+  /* Force source object. */
   struct Object *f_source;
 
-  /** Friction of cloth collisions. */
+  /* Friction of cloth collisions. */
   float pdef_cfrict;
   char _pad[4];
 } PartDeflect;
