@@ -266,94 +266,92 @@ typedef struct Object {
   /** Scale (can be negative). */
   float scale[3];
   /* DEPRECATED, 2.60 and older only. */
-  float dsize[3] DNA_DEPRECATED;
+  float dsize[3] TYPES_DEPRECATED;
   /* Ack!, changing. */
   float dscale[3];
-  /** Euler rotation. */
+  /* Euler rotation. */
   float rot[3], drot[3];
-  /** Quaternion rotation. */
+  /* Quaternion rotation. */
   float quat[4], dquat[4];
-  /** Axis angle rotation - axis part. */
+  /* Axis angle rotation - axis part. */
   float rotAxis[3], drotAxis[3];
-  /** Axis angle rotation - angle part. */
+  /* Axis angle rotation - angle part. */
   float rotAngle, drotAngle;
-  /** Final world-space matrix with constraints & animsys applied. */
+  /* Final world-space matrix with constraints & animsys applied. */
   float obmat[4][4];
-  /** Inverse result of parent, so that object doesn't 'stick' to parent. */
+  /* Inverse result of parent, so that object doesn't 'stick' to parent. */
   float parentinv[4][4];
-  /** Inverse result of constraints.
+  /* Inverse result of constraints.
    * doesn't include effect of parent or object local transform. */
   float constinv[4][4];
-  /**
-   * Inverse matrix of 'obmat' for any other use than rendering!
+  /* Inverse matrix of 'obmat' for any other use than rendering!
    *
-   * \note this isn't assured to be valid as with 'obmat',
-   * before using this value you should do: `invert_m4_m4(ob->imat, ob->obmat)`
-   */
+   * note this isn't assured to be valid as with 'obmat',
+   * before using this value you should do: `invert_m4_m4(ob->imat, ob->obmat) */
   float imat[4][4];
 
-  /** Copy of Base's layer in the scene. */
-  unsigned int lay DNA_DEPRECATED;
+  /* Copy of Base's layer in the scene. */
+  unsigned int lay TYPES_DEPRECATED;
 
-  /** Copy of Base. */
+  /* Copy of Base. */
   short flag;
-  /** Deprecated, use 'matbits'. */
-  short colbits DNA_DEPRECATED;
+  /* Deprecated, use 'matbits'. */
+  short colbits TYPES_DEPRECATED;
 
-  /** Transformation settings and transform locks. */
+  /* Transformation settings and transform locks. */
   short transflag, protectflag;
   short trackflag, upflag;
-  /** Used for DopeSheet filtering settings (expanded/collapsed). */
+  /* Used for DopeSheet filtering settings (expanded/collapsed). */
   short nlaflag;
 
   char _pad1;
   char duplicator_visibility_flag;
 
-  /* Depsgraph */
-  /** Used by depsgraph, flushed from base. */
+  /* Graph */
+  /* Used by depsgraph, flushed from base. */
   short base_flag;
-  /** Used by viewport, synced from base. */
+  /* Used by viewport, synced from base. */
   unsigned short base_local_view_bits;
 
-  /** Collision mask settings */
+  /* Collision mask settings */
   unsigned short col_group, col_mask;
 
-  /** Rotation mode - uses defines set out in DNA_action_types.h for PoseChannel rotations.... */
+  /* Rotation mode - uses defines set out in types_action.h for PoseChannel rotations.... */
   short rotmode;
 
-  /** Bounding box use for drawing. */
+  /* Bounding box use for drawing. */
   char boundtype;
-  /** Bounding box type used for collision. */
+  /* Bounding box type used for collision. */
   char collision_boundtype;
 
-  /** Viewport draw extra settings. */
+  /* Viewport draw extra settings. */
   short dtx;
-  /** Viewport draw type. */
+  /* Viewport draw type. */
   char dt;
   char empty_drawtype;
   float empty_drawsize;
-  /** Dupliface scale. */
+  /* Dupliface scale. */
   float instance_faces_scale;
 
-  /** Custom index, for renderpasses. */
+  /* Custom index, for renderpasses. */
   short index;
-  /** Current deformation group, NOTE: index starts at 1. */
-  unsigned short actdef DNA_DEPRECATED;
+  /* Current deformation group, NOTE: index starts at 1. */
+  unsigned short actdef TYPES_DEPRECATED;
   /** Current face map, NOTE: index starts at 1. */
   unsigned short actfmap;
   char _pad2[2];
   /** Object color (in most cases the material color is used for drawing). */
   float color[4];
 
-  /** Softbody settings. */
+  /* Softbody settings. */
   short softflag;
 
-  /** For restricting view, select, render etc. accessible in outliner. */
+  /* For restricting view, select, render etc. accessible in outliner. */
   short visibility_flag;
 
-  /** Current shape key for menu or pinned. */
+  /* Current shape key for menu or pinned. */
   short shapenr;
-  /** Flag for pinning. */
+  /* Flag for pinning. */
   char shapeflag;
 
   char _pad3[1];
@@ -406,22 +404,22 @@ typedef struct ObHook {
   struct ObHook *next, *prev;
 
   struct Object *parent;
-  /** Matrix making current transform unmodified. */
+  /* Matrix making current transform unmodified. */
   float parentinv[4][4];
-  /** Temp matrix while hooking. */
+  /* Temp matrix while hooking. */
   float mat[4][4];
-  /** Visualization of hook. */
+  /* Visualization of hook. */
   float cent[3];
-  /** If not zero, falloff is distance where influence zero. */
+  /* If not zero, falloff is distance where influence zero. */
   float falloff;
 
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
   int *indexar;
-  /** Curindex is cache for fast lookup. */
+  /* Curindex is cache for fast lookup. */
   int totindex, curindex;
-  /** Active is only first hook, for button menu. */
+  /* Active is only first hook, for button menu. */
   short type, active;
   float force;
 } ObHook;
@@ -435,7 +433,7 @@ typedef struct ObHook {
 enum {
   OB_EMPTY = 0,
   OB_MESH = 1,
-  /** Curve object is still used but replaced by "Curves" for the future (see T95355). */
+  /* Curve object is still used but replaced by "Curves" for the future (see T95355). */
   OB_CURVES_LEGACY = 2,
   OB_SURF = 3,
   OB_FONT = 4,
@@ -466,7 +464,7 @@ enum {
 
 /* check if the object type supports materials */
 #define OB_TYPE_SUPPORT_MATERIAL(_type) \
-  (((_type) >= OB_MESH && (_type) <= OB_MBALL) || ((_type) >= OB_GPENCIL && (_type) <= OB_VOLUME))
+  (((_type) >= OB_MESH && (_type) <= OB_MBALL) || ((_type) >= OB_PEN && (_type) <= OB_VOLUME))
 /* Does the object have some render-able geometry (unlike empties, cameras, etc.). */
 #define OB_TYPE_IS_GEOMETRY(_type) \
   (ELEM(_type, \
@@ -474,11 +472,11 @@ enum {
         OB_SURF, \
         OB_FONT, \
         OB_MBALL, \
-        OB_GPENCIL, \
+        OB_PEN, \
         OB_CURVES, \
         OB_POINTCLOUD, \
         OB_VOLUME))
-#define OB_TYPE_SUPPORT_VGROUP(_type) (ELEM(_type, OB_MESH, OB_LATTICE, OB_GPENCIL))
+#define OB_TYPE_SUPPORT_VGROUP(_type) (ELEM(_type, OB_MESH, OB_LATTICE, OB_PEN))
 #define OB_TYPE_SUPPORT_EDITMODE(_type) \
   (ELEM(_type, \
         OB_MESH, \
@@ -601,8 +599,8 @@ enum {
   OB_EMPTY_IMAGE = 8,
 };
 
-/* Grease-pencil add types.
- * TODO: doesn't need to be DNA, local to `OBJECT_OT_gpencil_add`. */
+/* Pen add types.
+ * TODO: doesn't need to be TYPES, local to `OBJECT_OT_pen_add`. */
 enum {
   P_EMPTY = 0,
   P_STROKE = 1,
@@ -632,7 +630,7 @@ enum {
   /* NOTE: BA_HAS_RECALC_DATA can be re-used later if freed in readfile.c. */
   // BA_HAS_RECALC_OB = (1 << 2),  /* DEPRECATED */
   // BA_HAS_RECALC_DATA =  (1 << 3),  /* DEPRECATED */
-  /** DEPRECATED, was runtime only, but was reusing an older flag. */
+  /* DEPRECATED, was runtime only, but was reusing an older flag. */
   BA_SNAP_FIX_DEPS_FIASCO = (1 << 2),
 };
 
@@ -671,7 +669,7 @@ enum {
 /* Object.shapeflag */
 enum {
   OB_SHAPE_LOCK = 1 << 0,
-#ifdef DNA_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
   OB_SHAPE_FLAG_UNUSED_1 = 1 << 1, /* cleared */
 #endif
   OB_SHAPE_EDIT_MODE = 1 << 2,
@@ -693,7 +691,7 @@ enum {
   /* OB_ADS_SHOWPARTS = 1 << 14, */ /* UNUSED */
 };
 
-/** Object.protectflag */
+/* Object.protectflag */
 enum {
   OB_LOCK_LOCX = 1 << 0,
   OB_LOCK_LOCY = 1 << 1,
@@ -711,18 +709,18 @@ enum {
   OB_LOCK_ROT4D = 1 << 10,
 };
 
-/** #Object.duplicator_visibility_flag */
+/* Object.duplicator_visibility_flag */
 enum {
   OB_DUPLI_FLAG_VIEWPORT = 1 << 0,
   OB_DUPLI_FLAG_RENDER = 1 << 1,
 };
 
-/** #Object.empty_image_depth */
+/* Object.empty_image_depth */
 #define OB_EMPTY_IMAGE_DEPTH_DEFAULT 0
 #define OB_EMPTY_IMAGE_DEPTH_FRONT 1
 #define OB_EMPTY_IMAGE_DEPTH_BACK 2
 
-/** #Object.empty_image_visibility_flag */
+/* Object.empty_image_visibility_flag */
 enum {
   OB_EMPTY_IMAGE_HIDE_PERSPECTIVE = 1 << 0,
   OB_EMPTY_IMAGE_HIDE_ORTHOGRAPHIC = 1 << 1,
@@ -731,7 +729,7 @@ enum {
   OB_EMPTY_IMAGE_HIDE_NON_AXIS_ALIGNED = 1 << 4,
 };
 
-/** #Object.empty_image_flag */
+/* Object.empty_image_flag */
 enum {
   OB_EMPTY_IMAGE_USE_ALPHA_BLEND = 1 << 0,
 };
