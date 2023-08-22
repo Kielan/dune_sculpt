@@ -31,7 +31,7 @@ typedef enum ePFieldType {
   PFIELD_CHARGE = 8,
   /* Force due to a Lennard-Jones potential. */
   PFIELD_LENNARDJ = 9,
-  /** Defines predator / goal for boids. */
+  /* Defines predator / goal for boids. */
   PFIELD_BOID = 10,
   /* Force defined by lib_noise_generic_turbulence. */
   PFIELD_TURBULENCE = 11,
@@ -78,30 +78,30 @@ typedef struct PartDeflect {
   float f_size;
 
   /* fall-off */
-  /** The power law - real gravitation is 2 (square). */
+  /* The power law - real gravitation is 2 (square). */
   float f_power;
-  /** If indicated, use this maximum. */
+  /* If indicated, use this maximum. */
   float maxdist;
-  /** If indicated, use this minimum. */
+  /* If indicated, use this minimum. */
   float mindist;
-  /** Radial fall-off power. */
+  /* Radial fall-off power. */
   float f_power_r;
-  /** Radial versions of above. */
+  /* Radial versions of above. */
   float maxrad;
   float minrad;
 
   /* particle collisions */
   /* Damping factor for particle deflection. */
   float pdef_damp;
-  /** Random element of damping for deflection. */
+  /* Random element of damping for deflection. */
   float pdef_rdamp;
-  /** Chance of particle passing through mesh. */
+  /* Chance of particle passing through mesh. */
   float pdef_perm;
-  /** Friction factor for particle deflection. */
+  /* Friction factor for particle deflection. */
   float pdef_frict;
-  /** Random element of friction for deflection. */
+  /* Random element of friction for deflection. */
   float pdef_rfrict;
-  /** Surface particle stickiness. */
+  /* Surface particle stickiness. */
   float pdef_stickness;
 
   /** Used for forces. */
@@ -154,10 +154,10 @@ typedef struct PartDeflect {
 } PartDeflect;
 
 typedef struct EffectorWeights {
-  /** Only use effectors from this group of objects. */
+  /* Only use effectors from this group of objects. */
   struct Collection *group;
 
-  /** Effector type specific weights. */
+  /* Effector type specific weights. */
   float weight[14];
   float global_gravity;
   short flag;
@@ -194,10 +194,9 @@ typedef struct SoftBody {
   /* part of UI: */
 
   /* general options */
-  /** Softbody mass of *vertex*. */
+  /* Softbody mass of *vertex*. */
   float nodemass;
-  /**
-   * Along with it introduce mass painting
+  /* Along with it introduce mass painting
    * starting to fix old bug .. nastiness that VG are indexes
    * rather find them by name tag to find it -> jow20090613.
    * MAX_VGROUP_NAME */
@@ -212,19 +211,18 @@ typedef struct SoftBody {
   float physics_speed;
 
   /* goal */
-  /** Softbody goal springs. */
+  /* Softbody goal springs. */
   float goalspring;
-  /** Softbody goal springs friction. */
+  /* Softbody goal springs friction. */
   float goalfrict;
-  /** Quick limits for goal. */
+  /* Quick limits for goal. */
   float mingoal;
   float maxgoal;
-  /** Default goal for vertices without vgroup. */
+  /* Default goal for vertices without vgroup. */
   float defgoal;
-  /** Index starting at 1. */
+  /* Index starting at 1. */
   short vertgroup;
-  /**
-   * Starting to fix old bug .. nastiness that VG are indexes
+  /* Starting to fix old bug .. nastiness that VG are indexes
    * rather find them by name tag to find it -> jow20090613.
    * MAX_VGROUP_NAME */
   char namedVG_Softgoal[64];
@@ -232,37 +230,35 @@ typedef struct SoftBody {
   short fuzzyness;
 
   /* springs */
-  /** Softbody inner springs. */
+  /* Softbody inner springs. */
   float inspring;
-  /** Softbody inner springs friction. */
+  /* Softbody inner springs friction. */
   float infrict;
-  /**
-   * Along with it introduce Spring_K painting
+  /* Along with it introduce Spring_K painting
    * starting to fix old bug .. nastiness that VG are indexes
    * rather find them by name tag to find it -> jow20090613.
-   * MAX_VGROUP_NAME
-   */
+   * MAX_VGROUP_NAME */
   char namedVG_Spring_K[64];
 
   /* baking */
   char _pad1[6];
-  /** Local==1: use local coords for baking. */
+  /* Local==1: use local coords for baking. */
   char local, solverflags;
 
   /* -- these must be kept for backwards compatibility -- */
-  /** Array of size totpointkey. */
+  /* Array of size totpointkey. */
   SBVertex **keys;
-  /** If totpointkey != totpoint or totkey!- (efra-sfra)/interval -> free keys. */
+  /* If totpointkey != totpoint or totkey!- (efra-sfra)/interval -> free keys. */
   int totpointkey, totkey;
   /* ---------------------------------------------------- */
   float secondspring;
 
   /* Self collision. */
-  /** Fixed collision ball size if > 0. */
+  /* Fixed collision ball size if > 0. */
   float colball;
-  /** Cooling down collision response. */
+  /* Cooling down collision response. */
   float balldamp;
-  /** Pressure the ball is loaded with. */
+  /* Pressure the ball is loaded with. */
   float ballstiff;
   short sbc_mode;
   short aeroedge;
@@ -273,16 +269,16 @@ typedef struct SoftBody {
   short plastic;
   short springpreload;
 
-  /** Scratchpad/cache on live time not saved in file. */
+  /* Scratchpad/cache on live time not saved in file. */
   struct SBScratch *scratch;
   float shearstiff;
   float inpush;
 
   struct SoftBody_Shared *shared;
-  /** Moved to SoftBody_Shared. */
-  struct PointCache *pointcache DNA_DEPRECATED;
-  /** Moved to SoftBody_Shared. */
-  struct ListBase ptcaches DNA_DEPRECATED;
+  /* Moved to SoftBody_Shared. */
+  struct PointCache *pointcache TYPES_DEPRECATED;
+  /* Moved to SoftBody_Shared. */
+  struct List ptcaches TYPES_DEPRECATED;
 
   struct Collection *collision_group;
 
@@ -298,37 +294,37 @@ typedef struct SoftBody {
 /* pd->flag: various settings */
 #define PFIELD_USEMAX (1 << 0)
 // #define PDEFLE_DEFORM         (1 << 1) /* UNUSED */
-/** TODO: do_versions for below */
+/* TODO: do_versions for below */
 #define PFIELD_GUIDE_PATH_ADD (1 << 2)
-/** used for do_versions */
+/* used for do_versions */
 #define PFIELD_PLANAR (1 << 3)
 #define PDEFLE_KILL_PART (1 << 4)
-/** used for do_versions */
+/* used for do_versions */
 #define PFIELD_POSZ (1 << 5)
 #define PFIELD_TEX_OBJECT (1 << 6)
-/** used for turbulence */
+/* used for turbulence */
 #define PFIELD_GLOBAL_CO (1 << 6)
 #define PFIELD_TEX_2D (1 << 7)
-/** used for harmonic force */
+/* used for harmonic force */
 #define PFIELD_MULTIPLE_SPRINGS (1 << 7)
 #define PFIELD_USEMIN (1 << 8)
 #define PFIELD_USEMAXR (1 << 9)
 #define PFIELD_USEMINR (1 << 10)
 #define PFIELD_TEX_ROOTCO (1 << 11)
-/** used for do_versions */
+/* used for do_versions */
 #define PFIELD_SURFACE (1 << 12)
 #define PFIELD_VISIBILITY (1 << 13)
 #define PFIELD_DO_LOCATION (1 << 14)
 #define PFIELD_DO_ROTATION (1 << 15)
-/** apply curve weights */
+/* apply curve weights */
 #define PFIELD_GUIDE_PATH_WEIGHT (1 << 16)
-/** multiply smoke force by density */
+/* multiply smoke force by density */
 #define PFIELD_SMOKE_DENSITY (1 << 17)
-/** used for (simple) force */
+/* used for (simple) force */
 #define PFIELD_GRAVITATION (1 << 18)
-/** Enable cloth collision side detection based on normal. */
+/* Enable cloth collision side detection based on normal. */
 #define PFIELD_CLOTH_USE_CULLING (1 << 19)
-/** Replace collision direction with collider normal. */
+/* Replace collision direction with collider normal. */
 #define PFIELD_CLOTH_USE_NORMAL (1 << 20)
 
 /* pd->falloff */
