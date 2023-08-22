@@ -1,137 +1,132 @@
 #pragma once
 
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
-#include "DNA_session_uuid_types.h"
+#include "types_defs.h"
+#include "types_list.h"
+#include "types_session_uuid.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* WARNING ALERT! TYPEDEF VALUES ARE WRITTEN IN FILES! SO DO NOT CHANGE!
- * (ONLY ADD NEW ITEMS AT THE END)
- */
+ * (ONLY ADD NEW ITEMS AT THE END) */
 
 struct Mesh;
 
-typedef enum ModifierType {
-  eModifierType_None = 0,
-  eModifierType_Subsurf = 1,
-  eModifierType_Lattice = 2,
-  eModifierType_Curve = 3,
-  eModifierType_Build = 4,
-  eModifierType_Mirror = 5,
-  eModifierType_Decimate = 6,
-  eModifierType_Wave = 7,
-  eModifierType_Armature = 8,
-  eModifierType_Hook = 9,
-  eModifierType_Softbody = 10,
-  eModifierType_Boolean = 11,
-  eModifierType_Array = 12,
-  eModifierType_EdgeSplit = 13,
-  eModifierType_Displace = 14,
-  eModifierType_UVProject = 15,
-  eModifierType_Smooth = 16,
-  eModifierType_Cast = 17,
-  eModifierType_MeshDeform = 18,
-  eModifierType_ParticleSystem = 19,
-  eModifierType_ParticleInstance = 20,
-  eModifierType_Explode = 21,
-  eModifierType_Cloth = 22,
-  eModifierType_Collision = 23,
-  eModifierType_Bevel = 24,
-  eModifierType_Shrinkwrap = 25,
-  eModifierType_Fluidsim = 26,
-  eModifierType_Mask = 27,
-  eModifierType_SimpleDeform = 28,
-  eModifierType_Multires = 29,
-  eModifierType_Surface = 30,
-#ifdef DNA_DEPRECATED_ALLOW
-  eModifierType_Smoke = 31,
+typedef enum ModType {
+  eModType_None = 0,
+  eModType_Subsurf = 1,
+  eModType_Lattice = 2,
+  eModType_Curve = 3,
+  eModType_Build = 4,
+  eModType_Mirror = 5,
+  eModType_Decimate = 6,
+  eModType_Wave = 7,
+  eModType_Armature = 8,
+  eModType_Hook = 9,
+  eModType_Softbody = 10,
+  eModType_Bool = 11,
+  eModType_Array = 12,
+  eModType_EdgeSplit = 13,
+  eModType_Displace = 14,
+  eModType_UVProject = 15,
+  eModType_Smooth = 16,
+  eModType_Cast = 17,
+  eModType_MeshDeform = 18,
+  eModType_ParticleSystem = 19,
+  eModType_ParticleInstance = 20,
+  eModType_Explode = 21,
+  eModType_Cloth = 22,
+  eModType_Collision = 23,
+  eModType_Bevel = 24,
+  eModType_Shrinkwrap = 25,
+  eModType_Fluidsim = 26,
+  eModType_Mask = 27,
+  eModType_SimpleDeform = 28,
+  eModType_Multires = 29,
+  eModType_Surface = 30,
+#ifdef TYPES_DEPRECATED_ALLOW
+  eModType_Smoke = 31,
 #endif
-  eModifierType_ShapeKey = 32,
-  eModifierType_Solidify = 33,
-  eModifierType_Screw = 34,
-  eModifierType_Warp = 35,
-  eModifierType_WeightVGEdit = 36,
-  eModifierType_WeightVGMix = 37,
-  eModifierType_WeightVGProximity = 38,
-  eModifierType_Ocean = 39,
-  eModifierType_DynamicPaint = 40,
-  eModifierType_Remesh = 41,
-  eModifierType_Skin = 42,
-  eModifierType_LaplacianSmooth = 43,
-  eModifierType_Triangulate = 44,
-  eModifierType_UVWarp = 45,
-  eModifierType_MeshCache = 46,
-  eModifierType_LaplacianDeform = 47,
-  eModifierType_Wireframe = 48,
-  eModifierType_DataTransfer = 49,
-  eModifierType_NormalEdit = 50,
-  eModifierType_CorrectiveSmooth = 51,
-  eModifierType_MeshSequenceCache = 52,
-  eModifierType_SurfaceDeform = 53,
-  eModifierType_WeightedNormal = 54,
-  eModifierType_Weld = 55,
-  eModifierType_Fluid = 56,
-  eModifierType_Nodes = 57,
-  eModifierType_MeshToVolume = 58,
-  eModifierType_VolumeDisplace = 59,
-  eModifierType_VolumeToMesh = 60,
-  NUM_MODIFIER_TYPES,
-} ModifierType;
+  eModType_ShapeKey = 32,
+  eModType_Solidify = 33,
+  eModType_Screw = 34,
+  eModType_Warp = 35,
+  eModType_WeightVGEdit = 36,
+  eModType_WeightVGMix = 37,
+  eModType_WeightVGProximity = 38,
+  eModType_Ocean = 39,
+  eModType_DynamicPaint = 40,
+  eModType_Remesh = 41,
+  eModType_Skin = 42,
+  eModType_LaplacianSmooth = 43,
+  eModType_Triangulate = 44,
+  eModType_UVWarp = 45,
+  eModType_MeshCache = 46,
+  eModType_LaplacianDeform = 47,
+  eModType_Wireframe = 48,
+  eModType_DataTransfer = 49,
+  eModType_NormalEdit = 50,
+  eModType_CorrectiveSmooth = 51,
+  eModType_MeshSequenceCache = 52,
+  eModType_SurfaceDeform = 53,
+  eModType_WeightedNormal = 54,
+  eModType_Weld = 55,
+  eModType_Fluid = 56,
+  eModType_Nodes = 57,
+  eModType_MeshToVolume = 58,
+  eModType_VolumeDisplace = 59,
+  eModType_VolumeToMesh = 60,
+  NUM_MOD_TYPES,
+} ModType;
 
-typedef enum ModifierMode {
-  eModifierMode_Realtime = (1 << 0),
-  eModifierMode_Render = (1 << 1),
-  eModifierMode_Editmode = (1 << 2),
-  eModifierMode_OnCage = (1 << 3),
-#ifdef DNA_DEPRECATED_ALLOW
-  /** Old modifier box expansion, just for versioning. */
-  eModifierMode_Expanded_DEPRECATED = (1 << 4),
+typedef enum ModMode {
+  eModMode_Realtime = (1 << 0),
+  eModMode_Render = (1 << 1),
+  eModMode_Editmode = (1 << 2),
+  eModMode_OnCage = (1 << 3),
+#ifdef TYPES_DEPRECATED_ALLOW
+  /* Old mod box expansion, just for versioning. */
+  eModMode_Expanded_DEPRECATED = (1 << 4),
 #endif
-  eModifierMode_Virtual = (1 << 5),
-  eModifierMode_ApplyOnSpline = (1 << 6),
-  eModifierMode_DisableTemporary = (1u << 31),
-} ModifierMode;
+  eModMode_Virtual = (1 << 5),
+  eModMode_ApplyOnSpline = (1 << 6),
+  eModMode_DisableTemporary = (1u << 31),
+} ModMode;
 
-typedef struct ModifierData {
-  struct ModifierData *next, *prev;
+typedef struct ModData {
+  struct ModData *next, *prev;
 
   int type, mode;
   char _pad0[4];
   short flag;
-  /** An "expand" bit for each of the modifier's (sub)panels (#uiPanelDataExpansion). */
+  /* An "expand" bit for each of the modifier's (sub)panels (#uiPanelDataExpansion). */
   short ui_expand_flag;
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
 
   char *error;
 
-  /** Runtime field which contains unique identifier of the modifier. */
+  /* Runtime field which contains unique identifier of the modifier. */
   SessionUUID session_uuid;
 
-  /** Runtime field which contains runtime data which is specific to a modifier type. */
+  /* Runtime field which contains runtime data which is specific to a modifier type. */
   void *runtime;
-} ModifierData;
+} ModData;
 
 typedef enum {
-  /** This modifier has been inserted in local override, and hence can be fully edited. */
-  eModifierFlag_OverrideLibrary_Local = (1 << 0),
-  /** This modifier does not own its caches, but instead shares them with another modifier. */
-  eModifierFlag_SharedCaches = (1 << 1),
-  /**
-   * This modifier is the object's active modifier. Used for context in the node editor.
-   * Only one modifier on an object should have this flag set.
-   */
-  eModifierFlag_Active = (1 << 2),
-} ModifierFlag;
+  /* This mod has been inserted in local override, and hence can be fully edited. */
+  eModFlag_OverrideLib_Local = (1 << 0),
+  /* This modifier does not own its caches, but instead shares them with another modifier. */
+  eModFlag_SharedCaches = (1 << 1),
+  /* This modifier is the object's active modifier. Used for context in the node editor.
+   * Only one modifier on an object should have this flag set. */
+  eModFlag_Active = (1 << 2),
+} ModFlag;
 
-/**
- * \note Not a real modifier.
- */
-typedef struct MappingInfoModifierData {
-  ModifierData modifier;
+/* Not a real modifier. */
+typedef struct MappingInfoModData {
+  ModData mod;
 
   struct Tex *texture;
   struct Object *map_object;
@@ -140,23 +135,23 @@ typedef struct MappingInfoModifierData {
   char uvlayer_name[64];
   int uvlayer_tmp;
   int texmapping;
-} MappingInfoModifierData;
+} MappingInfoModData;
 
 typedef enum {
-  eSubsurfModifierFlag_Incremental = (1 << 0),
-  eSubsurfModifierFlag_DebugIncr = (1 << 1),
-  eSubsurfModifierFlag_ControlEdges = (1 << 2),
+  eSubsurfModFlag_Incremental = (1 << 0),
+  eSubsurfModFlag_DebugIncr = (1 << 1),
+  eSubsurfModFlag_ControlEdges = (1 << 2),
   /* DEPRECATED, ONLY USED FOR DO-VERSIONS */
-  eSubsurfModifierFlag_SubsurfUv_DEPRECATED = (1 << 3),
-  eSubsurfModifierFlag_UseCrease = (1 << 4),
-  eSubsurfModifierFlag_UseCustomNormals = (1 << 5),
-  eSubsurfModifierFlag_UseRecursiveSubdivision = (1 << 6),
-} SubsurfModifierFlag;
+  eSubsurfModFlag_SubsurfUv_DEPRECATED = (1 << 3),
+  eSubsurfModFlag_UseCrease = (1 << 4),
+  eSubsurfModFlag_UseCustomNormals = (1 << 5),
+  eSubsurfModFlag_UseRecursiveSubdivision = (1 << 6),
+} SubsurfModFlag;
 
 typedef enum {
   SUBSURF_TYPE_CATMULL_CLARK = 0,
   SUBSURF_TYPE_SIMPLE = 1,
-} eSubsurfModifierType;
+} eSubsurfModType;
 
 typedef enum {
   SUBSURF_UV_SMOOTH_NONE = 0,
@@ -179,8 +174,8 @@ typedef struct SubsurfRuntimeData {
   char _pad[7];
 } SubsurfRuntimeData;
 
-typedef struct SubsurfModifierData {
-  ModifierData modifier;
+typedef struct SubsurfModData {
+  ModData mod;
 
   short subdivType, levels, renderLevels, flags;
   short uv_smooth;
@@ -188,46 +183,46 @@ typedef struct SubsurfModifierData {
   short boundary_smooth;
   char _pad[2];
 
-  /* TODO(sergey): Get rid of those with the old CCG subdivision code. */
+  /* remove old CCG subdivision code. */
   void *emCache, *mCache;
-} SubsurfModifierData;
+} SubsurfModData;
 
-typedef struct LatticeModifierData {
-  ModifierData modifier;
+typedef struct LatticeModData {
+  ModData mod;
 
   struct Object *object;
-  /** Optional vertexgroup name, MAX_VGROUP_NAME. */
+  /* Optional vertexgroup name, MAX_VGROUP_NAME. */
   char name[64];
   float strength;
   short flag;
   char _pad[2];
   void *_pad1;
-} LatticeModifierData;
+} LatticeModData;
 
-/** #LatticeModifierData.flag */
+/* LatticeModData.flag */
 enum {
   MOD_LATTICE_INVERT_VGROUP = (1 << 0),
 };
 
-typedef struct CurveModifierData {
-  ModifierData modifier;
+typedef struct CurveModData {
+  ModData mod;
 
   struct Object *object;
-  /** Optional vertexgroup name, MAX_VGROUP_NAME. */
+  /* Optional vertexgroup name, MAX_VGROUP_NAME. */
   char name[64];
-  /** Axis along which curve deforms. */
+  /* Axis along which curve deforms. */
   short defaxis;
   short flag;
   char _pad[4];
   void *_pad1;
-} CurveModifierData;
+} CurveModData;
 
-/** #CurveModifierData.flag */
+/* CurveModData.flag */
 enum {
   MOD_CURVE_INVERT_VGROUP = (1 << 0),
 };
 
-/** #CurveModifierData.defaxis */
+/* CurveModData.defaxis */
 enum {
   MOD_CURVE_POSX = 1,
   MOD_CURVE_POSY = 2,
@@ -237,135 +232,125 @@ enum {
   MOD_CURVE_NEGZ = 6,
 };
 
-typedef struct BuildModifierData {
-  ModifierData modifier;
+typedef struct BuildModData {
+  ModData mod;
 
   float start, length;
   short flag;
 
-  /** (bool) whether order of vertices is randomized - legacy files (for readfile conversion). */
+  /* (bool) whether order of vertices is randomized - legacy files (for readfile conversion). */
   short randomize;
-  /** (int) random seed. */
+  /* (int) random seed. */
   int seed;
-} BuildModifierData;
+} BuildModData;
 
-/** #BuildModifierData.flag */
+/* BuildModData.flag */
 enum {
-  /** order of vertices is randomized */
+  /* order of vertices is randomized */
   MOD_BUILD_FLAG_RANDOMIZE = (1 << 0),
-  /** frame range is reversed, resulting in a deconstruction effect */
+  /* frame range is reversed, resulting in a deconstruction effect */
   MOD_BUILD_FLAG_REVERSE = (1 << 1),
 };
 
-/** Mask Modifier. */
-typedef struct MaskModifierData {
-  ModifierData modifier;
+/* Mask Mod. */
+typedef struct MaskModData {
+  ModData mod;
 
-  /** Armature to use to in place of hardcoded vgroup. */
+  /* Armature to use to in place of hardcoded vgroup. */
   struct Object *ob_arm;
-  /** Name of vertex group to use to mask, MAX_VGROUP_NAME. */
+  /* Name of vertex group to use to mask, MAX_VGROUP_NAME. */
   char vgroup[64];
 
-  /** Using armature or hardcoded vgroup. */
+  /* Using armature or hardcoded vgroup. */
   short mode;
-  /** Flags for various things. */
+  /* Flags for various things. */
   short flag;
   float threshold;
   void *_pad1;
-} MaskModifierData;
+} MaskModData;
 
-/** #MaskModifierData.mode */
+/* MaskModData.mode */
 enum {
   MOD_MASK_MODE_VGROUP = 0,
   MOD_MASK_MODE_ARM = 1,
 };
 
-/** #MaskModifierData.flag */
+/* MaskModData.flag */
 enum {
   MOD_MASK_INV = (1 << 0),
   MOD_MASK_SMOOTH = (1 << 1),
 };
 
-typedef struct ArrayModifierData {
-  ModifierData modifier;
+typedef struct ArrayModData {
+  ModData mod;
 
-  /** The object with which to cap the start of the array. */
+  /* The object with which to cap the start of the array. */
   struct Object *start_cap;
-  /** The object with which to cap the end of the array. */
+  /* The object with which to cap the end of the array. */
   struct Object *end_cap;
-  /** The curve object to use for #MOD_ARR_FITCURVE. */
+  /* The curve object to use for #MOD_ARR_FITCURVE. */
   struct Object *curve_ob;
-  /** The object to use for object offset. */
+  /* The object to use for object offset. */
   struct Object *offset_ob;
-  /**
-   * A constant duplicate offset;
-   * 1 means the duplicates are 1 unit apart.
-   */
+  /* A constant duplicate offset;
+   * 1 means the duplicates are 1 unit apart. */
   float offset[3];
-  /**
-   * A scaled factor for duplicate offsets;
-   * 1 means the duplicates are 1 object-width apart.
-   */
+  /* A scaled factor for duplicate offsets;
+   * 1 means the duplicates are 1 object-width apart. */
   float scale[3];
-  /** The length over which to distribute the duplicates. */
+  /* The length over which to distribute the duplicates. */
   float length;
-  /** The limit below which to merge vertices in adjacent duplicates. */
+  /* The limit below which to merge vertices in adjacent duplicates. */
   float merge_dist;
-  /**
-   * Determines how duplicate count is calculated; one of:
-   * - #MOD_ARR_FIXEDCOUNT -> fixed.
-   * - #MOD_ARR_FITLENGTH  -> calculated to fit a set length.
-   * - #MOD_ARR_FITCURVE   -> calculated to fit the length of a Curve object.
-   */
+  /* Determines how duplicate count is calculated; one of:
+   * MOD_ARR_FIXEDCOUNT -> fixed.
+   * MOD_ARR_FITLENGTH  -> calculated to fit a set length.
+   * MOD_ARR_FITCURVE   -> calculated to fit the length of a Curve object. */
   int fit_type;
-  /**
-   * Flags specifying how total offset is calculated; binary OR of:
-   * - #MOD_ARR_OFF_CONST    -> total offset += offset.
-   * - #MOD_ARR_OFF_RELATIVE -> total offset += relative * object width.
-   * - #MOD_ARR_OFF_OBJ      -> total offset += offset_ob's matrix.
-   * Total offset is the sum of the individual enabled offsets.
-   */
+  /* Flags specifying how total offset is calculated; binary OR of:
+   * MOD_ARR_OFF_CONST    -> total offset += offset.
+   * MOD_ARR_OFF_RELATIVE -> total offset += relative * object width.
+   * MOD_ARR_OFF_OBJ      -> total offset += offset_ob's matrix.
+   * Total offset is the sum of the individual enabled offsets. */
   int offset_type;
-  /**
-   * General flags:
-   * #MOD_ARR_MERGE -> merge vertices in adjacent duplicates.
-   */
+  /* General flags:
+   * MOD_ARR_MERGE -> merge vertices in adjacent duplicates. */
   int flags;
-  /** The number of duplicates to generate for #MOD_ARR_FIXEDCOUNT. */
+  /* The number of duplicates to generate for MOD_ARR_FIXEDCOUNT. */
   int count;
   float uv_offset[2];
-} ArrayModifierData;
+} ArrayModData;
 
-/** #ArrayModifierData.fit_type */
+/* ArrayModData.fit_type */
 enum {
   MOD_ARR_FIXEDCOUNT = 0,
   MOD_ARR_FITLENGTH = 1,
   MOD_ARR_FITCURVE = 2,
 };
 
-/** #ArrayModifierData.offset_type */
+/* ArrayModData.offset_type */
 enum {
   MOD_ARR_OFF_CONST = (1 << 0),
   MOD_ARR_OFF_RELATIVE = (1 << 1),
   MOD_ARR_OFF_OBJ = (1 << 2),
 };
 
-/** #ArrayModifierData.flags */
+/* ArrayModData.flags */
 enum {
   MOD_ARR_MERGE = (1 << 0),
   MOD_ARR_MERGEFINAL = (1 << 1),
 };
 
-typedef struct MirrorModifierData {
-  ModifierData modifier;
+typedef struct MirrorModData {
+  ModData mod;
 
-  /** Deprecated, use flag instead. */
-  short axis DNA_DEPRECATED;
+  /* Deprecated, use flag instead. */
+  short axis TYPES_DEPRECATED;
   short flag;
   float tolerance;
   float bisect_threshold;
 
-  /** Mirror modifier used to merge the old vertex into its new copy, which would break code
+  /* Mirror mod used to merge the old vertex into its new copy, which would break code
    * relying on access to the original geometry vertices. However, modifying this behavior to the
    * correct one (i.e. merging the copy vertices into their original sources) has several potential
    * effects on other modifiers and tools, so we need to keep that incorrect behavior for existing
@@ -377,9 +362,9 @@ typedef struct MirrorModifierData {
   float uv_offset_copy[2];
   struct Object *mirror_ob;
   void *_pad1;
-} MirrorModifierData;
+} MirrorModData;
 
-/** #MirrorModifierData.flag */
+/* MirrorModData.flag */
 enum {
   MOD_MIR_CLIPPING = (1 << 0),
   MOD_MIR_MIRROR_U = (1 << 1),
@@ -398,69 +383,69 @@ enum {
   MOD_MIR_MIRROR_UDIM = (1 << 14),
 };
 
-typedef struct EdgeSplitModifierData {
-  ModifierData modifier;
+typedef struct EdgeSplitModData {
+  ModData mod;
 
-  /** Angle above which edges should be split. */
+  /* Angle above which edges should be split. */
   float split_angle;
   int flags;
-} EdgeSplitModifierData;
+} EdgeSplitModData;
 
-/** #EdgeSplitModifierData.flags */
+/* EdgeSplitModData.flags */
 enum {
   MOD_EDGESPLIT_FROMANGLE = (1 << 1),
   MOD_EDGESPLIT_FROMFLAG = (1 << 2),
 };
 
-typedef struct BevelModifierData {
-  ModifierData modifier;
+typedef struct BevelModData {
+  ModData mod;
 
-  /** The "raw" bevel value (distance/amount to bevel). */
+  /* The "raw" bevel value (distance/amount to bevel). */
   float value;
-  /** The resolution (as originally coded, it is the number of recursive bevels). */
+  /* The resolution (as originally coded, it is the number of recursive bevels). */
   int res;
-  /** General option flags. */
+  /* General option flags. */
   short flags;
-  /** Used to interpret the bevel value. */
+  /* Used to interpret the bevel value. */
   short val_flags;
-  /** For the type and how we build the bevel's profile. */
+  /* For the type and how we build the bevel's profile. */
   short profile_type;
-  /** Flags to tell the tool how to limit the bevel. */
+  /* Flags to tell the tool how to limit the bevel. */
   short lim_flags;
-  /** Flags to direct how edge weights are applied to verts. */
+  /* Flags to direct how edge weights are applied to verts. */
   short e_flags;
-  /** Material index if >= 0, else material inherited from surrounding faces. */
+  /* Material index if >= 0, else material inherited from surrounding faces. */
   short mat;
   short edge_flags;
   short face_str_mode;
-  /** Patterns to use for mitering non-reflex and reflex miter edges */
+  /* Patterns to use for mitering non-reflex and reflex miter edges */
   short miter_inner;
   short miter_outer;
-  /** The method to use for creating >2-way intersections */
+  /* The method to use for creating >2-way intersections */
   short vmesh_method;
-  /** Whether to affect vertices or edges. */
+  /* Whether to affect vertices or edges. */
   char affect_type;
   char _pad;
-  /** Controls profile shape (0->1, .5 is round). */
+  /* Controls profile shape (0->1, .5 is round). */
   float profile;
   /** if the MOD_BEVEL_ANGLE is set,
    * this will be how "sharp" an edge must be before it gets beveled */
   float bevel_angle;
   float spread;
-  /** if the MOD_BEVEL_VWEIGHT option is set,
+  /* if the MOD_BEVEL_VWEIGHT option is set,
    * this will be the name of the vert group, MAX_VGROUP_NAME */
   char defgrp_name[64];
 
   char _pad1[4];
-  /** Curve info for the custom profile */
+  /* Curve info for the custom profile */
   struct CurveProfile *custom_profile;
 
   void *_pad2;
 } BevelModifierData;
 
-/** #BevelModifierData.flags and BevelModifierData.lim_flags */
+/* BevelModData.flags and BevelModData.lim_flags */
 enum {
-#ifdef DNA_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
   MOD_BEVEL_VERT_DEPRECATED = (1 << 1),
 #endif
   MOD_BEVEL_INVERT_VGROUP = (1 << 2),
@@ -468,7 +453,7 @@ enum {
   MOD_BEVEL_WEIGHT = (1 << 4),
   MOD_BEVEL_VGROUP = (1 << 5),
 /* unused                  = (1 << 6), */
-#ifdef DNA_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
   MOD_BEVEL_CUSTOM_PROFILE_DEPRECATED = (1 << 7),
 #endif
   /* unused                  = (1 << 8), */
@@ -481,7 +466,7 @@ enum {
   MOD_BEVEL_HARDEN_NORMALS = (1 << 15),
 };
 
-/** #BevelModifierData.val_flags (not used as flags any more) */
+/* BevelModData.val_flags (not used as flags any more) */
 enum {
   MOD_BEVEL_AMT_OFFSET = 0,
   MOD_BEVEL_AMT_WIDTH = 1,
@@ -490,19 +475,19 @@ enum {
   MOD_BEVEL_AMT_ABSOLUTE = 4,
 };
 
-/** #BevelModifierData.profile_type */
+/* BevelModData.profile_type */
 enum {
   MOD_BEVEL_PROFILE_SUPERELLIPSE = 0,
   MOD_BEVEL_PROFILE_CUSTOM = 1,
 };
 
-/** #BevelModifierData.edge_flags */
+/* BevelModData.edge_flags */
 enum {
   MOD_BEVEL_MARK_SEAM = (1 << 0),
   MOD_BEVEL_MARK_SHARP = (1 << 1),
 };
 
-/** #BevelModifierData.face_str_mode */
+/* BevelModData.face_str_mode */
 enum {
   MOD_BEVEL_FACE_STRENGTH_NONE = 0,
   MOD_BEVEL_FACE_STRENGTH_NEW = 1,
@@ -510,76 +495,76 @@ enum {
   MOD_BEVEL_FACE_STRENGTH_ALL = 3,
 };
 
-/** #BevelModifier.miter_inner & #BevelModifier.miter_outer */
+/* BevelMod.miter_inner & BevelMod.miter_outer */
 enum {
   MOD_BEVEL_MITER_SHARP = 0,
   MOD_BEVEL_MITER_PATCH = 1,
   MOD_BEVEL_MITER_ARC = 2,
 };
 
-/** #BevelModifier.vmesh_method */
+/* BevelMod.vmesh_method */
 enum {
   MOD_BEVEL_VMESH_ADJ = 0,
   MOD_BEVEL_VMESH_CUTOFF = 1,
 };
 
-/** #BevelModifier.affect_type */
+/* BevelMod.affect_type */
 enum {
   MOD_BEVEL_AFFECT_VERTICES = 0,
   MOD_BEVEL_AFFECT_EDGES = 1,
 };
 
-typedef struct FluidModifierData {
+typedef struct FluidModData {
   ModifierData modifier;
 
   struct FluidDomainSettings *domain;
-  /** Inflow, outflow, smoke objects. */
+  /* Inflow, outflow, smoke objects. */
   struct FluidFlowSettings *flow;
-  /** Effector objects (collision, guiding). */
+  /* Effector objects (collision, guiding). */
   struct FluidEffectorSettings *effector;
   float time;
-  /** Domain, inflow, outflow, .... */
+  /* Domain, inflow, outflow, .... */
   int type;
   void *_pad1;
-} FluidModifierData;
+} FluidModData;
 
-/** #FluidModifierData.type */
+/* FluidModData.type */
 enum {
   MOD_FLUID_TYPE_DOMAIN = (1 << 0),
   MOD_FLUID_TYPE_FLOW = (1 << 1),
   MOD_FLUID_TYPE_EFFEC = (1 << 2),
 };
 
-typedef struct DisplaceModifierData {
-  ModifierData modifier;
+typedef struct DisplaceModData {
+  ModData mod;
 
-  /* Keep in sync with #MappingInfoModifierData. */
+  /* Keep in sync with MappingInfoModData. */
 
   struct Tex *texture;
   struct Object *map_object;
   char map_bone[64];
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvlayer_name[64];
   int uvlayer_tmp;
   int texmapping;
-  /* end MappingInfoModifierData */
+  /* end MappingInfoModData */
 
   float strength;
   int direction;
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
   float midlevel;
   int space;
   short flag;
   char _pad[6];
-} DisplaceModifierData;
+} DisplaceModData;
 
-/** #DisplaceModifierData.flag */
+/* DisplaceModData.flag */
 enum {
   MOD_DISP_INVERT_VGROUP = (1 << 0),
 };
 
-/** #DisplaceModifierData.direction */
+/* DisplaceModData.direction */
 enum {
   MOD_DISP_DIR_X = 0,
   MOD_DISP_DIR_Y = 1,
@@ -589,7 +574,7 @@ enum {
   MOD_DISP_DIR_CLNOR = 5,
 };
 
-/** #DisplaceModifierData.texmapping */
+/* DisplaceModData.texmapping */
 enum {
   MOD_DISP_MAP_LOCAL = 0,
   MOD_DISP_MAP_GLOBAL = 1,
@@ -597,59 +582,57 @@ enum {
   MOD_DISP_MAP_UV = 3,
 };
 
-/** #DisplaceModifierData.space */
+/* DisplaceModData.space */
 enum {
   MOD_DISP_SPACE_LOCAL = 0,
   MOD_DISP_SPACE_GLOBAL = 1,
 };
 
-typedef struct UVProjectModifierData {
-  ModifierData modifier;
-  /**
-   * The objects which do the projecting.
-   * \note 10=MOD_UVPROJECT_MAXPROJECTORS.
-   */
+typedef struct UVProjectModData {
+  ModData mod;
+  /* The objects which do the projecting.
+   * 10=MOD_UVPROJECT_MAXPROJECTORS. */
   struct Object *projectors[10];
   char _pad2[4];
   int num_projectors;
   float aspectx, aspecty;
   float scalex, scaley;
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvlayer_name[64];
   int uvlayer_tmp;
   char _pad[4];
-} UVProjectModifierData;
+} UVProjectModData;
 
 #define MOD_UVPROJECT_MAXPROJECTORS 10
 
-typedef struct DecimateModifierData {
-  ModifierData modifier;
+typedef struct DecimateModData {
+  ModData mod;
 
-  /** (mode == MOD_DECIM_MODE_COLLAPSE). */
+  /* (mode == MOD_DECIM_MODE_COLLAPSE). */
   float percent;
-  /** (mode == MOD_DECIM_MODE_UNSUBDIV). */
+  /* (mode == MOD_DECIM_MODE_UNSUBDIV). */
   short iter;
-  /** (mode == MOD_DECIM_MODE_DISSOLVE). */
+  /* (mode == MOD_DECIM_MODE_DISSOLVE). */
   char delimit;
-  /** (mode == MOD_DECIM_MODE_COLLAPSE). */
+  /* (mode == MOD_DECIM_MODE_COLLAPSE). */
   char symmetry_axis;
-  /** (mode == MOD_DECIM_MODE_DISSOLVE). */
+  /* (mode == MOD_DECIM_MODE_DISSOLVE). */
   float angle;
 
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
   float defgrp_factor;
   short flag, mode;
 
-  /** runtime only. */
+  /* runtime only. */
   int face_count;
-} DecimateModifierData;
+} DecimateModData;
 
 enum {
   MOD_DECIM_FLAG_INVERT_VGROUP = (1 << 0),
-  /** For collapse only. don't convert triangle pairs back to quads. */
+  /* For collapse only. don't convert triangle pairs back to quads. */
   MOD_DECIM_FLAG_TRIANGULATE = (1 << 1),
-  /** for dissolve only. collapse all verts between 2 faces */
+  /* for dissolve only. collapse all verts between 2 faces */
   MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS = (1 << 2),
   MOD_DECIM_FLAG_SYMMETRY = (1 << 3),
 };
@@ -657,20 +640,20 @@ enum {
 enum {
   MOD_DECIM_MODE_COLLAPSE = 0,
   MOD_DECIM_MODE_UNSUBDIV = 1,
-  /** called planar in the UI */
+  /* called planar in the UI */
   MOD_DECIM_MODE_DISSOLVE = 2,
 };
 
-typedef struct SmoothModifierData {
-  ModifierData modifier;
+typedef struct SmoothModData {
+  ModData mod;
   float fac;
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
   short flag, repeat;
 
-} SmoothModifierData;
+} SmoothModData;
 
-/** #SmoothModifierData.flag */
+/* SmoothModData.flag */
 enum {
   MOD_SMOOTH_INVERT_VGROUP = (1 << 0),
   MOD_SMOOTH_X = (1 << 1),
@@ -678,22 +661,22 @@ enum {
   MOD_SMOOTH_Z = (1 << 3),
 };
 
-typedef struct CastModifierData {
-  ModifierData modifier;
+typedef struct CastModData {
+  ModData mod;
 
   struct Object *object;
   float fac;
   float radius;
   float size;
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
   short flag;
-  /** Cast modifier projection type. */
+  /* Cast mod projection type. */
   short type;
   void *_pad1;
-} CastModifierData;
+} CastModData;
 
-/** #CastModifierData.flag */
+/* CastModData.flag */
 enum {
   /* And what bout (1 << 0) flag? ;) */
   MOD_CAST_INVERT_VGROUP = (1 << 0),
@@ -704,29 +687,29 @@ enum {
   MOD_CAST_SIZE_FROM_RADIUS = (1 << 5),
 };
 
-/** #CastModifierData.type */
+/* CastModData.type */
 enum {
   MOD_CAST_TYPE_SPHERE = 0,
   MOD_CAST_TYPE_CYLINDER = 1,
   MOD_CAST_TYPE_CUBOID = 2,
 };
 
-typedef struct WaveModifierData {
-  ModifierData modifier;
+typedef struct WaveModData {
+  ModData mod;
 
-  /* Keep in sync with #MappingInfoModifierData. */
+  /* Keep in sync with MappingInfoModData. */
 
   struct Tex *texture;
   struct Object *map_object;
   char map_bone[64];
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvlayer_name[64];
   int uvlayer_tmp;
   int texmapping;
-  /* End MappingInfoModifierData. */
+  /* End MappingInfoModData. */
 
   struct Object *objectcenter;
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
 
   short flag;
@@ -738,9 +721,9 @@ typedef struct WaveModifierData {
   float timeoffs, lifetime;
   char _pad1[4];
   void *_pad2;
-} WaveModifierData;
+} WaveModData;
 
-/** #WaveModifierData.flag */
+/* WaveModData.flag */
 enum {
   MOD_WAVE_INVERT_VGROUP = (1 << 0),
   MOD_WAVE_X = (1 << 1),
@@ -752,25 +735,25 @@ enum {
   MOD_WAVE_NORM_Z = (1 << 7),
 };
 
-typedef struct ArmatureModifierData {
-  ModifierData modifier;
+typedef struct ArmatureModData {
+  ModData mod;
 
-  /** #eArmature_DeformFlag use instead of #bArmature.deformflag. */
+  /* eArmature_DeformFlag use instead of Armature.deformflag. */
   short deformflag, multi;
   char _pad2[4];
   struct Object *object;
-  /** Stored input of previous modifier, for vertex-group blending. */
+  /* Stored input of previous modifier, for vertex-group blending. */
   float (*vert_coords_prev)[3];
-  /** MAX_VGROUP_NAME. */
+  /* MAX_VGROUP_NAME. */
   char defgrp_name[64];
-} ArmatureModifierData;
+} ArmatureModData;
 
 enum {
   MOD_HOOK_UNIFORM_SPACE = (1 << 0),
   MOD_HOOK_INVERT_VGROUP = (1 << 1),
 };
 
-/** \note same as #WarpModifierFalloff */
+/* same as WarpModFalloff */
 typedef enum {
   eHook_Falloff_None = 0,
   eHook_Falloff_Curve = 1,
@@ -782,71 +765,69 @@ typedef enum {
   eHook_Falloff_Sphere = 7,    /* PROP_SPHERE */
   eHook_Falloff_InvSquare = 8, /* PROP_INVSQUARE */
   /* PROP_RANDOM not used */
-} HookModifierFalloff;
+} HookModFalloff;
 
-typedef struct HookModifierData {
-  ModifierData modifier;
+typedef struct HookModData {
+  ModData mod;
 
   struct Object *object;
-  /** Optional name of bone target, MAX_ID_NAME-2. */
+  /* Optional name of bone target, MAX_ID_NAME-2. */
   char subtarget[64];
 
   char flag;
-  /** Use enums from WarpModifier (exact same functionality). */
+  /* Use enums from WarpMod (exact same functionality). */
   char falloff_type;
   char _pad[6];
-  /** Matrix making current transform unmodified. */
+  /* Matrix making current transform unmodified. */
   float parentinv[4][4];
-  /** Visualization of hook. */
+  /* Visualization of hook. */
   float cent[3];
-  /** If not zero, falloff is distance where influence zero. */
+  /* If not zero, falloff is distance where influence zero. */
   float falloff;
 
   struct CurveMapping *curfalloff;
 
-  /** If NULL, it's using vertexgroup. */
+  /* If NULL, it's using vertexgroup. */
   int *indexar;
   int totindex;
   float force;
-  /** Optional vertexgroup name, MAX_VGROUP_NAME. */
+  /* Optional vertexgroup name, MAX_VGROUP_NAME. */
   char name[64];
   void *_pad1;
-} HookModifierData;
+} HookModData;
 
-typedef struct SoftbodyModifierData {
-  ModifierData modifier;
-} SoftbodyModifierData;
+typedef struct SoftbodyModData {
+  ModData mod;
+} SoftbodyModData;
 
-typedef struct ClothModifierData {
-  ModifierData modifier;
+typedef struct ClothModData {
+  ModData mod;
 
-  /** The internal data structure for cloth. */
+  /* The internal data structure for cloth. */
   struct Cloth *clothObject;
-  /** Definition is in DNA_cloth_types.h. */
+  /* Definition is in types_cloth_types.h. */
   struct ClothSimSettings *sim_parms;
-  /** Definition is in DNA_cloth_types.h. */
+  /* Definition is in types_cloth_types.h. */
   struct ClothCollSettings *coll_parms;
 
-  /**
-   * PointCache can be shared with other instances of #ClothModifierData.
-   * Inspect `modifier.flag & eModifierFlag_SharedCaches` to find out.
-   */
-  /** Definition is in DNA_object_force_types.h. */
+  /* PointCache can be shared with other instances of ClothModData.
+   * Inspect `mod.flag & eModFlag_SharedCaches` to find out */
+  /* Definition is in types_object_force_types.h. */
   struct PointCache *point_cache;
-  struct ListBase ptcaches;
+  struct List ptcaches;
 
-  /** XXX: nasty hack, remove once hair can be separated from cloth modifier data. */
+  /* nasty hack, remove once hair can be separated from cloth mod data. */
   struct ClothHairData *hairdata;
-  /** Grid geometry values of hair continuum. */
+  /* Grid geometry values of hair continuum. */
   float hair_grid_min[3];
   float hair_grid_max[3];
   int hair_grid_res[3];
   float hair_grid_cellsize;
 
   struct ClothSolverResult *solver_result;
-} ClothModifierData;
+} ClothModData;
 
-typedef struct CollisionModifierData {
+typedef struct CollisionModData {
   ModifierData modifier;
 
   /** Position at the beginning of the frame. */
