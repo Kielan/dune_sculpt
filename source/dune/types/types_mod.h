@@ -828,89 +828,89 @@ typedef struct ClothModData {
 } ClothModData;
 
 typedef struct CollisionModData {
-  ModifierData modifier;
+  ModData mod;
 
-  /** Position at the beginning of the frame. */
+  /* Position at the beginning of the frame. */
   struct MVert *x;
-  /** Position at the end of the frame. */
+  /* Position at the end of the frame. */
   struct MVert *xnew;
-  /** Unused at the moment, but was discussed during sprint. */
+  /* Unused at the moment, but was discussed during sprint. */
   struct MVert *xold;
-  /** New position at the actual inter-frame step. */
+  /* New position at the actual inter-frame step. */
   struct MVert *current_xnew;
-  /** Position at the actual inter-frame step. */
+  /* Position at the actual inter-frame step. */
   struct MVert *current_x;
-  /** (xnew - x) at the actual inter-frame step. */
+  /* (xnew - x) at the actual inter-frame step. */
   struct MVert *current_v;
 
   struct MVertTri *tri;
 
   unsigned int mvert_num;
   unsigned int tri_num;
-  /** Cfra time of modifier. */
+  /* Cfra time of modifier. */
   float time_x, time_xnew;
-  /** Collider doesn't move this frame, i.e. x[].co==xnew[].co. */
+  /* Collider doesn't move this frame, i.e. x[].co==xnew[].co. */
   char is_static;
   char _pad[7];
 
-  /** Bounding volume hierarchy for this cloth object. */
+  /* Bounding volume hierarchy for this cloth object. */
   struct BVHTree *bvhtree;
-} CollisionModifierData;
+} CollisionModData;
 
-typedef struct SurfaceModifierData {
-  ModifierData modifier;
+typedef struct SurfaceModData {
+  ModData mod;
 
-  /** Old position. */
+  /* Old position. */
   struct MVert *x;
-  /** Velocity. */
+  /* Velocity. */
   struct MVert *v;
 
   struct Mesh *mesh;
 
-  /** Bounding volume hierarchy of the mesh faces. */
+  /* Bounding volume hierarchy of the mesh faces. */
   struct BVHTreeFromMesh *bvhtree;
 
   int cfra, numverts;
-} SurfaceModifierData;
+} SurfaceModData;
 
-typedef struct BooleanModifierData {
-  ModifierData modifier;
+typedef struct BoolModData {
+  ModData mod;
 
   struct Object *object;
   struct Collection *collection;
   float double_threshold;
-  char operation;
+  char op;
   char solver;
   char flag;
   char bm_flag;
-} BooleanModifierData;
+} BoolModData;
 
-/** #BooleanModifierData.operation */
+/* BoolModData.op */
 typedef enum {
-  eBooleanModifierOp_Intersect = 0,
-  eBooleanModifierOp_Union = 1,
-  eBooleanModifierOp_Difference = 2,
-} BooleanModifierOp;
+  eBoolModOp_Intersect = 0,
+  eBoolModOp_Union = 1,
+  eBoolModOp_Difference = 2,
+} BoolModOp;
 
-/** #BooleanModifierData.solver */
+/* BoolModData.solver */
 typedef enum {
-  eBooleanModifierSolver_Fast = 0,
-  eBooleanModifierSolver_Exact = 1,
-} BooleanModifierSolver;
+  eBoolModSolver_Fast = 0,
+  eBoolModSolver_Exact = 1,
+} BoolModSolver;
 
-/** #BooleanModifierData.flag */
+/* BoolModData.flag */
 enum {
-  eBooleanModifierFlag_Self = (1 << 0),
-  eBooleanModifierFlag_Object = (1 << 1),
-  eBooleanModifierFlag_Collection = (1 << 2),
-  eBooleanModifierFlag_HoleTolerant = (1 << 3),
+  eBoolModFlag_Self = (1 << 0),
+  eBoolModFlag_Object = (1 << 1),
+  eBoolModFlag_Collection = (1 << 2),
+  eBoolModFlag_HoleTolerant = (1 << 3),
 };
 
-/** #BooleanModifierData.bm_flag (only used when #G_DEBUG is set). */
+/* BoolModData.bm_flag (only used when #G_DEBUG is set). */
 enum {
-  eBooleanModifierBMeshFlag_BMesh_Separate = (1 << 0),
-  eBooleanModifierBMeshFlag_BMesh_NoDissolve = (1 << 1),
-  eBooleanModifierBMeshFlag_BMesh_NoConnectRegions = (1 << 2),
+  eBoolModMeshFlag_Mesh_Separate = (1 << 0),
+  eBoolModMeshFlag_Mesh_NoDissolve = (1 << 1),
+  eBoolModMeshFlag_Mesh_NoConnectRegions = (1 << 2),
 };
 
 typedef struct MDefInfluence {
@@ -923,90 +923,88 @@ typedef struct MDefCell {
   int totinfluence;
 } MDefCell;
 
-typedef struct MeshDeformModifierData {
-  ModifierData modifier;
+typedef struct MeshDeformModData {
+  ModData mod;
 
-  /** Mesh object. */
+  /* Mesh object. */
   struct Object *object;
-  /** Optional vertexgroup name, MAX_VGROUP_NAME. */
+  /* Optional vertexgroup name, MAX_VGROUP_NAME. */
   char defgrp_name[64];
 
   short gridsize, flag;
   char _pad[4];
 
   /* result of static binding */
-  /** Influences. */
+  /* Influences. */
   MDefInfluence *bindinfluences;
-  /** Offsets into influences array. */
+  /* Offsets into influences array. */
   int *bindoffsets;
-  /** Coordinates that cage was bound with. */
+  /* Coordinates that cage was bound with. */
   float *bindcagecos;
-  /** Total vertices in mesh and cage. */
+  /* Total vertices in mesh and cage. */
   int totvert, totcagevert;
 
   /* result of dynamic binding */
-  /** Grid with dynamic binding cell points. */
+  /* Grid with dynamic binding cell points. */
   MDefCell *dyngrid;
-  /** Dynamic binding vertex influences. */
+  /* Dynamic binding vertex influences. */
   MDefInfluence *dyninfluences;
-  /** Is this vertex bound or not? */
+  /* Is this vertex bound or not? */
   int *dynverts;
-  /** Size of the dynamic bind grid. */
+  /* Size of the dynamic bind grid. */
   int dyngridsize;
-  /** Total number of vertex influences. */
+  /* Total number of vertex influences. */
   int totinfluence;
-  /** Offset of the dynamic bind grid. */
+  /* Offset of the dynamic bind grid. */
   float dyncellmin[3];
-  /** Width of dynamic bind cell. */
+  /* Width of dynamic bind cell. */
   float dyncellwidth;
-  /** Matrix of cage at binding time. */
+  /* Matrix of cage at binding time. */
   float bindmat[4][4];
 
   /* deprecated storage */
-  /** Deprecated inefficient storage. */
+  /* Deprecated inefficient storage. */
   float *bindweights;
-  /** Deprecated storage of cage coords. */
+  /* Deprecated storage of cage coords. */
   float *bindcos;
 
   /* runtime */
-  void (*bindfunc)(struct Object *object,
-                   struct MeshDeformModifierData *mmd,
-                   struct Mesh *cagemesh,
-                   float *vertexcos,
-                   int totvert,
-                   float cagemat[4][4]);
-} MeshDeformModifierData;
+  void (*bindfn)(struct Object *object,
+                 struct MeshDeformModData *mmd,
+                 struct Mesh *cagemesh,
+                 float *vertexcos,
+                 int totvert,
+                 float cagemat[4][4]);
+} MeshDeformModData;
 
 enum {
   MOD_MDEF_INVERT_VGROUP = (1 << 0),
   MOD_MDEF_DYNAMIC_BIND = (1 << 1),
 };
 
-typedef struct ParticleSystemModifierData {
-  ModifierData modifier;
+typedef struct ParticleSystemModData {
+  ModData mod;
 
-  /**
-   * \note Storing the particle system pointer here is very weak, as it prevents modifiers' data
-   * copying to be self-sufficient (extra external code needs to ensure the pointer remains valid
-   * when the modifier data is copied from one object to another). See e.g.
-   * `BKE_object_copy_particlesystems` or `BKE_object_copy_modifier`.
-   */
+  /* Storing the particle system tr here is very weak, as it prevents modifiers' data
+   * copying to be self-sufficient (extra external code needs to ensure the ptr remains valid
+   * when the mod data is copied from one object to another). See e.g.
+   * `dune_object_copy_particlesystems` or `dune_object_copy_modifier` */
   struct ParticleSystem *psys;
-  /** Final Mesh - its topology may differ from orig mesh. */
+  /* Final Mesh - its topology may differ from orig mesh. */
   struct Mesh *mesh_final;
-  /** Original mesh that particles are attached to. */
+  /* Original mesh that particles are attached to. */
   struct Mesh *mesh_original;
   int totdmvert, totdmedge, totdmface;
   short flag;
   char _pad[2];
   void *_pad1;
-} ParticleSystemModifierData;
+} ParticleSystemModData;
 
 typedef enum {
   eParticleSystemFlag_Pars = (1 << 0),
   eParticleSystemFlag_psys_updated = (1 << 1),
   eParticleSystemFlag_file_loaded = (1 << 2),
-} ParticleSystemModifierFlag;
+} ParticleSystemModFlag;
 
 typedef enum {
   eParticleInstanceFlag_Parents = (1 << 0),
@@ -1017,27 +1015,27 @@ typedef enum {
   eParticleInstanceFlag_Dead = (1 << 5),
   eParticleInstanceFlag_KeepShape = (1 << 6),
   eParticleInstanceFlag_UseSize = (1 << 7),
-} ParticleInstanceModifierFlag;
+} ParticleInstanceModFlag;
 
 typedef enum {
   eParticleInstanceSpace_World = 0,
   eParticleInstanceSpace_Local = 1,
-} ParticleInstanceModifierSpace;
+} ParticleInstanceModSpace;
 
-typedef struct ParticleInstanceModifierData {
-  ModifierData modifier;
+typedef struct ParticleInstanceModData {
+  ModData mod;
 
   struct Object *ob;
   short psys, flag, axis, space;
   float position, random_position;
   float rotation, random_rotation;
   float particle_amount, particle_offset;
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char index_layer_name[64];
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char value_layer_name[64];
   void *_pad1;
-} ParticleInstanceModifierData;
+} ParticleInstanceModData;
 
 typedef enum {
   eExplodeFlag_CalcFaces = (1 << 0),
@@ -1047,59 +1045,59 @@ typedef enum {
   eExplodeFlag_Alive = (1 << 4),
   eExplodeFlag_Dead = (1 << 5),
   eExplodeFlag_INVERT_VGROUP = (1 << 6),
-} ExplodeModifierFlag;
+} ExplodeModFlag;
 
-typedef struct ExplodeModifierData {
-  ModifierData modifier;
+typedef struct ExplodeModData {
+  ModData mod;
 
   int *facepa;
   short flag, vgroup;
   float protect;
-  /** MAX_CUSTOMDATA_LAYER_NAME. */
+  /* MAX_CUSTOMDATA_LAYER_NAME. */
   char uvname[64];
   void *_pad1;
-} ExplodeModifierData;
+} ExplodeModData;
 
-typedef struct MultiresModifierData {
-  ModifierData modifier;
+typedef struct MultiresModData {
+  ModData mod;
 
   char lvl, sculptlvl, renderlvl, totlvl;
-  char simple DNA_DEPRECATED;
+  char simple TYPES_DEPRECATED;
   char flags, _pad[2];
   short quality;
   short uv_smooth;
   short boundary_smooth;
   char _pad2[2];
-} MultiresModifierData;
+} MultiresModData;
 
 typedef enum {
-  eMultiresModifierFlag_ControlEdges = (1 << 0),
+  eMultiresModFlag_ControlEdges = (1 << 0),
   /* DEPRECATED, only used for versioning. */
-  eMultiresModifierFlag_PlainUv_DEPRECATED = (1 << 1),
-  eMultiresModifierFlag_UseCrease = (1 << 2),
-  eMultiresModifierFlag_UseCustomNormals = (1 << 3),
-  eMultiresModifierFlag_UseSculptBaseMesh = (1 << 4),
-} MultiresModifierFlag;
+  eMultiresModFlag_PlainUv_DEPRECATED = (1 << 1),
+  eMultiresModFlag_UseCrease = (1 << 2),
+  eMultiresModFlag_UseCustomNormals = (1 << 3),
+  eMultiresModFlag_UseSculptBaseMesh = (1 << 4),
+} MultiresModFlag;
 
-/** DEPRECATED: only used for versioning. */
-typedef struct FluidsimModifierData {
-  ModifierData modifier;
+/* DEPRECATED: only used for versioning. */
+typedef struct FluidsimModData {
+  ModData mod;
 
-  /** Definition is in DNA_object_fluidsim_types.h. */
+  /* Definition is in types_object_fluidsim_types.h. */
   struct FluidsimSettings *fss;
   void *_pad1;
-} FluidsimModifierData;
+} FluidsimModData;
 
-/** DEPRECATED: only used for versioning. */
-typedef struct SmokeModifierData {
-  ModifierData modifier;
+/* DEPRECATED: only used for versioning. */
+typedef struct SmokeModData {
+  ModData mod;
 
-  /** Domain, inflow, outflow, .... */
+  /* Domain, inflow, outflow, .... */
   int type;
   int _pad;
-} SmokeModifierData;
+} SmokeModData;
 
-typedef struct ShrinkwrapModifierData {
+typedef struct ShrinkwrapModData {
   ModifierData modifier;
 
   /** Shrink target. */
