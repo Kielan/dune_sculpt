@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DNA_ID.h"
-#include "DNA_color_types.h" /* for color management */
-#include "DNA_defs.h"
+#include "types_id.h"
+#include "types_color.h" /* for color management */
+#include "types_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,25 +18,25 @@ struct anim;
 /* ImageUser is in Texture, in Nodes, Background Image, Image Window, .... */
 /* should be used in conjunction with an ID * to Image. */
 typedef struct ImageUser {
-  /** To retrieve render result. */
+  /* To retrieve render result. */
   struct Scene *scene;
 
-  /** Movies, sequences: current to display. */
+  /* Movies, sequences: current to display. */
   int framenr;
-  /** Total amount of frames to use. */
+  /* Total amount of frames to use. */
   int frames;
-  /** Offset within movie, start frame in global time. */
+  /* Offset within movie, start frame in global time. */
   int offset, sfra;
-  /** Cyclic flag. */
+  /* Cyclic flag. */
   char cycl;
 
-  /** Multiview current eye - for internal use of drawing routines. */
+  /* Multiview current eye - for internal use of drawing routines. */
   char multiview_eye;
   short pass;
 
   int tile;
 
-  /** Listbase indices, for menu browsing or retrieve buffer. */
+  /* List indices, for menu browsing or retrieve buffer. */
   short multi_index, view, layer;
   short flag;
 } ImageUser;
@@ -48,22 +48,22 @@ typedef struct ImageAnim {
 
 typedef struct ImageView {
   struct ImageView *next, *prev;
-  /** MAX_NAME. */
+  /* MAX_NAME. */
   char name[64];
-  /** 1024 = FILE_MAX. */
+  /* 1024 = FILE_MAX. */
   char filepath[1024];
 } ImageView;
 
 typedef struct ImagePackedFile {
   struct ImagePackedFile *next, *prev;
   struct PackedFile *packedfile;
-  /** 1024 = FILE_MAX. */
+  /* 1024 = FILE_MAX. */
   char filepath[1024];
 } ImagePackedFile;
 
 typedef struct RenderSlot {
   struct RenderSlot *next, *prev;
-  /** 64 = MAX_NAME. */
+  /* 64 = MAX_NAME. */
   char name[64];
   struct RenderResult *render;
 } RenderSlot;
@@ -119,38 +119,37 @@ typedef enum eImageTextureResolution {
   IMA_TEXTURE_RESOLUTION_LEN
 } eImageTextureResolution;
 
-/* Defined in BKE_image.h. */
+/* Defined in dune_image.h. */
 struct PartialUpdateRegister;
 struct PartialUpdateUser;
 
 typedef struct Image_Runtime {
-  /* Mutex used to guarantee thread-safe access to the cached ImBuf of the corresponding image ID.
-   */
+  /* Mutex used to guarantee thread-safe access to the cached ImBuf of the corresponding image ID. */
   void *cache_mutex;
 
-  /** \brief Register containing partial updates. */
+  /* Register containing partial updates. */
   struct PartialUpdateRegister *partial_update_register;
-  /** \brief Partial update user for GPUTextures stored inside the Image. */
+  /* Partial update user for GPUTextures stored inside the Image. */
   struct PartialUpdateUser *partial_update_user;
 
 } Image_Runtime;
 
 typedef struct Image {
-  ID id;
+  Id id;
 
-  /** File path, 1024 = FILE_MAX. */
+  /* File path, 1024 = FILE_MAX. */
   char filepath[1024];
 
-  /** Not written in file. */
+  /* Not written in file. */
   struct MovieCache *cache;
-  /** Not written in file 3 = TEXTARGET_COUNT, 2 = stereo eyes, 2 = IMA_TEXTURE_RESOLUTION_LEN. */
+  /* Not written in file 3 = TEXTARGET_COUNT, 2 = stereo eyes, 2 = IMA_TEXTURE_RESOLUTION_LEN. */
   struct GPUTexture *gputexture[3][2][2];
 
   /* sources from: */
-  ListBase anims;
+  List anims;
   struct RenderResult *rr;
 
-  ListBase renderslots;
+  List renderslots;
   short render_slot, last_render_slot;
 
   int flag;
@@ -165,9 +164,9 @@ typedef struct Image {
   short gpu_view;
   char _pad2[4];
 
-  /** Deprecated. */
-  struct PackedFile *packedfile DNA_DEPRECATED;
-  struct ListBase packedfiles;
+  /* Deprecated. */
+  struct PackedFile *packedfile TYPES_DEPRECATED;
+  struct List packedfiles;
   struct PreviewImage *preview;
 
   int lastused;
@@ -188,16 +187,16 @@ typedef struct Image {
   char _pad;
 
   /* Multiview */
-  /** For viewer node stereoscopy. */
+  /* For viewer node stereoscopy. */
   char eye;
   char views_format;
 
   /* ImageTile list for UDIMs. */
   int active_tile_index;
-  ListBase tiles;
+  List tiles;
 
-  /** ImageView. */
-  ListBase views;
+  /* ImageView. */
+  List views;
   struct Stereo3dFormat *stereo3d_format;
 
   Image_Runtime runtime;
@@ -209,7 +208,7 @@ typedef struct Image {
 enum {
   IMA_HIGH_BITDEPTH = (1 << 0),
   IMA_FLAG_UNUSED_1 = (1 << 1), /* cleared */
-#ifdef DNA_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
   IMA_DO_PREMUL = (1 << 2),
 #endif
   IMA_FLAG_UNUSED_4 = (1 << 4), /* cleared */
@@ -218,7 +217,7 @@ enum {
   IMA_OLD_PREMUL = (1 << 7),
   IMA_FLAG_UNUSED_8 = (1 << 8), /* cleared */
   IMA_USED_FOR_RENDER = (1 << 9),
-  /** For image user, but these flags are mixed. */
+  /* For image user, but these flags are mixed. */
   IMA_USER_FRAME_IN_RANGE = (1 << 10),
   IMA_VIEW_AS_RENDER = (1 << 11),
   IMA_FLAG_UNUSED_12 = (1 << 12), /* cleared */
@@ -230,7 +229,7 @@ enum {
 
 /* Image.gpuflag */
 enum {
-  /** All mipmap levels in OpenGL texture set? */
+  /* All mipmap levels in OpenGL texture set? */
   IMA_GPU_MIPMAP_COMPLETE = (1 << 0),
   /* Reuse the max resolution textures as they fit in the limited scale. */
   IMA_GPU_REUSE_MAX_RESOLUTION = (1 << 1),
