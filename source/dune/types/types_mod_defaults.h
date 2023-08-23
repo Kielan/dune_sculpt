@@ -3,7 +3,7 @@
 /* Struct members on own line. */
 /* clang-format off */
 
-#define _DNA_DEFAULT_ArmatureModifierData \
+#define _TYPES_DEFAULT_ArmatureModData \
   { \
     .deformflag = ARM_DEF_VGROUP, \
     .multi = 0.0f, \
@@ -12,7 +12,7 @@
   }
 
 /* Default to 2 duplicates distributed along the x-axis by an offset of 1 object width. */
-#define _DNA_DEFAULT_ArrayModifierData \
+#define _TYPES_DEFAULT_ArrayModData \
   { \
     .start_cap = NULL, \
     .end_cap = NULL, \
@@ -29,7 +29,7 @@
     .uv_offset = {0.0f, 0.0f}, \
   }
 
-#define _DNA_DEFAULT_BevelModifierData \
+#define _TYPES_DEFAULT_BevelModData \
   { \
     .value = 0.1f, \
     .res = 1, \
@@ -50,18 +50,18 @@
     .defgrp_name = "", \
   }
 
-#define _DNA_DEFAULT_BooleanModifierData \
+#define _TYPES_DEFAULT_BoolModData \
   { \
     .object = NULL, \
     .collection = NULL, \
     .double_threshold = 1e-6f, \
-    .operation = eBooleanModifierOp_Difference, \
-    .solver = eBooleanModifierSolver_Exact, \
-    .flag = eBooleanModifierFlag_Object, \
+    .op = eBoolModOp_Difference, \
+    .solver = eBoolModSolver_Exact, \
+    .flag = eBoolModFlag_Object, \
     .bm_flag = 0, \
   }
 
-#define _DNA_DEFAULT_BuildModifierData \
+#define _TYPES_DEFAULT_BuildModData \
   { \
     .start = 1.0f, \
     .length = 100.0f, \
@@ -70,7 +70,7 @@
     .seed = 0, \
   }
 
-#define _DNA_DEFAULT_CastModifierData \
+#define _TYPES_DEFAULT_CastModData \
   { \
     .object = NULL, \
     .fac = 0.5f, \
@@ -81,7 +81,7 @@
     .type = MOD_CAST_TYPE_SPHERE, \
   }
 
-#define _DNA_DEFAULT_ClothSimSettings \
+#define _TYPES_DEFAULT_ClothSimSettings \
   { \
     .cache = NULL, \
     .mingoal = 0.0f, \
@@ -147,7 +147,7 @@
     .max_internal_compression = 15.0f, \
   }
 
-#define _DNA_DEFAULT_ClothCollSettings \
+#define _TYPES_DEFAULT_ClothCollSettings \
   { \
     .collision_list = NULL, \
     .epsilon = 0.015f, \
@@ -164,7 +164,7 @@
     .self_clamp = 0.0f, \
   }
 
-#define _DNA_DEFAULT_ClothModifierData \
+#define _TYPES_DEFAULT_ClothModData \
   { \
     .clothObject = NULL, \
     .sim_parms = NULL, \
@@ -179,7 +179,7 @@
     .solver_result = NULL, \
   }
 
-#define _DNA_DEFAULT_CollisionModifierData \
+#define _TYPES_DEFAULT_CollisionModData \
   { \
     .x = NULL, \
     .xnew = NULL, \
@@ -196,7 +196,7 @@
     .bvhtree = NULL, \
   }
 
-#define _DNA_DEFAULT_CorrectiveSmoothModifierData \
+#define _TYPES_DEFAULT_CorrectiveSmoothModData \
   { \
     .bind_coords = NULL, \
     .bind_coords_num = 0, \
@@ -208,7 +208,7 @@
     .defgrp_name = "", \
   }
 
-#define _DNA_DEFAULT_CurveModifierData \
+#define _TYPES_DEFAULT_CurveModData \
   { \
     .object = NULL, \
     .name = "", \
@@ -218,7 +218,7 @@
 
 /* Defines are scattered across too many files, they need to be moved to DNA. */
 #if 0
-#define _DNA_DEFAULT_DataTransferModifierData \
+#define _TYPES_DEFAULT_DataTransferModData \
   { \
     .ob_source = NULL, \
     .data_types = 0, \
@@ -238,7 +238,7 @@
   }
 #endif
 
-#define _DNA_DEFAULT_DecimateModifierData \
+#define _TYPES_DEFAULT_DecimateModData \
   { \
     .percent = 1.0f, \
     .iter = 0, \
@@ -252,7 +252,7 @@
     .face_count = 0, \
   }
 
-#define _DNA_DEFAULT_DisplaceModifierData \
+#define _TYPES_DEFAULT_DisplaceModData \
   { \
     .texture = NULL, \
     .map_object = NULL, \
@@ -268,7 +268,7 @@
     .flag = 0, \
   }
 
-#define _DNA_DEFAULT_DynamicPaintModifierData \
+#define _TYPES_DEFAULT_DynamicPaintModData \
   { \
     .canvas = NULL, \
     .brush = NULL, \
@@ -276,13 +276,13 @@
   }
 
 /* Default to 30-degree split angle, sharpness from both angle & flag. */
-#define _DNA_DEFAULT_EdgeSplitModifierData \
+#define _TYPES_DEFAULT_EdgeSplitModData \
   { \
     .split_angle = DEG2RADF(30.0f), \
     .flags = MOD_EDGESPLIT_FROMANGLE | MOD_EDGESPLIT_FROMFLAG, \
   }
 
-#define _DNA_DEFAULT_ExplodeModifierData \
+#define _TYPES_DEFAULT_ExplodeModData \
   { \
     .facepa = NULL, \
     .flag = eExplodeFlag_Unborn | eExplodeFlag_Alive | eExplodeFlag_Dead, \
@@ -292,13 +292,12 @@
   }
 
 /* Fluid modifier settings skipped for now. */
-
-#define _DNA_DEFAULT_HookModifierData \
+#define _TYPES_DEFAULT_HookModData \
   { \
     .subtarget = "", \
     .flag = 0, \
     .falloff_type = eHook_Falloff_Smooth, \
-    .parentinv = _DNA_DEFAULT_UNIT_M4, \
+    .parentinv = _TYPES_DEFAULT_UNIT_M4, \
     .cent = {0.0f, 0.0f, 0.0f}, \
     .falloff = 0.0f, \
     .curfalloff = NULL, \
@@ -308,7 +307,7 @@
     .name = "", \
   }
 
-#define _DNA_DEFAULT_LaplacianDeformModifierData \
+#define _TYPES_DEFAULT_LaplacianDeformModData \
   { \
     .anchor_grp_name = "", \
     .total_verts = 0, \
@@ -318,7 +317,7 @@
     .flag = 0, \
   }
 
-#define _DNA_DEFAULT_LaplacianSmoothModifierData \
+#define _TYPES_DEFAULT_LaplacianSmoothModData \
   { \
     .lambda = 0.01f, \
     .lambda_border = 0.01f, \
@@ -328,7 +327,7 @@
     .repeat = 1, \
   }
 
-#define _DNA_DEFAULT_LatticeModifierData \
+#define _TYPES_DEFAULT_LatticeModData \
   { \
     .object = NULL, \
     .name = "", \
@@ -336,7 +335,7 @@
     .flag = 0, \
   }
 
-#define _DNA_DEFAULT_MaskModifierData \
+#define _TYPES_DEFAULT_MaskModData \
   { \
     .ob_arm = NULL, \
     .vgroup = "", \
@@ -345,8 +344,8 @@
     .threshold = 0.0f, \
   }
 
-/* Y and Z forward and up axes, Blender default. */
-#define _DNA_DEFAULT_MeshCacheModifierData \
+/* Y and Z forward and up axes, Dune default. */
+#define _TYPES_DEFAULT_MeshCacheModData \
   { \
     .flag = 0, \
     .type = MOD_MESHCACHE_TYPE_MDD, \
@@ -366,7 +365,7 @@
     .filepath = "", \
   }
 
-#define _DNA_DEFAULT_MeshDeformModifierData \
+#define TYPES_DEFAULT_MeshDeformModData \
   { \
     .object = 0, \
     .defgrp_name = "", \
@@ -390,7 +389,7 @@
     .bindfunc = NULL, \
   }
 
-#define _DNA_DEFAULT_MeshSeqCacheModifierData \
+#define _TYPES_DEFAULT_MeshSeqCacheModData \
   { \
     .cache_file = NULL, \
     .object_path = "", \
@@ -401,7 +400,7 @@
     .reader_object_path = "", \
   }
 
-#define _DNA_DEFAULT_MirrorModifierData \
+#define _TYPES_DEFAULT_MirrorModData \
   { \
     .flag = MOD_MIR_AXIS_X | MOD_MIR_VGROUP, \
     .tolerance = 0.001f, \
@@ -412,13 +411,13 @@
     .use_correct_order_on_merge = true, \
   }
 
-#define _DNA_DEFAULT_MultiresModifierData \
+#define _TYPES_DEFAULT_MultiresModData \
   { \
     .lvl = 0, \
     .sculptlvl = 0, \
     .renderlvl = 0, \
     .totlvl = 0, \
-    .flags = eMultiresModifierFlag_UseCrease | eMultiresModifierFlag_ControlEdges, \
+    .flags = eMultiresModFlag_UseCrease | eMultiresModFlag_ControlEdges, \
     .uv_smooth = SUBSURF_UV_SMOOTH_PRESERVE_BOUNDARIES, \
     .quality = 4, \
     .boundary_smooth = SUBSURF_BOUNDARY_SMOOTH_ALL, \
@@ -688,7 +687,7 @@
     .falloff_type = eWarp_Falloff_Smooth, \
   }
 
-#define _TYPES_DEFAULT_WaveModifierData \
+#define _TYPES_DEFAULT_WaveModData \
   { \
     .texture = NULL, \
     .map_object = NULL, \
