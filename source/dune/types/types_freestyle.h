@@ -85,20 +85,20 @@ enum {
 typedef struct FreestyleLineSet {
   struct FreestyleLineSet *next, *prev;
 
-  /** Line set name, MAX_NAME. */
+  /* Line set name, MAX_NAME. */
   char name[64];
   int flags;
 
-  /** Selection criteria. */
+  /* Selection criteria. */
   int selection;
-  /** Quantitative invisibility. */
+  /* Quantitative invisibility. */
   short qi;
   char _pad1[2];
   int qi_start, qi_end;
-  /** Feature edge types. */
+  /* Feature edge types. */
   int edge_types, exclude_edge_types;
   char _pad2[4];
-  /** Group of target objects. */
+  /* Group of target objects. */
   struct Collection *group;
 
   struct FreestyleLineStyle *linestyle;
@@ -118,14 +118,14 @@ typedef struct FreestyleConfig {
   /* Scripting, editor. */
   int mode;
   int raycasting_algorithm TYPES_DEPRECATED;
-  /** Suggestive contours, ridges/valleys, material boundaries. */
+  /* Suggestive contours, ridges/valleys, material boundaries. */
   int flags;
   float sphere_radius;
   float dkr_epsilon;
-  /** In radians. */
+  /* In radians. */
   float crease_angle;
 
-  ListBase linesets;
+  List linesets;
 } FreestyleConfig;
 
 #ifdef __cplusplus
