@@ -1,10 +1,10 @@
 #pragma once
 
-#include "DNA_ID.h"
-#include "DNA_listBase.h"
+#include "types_id.h"
+#include "types_list.h"
 
 /* Notice that we need to have this file although no struct defines.
- * Edge flags and usage flags are used by with scene/object/gpencil modifier bits, and those values
+ * Edge flags and usage flags are used by with scene/object/pen mod bits, and those values
  * needs to stay consistent throughout. */
 
 /* These flags are used for 1 time calculation, not stroke selection afterwards. */
@@ -42,7 +42,7 @@ typedef enum eLineartEdgeFlag {
   LRT_EDGE_FLAG_LOOSE = (1 << 5),
   LRT_EDGE_FLAG_CHAIN_PICKED = (1 << 6),
   LRT_EDGE_FLAG_CLIPPED = (1 << 7),
-  /** Limited to 8 bits, DON'T ADD ANYMORE until improvements on the data structure. */
+  /* Limited to 8 bits, DON'T ADD ANYMORE until improvements on the data structure. */
 } eLineartEdgeFlag;
 
 #define LRT_EDGE_FLAG_ALL_TYPE 0x3f
