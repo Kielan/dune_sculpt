@@ -1,5 +1,4 @@
 /* Object groups, one object can be in many groups at once. */
-
 #pragma once
 
 #include "types_id.h"
@@ -38,14 +37,14 @@ enum eCollectionLineArt_Flags {
 typedef struct Collection {
   Id id;
 
-  /** CollectionObject. */
+  /* CollectionObject. */
   List gobject;
-  /** CollectionChild. */
+  /* CollectionChild. */
   List children;
 
   struct PreviewImage *preview;
 
-  unsigned int layer DNA_DEPRECATED;
+  unsigned int layer TYPES_DEPRECATED;
   float instance_offset[3];
 
   short flag;
@@ -73,8 +72,8 @@ typedef struct Collection {
   List parents;
 
   /* Deprecated */
-  struct SceneCollection *collection DNA_DEPRECATED;
-  struct ViewLayer *view_layer DNA_DEPRECATED;
+  struct SceneCollection *collection TYPES_DEPRECATED;
+  struct ViewLayer *view_layer TYPES_DEPRECATED;
 } Collection;
 
 /* Collection->flag */
