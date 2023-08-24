@@ -1,115 +1,108 @@
 #pragma once
 
-#include "DNA_ID.h"
-#include "DNA_action_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_listBase.h"
+#include "types_id.h"
+#include "types_action.h"
+#include "types_curve.h"
+#include "types_list.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ************************************************ */
 /* F-Curve DataTypes */
 
 /* Modifiers -------------------------------------- */
 
-/**
- * F-Curve Modifiers (fcm)
+/* F-Curve Mods (fcm)
  *
  * These alter the way F-Curves behave, by altering the value that is returned
- * when evaluating the curve's data at some time (t).
- */
-typedef struct FModifier {
-  struct FModifier *next, *prev;
+ * when evaluating the curve's data at some time (t) */
+typedef struct FMod {
+  struct FMod *next, *prev;
 
-  /** Containing curve, only used for updates to CYCLES. */
+  /* Containing curve, only used for updates to CYCLES. */
   struct FCurve *curve;
-  /** Pointer to modifier data. */
+  /* Ptr to mod data. */
   void *data;
 
-  /** User-defined description for the modifier - `MAX_ID_NAME - 2`. */
+  /* User-defined description for the mod - `MAX_ID_NAME - 2`. */
   char name[64];
-  /** Type of f-curve modifier. */
+  /* Type of f-curve mod. */
   short type;
-  /** Settings for the modifier. */
+  /* Settings for the modifier. */
   short flag;
-  /**
-   * Expansion state for the modifier panel and its sub-panels, stored as a bit-field
-   * in depth-first order. (Maximum of `sizeof(short)` total panels).
-   */
+  /* Expansion state for the modifier panel and its sub-panels, stored as a bit-field
+   * in depth-first order. (Maximum of `sizeof(short)` total panels). */
   short ui_expand_flag;
 
   char _pad[6];
 
-  /** The amount that the modifier should influence the value. */
+  /* The amount that the modifier should influence the value. */
   float influence;
 
-  /** Start frame of restricted frame-range. */
+  /* Start frame of restricted frame-range. */
   float sfra;
-  /** End frame of restricted frame-range. */
+  /* End frame of restricted frame-range. */
   float efra;
-  /** Number of frames from sfra before modifier takes full influence. */
+  /* Number of frames from sfra before modifier takes full influence. */
   float blendin;
-  /** Number of frames from efra before modifier fades out. */
+  /* Number of frames from efra before modifier fades out. */
   float blendout;
-} FModifier;
+} FMod;
 
-/**
- * Types of F-Curve modifier
- * WARNING: order here is important!
- */
-typedef enum eFModifier_Types {
-  FMODIFIER_TYPE_NULL = 0,
-  FMODIFIER_TYPE_GENERATOR = 1,
-  FMODIFIER_TYPE_FN_GENERATOR = 2,
-  FMODIFIER_TYPE_ENVELOPE = 3,
-  FMODIFIER_TYPE_CYCLES = 4,
-  FMODIFIER_TYPE_NOISE = 5,
-  /** Unimplemented - for applying: FFT, high/low pass filters, etc. */
-  FMODIFIER_TYPE_FILTER = 6,
-  FMODIFIER_TYPE_PYTHON = 7,
-  FMODIFIER_TYPE_LIMITS = 8,
-  FMODIFIER_TYPE_STEPPED = 9,
+/* Types of F-Curve mod
+ * WARNING: order here is important! */
+typedef enum eFMod_Types {
+  FMOD_TYPE_NULL = 0,
+  FMOD_TYPE_GENERATOR = 1,
+  FMOD_TYPE_FN_GENERATOR = 2,
+  FMOD_TYPE_ENVELOPE = 3,
+  FMOD_TYPE_CYCLES = 4,
+  FMOD_TYPE_NOISE = 5,
+  /* Unimplemented - for applying: FFT, high/low pass filters, etc. */
+  FMOD_TYPE_FILTER = 6,
+  FMOD_TYPE_PYTHON = 7,
+  FMOD_TYPE_LIMITS = 8,
+  FMOD_TYPE_STEPPED = 9,
 
   /* NOTE: all new modifiers must be added above this line */
-  FMODIFIER_NUM_TYPES,
-} eFModifier_Types;
+  FMOD_NUM_TYPES,
+} eFMod_Types;
 
-/** F-Curve Modifier Settings. */
-typedef enum eFModifier_Flags {
-  /** Modifier is not able to be evaluated for some reason, and should be skipped (internal). */
-  FMODIFIER_FLAG_DISABLED = (1 << 0),
-#ifdef DNA_DEPRECATED_ALLOW
-  /** Modifier's data is expanded (in UI). Deprecated, use `ui_expand_flag`. */
-  FMODIFIER_FLAG_EXPANDED = (1 << 1),
+/* F-Curve Mod Settings. */
+typedef enum eFMod_Flags {
+  /* Mod is not able to be evald for some reason, and should be skipped (internal). */
+  FMOD_FLAG_DISABLED = (1 << 0),
+#ifdef TYPES_DEPRECATED_ALLOW
+  /* Mod's data is expanded (in UI). Deprecated, use `ui_expand_flag`. */
+  FMOD_FLAG_EXPANDED = (1 << 1),
 #endif
-  /** Modifier is active one (in UI) for editing purposes. */
-  FMODIFIER_FLAG_ACTIVE = (1 << 2),
-  /** User wants modifier to be skipped. */
-  FMODIFIER_FLAG_MUTED = (1 << 3),
-  /** Restrict range that F-Modifier can be considered over. */
-  FMODIFIER_FLAG_RANGERESTRICT = (1 << 4),
-  /** Use influence control. */
-  FMODIFIER_FLAG_USEINFLUENCE = (1 << 5),
-} eFModifier_Flags;
+  /* Mod is active one (in UI) for editing purposes. */
+  FMOD_FLAG_ACTIVE = (1 << 2),
+  /* User wants modifier to be skipped. */
+  FMOD_FLAG_MUTED = (1 << 3),
+  /* Restrict range that F-Modifier can be considered over. */
+  FMOD_FLAG_RANGERESTRICT = (1 << 4),
+  /* Use influence control. */
+  FMOD_FLAG_USEINFLUENCE = (1 << 5),
+} eFMod_Flags;
 
 /* --- */
 
-/* Generator modifier data */
+/* Generator mod data */
 typedef struct FMod_Generator {
   /* general generator information */
-  /** Coefficients array. */
+  /* Coefficients array. */
   float *coefficients;
-  /** Size of the coefficients array. */
+  /* Size of the coefficients array. */
   unsigned int arraysize;
 
-  /** Order of polynomial generated (i.e. 1 for linear, 2 for quadratic). */
+  /* Order of polynomial generated (i.e. 1 for linear, 2 for quadratic). */
   int poly_order;
-  /** Which 'generator' to use eFMod_Generator_Modes. */
+  /* Which 'generator' to use eFMod_Generator_Modes. */
   int mode;
 
-  /** Settings. */
+  /* Settings. */
   int flag;
 } FMod_Generator;
 
@@ -120,90 +113,87 @@ typedef enum eFMod_Generator_Modes {
 } eFMod_Generator_Modes;
 
 /* generator flags
- * - shared by Generator and Function Generator
- */
+ * - shared by Generator and Fn Generator */
 typedef enum eFMod_Generator_Flags {
   /* generator works in conjunction with other modifiers (i.e. doesn't replace those before it) */
   FCM_GENERATOR_ADDITIVE = (1 << 0),
 } eFMod_Generator_Flags;
 
-/**
- * 'Built-In Function' Generator modifier data
+/* 'Built-In Function' Generator mod data
  *
  * This uses the general equation for equations:
  * y = amplitude * fn(phase_multiplier*x + phase_offset) + y_offset
  *
  * where amplitude, phase_multiplier/offset, y_offset are user-defined coefficients,
- * x is the evaluation 'time', and 'y' is the resultant value
- */
-typedef struct FMod_FunctionGenerator {
-  /** Coefficients for general equation (as above). */
+ * x is the evaluation 'time', and 'y' is the resultant value */
+typedef struct FMod_FnGenerator {
+  /* Coefficients for general equation (as above). */
   float amplitude;
   float phase_multiplier;
   float phase_offset;
   float value_offset;
 
   /* flags */
-  /** #eFMod_Generator_Functions. */
+  /* eFMod_Generator_Functions. */
   int type;
-  /** #eFMod_Generator_flags. */
+  /* eFMod_Generator_flags. */
   int flag;
-} FMod_FunctionGenerator;
+} FMod_FnGenerator;
 
-/* 'function' generator types */
-typedef enum eFMod_Generator_Functions {
+/* 'fn' generator types */
+typedef enum eFMod_Generator_Fns {
   FCM_GENERATOR_FN_SIN = 0,
   FCM_GENERATOR_FN_COS = 1,
   FCM_GENERATOR_FN_TAN = 2,
   FCM_GENERATOR_FN_SQRT = 3,
   FCM_GENERATOR_FN_LN = 4,
   FCM_GENERATOR_FN_SINC = 5,
-} eFMod_Generator_Functions;
+} eFMod_Generator_Fns;
 
-/* envelope modifier - envelope data */
+/* envelope mod - envelope data */
 typedef struct FCM_EnvelopeData {
-  /** Min/max values for envelope at this point (absolute values). */
+  /* Min/max values for envelope at this point (absolute values). */
   float min, max;
-  /** Time for that this sample-point occurs. */
+  /* Time for that this sample-point occurs. */
   float time;
 
-  /** Settings for 'min' control point. */
+  /* Settings for 'min' control point. */
   short f1;
-  /** Settings for 'max' control point. */
+  /* Settings for 'max' control point. */
   short f2;
 } FCM_EnvelopeData;
 
 /* envelope-like adjustment to values (for fade in/out) */
 typedef struct FMod_Envelope {
-  /** Data-points defining envelope to apply (array). */
+  /* Data-points defining envelope to apply (array). */
   FCM_EnvelopeData *data;
-  /** Number of envelope points. */
+  /* Number of envelope points. */
   int totvert;
 
-  /** Value that envelope's influence is centered around / based on. */
+  /* Value that envelope's influence is centered around / based on. */
   float midval;
-  /** Distances from 'middle-value' for 1:1 envelope influence. */
+  /* Distances from 'middle-value' for 1:1 envelope influence. */
   float min, max;
 } FMod_Envelope;
 
 /* cycling/repetition modifier data */
 /* TODO: we can only do complete cycles. */
 typedef struct FMod_Cycles {
-  /** Extrapolation mode to use before first keyframe. */
+  /* Extrapolation mode to use before first keyframe. */
   short before_mode;
-  /** Extrapolation mode to use after last keyframe. */
+  /* Extrapolation mode to use after last keyframe. */
   short after_mode;
-  /** Number of 'cycles' before first keyframe to do. */
+  /* Number of 'cycles' before first keyframe to do. */
   short before_cycles;
-  /** Number of 'cycles' after last keyframe to do. */
+  /* Number of 'cycles' after last keyframe to do. */
   short after_cycles;
 } FMod_Cycles;
 
 /* cycling modes */
 typedef enum eFMod_Cycling_Modes {
-  /** don't do anything */
+  /* don't do anything */
   FCM_EXTRAPOLATE_NONE = 0,
-  /** repeat keyframe range as-is */
+  /* repeat keyframe range as-is */
   FCM_EXTRAPOLATE_CYCLIC,
   /** repeat keyframe range, but with offset based on gradient between values */
   FCM_EXTRAPOLATE_CYCLIC_OFFSET,
@@ -277,7 +267,7 @@ typedef struct FMod_Stepped {
 
 /* stepped modifier range flags */
 typedef enum eFMod_Stepped_Flags {
-  /** Don't affect frames before the start frame. */
+  /* Don't affect frames before the start frame. */
   FCM_STEPPED_NO_BEFORE = (1 << 0),
   /** Don't affect frames after the end frame. */
   FCM_STEPPED_NO_AFTER = (1 << 1),
@@ -287,51 +277,46 @@ typedef enum eFMod_Stepped_Flags {
 
 /* Driver Target (dtar)
  *
- * Defines how to access a dependency needed for a driver variable.
- */
+ * Defines how to access a dependency needed for a driver variable. */
 typedef struct DriverTarget {
   /** ID-block which owns the target, no user count. */
-  ID *id;
+  Id *id;
 
-  /** RNA path defining the setting to use (for DVAR_TYPE_SINGLE_PROP). */
-  char *rna_path;
+  /* API path defining the setting to use (for DVAR_TYPE_SINGLE_PROP). */
+  char *api_path;
 
-  /**
-   * Name of the posebone to use
-   * (for vars where DTAR_FLAG_STRUCT_REF is used) - `MAX_ID_NAME - 2`.
-   */
+  /* Name of the posebone to use
+   * (for vars where DTAR_FLAG_STRUCT_REF is used) - `MAX_ID_NAME - 2`. */
   char pchan_name[64];
-  /** Transform channel index (for #DVAR_TYPE_TRANSFORM_CHAN). */
+  /* Transform channel index (for #DVAR_TYPE_TRANSFORM_CHAN). */
   short transChan;
 
-  /** Rotation channel calculation type. */
+  /* Rotation channel calculation type. */
   char rotation_mode;
   char _pad[7];
 
-  /**
-   * Flags for the validity of the target
-   * (NOTE: these get reset every time the types change).
-   */
+  /* Flags for the validity of the target
+   * (NOTE: these get reset every time the types change). */
   short flag;
   /** Type of ID-block that this target can use. */
   int idtype;
 } DriverTarget;
 
-/** Driver Target flags. */
+/* Driver Target flags. */
 typedef enum eDriverTarget_Flag {
-  /** used for targets that use the pchan_name instead of RNA path
+  /* used for targets that use the pchan_name instead of RNA path
    * (i.e. rotation difference) */
   DTAR_FLAG_STRUCT_REF = (1 << 0),
-  /** idtype can only be 'Object' */
+  /* idtype can only be 'Object' */
   DTAR_FLAG_ID_OB_ONLY = (1 << 1),
 
   /* "local-space" flags. */
-  /** base flag - basically "pre parent+constraints" */
+  /* base flag - basically "pre parent+constraints" */
   DTAR_FLAG_LOCALSPACE = (1 << 2),
-  /** include constraints transformed to space including parents */
+  /* include constraints transformed to space including parents */
   DTAR_FLAG_LOCAL_CONSTS = (1 << 3),
 
-  /** error flags */
+  /* error flags */
   DTAR_FLAG_INVALID = (1 << 4),
 } eDriverTarget_Flag;
 
@@ -354,10 +339,10 @@ typedef enum eDriverTarget_TransformChannels {
 
 /* Rotation channel mode for Driver Targets */
 typedef enum eDriverTarget_RotationMode {
-  /** Automatic euler mode. */
+  /* Automatic euler mode. */
   DTAR_ROTMODE_AUTO = 0,
 
-  /** Explicit euler rotation modes - must sync with BLI_math_rotation.h defines. */
+  /* Explicit euler rotation modes - must sync with BLI_math_rotation.h defines. */
   DTAR_ROTMODE_EULER_XYZ = 1,
   DTAR_ROTMODE_EULER_XZY,
   DTAR_ROTMODE_EULER_YXZ,
@@ -367,7 +352,7 @@ typedef enum eDriverTarget_RotationMode {
 
   DTAR_ROTMODE_QUATERNION,
 
-  /** Implements the very common Damped Track + child trick to decompose
+  /* Implements the very common Damped Track + child trick to decompose
    *  rotation into bending followed by twist around the remaining axis. */
   DTAR_ROTMODE_SWING_TWIST_X,
   DTAR_ROTMODE_SWING_TWIST_Y,
@@ -377,13 +362,10 @@ typedef enum eDriverTarget_RotationMode {
   DTAR_ROTMODE_EULER_MAX = DTAR_ROTMODE_EULER_ZYX,
 } eDriverTarget_RotationMode;
 
-/* --- */
-
 /* maximum number of driver targets per variable */
 #define MAX_DRIVER_TARGETS 8
 
-/**
- * Driver Variable (dvar)
+/* Driver Variable (dvar)
  *
  * A 'variable' for use as an input for the driver evaluation.
  * Defines a way of accessing some channel to use, that can be
@@ -393,10 +375,8 @@ typedef enum eDriverTarget_RotationMode {
 typedef struct DriverVar {
   struct DriverVar *next, *prev;
 
-  /**
-   * Name of the variable to use in py-expression
-   * (must be valid python identifier) - `MAX_ID_NAME - 2`.
-   */
+  /* Name of the variable to use in py-expression
+   * (must be valid python identifier) - `MAX_ID_NAME - 2 */
   char name[64];
 
   /** MAX_DRIVER_TARGETS, target slots. */
@@ -415,7 +395,7 @@ typedef struct DriverVar {
 
 /** Driver Variable Types.* */
 typedef enum eDriverVar_Types {
-  /** single RNA property */
+  /** single RNA prop */
   DVAR_TYPE_SINGLE_PROP = 0,
   /** rotation difference (between 2 bones) */
   DVAR_TYPE_ROT_DIFF,
