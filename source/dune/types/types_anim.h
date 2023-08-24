@@ -11,7 +11,7 @@ extern "C" {
 
 /* F-Curve DataTypes */
 
-/* Modifiers -------------------------------------- */
+/* Modifiers */
 
 /* F-Curve Mods (fcm)
  *
@@ -31,7 +31,7 @@ typedef struct FMod {
   short type;
   /* Settings for the modifier. */
   short flag;
-  /* Expansion state for the modifier panel and its sub-panels, stored as a bit-field
+  /* Expansion state for the mod panel and its sub-panels, stored as a bit-field
    * in depth-first order. (Maximum of `sizeof(short)` total panels). */
   short ui_expand_flag;
 
@@ -65,7 +65,7 @@ typedef enum eFMod_Types {
   FMOD_TYPE_LIMITS = 8,
   FMOD_TYPE_STEPPED = 9,
 
-  /* NOTE: all new modifiers must be added above this line */
+  /* NOTE: all new mods must be added above this line */
   FMOD_NUM_TYPES,
 } eFMod_Types;
 
@@ -86,8 +86,6 @@ typedef enum eFMod_Flags {
   /* Use influence control. */
   FMOD_FLAG_USEINFLUENCE = (1 << 5),
 } eFMod_Flags;
-
-/* --- */
 
 /* Generator mod data */
 typedef struct FMod_Generator {
@@ -195,25 +193,25 @@ typedef enum eFMod_Cycling_Modes {
   FCM_EXTRAPOLATE_NONE = 0,
   /* repeat keyframe range as-is */
   FCM_EXTRAPOLATE_CYCLIC,
-  /** repeat keyframe range, but with offset based on gradient between values */
+  /* repeat keyframe range, but with offset based on gradient between values */
   FCM_EXTRAPOLATE_CYCLIC_OFFSET,
-  /** alternate between forward and reverse playback of keyframe range */
+  /* alternate between forward and reverse playback of keyframe range */
   FCM_EXTRAPOLATE_MIRROR,
 } eFMod_Cycling_Modes;
 
-/* Python-script modifier data */
+/* Python-script mod data */
 typedef struct FMod_Python {
-  /** Text buffer containing script to execute. */
+  /* Text buffer containing script to execute. */
   struct Text *script;
-  /** ID-properties to provide 'custom' settings. */
-  IDProperty *prop;
+  /* ID-props to provide 'custom' settings. */
+  IdProp *prop;
 } FMod_Python;
 
-/* limits modifier data */
+/* limits mod data */
 typedef struct FMod_Limits {
-  /** Rect defining the min/max values. */
+  /* Rect defining the min/max values. */
   rctf rect;
-  /** Settings for limiting. */
+  /* Settings for limiting. */
   int flag;
   char _pad[4];
 } FMod_Limits;
@@ -241,11 +239,11 @@ typedef struct FMod_Noise {
 typedef enum eFMod_Noise_Modifications {
   /** Modify existing curve, matching its shape. */
   FCM_NOISE_MODIF_REPLACE = 0,
-  /** Add noise to the curve. */
+  /* Add noise to the curve. */
   FCM_NOISE_MODIF_ADD,
-  /** Subtract noise from the curve. */
+  /* Subtract noise from the curve. */
   FCM_NOISE_MODIF_SUBTRACT,
-  /** Multiply the curve by noise. */
+  /* Multiply the curve by noise. */
   FCM_NOISE_MODIF_MULTIPLY,
 } eFMod_Noise_Modifications;
 
