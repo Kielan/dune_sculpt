@@ -1,9 +1,9 @@
 #pragma once
 
-#include "DNA_ID.h"
-#include "DNA_brush_enums.h"
-#include "DNA_curve_types.h"
-#include "DNA_texture_types.h" /* for MTex */
+#include "types_id.h"
+#include "types_brush_enums.h"
+#include "types_curve.h"
+#include "types_texture.h" /* for MTex */
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,43 +15,43 @@ struct MTex;
 struct Material;
 
 typedef struct BrushClone {
-  /** Image for clone tool. */
+  /* Image for clone tool. */
   struct Image *image;
-  /** Offset of clone image from canvas. */
+  /* Offset of clone image from canvas. */
   float offset[2];
-  /** Transparency for drawing of clone image. */
+  /* Transparency for drawing of clone image. */
   float alpha;
   char _pad[4];
 } BrushClone;
 
-typedef struct BrushGpencilSettings {
-  /** Amount of smoothing to apply to newly created strokes. */
+typedef struct BrushPenSettings {
+  /* Amount of smoothing to apply to newly created strokes. */
   float draw_smoothfac;
-  /** Fill zoom factor */
+  /* Fill zoom factor */
   float fill_factor;
-  /** Amount of alpha strength to apply to newly created strokes. */
+  /* Amount of alpha strength to apply to newly created strokes. */
   float draw_strength;
-  /** Amount of jitter to apply to newly created strokes. */
+  /* Amount of jitter to apply to newly created strokes. */
   float draw_jitter;
-  /** Angle when the brush has full thickness. */
+  /* Angle when the brush has full thickness. */
   float draw_angle;
-  /** Factor to apply when angle change (only 90 degrees). */
+  /* Factor to apply when angle change (only 90 degrees). */
   float draw_angle_factor;
-  /** Factor of randomness for pressure. */
+  /* Factor of randomness for pressure. */
   float draw_random_press;
-  /** Factor of strength for strength. */
+  /* Factor of strength for strength. */
   float draw_random_strength;
-  /** Number of times to apply smooth factor to new strokes. */
+  /* Number of times to apply smooth factor to new strokes. */
   short draw_smoothlvl;
-  /** Number of times to subdivide new strokes. */
+  /* Number of times to subdivide new strokes. */
   short draw_subdivide;
-  /** Layers used for fill. */
+  /* Layers used for fill. */
   short fill_layer_mode;
   short fill_direction;
 
-  /** Factor for transparency. */
+  /* Factor for transparency. */
   float fill_threshold;
-  /** Number of pixel to consider the leak is too small (x 2). */
+  /* Number of pixel to consider the leak is too small (x 2). */
   short fill_leak;
   /* Type of caps: eGPDstroke_Caps. */
   int8_t caps_type;
@@ -59,19 +59,19 @@ typedef struct BrushGpencilSettings {
 
   int flag2;
 
-  /** Number of simplify steps. */
+  /* Number of simplify steps. */
   int fill_simplylvl;
-  /** Type of control lines drawing mode. */
+  /* Type of control lines drawing mode. */
   int fill_draw_mode;
-  /** Icon identifier. */
+  /* Icon id. */
   int icon_id;
 
   /** Maximum distance before generate new point for very fast mouse movements. */
   int input_samples;
   /** Random factor for UV rotation. */
   float uv_random;
-  /** Moved to 'Brush.gpencil_tool'. */
-  int brush_type DNA_DEPRECATED;
+  /** Moved to 'Brush.pen_tool'. */
+  int brush_type TYPES_DEPRECATED;
   /** Soft, hard or stroke. */
   int eraser_mode;
   /** Smooth while drawing factor. */
@@ -230,7 +230,7 @@ typedef struct Brush {
 
   char _pad0[5];
 
-  /** Projection shape (sphere, circle). */
+  /* Projection shape (sphere, circle). */
   char falloff_shape;
   float falloff_angle;
 
