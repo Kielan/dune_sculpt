@@ -248,7 +248,7 @@ static bool btns_cxt_path_data(BtnsCxtPath *path, int type)
   if (api_struct_is_a(ptr->type, &ApiLightProbe) && (ELEM(type, -1, OB_LIGHTPROBE))) {
     return true;
   }
-  if (api_struct_is_a(ptr->type, &ApiPen) && (ELEM(type, -1, OB_GPENCIL))) {
+  if (api_struct_is_a(ptr->type, &ApiPen) && (ELEM(type, -1, OB_PEN))) {
     return true;
   }
 #ifdef WITH_NEW_CURVES_TYPE
@@ -775,21 +775,20 @@ bool ed_btns_should_sync_with_outliner(const Cxt *C,
   return auto_sync || sbuts->outliner_sync == PROPERTIES_SYNC_ALWAYS;
 }
 
-void ED_buttons_set_context(const bContext *C,
-                            SpaceProperties *sbuts,
-                            PointerRNA *ptr,
-                            const int context)
+void ed_btns_set_cxt(const Cxt *C,
+                    SpaceProps *sbtns,
+                    ApiPtr *ptr,
+                    const int cxt)
 {
-  ButsContextPath path;
-  if (buttons_context_path(C, sbuts, &path, context, 0) && is_pointer_in_path(&path, ptr)) {
-    sbuts->mainbuser = context;
-    sbuts->mainb = sbuts->mainbuser;
+  BtnsCxtPath path;
+  if (btns_context_path(C, sbtns, &path, cxt, 0) && is_ptr_in_path(&path, ptr)) {
+    sbtns->mainbuser = cxt;
+    sbtns->mainb = sbtns->mainbuser;
   }
 }
 
 /************************* Context Callback ************************/
-
-const char *buttons_context_dir[] = {
+const char *btns_cxt_dir[] = {
     "texture_slot",
     "scene",
     "world",
@@ -822,7 +821,7 @@ const char *buttons_context_dir[] = {
     "dynamic_paint",
     "line_style",
     "collection",
-    "gpencil",
+    "pen",
 #ifdef WITH_NEW_CURVES_TYPE
     "curves",
 #endif
@@ -833,73 +832,73 @@ const char *buttons_context_dir[] = {
     NULL,
 };
 
-int /*eContextResult*/ buttons_context(const bContext *C,
-                                       const char *member,
-                                       bContextDataResult *result)
+int /*eCxtResult*/ btns_cxt(const Cxt *C,
+                            const char *member,
+                            CxtDataResult *result)
 {
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
-  if (sbuts && sbuts->path == NULL) {
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  if (sbtns && sbtns->path == NULL) {
     /* path is cleared for SCREEN_OT_redo_last, when global undo does a file-read which clears the
      * path (see lib_link_workspace_layout_restore). */
-    buttons_context_compute(C, sbuts);
+    btns_cxt_compute(C, sbtns);
   }
-  ButsContextPath *path = sbuts ? sbuts->path : NULL;
+  BtnsCxtPath *path = sbtns ? sbtns->path : NULL;
 
   if (!path) {
-    return CTX_RESULT_MEMBER_NOT_FOUND;
+    return CXT_RESULT_MEMBER_NOT_FOUND;
   }
 
-  if (sbuts->mainb == BCONTEXT_TOOL) {
-    return CTX_RESULT_MEMBER_NOT_FOUND;
+  if (sbtns->mainb == CXT_TOOL) {
+    return CXT_RESULT_MEMBER_NOT_FOUND;
   }
 
   /* here we handle context, getting data from precomputed path */
-  if (CTX_data_dir(member)) {
+  if (cxt_data_dir(member)) {
     /* in case of new shading system we skip texture_slot, complex python
      * UI script logic depends on checking if this is available */
     if (sbuts->texuser) {
-      CTX_data_dir_set(result, buttons_context_dir + 1);
+      cxt_data_dir_set(result, btns_cxt_dir + 1);
     }
     else {
-      CTX_data_dir_set(result, buttons_context_dir);
+      cxt_data_dir_set(result, btns_cxt_dir);
     }
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "scene")) {
+  if (cxt_data_equals(member, "scene")) {
     /* Do not return one here if scene is not found in path,
-     * in this case we want to get default context scene! */
-    return set_pointer_type(path, result, &RNA_Scene);
+     * in this case we want to get default cxt scene! */
+    return set_ptr_type(path, result, &ApiScene);
   }
-  if (CTX_data_equals(member, "world")) {
-    set_pointer_type(path, result, &RNA_World);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "world")) {
+    set_ptr_type(path, result, &ApiWorld);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "collection")) {
+  if (cxt_data_equals(member, "collection")) {
     /* Do not return one here if collection is not found in path,
-     * in this case we want to get default context collection! */
-    return set_pointer_type(path, result, &RNA_Collection);
+     * in this case we want to get default cxt collection! */
+    return set_ptr_type(path, result, &ApiCollection);
   }
-  if (CTX_data_equals(member, "object")) {
-    set_pointer_type(path, result, &RNA_Object);
+  if (cxt_data_equals(member, "object")) {
+    set_ptr_type(path, result, &ApiObject);
+    return CXT_RESULT_OK;
+  }
+  if (cxt_data_equals(member, "mesh")) {
+    set_ptr_type(path, result, &ApiMesh);
+    return CXT_RESULT_OK;
+  }
+  if (cxt_data_equals(member, "armature")) {
+    set_pointer_type(path, result, &ApiArmature);
+    return CXT_RESULT_OK;
+  }
+  if (cxt_data_equals(member, "lattice")) {
+    set_ptr_type(path, result, ApiLattice);
     return CTX_RESULT_OK;
   }
-  if (CTX_data_equals(member, "mesh")) {
-    set_pointer_type(path, result, &RNA_Mesh);
+  if (cxt_data_equals(member, "curve")) {
+    set_ptr_type(path, result, &ApiCurve);
     return CTX_RESULT_OK;
   }
-  if (CTX_data_equals(member, "armature")) {
-    set_pointer_type(path, result, &RNA_Armature);
-    return CTX_RESULT_OK;
-  }
-  if (CTX_data_equals(member, "lattice")) {
-    set_pointer_type(path, result, &RNA_Lattice);
-    return CTX_RESULT_OK;
-  }
-  if (CTX_data_equals(member, "curve")) {
-    set_pointer_type(path, result, &RNA_Curve);
-    return CTX_RESULT_OK;
-  }
-  if (CTX_data_equals(member, "meta_ball")) {
+  if cxt_data_equals(member, "meta_ball")) {
     set_pointer_type(path, result, &RNA_MetaBall);
     return CTX_RESULT_OK;
   }
