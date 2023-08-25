@@ -9,14 +9,14 @@
 #include "lib_dunelib.h"
 #include "lib_utildefines.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_pen_mod.h" /* Types for registering panels. */
 #include "dune_lib_remap.h"
-#include "dune_modifier.h"
+#include "dune_mod.h"
 #include "dune_screen.h"
 #include "dune_shader_fx.h"
 
-#include "ed_buttons.h"
+#include "ed_btns.h"
 #include "ed_screen.h"
 #include "ed_space_api.h"
 #include "ed_view3d.h" /* To draw toolbar UI. */
@@ -34,9 +34,7 @@
 
 #include "btns_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
 /** Default Callbacks for Properties Space **/
-
 static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
 {
   ARegion *region;
@@ -45,7 +43,7 @@ static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(s
   sbtns = mem_callocn(sizeof(SpaceProps), "initbuts");
   sbtns->spacetype = SPACE_PROPS;
 
-  sbtns->maind = sbtns->mainduser = DCTX_OBJECT;
+  sbtns->maind = sbtns->mainduser = CXT_OBJECT;
 
   /* header */
   region = mem_callocn(sizeof(ARegion), "header for btns");
@@ -88,7 +86,7 @@ static void btns_free(SpaceLink *sl)
   }
 
   if (sbtns->texuser) {
-    BtnsCtxTexture *ct = sbtns->texuser;
+    BtnsCxtTexture *ct = sbtns->texuser;
     lib_freelistn(&ct->users);
     mem_freen(ct);
   }
@@ -100,9 +98,9 @@ static void btns_free(SpaceLink *sl)
 }
 
 /* spacetype; init callback */
-static void btns_init(struct wmWindowManager *UNUSED(wm), ScrArea *area)
+static void btns_init(struct WM *UNUSED(wm), ScrArea *area)
 {
-  SpaceProperties *sbtns = (SpaceProps *)area->spacedata.first;
+  SpaceProps *sbtns = (SpaceProps *)area->spacedata.first;
 
   if (sbtns->runtime == NULL) {
     sbtns->runtime = mem_mallocn(sizeof(SpaceProps_Runtime), __func__);
@@ -122,135 +120,133 @@ static SpaceLink *btns_duplicate(SpaceLink *sl)
   if (sfile_old->runtime != NULL) {
     sbutsn->runtime = mem_dupallocn(sfile_old->runtime);
     sbutsn->runtime->search_string[0] = '\0';
-    sbutsn->runtime->tab_search_results = LIB_BITMAP_NEW(DCTX_TOT, __func__);
+    sbutsn->runtime->tab_search_results = LIB_BITMAP_NEW(CXT_TOT, __func__);
   }
 
   return (SpaceLink *)sbutsn;
 }
 
 /* add handlers, stuff you only do once or on area/region changes */
-static void btns_main_region_init(wmWindowManager *wm, ARegion *region)
+static void btns_main_region_init(WM *wm, ARegion *region)
 {
   wmKeyMap *keymap;
 
   ed_region_panels_init(wm, region);
 
-  keymap = wm_keymap_ensure(wm->defaultconf, "Property Editor", SPACE_PROPS, 0);
+  keymap = wm_keymap_ensure(wm->defaultconf, "Prop Editor", SPACE_PROPS, 0);
   wm_event_add_keymap_handler(&region->handlers, keymap);
 }
 
-/* -------------------------------------------------------------------- */
-/** Property Editor Layout **/
-
-int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
+/* Prop Editor Layout **/
+int ed_btns_tabs_list(SpaceProps *sbtns, short *cxt_tabs_array)
 {
   int length = 0;
-  if (sbtns->pathflag & (1 << CTX_TOOL)) {
-    ctx_tabs_array[length] = CTX_TOOL;
+  if (sbtns->pathflag & (1 << CXT_TOOL)) {
+    cxt_tabs_array[length] = CXT_TOOL;
     length++;
   }
   if (length != 0) {
-    ctx_tabs_array[length] = -1;
+    cxt_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_RENDER)) {
-    ctx_tabs_array[length] = CTX_RENDER;
+  if (sbtns->pathflag & (1 << CXT_RENDER)) {
+    cxt_tabs_array[length] = CXT_RENDER;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_OUTPUT)) {
-    ctx_tabs_array[length] = CTX_OUTPUT;
+  if (sbtns->pathflag & (1 << CXT_OUTPUT)) {
+    cxt_tabs_array[length] = CXT_OUTPUT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_VIEW_LAYER)) {
-    ctx_tabs_array[length] = CTX_VIEW_LAYER;
+  if (sbtns->pathflag & (1 << CXT_VIEW_LAYER)) {
+    cxt_tabs_array[length] = CXT_VIEW_LAYER;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_SCENE)) {
-    ctx_tabs_array[length] = CTX_SCENE;
+  if (sbtns->pathflag & (1 << CXT_SCENE)) {
+    cxt_tabs_array[length] = CXT_SCENE;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_WORLD)) {
-    ctx_tabs_array[length] = CTX_WORLD;
+  if (sbtns->pathflag & (1 << CXT_WORLD)) {
+    cxt_tabs_array[length] = CXT_WORLD;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_COLLECTION)) {
+  if (sbtns->pathflag & (1 << CXT_COLLECTION)) {
     if (length != 0) {
-      ctx_tabs_array[length] = -1;
+      cxt_tabs_array[length] = -1;
       length++;
     }
-    ctx_tabs_array[length] = CTX_COLLECTION;
+    cxt_tabs_array[length] = CXT_COLLECTION;
     length++;
   }
   if (length != 0) {
-    ctx_tabs_array[length] = -1;
+    cxt_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_OBJECT)) {
-    ctx_tabs_array[length] = CTX_OBJECT;
+  if (sbtns->pathflag & (1 << CXT_OBJECT)) {
+    cxt_tabs_array[length] = CXT_OBJECT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_MODIFIER)) {
-    ctx_tabs_array[length] = CTX_MODIFIER;
+  if (sbtns->pathflag & (1 << CXT_MOD)) {
+    cxt_tabs_array[length] = CXT_MOD;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_SHADERFX)) {
-    ctx_tabs_array[length] = CTX_SHADERFX;
+  if (sbtns->pathflag & (1 << CXT_SHADERFX)) {
+    cxt_tabs_array[length] = CXT_SHADERFX;
     length++;
   }
   if (sbtns->pathflag & (1 << CXT_PARTICLE)) {
-    context_tabs_array[length] = CTX_PARTICLE;
+    context_tabs_array[length] = CXT_PARTICLE;
     length++;
   }
-  if (sbuts->pathflag & (1 << CTX_PHYSICS)) {
-    ctx_tabs_array[length] = CTX_PHYSICS;
+  if (sbuts->pathflag & (1 << CXT_PHYS)) {
+    ctx_tabs_array[length] = CXT_PHYS;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_CONSTRAINT)) {
-    ctx_tabs_array[length] = CTX_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CXT_CONSTRAINT)) {
+    cxt_tabs_array[length] = CXT_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_DATA)) {
-    ctxt_tabs_array[length] = CTX_DATA;
+  if (sbtns->pathflag & (1 << CXT_DATA)) {
+    cxt_tabs_array[length] = CXT_DATA;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_BONE)) {
-    ctxt_tabs_array[length] = CTX_BONE;
+  if (sbtns->pathflag & (1 << CXT_BONE)) {
+    cxt_tabs_array[length] = CXT_BONE;
     length++;
   
-  if (sbtns->pathflag & (1 << CTX_BONE_CONSTRAINT)) {
-    ctxt_tabs_array[length] = CTX_BONE_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CXT_BONE_CONSTRAINT)) {
+    cxt_tabs_array[length] = CXT_BONE_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_MATERIAL)) {
-    ctxt_tabs_array[length] = CTX_MATERIAL;
+  if (sbtns->pathflag & (1 << CXT_MATERIAL)) {
+    cxt_tabs_array[length] = CXT_MATERIAL;
     length++;
   }
   if (length != 0) {
-    ctxt_tabs_array[length] = -1;
+    cxt_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTX_TEXTURE)) {
-    ctxt_tabs_array[length] = CTX_TEXTURE;
+  if (sbtns->pathflag & (1 << CXT_TEXTURE)) {
+    cxt_tabs_array[length] = CXT_TEXTURE;
     length++;
   }
 
   return length;
 }
 
-static const char *btns_main_region_ctx_string(const short maind)
+static const char *btns_main_region_cxt_string(const short maind)
 {
   switch (maind) {
-    case CTX_SCENE:
+    case CXT_SCENE:
       return "scene";
-    case CTX_RENDER:
+    case CXT_RENDER:
       return "render";
-    case CTX_OUTPUT:
+    case CXT_OUTPUT:
       return "output";
-    case CTX_VIEW_LAYER:
+    case CXT_VIEW_LAYER:
       return "view_layer";
-    case CTX_WORLD:
+    case CXT_WORLD:
       return "world";
-    case CTX_COLLECTION:
+    case CXT_COLLECTION:
       return "collection";
     case CTX_OBJECT:
       return "object";
@@ -294,9 +290,7 @@ static void btns_main_region_layout_props(const Ctx *C,
   ed_region_panels_layout_ex(C, region, &region->type->paneltypes, ctxts, NULL);
 }
 
-/* -------------------------------------------------------------------- */
-/** Property Search Access API **/
-
+/** Prop Search Access API **/
 const char *ed_btns_search_string_get(SpaceProps *sbtns)
 {
   return sbtns->runtime->search_string;
@@ -309,7 +303,7 @@ int ed_btns_search_string_length(struct SpaceProps *sbtns)
 
 void ed_btns_search_string_set(SpaceProps *sbtns, const char *value)
 {
-  lib_strncpy(sbtbs->runtime->search_string, value, sizeof(sbtns->runtime->search_string));
+  lib_strncpy(sbtns->runtime->search_string, value, sizeof(sbtns->runtime->search_string));
 }
 
 bool ed_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
@@ -318,13 +312,13 @@ bool ed_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
 }
 
 /* -------------------------------------------------------------------- */
-/** "Off Screen" Layout Generation for Property Search **/
+/** "Off Screen" Layout Generation for Prop Search **/
 
-static bool prop_search_for_ctx(const Ctx *C, ARegion *region, SpaceProps *sbtns)
+static bool prop_search_for_ctx(const Cxt *C, ARegion *region, SpaceProps *sbtns)
 {
-  const char *contexts[2] = {bts_main_region_ctx_string(sbtns->maind), NULL};
+  const char *cxts[2] = {bts_main_region_cxt_string(sbtns->maind), NULL};
 
-  if (sbtns->maind == CTXT_TOOL) {
+  if (sbtns->maind == CXT_TOOL) {
     return false;
   }
 
