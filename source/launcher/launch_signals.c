@@ -43,7 +43,7 @@
 #    include "BPY_extern_python.h" /* BPY_python_backtrace */
 #  endif
 
-#  include "creator_intern.h" /* own include */
+#  include "launcher_intern.h" /* own include */
 
 // #define USE_WRITE_CRASH_DUNE
 #  ifdef USE_WRITE_CRASH_DUNE
@@ -180,7 +180,7 @@ static void sig_handle_crash(int signum)
 }
 
 #  ifdef WIN32
-extern LONG WINAPI windows_exception_handler(EXCEPTION_POINTERS *ExceptionInfo)
+extern LONG WINAPI windows_exception_handler(EXCEPTION_PTRS *ExceptionInfo)
 {
   /* If this is a stack overflow then we can't walk the stack, so just try to show
    * where the error happened */
