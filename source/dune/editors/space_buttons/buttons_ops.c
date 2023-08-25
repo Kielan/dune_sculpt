@@ -10,9 +10,9 @@
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "i18n_translation.h"
+#include "lang.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_main.h"
 #include "dune_report.h"
 #include "dune_screen.h"
@@ -29,30 +29,29 @@
 #include "ui_interface.h"
 #include "ui_resources.h"
 
-#include "buttons_intern.h" /* own include */
+#include "btns_intern.h" /* own include */
 
 /* -------------------------------------------------------------------- */
-/** Start / Clear Search Filter Operators
- *
- *  Almost a duplicate of the file browser operator file_ot_start_filter **/
+/* Start / Clear Search Filter Operators
+ *  Almost a duplicate of the file browser op file_ot_start_filter **/
 
-static int btns_start_filter_ex(Ctx *C, wmOp *UNUSED(op))
+static int btns_start_filter_ex(Cxt *C, wmOp *UNUSED(op))
 {
-  SpaceProps *space = ctx_wm_space_props(C);
-  ScrArea *area = ctx_wm_area(C);
+  SpaceProps *space = cxt_wm_space_props(C);
+  ScrArea *area = cxt_wm_area(C);
   ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HEADER);
 
-  ARegion *region_ctx = ctx_wm_region(C);
-  ctx_wm_region_set(C, region);
+  ARegion *region_cxt = cxt_wm_region(C);
+  cxt_wm_region_set(C, region);
   ui_textbtn_activate_api(C, region, space, "search_filter");
-  ctx_wm_region_set(C, region_ctx);
+  cxt_wm_region_set(C, region_ctx);
 
   return OP_FINISHED;
 }
 
 void btns_ot_start_filter(struct wmOpType *ot)
 {
-  /* Identifiers. */
+  /* Ids. */
   ot->name = "Filter";
   ot->description = "Start entering filter text";
   ot->idname = "btns_ot_start_filter";
@@ -62,13 +61,13 @@ void btns_ot_start_filter(struct wmOpType *ot)
   ot->poll = ed_op_btns_active;
 }
 
-static int btns_clear_filter_ex(Ctx *C, wmOp *UNUSED(op))
+static int btns_clear_filter_ex(Cxt *C, wmOp *UNUSED(op))
 {
-  SpaceProps *space = ctx_wm_space_props(C);
+  SpaceProps *space = cxt_wm_space_props(C);
 
   space->runtime->search_string[0] = '\0';
 
-  ScrArea *area = ctx_wm_area(C);
+  ScrArea *area = cxt_wm_area(C);
   ed_region_search_filter_update(area, ctx_wm_region(C));
   ed_area_tag_redraw(area);
 
@@ -88,27 +87,27 @@ void btns_ot_clear_filter(struct wmOpType *ot)
 }
 
 /* -------------------------------------------------------------------- */
-/** Pin id Operator **/
+/* Pin id Operator */
 
-static int toggle_pin_ex(Ctx *C, wmOp *UNUSED(op))
+static int toggle_pin_ex(Cxt *C, wmOp *UNUSED(op))
 {
-  SpaceProperties *sbuts = ctx_wm_space_props(C);
+  SpaceProps *sbtns = cxt_wm_space_props(C);
 
-  sbuts->flag ^= SB_PIN_CTX;
+  sbuts->flag ^= SB_PIN_CXT;
 
-  /* Create the properties space pointer. */
+  /* Create the props space pointer. */
   ApiPtr sbtns_ptr;
-  Screen *screen = ctx_wm_screen(C);
+  Screen *screen = cxt_wm_screen(C);
   api_ptr_create(&screen->id, &ApiSpaceProps, sbuts, &sbtns_ptr);
 
   /* Create the new id pointer and set the pin id with api
    * so we can use the property's api update functionality. */
-  Id *new_id = (sbuts->flag & SB_PIN_CTX) ? btns_ctx_id_path(C) : NULL;
+  Id *new_id = (sbuts->flag & SB_PIN_CXT) ? btns_cxt_id_path(C) : NULL;
   ApiPtr new_id_ptr;
   api_id_ptr_create(new_id, &new_id_ptr);
-  api_ptr_set(&sbuts_ptr, "pin_id", new_id_ptr);
+  api_ptr_set(&sbtns_ptr, "pin_id", new_id_ptr);
 
-  ed_area_tag_redraw(ctx_wm_area(C));
+  ed_area_tag_redraw(cxt_wm_area(C));
 
   return OP_FINISHED;
 }
@@ -125,11 +124,9 @@ void btns_ot_toggle_pin(wmOpType *ot)
   ot->poll = ed_op_btns_active;
 }
 
-/* -------------------------------------------------------------------- */
-/** Context Menu Operator **/
-
-static int ctx_menu_invoke(Ctx *C, wmOpType *ot) {
-  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Context Menu"), ICON_NONE);
+/* Context Menu Operator */
+static int cxt_menu_invoke(Cxt *C, wmOpType *ot) {
+  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Cxt Menu"), ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
 
   uiItemM(layout, "INFO_MT_area", NULL, ICON_NONE);
