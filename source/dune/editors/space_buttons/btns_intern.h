@@ -1,38 +1,35 @@
 #pragma once
 
 #include "lib_bitmap.h"
-#include "types_listBase.h"
+#include "types_list.h"
 #include "api_types.h"
 
 struct ARegionType;
 struct Id;
 struct SpaceProps;
 struct Tex;
-struct Ctx;
-struct CtxDataResult;
+struct Cxt;
+struct CxtDataResult;
 struct Node;
 struct NodeSocket;
 struct NodeTree;
 struct wmOpType;
 
 struct SpacePropsRuntime {
-  /** For filtering properties displayed in the space. */
+  /* For filtering props displayed in the space. */
   char search_string[UI_MAX_NAME_STR];
-  /**
-   * Bitfield (in the same order as the tabs) for whether each tab has properties
-   * that match the search filter. Only valid when search_string is set.
-   */
+  /* Bitfield (in the same order as the tabs) for whether each tab has properties
+   * that match the search filter. Only valid when search_string is set. */
   lib_bitmap *tab_search_results;
 };
 
 /* context data */
-
-typedef struct BtnsCtxPath {
+typedef struct BtnsCxtPath {
   ApiPtr ptr[8];
   int len;
   int flag;
   int collection_ctx;
-} BtnsCtxPath;
+} BtnsCxtPath;
 
 typedef struct BtnsTextureUser {
   struct BtnsTextureUser *next, *prev;
@@ -53,36 +50,32 @@ typedef struct BtnsTextureUser {
   int index;
 } BtnsTextureUser;
 
-typedef struct BtnsCtxTexture {
-  ListBase users;
+typedef struct BtnsCxtTexture {
+  List users;
   struct Tex *texture;
-  struct ButsTextureUser *user;
+  struct BtnsTextureUser *user;
   int index;
-} BtnsCtxTexture;
+} BtnsCxtTexture;
 
 /* internal exports only */
-
 /* btns_ctx.c */
-
-void btns_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
-int btns_ctxt(const struct Ctx *C,
+void btns_cxt_compute(const struct Cxt *C, struct SpaceProps *sbtns);
+int btns_cxt(const struct Cxt *C,
               const char *member,
-              struct CtxDataResult *result);
-void btns_ctx_register(struct ARegionType *art);
-struct Id *btns_ctx_id_path(const struct Ctx *C);
+              struct CxtDataResult *result);
+void btns_cxt_register(struct ARegionType *art);
+struct Id *btns_cxt_id_path(const struct Cxt *C);
 
-extern const char *btns_ctx_dir[]; /* doc access */
+extern const char *btns_cxt_dir[]; /* doc access */
 
 /* buttons_texture.c */
-
-void btns_texture_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
+void btns_texture_cxt_compute(const struct Ctx *C, struct SpaceProps *sbtns);
 
 /* btns_ops.c */
-
 void btns_ot_start_filter(struct wmOpType *ot);
 void btns_ot_clear_filter(struct wmOpType *ot);
 void btns_ot_toggle_pin(struct wmOpType *ot);
 void btns_ot_file_browse(struct wmOpType *ot);
-/** Second operator, only difference from btns_ot_file_browse is MESH_FILESEL_DIRECTORY. */
+/* Second op, only difference from btns_ot_file_browse is MESH_FILESEL_DIRECTORY. */
 void btns_ot_dir_browse(struct wmOpType *ot);
-void btns_ot_ctx_menu(struct wmOpType *ot);
+void btns_ot_cxt_menu(struct wmOpType *ot);
