@@ -215,9 +215,9 @@ static void btns_texture_mod_foreach(void *userData,
 }
 
 static void btns_texture_mod_pen_foreach(void *userData,
-                                                  Object *ob,
-                                                  PenModData *md,
-                                                  const char *propname)
+                                         Object *ob,
+                                         PenModData *md,
+                                         const char *propname)
 {
   ApiPtr ptr;
   PropApi *prop;
@@ -361,14 +361,14 @@ void btns_texture_cxt_compute(const Cxt *C, SpaceProps *sbtns)
   Id *pinid = sbuts->pinid;
 
   if (!ct) {
-    ct = mem_callocn(sizeof(BtnsCtxTexture), "BtnsCtxTexture");
+    ct = mem_callocn(sizeof(BtnsCxtTexture), "BtnsCxtTexture");
     sbuts->texuser = ct;
   }
   else {
     lib_freelistn(&ct->users);
   }
 
-  btns_texture_users_from_ctx(&ct->users, C, sbtns);
+  btns_texture_users_from_cxt(&ct->users, C, sbtns);
 
   if (pinid && GS(pinid->name) == ID_TE) {
     ct->user = NULL;
@@ -579,10 +579,10 @@ void uiTemplateTextureUser(uiLayout *layout, Cxt *C)
 /************************* Texture Show **************************/
 static ScrArea *find_area_props(const Cxt *C)
 {
-  Screen *screen = ctx_wm_screen(C);
-  Object *ob = ctx_data_active_object(C);
+  Screen *screen = cxt_wm_screen(C);
+  Object *ob = cxt_data_active_object(C);
 
-  LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
+  LIST_FOREACH (ScrArea *, area, &screen->areabase) {
     if (area->spacetype == SPACE_PROPS) {
       /* Only if unpinned, or if pinned object matches. */
       SpaceProps *sbtns = area->spacedata.first;
@@ -596,7 +596,7 @@ static ScrArea *find_area_props(const Cxt *C)
   return NULL;
 }
 
-static SpaceProps *find_space_props(const Ctx *C)
+static SpaceProps *find_space_props(const Cxt *C)
 {
   ScrArea *area = find_area_props(C);
   if (area != NULL) {
@@ -606,7 +606,7 @@ static SpaceProps *find_space_props(const Ctx *C)
   return NULL;
 }
 
-static void template_texture_show(Ctx *C, void *data_p, void *prop_p)
+static void template_texture_show(Cxt *C, void *data_p, void *prop_p)
 {
   if (data_p == NULL || prop_p == NULL) {
     return;
@@ -635,8 +635,8 @@ static void template_texture_show(Ctx *C, void *data_p, void *prop_p)
     template_texture_select(C, user, NULL);
 
     /* change context */
-    sbtns->maind = DCTX_TEXTURE;
-    sbtns->mainbuser = sbuts->maind;
+    sbtns->maind = CXT_TEXTURE;
+    sbtns->mainbuser = sbtns->maind;
     sbtns->preview = 1;
 
     /* redraw editor */
@@ -644,22 +644,22 @@ static void template_texture_show(Ctx *C, void *data_p, void *prop_p)
   }
 }
 
-void uiTemplateTextureShow(uiLayout *layout, const Ctx *C, ApiPtr *ptr, ApiProp *prop)
+void uiTemplateTextureShow(uiLayout *layout, const Cxt *C, ApiPtr *ptr, ApiProp *prop)
 {
-  /* Only show the button if there is actually a texture assigned. */
+  /* Only show the btn if there is actually a texture assigned. */
   Tex *texture = api_prop_ptr_get(ptr, prop).data;
   if (texture == NULL) {
     return;
   }
 
-  /* Only show the button if we are not in the Properties Editor's texture tab. */
-  SpaceProps *sbtns_ctx = ctx_wm_space_props(C);
-  if (sbtns_ctx != NULL && sbtns_ctx->maind == CONTEXT_TEXTURE) {
+  /* Only show the btn if we are not in the Props Editor's texture tab. */
+  SpaceProps *sbtns_cxt = cxt_wm_space_props(C);
+  if (sbtns_cxt != NULL && sbtns_cxt->maind == CXT_TEXTURE) {
     return;
   }
 
-  SpaceProps *sbuts = find_space_prop(C);
-  BtnsCtxTexture *ct = (sbuts) ? sbuts->texuser : NULL;
+  SpaceProps *sbtns = find_space_prop(C);
+  BtnsCxtTexture *ct = (sbtns) ? sbtns->texuser : NULL;
 
   /* find corresponding texture user */
   BtnsTextureUser *user;
@@ -673,13 +673,13 @@ void uiTemplateTextureShow(uiLayout *layout, const Ctx *C, ApiPtr *ptr, ApiProp 
     }
   }
 
-  /* Draw button (disabled if we cannot find a Properties Editor to display this in). */
+  /* Draw btn (disabled if we cannot find a Props Editor to display this in). */
   uiBlock *block = uiLayoutGetBlock(layout);
   uiBtn *btn;
   btn = uiDefIconBut(block,
                      UI_BTYPE_BTN,
                      0,
-                     ICON_PROPERTIES,
+                     ICON_PROPS,
                      0,
                      0,
                      UI_UNIT_X,
@@ -691,13 +691,13 @@ void uiTemplateTextureShow(uiLayout *layout, const Ctx *C, ApiPtr *ptr, ApiProp 
                      0.0,
                      TIP_("Show texture in texture tab"));
   ui_btn_fn_set(btn,
-                  template_texture_show,
-                  user_found ? user->ptr.data : NULL,
-                  user_found ? user->prop : NULL);
+                template_texture_show,
+                user_found ? user->ptr.data : NULL,
+                user_found ? user->prop : NULL);
   if (ct == NULL) {
-    ui_btn_disable(but, TIP_("No (unpinned) Properties Editor found to display texture in"));
+    ui_btn_disable(btn, TIP_("No (unpinned) Props Editor found to display texture in"));
   }
   else if (!user_found) {
-    ui_btn_disable(but, TIP_("No texture user found"));
+    ui_btn_disable(btn, TIP_("No texture user found"));
   }
 }
