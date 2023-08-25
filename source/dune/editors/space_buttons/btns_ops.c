@@ -31,7 +31,6 @@
 
 #include "btns_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
 /* Start / Clear Search Filter Operators
  *  Almost a duplicate of the file browser op file_ot_start_filter **/
 
@@ -82,11 +81,10 @@ void btns_ot_clear_filter(struct wmOpType *ot)
   ot->idname = "btns_ot_clear_filter";
 
   /* Callbacks. */
-  ot->exec = btns_clear_filter_ex;
+  ot->ex = btns_clear_filter_ex;
   ot->poll = ed_op_btns_active;
 }
 
-/* -------------------------------------------------------------------- */
 /* Pin id Operator */
 
 static int toggle_pin_ex(Cxt *C, wmOp *UNUSED(op))
@@ -98,7 +96,7 @@ static int toggle_pin_ex(Cxt *C, wmOp *UNUSED(op))
   /* Create the props space pointer. */
   ApiPtr sbtns_ptr;
   Screen *screen = cxt_wm_screen(C);
-  api_ptr_create(&screen->id, &ApiSpaceProps, sbuts, &sbtns_ptr);
+  api_ptr_create(&screen->id, &ApiSpaceProps, sbtns, &sbtns_ptr);
 
   /* Create the new id pointer and set the pin id with api
    * so we can use the property's api update functionality. */
@@ -139,16 +137,16 @@ void btns_ot_ctx_menu(wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Context Menu";
-  ot->description = "Display properties editor context_menu";
-  ot->idname = "btns_ot_ctx_menu";
+  ot->description = "Display props editor cxt_menu";
+  ot->idname = "btns_ot_cxt_menu";
 
   /* Callbacks. */
-  ot->invoke = ctx_menu_invoke;
+  ot->invoke = cxt_menu_invoke;
   ot->poll = ed_op_btns_active;
 }
 
 /* -------------------------------------------------------------------- */
-/** File Browse Operator **/
+/* File Browse Operator */
 
 typedef struct FileBrowseOp {
   ApiPtr ptr;
@@ -157,7 +155,7 @@ typedef struct FileBrowseOp {
   bool is_userdef;
 } FileBrowseOp;
 
-static int file_browse_ex(Ctx *C, wmOp *op)
+static int file_browse_ex(Cxt *C, wmOp *op)
 {
   Main *main = ctx_data_main(C);
   FileBrowseOp *fbo = op->customdata;
@@ -232,13 +230,13 @@ static int file_browse_ex(Ctx *C, wmOp *op)
   return OP_FINISHED;
 }
 
-static void file_browse_cancel(Ctx *UNUSED(C), wmOp *op)
+static void file_browse_cancel(Cxt *UNUSED(C), wmOp *op)
 {
   mem_freen(op->customdata);
   op->customdata = NULL;
 }
 
-static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int file_browse_invoke(Cxt *C, wmOp *op, const wmEvent *event)
 {
   ApiPtr ptr;
   ApiProp *prop;
@@ -247,7 +245,7 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
   FileBrowseOp *fbo;
   char *str;
 
-  if (ctx_wm_space_file(C)) {
+  if (cxt_wm_space_file(C)) {
     dune_report(op->reports, RPT_ERROR, "Cannot activate a file selector, one already open");
     return OP_CANCELLED;
   }
@@ -262,7 +260,7 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 
   /* Useful yet irritating feature, Shift+Click to open the file
    * Alt+Click to browse a folder in the OS's browser. */
-  if (event->modifier & (KM_SHIFT | KM_ALT)) {
+  if (event->mod & (KM_SHIFT | KM_ALT)) {
     wmOpType *ot = wm_optype_find("wm_ot_path_open", true);
     ApiPtr props_ptr;
 
@@ -331,7 +329,7 @@ void btns_ot_file_browse(wmOpType *ot)
 
   /* Callbacks. */
   ot->invoke = file_browse_invoke;
-  ot->exec = file_browse_exec;
+  ot->ex = file_browse_ex;
   ot->cancel = file_browse_cancel;
 
   /* Conditional undo based on button flag. */
