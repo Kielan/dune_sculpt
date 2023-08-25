@@ -51,7 +51,7 @@
       DESTINATION "."
       CONFIGURATIONS Debug
     )
-    list(APPEND LIB ${TBB_MALLOC_LIBRARIES})
+    list(APPEND LIB ${TBB_MALLOC_LIBS})
   endif()
 
   if(WITH_CODEC_SNDFILE)
@@ -116,7 +116,7 @@ elseif(APPLE)
                   OUTPUT_VARIABLE DUNE_DATE
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  set_target_properties(dune PROPERTIES
+  set_target_properties(dune PROPS
     MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${DUNE_VERSION}.${DUNE_VERSION_PATCH}"
     MACOSX_BUNDLE_LONG_VERSION_STRING "${DUNE_VERSION}.${DUNE_VERSION_PATCH} ${DUNE_DATE}")
@@ -159,7 +159,7 @@ elseif(APPLE)
 
   if(WITH_OPENMP AND OPENMP_CUSTOM)
     install(
-      FILES "${OpenMP_LIBRARY}"
+      FILES "${OpenMP_LIB}"
       DESTINATION "${MAC_DUNE_TARGET_DYLIBS_DIR}"
     )
   endif()
@@ -172,9 +172,7 @@ elseif(APPLE)
   endif()
 endif()
 
-# -----------------------------------------------------------------------------
 # Generic Install, for all targets
-
 if(DEFINED DUNE_TEXT_FILES_DESTINATION)
 
   configure_file(${CMAKE_SOURCE_DIR}/release/text/readme.html
@@ -203,12 +201,8 @@ delayed_do_install(${TARGETDIR_VER})
 unset(DUNE_TEXT_FILES)
 unset(DUNE_TEXT_FILES_DESTINATION)
 
-
-# -----------------------------------------------------------------------------
-# Geometry Icons
-
 # Geometry icons.
-get_property(_icon_names GLOBAL PROPERTY ICON_GEOM_NAMES)
+get_property(_icon_names GLOBAL PROP ICON_GEOM_NAMES)
 set(_icon_files)
 foreach(_f ${_icon_names})
   list(APPEND _icon_files
@@ -224,7 +218,6 @@ unset(_icon_names)
 unset(_icon_files)
 unset(_f)
 
-# -----------------------------------------------------------------------------
 # Studio Lights
 install(
   DIRECTORY
@@ -232,9 +225,7 @@ install(
   DESTINATION ${TARGETDIR_VER}/datafiles
 )
 
-# -----------------------------------------------------------------------------
 # Setup link libs
-
 add_dependencies(dune types)
 target_link_libraries(dune ${LIB})
 unset(LIB)
@@ -248,7 +239,6 @@ elseif(UNIX)
   set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dune.map)
 endif()
 
-# -----------------------------------------------------------------------------
 # USD registry.
 # USD requires a set of JSON files that define the standard schemas. These
 # files are required at runtime.
@@ -282,7 +272,6 @@ if(WIN32)
   endif()
 endif()
 
-# -----------------------------------------------------------------------------
 # Setup launcher
 
 if(WIN32 AND NOT WITH_PYTHON_MODULE)
