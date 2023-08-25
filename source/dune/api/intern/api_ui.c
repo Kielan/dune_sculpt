@@ -95,7 +95,7 @@ static bool panel_poll(const Cxt *C, PanelType *pt)
   fn = &api_Panel_poll_fn; /* api_struct_find_fun(&ptr, "poll"); */
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   pt->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "visible", &ret);
@@ -118,7 +118,7 @@ static void panel_draw(const Cxt *C, Panel *panel)
   fn = &api_Panel_draw_fn; /* api_struct_find_function(&ptr, "draw"); */
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
@@ -133,10 +133,10 @@ static void panel_draw_header(const Cxt *C, Panel *panel)
   ApiFn *fn;
 
   api_ptr_create(&cxt_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
-  fn = &api_Panel_draw_header_fn; /* RNA_struct_find_function(&ptr, "draw_header"); */
+  fn = &api_Panel_draw_header_fn; /* api_struct_find_function(&ptr, "draw_header"); */
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
@@ -154,7 +154,7 @@ static void panel_draw_header_preset(const Cxt *C, Panel *panel)
   fn = &api_Panel_draw_header_preset_fn;
 
   api_param_list_create(&list, &ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   panel->type->api_ext.call((Cxt *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
@@ -496,13 +496,13 @@ static void uilist_draw_item(uiList *ui_list,
   func = &api_UIList_draw_item_fn; /* api_struct_find_function(&ul_ptr, "draw_item"); */
 
   api_param_list_create(&list, &ul_ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "layout", &layout);
   api_param_set_lookup(&list, "data", dataptr);
   api_param_set_lookup(&list, "item", itemptr);
   api_param_set_lookup(&list, "icon", &icon);
   api_param_set_lookup(&list, "active_data", active_dataptr);
-  api_param_set_lookup(&list, "active_property", &active_propname);
+  api_param_set_lookup(&list, "active_prop", &active_propname);
   api_param_set_lookup(&list, "index", &index);
   api_param_set_lookup(&list, "flt_flag", &flt_flag);
   ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, fn, &list);
@@ -510,7 +510,7 @@ static void uilist_draw_item(uiList *ui_list,
   api_param_list_free(&list);
 }
 
-static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *layout)
+static void uilist_draw_filter(uiList *ui_list, const Cxt *C, uiLayout *layout)
 {
   extern ApiFn api_UIList_draw_filter_fn;
 
@@ -524,7 +524,7 @@ static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *lay
   api_param_list_create(&list, &ul_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "layout", &layout);
-  ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, func, &list);
+  ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -551,16 +551,16 @@ static void uilist_filter_items(uiList *ui_list,
   fn = &api_UIList_filter_items_fn; /* api_struct_find_fn(&ul_ptr, "filter_items"); */
 
   api_param_list_create(&list, &ul_ptr, fn);
-  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "cxt", &C);
   api_param_set_lookup(&list, "data", dataptr);
-  api_param_set_lookup(&list, "property", &propname);
+  api_param_set_lookup(&list, "prop", &propname);
 
   ui_list->type->api_ext.call((Cxt *)C, &ul_ptr, fn, &list);
 
   parm = api_fn_find_param(NULL, fn, "filter_flags");
   ret_len = api_param_dynamic_length_get(&list, parm);
   if (!ELEM(ret_len, len, 0)) {
-    printf("%s: Error, py func returned %d items in %s, %d or none were expected.\n",
+    printf("%s: Error, py fn returned %d items in %s, %d or none were expected.\n",
            __func__,
            api_param_dynamic_length_get(&list, parm),
            "filter_flags",
@@ -596,8 +596,7 @@ static void uilist_filter_items(uiList *ui_list,
 
       if (filter_neworder) {
         /* For sake of simplicity, py filtering is expected to filter all items,
-         * but we actually only want reordering data for shown items!
-         */
+         * but we actually only want reordering data for shown items! */
         int items_shown, shown_idx;
         int t_idx, t_ni, prev_ni;
         flt_data->items_shown = 0;
@@ -716,7 +715,7 @@ static ApiStruct *api_UIList_register(Main *main,
   if (!api_struct_available_or_report(reports, dummy_ult.idname)) {
     return NULL;
   }
-  if (!api_struct_bl_idname_ok_or_report(reports, dummy_ult.idname, "_UL_")) {
+  if (!api_struct_dunelib_idname_ok_or_report(reports, dummy_ult.idname, "_UL_")) {
     return NULL;
   }
 
