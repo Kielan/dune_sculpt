@@ -609,22 +609,22 @@ static bool btns_cxt_path(
       found = btns_cxt_path_data(path, -1);
       break;
     case CXT_PARTICLE:
-      found = buttons_context_path_particle(path);
+      found = btns_cxt_path_particle(path);
       break;
-    case BCONTEXT_MATERIAL:
-      found = buttons_context_path_material(path);
+    case CXT_MATERIAL:
+      found = btns_cxt_path_material(path);
       break;
-    case BCONTEXT_TEXTURE:
-      found = buttons_context_path_texture(C, path, sbuts->texuser);
+    case CXT_TEXTURE:
+      found = btns_cxt_path_texture(C, path, sbtns->texuser);
       break;
-    case BCONTEXT_BONE:
-      found = buttons_context_path_bone(path);
+    case CXT_BONE:
+      found = btns_cxt_path_bone(path);
       if (!found) {
-        found = buttons_context_path_data(path, OB_ARMATURE);
+        found = btns_cxt_path_data(path, OB_ARMATURE);
       }
       break;
-    case BCONTEXT_BONE_CONSTRAINT:
-      found = buttons_context_path_pose_bone(path);
+    case CXT_BONE_CONSTRAINT:
+      found = btns_cxt_path_pose_bone(path);
       break;
     default:
       found = false;
@@ -634,77 +634,77 @@ static bool btns_cxt_path(
   return found;
 }
 
-static bool buttons_shading_context(const bContext *C, int mainb)
+static bool btns_shading_cxt(const Cxt *C, int mainb)
 {
-  wmWindow *window = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(window);
+  wmWindow *window = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
   Object *ob = OBACT(view_layer);
 
-  if (ELEM(mainb, BCONTEXT_MATERIAL, BCONTEXT_WORLD, BCONTEXT_TEXTURE)) {
+  if (ELEM(mainb, CXT_MATERIAL, CXT_WORLD, CXT_TEXTURE)) {
     return true;
   }
-  if (mainb == BCONTEXT_DATA && ob && ELEM(ob->type, OB_LAMP, OB_CAMERA)) {
+  if (mainb == CXT_DATA && ob && ELEM(ob->type, OB_LAMP, OB_CAMERA)) {
     return true;
   }
 
   return false;
 }
 
-static int buttons_shading_new_context(const bContext *C, int flag)
+static int btns_shading_new_cxt(const Cxt *C, int flag)
 {
-  wmWindow *window = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(window);
+  wmWindow *window = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
   Object *ob = OBACT(view_layer);
 
-  if (flag & (1 << BCONTEXT_MATERIAL)) {
-    return BCONTEXT_MATERIAL;
+  if (flag & (1 << CXT_MATERIAL)) {
+    return CXT_MATERIAL;
   }
   if (ob && ELEM(ob->type, OB_LAMP, OB_CAMERA) && (flag & (1 << BCONTEXT_DATA))) {
-    return BCONTEXT_DATA;
+    return CXT_DATA;
   }
-  if (flag & (1 << BCONTEXT_WORLD)) {
-    return BCONTEXT_WORLD;
+  if (flag & (1 << CXT_WORLD)) {
+    return CXT_WORLD;
   }
 
-  return BCONTEXT_RENDER;
+  return CXT_RENDER;
 }
 
-void buttons_context_compute(const bContext *C, SpaceProperties *sbuts)
+void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
 {
-  if (!sbuts->path) {
-    sbuts->path = MEM_callocN(sizeof(ButsContextPath), "ButsContextPath");
+  if (!sbtns->path) {
+    sbtns->path = mem_callocn(sizeof(BtnsCxtPath), "BtnsCxtPath");
   }
 
-  ButsContextPath *path = sbuts->path;
+  BtnsCxtPath *path = sbtns->path;
 
   int pflag = 0;
   int flag = 0;
 
   /* Set scene path. */
-  buttons_context_path(C, sbuts, path, BCONTEXT_SCENE, pflag);
+  bns_cxt_path(C, sbtns, path, CXT_SCENE, pflag);
 
-  buttons_texture_context_compute(C, sbuts);
+  btns_texture_cxt_compute(C, sbtns);
 
-  /* for each context, see if we can compute a valid path to it, if
+  /* for each cxt, see if we can compute a valid path to it, if
    * this is the case, we know we have to display the button */
-  for (int i = 0; i < BCONTEXT_TOT; i++) {
-    if (buttons_context_path(C, sbuts, path, i, pflag)) {
+  for (int i = 0; i < CXT_TOT; i++) {
+    if (btns_cxt_path(C, sbuts, path, i, pflag)) {
       flag |= (1 << i);
 
-      /* setting icon for data context */
-      if (i == BCONTEXT_DATA) {
-        PointerRNA *ptr = &path->ptr[path->len - 1];
+      /* setting icon for data cxt */
+      if (i == CXT_DATA) {
+        ApiPtr *ptr = &path->ptr[path->len - 1];
 
         if (ptr->type) {
-          if (RNA_struct_is_a(ptr->type, &RNA_Light)) {
-            sbuts->dataicon = ICON_OUTLINER_DATA_LIGHT;
+          if (api_struct_is_a(ptr->type, &ApiLight)) {
+            sbtns->dataicon = ICON_OUTLINER_DATA_LIGHT;
           }
           else {
-            sbuts->dataicon = RNA_struct_ui_icon(ptr->type);
+            sbtns->dataicon = api_struct_ui_icon(ptr->type);
           }
         }
         else {
-          sbuts->dataicon = ICON_EMPTY_DATA;
+          sbtns->dataicon = ICON_EMPTY_DATA;
         }
       }
     }
@@ -713,49 +713,49 @@ void buttons_context_compute(const bContext *C, SpaceProperties *sbuts)
   /* always try to use the tab that was explicitly
    * set to the user, so that once that context comes
    * back, the tab is activated again */
-  sbuts->mainb = sbuts->mainbuser;
+  sbtns->mainb = sbtns->mainbuser;
 
   /* in case something becomes invalid, change */
-  if ((flag & (1 << sbuts->mainb)) == 0) {
-    if (sbuts->flag & SB_SHADING_CONTEXT) {
-      /* try to keep showing shading related buttons */
-      sbuts->mainb = buttons_shading_new_context(C, flag);
+  if ((flag & (1 << sbtns->mainb)) == 0) {
+    if (sbtns->flag & SB_SHADING_CXT) {
+      /* try to keep showing shading related btns */
+      sbtns->mainb = btns_shading_new_cxt(C, flag);
     }
-    else if (flag & BCONTEXT_OBJECT) {
-      sbuts->mainb = BCONTEXT_OBJECT;
+    else if (flag & CXT_OBJECT) {
+      sbtns->mainb = CXT_OBJECT;
     }
     else {
-      for (int i = 0; i < BCONTEXT_TOT; i++) {
+      for (int i = 0; i < CXT_TOT; i++) {
         if (flag & (1 << i)) {
-          sbuts->mainb = i;
+          sbtns->mainb = i;
           break;
         }
       }
     }
   }
 
-  buttons_context_path(C, sbuts, path, sbuts->mainb, pflag);
+  btns_cxt_path(C, sbtns, path, sbtns->mainb, pflag);
 
-  if (!(flag & (1 << sbuts->mainb))) {
-    if (flag & (1 << BCONTEXT_OBJECT)) {
-      sbuts->mainb = BCONTEXT_OBJECT;
+  if (!(flag & (1 << sbtns->mainb))) {
+    if (flag & (1 << CXT_OBJECT)) {
+      sbtns->mainb = CXT_OBJECT;
     }
     else {
-      sbuts->mainb = BCONTEXT_SCENE;
+      sbtns->mainb = CXT_SCENE;
     }
   }
 
-  if (buttons_shading_context(C, sbuts->mainb)) {
-    sbuts->flag |= SB_SHADING_CONTEXT;
+  if (btns_shading_cxt(C, sbtns->mainb)) {
+    sbtns->flag |= SB_SHADING_CXT;
   }
   else {
-    sbuts->flag &= ~SB_SHADING_CONTEXT;
+    sbtns->flag &= ~SB_SHADING_CXT;
   }
 
-  sbuts->pathflag = flag;
+  sbtns->pathflag = flag;
 }
 
-static bool is_pointer_in_path(ButsContextPath *path, PointerRNA *ptr)
+static bool is_ptr_in_path(BtnsCxtPath *path, ApiPtr *ptr)
 {
   for (int i = 0; i < path->len; ++i) {
     if (ptr->owner_id == path->ptr[i].owner_id) {
@@ -765,13 +765,13 @@ static bool is_pointer_in_path(ButsContextPath *path, PointerRNA *ptr)
   return false;
 }
 
-bool ED_buttons_should_sync_with_outliner(const bContext *C,
-                                          const SpaceProperties *sbuts,
-                                          ScrArea *area)
+bool ed_btns_should_sync_with_outliner(const Cxt *C,
+                                       const SpaceProps *sbtns,
+                                       ScrArea *area)
 {
-  ScrArea *active_area = CTX_wm_area(C);
-  const bool auto_sync = ED_area_has_shared_border(active_area, area) &&
-                         sbuts->outliner_sync == PROPERTIES_SYNC_AUTO;
+  ScrArea *active_area = cxt_wm_area(C);
+  const bool auto_sync = ed_area_has_shared_border(active_area, area) &&
+                         sbuts->outliner_sync == PROPS_SYNC_AUTO;
   return auto_sync || sbuts->outliner_sync == PROPERTIES_SYNC_ALWAYS;
 }
 
