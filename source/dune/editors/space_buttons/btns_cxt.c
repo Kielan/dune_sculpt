@@ -105,7 +105,7 @@ static bool btns_cxt_path_view_layer(BtnsCxtPath *path, wmWindow *win)
 }
 
 /* NOTE: this function can return true without adding a world to the path
- * so the buttons stay visible, but be sure to check the ID type if a ID_WO */
+ * so the btns stay visible, but be sure to check the ID type if a ID_WO */
 static bool btns_cxt_path_world(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
@@ -132,8 +132,8 @@ static bool btns_cxt_path_world(BtnsCxtPath *path)
   return false;
 }
 
-static bool btns_cxt_path_collection(const Ctx *C,
-                                     BtnsCtxPath *path,
+static bool btns_cxt_path_collection(const Cxt *C,
+                                     BtnsCxtPath *path,
                                      wmWindow *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
@@ -143,10 +143,10 @@ static bool btns_cxt_path_collection(const Ctx *C,
     return true;
   }
 
-  Scene *scene = ctx_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* if we have a view layer, use the view layer's active collection */
-  if (buttons_context_path_view_layer(path, window)) {
+  if (btns_cxt_path_view_layer(path, window)) {
     ViewLayer *view_layer = path->ptr[path->len - 1].data;
     Collection *c = view_layer->active_collection->collection;
 
@@ -166,7 +166,7 @@ static bool btns_cxt_path_collection(const Ctx *C,
   return false;
 }
 
-static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
+static bool btns_cxt_path_linestyle(BtnsCxtPath *path, wmWindow *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -175,7 +175,7 @@ static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
     return true;
   }
   /* if we have a view layer, use the lineset's linestyle */
-  if (btns_ctx_path_view_layer(path, window)) {
+  if (btns_cxt_path_view_layer(path, window)) {
     ViewLayer *view_layer = path->ptr[path->len - 1].data;
     FreestyleLineStyle *linestyle = dune_linestyle_active_from_view_layer(view_layer);
     if (linestyle) {
@@ -189,7 +189,7 @@ static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
   return false;
 }
 
-static bool btns_ctx_path_object(BtnsCtxPath *path)
+static bool btns_cxt_path_object(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -215,7 +215,7 @@ static bool btns_ctx_path_object(BtnsCtxPath *path)
   return false;
 }
 
-static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
+static bool btns_cxt_path_data(BtnsCxtPath *path, int type)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -265,7 +265,7 @@ static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
     return true;
   }
   /* try to get an object in the path, no pinning supported here */
-  if (btns_ctx_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ob && (ELEM(type, -1, ob->type))) {
@@ -280,9 +280,9 @@ static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
   return false;
 }
 /* path modifier */
-static bool btns_ctx_path_mod(BtnsCtxPath *path)
+static bool btns_cxt_path_mod(BtnsCxtPath *path)
 {
-  if (btns_ctx_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ELEM(ob->type,
@@ -295,9 +295,9 @@ static bool btns_ctx_path_mod(BtnsCtxPath *path)
              OB_CURVES,
              OB_POINTCLOUD,
              OB_VOLUME)) {
-      ModifierData *md = dune_object_active_modifier(ob);
+      ModData *md = dune_object_active_mod(ob);
       if (md != NULL) {
-        api_ptr_create(&ob->id, &ApiModifier, md, &path->ptr[path->len]);
+        api_ptr_create(&ob->id, &ApiMod, md, &path->ptr[path->len]);
         path->len++;
       }
 
@@ -308,12 +308,12 @@ static bool btns_ctx_path_mod(BtnsCtxPath *path)
   return false;
 }
 
-static bool buttons_ctx_path_shaderfx(BtnsCtxPath *path)
+static bool btns_cxt_path_shaderfx(BtnsCxtPath *path)
 {
-  if (btns_ctx_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
-    if (ob && ELEM(ob->type, OB_GPENCIL)) {
+    if (ob && ELEM(ob->type, OB_PEN)) {
       return true;
     }
   }
@@ -321,7 +321,7 @@ static bool buttons_ctx_path_shaderfx(BtnsCtxPath *path)
   return false;
 }
 
-static bool btns_ctx_path_material(BtnsCtxPath *path)
+static bool btns_cxt_path_material(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -330,11 +330,11 @@ static bool btns_ctx_path_material(BtnsCtxPath *path)
     return true;
   }
   /* if we have an object, use the object material slot */
-  if (buttons_context_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ob && OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
-      Material *ma = BKE_object_material_get(ob, ob->actcol);
+      Material *ma = dune_object_material_get(ob, ob->actcol);
       if (ma != NULL) {
         api_id_ptr_create(&ma->id, &path->ptr[path->len]);
         path->len++;
@@ -347,23 +347,23 @@ static bool btns_ctx_path_material(BtnsCtxPath *path)
   return false;
 }
 
-static bool buttons_context_path_bone(ButsContextPath *path)
+static bool btns_cxt_path_bone(BtnsCxtPath *path)
 {
   /* if we have an armature, get the active bone */
-  if (buttons_context_path_data(path, OB_ARMATURE)) {
-    bArmature *arm = path->ptr[path->len - 1].data;
+  if (btns_cxt_path_data(path, OB_ARMATURE)) {
+    Armature *arm = path->ptr[path->len - 1].data;
 
     if (arm->edbo) {
       if (arm->act_edbone) {
         EditBone *edbo = arm->act_edbone;
-        RNA_pointer_create(&arm->id, &RNA_EditBone, edbo, &path->ptr[path->len]);
+        api_ptr_create(&arm->id, &ApiEditBone, edbo, &path->ptr[path->len]);
         path->len++;
         return true;
       }
     }
     else {
       if (arm->act_bone) {
-        RNA_pointer_create(&arm->id, &RNA_Bone, arm->act_bone, &path->ptr[path->len]);
+        api_ptr_create(&arm->id, &ApiBone, arm->act_bone, &path->ptr[path->len]);
         path->len++;
         return true;
       }
@@ -374,28 +374,28 @@ static bool buttons_context_path_bone(ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_pose_bone(ButsContextPath *path)
+static bool btns_cxt_path_pose_bone(BtnsCxtPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) PoseBone, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_PoseBone)) {
+  if (api_struct_is_a(ptr->type, &ApiPoseBone)) {
     return true;
   }
 
   /* if we have an armature, get the active bone */
-  if (buttons_context_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
-    bArmature *arm = ob->data; /* path->ptr[path->len-1].data - works too */
+    Armature *arm = ob->data; /* path->ptr[path->len-1].data - works too */
 
     if (ob->type != OB_ARMATURE || arm->edbo) {
       return false;
     }
 
     if (arm->act_bone) {
-      bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, arm->act_bone->name);
+      PoseChannel *pchan = dune_pose_channel_find_name(ob->pose, arm->act_bone->name);
       if (pchan) {
-        RNA_pointer_create(&ob->id, &RNA_PoseBone, pchan, &path->ptr[path->len]);
+        api_ptr_create(&ob->id, &ApiPoseBone, pchan, &path->ptr[path->len]);
         path->len++;
         return true;
       }
@@ -406,22 +406,22 @@ static bool buttons_context_path_pose_bone(ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_particle(ButsContextPath *path)
+static bool btns_cxt_path_particle(BtnsCxtPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have (pinned) particle settings, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_ParticleSettings)) {
+  if (api_struct_is_a(ptr->type, &ApiParticleSettings)) {
     return true;
   }
   /* if we have an object, get the active particle system */
-  if (buttons_context_path_object(path)) {
+  if (btns_cxt_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ob && ob->type == OB_MESH) {
       ParticleSystem *psys = psys_get_current(ob);
 
-      RNA_pointer_create(&ob->id, &RNA_ParticleSystem, psys, &path->ptr[path->len]);
+      api_ptr_create(&ob->id, &ApiParticleSystem, psys, &path->ptr[path->len]);
       path->len++;
       return true;
     }
@@ -431,21 +431,21 @@ static bool buttons_context_path_particle(ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_brush(const bContext *C, ButsContextPath *path)
+static bool btns_cxt_path_brush(const Cxt *C, BtnsCxtPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) brush, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_Brush)) {
+  if (api_struct_is_a(ptr->type, &ApiBrush)) {
     return true;
   }
   /* if we have a scene, use the toolsettings brushes */
-  if (buttons_context_path_scene(path)) {
+  if (btns_cxt_path_scene(path)) {
     Scene *scene = path->ptr[path->len - 1].data;
 
     Brush *br = NULL;
     if (scene) {
-      wmWindow *window = ctx_wm_window(C);
+      wmWindow *window = cxt_wm_window(C);
       ViewLayer *view_layer = wm_window_get_active_view_layer(window);
       br = dune_paint_brush(dune_paint_get_active(scene, view_layer));
     }
@@ -462,9 +462,9 @@ static bool buttons_context_path_brush(const bContext *C, ButsContextPath *path)
   return false;
 }
 
-static bool btns_ctx_path_texture(const Ctx *C,
-                                  BtnsCtxPath *path,
-                                  BtnsCtxTexture *ct)
+static bool btns_cxt_path_texture(const Cxt *C,
+                                  BtnsCxtPath *path,
+                                  BtnsCxtTexture *ct)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -485,21 +485,21 @@ static bool btns_ctx_path_texture(const Ctx *C,
 
   if (id) {
     if (GS(id->name) == ID_BR) {
-      buttons_context_path_brush(C, path);
+      btns_cxt_path_brush(C, path);
     }
     else if (GS(id->name) == ID_PA) {
-      buttons_context_path_particle(path);
+      btns_cxt_path_particle(path);
     }
     else if (GS(id->name) == ID_OB) {
-      buttons_context_path_object(path);
+      btns_cxt_path_object(path);
     }
     else if (GS(id->name) == ID_LS) {
-      buttons_context_path_linestyle(path, CTX_wm_window(C));
+      btns_cxt_path_linestyle(path, cxt_wm_window(C));
     }
   }
 
   if (ct->texture) {
-    RNA_id_pointer_create(&ct->texture->id, &path->ptr[path->len]);
+    api_id_ptr_create(&ct->texture->id, &path->ptr[path->len]);
     path->len++;
   }
 
@@ -507,10 +507,10 @@ static bool btns_ctx_path_texture(const Ctx *C,
 }
 
 #ifdef WITH_FREESTYLE
-static bool buttons_context_linestyle_pinnable(const bContext *C, ViewLayer *view_layer)
+static bool btns_cxt_linestyle_pinnable(const Cxt *C, ViewLayer *view_layer)
 {
-  wmWindow *window = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(window);
+  wmWindow *window = cxt_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(window);
 
   /* if Freestyle is disabled in the scene */
   if ((scene->r.mode & R_EDGE_FRS) == 0) {
@@ -522,20 +522,20 @@ static bool buttons_context_linestyle_pinnable(const bContext *C, ViewLayer *vie
     return false;
   }
   /* if the scene has already been pinned */
-  SpaceProperties *sbuts = ctx_wm_space_properties(C);
-  if (sbuts->pinid && sbuts->pinid == &scene->id) {
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  if (sbtns->pinid && sbtns->pinid == &scene->id) {
     return false;
   }
   return true;
 }
 #endif
 
-static bool btns_ctx_path(
-    const Ctx *C, SpaceProps *sbtns, BtnsCtxPath *path, int mainb, int flag)
+static bool btns_cxt_path(
+    const Cxt *C, SpaceProps *sbtns, BtnsCxtPath *path, int mainb, int flag)
 {
   /* Note we don't use ctx_data here, instead we get it from the window.
    * Otherwise there is a loop reading the context that we are setting. */
-  wmWindow *window = ctx_wm_window(C);
+  wmWindow *window = cxt_wm_window(C);
   Scene *scene = wm_window_get_active_scene(window);
   ViewLayer *view_layer = wm_window_get_active_view_layer(window);
 
@@ -544,23 +544,23 @@ static bool btns_ctx_path(
 
   /* If some ID datablock is pinned, set the root pointer. */
   if (sbuts->pinid) {
-    ID *id = sbuts->pinid;
+    Id *id = sbtns->pinid;
 
-    RNA_id_pointer_create(id, &path->ptr[0]);
+    api_id_ptr_create(id, &path->ptr[0]);
     path->len++;
   }
   /* No pinned root, use scene as initial root. */
-  else if (mainb != BCONTEXT_TOOL) {
-    RNA_id_pointer_create(&scene->id, &path->ptr[0]);
+  else if (mainb != CXT_TOOL) {
+    api_id_ptr_create(&scene->id, &path->ptr[0]);
     path->len++;
 
     if (!ELEM(mainb,
-              BCONTEXT_SCENE,
-              BCONTEXT_RENDER,
-              BCONTEXT_OUTPUT,
-              BCONTEXT_VIEW_LAYER,
-              BCONTEXT_WORLD)) {
-      RNA_pointer_create(NULL, &RNA_ViewLayer, view_layer, &path->ptr[path->len]);
+              CXT_SCENE,
+              CXT_RENDER,
+              CXT_OUTPUT,
+              CXT_VIEW_LAYER,
+              CXT_WORLD)) {
+      api_ptr_create(NULL, &ApiViewLayer, view_layer, &path->ptr[path->len]);
       path->len++;
     }
   }
@@ -569,46 +569,46 @@ static bool btns_ctx_path(
    * tracing back recursively */
   bool found;
   switch (mainb) {
-    case BCONTEXT_SCENE:
-    case BCONTEXT_RENDER:
-    case BCONTEXT_OUTPUT:
-      found = buttons_context_path_scene(path);
+    case CXT_SCENE:
+    case CXT_RENDER:
+    case CXT_OUTPUT:
+      found = btns_cxt_path_scene(path);
       break;
-    case BCONTEXT_VIEW_LAYER:
+    case CXT_VIEW_LAYER:
 #ifdef WITH_FREESTYLE
-      if (buttons_context_linestyle_pinnable(C, view_layer)) {
-        found = buttons_context_path_linestyle(path, window);
+      if (btns_cxt_linestyle_pinnable(C, view_layer)) {
+        found = btns_cxt_path_linestyle(path, window);
         if (found) {
           break;
         }
       }
 #endif
-      found = buttons_context_path_view_layer(path, window);
+      found = btns_cxt_path_view_layer(path, window);
       break;
-    case BCONTEXT_WORLD:
-      found = buttons_context_path_world(path);
+    case CXT_WORLD:
+      found = btns_cxt_path_world(path);
       break;
-    case BCONTEXT_COLLECTION: /* This is for Line Art collection flags */
-      found = buttons_context_path_collection(C, path, window);
+    case CXT_COLLECTION: /* This is for Line Art collection flags */
+      found = btns_cxt_path_collection(C, path, window);
       break;
-    case BCONTEXT_TOOL:
+    case CXT_TOOL:
       found = true;
       break;
-    case BCONTEXT_OBJECT:
-    case BCONTEXT_PHYSICS:
-    case BCONTEXT_CONSTRAINT:
-      found = buttons_context_path_object(path);
+    case CXT_OBJECT:
+    case CXT_PHYS:
+    case CXT_CONSTRAINT:
+      found = btns_cxt_path_object(path);
       break;
-    case BCONTEXT_MODIFIER:
-      found = buttons_context_path_modifier(path);
+    case CXT_MOD:
+      found = btns_cxt_path_mod(path);
       break;
-    case BCONTEXT_SHADERFX:
-      found = buttons_context_path_shaderfx(path);
+    case CXT_SHADERFX:
+      found = btns_cxt_path_shaderfx(path);
       break;
-    case BCONTEXT_DATA:
-      found = buttons_context_path_data(path, -1);
+    case CXT_DATA:
+      found = btns_cxt_path_data(path, -1);
       break;
-    case BCONTEXT_PARTICLE:
+    case CXT_PARTICLE:
       found = buttons_context_path_particle(path);
       break;
     case BCONTEXT_MATERIAL:
