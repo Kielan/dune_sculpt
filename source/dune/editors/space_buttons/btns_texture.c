@@ -3,11 +3,11 @@
 
 #include "mem_guardedalloc.h"
 
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "i18n_translation.h"
+#include "lang.h"
 
 #include "types_id.h"
 #include "types_brush.h"
@@ -19,13 +19,13 @@
 #include "types_scene.h"
 #include "types_screa.h"
 #include "types_space.h"
-#include "types_windowmanager.h"
+#include "types_wm.h"
 
-#include "dune_context.h"
-#include "dune_pen_modifier.h"
+#include "dune_cxt.h"
+#include "dune_pen_mod.h"
 #include "dune_layer.h"
 #include "dune_linestyle.h"
-#include "dune_modifier.h"
+#include "dune_mod.h"
 #include "dune_node.h"
 #include "dune_paint.h"
 #include "dune_particle.h"
@@ -46,14 +46,14 @@
 
 #include "../interface/interface_intern.h"
 
-#include "buttons_intern.h" /* own include */
+#include "btns_intern.h" /* own include */
 
-static ScrArea *find_area_props(const Ctx *C);
-static SpaceProps *find_space_props(const Ctx *C);
+static ScrArea *find_area_props(const Cxt *C);
+static SpaceProps *find_space_props(const Cxt *C);
 
 /************************* Texture User **************************/
 
-static void btns_texture_user_socket_prop_add(ListBase *users,
+static void btns_texture_user_socket_prop_add(List *users,
                                               Id *id,
                                               ApiPtr ptr,
                                               ApiProp *prop,
@@ -75,12 +75,12 @@ static void btns_texture_user_socket_prop_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = lib_listbase_count(users);
+  user->index = lib_list_count(users);
 
   lib_addtail(users, user);
 }
 
-static void btns_texture_user_prop_add(ListBase *users,
+static void btns_texture_user_prop_add(List *users,
                                        Id *id,
                                        ApiPtr ptr,
                                        ApiProp *prop,
@@ -96,18 +96,18 @@ static void btns_texture_user_prop_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = lib_listbase_count(users);
+  user->index = lib_list_count(users);
 
   lib_addtail(users, user);
 }
 
-static void btns_texture_user_node_add(ListBase *users,
-                                          Id *id,
-                                          NodeTree *ntree,
-                                          Node *node,
-                                          const char *category,
-                                          int icon,
-                                          const char *name)
+static void btns_texture_user_node_add(List *users,
+                                       Id *id,
+                                       NodeTree *ntree,
+                                       Node *node,
+                                       const char *category,
+                                       int icon,
+                                       const char *name)
 {
   BtnsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
 
@@ -117,12 +117,12 @@ static void btns_texture_user_node_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = lib_listbase_count(users);
+  user->index = lib_list_count(users);
 
   lib_addtail(users, user);
 }
 
-static void btns_texture_users_find_nodetree(ListBase *users,
+static void btns_texture_users_find_nodetree(List *users,
                                              Id *id,
                                              NodeTree *ntree,
                                              const char *category)
@@ -148,20 +148,20 @@ static void btns_texture_users_find_nodetree(ListBase *users,
   }
 }
 
-static void btns_texture_modifier_geonodes_users_add(Object *ob,
-                                                     NodesModifierData *nmd,
-                                                     NodeTree *node_tree,
-                                                     ListBase *users)
+static void btns_texture_mod_geonodes_users_add(Object *ob,
+                                                NodesModData *nmd,
+                                                NodeTree *node_tree,
+                                                List *users)
 {
   ApiPtr ptr;
   ApiProp *prop;
 
-  LISTBASE_FOREACH (Node *, node, &node_tree->nodes) {
+  LIST_FOREACH (Node *, node, &node_tree->nodes) {
     if (node->type == NODE_GROUP && node->id) {
       /* Recurse into the node group */
-      btns_texture_modifier_geonodes_users_add(ob, nmd, (NodeTree *)node->id, users);
+      btns_texture_mod_geonodes_users_add(ob, nmd, (NodeTree *)node->id, users);
     }
-    LISTBASE_FOREACH (NodeSocket *, socket, &node->inputs) {
+    LIST_FOREACH (NodeSocket *, socket, &node->inputs) {
       if (socket->flag & SOCK_UNAVAIL) {
         continue;
       }
@@ -183,21 +183,21 @@ static void btns_texture_modifier_geonodes_users_add(Object *ob,
                                           socket,
                                           N_("Geometry Nodes"),
                                           api_struct_ui_icon(ptr.type),
-                                          nmd->modifier.name);
+                                          nmd->mod.name);
       }
     }
   }
 }
 
-static void btns_texture_modifier_foreach(void *userData,
-                                          Object *ob,
-                                          ModData *md,
-                                          const char *propname)
+static void btns_texture_mod_foreach(void *userData,
+                                     Object *ob,
+                                     ModData *md,
+                                     const char *propname)
 {
-  ListBase *users = userData;
+  List *users = userData;
 
   if (md->type == eModType_Nodes) {
-    NodesModifierData *nmd = (NodesModData *)md;
+    NodesModData *nmd = (NodesModData *)md;
     if (nmd->node_group != NULL) {
       btns_texture_mod_geonodes_users_add(ob, nmd, nmd->node_group, users);
     }
@@ -206,22 +206,22 @@ static void btns_texture_modifier_foreach(void *userData,
     ApiPtr ptr;
     ApiProp *prop;
 
-    api_ptr_create(&ob->id, &api_Modifier, md, &ptr);
+    api_ptr_create(&ob->id, &api_Mod, md, &ptr);
     prop = api_struct_find_prop(&ptr, propname);
 
     btns_texture_user_prop_add(
-        users, &ob->id, ptr, prop, N_("Modifiers"), api_struct_ui_icon(ptr.type), md->name);
+        users, &ob->id, ptr, prop, N_("Mods"), api_struct_ui_icon(ptr.type), md->name);
   }
 }
 
-static void btns_texture_modifier_gpencil_foreach(void *userData,
+static void btns_texture_mod_pen_foreach(void *userData,
                                                   Object *ob,
                                                   PenModData *md,
                                                   const char *propname)
 {
   ApiPtr ptr;
   PropApi *prop;
-  ListBase *users = userData;
+  List *users = userData;
 
   api_ptr_create(&ob->id, &ApiPenMod, md, &ptr);
   prop = api_struct_find_prop(&ptr, propname);
@@ -230,14 +230,14 @@ static void btns_texture_modifier_gpencil_foreach(void *userData,
                              &ob->id,
                              ptr,
                              prop,
-                             N_("Pen Modifiers"),
+                             N_("Pen Mods"),
                              api_struct_ui_icon(ptr.type),
                              md->name);
 }
 
-static void btns_texture_users_from_ctx(ListBase *users,
-                                               const dContext *C,
-                                               SpaceProperties *sbuts)
+static void btns_texture_users_from_cxt(List *users,
+                                        const Cxt *C,
+                                        SpaceProps *sbtns)
 {
   Scene *scene = NULL;
   Object *ob = NULL;
@@ -263,22 +263,22 @@ static void btns_texture_users_from_ctx(ListBase *users,
   }
 
   if (!scene) {
-    scene = ctx_data_scene(C);
+    scene = cxt_data_scene(C);
   }
 
   const ID_Type id_type = pinid != NULL ? GS(pinid->name) : -1;
   if (!pinid || id_type == ID_SCE) {
-    wmWindow *win = ctx_wm_window(C);
+    wmWindow *win = cxt_wm_window(C);
     ViewLayer *view_layer = (win->scene == scene) ? wm_window_get_active_view_layer(win) :
                                                     dune_view_layer_default_view(scene);
 
-    brush = dune_paint_brush(dune_paint_get_active_from_context(C));
+    brush = dune_paint_brush(dune_paint_get_active_from_cxt(C));
     linestyle = dune_linestyle_active_from_view_layer(view_layer);
     ob = OBACT(view_layer);
   }
 
   /* fill users */
-  lib_listbase_clear(users);
+  lib_list_clear(users);
 
   if (linestyle && !limited_mode) {
     btns_texture_users_find_nodetree(
@@ -291,9 +291,9 @@ static void btns_texture_users_from_ctx(ListBase *users,
     int a;
 
     /* modifiers */
-    dune_mods_foreach_tex_link(ob, btns_texture_modifier_foreach, users);
+    dune_mods_foreach_tex_link(ob, btns_texture_mod_foreach, users);
 
-    /* grease pencil modifiers */
+    /* pen mods */
     dune_pen_mods_foreach_tex_link(ob, btns_texture_mod_pen_foreach, users);
 
     /* particle systems */
@@ -353,11 +353,11 @@ static void btns_texture_users_from_ctx(ListBase *users,
   }
 }
 
-void btns_texture_ctx_compute(const Ctx *C, SpaceProps *sbuts)
+void btns_texture_cxt_compute(const Cxt *C, SpaceProps *sbtns)
 {
   /* gather available texture users in context. runs on every draw of
-   * properties editor, before the buttons are created. */
-  BtnsCtxTexture *ct = sbtns->texuser;
+   * props editor, before the buttons are created. */
+  BtnsCxtTexture *ct = sbtns->texuser;
   Id *pinid = sbuts->pinid;
 
   if (!ct) {
@@ -376,7 +376,7 @@ void btns_texture_ctx_compute(const Ctx *C, SpaceProps *sbuts)
   }
   else {
     /* set one user as active based on active index */
-    if (ct->index >= lib_listbase_count_at_most(&ct->users, ct->index + 1)) {
+    if (ct->index >= lib_list_count_at_most(&ct->users, ct->index + 1)) {
       ct->index = 0;
     }
 
@@ -404,7 +404,7 @@ void btns_texture_ctx_compute(const Ctx *C, SpaceProps *sbuts)
         ApiPtr texptr;
         Tex *tex;
 
-        /* Get texture datablock pointer if it's a property. */
+        /* Get texture datablock ptr if it's a prop. */
         texptr = api_prop_ptr_get(&ct->user->ptr, ct->user->prop);
         tex = (api_struct_is_a(texptr.type, &api_Texture)) ? texptr.data : NULL;
 
@@ -414,7 +414,7 @@ void btns_texture_ctx_compute(const Ctx *C, SpaceProps *sbuts)
   }
 }
 
-static void template_texture_select(Ctx *C, void *user_p, void *UNUSED(arg))
+static void template_texture_select(Cxt *C, void *user_p, void *UNUSED(arg))
 {
   /* callback when selecting a texture user in the menu */
   SpaceProps *sbtns = find_space_props(C);
@@ -429,11 +429,11 @@ static void template_texture_select(Ctx *C, void *user_p, void *UNUSED(arg))
 
   /* set user as active */
   if (user->node) {
-    ed_node_set_active(ctx_data_main(C), NULL, user->ntree, user->node, NULL);
+    ed_node_set_active(cxt_data_main(C), NULL, user->ntree, user->node, NULL);
     ct->texture = NULL;
 
     /* Not totally sure if we should also change selection? */
-    LISTBASE_FOREACH (Node *, node, &user->ntree->nodes) {
+    LIST_FOREACH (Node *, node, &user->ntree->nodes) {
       nodeSetSelected(node, false);
     }
     nodeSetSelected(user->node, true);
@@ -458,7 +458,7 @@ static void template_texture_select(Ctx *C, void *user_p, void *UNUSED(arg))
       }
     }
 
-    if (sbuts && tex) {
+    if (sbtns && tex) {
       sbtns->preview = 1;
     }
   }
@@ -467,10 +467,10 @@ static void template_texture_select(Ctx *C, void *user_p, void *UNUSED(arg))
   ct->index = user->index;
 }
 
-static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(arg))
+static void template_texture_user_menu(Cxt *C, uiLayout *layout, void *UNUSED(arg))
 {
   /* callback when opening texture user selection menu, to create buttons. */
-  SpaceProps *sbtns = ctx_wm_space_props(C);
+  SpaceProps *sbtns = cxt_wm_space_props(C);
   BtnsCtxTexture *ct = sbtns->texuser;
   BtnsTextureUser *user;
   uiBlock *block = uiLayoutGetBlock(layout);
@@ -503,7 +503,7 @@ static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(ar
       lib_snprintf(name, UI_MAX_NAME_STR, "  %s", user->name);
     }
 
-    but = uiDefIconTextBtn(block,
+    btn = uiDefIconTextBtn(block,
                            UI_BTYPE_BTN,
                            0,
                            user->icon,
@@ -526,13 +526,13 @@ static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(ar
   ui_block_flag_enable(block, UI_BLOCK_NO_FLIP);
 }
 
-void uiTemplateTextureUser(uiLayout *layout, Ctx *C)
+void uiTemplateTextureUser(uiLayout *layout, Cxt *C)
 {
   /* Texture user selection drop-down menu. the available users have been
-   * gathered before drawing in #ButsContextTexture, we merely need to
+   * gathered before drawing in BtsnCxtTexture, we merely need to
    * display the current item. */
-  SpaceProps *sbtns = ctx_wm_space_props(C);
-  BtnsCtxTexture *ct = (sbtns) ? sbtns->texuser : NULL;
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  BtnsCxtTexture *ct = (sbtns) ? sbtns->texuser : NULL;
   uiBlock *block = uiLayoutGetBlock(layout);
   uiBtn *btn;
   BtnsTextureUser *user;
@@ -577,8 +577,7 @@ void uiTemplateTextureUser(uiLayout *layout, Ctx *C)
 }
 
 /************************* Texture Show **************************/
-
-static ScrArea *find_area_props(const Ctx *C)
+static ScrArea *find_area_props(const Cxt *C)
 {
   Screen *screen = ctx_wm_screen(C);
   Object *ob = ctx_data_active_object(C);
