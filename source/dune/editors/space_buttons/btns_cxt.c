@@ -3,10 +3,10 @@
 
 #include "mem_guardedalloc.h"
 
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_utildefines.h"
 
-#include "i18n_translation.h"
+#include "lang.h"
 
 #include "types_armature.h"
 #include "types_brush.h"
@@ -24,7 +24,7 @@
 #include "dune_layer.h"
 #include "dune_linestyle.h"
 #include "dune_material.h"
-#include "dune_modifier.h"
+#include "dune_mod.h"
 #include "dune_object.h"
 #include "dune_paint.h"
 #include "dune_particle.h"
@@ -33,32 +33,32 @@
 #include "api_access.h"
 #include "api_prototypes.h"
 
-#include "ED_buttons.h"
-#include "ED_physics.h"
-#include "ED_screen.h"
+#include "ed_btns.h"
+#include "ed_phys.h"
+#include "ed_screen.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
 #include "wm_api.h"
 
-#include "buttons_intern.h" /* own include */
+#include "btns_intern.h" /* own include */
 
-static int set_ptr_type(BtnsCtxPath *path, CtxDataResult *result, ApiStruct *type)
+static int set_ptr_type(BtnsCxtPath *path, CxtDataResult *result, ApiStruct *type)
 {
   for (int i = 0; i < path->len; i++) {
     ApiPtr *ptr = &path->ptr[i];
 
     if (api_struct_is_a(ptr->type, type)) {
-      ctx_data_ptr_set_ptr(result, ptr);
-      return CTX_RESULT_OK;
+      cxt_data_ptr_set_ptr(result, ptr);
+      return CXT_RESULT_OK;
     }
   }
 
-  return CTX_RESULT_MEMBER_NOT_FOUND;
+  return CXT_RESULT_MEMBER_NOT_FOUND;
 }
 
-static ApiPtr *get_ptr_type(BtnsCtxPath *path, ApiStruct *type)
+static ApiPtr *get_ptr_type(BtnsCxtPath *path, ApiStruct *type)
 {
   for (int i = 0; i < path->len; i++) {
     ApiPtr *ptr = &path->ptr[i];
@@ -73,7 +73,7 @@ static ApiPtr *get_ptr_type(BtnsCtxPath *path, ApiStruct *type)
 
 /************************* Creating the Path ************************/
 
-static bool btns_ctx_path_scene(BtnsCtxPath *path)
+static bool btns_cxt_path_scene(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -81,22 +81,22 @@ static bool btns_ctx_path_scene(BtnsCtxPath *path)
   return api_struct_is_a(ptr->type, &ApiScene);
 }
 
-static bool btns_ctx_path_view_layer(BtnsCtxPath *path, wmWindow *win)
+static bool btns_cxt_path_view_layer(BtnsCxtPath *path, wmWindow *win)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* View Layer may have already been resolved in a previous call
-   * (e.g. in buttons_context_path_linestyle). */
-  if (api_struct_is_a(ptr->type, &RNA_ViewLayer)) {
+   * (e.g. in btns_cxt_path_linestyle). */
+  if (api_struct_is_a(ptr->type, &ApiViewLayer)) {
     return true;
   }
 
-  if (buttons_context_path_scene(path)) {
+  if (btns_cxt_path_scene(path)) {
     Scene *scene = path->ptr[path->len - 1].data;
-    ViewLayer *view_layer = (win->scene == scene) ? WM_window_get_active_view_layer(win) :
-                                                    BKE_view_layer_default_view(scene);
+    ViewLayer *view_layer = (win->scene == scene) ? wm_window_get_active_view_layer(win) :
+                                                    dune_view_layer_default_view(scene);
 
-    api_ptr_create(&scene->id, &RNA_ViewLayer, view_layer, &path->ptr[path->len]);
+    api_ptr_create(&scene->id, &ApiViewLayer, view_layer, &path->ptr[path->len]);
     path->len++;
     return true;
   }
@@ -106,7 +106,7 @@ static bool btns_ctx_path_view_layer(BtnsCtxPath *path, wmWindow *win)
 
 /* NOTE: this function can return true without adding a world to the path
  * so the buttons stay visible, but be sure to check the ID type if a ID_WO */
-static bool btns_ctx_path_world(BtnsCtxPath *path)
+static bool btns_cxt_path_world(BtnsCxtPath *path)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -115,7 +115,7 @@ static bool btns_ctx_path_world(BtnsCtxPath *path)
     return true;
   }
   /* if we have a scene, use the scene's world */
-  if (buttons_context_path_scene(path)) {
+  if (btns_cxt_path_scene(path)) {
     Scene *scene = path->ptr[path->len - 1].data;
     World *world = scene->world;
 
@@ -132,7 +132,7 @@ static bool btns_ctx_path_world(BtnsCtxPath *path)
   return false;
 }
 
-static bool btns_ctx_path_collection(const Ctx *C,
+static bool btns_cxt_path_collection(const Ctx *C,
                                      BtnsCtxPath *path,
                                      wmWindow *window)
 {
