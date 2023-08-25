@@ -20,7 +20,7 @@
 
 #include "dune_action.h"
 #include "dune_armature.h"
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_layer.h"
 #include "dune_linestyle.h"
 #include "dune_material.h"
@@ -887,72 +887,72 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "armature")) {
-    set_pointer_type(path, result, &ApiArmature);
+    set_ptr_type(path, result, &ApiArmature);
     return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "lattice")) {
-    set_ptr_type(path, result, ApiLattice);
-    return CTX_RESULT_OK;
+    set_ptr_type(path, result, &ApiLattice);
+    return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "curve")) {
     set_ptr_type(path, result, &ApiCurve);
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
   if cxt_data_equals(member, "meta_ball")) {
-    set_pointer_type(path, result, &RNA_MetaBall);
-    return CTX_RESULT_OK;
+    set_ptr_type(path, result, &ApiMetaBall);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "light")) {
-    set_pointer_type(path, result, &RNA_Light);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "light")) {
+    set_ptr_type(path, result, &ApiLight);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "camera")) {
-    set_pointer_type(path, result, &RNA_Camera);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "camera")) {
+    set_ptr_type(path, result, &ApiCamera);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "speaker")) {
-    set_pointer_type(path, result, &RNA_Speaker);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "speaker")) {
+    set_ptr_type(path, result, &ApiSpeaker);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "lightprobe")) {
-    set_pointer_type(path, result, &RNA_LightProbe);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "lightprobe")) {
+    set_ptr_type(path, result, &ApiLightProbe);
+    return CXT_RESULT_OK;
   }
 #ifdef WITH_NEW_CURVES_TYPE
-  if (CTX_data_equals(member, "curves")) {
-    set_pointer_type(path, result, &RNA_Curves);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "curves")) {
+    set_ptr_type(path, result, &ApiCurves);
+    return CXT_RESULT_OK;
   }
 #endif
 #ifdef WITH_POINT_CLOUD
-  if (CTX_data_equals(member, "pointcloud")) {
-    set_pointer_type(path, result, &RNA_PointCloud);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "pointcloud")) {
+    set_ptr_type(path, result, &ApiPointCloud);
+    return CXT_RESULT_OK;
   }
 #endif
-  if (CTX_data_equals(member, "volume")) {
-    set_pointer_type(path, result, &RNA_Volume);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "volume")) {
+    set_ptr_type(path, result, &ApiVolume);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "material")) {
-    set_pointer_type(path, result, &RNA_Material);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "material")) {
+    set_ptr_type(path, result, &ApiMaterial);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "texture")) {
-    ButsContextTexture *ct = sbuts->texuser;
+  if (cxt_data_equals(member, "texture")) {
+    BtnsCxtTexture *ct = sbtns->texuser;
 
     if (ct) {
       if (ct->texture == NULL) {
-        return CTX_RESULT_NO_DATA;
+        return CXT_RESULT_NO_DATA;
       }
 
-      CTX_data_pointer_set(result, &ct->texture->id, &RNA_Texture, ct->texture);
+      cxt_data_ptr_set(result, &ct->texture->id, &ApiTexture, ct->texture);
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "material_slot")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
+  if (cxt_data_equals(member, "material_slot")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr) {
       Object *ob = ptr->data;
@@ -963,211 +963,211 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
         if (matnr < 0) {
           matnr = 0;
         }
-        /* Keep aligned with rna_Object_material_slots_get. */
-        CTX_data_pointer_set(
-            result, &ob->id, &RNA_MaterialSlot, (void *)(matnr + (uintptr_t)&ob->id));
+        /* Keep aligned with api_Object_material_slots_get. */
+        cxt_data_ptr_set(
+            result, &ob->id, &ApiMaterialSlot, (void *)(matnr + (uintptr_t)&ob->id));
       }
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "texture_user")) {
-    ButsContextTexture *ct = sbuts->texuser;
+  if (cxt_data_equals(member, "texture_user")) {
+    BtnsCxtTexture *ct = sbtns->texuser;
 
     if (!ct) {
-      return CTX_RESULT_NO_DATA;
+      return CXT_RESULT_NO_DATA;
     }
 
     if (ct->user && ct->user->ptr.data) {
-      ButsTextureUser *user = ct->user;
-      CTX_data_pointer_set_ptr(result, &user->ptr);
+      BtnsTextureUser *user = ct->user;
+      cxt_data_ptr_set_ptr(result, &user->ptr);
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "texture_user_property")) {
-    ButsContextTexture *ct = sbuts->texuser;
+  if (cxt_data_equals(member, "texture_user_prop")) {
+    BtnsCxtTexture *ct = sbtns->texuser;
 
     if (!ct) {
-      return CTX_RESULT_NO_DATA;
+      return CXT_RESULT_NO_DATA;
     }
 
     if (ct->user && ct->user->ptr.data) {
-      ButsTextureUser *user = ct->user;
-      CTX_data_pointer_set(result, NULL, &RNA_Property, user->prop);
+      BtnsTextureUser *user = ct->user;
+      cxt_data_ptr_set(result, NULL, &ApiProp, user->prop);
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "texture_node")) {
-    ButsContextTexture *ct = sbuts->texuser;
+  if (cxt_data_equals(member, "texture_node")) {
+    BtnsCxtTexture *ct = sbtns->texuser;
 
     if (ct) {
       /* new shading system */
       if (ct->user && ct->user->node) {
-        CTX_data_pointer_set(result, &ct->user->ntree->id, &RNA_Node, ct->user->node);
+        cxt_data_ptr_set(result, &ct->user->ntree->id, &RNA_Node, ct->user->node);
       }
 
-      return CTX_RESULT_OK;
+      return CXT_RESULT_OK;
     }
-    return CTX_RESULT_NO_DATA;
+    return CXT_RESULT_NO_DATA;
   }
-  if (CTX_data_equals(member, "texture_slot")) {
-    ButsContextTexture *ct = sbuts->texuser;
-    PointerRNA *ptr;
+  if (cxt_data_equals(member, "texture_slot")) {
+    BtnsCxtTexture *ct = sbtns->texuser;
+    ApiPtr *ptr;
 
     /* Particles slots are used in both old and new textures handling. */
-    if ((ptr = get_pointer_type(path, &RNA_ParticleSystem))) {
+    if ((ptr = get_ptr_type(path, &ApiParticleSystem))) {
       ParticleSettings *part = ((ParticleSystem *)ptr->data)->part;
 
       if (part) {
-        CTX_data_pointer_set(
-            result, &part->id, &RNA_ParticleSettingsTextureSlot, part->mtex[(int)part->texact]);
+        cxt_data_ptr_set(
+            result, &part->id, &ApiParticleSettingsTextureSlot, part->mtex[(int)part->texact]);
       }
     }
     else if (ct) {
-      return CTX_RESULT_MEMBER_NOT_FOUND; /* new shading system */
+      return CXT_RESULT_MEMBER_NOT_FOUND; /* new shading system */
     }
-    else if ((ptr = get_pointer_type(path, &RNA_FreestyleLineStyle))) {
+    else if ((ptr = get_ptr_type(path, &ApiFreestyleLineStyle))) {
       FreestyleLineStyle *ls = ptr->data;
 
       if (ls) {
-        CTX_data_pointer_set(
-            result, &ls->id, &RNA_LineStyleTextureSlot, ls->mtex[(int)ls->texact]);
+        cxt_data_ptr_set(
+            result, &ls->id, &ApiLineStyleTextureSlot, ls->mtex[(int)ls->texact]);
       }
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "bone")) {
-    set_pointer_type(path, result, &RNA_Bone);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "bone")) {
+    set_ptr_type(path, result, &ApiBone);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "edit_bone")) {
-    set_pointer_type(path, result, &RNA_EditBone);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "edit_bone")) {
+    set_ptr_type(path, result, &ApiEditBone);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "pose_bone")) {
-    set_pointer_type(path, result, &RNA_PoseBone);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "pose_bone")) {
+    set_ptr_type(path, result, &ApiPoseBone);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "particle_system")) {
-    set_pointer_type(path, result, &RNA_ParticleSystem);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "particle_system")) {
+    set_ptr_type(path, result, &ApiParticleSystem);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "particle_system_editable")) {
-    if (PE_poll((bContext *)C)) {
-      set_pointer_type(path, result, &RNA_ParticleSystem);
+  if (cxt_data_equals(member, "particle_system_editable")) {
+    if (PE_poll((Cxt *)C)) {
+      set_ptr_type(path, result, &ApiParticleSystem);
     }
     else {
-      CTX_data_pointer_set(result, NULL, &RNA_ParticleSystem, NULL);
+      cxt_data_ptr_set(result, NULL, &ApiParticleSystem, NULL);
     }
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "particle_settings")) {
+  if (cxt_data_equals(member, "particle_settings")) {
     /* only available when pinned */
-    PointerRNA *ptr = get_pointer_type(path, &RNA_ParticleSettings);
+    ApiPtr *ptr = get_ptr_type(path, &ApiParticleSettings);
 
     if (ptr && ptr->data) {
-      CTX_data_pointer_set_ptr(result, ptr);
-      return CTX_RESULT_OK;
+      cxt_data_ptr_set_ptr(result, ptr);
+      return CXT_RESULT_OK;
     }
 
     /* get settings from active particle system instead */
-    ptr = get_pointer_type(path, &RNA_ParticleSystem);
+    ptr = get_ptr_type(path, &ApiParticleSystem);
 
     if (ptr && ptr->data) {
       ParticleSettings *part = ((ParticleSystem *)ptr->data)->part;
-      CTX_data_pointer_set(result, ptr->owner_id, &RNA_ParticleSettings, part);
-      return CTX_RESULT_OK;
+      cxt_data_ptr_set(result, ptr->owner_id, &ApiParticleSettings, part);
+      return CXT_RESULT_OK;
     }
 
-    set_pointer_type(path, result, &RNA_ParticleSettings);
-    return CTX_RESULT_OK;
+    set_ptr_type(path, result, &ApiParticleSettings);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "cloth")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
+  if (cxt_data_equals(member, "cloth")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
       Object *ob = ptr->data;
-      ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Cloth);
-      CTX_data_pointer_set(result, &ob->id, &RNA_ClothModifier, md);
-      return CTX_RESULT_OK;
+      ModData *md = dune_mods_findby_type(ob, eModType_Cloth);
+      cxt_data_ptr_set(result, &ob->id, &ApiClothMod, md);
+      return CXT_RESULT_OK;
     }
-    return CTX_RESULT_NO_DATA;
+    return CXT_RESULT_NO_DATA;
   }
-  if (CTX_data_equals(member, "soft_body")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
+  if (cxt_data_equals(member, "soft_body")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
       Object *ob = ptr->data;
-      ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Softbody);
-      CTX_data_pointer_set(result, &ob->id, &RNA_SoftBodyModifier, md);
-      return CTX_RESULT_OK;
+      ModData *md = dune_mods_findby_type(ob, eModType_Softbody);
+      cxt_data_ptr_set(result, &ob->id, &ApiSoftBodyMod, md);
+      return CXT_RESULT_OK;
     }
-    return CTX_RESULT_NO_DATA;
+    return CXT_RESULT_NO_DATA;
   }
 
-  if (CTX_data_equals(member, "fluid")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
-
-    if (ptr && ptr->data) {
-      Object *ob = ptr->data;
-      ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-      CTX_data_pointer_set(result, &ob->id, &RNA_FluidModifier, md);
-      return CTX_RESULT_OK;
-    }
-    return CTX_RESULT_NO_DATA;
-  }
-  if (CTX_data_equals(member, "collision")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
+  if (cxt_data_equals(member, "fluid")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
       Object *ob = ptr->data;
-      ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Collision);
-      CTX_data_pointer_set(result, &ob->id, &RNA_CollisionModifier, md);
-      return CTX_RESULT_OK;
+      ModData *md = dune_mods_findby_type(ob, eModType_Fluid);
+      cxt_data_ptr_set(result, &ob->id, &ApiFluidMod, md);
+      return CXT_RESULT_OK;
     }
-    return CTX_RESULT_NO_DATA;
+    return CXT_RESULT_NO_DATA;
   }
-  if (CTX_data_equals(member, "brush")) {
-    set_pointer_type(path, result, &RNA_Brush);
-    return CTX_RESULT_OK;
-  }
-  if (CTX_data_equals(member, "dynamic_paint")) {
-    PointerRNA *ptr = get_pointer_type(path, &RNA_Object);
+  if (cxt_data_equals(member, "collision")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
 
     if (ptr && ptr->data) {
       Object *ob = ptr->data;
-      ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_DynamicPaint);
-      CTX_data_pointer_set(result, &ob->id, &RNA_DynamicPaintModifier, md);
-      return CTX_RESULT_OK;
+      ModData *md = dune_mods_findby_type(ob, eModType_Collision);
+      cxt_data_ptr_set(result, &ob->id, &ApiCollisionMod, md);
+      return CXT_RESULT_OK;
     }
-    return CTX_RESULT_NO_DATA;
+    return CXT_RESULT_NO_DATA;
   }
-  if (CTX_data_equals(member, "line_style")) {
-    set_pointer_type(path, result, &RNA_FreestyleLineStyle);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "brush")) {
+    set_ptr_type(path, result, &ApiBrush);
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "gpencil")) {
-    set_pointer_type(path, result, &RNA_GreasePencil);
-    return CTX_RESULT_OK;
+  if (cxt_data_equals(member, "dynamic_paint")) {
+    ApiPtr *ptr = get_ptr_type(path, &ApiObject);
+
+    if (ptr && ptr->data) {
+      Object *ob = ptr->data;
+      ModData *md = dune_mods_findby_type(ob, eModType_DynamicPaint);
+      cxt_data_ptr_set(result, &ob->id, &ApiDynamicPaintMod, md);
+      return CXT_RESULT_OK;
+    }
+    return CXT_RESULT_NO_DATA;
   }
-  return CTX_RESULT_MEMBER_NOT_FOUND;
+  if (cxt_data_equals(member, "line_style")) {
+    set_ptr_type(path, result, &ApiFreestyleLineStyle);
+    return CXT_RESULT_OK;
+  }
+  if (cxt_data_equals(member, "pen")) {
+    set_ptr_type(path, result, &Api_Pen);
+    return CXT_RESULT_OK;
+  }
+  return CXT_RESULT_MEMBER_NOT_FOUND;
 }
 
 /************************* Drawing the Path ************************/
 
-static bool buttons_panel_context_poll(const bContext *C, PanelType *UNUSED(pt))
+static bool btns_panel_cxt_poll(const Cxt *C, PanelType *UNUSED(pt))
 {
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
-  return sbuts->mainb != BCONTEXT_TOOL;
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  return sbtns->mainb != CXT_TOOL;
 }
 
-static void buttons_panel_context_draw(const bContext *C, Panel *panel)
+static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
 {
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
-  ButsContextPath *path = sbuts->path;
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  BtnsCxtPath *path = sbtns->path;
 
   if (!path) {
     return;
@@ -1178,25 +1178,25 @@ static void buttons_panel_context_draw(const bContext *C, Panel *panel)
 
   bool first = true;
   for (int i = 0; i < path->len; i++) {
-    PointerRNA *ptr = &path->ptr[i];
+    ApiPtr *ptr = &path->ptr[i];
 
     /* Skip scene and view layer to save space. */
-    if ((!ELEM(sbuts->mainb,
-               BCONTEXT_RENDER,
-               BCONTEXT_OUTPUT,
-               BCONTEXT_SCENE,
-               BCONTEXT_VIEW_LAYER,
-               BCONTEXT_WORLD) &&
-         ptr->type == &RNA_Scene)) {
+    if ((!ELEM(sbtns->mainb,
+               CXT_RENDER,
+               CXT_OUTPUT,
+               CXT_SCENE,
+               CXT_VIEW_LAYER,
+               CXT_WORLD) &&
+         ptr->type == &ApiScene)) {
       continue;
     }
-    if ((!ELEM(sbuts->mainb,
-               BCONTEXT_RENDER,
-               BCONTEXT_OUTPUT,
-               BCONTEXT_SCENE,
-               BCONTEXT_VIEW_LAYER,
-               BCONTEXT_WORLD) &&
-         ptr->type == &RNA_ViewLayer)) {
+    if ((!ELEM(sbtns->mainb,
+               CXT_RENDER,
+               CXT_OUTPUT,
+               CXT_SCENE,
+               CXT_VIEW_LAYER,
+               CXT_WORLD) &&
+         ptr->type == &Api_ViewLayer)) {
       continue;
     }
 
@@ -1210,15 +1210,15 @@ static void buttons_panel_context_draw(const bContext *C, Panel *panel)
     }
 
     /* Add icon and name. */
-    int icon = RNA_struct_ui_icon(ptr->type);
+    int icon = api_struct_ui_icon(ptr->type);
     char namebuf[128];
-    char *name = RNA_struct_name_get_alloc(ptr, namebuf, sizeof(namebuf), NULL);
+    char *name = api_struct_name_get_alloc(ptr, namebuf, sizeof(namebuf), NULL);
 
     if (name) {
       uiItemLDrag(row, ptr, name, icon);
 
       if (name != namebuf) {
-        MEM_freeN(name);
+        mem_freen(name);
       }
     }
     else {
@@ -1234,45 +1234,45 @@ static void buttons_panel_context_draw(const bContext *C, Panel *panel)
   uiLayoutSetEmboss(pin_row, UI_EMBOSS_NONE);
   uiItemO(pin_row,
           "",
-          (sbuts->flag & SB_PIN_CONTEXT) ? ICON_PINNED : ICON_UNPINNED,
-          "BUTTONS_OT_toggle_pin");
+          (sbuts->flag & SB_PIN_CXT) ? ICON_PINNED : ICON_UNPINNED,
+          "BTNS_OT_toggle_pin");
 }
 
-void buttons_context_register(ARegionType *art)
+void btns_cxt_register(ARegionType *art)
 {
-  PanelType *pt = MEM_callocN(sizeof(PanelType), "spacetype buttons panel context");
-  strcpy(pt->idname, "PROPERTIES_PT_context");
-  strcpy(pt->label, N_("Context")); /* XXX C panels unavailable through RNA bpy.types! */
-  strcpy(pt->translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  pt->poll = buttons_panel_context_poll;
-  pt->draw = buttons_panel_context_draw;
+  PanelType *pt = mem_callocn(sizeof(PanelType), "spacetype btns panel cxt");
+  strcpy(pt->idname, "PROPS_PT_cxt");
+  strcpy(pt->label, N_("Cxt")); /* XXX C panels unavailable through API bpy.types! */
+  strcpy(pt->translation_cxt, LANG_CXT_DEFAULT_API);
+  pt->poll = btns_panel_cxt_poll;
+  pt->draw = btns_panel_cxt_draw;
   pt->flag = PANEL_TYPE_NO_HEADER | PANEL_TYPE_NO_SEARCH;
-  BLI_addtail(&art->paneltypes, pt);
+  lib_addtail(&art->paneltypes, pt);
 }
 
-ID *buttons_context_id_path(const bContext *C)
+Id *btns_cxt_id_path(const Cxt *C)
 {
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
-  ButsContextPath *path = sbuts->path;
+  SpaceProps *sbtns = cxt_wm_space_props(C);
+  BtnsCxtPath *path = sbtns->path;
 
   if (path->len == 0) {
     return NULL;
   }
 
   for (int i = path->len - 1; i >= 0; i--) {
-    PointerRNA *ptr = &path->ptr[i];
+    ApiPtr *ptr = &path->ptr[i];
 
     /* Pin particle settings instead of system, since only settings are an idblock. */
-    if (sbuts->mainb == BCONTEXT_PARTICLE && sbuts->flag & SB_PIN_CONTEXT) {
-      if (ptr->type == &RNA_ParticleSystem && ptr->data) {
+    if (sbtns->mainb == CXT_PARTICLE && sbtns->flag & SB_PIN_CXT) {
+      if (ptr->type == &Api_ParticleSystem && ptr->data) {
         ParticleSystem *psys = ptr->data;
         return &psys->part->id;
       }
     }
 
     /* There is no valid image ID panel, Image Empty objects need this workaround. */
-    if (sbuts->mainb == BCONTEXT_DATA && sbuts->flag & SB_PIN_CONTEXT) {
-      if (ptr->type == &RNA_Image && ptr->data) {
+    if (sbtns->mainb == CXT_DATA && sbtns->flag & SB_PIN_CXT) {
+      if (ptr->type == &Api_Image && ptr->data) {
         continue;
       }
     }
