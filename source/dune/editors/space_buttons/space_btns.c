@@ -34,13 +34,13 @@
 
 #include "btns_intern.h" /* own include */
 
-/** Default Callbacks for Properties Space **/
+/** Default Cbs for Props Space **/
 static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
 {
   ARegion *region;
   SpaceProps *sbtns;
 
-  sbtns = mem_callocn(sizeof(SpaceProps), "initbuts");
+  sbtns = mem_callocn(sizeof(SpaceProps), "initbtns");
   sbtns->spacetype = SPACE_PROPS;
 
   sbtns->maind = sbtns->mainduser = CXT_OBJECT;
@@ -118,12 +118,12 @@ static SpaceLink *btns_duplicate(SpaceLink *sl)
   sbtnsn->path = NULL;
   sbtnsn->texuser = NULL;
   if (sfile_old->runtime != NULL) {
-    sbutsn->runtime = mem_dupallocn(sfile_old->runtime);
-    sbutsn->runtime->search_string[0] = '\0';
-    sbutsn->runtime->tab_search_results = LIB_BITMAP_NEW(CXT_TOT, __func__);
+    sbtnsn->runtime = mem_dupallocn(sfile_old->runtime);
+    sbtnsn->runtime->search_string[0] = '\0';
+    sbtnsn->runtime->tab_search_results = LIB_BITMAP_NEW(CXT_TOT, __func__);
   }
 
-  return (SpaceLink *)sbutsn;
+  return (SpaceLink *)sbtnsn;
 }
 
 /* add handlers, stuff you only do once or on area/region changes */
@@ -248,29 +248,29 @@ static const char *btns_main_region_cxt_string(const short maind)
       return "world";
     case CXT_COLLECTION:
       return "collection";
-    case CTX_OBJECT:
+    case CXT_OBJECT:
       return "object";
-    case CTX_DATA:
+    case CXT_DATA:
       return "data";
-    case CTX_MATERIAL:
+    case CXT_MATERIAL:
       return "material";
-    case CTX_TEXTURE:
+    case CXT_TEXTURE:
       return "texture";
-    case CTX_PARTICLE:
+    case CXT_PARTICLE:
       return "particle";
-    case CTX_PHYSICS:
+    case CXT_PHYS:
       return "physics";
-    case CTX_BONE:
+    case CXT_BONE:
       return "bone";
-    case CTX_MODIFIER:
+    case CXT_MOD:
       return "modifier";
-    case CTX_SHADERFX:
+    case CXT_SHADERFX:
       return "shaderfx";
-    case CTX_CONSTRAINT:
+    case CXT_CONSTRAINT:
       return "constraint";
-    case CTX_BONE_CONSTRAINT:
+    case CXT_BONE_CONSTRAINT:
       return "bone_constraint";
-    case CTX_TOOL:
+    case CXT_TOOL:
       return "tool";
   }
 
@@ -346,7 +346,7 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
   /* Try the tabs after the current tab. */
   for (int i = current_tab_index; i < tabs_len; i++) {
     if (LIB_BITMAP_TEST(sbtns->runtime->tab_search_results, i)) {
-      sbtns->mainduser = ctx_tabs_array[i];
+      sbtns->mainduser = cxt_tabs_array[i];
       return;
     }
   }
@@ -354,16 +354,16 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
   /* Try the tabs before the current tab. */
   for (int i = 0; i < current_tab_index; i++) {
     if (LIB_BITMAP_TEST(sbtns->runtime->tab_search_results, i)) {
-      sbtns->maiduser = ctx_tabs_array[i];
+      sbtns->maiduser = cxt_tabs_array[i];
       return;
     }
   }
 }
 
-static void prop_search_all_tabs(const Ctx *C,
+static void prop_search_all_tabs(const Cxt *C,
                                  SpaceProps *sbtns,
                                  ARegion *region_original,
-                                 const short *ctx_tabs_array,
+                                 const short *cxt_tabs_array,
                                  const int tabs_len)
 {
   /* Use local copies of the area and duplicate the region as a mainly-paranoid protection
