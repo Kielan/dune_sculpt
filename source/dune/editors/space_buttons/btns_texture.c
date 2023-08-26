@@ -618,7 +618,7 @@ static void template_texture_show(Cxt *C, void *data_p, void *prop_p)
   }
 
   SpaceProps *sbtns = (SpaceProps *)area->spacedata.first;
-  BtnsCtxTexture *ct = (sbtns) ? sbtns->texuser : NULL;
+  BtnsCxtTexture *ct = (sbtns) ? sbtns->texuser : NULL;
   if (!ct) {
     return;
   }
