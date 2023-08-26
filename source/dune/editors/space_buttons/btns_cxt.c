@@ -81,7 +81,7 @@ static bool btns_cxt_path_scene(BtnsCxtPath *path)
   return api_struct_is_a(ptr->type, &ApiScene);
 }
 
-static bool btns_cxt_path_view_layer(BtnsCxtPath *path, wmWindow *win)
+static bool btns_cxt_path_view_layer(BtnsCxtPath *path, Window *win)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -134,7 +134,7 @@ static bool btns_cxt_path_world(BtnsCxtPath *path)
 
 static bool btns_cxt_path_collection(const Cxt *C,
                                      BtnsCxtPath *path,
-                                     wmWindow *window)
+                                     Window *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -166,7 +166,7 @@ static bool btns_cxt_path_collection(const Cxt *C,
   return false;
 }
 
-static bool btns_cxt_path_linestyle(BtnsCxtPath *path, wmWindow *window)
+static bool btns_cxt_path_linestyle(BtnsCxtPath *path, Window *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
@@ -509,7 +509,7 @@ static bool btns_cxt_path_texture(const Cxt *C,
 #ifdef WITH_FREESTYLE
 static bool btns_cxt_linestyle_pinnable(const Cxt *C, ViewLayer *view_layer)
 {
-  wmWindow *window = cxt_wm_window(C);
+  Window *window = cxt_wm_window(C);
   Scene *scene = wm_window_get_active_scene(window);
 
   /* if Freestyle is disabled in the scene */
@@ -533,9 +533,9 @@ static bool btns_cxt_linestyle_pinnable(const Cxt *C, ViewLayer *view_layer)
 static bool btns_cxt_path(
     const Cxt *C, SpaceProps *sbtns, BtnsCxtPath *path, int mainb, int flag)
 {
-  /* Note we don't use ctx_data here, instead we get it from the window.
-   * Otherwise there is a loop reading the context that we are setting. */
-  wmWindow *window = cxt_wm_window(C);
+  /* Note we don't use cxt_data here, instead we get it from the window.
+   * Otherwise there is a loop reading the cxt that we are setting. */
+  Window *window = cxt_wm_window(C);
   Scene *scene = wm_window_get_active_scene(window);
   ViewLayer *view_layer = wm_window_get_active_view_layer(window);
 
@@ -565,7 +565,7 @@ static bool btns_cxt_path(
     }
   }
 
-  /* now for each buttons context type, we try to construct a path,
+  /* now for each btns cxt type, we try to construct a path,
    * tracing back recursively */
   bool found;
   switch (mainb) {
@@ -681,14 +681,14 @@ void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
   int flag = 0;
 
   /* Set scene path. */
-  bns_cxt_path(C, sbtns, path, CXT_SCENE, pflag);
+  btns_cxt_path(C, sbtns, path, CXT_SCENE, pflag);
 
   btns_texture_cxt_compute(C, sbtns);
 
   /* for each cxt, see if we can compute a valid path to it, if
    * this is the case, we know we have to display the button */
   for (int i = 0; i < CXT_TOT; i++) {
-    if (btns_cxt_path(C, sbuts, path, i, pflag)) {
+    if (btns_cxt_path(C, sbtns, path, i, pflag)) {
       flag |= (1 << i);
 
       /* setting icon for data cxt */
@@ -711,7 +711,7 @@ void btns_cxt_compute(const Cxt *C, SpaceProps *sbtns)
   }
 
   /* always try to use the tab that was explicitly
-   * set to the user, so that once that context comes
+   * set to the user, so that once that cxt comes
    * back, the tab is activated again */
   sbtns->mainb = sbtns->mainbuser;
 
@@ -771,8 +771,8 @@ bool ed_btns_should_sync_with_outliner(const Cxt *C,
 {
   ScrArea *active_area = cxt_wm_area(C);
   const bool auto_sync = ed_area_has_shared_border(active_area, area) &&
-                         sbuts->outliner_sync == PROPS_SYNC_AUTO;
-  return auto_sync || sbuts->outliner_sync == PROPERTIES_SYNC_ALWAYS;
+                         sbtns->outliner_sync == PROPS_SYNC_AUTO;
+  return auto_sync || sbtns->outliner_sync == PROPS_SYNC_ALWAYS;
 }
 
 void ed_btns_set_cxt(const Cxt *C,
@@ -781,13 +781,13 @@ void ed_btns_set_cxt(const Cxt *C,
                     const int cxt)
 {
   BtnsCxtPath path;
-  if (btns_context_path(C, sbtns, &path, cxt, 0) && is_ptr_in_path(&path, ptr)) {
+  if (btns_cxt_path(C, sbtns, &path, cxt, 0) && is_ptr_in_path(&path, ptr)) {
     sbtns->mainbuser = cxt;
     sbtns->mainb = sbtns->mainbuser;
   }
 }
 
-/************************* Context Callback ************************/
+/** Context Callback **/
 const char *btns_cxt_dir[] = {
     "texture_slot",
     "scene",
@@ -806,7 +806,7 @@ const char *btns_cxt_dir[] = {
     "material_slot",
     "texture",
     "texture_user",
-    "texture_user_property",
+    "texture_user_prop",
     "bone",
     "edit_bone",
     "pose_bone",
@@ -1005,7 +1005,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     if (ct) {
       /* new shading system */
       if (ct->user && ct->user->node) {
-        cxt_data_ptr_set(result, &ct->user->ntree->id, &RNA_Node, ct->user->node);
+        cxt_data_ptr_set(result, &ct->user->ntree->id, &Api_Node, ct->user->node);
       }
 
       return CXT_RESULT_OK;
@@ -1056,7 +1056,7 @@ int /*eCxtResult*/ btns_cxt(const Cxt *C,
     return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "particle_system_editable")) {
-    if (PE_poll((Cxt *)C)) {
+    if (pe_poll((Cxt *)C)) {
       set_ptr_type(path, result, &ApiParticleSystem);
     }
     else {
@@ -1235,15 +1235,15 @@ static void btns_panel_cxt_draw(const Cxt *C, Panel *panel)
   uiItemO(pin_row,
           "",
           (sbuts->flag & SB_PIN_CXT) ? ICON_PINNED : ICON_UNPINNED,
-          "BTNS_OT_toggle_pin");
+          "btns_ot_toggle_pin");
 }
 
 void btns_cxt_register(ARegionType *art)
 {
   PanelType *pt = mem_callocn(sizeof(PanelType), "spacetype btns panel cxt");
-  strcpy(pt->idname, "PROPS_PT_cxt");
+  strcpy(pt->idname, "props_pt_cxt");
   strcpy(pt->label, N_("Cxt")); /* XXX C panels unavailable through API bpy.types! */
-  strcpy(pt->translation_cxt, LANG_CXT_DEFAULT_API);
+  strcpy(pt->lang_cxt, LANG_CXT_DEFAULT_API);
   pt->poll = btns_panel_cxt_poll;
   pt->draw = btns_panel_cxt_draw;
   pt->flag = PANEL_TYPE_NO_HEADER | PANEL_TYPE_NO_SEARCH;
