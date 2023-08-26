@@ -28,7 +28,7 @@ typedef struct BtnsCxtPath {
   ApiPtr ptr[8];
   int len;
   int flag;
-  int collection_ctx;
+  int collection_cxt;
 } BtnsCxtPath;
 
 typedef struct BtnsTextureUser {
@@ -58,7 +58,7 @@ typedef struct BtnsCxtTexture {
 } BtnsCxtTexture;
 
 /* internal exports only */
-/* btns_ctx.c */
+/* btns_cxt.c */
 void btns_cxt_compute(const struct Cxt *C, struct SpaceProps *sbtns);
 int btns_cxt(const struct Cxt *C,
               const char *member,
@@ -68,8 +68,8 @@ struct Id *btns_cxt_id_path(const struct Cxt *C);
 
 extern const char *btns_cxt_dir[]; /* doc access */
 
-/* buttons_texture.c */
-void btns_texture_cxt_compute(const struct Ctx *C, struct SpaceProps *sbtns);
+/* btns_texture.c */
+void btns_texture_cxt_compute(const struct Cxt *C, struct SpaceProps *sbtns);
 
 /* btns_ops.c */
 void btns_ot_start_filter(struct wmOpType *ot);
