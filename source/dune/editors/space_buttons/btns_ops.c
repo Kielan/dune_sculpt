@@ -33,7 +33,6 @@
 
 /* Start / Clear Search Filter Operators
  *  Almost a duplicate of the file browser op file_ot_start_filter **/
-
 static int btns_start_filter_ex(Cxt *C, wmOp *UNUSED(op))
 {
   SpaceProps *space = cxt_wm_space_props(C);
@@ -145,9 +144,7 @@ void btns_ot_ctx_menu(wmOpType *ot)
   ot->poll = ed_op_btns_active;
 }
 
-/* -------------------------------------------------------------------- */
 /* File Browse Operator */
-
 typedef struct FileBrowseOp {
   ApiPtr ptr;
   ApiProp *prop;
@@ -157,7 +154,7 @@ typedef struct FileBrowseOp {
 
 static int file_browse_ex(Cxt *C, wmOp *op)
 {
-  Main *main = ctx_data_main(C);
+  Main *main = cxt_data_main(C);
   FileBrowseOp *fbo = op->customdata;
   Id *id;
   char *str;
