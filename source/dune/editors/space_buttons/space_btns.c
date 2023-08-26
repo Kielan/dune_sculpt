@@ -61,7 +61,7 @@ static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(s
 
 #if 0
   /* cxt region */
-  region = mem_callocn(sizeof(ARegion), "context region for btns");
+  region = mem_callocn(sizeof(ARegion), "cxt region for btns");
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_CHANNELS;
   region->alignment = RGN_ALIGN_TOP;
@@ -194,10 +194,10 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *cxt_tabs_array)
     length++;
   }
   if (sbtns->pathflag & (1 << CXT_PARTICLE)) {
-    context_tabs_array[length] = CXT_PARTICLE;
+    cxt_tabs_array[length] = CXT_PARTICLE;
     length++;
   }
-  if (sbuts->pathflag & (1 << CXT_PHYS)) {
+  if (sbtns->pathflag & (1 << CXT_PHYS)) {
     ctx_tabs_array[length] = CXT_PHYS;
     length++;
   }
@@ -259,11 +259,11 @@ static const char *btns_main_region_cxt_string(const short maind)
     case CXT_PARTICLE:
       return "particle";
     case CXT_PHYS:
-      return "physics";
+      return "phys";
     case CXT_BONE:
       return "bone";
     case CXT_MOD:
-      return "modifier";
+      return "mod";
     case CXT_SHADERFX:
       return "shaderfx";
     case CXT_CONSTRAINT:
@@ -290,7 +290,7 @@ static void btns_main_region_layout_props(const Cxt *C,
   ed_region_panels_layout_ex(C, region, &region->type->paneltypes, cxts, NULL);
 }
 
-/** Prop Search Access API **/
+/* Prop Search Access API **/
 const char *ed_btns_search_string_get(SpaceProps *sbtns)
 {
   return sbtns->runtime->search_string;
@@ -311,12 +311,11 @@ bool ed_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
   return LIB_BITMAP_TEST(sbtns->runtime->tab_search_results, index);
 }
 
-/* -------------------------------------------------------------------- */
-/** "Off Screen" Layout Generation for Prop Search **/
 
+/** "Off Screen" Layout Generation for Prop Search **/
 static bool prop_search_for_cxt(const Cxt *C, ARegion *region, SpaceProps *sbtns)
 {
-  const char *cxts[2] = {bts_main_region_cxt_string(sbtns->maind), NULL};
+  const char *cxts[2] = {btns_main_region_cxt_string(sbtns->maind), NULL};
 
   if (sbtns->maind == CXT_TOOL) {
     return false;
@@ -331,7 +330,7 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
                                                       const int tabs_len)
 {
   /* As long as all-tab search in the tool is disabled in the tool context, don't move from it. */
-  if (sbtns->maind == CTX_TOOL) {
+  if (sbtns->maind == CXT_TOOL) {
     return;
   }
 
@@ -385,7 +384,7 @@ static void prop_search_all_tabs(const Cxt *C,
   lib_list_clear(&area_copy.spacedata);
   lib_addtail(&area_copy.spacedata, &sbtns_copy);
 
-  /* Loop through the tabs added to the properties editor. */
+  /* Loop through the tabs added to the props editor. */
   for (int i = 0; i < tabs_len; i++) {
     /* -1 corresponds to a spacer. */
     if (cxt_tabs_array[i] == -1) {
@@ -402,7 +401,7 @@ static void prop_search_all_tabs(const Cxt *C,
     /* Actually do the search and store the result in the bitmap. */
     LIB_BITMAP_SET(sbtns->runtime->tab_search_results,
                    i,
-                   props_search_for_ctx(C, region_copy, &sbtns_copy));
+                   props_search_for_cxt(C, region_copy, &sbtns_copy));
 
     ui_blocklist_free(C, region_copy);
   }
@@ -438,7 +437,7 @@ static void btns_main_region_prop_search(const Cxt *C,
   /* Find which index in the list the current tab corresponds to. */
   int current_tab_index = -1;
   for (int i = 0; i < tabs_len; i++) {
-    if (context_tabs_array[i] == sbtns->maind) {
+    if (cxt_tabs_array[i] == sbtns->maind) {
       current_tab_index = i;
     }
   }
@@ -515,10 +514,10 @@ static void btns_header_region_init(WindowManager *UNUSED(wm), ARegion *region)
 
 static void btns_header_region_draw(const Cxt *C, ARegion *region)
 {
-  SpaceProps *sbtns = ctx_wm_space_props(C);
+  SpaceProps *sbtns = cxt_wm_space_props(C);
 
   /* Needed for API to get the good values! */
-  btns_ctx_compute(C, sbtns);
+  btns_cxt_compute(C, sbtns);
 
   ed_region_header(C, region);
 }
@@ -550,7 +549,6 @@ static void btns_header_region_message_subscribe(const wmRegionMessageSubscribeP
 }
 
 /* Nav Region Cbs **/
-
 static void btns_nav_bar_region_init(WindowManager *wm, ARegion *region)
 {
   region->flag |= RGN_FLAG_PREFSIZE_OR_HIDDEN;
@@ -611,12 +609,12 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
     case NC_SCENE:
       switch (wmn->data) {
         case ND_RENDER_OPTIONS:
-          btns_area_redraw(area, CTX_RENDER);
-          btns_area_redraw(area, CTX_OUTPUT);
-          btns_area_redraw(area, CTX_VIEW_LAYER);
+          btns_area_redraw(area, CXT_RENDER);
+          btns_area_redraw(area, CXT_OUTPUT);
+          btns_area_redraw(area, CXT_VIEW_LAYER);
           break;
         case ND_WORLD:
-          btns_area_redraw(area, CTX_WORLD);
+          btns_area_redraw(area, CXT_WORLD);
           sbtns->preview = 1;
           break;
         case ND_FRAME:
@@ -653,7 +651,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
           btns_area_redraw(area, CXT_BONE_CONSTRAINT);
           btns_area_redraw(area, CXT_DATA);
           break;
-        case ND_MODIFIER:
+        case ND_MOD:
           if (wmn->action == NA_RENAME) {
             ed_area_tag_redraw(area);
           }
@@ -805,13 +803,13 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
 
 static void btns_id_remap(ScrArea *UNUSED(area),
                           SpaceLink *slink,
-                          const struct IDRemapper *mappings)
+                          const struct IdRemapper *mappings)
 {
   SpaceProps *sbtns = (SpaceProps *)slink;
 
   if (dune_id_remapper_apply(mappings, &sbtns->pinid, ID_REMAP_APPLY_DEFAULT) ==
       ID_REMAP_RESULT_SOURCE_UNASSIGNED) {
-    sbtns->flag &= ~SB_PIN_CONTEXT;
+    sbtns->flag &= ~SB_PIN_CXT;
   }
 
   if (sbtns->path) {
@@ -855,16 +853,15 @@ static void btns_id_remap(ScrArea *UNUSED(area),
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Space Type Initialization **/
 
+/** Space Type Initialization **/
 void ed_spacetype_btns(void)
 {
   SpaceType *st = mem_callocn(sizeof(SpaceType), "spacetype buttons");
   ARegionType *art;
 
   st->spaceid = SPACE_PROPS;
-  strncpy(st->name, "Buttons", DUNE_ST_MAXNAME);
+  strncpy(st->name, "Btns", DUNE_ST_MAXNAME);
 
   st->create = btns_create;
   st->free = btns_free;
@@ -887,8 +884,8 @@ void ed_spacetype_btns(void)
   btns_cxt_register(art);
   lib_addhead(&st->regiontypes, art);
 
-  /* Register the panel types from modifiers. The actual panels are built per modifier rather
-   * than per modifier type. */
+  /* Register the panel types from mods. The actual panels are built per mod rather
+   * than per mod type. */
   for (ModType i = 0; i < NUM_MOD_TYPES; i++) {
     const ModTypeInfo *mti = dune_mod_get_info(i);
     if (mti != NULL && mti->panelRegister != NULL) {
@@ -923,7 +920,7 @@ void ed_spacetype_btns(void)
   lib_addhead(&st->regiontypes, art);
 
   /* regions: navigation bar */
-  art = mem_callocn(sizeof(ARegionType), "spacetype nav buttons region");
+  art = mem_callocn(sizeof(ARegionType), "spacetype nav btns region");
   art->regionid = RGN_TYPE_NAV_BAR;
   art->prefsizex = AREAMINX - 3; /* XXX Works and looks best,
                                   * should we update AREAMINX accordingly? */
