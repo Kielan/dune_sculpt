@@ -1,41 +1,41 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "TYPES_userdef.h"
+#include "types_userdef.h"
 
-#include "LIB_dunelib.h"
-#include "LIB_linklist_stack.h"
-#include "LIB_math.h"
-#include "LIB_rand.h"
-#include "LIB_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_linklist_stack.h"
+#include "lib_math.h"
+#include "lib_rand.h"
+#include "lib_utildefines.h"
 
-#include "DUNE_context.h"
-#include "DUNE_global.h"
-#include "DUNE_image.h"
-#include "DUNE_screen.h"
-#include "DUNE_workspace.h"
+#include "dune_cxt.h"
+#include "dune_global.h"
+#include "dune_image.h"
+#include "dune_screen.h"
+#include "dune_workspace.h"
 
-#include "API_access.h"
-#include "API_types.h"
+#include "api_access.h"
+#include "api_types.h"
 
-#include "WM_api.h"
-#include "WM_message.h"
-#include "WM_toolsystem.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_message.h"
+#include "wm_toolsystem.h"
+#include "wm_types.h"
 
-#include "ED_buttons.h"
-#include "ED_screen.h"
-#include "ED_screen_types.h"
-#include "ED_space_api.h"
-#include "ED_time_scrub_ui.h"
+#include "ed_btns.h"
+#include "ed_screen.h"
+#include "ed_screen_types.h"
+#include "ed_space_api.h"
+#include "ed_time_scrub_ui.h"
 
-#include "GPU_framebuffer.h"
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_framebuffer.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
 #include "BLF_api.h"
 
@@ -69,13 +69,13 @@ static void region_draw_emboss(const ARegion *region, const rcti *scirct, int si
                      .ymax = scirct->ymax - region->winrct.ymin};
 
   /* set transp line */
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 
   float color[4] = {0.0f, 0.0f, 0.0f, 0.25f};
-  UI_GetThemeColor3fv(TH_EDITOR_OUTLINE, color);
+  ui_GetThemeColor3fv(TH_EDITOR_OUTLINE, color);
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
   immUniformColor4fv(color);
 
