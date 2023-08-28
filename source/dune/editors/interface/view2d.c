@@ -19,31 +19,29 @@
 #include "lib_timecode.h"
 #include "lib_utildefines.h"
 
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_screen.h"
+#include "dune_context.h"
+#include "dune_global.h"
+#include "dune_screen.h"
 
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
-#include "WM_api.h"
+#include "wm_api.h"
 
 #include "BLF_api.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
-#include "UI_interface.h"
-#include "UI_view2d.h"
+#include "ui_interface.h"
+#include "ui_view2d.h"
 
 #include "interface_intern.h"
 
 static void view2d_curRect_validate_resize(View2D *v2d, bool resize);
 
-/* -------------------------------------------------------------------- */
 /** Internal Utilities **/
-
-BLI_INLINE int clamp_float_to_int(const float f)
+LIB_INLINE int clamp_float_to_int(const float f)
 {
   const float min = (float)INT_MIN;
   const float max = (float)INT_MAX;
@@ -57,11 +55,9 @@ BLI_INLINE int clamp_float_to_int(const float f)
   return (int)f;
 }
 
-/**
- * use instead of #BLI_rcti_rctf_copy so we have consistent behavior
- * with users of #clamp_float_to_int.
- */
-BLI_INLINE void clamp_rctf_to_rcti(rcti *dst, const rctf *src)
+/* use instead of lib_rcti_rctf_copy so we have consistent behavior
+ * with users of clamp_float_to_int. */
+LIB_INLINE void clamp_rctf_to_rcti(rcti *dst, const rctf *src)
 {
   dst->xmin = clamp_float_to_int(src->xmin);
   dst->xmax = clamp_float_to_int(src->xmax);
@@ -69,19 +65,16 @@ BLI_INLINE void clamp_rctf_to_rcti(rcti *dst, const rctf *src)
   dst->ymax = clamp_float_to_int(src->ymax);
 }
 
-/* XXX still unresolved: scrolls hide/unhide vs region mask handling */
-/* XXX there's V2D_SCROLL_HORIZONTAL_HIDE and V2D_SCROLL_HORIZONTAL_FULLR ... */
+/* still unresolved: scrolls hide/unhide vs region mask handling */
+/* there's V2D_SCROLL_HORIZONTAL_HIDE and V2D_SCROLL_HORIZONTAL_FULLR ... */
 
-/* -------------------------------------------------------------------- */
-/** Internal Scroll & Mask Utilities **/
+/* Internal Scroll & Mask Utilities **/
 
-/**
- * helper to allow scrollbars to dynamically hide
+/* helper to allow scrollbars to dynamically hide
  * - returns a copy of the scrollbar settings with the flags to display
  *   horizontal/vertical scrollbars removed
  * - input scroll value is the v2d->scroll var
- * - hide flags are set per region at drawtime
- */
+ * - hide flags are set per region at drawtime */
 static int view2d_scroll_mapped(int scroll)
 {
   if (scroll & V2D_SCROLL_HORIZONTAL_FULLR) {
@@ -101,17 +94,14 @@ void view2d_mask_from_win(const View2D *v2d, rcti *r_mask)
   r_mask->ymax = v2d->winy - 1;
 }
 
-/**
- * Called each time #View2D.cur changes, to dynamically update masks.
- *
- * \param mask_scroll: Optionally clamp scrollbars by this region.
- */
+/* Called each time View2D.cur changes, to dynamically update masks.
+ * param mask_scroll: Optionally clamp scrollbars by this region. */
 static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 {
   int scroll;
 
   /* mask - view frame */
-  UI_view2d_mask_from_win(v2d, &v2d->mask);
+  ui_view2d_mask_from_win(v2d, &v2d->mask);
   if (mask_scroll == NULL) {
     mask_scroll = &v2d->mask;
   }
@@ -129,7 +119,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
   }
   if (v2d->scroll & V2D_SCROLL_VERTICAL_HIDE) {
     if (!(v2d->scroll & V2D_SCROLL_VERTICAL_HANDLES)) {
-      if (BLI_rctf_size_y(&v2d->tot) + 0.01f > BLI_rctf_size_y(&v2d->cur)) {
+      if (lib_rctf_size_y(&v2d->tot) + 0.01f > BLI_rctf_size_y(&v2d->cur)) {
         v2d->scroll &= ~V2D_SCROLL_VERTICAL_FULLR;
       }
       else {
@@ -142,8 +132,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 
   /* Scrollers are based off region-size:
    * - they can only be on one to two edges of the region they define
-   * - if they overlap, they must not occupy the corners (which are reserved for other widgets)
-   */
+   * - if they overlap, they must not occupy the corners (which are reserved for other widgets) */
   if (scroll) {
     float scroll_width, scroll_height;
 
@@ -195,9 +184,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** View2D Refresh and Validation (Spatial) **/
-
+/* View2D Refresh and Validation (Spatial) **/
 void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
 {
   bool tot_changed = false, do_init;
@@ -205,12 +192,11 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
 
   do_init = (v2d->flag & V2D_IS_INIT) == 0;
 
-  /* see eView2D_CommonViewTypes in UI_view2d.h for available view presets */
+  /* see eView2D_CommonViewTypes in ui_view2d.h for available view presets */
   switch (type) {
     /* 'standard view' - optimum setup for 'standard' view behavior,
      * that should be used new views as basis for their
-     * own unique View2D settings, which should be used instead of this in most cases...
-     */
+     * own unique View2D settings, which should be used instead of this in most cases... */
     case V2D_COMMONVIEW_STANDARD: {
       /* for now, aspect ratio should be maintained,
        * and zoom is clamped within sane default limits */
@@ -222,8 +208,7 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
        * and aligned using 'standard' OpenGL coordinates for now:
        * - region can resize 'tot' later to fit other data
        * - keeptot is only within bounds, as strict locking is not that critical
-       * - view is aligned for (0,0) -> (winx-1, winy-1) setup
-       */
+       * - view is aligned for (0,0) -> (winx-1, winy-1) setup */
       v2d->align = (V2D_ALIGN_NO_NEG_X | V2D_ALIGN_NO_NEG_Y);
       v2d->keeptot = V2D_KEEPTOT_BOUNDS;
       if (do_init) {
@@ -234,7 +219,7 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
         v2d->cur = v2d->tot;
       }
       /* scrollers - should we have these by default? */
-      /* XXX for now, we don't override this, or set it either! */
+      /* for now, we don't override this, or set it either! */
       break;
     }
     /* 'list/channel view' - zoom, aspect ratio, and alignment restrictions are set here */
@@ -350,7 +335,7 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
   }
 
   /* set 'tot' rect before setting cur? */
-  /* XXX confusing stuff here still */
+  /* confusing stuff here still */
   if (tot_changed) {
     view2d_totRect_set_resize(v2d, winx, winy, !do_init);
   }
@@ -359,11 +344,9 @@ void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
   }
 }
 
-/**
- * Ensure View2D rects remain in a viable configuration
- * 'cur' is not allowed to be: larger than max, smaller than min, or outside of 'tot'
- */
-/* XXX pre2.5 -> this used to be called  test_view2d() */
+/* Ensure View2D rects remain in a viable configuration
+ * 'cur' is not allowed to be: larger than max, smaller than min, or outside of 'tot' */
+/* pre2.5 -> this used to be called  test_view2d() */
 static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
 {
   float totwidth, totheight, curwidth, curheight, width, height;
@@ -372,10 +355,10 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
 
   /* use mask as size of region that View2D resides in, as it takes into account
    * scrollbars already - keep in sync with zoomx/zoomy in view_zoomstep_apply_ex! */
-  winx = (float)(BLI_rcti_size_x(&v2d->mask) + 1);
-  winy = (float)(BLI_rcti_size_y(&v2d->mask) + 1);
+  winx = (float)(lib_rcti_size_x(&v2d->mask) + 1);
+  winy = (float)(lib_rcti_size_y(&v2d->mask) + 1);
 
-  /* get pointers to rcts for less typing */
+  /* get ptrs to rcts for less typing */
   cur = &v2d->cur;
   tot = &v2d->tot;
 
@@ -384,18 +367,16 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
    * - cur must not fall outside of tot
    * - axis locks (zoom and offset) must be maintained
    * - zoom must not be excessive (check either sizes or zoom values)
-   * - aspect ratio should be respected (NOTE: this is quite closely related to zoom too)
-   */
+   * - aspect ratio should be respected (NOTE: this is quite closely related to zoom too) */
 
   /* Step 1: if keepzoom, adjust the sizes of the rects only
    * - firstly, we calculate the sizes of the rects
-   * - curwidth and curheight are saved as reference... modify width and height values here
-   */
-  totwidth = LIB_rctf_size_x(tot);
-  totheight = LIB_rctf_size_y(tot);
+   * - curwidth and curheight are saved as reference... modify width and height values here */
+  totwidth = lib_rctf_size_x(tot);
+  totheight = lib_rctf_size_y(tot);
   /* keep in sync with zoomx/zoomy in view_zoomstep_apply_ex! */
-  curwidth = width = LIB_rctf_size_x(cur);
-  curheight = height = LIB_rctf_size_y(cur);
+  curwidth = width = lib_rctf_size_x(cur);
+  curheight = height = lib_rctf_size_y(cur);
 
   /* if zoom is locked, size on the appropriate axis is reset to mask size */
   if (v2d->keepzoom & V2D_LOCKZOOM_X) {
@@ -407,8 +388,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
 
   /* values used to divide, so make it safe
    * NOTE: width and height must use FLT_MIN instead of 1, otherwise it is impossible to
-   *       get enough resolution in Graph Editor for editing some curves
-   */
+   *       get enough resolution in Graph Editor for editing some curves */
   if (width < FLT_MIN) {
     width = 1;
   }
@@ -445,8 +425,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     }
   }
   /* keepzoom (V2D_LIMITZOOM set), indicates that zoom level on each axis must not exceed limits
-   * NOTE: in general, it is not expected that the lock-zoom will be used in conjunction with this
-   */
+   * NOTE: in general, it is not expected that the lock-zoom will be used in conjunction with this */
   else if (v2d->keepzoom & V2D_LIMITZOOM) {
 
     /* check if excessive zoom on x-axis */
@@ -484,8 +463,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     float curRatio, winRatio;
 
     /* when a window edge changes, the aspect ratio can't be used to
-     * find which is the best new 'cur' rect. that's why it stores 'old'
-     */
+     * find which is the best new 'cur' rect. that's why it stores 'old' */
     if (winx != v2d->oldwinx) {
       do_x = true;
     }
@@ -524,8 +502,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
          *   being pushed out of view when view shrinks.
          * - The keeptot code will make sure cur->xmin will not be less than tot->xmin
          *   (which cannot be allowed).
-         * - width is not adjusted for changed ratios here.
-         */
+         * - width is not adjusted for changed ratios here. */
         if (winx < v2d->oldwinx) {
           const float temp = v2d->oldwinx - winx;
 
@@ -533,8 +510,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
           cur->xmax -= temp;
 
           /* width does not get modified, as keepaspect here is just set to make
-           * sure visible area adjusts to changing view shape!
-           */
+           * sure visible area adjusts to changing view shape! */
         }
       }
       else {
@@ -545,8 +521,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     else {
       if ((v2d->keeptot == V2D_KEEPTOT_STRICT) && (winy != v2d->oldwiny)) {
         /* special exception for Outliner (and later channel-lists):
-         * - Currently, no actions need to be taken here...
-         */
+         * - Currently, no actions need to be taken here.. */
 
         if (winy < v2d->oldwiny) {
           const float temp = v2d->oldwiny - winy;
@@ -625,8 +600,8 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     float temp, diff;
 
     /* recalculate extents of cur */
-    curwidth = BLI_rctf_size_x(cur);
-    curheight = BLI_rctf_size_y(cur);
+    curwidth = lib_rctf_size_x(cur);
+    curheight = lib_rctf_size_y(cur);
 
     /* width */
     if ((curwidth > totwidth) &&
@@ -642,8 +617,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     else if (v2d->keeptot == V2D_KEEPTOT_STRICT) {
       /* This is an exception for the outliner (and later channel-lists, headers)
        * - must clamp within tot rect (absolutely no excuses)
-       * --> therefore, cur->xmin must not be less than tot->xmin
-       */
+       * --> therefore, cur->xmin must not be less than tot->xmin */
       if (cur->xmin < tot->xmin) {
         /* move cur across so that it sits at minimum of tot */
         temp = tot->xmin - cur->xmin;
@@ -654,8 +628,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
       else if (cur->xmax > tot->xmax) {
         /* - only offset by difference of cur-xmax and tot-xmax if that would not move
          *   cur-xmin to lie past tot-xmin
-         * - otherwise, simply shift to tot-xmin???
-         */
+         * - otherwise, simply shift to tot-xmin??? */
         temp = cur->xmax - tot->xmax;
 
         if ((cur->xmin - temp) < tot->xmin) {
@@ -678,12 +651,11 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
        *
        * So, resolution is to just shift view by the gap between the extremities.
        * We favor moving the 'minimum' across, as that's origin for most things.
-       * (XXX: in the past, max was favored... if there are bugs, swap!)
-       */
+       * (XXX: in the past, max was favored... if there are bugs, swap!)  */
       if ((cur->xmin < tot->xmin) && (cur->xmax > tot->xmax)) {
         /* outside boundaries on both sides,
          * so take middle-point of tot, and place in balanced way */
-        temp = BLI_rctf_cent_x(tot);
+        temp = lib_rctf_cent_x(tot);
         diff = curwidth * 0.5f;
 
         cur->xmin = temp - diff;
@@ -699,8 +671,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
       else if (cur->xmax > tot->xmax) {
         /* - only offset by difference of cur-xmax and tot-xmax if that would not move
          *   cur-xmin to lie past tot-xmin
-         * - otherwise, simply shift to tot-xmin???
-         */
+         * - otherwise, simply shift to tot-xmin??? */
         temp = cur->xmax - tot->xmax;
 
         if ((cur->xmin - temp) < tot->xmin) {
@@ -734,8 +705,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
        * - height is OK, but need to check if outside of boundaries
        *
        * So, resolution is to just shift view by the gap between the extremities.
-       * We favor moving the 'minimum' across, as that's origin for most things.
-       */
+       * We favor moving the 'minimum' across, as that's origin for most things */
       if ((cur->ymin < tot->ymin) && (cur->ymax > tot->ymax)) {
         /* outside boundaries on both sides,
          * so take middle-point of tot, and place in balanced way */
@@ -769,8 +739,7 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
      * invalid.
      *
      * Here, we only check to make sure that on each axis, the 'cur' rect doesn't stray into these
-     * invalid zones, otherwise we offset.
-     */
+     * invalid zones, otherwise we offset  */
 
     /* handle width - posx and negx flags are mutually exclusive, so watch out */
     if ((v2d->align & V2D_ALIGN_NO_POS_X) && !(v2d->align & V2D_ALIGN_NO_NEG_X)) {
@@ -814,25 +783,23 @@ void view2d_curRect_validate(View2D *v2d)
   view2d_curRect_validate_resize(v2d, false);
 }
 
-void view2d_curRect_changed(const bContext *C, View2D *v2d)
+void view2d_curRect_changed(const Cxt *C, View2D *v2d)
 {
   view2d_curRect_validate(v2d);
 
-  ARegion *region = ctx_wm_region(C);
+  ARegion *region = cxt_wm_region(C);
 
   if (region->type->on_view2d_changed != NULL) {
     region->type->on_view2d_changed(C, region);
   }
 }
 
-/* ------------------ */
-
 bool view2d_area_supports_sync(ScrArea *area)
 {
   return ELEM(area->spacetype, SPACE_ACTION, SPACE_NLA, SPACE_SEQ, SPACE_CLIP, SPACE_GRAPH);
 }
 
-void view2d_sync(duneScreen *screen, ScrArea *area, View2D *v2dcur, int flag)
+void view2d_sync(Screen *screen, ScrArea *area, View2D *v2dcur, int flag)
 {
   /* don't continue if no view syncing to be done */
   if ((v2dcur->flag & (V2D_VIEWSYNC_SCREEN_TIME | V2D_VIEWSYNC_AREA_VERTICAL)) == 0) {
@@ -841,7 +808,7 @@ void view2d_sync(duneScreen *screen, ScrArea *area, View2D *v2dcur, int flag)
 
   /* check if doing within area syncing (i.e. channels/vertical) */
   if ((v2dcur->flag & V2D_VIEWSYNC_AREA_VERTICAL) && (area)) {
-    LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+    LIST_FOREACH (ARegion *, region, &area->regionbase) {
       /* don't operate on self */
       if (v2dcur != &region->v2d) {
         /* only if view has vertical locks enabled */
@@ -858,7 +825,7 @@ void view2d_sync(duneScreen *screen, ScrArea *area, View2D *v2dcur, int flag)
           }
 
           /* region possibly changed, so refresh */
-          ED_region_tag_redraw_no_rebuild(region);
+          ed_region_tag_redraw_no_rebuild(region);
         }
       }
     }
@@ -866,11 +833,11 @@ void view2d_sync(duneScreen *screen, ScrArea *area, View2D *v2dcur, int flag)
 
   /* check if doing whole screen syncing (i.e. time/horizontal) */
   if ((v2dcur->flag & V2D_VIEWSYNC_SCREEN_TIME) && (screen)) {
-    LISTBASE_FOREACH (ScrArea *, area_iter, &screen->areabase) {
+    LIST_FOREACH (ScrArea *, area_iter, &screen->areabase) {
       if (!UI_view2d_area_supports_sync(area_iter)) {
         continue;
       }
-      LISTBASE_FOREACH (ARegion *, region, &area_iter->regionbase) {
+      LIST_FOREACH (ARegion *, region, &area_iter->regionbase) {
         /* don't operate on self */
         if (v2dcur != &region->v2d) {
           /* only if view has horizontal locks enabled */
@@ -887,7 +854,7 @@ void view2d_sync(duneScreen *screen, ScrArea *area, View2D *v2dcur, int flag)
             }
 
             /* region possibly changed, so refresh */
-            ED_region_tag_redraw_no_rebuild(region);
+            ed_region_tag_redraw_no_rebuild(region);
           }
         }
       }
@@ -900,8 +867,8 @@ void view2d_curRect_reset(View2D *v2d)
   float width, height;
 
   /* assume width and height of 'cur' rect by default, should be same size as mask */
-  width = (float)(BLI_rcti_size_x(&v2d->mask) + 1);
-  height = (float)(BLI_rcti_size_y(&v2d->mask) + 1);
+  width = (float)(lib_rcti_size_x(&v2d->mask) + 1);
+  height = (float)(lib_rcti_size_y(&v2d->mask) + 1);
 
   /* handle width - posx and negx flags are mutually exclusive, so watch out */
   if ((v2d->align & V2D_ALIGN_NO_POS_X) && !(v2d->align & V2D_ALIGN_NO_NEG_X)) {
