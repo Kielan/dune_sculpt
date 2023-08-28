@@ -1089,7 +1089,6 @@ static void region_azones_scrollbars_init(ScrArea *area, ARegion *region)
   }
 }
 
-/* *************************************************************** */
 static void region_azones_add_edge(ScrArea *area,
                                    ARegion *region,
                                    const int alignment,
@@ -1111,7 +1110,7 @@ static void region_azones_add_edge(ScrArea *area,
   }
 }
 
-static void region_azones_add(const duneScreen *screen, ScrArea *area, ARegion *region)
+static void region_azones_add(const Screen *screen, ScrArea *area, ARegion *region)
 {
   const bool is_fullscreen = screen->state == SCREENFULL;
 
@@ -1141,16 +1140,16 @@ static void region_azones_add(const duneScreen *screen, ScrArea *area, ARegion *
 static int rct_fits(const rcti *rect, const eScreenAxis dir_axis, int size)
 {
   if (dir_axis == SCREEN_AXIS_H) {
-    return LIB_rcti_size_x(rect) + 1 - size;
+    return lib_rcti_size_x(rect) + 1 - size;
   }
   /* Vertical. */
-  return LIB_rcti_size_y(rect) + 1 - size;
+  return lib_rcti_size_y(rect) + 1 - size;
 }
 
 /* *************************************************************** */
 
 /* region should be overlapping */
-/* function checks if some overlapping region was defined before - on same place */
+/* fn checks if some overlapping region was defined before - on same place */
 static void region_overlap_fix(ScrArea *area, ARegion *region)
 {
   /* find overlapping previous region on same place */
@@ -1167,7 +1166,7 @@ static void region_overlap_fix(ScrArea *area, ARegion *region)
         continue;
       }
       align1 = region_iter->alignment;
-      if (LIB_rcti_isect(&region_iter->winrct, &region->winrct, NULL)) {
+      if (lib_rcti_isect(&region_iter->winrct, &region->winrct, NULL)) {
         if (align1 != align) {
           /* Left overlapping right or vice-versa, forbid this! */
           region->flag |= RGN_FLAG_TOO_SMALL;
@@ -1180,7 +1179,7 @@ static void region_overlap_fix(ScrArea *area, ARegion *region)
   }
 
   /* Guard against flags slipping through that would have to be masked out in usages below. */
-  LIB_assert(align1 == RGN_ALIGN_ENUM_FROM_MASK(align1));
+  lib_assert(align1 == RGN_ALIGN_ENUM_FROM_MASK(align1));
 
   /* translate or close */
   if (region_iter) {
@@ -1189,14 +1188,14 @@ static void region_overlap_fix(ScrArea *area, ARegion *region)
         region->flag |= RGN_FLAG_TOO_SMALL;
         return;
       }
-      LIB_rcti_translate(&region->winrct, region_iter->winx, 0);
+      lib_rcti_translate(&region->winrct, region_iter->winx, 0);
     }
     else if (align1 == RGN_ALIGN_RIGHT) {
       if (region->winrct.xmin - region_iter->winx < U.widget_unit) {
         region->flag |= RGN_FLAG_TOO_SMALL;
         return;
       }
-      LIB_rcti_translate(&region->winrct, -region_iter->winx, 0);
+      lib_rcti_translate(&region->winrct, -region_iter->winx, 0);
     }
   }
 
@@ -1212,7 +1211,7 @@ static void region_overlap_fix(ScrArea *area, ARegion *region)
 
     if (region_iter->overlap && (region_iter->alignment & RGN_SPLIT_PREV) == 0) {
       if ((region_iter->alignment != align) &&
-          LIB_rcti_isect(&region_iter->winrct, &region->winrct, NULL)) {
+          lib_rcti_isect(&region_iter->winrct, &region->winrct, NULL)) {
         /* Left overlapping right or vice-versa, forbid this! */
         region->flag |= RGN_FLAG_TOO_SMALL;
         return;
@@ -1221,7 +1220,7 @@ static void region_overlap_fix(ScrArea *area, ARegion *region)
   }
 }
 
-bool ED_region_is_overlap(int spacetype, int regiontype)
+bool ed_region_is_overlap(int spacetype, int regiontype)
 {
   if (regiontype == RGN_TYPE_HUD) {
     return true;
@@ -1260,7 +1259,7 @@ static void region_rect_recursive(
   int prev_winy = region->winy;
 
   /* no returns in function, winrct gets set in the end again */
-  LIB_rcti_init(&region->winrct, 0, 0, 0, 0);
+  lib_rcti_init(&region->winrct, 0, 0, 0, 0);
 
   /* for test; allow split of previously defined region */
   if (region->alignment & RGN_SPLIT_PREV) {
@@ -1305,16 +1304,16 @@ static void region_rect_recursive(
     prefsizey = UI_DPI_FAC * region->type->prefsizey;
   }
   else if (region->regiontype == RGN_TYPE_HEADER) {
-    prefsizey = ED_area_headersize();
+    prefsizey = ed_area_headersize();
   }
   else if (region->regiontype == RGN_TYPE_TOOL_HEADER) {
-    prefsizey = ED_area_headersize();
+    prefsizey = ed_area_headersize();
   }
   else if (region->regiontype == RGN_TYPE_FOOTER) {
-    prefsizey = ED_area_footersize();
+    prefsizey = ed_area_footersize();
   }
-  else if (ED_area_is_global(area)) {
-    prefsizey = ED_region_global_size_y();
+  else if (ed_area_is_global(area)) {
+    prefsizey = ed_region_global_size_y();
   }
   else {
     prefsizey = UI_DPI_FAC * (region->sizey > 1 ? region->sizey + 0.5f : region->type->prefsizey);
@@ -1324,29 +1323,27 @@ static void region_rect_recursive(
     /* hidden is user flag */
   }
   else if (alignment == RGN_ALIGN_FLOAT) {
-    /**
-     * Currently this window type is only used for RGN_TYPE_HUD,
+    /* Currently this window type is only used for RGN_TYPE_HUD,
      * We expect the panel to resize itself to be larger.
      *
-     * This aligns to the lower left of the area.
-     */
+     * This aligns to the lower left of the area. */
     const int size_min[2] = {UI_UNIT_X, UI_UNIT_Y};
     rcti overlap_remainder_margin = *overlap_remainder;
 
-    LIB_rcti_resize(&overlap_remainder_margin,
-                    max_ii(0, LIB_rcti_size_x(overlap_remainder) - UI_UNIT_X / 2),
-                    max_ii(0, LIB_rcti_size_y(overlap_remainder) - UI_UNIT_Y / 2));
+    lib_rcti_resize(&overlap_remainder_margin,
+                    max_ii(0, lib_rcti_size_x(overlap_remainder) - UI_UNIT_X / 2),
+                    max_ii(0, lib_rcti_size_y(overlap_remainder) - UI_UNIT_Y / 2));
     region->winrct.xmin = overlap_remainder_margin.xmin + region->runtime.offset_x;
     region->winrct.ymin = overlap_remainder_margin.ymin + region->runtime.offset_y;
     region->winrct.xmax = region->winrct.xmin + prefsizex - 1;
     region->winrct.ymax = region->winrct.ymin + prefsizey - 1;
 
-    LIB_rcti_isect(&region->winrct, &overlap_remainder_margin, &region->winrct);
+    lib_rcti_isect(&region->winrct, &overlap_remainder_margin, &region->winrct);
 
-    if (LIB_rcti_size_x(&region->winrct) != prefsizex - 1) {
+    if (lib_rcti_size_x(&region->winrct) != prefsizex - 1) {
       region->flag |= RGN_FLAG_SIZE_CLAMP_X;
     }
-    if (LIB_rcti_size_y(&region->winrct) != prefsizey - 1) {
+    if (lib_rcti_size_y(&region->winrct) != prefsizey - 1) {
       region->flag |= RGN_FLAG_SIZE_CLAMP_Y;
     }
 
@@ -1357,9 +1354,9 @@ static void region_rect_recursive(
         .xmax = region->winrct.xmin + size_min[0],
         .ymax = region->winrct.ymin + size_min[1],
     };
-    LIB_rcti_isect(&winrct_test, &overlap_remainder_margin, &winrct_test);
-    if (LIB_rcti_size_x(&winrct_test) < size_min[0] ||
-        LIB_rcti_size_y(&winrct_test) < size_min[1]) {
+    lib_rcti_isect(&winrct_test, &overlap_remainder_margin, &winrct_test);
+    if (lib_rcti_size_x(&winrct_test) < size_min[0] ||
+        lib_rcti_size_y(&winrct_test) < size_min[1]) {
       region->flag |= RGN_FLAG_TOO_SMALL;
     }
   }
@@ -1371,7 +1368,7 @@ static void region_rect_recursive(
   else if (alignment == RGN_ALIGN_NONE) {
     /* typically last region */
     region->winrct = *remainder;
-    LIB_rcti_init(remainder, 0, 0, 0, 0);
+    lib_rcti_init(remainder, 0, 0, 0, 0);
   }
   else if (ELEM(alignment, RGN_ALIGN_TOP, RGN_ALIGN_BOTTOM)) {
     rcti *winrct = (region->overlap) ? overlap_remainder : remainder;
@@ -1396,7 +1393,7 @@ static void region_rect_recursive(
         region->winrct.ymax = region->winrct.ymin + prefsizey - 1;
         winrct->ymin = region->winrct.ymax + 1;
       }
-      LIB_rcti_sanitize(winrct);
+      lib_rcti_sanitize(winrct);
     }
   }
   else if (ELEM(alignment, RGN_ALIGN_LEFT, RGN_ALIGN_RIGHT)) {
@@ -1422,7 +1419,7 @@ static void region_rect_recursive(
         region->winrct.xmax = region->winrct.xmin + prefsizex - 1;
         winrct->xmin = region->winrct.xmax + 1;
       }
-      LIB_rcti_sanitize(winrct);
+      lib_rcti_sanitize(winrct);
     }
   }
   else if (ELEM(alignment, RGN_ALIGN_VSPLIT, RGN_ALIGN_HSPLIT)) {
@@ -1435,7 +1432,7 @@ static void region_rect_recursive(
         remainder->xmin = region->winrct.xmax + 1;
       }
       else {
-        LIB_rcti_init(remainder, 0, 0, 0, 0);
+        lib_rcti_init(remainder, 0, 0, 0, 0);
       }
     }
     else {
@@ -1444,7 +1441,7 @@ static void region_rect_recursive(
         remainder->ymin = region->winrct.ymax + 1;
       }
       else {
-        LIB_rcti_init(remainder, 0, 0, 0, 0);
+        lib_rcti_init(remainder, 0, 0, 0, 0);
       }
     }
   }
@@ -1464,7 +1461,7 @@ static void region_rect_recursive(
 
       if (count != 4) {
         /* let's stop adding regions */
-        LIB_rcti_init(remainder, 0, 0, 0, 0);
+        lib_rcti_init(remainder, 0, 0, 0, 0);
         if (G.debug & G_DEBUG) {
           printf("region quadsplit failed\n");
         }
@@ -1475,34 +1472,34 @@ static void region_rect_recursive(
     }
     if (quad) {
       if (quad == 1) { /* left bottom */
-        region->winrct.xmax = LIB_rcti_cent_x(remainder);
-        region->winrct.ymax = LIB_rcti_cent_y(remainder);
+        region->winrct.xmax = lib_rcti_cent_x(remainder);
+        region->winrct.ymax = lib_rcti_cent_y(remainder);
       }
       else if (quad == 2) { /* left top */
-        region->winrct.xmax = LIB_rcti_cent_x(remainder);
-        region->winrct.ymin = LIB_rcti_cent_y(remainder) + 1;
+        region->winrct.xmax = lib_rcti_cent_x(remainder);
+        region->winrct.ymin = lib_rcti_cent_y(remainder) + 1;
       }
       else if (quad == 3) { /* right bottom */
-        region->winrct.xmin = LIB_rcti_cent_x(remainder) + 1;
-        region->winrct.ymax = LIB_rcti_cent_y(remainder);
+        region->winrct.xmin = lib_rcti_cent_x(remainder) + 1;
+        region->winrct.ymax = lib_rcti_cent_y(remainder);
       }
       else { /* right top */
-        region->winrct.xmin = LIB_rcti_cent_x(remainder) + 1;
-        region->winrct.ymin = LIB_rcti_cent_y(remainder) + 1;
-        LIB_rcti_init(remainder, 0, 0, 0, 0);
+        region->winrct.xmin = lib_rcti_cent_x(remainder) + 1;
+        region->winrct.ymin = lib_rcti_cent_y(remainder) + 1;
+        lib_rcti_init(remainder, 0, 0, 0, 0);
       }
 
       /* Fix any negative dimensions. This can happen when a quad split 3d view gets too small.
        * (see T72200). */
-      LIB_rcti_sanitize(&region->winrct);
+      lib_rcti_sanitize(&region->winrct);
 
       quad++;
     }
   }
 
   /* for speedup */
-  region->winx = LIB_rcti_size_x(&region->winrct) + 1;
-  region->winy = LIB_rcti_size_y(&region->winrct) + 1;
+  region->winx = lib_rcti_size_x(&region->winrct) + 1;
+  region->winy = lib_rcti_size_y(&region->winrct) + 1;
 
   /* If region opened normally, we store this for hide/reveal usage. */
   /* Prevent rounding errors for UI_DPI_FAC multiply and divide. */
@@ -1542,15 +1539,15 @@ static void region_rect_recursive(
     }
 
     /* Size on one axis is now 0, the other axis may still be invalid (negative) though. */
-    LIB_rcti_sanitize(&region->winrct);
+    lib_rcti_sanitize(&region->winrct);
   }
 
   /* restore prev-split exception */
   if (region->alignment & RGN_SPLIT_PREV) {
     if (region->prev) {
       remainder = remainder_prev;
-      region->prev->winx = LIB_rcti_size_x(&region->prev->winrct) + 1;
-      region->prev->winy = LIB_rcti_size_y(&region->prev->winrct) + 1;
+      region->prev->winx = lib_rcti_size_x(&region->prev->winrct) + 1;
+      region->prev->winy = lib_rcti_size_y(&region->prev->winrct) + 1;
     }
   }
 
@@ -1560,7 +1557,7 @@ static void region_rect_recursive(
     *overlap_remainder = *remainder;
   }
 
-  LIB_assert(LIB_rcti_is_valid(&region->winrct));
+  lib_assert(lib_rcti_is_valid(&region->winrct));
 
   region_rect_recursive(area, region->next, remainder, overlap_remainder, quad);
 
@@ -1569,10 +1566,10 @@ static void region_rect_recursive(
     /* 3D View needs a full rebuild in case a progressive render runs. Rest can live with
      * no-rebuild (e.g. Outliner) */
     if (area->spacetype == SPACE_VIEW3D) {
-      ED_region_tag_redraw(region);
+      lib_region_tag_redraw(region);
     }
     else {
-      ED_region_tag_redraw_no_rebuild(region);
+      lib_region_tag_redraw_no_rebuild(region);
     }
   }
 
@@ -1607,15 +1604,15 @@ static void area_calc_totrct(ScrArea *area, const rcti *window_rect)
    * (they were added in 2.8x as part of the top-bar commit).
    * For more details see T54864. */
 #if 0
-  LIB_assert(area->totrct.xmin >= 0);
-  LIB_assert(area->totrct.xmax >= 0);
-  LIB_assert(area->totrct.ymin >= 0);
-  LIB_assert(area->totrct.ymax >= 0);
+  lib_assert(area->totrct.xmin >= 0);
+  lib_assert(area->totrct.xmax >= 0);
+  lib_assert(area->totrct.ymin >= 0);
+  lib_assert(area->totrct.ymax >= 0);
 #endif
 
   /* for speedup */
-  area->winx = LIB_rcti_size_x(&area->totrct) + 1;
-  area->winy = LIB_rcti_size_y(&area->totrct) + 1;
+  area->winx = lib_rcti_size_x(&area->totrct) + 1;
+  area->winy = lib_rcti_size_y(&area->totrct) + 1;
 }
 
 /* used for area initialize below */
@@ -1634,211 +1631,210 @@ static bool event_in_markers_region(const ARegion *region, const wmEvent *event)
 {
   rcti rect = region->winrct;
   rect.ymax = rect.ymin + UI_MARKER_MARGIN_Y;
-  return LIB_rcti_isect_pt_v(&rect, event->xy);
+  return lib_rcti_isect_pt_v(&rect, event->xy);
 }
 
 /** param region: Region, may be NULL when adding handlers for a area. **/
 static void ed_default_handlers(
-    wmWindowManager *wm, ScrArea *area, ARegion *region, ListBase *handlers, int flag)
+    WindowManager *wm, ScrArea *area, ARegion *region, List *handlers, int flag)
 {
-  LIB_assert(region ? (&region->handlers == handlers) : (&area->handlers == handlers));
+  lib_assert(region ? (&region->handlers == handlers) : (&area->handlers == handlers));
 
   /* NOTE: add-handler checks if it already exists. */
 
   /* it would be good to have bound-box checks for some of these. */
   if (flag & ED_KEYMAP_UI) {
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "User Interface", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "User Interface", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
 
-    ListBase *dropboxes = WM_dropboxmap_find("User Interface", 0, 0);
-    WM_event_add_dropbox_handler(handlers, dropboxes);
+    List *dropboxes = wm_dropboxmap_find("User Interface", 0, 0);
+    wm_event_add_dropbox_handler(handlers, dropboxes);
 
     /* user interface widgets */
-    UI_region_handlers_add(handlers);
+    ui_region_handlers_add(handlers);
   }
   if (flag & ED_KEYMAP_GIZMO) {
-    LIB_assert(region && ELEM(region->type->regionid, RGN_TYPE_WINDOW, RGN_TYPE_PREVIEW));
+    lib_assert(region && ELEM(region->type->regionid, RGN_TYPE_WINDOW, RGN_TYPE_PREVIEW));
     if (region) {
       /* Anything else is confusing, only allow this. */
-      LIB_assert(&region->handlers == handlers);
+      lib_assert(&region->handlers == handlers);
       if (region->gizmo_map == NULL) {
         region->gizmo_map = WM_gizmomap_new_from_type(
             &(const struct wmGizmoMapType_Params){area->spacetype, region->type->regionid});
       }
-      WM_gizmomap_add_handlers(region, region->gizmo_map);
+      wm_gizmomap_add_handlers(region, region->gizmo_map);
     }
   }
   if (flag & ED_KEYMAP_VIEW2D) {
     /* 2d-viewport handling+manipulation */
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "View2D", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "View2D", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
   }
   if (flag & ED_KEYMAP_ANIMATION) {
     wmKeyMap *keymap;
 
     /* time-markers */
-    keymap = WM_keymap_ensure(wm->defaultconf, "Markers", 0, 0);
-    WM_event_add_keymap_handler_poll(handlers, keymap, event_in_markers_region);
+    keymap = wm_keymap_ensure(wm->defaultconf, "Markers", 0, 0);
+    wm_event_add_keymap_handler_poll(handlers, keymap, event_in_markers_region);
 
     /* time-scrub */
-    keymap = WM_keymap_ensure(wm->defaultconf, "Time Scrub", 0, 0);
-    WM_event_add_keymap_handler_poll(handlers, keymap, ED_time_scrub_event_in_region);
+    keymap = wm_keymap_ensure(wm->defaultconf, "Time Scrub", 0, 0);
+    wm_event_add_keymap_handler_poll(handlers, keymap, ed_time_scrub_event_in_region);
 
     /* frame changing and timeline operators (for time spaces) */
-    keymap = WM_keymap_ensure(wm->defaultconf, "Animation", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    keymap = wm_keymap_ensure(wm->defaultconf, "Animation", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
   }
   if (flag & ED_KEYMAP_TOOL) {
     if (flag & ED_KEYMAP_GIZMO) {
-      WM_event_add_keymap_handler_dynamic(
-          &region->handlers, WM_event_get_keymap_from_toolsystem_with_gizmos, area);
+      wm_event_add_keymap_handler_dynamic(
+          &region->handlers, wm_event_get_keymap_from_toolsystem_with_gizmos, area);
     }
     else {
-      WM_event_add_keymap_handler_dynamic(
-          &region->handlers, WM_event_get_keymap_from_toolsystem, area);
+      wm_event_add_keymap_handler_dynamic(
+          &region->handlers, wm_event_get_keymap_from_toolsystem, area);
     }
   }
   if (flag & ED_KEYMAP_FRAMES) {
     /* frame changing/jumping (for all spaces) */
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "Frames", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "Frames", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
   }
   if (flag & ED_KEYMAP_HEADER) {
     /* standard keymap for headers regions */
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
   }
   if (flag & ED_KEYMAP_FOOTER) {
     /* standard keymap for footer regions */
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap);
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap);
   }
   if (flag & ED_KEYMAP_NAVBAR) {
-    /* standard keymap for Navigation bar regions */
-    wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
-    WM_event_add_keymap_handler(&region->handlers, keymap);
+    /* standard keymap for Nav bar regions */
+    wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "Region Context Menu", 0, 0);
+    wm_event_add_keymap_handler(&region->handlers, keymap);
   }
 
   /* Keep last because of LMB/RMB handling, see: T57527. */
   if (flag & ED_KEYMAP_GPENCIL) {
-    /* grease pencil */
+    /* pen */
     /* This is now 4 keymaps - One for basic functionality,
      * and others for special stroke modes (edit, paint and sculpt).
      *
      * For now, it's easier to just include all,
-     * since you hardly want one without the others.
-     */
-    wmKeyMap *keymap_general = WM_keymap_ensure(wm->defaultconf, "Grease Pencil", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_general);
+     * since you hardly want one without the others. */
+    wmKeyMap *keymap_general = wm_keymap_ensure(wm->defaultconf, "Pen", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_general);
 
-    wmKeyMap *keymap_curve_edit = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Curve Edit Mode", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_curve_edit);
+    wmKeyMap *keymap_curve_edit = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Curve Edit Mode", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_curve_edit);
 
-    wmKeyMap *keymap_edit = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Edit Mode", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_edit);
+    wmKeyMap *keymap_edit = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Edit Mode", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_edit);
 
-    wmKeyMap *keymap_paint = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Paint Mode", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_paint);
+    wmKeyMap *keymap_paint = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Paint Mode", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_paint);
 
-    wmKeyMap *keymap_paint_draw = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Paint (Draw brush)", 0, 0);
+    wmKeyMap *keymap_paint_draw = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Paint (Draw brush)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_paint_draw);
 
-    wmKeyMap *keymap_paint_erase = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Paint (Erase)", 0, 0);
+    wmKeyMap *keymap_paint_erase = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Paint (Erase)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_paint_erase);
 
-    wmKeyMap *keymap_paint_fill = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Paint (Fill)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_paint_fill);
+    wmKeyMap *keymap_paint_fill = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Paint (Fill)", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_paint_fill);
 
-    wmKeyMap *keymap_paint_tint = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Paint (Tint)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_paint_tint);
+    wmKeyMap *keymap_paint_tint = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Paint (Tint)", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_paint_tint);
 
-    wmKeyMap *keymap_sculpt = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt Mode", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt);
+    wmKeyMap *keymap_sculpt = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Sculpt Mode", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt);
 
-    wmKeyMap *keymap_vertex = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex Mode", 0, 0);
+    wmKeyMap *keymap_vertex = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Vertex Mode", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex);
 
-    wmKeyMap *keymap_vertex_draw = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex (Draw)", 0, 0);
+    wmKeyMap *keymap_vertex_draw = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Vertex (Draw)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex_draw);
 
-    wmKeyMap *keymap_vertex_blur = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex (Blur)", 0, 0);
+    wmKeyMap *keymap_vertex_blur = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Vertex (Blur)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex_blur);
 
-    wmKeyMap *keymap_vertex_average = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex (Average)", 0, 0);
+    wmKeyMap *keymap_vertex_average = wm_keymap_ensure(
+        wm->defaultconf, "Pen Stroke Vertex (Average)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex_average);
 
     wmKeyMap *keymap_vertex_smear = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex (Smear)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Vertex (Smear)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex_smear);
 
     wmKeyMap *keymap_vertex_replace = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Vertex (Replace)", 0, 0);
+        wm->defaultconf, "Pen Stroke Vertex (Replace)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_vertex_replace);
 
     wmKeyMap *keymap_sculpt_smooth = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Smooth)", 0, 0);
+        wm->defaultconf, "Pen Stroke Sculpt (Smooth)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_smooth);
 
     wmKeyMap *keymap_sculpt_thickness = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Thickness)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Thickness)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_thickness);
 
     wmKeyMap *keymap_sculpt_strength = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Strength)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Strength)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_strength);
 
     wmKeyMap *keymap_sculpt_grab = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Grab)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Grab)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_grab);
 
     wmKeyMap *keymap_sculpt_push = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Push)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Push)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_push);
 
     wmKeyMap *keymap_sculpt_twist = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Twist)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Twist)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_twist);
 
     wmKeyMap *keymap_sculpt_pinch = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Pinch)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Pinch)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_pinch);
 
     wmKeyMap *keymap_sculpt_randomize = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Randomize)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Randomize)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_randomize);
 
     wmKeyMap *keymap_sculpt_clone = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Sculpt (Clone)", 0, 0);
+        wm->defaultconf, "Pencil Stroke Sculpt (Clone)", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_sculpt_clone);
 
     wmKeyMap *keymap_weight = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Weight Mode", 0, 0);
+        wm->defaultconf, "Pencil Stroke Weight Mode", 0, 0);
     WM_event_add_keymap_handler(handlers, keymap_weight);
 
     wmKeyMap *keymap_weight_draw = WM_keymap_ensure(
-        wm->defaultconf, "Grease Pencil Stroke Weight (Draw)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_weight_draw);
+        wm->defaultconf, "Pencil Stroke Weight (Draw)", 0, 0);
+    wm_event_add_keymap_handler(handlers, keymap_weight_draw);
   }
 }
 
-void ED_area_update_region_sizes(wmWindowManager *wm, wmWindow *win, ScrArea *area)
+void ed_area_update_region_sizes(WindowManager *wm, Window *win, ScrArea *area)
 {
   if (!(area->flag & AREA_FLAG_REGION_SIZE_UPDATE)) {
     return;
   }
-  const duneScreen *screen = WM_window_get_active_screen(win);
+  const Screen *screen = wm_window_get_active_screen(win);
 
   rcti window_rect;
   WM_window_rect_calc(win, &window_rect);
@@ -1852,7 +1848,7 @@ void ED_area_update_region_sizes(wmWindowManager *wm, wmWindow *win, ScrArea *ar
   /* Dynamically sized regions may have changed region sizes, so we have to force azone update. */
   area_azone_init(win, screen, area);
 
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
     region_subwindow(region);
 
     /* region size may have changed, init does necessary adjustments */
@@ -1863,39 +1859,39 @@ void ED_area_update_region_sizes(wmWindowManager *wm, wmWindow *win, ScrArea *ar
     /* Some AZones use View2D data which is only updated in region init, so call that first! */
     region_azones_add(screen, area, region);
   }
-  ED_area_azones_update(area, win->eventstate->xy);
+  ed_area_azones_update(area, win->eventstate->xy);
 
   area->flag &= ~AREA_FLAG_REGION_SIZE_UPDATE;
 }
 
-bool ED_area_has_shared_border(struct ScrArea *a, struct ScrArea *b)
+bool ed_area_has_shared_border(struct ScrArea *a, struct ScrArea *b)
 {
   return area_getorientation(a, b) != -1;
 }
 
-void ED_area_init(wmWindowManager *wm, wmWindow *win, ScrArea *area)
+void ed_area_init(WindowManager *wm, wmWindow *win, ScrArea *area)
 {
-  WorkSpace *workspace = WM_window_get_active_workspace(win);
-  const duneScreen *screen = DUNE_workspace_active_screen_get(win->workspace_hook);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  WorkSpace *workspace = ed_window_get_active_workspace(win);
+  const Screen *screen = DUNE_workspace_active_screen_get(win->workspace_hook);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
 
-  if (ED_area_is_global(area) && (area->global->flag & GLOBAL_AREA_IS_HIDDEN)) {
+  if (ed_area_is_global(area) && (area->global->flag & GLOBAL_AREA_IS_HIDDEN)) {
     return;
   }
 
   rcti window_rect;
-  WM_window_rect_calc(win, &window_rect);
+  wm_window_rect_calc(win, &window_rect);
 
   /* Set type-definitions. */
-  area->type = DUNE_spacetype_from_id(area->spacetype);
+  area->type = dune_spacetype_from_id(area->spacetype);
 
   if (area->type == NULL) {
     area->spacetype = SPACE_VIEW3D;
-    area->type = BKE_spacetype_from_id(area->spacetype);
+    area->type = dune_spacetype_from_id(area->spacetype);
   }
 
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
-    region->type = DUNE_regiontype_from_id_or_first(area->type, region->regiontype);
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
+    region->type = dune_regiontype_from_id_or_first(area->type, region->regiontype);
   }
 
   /* area sizes */
@@ -1918,7 +1914,7 @@ void ED_area_init(wmWindowManager *wm, wmWindow *win, ScrArea *area)
   area_azone_init(win, screen, area);
 
   /* region windows, default and own handlers */
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
     region_subwindow(region);
 
     if (region->visible) {
@@ -1931,7 +1927,7 @@ void ED_area_init(wmWindowManager *wm, wmWindow *win, ScrArea *area)
     }
     else {
       /* prevent uiblocks to run */
-      UI_blocklist_free(NULL, region);
+      ui_blocklist_free(NULL, region);
     }
 
     /* Some AZones use View2D data which is only updated in region init, so call that first! */
@@ -1941,7 +1937,7 @@ void ED_area_init(wmWindowManager *wm, wmWindow *win, ScrArea *area)
   /* Avoid re-initializing tools while resizing the window. */
   if ((G.moving & G_TRANSFORM_WM) == 0) {
     if ((1 << area->spacetype) & WM_TOOLSYSTEM_SPACE_MASK) {
-      WM_toolsystem_refresh_screen_area(workspace, view_layer, area);
+      wm_toolsystem_refresh_screen_area(workspace, view_layer, area);
       area->flag |= AREA_FLAG_ACTIVE_TOOL_UPDATE;
     }
     else {
@@ -1953,83 +1949,83 @@ void ED_area_init(wmWindowManager *wm, wmWindow *win, ScrArea *area)
 
 static void area_offscreen_init(ScrArea *area)
 {
-  area->type = DUNE_spacetype_from_id(area->spacetype);
+  area->type = dune_spacetype_from_id(area->spacetype);
 
   if (area->type == NULL) {
     area->spacetype = SPACE_VIEW3D;
-    area->type = DUNE_spacetype_from_id(area->spacetype);
+    area->type = dune_spacetype_from_id(area->spacetype);
   }
 
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
-    region->type = DUNE_regiontype_from_id_or_first(area->type, region->regiontype);
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
+    region->type = dune_regiontype_from_id_or_first(area->type, region->regiontype);
   }
 }
 
-ScrArea *ED_area_offscreen_create(wmWindow *win, eSpace_Type space_type)
+ScrArea *ed_area_offscreen_create(Window *win, eSpace_Type space_type)
 {
   ScrArea *area = MEM_callocN(sizeof(*area), __func__);
   area->spacetype = space_type;
 
-  screen_area_spacelink_add(WM_window_get_active_scene(win), area, space_type);
+  screen_area_spacelink_add(wm_window_get_active_scene(win), area, space_type);
   area_offscreen_init(area);
 
   return area;
 }
 
-static void area_offscreen_exit(wmWindowManager *wm, wmWindow *win, ScrArea *area)
+static void area_offscreen_exit(WindowManager *wm, Window *win, ScrArea *area)
 {
   if (area->type && area->type->exit) {
     area->type->exit(wm, area);
   }
 
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
     if (region->type && region->type->exit) {
       region->type->exit(wm, region);
     }
 
-    WM_event_modal_handler_region_replace(win, region, NULL);
-    WM_draw_region_free(region, true);
+    wm_event_modal_handler_region_replace(win, region, NULL);
+    wm_draw_region_free(region, true);
 
     MEM_SAFE_FREE(region->headerstr);
 
     if (region->regiontimer) {
-      WM_event_remove_timer(wm, win, region->regiontimer);
+      wm_event_remove_timer(wm, win, region->regiontimer);
       region->regiontimer = NULL;
     }
 
     if (wm->message_bus) {
-      WM_msgbus_clear_by_owner(wm->message_bus, region);
+      wm_msgbus_clear_by_owner(wm->message_bus, region);
     }
   }
 
-  WM_event_modal_handler_area_replace(win, area, NULL);
+  wm_event_modal_handler_area_replace(win, area, NULL);
 }
 
-void ED_area_offscreen_free(wmWindowManager *wm, wmWindow *win, ScrArea *area)
+void ed_area_offscreen_free(WindowManager *wm, Window *win, ScrArea *area)
 {
   area_offscreen_exit(wm, win, area);
 
-  DUNE_screen_area_free(area);
-  MEM_freeN(area);
+  dune_screen_area_free(area);
+  mem_freen(area);
 }
 
 static void region_update_rect(ARegion *region)
 {
-  region->winx = LIB_rcti_size_x(&region->winrct) + 1;
-  region->winy = LIB_rcti_size_y(&region->winrct) + 1;
+  region->winx = lib_rcti_size_x(&region->winrct) + 1;
+  region->winy = lib_rcti_size_y(&region->winrct) + 1;
 
   /* v2d mask is used to subtract scrollbars from a 2d view. Needs initialize here. */
-  LIB_rcti_init(&region->v2d.mask, 0, region->winx - 1, 0, region->winy - 1);
+  lib_rcti_init(&region->v2d.mask, 0, region->winx - 1, 0, region->winy - 1);
 }
 
-void ED_region_update_rect(ARegion *region)
+void ed_region_update_rect(ARegion *region)
 {
   region_update_rect(region);
 }
 
-void ED_region_floating_init(ARegion *region)
+void ed_region_floating_init(ARegion *region)
 {
-  LIB_assert(region->alignment == RGN_ALIGN_FLOAT);
+  lib_assert(region->alignment == RGN_ALIGN_FLOAT);
 
   /* refresh can be called before window opened */
   region_subwindow(region);
@@ -2037,10 +2033,10 @@ void ED_region_floating_init(ARegion *region)
   region_update_rect(region);
 }
 
-void ED_region_cursor_set(wmWindow *win, ScrArea *area, ARegion *region)
+void ed_region_cursor_set(Window *win, ScrArea *area, ARegion *region)
 {
   if (region != NULL) {
-    if ((region->gizmo_map != NULL) && WM_gizmomap_cursor_set(region->gizmo_map, win)) {
+    if ((region->gizmo_map != NULL) && wm_gizmomap_cursor_set(region->gizmo_map, win)) {
       return;
     }
     if (area && region->type && region->type->cursor) {
@@ -2049,50 +2045,50 @@ void ED_region_cursor_set(wmWindow *win, ScrArea *area, ARegion *region)
     }
   }
 
-  if (WM_cursor_set_from_tool(win, area, region)) {
+  if (wm_cursor_set_from_tool(win, area, region)) {
     return;
   }
 
-  WM_cursor_set(win, WM_CURSOR_DEFAULT);
+  wm_cursor_set(win, WM_CURSOR_DEFAULT);
 }
 
-void ED_region_visibility_change_update(duneContext *C, ScrArea *area, ARegion *region)
+void ed_region_visibility_change_update(Cxt *C, ScrArea *area, ARegion *region)
 {
   if (region->flag & RGN_FLAG_HIDDEN) {
-    WM_event_remove_handlers(C, &region->handlers);
+    wm_event_remove_handlers(C, &region->handlers);
     /* Needed to close any open pop-overs which would otherwise remain open,
      * crashing on attempting to refresh. See: T93410.
      *
      * When ED_area_init frees buttons via UI_blocklist_free a NULL context
      * is passed, causing the free not to remove menus or their handlers. */
-    UI_region_free_active_but_all(C, region);
+    ui_region_free_active_but_all(C, region);
   }
 
-  ED_area_init(CTX_wm_manager(C), CTX_wm_window(C), area);
-  ED_area_tag_redraw(area);
+  ed_area_init(cxt_wm_manager(C), cxt_wm_window(C), area);
+  ed_area_tag_redraw(area);
 }
 
-void region_toggle_hidden(duneContext *C, ARegion *region, const bool do_fade)
+void region_toggle_hidden(Cxt *C, ARegion *region, const bool do_fade)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_wm_area(C);
 
   region->flag ^= RGN_FLAG_HIDDEN;
 
   if (do_fade && region->overlap) {
     /* starts a timer, and in end calls the stuff below itself (region_sblend_invoke()) */
-    ED_region_visibility_change_update_animated(C, area, region);
+    ed_region_visibility_change_update_animated(C, area, region);
   }
   else {
-    ED_region_visibility_change_update(C, area, region);
+    ed_region_visibility_change_update(C, area, region);
   }
 }
 
-void ED_region_toggle_hidden(duneContext *C, ARegion *region)
+void ed_region_toggle_hidden(Cxt *C, ARegion *region)
 {
   region_toggle_hidden(C, region, true);
 }
 
-void ED_area_data_copy(ScrArea *area_dst, ScrArea *area_src, const bool do_free)
+void ed_area_data_copy(ScrArea *area_dst, ScrArea *area_src, const bool do_free)
 {
   const char spacetype = area_dst->spacetype;
   const short flag_copy = HEADER_NO_PULLDOWN;
@@ -2104,28 +2100,28 @@ void ED_area_data_copy(ScrArea *area_dst, ScrArea *area_src, const bool do_free)
 
   /* area */
   if (do_free) {
-    DUNE_spacedata_freelist(&area_dst->spacedata);
+    dune_spacedata_freelist(&area_dst->spacedata);
   }
-  DUNE_spacedata_copylist(&area_dst->spacedata, &area_src->spacedata);
+  dune_spacedata_copylist(&area_dst->spacedata, &area_src->spacedata);
 
   /* NOTE: SPACE_EMPTY is possible on new screens. */
 
   /* regions */
   if (do_free) {
     SpaceType *st = DUNE_spacetype_from_id(spacetype);
-    LISTBASE_FOREACH (ARegion *, region, &area_dst->regionbase) {
-      DUNE_area_region_free(st, region);
+    LIST_FOREACH (ARegion *, region, &area_dst->regionbase) {
+      dune_area_region_free(st, region);
     }
-    LIB_freelistN(&area_dst->regionbase);
+    lib_freelistn(&area_dst->regionbase);
   }
-  SpaceType *st = DUNE_spacetype_from_id(area_src->spacetype);
-  LISTBASE_FOREACH (ARegion *, region, &area_src->regionbase) {
-    ARegion *newar = DUNE_area_region_copy(st, region);
-    LIB_addtail(&area_dst->regionbase, newar);
+  SpaceType *st = dune_spacetype_from_id(area_src->spacetype);
+  LIST_FOREACH (ARegion *, region, &area_src->regionbase) {
+    ARegion *newar = dune_area_region_copy(st, region);
+    lib_addtail(&area_dst->regionbase, newar);
   }
 }
 
-void ED_area_data_swap(ScrArea *area_dst, ScrArea *area_src)
+void ed_area_data_swap(ScrArea *area_dst, ScrArea *area_src)
 {
   SWAP(char, area_dst->spacetype, area_src->spacetype);
   SWAP(SpaceType *, area_dst->type, area_src->type);
@@ -2137,23 +2133,17 @@ void ED_area_data_swap(ScrArea *area_dst, ScrArea *area_src)
 /* -------------------------------------------------------------------- */
 /* Region Alignment Syncing for Space Switching **/
 
-/**
- * Store the alignment & other info per region type
+/* Store the alignment & other info per region type
  * (use as a region-type aligned array).
  *
  * note Currently this is only done for headers,
- * we might want to do this with the tool-bar in the future too.
- */
+ * we might want to do this with the tool-bar in the future too. */
 struct RegionTypeAlignInfo {
   struct {
-    /**
-     * Values match ARegion.alignment without flags (see #RGN_ALIGN_ENUM_FROM_MASK).
-     * store all so we can sync alignment without adding extra checks.
-     */
+    /* Values match ARegion.alignment without flags (see #RGN_ALIGN_ENUM_FROM_MASK).
+     * store all so we can sync alignment without adding extra checks. */
     short alignment;
-    /**
-     * Needed for detecting which header displays the space-type switcher.
-     */
+    /* Needed for detecting which header displays the space-type switcher. */
     bool hidden;
   } by_type[RGN_TYPE_LEN];
 };
@@ -2166,7 +2156,7 @@ static void region_align_info_from_area(ScrArea *area, struct RegionTypeAlignInf
     r_align_info->by_type[index].hidden = true;
   }
 
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
+  LIST_FOREACH (ARegion *, region, &area->regionbase) {
     const int index = region->regiontype;
     if ((uint)index < RGN_TYPE_LEN) {
       r_align_info->by_type[index].alignment = RGN_ALIGN_ENUM_FROM_MASK(region->alignment);
@@ -2175,13 +2165,11 @@ static void region_align_info_from_area(ScrArea *area, struct RegionTypeAlignInf
   }
 }
 
-/**
- * Keeping alignment between headers keep the space-type selector button in the same place.
+/* Keeping alignment between headers keep the space-type selector button in the same place.
  * This is complicated by the editor-type selector being placed on the header
  * closest to the screen edge which changes based on hidden state.
  *
- * The tool-header is used when visible, otherwise the header is used.
- */
+ * The tool-header is used when visible, otherwise the header is used */
 static short region_alignment_from_header_and_tool_header_state(
     const struct RegionTypeAlignInfo *region_align_info, const short fallback)
 {
@@ -2206,8 +2194,7 @@ static short region_alignment_from_header_and_tool_header_state(
   return fallback;
 }
 
-/**
- * Notes on header alignment syncing.
+/* Notes on header alignment syncing.
  *
  * This is as involved as it is because:
  *
@@ -2226,8 +2213,7 @@ static short region_alignment_from_header_and_tool_header_state(
  *   from the previous regions to the next regions when syncing.
  * - Otherwise detect the _primary_ header (the one that shows the space type)
  *   and use this to set alignment for the headers in the destination area.
- * - Header & tool-header/footer may be on opposite sides, this is preserved when syncing.
- */
+ * - Header & tool-header/footer may be on opposite sides, this is preserved when syncing. */
 static void region_align_info_to_area_for_headers(
     const struct RegionTypeAlignInfo *region_align_info_src,
     const struct RegionTypeAlignInfo *region_align_info_dst,
@@ -2368,35 +2354,35 @@ static void region_align_info_to_area(
 
 /* *********** Space switching code *********** */
 
-void ED_area_swapspace(bContext *C, ScrArea *sa1, ScrArea *sa2)
+void ed_area_swapspace(Cxt *C, ScrArea *sa1, ScrArea *sa2)
 {
-  ScrArea *tmp = MEM_callocN(sizeof(ScrArea), "addscrarea");
-  wmWindow *win = CTX_wm_window(C);
+  ScrArea *tmp = mem_callocn(sizeof(ScrArea), "addscrarea");
+  Window *win = cxt_wm_window(C);
 
-  ED_area_exit(C, sa1);
-  ED_area_exit(C, sa2);
+  ed_area_exit(C, sa1);
+  ed_area_exit(C, sa2);
 
-  ED_area_data_copy(tmp, sa1, false);
-  ED_area_data_copy(sa1, sa2, true);
-  ED_area_data_copy(sa2, tmp, true);
-  ED_area_init(CTX_wm_manager(C), win, sa1);
-  ED_area_init(CTX_wm_manager(C), win, sa2);
+  ed_area_data_copy(tmp, sa1, false);
+  ed_area_data_copy(sa1, sa2, true);
+  ed_area_data_copy(sa2, tmp, true);
+  ed_area_init(cxt_wm_manager(C), win, sa1);
+  ed_area_init(cxt_wm_manager(C), win, sa2);
 
-  DUNE_screen_area_free(tmp);
-  MEM_freeN(tmp);
+  dune_screen_area_free(tmp);
+  mem_freen(tmp);
 
   /* tell WM to refresh, cursor types etc */
-  WM_event_add_mousemove(win);
+  wm_event_add_mousemove(win);
 
-  ED_area_tag_redraw(sa1);
-  ED_area_tag_refresh(sa1);
-  ED_area_tag_redraw(sa2);
-  ED_area_tag_refresh(sa2);
+  ed_area_tag_redraw(sa1);
+  ed_area_tag_refresh(sa1);
+  ed_area_tag_redraw(sa2);
+  ed_area_tag_refresh(sa2);
 }
 
-void ED_area_newspace(duneContext *C, ScrArea *area, int type, const bool skip_region_exit)
+void ed_area_newspace(Cxt *C, ScrArea *area, int type, const bool skip_region_exit)
 {
-  wmWindow *win = CTX_wm_window(C);
+  Window *win = cxt_wm_window(C);
 
   if (area->spacetype != type) {
     SpaceLink *slold = area->spacedata.first;
@@ -2426,25 +2412,25 @@ void ED_area_newspace(duneContext *C, ScrArea *area, int type, const bool skip_r
       area->type->exit = NULL;
     }
 
-    ED_area_exit(C, area);
+    ed_area_exit(C, area);
 
     /* restore old area exit callback */
     if (skip_region_exit && area->type) {
       area->type->exit = area_exit;
     }
 
-    SpaceType *st = DUNE_spacetype_from_id(type);
+    SpaceType *st = dune_spacetype_from_id(type);
 
     area->spacetype = type;
     area->type = st;
 
-    /* If st->create may be called, don't use context until then. The
-     * area->type->context() callback has changed but data may be invalid
-     * (e.g. with properties editor) until space-data is properly created */
+    /* If st->create may be called, don't use cxt until then. The
+     * area->type->cxt() cb has changed but data may be invalid
+     * (e.g. with props editor) until space-data is properly created */
 
     /* check previously stored space */
     SpaceLink *sl = NULL;
-    LISTBASE_FOREACH (SpaceLink *, sl_iter, &area->spacedata) {
+    LIST_FOREACH (SpaceLink *, sl_iter, &area->spacedata) {
       if (sl_iter->spacetype == type) {
         sl = sl_iter;
         break;
@@ -2452,9 +2438,9 @@ void ED_area_newspace(duneContext *C, ScrArea *area, int type, const bool skip_r
     }
 
     /* old spacedata... happened during work on 2.50, remove */
-    if (sl && LIB_listbase_is_empty(&sl->regionbase)) {
+    if (sl && lib_list_is_empty(&sl->regionbase)) {
       st->free(sl);
-      LIB_freelinkN(&area->spacedata, sl);
+      lib_freelinkn(&area->spacedata, sl);
       if (slold == sl) {
         slold = NULL;
       }
@@ -2465,30 +2451,30 @@ void ED_area_newspace(duneContext *C, ScrArea *area, int type, const bool skip_r
       /* swap regions */
       slold->regionbase = area->regionbase;
       area->regionbase = sl->regionbase;
-      LIB_listbase_clear(&sl->regionbase);
+      lib_list_clear(&sl->regionbase);
       /* SPACE_FLAG_TYPE_WAS_ACTIVE is only used to go back to a previously active space that is
        * overlapped by temporary ones. It's now properly activated, so the flag should be cleared
        * at this point. */
       sl->link_flag &= ~SPACE_FLAG_TYPE_WAS_ACTIVE;
 
       /* put in front of list */
-      LIB_remlink(&area->spacedata, sl);
-      LIB_addhead(&area->spacedata, sl);
+      lib_remlink(&area->spacedata, sl);
+      lib_addhead(&area->spacedata, sl);
     }
     else {
       /* new space */
       if (st) {
         /* Don't get scene from context here which may depend on space-data. */
-        Scene *scene = WM_window_get_active_scene(win);
+        Scene *scene = wm_window_get_active_scene(win);
         sl = st->create(area, scene);
-        LIB_addhead(&area->spacedata, sl);
+        lib_addhead(&area->spacedata, sl);
 
         /* swap regions */
         if (slold) {
           slold->regionbase = area->regionbase;
         }
         area->regionbase = sl->regionbase;
-        LIB_listbase_clear(&sl->regionbase);
+        lib_list_clear(&sl->regionbase);
       }
     }
 
@@ -2497,19 +2483,19 @@ void ED_area_newspace(duneContext *C, ScrArea *area, int type, const bool skip_r
       region_align_info_to_area(area, region_align_info);
     }
 
-    ED_area_init(CTX_wm_manager(C), win, area);
+    ed_area_init(cxt_wm_manager(C), win, area);
 
-    /* tell WM to refresh, cursor types etc */
-    WM_event_add_mousemove(win);
+    /* tell wm to refresh, cursor types etc */
+    wm_event_add_mousemove(win);
 
     /* send space change notifier */
-    WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, area);
+    wm_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, area);
 
-    ED_area_tag_refresh(area);
+    ed_area_tag_refresh(area);
   }
 
   /* also redraw when re-used */
-  ED_area_tag_redraw(area);
+  ed_area_tag_redraw(area);
 }
 
 static SpaceLink *area_get_prevspace(ScrArea *area)
@@ -2534,13 +2520,13 @@ static SpaceLink *area_get_prevspace(ScrArea *area)
   return sl->next;
 }
 
-void ED_area_prevspace(bContext *C, ScrArea *area)
+void ed_area_prevspace(Cxt *C, ScrArea *area)
 {
   SpaceLink *sl = area->spacedata.first;
   SpaceLink *prevspace = sl ? area_get_prevspace(area) : NULL;
 
   if (prevspace) {
-    ED_area_newspace(C, area, prevspace->spacetype, false);
+    ed_area_newspace(C, area, prevspace->spacetype, false);
     /* We've exited the space, so it can't be considered temporary anymore. */
     sl->link_flag &= ~SPACE_FLAG_TYPE_TEMPORARY;
   }
@@ -2552,20 +2538,20 @@ void ED_area_prevspace(bContext *C, ScrArea *area)
    * fullscreen, but not in a stacked one). */
   area->flag &= ~AREA_FLAG_STACKED_FULLSCREEN;
 
-  ED_area_tag_redraw(area);
+  ed_area_tag_redraw(area);
 
   /* send space change notifier */
-  WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, area);
+  wm_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, area);
 }
 
-int ED_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
+int ed_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
 {
-  ScrArea *area = CTX_wm_area(C);
-  bScreen *screen = CTX_wm_screen(C);
-  PointerAPI areaptr;
+  ScrArea *area = cxt_wm_area(C);
+  Screen *screen = cxt_wm_screen(C);
+  ApiPtr areaptr;
   int xco = 0.4 * U.widget_unit;
 
-  API_pointer_create(&(screen->id), &RNA_Area, area, &areaptr);
+  api_ptr_create(&(screen->id), &RNA_Area, area, &areaptr);
 
   uiDefButR(block,
             UI_BTYPE_MENU,
@@ -2589,9 +2575,9 @@ int ED_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
 
 /************************ standard UI regions ************************/
 
-static ThemeColorID region_background_color_id(const duneContext *C, const ARegion *region)
+static ThemeColorId region_background_color_id(const Cxt *C, const ARegion *region)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_wm_area(C);
 
   switch (region->regiontype) {
     case RGN_TYPE_HEADER:
@@ -2609,21 +2595,21 @@ static ThemeColorID region_background_color_id(const duneContext *C, const ARegi
   }
 }
 
-static void region_clear_color(const bContext *C, const ARegion *region, ThemeColorID colorid)
+static void region_clear_color(const Cxt *C, const ARegion *region, ThemeColorId colorid)
 {
   if (region->alignment == RGN_ALIGN_FLOAT) {
     /* handle our own drawing. */
   }
   else if (region->overlap) {
     /* view should be in pixelspace */
-    UI_view2d_view_restore(C);
+    ui_view2d_view_restore(C);
 
     float back[4];
-    UI_GetThemeColor4fv(colorid, back);
-    GPU_clear_color(back[3] * back[0], back[3] * back[1], back[3] * back[2], back[3]);
+    ui_GetThemeColor4fv(colorid, back);
+    gpu_clear_color(back[3] * back[0], back[3] * back[1], back[3] * back[2], back[3]);
   }
   else {
-    UI_ThemeClearColor(colorid);
+    ui_ThemeClearColor(colorid);
   }
 }
 
@@ -2637,18 +2623,16 @@ LIB_INLINE bool streq_array_any(const char *s, const char *arr[])
   return false;
 }
 
-/**
- * Builds the panel layout for the input \a panel or type \a pt.
+/* Builds the panel layout for the input panel or type pt.
  *
  * param panel: The panel to draw. Can be null,
  * in which case a panel with the type of a pt will be created.
  * param unique_panel_str: A unique identifier for the name of the a uiBlock associated with the
  * panel. Used when the panel is an instanced panel so a unique identifier is needed to find the
- * correct old a uiBlock, and NULL otherwise.
- */
-static void ed_panel_draw(const duneContext *C,
+ * correct old a uiBlock, and NULL otherwise. */
+static void ed_panel_draw(const Cxt *C,
                           ARegion *region,
-                          ListBase *lb,
+                          List *lb,
                           PanelType *pt,
                           Panel *panel,
                           int w,
@@ -2656,10 +2640,9 @@ static void ed_panel_draw(const duneContext *C,
                           char *unique_panel_str,
                           const char *search_filter)
 {
-  const uiStyle *style = UI_style_get_dpi();
+  const uiStyle *style = ui_style_get_dpi();
 
   /* Draw panel. */
-
   char block_name[DUNE_ST_MAXNAME + INSTANCED_PANEL_UNIQUE_STR_LEN];
   strncpy(block_name, pt->idname, DUNE_ST_MAXNAME);
   if (unique_panel_str != NULL) {
@@ -2692,15 +2675,15 @@ static void ed_panel_draw(const duneContext *C,
 
     pt->draw_header_preset(C, panel);
 
-    UI_block_apply_search_filter(block, search_filter);
-    UI_block_layout_resolve(block, &xco, &yco);
-    UI_block_translate(block, headerend - xco, 0);
+    ui_block_apply_search_filter(block, search_filter);
+    ui_block_layout_resolve(block, &xco, &yco);
+    ui_block_translate(block, headerend - xco, 0);
     panel->layout = NULL;
   }
 
   if (pt->draw_header && !(pt->flag & PANEL_TYPE_NO_HEADER)) {
     int labelx, labely;
-    UI_panel_label_offset(block, &labelx, &labely);
+    ui_panel_label_offset(block, &labelx, &labely);
 
     /* Unusual case: Use expanding layout (buttons stretch to available width). */
     if (pt->flag & PANEL_TYPE_HEADER_EXPAND) {
@@ -2715,7 +2698,7 @@ static void ed_panel_draw(const duneContext *C,
                                          style);
       panel->layout = uiLayoutRow(layout, false);
     }
-    /* Regular case: Normal panel with fixed size buttons. */
+    /* Regular case: Normal panel with fixed size btns. */
     else {
       panel->layout = UI_block_layout(
           block, UI_LAYOUT_HORIZONTAL, UI_LAYOUT_HEADER, labelx, labely, UI_UNIT_Y, 1, 0, style);
@@ -2723,34 +2706,34 @@ static void ed_panel_draw(const duneContext *C,
 
     pt->draw_header(C, panel);
 
-    UI_block_apply_search_filter(block, search_filter);
-    UI_block_layout_resolve(block, &xco, &yco);
+    ui_block_apply_search_filter(block, search_filter);
+    ui_block_layout_resolve(block, &xco, &yco);
     panel->labelofs = xco - labelx;
     panel->layout = NULL;
   }
   else {
     panel->labelofs = 0;
   }
-  UI_panel_header_buttons_end(panel);
+  ui_panel_header_btns_end(panel);
 
   if (open || search_filter_active) {
-    short panelContext;
+    short panelCxt;
 
-    /* panel context can either be toolbar region or normal panels region */
+    /* panel cxt can either be toolbar region or normal panels region */
     if (pt->flag & PANEL_TYPE_LAYOUT_VERT_BAR) {
-      panelContext = UI_LAYOUT_VERT_BAR;
+      panelCxt = UI_LAYOUT_VERT_BAR;
     }
     else if (region->regiontype == RGN_TYPE_TOOLS) {
-      panelContext = UI_LAYOUT_TOOLBAR;
+      panelCxt = UI_LAYOUT_TOOLBAR;
     }
     else {
-      panelContext = UI_LAYOUT_PANEL;
+      panelCxt = UI_LAYOUT_PANEL;
     }
 
-    panel->layout = UI_block_layout(
+    panel->layout = ui_block_layout(
         block,
         UI_LAYOUT_VERTICAL,
-        panelContext,
+        panelCxt,
         (pt->flag & PANEL_TYPE_LAYOUT_VERT_BAR) ? 0 : style->panelspace,
         0,
         (pt->flag & PANEL_TYPE_LAYOUT_VERT_BAR) ? 0 : w - 2 * style->panelspace,
@@ -2773,9 +2756,9 @@ static void ed_panel_draw(const duneContext *C,
 
   /* Draw child panels. */
   if (open || search_filter_active) {
-    LISTBASE_FOREACH (LinkData *, link, &pt->children) {
+    LIST_FOREACH (LinkData *, link, &pt->children) {
       PanelType *child_pt = link->data;
-      Panel *child_panel = UI_panel_find_by_type(&panel->children, child_pt);
+      Panel *child_panel = ui_panel_find_by_type(&panel->children, child_pt);
 
       if (child_pt->draw && (!child_pt->poll || child_pt->poll(C, child_pt))) {
         ed_panel_draw(C,
@@ -2791,7 +2774,7 @@ static void ed_panel_draw(const duneContext *C,
     }
   }
 
-  UI_panel_end(panel, w, h);
+  ui_panel_end(panel, w, h);
 }
 
 /** Check whether a panel should be added to the region's panel layout. **/
@@ -2821,7 +2804,7 @@ static bool panel_add_check(const duneContext *C,
 
   /* If we're tagged, only use compatible. */
   if (panel_type->owner_id[0]) {
-    if (!DUNE_workspace_owner_id_check(workspace, panel_type->owner_id)) {
+    if (!dune_workspace_owner_id_check(workspace, panel_type->owner_id)) {
       return false;
     }
   }
@@ -2836,7 +2819,7 @@ static bool panel_add_check(const duneContext *C,
 }
 static bool region_uses_category_tabs(const ScrArea *area, const ARegion *region)
 {
-  /* XXX, should use some better check? */
+  /* Should use some better check? */
   /* For now also has hardcoded check for clip editor until it supports actual toolbar. */
   return ((1 << region->regiontype) & RGN_TYPE_HAS_CATEGORY_MASK) ||
          (region->regiontype == RGN_TYPE_TOOLS && area->spacetype == SPACE_CLIP);
@@ -2846,20 +2829,20 @@ static const char *region_panels_collect_categories(ARegion *region,
                                                     LinkNode *panel_types_stack,
                                                     bool *use_category_tabs)
 {
-  UI_panel_category_clear_all(region);
+  ui_panel_category_clear_all(region);
 
   /* gather unique categories */
   for (LinkNode *pt_link = panel_types_stack; pt_link; pt_link = pt_link->next) {
     PanelType *pt = pt_link->link;
     if (pt->category[0]) {
-      if (!UI_panel_category_find(region, pt->category)) {
-        UI_panel_category_add(region, pt->category);
+      if (!ui_panel_category_find(region, pt->category)) {
+        ui_panel_category_add(region, pt->category);
       }
     }
   }
 
-  if (UI_panel_category_is_visible(region)) {
-    return UI_panel_category_active_get(region, true);
+  if (ui_panel_category_is_visible(region)) {
+    return ui_panel_category_active_get(region, true);
   }
 
   *use_category_tabs = false;
@@ -2871,29 +2854,29 @@ static int panel_draw_width_from_max_width_get(const ARegion *region,
                                                const int max_width)
 {
   /* With a background, we want some extra padding. */
-  return UI_panel_should_show_background(region, panel_type) ?
+  return ui_panel_should_show_background(region, panel_type) ?
              max_width - UI_PANEL_MARGIN_X * 2.0f :
              max_width;
 }
 
-void ED_region_panels_layout_ex(const duneContext *C,
+void ED_region_panels_layout_ex(const Cxt *C,
                                 ARegion *region,
-                                ListBase *paneltypes,
-                                const char *contexts[],
+                                List *paneltypes,
+                                const char *cxts[],
                                 const char *category_override)
 {
   /* collect panels to draw */
-  WorkSpace *workspace = CTX_wm_workspace(C);
+  WorkSpace *workspace = cxt_wm_workspace(C);
   LinkNode *panel_types_stack = NULL;
-  LISTBASE_FOREACH_BACKWARD (PanelType *, pt, paneltypes) {
-    if (panel_add_check(C, workspace, contexts, category_override, pt)) {
-      LIB_linklist_prepend_alloca(&panel_types_stack, pt);
+  LIST_FOREACH_BACKWARD (PanelType *, pt, paneltypes) {
+    if (panel_add_check(C, workspace, cxts, category_override, pt)) {
+      lib_linklist_prepend_alloca(&panel_types_stack, pt);
     }
   }
 
   region->runtime.category = NULL;
 
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_wm_area(C);
   View2D *v2d = &region->v2d;
 
   bool use_category_tabs = (category_override == NULL) && region_uses_category_tabs(area, region);
@@ -2918,18 +2901,18 @@ void ED_region_panels_layout_ex(const duneContext *C,
     margin_x = category_tabs_width;
   }
 
-  const int width_no_header = LIB_rctf_size_x(&v2d->cur) - margin_x;
+  const int width_no_header = lib_rctf_size_x(&v2d->cur) - margin_x;
   /* Works out to 10 * UI_UNIT_X or 20 * UI_UNIT_X. */
   const int em = (region->type->prefsizex) ? 10 : 20;
 
   /* create panels */
-  UI_panels_begin(C, region);
+  ui_panels_begin(C, region);
 
   /* Get search string for property search. */
   const char *search_filter = ED_area_region_search_filter_get(area, region);
 
   /* set view2d view matrix  - UI_block_begin() stores it */
-  UI_view2d_view_ortho(v2d);
+  ui_view2d_view_ortho(v2d);
 
   bool has_instanced_panel = false;
   for (LinkNode *pt_link = panel_types_stack; pt_link; pt_link = pt_link->next) {
@@ -2939,7 +2922,7 @@ void ED_region_panels_layout_ex(const duneContext *C,
       has_instanced_panel = true;
       continue;
     }
-    Panel *panel = UI_panel_find_by_type(&region->panels, pt);
+    Panel *panel = ui_panel_find_by_type(&region->panels, pt);
 
     if (use_category_tabs && pt->category[0] && !STREQ(category, pt->category)) {
       if ((panel == NULL) || ((panel->flag & PNL_PIN) == 0)) {
@@ -2948,7 +2931,7 @@ void ED_region_panels_layout_ex(const duneContext *C,
     }
     const int width = panel_draw_width_from_max_width_get(region, pt, width_no_header);
 
-    if (panel && UI_panel_is_dragging(panel)) {
+    if (panel && ui_panel_is_dragging(panel)) {
       /* Prevent View2d.tot rectangle size changes while dragging panels. */
       update_tot_size = false;
     }
@@ -2966,7 +2949,7 @@ void ED_region_panels_layout_ex(const duneContext *C,
 
   /* Draw "poly-instantiated" panels that don't have a 1 to 1 correspondence with their types. */
   if (has_instanced_panel) {
-    LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+    LIST_FOREACH (Panel *, panel, &region->panels) {
       if (panel->type == NULL) {
         continue; /* Some panels don't have a type. */
       }
@@ -3006,7 +2989,7 @@ void ED_region_panels_layout_ex(const duneContext *C,
 
   /* before setting the view */
   if (region_layout_based) {
-    /* XXX, only single panel support at the moment.
+    /* only single panel support at the moment.
      * Can't use x/y values calculated above because they're not using the real height of panels,
      * instead they calculate offsets for the next panel to start drawing. */
     Panel *panel = region->panels.last;
@@ -3067,7 +3050,7 @@ void ED_region_panels_draw(const bContext *C, ARegion *region)
   }
 
   /* reset line width for drawing tabs */
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   /* set the view */
   UI_view2d_view_ortho(v2d);
@@ -3095,46 +3078,44 @@ void ED_region_panels_draw(const bContext *C, ARegion *region)
     UI_view2d_mask_from_win(v2d, &mask);
     mask.xmax -= UI_PANEL_CATEGORY_MARGIN_WIDTH;
   }
-  UI_view2d_scrollers_draw(v2d, use_mask ? &mask : NULL);
+  ui_view2d_scrollers_draw(v2d, use_mask ? &mask : NULL);
 }
 
-void ED_region_panels_ex(const bContext *C, ARegion *region, const char *contexts[])
+void ed_region_panels_ex(const Cxt *C, ARegion *region, const char *contexts[])
 {
   /* TODO: remove? */
   ED_region_panels_layout_ex(C, region, &region->type->paneltypes, contexts, NULL);
   ED_region_panels_draw(C, region);
 }
 
-void ED_region_panels(const bContext *C, ARegion *region)
+void ED_region_panels(const Cxt *C, ARegion *region)
 {
   /* TODO: remove? */
-  ED_region_panels_layout(C, region);
-  ED_region_panels_draw(C, region);
+  ed_region_panels_layout(C, region);
+  ed_region_panels_draw(C, region);
 }
 
-void ED_region_panels_init(wmWindowManager *wm, ARegion *region)
+void ed_region_panels_init(WindowManager *wm, ARegion *region)
 {
-  UI_view2d_region_reinit(&region->v2d, V2D_COMMONVIEW_PANELS_UI, region->winx, region->winy);
+  ui_view2d_region_reinit(&region->v2d, V2D_COMMONVIEW_PANELS_UI, region->winx, region->winy);
 
-  wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "View2D Buttons List", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  wmKeyMap *keymap = wm_keymap_ensure(wm->defaultconf, "View2D Buttons List", 0, 0);
+  wm_event_add_keymap_handler(&region->handlers, keymap);
 }
 
-/**
- * Check whether any of the buttons generated by the a panel_type's
- * layout callbacks match the a search_filter.
+/* Check whether any of the buttons generated by the a panel_type's
+ * layout cbs match the a search_filter.
  *
- * param panel: If non-NULL, use this instead of adding a new panel for the a panel_type.
- */
-static bool panel_property_search(const duneContext *C,
+ * param panel: If non-NULL, use this instead of adding a new panel for the a panel_type */
+static bool panel_prop_search(const Cxt *C,
                                   ARegion *region,
                                   const uiStyle *style,
                                   Panel *panel,
                                   PanelType *panel_type,
                                   const char *search_filter)
 {
-  uiBlock *block = UI_block_begin(C, region, panel_type->idname, UI_EMBOSS);
-  UI_block_set_search_only(block, true);
+  uiBlock *block = ui_block_begin(C, region, panel_type->idname, UI_EMBOSS);
+  ui_block_set_search_only(block, true);
 
   /* Skip panels that give meaningless search results. */
   if (panel_type->flag & PANEL_TYPE_NO_SEARCH) {
@@ -3143,7 +3124,7 @@ static bool panel_property_search(const duneContext *C,
 
   if (panel == NULL) {
     bool open; /* Dummy variable. */
-    panel = UI_panel_begin(region, &region->panels, block, panel_type, panel, &open);
+    panel = ui_panel_begin(region, &region->panels, block, panel_type, panel, &open);
   }
 
   /* Build the layouts. Because they are only used for search,
@@ -3159,26 +3140,26 @@ static bool panel_property_search(const duneContext *C,
     panel_type->draw_header(C, panel);
   }
   if (LIKELY(panel->type->draw != NULL)) {
-    panel->layout = UI_block_layout(
+    panel->layout = ui_block_layout(
         block, UI_LAYOUT_VERTICAL, UI_LAYOUT_PANEL, 0, 0, 0, 0, 0, style);
     panel_type->draw(C, panel);
   }
 
-  UI_block_layout_free(block);
+  ui_block_layout_free(block);
 
   /* We could check after each layout to increase the likelihood of returning early,
    * but that probably wouldn't make much of a difference anyway. */
-  if (UI_block_apply_search_filter(block, search_filter)) {
+  if (ui_block_apply_search_filter(block, search_filter)) {
     return true;
   }
 
-  LISTBASE_FOREACH (LinkData *, link, &panel_type->children) {
+  LIST_FOREACH (LinkData *, link, &panel_type->children) {
     PanelType *panel_type_child = link->data;
     if (!panel_type_child->poll || panel_type_child->poll(C, panel_type_child)) {
       /* Search for the existing child panel here because it might be an instanced
        * child panel with a custom data field that will be needed to build the layout. */
-      Panel *child_panel = UI_panel_find_by_type(&panel->children, panel_type_child);
-      if (panel_property_search(C, region, style, child_panel, panel_type_child, search_filter)) {
+      Panel *child_panel = ui_panel_find_by_type(&panel->children, panel_type_child);
+      if (panel_prop_search(C, region, style, child_panel, panel_type_child, search_filter)) {
         return true;
       }
     }
@@ -3187,21 +3168,21 @@ static bool panel_property_search(const duneContext *C,
   return false;
 }
 
-bool ED_region_property_search(const duneContext *C,
+bool ED_region_prop_search(const duneContext *C,
                                ARegion *region,
                                ListBase *paneltypes,
                                const char *contexts[],
                                const char *category_override)
 {
-  ScrArea *area = CTX_wm_area(C);
-  WorkSpace *workspace = CTX_wm_workspace(C);
-  const uiStyle *style = UI_style_get_dpi();
-  const char *search_filter = ED_area_region_search_filter_get(area, region);
+  ScrArea *area = cxt_wm_area(C);
+  WorkSpace *workspace = cxt_wm_workspace(C);
+  const uiStyle *style = ui_style_get_dpi();
+  const char *search_filter = ed_area_region_search_filter_get(area, region);
 
   LinkNode *panel_types_stack = NULL;
-  LISTBASE_FOREACH_BACKWARD (PanelType *, pt, paneltypes) {
-    if (panel_add_check(C, workspace, contexts, category_override, pt)) {
-      LIB_linklist_prepend_alloca(&panel_types_stack, pt);
+  LIST_FOREACH_BACKWARD (PanelType *, pt, paneltypes) {
+    if (panel_add_check(C, workspace, cxts, category_override, pt)) {
+      lib_linklist_prepend_alloca(&panel_types_stack, pt);
     }
   }
 
@@ -3211,7 +3192,7 @@ bool ED_region_property_search(const duneContext *C,
     category = region_panels_collect_categories(region, panel_types_stack, &use_category_tabs);
   }
 
-  /* Run property search for each panel, stopping if a result is found. */
+  /* Run prop search for each panel, stopping if a result is found. */
   bool has_result = true;
   bool has_instanced_panel = false;
   for (LinkNode *pt_link = panel_types_stack; pt_link; pt_link = pt_link->next) {
@@ -3228,17 +3209,17 @@ bool ED_region_property_search(const duneContext *C,
       }
     }
 
-    /* We start property search with an empty panel list, so there's
+    /* We start prop search with an empty panel list, so there's
      * no point in trying to find an existing panel with this type. */
-    has_result = panel_property_search(C, region, style, NULL, panel_type, search_filter);
+    has_result = panel_prop_search(C, region, style, NULL, panel_type, search_filter);
     if (has_result) {
       break;
     }
   }
 
-  /* Run property search for instanced panels (created in the layout calls of previous panels). */
+  /* Run prop search for instanced panels (created in the layout calls of previous panels). */
   if (!has_result && has_instanced_panel) {
-    LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+    LIST_FOREACH (Panel *, panel, &region->panels) {
       /* Note that these checks are duplicated from ED_region_panels_layout_ex. */
       if (panel->type == NULL || !(panel->type->flag & PANEL_TYPE_INSTANCED)) {
         continue;
@@ -3249,7 +3230,7 @@ bool ED_region_property_search(const duneContext *C,
         }
       }
 
-      has_result = panel_property_search(C, region, style, panel, panel->type, search_filter);
+      has_result = panel_prop_search(C, region, style, panel, panel->type, search_filter);
       if (has_result) {
         break;
       }
@@ -3259,28 +3240,28 @@ bool ED_region_property_search(const duneContext *C,
   /* Free the panels and blocks, as they are only used for search. */
   UI_blocklist_free(C, region);
   UI_panels_free_instanced(C, region);
-  DUNE_area_region_panels_free(&region->panels);
+  dune_area_region_panels_free(&region->panels);
 
   return has_result;
 }
 
-void ED_region_header_layout(const bContext *C, ARegion *region)
+void ed_region_header_layout(const Cxt *C, ARegion *region)
 {
-  const uiStyle *style = UI_style_get_dpi();
+  const uiStyle *style = ui_style_get_dpi();
   bool region_layout_based = region->flag & RGN_FLAG_DYNAMIC_SIZE;
 
   /* Height of buttons and scaling needed to achieve it. */
-  const int buttony = min_ii(UI_UNIT_Y, region->winy - 2 * UI_DPI_FAC);
-  const float buttony_scale = buttony / (float)UI_UNIT_Y;
+  const int btny = min_ii(UI_UNIT_Y, region->winy - 2 * UI_DPI_FAC);
+  const float btny_scale = btny / (float)UI_UNIT_Y;
 
   /* Vertically center buttons. */
   int xco = UI_HEADER_OFFSET;
-  int yco = buttony + (region->winy - buttony) / 2;
+  int yco = btny + (region->winy - btny) / 2;
   int maxco = xco;
 
-  /* XXX workaround for 1 px alignment issue. Not sure what causes it...
+  /* workaround for 1 px alignment issue. Not sure what causes it...
    * Would prefer a proper fix - Julian */
-  if (!ELEM(CTX_wm_area(C)->spacetype, SPACE_TOPBAR, SPACE_STATUSBAR)) {
+  if (!ELEM(cxt_wm_area(C)->spacetype, SPACE_TOPBAR, SPACE_STATUSBAR)) {
     yco -= 1;
   }
 
@@ -3288,7 +3269,7 @@ void ED_region_header_layout(const bContext *C, ARegion *region)
   UI_view2d_view_ortho(&region->v2d);
 
   /* draw all headers types */
-  LISTBASE_FOREACH (HeaderType *, ht, &region->type->headertypes) {
+  LIST_FOREACH (HeaderType *, ht, &region->type->headertypes) {
     if (ht->poll && !ht->poll(C, ht)) {
       continue;
     }
@@ -3328,13 +3309,13 @@ void ED_region_header_layout(const bContext *C, ARegion *region)
 
     if (region_layout_based && (region->sizex != new_sizex)) {
       /* region size is layout based and needs to be updated */
-      ScrArea *area = CTX_wm_area(C);
+      ScrArea *area = cxt_wm_area(C);
 
       region->sizex = new_sizex;
       area->flag |= AREA_FLAG_REGION_SIZE_UPDATE;
     }
 
-    UI_block_end(C, block);
+    ui_block_end(C, block);
 
     /* In most cases there is only ever one header, it never makes sense to draw more than one
      * header in the same region, this results in overlapping buttons, see: T60195. */
@@ -3346,13 +3327,13 @@ void ED_region_header_layout(const bContext *C, ARegion *region)
   }
 
   /* Always as last. */
-  UI_view2d_totRect_set(&region->v2d, maxco, region->winy);
+  ui_view2d_totRect_set(&region->v2d, maxco, region->winy);
 
   /* Restore view matrix. */
-  UI_view2d_view_restore(C);
+  ui_view2d_view_restore(C);
 }
 
-void ED_region_header_draw(const duneContext *C, ARegion *region)
+void ed_region_header_draw(const Cxt *C, ARegion *region)
 {
   /* clear */
   region_clear_color(C, region, region_background_color_id(C, region));
@@ -3394,7 +3375,7 @@ int ED_area_footersize(void)
 
 int ED_area_global_size_y(const ScrArea *area)
 {
-  LIB_assert(ED_area_is_global(area));
+  lib_assert(ED_area_is_global(area));
   return round_fl_to_int(area->global->cur_fixed_height * UI_DPI_FAC);
 }
 int ED_area_global_min_size_y(const ScrArea *area)
