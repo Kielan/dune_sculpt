@@ -19,7 +19,7 @@
 #include "lib_timecode.h"
 #include "lib_utildefines.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_global.h"
 #include "dune_screen.h"
 
@@ -109,7 +109,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
   /* check size if hiding flag is set: */
   if (v2d->scroll & V2D_SCROLL_HORIZONTAL_HIDE) {
     if (!(v2d->scroll & V2D_SCROLL_HORIZONTAL_HANDLES)) {
-      if (BLI_rctf_size_x(&v2d->tot) > BLI_rctf_size_x(&v2d->cur)) {
+      if (lib_rctf_size_x(&v2d->tot) > BLI_rctf_size_x(&v2d->cur)) {
         v2d->scroll &= ~V2D_SCROLL_HORIZONTAL_FULLR;
       }
       else {
@@ -188,7 +188,7 @@ static void view2d_masks(View2D *v2d, const rcti *mask_scroll)
 void view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
 {
   bool tot_changed = false, do_init;
-  const uiStyle *style = UI_style_get();
+  const uiStyle *style = ui_style_get();
 
   do_init = (v2d->flag & V2D_IS_INIT) == 0;
 
@@ -555,18 +555,18 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     /* Resize from center-point, unless otherwise specified. */
     if (width != curwidth) {
       if (v2d->keepofs & V2D_LOCKOFS_X) {
-        cur->xmax += width - BLI_rctf_size_x(cur);
+        cur->xmax += width - lib_rctf_size_x(cur);
       }
       else if (v2d->keepofs & V2D_KEEPOFS_X) {
         if (v2d->align & V2D_ALIGN_NO_POS_X) {
-          cur->xmin -= width - BLI_rctf_size_x(cur);
+          cur->xmin -= width - lib_rctf_size_x(cur);
         }
         else {
-          cur->xmax += width - BLI_rctf_size_x(cur);
+          cur->xmax += width - lib_rctf_size_x(cur);
         }
       }
       else {
-        temp = BLI_rctf_cent_x(cur);
+        temp = lib_rctf_cent_x(cur);
         dh = width * 0.5f;
 
         cur->xmin = temp - dh;
@@ -575,18 +575,18 @@ static void ui_view2d_curRect_validate_resize(View2D *v2d, bool resize)
     }
     if (height != curheight) {
       if (v2d->keepofs & V2D_LOCKOFS_Y) {
-        cur->ymax += height - BLI_rctf_size_y(cur);
+        cur->ymax += height - lib_rctf_size_y(cur);
       }
       else if (v2d->keepofs & V2D_KEEPOFS_Y) {
         if (v2d->align & V2D_ALIGN_NO_POS_Y) {
-          cur->ymin -= height - BLI_rctf_size_y(cur);
+          cur->ymin -= height - lib_rctf_size_y(cur);
         }
         else {
-          cur->ymax += height - BLI_rctf_size_y(cur);
+          cur->ymax += height - lib_rctf_size_y(cur);
         }
       }
       else {
-        temp = BLI_rctf_cent_y(cur);
+        temp = lib_rctf_cent_y(cur);
         dh = height * 0.5f;
 
         cur->ymin = temp - dh;
@@ -909,8 +909,6 @@ void view2d_curRect_reset(View2D *v2d)
   }
 }
 
-/* ------------------ */
-
 void view2d_totRect_set_resize(View2D *v2d, int width, int height, bool resize)
 {
   /* don't do anything if either value is 0 */
@@ -979,8 +977,7 @@ void view2d_zoom_cache_reset(void)
 {
   /* TODO: This way we avoid threading conflict with sequencer rendering
    * text strip. But ideally we want to make glyph cache to be fully safe
-   * for threading.
-   */
+   * for threading. */
   if (G.is_rendering) {
     return;
   }
@@ -991,5 +988,4 @@ void view2d_zoom_cache_reset(void)
   BLF_cache_clear();
 }
 
-/* -------------------------------------------------------------------- */
 /** View2D Matrix Setup **/
