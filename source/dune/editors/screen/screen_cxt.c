@@ -10,9 +10,9 @@
 #include "types_object.h"
 #include "types_scene.h"
 #include "types_screen.h"
-#include "types_sequence.h"
+#include "types_seq.h"
 #include "types_space.h"
-#include "types_windowmanager.h"
+#include "types_wm.h"
 #include "types_workspace.h"
 
 #include "lib_ghash.h"
@@ -37,7 +37,7 @@
 #include "ed_pen.h"
 
 #include "seq_select.h"
-#include "seq_sequencer.h"
+#include "seq_seq.h"
 
 #include "ui_interface.h"
 #include "wm_api.h"
@@ -106,7 +106,7 @@ const char *screen_cxt_dir[] = {
 
 /* Each fn `screen_cxt_XXX()` will be called when the screen cxt "XXX" is requested.
  * ensure_ed_screen_cxt_fns() is responsible for creating the hash map from cxt
- * member name to function. */
+ * member name to fn. */
 
 static eContextResult screen_ctx_scene(const Cxt *C, CxtDataResult *result)
 {
@@ -129,7 +129,7 @@ static eCxtResult screen_cxt_visible_objects(const Cxt *C, CxtDataResult *result
   cxt_data_type_set(result, CXT_DATA_TYPE_COLLECTION);
   return CXT_RESULT_OK;
 }
-static eContextResult screen_cxt_selectable_objects(const Cxt *C, CxtDataResult *result)
+static eCxtResult screen_cxt_selectable_objects(const Cxt *C, CxtDataResult *result)
 {
   wmWindow *win = cxt_wm_window(C);
   View3D *v3d =  cxt_wm_view3d(C); /* This may be NULL in a lot of cases. */
@@ -418,228 +418,228 @@ static eCxtResult screen_ctx_selected_pose_bones(const bContext *C, bContextData
       }
       FOREACH_OBJECT_IN_MODE_END;
     }
-    cxt_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
+    cxt_data_type_set(result, CXT_DATA_TYPE_COLLECTION);
     return CXT_RESULT_OK;
   }
   return CTX_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_selected_pose_bones_from_active_object(const bContext *C,
+static eCxtResult screen_cxt_selected_pose_bones_from_active_object(const bContext *C,
                                                                         bContextDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
-  Object *obpose = BKE_object_pose_armature_get(obact);
+  Object *obpose = dune_object_pose_armature_get(obact);
   if (obpose && obpose->pose && obpose->data) {
     if (obpose != obact) {
       FOREACH_PCHAN_SELECTED_IN_OBJECT_BEGIN (obpose, pchan) {
-        CTX_data_list_add(result, &obpose->id, &RNA_PoseBone, pchan);
+        cxt_data_list_add(result, &obpose->id, &Api_PoseBone, pchan);
       }
       FOREACH_PCHAN_SELECTED_IN_OBJECT_END;
     }
     else if (obact->mode & OB_MODE_POSE) {
       FOREACH_PCHAN_SELECTED_IN_OBJECT_BEGIN (obact, pchan) {
-        CTX_data_list_add(result, &obact->id, &RNA_PoseBone, pchan);
+        cxt_data_list_add(result, &obact->id, &Api_PoseBone, pchan);
       }
       FOREACH_PCHAN_SELECTED_IN_OBJECT_END;
     }
-    CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
-    return CTX_RESULT_OK;
+    cxt_data_type_set(result, CXT_DATA_TYPE_COLLECTION);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_active_bone(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_active_bone(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
+  Window *win = cxt_wm_window(C);
   ViewLayer *view_layer = WM_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
   if (obact && obact->type == OB_ARMATURE) {
-    bArmature *arm = obact->data;
+    Armature *arm = obact->data;
     if (arm->edbo) {
       if (arm->act_edbone) {
-        CTX_data_pointer_set(result, &arm->id, &RNA_EditBone, arm->act_edbone);
-        return CTX_RESULT_OK;
+        cxt_data_ptr_set(result, &arm->id, &Api_EditBone, arm->act_edbone);
+        return CXT_RESULT_OK;
       }
     }
     else {
       if (arm->act_bone) {
-        CTX_data_pointer_set(result, &arm->id, &RNA_Bone, arm->act_bone);
-        return CTX_RESULT_OK;
+        cxt_data_ptr_set(result, &arm->id, &Api_Bone, arm->act_bone);
+        return CXT_RESULT_OK;
       }
     }
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_active_pose_bone(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_active_pose_bone(const bContext *C, bContextDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
-  Object *obpose = BKE_object_pose_armature_get(obact);
+  Object *obpose = dune_object_pose_armature_get(obact);
 
-  bPoseChannel *pchan = BKE_pose_channel_active_if_layer_visible(obpose);
+  PoseChannel *pchan = dune_pose_channel_active_if_layer_visible(obpose);
   if (pchan) {
-    CTX_data_pointer_set(result, &obpose->id, &RNA_PoseBone, pchan);
-    return CTX_RESULT_OK;
+    cxt_data_ptr_set(result, &obpose->id, &RNA_PoseBone, pchan);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_active_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_active_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
+  Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
+
+  if (obact) {
+    cxt_data_id_ptr_set(result, &obact->id);
+  }
+
+  return CXT_RESULT_OK;
+}
+static eCxtResult screen_ctx_object(const Cxt *C, CxtDataResult *result)
+{
+  Window *win = cxt_wm_window(C);
   ViewLayer *view_layer = WM_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
 
   if (obact) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
-  return CTX_RESULT_OK;
+  return CXT_RESULT_OK;
 }
-static eContextResult screen_ctx_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_edit_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
-  Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
-
-  if (obact) {
-    CTX_data_id_pointer_set(result, &obact->id);
-  }
-
-  return CTX_RESULT_OK;
-}
-static eContextResult screen_ctx_edit_object(const bContext *C, bContextDataResult *result)
-{
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obedit = OBEDIT_FROM_VIEW_LAYER(view_layer);
   /* convenience for now, 1 object per scene in editmode */
   if (obedit) {
-    CTX_data_id_pointer_set(result, &obedit->id);
+    cxt_data_id_ptr_set(result, &obedit->id);
   }
 
   return CTX_RESULT_OK;
 }
-static eContextResult screen_ctx_sculpt_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_sculpt_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
 
   if (obact && (obact->mode & OB_MODE_SCULPT)) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
-  return CTX_RESULT_OK;
+  return CXT_RESULT_OK;
 }
-static eContextResult screen_ctx_vertex_paint_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_vertex_paint_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
   if (obact && (obact->mode & OB_MODE_VERTEX_PAINT)) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
   return CTX_RESULT_OK;
 }
-static eContextResult screen_ctx_weight_paint_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_weight_paint_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
   if (obact && (obact->mode & OB_MODE_ALL_WEIGHT_PAINT)) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
-  return CTX_RESULT_OK;
+  return CXT_RESULT_OK;
 }
-static eContextResult screen_ctx_image_paint_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_image_paint_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
   if (obact && (obact->mode & OB_MODE_TEXTURE_PAINT)) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
   return CTX_RESULT_OK;
 }
-static eContextResult screen_ctx_particle_edit_object(const bContext *C,
-                                                      bContextDataResult *result)
+static eCxtResult screen_cxt_particle_edit_object(const Cxt *C,
+                                                  CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
   if (obact && (obact->mode & OB_MODE_PARTICLE_EDIT)) {
-    CTX_data_id_pointer_set(result, &obact->id);
+    cxt_data_id_ptr_set(result, &obact->id);
   }
 
-  return CTX_RESULT_OK;
+  return CXT_RESULT_OK;
 }
-static eContextResult screen_ctx_pose_object(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_pose_object(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  Window *win = cxt_wm_window(C);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
   Object *obact = view_layer->basact ? view_layer->basact->object : NULL;
-  Object *obpose = BKE_object_pose_armature_get(obact);
+  Object *obpose = dune_object_pose_armature_get(obact);
   if (obpose) {
-    CTX_data_id_pointer_set(result, &obpose->id);
+    cxt_data_id_ptr_set(result, &obpose->id);
   }
-  return CTX_RESULT_OK;
+  return CXT_RESULT_OK;
 }
-static eContextResult screen_ctx_active_sequence_strip(const bContext *C,
-                                                       bContextDataResult *result)
+static eCxtResult screen_cxt_active_seq_strip(const Cxt *C,
+                                              CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(win);
-  Sequence *seq = SEQ_select_active_get(scene);
+  Window *win = cxt_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(win);
+  Seq *seq = seq_select_active_get(scene);
   if (seq) {
-    CTX_data_pointer_set(result, &scene->id, &RNA_Sequence, seq);
-    return CTX_RESULT_OK;
+    cxt_data_ptr_set(result, &scene->id, &Api_Seq, seq);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_sequences(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_seqs(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(win);
-  Editing *ed = SEQ_editing_get(scene);
+  Window *win = cxt_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(win);
+  Editing *ed = seq_editing_get(scene);
   if (ed) {
-    LISTBASE_FOREACH (Sequence *, seq, ed->seqbasep) {
-      CTX_data_list_add(result, &scene->id, &RNA_Sequence, seq);
+    LIST_FOREACH (Seq*, seq, ed->seqbasep) {
+      cxt_data_list_add(result, &scene->id, &Api_Seq, seq);
     }
-    CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
-    return CTX_RESULT_OK;
+    cxt_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_selected_sequences(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_selected_seqs(const Cxt *C, CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(win);
-  Editing *ed = SEQ_editing_get(scene);
+  Window *win = cxt_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(win);
+  Editing *ed = seq_editing_get(scene);
   if (ed) {
-    LISTBASE_FOREACH (Sequence *, seq, ed->seqbasep) {
+    LIST_FOREACH (Seq *, seq, ed->seqbasep) {
       if (seq->flag & SELECT) {
-        CTX_data_list_add(result, &scene->id, &RNA_Sequence, seq);
+        cxt_data_list_add(result, &scene->id, &Api_Seq, seq);
       }
     }
-    CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
-    return CTX_RESULT_OK;
+    cxt_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
+    return CXT_RESULT_OK;
   }
   return CTX_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_selected_editable_sequences(const bContext *C,
-                                                             bContextDataResult *result)
+static eCxtResult screen_cxt_selected_editable_seqs(const Cxt *C,
+                                                    CxtDataResult *result)
 {
-  wmWindow *win = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(win);
-  Editing *ed = SEQ_editing_get(scene);
+  Window *win = cxt_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(win);
+  Editing *ed = seq_editing_get(scene);
   if (ed) {
-    LISTBASE_FOREACH (Sequence *, seq, ed->seqbasep) {
+    LIST_FOREACH (Seq *, seq, ed->seqbasep) {
       if (seq->flag & SELECT && !(seq->flag & SEQ_LOCK)) {
-        CTX_data_list_add(result, &scene->id, &RNA_Sequence, seq);
+        CTX_data_list_add(result, &scene->id, &Api_Seq, seq);
       }
     }
     CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
@@ -647,57 +647,57 @@ static eContextResult screen_ctx_selected_editable_sequences(const bContext *C,
   }
   return CTX_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_active_nla_track(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_active_nla_track(const Cxt *C, CxtDataResult *result)
 {
-  PointerRNA ptr;
-  if (ANIM_nla_context_track_ptr(C, &ptr)) {
-    CTX_data_pointer_set_ptr(result, &ptr);
-    return CTX_RESULT_OK;
+  ApiPtr ptr;
+  if (anim_nla_cxt_track_ptr(C, &ptr)) {
+    cxt_data_ptr_set_ptr(result, &ptr);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_active_nla_strip(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_active_nla_strip(const Cxt *C, CxtDataResult *result)
 {
-  PointerRNA ptr;
-  if (ANIM_nla_context_strip_ptr(C, &ptr)) {
-    CTX_data_pointer_set_ptr(result, &ptr);
-    return CTX_RESULT_OK;
+  ApiPtr ptr;
+  if (anim_nla_cxt_strip_ptr(C, &ptr)) {
+    cxt_data_ptr_set_ptr(result, &ptr);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_selected_nla_strips(const bContext *C, bContextDataResult *result)
+static eCxtResult screen_cxt_selected_nla_strips(const Cxt *C, CxtDataResult *result)
 {
-  bAnimContext ac;
-  if (ANIM_animdata_get_context(C, &ac) != 0) {
-    ListBase anim_data = {NULL, NULL};
+  AnimCxt ac;
+  if (ANIM_animdata_get_cxt(C, &ac) != 0) {
+    List anim_data = {NULL, NULL};
 
     ANIM_animdata_filter(&ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac.data, ac.datatype);
-    LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+    LIST_FOREACH (AnimListElem *, ale, &anim_data) {
       if (ale->datatype != ALE_NLASTRIP) {
         continue;
       }
       NlaTrack *nlt = (NlaTrack *)ale->data;
-      LISTBASE_FOREACH (NlaStrip *, strip, &nlt->strips) {
+      LIST_FOREACH (NlaStrip *, strip, &nlt->strips) {
         if (strip->flag & NLASTRIP_FLAG_SELECT) {
-          CTX_data_list_add(result, ale->id, &RNA_NlaStrip, strip);
+          cxt_data_list_add(result, ale->id, &Api_NlaStrip, strip);
         }
       }
     }
-    ANIM_animdata_freelist(&anim_data);
+    anim_animdata_freelist(&anim_data);
 
-    CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
-    return CTX_RESULT_OK;
+    cxt_data_type_set(result, CXT_DATA_TYPE_COLLECTION);
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_NO_DATA;
+  return CXT_RESULT_NO_DATA;
 }
-static eContextResult screen_ctx_selected_movieclip_tracks(const bContext *C,
-                                                           bContextDataResult *result)
+static eCxtResult screen_cxt_selected_movieclip_tracks(const Cxt *C,
+                                                       CxtDataResult *result)
 {
-  SpaceClip *space_clip = CTX_wm_space_clip(C);
+  SpaceClip *space_clip = cxt_wm_space_clip(C);
   if (space_clip == NULL) {
     return CTX_RESULT_NO_DATA;
   }
-  MovieClip *clip = ED_space_clip_get_clip(space_clip);
+  MovieClip *clip = ed_space_clip_get_clip(space_clip);
   if (clip == NULL) {
     return CTX_RESULT_NO_DATA;
   }
@@ -706,12 +706,12 @@ static eContextResult screen_ctx_selected_movieclip_tracks(const bContext *C,
     return CTX_RESULT_NO_DATA;
   }
 
-  ListBase *tracks_list = BKE_tracking_get_active_tracks(tracking);
-  LISTBASE_FOREACH (MovieTrackingTrack *, track, tracks_list) {
+  List *tracks_list = dune_tracking_get_active_tracks(tracking);
+  LIST_FOREACH (MovieTrackingTrack *, track, tracks_list) {
     if (!TRACK_SELECTED(track)) {
       continue;
     }
-    CTX_data_list_add(result, &clip->id, &RNA_MovieTrackingTrack, track);
+    CTX_data_list_add(result, &clip->id, &Api_MovieTrackingTrack, track);
   }
 
   CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
