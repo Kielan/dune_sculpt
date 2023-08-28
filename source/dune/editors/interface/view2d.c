@@ -1,30 +1,23 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2008 Blender Foundation. All rights reserved. */
-
-/** \file
- * \ingroup edinterface
- */
-
 #include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_scene_types.h"
-#include "DNA_userdef_types.h"
+#include "types_scene.h"
+#include "types_userdef.h"
 
-#include "BLI_array.h"
-#include "BLI_easing.h"
-#include "BLI_link_utils.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_timecode.h"
-#include "BLI_utildefines.h"
+#include "lib_array.h"
+#include "lib_easing.h"
+#include "lib_link_utils.h"
+#include "lib_list.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_timecode.h"
+#include "lib_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
