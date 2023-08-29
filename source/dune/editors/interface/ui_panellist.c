@@ -6,15 +6,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "PIL_time.h"
 
-#include "lib_blenlib.h"
+#include "lib_dune.h"
 #include "lib_math.h"
 #include "lib_utildefines.h"
 
-#include "i18n_translation.h"
+#include "lang.h"
 
 #include "types_screen.h"
 #include "types_userdef.h"
