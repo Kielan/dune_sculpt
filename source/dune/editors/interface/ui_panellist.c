@@ -19,27 +19,27 @@
 #include "types_screen.h"
 #include "types_userdef.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_screen.h"
 
 #include "api_access.h"
 
 #include "BLF_api.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
-#include "UI_interface.h"
-#include "UI_interface_icons.h"
-#include "UI_resources.h"
-#include "UI_view2d.h"
+#include "ui_interface.h"
+#include "ui_interface_icons.h"
+#include "ui_resources.h"
+#include "ui_view2d.h"
 
-#include "GPU_batch_presets.h"
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_batch_presets.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpi_state.h"
 
 #include "interface_intern.h"
 
@@ -56,19 +56,15 @@ typedef enum uiPanelRuntimeFlag {
   PANEL_ANIM_ALIGN = (1 << 4),
   PANEL_NEW_ADDED = (1 << 5),
   PANEL_SEARCH_FILTER_MATCH = (1 << 7),
-  /**
-   * Use the status set by property search (#PANEL_SEARCH_FILTER_MATCH)
-   * instead of #PNL_CLOSED. Set to true on every property search update.
-   */
+  /* Use the status set by prop search (PANEL_SEARCH_FILTER_MATCH)
+   * instead of PNL_CLOSED. Set to true on every property search update. */
   PANEL_USE_CLOSED_FROM_SEARCH = (1 << 8),
   /** The Panel was before the start of the current / latest layout pass. */
   PANEL_WAS_CLOSED = (1 << 9),
-  /**
-   * Set when the panel is being dragged and while it animates back to its aligned
-   * position. Unlike #PANEL_STATE_ANIMATION, this is applied to sub-panels as well.
-   */
+  /* Set when the panel is being dragged and while it animates back to its aligned
+   * position. Unlike PANEL_STATE_ANIMATION, this is applied to sub-panels as well. */
   PANEL_IS_DRAG_DROP = (1 << 10),
-  /** Draw a border with the active color around the panel. */
+  /* Draw a border with the active color around the panel. */
   PANEL_ACTIVE_BORDER = (1 << 11),
 } uiPanelRuntimeFlag;
 
@@ -87,11 +83,9 @@ typedef enum uiHandlePanelState {
 
 typedef struct uiHandlePanelData {
   uiHandlePanelState state;
-
   /* Animation. */
   wmTimer *animtimer;
   double starttime;
-
   /* Dragging. */
   int startx, starty;
   int startofsx, startofsy;
@@ -104,22 +98,20 @@ typedef struct PanelSort {
   int new_offset_y;
 } PanelSort;
 
-static void panel_set_expansion_from_list_data(const bContext *C, Panel *panel);
+static void panel_set_expansion_from_list_data(const Cxt *C, Panel *panel);
 static int get_panel_real_size_y(const Panel *panel);
-static void panel_activate_state(const bContext *C, Panel *panel, uiHandlePanelState state);
+static void panel_activate_state(const Cxt *C, Panel *panel, uiHandlePanelState state);
 static int compare_panel(const void *a, const void *b);
 static bool panel_type_context_poll(ARegion *region,
                                     const PanelType *panel_type,
-                                    const char *context);
+                                    const char *cxt);
 
-/* -------------------------------------------------------------------- */
 /** Local Functions **/
-
-static bool panel_active_animation_changed(ListBase *lb,
+static bool panel_active_animation_changed(List *lb,
                                            Panel **r_panel_animation,
                                            bool *r_no_animation)
 {
-  LISTBASE_FOREACH (Panel *, panel, lb) {
+  LIST_FOREACH (Panel *, panel, lb) {
     /* Detect panel active flag changes. */
     if (!(panel->type && panel->type->parent)) {
       if ((panel->runtime_flag & PANEL_WAS_ACTIVE) && !(panel->runtime_flag & PANEL_ACTIVE)) {
@@ -131,12 +123,12 @@ static bool panel_active_animation_changed(ListBase *lb,
     }
 
     /* Detect changes in panel expansions. */
-    if ((bool)(panel->runtime_flag & PANEL_WAS_CLOSED) != UI_panel_is_closed(panel)) {
+    if ((bool)(panel->runtime_flag & PANEL_WAS_CLOSED) != ui_panel_is_closed(panel)) {
       *r_panel_animation = panel;
       return false;
     }
 
-    if ((panel->runtime_flag & PANEL_ACTIVE) && !UI_panel_is_closed(panel)) {
+    if ((panel->runtime_flag & PANEL_ACTIVE) && !ui_panel_is_closed(panel)) {
       if (panel_active_animation_changed(&panel->children, r_panel_animation, r_no_animation)) {
         return true;
       }
@@ -161,15 +153,13 @@ static bool panel_active_animation_changed(ListBase *lb,
   return false;
 }
 
-/**
- * return: true if the properties editor switch tabs since the last layout pass.
- **/
+/* return: true if the properties editor switch tabs since the last layout pass. **/
 static bool props_space_needs_realign(const ScrArea *area, const ARegion *region)
 {
-  if (area->spacetype == SPACE_PROPERTIES && region->regiontype == RGN_TYPE_WINDOW) {
-    SpaceProperties *sbuts = area->spacedata.first;
+  if (area->spacetype == SPACE_PROPS && region->regiontype == RGN_TYPE_WINDOW) {
+    SpaceProps *sbtns = area->spacedata.first;
 
-    if (sbuts->mainbo != sbuts->mainb) {
+    if (sbtns->mainbo != sbtns->mainb) {
       return true;
     }
   }
@@ -188,7 +178,7 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
   /* Detect if a panel was added or removed. */
   Panel *panel_animation = NULL;
   bool no_animation = false;
-  if (panel_active_animation_changed(&region->panels, &panel_animation, &no_animation)) {
+  if (panel_active_anim_changed(&region->panels, &panel_animation, &no_animation)) {
     return true;
   }
 
@@ -203,24 +193,22 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
   return false;
 }
 
-/* -------------------------------------------------------------------- */
-/** Functions for Instanced PanelList **/
-
+/* Fns for Instanced PanelList **/
 static PanelList *panellist_add_instanced(ARegion *region,
-                                  ListBase *panels,
+                                  List *panels,
                                   PanelType *panel_type,
                                   ApiPtr *custom_data)
 {
-  PanelList *panellist = MEM_callocN(sizeof(Panel), __func__);
+  PanelList *panellist = mem_callocn(sizeof(Panel), __func__);
   panel->type = panel_type;
-  LIB_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
+  lib_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
 
   panel->runtime.custom_data_ptr = custom_data;
   panel->runtime_flag |= PANEL_NEW_ADDED;
 
   /* Add the panel's children too. Although they aren't instanced panels, we can still use this
    * function to create them, as UI_panel_begin does other things we don't need to do. */
-  LISTBASE_FOREACH (LinkData *, child, &panel_type->children) {
+  LIST_FOREACH (LinkData *, child, &panel_type->children) {
     PanelType *child_type = child->data;
     panellistinstanced_add(region, &panel->children, child_type, custom_data);
   }
@@ -231,27 +219,27 @@ static PanelList *panellist_add_instanced(ARegion *region,
    * NOTE: We could use special behavior to place it after the panel that starts the list of
    * instanced panels, but that would add complexity that isn't needed for now. */
   int max_sortorder = 0;
-  LISTBASE_FOREACH (Panel *, existing_panel, panels) {
+  LIST_FOREACH (Panel *, existing_panel, panels) {
     if (existing_panel->sortorder > max_sortorder) {
       max_sortorder = existing_panel->sortorder;
     }
   }
   panel->sortorder = max_sortorder + 1;
 
-  LIB_addtail(panels, panel);
+  lib_addtail(panels, panel);
 
   return panel;
 }
 
-Panel *panellistinstanced_add(const duneContext *C,
+Panel *panellistinstanced_add(const Cxt *C,
                               ARegion *region,
-                              ListBase *panels,
+                              List *panels,
                               const char *panel_idname,
                               ApiPtr *custom_data)
 {
   ARegionType *region_type = region->type;
 
-  PanelType *panel_type = LIB_findstring(
+  PanelType *panel_type = lib_findstring(
       &region_type->paneltypes, panel_idname, offsetof(PanelType, idname));
 
   if (panel_type == NULL) {
@@ -274,32 +262,30 @@ void panellist_unique_str(Panel *panel, char *r_name)
   snprintf(r_name, INSTANCED_PANEL_UNIQUE_STR_LEN, "%d", panel->sortorder);
 }
 
-/**
- * Free a panel and its children. Custom data is shared by the panel and its children
- * and is freed by #ui_panellistinstanced_free.
+/* Free a panel and its children. Custom data is shared by the panel and its children
+ * and is freed by ui_panellistinstanced_free.
  *
  * note: The only panels that should need to be deleted at runtime are panels with the
- * #PANEL_TYPE_INSTANCED flag set.
- */
+ * PANEL_TYPE_INSTANCED flag set. */
 static void panel_delete(const duneContext *C, ARegion *region, ListBase *panels, Panel *panel)
 {
   /* Recursively delete children. */
-  LISTBASE_FOREACH_MUTABLE (Panel *, child, &panel->children) {
+  LIST_FOREACH_MUTABLE (Panel *, child, &panel->children) {
     panel_delete(C, region, &panel->children, child);
   }
-  LIB_freelistN(&panel->children);
+  lib_freelistn(&panel->children);
 
-  LIB_remlink(panels, panel);
+  lib_remlink(panels, panel);
   if (panel->activedata) {
-    MEM_freeN(panel->activedata);
+    mem_freen(panel->activedata);
   }
-  MEM_freeN(panel);
+  mem_freen(panel);
 }
 
-void panellistinstanced_free(const duneContext *C, ARegion *region)
+void panellistinstanced_free(const Cxt *C, ARegion *region)
 {
   /* Delete panels with the instanced flag. */
-  LISTBASE_FOREACH_MUTABLE (Panel *, panel, &region->panels) {
+  LIST_FOREACH_MUTABLE (Panel *, panel, &region->panels) {
     if ((panel->type != NULL) && (panel->type->flag & PANEL_TYPE_INSTANCED)) {
       /* Make sure the panel's handler is removed before deleting it. */
       if (C != NULL && panel->activedata != NULL) {
@@ -308,7 +294,7 @@ void panellistinstanced_free(const duneContext *C, ARegion *region)
 
       /* Free panel's custom data. */
       if (panel->runtime.custom_data_ptr != NULL) {
-        MEM_freeN(panel->runtime.custom_data_ptr);
+        mem_freen(panel->runtime.custom_data_ptr);
       }
 
       /* Free the panel and its sub-panels. */
@@ -318,8 +304,8 @@ void panellistinstanced_free(const duneContext *C, ARegion *region)
 }
 
 bool ui_panellist_matches_data(ARegion *region,
-                                ListBase *data,
-                                uiListPanelIDFromDataFunc panel_idname_fn)
+                               List *data,
+                               uiListPanelIdFromDataFn panel_idname_fn)
 {
   /* Check for NULL data. */
   int data_len = 0;
@@ -329,12 +315,12 @@ bool ui_panellist_matches_data(ARegion *region,
     data_link = NULL;
   }
   else {
-    data_len = lib_listbase_count(data);
+    data_len = lib_list_count(data);
     data_link = data->first;
   }
 
   int i = 0;
-  LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+  LIST_FOREACH (Panel *, panel, &region->panels) {
     if (panel->type != NULL && panel->type->flag & PANEL_TYPE_INSTANCED) {
       /* The panels were reordered by drag and drop. */
       if (panel->flag & PNL_INSTANCED_LIST_ORDER_CHANGED) {
@@ -366,7 +352,7 @@ bool ui_panellist_matches_data(ARegion *region,
   return true;
 }
 
-static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelList *panellist_drag)
+static void panellistinstanced_reorder(Cxt *C, ARegion *region, PanelList *panellist_drag)
 {
   /* Without a type we cannot access the reorder callback. */
   if (drag_panel->type == NULL) {
@@ -377,20 +363,20 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelLis
     return;
   }
 
-  char *ctx = NULL;
+  char *cxt = NULL;
   if (!panellist_category_is_visible(region)) {
-    context = drag_panel->type->context;
+    cxt = drag_panel->type->cxt;
   }
 
   /* Find how many instanced panels with this context string. */
   int panellist_len = 0;
   int start_index = -1;
-  LISTBASE_FOREACH (const Panel *, panel, &region->panellist) {
+  LIST_FOREACH (const Panel *, panel, &region->panellist) {
     if (panel->type) {
       if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_ctx_poll(region, panel->type, ctx)) {
+        if (panel_type_cxt_poll(region, panel->type, cxt)) {
           if (panel == drag_panel) {
-            LIB_assert(start_index == -1); /* This panel should only appear once. */
+            lib_assert(start_index == -1); /* This panel should only appear once. */
             start_index = list_panels_len;
           }
           panellist_len++;
@@ -398,15 +384,15 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelLis
       }
     }
   }
-  LIB_assert(start_index != -1); /* The drag panel should definitely be in the list. */
+  lib_assert(start_index != -1); /* The drag panel should definitely be in the list. */
 
   /* Sort the matching instanced panels by their display order. */
-  PanelSort *panel_sort = MEM_callocN(list_panels_len * sizeof(*panel_sort), __func__);
+  PanelSort *panel_sort = mem_callocn(list_panels_len * sizeof(*panel_sort), __func__);
   PanelSort *sort_index = panel_sort;
-  LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+  LIST_FOREACH (Panel *, panel, &region->panels) {
     if (panel->type) {
       if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_context_poll(region, panel->type, context)) {
+        if (panel_type_cxt_poll(region, panel->type, cxt)) {
           sort_index->panel = panel;
           sort_index++;
         }
@@ -423,7 +409,7 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelLis
     }
   }
 
-  MEM_freeN(panel_sort);
+  mem_freen(panel_sort);
 
   if (move_to_index == start_index) {
     /* In this case, the reorder was not changed, so don't do any updates or call the callback. */
@@ -433,41 +419,37 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelLis
   /* Set the bit to tell the interface to instanced the list. */
   drag_panel->flag |= PNL_INSTANCED_LIST_ORDER_CHANGED;
 
-  ctx_store_set(C, drag_panel->runtime.ctx);
+  cxt_store_set(C, drag_panel->runtime.ctx);
 
   /* Finally, move this panel's list item to the new index in its list. */
   drag_panel->type->reorder(C, drag_panel, move_to_index);
 
-  ctx_store_set(C, NULL);
+  cxt_store_set(C, NULL);
 }
 
-/**
- * Recursive implementation for #panellistdata_expansion.
+/* Recursive implementation for #panellistdata_expansion.
  *
- * return: Whether the closed flag for the panel or any sub-panels changed.
- */
+ * return: Whether the closed flag for the panel or any sub-panels changed. */
 static bool panellistdata_expand_recursive(Panel *panel, short flag, short *flag_index)
 {
   const bool open = (flag & (1 << *flag_index));
-  bool changed = (open == UI_panel_is_closed(panel));
+  bool changed = (open == ui_panel_is_closed(panel));
 
   SET_FLAG_FROM_TEST(panel->flag, !open, PNL_CLOSED);
 
-  LISTBASE_FOREACH (Panel *, child, &panel->children) {
+  LIST_FOREACH (Panel *, child, &panel->children) {
     *flag_index = *flag_index + 1;
     changed |= panellistdata_expand_recursive(child, flag, flag_index);
   }
   return changed;
 }
 
-/**
- * Set the expansion of the panel and its sub-panels from the flag stored in the
- * corresponding list data. The flag has expansion stored in each bit in depth first order.
- */
-static void panellistdata_set_expansion_from(const duneContext *C, Panel *panel)
+/* Set the expansion of the panel and its sub-panels from the flag stored in the
+ * corresponding list data. The flag has expansion stored in each bit in depth first order */
+static void panellistdata_set_expansion_from(const Cxt *C, Panel *panel)
 {
-  LIB_assert(panel->type != NULL);
-  LIB_assert(panel->type->flag & PANEL_TYPE_INSTANCED);
+  lib_assert(panel->type != NULL);
+  lib_assert(panel->type->flag & PANEL_TYPE_INSTANCED);
   if (panel->type->get_list_data_expand_flag == NULL) {
     /* Instanced panel doesn't support loading expansion. */
     return;
@@ -482,12 +464,10 @@ static void panellistdata_set_expansion_from(const duneContext *C, Panel *panel)
   }
 }
 
-/**
- * Set expansion based on the data for instanced panels.
- */
-static void region_panellistdata_expand(const duneContext *C, ARegion *region)
+/* Set expansion based on the data for instanced panels */
+static void region_panellistdata_expand(const Cxt *C, ARegion *region)
 {
-  LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+  LIST_FOREACH (Panel *, panel, &region->panels) {
     if (panel->runtime_flag & PANEL_ACTIVE) {
       PanelType *panel_type = panel->type;
       if (panel_type != NULL && panel->type->flag & PANEL_TYPE_INSTANCED) {
@@ -497,31 +477,27 @@ static void region_panellistdata_expand(const duneContext *C, ARegion *region)
   }
 }
 
-/**
- * Recursive implementation for #panellistdata_flag_expand_set.
- */
+/* Recursive implementation for #panellistdata_flag_expand_set */
 static void panellist_expand_flag_get(const Panel *panel, short *flag, short *flag_index)
 {
   const bool open = !(panellist->flag & PNL_CLOSED);
   SET_FLAG_FROM_TEST(*flag, open, (1 << *flag_index));
 
-  LISTBASE_FOREACH (const Panel *, child, &panel->children) {
+  LIST_FOREACH (const Panel *, child, &panel->children) {
     *flag_index = *flag_index + 1;
     get_panel_expand_flag(child, flag, flag_index);
   }
 }
 
-/**
- * Call the callback to store the panel and sub-panel expansion settings in the list item that
+/* Call the callback to store the panel and sub-panel expansion settings in the list item that
  * corresponds to each instanced panel.
  *
  * note: This needs to iterate through all of the region's panels because the panel with changed
  * expansion might have been the sub-panel of an instanced panel, meaning it might not know
- * which list item it corresponds to.
- */
+ * which list item it corresponds to. */
 static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *region)
 {
-  LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+  LIST_FOREACH (Panel *, panel, &region->panels) {
     PanelType *panel_type = panel->type;
     if (panel_type == NULL) {
       continue;
@@ -539,14 +515,12 @@ static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *r
   }
 }
 
-/* -------------------------------------------------------------------- */
 /** Panels **/
-
 static bool panellistdata_custom_active_get(const PanelList *panellist)
 {
   /* The caller should make sure the panel is active and has a type. */
-  LIB_assert(panellist_is_active(panel));
-  LIB_assert(panellist->type != NULL);
+  lib_assert(panellist_is_active(panel));
+  lib_assert(panellist->type != NULL);
 
   if (panellist->type->active_prop[0] != '\0') {
     ApiPtr *ptr = panellist_custom_data_get(panel);
@@ -561,13 +535,13 @@ static bool panellistdata_custom_active_get(const PanelList *panellist)
 static void panellist_custom_data_active_set(Panel *panel)
 {
   /* Since the panel is interacted with, it should be active and have a type. */
-  LIB_assert(panellist_is_active(panel));
-  LIB_assert(panellist->type != NULL);
+  lib_assert(panellist_is_active(panel));
+  lib_assert(panellist->type != NULL);
 
   if (panellist->type->active_prop[0] != '\0') {
     ApiPtr *ptr =panellistdata_custom__get(panel);
-    LIB_assert(api_struct_find_prop(ptr, panellist->type->active_property) != NULL);
-    if (ptr != NULL && !api_pointer_is_null(ptr)) {
+    lib_assert(api_struct_find_prop(ptr, panellist->type->active_prop) != NULL);
+    if (ptr != NULL && !api_ptr_is_null(ptr)) {
       api_bool_set(ptr, panellist->type->active_prop, true);
     }
   }
@@ -578,7 +552,7 @@ static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->flag, value, flag);
 
-  LISTBASE_FOREACH (Panel *, child, &panel->children) {
+  LIST_FOREACH (Panel *, child, &panel->children) {
     panellist_flag_set_recursive(child, flag, value);
   }
 }
@@ -588,7 +562,7 @@ static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool v
 {
   SET_FLAG_FROM_TEST(panel->runtime_flag, value, flag);
 
-  LISTBASE_FOREACH (Panel *, sub_panel, &panel->children) {
+  LIST_FOREACH (Panel *, sub_panel, &panel->children) {
     panel_set_runtime_flag_recursive(sub_panel, flag, value);
   }
 }
@@ -599,7 +573,7 @@ static void panellist_collapse_all(ARegion *region, const PanelList *from_panell
   const char *category = has_category_tabs ? panellist_category_active_get(region, false) : NULL;
   const PanelType *from_pt = from_panel->type;
 
-  LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+  LIST_FOREACH (Panel *, panel, &region->panels) {
     PanelType *pt = panel->type;
 
     /* Close panels with headers in the same context. */
@@ -614,11 +588,11 @@ static void panellist_collapse_all(ARegion *region, const PanelList *from_panell
   }
 }
 
-static bool panellist_type_ctx_poll(ARegion *region,
+static bool panellist_type_cxt_poll(ARegion *region,
                                     const PanelType *panel_type,
-                                    const char *ctx)
+                                    const char *cxt)
 {
-  if (!LIB_listbase_is_empty(&region->panellist_category)) {
+  if (!lib_list_is_empty(&region->panellist_category)) {
     return STREQ(panel_type->category, panellist_category_active_get(region, false));
   }
 
@@ -633,7 +607,7 @@ PanelList *panellist_find_by_type(ListBase *lb, const PanelType *pt)
 {
   const char *idname = pt->idname;
 
-  LISTBASE_FOREACH (Panel *, panel, lb) {
+  LIST_FOREACH (Panel *, panel, lb) {
     if (STREQLEN(panel->panelname, idname, sizeof(panel->panelname))) {
       return panel;
     }
@@ -642,17 +616,17 @@ PanelList *panellist_find_by_type(ListBase *lb, const PanelType *pt)
 }
 
 PanelList *panellist_begin(
-    ARegion *region, ListBase *lb, uiBlock *block, PanelType *pt, PanelList *panellist, bool *r_open)
+    ARegion *region, List *lb, uiBlock *block, PanelType *pt, PanelList *panellist, bool *r_open)
 {
   PanelList *panellist_last;
-  const char *drawname = CTX_IFACE_(pt->translation_ctx, pt->label);
+  const char *drawname = cxt_IFACE_(pt->translation_cxt, pt->label);
   const char *idname = pt->idname;
   const bool newpanel = (panel == NULL);
 
   if (newpanel) {
-    panel = MEM_callocN(sizeof(Panel), __func__);
+    panel = mem_callocn(sizeof(Panel), __func__);
     panel->type = pt;
-    LIB_strncpy(panel->panelname, idname, sizeof(panel->panelname));
+    lib_strncpy(panel->panelname, idname, sizeof(panel->panelname));
 
     if (pt->flag & PANEL_TYPE_DEFAULT_CLOSED) {
       panel->flag |= PNL_CLOSED;
@@ -667,7 +641,7 @@ PanelList *panellist_begin(
     panel->blocksizey = 0;
     panel->runtime_flag |= PANEL_NEW_ADDED;
 
-    BLI_addtail(lb, panel);
+    lib_addtail(lb, panel);
   }
   else {
     /* Panel already exists. */
@@ -676,14 +650,14 @@ PanelList *panellist_begin(
 
   panel->runtime.block = block;
 
-  BLI_strncpy(panel->drawname, drawname, sizeof(panel->drawname));
+  lib_strncpy(panel->drawname, drawname, sizeof(panel->drawname));
 
   /* If a new panel is added, we insert it right after the panel that was last added.
    * This way new panels are inserted in the right place between versions. */
   for (panel_last = lb->first; panel_last; panel_last = panel_last->next) {
     if (panel_last->runtime_flag & PANEL_LAST_ADDED) {
-      BLI_remlink(lb, panel);
-      BLI_insertlinkafter(lb, panel_last, panel);
+      lib_remlink(lb, panel);
+      lib_insertlinkafter(lb, panel_last, panel);
       break;
     }
   }
@@ -691,7 +665,7 @@ PanelList *panellist_begin(
   if (newpanel) {
     panel->sortorder = (panel_last) ? panel_last->sortorder + 1 : 0;
 
-    LISTBASE_FOREACH (Panel *, panel_next, lb) {
+    LIST_FOREACH (Panel *, panel_next, lb) {
       if (panel_next != panel && panel_next->sortorder >= panel->sortorder) {
         panel_next->sortorder++;
       }
@@ -724,30 +698,30 @@ void ui_panel_headerbtns_begin(Panel *panel)
 {
   uiBlock *block = panel->runtime.block;
 
-  ui_block_new_btn_group(block, UI_BUTTON_GROUP_LOCK | UI_BUTTON_GROUP_PANEL_HEADER);
+  ui_block_new_btn_group(block, UI_BTN_GROUP_LOCK | UI_BTN_GROUP_PANEL_HEADER);
 }
 
 void ui_panellist_headerbtns_end(Panel *panel)
 {
   uiBlock *block = panel->runtime.block;
 
-  /* A button group should always be created in #ui_panellist_headerbuttons_begin. */
-  LIB_assert(!LIB_listbase_is_empty(&block->btn_groups));
+  /* A btn group should always be created in ui_panellist_headerbtns_begin. */
+  lib_assert(!lib_list_is_empty(&block->btn_groups));
 
   uiBtnGroup *btn_group = block->btn_groups.last;
 
-  btn_group->flag &= ~UI_BUTTON_GROUP_LOCK;
+  btn_group->flag &= ~UI_BTN_GROUP_LOCK;
 
   /* Repurpose the first header button group if it is empty, in case the first button added to
    * the panel doesn't add a new group (if the button is created directly rather than through an
    * interface layout call). */
-  if (LIB_listbase_is_single(&block->btn_groups) &&
-      LIB_listbase_is_empty(&btn_group->btns)) {
-    btn_group->flag &= ~UI_BUTTON_GROUP_PANEL_HEADER;
+  if (lib_list_is_single(&block->btn_groups) &&
+      lib_list_is_empty(&btn_group->btns)) {
+    btn_group->flag &= ~UI_BTN_GROUP_PANEL_HEADER;
   }
   else {
-    /* Always add a new button group. Although this may result in many empty groups, without it,
-     * new buttons in the panel body not protected with a #ui_block_new_btn_group call would
+    /* Always add a new btn group. Although this may result in many empty groups, without it,
+     * new btns in the panel body not protected with a ui_block_new_btn_group call would
      * end up in the panel header group. */
     ui_block_btn_group_new(block, 0);
   }
@@ -764,20 +738,20 @@ static float panellist_region_offset_x_get(const ARegion *region)
   return 0.0f;
 }
 
-/* mapping function to ensure 'cur' draws extended over the area where sliders are */
+/* mapping fn to ensure 'cur' draws extended over the area where sliders are */
 static void view2d_map_cur_using_mask(const View2D *v2d, rctf *r_curmasked)
 {
   *r_curmasked = v2d->cur;
 
   if (view2d_scroll_mapped(v2d->scroll)) {
-    const float sizex = BLI_rcti_size_x(&v2d->mask);
-    const float sizey = BLI_rcti_size_y(&v2d->mask);
+    const float sizex = lib_rcti_size_x(&v2d->mask);
+    const float sizey = lib_rcti_size_y(&v2d->mask);
 
     /* prevent tiny or narrow regions to get
      * invalid coordinates - mask can get negative even... */
     if (sizex > 0.0f && sizey > 0.0f) {
-      const float dx = BLI_rctf_size_x(&v2d->cur) / (sizex + 1);
-      const float dy = BLI_rctf_size_y(&v2d->cur) / (sizey + 1);
+      const float dx = lib_rctf_size_x(&v2d->cur) / (sizex + 1);
+      const float dy = lib_rctf_size_y(&v2d->cur) / (sizey + 1);
 
       if (v2d->mask.xmin != 0) {
         r_curmasked->xmin -= dx * (float)v2d->mask.xmin;
@@ -796,32 +770,31 @@ static void view2d_map_cur_using_mask(const View2D *v2d, rctf *r_curmasked)
   }
 }
 
-void UI_view2d_view_ortho(const View2D *v2d)
+void ui_view2d_view_ortho(const View2D *v2d)
 {
   rctf curmasked;
-  const int sizex = BLI_rcti_size_x(&v2d->mask);
-  const int sizey = BLI_rcti_size_y(&v2d->mask);
+  const int sizex = lib_rcti_size_x(&v2d->mask);
+  const int sizey = lib_rcti_size_y(&v2d->mask);
   const float eps = 0.001f;
   float xofs = 0.0f, yofs = 0.0f;
 
   /* Pixel offsets (-GLA_PIXEL_OFS) are needed to get 1:1
    * correspondence with pixels for smooth UI drawing,
-   * but only applied where requested.
-   */
+   * but only applied where requested.  */
   /* XXX brecht: instead of zero at least use a tiny offset, otherwise
    * pixel rounding is effectively random due to float inaccuracy */
   if (sizex > 0) {
-    xofs = eps * BLI_rctf_size_x(&v2d->cur) / sizex;
+    xofs = eps * lib_rctf_size_x(&v2d->cur) / sizex;
   }
   if (sizey > 0) {
-    yofs = eps * BLI_rctf_size_y(&v2d->cur) / sizey;
+    yofs = eps * lib_rctf_size_y(&v2d->cur) / sizey;
   }
 
   /* apply mask-based adjustments to cur rect (due to scrollers),
    * to eliminate scaling artifacts */
   view2d_map_cur_using_mask(v2d, &curmasked);
 
-  BLI_rctf_translate(&curmasked, -xofs, -yofs);
+  lib_rctf_translate(&curmasked, -xofs, -yofs);
 
   /* XXX ton: this flag set by outliner, for icons */
   if (v2d->flag & V2D_PIXELOFS_X) {
@@ -837,15 +810,14 @@ void UI_view2d_view_ortho(const View2D *v2d)
   wmOrtho2(curmasked.xmin, curmasked.xmax, curmasked.ymin, curmasked.ymax);
 }
 
-void UI_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
+void ui_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
 {
   rctf curmasked;
   float xofs, yofs;
 
   /* Pixel offsets (-GLA_PIXEL_OFS) are needed to get 1:1
    * correspondence with pixels for smooth UI drawing,
-   * but only applied where requested.
-   */
+   * but only applied where requested. */
   /* XXX(ton): temp. */
   xofs = 0.0f;  // (v2d->flag & V2D_PIXELOFS_X) ? GLA_PIXEL_OFS : 0.0f;
   yofs = 0.0f;  // (v2d->flag & V2D_PIXELOFS_Y) ? GLA_PIXEL_OFS : 0.0f;
@@ -863,25 +835,20 @@ void UI_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
   }
 }
 
-void UI_view2d_view_restore(const bContext *C)
+void ui_view2d_view_restore(const bContext *C)
 {
-  ARegion *region = CTX_wm_region(C);
-  const int width = BLI_rcti_size_x(&region->winrct) + 1;
-  const int height = BLI_rcti_size_y(&region->winrct) + 1;
+  ARegion *region = cxt_wm_region(C);
+  const int width = lib_rcti_size_x(&region->winrct) + 1;
+  const int height = lib_rcti_size_y(&region->winrct) + 1;
 
   wmOrtho2(0.0f, (float)width, 0.0f, (float)height);
-  GPU_matrix_identity_set();
+  gpu_matrix_identity_set();
 
-  //  ED_region_pixelspace(CTX_wm_region(C));
+  //  ed_region_pixelspace(cxt_wm_region(C));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Grid-Line Drawing
- * \{ */
-
-void UI_view2d_multi_grid_draw(
+/* Grid-Line Drawing */
+void ui_view2d_multi_grid_draw(
     const View2D *v2d, int colorid, float step, int level_size, int totlevels)
 {
   /* Exit if there is nothing to draw */
@@ -899,11 +866,11 @@ void UI_view2d_multi_grid_draw(
   vertex_count += 2 * ((int)((v2d->cur.ymax - v2d->cur.ymin) / lstep) + 1);
 
   GPUVertFormat *format = immVertexFormat();
-  const uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-  uint color = GPU_vertformat_attr_add(
+  const uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint color = gpu_vertformat_attr_add(
       format, "color", GPU_COMP_U8, 3, GPU_FETCH_INT_TO_FLOAT_UNIT);
 
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   immBindBuiltinProgram(GPU_SHADER_2D_FLAT_COLOR);
   immBeginAtMost(GPU_PRIM_LINES, vertex_count);
@@ -1012,23 +979,23 @@ static const DotGridLevelInfo level_info[9] = {
     {0.025f, 0.6f, 0.9f},
 };
 
-void UI_view2d_dot_grid_draw(const View2D *v2d,
+void ui_view2d_dot_grid_draw(const View2D *v2d,
                              const int grid_color_id,
                              const float min_step,
                              const int grid_levels)
 {
-  BLI_assert(grid_levels >= 0 && grid_levels < 10);
-  const float zoom_x = (float)(BLI_rcti_size_x(&v2d->mask) + 1) / BLI_rctf_size_x(&v2d->cur);
+  lib_assert(grid_levels >= 0 && grid_levels < 10);
+  const float zoom_x = (float)(lib_rcti_size_x(&v2d->mask) + 1) / BLI_rctf_size_x(&v2d->cur);
   const float zoom_normalized = (zoom_x - v2d->minzoom) / (v2d->maxzoom - v2d->minzoom);
 
   GPUVertFormat *format = immVertexFormat();
-  const uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-  const uint color_id = GPU_vertformat_attr_add(format, "color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+  const uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  const uint color_id = gpu_vertformat_attr_add(format, "color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_2D_FLAT_COLOR);
-  GPU_point_size(3.0f * UI_DPI_FAC);
+  gpu_point_size(3.0f * UI_DPI_FAC);
 
   float color[4];
-  UI_GetThemeColor3fv(grid_color_id, color);
+  ui_GetThemeColor3fv(grid_color_id, color);
 
   for (int level = 0; level < grid_levels; level++) {
     const DotGridLevelInfo *info = &level_info[level];
@@ -1036,7 +1003,7 @@ void UI_view2d_dot_grid_draw(const View2D *v2d,
 
     const float alpha_factor = (zoom_normalized - info->fade_in_start_zoom) /
                                (info->fade_in_end_zoom - info->fade_in_start_zoom);
-    color[3] = clamp_f(BLI_easing_cubic_ease_in_out(alpha_factor, 0.0f, 1.0f, 1.0f), 0.0f, 1.0f);
+    color[3] = clamp_f(lib_easing_cubic_ease_in_out(alpha_factor, 0.0f, 1.0f, 1.0f), 0.0f, 1.0f);
     if (color[3] == 0.0f) {
       break;
     }
@@ -1070,18 +1037,13 @@ void UI_view2d_dot_grid_draw(const View2D *v2d,
   immUnbindProgram();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Scrollers
- * \{ */
+/* Scrollers */
 
-/**
- * View2DScrollers is typedef'd in UI_view2d.h
+/* View2DScrollers is typedef'd in UI_view2d.h
  *
  * \warning The start of this struct must not change, as view2d_ops.c uses this too.
- * For now, we don't need to have a separate (internal) header for structs like this...
- */
+ * For now, we don't need to have a separate (internal) header for structs like this... */
 struct View2DScrollers {
   /* focus bubbles */
   /* focus bubbles */
@@ -1095,7 +1057,7 @@ struct View2DScrollers {
   /* int horfull, vertfull; */ /* UNUSED */
 };
 
-void UI_view2d_scrollers_calc(View2D *v2d,
+void ui_view2d_scrollers_calc(View2D *v2d,
                               const rcti *mask_custom,
                               struct View2DScrollers *r_scrollers)
 {
@@ -1139,15 +1101,14 @@ void UI_view2d_scrollers_calc(View2D *v2d,
   r_scrollers->vert = vert;
   r_scrollers->hor = hor;
 
-  /* scroller 'buttons':
+  /* scroller 'btns':
    * - These should always remain within the visible region of the scrollbar
-   * - They represent the region of 'tot' that is visible in 'cur'
-   */
+   * - They represent the region of 'tot' that is visible in 'cur' */
 
   /* horizontal scrollers */
   if (scroll & V2D_SCROLL_HORIZONTAL) {
     /* scroller 'button' extents */
-    totsize = BLI_rctf_size_x(&v2d->tot);
+    totsize = lib_rctf_size_x(&v2d->tot);
     scrollsize = (float)BLI_rcti_size_x(&hor);
     if (totsize == 0.0f) {
       totsize = 1.0f; /* avoid divide by zero */
@@ -1262,8 +1223,7 @@ void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      * - slider bubble is large enough (no overdraw confusion)
      * - scale is shown on the scroller
      *   (workaround to make sure that button windows don't show these,
-     *   and only the time-grids with their zoom-ability can do so).
-     */
+     *   and only the time-grids with their zoom-ability can do so). */
     if ((v2d->keepzoom & V2D_LOCKZOOM_X) == 0 && (v2d->scroll & V2D_SCROLL_HORIZONTAL_HANDLES) &&
         (BLI_rcti_size_x(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
@@ -1296,8 +1256,7 @@ void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      * - slider bubble is large enough (no overdraw confusion)
      * - scale is shown on the scroller
      *   (workaround to make sure that button windows don't show these,
-     *   and only the time-grids with their zoomability can do so)
-     */
+     *   and only the time-grids with their zoomability can do so) */
     if ((v2d->keepzoom & V2D_LOCKZOOM_Y) == 0 && (v2d->scroll & V2D_SCROLL_VERTICAL_HANDLES) &&
         (BLI_rcti_size_y(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
