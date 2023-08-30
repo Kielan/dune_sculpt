@@ -252,7 +252,7 @@ static void block_align_stitch_neighbors(BtnAlign *btnal,
 
   /* We have to check stitching flags on both sides of the stitching,
    * since we only clear one of them flags to break any future loop on same 'columns/side' case.
-   * Also, if butal is spanning over several rows or columns of neighbors,
+   * Also, if btnal is spanning over several rows or columns of neighbors,
    * it may have both of its stitching flags
    * set, but would not be the case of its immediate neighbor! */
   while ((btnal->flags[side] & stitch_s1) && (btnal = btnal->neighbors[side_s1]) &&
@@ -293,88 +293,88 @@ static int ui_block_align_btnal_cmp(const void *a, const void *b)
   const BtnAlign *btnal_other = b;
 
   /* Sort by align group. */
-  if (btnal->btn->alignnr != btnal_other->but->alignnr) {
-    return btnal->btn->alignnr - btnal_other->but->alignnr;
+  if (btnal->btn->alignnr != btnal_other->btn->alignnr) {
+    return btnal->btn->alignnr - btnal_other->btn->alignnr;
   }
 
   /* Sort vertically.
    * Note that Y of buttons is decreasing (first buttons have higher Y value than later ones). */
-  if (*butal->borders[TOP] != *butal_other->borders[TOP]) {
-    return (*butal_other->borders[TOP] > *butal->borders[TOP]) ? 1 : -1;
+  if (*btnal->borders[TOP] != *btnal_other->borders[TOP]) {
+    return (*btnal_other->borders[TOP] > *btnal->borders[TOP]) ? 1 : -1;
   }
 
   /* Sort horizontally. */
-  if (*butal->borders[LEFT] != *butal_other->borders[LEFT]) {
-    return (*butal->borders[LEFT] > *butal_other->borders[LEFT]) ? 1 : -1;
+  if (*btnal->borders[LEFT] != *btnal_other->borders[LEFT]) {
+    return (*btnal->borders[LEFT] > *btnal_other->borders[LEFT]) ? 1 : -1;
   }
 
-  /* XXX We cannot actually assert here, since in some very compressed space cases,
-   *     stupid UI code produces widgets which have the same TOP and LEFT positions...
-   *     We do not care really,
-   *     because this happens when UI is way too small to be usable anyway. */
-  // LIB_assert(0);
+  /* We cannot actually assert here, since in some very compressed space cases,
+   * stupid UI code produces widgets which have the same TOP and LEFT positions...
+   * We do not care really,
+   * because this happens when UI is way too small to be usable anyway. */
+  // lib_assert(0);
   return 0;
 }
 
-static void blockalign_btn_to_region(uiBut *but, const ARegion *region)
+static void blockalign_btn_to_region(uiBtn *btn, const ARegion *region)
 {
-  rctf *rect = &but->rect;
-  const float but_width = BLI_rctf_size_x(rect);
-  const float but_height = BLI_rctf_size_y(rect);
+  rctf *rect = &btn->rect;
+  const float btn_width = lib_rctf_size_x(rect);
+  const float btn_height = lib_rctf_size_y(rect);
   const float outline_px = U.pixelsize; /* This may have to be made more variable. */
 
-  switch (but->drawflag & UI_BTN_ALIGN) {
+  switch (btn->drawflag & UI_BTN_ALIGN) {
     case UI_BTN_ALIGN_TOP:
       rect->ymax = region->winy + outline_px;
-      rect->ymin = but->rect.ymax - btn_height;
+      rect->ymin = btn->rect.ymax - btn_height;
       break;
-    case UI_BUT_ALIGN_DOWN:
+    case UI_BTN_ALIGN_DOWN:
       rect->ymin = -outline_px;
-      rect->ymax = rect->ymin + but_height;
+      rect->ymax = rect->ymin + btn_height;
       break;
-    case UI_BUT_ALIGN_LEFT:
+    case UI_BTN_ALIGN_LEFT:
       rect->xmin = -outline_px;
-      rect->xmax = rect->xmin + but_width;
+      rect->xmax = rect->xmin + btn_width;
       break;
-    case UI_BUT_ALIGN_RIGHT:
+    case UI_BTN_ALIGN_RIGHT:
       rect->xmax = region->winx + outline_px;
-      rect->xmin = rect->xmax - but_width;
+      rect->xmin = rect->xmax - btn_width;
       break;
     default:
-      /* Tabs may be shown in unaligned regions too, they just appear as regular buttons then. */
+      /* Tabs may be shown in unaligned regions too, they just appear as regular btns then. */
       break;
   }
 }
 
 void blockalign_calc(uiBlock *block, const ARegion *region)
 {
-  int num_buttons = 0;
+  int num_btns = 0;
 
-  const int sides_to_ui_but_align_flags[4] = SIDE_TO_UI_BUT_ALIGN;
+  const int sides_to_ui_btn_align_flags[4] = SIDE_TO_UI_BTN_ALIGN;
 
-  ButAlign *butal_array;
-  ButAlign *butal, *butal_other;
+  BtnAlign *btnal_array;
+  BtnAlign *butal, *btnal_other;
   int side;
 
-  /* First loop: we count number of buttons belonging to an align group,
+  /* First loop: we count number of btns belonging to an align group,
    * and clear their align flag.
    * Tabs get some special treatment here, they get aligned to region border. */
-  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
+  LIST_FOREACH (uiBtn *, btn, &block->btns) {
     /* special case: tabs need to be aligned to a region border, drawflag tells which one */
-    if (but->type == UI_BTYPE_TAB) {
-      ui_block_align_but_to_region(but, region);
+    if (btn->type == UI_BTYPE_TAB) {
+      ui_block_align_btn_to_region(btn, region);
     }
     else {
       /* Clear old align flags. */
-      but->drawflag &= ~UI_BUT_ALIGN_ALL;
+      btn->drawflag &= ~UI_BTN_ALIGN_ALL;
     }
 
-    if (but->alignnr != 0) {
+    if (btn->alignnr != 0) {
       num_buttons++;
     }
   }
 
-  if (num_buttons < 2) {
+  if (num_btns < 2) {
     /* No need to go further if we have nothing to align... */
     return;
   }
@@ -382,39 +382,39 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
   /* Note that this is typically less than ~20, and almost always under ~100.
    * Even so, we can't ensure this value won't exceed available stack memory.
    * Fallback to allocation instead of using #alloca, see: T78636. */
-  ButAlign butal_array_buf[256];
-  if (num_buttons <= ARRAY_SIZE(butal_array_buf)) {
-    butal_array = butal_array_buf;
+  BtnAlign btnal_array_buf[256];
+  if (num_btns <= ARRAY_SIZE(btnal_array_buf)) {
+    btnal_array = btnal_array_buf;
   }
   else {
-    butal_array = MEM_mallocN(sizeof(*butal_array) * num_buttons, __func__);
+    btnal_array = _mallocN(sizeof(*btnal_array) * num_btns, __func__);
   }
-  memset(butal_array, 0, sizeof(*butal_array) * (size_t)num_buttons);
+  memset(btnal_array, 0, sizeof(*btnal_array) * (size_t)num_btns);
 
-  /* Second loop: we initialize our ButAlign data for each button. */
-  butal = butal_array;
-  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
-    if (but->alignnr != 0) {
-      butal->but = but;
-      butal->borders[LEFT] = &but->rect.xmin;
-      butal->borders[RIGHT] = &but->rect.xmax;
-      butal->borders[DOWN] = &but->rect.ymin;
-      butal->borders[TOP] = &but->rect.ymax;
-      copy_v4_fl(butal->dists, FLT_MAX);
-      butal++;
+  /* Second loop: we initialize our BtnAlign data for each btn. */
+  btnal = btnal_array;
+  LIST_FOREACH (uiBtn *, btn, &block->btns) {
+    if (btn->alignnr != 0) {
+      btnal->btn = btn;
+      btnal->borders[LEFT] = &btn->rect.xmin;
+      btnal->borders[RIGHT] = &btn->rect.xmax;
+      btnal->borders[DOWN] = &btn->rect.ymin;
+      btnal->borders[TOP] = &btn->rect.ymax;
+      copy_v4_fl(btnal->dists, FLT_MAX);
+      btnal++;
     }
   }
 
   /* This will give us BtnAlign items regrouped by align group, vertical and horizontal location.
-   * Note that, given how buttons are defined in UI code,
-   * butal_array shall already be "nearly sorted"... */
-  qsort(btnal_array, (size_t)num_buttons, sizeof(*butal_array), ui_block_align_butal_cmp);
+   * Note that, given how btns are defined in UI code,
+   * btnal_array shall already be "nearly sorted"... */
+  qsort(btnal_array, (size_t)num_btns, sizeof(*btnal_array), ui_block_align_btnal_cmp);
 
-  /* Third loop: for each pair of buttons in the same align group,
+  /* Third loop: for each pair of btns in the same align group,
    * we compute their potential proximity. Note that each pair is checked only once, and that we
    * break early in case we know all remaining pairs will always be too far away. */
   int i;
-  for (i = 0, btnal = btnal_array; i < num_buttons; i++, butal++) {
+  for (i = 0, btnal = btnal_array; i < num_btns; i++, btnal++) {
     const short alignnr = btnal->btn->alignnr;
 
     int j;
@@ -424,14 +424,14 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
       /* Since they are sorted, buttons after current btnal can only be of same or higher
        * group, and once they are not of same group, we know we can break this sub-loop and
        * start checking with next butal. */
-      if (btnal_other->but->alignnr != alignnr) {
+      if (btnal_other->btn->alignnr != alignnr) {
         break;
       }
 
-      /* Since they are sorted vertically first, buttons after current butal can only be at
+      /* Since they are sorted vertically first, btns after current btnal can only be at
        * same or lower height, and once they are lower than a given threshold, we know we can
        * break this sub-loop and start checking with next btnal. */
-      if ((*butal->borders[DOWN] - *btnal_other->borders[TOP]) > max_delta) {
+      if ((*btnal->borders[DOWN] - *btnal_other->borders[TOP]) > max_delta) {
         break;
       }
 
@@ -439,11 +439,10 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
     }
   }
 
-  /* Fourth loop: we have all our 'aligned' buttons as a 'map' in butal_array. We need to:
+  /* Fourth loop: we have all our 'aligned' buttons as a 'map' in btnal_array. We need to:
    *     - update their relevant coordinates to stitch them.
-   *     - assign them valid flags.
-   */
-  for (i = 0; i < num_buttons; i++) {
+   *     - assign them valid flags */
+  for (i = 0; i < num_btns; i++) {
     btnal = &btnal_array[i];
 
     for (side = 0; side < TOTSIDES; side++) {
@@ -454,13 +453,13 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
         const int side_s1 = SIDE1(side);
         const int side_s2 = SIDE2(side);
 
-        const int align = sides_to_ui_but_align_flags[side];
-        const int align_opp = sides_to_ui_but_align_flags[side_opp];
+        const int align = sides_to_ui_btn_align_flags[side];
+        const int align_opp = sides_to_ui_btn_align_flags[side_opp];
 
         float co;
 
-        btnal->but->drawflag |= align;
-        btnal_other->but->drawflag |= align_opp;
+        btnal->btn->drawflag |= align;
+        btnal_other->btn->drawflag |= align_opp;
         if (!IS_EQF(btnal->dists[side], 0.0f)) {
           float *delta = &btnal->dists[side];
 
@@ -473,7 +472,7 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
           co = (*btnal->borders[side] += *delta);
 
           if (!IS_EQF(btnal_other->dists[side_opp], 0.0f)) {
-            LIB_assert(btnal_other->dists[side_opp] * 0.5f == fabsf(*delta));
+            lib_assert(btnal_other->dists[side_opp] * 0.5f == fabsf(*delta));
             *btnal_other->borders[side_opp] = co;
             btnal_other->dists[side_opp] = 0.0f;
           }
@@ -491,11 +490,11 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
     }
   }
   if (btnal_array_buf != btnal_array) {
-    MEM_freeN(btnal_array);
+    mem_freen(btnal_array);
   }
 }
 
-#  undef SIDE_TO_UI_BUT_ALIGN
+#  undef SIDE_TO_UI_BTN_ALIGN
 #  undef SIDE1
 #  undef OPPOSITE
 #  undef SIDE2
@@ -516,30 +515,30 @@ bool btnalign_can(const uiBtn *btn)
                UI_BTYPE_SEPR_SPACER);
 }
 
-static bool btnlist_is_horiz(uiBut *but1, uiBut *but2)
+static bool btnlist_is_horiz(uiBtn *btn1, uiBtn *btn2)
 {
   float dx, dy;
 
-  /* simple case which can fail if buttons shift apart
+  /* simple case which can fail if btns shift apart
    * with proportional layouts, see: T38602. */
-  if ((but1->rect.ymin == but2->rect.ymin) && (but1->rect.xmin != but2->rect.xmin)) {
+  if ((btn1->rect.ymin == btn2->rect.ymin) && (btn1->rect.xmin != btn2->rect.xmin)) {
     return true;
   }
 
-  dx = fabsf(but1->rect.xmax - but2->rect.xmin);
-  dy = fabsf(but1->rect.ymin - but2->rect.ymax);
+  dx = fabsf(btn1->rect.xmax - but2->rect.xmin);
+  dy = fabsf(btn1->rect.ymin - but2->rect.ymax);
 
   return (dx <= dy);
 }
 
 static void blockalign_btn_calc(uiBtn *first, short nr)
 {
-  uiBtn *prev, *but = NULL, *next;
+  uiBtn *prev, *btn = NULL, *next;
   int flag = 0, cols = 0, rows = 0;
 
   /* auto align */
 
-  for (btn = first; btn && btn->alignnr == nr; but = but->next) {
+  for (btn = first; btn && btn->alignnr == nr; btn = btn->next) {
     if (btn->next && btn->next->alignnr == nr) {
       if (btnlist_is_horiz(btn, btn->next)) {
         cols++;
@@ -561,68 +560,68 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
     }
 
     /* clear old flag */
-    btn->drawflag &= ~UI_BUT_ALIGN;
+    btn->drawflag &= ~UI_BTN_ALIGN;
 
     if (flag == 0) { /* first case */
       if (next) {
-        if (buts_are_horiz(but, next)) {
+        if (btns_are_horiz(btn, next)) {
           if (rows == 0) {
-            flag = UI_BUT_ALIGN_RIGHT;
+            flag = UI_BTN_ALIGN_RIGHT;
           }
           else {
-            flag = UI_BUT_ALIGN_DOWN | UI_BUT_ALIGN_RIGHT;
+            flag = UI_BTN_ALIGN_DOWN | UI_BTN_ALIGN_RIGHT;
           }
         }
         else {
-          flag = UI_BUT_ALIGN_DOWN;
+          flag = UI_BTN_ALIGN_DOWN;
         }
       }
     }
     else if (next == NULL) { /* last case */
       if (prev) {
-        if (buts_are_horiz(prev, but)) {
+        if (btns_are_horiz(prev, btn)) {
           if (rows == 0) {
-            flag = UI_BUT_ALIGN_LEFT;
+            flag = UI_BTN_ALIGN_LEFT;
           }
           else {
-            flag = UI_BUT_ALIGN_TOP | UI_BUT_ALIGN_LEFT;
+            flag = UI_BTN_ALIGN_TOP | UI_BTN_ALIGN_LEFT;
           }
         }
         else {
-          flag = UI_BUT_ALIGN_TOP;
+          flag = UI_BTN_ALIGN_TOP;
         }
       }
     }
-    else if (buts_are_horiz(but, next)) {
+    else if (btns_are_horiz(btn, next)) {
       /* check if this is already second row */
-      if (prev && buts_are_horiz(prev, but) == 0) {
-        flag &= ~UI_BUT_ALIGN_LEFT;
-        flag |= UI_BUT_ALIGN_TOP;
+      if (prev && btns_are_horiz(prev, btn) == 0) {
+        flag &= ~UI_BTN_ALIGN_LEFT;
+        flag |= UI_BTN_ALIGN_TOP;
         /* exception case: bottom row */
         if (rows > 0) {
-          uiBut *bt = but;
+          uiBtn *bt = btn;
           while (bt && bt->alignnr == nr) {
-            if (bt->next && bt->next->alignnr == nr && buts_are_horiz(bt, bt->next) == 0) {
+            if (bt->next && bt->next->alignnr == nr && btns_are_horiz(bt, bt->next) == 0) {
               break;
             }
             bt = bt->next;
           }
           if (bt == NULL || bt->alignnr != nr) {
-            flag = UI_BUT_ALIGN_TOP | UI_BUT_ALIGN_RIGHT;
+            flag = UI_BTN_ALIGN_TOP | UI_BTN_ALIGN_RIGHT;
           }
         }
       }
       else {
-        flag |= UI_BUT_ALIGN_LEFT;
+        flag |= UI_BTN_ALIGN_LEFT;
       }
     }
     else {
       if (cols == 0) {
         flag |= UI_BTN_ALIGN_TOP;
       }
-      else { /* next button switches to new row */
+      else { /* next btn switches to new row */
 
-        if (prev && btnlist_is_horiz(prev, but)) {
+        if (prev && btnlist_is_horiz(prev, btn)) {
           flag |= UI_BTN_ALIGN_LEFT;
         }
         else {
@@ -636,7 +635,7 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
               flag = UI_BTN_ALIGN_DOWN | UI_BTN_ALIGN_LEFT | UI_BTN_ALIGN_RIGHT;
             }
             else {
-              /* last button in top row */
+              /* last btn in top row */
               flag = UI_BTN_ALIGN_DOWN | UI_BTN_ALIGN_LEFT;
             }
           }
@@ -657,11 +656,11 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
       /* simple cases */
       if (rows == 0) {
         btn->rect.xmin = (prev->rect.xmax + btn->rect.xmin) / 2.0f;
-        prev->rect.xmax = but->rect.xmin;
+        prev->rect.xmax = btn->rect.xmin;
       }
       else if (cols == 0) {
-        btn->rect.ymax = (prev->rect.ymin + but->rect.ymax) / 2.0f;
-        prev->rect.ymin = but->rect.ymax;
+        btn->rect.ymax = (prev->rect.ymin + btn->rect.ymax) / 2.0f;
+        prev->rect.ymin = btn->rect.ymax;
       }
       else {
         if (flex_is_horiz(prev, btn)) {
@@ -671,7 +670,7 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
           btn->rect.ymax = prev->rect.ymax;
         }
         else if (prev->prev && flex_is_horiz(prev->prev, prev) == 0) {
-          /* the previous button is a single one in its row */
+          /* the previous btn is a single one in its row */
           btn->rect.ymax = (prev->rect.ymin + btn->rect.ymax) / 2.0f;
           prev->rect.ymin = btn->rect.ymax;
 
@@ -681,7 +680,7 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
           }
         }
         else {
-          /* the previous button is not a single one in its row */
+          /* the previous btn is not a single one in its row */
           btn->rect.ymax = prev->rect.ymin;
         }
       }
@@ -694,7 +693,7 @@ void blockalign_calc(uiBlock *block, const struct ARegion *UNUSED(region))
   short nr;
 
   /* align buttons with same align nr */
-  LISTBASE_FOREACH (uiBtn *, btn, &block->btnlist) {
+  LIST_FOREACH (uiBtn *, btn, &block->btnlist) {
     if (btn->alignnr) {
       nr = btn->alignnr;
       flex_btnalign_calc(btn, nr);
@@ -724,13 +723,13 @@ int btnalign_opposite_to_areaalign_get(const ARegion *region)
 
   switch (RGN_ALIGN_ENUM_FROM_MASK(align_region->alignment)) {
     case RGN_ALIGN_TOP:
-      return UI_BUT_ALIGN_DOWN;
+      return UI_BTN_ALIGN_DOWN;
     case RGN_ALIGN_BOTTOM:
-      return UI_BUT_ALIGN_TOP;
+      return UI_BTN_ALIGN_TOP;
     case RGN_ALIGN_LEFT:
-      return UI_BUT_ALIGN_RIGHT;
+      return UI_BTN_ALIGN_RIGHT;
     case RGN_ALIGN_RIGHT:
-      return UI_BUT_ALIGN_LEFT;
+      return UI_BTN_ALIGN_LEFT;
   }
 
   return 0;
