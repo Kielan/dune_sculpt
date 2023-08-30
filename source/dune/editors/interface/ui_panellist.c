@@ -107,8 +107,8 @@ static bool panel_type_context_poll(ARegion *region,
 
 /** Local Functions **/
 static bool panel_active_anim_changed(List *lb,
-                                           Panel **r_panel_animation,
-                                           bool *r_no_animation)
+                                      Panel **r_panel_animation,
+                                      bool *r_no_animation)
 {
   LIST_FOREACH (Panel *, panel, lb) {
     /* Detect panel active flag changes. */
@@ -602,7 +602,7 @@ static bool panellist_type_cxt_poll(ARegion *region,
   return false;
 }
 
-PanelList *panellist_find_by_type(ListBase *lb, const PanelType *pt)
+PanelList *panellist_find_by_type(List *lb, const PanelType *pt)
 {
   const char *idname = pt->idname;
 
@@ -1346,8 +1346,8 @@ bool ui_view2d_view_to_region_clip(
     const View2D *v2d, float x, float y, int *r_region_x, int *r_region_y)
 {
   /* express given coordinates as proportional values */
-  x = (x - v2d->cur.xmin) / BLI_rctf_size_x(&v2d->cur);
-  y = (y - v2d->cur.ymin) / BLI_rctf_size_y(&v2d->cur);
+  x = (x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur);
+  y = (y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur);
 
   /* check if values are within bounds */
   if ((x >= 0.0f) && (x <= 1.0f) && (y >= 0.0f) && (y <= 1.0f)) {
@@ -1644,7 +1644,6 @@ char ui_view2d_rect_in_scrollers(const ARegion *region, const View2D *v2d, const
 }
 
 /* View2D Text Drawing Cache */
-
 typedef struct View2DString {
   struct View2DString *next;
   union {
@@ -1669,17 +1668,17 @@ void ui_view2d_text_cache_add(
 
   lib_assert(str_len == strlen(str));
 
-  if (UI_view2d_view_to_region_clip(v2d, x, y, &mval[0], &mval[1])) {
+  if (ui_view2d_view_to_region_clip(v2d, x, y, &mval[0], &mval[1])) {
     const int alloc_len = str_len + 1;
     View2DString *v2s;
 
     if (g_v2d_strings_arena == NULL) {
-      g_v2d_strings_arena = BLI_memarena_new(MEM_SIZE_OPTIMAL(1 << 14), __func__);
+      g_v2d_strings_arena = lib_memarena_new(MEM_SIZE_OPTIMAL(1 << 14), __func__);
     }
 
-    v2s = BLI_memarena_alloc(g_v2d_strings_arena, sizeof(View2DString) + alloc_len);
+    v2s = lib_memarena_alloc(g_v2d_strings_arena, sizeof(View2DString) + alloc_len);
 
-    BLI_LINKS_PREPEND(g_v2d_strings, v2s);
+    LIB_LINKS_PREPEND(g_v2d_strings, v2s);
 
     v2s->col.pack = *((const int *)col);
 
@@ -1697,17 +1696,17 @@ void view2d_text_cache_add_rectf(
 {
   rcti rect;
 
-  BLI_assert(str_len == strlen(str));
+  lib_assert(str_len == strlen(str));
 
   if (view2d_view_to_region_rcti_clip(v2d, rect_view, &rect)) {
     const int alloc_len = str_len + 1;
     View2DString *v2s;
 
     if (g_v2d_strings_arena == NULL) {
-      g_v2d_strings_arena = LIB_memarena_new(MEM_SIZE_OPTIMAL(1 << 14), __func__);
+      g_v2d_strings_arena = lib_memarena_new(MEM_SIZE_OPTIMAL(1 << 14), __func__);
     }
 
-    v2s = LIB_memarena_alloc(g_v2d_strings_arena, sizeof(View2DString) + alloc_len);
+    v2s = lib_memarena_alloc(g_v2d_strings_arena, sizeof(View2DString) + alloc_len);
 
     LIB_LINKS_PREPEND(g_v2d_strings, v2s);
 
@@ -1738,7 +1737,7 @@ void view2d_txt_cache_draw(ARegion *region)
   for (v2s = g_v2d_strings; v2s; v2s = v2s->next) {
     int xofs = 0, yofs;
 
-    yofs = ceil(0.5f * (BLI_rcti_size_y(&v2s->rect) - default_height));
+    yofs = ceil(0.5f * (lib_rcti_size_y(&v2s->rect) - default_height));
     if (yofs < 1) {
       yofs = 1;
     }
@@ -1767,7 +1766,7 @@ void view2d_txt_cache_draw(ARegion *region)
   g_v2d_strings = NULL;
 
   if (g_v2d_strings_arena) {
-    LIB_memarena_free(g_v2d_strings_arena);
+    lib_memarena_free(g_v2d_strings_arena);
     g_v2d_strings_arena = NULL;
   }
 }
