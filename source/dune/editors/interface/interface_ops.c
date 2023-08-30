@@ -341,15 +341,15 @@ static bool override_type_set_btnpoll(DuneContext *C)
   ApiPtr *prop;
   int index;
 
-  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   const uint override_status = apiprop_override_lib_status(
-      CTX_data_main(C), &ptr, prop, index);
+      cxt_data_main(C), &ptr, prop, index);
 
-  return (ptr.data && prop && (override_status & RNA_OVERRIDE_STATUS_OVERRIDABLE));
+  return (ptr.data && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDABLE));
 }
 
-static int override_type_set_btnex(DuneContext *C, wmOperator *op)
+static int override_type_set_btnex(Cxt *C, wmOp *op)
 {
   ApiProp ptr;
   ApiProp *prop;
@@ -358,125 +358,125 @@ static int override_type_set_btnex(DuneContext *C, wmOperator *op)
   const bool all = api_bool_get(op->ptr, "all");
   const int op_type = api_enum_get(op->ptr, "type");
 
-  short operation;
+  short op;
 
   switch (op_type) {
     case UIOverride_Type_NOOP:
-      operation = IDOVERRIDE_LIBRARY_OP_NOOP;
+      operation = IDOVERRIDE_LIB_OP_NOOP;
       break;
     case UIOverride_Type_Replace:
-      operation = IDOVERRIDE_LIBRARY_OP_REPLACE;
+      operation = IDOVERRIDE_LIB_OP_REPLACE;
       break;
     case UIOverride_Type_Difference:
       /* override code will automatically switch to subtract if needed. */
-      operation = IDOVERRIDE_LIBRARY_OP_ADD;
+      operation = IDOVERRIDE_LIB_OP_ADD;
       break;
     case UIOverride_Type_Factor:
-      operation = IDOVERRIDE_LIBRARY_OP_MULTIPLY;
+      operation = IDOVERRIDE_LIB_OP_MULTIPLY;
       break;
     default:
-      operation = IDOVERRIDE_LIBRARY_OP_REPLACE;
-      LIB_assert(0);
+      operation = IDOVERRIDE_LIB_OP_REPLACE;
+      lib_assert(0);
       break;
   }
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
-  LIB_assert(ptr.owner_id != NULL);
+  lib_assert(ptr.owner_id != NULL);
 
   if (all) {
     index = -1;
   }
 
-  IDOverrideLibPropOp *opop = apiprop_override_prop_op_get(
-      CTX_data_main(C), &ptr, prop, operation, index, true, NULL, &created);
+  IdOverrideLibPropOp *opop = apiprop_override_prop_op_get(
+      cxt_data_main(C), &ptr, prop, op, index, true, NULL, &created);
 
   if (opop == NULL) {
     /* Sometimes e.g. API cannot generate a path to the given property. */
-    DUNE_reportf(op->reports, RPT_WARNING, "Failed to create the override operation");
-    return OPERATOR_CANCELLED;
+    dune_reportf(op->reports, RPT_WARNING, "Failed to create the override operation");
+    return OP_CANCELLED;
   }
 
   if (!created) {
-    opop->operation = operation;
+    opop->op = op;
   }
 
   /* Outliner e.g. has to be aware of this change. */
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
   return op_btnprop_finish(C, &ptr, prop);
 }
 
-static int override_type_set_btn_invoke(DuneContext *C,
-                                           wmOperator *op,
-                                           const wmEvent *UNUSED(event))
+static int override_type_set_btn_invoke(Cxt *C,
+                                        wmOp *op,
+                                        const wmEvent *UNUSED(event))
 {
 #if 0 /* Disabled for now */
-  return WM_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
+  return wm_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
 #else
-  api_enum_set(op->ptr, "type", IDOVERRIDE_LIBRARY_OP_REPLACE);
+  api_enum_set(op->ptr, "type", IDOVERRIDE_LIB_OP_REPLACE);
   return override_type_set_btnex(C, op);
 #endif
 }
 
-static void UI_OT_override_type_set_btn(wmOperatorType *ot)
+static void UI_OT_override_type_set_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Define Override Type";
   ot->idname = "UI_OT_override_type_set_btn";
-  ot->description = "Create an override operation, or set the type of an existing one";
+  ot->description = "Create an override op, or set the type of an existing one";
 
   /* callbacks */
   ot->poll = override_type_set_btnpoll;
-  ot->exec = override_type_set_btnex;
+  ot->ex = override_type_set_btnex;
   ot->invoke = override_type_set_btninvoke;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
-  ot->prop = api_def_enum(ot->srna,
+  api_def_bool(ot->sapi, "all", 1, "All", "Reset to default values all elements of the array");
+  ot->prop = api_def_enum(ot->sapi,
                           "type",
                           override_type_items,
                           UIOverride_Type_Replace,
                           "Type",
-                          "Type of override operation");
+                          "Type of override op");
   /* TODO: add itemf callback, not all options are available for all data types... */
 }
 
-static bool override_remove_btnpoll(DuneContext *C)
+static bool override_remove_btnpoll(Cxt *C)
 {
   ApiPtr ptr;
   ApiProp *prop;
   int index;
 
-  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   const uint override_status = ApiProp_override_lib_status(
-      CTX_data_main(C), &ptr, prop, index);
+      cxt_data_main(C), &ptr, prop, index);
 
   return (ptr.data && ptr.owner_id && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDDEN));
 }
 
-static int override_remove_btnex(DuneContext *C, wmOperator *op)
+static int override_remove_btnex(Cxt *C, wmOp *op)
 {
-  Main *duneMain = CTX_data_main(C);
+  Main *duneMain = cxt_data_main(C);
   ApiPtr ptr, id_refptr, src;
   ApiPtr *prop;
   int index;
   const bool all = api_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
-  ID *id = ptr.owner_id;
-  IDOverrideLibProp *oprop = apiprop_override_prop_find(duneMain, &ptr, prop, &id);
-  LIB_assert(oprop != NULL);
-  LIB_assert(id != NULL && id->override_library != NULL);
+  Id *id = ptr.owner_id;
+  IdOverrideLibProp *oprop = apiprop_override_prop_find(duneMain, &ptr, prop, &id);
+  lib_assert(oprop != NULL);
+  lib_assert(id != NULL && id->override_library != NULL);
 
-  const bool is_template = ID_IS_OVERRIDE_LIBRARY_TEMPLATE(id);
+  const bool is_template = ID_IS_OVERRIDE_LIB_TEMPLATE(id);
 
   /* We need source (i.e. linked data) to restore values of deleted overrides...
    * If this is an override template, we obviously do not need to restore anything. */
@@ -484,7 +484,7 @@ static int override_remove_btnex(DuneContext *C, wmOperator *op)
     ApiProp *src_prop;
     apiid_ptr_create(id->override_lib->reference, &id_refptr);
     if (!apipath_resolve_prop(&id_refptr, oprop->api_path, &src, &src_prop)) {
-      LIB_assert_msg(0, "Failed to create matching source (linked data) API pointer");
+      lib_assert_msg(0, "Failed to create matching source (linked data) API pointer");
     }
   }
 
@@ -492,43 +492,43 @@ static int override_remove_btnex(DuneContext *C, wmOperator *op)
     bool is_strict_find;
     /* Remove override operation for given item,
      * add singular operations for the other items as needed. */
-    IDOverrideLibraryPropertyOperation *opop = DUNE_lib_override_libprop_op_find(
+    IdOverrideLibPropOp *opop = dune_lib_override_libprop_op_find(
         oprop, NULL, NULL, index, index, false, &is_strict_find);
-    LIB_assert(opop != NULL);
+    lib_assert(opop != NULL);
     if (!is_strict_find) {
       /* No specific override operation, we have to get generic one,
        * and create item-specific override operations for all but given index,
        * before removing generic one. */
       for (int idx = apiprop_array_length(&ptr, prop); idx--;) {
         if (idx != index) {
-          DUNE_lib_override_libprop_op_get(
-              oprop, opop->operation, NULL, NULL, idx, idx, true, NULL, NULL);
+          dune_lib_override_libprop_op_get(
+              oprop, opop->op, NULL, NULL, idx, idx, true, NULL, NULL);
         }
       }
     }
-    DUNE_lib_override_libprop_op_delete(oprop, opop);
+    dune_lib_override_libprop_op_delete(oprop, opop);
     if (!is_template) {
       apiprop_copy(duneMain, &ptr, &src, prop, index);
     }
-    if (LIB_listbase_is_empty(&oprop->operations)) {
-      DUNE_lib_override_libprop_delete(id->override_library, oprop);
+    if (lib_list_is_empty(&oprop->ops)) {
+      dune_lib_override_libprop_delete(id->override_lib, oprop);
     }
   }
   else {
     /* Just remove whole generic override operation of this property. */
-    DUNE_lib_override_libprop_delete(id->override_library, oprop);
+    dune_lib_override_libprop_delete(id->override_lib, oprop);
     if (!is_template) {
       apiProp_copy(duneMain, &ptr, &src, prop, -1);
     }
   }
 
   /* Outliner e.g. has to be aware of this change. */
-  WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
   return op_btnprop_finish(C, &ptr, prop);
 }
 
-static void UI_OT_override_remove_btn(wmOperatorType *ot)
+static void UI_OT_override_remove_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Remove Override";
@@ -537,13 +537,13 @@ static void UI_OT_override_remove_btn(wmOperatorType *ot)
 
   /* callbacks */
   ot->poll = override_remove_btnpoll;
-  ot->exec = override_remove_btnexec;
+  ot->ex = override_remove_btnex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
+  api_def_bool(ot->sapi, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
 /* -------------------------------------------------------------------- */
@@ -552,13 +552,13 @@ static void UI_OT_override_remove_btn(wmOperatorType *ot)
 #define NOT_NULL(assignment) ((assignment) != NULL)
 #define NOT_API_NULL(assignment) ((assignment).data != NULL)
 
-static void ui_ctx_selected_bones_via_pose(DuneContext *C, ListBase *r_lb)
+static void ui_cxt_selected_bones_via_pose(Cxt *C, List *r_lb)
 {
-  ListBase lb;
-  lb = CTX_data_collection_get(C, "selected_pose_bones");
+  List lb;
+  lb = cxt_data_collection_get(C, "selected_pose_bones");
 
-  if (!LIB_listbase_is_empty(&lb)) {
-    LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
+  if (!lib_list_is_empty(&lb)) {
+    LIST_FOREACH (CollectionPtrLink *, link, &lb) {
       DunePoseChannel *pchan = link->ptr.data;
       apiptr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
     }
@@ -567,7 +567,7 @@ static void ui_ctx_selected_bones_via_pose(DuneContext *C, ListBase *r_lb)
   *r_lb = lb;
 }
 
-bool UI_ctx_copy_to_selected_list(DuneContext *C,
+bool ui_cxt_copy_to_selected_list(DuneContext *C,
                                       ApiPtr *ptr,
                                       ApiProp *prop,
                                       ListBase *r_lb,
@@ -584,27 +584,26 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
   /* PropGroup objects don't have a reference to the struct that actually owns
    * them, so it is normally necessary to do a brute force search to find it. This
    * handles the search for non-ID owners by using the 'active' reference as a hint
-   * to preserve efficiency. Only properties defined through API are handled, as
-   * custom properties cannot be assumed to be valid for all instances.
+   * to preserve efficiency. Only props defined through API are handled, as
+   * custom props cannot be assumed to be valid for all instances.
    *
-   * Properties owned by the ID are handled by the 'if (ptr->owner_id)' case below.
-   */
+   * Props owned by the ID are handled by the 'if (ptr->owner_id)' case below.  */
   if (!apiprop_is_idprop(prop) && api_struct_is_a(ptr->type, &api_PropGroup)) {
     ApiPtr owner_ptr;
     char *idpath = NULL;
 
     /* First, check the active PoseBone and PoseBone->Bone. */
     if (NOT_API_NULL(
-            owner_ptr = ctx_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
+            owner_ptr = cxt_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
       if (NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-        *r_lb = ctx_data_collection_get(C, "selected_pose_bones");
+        *r_lb = cxt_data_collection_get(C, "selected_pose_bones");
       }
       else {
         DunePoseChannel *pchan = owner_ptr.data;
         apiptr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
 
         if (NOT_NULL(idpath = api_path_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-          ui_ctx_selected_bones_via_pose(C, r_lb);
+          ui_cxt_selected_bones_via_pose(C, r_lb);
         }
       }
     }
@@ -612,36 +611,36 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     if (idpath == NULL) {
       /* Check the active EditBone if in edit mode. */
       if (NOT_API_NULL(
-              owner_ptr = ctx_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
+              owner_ptr = cxt_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
           NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-        *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
+        *r_lb = cxt_data_collection_get(C, "selected_editable_bones");
       }
 
       /* Add other simple cases here (Node, NodeSocket, Sequence, ViewLayer etc). */
     }
 
     if (idpath) {
-      *r_path = LIB_sprintfN("%s.%s", idpath, apiprop_id(prop));
-      MEM_freeN(idpath);
+      *r_path = lib_sprintfn("%s.%s", idpath, apiprop_id(prop));
+      mem_freen(idpath);
       return true;
     }
   }
 
   if (api_struct_is_a(ptr->type, &api_EditBone)) {
-    *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
+    *r_lb = cxt_data_collection_get(C, "selected_editable_bones");
   }
   else if (api_struct_is_a(ptr->type, &api_PoseBone)) {
-    *r_lb = ctx_data_collection_get(C, "selected_pose_bones");
+    *r_lb = cxt_data_collection_get(C, "selected_pose_bones");
   }
   else if (api_struct_is_a(ptr->type, &api_Bone)) {
-    ui_ctx_selected_bones_via_pose(C, r_lb);
+    ui_cxt_selected_bones_via_pose(C, r_lb);
   }
   else if (api_struct_is_a(ptr->type, &api_Sequence)) {
     /* Special case when we do this for 'Sequence.lock'.
      * (if the sequence is locked, it won't be in "selected_editable_sequences"). */
     const char *prop_id = api_prop_id(prop);
     if (STREQ(prop_id, "lock")) {
-      *r_lb = ctx_data_collection_get(C, "selected_sequences");
+      *r_lb = cxt_data_collection_get(C, "selected_sequences");
     }
     else {
       *r_lb = ctx_data_collection_get(C, "selected_editable_sequences");
@@ -650,16 +649,16 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     ensure_list_items_contain_prop = true;
   }
   else if (api_struct_is_a(ptr->type, &api_FCurve)) {
-    *r_lb = ctx_data_collection_get(C, "selected_editable_fcurves");
+    *r_lb = cxt_data_collection_get(C, "selected_editable_fcurves");
   }
   else if (api_struct_is_a(ptr->type, &api_Keyframe)) {
-    *r_lb = ctx_data_collection_get(C, "selected_editable_keyframes");
+    *r_lb = cxt_data_collection_get(C, "selected_editable_keyframes");
   }
   else if (api_struct_is_a(ptr->type, &api_Action)) {
-    *r_lb = ctx_data_collection_get(C, "selected_editable_actions");
+    *r_lb = cxt_data_collection_get(C, "selected_editable_actions");
   }
   else if (api_struct_is_a(ptr->type, &api_NlaStrip)) {
-    *r_lb = ctx_data_collection_get(C, "selected_nla_strips");
+    *r_lb = cxt_data_collection_get(C, "selected_nla_strips");
   }
   else if (api_struct_is_a(ptr->type, &api_MovieTrackingTrack)) {
     *r_lb = ctx_data_collection_get(C, "selected_movieclip_tracks");
@@ -667,18 +666,18 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
   else if (api_struct_is_a(ptr->type, &api_Constraint) &&
            (path_from_bone = apipath_resolve_from_type_to_prop(ptr, prop, &api_PoseBone)) !=
                NULL) {
-    *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
+    *r_lb = cxt_data_collection_get(C, "selected_pose_bones");
     *r_path = path_from_bone;
   }
   else if (api_struct_is_a(ptr->type, &api_Node) || api_struct_is_a(ptr->type, &api_NodeSocket)) {
-    ListBase lb = {NULL, NULL};
+    List lb = {NULL, NULL};
     char *path = NULL;
-    bNode *node = NULL;
+    Node *node = NULL;
 
     /* Get the node we're editing */
     if (api_struct_is_a(ptr->type, &api_NodeSocket)) {
-      bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-      bNodeSocket *sock = ptr->data;
+      NodeTree *ntree = (bNodeTree *)ptr->owner_id;
+      NodeSocket *sock = ptr->data;
       if (nodeFindNode(ntree, sock, &node, NULL)) {
         if ((path = api_path_resolve_from_type_to_property(ptr, prop, &RNA_Node)) != NULL) {
           /* we're good! */
@@ -694,14 +693,14 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
 
     /* Now filter by type */
     if (node) {
-      lb = ctx_data_collection_get(C, "selected_nodes");
+      lb = cxt_data_collection_get(C, "selected_nodes");
 
-      LISTBASE_FOREACH_MUTABLE (CollectionPointerLink *, link, &lb) {
-        bNode *node_data = link->ptr.data;
+      LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &lb) {
+        Node *node_data = link->ptr.data;
 
         if (node_data->type != node->type) {
-          LIB_remlink(&lb, link);
-          MEM_freeN(link);
+          lib_remlink(&lb, link);
+          mem_freen(link);
         }
       }
     }
@@ -710,41 +709,41 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     *r_path = path;
   }
   else if (ptr->owner_id) {
-    ID *id = ptr->owner_id;
+    Id *id = ptr->owner_id;
 
     if (GS(id->name) == ID_OB) {
-      *r_lb = CTX_data_collection_get(C, "selected_editable_objects");
+      *r_lb = cxt_data_collection_get(C, "selected_editable_objects");
       *r_use_path_from_id = true;
-      *r_path = RNA_path_from_ID_to_property(ptr, prop);
+      *r_path = api_path_from_id_to_prop(ptr, prop);
     }
     else if (OB_DATA_SUPPORT_ID(GS(id->name))) {
       /* check we're using the active object */
       const short id_code = GS(id->name);
-      ListBase lb = ctx_data_collection_get(C, "selected_editable_objects");
-      char *path = api_path_from_ID_to_property(ptr, prop);
+      List lb = cxt_data_collection_get(C, "selected_editable_objects");
+      char *path = api_path_from_id_to_prop(ptr, prop);
 
       /* de-duplicate obdata */
-      if (!BLI_listbase_is_empty(&lb)) {
-        LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
+      if (!lib_list_is_empty(&lb)) {
+        LIST_FOREACH (CollectionPtrLink *, link, &lb) {
           Object *ob = (Object *)link->ptr.owner_id;
           if (ob->data) {
-            ID *id_data = ob->data;
+            Id *id_data = ob->data;
             id_data->tag |= LIB_TAG_DOIT;
           }
         }
 
-        LISTBASE_FOREACH_MUTABLE (CollectionPointerLink *, link, &lb) {
+        LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &lb) {
           Object *ob = (Object *)link->ptr.owner_id;
-          ID *id_data = ob->data;
+          Id *id_data = ob->data;
 
           if ((id_data == NULL) || (id_data->tag & LIB_TAG_DOIT) == 0 || ID_IS_LINKED(id_data) ||
               (GS(id_data->name) != id_code)) {
-            BLI_remlink(&lb, link);
-            MEM_freeN(link);
+            lib_remlink(&lb, link);
+            mem_freen(link);
           }
           else {
             /* Avoid prepending 'data' to the path. */
-            RNA_id_pointer_create(id_data, &link->ptr);
+            api_id_ptr_create(id_data, &link->ptr);
           }
 
           if (id_data) {
@@ -760,15 +759,15 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
       /* Sequencer's ID is scene :/ */
       /* Try to recursively find an RNA_Sequence ancestor,
        * to handle situations like T41062... */
-      if ((*r_path = RNA_path_resolve_from_type_to_property(ptr, prop, &RNA_Sequence)) != NULL) {
+      if ((*r_path = api_path_resolve_from_type_to_prop(ptr, prop, &Api_Seq)) != NULL) {
         /* Special case when we do this for 'Sequence.lock'.
          * (if the sequence is locked, it won't be in "selected_editable_sequences"). */
-        const char *prop_id = RNA_property_identifier(prop);
+        const char *prop_id = api_prop_identifier(prop);
         if (STREQ(prop_id, "lock")) {
-          *r_lb = CTX_data_collection_get(C, "selected_sequences");
+          *r_lb = cxt_data_collection_get(C, "selected_seqs");
         }
         else {
-          *r_lb = CTX_data_collection_get(C, "selected_editable_sequences");
+          *r_lb = cxt_data_collection_get(C, "selected_editable_seqs");
         }
         /* Account for properties only being available for some sequence types. */
         ensure_list_items_contain_prop = true;
@@ -781,12 +780,12 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
   }
 
   if (ensure_list_items_contain_prop) {
-    const char *prop_id = RNA_property_identifier(prop);
-    LISTBASE_FOREACH_MUTABLE (CollectionPointerLink *, link, r_lb) {
+    const char *prop_id = api_prop_id(prop);
+    LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, r_lb) {
       if ((ptr->type != link->ptr.type) &&
-          (RNA_struct_type_find_property(link->ptr.type, prop_id) != prop)) {
-        BLI_remlink(r_lb, link);
-        MEM_freeN(link);
+          (api_struct_type_find_prop(link->ptr.type, prop_id) != prop)) {
+        lib_remlink(r_lb, link);
+        mem_freen(link);
       }
     }
   }
@@ -794,17 +793,17 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
   return true;
 }
 
-bool UI_context_copy_to_selected_check(PointerRNA *ptr,
-                                       PointerRNA *ptr_link,
-                                       PropertyRNA *prop,
-                                       const char *path,
-                                       bool use_path_from_id,
-                                       PointerRNA *r_ptr,
-                                       PropertyRNA **r_prop)
+bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
+                                   ApiPtr *ptr_link,
+                                   ApiProp *prop,
+                                   const char *path,
+                                   bool use_path_from_id,
+                                   ApiPtr *r_ptr,
+                                   ApiProp **r_prop)
 {
-  PointerRNA idptr;
-  PropertyRNA *lprop;
-  PointerRNA lptr;
+  ApiPtr idptr;
+  ApiProp *lprop;
+  ApiPtr lptr;
 
   if (ptr_link->data == ptr->data) {
     return false;
@@ -813,13 +812,13 @@ bool UI_context_copy_to_selected_check(PointerRNA *ptr,
   if (use_path_from_id) {
     /* Path relative to ID. */
     lprop = NULL;
-    RNA_id_pointer_create(ptr_link->owner_id, &idptr);
-    RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
+    api_id_ptr_create(ptr_link->owner_id, &idptr);
+    api_path_resolve_prop(&idptr, path, &lptr, &lprop);
   }
   else if (path) {
     /* Path relative to elements from list. */
     lprop = NULL;
-    RNA_path_resolve_property(ptr_link, path, &lptr, &lprop);
+    api_path_resolve_prop(ptr_link, path, &lptr, &lprop);
   }
   else {
     lptr = *ptr_link;
