@@ -43,11 +43,10 @@
 
 #include "interface_intern.h"
 
-/* -------------------------------------------------------------------- */
 /** Defines & Structs **/
 
-#define ANIMATION_TIME 0.30
-#define ANIMATION_INTERVAL 0.02
+#define ANIM_TIME 0.30
+#define ANIM_INTERVAL 0.02
 
 typedef enum uiPanelRuntimeFlag {
   PANEL_LAST_ADDED = (1 << 0),
@@ -77,7 +76,7 @@ typedef enum uiPanelMouseState {
 
 typedef enum uiHandlePanelState {
   PANEL_STATE_DRAG,
-  PANEL_STATE_ANIMATION,
+  PANEL_STATE_ANIM,
   PANEL_STATE_EXIT,
 } uiHandlePanelState;
 
@@ -107,7 +106,7 @@ static bool panel_type_context_poll(ARegion *region,
                                     const char *cxt);
 
 /** Local Functions **/
-static bool panel_active_animation_changed(List *lb,
+static bool panel_active_anim_changed(List *lb,
                                            Panel **r_panel_animation,
                                            bool *r_no_animation)
 {
@@ -169,23 +168,23 @@ static bool props_space_needs_realign(const ScrArea *area, const ARegion *region
 
 static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_panel_animation)
 {
-  *r_panel_animation = NULL;
+  *r_panel_anim = NULL;
 
   if (props_space_needs_realign(area, region)) {
     return true;
   }
 
   /* Detect if a panel was added or removed. */
-  Panel *panel_animation = NULL;
-  bool no_animation = false;
-  if (panel_active_anim_changed(&region->panels, &panel_animation, &no_animation)) {
+  Panel *panel_anim = NULL;
+  bool no_anim = false;
+  if (panel_active_anim_changed(&region->panels, &panel_anim, &no_anim)) {
     return true;
   }
 
-  /* Detect panel marked for animation, if we're not already animating. */
-  if (panel_animation) {
-    if (!no_animation) {
-      *r_panel_animation = panel_animation;
+  /* Detect panel marked for anim, if we're not already animating. */
+  if (panel_anim) {
+    if (!no_anim) {
+      *r_panel_anim = panel_anim;
     }
     return true;
   }
@@ -267,7 +266,7 @@ void panellist_unique_str(Panel *panel, char *r_name)
  *
  * note: The only panels that should need to be deleted at runtime are panels with the
  * PANEL_TYPE_INSTANCED flag set. */
-static void panel_delete(const duneContext *C, ARegion *region, ListBase *panels, Panel *panel)
+static void panel_delete(const Cxt *C, ARegion *region, List *panels, Panel *panel)
 {
   /* Recursively delete children. */
   LIST_FOREACH_MUTABLE (Panel *, child, &panel->children) {
@@ -495,7 +494,7 @@ static void panellist_expand_flag_get(const Panel *panel, short *flag, short *fl
  * note: This needs to iterate through all of the region's panels because the panel with changed
  * expansion might have been the sub-panel of an instanced panel, meaning it might not know
  * which list item it corresponds to. */
-static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *region)
+static void panellistdata_expand_flag_set(const Cxt *C, const ARegion *region)
 {
   LIST_FOREACH (Panel *, panel, &region->panels) {
     PanelType *panel_type = panel->type;
@@ -547,7 +546,7 @@ static void panellist_custom_data_active_set(Panel *panel)
   }
 }
 
-/** Set flag state for a panel and its sub-panels. **/
+/* Set flag state for a panel and its sub-panels. **/
 static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->flag, value, flag);
@@ -557,7 +556,7 @@ static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
   }
 }
 
-/** Set runtime flag state for a panel and its sub-panels. **/
+/* Set runtime flag state for a panel and its sub-panels. **/
 static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->runtime_flag, value, flag);
@@ -712,8 +711,8 @@ void ui_panellist_headerbtns_end(Panel *panel)
 
   btn_group->flag &= ~UI_BTN_GROUP_LOCK;
 
-  /* Repurpose the first header button group if it is empty, in case the first button added to
-   * the panel doesn't add a new group (if the button is created directly rather than through an
+  /* Repurpose the first header btn group if it is empty, in case the first btn added to
+   * the panel doesn't add a new group (if the btn is created directly rather than through an
    * interface layout call). */
   if (lib_list_is_single(&block->btn_groups) &&
       lib_list_is_empty(&btn_group->btns)) {
@@ -781,7 +780,7 @@ void ui_view2d_view_ortho(const View2D *v2d)
   /* Pixel offsets (-GLA_PIXEL_OFS) are needed to get 1:1
    * correspondence with pixels for smooth UI drawing,
    * but only applied where requested.  */
-  /* XXX brecht: instead of zero at least use a tiny offset, otherwise
+  /* Instead of zero at least use a tiny offset, otherwise
    * pixel rounding is effectively random due to float inaccuracy */
   if (sizex > 0) {
     xofs = eps * lib_rctf_size_x(&v2d->cur) / sizex;
@@ -796,7 +795,7 @@ void ui_view2d_view_ortho(const View2D *v2d)
 
   lib_rctf_translate(&curmasked, -xofs, -yofs);
 
-  /* XXX ton: this flag set by outliner, for icons */
+  /* This flag set by outliner, for icons */
   if (v2d->flag & V2D_PIXELOFS_X) {
     curmasked.xmin = floorf(curmasked.xmin) - (eps + xofs);
     curmasked.xmax = floorf(curmasked.xmax) - (eps + xofs);
@@ -818,7 +817,7 @@ void ui_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
   /* Pixel offsets (-GLA_PIXEL_OFS) are needed to get 1:1
    * correspondence with pixels for smooth UI drawing,
    * but only applied where requested. */
-  /* XXX(ton): temp. */
+  /* temp. */
   xofs = 0.0f;  // (v2d->flag & V2D_PIXELOFS_X) ? GLA_PIXEL_OFS : 0.0f;
   yofs = 0.0f;  // (v2d->flag & V2D_PIXELOFS_Y) ? GLA_PIXEL_OFS : 0.0f;
 
@@ -878,7 +877,7 @@ void ui_view2d_multi_grid_draw(
   for (int level = 0; level < totlevels; level++) {
     /* Blend the background color (colorid) with the grid color, to avoid either too low contrast
      * or high contrast grid lines. This only has an effect if colorid != TH_GRID. */
-    UI_GetThemeColorBlendShade3ubv(colorid, TH_GRID, 0.25f, offset, grid_line_color);
+    ui_GetThemeColorBlendShade3ubv(colorid, TH_GRID, 0.25f, offset, grid_line_color);
 
     int i = (int)(v2d->cur.xmin / lstep);
     if (v2d->cur.xmin > 0.0f) {
@@ -919,7 +918,7 @@ void ui_view2d_multi_grid_draw(
   }
 
   /* X and Y axis */
-  UI_GetThemeColorBlendShade3ubv(
+  ui_GetThemeColorBlendShade3ubv(
       colorid, TH_GRID, 0.5f, -18 + ((totlevels - 1) * -6), grid_line_color);
 
   immAttrSkip(color);
@@ -1037,12 +1036,11 @@ void ui_view2d_dot_grid_draw(const View2D *v2d,
   immUnbindProgram();
 }
 
-/* -------------------------------------------------------------------- */
 /* Scrollers */
 
-/* View2DScrollers is typedef'd in UI_view2d.h
+/* View2DScrollers is typedef'd in ui_view2d.h
  *
- * \warning The start of this struct must not change, as view2d_ops.c uses this too.
+ * warning The start of this struct must not change, as view2d_ops.c uses this too.
  * For now, we don't need to have a separate (internal) header for structs like this... */
 struct View2DScrollers {
   /* focus bubbles */
@@ -1051,7 +1049,7 @@ struct View2DScrollers {
   int vert_min, vert_max; /* vertical scrollbar */
   int hor_min, hor_max;   /* horizontal scrollbar */
 
-  /** Exact size of slider backdrop. */
+  /* Exact size of slider backdrop. */
   rcti hor, vert;
   /* set if sliders are full, we don't draw them */
   /* int horfull, vertfull; */ /* UNUSED */
@@ -1146,8 +1144,8 @@ void ui_view2d_scrollers_calc(View2D *v2d,
   /* vertical scrollers */
   if (scroll & V2D_SCROLL_VERTICAL) {
     /* scroller 'button' extents */
-    totsize = BLI_rctf_size_y(&v2d->tot);
-    scrollsize = (float)BLI_rcti_size_y(&vert);
+    totsize = lib_rctf_size_y(&v2d->tot);
+    scrollsize = (float)lib_rcti_size_y(&vert);
     if (totsize == 0.0f) {
       totsize = 1.0f; /* avoid divide by zero */
     }
@@ -1182,18 +1180,18 @@ void ui_view2d_scrollers_calc(View2D *v2d,
   }
 }
 
-void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
+void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
 {
   View2DScrollers scrollers;
-  UI_view2d_scrollers_calc(v2d, mask_custom, &scrollers);
-  bTheme *btheme = UI_GetTheme();
+  ui_view2d_scrollers_calc(v2d, mask_custom, &scrollers);
+  Theme *theme = ui_GetTheme();
   rcti vert, hor;
   const int scroll = view2d_scroll_mapped(v2d->scroll);
   const char emboss_alpha = btheme->tui.widget_emboss[3];
   uchar scrollers_back_color[4];
 
   /* Color for scrollbar backs */
-  UI_GetThemeColor4ubv(TH_BACK, scrollers_back_color);
+  ui_GetThemeColor4ubv(TH_BACK, scrollers_back_color);
 
   /* make copies of rects for less typing */
   vert = scrollers.vert;
@@ -1225,11 +1223,11 @@ void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      *   (workaround to make sure that button windows don't show these,
      *   and only the time-grids with their zoom-ability can do so). */
     if ((v2d->keepzoom & V2D_LOCKZOOM_X) == 0 && (v2d->scroll & V2D_SCROLL_HORIZONTAL_HANDLES) &&
-        (BLI_rcti_size_x(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
+        (lib_rcti_size_x(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
     }
 
-    UI_draw_widget_scroll(&wcol, &hor, &slider, state);
+    ui_draw_widget_scroll(&wcol, &hor, &slider, state);
   }
 
   /* vertical scrollbar */
@@ -1249,7 +1247,7 @@ void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
     wcol.inner[3] *= alpha_fac;
     wcol.item[3] *= alpha_fac;
     wcol.outline[3] *= alpha_fac;
-    btheme->tui.widget_emboss[3] *= alpha_fac; /* will be reset later */
+    theme->tui.widget_emboss[3] *= alpha_fac; /* will be reset later */
 
     /* show zoom handles if:
      * - zooming on y-axis is allowed (no scroll otherwise)
@@ -1258,24 +1256,19 @@ void UI_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      *   (workaround to make sure that button windows don't show these,
      *   and only the time-grids with their zoomability can do so) */
     if ((v2d->keepzoom & V2D_LOCKZOOM_Y) == 0 && (v2d->scroll & V2D_SCROLL_VERTICAL_HANDLES) &&
-        (BLI_rcti_size_y(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
+        (lib_rcti_size_y(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
     }
 
-    UI_draw_widget_scroll(&wcol, &vert, &slider, state);
+    ui_draw_widget_scroll(&wcol, &vert, &slider, state);
   }
 
   /* Was changed above, so reset. */
-  btheme->tui.widget_emboss[3] = emboss_alpha;
+  theme->tui.widget_emboss[3] = emboss_alpha;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name List View Utilities
- * \{ */
-
-void UI_view2d_listview_view_to_cell(float columnwidth,
+/* List View Utilities */
+void ui_view2d_listview_view_to_cell(float columnwidth,
                                      float rowheight,
                                      float startx,
                                      float starty,
@@ -1305,31 +1298,26 @@ void UI_view2d_listview_view_to_cell(float columnwidth,
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Coordinate Conversions
- * \{ */
-
-float UI_view2d_region_to_view_x(const struct View2D *v2d, float x)
+/* Coordinate Conversions */
+float ui_view2d_region_to_view_x(const struct View2D *v2d, float x)
 {
   return (v2d->cur.xmin +
-          (BLI_rctf_size_x(&v2d->cur) * (x - v2d->mask.xmin) / BLI_rcti_size_x(&v2d->mask)));
+          (lib_rctf_size_x(&v2d->cur) * (x - v2d->mask.xmin) / lib_rcti_size_x(&v2d->mask)));
 }
-float UI_view2d_region_to_view_y(const struct View2D *v2d, float y)
+float ui_view2d_region_to_view_y(const struct View2D *v2d, float y)
 {
   return (v2d->cur.ymin +
-          (BLI_rctf_size_y(&v2d->cur) * (y - v2d->mask.ymin) / BLI_rcti_size_y(&v2d->mask)));
+          (lib_rctf_size_y(&v2d->cur) * (y - v2d->mask.ymin) / lib_rcti_size_y(&v2d->mask)));
 }
 
-void UI_view2d_region_to_view(
+void ui_view2d_region_to_view(
     const View2D *v2d, float x, float y, float *r_view_x, float *r_view_y)
 {
-  *r_view_x = UI_view2d_region_to_view_x(v2d, x);
-  *r_view_y = UI_view2d_region_to_view_y(v2d, y);
+  *r_view_x = ui_view2d_region_to_view_x(v2d, x);
+  *r_view_y = ui_view2d_region_to_view_y(v2d, y);
 }
 
-void UI_view2d_region_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf *rect_dst)
+void ui_view2d_region_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf *rect_dst)
 {
   const float cur_size[2] = {BLI_rctf_size_x(&v2d->cur), BLI_rctf_size_y(&v2d->cur)};
   const float mask_size[2] = {BLI_rcti_size_x(&v2d->mask), BLI_rcti_size_y(&v2d->mask)};
@@ -1344,18 +1332,18 @@ void UI_view2d_region_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf
                     (cur_size[1] * (rect_src->ymax - v2d->mask.ymin) / mask_size[1]));
 }
 
-float UI_view2d_view_to_region_x(const View2D *v2d, float x)
+float ui_view2d_view_to_region_x(const View2D *v2d, float x)
 {
   return (v2d->mask.xmin +
-          (((x - v2d->cur.xmin) / BLI_rctf_size_x(&v2d->cur)) * BLI_rcti_size_x(&v2d->mask)));
+          (((x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur)) * BLI_rcti_size_x(&v2d->mask)));
 }
-float UI_view2d_view_to_region_y(const View2D *v2d, float y)
+float ui_view2d_view_to_region_y(const View2D *v2d, float y)
 {
   return (v2d->mask.ymin +
-          (((y - v2d->cur.ymin) / BLI_rctf_size_y(&v2d->cur)) * BLI_rcti_size_y(&v2d->mask)));
+          (((y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur)) * BLI_rcti_size_y(&v2d->mask)));
 }
 
-bool UI_view2d_view_to_region_clip(
+bool ui_view2d_view_to_region_clip(
     const View2D *v2d, float x, float y, int *r_region_x, int *r_region_y)
 {
   /* express given coordinates as proportional values */
@@ -1376,38 +1364,38 @@ bool UI_view2d_view_to_region_clip(
   return false;
 }
 
-void UI_view2d_view_to_region(
+void ui_view2d_view_to_region(
     const View2D *v2d, float x, float y, int *r_region_x, int *r_region_y)
 {
   /* Step 1: express given coordinates as proportional values. */
-  x = (x - v2d->cur.xmin) / BLI_rctf_size_x(&v2d->cur);
-  y = (y - v2d->cur.ymin) / BLI_rctf_size_y(&v2d->cur);
+  x = (x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur);
+  y = (y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur);
 
   /* Step 2: convert proportional distances to screen coordinates. */
-  x = v2d->mask.xmin + (x * BLI_rcti_size_x(&v2d->mask));
-  y = v2d->mask.ymin + (y * BLI_rcti_size_y(&v2d->mask));
+  x = v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask));
+  y = v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask));
 
   /* Although we don't clamp to lie within region bounds, we must avoid exceeding size of ints. */
   *r_region_x = clamp_float_to_int(x);
   *r_region_y = clamp_float_to_int(y);
 }
 
-void UI_view2d_view_to_region_fl(
+void ui_view2d_view_to_region_fl(
     const View2D *v2d, float x, float y, float *r_region_x, float *r_region_y)
 {
   /* express given coordinates as proportional values */
-  x = (x - v2d->cur.xmin) / BLI_rctf_size_x(&v2d->cur);
-  y = (y - v2d->cur.ymin) / BLI_rctf_size_y(&v2d->cur);
+  x = (x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur);
+  y = (y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur);
 
   /* convert proportional distances to screen coordinates */
-  *r_region_x = v2d->mask.xmin + (x * BLI_rcti_size_x(&v2d->mask));
-  *r_region_y = v2d->mask.ymin + (y * BLI_rcti_size_y(&v2d->mask));
+  *r_region_x = v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask));
+  *r_region_y = v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask));
 }
 
-void UI_view2d_view_to_region_rcti(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
+void ui_view2d_view_to_region_rcti(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
 {
-  const float cur_size[2] = {BLI_rctf_size_x(&v2d->cur), BLI_rctf_size_y(&v2d->cur)};
-  const float mask_size[2] = {BLI_rcti_size_x(&v2d->mask), BLI_rcti_size_y(&v2d->mask)};
+  const float cur_size[2] = {lib_rctf_size_x(&v2d->cur), lib_rctf_size_y(&v2d->cur)};
+  const float mask_size[2] = {lib_rcti_size_x(&v2d->mask), lib_rcti_size_y(&v2d->mask)};
   rctf rect_tmp;
 
   /* Step 1: express given coordinates as proportional values. */
@@ -1425,21 +1413,21 @@ void UI_view2d_view_to_region_rcti(const View2D *v2d, const rctf *rect_src, rcti
   clamp_rctf_to_rcti(rect_dst, &rect_tmp);
 }
 
-void UI_view2d_view_to_region_m4(const View2D *v2d, float matrix[4][4])
+void ui_view2d_view_to_region_m4(const View2D *v2d, float matrix[4][4])
 {
   rctf mask;
   unit_m4(matrix);
-  BLI_rctf_rcti_copy(&mask, &v2d->mask);
-  BLI_rctf_transform_calc_m4_pivot_min(&v2d->cur, &mask, matrix);
+  lib_rctf_rcti_copy(&mask, &v2d->mask);
+  lib_rctf_transform_calc_m4_pivot_min(&v2d->cur, &mask, matrix);
 }
 
-bool UI_view2d_view_to_region_rcti_clip(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
+bool ui_view2d_view_to_region_rcti_clip(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
 {
-  const float cur_size[2] = {BLI_rctf_size_x(&v2d->cur), BLI_rctf_size_y(&v2d->cur)};
-  const float mask_size[2] = {BLI_rcti_size_x(&v2d->mask), BLI_rcti_size_y(&v2d->mask)};
+  const float cur_size[2] = {lib_rctf_size_x(&v2d->cur), lib_rctf_size_y(&v2d->cur)};
+  const float mask_size[2] = {lib_rcti_size_x(&v2d->mask), lib_rcti_size_y(&v2d->mask)};
   rctf rect_tmp;
 
-  BLI_assert(rect_src->xmin <= rect_src->xmax && rect_src->ymin <= rect_src->ymax);
+  lib_assert(rect_src->xmin <= rect_src->xmax && rect_src->ymin <= rect_src->ymax);
 
   /* Step 1: express given coordinates as proportional values. */
   rect_tmp.xmin = (rect_src->xmin - v2d->cur.xmin) / cur_size[0];
@@ -1464,16 +1452,11 @@ bool UI_view2d_view_to_region_rcti_clip(const View2D *v2d, const rctf *rect_src,
   return false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Utilities
- * \{ */
-
-View2D *UI_view2d_fromcontext(const bContext *C)
+/* Utilities */
+View2D *ui_view2d_fromcxt(const Cxt *C)
 {
-  ScrArea *area = CTX_wm_area(C);
-  ARegion *region = CTX_wm_region(C);
+  ScrArea *area = cxt_wm_area(C);
+  ARegion *region = cxt_wm_region(C);
 
   if (area == NULL) {
     return NULL;
@@ -1484,10 +1467,10 @@ View2D *UI_view2d_fromcontext(const bContext *C)
   return &(region->v2d);
 }
 
-View2D *UI_view2d_fromcontext_rwin(const bContext *C)
+View2D *ui_view2d_fromcxt_rwin(const Cxt *C)
 {
-  ScrArea *area = CTX_wm_area(C);
-  ARegion *region = CTX_wm_region(C);
+  ScrArea *area = cxt_wm_area(C);
+  ARegion *region = cxt_wm_region(C);
 
   if (area == NULL) {
     return NULL;
@@ -1496,7 +1479,7 @@ View2D *UI_view2d_fromcontext_rwin(const bContext *C)
     return NULL;
   }
   if (region->regiontype != RGN_TYPE_WINDOW) {
-    ARegion *region_win = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+    ARegion *region_win = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
     return region_win ? &(region_win->v2d) : NULL;
   }
   return &(region->v2d);
