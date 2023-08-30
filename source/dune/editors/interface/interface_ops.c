@@ -1,81 +1,79 @@
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "TYPES_armature.h"
-#include "TYPES_material.h"
-#include "TYPES_modifier.h" /* for handling geometry nodes properties */
-#include "TYPES_object.h"   /* for OB_DATA_SUPPORT_ID */
-#include "TYPES_screen.h"
-#include "TYPES_text.h"
+#include "types_armature.h"
+#include "types_material.h"
+#include "types_mod.h" /* for handling geometry nodes properties */
+#include "types_object.h"   /* for OB_DATA_SUPPORT_ID */
+#include "types_screen.h"
+#include "types_text.h"
 
-#include "LIB_dunelib.h"
-#include "LIB_math_color.h"
+#include "lib_dunelib.h"
+#include "lib_math_color.h"
 
 #include "BLF_api.h"
-#include "I18N_lang.h"
+#include "lang.h"
 
-#include "DUNE_context.h"
-#include "DUNE_global.h"
-#include "DUNE_idprop.h"
-#include "DUNE_layer.h"
-#include "DUNE_lib_id.h"
-#include "DUNE_lib_override.h"
-#include "DUNE_material.h"
-#include "DUNE_node.h"
-#include "DUNE_report.h"
-#include "DUNE_screen.h"
-#include "DUNE_text.h"
+#include "dune_cxt.h"
+#include "dune_global.h"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_override.h"
+#include "dune_material.h"
+#include "dune_node.h"
+#include "dune_report.h"
+#include "dune_screen.h"
+#include "dune_text.h"
 
 #include "IMB_colormanagement.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "API_access.h"
-#include "API_define.h"
-#include "API_prototypes.h"
-#include "API_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
+#include "api_types.h"
 
-#include "UI_interface.h"
+#include "ui_interface.h"
 
-#include "interface_intern.h"
+#include "ui_intern.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_object.h"
-#include "ED_paint.h"
+#include "ed_object.h"
+#include "ed_paint.h"
 
 /* for Copy As Driver */
-#include "ED_keyframing.h"
+#include "ed_keyframing.h"
 
 /* only for UI_OT_editsource */
-#include "DUNE_main.h"
-#include "LIB_ghash.h"
-#include "ED_screen.h"
-#include "ED_text.h"
+#include "dune_main.h"
+#include "lib_ghash.h"
+#include "ed_screen.h"
+#include "ed_text.h"
 
 /* -------------------------------------------------------------------- */
 /** Immediate redraw helper
  *
- * Generally handlers shouldn't do any redrawing, that includes the layout/button definitions. That
+ * Generally handlers shouldn't do any redrawing, that includes the layout/btn definitions. That
  * violates the Model-View-Controller pattern.
  *
  * But there are some operators which really need to re-run the layout definitions for various
  * reasons. For example, "Edit Source" does it to find out which exact Python code added a button.
- * Other operators may need to access buttons that aren't currently visible. In Blender's UI code
- * design that typically means just not adding the button in the first place, for a particular
+ * Other operators may need to access btns that aren't currently visible. In Dune's UI code
+ * design that typically means just not adding the btn in the first place, for a particular
  * redraw. So the operator needs to change context and re-create the layout, so the button becomes
- * available to act on.
- *
- **/
+ * available to act on. */
 
 /* -------------------------------------------------------------------- */
-/** Copy Python Command Operator */
+/* Copy Python Command Operator */
 
-static bool copy_pycmd_btnpoll(DuneContext *C)
+static bool copy_pycmd_btnpoll(Cxt *C)
 {
-  uiBtn *btn = ui_ctx_active_btn_get(C);
+  uiBtn *btn = ui_cxt_active_btn_get(C);
 
   if (btn && (btn->optype != NULL)) {
     return 1;
@@ -84,25 +82,25 @@ static bool copy_pycmd_btnpoll(DuneContext *C)
   return 0;
 }
 
-static int copy_py_cmd_btnex(DuneContext *C, wmOperator *UNUSED(op))
+static int copy_py_cmd_btnex(Cxt *C, wmOp *UNUSED(op))
 {
-  uiBtn *btn = ui_ctx_active_btn_get(C);
+  uiBtn *btn = ui_cxt_active_btn_get(C);
 
   if (btn && (btn->optype != NULL)) {
     ApiPtr *opptr;
     char *str;
-    opptr = ui_btn_op_ptr_get(btn); /* allocated when needed, the button owns it */
+    opptr = ui_btn_op_ptr_get(btn); /* allocated when needed, the btn owns it */
 
     str = wm_op_pystring_ex(C, NULL, false, true, btn->optype, opptr);
 
     wm_clipboard_txt_set(str, 0);
 
-    MEM_freeN(str);
+    mem_freen(str);
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
 static void UI_OT_copy_pycmd_btn(wmOpType *ot)
@@ -113,7 +111,7 @@ static void UI_OT_copy_pycmd_btn(wmOpType *ot)
   ot->description = "Copy the Python command matching this button";
 
   /* callbacks */
-  ot->exec = copy_py_cmd_btn_ex;
+  ot->ex = copy_py_cmd_btn_ex;
   ot->poll = copy_py_cmd_btn_poll;
 
   /* flags */
@@ -121,53 +119,53 @@ static void UI_OT_copy_pycmd_btn(wmOpType *ot)
 }
 
 /* -------------------------------------------------------------------- */
-/** Reset to Default Values Button Operator **/
+/* Reset to Default Values Btn Operator **/
 
-static int op_btnprop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
+static int op_btnprop_finish(Cxt *C, ApiPtr *ptr, ApiProp *prop)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   /* perform updates required for this property */
   apiprop_update(C, ptr, prop);
 
   /* as if we pressed the button */
-  ui_ctx_active_btnprop_handle(C, false);
+  ui_cxt_active_btnprop_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
    * edits on the screen or on operator settings.
-   * it might be better to move undo's inline - campbell */
+   * it might be better to move undo's inline */
   if (id && ID_CHECK_UNDO(id)) {
     /* do nothing, go ahead with undo */
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static int op_btnprop_finish_with_undo(DuneContext *C,
-                                                     ApiPtr *ptr,
-                                                     ApiProp *prop)
+static int op_btnprop_finish_with_undo(Cxt *C,
+                                       ApiPtr *ptr,
+                                       ApiProp *prop)
 {
-  /* Perform updates required for this property. */
+  /* Perform updates required for this prop. */
   apiprop_update(C, ptr, prop);
 
-  /* As if we pressed the button. */
-  ui_ctx_active_btnprop_handle(C, true);
+  /* As if we pressed the btn. */
+  ui_cxt_active_btnprop_handle(C, true);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool reset_default_btnpoll(DuneContext *C)
+static bool reset_default_btnpoll(Cxt *C)
 {
   ApiProp ptr;
   ApiProp *prop;
   int index;
 
-  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   return (ptr.data && prop && apiprop_editable(&ptr, prop));
 }
 
-static int reset_default_btnEx(DuneContext *C, wmOperator *op)
+static int reset_default_btnEx(Cxt *C, wmOp *op)
 {
   ApiPtr ptr;
   ApiProp *prop;
@@ -175,7 +173,7 @@ static int reset_default_btnEx(DuneContext *C, wmOperator *op)
   const bool all = api_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
   if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
@@ -184,22 +182,22 @@ static int reset_default_btnEx(DuneContext *C, wmOperator *op)
     }
   }
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static void UI_OT_reset_default_btn(wmOperatorType *ot)
+static void UI_OT_reset_default_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Reset to Default Value";
   ot->idname = "UI_OT_reset_default_btn";
-  ot->description = "Reset this property's value to its default value";
+  ot->description = "Reset this prop's value to its default value";
 
   /* callbacks */
   ot->poll = reset_default_btnpoll;
-  ot->exec = reset_default_btnEx;
+  ot->ex = reset_default_btnEx;
 
   /* flags */
-  /* Don't set #OPTYPE_UNDO because #op_btnprop_finish_with_undo
+  /* Don't set OPTYPE_UNDO because op_btnprop_finish_with_undo
    * is responsible for the undo push. */
   ot->flag = 0;
 
@@ -210,13 +208,13 @@ static void UI_OT_reset_default_btn(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Assign Value as Default Button Operator **/
 
-static bool assign_default_btn_poll(DuneContext *C)
+static bool assign_default_btn_poll(Cxt *C)
 {
   ApiProp ptr;
   ApiProp *prop;
   int index;
 
-  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   if (ptr.data && prop && ApiProp_editable(&ptr, prop)) {
     const PropType type = ApiProp_type(prop);
@@ -228,14 +226,14 @@ static bool assign_default_btn_poll(DuneContext *C)
   return false;
 }
 
-static int assign_default_btnEx(DuneContext *C, wmOperator *UNUSED(op))
+static int assign_default_btnEx(Cxt *C, wmOp *UNUSED(op))
 {
   ApiPtr ptr;
   ApiProp *prop;
   int index;
 
   /* try to reset the nominated setting to its default value */
-  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btnProp_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
   if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
@@ -244,10 +242,10 @@ static int assign_default_btnEx(DuneContext *C, wmOperator *UNUSED(op))
     }
   }
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static void UI_OT_assign_default_btn(wmOperatorType *ot)
+static void UI_OT_assign_default_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Assign Value as Default";
