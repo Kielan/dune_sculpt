@@ -133,7 +133,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
   for (side = 0; side < RIGHT; side++) {
     /* We are only interested in buttons which share a same line
      * (LEFT/RIGHT sides) or column (TOP/DOWN sides). */
-    if (buts_share[IS_COLUMN(side)]) {
+    if (btns_share[IS_COLUMN(side)]) {
       side_opp = OPPOSITE(side);
 
       /* We check both opposite sides at once, because with very small buttons,
@@ -153,7 +153,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
       if (delta < max_delta) {
         /* We are only interested in neighbors that are
          * at least as close as already found ones. */
-        if (delta <= butal->dists[side]) {
+        if (delta <= btnal->dists[side]) {
           {
             /* We found an as close or closer neighbor.
              * If both buttons are alignable, we set them as each other neighbors.
@@ -163,23 +163,23 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
              *
              * NOTE: We cannot only execute that piece of code in case we found a
              *       **closer** neighbor, due to the limited way we represent neighbors
-             *       (buttons only know **one** neighbor on each side, when they can
+             *       (btns only know **one** neighbor on each side, when they can
              *       actually have several ones), it would prevent some buttons to be
              *       properly 'neighborly-initialized'. */
-            if (butal_can_align && butal_other_can_align) {
-              butal->neighbors[side] = butal_other;
-              butal_other->neighbors[side_opp] = butal;
+            if (btnal_can_align && btnal_other_can_align) {
+              btnal->neighbors[side] = btnal_other;
+              btnal_other->neighbors[side_opp] = btnal;
             }
-            else if (butal_can_align && (delta < butal->dists[side])) {
-              butal->neighbors[side] = NULL;
+            else if (btnal_can_align && (delta < butal->dists[side])) {
+              btnal->neighbors[side] = NULL;
             }
-            else if (butal_other_can_align && (delta < butal_other->dists[side_opp])) {
-              butal_other->neighbors[side_opp] = NULL;
+            else if (btnal_other_can_align && (delta < butal_other->dists[side_opp])) {
+              btnal_other->neighbors[side_opp] = NULL;
             }
-            butal->dists[side] = butal_other->dists[side_opp] = delta;
+            btnal->dists[side] = btnal_other->dists[side_opp] = delta;
           }
 
-          if (butal_can_align && butal_other_can_align) {
+          if (butal_can_align && btnal_other_can_align) {
             const int side_s1 = SIDE1(side);
             const int side_s2 = SIDE2(side);
 
