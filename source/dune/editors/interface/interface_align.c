@@ -1,20 +1,19 @@
 #include "types_screen.h"
 #include "types_userdef.h"
 
-#include "LIB_listbase.h"
-#include "LIB_math.h"
-#include "LIB_rect.h"
+#include "list_list.h"
+#include "lib_math.h"
+#include "lib_rect.h"
 
 #include "interface.h"
 
 #include "interface_intern.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #ifdef USE_UIBUT_SPATIAL_ALIGN
 
-/**
- * This struct stores a (simplified) 2D representation of all buttons of a same align group,
+/* This struct stores a (simplified) 2D representation of all buttons of a same align group,
  * with their immediate neighbors (if found),
  * and needed value to compute 'stitching' of aligned buttons.
  *
@@ -90,7 +89,7 @@ enum {
 
 bool btn_can_align(const uiBtn *btn)
 {
-  const bool btype_can_align = !ELEM(but->type,
+  const bool btype_can_align = !ELEM(btn->type,
                                      UI_BTYPE_LABEL,
                                      UI_BTYPE_CHECKBOX,
                                      UI_BTYPE_CHECKBOX_N,
@@ -98,18 +97,16 @@ bool btn_can_align(const uiBtn *btn)
                                      UI_BTYPE_SEPR,
                                      UI_BTYPE_SEPR_LINE,
                                      UI_BTYPE_SEPR_SPACER);
-  return (btype_can_align && (LIB_rctf_size_x(&btn->rect) > 0.0f) &&
-          (LIB_rctf_size_y(&btn->rect) > 0.0f));
+  return (btype_can_align && (lib_rctf_size_x(&btn->rect) > 0.0f) &&
+          (lib_rctf_size_y(&btn->rect) > 0.0f));
 }
 
-/**
- * This function checks a pair of buttons (assumed in a same align group),
+/* This fn checks a pair of buttons (assumed in a same align group),
  * and if they are neighbors, set needed data accordingly.
  *
  * note It is designed to be called in total random order of buttons.
- * Order-based optimizations are done by caller.
- */
-static void block_align_proximity_compute(BtnAlign *butal, ButAlign *butal_other)
+ * Order-based optimizations are done by caller. */
+static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other)
 {
   /* That's the biggest gap between two borders to consider them 'alignable'. */
   const float max_delta = MAX_DELTA;
@@ -117,15 +114,15 @@ static void block_align_proximity_compute(BtnAlign *butal, ButAlign *butal_other
   int side, side_opp;
 
   const bool btnal_can_align = ui_btn_can_align(btnal->btn);
-  const bool btnal_other_can_align = ui_btn_can_align(butal_other->but);
+  const bool btnal_other_can_align = ui_btn_can_align(btnal_other->btn);
 
-  const bool buts_share[2] = {
+  const bool btns_share[2] = {
       /* Sharing same line? */
-      !((*butal->borders[DOWN] >= *butal_other->borders[TOP]) ||
-        (*butal->borders[TOP] <= *butal_other->borders[DOWN])),
+      !((*btnal->borders[DOWN] >= *butal_other->borders[TOP]) ||
+        (*btnal->borders[TOP] <= *butal_other->borders[DOWN])),
       /* Sharing same column? */
-      !((*butal->borders[LEFT] >= *butal_other->borders[RIGHT]) ||
-        (*butal->borders[RIGHT] <= *butal_other->borders[LEFT])),
+      !((*btnal->borders[LEFT] >= *butal_other->borders[RIGHT]) ||
+        (*btnal->borders[RIGHT] <= *butal_other->borders[LEFT])),
   };
 
   /* Early out in case buttons share no column or line, or if none can align... */
