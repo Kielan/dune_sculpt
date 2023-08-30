@@ -118,15 +118,15 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
 
   const bool btns_share[2] = {
       /* Sharing same line? */
-      !((*btnal->borders[DOWN] >= *butal_other->borders[TOP]) ||
-        (*btnal->borders[TOP] <= *butal_other->borders[DOWN])),
+      !((*btnal->borders[DOWN] >= *btnal_other->borders[TOP]) ||
+        (*btnal->borders[TOP] <= *btnal_other->borders[DOWN])),
       /* Sharing same column? */
-      !((*btnal->borders[LEFT] >= *butal_other->borders[RIGHT]) ||
-        (*btnal->borders[RIGHT] <= *butal_other->borders[LEFT])),
+      !((*btnal->borders[LEFT] >= *btnal_other->borders[RIGHT]) ||
+        (*btnal->borders[RIGHT] <= *btnal_other->borders[LEFT])),
   };
 
   /* Early out in case buttons share no column or line, or if none can align... */
-  if (!(buts_share[0] || buts_share[1]) || !(butal_can_align || butal_other_can_align)) {
+  if (!(btns_share[0] || buts_share[1]) || !(butal_can_align || butal_other_can_align)) {
     return;
   }
 
@@ -138,12 +138,12 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
 
       /* We check both opposite sides at once, because with very small buttons,
        * delta could be below max_delta for the wrong side
-       * (that is, in horizontal case, the total width of two buttons can be below max_delta).
+       * (that is, in horizontal case, the total width of two btns can be below max_delta).
        * We rely on exact zero value here as an 'already processed' flag,
        * so ensure we never actually set a zero value at this stage.
        * FLT_MIN is zero-enough for UI position computing. ;) */
-      delta = max_ff(fabsf(*butal->borders[side] - *butal_other->borders[side_opp]), FLT_MIN);
-      delta_side_opp = max_ff(fabsf(*butal->borders[side_opp] - *butal_other->borders[side]),
+      delta = max_ff(fabsf(*btnal->borders[side] - *btnal_other->borders[side_opp]), FLT_MIN);
+      delta_side_opp = max_ff(fabsf(*btnal->borders[side_opp] - *btnal_other->borders[side]),
                               FLT_MIN);
       if (delta_side_opp < delta) {
         SWAP(int, side, side_opp);
@@ -170,44 +170,44 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
               btnal->neighbors[side] = btnal_other;
               btnal_other->neighbors[side_opp] = btnal;
             }
-            else if (btnal_can_align && (delta < butal->dists[side])) {
+            else if (btnal_can_align && (delta < btnal->dists[side])) {
               btnal->neighbors[side] = NULL;
             }
-            else if (btnal_other_can_align && (delta < butal_other->dists[side_opp])) {
+            else if (btnal_other_can_align && (delta < btnal_other->dists[side_opp])) {
               btnal_other->neighbors[side_opp] = NULL;
             }
             btnal->dists[side] = btnal_other->dists[side_opp] = delta;
           }
 
-          if (butal_can_align && btnal_other_can_align) {
+          if (btnal_can_align && btnal_other_can_align) {
             const int side_s1 = SIDE1(side);
             const int side_s2 = SIDE2(side);
 
             const int stitch = STITCH(side);
             const int stitch_opp = STITCH(side_opp);
 
-            if (butal->neighbors[side] == NULL) {
-              butal->neighbors[side] = butal_other;
+            if (btnal->neighbors[side] == NULL) {
+              btnal->neighbors[side] = btnal_other;
             }
-            if (butal_other->neighbors[side_opp] == NULL) {
-              butal_other->neighbors[side_opp] = butal;
+            if (btnal_other->neighbors[side_opp] == NULL) {
+              btnal_other->neighbors[side_opp] = btnal;
             }
 
             /* We have a pair of neighbors, we have to check whether we
              *   can stitch their matching corners.
-             *   E.g. if butal_other is on the left of butal (that is, side == LEFT),
+             *   E.g. if btnal_other is on the left of butal (that is, side == LEFT),
              *        if both TOP (side_s1) coordinates of buttons are close enough,
              *        we can stitch their upper matching corners,
              *        and same for DOWN (side_s2) side. */
-            delta = fabsf(*butal->borders[side_s1] - *butal_other->borders[side_s1]);
+            delta = fabsf(*btnal->borders[side_s1] - *btnal_other->borders[side_s1]);
             if (delta < max_delta) {
-              butal->flags[side_s1] |= stitch;
-              butal_other->flags[side_s1] |= stitch_opp;
+              btnal->flags[side_s1] |= stitch;
+              btnal_other->flags[side_s1] |= stitch_opp;
             }
-            delta = fabsf(*butal->borders[side_s2] - *butal_other->borders[side_s2]);
+            delta = fabsf(*btnal->borders[side_s2] - *btnal_other->borders[side_s2]);
             if (delta < max_delta) {
-              butal->flags[side_s2] |= stitch;
-              butal_other->flags[side_s2] |= stitch_opp;
+              btnal->flags[side_s2] |= stitch;
+              btnal_other->flags[side_s2] |= stitch_opp;
             }
           }
         }
@@ -219,28 +219,24 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
   }
 }
 
-/**
- * This function takes care of case described in this schema:
+/* This fn takes care of case described in this schema:
  *
- * <pre>
  * +-----------+-----------+
- * |   BUT 1   |   BUT 2   |
+ * |   BTN 1   |   BTN 2   |
  * |-----------------------+
- * |   BUT 3   |
+ * |   BTN 3   |
  * +-----------+
- * </pre>
  *
- * Here, BUT 3 RIGHT side would not get 'dragged' to align with BUT 1 RIGHT side,
- * since BUT 3 has not RIGHT neighbor.
- * So, this function, when called with BUT 1, will 'walk' the whole column in \a side_s1 direction
- * (TOP or DOWN when called for RIGHT side), and force buttons like BUT 3 to align as needed,
- * if BUT 1 and BUT 3 were detected as needing top-right corner stitching in
- * #block_align_proximity_compute() step.
+ * Here, BTN 3 RIGHT side would not get 'dragged' to align with BUT 1 RIGHT side,
+ * since BTN 3 has not RIGHT neighbor.
+ * So, this fn, when called with BTN 1, will 'walk' the whole column in side_s1 direction
+ * (TOP or DOWN when called for RIGHT side), and force btns like BTN 3 to align as needed,
+ * if BTN 1 and BTN 3 were detected as needing top-right corner stitching in
+ * block_align_proximity_compute() step.
  *
- * \note To avoid doing this twice, some stitching flags are cleared to break the
- * 'stitching connection' between neighbors.
- */
-static void block_align_stitch_neighbors(ButAlign *butal,
+ * To avoid doing this twice, some stitching flags are cleared to break the
+ * 'stitching connection' between neighbors. */
+static void block_align_stitch_neighbors(BtnAlign *btnal,
                                          const int side,
                                          const int side_opp,
                                          const int side_s1,
@@ -249,7 +245,7 @@ static void block_align_stitch_neighbors(ButAlign *butal,
                                          const int align_opp,
                                          const float co)
 {
-  ButAlign *butal_neighbor;
+  BtnAlign *btnal_neighbor;
 
   const int stitch_s1 = STITCH(side_s1);
   const int stitch_s2 = STITCH(side_s2);
@@ -259,47 +255,46 @@ static void block_align_stitch_neighbors(ButAlign *butal,
    * Also, if butal is spanning over several rows or columns of neighbors,
    * it may have both of its stitching flags
    * set, but would not be the case of its immediate neighbor! */
-  while ((butal->flags[side] & stitch_s1) && (butal = butal->neighbors[side_s1]) &&
-         (butal->flags[side] & stitch_s2)) {
-    butal_neighbor = butal->neighbors[side];
+  while ((btnal->flags[side] & stitch_s1) && (btnal = btnal->neighbors[side_s1]) &&
+         (btnal->flags[side] & stitch_s2)) {
+    btnal_neighbor = btnal->neighbors[side];
 
     /* If we actually do have a neighbor, we directly set its values accordingly,
      * and clear its matching 'dist' to prevent it being set again later... */
-    if (butal_neighbor) {
-      butal->but->drawflag |= align;
-      butal_neighbor->but->drawflag |= align_opp;
-      *butal_neighbor->borders[side_opp] = co;
-      butal_neighbor->dists[side_opp] = 0.0f;
+    if (btnal_neighbor) {
+      btnal->btn->drawflag |= align;
+      btnal_neighbor->btn->drawflag |= align_opp;
+      *btnal_neighbor->borders[side_opp] = co;
+      btnal_neighbor->dists[side_opp] = 0.0f;
     }
-    /* See definition of UI_BUT_ALIGN_STITCH_LEFT/TOP for reason of this... */
+    /* See definition of UI_BTN_ALIGN_STITCH_LEFT/TOP for reason of this... */
     else if (side == LEFT) {
-      butal->but->drawflag |= UI_BUT_ALIGN_STITCH_LEFT;
+      btnal->btn->drawflag |= UI_BTN_ALIGN_STITCH_LEFT;
     }
     else if (side == TOP) {
-      butal->but->drawflag |= UI_BUT_ALIGN_STITCH_TOP;
+      btnal->btn->drawflag |= UI_BTN_ALIGN_STITCH_TOP;
     }
-    *butal->borders[side] = co;
-    butal->dists[side] = 0.0f;
+    *btnal->borders[side] = co;
+    btnal->dists[side] = 0.0f;
     /* Clearing one of the 'flags pair' here is enough to prevent this loop running on
      * the same column, side and direction again. */
-    butal->flags[side] &= ~stitch_s2;
+    btnal->flags[side] &= ~stitch_s2;
   }
 }
 
-/**
- * Helper to sort ButAlign items by:
+/* Helper to sort BtnAlign items by:
  *   - Their align group.
  *   - Their vertical position.
  *   - Their horizontal position.
  */
-static int ui_block_align_butal_cmp(const void *a, const void *b)
+static int ui_block_align_btnal_cmp(const void *a, const void *b)
 {
-  const ButAlign *butal = a;
-  const ButAlign *butal_other = b;
+  const BtnAlign *btnal = a;
+  const BtnAlign *btnal_other = b;
 
   /* Sort by align group. */
-  if (butal->but->alignnr != butal_other->but->alignnr) {
-    return butal->but->alignnr - butal_other->but->alignnr;
+  if (btnal->btn->alignnr != btnal_other->but->alignnr) {
+    return btnal->btn->alignnr - btnal_other->but->alignnr;
   }
 
   /* Sort vertically.
