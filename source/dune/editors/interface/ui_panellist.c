@@ -1039,7 +1039,6 @@ void ui_view2d_dot_grid_draw(const View2D *v2d,
 /* Scrollers */
 
 /* View2DScrollers is typedef'd in ui_view2d.h
- *
  * warning The start of this struct must not change, as view2d_ops.c uses this too.
  * For now, we don't need to have a separate (internal) header for structs like this... */
 struct View2DScrollers {
@@ -1107,7 +1106,7 @@ void ui_view2d_scrollers_calc(View2D *v2d,
   if (scroll & V2D_SCROLL_HORIZONTAL) {
     /* scroller 'button' extents */
     totsize = lib_rctf_size_x(&v2d->tot);
-    scrollsize = (float)BLI_rcti_size_x(&hor);
+    scrollsize = (float)lib_rcti_size_x(&hor);
     if (totsize == 0.0f) {
       totsize = 1.0f; /* avoid divide by zero */
     }
@@ -1214,7 +1213,7 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
     wcol.inner[3] *= alpha_fac;
     wcol.item[3] *= alpha_fac;
     wcol.outline[3] *= alpha_fac;
-    btheme->tui.widget_emboss[3] *= alpha_fac; /* will be reset later */
+    theme->tui.widget_emboss[3] *= alpha_fac; /* will be reset later */
 
     /* show zoom handles if:
      * - zooming on x-axis is allowed (no scroll otherwise)
@@ -1485,7 +1484,7 @@ View2D *ui_view2d_fromcxt_rwin(const Cxt *C)
   return &(region->v2d);
 }
 
-void UI_view2d_scroller_size_get(const View2D *v2d, float *r_x, float *r_y)
+void ui_view2d_scroller_size_get(const View2D *v2d, float *r_x, float *r_y)
 {
   const int scroll = view2d_scroll_mapped(v2d->scroll);
 
@@ -1508,55 +1507,55 @@ void UI_view2d_scroller_size_get(const View2D *v2d, float *r_x, float *r_y)
   }
 }
 
-void UI_view2d_scale_get(const View2D *v2d, float *r_x, float *r_y)
+void ui_view2d_scale_get(const View2D *v2d, float *r_x, float *r_y)
 {
   if (r_x) {
-    *r_x = UI_view2d_scale_get_x(v2d);
+    *r_x = ui_view2d_scale_get_x(v2d);
   }
   if (r_y) {
-    *r_y = UI_view2d_scale_get_y(v2d);
+    *r_y = ui_view2d_scale_get_y(v2d);
   }
 }
-float UI_view2d_scale_get_x(const View2D *v2d)
+float ui_view2d_scale_get_x(const View2D *v2d)
 {
-  return BLI_rcti_size_x(&v2d->mask) / BLI_rctf_size_x(&v2d->cur);
+  return lib_rcti_size_x(&v2d->mask) / lib_rctf_size_x(&v2d->cur);
 }
-float UI_view2d_scale_get_y(const View2D *v2d)
+float ui_view2d_scale_get_y(const View2D *v2d)
 {
-  return BLI_rcti_size_y(&v2d->mask) / BLI_rctf_size_y(&v2d->cur);
+  return lib_rcti_size_y(&v2d->mask) / lib_rctf_size_y(&v2d->cur);
 }
-void UI_view2d_scale_get_inverse(const View2D *v2d, float *r_x, float *r_y)
+void ui_view2d_scale_get_inverse(const View2D *v2d, float *r_x, float *r_y)
 {
   if (r_x) {
-    *r_x = BLI_rctf_size_x(&v2d->cur) / BLI_rcti_size_x(&v2d->mask);
+    *r_x = lib_rctf_size_x(&v2d->cur) / lib_rcti_size_x(&v2d->mask);
   }
   if (r_y) {
-    *r_y = BLI_rctf_size_y(&v2d->cur) / BLI_rcti_size_y(&v2d->mask);
+    *r_y = lib_rctf_size_y(&v2d->cur) / lib_rcti_size_y(&v2d->mask);
   }
 }
 
-void UI_view2d_center_get(const struct View2D *v2d, float *r_x, float *r_y)
+void ui_view2d_center_get(const struct View2D *v2d, float *r_x, float *r_y)
 {
   /* get center */
   if (r_x) {
-    *r_x = BLI_rctf_cent_x(&v2d->cur);
+    *r_x = lib_rctf_cent_x(&v2d->cur);
   }
   if (r_y) {
-    *r_y = BLI_rctf_cent_y(&v2d->cur);
+    *r_y = lib_rctf_cent_y(&v2d->cur);
   }
 }
-void UI_view2d_center_set(struct View2D *v2d, float x, float y)
+void ui_view2d_center_set(struct View2D *v2d, float x, float y)
 {
-  BLI_rctf_recenter(&v2d->cur, x, y);
+  lib_rctf_recenter(&v2d->cur, x, y);
 
   /* make sure that 'cur' rect is in a valid state as a result of these changes */
-  UI_view2d_curRect_validate(v2d);
+  ui_view2d_curRect_validate(v2d);
 }
 
-void UI_view2d_offset(struct View2D *v2d, float xfac, float yfac)
+void ui_view2d_offset(struct View2D *v2d, float xfac, float yfac)
 {
   if (xfac != -1.0f) {
-    const float xsize = BLI_rctf_size_x(&v2d->cur);
+    const float xsize = lib_rctf_size_x(&v2d->cur);
     const float xmin = v2d->tot.xmin;
     const float xmax = v2d->tot.xmax - xsize;
 
@@ -1565,7 +1564,7 @@ void UI_view2d_offset(struct View2D *v2d, float xfac, float yfac)
   }
 
   if (yfac != -1.0f) {
-    const float ysize = BLI_rctf_size_y(&v2d->cur);
+    const float ysize = lib_rctf_size_y(&v2d->cur);
     const float ymin = v2d->tot.ymin;
     const float ymax = v2d->tot.ymax - ysize;
 
@@ -1573,10 +1572,10 @@ void UI_view2d_offset(struct View2D *v2d, float xfac, float yfac)
     v2d->cur.ymax = v2d->cur.ymin + ysize;
   }
 
-  UI_view2d_curRect_validate(v2d);
+  ui_view2d_curRect_validate(v2d);
 }
 
-char UI_view2d_mouse_in_scrollers_ex(const ARegion *region,
+char ui_view2d_mouse_in_scrollers_ex(const ARegion *region,
                                      const View2D *v2d,
                                      const int xy[2],
                                      int *r_scroll)
@@ -1605,7 +1604,7 @@ char UI_view2d_mouse_in_scrollers_ex(const ARegion *region,
   return 0;
 }
 
-char UI_view2d_rect_in_scrollers_ex(const ARegion *region,
+char ui_view2d_rect_in_scrollers_ex(const ARegion *region,
                                     const View2D *v2d,
                                     const rcti *rect,
                                     int *r_scroll)
@@ -1616,7 +1615,7 @@ char UI_view2d_rect_in_scrollers_ex(const ARegion *region,
   if (scroll) {
     /* Move to region-coordinates. */
     rcti rect_region = *rect;
-    BLI_rcti_translate(&rect_region, -region->winrct.xmin, region->winrct.ymin);
+    lib_rcti_translate(&rect_region, -region->winrct.xmin, region->winrct.ymin);
     if (scroll & V2D_SCROLL_HORIZONTAL) {
       if (IN_2D_HORIZ_SCROLL_RECT(v2d, &rect_region)) {
         return 'h';
@@ -1632,23 +1631,19 @@ char UI_view2d_rect_in_scrollers_ex(const ARegion *region,
   return 0;
 }
 
-char UI_view2d_mouse_in_scrollers(const ARegion *region, const View2D *v2d, const int xy[2])
+char ui_view2d_mouse_in_scrollers(const ARegion *region, const View2D *v2d, const int xy[2])
 {
   int scroll_dummy = 0;
-  return UI_view2d_mouse_in_scrollers_ex(region, v2d, xy, &scroll_dummy);
+  return ui_view2d_mouse_in_scrollers_ex(region, v2d, xy, &scroll_dummy);
 }
 
-char UI_view2d_rect_in_scrollers(const ARegion *region, const View2D *v2d, const rcti *rect)
+char ui_view2d_rect_in_scrollers(const ARegion *region, const View2D *v2d, const rcti *rect)
 {
   int scroll_dummy = 0;
-  return UI_view2d_rect_in_scrollers_ex(region, v2d, rect, &scroll_dummy);
+  return ui_view2d_rect_in_scrollers_ex(region, v2d, rect, &scroll_dummy);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View2D Text Drawing Cache
- * \{ */
+/* View2D Text Drawing Cache */
 
 typedef struct View2DString {
   struct View2DString *next;
@@ -1667,12 +1662,12 @@ typedef struct View2DString {
 static MemArena *g_v2d_strings_arena = NULL;
 static View2DString *g_v2d_strings = NULL;
 
-void UI_view2d_text_cache_add(
+void ui_view2d_text_cache_add(
     View2D *v2d, float x, float y, const char *str, size_t str_len, const uchar col[4])
 {
   int mval[2];
 
-  BLI_assert(str_len == strlen(str));
+  lib_assert(str_len == strlen(str));
 
   if (UI_view2d_view_to_region_clip(v2d, x, y, &mval[0], &mval[1])) {
     const int alloc_len = str_len + 1;
