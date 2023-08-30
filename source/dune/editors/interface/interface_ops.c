@@ -55,7 +55,6 @@
 #include "ed_screen.h"
 #include "ed_text.h"
 
-/* -------------------------------------------------------------------- */
 /** Immediate redraw helper
  *
  * Generally handlers shouldn't do any redrawing, that includes the layout/btn definitions. That
@@ -65,10 +64,9 @@
  * reasons. For example, "Edit Source" does it to find out which exact Python code added a button.
  * Other operators may need to access btns that aren't currently visible. In Dune's UI code
  * design that typically means just not adding the btn in the first place, for a particular
- * redraw. So the operator needs to change context and re-create the layout, so the button becomes
+ * redraw. So the op needs to change cxt and re-create the layout, so the button becomes
  * available to act on. */
 
-/* -------------------------------------------------------------------- */
 /* Copy Python Command Operator */
 
 static bool copy_pycmd_btnpoll(Cxt *C)
@@ -661,7 +659,7 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     *r_lb = cxt_data_collection_get(C, "selected_nla_strips");
   }
   else if (api_struct_is_a(ptr->type, &api_MovieTrackingTrack)) {
-    *r_lb = ctx_data_collection_get(C, "selected_movieclip_tracks");
+    *r_lb = cxt_data_collection_get(C, "selected_movieclip_tracks");
   }
   else if (api_struct_is_a(ptr->type, &api_Constraint) &&
            (path_from_bone = apipath_resolve_from_type_to_prop(ptr, prop, &api_PoseBone)) !=
@@ -679,7 +677,7 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
       NodeTree *ntree = (bNodeTree *)ptr->owner_id;
       NodeSocket *sock = ptr->data;
       if (nodeFindNode(ntree, sock, &node, NULL)) {
-        if ((path = api_path_resolve_from_type_to_property(ptr, prop, &RNA_Node)) != NULL) {
+        if ((path = api_path_resolve_from_type_to_prop(ptr, prop, &RNA_Node)) != NULL) {
           /* we're good! */
         }
         else {
@@ -836,31 +834,31 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
     return false;
   }
 
-  if (RNA_property_type(lprop) != RNA_property_type(prop)) {
+  if (api_prop_type(lprop) != api_prop_type(prop)) {
     return false;
   }
 
-  /* Check property pointers matching.
-   * For ID properties, these pointers match:
-   * - If the property is API defined on an existing class (and they are equally named).
-   * - Never for ID properties on specific ID (even if they are equally named).
-   * - Never for NodesModifierSettings properties (even if they are equally named).
+  /* Check prop ptrs matching.
+   * For ID props, these ptrs match:
+   * - If the prop is API defined on an existing class (and they are equally named).
+   * - Never for ID props on specific ID (even if they are equally named).
+   * - Never for NodesModSettings props (even if they are equally named).
    *
-   * Be permissive on ID properties in the following cases:
-   * - #NodesModifierSettings properties
-   *   - (special check: only if the node-group matches, since the 'Input_n' properties are name
+   * Be permissive on ID props in the following cases:
+   * - NodesModSettings props
+   *   - (special check: only if the node-group matches, since the 'Input_n' props are name
    *      based and similar on potentially very different node-groups).
-   * - ID properties on specific ID
+   * - ID props on specific ID
    *   - (no special check, copying seems OK [even if type does not match -- does not do anything
    *      then])
    */
-  bool ignore_prop_eq = RNA_property_is_idprop(lprop) && RNA_property_is_idprop(prop);
-  if (RNA_struct_is_a(lptr.type, &RNA_NodesModifier) &&
-      RNA_struct_is_a(ptr->type, &RNA_NodesModifier)) {
+  bool ignore_prop_eq = api_prop_is_idprop(lprop) && api_prop_is_idprop(prop);
+  if (api_struct_is_a(lptr.type, &Api_NodesMod) &&
+      api_struct_is_a(ptr->type, &Api_NodesMod)) {
     ignore_prop_eq = false;
 
-    NodesModifierData *nmd_link = (NodesModifierData *)lptr.data;
-    NodesModifierData *nmd_src = (NodesModifierData *)ptr->data;
+    NodesModData *nmd_link = (NodesModData *)lptr.data;
+    NodesModData *nmd_src = (NodesModData *)ptr->data;
     if (nmd_link->node_group == nmd_src->node_group) {
       ignore_prop_eq = true;
     }
@@ -870,7 +868,7 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
     return false;
   }
 
-  if (!RNA_property_editable(&lptr, lprop)) {
+  if (!api_prop_editable(&lptr, lprop)) {
     return false;
   }
 
@@ -884,17 +882,17 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
   return true;
 }
 
-bool UI_context_copy_to_selected_check(PointerRNA *ptr,
-                                       PointerRNA *ptr_link,
-                                       PropertyRNA *prop,
-                                       const char *path,
-                                       bool use_path_from_id,
-                                       PointerRNA *r_ptr,
-                                       PropertyRNA **r_prop)
+bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
+                                   ApiPtr *ptr_link,
+                                   ApiProp *prop,
+                                   const char *path,
+                                   bool use_path_from_id,
+                                   ApiPtr *r_ptr,
+                                   ApiProp **r_prop)
 {
-  PointerRNA idptr;
-  PropertyRNA *lprop;
-  PointerRNA lptr;
+  ApiPtr idptr;
+  ApiProp *lprop;
+  ApiPtr lptr;
 
   if (ptr_link->data == ptr->data) {
     return false;
@@ -903,13 +901,13 @@ bool UI_context_copy_to_selected_check(PointerRNA *ptr,
   if (use_path_from_id) {
     /* Path relative to ID. */
     lprop = NULL;
-    RNA_id_pointer_create(ptr_link->owner_id, &idptr);
-    RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
+    api_id_ptr_create(ptr_link->owner_id, &idptr);
+    api_path_resolve_prop(&idptr, path, &lptr, &lprop);
   }
   else if (path) {
     /* Path relative to elements from list. */
     lprop = NULL;
-    RNA_path_resolve_property(ptr_link, path, &lptr, &lprop);
+    api_path_resolve_prop(ptr_link, path, &lptr, &lprop);
   }
   else {
     lptr = *ptr_link;
@@ -921,37 +919,37 @@ bool UI_context_copy_to_selected_check(PointerRNA *ptr,
     return false;
   }
 
-  /* Skip non-existing properties on link. This was previously covered with the `lprop != prop`
-   * check but we are now more permissive when it comes to ID properties, see below. */
+  /* Skip non-existing props on link. This was previously covered with the `lprop != prop`
+   * check but we are now more permissive when it comes to Id props, see below. */
   if (lprop == NULL) {
     return false;
   }
 
-  if (RNA_property_type(lprop) != RNA_property_type(prop)) {
+  if (api_prop_type(lprop) != api_prop_type(prop)) {
     return false;
   }
 
-  /* Check property pointers matching.
-   * For ID properties, these pointers match:
-   * - If the property is API defined on an existing class (and they are equally named).
-   * - Never for ID properties on specific ID (even if they are equally named).
-   * - Never for NodesModifierSettings properties (even if they are equally named).
+  /* Check prop ptrs matching.
+   * For Id props, these ptrs match:
+   * - If the prop is API defined on an existing class (and they are equally named).
+   * - Never for ID props on specific ID (even if they are equally named).
+   * - Never for NodesModSettings props (even if they are equally named).
    *
-   * Be permissive on ID properties in the following cases:
-   * - #NodesModifierSettings properties
+   * Be permissive on Id props in the following cases:
+   * - NodesModSettings props
    *   - (special check: only if the node-group matches, since the 'Input_n' properties are name
    *      based and similar on potentially very different node-groups).
-   * - ID properties on specific ID
+   * - ID props on specific ID
    *   - (no special check, copying seems OK [even if type does not match -- does not do anything
    *      then])
    */
-  bool ignore_prop_eq = RNA_property_is_idprop(lprop) && RNA_property_is_idprop(prop);
-  if (RNA_struct_is_a(lptr.type, &RNA_NodesModifier) &&
-      RNA_struct_is_a(ptr->type, &RNA_NodesModifier)) {
+  bool ignore_prop_eq = api_prop_is_idprop(lprop) && api_prop_is_idprop(prop);
+  if (api_struct_is_a(lptr.type, &Api_NodesMod) &&
+      api_struct_is_a(ptr->type, &Api_NodesMod)) {
     ignore_prop_eq = false;
 
-    NodesModifierData *nmd_link = (NodesModifierData *)lptr.data;
-    NodesModifierData *nmd_src = (NodesModifierData *)ptr->data;
+    NodesModData *nmd_link = (NodesModData *)lptr.data;
+    NodesModData *nmd_src = (NodesModData *)ptr->data;
     if (nmd_link->node_group == nmd_src->node_group) {
       ignore_prop_eq = true;
     }
@@ -961,7 +959,7 @@ bool UI_context_copy_to_selected_check(PointerRNA *ptr,
     return false;
   }
 
-  if (!RNA_property_editable(&lptr, lprop)) {
+  if (!api_prop_editable(&lptr, lprop)) {
     return false;
   }
 
@@ -975,23 +973,21 @@ bool UI_context_copy_to_selected_check(PointerRNA *ptr,
   return true;
 }
 
-/**
- * Called from both exec & poll.
+/* Called from both exec & poll.
  *
- * \note Normally we wouldn't call a loop from within a poll function,
+ * Normally we wouldn't call a loop from within a poll function,
  * however this is a special case, and for regular poll calls, getting
- * the context from the button will fail early.
- */
-static bool copy_to_selected_button(bContext *C, bool all, bool poll)
+ * the context from the button will fail early. */
+static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
 {
-  Main *bmain = CTX_data_main(C);
-  PointerRNA ptr, lptr;
-  PropertyRNA *prop, *lprop;
+  Main *main = cxt_data_main(C);
+  ApiPtr ptr, lptr;
+  ApiProp *prop, *lprop;
   bool success = false;
   int index;
 
   /* try to reset the nominated setting to its default value */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_but_prop_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
   if (ptr.data == NULL || prop == NULL) {
@@ -1000,22 +996,22 @@ static bool copy_to_selected_button(bContext *C, bool all, bool poll)
 
   char *path = NULL;
   bool use_path_from_id;
-  ListBase lb = {NULL};
+  List lb = {NULL};
 
-  if (!UI_context_copy_to_selected_list(C, &ptr, prop, &lb, &use_path_from_id, &path)) {
+  if (!ui_cxt_copy_to_selected_list(C, &ptr, prop, &lb, &use_path_from_id, &path)) {
     return false;
   }
-  if (BLI_listbase_is_empty(&lb)) {
+  if (lib_list_is_empty(&lb)) {
     MEM_SAFE_FREE(path);
     return false;
   }
 
-  LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
+  LIST_FOREACH (CollectionPtrLink *, link, &lb) {
     if (link->ptr.data == ptr.data) {
       continue;
     }
 
-    if (!UI_context_copy_to_selected_check(
+    if (!ui_cxt_copy_to_selected_check(
             &ptr, &link->ptr, prop, path, use_path_from_id, &lptr, &lprop)) {
       continue;
     }
@@ -1024,8 +1020,8 @@ static bool copy_to_selected_button(bContext *C, bool all, bool poll)
       success = true;
       break;
     }
-    if (RNA_property_copy(bmain, &lptr, &ptr, prop, (all) ? -1 : index)) {
-      RNA_property_update(C, &lptr, prop);
+    if (api_prop_copy(main, &lptr, &ptr, prop, (all) ? -1 : index)) {
+      api_prop_update(C, &lptr, prop);
       success = true;
     }
   }
