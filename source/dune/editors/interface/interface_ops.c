@@ -1305,90 +1305,90 @@ void ui_editsource_btn_replace(const uiBtn *old_btn, uiBtn *new_btn)
 }
 
 static int editsource_text_edit(Cxt *C,
-                                wmOperator *op,
+                                wmOp *op,
                                 const char filepath[FILE_MAX],
                                 const int line)
 {
-  struct Main *bmain = CTX_data_main(C);
+  struct Main *main = cxt_data_main(C);
   Text *text = NULL;
 
   /* Developers may wish to copy-paste to an external editor. */
   printf("%s:%d\n", filepath, line);
 
-  LISTBASE_FOREACH (Text *, text_iter, &bmain->texts) {
-    if (text_iter->filepath && BLI_path_cmp(text_iter->filepath, filepath) == 0) {
+  LIST_FOREACH (Text *, text_iter, &main->texts) {
+    if (text_iter->filepath && lib_path_cmp(text_iter->filepath, filepath) == 0) {
       text = text_iter;
       break;
     }
   }
 
   if (text == NULL) {
-    text = BKE_text_load(bmain, filepath, BKE_main_blendfile_path(bmain));
+    text = dune_text_load(main, filepath, BKE_main_blendfile_path(bmain));
   }
 
   if (text == NULL) {
-    BKE_reportf(op->reports, RPT_WARNING, "File '%s' cannot be opened", filepath);
-    return OPERATOR_CANCELLED;
+    dune_reportf(op->reports, RPT_WARNING, "File '%s' cannot be opened", filepath);
+    return OP_CANCELLED;
   }
 
   txt_move_toline(text, line - 1, false);
 
   /* naughty!, find text area to set, not good behavior
    * but since this is a developer tool lets allow it - campbell */
-  if (!ED_text_activate_in_screen(C, text)) {
-    BKE_reportf(op->reports, RPT_INFO, "See '%s' in the text editor", text->id.name + 2);
+  if (!ed_text_activate_in_screen(C, text)) {
+    dune_reportf(op->reports, RPT_INFO, "See '%s' in the text editor", text->id.name + 2);
   }
 
-  WM_event_add_notifier(C, NC_TEXT | ND_CURSOR, text);
+  wm_event_add_notifier(C, NC_TEXT | ND_CURSOR, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int editsource_exec(bContext *C, wmOperator *op)
+static int editsource_ex(Cxt *C, wmOp *op)
 {
-  uiBut *but = UI_context_active_but_get(C);
+  uiBtn *btn = ui_cxt_active_btn_get(C);
 
-  if (but) {
-    GHashIterator ghi;
-    struct uiEditSourceButStore *but_store = NULL;
+  if (btn) {
+    GHashIter ghi;
+    struct uiEditSourceBtnStore *btn_store = NULL;
 
-    ARegion *region = CTX_wm_region(C);
+    ARegion *region = cxt_wm_region(C);
     int ret;
 
     /* needed else the active button does not get tested */
-    UI_screen_free_active_but_highlight(C, CTX_wm_screen(C));
+    ui_screen_free_active_btn_highlight(C, cxt_wm_screen(C));
 
     // printf("%s: begin\n", __func__);
 
     /* take care not to return before calling ui_editsource_active_but_clear */
-    ui_editsource_active_but_set(but);
+    ui_editsource_active_btn_set(btn);
 
     /* redraw and get active button python info */
     ui_region_redraw_immediately(C, region);
 
-    for (BLI_ghashIterator_init(&ghi, ui_editsource_info->hash);
-         BLI_ghashIterator_done(&ghi) == false;
-         BLI_ghashIterator_step(&ghi)) {
-      uiBut *but_key = BLI_ghashIterator_getKey(&ghi);
-      if (but_key && ui_editsource_uibut_match(&ui_editsource_info->but_orig, but_key)) {
-        but_store = BLI_ghashIterator_getValue(&ghi);
+    for (lib_ghashIter_init(&ghi, ui_editsource_info->hash);
+         lib_ghashIter_done(&ghi) == false;
+         lib_ghashIter_step(&ghi)) {
+      uiBtn *btn_key = lib_ghashIter_getKey(&ghi);
+      if (btn_key && ui_editsource_uibtn_match(&ui_editsource_info->btn_orig, btn_key)) {
+        btn_store = lib_ghashIterator_getValue(&ghi);
         break;
       }
     }
 
-    if (but_store) {
-      if (but_store->py_dbg_line_number != -1) {
-        ret = editsource_text_edit(C, op, but_store->py_dbg_fn, but_store->py_dbg_line_number);
+    if (btn_store) {
+      if (btn_store->py_dbg_line_number != -1) {
+        ret = editsource_text_edit(C, op, btn_store->py_dbg_fn, btn_store->py_dbg_line_number);
       }
       else {
-        BKE_report(
-            op->reports, RPT_ERROR, "Active button is not from a script, cannot edit source");
-        ret = OPERATOR_CANCELLED;
+        dune_report(
+            op->reports, RPT_ERROR, "Active btn is not from a script, cannot edit source");
+        ret = OP_CANCELLED;
       }
     }
     else {
-      BKE_report(op->reports, RPT_ERROR, "Active button match cannot be found");
-      ret = OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_ERROR, "Active btn match cannot be found");
+      ret = OP_CANCELLED;
     }
 
     ui_editsource_active_but_clear();
@@ -1398,11 +1398,11 @@ static int editsource_exec(bContext *C, wmOperator *op)
     return ret;
   }
 
-  BKE_report(op->reports, RPT_ERROR, "Active button not found");
-  return OPERATOR_CANCELLED;
+  dune_report(op->reports, RPT_ERROR, "Active button not found");
+  return OP_CANCELLED;
 }
 
-static void UI_OT_editsource(wmOperatorType *ot)
+static void UI_OT_editsource(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Edit Source";
@@ -1410,21 +1410,14 @@ static void UI_OT_editsource(wmOperatorType *ot)
   ot->description = "Edit UI source code of the active button";
 
   /* callbacks */
-  ot->exec = editsource_exec;
+  ot->ex = editsource_ex;
 }
 
-/** \} */
+/* Edit Translation Operator */
 
-/* -------------------------------------------------------------------- */
-/** \name Edit Translation Operator
- * \{ */
-
-/**
- * EditTranslation utility funcs and operator,
- *
- * \note this includes utility functions and button matching checks.
- * this only works in conjunction with a Python operator!
- */
+/* EditTranslation utility funcs and operator,
+ * this includes utility functions and button matching checks.
+ * this only works in conjunction with a Python operator! */
 static void edittranslation_find_po_file(const char *root,
                                          const char *uilng,
                                          char *path,
@@ -1433,10 +1426,10 @@ static void edittranslation_find_po_file(const char *root,
   char tstr[32]; /* Should be more than enough! */
 
   /* First, full lang code. */
-  BLI_snprintf(tstr, sizeof(tstr), "%s.po", uilng);
-  BLI_join_dirfile(path, maxlen, root, uilng);
-  BLI_path_append(path, maxlen, tstr);
-  if (BLI_is_file(path)) {
+  lib_snprintf(tstr, sizeof(tstr), "%s.po", uilng);
+  lib_join_dirfile(path, maxlen, root, uilng);
+  lib_path_append(path, maxlen, tstr);
+  if (lib_is_file(path)) {
     return;
   }
 
@@ -1450,20 +1443,20 @@ static void edittranslation_find_po_file(const char *root,
     if (tc) {
       szt = tc - uilng;
       if (szt < sizeof(tstr)) {            /* Paranoid, should always be true! */
-        BLI_strncpy(tstr, uilng, szt + 1); /* +1 for '\0' char! */
+        lib_strncpy(tstr, uilng, szt + 1); /* +1 for '\0' char! */
       }
     }
     if (tstr[0]) {
       /* Because of some codes like sr_SR@latin... */
       tc = strchr(uilng, '@');
       if (tc) {
-        BLI_strncpy(tstr + szt, tc, sizeof(tstr) - szt);
+        lib_strncpy(tstr + szt, tc, sizeof(tstr) - szt);
       }
 
-      BLI_join_dirfile(path, maxlen, root, tstr);
+      lib_join_dirfile(path, maxlen, root, tstr);
       strcat(tstr, ".po");
-      BLI_path_append(path, maxlen, tstr);
-      if (BLI_is_file(path)) {
+      lib_path_append(path, maxlen, tstr);
+      if (lib_is_file(path)) {
         return;
       }
     }
@@ -1473,30 +1466,30 @@ static void edittranslation_find_po_file(const char *root,
   path[0] = '\0';
 }
 
-static int edittranslation_exec(bContext *C, wmOperator *op)
+static int edittranslation_ex(Cxt *C, wmOp *op)
 {
-  uiBut *but = UI_context_active_but_get(C);
-  if (but == NULL) {
-    BKE_report(op->reports, RPT_ERROR, "Active button not found");
-    return OPERATOR_CANCELLED;
+  uiBtn *btn = ui_cxt_active_btn_get(C);
+  if (btn == NULL) {
+    dune_report(op->reports, RPT_ERROR, "Active btn not found");
+    return OP_CANCELLED;
   }
 
-  wmOperatorType *ot;
-  PointerRNA ptr;
+  wmOpType *ot;
+  ApiPtr ptr;
   char popath[FILE_MAX];
   const char *root = U.i18ndir;
-  const char *uilng = BLT_lang_get();
+  const char *uilng = lang_get();
 
-  uiStringInfo but_label = {BUT_GET_LABEL, NULL};
-  uiStringInfo rna_label = {BUT_GET_RNA_LABEL, NULL};
-  uiStringInfo enum_label = {BUT_GET_RNAENUM_LABEL, NULL};
-  uiStringInfo but_tip = {BUT_GET_TIP, NULL};
-  uiStringInfo rna_tip = {BUT_GET_RNA_TIP, NULL};
-  uiStringInfo enum_tip = {BUT_GET_RNAENUM_TIP, NULL};
-  uiStringInfo rna_struct = {BUT_GET_RNASTRUCT_IDENTIFIER, NULL};
-  uiStringInfo rna_prop = {BUT_GET_RNAPROP_IDENTIFIER, NULL};
-  uiStringInfo rna_enum = {BUT_GET_RNAENUM_IDENTIFIER, NULL};
-  uiStringInfo rna_ctxt = {BUT_GET_RNA_LABEL_CONTEXT, NULL};
+  uiStringInfo btn_label = {BTN_GET_LABEL, NULL};
+  uiStringInfo api_label = {BTN_GET_API_LABEL, NULL};
+  uiStringInfo enum_label = {BTN_GET_APIENUM_LABEL, NULL};
+  uiStringInfo but_tip = {BTN_GET_TIP, NULL};
+  uiStringInfo rna_tip = {BTN_GET_API_TIP, NULL};
+  uiStringInfo enum_tip = {BTN_GET_APIENUM_TIP, NULL};
+  uiStringInfo rna_struct = {BTN_GET_APISTRUCT_ID, NULL};
+  uiStringInfo rna_prop = {BTN_GET_APIPROP_ID, NULL};
+  uiStringInfo rna_enum = {BTN_GET_APIENUM_ID, NULL};
+  uiStringInfo api_cxt = {BTN_GET_API_LABEL_CXT, NULL};
 
   if (!BLI_is_dir(root)) {
     BKE_report(op->reports,
