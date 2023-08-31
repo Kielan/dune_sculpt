@@ -609,7 +609,7 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     if (idpath == NULL) {
       /* Check the active EditBone if in edit mode. */
       if (NOT_API_NULL(
-              owner_ptr = cxt_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
+              owner_ptr = cxt_data_ptr_get_type_silent(C, "active_bone", &Api_EditBone)) &&
           NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
         *r_lb = cxt_data_collection_get(C, "selected_editable_bones");
       }
@@ -975,9 +975,9 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
 
 /* Called from both exec & poll.
  *
- * Normally we wouldn't call a loop from within a poll function,
+ * Normally we wouldn't call a loop from within a poll fn,
  * however this is a special case, and for regular poll calls, getting
- * the context from the button will fail early. */
+ * the context from the btn will fail early. */
 static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
 {
   Main *main = cxt_data_main(C);
@@ -1027,70 +1027,66 @@ static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
   }
 
   MEM_SAFE_FREE(path);
-  BLI_freelistN(&lb);
+  lib_freelistn(&lb);
 
   return success;
 }
 
-static bool copy_to_selected_button_poll(bContext *C)
+static bool copy_to_selected_btn_poll(Cxt *C)
 {
-  return copy_to_selected_button(C, false, true);
+  return copy_to_selected_btn(C, false, true);
 }
 
-static int copy_to_selected_button_exec(bContext *C, wmOperator *op)
+static int copy_to_selected_btn_ex(Cxt *C, wmOp *op)
 {
   bool success;
 
-  const bool all = RNA_boolean_get(op->ptr, "all");
+  const bool all = api_bool_get(op->ptr, "all");
 
-  success = copy_to_selected_button(C, all, false);
+  success = copy_to_selected_btn(C, all, false);
 
-  return (success) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+  return (success) ? OP_FINISHED : OPERATOR_CANCELLED;
 }
 
-static void UI_OT_copy_to_selected_button(wmOperatorType *ot)
+static void UI_OT_copy_to_selected_button(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Copy to Selected";
-  ot->idname = "UI_OT_copy_to_selected_button";
-  ot->description = "Copy property from this object to selected objects or bones";
+  ot->idname = "UI_OT_copy_to_selected_btn";
+  ot->description = "Copy prop from this object to selected objects or bones";
 
   /* callbacks */
-  ot->poll = copy_to_selected_button_poll;
-  ot->exec = copy_to_selected_button_exec;
+  ot->poll = copy_to_selected_btn_poll;
+  ot->ex = copy_to_selected_btn_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_boolean(ot->srna, "all", true, "All", "Copy to selected all elements of the array");
+  /* props */
+  api_def_bool(ot->sapi, "all", true, "All", "Copy to selected all elements of the array");
 }
 
-/** \} */
+/* Jump to Target Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Jump to Target Operator
- * \{ */
-
-/** Jump to the object or bone referenced by the pointer, or check if it is possible. */
-static bool jump_to_target_ptr(bContext *C, PointerRNA ptr, const bool poll)
+/** Jump to the object or bone ref by the ptr, or check if it is possible. */
+static bool jump_to_target_ptr(Cxt *C, ApiPtr ptr, const bool poll)
 {
-  if (RNA_pointer_is_null(&ptr)) {
+  if (api_ptr_is_null(&ptr)) {
     return false;
   }
 
   /* Verify pointer type. */
   char bone_name[MAXBONENAME];
-  const StructRNA *target_type = NULL;
+  const ApiStruct *target_type = NULL;
 
-  if (ELEM(ptr.type, &RNA_EditBone, &RNA_PoseBone, &RNA_Bone)) {
-    RNA_string_get(&ptr, "name", bone_name);
+  if (ELEM(ptr.type, &Api_EditBone, &Api_PoseBone, &Api_Bone)) {
+    api_string_get(&ptr, "name", bone_name);
     if (bone_name[0] != '\0') {
-      target_type = &RNA_Bone;
+      target_type = &Api_Bone;
     }
   }
-  else if (RNA_struct_is_a(ptr.type, &RNA_Object)) {
-    target_type = &RNA_Object;
+  else if (api_struct_is_a(ptr.type, &RNA_Object)) {
+    target_type = &Api_Object;
   }
 
   if (target_type == NULL) {
@@ -1098,14 +1094,14 @@ static bool jump_to_target_ptr(bContext *C, PointerRNA ptr, const bool poll)
   }
 
   /* Find the containing Object. */
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Base *base = NULL;
   const short id_type = GS(ptr.owner_id->name);
   if (id_type == ID_OB) {
-    base = BKE_view_layer_base_find(view_layer, (Object *)ptr.owner_id);
+    base = dune_view_layer_base_find(view_layer, (Object *)ptr.owner_id);
   }
   else if (OB_DATA_SUPPORT_ID(id_type)) {
-    base = ED_object_find_first_by_data_id(view_layer, ptr.owner_id);
+    base = ed_object_find_first_by_data_id(view_layer, ptr.owner_id);
   }
 
   bool ok = false;
@@ -1119,57 +1115,55 @@ static bool jump_to_target_ptr(bContext *C, PointerRNA ptr, const bool poll)
     /* Make optional. */
     const bool reveal_hidden = true;
     /* Select and activate the target. */
-    if (target_type == &RNA_Bone) {
-      ok = ED_object_jump_to_bone(C, base->object, bone_name, reveal_hidden);
+    if (target_type == &Api_Bone) {
+      ok = ed_object_jump_to_bone(C, base->object, bone_name, reveal_hidden);
     }
-    else if (target_type == &RNA_Object) {
-      ok = ED_object_jump_to_object(C, base->object, reveal_hidden);
+    else if (target_type == &Api_Object) {
+      ok = ed_object_jump_to_object(C, base->object, reveal_hidden);
     }
     else {
-      BLI_assert(0);
+      lib_assert(0);
     }
   }
   return ok;
 }
 
-/**
- * Jump to the object or bone referred to by the current UI field value.
+/* Jump to the object or bone referred to by the current UI field value.
  *
- * \note quite heavy for a poll callback, but the operator is only
+ * quite heavy for a poll cb, but the op is only
  * used as a right click menu item for certain UI field types, and
- * this will fail quickly if the context is completely unsuitable.
- */
-static bool jump_to_target_button(bContext *C, bool poll)
+ * this will fail quickly if the cxt is completely unsuitable */
+static bool jump_to_target_btn(Cxt *C, bool poll)
 {
-  PointerRNA ptr, target_ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr, target_ptr;
+  ApiProp *prop;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
-  /* If there is a valid property... */
+  /* If there is a valid prop... */
   if (ptr.data && prop) {
-    const PropertyType type = RNA_property_type(prop);
+    const PropType type = api_prop_type(prop);
 
     /* For pointer properties, use their value directly. */
-    if (type == PROP_POINTER) {
-      target_ptr = RNA_property_pointer_get(&ptr, prop);
+    if (type == PROP_PTR) {
+      target_ptr = api_prop_ptr_get(&ptr, prop);
 
       return jump_to_target_ptr(C, target_ptr, poll);
     }
     /* For string properties with prop_search, look up the search collection item. */
     if (type == PROP_STRING) {
-      const uiBut *but = UI_context_active_but_get(C);
-      const uiButSearch *search_but = (but->type == UI_BTYPE_SEARCH_MENU) ? (uiButSearch *)but :
+      const uiBtn *btn = ui_cxt_active_btn_get(C);
+      const uiBtnSearch *search_btn = (btn->type == UI_BTYPE_SEARCH_MENU) ? (uiBtnSearch *)btn :
                                                                             NULL;
 
-      if (search_but && search_but->items_update_fn == ui_rna_collection_search_update_fn) {
-        uiRNACollectionSearch *coll_search = search_but->arg;
+      if (search_btn && search_btn->items_update_fn == ui_api_collection_search_update_fn) {
+        uiApiCollectionSearch *coll_search = search_but->arg;
 
         char str_buf[MAXBONENAME];
-        char *str_ptr = RNA_property_string_get_alloc(&ptr, prop, str_buf, sizeof(str_buf), NULL);
+        char *str_ptr = api_prop_string_get_alloc(&ptr, prop, str_buf, sizeof(str_buf), NULL);
 
-        int found = RNA_property_collection_lookup_string(
+        int found = api_prop_collection_lookup_string(
             &coll_search->search_ptr, coll_search->search_prop, str_ptr, &target_ptr);
 
         if (str_ptr != str_buf) {
@@ -1186,38 +1180,34 @@ static bool jump_to_target_button(bContext *C, bool poll)
   return false;
 }
 
-bool ui_jump_to_target_button_poll(bContext *C)
+bool ui_jump_to_target_btn_poll(Cxt *C)
 {
-  return jump_to_target_button(C, true);
+  return jump_to_target_btn(C, true);
 }
 
-static int jump_to_target_button_exec(bContext *C, wmOperator *UNUSED(op))
+static int jump_to_target_btn_ex(Cxt *C, wmOp *UNUSED(op))
 {
-  const bool success = jump_to_target_button(C, false);
+  const bool success = jump_to_target_btn(C, false);
 
-  return (success) ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+  return (success) ? OP_FINISHED : OP_CANCELLED;
 }
 
-static void UI_OT_jump_to_target_button(wmOperatorType *ot)
+static void UI_OT_jump_to_target_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Jump to Target";
-  ot->idname = "UI_OT_jump_to_target_button";
+  ot->idname = "UI_OT_jump_to_target_btn";
   ot->description = "Switch to the target object or bone";
 
   /* callbacks */
-  ot->poll = ui_jump_to_target_button_poll;
-  ot->exec = jump_to_target_button_exec;
+  ot->poll = ui_jump_to_target_btn_poll;
+  ot->ex = jump_to_target_btn_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit Python Source Operator
- * \{ */
+/* Edit Python Source Operator */
 
 #ifdef WITH_PYTHON
 
@@ -1226,95 +1216,95 @@ static void UI_OT_jump_to_target_button(wmOperatorType *ot)
  * NOTE: this includes utility functions and button matching checks. */
 
 typedef struct uiEditSourceStore {
-  uiBut but_orig;
+  uiBtn btn_orig;
   GHash *hash;
 } uiEditSourceStore;
 
-typedef struct uiEditSourceButStore {
+typedef struct uiEditSourceBtnStore {
   char py_dbg_fn[FILE_MAX];
   int py_dbg_line_number;
-} uiEditSourceButStore;
+} uiEditSourceBtnStore;
 
 /* should only ever be set while the edit source operator is running */
 static struct uiEditSourceStore *ui_editsource_info = NULL;
 
-bool UI_editsource_enable_check(void)
+bool ui_editsource_enable_check(void)
 {
   return (ui_editsource_info != NULL);
 }
 
-static void ui_editsource_active_but_set(uiBut *but)
+static void ui_editsource_active_btn_set(uiBtn *btn)
 {
-  BLI_assert(ui_editsource_info == NULL);
+  lib_assert(ui_editsource_info == NULL);
 
-  ui_editsource_info = MEM_callocN(sizeof(uiEditSourceStore), __func__);
-  memcpy(&ui_editsource_info->but_orig, but, sizeof(uiBut));
+  ui_editsource_info = mem_callocn(sizeof(uiEditSourceStore), __func__);
+  memcpy(&ui_editsource_info->btn_orig, btn, sizeof(uiBtn));
 
-  ui_editsource_info->hash = BLI_ghash_ptr_new(__func__);
+  ui_editsource_info->hash = lib_ghash_ptr_new(__func__);
 }
 
-static void ui_editsource_active_but_clear(void)
+static void ui_editsource_active_btn_clear(void)
 {
-  BLI_ghash_free(ui_editsource_info->hash, NULL, MEM_freeN);
-  MEM_freeN(ui_editsource_info);
+  lib_ghash_free(ui_editsource_info->hash, NULL, mem_freen);
+  mem_freen(ui_editsource_info);
   ui_editsource_info = NULL;
 }
 
-static bool ui_editsource_uibut_match(uiBut *but_a, uiBut *but_b)
+static bool ui_editsource_uibtn_match(uiBtn *btn_a, uiBtn *btn_b)
 {
 #  if 0
-  printf("matching buttons: '%s' == '%s'\n", but_a->drawstr, but_b->drawstr);
+  printf("matching btns: '%s' == '%s'\n", btn_a->drawstr, btn_b->drawstr);
 #  endif
 
   /* this just needs to be a 'good-enough' comparison so we can know beyond
    * reasonable doubt that these buttons are the same between redraws.
    * if this fails it only means edit-source fails - campbell */
-  if (BLI_rctf_compare(&but_a->rect, &but_b->rect, FLT_EPSILON) && (but_a->type == but_b->type) &&
-      (but_a->rnaprop == but_b->rnaprop) && (but_a->optype == but_b->optype) &&
-      (but_a->unit_type == but_b->unit_type) &&
-      STREQLEN(but_a->drawstr, but_b->drawstr, UI_MAX_DRAW_STR)) {
+  if (lib_rctf_compare(&btn_a->rect, &btn_b->rect, FLT_EPSILON) && (btn_a->type == btn_b->type) &&
+      (btn_a->apiprop == btn_b->apiprop) && (btn_a->optype == btn_b->optype) &&
+      (btn_a->unit_type == btn_b->unit_type) &&
+      STREQLEN(but_a->drawstr, btn_b->drawstr, UI_MAX_DRAW_STR)) {
     return true;
   }
   return false;
 }
 
-void UI_editsource_active_but_test(uiBut *but)
+void ui_editsource_active_btn_test(uiBtn *btn)
 {
   extern void PyC_FileAndNum_Safe(const char **r_filename, int *r_lineno);
 
-  struct uiEditSourceButStore *but_store = MEM_callocN(sizeof(uiEditSourceButStore), __func__);
+  struct uiEditSourceBtnStore *btn_store = mem_callocn(sizeof(uiEditSourceBtnStore), __func__);
 
   const char *fn;
   int line_number = -1;
 
 #  if 0
-  printf("comparing buttons: '%s' == '%s'\n", but->drawstr, ui_editsource_info->but_orig.drawstr);
+  printf("comparing btns: '%s' == '%s'\n", btn->drawstr, ui_editsource_info->btn_orig.drawstr);
 #  endif
 
   PyC_FileAndNum_Safe(&fn, &line_number);
 
   if (line_number != -1) {
-    BLI_strncpy(but_store->py_dbg_fn, fn, sizeof(but_store->py_dbg_fn));
-    but_store->py_dbg_line_number = line_number;
+    lib_strncpy(btn_store->py_dbg_fn, fn, sizeof(btn_store->py_dbg_fn));
+    btn_store->py_dbg_line_number = line_number;
   }
   else {
-    but_store->py_dbg_fn[0] = '\0';
-    but_store->py_dbg_line_number = -1;
+    btn_store->py_dbg_fn[0] = '\0';
+    btn_store->py_dbg_line_number = -1;
   }
 
-  BLI_ghash_insert(ui_editsource_info->hash, but, but_store);
+  lin_ghash_insert(ui_editsource_info->hash, btn, btn_store);
 }
 
-void UI_editsource_but_replace(const uiBut *old_but, uiBut *new_but)
+void ui_editsource_btn_replace(const uiBtn *old_btn, uiBtn *new_btn)
 {
-  uiEditSourceButStore *but_store = BLI_ghash_lookup(ui_editsource_info->hash, old_but);
-  if (but_store) {
-    BLI_ghash_remove(ui_editsource_info->hash, old_but, NULL, NULL);
-    BLI_ghash_insert(ui_editsource_info->hash, new_but, but_store);
+  uiEditSourceBtnStore *btn_store = lib_ghash_lookup(ui_editsource_info->hash, old_btn);
+  if (btn_store) {
+    lib_ghash_remove(ui_editsource_info->hash, old_btn, NULL, NULL);
+    lib_ghash_insert(ui_editsource_info->hash, new_btn, btn_store);
   }
 }
 
-static int editsource_text_edit(bContext *C,
+static int editsource_text_edit(Cxt *C,
                                 wmOperator *op,
                                 const char filepath[FILE_MAX],
                                 const int line)
