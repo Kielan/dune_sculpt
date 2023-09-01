@@ -1,104 +1,88 @@
 #pragma once
 
-#include "BLI_compiler_attrs.h"
-#include "BLI_sys_types.h"
+#include "lib_compiler_attrs.h"
+#include "lib_sys_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* enable this only if needed (unused circa 2016) */
-#define BLF_BLUR_ENABLE 0
+#define FONT_BLUR_ENABLE 0
 
 struct ColorManagedDisplay;
-struct ResultBLF;
+struct FontResult;
 struct rctf;
 struct rcti;
 
-int BLF_init(void);
-void BLF_exit(void);
+int font_init(void);
+void font_exit(void);
 
-void BLF_cache_clear(void);
+void font_cache_clear(void);
 
-/**
- * Optional cache flushing function, called before #blf_batch_draw.
- */
-void BLF_cache_flush_set_fn(void (*cache_flush_fn)(void));
+/* Optional cache flushing function, called before font_batch_draw. */
+void font_cache_flush_set_fn(void (*cache_flush_fn)(void));
 
-/**
- * Loads a font, or returns an already loaded font and increments its reference count.
- */
-int BLF_load(const char *name) ATTR_NONNULL();
-int BLF_load_mem(const char *name, const unsigned char *mem, int mem_size) ATTR_NONNULL();
+/* Loads a font, or returns an already loaded font and increments its ref count. */
+int font_load(const char *name) ATTR_NONNULL();
+int font_load_mem(const char *name, const unsigned char *mem, int mem_size) ATTR_NONNULL();
 
-int BLF_load_unique(const char *name) ATTR_NONNULL();
-int BLF_load_mem_unique(const char *name, const unsigned char *mem, int mem_size) ATTR_NONNULL();
+int font_load_unique(const char *name) ATTR_NONNULL();
+int font_load_mem_unique(const char *name, const unsigned char *mem, int mem_size) ATTR_NONNULL();
 
-void BLF_unload(const char *name) ATTR_NONNULL();
-void BLF_unload_id(int fontid);
+void font_unload(const char *name) ATTR_NONNULL();
+void font_unload_id(int fontid);
 
-char *BLF_display_name_from_file(const char *filename);
+char *font_display_name_from_file(const char *filename);
 
-/**
- * Check if font supports a particular glyph.
- */
-bool BLF_has_glyph(int fontid, unsigned int unicode);
+/* Check if font supports a particular glyph. */
+bool font_has_glyph(int fontid, unsigned int unicode);
 
-/**
- * Attach a file with metrics information from memory.
- */
-void BLF_metrics_attach(int fontid, unsigned char *mem, int mem_size);
+/* Attach a file with metrics information from memory. */
+void font_metrics_attach(int fontid, unsigned char *mem, int mem_size);
 
-void BLF_aspect(int fontid, float x, float y, float z);
-void BLF_position(int fontid, float x, float y, float z);
-void BLF_size(int fontid, float size, int dpi);
+void font_aspect(int fontid, float x, float y, float z);
+void font_position(int fontid, float x, float y, float z);
+void font_size(int fontid, float size, int dpi);
 
 /* Goal: small but useful color API. */
-
-void BLF_color4ubv(int fontid, const unsigned char rgba[4]);
-void BLF_color3ubv(int fontid, const unsigned char rgb[3]);
-void BLF_color3ubv_alpha(int fontid, const unsigned char rgb[3], unsigned char alpha);
-void BLF_color4ub(
+void font_color4ubv(int fontid, const unsigned char rgba[4]);
+void font_color3ubv(int fontid, const unsigned char rgb[3]);
+void font_color3ubv_alpha(int fontid, const unsigned char rgb[3], unsigned char alpha);
+void font_color4ub(
     int fontid, unsigned char r, unsigned char g, unsigned char b, unsigned char alpha);
-void BLF_color3ub(int fontid, unsigned char r, unsigned char g, unsigned char b);
-void BLF_color4f(int fontid, float r, float g, float b, float a);
-void BLF_color4fv(int fontid, const float rgba[4]);
-void BLF_color3f(int fontid, float r, float g, float b);
-void BLF_color3fv_alpha(int fontid, const float rgb[3], float alpha);
+void font_color3ub(int fontid, unsigned char r, unsigned char g, unsigned char b);
+void font_color4f(int fontid, float r, float g, float b, float a);
+void font_color4fv(int fontid, const float rgba[4]);
+void font_color3f(int fontid, float r, float g, float b);
+void font_color3fv_alpha(int fontid, const float rgb[3], float alpha);
 /* Also available: `UI_FontThemeColor(fontid, colorid)`. */
 
-/**
- * Set a 4x4 matrix to be multiplied before draw the text.
- * Remember that you need call BLF_enable(BLF_MATRIX)
+/* Set a 4x4 matrix to be multiplied before draw the text.
+ * Remember that you need call font_enable(FONT_MATRIX)
  * to enable this.
  *
  * The order of the matrix is like GL:
- * \code{.unparsed}
  *  | m[0]  m[4]  m[8]  m[12] |
  *  | m[1]  m[5]  m[9]  m[13] |
  *  | m[2]  m[6]  m[10] m[14] |
  *  | m[3]  m[7]  m[11] m[15] |
- * \endcode
  */
-void BLF_matrix(int fontid, const float m[16]);
+void font_matrix(int fontid, const float m[16]);
 
-/**
- * Batch draw-calls together as long as
- * the model-view matrix and the font remain unchanged.
- */
-void BLF_batch_draw_begin(void);
-void BLF_batch_draw_flush(void);
-void BLF_batch_draw_end(void);
+/* Batch draw-calls together as long as
+ * the model-view matrix and the font remain unchanged. */
+void font_batch_draw_begin(void);
+void font_batch_draw_flush(void);
+void font_batch_draw_end(void);
 
-/**
- * Draw the string using the current font.
- */
-void BLF_draw_ex(int fontid, const char *str, size_t str_len, struct ResultBLF *r_info)
+/* Draw the string using the current font. */
+void font_draw_ex(int fontid, const char *str, size_t str_len, struct FontResult *r_info)
     ATTR_NONNULL(2);
-void BLF_draw(int fontid, const char *str, size_t str_len) ATTR_NONNULL(2);
-int BLF_draw_mono(int fontid, const char *str, size_t str_len, int cwidth) ATTR_NONNULL(2);
+void font_draw(int fontid, const char *str, size_t str_len) ATTR_NONNULL(2);
+int font_draw_mono(int fontid, const char *str, size_t str_len, int cwidth) ATTR_NONNULL(2);
 
-typedef bool (*BLF_GlyphBoundsFn)(const char *str,
+typedef bool (*FontGlyphBoundsFn)(const char *str,
                                   size_t str_step_ofs,
                                   const struct rcti *glyph_step_bounds,
                                   int glyph_advance_x,
@@ -106,47 +90,38 @@ typedef bool (*BLF_GlyphBoundsFn)(const char *str,
                                   const int glyph_bearing[2],
                                   void *user_data);
 
-/**
- * Run \a user_fn for each character, with the bound-box that would be used for drawing.
+/* Run user_fn for each character, with the bound-box that would be used for drawing.
  *
- * \param user_fn: Callback that runs on each glyph, returning false early exits.
- * \param user_data: User argument passed to \a user_fn.
- *
- * \note The font position, clipping, matrix and rotation are not applied.
- */
-void BLF_boundbox_foreach_glyph_ex(int fontid,
+ * param user_fn: Cb that runs on each glyph, returning false early exits.
+ * param user_data: User argument passed to user_fn.
+ * The font position, clipping, matrix and rotation are not applied */
+void font_boundbox_foreach_glyph_ex(int fontid,
                                    const char *str,
                                    size_t str_len,
-                                   BLF_GlyphBoundsFn user_fn,
+                                   FontGlyphBoundsFn user_fn,
                                    void *user_data,
-                                   struct ResultBLF *r_info) ATTR_NONNULL(2);
-void BLF_boundbox_foreach_glyph(int fontid,
+                                   struct FontResult *r_info) ATTR_NONNULL(2);
+void font_boundbox_foreach_glyph(int fontid,
                                 const char *str,
                                 size_t str_len,
-                                BLF_GlyphBoundsFn user_fn,
+                                FontGlyphBoundsFn user_fn,
                                 void *user_data) ATTR_NONNULL(2);
 
-/**
- * Get the string byte offset that fits within a given width.
- */
-size_t BLF_width_to_strlen(
+/* Get the string byte offset that fits within a given width. */
+size_t font_width_to_strlen(
     int fontid, const char *str, size_t str_len, float width, float *r_width) ATTR_NONNULL(2);
-/**
- * Same as BLF_width_to_strlen but search from the string end.
- */
-size_t BLF_width_to_rstrlen(
+/* Same as font_width_to_strlen but search from the string end. */
+size_t font_width_to_rstrlen(
     int fontid, const char *str, size_t str_len, float width, float *r_width) ATTR_NONNULL(2);
 
-/**
- * This function return the bounding box of the string
- * and are not multiplied by the aspect.
- */
-void BLF_boundbox_ex(int fontid,
+/* This fn return the bounding box of the string
+ * and are not multiplied by the aspect. */
+void font_boundbox_ex(int fontid,
                      const char *str,
                      size_t str_len,
                      struct rctf *box,
                      struct FontResult *r_info) ATTR_NONNULL(2);
-void BLF_boundbox(int fontid, const char *str, size_t str_len, struct rctf *box) ATTR_NONNULL();
+void font_boundbox(int fontid, const char *str, size_t str_len, struct rctf *box) ATTR_NONNULL();
 
 /* The next both fn return the width and height
  * of the string, using the current font and both value
