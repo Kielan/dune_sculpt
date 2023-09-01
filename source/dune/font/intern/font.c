@@ -1,10 +1,5 @@
-/** \file
- * \ingroup blf
- *
- * Main BlenFont (BLF) API, public functions for font handling.
- *
- * Wraps OpenGL and FreeType.
- */
+/* Main Font API, public fns for font handling.
+ * Wraps OpenGL and FreeType. */
 
 #include <math.h>
 #include <stdio.h>
@@ -16,26 +11,25 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
-#include "BLI_threads.h"
+#include "lib_math.h"
+#include "lib_threads.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "IMB_colormanagement.h"
+#include "imbuf_colormanagement.h"
 
-#include "GPU_matrix.h"
-#include "GPU_shader.h"
+#include "gpu_matrix.h"
+#include "gpu_shader.h"
 
-#include "blf_internal.h"
-#include "blf_internal_types.h"
+#include "font_internal.h"
+#include "font_internal_types.h"
 
 /* Max number of font in memory.
  * Take care that now every font have a glyph cache per size/dpi,
  * so we don't need load the same font with different size, just
- * load one and call BLF_size.
- */
+ * load one and call BLF_size. */
 #define BLF_MAX_FONT 16
 
 #define BLF_RESULT_CHECK_INIT(r_info) \
