@@ -1,10 +1,5 @@
-/** \file
- * \ingroup blf
- *
- * Deals with drawing text to OpenGL or bitmap buffers.
- *
- * Also low level functions for managing \a FontBLF.
- */
+/* Deals with drawing text to OpenGL or bitmap buffers.
+ * Also low level fns for managing Font Struct. */
 
 #include <math.h>
 #include <stdio.h>
@@ -16,54 +11,49 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_vec_types.h"
+#include "types_vec.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_color_blend.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_threads.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_math_color_blend.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_string_utf8.h"
+#include "lib_threads.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "GPU_batch.h"
-#include "GPU_matrix.h"
+#include "gpu_batch.h"
+#include "gpu_matrix.h"
 
-#include "blf_internal.h"
-#include "blf_internal_types.h"
+#include "font_internal.h"
+#include "font_internal_types.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 #ifdef WIN32
 #  define FT_New_Face FT_New_Face__win32_compat
 #endif
 
 /* Batching buffer for drawing. */
-
-BatchBLF g_batch;
+FontBatch g_batch;
 
 /* freetype2 handle ONLY for this file! */
 static FT_Library ft_lib;
 static SpinLock ft_lib_mutex;
 static SpinLock blf_glyph_cache_mutex;
 
-/* May be set to #UI_widgetbase_draw_cache_flush. */
-static void (*blf_draw_cache_flush)(void) = NULL;
+/* May be set to ui_widgetbase_draw_cache_flush. */
+static void (*font_draw_cache_flush)(void) = NULL;
 
-/* -------------------------------------------------------------------- */
-/** \name FreeType Utilities (Internal)
- * \{ */
+/* FreeType Utilities (Internal) */
 
-/**
- * Convert a FreeType 26.6 value representing an unscaled design size to pixels.
+/* Convert a FreeType 26.6 value representing an unscaled design size to pixels.
  * This is an exact copy of the scaling done inside FT_Get_Kerning when called
- * with #FT_KERNING_DEFAULT, including arbitrary resizing for small fonts.
- */
-static int blf_unscaled_F26Dot6_to_pixels(FontBLF *font, FT_Pos value)
+ * with FT_KERNING_DEFAULT, including arbitrary resizing for small fonts. */
+static int fong_unscaled_F26Dot6_to_pixels(Font *font, FT_Pos value)
 {
   /* Scale value by font size using integer-optimized multiplication. */
   FT_Long scaled = FT_MulFix(value, font->face->size->metrics.x_scale);
@@ -84,59 +74,53 @@ static int blf_unscaled_F26Dot6_to_pixels(FontBLF *font, FT_Pos value)
 #undef FT_PIX_ROUND
 }
 
-/** \} */
+/* Glyph Batching */
 
-/* -------------------------------------------------------------------- */
-/** \name Glyph Batching
- * \{ */
-
-/**
- * Draw-calls are precious! make them count!
+/* Draw-calls are precious! make them count!
  * Since most of the Text elements are not covered by other UI elements, we can
  * group some strings together and render them in one draw-call. This behavior
- * is on demand only, between #BLF_batch_draw_begin() and #BLF_batch_draw_end().
- */
-static void blf_batch_draw_init(void)
+ * is on demand only, between font_batch_draw_begin() and font_batch_draw_end(). */
+static void font_batch_draw_init(void)
 {
   GPUVertFormat format = {0};
-  g_batch.pos_loc = GPU_vertformat_attr_add(&format, "pos", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
-  g_batch.col_loc = GPU_vertformat_attr_add(
+  g_batch.pos_loc = gpu_vertformat_attr_add(&format, "pos", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+  g_batch.col_loc = gpu_vertformat_attr_add(
       &format, "col", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
-  g_batch.offset_loc = GPU_vertformat_attr_add(&format, "offset", GPU_COMP_I32, 1, GPU_FETCH_INT);
-  g_batch.glyph_size_loc = GPU_vertformat_attr_add(
+  g_batch.offset_loc = gpu_vertformat_attr_add(&format, "offset", GPU_COMP_I32, 1, GPU_FETCH_INT);
+  g_batch.glyph_size_loc = gpu_vertformat_attr_add(
       &format, "glyph_size", GPU_COMP_I32, 2, GPU_FETCH_INT);
 
   g_batch.verts = GPU_vertbuf_create_with_format_ex(&format, GPU_USAGE_STREAM);
-  GPU_vertbuf_data_alloc(g_batch.verts, BLF_BATCH_DRAW_LEN_MAX);
+  gpu_vertbuf_data_alloc(g_batch.verts, FONT_BATCH_DRAW_LEN_MAX);
 
-  GPU_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.pos_loc, &g_batch.pos_step);
-  GPU_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.col_loc, &g_batch.col_step);
-  GPU_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.offset_loc, &g_batch.offset_step);
-  GPU_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.glyph_size_loc, &g_batch.glyph_size_step);
+  gpu_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.pos_loc, &g_batch.pos_step);
+  gpu_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.col_loc, &g_batch.col_step);
+  gpu_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.offset_loc, &g_batch.offset_step);
+  gpu_vertbuf_attr_get_raw_data(g_batch.verts, g_batch.glyph_size_loc, &g_batch.glyph_size_step);
   g_batch.glyph_len = 0;
 
   /* A dummy VBO containing 4 points, attributes are not used. */
-  GPUVertBuf *vbo = GPU_vertbuf_create_with_format(&format);
-  GPU_vertbuf_data_alloc(vbo, 4);
+  GPUVertBuf *vbo = gpu_vertbuf_create_with_format(&format);
+  gpu_vertbuf_data_alloc(vbo, 4);
 
   /* We render a quad as a triangle strip and instance it for each glyph. */
-  g_batch.batch = GPU_batch_create_ex(GPU_PRIM_TRI_STRIP, vbo, NULL, GPU_BATCH_OWNS_VBO);
-  GPU_batch_instbuf_set(g_batch.batch, g_batch.verts, true);
+  g_batch.batch = gpu_batch_create_ex(GPU_PRIM_TRI_STRIP, vbo, NULL, GPU_BATCH_OWNS_VBO);
+  gpu_batch_instbuf_set(g_batch.batch, g_batch.verts, true);
 }
 
-static void blf_batch_draw_exit(void)
+static void font_batch_draw_exit(void)
 {
   GPU_BATCH_DISCARD_SAFE(g_batch.batch);
 }
 
-void blf_batch_draw_begin(FontBLF *font)
+void font_batch_draw_begin(Font *font)
 {
   if (g_batch.batch == NULL) {
-    blf_batch_draw_init();
+    font_batch_draw_init();
   }
 
   const bool font_changed = (g_batch.font != font);
-  const bool simple_shader = ((font->flags & (BLF_ROTATION | BLF_MATRIX | BLF_ASPECT)) == 0);
+  const bool simple_shader = ((font->flags & (FONT_ROTATION | FONT_MATRIX | FONT_ASPECT)) == 0);
   const bool shader_changed = (simple_shader != g_batch.simple_shader);
 
   g_batch.active = g_batch.enabled && simple_shader;
@@ -153,20 +137,20 @@ void blf_batch_draw_begin(FontBLF *font)
 
   if (g_batch.active) {
     float gpumat[4][4];
-    GPU_matrix_model_view_get(gpumat);
+    gpu_matrix_model_view_get(gpumat);
 
     bool mat_changed = (memcmp(gpumat, g_batch.mat, sizeof(g_batch.mat)) != 0);
 
     if (mat_changed) {
       /* Modelviewmat is no longer the same.
        * Flush cache but with the previous mat. */
-      GPU_matrix_push();
-      GPU_matrix_set(g_batch.mat);
+      gpu_matrix_push();
+      gpu_matrix_set(g_batch.mat);
     }
 
     /* flush cache if config is not the same. */
     if (mat_changed || font_changed || shader_changed) {
-      blf_batch_draw();
+      font_batch_draw();
       g_batch.simple_shader = simple_shader;
       g_batch.font = font;
     }
@@ -176,27 +160,27 @@ void blf_batch_draw_begin(FontBLF *font)
     }
 
     if (mat_changed) {
-      GPU_matrix_pop();
+      gpu_matrix_pop();
       /* Save for next memcmp. */
       memcpy(g_batch.mat, gpumat, sizeof(g_batch.mat));
     }
   }
   else {
     /* flush cache */
-    blf_batch_draw();
+    font_batch_draw();
     g_batch.font = font;
     g_batch.simple_shader = simple_shader;
   }
 }
 
-static GPUTexture *blf_batch_cache_texture_load(void)
+static GPUTexture *font_batch_cache_texture_load(void)
 {
-  GlyphCacheBLF *gc = g_batch.glyph_cache;
-  BLI_assert(gc);
-  BLI_assert(gc->bitmap_len > 0);
+  FontGlyphCache *gc = g_batch.glyph_cache;
+  lib_assert(gc);
+  lib_assert(gc->bitmap_len > 0);
 
   if (gc->bitmap_len > gc->bitmap_len_landed) {
-    const int tex_width = GPU_texture_width(gc->texture);
+    const int tex_width = gpu_texture_width(gc->texture);
 
     int bitmap_len_landed = gc->bitmap_len_landed;
     int remain = gc->bitmap_len - bitmap_len_landed;
@@ -229,13 +213,13 @@ static GPUTexture *blf_batch_cache_texture_load(void)
   return gc->texture;
 }
 
-void blf_batch_draw(void)
+void font_batch_draw(void)
 {
   if (g_batch.glyph_len == 0) {
     return;
   }
 
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 
   /* We need to flush widget base first to ensure correct ordering. */
   if (blf_draw_cache_flush != NULL) {
