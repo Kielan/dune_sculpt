@@ -870,3 +870,480 @@ void font_font_boundbox_foreach_glyph(FontBLF *font,
   blf_font_boundbox_foreach_glyph_ex(font, gc, str, str_len, user_fn, user_data, r_info, 0);
   blf_glyph_cache_release(font);
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Text Evaluation: Word-Wrap with Callback
+ * \{ */
+
+/**
+ * Generic function to add word-wrap support for other existing functions.
+ *
+ * Wraps on spaces and respects newlines.
+ * Intentionally ignores non-unix newlines, tabs and more advanced text formatting.
+ *
+ * \note If we want rich text - we better have a higher level API to handle that
+ * (color, bold, switching fonts... etc).
+ */
+static void blf_font_wrap_apply(FontBLF *font,
+                                const char *str,
+                                const size_t str_len,
+                                struct ResultBLF *r_info,
+                                void (*callback)(FontBLF *font,
+                                                 GlyphCacheBLF *gc,
+                                                 const char *str,
+                                                 const size_t str_len,
+                                                 int pen_y,
+                                                 void *userdata),
+                                void *userdata)
+{
+  GlyphBLF *g, *g_prev = NULL;
+  int pen_x = 0, pen_y = 0;
+  size_t i = 0;
+  int lines = 0;
+  int pen_x_next = 0;
+
+  GlyphCacheBLF *gc = blf_glyph_cache_acquire(font);
+
+  struct WordWrapVars {
+    int wrap_width;
+    size_t start, last[2];
+  } wrap = {font->wrap_width != -1 ? font->wrap_width : INT_MAX, 0, {0, 0}};
+
+  // printf("%s wrapping (%d, %d) `%s`:\n", __func__, str_len, strlen(str), str);
+  while ((i < str_len) && str[i]) {
+
+    /* wrap vars */
+    size_t i_curr = i;
+    bool do_draw = false;
+
+    g = blf_glyph_from_utf8_and_step(font, gc, str, str_len, &i);
+
+    if (UNLIKELY(g == NULL)) {
+      continue;
+    }
+    pen_x += blf_kerning(font, g_prev, g);
+
+    /**
+     * Implementation Detail (utf8).
+     *
+     * Take care with single byte offsets here,
+     * since this is utf8 we can't be sure a single byte is a single character.
+     *
+     * This is _only_ done when we know for sure the character is ascii (newline or a space).
+     */
+    pen_x_next = pen_x + g->advance_i;
+    if (UNLIKELY((pen_x_next >= wrap.wrap_width) && (wrap.start != wrap.last[0]))) {
+      do_draw = true;
+    }
+    else if (UNLIKELY(((i < str_len) && str[i]) == 0)) {
+      /* need check here for trailing newline, else we draw it */
+      wrap.last[0] = i + ((g->c != '\n') ? 1 : 0);
+      wrap.last[1] = i;
+      do_draw = true;
+    }
+    else if (UNLIKELY(g->c == '\n')) {
+      wrap.last[0] = i_curr + 1;
+      wrap.last[1] = i;
+      do_draw = true;
+    }
+    else if (UNLIKELY(g->c != ' ' && (g_prev ? g_prev->c == ' ' : false))) {
+      wrap.last[0] = i_curr;
+      wrap.last[1] = i_curr;
+    }
+
+    if (UNLIKELY(do_draw)) {
+      // printf("(%03d..%03d)  `%.*s`\n",
+      //        wrap.start, wrap.last[0], (wrap.last[0] - wrap.start) - 1, &str[wrap.start]);
+
+      callback(font, gc, &str[wrap.start], (wrap.last[0] - wrap.start) - 1, pen_y, userdata);
+      wrap.start = wrap.last[0];
+      i = wrap.last[1];
+      pen_x = 0;
+      pen_y -= blf_font_height_max(font);
+      g_prev = NULL;
+      lines += 1;
+      continue;
+    }
+
+    pen_x = pen_x_next;
+    g_prev = g;
+  }
+
+  // printf("done! lines: %d, width, %d\n", lines, pen_x_next);
+
+  if (r_info) {
+    r_info->lines = lines;
+    /* width of last line only (with wrapped lines) */
+    r_info->width = pen_x_next;
+  }
+
+  blf_glyph_cache_release(font);
+}
+
+/* blf_font_draw__wrap */
+static void blf_font_draw__wrap_cb(FontBLF *font,
+                                   GlyphCacheBLF *gc,
+                                   const char *str,
+                                   const size_t str_len,
+                                   int pen_y,
+                                   void *UNUSED(userdata))
+{
+  blf_font_draw_ex(font, gc, str, str_len, NULL, pen_y);
+}
+void blf_font_draw__wrap(FontBLF *font,
+                         const char *str,
+                         const size_t str_len,
+                         struct ResultBLF *r_info)
+{
+  blf_font_wrap_apply(font, str, str_len, r_info, blf_font_draw__wrap_cb, NULL);
+}
+
+/* blf_font_boundbox__wrap */
+static void blf_font_boundbox_wrap_cb(FontBLF *font,
+                                      GlyphCacheBLF *gc,
+                                      const char *str,
+                                      const size_t str_len,
+                                      int pen_y,
+                                      void *userdata)
+{
+  rctf *box = userdata;
+  rctf box_single;
+
+  blf_font_boundbox_ex(font, gc, str, str_len, &box_single, NULL, pen_y);
+  BLI_rctf_union(box, &box_single);
+}
+void blf_font_boundbox__wrap(
+    FontBLF *font, const char *str, const size_t str_len, rctf *box, struct ResultBLF *r_info)
+{
+  box->xmin = 32000.0f;
+  box->xmax = -32000.0f;
+  box->ymin = 32000.0f;
+  box->ymax = -32000.0f;
+
+  blf_font_wrap_apply(font, str, str_len, r_info, blf_font_boundbox_wrap_cb, box);
+}
+
+/* blf_font_draw_buffer__wrap */
+static void blf_font_draw_buffer__wrap_cb(FontBLF *font,
+                                          GlyphCacheBLF *gc,
+                                          const char *str,
+                                          const size_t str_len,
+                                          int pen_y,
+                                          void *UNUSED(userdata))
+{
+  blf_font_draw_buffer_ex(font, gc, str, str_len, NULL, pen_y);
+}
+void blf_font_draw_buffer__wrap(FontBLF *font,
+                                const char *str,
+                                const size_t str_len,
+                                struct ResultBLF *r_info)
+{
+  blf_font_wrap_apply(font, str, str_len, r_info, blf_font_draw_buffer__wrap_cb, NULL);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Text Evaluation: Count Missing Characters
+ * \{ */
+
+int blf_font_count_missing_chars(FontBLF *font,
+                                 const char *str,
+                                 const size_t str_len,
+                                 int *r_tot_chars)
+{
+  int missing = 0;
+  size_t i = 0;
+
+  *r_tot_chars = 0;
+  while (i < str_len) {
+    unsigned int c;
+
+    if ((c = str[i]) < GLYPH_ASCII_TABLE_SIZE) {
+      i++;
+    }
+    else {
+      c = BLI_str_utf8_as_unicode_step(str, str_len, &i);
+      if (FT_Get_Char_Index((font)->face, c) == 0) {
+        missing++;
+      }
+    }
+    (*r_tot_chars)++;
+  }
+  return missing;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Font Query: Attributes
+ * \{ */
+
+int blf_font_height_max(FontBLF *font)
+{
+  int height_max;
+  if (FT_IS_SCALABLE(font->face)) {
+    height_max = (int)((float)(font->face->ascender - font->face->descender) *
+                       (((float)font->face->size->metrics.y_ppem) /
+                        ((float)font->face->units_per_EM)));
+  }
+  else {
+    height_max = (int)(((float)font->face->size->metrics.height) / 64.0f);
+  }
+  /* can happen with size 1 fonts */
+  return MAX2(height_max, 1);
+}
+
+int blf_font_width_max(FontBLF *font)
+{
+  int width_max;
+  if (FT_IS_SCALABLE(font->face)) {
+    width_max = (int)((float)(font->face->bbox.xMax - font->face->bbox.xMin) *
+                      (((float)font->face->size->metrics.x_ppem) /
+                       ((float)font->face->units_per_EM)));
+  }
+  else {
+    width_max = (int)(((float)font->face->size->metrics.max_advance) / 64.0f);
+  }
+  /* can happen with size 1 fonts */
+  return MAX2(width_max, 1);
+}
+
+float blf_font_descender(FontBLF *font)
+{
+  return ((float)font->face->size->metrics.descender) / 64.0f;
+}
+
+float blf_font_ascender(FontBLF *font)
+{
+  return ((float)font->face->size->metrics.ascender) / 64.0f;
+}
+
+char *blf_display_name(FontBLF *font)
+{
+  if (!font->face->family_name) {
+    return NULL;
+  }
+  return BLI_sprintfN("%s %s", font->face->family_name, font->face->style_name);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Font Subsystem Init/Exit
+ * \{ */
+
+int blf_font_init(void)
+{
+  memset(&g_batch, 0, sizeof(g_batch));
+  BLI_spin_init(&ft_lib_mutex);
+  BLI_spin_init(&blf_glyph_cache_mutex);
+  return FT_Init_FreeType(&ft_lib);
+}
+
+void blf_font_exit(void)
+{
+  FT_Done_FreeType(ft_lib);
+  BLI_spin_end(&ft_lib_mutex);
+  BLI_spin_end(&blf_glyph_cache_mutex);
+  blf_batch_draw_exit();
+}
+
+void BLF_cache_flush_set_fn(void (*cache_flush_fn)(void))
+{
+  blf_draw_cache_flush = cache_flush_fn;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Font New/Free
+ * \{ */
+
+static void blf_font_fill(FontBLF *font)
+{
+  font->aspect[0] = 1.0f;
+  font->aspect[1] = 1.0f;
+  font->aspect[2] = 1.0f;
+  font->pos[0] = 0.0f;
+  font->pos[1] = 0.0f;
+  font->angle = 0.0f;
+
+  for (int i = 0; i < 16; i++) {
+    font->m[i] = 0;
+  }
+
+  /* annoying bright color so we can see where to add BLF_color calls */
+  font->color[0] = 255;
+  font->color[1] = 255;
+  font->color[2] = 0;
+  font->color[3] = 255;
+
+  font->clip_rec.xmin = 0.0f;
+  font->clip_rec.xmax = 0.0f;
+  font->clip_rec.ymin = 0.0f;
+  font->clip_rec.ymax = 0.0f;
+  font->flags = 0;
+  font->dpi = 0;
+  font->size = 0;
+  BLI_listbase_clear(&font->cache);
+  font->kerning_cache = NULL;
+#if BLF_BLUR_ENABLE
+  font->blur = 0;
+#endif
+  font->tex_size_max = -1;
+
+  font->buf_info.fbuf = NULL;
+  font->buf_info.cbuf = NULL;
+  font->buf_info.dims[0] = 0;
+  font->buf_info.dims[1] = 0;
+  font->buf_info.ch = 0;
+  font->buf_info.col_init[0] = 0;
+  font->buf_info.col_init[1] = 0;
+  font->buf_info.col_init[2] = 0;
+  font->buf_info.col_init[3] = 0;
+
+  font->ft_lib = ft_lib;
+  font->ft_lib_mutex = &ft_lib_mutex;
+  font->glyph_cache_mutex = &blf_glyph_cache_mutex;
+}
+
+FontBLF *blf_font_new(const char *name, const char *filename)
+{
+  FontBLF *font;
+  FT_Error err;
+  char *mfile;
+
+  font = (FontBLF *)MEM_callocN(sizeof(FontBLF), "blf_font_new");
+  err = FT_New_Face(ft_lib, filename, 0, &font->face);
+  if (err) {
+    if (ELEM(err, FT_Err_Unknown_File_Format, FT_Err_Unimplemented_Feature)) {
+      printf("Format of this font file is not supported\n");
+    }
+    else {
+      printf("Error encountered while opening font file\n");
+    }
+    MEM_freeN(font);
+    return NULL;
+  }
+
+  err = FT_Select_Charmap(font->face, FT_ENCODING_UNICODE);
+  if (err) {
+    err = FT_Select_Charmap(font->face, FT_ENCODING_APPLE_ROMAN);
+  }
+  if (err && font->face->num_charmaps > 0) {
+    err = FT_Select_Charmap(font->face, font->face->charmaps[0]->encoding);
+  }
+  if (err) {
+    printf("Can't set a character map!\n");
+    FT_Done_Face(font->face);
+    MEM_freeN(font);
+    return NULL;
+  }
+
+  mfile = blf_dir_metrics_search(filename);
+  if (mfile) {
+    err = FT_Attach_File(font->face, mfile);
+    if (err) {
+      fprintf(stderr, "FT_Attach_File failed to load '%s' with error %d\n", filename, (int)err);
+    }
+    MEM_freeN(mfile);
+  }
+
+  font->name = BLI_strdup(name);
+  font->filename = BLI_strdup(filename);
+  blf_font_fill(font);
+
+  if (FT_HAS_KERNING(font->face)) {
+    /* Create kerning cache table and fill with value indicating "unset". */
+    font->kerning_cache = MEM_mallocN(sizeof(KerningCacheBLF), __func__);
+    for (uint i = 0; i < KERNING_CACHE_TABLE_SIZE; i++) {
+      for (uint j = 0; j < KERNING_CACHE_TABLE_SIZE; j++) {
+        font->kerning_cache->ascii_table[i][j] = KERNING_ENTRY_UNSET;
+      }
+    }
+  }
+
+  return font;
+}
+
+void blf_font_attach_from_mem(FontBLF *font, const unsigned char *mem, int mem_size)
+{
+  FT_Open_Args open;
+
+  open.flags = FT_OPEN_MEMORY;
+  open.memory_base = (const FT_Byte *)mem;
+  open.memory_size = mem_size;
+  FT_Attach_Stream(font->face, &open);
+}
+
+FontBLF *blf_font_new_from_mem(const char *name, const unsigned char *mem, int mem_size)
+{
+  FontBLF *font;
+  FT_Error err;
+
+  font = (FontBLF *)MEM_callocN(sizeof(FontBLF), "blf_font_new_from_mem");
+  err = FT_New_Memory_Face(ft_lib, mem, mem_size, 0, &font->face);
+  if (err) {
+    MEM_freeN(font);
+    return NULL;
+  }
+
+  err = FT_Select_Charmap(font->face, ft_encoding_unicode);
+  if (err) {
+    printf("Can't set the unicode character map!\n");
+    FT_Done_Face(font->face);
+    MEM_freeN(font);
+    return NULL;
+  }
+
+  font->name = BLI_strdup(name);
+  font->filename = NULL;
+  blf_font_fill(font);
+  return font;
+}
+
+void blf_font_free(FontBLF *font)
+{
+  blf_glyph_cache_clear(font);
+
+  if (font->kerning_cache) {
+    MEM_freeN(font->kerning_cache);
+  }
+
+  FT_Done_Face(font->face);
+  if (font->filename) {
+    MEM_freeN(font->filename);
+  }
+  if (font->name) {
+    MEM_freeN(font->name);
+  }
+  MEM_freeN(font);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Font Configure
+ * \{ */
+
+bool blf_font_size(FontBLF *font, float size, unsigned int dpi)
+{
+  /* FreeType uses fixed-point integers in 64ths. */
+  FT_F26Dot6 ft_size = lroundf(size * 64.0f);
+  /* Adjust our new size to be on even 64ths. */
+  size = (float)ft_size / 64.0f;
+
+  if (font->size != size || font->dpi != dpi) {
+    if (FT_Set_Char_Size(font->face, 0, ft_size, dpi, dpi) == 0) {
+      font->size = size;
+      font->dpi = dpi;
+    }
+    else {
+      printf("The current font does not support the size, %f and dpi, %u\n", size, dpi);
+      return false;
+    }
+  }
+
+  return true;
+}
