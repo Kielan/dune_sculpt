@@ -14,14 +14,14 @@
 #include "lib_assert.h"
 #include "lib_utildefines.h"
 
-#include "gpu_context.h"
+#include "gpu_cxt.h"
 #include "gpu_framebuffer.h"
 
 #include "GHOST_C-api.h"
 
 #include "gpu_backend.hh"
 #include "gpu_batch_private.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_matrix_private.h"
 
 #ifdef WITH_OPENGL_BACKEND
@@ -37,19 +37,19 @@
 
 using namespace dune::gpu;
 
-static thread_local Context *active_ctx = nullptr;
+static thread_local Cxt *active_cxt = nullptr;
 
-/* gpu::Context methods **/
+/* gpu::Cxt methods **/
 namespace dune::gpu {
 
-Context::Context()
+Cxt::Cxt()
 {
   thread_ = pthread_self();
   is_active_ = false;
   matrix_state = gpu_matrix_state_create();
 }
 
-Context::~Context()
+Cxt::~Cxt()
 {
   gpu_matrix_state_discard(matrix_state);
   delete state_manager;
@@ -60,12 +60,12 @@ Context::~Context()
   delete imm;
 }
 
-bool Context::is_active_on_thread()
+bool Cxt::is_active_on_thread()
 {
   return (this == active_cxt) && pthread_equal(pthread_self(), thread_);
 }
 
-Context *Context::get()
+Cxt *Cxt::get()
 {
   return active_cxt;
 }
