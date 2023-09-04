@@ -26,7 +26,7 @@
 #include "lib_sys_types.h" /* for intptr_t support */
 
 #include "gpu_codegen.h"
-#include "gpu_material_library.h"
+#include "gpu_material_lib.h"
 #include "gpu_node_graph.h"
 
 #include <stdarg.h>
@@ -39,8 +39,7 @@ extern char datatoc_gpu_shader_common_obinfos_lib_glsl[];
 /**
  * Internal shader cache: This prevent the shader recompilation / stall when
  * using undo/redo AND also allows for GPUPass reuse if the Shader code is the
- * same for 2 different Materials. Unused GPUPasses are free by Garbage collection.
- */
+ * same for 2 different Materials. Unused GPUPasses are free by Garbage collection */
 
 /* Only use one linked-list that contains the GPUPasses grouped by hash. */
 static GPUPass *pass_cache = NULL;
@@ -102,7 +101,6 @@ static GPUPass *gpu_pass_cache_resolve_collision(GPUPass *pass,
 }
 
 /* GLSL code generation */
-
 static void codegen_convert_datatype(DynStr *ds, int from, int to, const char *tmp, int id)
 {
   char name[1024];
@@ -264,16 +262,14 @@ static void codegen_set_unique_ids(GPUNodeGraph *graph)
       input->id = id++;
     }
 
-    LISTBASE_FOREACH (GPUOutput *, output, &node->outputs) {
+    LIST_FOREACH (GPUOutput *, output, &node->outputs) {
       /* set id for unique names of tmp variables storing output */
       output->id = id++;
     }
   }
 }
 
-/**
- * It will create an UBO for GPUMaterial if there is any GPU_DYNAMIC_UBO.
- */
+/* It will create an UBO for GPUMaterial if there is any GPU_DYNAMIC_UBO */
 static int codegen_process_uniforms_functions(GPUMaterial *material,
                                               DynStr *ds,
                                               GPUNodeGraph *graph)
@@ -283,7 +279,7 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
   ListBase ubo_inputs = {NULL, NULL};
 
   /* Textures */
-  LISTBASE_FOREACH (GPUMaterialTexture *, tex, &graph->textures) {
+  LIST_FOREACH (GPUMaterialTexture *, tex, &graph->textures) {
     if (tex->colorband) {
       lib_dynstr_appendf(ds, "uniform sampler1DArray %s;\n", tex->sampler_name);
     }
@@ -297,15 +293,14 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
   }
 
   /* Volume Grids */
-  LISTBASE_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
+  LIST_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
     lib_dynstr_appendf(ds, "uniform sampler3D %s;\n", grid->sampler_name);
     lib_dynstr_appendf(ds, "uniform mat4 %s = mat4(0.0);\n", grid->transform_name);
   }
 
   /* Print other uniforms */
-
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
-    LISTBASE_FOREACH (GPUInput *, input, &node->inputs) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
+    LIST_FOREACH (GPUInput *, input, &node->inputs) {
       if (input->source == GPU_SOURCE_BUILTIN) {
         /* only define each builtin uniform/varying once */
         if (!(builtins & input->builtin)) {
@@ -346,7 +341,7 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
     /* Inputs are sorted */
     lib_dynstr_appendf(ds, "\nlayout (std140) uniform %s {\n", GPU_UBO_BLOCK_NAME);
 
-    LISTBASE_FOREACH (LinkData *, link, &ubo_inputs) {
+    LIST_FOREACH (LinkData *, link, &ubo_inputs) {
       GPUInput *input = (GPUInput *)(link->data);
       lib_dynstr_appendf(ds, "  %s unf%d;\n", gpu_data_type_to_string(input->type), input->id);
     }
@@ -357,7 +352,7 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
   /* Generate the uniform attribute UBO if necessary. */
   if (!lib_listbase_is_empty(&graph->uniform_attrs.list)) {
     lib_dynstr_append(ds, "\nstruct UniformAttributes {\n");
-    LISTBASE_FOREACH (GPUUniformAttr *, attr, &graph->uniform_attrs.list) {
+    LIST_FOREACH (GPUUniformAttr *, attr, &graph->uniform_attrs.list) {
       lib_dynstr_appendf(ds, "  vec4 attr%d;\n", attr->id);
     }
     lib_dynstr_append(ds, "};\n");
@@ -374,9 +369,9 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
 
 static void codegen_declare_tmps(DynStr *ds, GPUNodeGraph *graph)
 {
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
     /* declare temporary variables for node output storage */
-    LISTBASE_FOREACH (GPUOutput *, output, &node->outputs) {
+    LIST_FOREACH (GPUOutput *, output, &node->outputs) {
       if (output->type == GPU_CLOSURE) {
         lib_dynstr_appendf(ds, "  Closure tmp%d;\n", output->id);
       }
@@ -388,12 +383,12 @@ static void codegen_declare_tmps(DynStr *ds, GPUNodeGraph *graph)
   lib_dynstr_append(ds, "\n");
 }
 
-static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
+static void codegen_call_fns(DynStr *ds, GPUNodeGraph *graph)
 {
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
     lib_dynstr_appendf(ds, "  %s(", node->name);
 
-    LISTBASE_FOREACH (GPUInput *, input, &node->inputs) {
+    LIST_FOREACH (GPUInput *, input, &node->inputs) {
       if (input->source == GPU_SOURCE_TEX) {
         lib_dynstr_append(ds, input->texture->sampler_name);
       }
@@ -477,7 +472,7 @@ static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
       lib_dynstr_append(ds, ", ");
     }
 
-    LISTBASE_FOREACH (GPUOutput *, output, &node->outputs) {
+    LIST_FOREACH (GPUOutput *, output, &node->outputs) {
       lib_dynstr_appendf(ds, "tmp%d", output->id);
       if (output->next) {
         lib_dynstr_append(ds, ", ");
@@ -573,14 +568,14 @@ static char *code_generate_fragment(GPUMaterial *material,
   }
 
   codegen_declare_tmps(ds, graph);
-  codegen_call_functions(ds, graph);
+  codegen_call_fns(ds, graph);
 
   lib_dynstr_append(ds, "  #ifndef VOLUMETRICS\n");
   lib_dynstr_append(ds, "  if (renderPassAOV) {\n");
   lib_dynstr_append(ds, "    switch (render_pass_aov_hash()) {\n");
   GSet *aovhashes_added = lib_gset_int_new(__func__);
-  LISTBASE_FOREACH (GPUNodeGraphOutputLink *, aovlink, &graph->outlink_aovs) {
-    void *aov_key = POINTER_FROM_INT(aovlink->hash);
+  LIST_FOREACH (GPUNodeGraphOutputLink *, aovlink, &graph->outlink_aovs) {
+    void *aov_key = PTR_FROM_INT(aovlink->hash);
     if (lib_gset_haskey(aovhashes_added, aov_key)) {
       continue;
     }
@@ -636,7 +631,7 @@ static const char *attr_prefix_get(CustomDataType type)
     case CD_HAIRLENGTH:
       return "hl";
     default:
-      BLI_assert_msg(0, "GPUVertAttr Prefix type not found : This should not happen!");
+      lib_assert_msg(0, "GPUVertAttr Prefix type not found : This should not happen!");
       return "";
   }
 }
@@ -644,7 +639,7 @@ static const char *attr_prefix_get(CustomDataType type)
 /* We talk about shader stage interface, not to be mistaken with GPUShaderInterface. */
 static char *code_generate_interface(GPUNodeGraph *graph, int builtins)
 {
-  if (lib_listbase_is_empty(&graph->attributes) &&
+  if (lib_list_is_empty(&graph->attributes) &&
       (builtins & (GPU_BARYCENTRIC_DIST | GPU_BARYCENTRIC_TEXCO)) == 0) {
     return NULL;
   }
@@ -653,7 +648,7 @@ static char *code_generate_interface(GPUNodeGraph *graph, int builtins)
 
   lib_dynstr_append(ds, "\n");
 
-  LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
+  LIST_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     if (attr->type == CD_HAIRLENGTH) {
       lib_dynstr_appendf(ds, "float var%d;\n", attr->id);
     }
@@ -685,7 +680,7 @@ static char *code_generate_vertex(GPUNodeGraph *graph,
   lub_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
 
   /* Inputs */
-  LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
+  LIST_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     const char *type_str = gpu_data_type_to_string(attr->gputype);
     const char *prefix = attr_prefix_get(attr->type);
     /* XXX FIXME: see notes in mesh_render_data_create() */
@@ -735,7 +730,7 @@ static char *code_generate_vertex(GPUNodeGraph *graph,
     lib_dynstr_appendf(ds, "  barycentricDist = vec3(0);\n");
   }
 
-  LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
+  LIST_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     if (attr->type == CD_TANGENT) { /* silly exception */
       lib_dynstr_appendf(ds, "  var%d = tangent_get(att%d, normalmat);\n", attr->id, attr->id);
     }
@@ -800,7 +795,7 @@ static char *code_generate_geometry(GPUNodeGraph *graph,
     lib_dynstr_append(ds, "dataAttrOut.barycentricTexCo = calc_barycentric_co(vert);\\\n");
   }
 
-  LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
+  LIST_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     /* TODO: let shader choose what to do depending on what the attribute is. */
     lib_dynstr_appendf(ds, "dataAttrOut.var%d = dataAttrIn[vert].var%d;\\\n", attr->id, attr->id);
   }
@@ -820,7 +815,6 @@ GPUShader *gpu_pass_shader_get(GPUPass *pass)
 }
 
 /* Pass create/free */
-
 static bool gpu_pass_is_valid(GPUPass *pass)
 {
   /* Shader is not null if compilation is successful. */
@@ -840,8 +834,8 @@ GPUPass *gpu_generate_pass(GPUMaterial *material,
   gpu_node_graph_finalize_uniform_attrs(graph);
 
   int builtins = 0;
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
-    LISTBASE_FOREACH (GPUInput *, input, &node->inputs) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
+    LIST_FOREACH (GPUInput *, input, &node->inputs) {
       if (input->source == GPU_SOURCE_BUILTIN) {
         builtins |= input->builtin;
       }
@@ -921,7 +915,7 @@ GPUPass *gpu_generate_pass(GPUMaterial *material,
     }
     else {
       /* No other pass have same hash, just prepend to the list. */
-      BLI_LINKS_PREPEND(pass_cache, pass);
+      LIB_LINKS_PREPEND(pass_cache, pass);
     }
     lib_spin_unlock(&pass_cache_spin);
   }
@@ -997,20 +991,20 @@ static bool gpu_pass_shader_validate(GPUPass *pass, GPUShader *shader)
   int total_samplers_len = vert_samplers_len + frag_samplers_len;
 
   /* Validate against opengl limit. */
-  if ((frag_samplers_len > GPU_max_textures_frag()) ||
-      (vert_samplers_len > GPU_max_textures_vert())) {
+  if ((frag_samplers_len > gpu_max_textures_frag()) ||
+      (vert_samplers_len > gpu_max_textures_vert())) {
     return false;
   }
 
   if (pass->geometrycode) {
     int geom_samplers_len = count_active_texture_sampler(shader, pass->geometrycode);
     total_samplers_len += geom_samplers_len;
-    if (geom_samplers_len > GPU_max_textures_geom()) {
+    if (geom_samplers_len > gpu_max_textures_geom()) {
       return false;
     }
   }
 
-  return (total_samplers_len <= GPU_max_textures());
+  return (total_samplers_len <= gpu_max_textures());
 }
 
 bool gpu_pass_compile(GPUPass *pass, const char *shname)
@@ -1047,13 +1041,13 @@ static void gpu_pass_free(GPUPass *pass)
 {
   lib_assert(pass->refcount == 0);
   if (pass->shader) {
-    GPU_shader_free(pass->shader);
+    gpu_shader_free(pass->shader);
   }
   MEM_SAFE_FREE(pass->fragmentcode);
   MEM_SAFE_FREE(pass->geometrycode);
   MEM_SAFE_FREE(pass->vertexcode);
   MEM_SAFE_FREE(pass->defines);
-  MEM_freeN(pass);
+  mem_freen(pass);
 }
 
 void gpu_pass_cache_garbage_collect(void)
