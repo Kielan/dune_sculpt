@@ -1,10 +1,10 @@
-/** This interface allow GPU to manage GL objects for multiple context and threads. **/
+/* This interface allow GPU to manage GL objects for multiple context and threads. **/
 
 #pragma once
 
 #include "mem_guardedalloc.h"
 
-#include "gpu_context.h"
+#include "gpu_cxt.h"
 
 #include "gpu_debug_private.hh"
 #include "gpu_framebuffer_private.hh"
@@ -18,7 +18,7 @@ struct GPUMatrixState;
 
 namespace dune::gpu {
 
-class Context {
+class Cxt {
  public:
   /** State management */
   Shader *shader = NULL;
@@ -27,13 +27,11 @@ class Context {
   StateManager *state_manager = NULL;
   Immediate *imm = NULL;
 
-  /**
-   * All 4 window frame-buffers.
+  /** All 4 window frame-buffers.
    * None of them are valid in an off-screen context.
    * Right frame-buffers are only available if using stereo rendering.
    * Front frame-buffers contains (in principle, but not always) the last frame color.
-   * Default frame-buffer is back_left.
-   */
+   * Default frame-buffer is back_left. */
   FrameBuffer *back_left = NULL;
   FrameBuffer *front_left = NULL;
   FrameBuffer *back_right = NULL;
@@ -49,10 +47,10 @@ class Context {
   void *ghost_window_;
 
  public:
-  Context();
-  virtual ~Context();
+  Cxt();
+  virtual ~Cxt();
 
-  static Context *get();
+  static Cxt *get();
 
   virtual void activate() = 0;
   virtual void deactivate() = 0;
@@ -71,17 +69,17 @@ class Context {
 };
 
 /* Syntactic sugar. */
-static inline GPUContext *wrap(Context *ctx)
+static inline GPUCxt *wrap(Cxt *cxt)
 {
-  return reinterpret_cast<GPUContext *>(ctx);
+  return reinterpret_cast<GPUCxt *>(cxt);
 }
-static inline Context *unwrap(GPUContext *ctx)
+static inline Cxt *unwrap(GPUCxt *cxt)
 {
-  return reinterpret_cast<Context *>(ctx);
+  return reinterpret_cast<Cxt *>(cxt);
 }
-static inline const Context *unwrap(const GPUContext *ctx)
+static inline const Cxt *unwrap(const GPUCxt *cxt)
 {
-  return reinterpret_cast<const Context *>(ctx);
+  return reinterpret_cast<const Cxt *>(cxt);
 }
 
 }  // namespace dune::gpu
