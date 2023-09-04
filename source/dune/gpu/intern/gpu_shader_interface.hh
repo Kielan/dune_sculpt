@@ -1,9 +1,6 @@
-/**
- * GPU shader interface (C --> GLSL)
- *
+/* GPU shader interface (C --> GLSL)
  * Structure detailing needed vertex inputs and resources for a specific shader.
- * A shader interface can be shared between two similar shaders.
- */
+ * A shader interface can be shared between two similar shaders. */
 
 #pragma once
 
@@ -21,34 +18,32 @@ typedef struct ShaderInput {
   uint32_t name_offset;
   uint32_t name_hash;
   int32_t location;
-  /** Defined at interface creation or in shader. Only for Samplers, UBOs and Vertex Attributes. */
+  /* Defined at interface creation or in shader. Only for Samplers, UBOs and Vertex Attributes. */
   int32_t binding;
 } ShaderInput;
 
-/**
- * Implementation of Shader interface.
- * Base class which is then specialized for each implementation (GL, VK, ...).
- */
+/* Implementation of Shader interface.
+ * Base class which is then specialized for each implementation (GL, VK, ...) */
 class ShaderInterface {
   friend shader::ShaderCreateInfo;
   /* TODO: should be protected. */
  public:
-  /** Flat array. In this order: Attributes, Ubos, Uniforms. */
+  /* Flat array. In this order: Attributes, Ubos, Uniforms. */
   ShaderInput *inputs_ = NULL;
-  /** Buffer containing all inputs names separated by '\0'. */
+  /* Buffer containing all inputs names separated by '\0'. */
   char *name_buffer_ = NULL;
-  /** Input counts inside input array. */
+  /* Input counts inside input array. */
   uint attr_len_ = 0;
   uint ubo_len_ = 0;
   uint uniform_len_ = 0;
   uint ssbo_len_ = 0;
-  /** Enabled bind-points that needs to be fed with data. */
+  /* Enabled bind-points that needs to be fed with data. */
   uint16_t enabled_attr_mask_ = 0;
   uint16_t enabled_ubo_mask_ = 0;
   uint8_t enabled_ima_mask_ = 0;
   uint64_t enabled_tex_mask_ = 0;
   uint16_t enabled_ssbo_mask_ = 0;
-  /** Location of builtin uniforms. Fast access, no lookup needed. */
+  /* Location of builtin uniforms. Fast access, no lookup needed. */
   int32_t builtins_[GPU_NUM_UNIFORMS];
   int32_t builtin_blocks_[GPU_NUM_UNIFORM_BLOCKS];
 
@@ -121,9 +116,7 @@ class ShaderInterface {
                               char *name_buffer,
                               uint32_t &name_buffer_offset) const;
 
-  /**
-   * Finalize interface construction by sorting the #ShaderInputs for faster lookups.
-   */
+  /* Finalize interface construction by sorting the #ShaderInputs for faster lookups. */
   void sort_inputs();
 
  private:
