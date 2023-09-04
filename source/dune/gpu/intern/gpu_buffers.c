@@ -1,5 +1,4 @@
-/** Mesh drawing using OpenGL VBO (Vertex Buffer Objects) **/
-
+/* Mesh drawing using OpenGL VBO (Vertex Buffer Objects) */
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
@@ -31,12 +30,10 @@
 
 #include "bmesh.h"
 
-/* XXX: the rest of the code in this file is used for optimized PBVH
+/* the rest of the code in this file is used for optimized PBVH
  * drawing and doesn't interact at all with the buffer code above */
 
-/* -------------------------------------------------------------------- */
-/** Private Types **/
-
+/* Private Types */
 struct GPU_PBVH_Buffers {
   GPUIndexBuf *index_buf, *index_buf_fast;
   GPUIndexBuf *index_lines_buf, *index_lines_buf_fast;
@@ -83,9 +80,7 @@ static struct {
   uint pos, nor, msk, col, fset;
 } g_vbo_id = {{0}};
 
-/* -------------------------------------------------------------------- */
-/** PBVH Utils **/
-
+/* PBVH Utils */
 void gpu_pbvh_init()
 {
   /* Initialize vertex buffer (match 'VertexBufferFormat'). */
@@ -166,9 +161,7 @@ static void gpu_pbvh_batch_init(GPU_PBVH_Buffers *buffers, GPUPrimType prim)
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Mesh PBVH **/
-
+/* Mesh PBVH */
 static bool gpu_pbvh_is_looptri_visible(const MLoopTri *lt,
                                         const MVert *mvert,
                                         const MLoop *mloop,
@@ -208,12 +201,12 @@ void gpu_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
       GPUVertBufRaw fset_step = {0};
       GPUVertBufRaw col_step = {0};
 
-      GPU_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.pos, &pos_step);
-      GPU_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.nor, &nor_step);
-      GPU_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.msk, &msk_step);
-      GPU_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.fset, &fset_step);
+      gpu_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.pos, &pos_step);
+      gpu_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.nor, &nor_step);
+      gpu_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.msk, &msk_step);
+      gpu_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.fset, &fset_step);
       if (show_vcol) {
-        GPU_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.col, &col_step);
+        gpu_vertbuf_attr_get_raw_data(buffers->vert_buf, g_vbo_id.col, &col_step);
       }
 
       /* calculate normal for each polygon only once */
@@ -399,9 +392,7 @@ GPU_PBVH_Buffers *gpu_pbvh_mesh_buffers_build(const MPoly *mpoly,
   return buffers;
 }
 
-/* -------------------------------------------------------------------- */
-/* Grid PBVH **/
-
+/* Grid PBVH */
 static void gpu_pbvh_grid_fill_index_buffers(GPU_PBVH_Buffers *buffers,
                                              SubdivCCG *UNUSED(subdiv_ccg),
                                              const int *UNUSED(face_sets),
@@ -748,11 +739,9 @@ GPU_PBVH_Buffers *gpu_pbvh_grid_buffers_build(int totgrid, BLI_bitmap **grid_hid
 
 #undef FILL_QUAD_BUFFER
 
-/* -------------------------------------------------------------------- */
-/** BMesh PBVH **/
-
-/* Output a BMVert into a VertexBufferFormat array at v_index. */
-static void gpu_bmesh_vert_to_buffer_copy(BMVert *v,
+/* Mesh PBVH */
+/* Output a MVert into a VertexBufferFormat array at v_index. */
+static void gpu_bmesh_vert_to_buffer_copy(MVert *v,
                                           GPUVertBuf *vert_buf,
                                           int v_index,
                                           const float fno[3],
@@ -790,20 +779,20 @@ static void gpu_bmesh_vert_to_buffer_copy(BMVert *v,
 }
 
 /* Return the total number of vertices that don't have BM_ELEM_HIDDEN set */
-static int gpu_bmesh_vert_visible_count(GSet *bm_unique_verts, GSet *bm_other_verts)
+static int gpu_mesh_vert_visible_count(GSet *bm_unique_verts, GSet *bm_other_verts)
 {
   GSetIterator gs_iter;
   int totvert = 0;
 
   GSET_ITER (gs_iter, bm_unique_verts) {
-    BMVert *v = BLI_gsetIterator_getKey(&gs_iter);
-    if (!BM_elem_flag_test(v, BM_ELEM_HIDDEN)) {
+    MVert *v = lib_gsetIterator_getKey(&gs_iter);
+    if (!mesh_elem_flag_test(v, M_ELEM_HIDDEN)) {
       totvert++;
     }
   }
   GSET_ITER (gs_iter, bm_other_verts) {
     BMVert *v = lib_gsetIterator_getKey(&gs_iter);
-    if (!BM_elem_flag_test(v, BM_ELEM_HIDDEN)) {
+    if (!mesh_elem_flag_test(v, M_ELEM_HIDDEN)) {
       totvert++;
     }
   }
@@ -817,10 +806,10 @@ static int gpu_bmesh_face_visible_count(GSet *bm_faces)
   GSetIterator gh_iter;
   int totface = 0;
 
-  GSET_ITER (gh_iter, bm_faces) {
-    BMFace *f = BLI_gsetIterator_getKey(&gh_iter);
+  GSET_ITER (gh_iter, mesh_faces) {
+    BMFace *f = lib_gsetIterator_getKey(&gh_iter);
 
-    if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+    if (!mesh_elem_flag_test(f, BM_ELEM_HIDDEN)) {
       totface++;
     }
   }
@@ -901,16 +890,16 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
     GSET_ITER (gs_iter, bm_faces) {
       f = lib_gsetIterator_getKey(&gs_iter);
 
-      if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
-        BMVert *v[3];
-        BM_face_as_array_vert_tri(f, v);
+      if (!mesh_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+        MVert *v[3];
+        mesh_face_as_array_vert_tri(f, v);
 
         uint idx[3];
         for (int i = 0; i < 3; i++) {
           void **idx_p;
-          if (!lib_ghash_ensure_p(bm_vert_to_index, v[i], &idx_p)) {
+          if (!lib_ghash_ensure_p(mesh_vert_to_index, v[i], &idx_p)) {
             /* Add vertex to the vertex buffer each time a new one is encountered */
-            *idx_p = POINTER_FROM_UINT(v_index);
+            *idx_p = PTR_FROM_UINT(v_index);
 
             gpu_bmesh_vert_to_buffer_copy(v[i],
                                           buffers->vert_buf,
@@ -927,7 +916,7 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
           }
           else {
             /* Vertex already in the vertex buffer, just get the index. */
-            idx[i] = POINTER_AS_UINT(*idx_p);
+            idx[i] = PTR_AS_UINT(*idx_p);
           }
         }
 
@@ -961,12 +950,12 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
 
       lib_assert(f->len == 3);
 
-      if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
-        BMVert *v[3];
+      if (!mesh_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+        MVert *v[3];
         float fmask = 0.0f;
         int i;
 
-        BM_face_as_array_vert_tri(f, v);
+        mesh_face_as_array_vert_tri(f, v);
 
         /* Average mask value */
         for (i = 0; i < 3; i++) {
@@ -1004,9 +993,7 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
   gpu_pbvh_batch_init(buffers, GPU_PRIM_TRIS);
 }
 
-/* -------------------------------------------------------------------- */
-/** Generi */
-
+/* Generic */
 GPU_PBVH_Buffers *gpu_pbvh_bmesh_buffers_build(bool smooth_shading)
 {
   GPU_PBVH_Buffers *buffers;
