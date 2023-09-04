@@ -1,4 +1,4 @@
-/** Selection implementations. **/
+/* Selection implementations. **/
 
 #pragma once
 
@@ -7,7 +7,6 @@ extern "C" {
 #endif
 
 /* gpu_select_pick */
-
 void gpu_select_pick_begin(GPUSelectResult *buffer,
                            uint buffer_len,
                            const rcti *input,
@@ -17,14 +16,11 @@ uint gpu_select_pick_end(void);
 
 void gpu_select_pick_cache_begin(void);
 void gpu_select_pick_cache_end(void);
-/**
- * return true if drawing is not needed.
- */
+/* return true if drawing is not needed. */
 bool gpu_select_pick_is_cached(void);
 void gpu_select_pick_cache_load_id(void);
 
 /* gpu_select_sample_query */
-
 void gpu_select_query_begin(
     GPUSelectResult *buffer, uint buffer_len, const rcti *input, eGPUSelectMode mode, int oldhits);
 bool gpu_select_query_load_id(uint id);
