@@ -1,15 +1,12 @@
-/** GPU vertex buffer **/
-
+/* GPU vertex buffer */
 #pragma once
 
 #include "gpu_vertex_buffer.h"
 
 namespace dune::gpu {
 
-/**
- * Implementation of Vertex Buffers.
- * Base class which is then specialized for each implementation (GL, VK, ...).
- */
+/* Implementation of Vertex Buffers.
+ * Base class which is then specialized for each implementation (GL, VK, ...). */
 class VertBuf {
  public:
   static size_t memory_usage;
@@ -25,11 +22,11 @@ class VertBuf {
   uchar *data = NULL;
 
  protected:
-  /** Usage hint for GL optimization. */
+  /* Usage hint for GL optimization. */
   GPUUsageType usage_ = GPU_USAGE_STATIC;
 
  private:
-  /** This counter will only avoid freeing the #GPUVertBuf, not the data. */
+  /* This counter will only avoid freeing the #GPUVertBuf, not the data. */
   int handle_refcount_ = 1;
 
  public:
