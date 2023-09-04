@@ -1,4 +1,4 @@
-/*** Convert material node-trees to GLSL. */
+/* Convert material node-trees to GLSL. */
 
 #include "mem_guardedalloc.h"
 
@@ -35,9 +35,8 @@
 extern char datatoc_gpu_shader_codegen_lib_glsl[];
 extern char datatoc_gpu_shader_common_obinfos_lib_glsl[];
 
-/* -------------------- GPUPass Cache ------------------ */
-/**
- * Internal shader cache: This prevent the shader recompilation / stall when
+/* GPUPass Cache */
+/* Internal shader cache: This prevent the shader recompilation / stall when
  * using undo/redo AND also allows for GPUPass reuse if the Shader code is the
  * same for 2 different Materials. Unused GPUPasses are free by Garbage collection */
 
@@ -256,8 +255,8 @@ static void codegen_set_unique_ids(GPUNodeGraph *graph)
 {
   int id = 1;
 
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
-    LISTBASE_FOREACH (GPUInput *, input, &node->inputs) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
+    LIST_FOREACH (GPUInput *, input, &node->inputs) {
       /* set id for unique names of uniform variables */
       input->id = id++;
     }
@@ -1097,7 +1096,6 @@ void gpu_pass_cache_free(void)
 }
 
 /* Module */
-
 void gpu_codegen_init(void)
 {
 }
