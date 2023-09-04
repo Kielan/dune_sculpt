@@ -1,4 +1,4 @@
-/** GPU vertex buffer **/
+/* GPU vertex buffer */
 
 #include "mem_guardedalloc.h"
 
@@ -12,9 +12,7 @@
 
 #include <cstring>
 
-/* -------------------------------------------------------------------- */
 /** VertBuf **/
-
 namespace dune::gpu {
 
 size_t VertBuf::memory_usage = 0;
@@ -90,13 +88,11 @@ void VertBuf::upload()
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-/** C-API */
-
+/* C-API */
 using namespace dune;
 using namespace dune::gpu;
 
-/* -------- Creation & deletion -------- */
+/* Creation & deletion */
 
 GPUVertBuf *gpu_vertbuf_calloc()
 {
@@ -254,8 +250,7 @@ void gpu_vertbuf_attr_get_raw_data(GPUVertBuf *verts_, uint a_idx, GPUVertBufRaw
 #endif
 }
 
-/* -------- Getters -------- */
-
+/* Getters */
 void *gpu_vertbuf_get_data(const GPUVertBuf *verts)
 {
   /* TODO: Assert that the format has no padding. */
