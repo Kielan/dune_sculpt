@@ -1,10 +1,10 @@
 #pragma once
 
-#include "BLI_sys_types.h"
+#include "lib_sys_types.h"
 
 struct GPUUniformBuf;
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 #ifdef DEBUG
@@ -13,17 +13,15 @@ namespace gpu {
 #  define DEBUG_NAME_LEN 8
 #endif
 
-/**
- * Implementation of Uniform Buffers.
- * Base class which is then specialized for each implementation (GL, VK, ...).
- */
+/* Implementation of Uniform Buffers.
+ * Base class which is then specialized for each implementation (GL, VK, ...). */
 class UniformBuf {
  protected:
-  /** Data size in bytes. */
+  /* Data size in bytes. */
   size_t size_in_bytes_;
-  /** Continuous memory block to copy to GPU. This data is owned by the UniformBuf. */
+  /* Continuous memory block to copy to GPU. This data is owned by the UniformBuf. */
   void *data_ = NULL;
-  /** Debugging name */
+  /* Debugging name */
   char name_[DEBUG_NAME_LEN];
 
  public:
@@ -34,8 +32,8 @@ class UniformBuf {
   virtual void bind(int slot) = 0;
   virtual void unbind() = 0;
 
-  /** Used to defer data upload at drawing time.
-   * This is useful if the thread has no context bound.
+  /* Used to defer data upload at drawing time.
+   * This is useful if the thread has no cxt bound.
    * This transfers ownership to this UniformBuf. */
   void attach_data(void *data)
   {
