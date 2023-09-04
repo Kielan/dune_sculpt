@@ -1,4 +1,4 @@
-/** Intermediate node graph for generating GLSL shaders. **/
+/* Intermediate node graph for generating GLSL shaders. **/
 
 #include <stdio.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 #include "types_node.h"
 
 #include "lib_ghash.h"
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
@@ -17,8 +17,7 @@
 #include "gpu_material_lib.h"
 #include "gpu_node_graph.h"
 
-/* Node Link Functions */
-
+/* Node Link Fns */
 static GPUNodeLink *gpu_node_link_create(void)
 {
   GPUNodeLink *link = mem_callocn(sizeof(GPUNodeLink), "GPUNodeLink");
@@ -43,8 +42,7 @@ static void gpu_node_link_free(GPUNodeLink *link)
   }
 }
 
-/* Node Functions */
-
+/* Node Fns */
 static GPUNode *gpu_node_create(const char *name)
 {
   GPUNode *node = mem_callocn(sizeof(GPUNode), "GPUNode");
@@ -66,7 +64,7 @@ static void gpu_node_input_link(GPUNode *node, GPUNodeLink *link, const eGPUType
     input = outnode->inputs.first;
 
     if (STR_ELEM(name, "set_value", "set_rgb", "set_rgba") && (input->type == type)) {
-      input = MEM_dupallocN(outnode->inputs.first);
+      input = mem_dupallocn(outnode->inputs.first);
       if (input->link) {
         input->link->users++;
       }
@@ -156,10 +154,8 @@ static const char *gpu_uniform_set_function_from_type(eNodeSocketDatatype type)
   }
 }
 
-/**
- * Link stack uniform buffer.
- * This is called for the input/output sockets that are not connected.
- */
+/* Link stack uniform buffer.
+ * This is called for the input/output sockets that are not connected. */
 static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
                                            bNode *node,
                                            GPUNodeStack *stack,
@@ -244,7 +240,6 @@ static void gpu_node_output(GPUNode *node, const eGPUType type, GPUNodeLink **li
 }
 
 /* Uniform Attribute Functions */
-
 static int uniform_attr_sort_cmp(const void *a, const void *b)
 {
   const GPUUniformAttr *attr_a = a, *attr_b = b;
@@ -307,13 +302,13 @@ void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
   lib_assert(attrs->count == lib_listbase_count(&attrs->list));
 
   /* Sort the attributes by name to ensure a stable order. */
-  lib_listbase_sort(&attrs->list, uniform_attr_sort_cmp);
+  lib_list_sort(&attrs->list, uniform_attr_sort_cmp);
 
   /* Compute the indices and the hash code. */
   int next_id = 0;
   attrs->hash_code = 0;
 
-  LISTBASE_FOREACH (GPUUniformAttr *, attr, &attrs->list) {
+  LIST_FOREACH (GPUUniformAttr *, attr, &attrs->list) {
     attr->id = next_id++;
 
     attrs->hash_code ^= lib_ghashutil_strhash_p(attr->name);
@@ -326,7 +321,7 @@ void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
 
 /* Attributes and Textures */
 
-/** Add a new varying attribute of given type and name. Returns NULL if out of slots. */
+/* Add a new varying attribute of given type and name. Returns NULL if out of slots. */
 static GPUMaterialAttribute *gpu_node_graph_add_attribute(GPUNodeGraph *graph,
                                                           CustomDataType type,
                                                           const char *name)
@@ -362,7 +357,7 @@ static GPUMaterialAttribute *gpu_node_graph_add_attribute(GPUNodeGraph *graph,
   return attr;
 }
 
-/** Add a new uniform attribute of given type and name. Returns NULL if out of slots. */
+/* Add a new uniform attribute of given type and name. Returns NULL if out of slots. */
 static GPUUniformAttr *gpu_node_graph_add_uniform_attribute(GPUNodeGraph *graph,
                                                             const char *name,
                                                             bool use_dupli)
@@ -464,7 +459,6 @@ static GPUMaterialVolumeGrid *gpu_node_graph_add_volume_grid(GPUNodeGraph *graph
 }
 
 /* Creating Inputs */
-
 GPUNodeLink *gpu_attribute(GPUMaterial *mat, const CustomDataType type, const char *name)
 {
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
@@ -490,7 +484,7 @@ GPUNodeLink *gpu_uniform_attribute(GPUMaterial *mat, const char *name, bool use_
   /* Dummy fallback if out of slots. */
   if (attr == NULL) {
     static const float zero_data[GPU_MAX_CONSTANT_DATA] = {0.0f};
-    return GPU_constant(zero_data);
+    return gpu_constant(zero_data);
   }
 
   GPUNodeLink *link = gpu_node_link_create();
@@ -604,18 +598,17 @@ GPUNodeLink *gpu_builtin(eGPUBuiltin builtin)
 }
 
 /* Creating Nodes */
-
 bool gpu_link(GPUMaterial *mat, const char *name, ...)
 {
-  GSet *used_libraries = gpu_material_used_libraries(mat);
+  GSet *used_libs = gpu_material_used_libs(mat);
   GPUNode *node;
-  GPUFunction *function;
+  GPUFn *fn;
   GPUNodeLink *link, **linkptr;
   va_list params;
   int i;
 
-  function = gpu_material_library_use_function(used_libraries, name);
-  if (!function) {
+  fn = gpu_material_lib_use_fn(used_libs, name);
+  if (!fn) {
     fprintf(stderr, "GPU failed to find function %s\n", name);
     return false;
   }
@@ -624,7 +617,7 @@ bool gpu_link(GPUMaterial *mat, const char *name, ...)
 
   va_start(params, name);
   for (i = 0; i < function->totparam; i++) {
-    if (function->paramqual[i] != FUNCTION_QUAL_IN) {
+    if (fn->paramqual[i] != FUNCTION_QUAL_IN) {
       linkptr = va_arg(params, GPUNodeLink **);
       gpu_node_output(node, function->paramtype[i], linkptr);
     }
@@ -642,22 +635,22 @@ bool gpu_link(GPUMaterial *mat, const char *name, ...)
 }
 
 bool gpu_stack_link(GPUMaterial *material,
-                    bNode *bnode,
+                    Node *node,
                     const char *name,
                     GPUNodeStack *in,
                     GPUNodeStack *out,
                     ...)
 {
-  GSet *used_libraries = gpu_material_used_libraries(material);
+  GSet *used_libs = gpu_material_used_libraries(material);
   GPUNode *node;
-  GPUFunction *function;
+  GPUFn *fn;
   GPUNodeLink *link, **linkptr;
   va_list params;
   int i, totin, totout;
 
-  function = gpu_material_library_use_function(used_libraries, name);
-  if (!function) {
-    fprintf(stderr, "GPU failed to find function %s\n", name);
+  fn = gpu_material_lib_use_fn(used_libs, name);
+  if (!fn) {
+    fprintf(stderr, "GPU failed to find fn %s\n", name);
     return false;
   }
 
@@ -684,11 +677,11 @@ bool gpu_stack_link(GPUMaterial *material,
   }
 
   va_start(params, out);
-  for (i = 0; i < function->totparam; i++) {
-    if (function->paramqual[i] != FUNCTION_QUAL_IN) {
+  for (i = 0; i < fn->totparam; i++) {
+    if (fn->paramqual[i] != FN_QUAL_IN) {
       if (totout == 0) {
         linkptr = va_arg(params, GPUNodeLink **);
-        gpu_node_output(node, function->paramtype[i], linkptr);
+        gpu_node_output(node, fn->paramtype[i], linkptr);
       }
       else {
         totout--;
@@ -718,7 +711,7 @@ bool gpu_stack_link(GPUMaterial *material,
 }
 
 GPUNodeLink *gpu_uniformbuf_link_out(GPUMaterial *mat,
-                                     bNode *node,
+                                     Node *node,
                                      GPUNodeStack *stack,
                                      const int index)
 {
@@ -726,8 +719,7 @@ GPUNodeLink *gpu_uniformbuf_link_out(GPUMaterial *mat,
 }
 
 /* Node Graph */
-
-static void gpu_inputs_free(ListBase *inputs)
+static void gpu_inputs_free(List *inputs)
 {
   GPUInput *input;
 
@@ -750,7 +742,7 @@ static void gpu_inputs_free(ListBase *inputs)
     }
   }
 
-  BLI_freelistN(inputs);
+  lib_freelistn(inputs);
 }
 
 static void gpu_node_free(GPUNode *node)
@@ -766,7 +758,7 @@ static void gpu_node_free(GPUNode *node)
     }
   }
 
-  lib_freelistN(&node->outputs);
+  lib_freelistn(&node->outputs);
   mem_freen(node);
 }
 
@@ -786,7 +778,7 @@ void gpu_node_graph_free(GPUNodeGraph *graph)
   lib_freelistn(&graph->outlink_aovs);
   gpu_node_graph_free_nodes(graph);
 
-  LISTBASE_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
+  LIST_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
     MEM_SAFE_FREE(grid->name);
   }
   lib_freelistn(&graph->volume_grids);
@@ -796,7 +788,6 @@ void gpu_node_graph_free(GPUNodeGraph *graph)
 }
 
 /* Prune Unused Nodes */
-
 static void gpu_nodes_tag(GPUNodeLink *link)
 {
   GPUNode *node;
@@ -821,12 +812,12 @@ static void gpu_nodes_tag(GPUNodeLink *link)
 
 void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
 {
-  LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
+  LIST_FOREACH (GPUNode *, node, &graph->nodes) {
     node->tag = false;
   }
 
   gpu_nodes_tag(graph->outlink);
-  LISTBASE_FOREACH (GPUNodeGraphOutputLink *, aovlink, &graph->outlink_aovs) {
+  LIST_FOREACH (GPUNodeGraphOutputLink *, aovlink, &graph->outlink_aovs) {
     gpu_nodes_tag(aovlink->outlink);
   }
 
