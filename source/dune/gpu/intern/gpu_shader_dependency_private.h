@@ -1,9 +1,6 @@
-/**
- * gpu
- *
+/* gpu
  * Shader source dependency builder that make possible to support #include directive inside the
- * shader files.
- */
+ * shader files */
 
 #pragma once
 
