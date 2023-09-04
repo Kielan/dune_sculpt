@@ -1,4 +1,4 @@
-/** Implementation of Multi Draw Indirect. */
+/* Implementation of Multi Draw Indirect. */
 
 #include "mem_guardedalloc.h"
 
