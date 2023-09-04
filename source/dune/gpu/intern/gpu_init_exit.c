@@ -3,19 +3,17 @@
 #include "lib_sys_types.h"
 #include "gpu_batch.h"
 #include "gpu_buffers.h"
-#include "gpu_context.h"
+#include "gpu_cxt.h"
 #include "gpu_immediate.h"
 
 #include "intern/gpu_codegen.h"
-#include "intern/gpu_material_library.h"
+#include "intern/gpu_material_lib.h"
 #include "intern/gpu_private.h"
 #include "intern/gpu_shader_create_info_private.hh"
 #include "intern/gpu_shader_dependency_private.h"
 
-/**
- * although the order of initialization and shutdown should not matter
- * (except for the extensions), I chose alphabetical and reverse alphabetical order
- */
+/* although the order of initialization and shutdown should not matter
+ * (except for the extensions), I chose alphabetical and reverse alphabetical order */
 
 static bool initialized = false;
 
@@ -32,7 +30,7 @@ void gpu_init(void)
   gpu_shader_create_info_init();
 
   gpu_codegen_init();
-  gpu_material_library_init();
+  gpu_material_lib_init();
 
   gpu_batch_init();
 
@@ -49,7 +47,7 @@ void gpu_exit(void)
 
   gpu_batch_exit();
 
-  gpu_material_library_exit();
+  gpu_material_lib_exit();
   gpu_codegen_exit();
 
   gpu_shader_dependency_exit();
