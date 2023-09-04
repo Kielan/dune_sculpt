@@ -1,4 +1,4 @@
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_matrix_private.h"
 
 #define SUPPRESS_GENERIC_MATRIX_API
@@ -34,14 +34,13 @@ struct GPUMatrixState {
    * generate as needed for shaders, invalidate when original matrices change
    *
    * TODO: separate Model from View transform? Batches/objects have model,
-   * camera/eye has view & projection
-   */
+   * camera/eye has view & projection */
 };
 
-#define ModelViewStack Context::get()->matrix_state->model_view_stack
+#define ModelViewStack Cxt::get()->matrix_state->model_view_stack
 #define ModelView ModelViewStack.stack[ModelViewStack.top]
 
-#define ProjectionStack Context::get()->matrix_state->projection_stack
+#define ProjectionStack Cxt::get()->matrix_state->projection_stack
 #define Projection ProjectionStack.stack[ProjectionStack.top]
 
 GPUMatrixState *gpu_matrix_state_create()
@@ -144,7 +143,7 @@ void gpu_matrix_set(const float m[4][4])
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void gpu_matrix_identity_projection_set()
+void gpu_matrix_id_projection_set()
 {
   unit_m4(Projection);
   CHECKMAT(Projection3D);
@@ -228,7 +227,7 @@ void gpu_matrix_scale_3f(float x, float y, float z)
   m[1][1] = y;
   m[2][2] = z;
   m[3][3] = 1.0f;
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 }
 
 void gpu_matrix_scale_3fv(const float vec[3])
@@ -246,8 +245,7 @@ void gpu_matrix_mul(const float m[4][4])
 void gpu_matrix_rotate_2d(float deg)
 {
   /* essentially RotateAxis('Z')
-   * TODO: simpler math for 2D case
-   */
+   * TODO: simpler math for 2D case  */
   rotate_m4(ModelView, 'Z', DEG2RADF(deg));
 }
 
@@ -472,19 +470,15 @@ bool gpu_matrix_unproject_3fv(const float win[3],
       2 * win[2] - 1.0f,
   };
 
-  /**
-   * The same result could be obtained as follows:
-   *
+  /* The same result could be obtained as follows:
    *
    * float projinv[4][4];
    * invert_m4_m4(projinv, projview);
    * copy_v3_v3(r_world, in);
    * mul_project_m4_v3(projinv, r_world);
    *
-   *
    * But that solution loses much precision.
-   * Therefore, get the same result without inverting the project view matrix.
-   */
+   * Therefore, get the same result without inverting the project view matrix. */
 
   float out[3];
   const bool is_persp = proj[3][3] == 0.0f;
@@ -574,8 +568,7 @@ void gpu_matrix_bind(GPUShader *shader)
 {
   /* set uniform values to matrix stack values
    * call this before a draw call if desired matrices are dirty
-   * call glUseProgram before this, as glUniform expects program to be bound
-   */
+   * call glUseProgram before this, as glUniform expects program to be bound */
   int32_t MV = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_MODELVIEW);
   int32_t P = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_PROJECTION);
   int32_t MVP = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_MVP);
@@ -589,14 +582,14 @@ void gpu_matrix_bind(GPUShader *shader)
         shader, MV, 16, 1, (const float *)gpu_matrix_model_view_get(nullptr));
   }
   if (P != -1) {
-    gpu_shader_uniform_vector(shader, P, 16, 1, (const float *)GPU_matrix_projection_get(nullptr));
+    gpu_shader_uniform_vector(shader, P, 16, 1, (const float *)gpu_matrix_projection_get(nullptr));
   }
   if (MVP != -1) {
     gpu_shader_uniform_vector(
-        shader, MVP, 16, 1, (const float *)GPU_matrix_model_view_projection_get(nullptr));
+        shader, MVP, 16, 1, (const float *)gpu_matrix_model_view_projection_get(nullptr));
   }
   if (N != -1) {
-    gpu_shader_uniform_vector(shader, N, 9, 1, (const float *)GPU_matrix_normal_get(nullptr));
+    gpu_shader_uniform_vector(shader, N, 9, 1, (const float *)gpu_matrix_normal_get(nullptr));
   }
   if (MV_inv != -1) {
     Mat4 m;
@@ -616,17 +609,14 @@ void gpu_matrix_bind(GPUShader *shader)
 
 bool gpu_matrix_dirty_get()
 {
-  GPUMatrixState *state = Context::get()->matrix_state;
+  GPUMatrixState *state = Cxt::get()->matrix_state;
   return state->dirty;
 }
 
-/* -------------------------------------------------------------------- */
-/ Python API Helpers **/
-
+/* Python API Helpers **/
 LIB_STATIC_ASSERT(GPU_PY_MATRIX_STACK_LEN + 1 == MATRIX_STACK_DEPTH, "define mismatch");
 
 /* Return int since caller is may subtract. */
-
 int gpu_matrix_stack_level_get_model_view()
 {
   GPUMatrixState *state = Context::get()->matrix_state;
@@ -635,16 +625,14 @@ int gpu_matrix_stack_level_get_model_view()
 
 int gpu_matrix_stack_level_get_projection()
 {
-  GPUMatrixState *state = Context::get()->matrix_state;
+  GPUMatrixState *state = Cxt::get()->matrix_state;
   return (int)state->projection_stack.top;
 }
 
-/* -------------------------------------------------------------------- */
-/** Polygon Offset Hack
+/* Polygon Offset Hack
  *
  * Workaround the fact that polygon-offset is implementation dependent.
- * We modify the projection matrix \a winmat in order to change the final depth a tiny amount.
- **/
+ * We modify the projection matrix \a winmat in order to change the final depth a tiny amount. */
 
 float gpu_polygon_offset_calc(const float (*winmat)[4], float viewdist, float dist)
 {
@@ -671,8 +659,7 @@ float gpu_polygon_offset_calc(const float (*winmat)[4], float viewdist, float di
    * winmat[4][3] actually evaluates to `-2 * far * near / (far - near)`,
    * is very close to -0.2 with default clip range,
    * and is used as the coefficient multiplied by `w / z`,
-   * thus controlling the z dependent part of the depth value.
-   */
+   * thus controlling the z dependent part of the depth value. */
   return winmat[3][2] * -0.0025f * dist;
 }
 
@@ -685,7 +672,6 @@ void gpu_polygon_offset(float viewdist, float dist)
     gpu_matrix_projection_get(winmat);
 
     /* dist is from camera to center point */
-
     float ofs = gpu_polygon_offset_calc(winmat, viewdist, dist);
 
     winmat[3][2] -= ofs;
