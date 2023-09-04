@@ -1,4 +1,4 @@
-/** Descriptor type used to define shader structure, resources and interfaces. **/
+/* Descriptor type used to define shader structure, resources and interfaces. **/
 
 #include "lib_map.hh"
 #include "lib_set.hh"
@@ -65,7 +65,7 @@ void ShaderCreateInfo::finalize()
       if (!test) {
         std::cout << name_ << ": Validation failed while merging " << info.name_ << " : ";
         std::cout << error << std::endl;
-        BLI_assert(0);
+        lib_assert(0);
       }
     };
 
@@ -255,13 +255,13 @@ void gpu_shader_create_info_exit()
 
 bool gpu_shader_create_info_compile_all()
 {
-  using namespace blender::gpu;
+  using namespace dune::gpu;
   int success = 0;
   int total = 0;
   for (ShaderCreateInfo *info : g_create_infos->values()) {
     if (info->do_static_compilation_) {
       total++;
-      GPUShader *shader = GPU_shader_create_from_info(
+      GPUShader *shader = gpu_shader_create_from_info(
           reinterpret_cast<const GPUShaderCreateInfo *>(info));
       if (shader == nullptr) {
         printf("Compilation %s Failed\n", info->name_.c_str());
