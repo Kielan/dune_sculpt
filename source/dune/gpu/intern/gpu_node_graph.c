@@ -162,7 +162,7 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
                                            const int index,
                                            const eNodeSocketInOut in_out)
 {
-  DNodeSocket *socket;
+  NodeSocket *socket;
 
   if (in_out == SOCK_IN) {
     socket = lib_findlink(&node->inputs, index);
@@ -178,17 +178,17 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
     GPUNodeLink *link;
     switch (socket->type) {
       case SOCK_FLOAT: {
-        DNodeSocketValueFloat *socket_data = socket->default_value;
+        NodeSocketValueFloat *socket_data = socket->default_value;
         link = gpu_uniform(&socket_data->value);
         break;
       }
       case SOCK_VECTOR: {
-        DNodeSocketValueVector *socket_data = socket->default_value;
+        NodeSocketValueVector *socket_data = socket->default_value;
         link = gpu_uniform(socket_data->value);
         break;
       }
       case SOCK_RGBA: {
-        DNodeSocketValueRGBA *socket_data = socket->default_value;
+        NodeSocketValueRGBA *socket_data = socket->default_value;
         link = gpu_uniform(socket_data->value);
         break;
       }
@@ -206,7 +206,7 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
 }
 
 static void gpu_node_input_socket(
-    GPUMaterial *material, DNode *dnode, GPUNode *node, GPUNodeStack *sock, const int index)
+    GPUMaterial *material, Node *dnode, GPUNode *node, GPUNodeStack *sock, const int index)
 {
   if (sock->link) {
     gpu_node_input_link(node, sock->link, sock->type);
@@ -854,7 +854,7 @@ void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
 
   GPUUniformAttrList *uattrs = &graph->uniform_attrs;
 
-  LISTBASE_FOREACH_MUTABLE (GPUUniformAttr *, attr, &uattrs->list) {
+  LIST_FOREACH_MUTABLE (GPUUniformAttr *, attr, &uattrs->list) {
     if (attr->users == 0) {
       lib_freelinkn(&uattrs->list, attr);
       uattrs->count--;
