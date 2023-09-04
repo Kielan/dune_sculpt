@@ -12,7 +12,7 @@
 
 #include "gpu_state.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 
 #include "gpu_state_private.hh"
 
@@ -28,9 +28,7 @@ using namespace dune::gpu;
 #define SET_IMMUTABLE_STATE(_state, _value) SET_STATE(, _state, _value)
 #define SET_MUTABLE_STATE(_state, _value) SET_STATE(mutable_, _state, _value)
 
-/* -------------------------------------------------------------------- */
-/** Immutable state Setters **/
-
+/* Immutable state Setters */
 void gpu_blend(eGPUBlend blend)
 {
   SET_IMMUTABLE_STATE(blend, blend);
@@ -83,7 +81,7 @@ void gpu_write_mask(eGPUWriteMask mask)
 
 void gpu_color_mask(bool r, bool g, bool b, bool a)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->state;
   uint32_t write_mask = state.write_mask;
   SET_FLAG_FROM_TEST(write_mask, r, (uint32_t)GPU_WRITE_RED);
@@ -95,7 +93,7 @@ void gpu_color_mask(bool r, bool g, bool b, bool a)
 
 void gpu_depth_mask(bool depth)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->state;
   uint32_t write_mask = state.write_mask;
   SET_FLAG_FROM_TEST(write_mask, depth, (uint32_t)GPU_WRITE_DEPTH);
@@ -120,7 +118,7 @@ void gpu_state_set(eGPUWriteMask write_mask,
                    eGPUStencilOp stencil_op,
                    eGPUProvokingVertex provoking_vert)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->state;
   state.write_mask = (uint32_t)write_mask;
   state.blend = (uint32_t)blend;
@@ -131,12 +129,10 @@ void gpu_state_set(eGPUWriteMask write_mask,
   state.provoking_vert = (uint32_t)provoking_vert;
 }
 
-/* -------------------------------------------------------------------- */
-/** Mutable State Setters **/
-
+/* Mutable State Setters */
 void gpu_depth_range(float near, float far)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->mutable_state;
   copy_v2_fl2(state.depth_range, near, far);
 }
@@ -149,7 +145,7 @@ void gpu_line_width(float width)
 
 void gpu_point_size(float size)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->mutable_state;
   /* Keep the sign of point_size since it represents the enable state. */
   state.point_size = size * ((state.point_size > 0.0) ? 1.0f : -1.0f);
@@ -157,7 +153,7 @@ void gpu_point_size(float size)
 
 void gpu_program_point_size(bool enable)
 {
-  StateManager *stack = Context::get()->state_manager;
+  StateManager *stack = Cxt::get()->state_manager;
   auto &state = stack->mutable_state;
   /* Set point size sign negative to disable. */
   state.point_size = fabsf(state.point_size) * (enable ? 1 : -1);
@@ -171,13 +167,13 @@ void gpu_scissor_test(bool enable)
 void gpu_scissor(int x, int y, int width, int height)
 {
   int scissor_rect[4] = {x, y, width, height};
-  Context::get()->active_fb->scissor_set(scissor_rect);
+  Cxt::get()->active_fb->scissor_set(scissor_rect);
 }
 
 void gpu_viewport(int x, int y, int width, int height)
 {
   int viewport_rect[4] = {x, y, width, height};
-  Context::get()->active_fb->viewport_set(viewport_rect);
+  Cxt::get()->active_fb->viewport_set(viewport_rect);
 }
 
 void gpu_stencil_ref_set(uint ref)
@@ -195,9 +191,7 @@ void gpu_stencil_compare_mask_set(uint compare_mask)
   SET_MUTABLE_STATE(stencil_compare_mask, (uint8_t)compare_mask);
 }
 
-/* -------------------------------------------------------------------- */
-/** State Getters **/
-
+/* State Getters */
 eGPUBlend gpu_blend_get()
 {
   GPUState &state = Context::get()->state_manager->state;
@@ -206,7 +200,7 @@ eGPUBlend gpu_blend_get()
 
 eGPUWriteMask gpu_write_mask_get()
 {
-  GPUState &state = Context::get()->state_manager->state;
+  GPUState &state = Cxt::get()->state_manager->state;
   return (eGPUWriteMask)state.write_mask;
 }
 
@@ -218,31 +212,31 @@ uint gpu_stencil_mask_get()
 
 eGPUDepthTest gpu_depth_test_get()
 {
-  GPUState &state = Context::get()->state_manager->state;
+  GPUState &state = Cxt::get()->state_manager->state;
   return (eGPUDepthTest)state.depth_test;
 }
 
 eGPUStencilTest gpu_stencil_test_get()
 {
-  GPUState &state = Context::get()->state_manager->state;
+  GPUState &state = Cxt::get()->state_manager->state;
   return (eGPUStencilTest)state.stencil_test;
 }
 
 float gpu_line_width_get()
 {
-  const GPUStateMutable &state = Context::get()->state_manager->mutable_state;
+  const GPUStateMutable &state = Cxt::get()->state_manager->mutable_state;
   return state.line_width;
 }
 
 void gpu_scissor_get(int coords[4])
 {
-  Context::get()->active_fb->scissor_get(coords);
+  Cxt::get()->active_fb->scissor_get(coords);
 }
 
 void gpu_viewport_size_get_f(float coords[4])
 {
   int viewport[4];
-  Context::get()->active_fb->viewport_get(viewport);
+  Cxt::get()->active_fb->viewport_get(viewport);
   for (int i = 0; i < 4; i++) {
     coords[i] = viewport[i];
   }
@@ -250,7 +244,7 @@ void gpu_viewport_size_get_f(float coords[4])
 
 void gpu_viewport_size_get_i(int coords[4])
 {
-  Context::get()->active_fb->viewport_get(coords);
+  Cxt::get()->active_fb->viewport_get(coords);
 }
 
 bool gpu_depth_mask_get()
@@ -270,17 +264,17 @@ bool gpu_mipmap_enabled()
 
 void gpu_flush()
 {
-  Context::get()->flush();
+  Cxt::get()->flush();
 }
 
 void gpu_finish()
 {
-  Context::get()->finish();
+  Cxt::get()->finish();
 }
 
 void gpu_apply_state()
 {
-  Context::get()->state_manager->apply_state();
+  Cxt::get()->state_manager->apply_state();
 }
 
 /* -------------------------------------------------------------------- */
@@ -288,16 +282,15 @@ void gpu_apply_state()
  *
  * bgl makes direct GL calls that makes our state tracking out of date.
  * This flag make it so that the pyGPU calls will not override the state set by
- * bgl functions.
- **/
+ * bgl functions. */
 
 void gpu_bgl_start()
 {
-  Context *ctx = Context::get();
-  if (!(ctx && ctx->state_manager)) {
+  Cxt *cxt = Cxt::get();
+  if (!(cxt && cxt->state_manager)) {
     return;
   }
-  StateManager &state_manager = *(Context::get()->state_manager);
+  StateManager &state_manager = *(Cxt::get()->state_manager);
   if (state_manager.use_bgl == false) {
     /* Expected by many addons (see T80169, T81289).
      * This will reset the blend function. */
@@ -323,11 +316,11 @@ void gpu_bgl_start()
 
 void gpu_bgl_end()
 {
-  Context *ctx = Context::get();
-  if (!(ctx && ctx->state_manager)) {
+  Cxt *cxt = Cxt::get();
+  if (!(cxt && cxt->state_manager)) {
     return;
   }
-  StateManager &state_manager = *ctx->state_manager;
+  StateManager &state_manager = *cxt->state_manager;
   if (state_manager.use_bgl == true) {
     state_manager.use_bgl = false;
     /* Resync state tracking. */
@@ -337,20 +330,17 @@ void gpu_bgl_end()
 
 bool gpu_bgl_get()
 {
-  return Context::get()->state_manager->use_bgl;
+  return Cxt::get()->state_manager->use_bgl;
 }
 
-/* -------------------------------------------------------------------- */
 /** Synchronization Utils **/
-
 void gpu_memory_barrier(eGPUBarrier barrier)
 {
-  Context::get()->state_manager->issue_barrier(barrier);
+  Cxt::get()->state_manager->issue_barrier(barrier);
 }
 
 /* -------------------------------------------------------------------- */
 /* Default State **/
-
 StateManager::StateManager()
 {
   /* Set default state. */
