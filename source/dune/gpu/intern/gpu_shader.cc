@@ -8,7 +8,7 @@
 #include "gpu_platform.h"
 
 #include "gpu_backend.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_shader_create_info.hh"
 #include "gpu_shader_create_info_private.hh"
 #include "gpu_shader_dependency_private.h"
@@ -40,9 +40,7 @@ using namespace dune::gpu;
 
 static bool gpu_shader_srgb_uniform_dirty_get();
 
-/* -------------------------------------------------------------------- */
-/** Creation / Destruction **/
-
+/* Creation / Destruction */
 Shader::Shader(const char *sh_name)
 {
   lib_strncpy(this->name, sh_name, sizeof(this->name));
@@ -194,9 +192,7 @@ void gpu_shader_free(GPUShader *shader)
   delete unwrap(shader);
 }
 
-/* -------------------------------------------------------------------- */
-/** Creation utils **/
-
+/* Creation utils */
 GPUShader *gpu_shader_create(const char *vertcode,
                              const char *fragcode,
                              const char *geomcode,
@@ -480,7 +476,7 @@ void gpu_shader_bind(GPUShader *gpu_shader)
 {
   Shader *shader = unwrap(gpu_shader);
 
-  Context *ctx = Context::get();
+  Cxt *ctx = Cxt::get();
 
   if (ctx->shader != shader) {
     ctx->shader = shader;
@@ -501,7 +497,7 @@ void gpu_shader_bind(GPUShader *gpu_shader)
 void gpu_shader_unbind()
 {
 #ifndef NDEBUG
-  Context *ctx = Context::get();
+  Cxt *ctx = Cxt::get();
   if (ctx->shader) {
     ctx->shader->unbind();
   }
@@ -533,9 +529,7 @@ void gpu_shader_transform_feedback_disable(GPUShader *shader)
   unwrap(shader)->transform_feedback_disable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Uniforms / Resource location **/
-
+/* Uniforms / Resource location **/
 int gpu_shader_get_uniform(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
@@ -590,9 +584,7 @@ int gpu_shader_get_attribute(GPUShader *shader, const char *name)
   return attr ? attr->location : -1;
 }
 
-/* -------------------------------------------------------------------- */
-/** Getters **/
-
+/* Getters */
 int gpu_shader_get_program(GPUShader *shader)
 {
   return unwrap(shader)->program_handle_get();
@@ -715,7 +707,7 @@ static bool gpu_shader_srgb_uniform_dirty_get()
 
 void gpu_shader_set_srgb_uniform(GPUShader *shader)
 {
-  int32_t loc = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_SRGB_TRANSFORM);
+  int32_t loc = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_SRGB_TRANSFORM);
   if (loc != -1) {
     gpu_shader_uniform_vector_int(shader, loc, 1, 1, &g_shader_builtin_srgb_transform);
   }
