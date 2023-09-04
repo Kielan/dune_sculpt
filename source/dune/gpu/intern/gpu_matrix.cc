@@ -45,7 +45,7 @@ struct GPUMatrixState {
 
 GPUMatrixState *gpu_matrix_state_create()
 {
-#define MATRIX_4X4_IDENTITY \
+#define MATRIX_4X4_ID \
   { \
     {1.0f, 0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f, 0.0f}, \
     { \
@@ -54,12 +54,12 @@ GPUMatrixState *gpu_matrix_state_create()
   }
 
   GPUMatrixState *state = (GPUMatrixState *)mem_mallocn(sizeof(*state), __func__);
-  const MatrixStack identity_stack = {{MATRIX_4X4_IDENTITY}, 0};
+  const MatrixStack id_stack = {{MATRIX_4X4_ID}, 0};
 
-  state->model_view_stack = state->projection_stack = identity_stack;
+  state->model_view_stack = state->projection_stack = id_stack;
   state->dirty = true;
 
-#undef MATRIX_4X4_IDENTITY
+#undef MATRIX_4X4_ID
 
   return state;
 }
@@ -71,13 +71,13 @@ void gpu_matrix_state_discard(GPUMatrixState *state)
 
 static void gpu_matrix_state_active_set_dirty(bool value)
 {
-  GPUMatrixState *state = Context::get()->matrix_state;
+  GPUMatrixState *state = Cxt::get()->matrix_state;
   state->dirty = value;
 }
 
 void gpu_matrix_reset()
 {
-  GPUMatrixState *state = Context::get()->matrix_state;
+  GPUMatrixState *state = Cxt::get()->matrix_state;
   state->model_view_stack.top = 0;
   state->projection_stack.top = 0;
   unit_m4(ModelView);
@@ -632,7 +632,7 @@ int gpu_matrix_stack_level_get_projection()
 /* Polygon Offset Hack
  *
  * Workaround the fact that polygon-offset is implementation dependent.
- * We modify the projection matrix \a winmat in order to change the final depth a tiny amount. */
+ * We modify the projection matrix winmat in order to change the final depth a tiny amount. */
 
 float gpu_polygon_offset_calc(const float (*winmat)[4], float viewdist, float dist)
 {
