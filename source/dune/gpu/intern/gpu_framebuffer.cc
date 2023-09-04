@@ -219,7 +219,7 @@ bool gpu_framebuffer_bound(GPUFrameBuffer *gpu_fb)
   return (gpu_fb == gpu_framebuffer_active_get());
 }
 
-/* ---------- Attachment Management ----------- */
+/* Attachment Management */
 
 bool gpu_framebuffer_check_valid(GPUFrameBuffer *gpu_fb, char err_out[256])
 {
@@ -289,7 +289,7 @@ void gpu_framebuffer_config_array(GPUFrameBuffer *gpu_fb,
   }
 }
 
-/* ---------- Viewport & Scissor Region ----------- */
+/* Viewport & Scissor Region ----------- */
 
 void gpu_framebuffer_viewport_set(GPUFrameBuffer *gpu_fb, int x, int y, int width, int height)
 {
@@ -307,7 +307,7 @@ void gpu_framebuffer_viewport_reset(GPUFrameBuffer *gpu_fb)
   unwrap(gpu_fb)->viewport_reset();
 }
 
-/* ---------- Frame-buffer Operations ----------- */
+/* Frame-buffer Operations */
 
 void gpu_framebuffer_clear(GPUFrameBuffer *gpu_fb,
                            eGPUFrameBufferBits buffers,
@@ -326,13 +326,13 @@ void gpu_framebuffer_multi_clear(GPUFrameBuffer *gpu_fb, const float (*clear_col
 void gpu_clear_color(float red, float green, float blue, float alpha)
 {
   float clear_col[4] = {red, green, blue, alpha};
-  Context::get()->active_fb->clear(GPU_COLOR_BIT, clear_col, 0.0f, 0x0);
+  Cxt::get()->active_fb->clear(GPU_COLOR_BIT, clear_col, 0.0f, 0x0);
 }
 
 void gpu_clear_depth(float depth)
 {
   float clear_col[4] = {0};
-  Context::get()->active_fb->clear(GPU_DEPTH_BIT, clear_col, depth, 0x0);
+  Cxt::get()->active_fb->clear(GPU_DEPTH_BIT, clear_col, depth, 0x0);
 }
 
 void gpu_framebuffer_read_depth(
@@ -361,7 +361,7 @@ void gpu_frontbuffer_read_pixels(
     int x, int y, int w, int h, int channels, eGPUDataFormat format, void *data)
 {
   int rect[4] = {x, y, w, h};
-  Context::get()->front_left->read(GPU_COLOR_BIT, format, rect, channels, 0, data);
+  Cxt::get()->front_left->read(GPU_COLOR_BIT, format, rect, channels, 0, data);
 }
 
 /* TODO: port as texture operation. */
@@ -375,7 +375,7 @@ void gpu_framebuffer_blit(GPUFrameBuffer *gpufb_read,
   FrameBuffer *fb_write = unwrap(gpufb_write);
   lib_assert(blit_buffers != 0);
 
-  FrameBuffer *prev_fb = Context::get()->active_fb;
+  FrameBuffer *prev_fb = Cxt::get()->active_fb;
 
 #ifndef NDEBUG
   GPUTexture *read_tex, *write_tex;
@@ -406,19 +406,19 @@ void gpu_framebuffer_blit(GPUFrameBuffer *gpufb_read,
 
 void gpu_framebuffer_recursive_downsample(GPUFrameBuffer *gpu_fb,
                                           int max_lvl,
-                                          void (*callback)(void *userData, int level),
+                                          void (*cb)(void *userData, int level),
                                           void *userData)
 {
-  unwrap(gpu_fb)->recursive_downsample(max_lvl, callback, userData);
+  unwrap(gpu_fb)->recursive_downsample(max_lvl, cb, userData);
 }
 
 #ifndef GPU_NO_USE_PY_REFERENCES
-void **gou_framebuffer_py_reference_get(GPUFrameBuffer *gpu_fb)
+void **gpu_framebuffer_py_ref_get(GPUFrameBuffer *gpu_fb)
 {
   return unwrap(gpu_fb)->py_ref;
 }
 
-void gpu_framebuffer_py_reference_set(GPUFrameBuffer *gpu_fb, void **py_ref)
+void gpu_framebuffer_py_ref_set(GPUFrameBuffer *gpu_fb, void **py_ref)
 {
   lib_assert(py_ref == nullptr || unwrap(gpu_fb)->py_ref == nullptr);
   unwrap(gpu_fb)->py_ref = py_ref;
@@ -428,8 +428,7 @@ void gpu_framebuffer_py_reference_set(GPUFrameBuffer *gpu_fb, void **py_ref)
 /* -------------------------------------------------------------------- */
 /** Frame-Buffer Stack
  *
- * Keeps track of frame-buffer binding operation to restore previously bound frame-buffers.
- **/
+ * Keeps track of frame-buffer binding operation to restore previously bound frame-buffers */
 
 #define FRAMEBUFFER_STACK_DEPTH 16
 
@@ -459,12 +458,9 @@ uint gpu_framebuffer_stack_level_get()
 
 #undef FRAMEBUFFER_STACK_DEPTH
 
-/* -------------------------------------------------------------------- */
-/** GPUOffScreen
- *
+/* GPUOffScreen 
  * Container that holds a frame-buffer and its textures.
- * Might be bound to multiple contexts.
- **/
+ * Might be bound to multiple contexts. */
 
 #define MAX_CTX_FB_LEN 3
 
@@ -472,23 +468,21 @@ struct GPUOffScreen {
   struct {
     Context *ctx;
     GPUFrameBuffer *fb;
-  } framebuffers[MAX_CTX_FB_LEN];
+  } framebuffers[MAX_CXT_FB_LEN];
 
   GPUTexture *color;
   GPUTexture *depth;
 };
 
-/**
- * Returns the correct frame-buffer for the current context.
- */
+/* Returns the correct frame-buffer for the current context. */
 static GPUFrameBuffer *gpu_offscreen_fb_get(GPUOffScreen *ofs)
 {
-  Context *ctx = Context::get();
-  lib_assert(ctx);
+  Context *ctx = Cxt::get();
+  lib_assert(cxt);
 
   for (auto &framebuffer : ofs->framebuffers) {
     if (framebuffer.fb == nullptr) {
-      framebuffer.ctx = ctx;
+      framebuffer.cxt = cxt;
       gpu_framebuffer_ensure_config(&framebuffer.fb,
                                     {
                                         GPU_ATTACHMENT_TEXTURE(ofs->depth),
@@ -496,7 +490,7 @@ static GPUFrameBuffer *gpu_offscreen_fb_get(GPUOffScreen *ofs)
                                     });
     }
 
-    if (framebuffer.ctx == ctx) {
+    if (framebuffer.cxt == cxt) {
       return framebuffer.fb;
     }
   }
@@ -589,7 +583,7 @@ void gpu_offscreen_unbind(GPUOffScreen *UNUSED(ofs), bool restore)
 {
   GPUFrameBuffer *fb = nullptr;
   if (restore) {
-    fb = GPU_framebuffer_pop();
+    fb = gpu_framebuffer_pop();
   }
 
   if (fb) {
@@ -602,7 +596,7 @@ void gpu_offscreen_unbind(GPUOffScreen *UNUSED(ofs), bool restore)
 
 void gpu_offscreen_draw_to_screen(GPUOffScreen *ofs, int x, int y)
 {
-  Context *ctx = Context::get();
+  Cxt *cxt = Cxt::get();
   FrameBuffer *ofs_fb = unwrap(gpu_offscreen_fb_get(ofs));
   ofs_fb->blit_to(GPU_COLOR_BIT, 0, ctx->active_fb, 0, x, y);
 }
@@ -611,8 +605,8 @@ void gpu_offscreen_read_pixels(GPUOffScreen *ofs, eGPUDataFormat format, void *p
 {
   lib_assert(ELEM(format, GPU_DATA_UBYTE, GPU_DATA_FLOAT));
 
-  const int w = GPU_texture_width(ofs->color);
-  const int h = GPU_texture_height(ofs->color);
+  const int w = gpu_texture_width(ofs->color);
+  const int h = gpu_texture_height(ofs->color);
 
   GPUFrameBuffer *ofs_fb = gpu_offscreen_fb_get(ofs);
   gpu_framebuffer_read_color(ofs_fb, 0, 0, w, h, 4, 0, format, pixels);
