@@ -2,8 +2,8 @@
 
 #include "lib_utildefines.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
 #include "dune_customdata.h"
 #include "dune_global.h"
@@ -18,7 +18,7 @@
 
 #include "NOD_shader.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #include "bmesh.h"
 
@@ -29,17 +29,13 @@ extern "C" {
 Global G;
 UserDef U;
 
-/* -------------------------------------------------------------------- */
-/** Stubs of lib_imbuf_types.h **/
-
-void IMB_freeImBuf(ImBuf *UNUSED(ibuf))
+/* Stubs of lib_imbuf_types.h **/
+void imbuf_freeImBuf(ImBuf *UNUSED(ibuf))
 {
   lib_assert_unreachable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of ui_resources.h **/
-
+/* Stubs of ui_resources.h */
 void ui_GetThemeColor4fv(int UNUSED(colorid), float UNUSED(col[4]))
 {
   lib_assert_unreachable();
@@ -87,8 +83,7 @@ void ui_GetThemeColorShadeAlpha4ubv(int UNUSED(colorid),
   gpu_assert_unreachable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_paint.h **/
+/* Stubs of dune_paint.h */
 bool paint_is_face_hidden(const struct MLoopTri *UNUSED(lt),
                           const struct MVert *UNUSED(mvert),
                           const struct MLoop *UNUSED(mloop))
@@ -114,7 +109,7 @@ bool paint_is_grid_face_hidden(const unsigned int *UNUSED(grid_hidden),
 }
 
 /* -------------------------------------------------------------------- */
-/** Stubs of dune_mesh.h **/
+/* Stubs of dune_mesh.h **/
 void dune_mesh_calc_poly_normal(const struct MPoly *UNUSED(mpoly),
                                const struct MLoop *UNUSED(loopstart),
                                const struct MVert *UNUSED(mvarray),
@@ -130,26 +125,20 @@ void dune_mesh_looptri_get_real_edges(const struct Mesh *UNUSED(mesh),
   lib_assert_unreachable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_material.h */
-
+/* Stubs of dune_material.h */
 void dune_material_defaults_free_gpu()
 {
-  /* This function is reachable via GPU_exit. */
+  /* This function is reachable via gpu_exit. */
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_customdata.h **/
-
+/* Stubs of dune_customdata.h */
 int CustomData_get_offset(const struct CustomData *UNUSED(data), int UNUSED(type))
 {
   lib_assert_unreachable();
   return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_pbvh.h **/
-
+/* Stubs of dune_pbvh.h **/
 int dune_pbvh_count_grid_quads(lib_bitmap **UNUSED(grid_hidden),
                               const int *UNUSED(grid_indices),
                               int UNUSED(totgrid),
@@ -159,8 +148,7 @@ int dune_pbvh_count_grid_quads(lib_bitmap **UNUSED(grid_hidden),
   return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_subdiv_ccg.h **/
+/* Stubs of dune_subdiv_ccg.h **/
 int dune_subdiv_ccg_grid_to_face_index(const SubdivCCG *UNUSED(subdiv_ccg),
                                       const int UNUSED(grid_index))
 {
@@ -168,9 +156,8 @@ int dune_subdiv_ccg_grid_to_face_index(const SubdivCCG *UNUSED(subdiv_ccg),
   return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of dune_node.h **/
-void ntreeGPUMaterialNodes(struct bNodeTree *UNUSED(localtree),
+/* Stubs of dune_node.h **/
+void ntreeGPUMaterialNodes(struct NodeTree *UNUSED(localtree),
                            struct GPUMaterial *UNUSED(mat),
                            bool *UNUSED(has_surface_output),
                            bool *UNUSED(has_volume_output))
@@ -178,27 +165,25 @@ void ntreeGPUMaterialNodes(struct bNodeTree *UNUSED(localtree),
   lib_assert_unreachable();
 }
 
-struct DNodeTree *ntreeLocalize(struct bNodeTree *UNUSED(ntree))
+struct NodeTree *ntreeLocalize(struct NodeTree *UNUSED(ntree))
 {
   lib_assert_unreachable();
   return nullptr;
 }
 
-void ntreeFreeLocalTree(struct DNodeTree *UNUSED(ntree))
+void ntreeFreeLocalTree(struct NodeTree *UNUSED(ntree))
 {
   lib_assert_unreachable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of bmesh.h **/
-void BM_face_as_array_vert_tri(BMFace *UNUSED(f), BMVert *UNUSED(r_verts[3]))
+/* Stubs of mesh.h */
+void mesh_face_as_array_vert_tri(MFace *UNUSED(f), MVert *UNUSED(r_verts[3]))
 {
   lib_assert_unreachable();
 }
 
-/* -------------------------------------------------------------------- */
-/** Stubs of DRW_engine.h **/
-void DRW_deferred_shader_remove(struct GPUMaterial *UNUSED(mat))
+/* Stubs of draw_engine.h **/
+void draw_deferred_shader_remove(struct GPUMaterial *UNUSED(mat))
 {
   lib_assert_unreachable();
 }
