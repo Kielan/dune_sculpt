@@ -1,5 +1,4 @@
-/** Parsing of and code generation using GLSL shaders in gpu/shaders/material. */
-
+/* Parsing of and code generation using GLSL shaders in gpu/shaders/material. */
 #pragma once
 
 #include "gpu_material.h"
@@ -21,9 +20,9 @@ typedef enum {
 } GPUFnQual;
 
 typedef struct GPUFn {
-  char name[MAX_FUNCTION_NAME];
+  char name[MAX_FN_NAME];
   eGPUType paramtype[MAX_PARAM];
-  GPUFunctionQual paramqual[MAX_PARAM];
+  GPUFnQual paramqual[MAX_PARAM];
   int totparam;
   GPUMaterialLib *lib;
 } GPUFn;
