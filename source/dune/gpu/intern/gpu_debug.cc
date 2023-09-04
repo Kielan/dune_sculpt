@@ -1,10 +1,10 @@
-/** Debug features of OpenGL. **/
+/* Debug features of OpenGL. **/
 
 #include "dune_global.h"
 
 #include "lib_string.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 
 #include "gpu_debug.h"
 
@@ -16,8 +16,8 @@ void gpu_debug_group_begin(const char *name)
   if (!(G.debug & G_DEBUG_GPU)) {
     return;
   }
-  Context *ctx = Context::get();
-  DebugStack &stack = ctx->debug_stack;
+  Cxt *cxt = Cxt::get();
+  DebugStack &stack = cxt->debug_stack;
   stack.append(StringRef(name));
   ctx->debug_group_begin(name, stack.size());
 }
@@ -34,18 +34,18 @@ void gpu_debug_group_end()
 
 void gpu_debug_get_groups_names(int name_buf_len, char *r_name_buf)
 {
-  Context *ctx = Context::get();
+  Cxt *cxt = Cxt::get();
   if (ctx == nullptr) {
     return;
   }
-  DebugStack &stack = ctx->debug_stack;
+  DebugStack &stack = cxt->debug_stack;
   if (stack.size() == 0) {
     r_name_buf[0] = '\0';
     return;
   }
   size_t sz = 0;
   for (StringRef &name : stack) {
-    sz += BLI_snprintf_rlen(r_name_buf + sz, name_buf_len - sz, "%s > ", name.data());
+    sz += lib_snprintf_rlen(r_name_buf + sz, name_buf_len - sz, "%s > ", name.data());
   }
   r_name_buf[sz - 3] = '\0';
 }
@@ -54,11 +54,11 @@ bool gpu_debug_group_match(const char *ref)
 {
   /* Otherwise there will be no names. */
   lib_assert(G.debug & G_DEBUG_GPU);
-  Context *ctx = Context::get();
-  if (ctx == nullptr) {
+  Cxt *cxt = Cxt::get();
+  if (cxt == nullptr) {
     return false;
   }
-  const DebugStack &stack = ctx->debug_stack;
+  const DebugStack &stack = cxt->debug_stack;
   for (const StringRef &name : stack) {
     if (name == ref) {
       return true;
