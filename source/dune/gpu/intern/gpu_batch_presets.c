@@ -1,4 +1,4 @@
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_math.h"
 #include "lib_threads.h"
 #include "lib_utildefines.h"
@@ -13,8 +13,8 @@
 #include "gpu_batch_presets.h" /* own include */
 #include "gpu_batch_utils.h"
 
-/* -------------------------------------------------------------------- */
-/** Local Structures **/
+
+/* Local Structures */
 
 /* Struct to store 3D Batches and their format */
 static struct {
@@ -55,16 +55,14 @@ static struct {
 
 static ListBase presets_list = {NULL, NULL};
 
-/* -------------------------------------------------------------------- */
-/** 3D Primitives **/
-
+/* 3D Primitives */
 static GPUVertFormat *preset_3d_format(void)
 {
   if (g_presets_3d.format.attr_len == 0) {
     GPUVertFormat *format = &g_presets_3d.format;
-    g_presets_3d.attr_id.pos = GPU_vertformat_attr_add(
+    g_presets_3d.attr_id.pos = gpu_vertformat_attr_add(
         format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-    g_presets_3d.attr_id.nor = GPU_vertformat_attr_add(
+    g_presets_3d.attr_id.nor = gpu_vertformat_attr_add(
         format, "nor", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
   }
   return &g_presets_3d.format;
@@ -74,9 +72,9 @@ static GPUVertFormat *preset_2d_format(void)
 {
   if (g_presets_2d.format.attr_len == 0) {
     GPUVertFormat *format = &g_presets_2d.format;
-    g_presets_2d.attr_id.pos = GPU_vertformat_attr_add(
+    g_presets_2d.attr_id.pos = gpu_vertformat_attr_add(
         format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-    g_presets_2d.attr_id.col = GPU_vertformat_attr_add(
+    g_presets_2d.attr_id.col = gpu_vertformat_attr_add(
         format, "color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
   }
   return &g_presets_2d.format;
@@ -121,9 +119,7 @@ GPUBatch *gpu_batch_preset_sphere_wire(int lod)
   return g_presets_3d.batch.sphere_wire_med;
 }
 
-/* -------------------------------------------------------------------- */
-/** Create Sphere (3D) **/
-
+/* Create Sphere (3D) */
 GPUBatch *gpu_batch_sphere(int lat_res, int lon_res)
 {
   const float lon_inc = 2 * M_PI / lon_res;
@@ -196,9 +192,7 @@ static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
   return gpu_batch_create_ex(GPU_PRIM_LINES, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
 
-/* -------------------------------------------------------------------- */
-/** Panel Drag Widget **/
-
+/* Panel Drag Widget */
 static void gpu_batch_preset_rectf_tris_color_ex(GPUVertBufRaw *pos_step,
                                                  float x1,
                                                  float y1,
@@ -237,7 +231,7 @@ static GPUBatch *gpu_batch_preset_panel_drag_widget(float pixelsize,
 
   GPUVertBufRaw pos_step, col_step;
   gpu_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.pos, &pos_step);
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.col, &col_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.col, &col_step);
 
   const int px = (int)pixelsize;
   const int px_zoom = max_ii(round_fl_to_int(width / 22.0f), 1);
@@ -314,9 +308,7 @@ GPUBatch *gpu_batch_preset_quad(void)
   return g_presets_2d.batch.quad;
 }
 
-/* -------------------------------------------------------------------- */
-/** Preset Registration Management **/
-
+/* Preset Registration Management */
 void gpu_batch_presets_init(void)
 {
   lib_mutex_init(&g_presets_3d.mutex);
@@ -341,7 +333,7 @@ void gpu_batch_presets_init(void)
 void gpu_batch_presets_register(GPUBatch *preset_batch)
 {
   lib_mutex_lock(&g_presets_3d.mutex);
-  lib_addtail(&presets_list, lib_genericNodeN(preset_batch));
+  lib_addtail(&presets_list, lib_genericnoden(preset_batch));
   lib_mutex_unlock(&g_presets_3d.mutex);
 }
 
