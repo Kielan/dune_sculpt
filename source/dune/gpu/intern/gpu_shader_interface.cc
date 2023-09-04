@@ -1,8 +1,5 @@
-/**
- * gpu
- *
- * GPU shader interface (C --> GLSL)
- */
+/* GPU shader interface
+ * (C --> GLSL) */
 
 #include "mem_guardedalloc.h"
 
