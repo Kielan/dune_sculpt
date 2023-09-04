@@ -9,9 +9,7 @@
 #include "gpu_batch.h"
 #include "gpu_batch_utils.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Polygon Creation (2D) **/
-
+/* Polygon Creation (2D) **/
 GPUBatch *gpu_batch_tris_from_poly_2d_encoded(const uchar *polys_flat,
                                               uint polys_flat_len,
                                               const rctf *rect)
