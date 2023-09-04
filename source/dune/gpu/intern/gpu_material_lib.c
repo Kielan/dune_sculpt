@@ -13,9 +13,9 @@
 #include "gpu_material_lib.h"
 
 /* List of all gpu_shader_material_*.glsl files used by GLSL materials. These
- * will be parsed to make all functions in them available to use for GPU_link().
+ * will be parsed to make all fns in them available to use for gpu_link().
  *
- * If a file uses functions from another file, it must be added to the list of
+ * If a file uses fns from another file, it must be added to the list of
  * dependencies, and be placed after that file in the list. */
 
 extern char datatoc_gpu_shader_material_add_shader_glsl[];
