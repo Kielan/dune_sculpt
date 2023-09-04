@@ -1,11 +1,8 @@
 /* Debug features of OpenGL. **/
 
 #include "dune_global.h"
-
 #include "lib_string.h"
-
 #include "gpu_cxt_private.hh"
-
 #include "gpu_debug.h"
 
 using namespace dune;
