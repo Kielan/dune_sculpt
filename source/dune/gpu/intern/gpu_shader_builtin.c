@@ -89,9 +89,9 @@ extern char datatoc_gpu_shader_text_frag_glsl[];
 extern char datatoc_gpu_shader_keyframe_shape_vert_glsl[];
 extern char datatoc_gpu_shader_keyframe_shape_frag_glsl[];
 
-extern char datatoc_gpu_shader_gpencil_stroke_vert_glsl[];
-extern char datatoc_gpu_shader_gpencil_stroke_frag_glsl[];
-extern char datatoc_gpu_shader_gpencil_stroke_geom_glsl[];
+extern char datatoc_gpu_shader_pen_stroke_vert_glsl[];
+extern char datatoc_gpu_shader_pen_stroke_frag_glsl[];
+extern char datatoc_gpu_shader_pen_stroke_geom_glsl[];
 
 extern char datatoc_gpu_shader_cfg_world_clip_lib_glsl[];
 
@@ -101,13 +101,13 @@ const struct GPUShaderConfigData GPU_shader_cfg_data[GPU_SHADER_CFG_LEN] = {
     [GPU_SHADER_CFG_DEFAULT] =
         {
             .lib = "",
-            .def = "#define blender_srgb_to_framebuffer_space(a) a\n",
+            .def = "#define dune_srgb_to_framebuffer_space(a) a\n",
         },
     [GPU_SHADER_CFG_CLIPPED] =
         {
             .lib = datatoc_gpu_shader_cfg_world_clip_lib_glsl,
             .def = "#define USE_WORLD_CLIP_PLANES\n"
-                   "#define blender_srgb_to_framebuffer_space(a) a\n",
+                   "#define dune_srgb_to_framebuffer_space(a) a\n",
         },
 };
 
