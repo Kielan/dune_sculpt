@@ -1,20 +1,16 @@
-/** \file
- * \ingroup gpu
- *
- * Intermediate node graph for generating GLSL shaders.
- */
+/* Intermediate node graph for generating GLSL shaders. */
 
 #pragma once
 
-#include "DNA_customdata_types.h"
-#include "DNA_listBase.h"
+#include "types_customdata.h"
+#include "types_list.h"
 
-#include "GPU_material.h"
-#include "GPU_shader.h"
+#include "gpu_material.h"
+#include "gpu_shader.h"
 
 struct GPUNode;
 struct GPUOutput;
-struct ListBase;
+struct List;
 
 typedef enum eGPUDataSource {
   GPU_SOURCE_OUTPUT,
@@ -54,8 +50,8 @@ struct GPUNode {
   /* Internal flag to mark nodes during pruning */
   bool tag;
 
-  ListBase inputs;
-  ListBase outputs;
+  List inputs;
+  List outputs;
 };
 
 struct GPUNodeLink {
@@ -128,17 +124,17 @@ typedef struct GPUNodeGraphOutputLink {
 
 typedef struct GPUNodeGraph {
   /* Nodes */
-  ListBase nodes;
+  List nodes;
 
   /* Main Output. */
   GPUNodeLink *outlink;
   /* List of GPUNodeGraphOutputLink */
-  ListBase outlink_aovs;
+  List outlink_aovs;
 
   /* Requested attributes and textures. */
-  ListBase attributes;
-  ListBase textures;
-  ListBase volume_grids;
+  List attributes;
+  List textures;
+  List volume_grids;
 
   /* The list of uniform attributes. */
   GPUUniformAttrList uniform_attrs;
@@ -148,24 +144,17 @@ typedef struct GPUNodeGraph {
 
 void gpu_node_graph_prune_unused(GPUNodeGraph *graph);
 void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph);
-/**
- * Free intermediate node graph.
- */
+/* Free intermediate node graph */
 void gpu_node_graph_free_nodes(GPUNodeGraph *graph);
-/**
- * Free both node graph and requested attributes and textures.
- */
+/* Free both node graph and requested attributes and textures. */
 void gpu_node_graph_free(GPUNodeGraph *graph);
 
 /* Material calls */
-
 struct GPUNodeGraph *gpu_material_node_graph(struct GPUMaterial *material);
-/**
- * Returns the address of the future pointer to coba_tex.
- */
+/* Returns the address of the future pointer to coba_tex. */
 struct GPUTexture **gpu_material_ramp_texture_row_set(struct GPUMaterial *mat,
                                                       int size,
                                                       float *pixels,
                                                       float *row);
 
-struct GSet *gpu_material_used_libraries(struct GPUMaterial *material);
+struct GSet *gpu_material_used_libs(struct GPUMaterial *material);
