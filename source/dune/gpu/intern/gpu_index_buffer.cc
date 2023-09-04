@@ -1,4 +1,4 @@
-/** GPU element list (AKA index buffer) */
+/* GPU element list, index buffer */
 
 #include "mem_guardedalloc.h"
 
@@ -15,8 +15,7 @@
 
 #define RESTART_INDEX 0xFFFFFFFF
 
-/* -------------------------------------------------------------------- */
-/** IndexBufBuilder **/
+/* IndexBufBuilder */
 
 using namespace dune;
 using namespace dune::gpu;
@@ -203,9 +202,7 @@ void gpu_indexbuf_set_tri_restart(GPUIndexBufBuilder *builder, uint elem)
   builder->index_len = MAX2(builder->index_len, idx);
 }
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
-
+/* Creation & Deletion */
 namespace dune::gpu {
 
 IndexBuf::~IndexBuf()
@@ -321,9 +318,7 @@ uint32_t *IndexBuf::unmap(const uint32_t *mapped_memory) const
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-/** C-API **/
-
+/* C-API */
 GPUIndexBuf *gpu_indexbuf_calloc()
 {
   return wrap(GPUBackend::get()->indexbuf_alloc());
