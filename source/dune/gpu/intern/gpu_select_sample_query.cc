@@ -1,7 +1,5 @@
-/**
- * Interface for accessing gpu-related methods for selection. The semantics will be
- * similar to `glRenderMode(GL_SELECT)` since the goal is to maintain compatibility.
- */
+/* Interface for accessing gpu-related methods for selection. The semantics will be
+ * similar to `glRenderMode(GL_SELECT)` since the goal is to maintain compatibility. */
 
 #include <cstdlib>
 
@@ -27,22 +25,22 @@ using namespace dune;
 using namespace dune::gpu;
 
 struct GPUSelectQueryState {
-  /** Tracks whether a query has been issued so that gpu_load_id can end the previous one. */
+  /* Tracks whether a query has been issued so that gpu_load_id can end the previous one. */
   bool query_issued;
-  /** GPU queries abstraction. Contains an array of queries. */
+  /* GPU queries abstraction. Contains an array of queries. */
   QueryPool *queries;
-  /** Array holding the id corresponding id to each query. */
+  /* Array holding the id corresponding id to each query. */
   Vector<uint, QUERY_MIN_LEN> *ids;
-  /** Cache on initialization. */
+  /* Cache on initialization. */
   GPUSelectResult *buffer;
-  /** The capacity of the `buffer` array. */
+  /* The capacity of the `buffer` array. */
   uint buffer_len;
-  /** Mode of operation. */
+  /* Mode of operation. */
   eGPUSelectMode mode;
   uint index;
   int oldhits;
 
-  /** Previous state to restore after drawing. */
+  /* Previous state to restore after drawing. */
   int viewport[4];
   int scissor[4];
   eGPUWriteMask write_mask;
@@ -93,7 +91,7 @@ void gpu_select_query_begin(GPUSelectResult *buffer,
   /* occlusion queries operates on fragments that pass tests and since we are interested on all
    * objects in the view frustum independently of their order, we need to disable the depth test */
   if (mode == GPU_SELECT_ALL) {
-    /* #glQueries on Windows+Intel drivers only works with depth testing turned on.
+    /* glQueries on Windows+Intel drivers only works with depth testing turned on.
      * See T62947 for details */
     gpu_depth_test(GPU_DEPTH_ALWAYS);
     gpu_depth_mask(true);
