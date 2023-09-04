@@ -1,7 +1,4 @@
-/**
- * gpu
- *
- * GPUBackend derived class contain allocators that do not need a context bound.
+/* GPUBackend derived class contain allocators that do not need a context bound.
  * The backend is init at startup and is accessible using gpu_backend_get() */
 
 #pragma once
@@ -11,7 +8,7 @@
 namespace dune {
 namespace gpu {
 
-class Context;
+class Cxt;
 
 class Batch;
 class DrawList;
@@ -34,7 +31,7 @@ class GPUBackend {
   virtual void compute_dispatch(int groups_x_len, int groups_y_len, int groups_z_len) = 0;
   virtual void compute_dispatch_indirect(StorageBuf *indirect_buf) = 0;
 
-  virtual Context *context_alloc(void *ghost_window) = 0;
+  virtual Cxt *cxt_alloc(void *ghost_window) = 0;
 
   virtual Batch *batch_alloc() = 0;
   virtual DrawList *drawlist_alloc(int list_length) = 0;
