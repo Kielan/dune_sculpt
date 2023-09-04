@@ -1,13 +1,11 @@
-/**
- * Wrap OpenGL features such as textures, shaders and GLSL
- * with checks for drivers and GPU support.
- */
+/* Wrap OpenGL features such as textures, shaders and GLSL
+ * with checks for drivers and GPU support. */
 
 #include "types_userdef.h"
 
 #include "gpu_capabilities.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 
 #include "gpu_capabilities_private.hh"
 
@@ -17,11 +15,9 @@ GPUCapabilities GCaps;
 
 }
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
-/* -------------------------------------------------------------------- */
-/** Capabilities **/
-
+/* Capabilities */
 int gpu_max_texture_size()
 {
   return GCaps.max_texture_size;
@@ -120,7 +116,7 @@ bool gpu_depth_blitting_workaround()
   return GCaps.depth_blitting_workaround;
 }
 
-bool gpu_use_main_context_workaround()
+bool gpu_use_main_cxt_workaround()
 {
   return GCaps.use_main_context_workaround;
 }
@@ -156,9 +152,7 @@ int gpu_max_shader_storage_buffer_bindings()
   return GCaps.max_shader_storage_buffer_bindings;
 }
 
-/* -------------------------------------------------------------------- */
-/** Memory statistics **/
-
+/* Memory statistics */
 bool gpu_mem_stats_supported()
 {
   return GCaps.mem_stats_support;
@@ -166,10 +160,10 @@ bool gpu_mem_stats_supported()
 
 void gpu_mem_stats_get(int *totalmem, int *freemem)
 {
-  Context::get()->memory_statistics_get(totalmem, freemem);
+  Cxt::get()->memory_statistics_get(totalmem, freemem);
 }
 
 bool gpu_stereo_quadbuffer_support()
 {
-  return Context::get()->front_right != nullptr;
+  return Cxt::get()->front_right != nullptr;
 }
