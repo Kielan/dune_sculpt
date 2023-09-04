@@ -1,15 +1,14 @@
-/*** System that manages viewport drawing. */
-
+/* System that manages viewport drawing. */
 #include <string.h>
 
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_math_vector.h"
 #include "lib_memblock.h"
 #include "lib_rect.h"
 
 #include "dune_colortools.h"
 
-#include "IMB_colormanagement.h"
+#include "imbuf_colormanagement.h"
 
 #include "types_userdef_types.h"
 #include "types_vec_types.h"
@@ -21,7 +20,7 @@
 #include "gpu_uniform_buffer.h"
 #include "gpu_viewport.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #include "mem_guardedalloc.h"
 
@@ -51,15 +50,15 @@ struct GPUViewport {
   int active_view;
 
   /* Viewport Resources. */
-  struct DRWData *draw_data;
-  /** Color buffers, one for each stereo view. Only one if not stereo viewport. */
+  struct DrawData *draw_data;
+  /* Color buffers, one for each stereo view. Only one if not stereo viewport. */
   GPUTexture *color_render_tx[2];
   GPUTexture *color_overlay_tx[2];
-  /** Depth buffer. Can be shared with GPUOffscreen. */
+  /* Depth buffer. Can be shared with GPUOffscreen. */
   GPUTexture *depth_tx;
-  /** Compositing framebuffer for stereo viewport. */
+  /* Compositing framebuffer for stereo viewport. */
   GPUFrameBuffer *stereo_comp_fb;
-  /** Overlay framebuffer for drawing outside of DRW module. */
+  /* Overlay framebuffer for drawing outside of DRW module. */
   GPUFrameBuffer *overlay_fb;
 
   /* Color management. */
@@ -106,7 +105,7 @@ GPUViewport *gpu_viewport_stereo_create(void)
   return viewport;
 }
 
-struct DRWData **gpu_viewport_data_get(GPUViewport *viewport)
+struct DrawData **gpu_viewport_data_get(GPUViewport *viewport)
 {
   return &viewport->draw_data;
 }
@@ -162,10 +161,10 @@ void gpu_viewport_bind(GPUViewport *viewport, int view, const rcti *rect)
 {
   int rect_size[2];
   /* add one pixel because of scissor test */
-  rect_size[0] = BLI_rcti_size_x(rect) + 1;
-  rect_size[1] = BLI_rcti_size_y(rect) + 1;
+  rect_size[0] = lib_rcti_size_x(rect) + 1;
+  rect_size[1] = lib_rcti_size_y(rect) + 1;
 
-  DRW_opengl_context_enable();
+  draw_opengl_cxt_enable();
 
   if (!equals_v2v2_int(viewport->size, rect_size)) {
     copy_v2_v2_int(viewport->size, rect_size);
@@ -188,7 +187,7 @@ void gpu_viewport_bind_from_offscreen(GPUViewport *viewport,
   gpu_offscreen_viewport_data_get(ofs, &fb, &color, &depth);
 
   /* XR surfaces will already check for texture size changes and free if necessary (see
-   * #wm_xr_session_surface_offscreen_ensure()), so don't free here as it has a significant
+   * wm_xr_session_surface_offscreen_ensure()), so don't free here as it has a significant
    * performance impact (leads to texture re-creation in #gpu_viewport_textures_create() every VR
    * drawing iteration).*/
   if (!is_xr_surface) {
@@ -206,13 +205,11 @@ void gpu_viewport_colorspace_set(GPUViewport *viewport,
                                  const ColorManagedDisplaySettings *display_settings,
                                  float dither)
 {
-  /**
-   * HACK: We copy the settings here to avoid use after free if an update frees the scene
+  /* HACK: We copy the settings here to avoid use after free if an update frees the scene
    * and the viewport stays cached (see T75443). But this means the OCIO curve-mapping caching
-   * (which is based on #CurveMap pointer address) cannot operate correctly and it will create
+   * (which is based on CurveMap ptr address) cannot operate correctly and it will create
    * a different OCIO processor for each viewport. We try to only reallocate the curve-map copy
-   * if needed to avoid unneeded cache invalidation.
-   */
+   * if needed to avoid unneeded cache invalidation. */
   if (view_settings->curve_mapping) {
     if (viewport->view_settings.curve_mapping) {
       if (view_settings->curve_mapping->changed_timestamp !=
@@ -315,9 +312,7 @@ void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
 
   gpu_framebuffer_restore();
 }
-/* -------------------------------------------------------------------- */
-/** Viewport Batches */
-
+/* Viewport Batches */
 static GPUVertFormat *gpu_viewport_batch_format(void)
 {
   if (g_viewport.format.attr_len == 0) {
@@ -360,10 +355,10 @@ static GPUBatch *gpu_viewport_batch_get(GPUViewport *viewport,
   const bool parameters_changed =
       (!lib_rctf_compare(
            &viewport->batch.last_used_parameters.rect_pos, rect_pos, compare_limit) ||
-       !BLI_rctf_compare(&viewport->batch.last_used_parameters.rect_uv, rect_uv, compare_limit));
+       (lib_rctf_compare(&viewport->batch.last_used_parameters.rect_uv, rect_uv, compare_limit));
 
   if (viewport->batch.batch && parameters_changed) {
-    GPU_batch_discard(viewport->batch.batch);
+    gpu_batch_discard(viewport->batch.batch);
     viewport->batch.batch = NULL;
   }
 
@@ -429,7 +424,7 @@ static void gpu_viewport_draw_colormanaged(GPUViewport *viewport,
   gpu_texture_unbind(color_overlay);
 
   if (use_ocio) {
-    IMB_colormanagement_finish_glsl_draw();
+    imbuf_colormanagement_finish_glsl_draw();
   }
 }
 
@@ -526,7 +521,7 @@ void gpu_viewport_unbind_from_offscreen(GPUViewport *viewport,
 void gpu_viewport_unbind(GPUViewport *UNUSED(viewport))
 {
   gpu_framebuffer_restore();
-  DRW_opengl_context_disable();
+  draw_opengl_cxt_disable();
 }
 
 int gpu_viewport_active_view_get(GPUViewport *viewport)
@@ -568,7 +563,7 @@ GPUFrameBuffer *gpu_viewport_framebuffer_overlay_get(GPUViewport *viewport)
 void gpu_viewport_free(GPUViewport *viewport)
 {
   if (viewport->draw_data) {
-    DRW_viewport_data_free(viewport->draw_data);
+    draw_viewport_data_free(viewport->draw_data);
   }
 
   gpu_viewport_textures_free(viewport);
