@@ -45,7 +45,6 @@ typedef struct SubRectStride {
 typedef uint depth_t;
 
 /* Calculate values needed for looping over a sub-region (smaller buffer within a larger buffer).
- *
  * 'src' must be bigger than 'dst'. */
 static void rect_subregion_stride_calc(const rcti *src, const rcti *dst, SubRectStride *r_sub)
 {
@@ -77,7 +76,7 @@ LIB_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
  * Result of reading gpu_framebuffer_read_depth,
  * use for both cache and non-cached storage. */
 
-/* Store result of #gpu_framebuffer_read_depth. */
+/* Store result of gpu_framebuffer_read_depth. */
 typedef struct DepthBufCache {
   struct DepthBufCache *next, *prev;
   uint id;
@@ -159,7 +158,6 @@ static bool depth_buf_subrect_depth_any_filled(const DepthBufCache *rect_src,
 
 /* DepthId
  * Internal structure for storing hits. */
-
 typedef struct DepthId {
   uint id;
   depth_t depth;
@@ -202,15 +200,15 @@ typedef struct GPUPickState {
 
   /* GPU drawing, never use when `is_cached == true`. */
   struct {
-    /** The current depth, accumulated while drawing. */
+    /* The current depth, accumulated while drawing. */
     DepthBufCache *rect_depth;
-    /** Scratch buffer, avoid allocations every time (when not caching). */
+    /* Scratch buffer, avoid allocations every time (when not caching). */
     DepthBufCache *rect_depth_test;
 
-    /** Pass to `gpu_framebuffer_read_depth(x, y, w, h)`. */
+    /* Pass to `gpu_framebuffer_read_depth(x, y, w, h)`. */
     int clip_readpixels[4];
 
-    /** Set after first draw. */
+    /* Set after first draw. */
     bool is_init;
     uint prev_id;
   } gpu;
@@ -222,12 +220,11 @@ typedef struct GPUPickState {
     uint rect_len;
   } src, dst;
 
-  /** Store cache between `gpu_select_cache_begin/end` */
+  /* Store cache between `gpu_select_cache_begin/end` */
   bool use_cache;
   bool is_cached;
   struct {
-    /**
-     * Cleanup used for iterating over both source and destination buffers:
+    /* Cleanup used for iterating over both source and destination buffers:
      * `src.clip_rect` -> `dst.clip_rect` */
     SubRectStride sub_rect;
 
@@ -250,7 +247,7 @@ typedef struct GPUPickState {
     } nearest;
   };
 
-  /** Previous state to restore after drawing. */
+  /* Previous state to restore after drawing. */
   int viewport[4];
   int scissor[4];
   eGPUWriteMask write_mask;
@@ -660,8 +657,7 @@ uint gpu_select_pick_end(void)
 }
 
 /* Caching
- * Support multiple begin/end's reusing depth buffers. **/
-
+ * Support multiple begin/end's reusing depth buffers */
 void gpu_select_pick_cache_begin(void)
 {
   lib_assert(g_pick_state.use_cache == false);
@@ -675,7 +671,7 @@ void gpu_select_pick_cache_begin(void)
 void gpu_select_pick_cache_end(void)
 {
 #ifdef DEBUG_PRINT
-  printf("%s: with %d buffers\n", __func__, BLI_listbase_count(&g_pick_state.cache.bufs));
+  printf("%s: with %d buffers\n", __func__, lib_list_count(&g_pick_state.cache.bufs));
 #endif
   g_pick_state.use_cache = false;
   g_pick_state.is_cached = false;
