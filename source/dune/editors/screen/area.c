@@ -338,9 +338,9 @@ static void region_draw_status_text(ScrArea *area, ARegion *region)
     ui_ThemeClearColor(TH_HEADER);
   }
 
-  int fontid = BLF_set_default();
+  int fontid = font_set_default();
 
-  const float width = BLF_width(fontid, region->headerstr, BLF_DRAW_STR_DUMMY_MAX);
+  const float width = font_width(fontid, region->headerstr, BLF_DRAW_STR_DUMMY_MAX);
   const float x = UI_UNIT_X;
   const float y = 0.4f * UI_UNIT_Y;
 
@@ -373,8 +373,8 @@ static void region_draw_status_text(ScrArea *area, ARegion *region)
     ui_FontThemeColor(fontid, TH_TEXT);
   }
 
-  BLF_position(fontid, x, y, 0.0f);
-  BLF_draw(fontid, region->headerstr, BLF_DRAW_STR_DUMMY_MAX);
+  font_position(fontid, x, y, 0.0f);
+  font_draw(fontid, region->headerstr, BLF_DRAW_STR_DUMMY_MAX);
 }
 
 void ed_region_do_msg_notify_tag_redraw(
@@ -443,7 +443,7 @@ void ed_area_do_mgs_subscribe_for_tool_ui(const wmRegionMessageSubscribeParams *
   else {
     /* Check if a tool category panel is pinned and visible in another category. */
     LIST_FOREACH (Panel *, panel, &region->panels) {
-      if (UI_panel_is_active(panel) && panel->flag & PNL_PIN &&
+      if (ui_panel_is_active(panel) && panel->flag & PNL_PIN &&
           STREQ(panel->type->category, panel_category_tool)) {
         update_region = true;
         break;
@@ -531,7 +531,7 @@ void ed_region_do_draw(Cxt *C, ARegion *region)
   ed_region_pixelspace(region);
 
   /* Remove sRGB override by rebinding the framebuffer. */
-  GPUFrameBuffer *fb = GPU_framebuffer_active_get();
+  GPUFrameBuffer *fb = gpu_framebuffer_active_get();
   gpu_framebuffer_bind(fb);
 
   ed_region_draw_cb_draw(C, region, REGION_DRAW_POST_PIXEL);
@@ -542,7 +542,7 @@ void ed_region_do_draw(Cxt *C, ARegion *region)
   if (G.debug_value == 888) {
     gpu_blend(GPU_BLEND_ALPHA);
     GPUVertFormat *format = immVertexFormat();
-    uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+    uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
     immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
     immUniformColor4f(BLI_thread_frand(0), BLI_thread_frand(0), BLI_thread_frand(0), 0.1f);
     immRectf(pos,
@@ -1428,7 +1428,7 @@ static void region_rect_recursive(
 
     if (alignment == RGN_ALIGN_HSPLIT) {
       if (rct_fits(remainder, SCREEN_AXIS_H, prefsizex) > 4) {
-        region->winrct.xmax = LIB_rcti_cent_x(remainder);
+        region->winrct.xmax = lib_rcti_cent_x(remainder);
         remainder->xmin = region->winrct.xmax + 1;
       }
       else {
@@ -1745,7 +1745,7 @@ static void ed_default_handlers(
 
     wmKeyMap *keymap_paint_erase = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Paint (Erase)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_paint_erase);
+    wm_event_add_keymap_handler(handlers, keymap_paint_erase);
 
     wmKeyMap *keymap_paint_fill = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Paint (Fill)", 0, 0);
@@ -1761,59 +1761,59 @@ static void ed_default_handlers(
 
     wmKeyMap *keymap_vertex = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Vertex Mode", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex);
+    wm_event_add_keymap_handler(handlers, keymap_vertex);
 
     wmKeyMap *keymap_vertex_draw = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Vertex (Draw)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex_draw);
+    wm_event_add_keymap_handler(handlers, keymap_vertex_draw);
 
     wmKeyMap *keymap_vertex_blur = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Vertex (Blur)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex_blur);
+    wm_event_add_keymap_handler(handlers, keymap_vertex_blur);
 
     wmKeyMap *keymap_vertex_average = wm_keymap_ensure(
         wm->defaultconf, "Pen Stroke Vertex (Average)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex_average);
+    wm_event_add_keymap_handler(handlers, keymap_vertex_average);
 
     wmKeyMap *keymap_vertex_smear = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Vertex (Smear)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex_smear);
+    wm_event_add_keymap_handler(handlers, keymap_vertex_smear);
 
     wmKeyMap *keymap_vertex_replace = WM_keymap_ensure(
         wm->defaultconf, "Pen Stroke Vertex (Replace)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_vertex_replace);
+    wm_event_add_keymap_handler(handlers, keymap_vertex_replace);
 
     wmKeyMap *keymap_sculpt_smooth = WM_keymap_ensure(
         wm->defaultconf, "Pen Stroke Sculpt (Smooth)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_smooth);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_smooth);
 
     wmKeyMap *keymap_sculpt_thickness = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Thickness)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_thickness);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_thickness);
 
     wmKeyMap *keymap_sculpt_strength = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Strength)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_strength);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_strength);
 
     wmKeyMap *keymap_sculpt_grab = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Grab)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_grab);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_grab);
 
     wmKeyMap *keymap_sculpt_push = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Push)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_push);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_push);
 
     wmKeyMap *keymap_sculpt_twist = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Twist)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_twist);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_twist);
 
     wmKeyMap *keymap_sculpt_pinch = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Pinch)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_pinch);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_pinch);
 
     wmKeyMap *keymap_sculpt_randomize = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Randomize)", 0, 0);
-    WM_event_add_keymap_handler(handlers, keymap_sculpt_randomize);
+    wm_event_add_keymap_handler(handlers, keymap_sculpt_randomize);
 
     wmKeyMap *keymap_sculpt_clone = WM_keymap_ensure(
         wm->defaultconf, "Pencil Stroke Sculpt (Clone)", 0, 0);
