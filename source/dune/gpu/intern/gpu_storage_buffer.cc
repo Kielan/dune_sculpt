@@ -1,7 +1,7 @@
 #include "mem_guardedalloc.h"
 #include <cstring>
 
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_math_base.h"
 
 #include "gpu_backend.hh"
@@ -13,8 +13,7 @@
 #include "gpu_storage_buffer.h"
 #include "gpu_storage_buffer_private.hh"
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
+/* Creation & Deletion */
 
 namespace dune::gpu {
 
@@ -35,8 +34,7 @@ StorageBuf::~StorageBuf()
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-/** C-API **/
+/* C-API */
 
 using namespace dune::gpu;
 
