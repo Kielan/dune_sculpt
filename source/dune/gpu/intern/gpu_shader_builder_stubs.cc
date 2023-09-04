@@ -1,4 +1,4 @@
-/** Stubs to reduce linking time for shader_builder. */
+/* Stubs to reduce linking time for shader_builder. */
 
 #include "lib_utildefines.h"
 
