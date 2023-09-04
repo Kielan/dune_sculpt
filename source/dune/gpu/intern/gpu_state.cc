@@ -161,7 +161,7 @@ void gpu_program_point_size(bool enable)
 
 void gpu_scissor_test(bool enable)
 {
-  Context::get()->active_fb->scissor_test_set(enable);
+  Cxt::get()->active_fb->scissor_test_set(enable);
 }
 
 void gpu_scissor(int x, int y, int width, int height)
@@ -277,7 +277,6 @@ void gpu_apply_state()
 }
 
 /* BGL workaround
- *
  * bgl makes direct GL calls that makes our state tracking out of date.
  * This flag make it so that the pyGPU calls will not override the state set by
  * bgl functions. */
@@ -331,14 +330,13 @@ bool gpu_bgl_get()
   return Cxt::get()->state_manager->use_bgl;
 }
 
-/** Synchronization Utils **/
+/* Synchronization Utils */
 void gpu_memory_barrier(eGPUBarrier barrier)
 {
   Cxt::get()->state_manager->issue_barrier(barrier);
 }
 
-/* -------------------------------------------------------------------- */
-/* Default State **/
+/* Default State */
 StateManager::StateManager()
 {
   /* Set default state. */
