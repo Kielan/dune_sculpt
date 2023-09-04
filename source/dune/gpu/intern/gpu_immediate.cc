@@ -1,4 +1,4 @@
-/** Mimics old style opengl immediate mode drawing. **/
+/* Mimics old style opengl immediate mode drawing. **/
 
 #ifndef GPU_STANDALONE
 #  include "ui_resources.h"
@@ -8,7 +8,7 @@
 #include "gpu_matrix.h"
 #include "gpu_texture.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_immediate_private.hh"
 #include "gpu_shader_private.hh"
 #include "gpu_vertex_buffer_private.hh"
@@ -20,7 +20,7 @@ static thread_local Immediate *imm = nullptr;
 
 void immActivate()
 {
-  imm = Context::get()->imm;
+  imm = Cxt::get()->imm;
 }
 
 void immDeactivate()
@@ -100,12 +100,10 @@ static bool vertex_count_makes_sense_for_primitive(uint vertex_len, GPUPrimType 
 }
 #endif
 
-/* -------------------------------------------------------------------- */
-/** Wide line workaround
+/* Wide line workaround
  *
  * Some systems do not support wide lines.
- * We workaround this by using specialized shaders.
- **/
+ * We workaround this by using specialized shaders. */
 
 static void wide_line_workaround_start(GPUPrimType prim_type)
 {
