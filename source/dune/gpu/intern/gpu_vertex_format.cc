@@ -34,7 +34,7 @@ void gpu_vertformat_clear(GPUVertFormat *format)
 #endif
 }
 
-void GPU_vertformat_copy(GPUVertFormat *dest, const GPUVertFormat *src)
+void gpu_vertformat_copy(GPUVertFormat *dest, const GPUVertFormat *src)
 {
   /* copy regular struct fields */
   memcpy(dest, src, sizeof(GPUVertFormat));
@@ -104,7 +104,7 @@ static uchar copy_attr_name(GPUVertFormat *format, const char *name)
   return name_offset;
 }
 
-uint GPU_vertformat_attr_add(GPUVertFormat *format,
+uint gpu_vertformat_attr_add(GPUVertFormat *format,
                              const char *name,
                              GPUVertCompType comp_type,
                              uint comp_len,
@@ -248,7 +248,7 @@ void gpu_vertformat_safe_attr_name(const char *attr_name, char *r_safe_name, uin
     /* We use a hash to identify each data layer based on its name.
      * NOTE: This is still prone to hash collision but the risks are very low. */
     /* Start hashing after the first 2 chars. */
-    *(uint *)&data[4] = BLI_ghashutil_strhash_p_murmur(attr_name + 4);
+    *(uint *)&data[4] = lib_ghashutil_strhash_p_murmur(attr_name + 4);
   }
   else {
     /* Copy the whole name. Collision is barely possible
