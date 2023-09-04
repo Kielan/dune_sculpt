@@ -10,7 +10,7 @@
 #include "gpu_texture.h"
 
 #include "gpu_backend.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_private.h"
 #include "gpu_texture_private.hh"
 
@@ -18,9 +18,7 @@
 
 namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** Constructor / Destructor  */
-
+/* Constructor / Destructor  */
 FrameBuffer::FrameBuffer(const char *name)
 {
   if (name) {
@@ -55,9 +53,7 @@ FrameBuffer::~FrameBuffer()
 #endif
 }
 
-/* -------------------------------------------------------------------- */
-/** Attachments Management **/
-
+/* Attachments Management **/
 void FrameBuffer::attachment_set(GPUAttachmentType type, const GPUAttachment &new_attachment)
 {
   if (new_attachment.mip == -1) {
@@ -116,13 +112,13 @@ void FrameBuffer::attachment_remove(GPUAttachmentType type)
 }
 
 void FrameBuffer::recursive_downsample(int max_lvl,
-                                       void (*callback)(void *userData, int level),
+                                       void (*cb)(void *userData, int level),
                                        void *userData)
 {
   /* Bind to make sure the frame-buffer is up to date. */
   this->bind(true);
 
-  /* FIXME(fclem): This assumes all mips are defined which may not be the case. */
+  /* FIXME: This assumes all mips are defined which may not be the case. */
   max_lvl = min_ii(max_lvl, floor(log2(max_ii(width_, height_))));
 
   for (int mip_lvl = 1; mip_lvl <= max_lvl; mip_lvl++) {
@@ -133,7 +129,7 @@ void FrameBuffer::recursive_downsample(int max_lvl,
         /* Some Intel HDXXX have issue with rendering to a mipmap that is below
          * the texture GL_TEXTURE_MAX_LEVEL. So even if it not correct, in this case
          * we allow GL_TEXTURE_MAX_LEVEL to be one level lower. In practice it does work! */
-        int mip_max = (GPU_mip_render_workaround()) ? mip_lvl : (mip_lvl - 1);
+        int mip_max = (gpu_mip_render_workaround()) ? mip_lvl : (mip_lvl - 1);
         /* Restrict fetches only to previous level. */
         tex->mip_range_set(mip_lvl - 1, mip_max);
         /* Bind next level. */
@@ -144,7 +140,7 @@ void FrameBuffer::recursive_downsample(int max_lvl,
     dirty_attachments_ = true;
     this->bind(true);
 
-    callback(userData, mip_lvl);
+    cb(userData, mip_lvl);
   }
 
   for (GPUAttachment &attachment : attachments_) {
@@ -160,16 +156,14 @@ void FrameBuffer::recursive_downsample(int max_lvl,
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-/** C-API */
-
+/* C-API */
 using namespace dune;
 using namespace dune::gpu;
 
 GPUFrameBuffer *gpu_framebuffer_create(const char *name)
 {
   /* We generate the FB object later at first use in order to
-   * create the frame-buffer in the right opengl context. */
+   * create the frame-buffer in the right opengl cxt. */
   return wrap(GPUBackend::get()->framebuffer_alloc(name));
 }
 
@@ -178,8 +172,7 @@ void gpu_framebuffer_free(GPUFrameBuffer *gpu_fb)
   delete unwrap(gpu_fb);
 }
 
-/* ---------- Binding ----------- */
-
+/* Binding */
 void gpu_framebuffer_bind(GPUFrameBuffer *gpu_fb)
 {
   const bool enable_srgb = true;
@@ -194,31 +187,31 @@ void gpu_framebuffer_bind_no_srgb(GPUFrameBuffer *gpu_fb)
 
 void gpu_backbuffer_bind(eGPUBackBuffer buffer)
 {
-  Context *ctx = Context::get();
+  Cxt *cxt = Cxt::get();
 
   if (buffer == GPU_BACKBUFFER_LEFT) {
-    ctx->back_left->bind(false);
+    cxt->back_left->bind(false);
   }
   else {
-    ctx->back_right->bind(false);
+    cxt->back_right->bind(false);
   }
 }
 
 void gpu_framebuffer_restore()
 {
-  Context::get()->back_left->bind(false);
+  Cxt::get()->back_left->bind(false);
 }
 
 GPUFrameBuffer *gpu_framebuffer_active_get()
 {
-  Context *ctx = Context::get();
-  return wrap(ctx ? ctx->active_fb : nullptr);
+  Cxt *cxt = Cxt::get();
+  return wrap(cxt ? cxt->active_fb : nullptr);
 }
 
 GPUFrameBuffer *gpu_framebuffer_back_get()
 {
-  Context *ctx = Context::get();
-  return wrap(ctx ? ctx->back_left : nullptr);
+  Cxt *ctx = Cxt::get();
+  return wrap(cxt ? cxt->back_left : nullptr);
 }
 
 bool gpu_framebuffer_bound(GPUFrameBuffer *gpu_fb)
