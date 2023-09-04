@@ -1,12 +1,10 @@
 
-/**
- * Manage GL vertex array IDs in a thread-safe way
+/* Manage GL vertex array IDs in a thread-safe way
  * Use these instead of glGenBuffers & its friends
  * - alloc must be called from a thread that is bound
  *   to the context that will be used for drawing with
  *   this VAO.
- * - free can be called from any thread
- */
+ * - free can be called from any thread */
 
 /* TODO: Create cmake option. */
 #if WITH_OPENGL
@@ -41,9 +39,7 @@ using namespace dune::gpu;
 
 static thread_local Context *active_ctx = nullptr;
 
-/* -------------------------------------------------------------------- */
-/** gpu::Context methods **/
-
+/* gpu::Context methods **/
 namespace dune::gpu {
 
 Context::Context()
@@ -66,82 +62,74 @@ Context::~Context()
 
 bool Context::is_active_on_thread()
 {
-  return (this == active_ctx) && pthread_equal(pthread_self(), thread_);
+  return (this == active_cxt) && pthread_equal(pthread_self(), thread_);
 }
 
 Context *Context::get()
 {
-  return active_ctx;
+  return active_cxt;
 }
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-
-GPUContext *gpu_ctx_create(void *ghost_window)
+GPUCxt *gpu_cxt_create(void *ghost_window)
 {
   if (GPUBackend::get() == nullptr) {
     /* TODO: move where it make sense. */
     gpu_backend_init(GPU_BACKEND_OPENGL);
   }
 
-  Context *ctx = GPUBackend::get()->context_alloc(ghost_window);
+  Cxt *cxt = GPUBackend::get()->cxt_alloc(ghost_window);
 
-  gpu_context_active_set(wrap(ctx));
-  return wrap(ctx);
+  gpu_cxt_active_set(wrap(cxt));
+  return wrap(cxt);
 }
 
-void gpu_ctx_discard(GPUContext *ctx_)
+void gpu_cxt_discard(GPUCxt *cxt_)
 {
-  Context *ctx = unwrap(ctx_);
-  delete ctx;
-  active_ctx = nullptr;
+  Context *cxt = unwrap(cxt_);
+  delete ctxt;
+  active_cxt = nullptr;
 }
 
-void gpu_ctx_active_set(GPUContext *ctx_)
+void gpu_cxt_active_set(GPUCxt *cxt_)
 {
-  Context *ctx = unwrap(ctx_);
+  Cxt *cxt = unwrap(cxt_);
 
-  if (active_ctx) {
-    active_ctx->deactivate();
+  if (active_cxt) {
+    active_cxt->deactivate();
   }
 
-  active_ctx = ctx;
+  active_cxt = cxt;
 
-  if (ctx) {
-    ctx->activate();
+  if (cxt) {
+    cxt->activate();
   }
 }
 
-GPUContext *gpu_ctx_active_get()
+GPUCxt *gpu_cxt_active_get()
 {
-  return wrap(Context::get());
+  return wrap(Cxt::get());
 }
 
-/* -------------------------------------------------------------------- */
-/** Main context global mutex
- *
- * Used to avoid crash on some old drivers.
- **/
+/* Main cxt global mutex
+ * Used to avoid crash on some old drivers */
 
-static std::mutex main_ctx_mutex;
+static std::mutex main_cxt_mutex;
 
-void gpu_context_main_lock()
+void gpu_cxt_main_lock()
 {
-  main_context_mutex.lock();
+  main_cxt_mutex.lock();
 }
 
-void gpu_context_main_unlock()
+void gpu_cxt_main_unlock()
 {
-  main_context_mutex.unlock();
+  main_cxt_mutex.unlock();
 }
 
-/* -------------------------------------------------------------------- */
-/** GPU Begin/end work blocks
- *
+/* GPU Begin/end work blocks
  * Used to explicitly define a per-frame block within which GPU work will happen.
- * Used for global autoreleasepool flushing in Metal
- **/
+ * Used for global autoreleasepool flushing in Metal */
 
 void gpu_render_begin()
 {
@@ -162,9 +150,7 @@ void gpu_render_step()
   backend->render_step();
 }
 
-/* -------------------------------------------------------------------- */
-/** Backend selection */
-
+/* Backend selection */
 static GPUBackend *g_backend;
 
 bool gpu_backend_supported(eGPUBackendType type)
