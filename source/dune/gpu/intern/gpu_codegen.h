@@ -1,4 +1,4 @@
-/** Generate shader code from the intermediate node graph. **/
+/* Generate shader code from the intermediate node graph. */
 
 #pragma once
 
@@ -24,7 +24,6 @@ typedef struct GPUPass {
 } GPUPass;
 
 /* Pass */
-
 GPUPass *gpu_generate_pass(struct GPUMaterial *material,
                            struct GPUNodeGraph *graph,
                            const char *vert_code,
@@ -36,7 +35,6 @@ bool gpu_pass_compile(GPUPass *pass, const char *shname);
 void gpu_pass_release(GPUPass *pass);
 
 /* Module */
-
 void gpu_codegen_init(void);
 void gpu_codegen_exit(void);
 
