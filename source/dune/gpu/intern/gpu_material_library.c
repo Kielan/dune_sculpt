@@ -1,4 +1,4 @@
-/** GPU material lib parsing and code generation. */
+/* GPU material lib parsing and code generation. */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,7 @@
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "gpu_material_library.h"
+#include "gpu_material_lib.h"
 
 /* List of all gpu_shader_material_*.glsl files used by GLSL materials. These
  * will be parsed to make all functions in them available to use for GPU_link().
@@ -128,7 +128,7 @@ static GPUMaterialLib gpu_shader_material_hash_lib = {
 
 static GPUMaterialLib gpu_shader_material_noise_lib = {
     .code = datatoc_gpu_shader_material_noise_glsl,
-    .dependencies = {&gpu_shader_material_hash_library, NULL},
+    .dependencies = {&gpu_shader_material_hash_lib, NULL},
 };
 
 static GPUMaterialLib gpu_shader_material_fractal_noise_lib = {
@@ -737,13 +737,13 @@ const char *gpu_data_type_to_string(const eGPUType type)
   return GPU_DATATYPE_STR[type];
 }
 
-static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
+static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *lib)
 {
-  GPUFn *function;
+  GPUFn *fn;
   eGPUType type;
   GPUFnQual qual;
   int i;
-  const char *code = library->code;
+  const char *code = lib->code;
 
   while ((code = strstr(code, "void "))) {
     function = mem_callocn(sizeof(GPUFn), "GPUFunction");
@@ -759,14 +759,14 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
       }
 
       /* test if it's an input or output */
-      qual = FUNCTION_QUAL_IN;
+      qual = FN_QUAL_IN;
       if (lib_str_startswith(code, "out ")) {
-        qual = FUNCTION_QUAL_OUT;
+        qual = FN_QUAL_OUT;
       }
       if (lib_str_startswith(code, "inout ")) {
-        qual = FUNCTION_QUAL_INOUT;
+        qual = FN_QUAL_INOUT;
       }
-      if ((qual != FUNCTION_QUAL_IN) || lib_str_startswith(code, "in ")) {
+      if ((qual != FN_QUAL_IN) || lib_str_startswith(code, "in ")) {
         code = gpu_str_skip_token(code, NULL, 0);
       }
 
@@ -806,9 +806,9 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
         /* add parameter */
         code = gpu_str_skip_token(code, NULL, 0);
         code = gpu_str_skip_token(code, NULL, 0);
-        function->paramqual[function->totparam] = qual;
-        function->paramtype[function->totparam] = type;
-        function->totparam++;
+        fn->paramqual[fn->totparam] = qual;
+        fn->paramtype[fn->totparam] = type;
+        fn->totparam++;
       }
       else {
         fprintf(stderr, "GPU invalid function parameter in %s.\n", function->name);
@@ -816,28 +816,27 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
       }
     }
 
-    if (function->name[0] == '\0' || function->totparam == 0) {
-      fprintf(stderr, "GPU functions parse error.\n");
-      mem_freen(function);
+    if (fn->name[0] == '\0' || fn->totparam == 0) {
+      fprintf(stderr, "GPU fns parse error.\n");
+      mem_freen(fn);
       break;
     }
 
-    lib_ghash_insert(hash, function->name, function);
+    lib_ghash_insert(hash, fn->name, fn);
   }
 }
 
 /* Module */
-
 void gpu_material_lib_init(void)
 {
   /* Only parse GLSL shader files once. */
-  if (FUNCTION_HASH) {
+  if (FN_HASH) {
     return;
   }
 
-  FUNCTION_HASH = lib_ghash_str_new("GPU_lookup_function gh");
+  FN_HASH = lib_ghash_str_new("GPU_lookup_fn gh");
   for (int i = 0; gpu_material_libs[i]; i++) {
-    gpu_parse_material_lib(FUNCTION_HASH, gpu_material_libraries[i]);
+    gpu_parse_material_lib(FN_HASH, gpu_material_libs[i]);
   }
 }
 
@@ -850,9 +849,8 @@ void gpu_material_lib_exit(void)
 }
 
 /* Code Generation */
-
 static void gpu_material_use_lib_with_dependencies(GSet *used_libs,
-                                                       GPUMaterialLibrary *lib)
+                                                   GPUMaterialLib *lib)
 {
   if (lib_gset_add(used_libs, lib->code)) {
     for (int i = 0; lib->dependencies[i]; i++) {
@@ -863,9 +861,9 @@ static void gpu_material_use_lib_with_dependencies(GSet *used_libs,
 
 GPUFn *gpu_material_lib_use_fn(GSet *used_libs, const char *name)
 {
-  GPUFn *function = lib_ghash_lookup(FN_HASH, (const void *)name);
-  if (function) {
-    gpu_material_use_lib_with_dependencies(used_libs, function->lib);
+  GPUFn *fn = lib_ghash_lookup(FN_HASH, (const void *)name);
+  if (fn) {
+    gpu_material_use_lib_with_dependencies(used_libs, fn->lib);
   }
   return function;
 }
@@ -880,7 +878,7 @@ char *gpu_material_lib_generate_code(GSet *used_libs, const char *frag_lib)
 
   /* Always include those because they may be needed by the execution function. */
   gpu_material_use_lib_with_dependencies(used_libs,
-                                             &gpu_shader_material_world_normals_library);
+                                         &gpu_shader_material_world_normals_library);
 
   /* Add library code in order, for dependencies. */
   for (int i = 0; gpu_material_libraries[i]; i++) {
