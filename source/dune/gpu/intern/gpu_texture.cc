@@ -4,7 +4,7 @@
 #include "gpu_texture.h"
 
 #include "gpu_backend.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_framebuffer_private.hh"
 #include "gpu_vertex_buffer_private.hh"
 
@@ -12,9 +12,7 @@
 
 namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
-
+/* Creation & Deletion */
 Texture::Texture(const char *name)
 {
   if (name) {
@@ -166,9 +164,7 @@ bool Texture::init_view(const GPUTexture *src_,
   return this->init_internal(src_, mip_start, layer_start);
 }
 
-/* -------------------------------------------------------------------- */
-/** Operation **/
-
+/* Operation */
 void Texture::attach_to(FrameBuffer *fb, GPUAttachmentType type)
 {
   for (int i = 0; i < ARRAY_SIZE(fb_); i++) {
@@ -203,13 +199,11 @@ void Texture::update(eGPUDataFormat format, const void *data)
 
 }  // namespace dune::gpu
 
-/* -------------------------------------------------------------------- */
-/** C-API **/
-
+/* C-API */
 using namespace dune;
 using namespace dune::gpu;
 
-/* ------ Memory Management ------ */
+/* Memory Management */
 
 uint dune_texture_memory_usage_get()
 {
@@ -217,8 +211,7 @@ uint dune_texture_memory_usage_get()
   return 0;
 }
 
-/* ------ Creation ------ */
-
+/* Creation */
 static inline GPUTexture *gpu_texture_create(const char *name,
                                              const int w,
                                              const int h,
@@ -388,7 +381,7 @@ GPUTexture *gpu_texture_create_view(const char *name,
   return wrap(view);
 }
 
-/* ------ Update ------ */
+/* Update */
 
 void gpu_texture_update_mipmap(GPUTexture *tex_,
                                int miplvl,
@@ -435,10 +428,10 @@ void gpu_texture_update(GPUTexture *tex, eGPUDataFormat data_format, const void 
 
 void gpu_unpack_row_length_set(uint len)
 {
-  Context::get()->state_manager->texture_unpack_row_length_set(len);
+  Cxt::get()->state_manager->texture_unpack_row_length_set(len);
 }
 
-/* ------ Binding ------ */
+/* Binding */
 
 void gpu_texture_bind_ex(GPUTexture *tex_,
                          eGPUSamplerState state,
@@ -447,39 +440,39 @@ void gpu_texture_bind_ex(GPUTexture *tex_,
 {
   Texture *tex = reinterpret_cast<Texture *>(tex_);
   state = (state >= GPU_SAMPLER_MAX) ? tex->sampler_state : state;
-  Context::get()->state_manager->texture_bind(tex, state, unit);
+  Cxt::get()->state_manager->texture_bind(tex, state, unit);
 }
 
 void gpu_texture_bind(GPUTexture *tex_, int unit)
 {
   Texture *tex = reinterpret_cast<Texture *>(tex_);
-  Context::get()->state_manager->texture_bind(tex, tex->sampler_state, unit);
+  Cxt::get()->state_manager->texture_bind(tex, tex->sampler_state, unit);
 }
 
 void gpu_texture_unbind(GPUTexture *tex_)
 {
   Texture *tex = reinterpret_cast<Texture *>(tex_);
-  Context::get()->state_manager->texture_unbind(tex);
+  Cxt::get()->state_manager->texture_unbind(tex);
 }
 
 void gpu_texture_unbind_all()
 {
-  Context::get()->state_manager->texture_unbind_all();
+  Cxt::get()->state_manager->texture_unbind_all();
 }
 
 void gpu_texture_image_bind(GPUTexture *tex, int unit)
 {
-  Context::get()->state_manager->image_bind(unwrap(tex), unit);
+  Cxt::get()->state_manager->image_bind(unwrap(tex), unit);
 }
 
 void gpu_texture_image_unbind(GPUTexture *tex)
 {
-  Context::get()->state_manager->image_unbind(unwrap(tex));
+  Cxt::get()->state_manager->image_unbind(unwrap(tex));
 }
 
 void gpu_texture_image_unbind_all()
 {
-  Context::get()->state_manager->image_unbind_all();
+  Cxt::get()->state_manager->image_unbind_all();
 }
 
 void gpu_texture_generate_mipmap(GPUTexture *tex)
@@ -677,21 +670,15 @@ void gpu_texture_get_mipmap_size(GPUTexture *tex, int lvl, int *r_size)
   return reinterpret_cast<Texture *>(tex)->mip_size_get(lvl, r_size);
 }
 
-/* -------------------------------------------------------------------- */
-/** GPU Sampler Objects
- *
+/* GPU Sampler Objects
  * Simple wrapper around opengl sampler objects.
- * Override texture sampler state for one sampler unit only.
- **/
-
+ * Override texture sampler state for one sampler unit only. */
 void gpu_samplers_update()
 {
   GPUBackend::get()->samplers_update();
 }
 
-/* -------------------------------------------------------------------- */
-/** GPU texture utilities **/
-
+/* GPU texture utilities **/
 size_t gpu_texture_component_len(eGPUTextureFormat tex_format)
 {
   return to_component_len(tex_format);
