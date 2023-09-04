@@ -18,31 +18,28 @@ static inline size_t to_bytesize(GPUIndexBufType type)
   return (type == GPU_INDEX_U32) ? sizeof(uint32_t) : sizeof(uint16_t);
 }
 
-/**
- * Base class which is then specialized for each implementation (GL, VK, ...).
- *
- * #IndexBuf does not hold any #GPUPrimType.
- * This is because it can be interpreted differently by multiple batches.
- */
+/* Base class which is then specialized for each implementation (GL, VK, ...)
+ * IndexBuf does not hold any GPUPrimType.
+ * This is because it can be interpreted differently by multiple batches. */
 class IndexBuf {
  protected:
-  /** Type of indices used inside this buffer. */
+  /* Type of indices used inside this buffer. */
   GPUIndexBufType index_type_ = GPU_INDEX_U32;
-  /** Offset in this buffer to the first index to render. Is 0 if not a subrange. */
+  /* Offset in this buffer to the first index to render. Is 0 if not a subrange. */
   uint32_t index_start_ = 0;
-  /** Number of indices to render. */
+  /* Number of indices to render. */
   uint32_t index_len_ = 0;
-  /** Base index: Added to all indices after fetching. Allows index compression. */
+  /* Base index: Added to all indices after fetching. Allows index compression. */
   uint32_t index_base_ = 0;
-  /** Bookkeeping. */
+  /* Bookkeeping. */
   bool is_init_ = false;
-  /** Is this object only a reference to a subrange of another IndexBuf. */
+  /* Is this object only a reference to a subrange of another IndexBuf. */
   bool is_subrange_ = false;
 
   union {
-    /** Mapped buffer data. non-NULL indicates not yet sent to VRAM. */
+    /* Mapped buffer data. non-NULL indicates not yet sent to VRAM. */
     void *data_ = nullptr;
-    /** If is_subrange is true, this is the source index buffer. */
+    /* If is_subrange is true, this is the source index buffer. */
     IndexBuf *src_;
   };
 
