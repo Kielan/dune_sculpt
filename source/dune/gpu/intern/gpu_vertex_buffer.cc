@@ -1,18 +1,17 @@
 /* GPU vertex buffer */
-
 #include "mem_guardedalloc.h"
 
 #include "gpu_backend.hh"
 #include "gpu_vertex_format_private.h"
 
 #include "gl_vertex_buffer.hh"    /* TODO: remove. */
-#include "gpu_context_private.hh" /* TODO: remove. */
+#include "gpu_cxt_private.hh" /* TODO: remove. */
 
 #include "gpu_vertex_buffer_private.hh"
 
 #include <cstring>
 
-/** VertBuf **/
+/* VertBuf */
 namespace dune::gpu {
 
 size_t VertBuf::memory_usage = 0;
@@ -155,7 +154,7 @@ void gpu_vertbuf_handle_ref_remove(GPUVertBuf *verts)
   unwrap(verts)->refuse_remove();
 }
 
-/* -------- Data update -------- */
+/* Data update */
 
 void gpu_vertbuf_data_alloc(GPUVertBuf *verts, uint v_len)
 {
