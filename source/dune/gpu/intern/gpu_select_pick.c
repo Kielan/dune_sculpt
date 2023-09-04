@@ -1,7 +1,5 @@
-/**
- * Custom select code for picking small regions (not efficient for large regions).
- * `gpu_select_pick_*` API.
- */
+/* Custom select code for picking small regions (not efficient for large regions).
+ * `gpu_select_pick_*` API. */
 #include <float.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +12,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_rect.h"
 #include "lib_utildefines.h"
 
@@ -30,29 +28,25 @@
 /* Z-depth of cleared depth buffer */
 #define DEPTH_MAX 0xffffffff
 
-/* -------------------------------------------------------------------- */
-/** #SubRectStride **/
-
-/** For looping over a sub-region of a #rcti, could be moved into 'rct.c'. */
+/* SubRectStride */
+/* For looping over a sub-region of a #rcti, could be moved into 'rct.c'. */
 typedef struct SubRectStride {
-  /** Start here. */
+  /* Start here. */
   uint start;
-  /** Read these. */
+  /* Read these. */
   uint span;
-  /** `len` times (read span 'len' times). */
+  /* `len` times (read span 'len' times). */
   uint span_len;
-  /** Skip those. */
+  /* Skip those. */
   uint skip;
 } SubRectStride;
 
-/** We may want to change back to float if `uint` isn't well supported. */
+/* We may want to change back to float if `uint` isn't well supported. */
 typedef uint depth_t;
 
-/**
- * Calculate values needed for looping over a sub-region (smaller buffer within a larger buffer).
+/* Calculate values needed for looping over a sub-region (smaller buffer within a larger buffer).
  *
- * 'src' must be bigger than 'dst'.
- */
+ * 'src' must be bigger than 'dst'. */
 static void rect_subregion_stride_calc(const rcti *src, const rcti *dst, SubRectStride *r_sub)
 {
   const int src_x = lib_rcti_size_x(src);
@@ -72,23 +66,18 @@ static void rect_subregion_stride_calc(const rcti *src, const rcti *dst, SubRect
   r_sub->skip = (uint)(src_x - dst_x);
 }
 
-/**
- * Ignore depth clearing as a change,
- * only check if its been changed _and_ filled in (ignore clearing since XRAY does this).
- */
+/* Ignore depth clearing as a change,
+ * only check if its been changed _and_ filled in (ignore clearing since XRAY does this). */
 LIB_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
 {
   return (*prev != *curr) && (*curr != DEPTH_MAX);
 }
 
-/* -------------------------------------------------------------------- */
-/** #DepthBufCache
- *
+/* DepthBufCache
  * Result of reading gpu_framebuffer_read_depth,
- * use for both cache and non-cached storage.
- **/
+ * use for both cache and non-cached storage. */
 
-/** Store result of #gpu_framebuffer_read_depth. */
+/* Store result of #gpu_framebuffer_read_depth. */
 typedef struct DepthBufCache {
   struct DepthBufCache *next, *prev;
   uint id;
@@ -147,9 +136,7 @@ static bool depth_buf_rect_depth_any_filled(const DepthBufCache *rect_prev,
 #endif
 }
 
-/**
- * Both buffers are the same size, just check if the sub-rect contains any differences.
- */
+/* Both buffers are the same size, just check if the sub-rect contains any differences. */
 static bool depth_buf_subrect_depth_any_filled(const DepthBufCache *rect_src,
                                                const DepthBufCache *rect_dst,
                                                const SubRectStride *sub_rect)
@@ -170,16 +157,13 @@ static bool depth_buf_subrect_depth_any_filled(const DepthBufCache *rect_src,
   return false;
 }
 
-/* -------------------------------------------------------------------- */
-/** DepthId
- *
- * Internal structure for storing hits.
- **/
+/* DepthId
+ * Internal structure for storing hits. */
 
 typedef struct DepthId {
   uint id;
   depth_t depth;
-} DepthID;
+} DepthId;
 
 static int depth_id_cmp(const void *v1, const void *v2)
 {
@@ -207,18 +191,16 @@ static int depth_cmp(const void *v1, const void *v2)
   return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** Main Selection Begin/End/Load API **/
-
-/** Depth sorting. */
+/* Main Selection Begin/End/Load API **/
+/* Depth sorting. */
 typedef struct GPUPickState {
-  /** Cache on initialization. */
+  /* Cache on initialization. */
   GPUSelectResult *buffer;
   uint buffer_len;
-  /** Mode of this operation. */
+  /* Mode of this operation. */
   eGPUSelectMode mode;
 
-  /** GPU drawing, never use when `is_cached == true`. */
+  /* GPU drawing, never use when `is_cached == true`. */
   struct {
     /** The current depth, accumulated while drawing. */
     DepthBufCache *rect_depth;
@@ -233,10 +215,8 @@ typedef struct GPUPickState {
     uint prev_id;
   } gpu;
 
-  /**
-   * `src`: data stored in 'cache' and 'gpu',
-   * `dst`: use when cached region is smaller (where `src` -> `dst` isn't 1:1).
-   */
+  /* `src`: data stored in 'cache' and 'gpu',
+   * `dst`: use when cached region is smaller (where `src` -> `dst` isn't 1:1).  */
   struct {
     rcti clip_rect;
     uint rect_len;
@@ -248,12 +228,11 @@ typedef struct GPUPickState {
   struct {
     /**
      * Cleanup used for iterating over both source and destination buffers:
-     * `src.clip_rect` -> `dst.clip_rect`.
-     */
+     * `src.clip_rect` -> `dst.clip_rect` */
     SubRectStride sub_rect;
 
-    /** List of DepthBufCache, sized of 'src.clip_rect'. */
-    ListBase bufs;
+    /* List of DepthBufCache, sized of 'src.clip_rect'. */
+    List bufs;
   } cache;
 
   /** Picking methods. */
@@ -265,7 +244,7 @@ typedef struct GPUPickState {
       uint hits_len_alloc;
     } all;
 
-    /** GPU_SELECT_PICK_NEAREST */
+    /* GPU_SELECT_PICK_NEAREST */
     struct {
       uint *rect_id;
     } nearest;
@@ -369,10 +348,8 @@ void gpu_select_pick_begin(GPUSelectResult *buffer,
   }
 }
 
-/**
- * Given 2x depths, we know are different - update the depth information
- * use for both cached/uncached depth buffers.
- */
+/* Given 2x depths, we know are different - update the depth information
+ * use for both cached/uncached depth buffers */
 static void gpu_select_load_id_pass_all(const DepthBufCache *rect_curr)
 {
   GPUPickState *ps = &g_pick_state;
@@ -682,11 +659,8 @@ uint gpu_select_pick_end(void)
   return hits;
 }
 
-/* -------------------------------------------------------------------- */
-/** Caching
- *
- * Support multiple begin/end's reusing depth buffers.
- **/
+/* Caching
+ * Support multiple begin/end's reusing depth buffers. **/
 
 void gpu_select_pick_cache_begin(void)
 {
@@ -721,7 +695,7 @@ void gpu_select_pick_cache_load_id(void)
 #ifdef DEBUG_PRINT
   printf("%s (building depth from cache)\n", __func__);
 #endif
-  LISTBASE_FOREACH (DepthBufCache *, rect_depth, &ps->cache.bufs) {
+  LIST_FOREACH (DepthBufCache *, rect_depth, &ps->cache.bufs) {
     if (rect_depth->next != NULL) {
       /* We know the buffers differ, but this sub-region may not.
        * Double check before adding an id-pass. */
