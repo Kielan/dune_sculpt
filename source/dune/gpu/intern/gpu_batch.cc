@@ -1,7 +1,5 @@
-/**
- * GPU geometry batch
- * Contains VAOs + VBOs + Shader representing a drawable entity.
- */
+/* GPU geometry batch
+ * Contains VAOs + VBOs + Shader representing a drawable entity. */
 
 #include "mem_guardedalloc.h"
 
@@ -14,7 +12,7 @@
 #include "gpu_shader.h"
 
 #include "gpu_backend.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_index_buffer_private.hh"
 #include "gpu_shader_private.hh"
 #include "gpu_vertex_buffer_private.hh"
@@ -25,9 +23,7 @@
 
 using namespace dune::gpu;
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
-
+/* Creation & Deletion */
 GPUBatch *gpu_batch_calloc()
 {
   GPUBatch *batch = GPUBackend::get()->batch_alloc();
@@ -108,9 +104,7 @@ void gpu_batch_discard(GPUBatch *batch)
   delete static_cast<Batch *>(batch);
 }
 
-/* -------------------------------------------------------------------- */
-/** Buffers Management **/
-
+/* Buffers Management */
 void gpu_batch_instbuf_set(GPUBatch *batch, GPUVertBuf *inst, bool own_vbo)
 {
   lib_assert(inst);
@@ -170,7 +164,7 @@ int gpu_batch_vertbuf_add_ex(GPUBatch *batch, GPUVertBuf *verts, bool own_vbo)
       /* for now all VertexBuffers must have same vertex_len */
       if (batch->verts[0] != nullptr) {
         /* This is an issue for the HACK inside DRW_vbo_request(). */
-        // BLI_assert(verts->vertex_len == batch->verts[0]->vertex_len);
+        // lib_assert(verts->vertex_len == batch->verts[0]->vertex_len);
       }
       batch->verts[v] = verts;
       SET_FLAG_FROM_TEST(batch->flag, own_vbo, (eGPUBatchFlag)(GPU_BATCH_OWNS_VBO << v));
@@ -192,11 +186,8 @@ bool gpu_batch_vertbuf_has(GPUBatch *batch, GPUVertBuf *verts)
   return false;
 }
 
-/* -------------------------------------------------------------------- */
-/** Uniform setters
- *
- * TODO: port this to GPUShader.
- **/
+/* Uniform setters
+ * TODO: port this to GPUShader */
 
 void gpu_batch_set_shader(GPUBatch *batch, GPUShader *shader)
 {
@@ -204,9 +195,7 @@ void gpu_batch_set_shader(GPUBatch *batch, GPUShader *shader)
   gpu_shader_bind(batch->shader);
 }
 
-/* -------------------------------------------------------------------- */
-/** Drawing / Drawcall functions **/
-
+/* Drawing / Drawcall functions */
 void gpu_batch_draw(GPUBatch *batch)
 {
   gpu_shader_bind(batch->shader);
@@ -230,7 +219,7 @@ void gpu_batch_draw_instanced(GPUBatch *batch, int i_count)
 void gpu_batch_draw_advanced(
     GPUBatch *gpu_batch, int v_first, int v_count, int i_first, int i_count)
 {
-  gpu_assert(Context::get()->shader != nullptr);
+  gpu_assert(Cxt::get()->shader != nullptr);
   Batch *batch = static_cast<Batch *>(gpu_batch);
 
   if (v_count == 0) {
@@ -257,9 +246,7 @@ void gpu_batch_draw_advanced(
   batch->draw(v_first, v_count, i_first, i_count);
 }
 
-/* -------------------------------------------------------------------- */
-/** Utilities **/
-
+/* Utilities */
 void gpu_batch_program_set_builtin_with_config(GPUBatch *batch,
                                                eGPUBuiltinShader shader_id,
                                                eGPUShaderConfig sh_cfg)
@@ -278,9 +265,7 @@ void gpu_batch_program_set_imm_shader(GPUBatch *batch)
   gpu_batch_set_shader(batch, immGetShader());
 }
 
-/* -------------------------------------------------------------------- */
-/** Init/Exit **/
-
+/* Init/Exit */
 void gpu_batch_init()
 {
   gpu_batch_presets_init();
