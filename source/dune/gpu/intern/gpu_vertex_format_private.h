@@ -1,5 +1,4 @@
-/** GPU vertex format **/
-
+/* GPU vertex format */
 #pragma once
 
 #ifdef __cplusplus
