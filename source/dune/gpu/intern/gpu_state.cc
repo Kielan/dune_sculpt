@@ -20,7 +20,7 @@ using namespace dune::gpu;
 
 #define SET_STATE(_prefix, _state, _value) \
   do { \
-    StateManager *stack = Context::get()->state_manager; \
+    StateManager *stack = Cxt::get()->state_manager; \
     auto &state_object = stack->_prefix##state; \
     state_object._state = (_value); \
   } while (0)
@@ -194,7 +194,7 @@ void gpu_stencil_compare_mask_set(uint compare_mask)
 /* State Getters */
 eGPUBlend gpu_blend_get()
 {
-  GPUState &state = Context::get()->state_manager->state;
+  GPUState &state = Cxt::get()->state_manager->state;
   return (eGPUBlend)state.blend;
 }
 
@@ -206,7 +206,7 @@ eGPUWriteMask gpu_write_mask_get()
 
 uint gpu_stencil_mask_get()
 {
-  const GPUStateMutable &state = Context::get()->state_manager->mutable_state;
+  const GPUStateMutable &state = Cxt::get()->state_manager->mutable_state;
   return state.stencil_write_mask;
 }
 
@@ -249,7 +249,7 @@ void gpu_viewport_size_get_i(int coords[4])
 
 bool gpu_depth_mask_get()
 {
-  const GPUState &state = Context::get()->state_manager->state;
+  const GPUState &state = Cxt::get()->state_manager->state;
   return (state.write_mask & GPU_WRITE_DEPTH) != 0;
 }
 
@@ -259,8 +259,7 @@ bool gpu_mipmap_enabled()
   return true;
 }
 
-/* -------------------------------------------------------------------- */
-/** Context Utils **/
+/* Cxt Utils **/
 
 void gpu_flush()
 {
@@ -277,8 +276,7 @@ void gpu_apply_state()
   Cxt::get()->state_manager->apply_state();
 }
 
-/* -------------------------------------------------------------------- */
-/** BGL workaround
+/* BGL workaround
  *
  * bgl makes direct GL calls that makes our state tracking out of date.
  * This flag make it so that the pyGPU calls will not override the state set by
