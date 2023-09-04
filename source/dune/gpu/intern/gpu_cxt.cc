@@ -87,8 +87,8 @@ GPUCxt *gpu_cxt_create(void *ghost_window)
 
 void gpu_cxt_discard(GPUCxt *cxt_)
 {
-  Context *cxt = unwrap(cxt_);
-  delete ctxt;
+  Cxt *cxt = unwrap(cxt_);
+  delete cxt;
   active_cxt = nullptr;
 }
 
