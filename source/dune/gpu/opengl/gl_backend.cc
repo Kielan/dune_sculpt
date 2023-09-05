@@ -1,5 +1,5 @@
 
-#include "BKE_global.h"
+#include "dune_global.h"
 
 #include "gpu_capabilities_private.hh"
 #include "gpu_platform_private.hh"
@@ -10,12 +10,9 @@
 
 #include "gl_backend.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** \name Platform
- * \{ */
-
+/* Platform */
 static bool match_renderer(StringRef renderer, const Vector<std::string> &items)
 {
   for (const std::string &item : items) {
@@ -29,7 +26,7 @@ static bool match_renderer(StringRef renderer, const Vector<std::string> &items)
 
 void GLBackend::platform_init()
 {
-  BLI_assert(!GPG.initialized);
+  lib_assert(!GPG.initialized);
 
   const char *vendor = (const char *)glGetString(GL_VENDOR);
   const char *renderer = (const char *)glGetString(GL_RENDERER);
@@ -139,21 +136,16 @@ void GLBackend::platform_init()
 
 void GLBackend::platform_exit()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   GPG.clear();
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Capabilities
- * \{ */
-
+/* Capabilities */
 static bool detect_mip_render_workaround()
 {
   int cube_size = 2;
   float clear_color[4] = {1.0f, 0.5f, 0.0f, 0.0f};
-  float *source_pix = (float *)MEM_callocN(sizeof(float[4]) * cube_size * cube_size * 6, __func__);
+  float *source_pix = (float *)mem_callocn(sizeof(float[4]) * cube_size * cube_size * 6, __func__);
 
   /* NOTE: Debug layers are not yet enabled. Force use of glGetError. */
   debug::check_gl_error("Cubemap Workaround Start");
@@ -184,7 +176,7 @@ static bool detect_mip_render_workaround()
   /* Read mip 1. If color is not the same as the clear_color, the rendering failed. */
   glGetTexImage(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 1, GL_RGBA, GL_FLOAT, source_pix);
   bool enable_workaround = !equals_v4v4(clear_color, source_pix);
-  MEM_freeN(source_pix);
+  mem_freen(source_pix);
 
   glDeleteFramebuffers(1, &fb);
   glDeleteTextures(1, &tex);
@@ -249,7 +241,7 @@ static void detect_workarounds()
   if (!GLEW_VERSION_4_0) {
     GLContext::base_instance_support = false;
   }
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
       (strstr(version, "4.5.13399") || strstr(version, "4.5.13417") ||
        strstr(version, "4.5.13422") || strstr(version, "4.5.13467"))) {
     /* The renderers include:
@@ -265,12 +257,12 @@ static void detect_workarounds()
     GCaps.broken_amd_driver = true;
   }
   /* Compute shaders have some issues with those versions (see T94936). */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_OFFICIAL) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_OFFICIAL) &&
       (strstr(version, "4.5.14831") || strstr(version, "4.5.14760"))) {
     GCaps.compute_shader_support = false;
   }
   /* We have issues with this specific renderer. (see T74024) */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
       (strstr(renderer, "AMD VERDE") || strstr(renderer, "AMD KAVERI") ||
        strstr(renderer, "AMD TAHITI"))) {
     GLContext::unused_fb_slot_workaround = true;
@@ -278,15 +270,14 @@ static void detect_workarounds()
     GCaps.broken_amd_driver = true;
   }
   /* Fix slowdown on this particular driver. (see T77641) */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
       strstr(version, "Mesa 19.3.4")) {
     GCaps.shader_image_load_store_support = false;
     GCaps.broken_amd_driver = true;
   }
   /* See T82856: AMD drivers since 20.11 running on a polaris architecture doesn't support the
    * `GL_INT_2_10_10_10_REV` data type correctly. This data type is used to pack normals and flags.
-   * The work around uses `GPU_RGBA16I`.
-   */
+   * The work around uses `GPU_RGBA16I` */
   if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_OFFICIAL)) {
     const Vector<std::string> matches = {"RX 460",
                                          "RX 470",
@@ -310,11 +301,11 @@ static void detect_workarounds()
       GCaps.use_hq_normals_workaround = true;
     }
   }
-  /* There is an issue with the #glBlitFramebuffer on MacOS with radeon pro graphics.
-   * Blitting depth with#GL_DEPTH24_STENCIL8 is buggy so the workaround is to use
-   * #GPU_DEPTH32F_STENCIL8. Then Blitting depth will work but blitting stencil will
+  /* There is an issue with the glBlitFramebuffer on MacOS with radeon pro graphics.
+   * Blitting depth with GL_DEPTH24_STENCIL8 is buggy so the workaround is to use
+   * GPU_DEPTH32F_STENCIL8. Then Blitting depth will work but blitting stencil will
    * still be broken. */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_MAC, GPU_DRIVER_OFFICIAL)) {
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_MAC, GPU_DRIVER_OFFICIAL)) {
     if (strstr(renderer, "AMD Radeon Pro") || strstr(renderer, "AMD Radeon R9") ||
         strstr(renderer, "AMD Radeon RX")) {
       GCaps.depth_blitting_workaround = true;
@@ -323,17 +314,17 @@ static void detect_workarounds()
   /* Limit this fix to older hardware with GL < 4.5. This means Broadwell GPUs are
    * covered since they only support GL 4.4 on windows.
    * This fixes some issues with workbench anti-aliasing on Win + Intel GPU. (see T76273) */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) && !GLEW_VERSION_4_5) {
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) && !GLEW_VERSION_4_5) {
     GLContext::copy_image_support = false;
   }
   /* Special fix for these specific GPUs.
    * Without this workaround, blender crashes on startup. (see T72098) */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
       (strstr(renderer, "HD Graphics 620") || strstr(renderer, "HD Graphics 630"))) {
     GCaps.mip_render_workaround = true;
   }
   /* Intel Ivy Bridge GPU's seems to have buggy cube-map array support. (see T75943) */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_OFFICIAL) &&
       (strstr(renderer, "HD Graphics 4000") || strstr(renderer, "HD Graphics 4400") ||
        strstr(renderer, "HD Graphics 2500"))) {
     GLContext::texture_cube_map_array_support = false;
@@ -342,7 +333,7 @@ static void detect_workarounds()
    * But it's hard to test each case.
    * We get crashes from some crappy Intel drivers don't work well with shaders created in
    * different rendering contexts. */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_ANY) &&
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_ANY) &&
       (strstr(version, "Build 10.18.10.3") || strstr(version, "Build 10.18.10.4") ||
        strstr(version, "Build 10.18.10.5") || strstr(version, "Build 10.18.14.4") ||
        strstr(version, "Build 10.18.14.5"))) {
@@ -356,24 +347,24 @@ static void detect_workarounds()
   }
   /* See T70187: merging vertices fail. This has been tested from `18.2.2` till `19.3.0~dev`
    * of the Mesa driver */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE) &&
       (strstr(version, "Mesa 18.") || strstr(version, "Mesa 19.0") ||
        strstr(version, "Mesa 19.1") || strstr(version, "Mesa 19.2"))) {
     GLContext::unused_fb_slot_workaround = true;
   }
   /* There is a bug on older Nvidia GPU where GL_ARB_texture_gather
    * is reported to be supported but yield a compile error (see T55802). */
-  if (GPU_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_ANY, GPU_DRIVER_ANY) && !GLEW_VERSION_4_0) {
+  if (gpu_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_ANY, GPU_DRIVER_ANY) && !GLEW_VERSION_4_0) {
     GLContext::texture_gather_support = false;
   }
 
   /* dFdx/dFdy calculation factors, those are dependent on driver. */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_ANY) &&
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_ANY) &&
       strstr(version, "3.3.10750")) {
     GLContext::derivative_signs[0] = 1.0;
     GLContext::derivative_signs[1] = -1.0;
   }
-  else if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_ANY)) {
+  else if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_ANY)) {
     if (strstr(version, "4.0.0 - Build 10.18.10.3308") ||
         strstr(version, "4.0.0 - Build 9.18.10.3186") ||
         strstr(version, "4.0.0 - Build 9.18.10.3165") ||
@@ -402,13 +393,13 @@ static void detect_workarounds()
   }
 
   /* Broken glGenerateMipmap on macOS 10.15.7 security update. */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_MAC, GPU_DRIVER_ANY) &&
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_MAC, GPU_DRIVER_ANY) &&
       strstr(renderer, "HD Graphics 4000")) {
     GLContext::generate_mipmap_workaround = true;
   }
 
   /* Buggy interface query functions cause crashes when handling SSBOs (T93680) */
-  if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_ANY, GPU_DRIVER_ANY) &&
+  if (gpu_type_matches(GPU_DEVICE_INTEL, GPU_OS_ANY, GPU_DRIVER_ANY) &&
       (strstr(renderer, "HD Graphics 4400") || strstr(renderer, "HD Graphics 4600"))) {
     GCaps.shader_storage_buffer_objects_support = false;
   }
@@ -418,10 +409,9 @@ static void detect_workarounds()
   /* Minimum Per-Vertex stride is 1 byte for OpenGL. */
   GCaps.minimum_per_vertex_stride = 1;
 
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
-/** Internal capabilities. */
-
+/* Internal capabilities. */
 GLint GLContext::max_cubemap_size = 0;
 GLint GLContext::max_texture_3d_size = 0;
 GLint GLContext::max_ubo_binds = 0;
@@ -429,8 +419,7 @@ GLint GLContext::max_ubo_size = 0;
 GLint GLContext::max_ssbo_binds = 0;
 GLint GLContext::max_ssbo_size = 0;
 
-/** Extensions. */
-
+/* Extensions. */
 bool GLContext::base_instance_support = false;
 bool GLContext::clear_texture_support = false;
 bool GLContext::copy_image_support = false;
@@ -451,7 +440,7 @@ bool GLContext::texture_gather_support = false;
 bool GLContext::texture_storage_support = false;
 bool GLContext::vertex_attrib_binding_support = false;
 
-/** Workarounds. */
+/* Workarounds. */
 
 bool GLContext::debug_layer_workaround = false;
 bool GLContext::unused_fb_slot_workaround = false;
@@ -460,7 +449,7 @@ float GLContext::derivative_signs[2] = {1.0f, 1.0f};
 
 void GLBackend::capabilities_init()
 {
-  BLI_assert(GLEW_VERSION_3_3);
+  lib_assert(GLEW_VERSION_3_3);
   /* Common Capabilities. */
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &GCaps.max_texture_size);
   glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &GCaps.max_texture_layers);
@@ -528,6 +517,4 @@ void GLBackend::capabilities_init()
   }
 }
 
-/** \} */
-
-}  // namespace blender::gpu
+}  // namespace dune::gpu
