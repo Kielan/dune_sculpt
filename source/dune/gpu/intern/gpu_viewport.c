@@ -10,8 +10,8 @@
 
 #include "imbuf_colormanagement.h"
 
-#include "types_userdef_types.h"
-#include "types_vec_types.h"
+#include "types_userdef.h"
+#include "types_vec.h"
 
 #include "gpu_framebuffer.h"
 #include "gpu_immediate.h"
