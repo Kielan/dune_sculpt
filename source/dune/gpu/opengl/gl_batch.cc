@@ -1,8 +1,6 @@
-/**
- * GL implementation of GPUBatch.
+/* GL implementation of GPUBatch.
  * The only specificity of GL here is that it caches a list of
- * Vertex Array Objects based on the bound shader interface.
- */
+ * Vertex Array Objects based on the bound shader interface. */
 
 #include "lib_assert.h"
 
@@ -12,7 +10,7 @@
 #include "gpu_shader_private.hh"
 
 #include "gl_backend.hh"
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_debug.hh"
 #include "gl_index_buffer.hh"
 #include "gl_primitive.hh"
@@ -22,12 +20,9 @@
 
 using namespace dune::gpu;
 
-/* -------------------------------------------------------------------- */
-/** VAO Cache
- *
- * Each #GLBatch has a small cache of VAO objects that are used to avoid VAO reconfiguration.
- * TODO: Could be revisited to avoid so much cross refs.
- **/
+/* VAO Cache
+ * Each GLBatch has a small cache of VAO objects that are used to avoid VAO reconfiguration.
+ * TODO: Could be revisited to avoid so much cross refs. */
 
 GLVaoCache::GLVaoCache()
 {
@@ -41,7 +36,7 @@ GLVaoCache::~GLVaoCache()
 
 void GLVaoCache::init()
 {
-  context_ = nullptr;
+  cxt_ = nullptr;
   interface_ = nullptr;
   is_dynamic_vao_count = false;
   for (int i = 0; i < GPU_VAO_STATIC_LEN; i++) {
@@ -73,7 +68,7 @@ void GLVaoCache::insert(const GLShaderInterface *interface, GLuint vao)
       for (int i = 0; i < GPU_VAO_STATIC_LEN; i++) {
         if (static_vaos.interfaces[i] != nullptr) {
           const_cast<GLShaderInterface *>(static_vaos.interfaces[i])->ref_remove(this);
-          context_->vao_free(static_vaos.vao_ids[i]);
+          cxt_->vao_free(static_vaos.vao_ids[i]);
         }
       }
       /* Not enough place switch to dynamic. */
@@ -119,7 +114,7 @@ void GLVaoCache::remove(const GLShaderInterface *interface)
                                                                   static_vaos.interfaces;
   for (int i = 0; i < count; i++) {
     if (interfaces[i] == interface) {
-      context_->vao_free(vaos[i]);
+      cxt_->vao_free(vaos[i]);
       vaos[i] = 0;
       interfaces[i] = nullptr;
       break; /* cannot have duplicates */
@@ -129,7 +124,7 @@ void GLVaoCache::remove(const GLShaderInterface *interface)
 
 void GLVaoCache::clear()
 {
-  GLContext *ctx = GLContext::get();
+  GLContext *cxt = GLContext::get();
   const int count = (is_dynamic_vao_count) ? dynamic_vaos.count : GPU_VAO_STATIC_LEN;
   GLuint *vaos = (is_dynamic_vao_count) ? dynamic_vaos.vao_ids : static_vaos.vao_ids;
   const GLShaderInterface **interfaces = (is_dynamic_vao_count) ? dynamic_vaos.interfaces :
