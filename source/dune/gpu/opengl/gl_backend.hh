@@ -2,11 +2,11 @@
 
 #include "gpu_backend.hh"
 
-#include "BLI_vector.hh"
+#include "lib_vector.hh"
 
 #include "gl_batch.hh"
 #include "gl_compute.hh"
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_drawlist.hh"
 #include "gl_framebuffer.hh"
 #include "gl_index_buffer.hh"
@@ -17,7 +17,7 @@
 #include "gl_uniform_buffer.hh"
 #include "gl_vertex_buffer.hh"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class GLBackend : public GPUBackend {
@@ -50,7 +50,7 @@ class GLBackend : public GPUBackend {
     GLTexture::samplers_update();
   };
 
-  Context *context_alloc(void *ghost_window) override
+  Context *cxt_alloc(void *ghost_window) override
   {
     return new GLContext(ghost_window, shared_orphan_list_);
   };
