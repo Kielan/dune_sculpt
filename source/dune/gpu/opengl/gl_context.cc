@@ -1,14 +1,14 @@
-#include "BLI_assert.h"
-#include "BLI_system.h"
-#include "BLI_utildefines.h"
+#include "lib_assert.h"
+#include "lib_system.h"
+#include "lib_utildefines.h"
 
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "GPU_framebuffer.h"
+#include "gpu_framebuffer.h"
 
 #include "GHOST_C-api.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_immediate_private.hh"
 
 #include "gl_debug.hh"
@@ -17,20 +17,17 @@
 #include "gl_uniform_buffer.hh"
 
 #include "gl_backend.hh" /* TODO: remove. */
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
-/* -------------------------------------------------------------------- */
-/** \name Constructor / Destructor
- * \{ */
-
-GLContext::GLContext(void *ghost_window, GLSharedOrphanLists &shared_orphan_list)
+/* Constructor / Destructor */
+GLCxt::GLCxt(void *ghost_window, GLSharedOrphanLists &shared_orphan_list)
     : shared_orphan_list_(shared_orphan_list)
 {
   if (G.debug & G_DEBUG_GPU) {
-    debug::init_gl_callbacks();
+    debug::init_gl_cbs();
   }
 
   float data[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -79,12 +76,12 @@ GLContext::GLContext(void *ghost_window, GLSharedOrphanLists &shared_orphan_list
       active_fb);
 }
 
-GLContext::~GLContext()
+GLCxt::~GLCxt()
 {
-  BLI_assert(orphaned_framebuffers_.is_empty());
-  BLI_assert(orphaned_vertarrays_.is_empty());
+  lib_assert(orphaned_framebuffers_.is_empty());
+  lib_assert(orphaned_vertarrays_.is_empty());
   /* For now don't allow GPUFrameBuffers to be reuse in another context. */
-  BLI_assert(framebuffers_.is_empty());
+  lib_assert(framebuffers_.is_empty());
   /* Delete VAO's so the batch can be reused in another context. */
   for (GLVaoCache *cache : vao_caches_) {
     cache->clear();
@@ -92,16 +89,12 @@ GLContext::~GLContext()
   glDeleteBuffers(1, &default_attr_vbo_);
 }
 
-/** \} */
+/* Activate / Deactivate cxt */
 
-/* -------------------------------------------------------------------- */
-/** \name Activate / Deactivate context
- * \{ */
-
-void GLContext::activate()
+void GLCxt::activate()
 {
   /* Make sure no other context is already bound to this thread. */
-  BLI_assert(is_active_ == false);
+  lib_assert(is_active_ == false);
 
   is_active_ = true;
   thread_ = pthread_self();
@@ -137,41 +130,31 @@ void GLContext::activate()
   immActivate();
 }
 
-void GLContext::deactivate()
+void GLCxt::deactivate()
 {
   immDeactivate();
   is_active_ = false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Flush, Finish & sync
- * \{ */
-
-void GLContext::flush()
+/* Flush, Finish & sync */
+void GLCxt::flush()
 {
   glFlush();
 }
 
-void GLContext::finish()
+void GLCxt::finish()
 {
   glFinish();
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Safe object deletion
- *
+/* Safe object deletion
  * GPU objects can be freed when the context is not bound.
- * In this case we delay the deletion until the context is bound again.
- * \{ */
+ * In this case we delay the deletion until the cxt is bound again */
 
 void GLSharedOrphanLists::orphans_clear()
 {
   /* Check if any context is active on this thread! */
-  BLI_assert(GLContext::get());
+  lib_assert(GLCxt::get());
 
   lists_mutex.lock();
   if (!buffers.is_empty()) {
@@ -185,10 +168,10 @@ void GLSharedOrphanLists::orphans_clear()
   lists_mutex.unlock();
 };
 
-void GLContext::orphans_clear()
+void GLCxt::orphans_clear()
 {
   /* Check if context has been activated by another thread! */
-  BLI_assert(this->is_active_on_thread());
+  lib_assert(this->is_active_on_thread());
 
   lists_mutex_.lock();
   if (!orphaned_vertarrays_.is_empty()) {
@@ -204,16 +187,16 @@ void GLContext::orphans_clear()
   shared_orphan_list_.orphans_clear();
 };
 
-void GLContext::orphans_add(Vector<GLuint> &orphan_list, std::mutex &list_mutex, GLuint id)
+void GLCxt::orphans_add(Vector<GLuint> &orphan_list, std::mutex &list_mutex, GLuint id)
 {
   list_mutex.lock();
   orphan_list.append(id);
   list_mutex.unlock();
 }
 
-void GLContext::vao_free(GLuint vao_id)
+void GLCxt::vao_free(GLuint vao_id)
 {
-  if (this == GLContext::get()) {
+  if (this == GLCxt::get()) {
     glDeleteVertexArrays(1, &vao_id);
   }
   else {
@@ -221,9 +204,9 @@ void GLContext::vao_free(GLuint vao_id)
   }
 }
 
-void GLContext::fbo_free(GLuint fbo_id)
+void GLCxt::fbo_free(GLuint fbo_id)
 {
-  if (this == GLContext::get()) {
+  if (this == GLCxt::get()) {
     glDeleteFramebuffers(1, &fbo_id);
   }
   else {
@@ -231,10 +214,10 @@ void GLContext::fbo_free(GLuint fbo_id)
   }
 }
 
-void GLContext::buf_free(GLuint buf_id)
+void GLCxt::buf_free(GLuint buf_id)
 {
-  /* Any context can free. */
-  if (GLContext::get()) {
+  /* Any cxt can free. */
+  if (GLCxt::get()) {
     glDeleteBuffers(1, &buf_id);
   }
   else {
@@ -243,10 +226,10 @@ void GLContext::buf_free(GLuint buf_id)
   }
 }
 
-void GLContext::tex_free(GLuint tex_id)
+void GLCxt::tex_free(GLuint tex_id)
 {
   /* Any context can free. */
-  if (GLContext::get()) {
+  if (GLCxt::get()) {
     glDeleteTextures(1, &tex_id);
   }
   else {
@@ -255,39 +238,29 @@ void GLContext::tex_free(GLuint tex_id)
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Linked object deletion
- *
+/* Linked object deletion
  * These objects contain data that are stored per context. We
  * need to do some cleanup if they are used across context or if context
- * is discarded.
- * \{ */
+ * is discarded */
 
-void GLContext::vao_cache_register(GLVaoCache *cache)
+void GLCxt::vao_cache_register(GLVaoCache *cache)
 {
   lists_mutex_.lock();
   vao_caches_.add(cache);
   lists_mutex_.unlock();
 }
 
-void GLContext::vao_cache_unregister(GLVaoCache *cache)
+void GLCxt::vao_cache_unregister(GLVaoCache *cache)
 {
   lists_mutex_.lock();
   vao_caches_.remove(cache);
   lists_mutex_.unlock();
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Memory statistics
- * \{ */
-
-void GLContext::memory_statistics_get(int *r_total_mem, int *r_free_mem)
+/* Memory statistics */
+void GLCxt::memory_statistics_get(int *r_total_mem, int *r_free_mem)
 {
-  /* TODO(merwin): use Apple's platform API to get this info. */
+  /* TODO: use Apple's platform API to get this info. */
   if (GLEW_NVX_gpu_memory_info) {
     /* Returned value in Kb. */
     glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, r_total_mem);
@@ -305,5 +278,3 @@ void GLContext::memory_statistics_get(int *r_total_mem, int *r_free_mem)
     *r_free_mem = 0;
   }
 }
-
-/** \} */
