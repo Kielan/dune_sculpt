@@ -1,4 +1,4 @@
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_debug.hh"
 
 #include "gl_index_buffer.hh"
@@ -7,7 +7,7 @@ namespace dune::gpu {
 
 GLIndexBuf::~GLIndexBuf()
 {
-  GLContext::buf_free(ibo_id_);
+  GLCxt::buf_free(ibo_id_);
 }
 
 void GLIndexBuf::bind()
