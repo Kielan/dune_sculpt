@@ -1,25 +1,22 @@
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "BLI_math_base.h"
-#include "BLI_math_bits.h"
+#include "lib_math_base.h"
+#include "lib_math_bits.h"
 
-#include "GPU_capabilities.h"
+#include "gpu_capabilities.h"
 
 #include "glew-mx.h"
 
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_debug.hh"
 #include "gl_framebuffer.hh"
 #include "gl_texture.hh"
 
 #include "gl_state.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** \name GLStateManager
- * \{ */
-
+/* GLStateManager */
 GLStateManager::GLStateManager()
 {
   /* Set other states that never change. */
@@ -35,8 +32,8 @@ GLStateManager::GLStateManager()
 
   glPrimitiveRestartIndex((GLuint)0xFFFFFFFF);
   /* TODO: Should become default. But needs at least GL 4.3 */
-  if (GLContext::fixed_restart_index_support) {
-    /* Takes precedence over #GL_PRIMITIVE_RESTART. */
+  if (GLCxt::fixed_restart_index_support) {
+    /* Takes precedence over GL_PRIMITIVE_RESTART. */
     glEnable(GL_PRIMITIVE_RESTART_FIXED_INDEX);
   }
 
@@ -163,11 +160,7 @@ void GLStateManager::set_mutable_state(const GPUStateMutable &state)
   current_mutable_ = state;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name State set functions
- * \{ */
+/* State set fns */
 
 void GLStateManager::set_write_mask(const eGPUWriteMask value)
 {
@@ -187,41 +180,41 @@ void GLStateManager::set_write_mask(const eGPUWriteMask value)
 
 void GLStateManager::set_depth_test(const eGPUDepthTest value)
 {
-  GLenum func;
+  GLenum fn;
   switch (value) {
     case GPU_DEPTH_LESS:
-      func = GL_LESS;
+      fn = GL_LESS;
       break;
     case GPU_DEPTH_LESS_EQUAL:
-      func = GL_LEQUAL;
+      fn = GL_LEQUAL;
       break;
     case GPU_DEPTH_EQUAL:
-      func = GL_EQUAL;
+      fn = GL_EQUAL;
       break;
     case GPU_DEPTH_GREATER:
-      func = GL_GREATER;
+      fn = GL_GREATER;
       break;
     case GPU_DEPTH_GREATER_EQUAL:
-      func = GL_GEQUAL;
+      fn = GL_GEQUAL;
       break;
     case GPU_DEPTH_ALWAYS:
     default:
-      func = GL_ALWAYS;
+      fn = GL_ALWAYS;
       break;
   }
 
   if (value != GPU_DEPTH_NONE) {
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(func);
+    glDepthFn(fn);
   }
   else {
     glDisable(GL_DEPTH_TEST);
   }
 }
 
-void GLStateManager::set_stencil_test(const eGPUStencilTest test, const eGPUStencilOp operation)
+void GLStateManager::set_stencil_test(const eGPUStencilTest test, const eGPUStencilOp op)
 {
-  switch (operation) {
+  switch (op) {
     case GPU_STENCIL_OP_REPLACE:
       glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
       break;
@@ -248,26 +241,26 @@ void GLStateManager::set_stencil_test(const eGPUStencilTest test, const eGPUSten
 
 void GLStateManager::set_stencil_mask(const eGPUStencilTest test, const GPUStateMutable state)
 {
-  GLenum func;
+  GLenum fn;
   switch (test) {
     case GPU_STENCIL_NEQUAL:
-      func = GL_NOTEQUAL;
+      fn = GL_NOTEQUAL;
       break;
     case GPU_STENCIL_EQUAL:
-      func = GL_EQUAL;
+      fn = GL_EQUAL;
       break;
     case GPU_STENCIL_ALWAYS:
-      func = GL_ALWAYS;
+      fn = GL_ALWAYS;
       break;
     case GPU_STENCIL_NONE:
     default:
       glStencilMask(0x00);
-      glStencilFunc(GL_ALWAYS, 0x00, 0x00);
+      glStencilFn(GL_ALWAYS, 0x00, 0x00);
       return;
   }
 
   glStencilMask(state.stencil_write_mask);
-  glStencilFunc(func, state.stencil_reference, state.stencil_compare_mask);
+  glStencilFn(fn, state.stencil_reference, state.stencil_compare_mask);
 }
 
 void GLStateManager::set_clip_distances(const int new_dist_len, const int old_dist_len)
@@ -330,13 +323,11 @@ void GLStateManager::set_shadow_bias(const bool enable)
 
 void GLStateManager::set_blend(const eGPUBlend value)
 {
-  /**
-   * Factors to the equation.
+  /* Factors to the equation.
    * SRC is fragment shader output.
    * DST is frame-buffer color.
    * final.rgb = SRC.rgb * src_rgb + DST.rgb * dst_rgb;
-   * final.a = SRC.a * src_alpha + DST.a * dst_alpha;
-   */
+   * final.a = SRC.a * src_alpha + DST.a * dst_alpha;   */
   GLenum src_rgb, src_alpha, dst_rgb, dst_alpha;
   switch (value) {
     default:
@@ -416,16 +407,15 @@ void GLStateManager::set_blend(const eGPUBlend value)
   }
 
   if (value == GPU_BLEND_SUBTRACT) {
-    glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
+    glBlendEquation(GL_FN_REVERSE_SUBTRACT);
   }
   else {
-    glBlendEquation(GL_FUNC_ADD);
+    glBlendEquation(GL_FN_ADD);
   }
 
-  /* Always set the blend function. This avoid a rendering error when blending is disabled but
-   * GPU_BLEND_CUSTOM was used just before and the frame-buffer is using more than 1 color target.
-   */
-  glBlendFuncSeparate(src_rgb, dst_rgb, src_alpha, dst_alpha);
+  /* Always set the blend fn. This avoid a rendering error when blending is disabled but
+   * GPU_BLEND_CUSTOM was used just before and the frame-buffer is using more than 1 color target. */
+  glBlendFnSeparate(src_rgb, dst_rgb, src_alpha, dst_alpha);
   if (value != GPU_BLEND_NONE) {
     glEnable(GL_BLEND);
   }
@@ -434,15 +424,10 @@ void GLStateManager::set_blend(const eGPUBlend value)
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Texture State Management
- * \{ */
-
+/* Texture State Management */
 void GLStateManager::texture_bind(Texture *tex_, eGPUSamplerState sampler_type, int unit)
 {
-  BLI_assert(unit < GPU_max_textures());
+  lib_assert(unit < gpu_max_textures());
   GLTexture *tex = static_cast<GLTexture *>(tex_);
   if (G.debug & G_DEBUG_GPU) {
     tex->check_feedback_loop();
@@ -512,7 +497,7 @@ void GLStateManager::texture_bind_apply()
   int last = 64 - bitscan_reverse_uint64(dirty_bind);
   int count = last - first;
 
-  if (GLContext::multi_bind_support) {
+  if (GLCxt::multi_bind_support) {
     glBindTextures(first, count, textures_ + first);
     glBindSamplers(first, count, samplers_ + first);
   }
@@ -543,16 +528,11 @@ uint64_t GLStateManager::bound_texture_slots()
   return bound_slots;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Image Binding (from image load store)
- * \{ */
-
+/* Image Binding (from image load store) */
 void GLStateManager::image_bind(Texture *tex_, int unit)
 {
   /* Minimum support is 8 image in the fragment shader. No image for other stages. */
-  BLI_assert(GPU_shader_image_load_store_support() && unit < 8);
+  lib_assert(gpu_shader_image_load_store_support() && unit < 8);
   GLTexture *tex = static_cast<GLTexture *>(tex_);
   if (G.debug & G_DEBUG_GPU) {
     tex->check_feedback_loop();
@@ -603,7 +583,7 @@ void GLStateManager::image_bind_apply()
   int last = 32 - bitscan_reverse_uint(dirty_bind);
   int count = last - first;
 
-  if (GLContext::multi_bind_support) {
+  if (GLCxt::multi_bind_support) {
     glBindImageTextures(first, count, images_ + first);
   }
   else {
@@ -626,9 +606,7 @@ uint8_t GLStateManager::bound_image_slots()
   return bound_slots;
 }
 
-/* -------------------------------------------------------------------- */
-/** Memory barrier */
-
+/* Memory barrier */
 void GLStateManager::issue_barrier(eGPUBarrier barrier_bits)
 {
   glMemoryBarrier(to_gl(barrier_bits));
