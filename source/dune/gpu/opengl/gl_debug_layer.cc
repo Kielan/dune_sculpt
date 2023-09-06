@@ -1,7 +1,5 @@
-/**
- * Implement our own subset of KHR_debug extension.
- * We override the functions pointers by our own implementation that just checks glGetError.
- */
+/* Implement our own subset of KHR_debug extension.
+ * We override the fns ptrs by our own implementation that just checks glGetError. */
 
 #include "lib_utildefines.h"
 
@@ -32,8 +30,8 @@ using GPUvoidptr = void *;
 
 namespace dune::gpu::debug {
 
-/* List of wrapped functions. We don't have to support all of them.
- * Some functions might be declared as `extern` in GLEW. We cannot override them in this case.
+/* List of wrapped fns. We don't have to support all of them.
+ * Some fns might be declared as `extern` in GLEW. We cannot override them in this case.
  * Keep the list in alphabetical order. */
 
 /* Avoid very long declarations. */
@@ -84,14 +82,14 @@ DEBUG_FN_DECLARE(PFNGLUNMAPBUFFERPROC, GLboolean, glUnmapBuffer, GLenum, target)
 DEBUG_FN_DECLARE(PFNGLUSEPROGRAMPROC, void, glUseProgram, GLuint, program);
 /* clang-format on */
 
-#undef DEBUG_FUNC_DECLARE
+#undef DEBUG_FN_DECLARE
 
 void init_debug_layer()
 {
-#define DEBUG_WRAP(function) \
+#define DEBUG_WRAP(fn) \
   do { \
-    real_##function = ::function; \
-    ::function = &debug_##function; \
+    real_##fn = ::fn; \
+    ::fn = &debug_##fn; \
   } while (0)
 
   DEBUG_WRAP(glBeginQuery);
