@@ -1,8 +1,8 @@
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 
 #include "gl_vertex_buffer.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 void GLVertBuf::acquire_data()
 {
@@ -12,7 +12,7 @@ void GLVertBuf::acquire_data()
 
   /* Discard previous data if any. */
   MEM_SAFE_FREE(data);
-  data = (uchar *)MEM_mallocN(sizeof(uchar) * this->size_alloc_get(), __func__);
+  data = (uchar *)mem_mallocn(sizeof(uchar) * this->size_alloc_get(), __func__);
 }
 
 void GLVertBuf::resize_data()
@@ -21,7 +21,7 @@ void GLVertBuf::resize_data()
     return;
   }
 
-  data = (uchar *)MEM_reallocN(data, sizeof(uchar) * this->size_alloc_get());
+  data = (uchar *)mem_reallocn(data, sizeof(uchar) * this->size_alloc_get());
 }
 
 void GLVertBuf::release_data()
@@ -31,7 +31,7 @@ void GLVertBuf::release_data()
   }
 
   if (vbo_id_ != 0) {
-    GLContext::buf_free(vbo_id_);
+    GLCxt::buf_free(vbo_id_);
     vbo_id_ = 0;
     memory_usage -= vbo_size_;
   }
@@ -41,7 +41,7 @@ void GLVertBuf::release_data()
 
 void GLVertBuf::duplicate_data(VertBuf *dst_)
 {
-  BLI_assert(GLContext::get() != nullptr);
+  lib_assert(GLCxt::get() != nullptr);
   GLVertBuf *src = this;
   GLVertBuf *dst = static_cast<GLVertBuf *>(dst_);
 
@@ -60,7 +60,7 @@ void GLVertBuf::duplicate_data(VertBuf *dst_)
   }
 
   if (data != nullptr) {
-    dst->data = (uchar *)MEM_dupallocN(src->data);
+    dst->data = (uchar *)mem_dupallocn(src->data);
   }
 }
 
@@ -106,7 +106,7 @@ void GLVertBuf::bind_as_ssbo(uint binding)
 
 const void *GLVertBuf::read() const
 {
-  BLI_assert(is_active());
+  lib_assert(is_active());
   void *result = glMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
   return result;
 }
@@ -120,8 +120,8 @@ void *GLVertBuf::unmap(const void *mapped_data) const
 
 void GLVertBuf::wrap_handle(uint64_t handle)
 {
-  BLI_assert(vbo_id_ == 0);
-  BLI_assert(glIsBuffer(static_cast<uint>(handle)));
+  lib_assert(vbo_id_ == 0);
+  lib_assert(glIsBuffer(static_cast<uint>(handle)));
   is_wrapper_ = true;
   vbo_id_ = static_cast<uint>(handle);
   /* We assume the data is already on the device, so no need to allocate or send it. */
