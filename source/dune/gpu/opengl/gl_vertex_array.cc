@@ -1,4 +1,3 @@
-
 #include "gpu_shader_interface.hh"
 #include "gpu_vertex_buffer_private.hh"
 #include "gpu_vertex_format_private.h"
@@ -13,7 +12,6 @@
 namespace dune::gpu {
 
 /* Vertex Array Bindings */
-
 /* Returns enabled vertex pointers as a bitflag (one bit per attrib). */
 static uint16_t vbo_bind(const ShaderInterface *interface,
                          const GPUVertFormat *format,
@@ -39,7 +37,7 @@ static uint16_t vbo_bind(const ShaderInterface *interface,
     }
 
     /* This is in fact an offset in memory. */
-    const GLvoid *pointer = (const GLubyte *)(intptr_t)(offset + v_first * stride);
+    const GLvoid *ptr = (const GLubyte *)(intptr_t)(offset + v_first * stride);
     const GLenum type = to_gl(static_cast<GPUVertCompType>(a->comp_type));
 
     for (uint n_idx = 0; n_idx < a->name_len; n_idx++) {
@@ -59,7 +57,7 @@ static uint16_t vbo_bind(const ShaderInterface *interface,
           glEnableVertexAttribArray(input->location + i);
           glVertexAttribDivisor(input->location + i, divisor);
           glVertexAttribPointer(
-              input->location + i, 4, type, GL_FALSE, stride, (const GLubyte *)pointer + i * 16);
+              input->location + i, 4, type, GL_FALSE, stride, (const GLubyte *)ptr + i * 16);
         }
       }
       else {
