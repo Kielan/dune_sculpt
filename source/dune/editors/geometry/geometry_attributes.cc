@@ -7,158 +7,157 @@
 #include "dune_attribute.h"
 #include "dune_cxt.h"
 #include "dune_deform.h"
-#include "BKE_geometry_set.hh"
-#include "BKE_object_deform.h"
-#include "BKE_report.h"
+#include "dune_geometry_set.hh"
+#include "dune_object_deform.h"
+#include "dune_report.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
-#include "ED_object.h"
+#include "ed_object.h"
 
 #include "geometry_intern.hh"
 
-namespace blender::ed::geometry {
+namespace dune::ed::geometry {
 
-/*********************** Attribute Operators ************************/
-
-static bool geometry_attributes_poll(bContext *C)
+/* Attribute Operators */
+static bool geometry_attributes_poll(Cxt *C)
 {
-  Object *ob = ED_object_context(C);
-  ID *data = (ob) ? static_cast<ID *>(ob->data) : nullptr;
+  Object *ob = ed_object_context(C);
+  Id *data = (ob) ? static_cast<Id *>(ob->data) : nullptr;
   return (ob && !ID_IS_LINKED(ob) && data && !ID_IS_LINKED(data)) &&
-         BKE_id_attributes_supported(data);
+         dune_id_attributes_supported(data);
 }
 
-static bool geometry_attributes_remove_poll(bContext *C)
+static bool geometry_attributes_remove_poll(Cxt *C)
 {
   if (!geometry_attributes_poll(C)) {
     return false;
   }
 
-  Object *ob = ED_object_context(C);
-  ID *data = (ob) ? static_cast<ID *>(ob->data) : nullptr;
-  if (BKE_id_attributes_active_get(data) != nullptr) {
+  Object *ob = ed_object_cxt(C);
+  Id *data = (ob) ? static_cast<Id *>(ob->data) : nullptr;
+  if (dune_id_attributes_active_get(data) != nullptr) {
     return true;
   }
 
   return false;
 }
 
-static const EnumPropertyItem *geometry_attribute_domain_itemf(bContext *C,
-                                                               PointerRNA *UNUSED(ptr),
-                                                               PropertyRNA *UNUSED(prop),
-                                                               bool *r_free)
+static const EnumPropItem *geometry_attribute_domain_itemf(Cxt *C,
+                                                           ApiPtr *UNUSED(ptr),
+                                                           ApiProp *UNUSED(prop),
+                                                           bool *r_free)
 {
   if (C == nullptr) {
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
-  Object *ob = ED_object_context(C);
+  Object *ob = ed_object_cxt(C);
   if (ob == nullptr) {
-    return DummyRNA_NULL_items;
+    return DummyApi_NULL_items;
   }
 
-  return rna_enum_attribute_domain_itemf(static_cast<ID *>(ob->data), false, r_free);
+  return api_enum_attribute_domain_itemf(static_cast<Id *>(ob->data), false, r_free);
 }
 
-static int geometry_attribute_add_exec(bContext *C, wmOperator *op)
+static int geometry_attribute_add_ex(Cxt *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
-  ID *id = static_cast<ID *>(ob->data);
+  Object *ob = ed_object_context(C);
+  Id *id = static_cast<Id *>(ob->data);
 
   char name[MAX_NAME];
-  RNA_string_get(op->ptr, "name", name);
-  CustomDataType type = (CustomDataType)RNA_enum_get(op->ptr, "data_type");
-  AttributeDomain domain = (AttributeDomain)RNA_enum_get(op->ptr, "domain");
-  CustomDataLayer *layer = BKE_id_attribute_new(id, name, type, domain, op->reports);
+  api_string_get(op->ptr, "name", name);
+  CustomDataType type = (CustomDataType)api_enum_get(op->ptr, "data_type");
+  AttributeDomain domain = (AttributeDomain)api_enum_get(op->ptr, "domain");
+  CustomDataLayer *layer = dune_id_attribute_new(id, name, type, domain, op->reports);
 
   if (layer == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  BKE_id_attributes_active_set(id, layer);
+  dune_id_attributes_active_set(id, layer);
 
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graph_id_tag_update(id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GEOMETRY_OT_attribute_add(wmOperatorType *ot)
+void GEOMETRY_OT_attribute_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Geometry Attribute";
   ot->description = "Add attribute to geometry";
   ot->idname = "GEOMETRY_OT_attribute_add";
 
-  /* api callbacks */
+  /* api cbs */
   ot->poll = geometry_attributes_poll;
   ot->exec = geometry_attribute_add_exec;
-  ot->invoke = WM_operator_props_popup_confirm;
+  ot->invoke = wm_op_props_popup_confirm;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  PropertyRNA *prop;
+  /* props */
+  ApiProp *prop;
 
-  prop = RNA_def_string(ot->srna, "name", "Attribute", MAX_NAME, "Name", "Name of new attribute");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_string(ot->sapi, "name", "Attribute", MAX_NAME, "Name", "Name of new attribute");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_enum(ot->srna,
+  prop = api_def_enum(ot->sapi,
                       "domain",
                       rna_enum_attribute_domain_items,
                       ATTR_DOMAIN_POINT,
                       "Domain",
                       "Type of element that attribute is stored on");
-  RNA_def_enum_funcs(prop, geometry_attribute_domain_itemf);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_enum_fns(prop, geometry_attribute_domain_itemf);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_enum(ot->srna,
+  prop = api_def_enum(ot->sapi,
                       "data_type",
-                      rna_enum_attribute_type_items,
+                      api_enum_attribute_type_items,
                       CD_PROP_FLOAT,
                       "Data Type",
                       "Type of data stored in attribute");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-static int geometry_attribute_remove_exec(bContext *C, wmOperator *op)
+static int geometry_attribute_remove_ex(Cxt *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
-  ID *id = static_cast<ID *>(ob->data);
-  CustomDataLayer *layer = BKE_id_attributes_active_get(id);
+  Object *ob = ed_object_cxt(C);
+  Id *id = static_cast<Id *>(ob->data);
+  CustomDataLayer *layer = dune_id_attributes_active_get(id);
 
   if (layer == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  if (!BKE_id_attribute_remove(id, layer, op->reports)) {
-    return OPERATOR_CANCELLED;
+  if (!dune_id_attribute_remove(id, layer, op->reports)) {
+    return OP_CANCELLED;
   }
 
-  int *active_index = BKE_id_attributes_active_index_p(id);
+  int *active_index = dune_id_attributes_active_index_p(id);
   if (*active_index > 0) {
     *active_index -= 1;
   }
 
-  DEG_id_tag_update(id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+  graoh_id_tag_update(id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, id);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GEOMETRY_OT_attribute_remove(wmOperatorType *ot)
+void GEOMETRY_OT_attribute_remove(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Remove Geometry Attribute";
@@ -166,7 +165,7 @@ void GEOMETRY_OT_attribute_remove(wmOperatorType *ot)
   ot->idname = "GEOMETRY_OT_attribute_remove";
 
   /* api callbacks */
-  ot->exec = geometry_attribute_remove_exec;
+  ot->exec = geometry_attribute_remove_ex;
   ot->poll = geometry_attributes_remove_poll;
 
   /* flags */
@@ -180,33 +179,33 @@ enum class ConvertAttributeMode {
   VertexColor,
 };
 
-static bool geometry_attribute_convert_poll(bContext *C)
+static bool geometry_attribute_convert_poll(Cxt *C)
 {
   if (!geometry_attributes_poll(C)) {
     return false;
   }
 
-  Object *ob = ED_object_context(C);
-  ID *data = static_cast<ID *>(ob->data);
+  Object *ob = ed_object_cxt(C);
+  Id *data = static_cast<Id *>(ob->data);
   if (GS(data->name) != ID_ME) {
     return false;
   }
-  CustomDataLayer *layer = BKE_id_attributes_active_get(data);
+  CustomDataLayer *layer = dune_id_attributes_active_get(data);
   if (layer == nullptr) {
     return false;
   }
   return true;
 }
 
-static int geometry_attribute_convert_exec(bContext *C, wmOperator *op)
+static int geometry_attribute_convert_exec(Cxt *C, wmOp *op)
 {
-  Object *ob = ED_object_context(C);
-  ID *ob_data = static_cast<ID *>(ob->data);
-  CustomDataLayer *layer = BKE_id_attributes_active_get(ob_data);
+  Object *ob = ed_object_cxt(C);
+  Id *ob_data = static_cast<ID *>(ob->data);
+  CustomDataLayer *layer = dune_id_attributes_active_get(ob_data);
   const std::string name = layer->name;
 
   const ConvertAttributeMode mode = static_cast<ConvertAttributeMode>(
-      RNA_enum_get(op->ptr, "mode"));
+      api_enum_get(op->ptr, "mode"));
 
   Mesh *mesh = reinterpret_cast<Mesh *>(ob_data);
   MeshComponent mesh_component;
@@ -220,18 +219,18 @@ static int geometry_attribute_convert_exec(bContext *C, wmOperator *op)
   switch (mode) {
     case ConvertAttributeMode::Generic: {
       const AttributeDomain dst_domain = static_cast<AttributeDomain>(
-          RNA_enum_get(op->ptr, "domain"));
+          api_enum_get(op->ptr, "domain"));
       const CustomDataType dst_type = static_cast<CustomDataType>(
-          RNA_enum_get(op->ptr, "data_type"));
+          api_enum_get(op->ptr, "data_type"));
 
       if (ELEM(dst_type, CD_PROP_STRING, CD_MLOOPCOL)) {
-        BKE_report(op->reports, RPT_ERROR, "Cannot convert to the selected type");
-        return OPERATOR_CANCELLED;
+        dune_report(op->reports, RPT_ERROR, "Cannot convert to the selected type");
+        return OP_CANCELLED;
       }
 
       GVArray src_varray = mesh_component.attribute_get_for_read(name, dst_domain, dst_type);
       const CPPType &cpp_type = src_varray.type();
-      void *new_data = MEM_malloc_arrayN(src_varray.size(), cpp_type.size(), __func__);
+      void *new_data = mem_malloc_arrayn(src_varray.size(), cpp_type.size(), __func__);
       src_varray.materialize_to_uninitialized(new_data);
       mesh_component.attribute_try_delete(name);
       mesh_component.attribute_try_create(name, dst_domain, dst_type, AttributeInitMove(new_data));
@@ -239,7 +238,7 @@ static int geometry_attribute_convert_exec(bContext *C, wmOperator *op)
     }
     case ConvertAttributeMode::UVMap: {
       MLoopUV *dst_uvs = static_cast<MLoopUV *>(
-          MEM_calloc_arrayN(mesh->totloop, sizeof(MLoopUV), __func__));
+          mem_calloc_arrayn(mesh->totloop, sizeof(MLoopUV), __func__));
       VArray<float2> src_varray = mesh_component.attribute_get_for_read<float2>(
           name, ATTR_DOMAIN_CORNER, {0.0f, 0.0f});
       for (const int i : IndexRange(mesh->totloop)) {
@@ -252,7 +251,7 @@ static int geometry_attribute_convert_exec(bContext *C, wmOperator *op)
     }
     case ConvertAttributeMode::VertexColor: {
       MLoopCol *dst_colors = static_cast<MLoopCol *>(
-          MEM_calloc_arrayN(mesh->totloop, sizeof(MLoopCol), __func__));
+          mem_calloc_arrayn(mesh->totloop, sizeof(MLoopCol), __func__));
       VArray<ColorGeometry4f> src_varray = mesh_component.attribute_get_for_read<ColorGeometry4f>(
           name, ATTR_DOMAIN_CORNER, ColorGeometry4f{0.0f, 0.0f, 0.0f, 1.0f});
       for (const int i : IndexRange(mesh->totloop)) {
@@ -271,31 +270,31 @@ static int geometry_attribute_convert_exec(bContext *C, wmOperator *op)
       src_varray.materialize(src_weights);
       mesh_component.attribute_try_delete(name);
 
-      bDeformGroup *defgroup = BKE_object_defgroup_new(ob, name.c_str());
-      const int defgroup_index = BLI_findindex(BKE_id_defgroup_list_get(&mesh->id), defgroup);
-      MDeformVert *dverts = BKE_object_defgroup_data_create(&mesh->id);
+      DeformGroup *defgroup = dune_object_defgroup_new(ob, name.c_str());
+      const int defgroup_index = lib_findindex(dune_id_defgroup_list_get(&mesh->id), defgroup);
+      MDeformVert *dverts = dune_object_defgroup_data_create(&mesh->id);
       for (const int i : IndexRange(mesh->totvert)) {
         const float weight = src_weights[i];
         if (weight > 0.0f) {
-          BKE_defvert_add_index_notest(dverts + i, defgroup_index, weight);
+          dune_defvert_add_index_notest(dverts + i, defgroup_index, weight);
         }
       }
       break;
     }
   }
 
-  int *active_index = BKE_id_attributes_active_index_p(&mesh->id);
+  int *active_index = dune_id_attributes_active_index_p(&mesh->id);
   if (*active_index > 0) {
     *active_index -= 1;
   }
 
-  DEG_id_tag_update(&mesh->id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&mesh->id, ID_RECALC_GEOMETRY);
   wm_main_add_notifier(NC_GEOM | ND_DATA, &mesh->id);
 
   return OPERATOR_FINISHED;
 }
 
-static void geometry_attribute_convert_ui(bContext *UNUSED(C), wmOperator *op)
+static void geometry_attribute_convert_ui(Cxt *UNUSED(C), wmOp *op)
 {
   uiLayout *layout = op->layout;
   uiLayoutSetPropSep(layout, true);
@@ -312,21 +311,21 @@ static void geometry_attribute_convert_ui(bContext *UNUSED(C), wmOperator *op)
   }
 }
 
-static int geometry_attribute_convert_invoke(dContext *C,
-                                             wmOperator *op,
+static int geometry_attribute_convert_invoke(Cxt *C,
+                                             wmOp *op,
                                              const wmEvent *UNUSED(event))
 {
   return wm_op_props_dialog_popup(C, op, 300);
 }
 
-void GEOMETRY_OT_attribute_convert(wmOperatorType *ot)
+void GEOMETRY_OT_attribute_convert(wmOpType *ot)
 {
   ot->name = "Convert Attribute";
   ot->description = "Change how the attribute is stored";
   ot->idname = "GEOMETRY_OT_attribute_convert";
 
   ot->invoke = geometry_attribute_convert_invoke;
-  ot->exec = geometry_attribute_convert_exec;
+  ot->exec = geometry_attribute_convert_ex;
   ot->poll = geometry_attribute_convert_poll;
   ot->ui = geometry_attribute_convert_ui;
 
@@ -343,7 +342,7 @@ void GEOMETRY_OT_attribute_convert(wmOperatorType *ot)
   ApiProp *prop;
 
   api_def_enum(
-      ot->srna, "mode", mode_items, static_cast<int>(ConvertAttributeMode::Generic), "Mode", "");
+      ot->sapi, "mode", mode_items, static_cast<int>(ConvertAttributeMode::Generic), "Mode", "");
 
   prop = api_def_enum(ot->srna,
                       "domain",
@@ -354,7 +353,7 @@ void GEOMETRY_OT_attribute_convert(wmOperatorType *ot)
   api_def_enum_fns(prop, geometry_attribute_domain_itemf);
 
   api_def_enum(
-      ot->srna, "data_type", api_enum_attribute_type_items, CD_PROP_FLOAT, "Data Type", "");
+      ot->sapi, "data_type", api_enum_attribute_type_items, CD_PROP_FLOAT, "Data Type", "");
 }
 
 }  // namespace dune::ed::geometry
