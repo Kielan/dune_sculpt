@@ -12,7 +12,7 @@
 
 #include "glew-mx.h"
 
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_uniform_buffer.hh"
 
 #include "gl_debug.hh"
@@ -28,12 +28,9 @@ static CLG_LogRef LOG = {"gpu.debug"};
 
 namespace dune::gpu::debug {
 
-/* -------------------------------------------------------------------- */
-/** Debug Callbacks
- *
+/* Debug Callbacks
  * Hooks up debug callbacks to a debug OpenGL context using extensions or 4.3 core debug
- * capabilities.
- **/
+ * capabilities */
 
 /* Debug callbacks need the same calling convention as OpenGL functions. */
 #if defined(_WIN32)
@@ -42,7 +39,7 @@ namespace dune::gpu::debug {
 #  define APIENTRY
 #endif
 
-static void APIENTRY debug_callback(GLenum UNUSED(source),
+static void APIENTRY debug_cb(GLenum UNUSED(source),
                                     GLenum type,
                                     GLuint UNUSED(id),
                                     GLenum severity,
@@ -56,17 +53,17 @@ static void APIENTRY debug_callback(GLenum UNUSED(source),
     return;
   }
 
-  /* NOTE: callback function can be triggered during before the platform is initialized.
-   *       In this case invoking `GPU_type_matches` would fail and
+  /* NOTE: cb fn can be triggered during before the platform is initialized.
+   *       In this case invoking `gpu_type_matches` would fail and
    *       therefore the message is checked before the platform matching. */
   if (TRIM_NVIDIA_BUFFER_INFO && STRPREFIX(message, "Buffer detailed info") &&
       gpu_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_ANY, GPU_DRIVER_OFFICIAL)) {
-    /** Suppress buffer infos flooding the output. */
+    /* Suppress buffer infos flooding the output. */
     return;
   }
 
   if (TRIM_SHADER_STATS_INFO && STRPREFIX(message, "Shader Stats")) {
-    /** Suppress buffer infos flooding the output. */
+    /* Suppress buffer infos flooding the output. */
     return;
   }
 
@@ -84,7 +81,7 @@ static void APIENTRY debug_callback(GLenum UNUSED(source),
     CLG_Severity clog_severity;
 
     if (gpu_debug_group_match(GPU_DEBUG_SHADER_COMPILATION_GROUP)) {
-      /** Do not duplicate shader compilation error/warnings. */
+      /* Do not duplicate shader compilation error/warnings. */
       return;
     }
 
@@ -122,7 +119,7 @@ static void APIENTRY debug_callback(GLenum UNUSED(source),
 
 #undef APIENTRY
 
-void init_gl_callbacks()
+void init_gl_cbs()
 {
   CLOG_ENSURE(&LOG);
 
@@ -145,7 +142,7 @@ void init_gl_callbacks()
   else if (GLEW_ARB_debug_output) {
     SNPRINTF(msg, format, "ARB_debug_output");
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageCallbackARB((GLDEBUGPROCARB)debug_callback, nullptr);
+    glDebugMessageCallbackARB((GLDEBUGPROCARB)debug_cb, nullptr);
     glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
     glDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB,
                             GL_DEBUG_TYPE_OTHER_ARB,
@@ -160,12 +157,9 @@ void init_gl_callbacks()
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Error Checking
- *
+/* Error Checking
  * This is only useful for implementation that does not support the KHR_debug extension OR when the
- * implementations do not report any errors even when clearly doing shady things.
- **/
+ * implementations do not report any errors even when clearly doing shady things */
 
 void check_gl_error(const char *info)
 {
@@ -202,24 +196,24 @@ void check_gl_error(const char *info)
 
 void check_gl_resources(const char *info)
 {
-  if (!(G.debug & G_DEBUG_GPU) || GPU_bgl_get()) {
+  if (!(G.debug & G_DEBUG_GPU) || gpu_bgl_get()) {
     return;
   }
 
-  GLContext *ctx = GLContext::get();
-  ShaderInterface *interface = ctx->shader->interface;
+  GLCxt *cxt = GLCxt::get();
+  ShaderInterface *interface = cxt->shader->interface;
   /* NOTE: This only check binding. To be valid, the bound ubo needs to
    * be big enough to feed the data range the shader awaits. */
   uint16_t ubo_needed = interface->enabled_ubo_mask_;
-  ubo_needed &= ~ctx->bound_ubo_slots;
-  /* NOTE: This only check binding. To be valid, the bound texture needs to
+  ubo_needed &= ~cxt->bound_ubo_slots;
+  /* This only check binding. To be valid, the bound texture needs to
    * be the same format/target the shader expects. */
   uint64_t tex_needed = interface->enabled_tex_mask_;
-  tex_needed &= ~GLContext::state_manager_active_get()->bound_texture_slots();
-  /* NOTE: This only check binding. To be valid, the bound image needs to
+  tex_needed &= ~GLCxt::state_manager_active_get()->bound_texture_slots();
+  /* This only check binding. To be valid, the bound image needs to
    * be the same format/target the shader expects. */
   uint8_t ima_needed = interface->enabled_ima_mask_;
-  ima_needed &= ~GLContext::state_manager_active_get()->bound_image_slots();
+  ima_needed &= ~GLCxt::state_manager_active_get()->bound_image_slots();
 
   if (ubo_needed == 0 && tex_needed == 0 && ima_needed == 0) {
     return;
@@ -253,7 +247,7 @@ void check_gl_resources(const char *info)
       /* FIXME: texture_get might return a texture input instead. */
       const ShaderInput *tex_input = interface->texture_get(i);
       const char *tex_name = interface->input_name_get(tex_input);
-      const char *sh_name = ctx->shader->name_get();
+      const char *sh_name = cxt->shader->name_get();
       char msg[256];
       SNPRINTF(msg, "Missing Image bind at slot %d : %s > %s : %s", i, sh_name, tex_name, info);
       debug_callback(0, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, 0, msg, nullptr);
@@ -266,13 +260,9 @@ void raise_gl_error(const char *info)
   debug_cb(0, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, 0, info, nullptr);
 }
 
-/* -------------------------------------------------------------------- */
-/** Object Label
- *
+/* Object Label
  * Useful for debugging through render-doc. Only defined if using `--debug-gpu`.
- * Make sure to bind the object first so that it gets defined by the GL implementation.
- **/
-
+ * Make sure to bind the object first so that it gets defined by the GL implementation */
 static const char *to_str_prefix(GLenum type)
 {
   switch (type) {
@@ -332,13 +322,10 @@ void object_label(GLenum type, GLuint object, const char *name)
 
 namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
 /* Debug Groups
- *
- * Useful for debugging through render-doc. This makes all the API calls grouped into "passes".
- **/
-
-void GLContext::debug_group_begin(const char *name, int index)
+ * Useful for debugging through render-doc.
+ * This makes all the API calls grouped into "passes" */
+void GLCxt::debug_group_begin(const char *name, int index)
 {
   if ((G.debug & G_DEBUG_GPU) && (GLEW_VERSION_4_3 || GLEW_KHR_debug)) {
     /* Add 10 to avoid collision with other indices from other possible callback layers. */
@@ -347,7 +334,7 @@ void GLContext::debug_group_begin(const char *name, int index)
   }
 }
 
-void GLContext::debug_group_end()
+void GLCxt::debug_group_end()
 {
   if ((G.debug & G_DEBUG_GPU) && (GLEW_VERSION_4_3 || GLEW_KHR_debug)) {
     glPopDebugGroup();
