@@ -35,50 +35,46 @@ static int pen_lineart_material(Main *main,
   int index;
   Material *ma = dune_pen_object_material_ensure_by_name(main, ob, pct->name, &index);
 
-  copy_v4_v4(ma->dpen_style->stroke_rgba, pct->line);
-  srgb_to_linearrgb_v4(ma->dpen_style->stroke_rgba, ma->pen_style->stroke_rgba);
+  copy_v4_v4(ma->pen_style->stroke_rgba, pct->line);
+  srgb_to_linearrgb_v4(ma->pen_style->stroke_rgba, ma->pen_style->stroke_rgba);
 
-  copy_v4_v4(ma->dpen_style->fill_rgba, pct->fill);
-  srgb_to_linearrgb_v4(ma->dpen_style->fill_rgba, ma->dpen_style->fill_rgba);
+  copy_v4_v4(ma->pen_style->fill_rgba, pct->fill);
+  srgb_to_linearrgb_v4(ma->pen_style->fill_rgba, ma->pen_style->fill_rgba);
 
   if (fill) {
-    ma->dpen_style->flag |= DPEN_MATERIAL_FILL_SHOW;
+    ma->dpen_style->flag |= PEN_MATERIAL_FILL_SHOW;
   }
 
   return index;
 }
 
-/* ***************************************************************** */
 /* Color Data */
-
-static const ColorTemplate dpen_stroke_material_black = {
+static const ColorTemplate pen_stroke_material_black = {
     "Black",
     {0.0f, 0.0f, 0.0f, 1.0f},
     {0.0f, 0.0f, 0.0f, 0.0f},
 };
 
-/* ***************************************************************** */
 /* LineArt API */
-
-void ed_dpen_create_lineart(dContext *C, Object *ob)
+void ed_pen_create_lineart(Cxt *C, Object *ob)
 {
-  Main *dmain = ctx_data_main(C);
-  DPenData *dpd = (DPenData *)ob->data;
+  Main *main = cxt_data_main(C);
+  PenData *pd = (PenData *)ob->data;
 
   /* create colors */
-  int color_black = dpen_lineart_material(dmain, ob, &dpen_stroke_material_black, false);
+  int color_black = pen_lineart_material(main, ob, &pen_stroke_material_black, false);
 
   /* set first color as active and in brushes */
   ob->actcol = color_black + 1;
 
   /* layers */
-  DPenLayer *lines = dune_dpen_layer_addnew(dpd, "Lines", true, false);
+  PenLayer *lines = dune_pen_layer_addnew(pd, "Lines", true, false);
 
   /* frames */
   dune_dpen_frame_addnew(lines, 0);
 
   /* update depsgraph */
   /* To trigger modifier update, this is still needed although we don't have any strokes. */
-  DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-  dpd->flag |= DPEN_DATA_CACHE_IS_DIRTY;
+  graph_id_tag_update(&pd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  pd->flag |= PEN_DATA_CACHE_IS_DIRTY;
 }
