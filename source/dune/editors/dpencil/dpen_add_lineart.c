@@ -1,21 +1,21 @@
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_pen.h"
+#include "types_material.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "BKE_brush.h"
-#include "BKE_context.h"
-#include "BKE_gpencil.h"
-#include "BKE_gpencil_geom.h"
+#include "dune_brush.h"
+#include "dune_cxt.h"
+#include "dune_pen.h"
+#include "dune_pen_geom.h"
 #include "dune_lib_id.h"
 #include "dune_main.h"
 #include "dune_material.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
 #include "ed_dpen.h"
 
@@ -27,16 +27,16 @@ typedef struct ColorTemplate {
 } ColorTemplate;
 
 /* Add color an ensure duplications (matched by name) */
-static int dpen_lineart_material(Main *dmain,
-                                    Object *ob,
-                                    const ColorTemplate *pct,
-                                    const bool fill)
+static int pen_lineart_material(Main *main,
+                                Object *ob,
+                                const ColorTemplate *pct,
+                                const bool fill)
 {
   int index;
-  Material *ma = dune_dpen_object_material_ensure_by_name(dmain, ob, pct->name, &index);
+  Material *ma = dune_pen_object_material_ensure_by_name(main, ob, pct->name, &index);
 
   copy_v4_v4(ma->dpen_style->stroke_rgba, pct->line);
-  srgb_to_linearrgb_v4(ma->dpen_style->stroke_rgba, ma->dpen_style->stroke_rgba);
+  srgb_to_linearrgb_v4(ma->dpen_style->stroke_rgba, ma->pen_style->stroke_rgba);
 
   copy_v4_v4(ma->dpen_style->fill_rgba, pct->fill);
   srgb_to_linearrgb_v4(ma->dpen_style->fill_rgba, ma->dpen_style->fill_rgba);
