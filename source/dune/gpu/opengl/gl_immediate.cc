@@ -1,12 +1,11 @@
-/** Mimics old style opengl immediate mode drawing. */
-
+/* Mimics old style opengl immediate mode drawing. */
 #include "dune_global.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_shader_private.hh"
 #include "gpu_vertex_format_private.h"
 
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_debug.hh"
 #include "gl_primitive.hh"
 #include "gl_vertex_array.hh"
@@ -15,9 +14,7 @@
 
 namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
-
+/* Creation & Deletion */
 GLImmediate::GLImmediate()
 {
   glGenVertexArrays(1, &vao_id_);
@@ -49,9 +46,7 @@ GLImmediate::~GLImmediate()
   glDeleteBuffers(1, &buffer_strict.vbo_id);
 }
 
-/* -------------------------------------------------------------------- */
-/** Buffer management **/
-
+/* Buffer management */
 uchar *GLImmediate::begin()
 {
   /* How many bytes do we need for this draw call? */
@@ -125,7 +120,7 @@ void GLImmediate::end()
   glUnmapBuffer(GL_ARRAY_BUFFER);
 
   if (vertex_len > 0) {
-    GLContext::get()->state_manager->apply_state();
+    GLCxt::get()->state_manager->apply_state();
 
     /* We convert the offset in vertex offset from the buffer's start.
      * This works because we added some padding to align the first vertex. */
