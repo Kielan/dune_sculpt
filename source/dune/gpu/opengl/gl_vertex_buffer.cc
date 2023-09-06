@@ -71,7 +71,7 @@ void GLVertBuf::upload_data()
 
 void GLVertBuf::bind()
 {
-  BLI_assert(GLContext::get() != nullptr);
+  lib_assert(GLCxt::get() != nullptr);
 
   if (vbo_id_ == 0) {
     glGenBuffers(1, &vbo_id_);
@@ -100,7 +100,7 @@ void GLVertBuf::bind()
 void GLVertBuf::bind_as_ssbo(uint binding)
 {
   bind();
-  BLI_assert(vbo_id_ != 0);
+  lib_assert(vbo_id_ != 0);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, vbo_id_);
 }
 
@@ -113,7 +113,7 @@ const void *GLVertBuf::read() const
 
 void *GLVertBuf::unmap(const void *mapped_data) const
 {
-  void *result = MEM_mallocN(vbo_size_, __func__);
+  void *result = mem_mallocn(vbo_size_, __func__);
   memcpy(result, mapped_data, vbo_size_);
   return result;
 }
