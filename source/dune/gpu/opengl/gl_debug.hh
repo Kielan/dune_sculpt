@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 
 #include "glew-mx.h"
 
@@ -68,32 +68,28 @@ namespace debug {
 void raise_gl_error(const char *info);
 void check_gl_error(const char *info);
 void check_gl_resources(const char *info);
-/**
- * This function needs to be called once per context.
- */
-void init_gl_callbacks();
+/* This fn needs to be called once per context. */
+void init_gl_cbs();
 
-/**
- * Initialize a fallback layer (to KHR_debug) that covers only some functions.
- * We override the functions pointers by our own implementation that just checks #glGetError.
- * Some additional functions (not overridable) are covered inside the header using wrappers.
- */
+/* Initialize a fallback layer (to KHR_debug) that covers only some functions.
+ * We override the fns ptrs by our own implementation that just checks glGetError.
+ * Some additional fns (not overridable) are covered inside the header using wrappers. */
 void init_debug_layer();
 
 void object_label(GLenum type, GLuint object, const char *name);
 
 }  // namespace debug
 
-#define DEBUG_FUNC_OVERRIDE(func, ...) \
-  inline void func(ARG_LIST(__VA_ARGS__)) \
+#define DEBUG_FN_OVERRIDE(fn, ...) \
+  inline void fn(ARG_LIST(__VA_ARGS__)) \
   { \
-    if (GLContext::debug_layer_workaround) { \
-      debug::check_gl_error("generated before " #func); \
-      ::func(ARG_LIST_CALL(__VA_ARGS__)); \
-      debug::check_gl_error("" #func); \
+    if (GLCxt::debug_layer_workaround) { \
+      debug::check_gl_error("generated before " #fn); \
+      ::fn(ARG_LIST_CALL(__VA_ARGS__)); \
+      debug::check_gl_error("" #fn); \
     } \
     else { \
-      ::func(ARG_LIST_CALL(__VA_ARGS__)); \
+      ::fn(ARG_LIST_CALL(__VA_ARGS__)); \
     } \
   }
 
