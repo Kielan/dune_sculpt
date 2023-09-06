@@ -18,7 +18,7 @@ namespace dune::gpu {
 
 GLTexture::GLTexture(const char *name) : Texture(name)
 {
-  BLI_assert(GLContext::get() != nullptr);
+  lib_assert(GLCxt::get() != nullptr);
 
   glGenTextures(1, &tex_id_);
 }
@@ -290,16 +290,14 @@ void GLTexture::update_sub(
 }
 
 /* This will create the mipmap images and populate them with filtered data from base level.
- *
  * WARNING: Depth textures are not populated but they have their mips correctly defined.
- * WARNING: This resets the mipmap range.
- */
+ * WARNING: This resets the mipmap range */
 void GLTexture::generate_mipmap()
 {
   /* Some drivers have bugs when using #glGenerateMipmap with depth textures (see T56789).
    * In this case we just create a complete texture with mipmaps manually without
    * down-sampling. You must initialize the texture levels using other methods like
-   * #GPU_framebuffer_recursive_downsample(). */
+   * GPU_framebuffer_recursive_downsample(). */
   if (format_flag_ & GPU_FORMAT_DEPTH) {
     return;
   }
@@ -353,13 +351,13 @@ void GLTexture::copy_to(Texture *dst_)
   GLTexture *dst = static_cast<GLTexture *>(dst_);
   GLTexture *src = this;
 
-  BLI_assert((dst->w_ == src->w_) && (dst->h_ == src->h_) && (dst->d_ == src->d_));
-  BLI_assert(dst->format_ == src->format_);
-  BLI_assert(dst->type_ == src->type_);
+  lib_assert((dst->w_ == src->w_) && (dst->h_ == src->h_) && (dst->d_ == src->d_));
+  lib_assert(dst->format_ == src->format_);
+  lib_assert(dst->type_ == src->type_);
   /* TODO: support array / 3D textures. */
-  BLI_assert(dst->d_ == 0);
+  lib_assert(dst->d_ == 0);
 
-  if (GLContext::copy_image_support) {
+  if (GLCxt::copy_image_support) {
     int mip = 0;
     /* NOTE: mip_size_get() won't override any dimension that is equal to 0. */
     int extent[3] = {1, 1, 1};
@@ -369,7 +367,7 @@ void GLTexture::copy_to(Texture *dst_)
   }
   else {
     /* Fallback for older GL. */
-    GPU_framebuffer_blit(
+    gpu_framebuffer_blit(
         src->framebuffer_get(), 0, dst->framebuffer_get(), 0, to_framebuffer_bits(format_));
   }
 
@@ -378,9 +376,9 @@ void GLTexture::copy_to(Texture *dst_)
 
 void *GLTexture::read(int mip, eGPUDataFormat type)
 {
-  BLI_assert(!(format_flag_ & GPU_FORMAT_COMPRESSED));
-  BLI_assert(mip <= mipmaps_ || mip == 0);
-  BLI_assert(validate_data_format(format_, type));
+  lib_assert(!(format_flag_ & GPU_FORMAT_COMPRESSED));
+  lib_assert(mip <= mipmaps_ || mip == 0);
+  lib_assert(validate_data_format(format_, type));
 
   /* NOTE: mip_size_get() won't override any dimension that is equal to 0. */
   int extent[3] = {1, 1, 1};
@@ -392,16 +390,16 @@ void *GLTexture::read(int mip, eGPUDataFormat type)
 
   /* AMD Pro driver have a bug that write 8 bytes past buffer size
    * if the texture is big. (see T66573) */
-  void *data = MEM_mallocN(texture_size + 8, "GPU_texture_read");
+  void *data = mem_mallocn(texture_size + 8, "GPU_texture_read");
 
   GLenum gl_format = to_gl_data_format(format_);
   GLenum gl_type = to_gl(type);
 
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glGetTextureImage(tex_id_, mip, gl_format, gl_type, texture_size, data);
   }
   else {
-    GLContext::state_manager_active_get()->texture_bind_temp(this);
+    GLCxt::state_manager_active_get()->texture_bind_temp(this);
     if (type_ == GPU_TEXTURE_CUBE) {
       size_t cube_face_size = texture_size / 6;
       char *face_data = (char *)data;
@@ -416,32 +414,27 @@ void *GLTexture::read(int mip, eGPUDataFormat type)
   return data;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Getters & setters
- * \{ */
-
+/* Getters & setters */
 void GLTexture::swizzle_set(const char swizzle[4])
 {
   GLint gl_swizzle[4] = {(GLint)swizzle_to_gl(swizzle[0]),
                          (GLint)swizzle_to_gl(swizzle[1]),
                          (GLint)swizzle_to_gl(swizzle[2]),
                          (GLint)swizzle_to_gl(swizzle[3])};
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glTextureParameteriv(tex_id_, GL_TEXTURE_SWIZZLE_RGBA, gl_swizzle);
   }
   else {
-    GLContext::state_manager_active_get()->texture_bind_temp(this);
+    GLCxt::state_manager_active_get()->texture_bind_temp(this);
     glTexParameteriv(target_, GL_TEXTURE_SWIZZLE_RGBA, gl_swizzle);
   }
 }
 
 void GLTexture::stencil_texture_mode_set(bool use_stencil)
 {
-  BLI_assert(GLContext::stencil_texturing_support);
+  lib_assert(GLCxt::stencil_texturing_support);
   GLint value = use_stencil ? GL_STENCIL_INDEX : GL_DEPTH_COMPONENT;
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glTextureParameteri(tex_id_, GL_DEPTH_STENCIL_TEXTURE_MODE, value);
   }
   else {
@@ -480,9 +473,7 @@ struct GPUFrameBuffer *GLTexture::framebuffer_get()
   return framebuffer_;
 }
 
-/* -------------------------------------------------------------------- */
 /* Sampler objects */
-
 GLuint GLTexture::samplers_[GPU_SAMPLER_MAX] = {0};
 
 void GLTexture::samplers_init()
@@ -508,12 +499,11 @@ void GLTexture::samplers_init()
     glSamplerParameteri(samplers_[i], GL_TEXTURE_COMPARE_MODE, compare_mode);
     glSamplerParameteri(samplers_[i], GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
-    /** Other states are left to default:
+    /* Other states are left to default:
      * - GL_TEXTURE_BORDER_COLOR is {0, 0, 0, 0}.
      * - GL_TEXTURE_MIN_LOD is -1000.
      * - GL_TEXTURE_MAX_LOD is 1000.
      * - GL_TEXTURE_LOD_BIAS is 0.0f. */
-
     char sampler_name[128] = "\0\0";
     SNPRINTF(sampler_name,
              "%s%s%s%s%s%s%s%s%s%s",
@@ -564,9 +554,7 @@ void GLTexture::samplers_free()
   glDeleteSamplers(GPU_SAMPLER_MAX, samplers_);
 }
 
-/* -------------------------------------------------------------------- */
-/** Proxy texture
- *
+/* Proxy texture
  * Dummy texture to see if the implementation supports the requested size. */
 
 /* NOTE: This only checks if this mipmap is valid / supported.
