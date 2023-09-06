@@ -1,8 +1,8 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_assert.h"
+#include "lib_assert.h"
 
 #include "gpu_texture_private.hh"
 
@@ -10,7 +10,7 @@
 
 struct GPUFrameBuffer;
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class GLTexture : public Texture {
@@ -18,19 +18,19 @@ class GLTexture : public Texture {
   friend class GLFrameBuffer;
 
  private:
-  /** All samplers states. */
+  /* All samplers states. */
   static GLuint samplers_[GPU_SAMPLER_MAX];
 
-  /** Target to bind the texture to (#GL_TEXTURE_1D, #GL_TEXTURE_2D, etc...). */
+  /* Target to bind the texture to (#GL_TEXTURE_1D, #GL_TEXTURE_2D, etc...). */
   GLenum target_ = -1;
-  /** opengl identifier for texture. */
+  /* opengl identifier for texture. */
   GLuint tex_id_ = 0;
-  /** Legacy workaround for texture copy. Created when using framebuffer_get(). */
+  /* Legacy workaround for texture copy. Created when using framebuffer_get(). */
   struct GPUFrameBuffer *framebuffer_ = NULL;
-  /** True if this texture is bound to at least one texture unit. */
-  /* TODO(fclem): How do we ensure thread safety here? */
+  /* True if this texture is bound to at least one texture unit. */
+  /* TODO: How do we ensure thread safety here? */
   bool is_bound_ = false;
-  /** True if pixels in the texture have been initialized. */
+  /* True if pixels in the texture have been initialized. */
   bool has_pixels_ = false;
 
  public:
@@ -40,12 +40,10 @@ class GLTexture : public Texture {
   void update_sub(
       int mip, int offset[3], int extent[3], eGPUDataFormat type, const void *data) override;
 
-  /**
-   * This will create the mipmap images and populate them with filtered data from base level.
+  /* This will create the mipmap images and populate them with filtered data from base level.
    *
-   * \warning Depth textures are not populated but they have their mips correctly defined.
-   * \warning This resets the mipmap range.
-   */
+   * warning Depth textures are not populated but they have their mips correctly defined.
+   * warning This resets the mipmap range */
   void generate_mipmap() override;
   void copy_to(Texture *dst) override;
   void clear(eGPUDataFormat format, const void *data) override;
@@ -56,7 +54,7 @@ class GLTexture : public Texture {
 
   void check_feedback_loop();
 
-  /* TODO(fclem): Legacy. Should be removed at some point. */
+  /* TODO: Legacy. Should be removed at some point. */
   uint gl_bindcode_get() const override;
 
   static void samplers_init();
@@ -64,11 +62,11 @@ class GLTexture : public Texture {
   static void samplers_update();
 
  protected:
-  /** Return true on success. */
+  /* Return true on success. */
   bool init_internal() override;
-  /** Return true on success. */
+  /* Return true on success. */
   bool init_internal(GPUVertBuf *vbo) override;
-  /** Return true on success. */
+  /* Return true on success. */
   bool init_internal(const GPUTexture *src, int mip_offset, int layer_offset) override;
 
  private:
@@ -206,7 +204,7 @@ inline GLenum to_gl_target(eGPUTextureType type)
     case GPU_TEXTURE_BUFFER:
       return GL_TEXTURE_BUFFER;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       return GL_TEXTURE_1D;
   }
 }
@@ -281,9 +279,7 @@ inline GLenum to_gl(eGPUDataFormat format)
   }
 }
 
-/**
- * Definitely not complete, edit according to the OpenGL specification.
- */
+/* Definitely not complete, edit according to the OpenGL specification */
 inline GLenum to_gl_data_format(eGPUTextureFormat format)
 {
   /* You can add any of the available type to this list
@@ -350,14 +346,12 @@ inline GLenum to_gl_data_format(eGPUTextureFormat format)
     case GPU_RGBA8_DXT5:
       return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
     default:
-      BLI_assert_msg(0, "Texture format incorrect or unsupported\n");
+      lib_assert_msg(0, "Texture format incorrect or unsupported\n");
       return 0;
   }
 }
 
-/**
- * Assume Unorm / Float target. Used with #glReadPixels.
- */
+/* Assume Unorm / Float target. Used with glReadPixels. */
 inline GLenum channel_len_to_gl(int channel_len)
 {
   switch (channel_len) {
@@ -370,7 +364,7 @@ inline GLenum channel_len_to_gl(int channel_len)
     case 4:
       return GL_RGBA;
     default:
-      BLI_assert_msg(0, "Wrong number of texture channels");
+      lib_assert_msg(0, "Wrong number of texture channels");
       return GL_RED;
   }
 }
