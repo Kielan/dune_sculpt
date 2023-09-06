@@ -1,68 +1,57 @@
-/** \file
- * \ingroup gpu
- *
- * Encapsulation of Frame-buffer states (attached textures, viewport, scissors).
- */
+/* Encapsulation of Frame-buffer states (attached textures, viewport, scissors). */
 
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "glew-mx.h"
 
 #include "gpu_framebuffer_private.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 class GLStateManager;
 
-/**
- * Implementation of FrameBuffer object using OpenGL.
- */
+/* Implementation of FrameBuffer object using OpenGL. */
 class GLFrameBuffer : public FrameBuffer {
   /* For debugging purpose. */
   friend class GLTexture;
 
  private:
-  /** OpenGL handle. */
+  /* OpenGL handle. */
   GLuint fbo_id_ = 0;
-  /** Context the handle is from. Frame-buffers are not shared across contexts. */
-  GLContext *context_ = NULL;
+  /* Cxt the handle is from. Frame-buffers are not shared across contexts. */
+  GLCxt *cxt_ = NULL;
   /** State Manager of the same contexts. */
   GLStateManager *state_manager_ = NULL;
   /** Copy of the GL state. Contains ONLY color attachments enums for slot binding. */
   GLenum gl_attachments_[GPU_FB_MAX_COLOR_ATTACHMENT];
-  /** Internal frame-buffers are immutable. */
+  /* Internal frame-buffers are immutable. */
   bool immutable_;
-  /** True is the frame-buffer has its first color target using the GPU_SRGB8_A8 format. */
+  /* True is the frame-buffer has its first color target using the GPU_SRGB8_A8 format. */
   bool srgb_;
-  /** True is the frame-buffer has been bound using the GL_FRAMEBUFFER_SRGB feature. */
+  /* True is the frame-buffer has been bound using the GL_FRAMEBUFFER_SRGB feature. */
   bool enabled_srgb_ = false;
 
  public:
-  /**
-   * Create a conventional frame-buffer to attach texture to.
-   */
+  /* Create a conventional frame-buffer to attach texture to. */
   GLFrameBuffer(const char *name);
 
-  /**
-   * Special frame-buffer encapsulating internal window frame-buffer.
-   *  (i.e.: #GL_FRONT_LEFT, #GL_BACK_RIGHT, ...)
-   * \param ctx: Context the handle is from.
-   * \param target: The internal GL name (i.e: #GL_BACK_LEFT).
-   * \param fbo: The (optional) already created object for some implementation. Default is 0.
-   * \param w: Buffer width.
-   * \param h: Buffer height.
+  /* Special frame-buffer encapsulating internal window frame-buffer.
+   *  (i.e.: GL_FRONT_LEFT, GL_BACK_RIGHT, ...)
+   * param cxt: Cxt the handle is from.
+   * param target: The internal GL name (i.e: GL_BACK_LEFT).
+   * param fbo: The (optional) already created object for some implementation. Default is 0.
+   * param w: Buffer width.
+   * param h: Buffer height.
    */
-  GLFrameBuffer(const char *name, GLContext *ctx, GLenum target, GLuint fbo, int w, int h);
+  GLFrameBuffer(const char *name, GLCxt *cxt, GLenum target, GLuint fbo, int w, int h);
 
   ~GLFrameBuffer();
 
   void bind(bool enabled_srgb) override;
 
-  /**
-   * This is a rather slow operation. Don't check in normal cases.
-   */
+  /* This is a rather slow operation. Don't check in normal cases. */
   bool check(char err_out[256]) override;
 
   void clear(eGPUFrameBufferBits buffers,
@@ -81,9 +70,7 @@ class GLFrameBuffer : public FrameBuffer {
             int slot,
             void *r_data) override;
 
-  /**
-   * Copy \a src at the give offset inside \a dst.
-   */
+  /* Copy src at the give offset inside dst */
   void blit_to(eGPUFrameBufferBits planes,
                int src_slot,
                FrameBuffer *dst,
@@ -98,13 +85,10 @@ class GLFrameBuffer : public FrameBuffer {
   void update_attachments();
   void update_drawbuffers();
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("GLFrameBuffer");
+  MEM_CXX_CLASS_ALLOC_FNS("GLFrameBuffer");
 };
 
-/* -------------------------------------------------------------------- */
-/** \name Enums Conversion
- * \{ */
-
+/* Enums Conversion */
 static inline GLenum to_gl(const GPUAttachmentType type)
 {
 #define ATTACHMENT(X) \
@@ -125,7 +109,7 @@ static inline GLenum to_gl(const GPUAttachmentType type)
     ATTACHMENT(COLOR_ATTACHMENT6);
     ATTACHMENT(COLOR_ATTACHMENT7);
     default:
-      BLI_assert(0);
+      lib_assert(0);
       return GL_COLOR_ATTACHMENT0;
   }
 #undef ATTACHMENT
@@ -139,7 +123,5 @@ static inline GLbitfield to_gl(const eGPUFrameBufferBits bits)
   mask |= (bits & GPU_COLOR_BIT) ? GL_COLOR_BUFFER_BIT : 0;
   return mask;
 }
-
-/** \} */
 
 }  // namespace dune::gpu
