@@ -1,12 +1,12 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "glew-mx.h"
 
 #include "gpu_vertex_buffer_private.hh"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class GLVertBuf : public VertBuf {
@@ -14,12 +14,12 @@ class GLVertBuf : public VertBuf {
   friend class GLShader;  /* For transform feedback. */
 
  private:
-  /** OpenGL buffer handle. Init on first upload. Immutable after that. */
+  /* OpenGL buffer handle. Init on first upload. Immutable after that. */
   GLuint vbo_id_ = 0;
-  /** Defines whether the buffer handle is wrapped by this GLVertBuf, i.e. we do not own it and
+  /* Defines whether the buffer handle is wrapped by this GLVertBuf, i.e. we do not own it and
    * should not free it. */
   bool is_wrapper_ = false;
-  /** Size on the GPU. */
+  /* Size on the GPU. */
   size_t vbo_size_ = 0;
 
  public:
@@ -57,7 +57,7 @@ static inline GLenum to_gl(GPUUsageType type)
     case GPU_USAGE_DEVICE_ONLY:
       return GL_STATIC_DRAW;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       return GL_STATIC_DRAW;
   }
 }
@@ -82,7 +82,7 @@ static inline GLenum to_gl(GPUVertCompType type)
     case GPU_COMP_I10:
       return GL_INT_2_10_10_10_REV;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       return GL_FLOAT;
   }
 }
