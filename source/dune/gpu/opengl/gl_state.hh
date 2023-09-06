@@ -1,42 +1,39 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "gpu_state_private.hh"
 
 #include "glew-mx.h"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class GLFrameBuffer;
 class GLTexture;
 
-/**
- * State manager keeping track of the draw state and applying it before drawing.
- * Opengl Implementation.
- */
+/* State manager keeping track of the draw state and applying it before drawing.
+ * Opengl Implementation. */
 class GLStateManager : public StateManager {
  public:
-  /** Another reference to the active frame-buffer. */
+  /* Another reference to the active frame-buffer. */
   GLFrameBuffer *active_fb = nullptr;
 
  private:
-  /** Current state of the GL implementation. Avoids resetting the whole state for every change. */
+  /* Current state of the GL implementation. Avoids resetting the whole state for every change. */
   GPUState current_;
   GPUStateMutable current_mutable_;
-  /** Limits. */
+  /* Limits. */
   float line_width_range_[2];
 
-  /** Texture state:
+  /* Texture state:
    * We keep the full stack of textures and sampler bounds to use multi bind, and to be able to
    * edit and restore texture binds on the fly without querying the context.
    * Also this allows us to keep track of textures bounds to many texture units.
    * Keep the targets to know what target to set to 0 for unbinding (legacy).
-   * Init first target to GL_TEXTURE_2D for texture_bind_temp to work.
-   */
+   * Init first target to GL_TEXTURE_2D for texture_bind_temp to work. */
   GLuint targets_[64] = {GL_TEXTURE_2D};
   GLuint textures_[64] = {0};
   GLuint samplers_[64] = {0};
@@ -50,17 +47,13 @@ class GLStateManager : public StateManager {
   GLStateManager();
 
   void apply_state() override;
-  /**
-   * Will set all the states regardless of the current ones.
-   */
+  /* Will set all the states regardless of the current ones. */
   void force_state() override;
 
   void issue_barrier(eGPUBarrier barrier_bits) override;
 
   void texture_bind(Texture *tex, eGPUSamplerState sampler, int unit) override;
-  /**
-   * Bind the texture to slot 0 for editing purpose. Used by legacy pipeline.
-   */
+  /* Bind the texture to slot 0 for editing purpose. Used by legacy pipeline. */
   void texture_bind_temp(GLTexture *tex);
   void texture_unbind(Texture *tex) override;
   void texture_unbind_all() override;
