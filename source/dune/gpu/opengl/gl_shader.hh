@@ -1,31 +1,29 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "glew-mx.h"
 
 #include "gpu_shader_create_info.hh"
 #include "gpu_shader_private.hh"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
-/**
- * Implementation of shader compilation and uniforms handling using OpenGL.
- */
+/* Implementation of shader compilation and uniforms handling using OpenGL. */
 class GLShader : public Shader {
   friend shader::ShaderCreateInfo;
   friend shader::StageInterfaceInfo;
 
  private:
-  /** Handle for full program (links shader stages below). */
+  /* Handle for full program (links shader stages below). */
   GLuint shader_program_ = 0;
-  /** Individual shader stages. */
+  /* Individual shader stages. */
   GLuint vert_shader_ = 0;
   GLuint geom_shader_ = 0;
   GLuint frag_shader_ = 0;
   GLuint compute_shader_ = 0;
-  /** True if any shader failed to compile. */
+  /* True if any shader failed to compile. */
   bool compilation_failed_ = false;
 
   eGPUShaderTFBType transform_feedback_type_ = GPU_SHADER_TFB_NONE;
@@ -34,7 +32,7 @@ class GLShader : public Shader {
   GLShader(const char *name);
   ~GLShader();
 
-  /** Return true on success. */
+  /* Return true on success. */
   void vertex_shader_from_glsl(MutableSpan<const char *> sources) override;
   void geometry_shader_from_glsl(MutableSpan<const char *> sources) override;
   void fragment_shader_from_glsl(MutableSpan<const char *> sources) override;
@@ -62,7 +60,7 @@ class GLShader : public Shader {
 
   void vertformat_from_shader(GPUVertFormat *format) const override;
 
-  /** DEPRECATED: Kept only because of BGL API. */
+  /* DEPRECATED: Kept only because of BGL API. */
   int program_handle_get() const override;
 
   bool is_compute() const
@@ -73,13 +71,11 @@ class GLShader : public Shader {
  private:
   char *glsl_patch_get(GLenum gl_stage);
 
-  /** Create, compile and attach the shader stage to the shader program. */
+  /* Create, compile and attach the shader stage to the shader program. */
   GLuint create_shader_stage(GLenum gl_stage, MutableSpan<const char *> sources);
 
-  /**
-   * \brief features available on newer implementation such as native barycentric coordinates
-   * and layered rendering, necessitate a geometry shader to work on older hardware.
-   */
+  /* features available on newer implementation such as native barycentric coordinates
+   * and layered rendering, necessitate a geometry shader to work on older hardware. */
   std::string workaround_geometry_shader_source_create(const shader::ShaderCreateInfo &info);
 
   bool do_geometry_shader_injection(const shader::ShaderCreateInfo *info);
