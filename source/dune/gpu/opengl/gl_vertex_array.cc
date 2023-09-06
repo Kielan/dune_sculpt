@@ -4,17 +4,15 @@
 #include "gpu_vertex_format_private.h"
 
 #include "gl_batch.hh"
-#include "gl_context.hh"
+#include "gl_cxt.hh"
 #include "gl_index_buffer.hh"
 #include "gl_vertex_buffer.hh"
 
 #include "gl_vertex_array.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** \name Vertex Array Bindings
- * \{ */
+/* Vertex Array Bindings */
 
 /* Returns enabled vertex pointers as a bitflag (one bit per attrib). */
 static uint16_t vbo_bind(const ShaderInterface *interface,
@@ -55,8 +53,8 @@ static uint16_t vbo_bind(const ShaderInterface *interface,
       enabled_attrib |= (1 << input->location);
 
       if (ELEM(a->comp_len, 16, 12, 8)) {
-        BLI_assert(a->fetch_mode == GPU_FETCH_FLOAT);
-        BLI_assert(a->comp_type == GPU_COMP_F32);
+        lib_assert(a->fetch_mode == GPU_FETCH_FLOAT);
+        lib_assert(a->comp_type == GPU_COMP_F32);
         for (int i = 0; i < a->comp_len / 4; i++) {
           glEnableVertexAttribArray(input->location + i);
           glVertexAttribDivisor(input->location + i, divisor);
@@ -113,10 +111,10 @@ void GLVertArray::update_bindings(const GLuint vao,
     }
   }
 
-  if (attr_mask != 0 && GLContext::vertex_attrib_binding_support) {
+  if (attr_mask != 0 && GLCxt::vertex_attrib_binding_support) {
     for (uint16_t mask = 1, a = 0; a < 16; a++, mask <<= 1) {
       if (attr_mask & mask) {
-        GLContext *ctx = GLContext::get();
+        GLCxt *cxt = GLCxt::get();
         /* This replaces glVertexAttrib4f(a, 0.0f, 0.0f, 0.0f, 1.0f); with a more modern style.
          * Fix issues for some drivers (see T75069). */
         glBindVertexBuffer(a, ctx->default_attr_vbo_, (intptr_t)0, (intptr_t)0);
