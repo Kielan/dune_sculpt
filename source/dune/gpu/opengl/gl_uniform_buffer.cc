@@ -1,40 +1,33 @@
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "BLI_string.h"
+#include "lib_string.h"
 
 #include "gpu_backend.hh"
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 
 #include "gl_backend.hh"
 #include "gl_debug.hh"
 #include "gl_uniform_buffer.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+/* Creation & Deletion */
 
 GLUniformBuf::GLUniformBuf(size_t size, const char *name) : UniformBuf(size, name)
 {
   /* Do not create ubo GL buffer here to allow allocation from any thread. */
-  BLI_assert(size <= GLContext::max_ubo_size);
+  lib_assert(size <= GLCxt::max_ubo_size);
 }
 
 GLUniformBuf::~GLUniformBuf()
 {
-  GLContext::buf_free(ubo_id_);
+  GLCxt::buf_free(ubo_id_);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Data upload / update
- * \{ */
-
+/* Data upload / update */
 void GLUniformBuf::init()
 {
-  BLI_assert(GLContext::get());
+  lib_assert(GLCxt::get());
 
   glGenBuffers(1, &ubo_id_);
   glBindBuffer(GL_UNIFORM_BUFFER, ubo_id_);
@@ -53,20 +46,15 @@ void GLUniformBuf::update(const void *data)
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Usage
- * \{ */
-
+/* Usage */
 void GLUniformBuf::bind(int slot)
 {
-  if (slot >= GLContext::max_ubo_binds) {
+  if (slot >= GLCxt::max_ubo_binds) {
     fprintf(stderr,
             "Error: Trying to bind \"%s\" ubo to slot %d which is above the reported limit of %d.",
             name_,
             slot,
-            GLContext::max_ubo_binds);
+            GLCxt::max_ubo_binds);
     return;
   }
 
@@ -83,8 +71,8 @@ void GLUniformBuf::bind(int slot)
   glBindBufferBase(GL_UNIFORM_BUFFER, slot_, ubo_id_);
 
 #ifdef DEBUG
-  BLI_assert(slot < 16);
-  GLContext::get()->bound_ubo_slots |= 1 << slot;
+  lib_assert(slot < 16);
+  GLCxt::get()->bound_ubo_slots |= 1 << slot;
 #endif
 }
 
@@ -94,7 +82,7 @@ void GLUniformBuf::unbind()
   /* NOTE: This only unbinds the last bound slot. */
   glBindBufferBase(GL_UNIFORM_BUFFER, slot_, 0);
   /* Hope that the context did not change. */
-  GLContext::get()->bound_ubo_slots &= ~(1 << slot_);
+  GLCxt::get()->bound_ubo_slots &= ~(1 << slot_);
 #endif
   slot_ = 0;
 }
