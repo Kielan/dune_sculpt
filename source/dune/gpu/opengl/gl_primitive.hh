@@ -1,14 +1,9 @@
-/** \file
- * \ingroup gpu
- *
- * Encapsulation of Frame-buffer states (attached textures, viewport, scissors).
- */
-
+/* Encapsulation of Frame-buffer states (attached textures, viewport, scissors). */
 #pragma once
 
-#include "BLI_assert.h"
+#include "lib_assert.h"
 
-#include "GPU_primitive.h"
+#include "gpu_primitive.h"
 
 #include "glew-mx.h"
 
@@ -16,7 +11,7 @@ namespace dune::gpu {
 
 static inline GLenum to_gl(GPUPrimType prim_type)
 {
-  BLI_assert(prim_type != GPU_PRIM_NONE);
+  lib_assert(prim_type != GPU_PRIM_NONE);
   switch (prim_type) {
     default:
     case GPU_PRIM_POINTS:
