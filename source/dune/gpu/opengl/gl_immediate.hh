@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * Mimics old style opengl immediate mode drawing.
- */
+/* Mimics old style opengl immediate mode drawing. */
 
 #pragma once
 
@@ -23,16 +19,16 @@ class GLImmediate : public Immediate {
    * avoid some huge driver slowdown (see T70922).
    * Use accessor functions to get / modify. */
   struct {
-    /** Opengl Handle for this buffer. */
+    /* Opengl Handle for this buffer. */
     GLuint vbo_id = 0;
     /** Offset of the mapped data in data. */
     size_t buffer_offset = 0;
-    /** Size of the whole buffer in bytes. */
+    /* Size of the whole buffer in bytes. */
     size_t buffer_size = 0;
   } buffer, buffer_strict;
-  /** Size in bytes of the mapped region. */
+  /* Size in bytes of the mapped region. */
   size_t bytes_mapped_ = 0;
-  /** Vertex array for this immediate mode instance. */
+  /* Vertex array for this immediate mode instance. */
   GLuint vao_id_ = 0;
 
  public:
