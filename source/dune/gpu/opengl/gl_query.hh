@@ -1,25 +1,25 @@
 #pragma once
 
-#include "BLI_vector.hh"
+#include "lib_vector.hh"
 
 #include "gpu_query.hh"
 
 #include "glew-mx.h"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 class GLQueryPool : public QueryPool {
  private:
-  /** Contains queries object handles. */
+  /* Contains queries object handles. */
   Vector<GLuint, QUERY_MIN_LEN> query_ids_;
-  /** Type of this query pool. */
+  /* Type of this query pool. */
   GPUQueryType type_;
-  /** Associated GL type. */
+  /* Associated GL type. */
   GLenum gl_type_;
-  /** Number of queries that have been issued since last initialization.
+  /* Number of queries that have been issued since last initialization.
    * Should be equal to query_ids_.size(). */
   uint32_t query_issued_;
-  /** Can only be initialized once. */
+  /* Can only be initialized once. */
   bool initialized_ = false;
 
  public:
@@ -36,11 +36,11 @@ class GLQueryPool : public QueryPool {
 static inline GLenum to_gl(GPUQueryType type)
 {
   if (type == GPU_QUERY_OCCLUSION) {
-    /* TODO(fclem): try with GL_ANY_SAMPLES_PASSED​. */
+    /* TODO: try with GL_ANY_SAMPLES_PASSED​. */
     return GL_SAMPLES_PASSED;
   }
-  BLI_assert(0);
+  lib_assert(0);
   return GL_SAMPLES_PASSED;
 }
 
-}  // namespace blender::gpu
+}  // namespace dube::gpu
