@@ -1,24 +1,22 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "gpu_storage_buffer_private.hh"
 
 #include "glew-mx.h"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
-/**
- * Implementation of Storage Buffers using OpenGL.
- */
+/* Implementation of Storage Buffers using OpenGL. */
 class GLStorageBuf : public StorageBuf {
  private:
-  /** Slot to which this UBO is currently bound. -1 if not bound. */
+  /* Slot to which this UBO is currently bound. -1 if not bound. */
   int slot_ = -1;
-  /** OpenGL Object handle. */
+  /* OpenGL Object handle. */
   GLuint ssbo_id_ = 0;
-  /** Usage type. */
+  /* Usage type. */
   GPUUsageType usage_;
 
  public:
