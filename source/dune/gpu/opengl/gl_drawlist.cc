@@ -1,19 +1,14 @@
 
-/** \file
- * \ingroup gpu
- *
- * Implementation of Multi Draw Indirect using OpenGL.
- * Fallback if the needed extensions are not supported.
- */
+/* Implementation of Multi Draw Indirect using OpenGL.
+ * Fallback if the needed extensions are not supported. */
+#include "lib_assert.h"
 
-#include "BLI_assert.h"
-
-#include "GPU_batch.h"
-#include "GPU_capabilities.h"
+#include "gpu_batch.h"
+#include "gpu_capabilities.h"
 
 #include "glew-mx.h"
 
-#include "gpu_context_private.hh"
+#include "gpu_cxt_private.hh"
 #include "gpu_drawlist_private.hh"
 #include "gpu_vertex_buffer_private.hh"
 
@@ -23,7 +18,7 @@
 
 #include <climits>
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 struct GLDrawCommand {
   GLuint v_count;
@@ -46,7 +41,7 @@ struct GLDrawCommandIndexed {
 
 GLDrawList::GLDrawList(int length)
 {
-  BLI_assert(length > 0);
+  lib_assert(length > 0);
   batch_ = nullptr;
   buffer_id_ = 0;
   command_len_ = 0;
@@ -55,7 +50,7 @@ GLDrawList::GLDrawList(int length)
   data_size_ = 0;
   data_ = nullptr;
 
-  if (GLContext::multi_draw_indirect_support) {
+  if (GLCxt::multi_draw_indirect_support) {
     /* Alloc the biggest possible command list, which is indexed. */
     buffer_size_ = sizeof(GLDrawCommandIndexed) * length;
   }
@@ -69,21 +64,21 @@ GLDrawList::GLDrawList(int length)
 
 GLDrawList::~GLDrawList()
 {
-  GLContext::buf_free(buffer_id_);
+  GLCxt::buf_free(buffer_id_);
 }
 
 void GLDrawList::init()
 {
-  BLI_assert(GLContext::get());
-  BLI_assert(MDI_ENABLED);
-  BLI_assert(data_ == nullptr);
+  lib_assert(GLCxt::get());
+  lib_assert(MDI_ENABLED);
+  lib_assert(data_ == nullptr);
   batch_ = nullptr;
   command_len_ = 0;
 
   if (buffer_id_ == 0) {
     /* Allocate on first use. */
     glGenBuffers(1, &buffer_id_);
-    context_ = GLContext::get();
+    cxt_ = GLCxt::get();
   }
 
   glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer_id_);
@@ -104,7 +99,7 @@ void GLDrawList::append(GPUBatch *gpu_batch, int i_first, int i_count)
 {
   /* Fallback when MultiDrawIndirect is not supported/enabled. */
   if (MDI_DISABLED) {
-    GPU_batch_draw_advanced(gpu_batch, 0, 0, i_first, i_count);
+    gpu_batch_draw_advanced(gpu_batch, 0, 0, i_first, i_count);
     return;
   }
 
@@ -114,7 +109,7 @@ void GLDrawList::append(GPUBatch *gpu_batch, int i_first, int i_count)
 
   GLBatch *batch = static_cast<GLBatch *>(gpu_batch);
   if (batch != batch_) {
-    // BLI_assert(batch->flag | GPU_BATCH_INIT);
+    // lib_assert(batch->flag | GPU_BATCH_INIT);
     this->submit();
     batch_ = batch;
     /* Cached for faster access. */
@@ -162,9 +157,9 @@ void GLDrawList::submit()
     return;
   }
   /* Something's wrong if we get here without MDI support. */
-  BLI_assert(MDI_ENABLED);
-  BLI_assert(data_);
-  BLI_assert(GLContext::get()->shader != nullptr);
+  lib_assert(MDI_ENABLED);
+  lib_assert(data_);
+  lib_assert(GLCxt::get()->shader != nullptr);
 
   size_t command_size = MDI_INDEXED ? sizeof(GLDrawCommandIndexed) : sizeof(GLDrawCommand);
 
