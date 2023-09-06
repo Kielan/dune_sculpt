@@ -11,9 +11,7 @@
 
 namespace dune::gpu {
 
-/* -------------------------------------------------------------------- */
-/** Creation & Deletion **/
-
+/* Creation & Deletion **/
 GLFrameBuffer::GLFrameBuffer(const char *name) : FrameBuffer(name)
 {
   /* Just-In-Time init. See #GLFrameBuffer::init(). */
@@ -22,11 +20,11 @@ GLFrameBuffer::GLFrameBuffer(const char *name) : FrameBuffer(name)
 }
 
 GLFrameBuffer::GLFrameBuffer(
-    const char *name, GLContext *ctx, GLenum target, GLuint fbo, int w, int h)
+    const char *name, GLCxt *cxt, GLenum target, GLuint fbo, int w, int h)
     : FrameBuffer(name)
 {
-  context_ = ctx;
-  state_manager_ = static_cast<GLStateManager *>(ctx->state_manager);
+  cxt_ = cxt;
+  state_manager_ = static_cast<GLStateManager *>(cxt->state_manager);
   immutable_ = true;
   fbo_id_ = fbo;
   gl_attachments_[0] = target;
@@ -48,29 +46,29 @@ GLFrameBuffer::GLFrameBuffer(
 
 GLFrameBuffer::~GLFrameBuffer()
 {
-  if (context_ == nullptr) {
+  if (cxt_ == nullptr) {
     return;
   }
 
   /* Context might be partially freed. This happens when destroying the window frame-buffers. */
-  if (context_ == Context::get()) {
+  if (cxt_ == Cxt::get()) {
     glDeleteFramebuffers(1, &fbo_id_);
   }
   else {
-    context_->fbo_free(fbo_id_);
+    cxt_->fbo_free(fbo_id_);
   }
   /* Restore default frame-buffer if this frame-buffer was bound. */
-  if (context_->active_fb == this && context_->back_left != this) {
+  if (cxt_->active_fb == this && cxt_->back_left != this) {
     /* If this assert triggers it means the frame-buffer is being freed while in use by another
-     * context which, by the way, is TOTALLY UNSAFE! */
-    lib_assert(context_ == Context::get());
+     * cxt which, by the way, is TOTALLY UNSAFE! */
+    lib_assert(context_ == Cxt::get());
     gpu_framebuffer_restore();
   }
 }
 
 void GLFrameBuffer::init()
 {
-  context_ = GLContext::get();
+  cxt_ = GLCxt::get();
   state_manager_ = static_cast<GLStateManager *>(context_->state_manager);
   glGenFramebuffers(1, &fbo_id_);
   /* Binding before setting the label is needed on some drivers.
@@ -80,9 +78,7 @@ void GLFrameBuffer::init()
   debug::object_label(GL_FRAMEBUFFER, fbo_id_, name_);
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Config **/
-
+/* Config */
 bool GLFrameBuffer::check(char err_out[256])
 {
   this->bind(true);
@@ -153,9 +149,9 @@ void GLFrameBuffer::update_attachments()
       continue;
     }
     GLuint gl_tex = static_cast<GLTexture *>(unwrap(attach.tex))->tex_id_;
-    if (attach.layer > -1 && GPU_texture_cube(attach.tex) && !GPU_texture_array(attach.tex)) {
+    if (attach.layer > -1 && gpu_texture_cube(attach.tex) && !gpu_texture_array(attach.tex)) {
       /* Could be avoided if ARB_direct_state_access is required. In this case
-       * #glFramebufferTextureLayer would bind the correct face. */
+       * glFramebufferTextureLayer would bind the correct face. */
       GLenum gl_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + attach.layer;
       glFramebufferTexture2D(GL_FRAMEBUFFER, gl_attachment, gl_target, gl_tex, attach.mip);
     }
@@ -173,7 +169,7 @@ void GLFrameBuffer::update_attachments()
     }
   }
 
-  if (GLContext::unused_fb_slot_workaround) {
+  if (GLCxt::unused_fb_slot_workaround) {
     /* Fill normally un-occupied slots to avoid rendering artifacts on some hardware. */
     GLuint gl_tex = 0;
     /* NOTE: Inverse iteration to get the first color texture. */
@@ -227,21 +223,19 @@ void GLFrameBuffer::apply_state()
   dirty_state_ = false;
 }
 
-/* -------------------------------------------------------------------- */
-/** Binding **/
-
+/* Binding */
 void GLFrameBuffer::bind(bool enabled_srgb)
 {
   if (!immutable_ && fbo_id_ == 0) {
     this->init();
   }
 
-  if (context_ != GLContext::get()) {
+  if (cxt_ != GLCxt::get()) {
     lib_assert_msg(0, "Trying to use the same frame-buffer in multiple context");
     return;
   }
 
-  if (context_->active_fb != this) {
+  if (cxt_->active_fb != this) {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_id_);
     /* Internal frame-buffers have only one color output and needs to be set every time. */
     if (immutable_ && fbo_id_ == 0) {
@@ -255,7 +249,7 @@ void GLFrameBuffer::bind(bool enabled_srgb)
     this->scissor_reset();
   }
 
-  if (context_->active_fb != this || enabled_srgb_ != enabled_srgb) {
+  if (cxt_->active_fb != this || enabled_srgb_ != enabled_srgb) {
     enabled_srgb_ = enabled_srgb;
     if (enabled_srgb && srgb_) {
       glEnable(GL_FRAMEBUFFER_SRGB);
@@ -266,22 +260,20 @@ void GLFrameBuffer::bind(bool enabled_srgb)
     gpu_shader_set_framebuffer_srgb_target(enabled_srgb && srgb_);
   }
 
-  if (context_->active_fb != this) {
-    context_->active_fb = this;
+  if (cxt_->active_fb != this) {
+    cxt_->active_fb = this;
     state_manager_->active_fb = this;
     dirty_state_ = true;
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Operations. **/
-
+/* Operations */
 void GLFrameBuffer::clear(eGpuFrameBufferBits buffers,
                           const float clear_col[4],
                           float clear_depth,
                           uint clear_stencil)
 {
-  lib_assert(GLContext::get() == context_);
+  lib_assert(GLCxt::get() == cxt_);
   lib_assert(context_->active_fb == this);
 
   /* Save and restore the state. */
@@ -303,13 +295,13 @@ void GLFrameBuffer::clear(eGpuFrameBufferBits buffers,
     glClearStencil(clear_stencil);
   }
 
-  context_->state_manager->apply_state();
+  cxt_->state_manager->apply_state();
 
   GLbitfield mask = to_gl(buffers);
   glClear(mask);
 
   if (buffers & (GPU_COLOR_BIT | GPU_DEPTH_BIT)) {
-    GPU_write_mask(write_mask);
+    gpu_write_mask(write_mask);
   }
   if (buffers & GPU_STENCIL_BIT) {
     gpu_stencil_write_mask_set(stencil_mask);
@@ -321,14 +313,14 @@ void GLFrameBuffer::clear_attachment(GPUAttachmentType type,
                                      eGPUDataFormat data_format,
                                      const void *clear_value)
 {
-  lib_assert(GLContext::get() == context_);
-  lib_assert(context_->active_fb == this);
+  lib_assert(GLCxt::get() == cxt_);
+  lib_assert(cxt_->active_fb == this);
 
   /* Save and restore the state. */
-  eGPUWriteMask write_mask = GPU_write_mask_get();
-  GPU_color_mask(true, true, true, true);
+  eGPUWriteMask write_mask = gpu_write_mask_get();
+  gpu_color_mask(true, true, true, true);
 
-  context_->state_manager->apply_state();
+  cxt_->state_manager->apply_state();
 
   if (type == GPU_FB_DEPTH_STENCIL_ATTACHMENT) {
     lib_assert(data_format == GPU_DATA_UINT_24_8);
@@ -345,7 +337,7 @@ void GLFrameBuffer::clear_attachment(GPUAttachmentType type,
       glClearBufferfv(GL_DEPTH, 0, &depth);
     }
     else {
-      BLI_assert_msg(0, "Unhandled data format");
+      lib_assert_msg(0, "Unhandled data format");
     }
   }
   else {
@@ -396,13 +388,13 @@ void GLFrameBuffer::read(eGPUFrameBufferBits plane,
   switch (plane) {
     case GPU_DEPTH_BIT:
       format = GL_DEPTH_COMPONENT;
-      BLI_assert_msg(
+      lib_assert_msg(
           this->attachments_[GPU_FB_DEPTH_ATTACHMENT].tex != nullptr ||
               this->attachments_[GPU_FB_DEPTH_STENCIL_ATTACHMENT].tex != nullptr,
           "GPUFramebuffer: Error: Trying to read depth without a depth buffer attached.");
       break;
     case GPU_COLOR_BIT:
-      BLI_assert_msg(
+      lib_assert_msg(
           mode != GL_NONE,
           "GPUFramebuffer: Error: Trying to read a color slot without valid attachment.");
       format = channel_len_to_gl(channel_len);
@@ -462,7 +454,7 @@ void GLFrameBuffer::blit_to(
     glDrawBuffers(ARRAY_SIZE(dst->gl_attachments_), dst->gl_attachments_);
   }
   /* Ensure previous buffer is restored. */
-  context_->active_fb = dst;
+  cxt_->active_fb = dst;
 }
 
 }  // namespace dune::gpu
