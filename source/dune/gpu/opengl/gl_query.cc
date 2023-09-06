@@ -1,6 +1,6 @@
 #include "gl_query.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 #define QUERY_CHUNCK_LEN 256
 
@@ -11,7 +11,7 @@ GLQueryPool::~GLQueryPool()
 
 void GLQueryPool::init(GPUQueryType type)
 {
-  BLI_assert(initialized_ == false);
+  lib_assert(initialized_ == false);
   initialized_ = true;
   type_ = type;
   gl_type_ = to_gl(type);
