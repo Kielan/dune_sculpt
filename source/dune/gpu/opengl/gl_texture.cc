@@ -1,10 +1,10 @@
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "GPU_capabilities.h"
-#include "GPU_framebuffer.h"
-#include "GPU_platform.h"
+#include "gpu_capabilities.h"
+#include "gpu_framebuffer.h"
+#include "gpu_platform.h"
 
 #include "gl_backend.hh"
 #include "gl_debug.hh"
@@ -13,11 +13,8 @@
 
 #include "gl_texture.hh"
 
-namespace blender::gpu {
-
-/* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+namespace dune::gpu {
+/* Creation & Deletion */
 
 GLTexture::GLTexture(const char *name) : Texture(name)
 {
@@ -29,14 +26,14 @@ GLTexture::GLTexture(const char *name) : Texture(name)
 GLTexture::~GLTexture()
 {
   if (framebuffer_) {
-    GPU_framebuffer_free(framebuffer_);
+    gpu_framebuffer_free(framebuffer_);
   }
-  GLContext *ctx = GLContext::get();
-  if (ctx != nullptr && is_bound_) {
+  GLCxt *cxt = GLCxt::get();
+  if (cxt != nullptr && is_bound_) {
     /* This avoid errors when the texture is still inside the bound texture array. */
-    ctx->state_manager->texture_unbind(this);
+    cxt->state_manager->texture_unbind(this);
   }
-  GLContext::tex_free(tex_id_);
+  GLCxt::tex_free(tex_id_);
 }
 
 bool GLTexture::init_internal()
@@ -47,7 +44,7 @@ bool GLTexture::init_internal()
     format_ = GPU_DEPTH32F_STENCIL8;
   }
 
-  if ((type_ == GPU_TEXTURE_CUBE_ARRAY) && (GLContext::texture_cube_map_array_support == false)) {
+  if ((type_ == GPU_TEXTURE_CUBE_ARRAY) && (GLCxt::texture_cube_map_array_support == false)) {
     /* Silently fail and let the caller handle the error. */
     // debug::raise_gl_error("Attempt to create a cubemap array without hardware support!");
     return false;
@@ -56,7 +53,7 @@ bool GLTexture::init_internal()
   target_ = to_gl_target(type_);
 
   /* We need to bind once to define the texture type. */
-  GLContext::state_manager_active_get()->texture_bind_temp(this);
+  GLCxt::state_manager_active_get()->texture_bind_temp(this);
 
   if (!this->proxy_check(0)) {
     return false;
@@ -77,7 +74,7 @@ bool GLTexture::init_internal()
   switch (dimensions) {
     default:
     case 1:
-      if (GLContext::texture_storage_support) {
+      if (GLCxt::texture_storage_support) {
         glTexStorage1D(target_, mipmaps_, internal_format, w_);
       }
       else {
@@ -93,7 +90,7 @@ bool GLTexture::init_internal()
       }
       break;
     case 2:
-      if (GLContext::texture_storage_support) {
+      if (GLCxt::texture_storage_support) {
         glTexStorage2D(target_, mipmaps_, internal_format, w_, h_);
       }
       else {
@@ -113,7 +110,7 @@ bool GLTexture::init_internal()
       }
       break;
     case 3:
-      if (GLContext::texture_storage_support) {
+      if (GLCxt::texture_storage_support) {
         glTexStorage3D(target_, mipmaps_, internal_format, w_, h_, d_);
       }
       else {
@@ -135,7 +132,7 @@ bool GLTexture::init_internal()
   this->mip_range_set(0, mipmaps_ - 1);
 
   /* Avoid issue with formats not supporting filtering. Nearest by default. */
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glTextureParameteri(tex_id_, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   }
   else {
@@ -152,11 +149,11 @@ bool GLTexture::init_internal(GPUVertBuf *vbo)
   target_ = to_gl_target(type_);
 
   /* We need to bind once to define the texture type. */
-  GLContext::state_manager_active_get()->texture_bind_temp(this);
+  GLCxt::state_manager_active_get()->texture_bind_temp(this);
 
   GLenum internal_format = to_gl_internal_format(format_);
 
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glTextureBuffer(tex_id_, internal_format, gl_vbo->vbo_id_);
   }
   else {
@@ -170,7 +167,7 @@ bool GLTexture::init_internal(GPUVertBuf *vbo)
 
 bool GLTexture::init_internal(const GPUTexture *src, int mip_offset, int layer_offset)
 {
-  BLI_assert(GLContext::texture_storage_support);
+  lib_assert(GLCxt::texture_storage_support);
 
   const GLTexture *gl_src = static_cast<const GLTexture *>(unwrap(src));
   GLenum internal_format = to_gl_internal_format(format_);
@@ -190,12 +187,7 @@ bool GLTexture::init_internal(const GPUTexture *src, int mip_offset, int layer_o
   return true;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Operations
- * \{ */
-
+/* Operations */
 void GLTexture::update_sub_direct_state_access(
     int mip, int offset[3], int extent[3], GLenum format, GLenum type, const void *data)
 {
@@ -237,8 +229,8 @@ void GLTexture::update_sub_direct_state_access(
 void GLTexture::update_sub(
     int mip, int offset[3], int extent[3], eGPUDataFormat type, const void *data)
 {
-  BLI_assert(validate_data_format(format_, type));
-  BLI_assert(data != nullptr);
+  lib_assert(validate_data_format(format_, type));
+  lib_assert(data != nullptr);
 
   if (mip >= mipmaps_) {
     debug::raise_gl_error("Updating a miplvl on a texture too small to have this many levels.");
@@ -250,12 +242,12 @@ void GLTexture::update_sub(
   GLenum gl_type = to_gl(type);
 
   /* Some drivers have issues with cubemap & glTextureSubImage3D even if it is correct. */
-  if (GLContext::direct_state_access_support && (type_ != GPU_TEXTURE_CUBE)) {
+  if (GLCxt::direct_state_access_support && (type_ != GPU_TEXTURE_CUBE)) {
     this->update_sub_direct_state_access(mip, offset, extent, gl_format, gl_type, data);
     return;
   }
 
-  GLContext::state_manager_active_get()->texture_bind_temp(this);
+  GLCxt::state_manager_active_get()->texture_bind_temp(this);
   if (type_ == GPU_TEXTURE_CUBE) {
     for (int i = 0; i < extent[2]; i++) {
       GLenum target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + offset[2] + i;
@@ -297,8 +289,7 @@ void GLTexture::update_sub(
   has_pixels_ = true;
 }
 
-/**
- * This will create the mipmap images and populate them with filtered data from base level.
+/* This will create the mipmap images and populate them with filtered data from base level.
  *
  * WARNING: Depth textures are not populated but they have their mips correctly defined.
  * WARNING: This resets the mipmap range.
@@ -313,7 +304,7 @@ void GLTexture::generate_mipmap()
     return;
   }
 
-  if (GLContext::generate_mipmap_workaround) {
+  if (GLCxt::generate_mipmap_workaround) {
     /* Broken glGenerateMipmap, don't call it and render without mipmaps.
      * If no top level pixels have been filled in, the levels will get filled by
      * other means and there is no need to disable mipmapping. */
@@ -324,20 +315,20 @@ void GLTexture::generate_mipmap()
   }
 
   /* Down-sample from mip 0 using implementation. */
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glGenerateTextureMipmap(tex_id_);
   }
   else {
-    GLContext::state_manager_active_get()->texture_bind_temp(this);
+    GLCxt::state_manager_active_get()->texture_bind_temp(this);
     glGenerateMipmap(target_);
   }
 }
 
 void GLTexture::clear(eGPUDataFormat data_format, const void *data)
 {
-  BLI_assert(validate_data_format(format_, data_format));
+  lib_assert(validate_data_format(format_, data_format));
 
-  if (GLContext::clear_texture_support) {
+  if (GLCxt::clear_texture_support) {
     int mip = 0;
     GLenum gl_format = to_gl_data_format(format_);
     GLenum gl_type = to_gl(data_format);
@@ -351,7 +342,7 @@ void GLTexture::clear(eGPUDataFormat data_format, const void *data)
     fb->bind(true);
     fb->clear_attachment(this->attachment_type(0), data_format, data);
 
-    GPU_framebuffer_bind(prev_fb);
+    gpu_framebuffer_bind(prev_fb);
   }
 
   has_pixels_ = true;
@@ -454,22 +445,22 @@ void GLTexture::stencil_texture_mode_set(bool use_stencil)
     glTextureParameteri(tex_id_, GL_DEPTH_STENCIL_TEXTURE_MODE, value);
   }
   else {
-    GLContext::state_manager_active_get()->texture_bind_temp(this);
+    GLCxt::state_manager_active_get()->texture_bind_temp(this);
     glTexParameteri(target_, GL_DEPTH_STENCIL_TEXTURE_MODE, value);
   }
 }
 
 void GLTexture::mip_range_set(int min, int max)
 {
-  BLI_assert(min <= max && min >= 0 && max <= mipmaps_);
+  lib_assert(min <= max && min >= 0 && max <= mipmaps_);
   mip_min_ = min;
   mip_max_ = max;
-  if (GLContext::direct_state_access_support) {
+  if (GLCxt::direct_state_access_support) {
     glTextureParameteri(tex_id_, GL_TEXTURE_BASE_LEVEL, min);
     glTextureParameteri(tex_id_, GL_TEXTURE_MAX_LEVEL, max);
   }
   else {
-    GLContext::state_manager_active_get()->texture_bind_temp(this);
+    GLCxt::state_manager_active_get()->texture_bind_temp(this);
     glTexParameteri(target_, GL_TEXTURE_BASE_LEVEL, min);
     glTexParameteri(target_, GL_TEXTURE_MAX_LEVEL, max);
   }
@@ -480,20 +471,17 @@ struct GPUFrameBuffer *GLTexture::framebuffer_get()
   if (framebuffer_) {
     return framebuffer_;
   }
-  BLI_assert(!(type_ & (GPU_TEXTURE_ARRAY | GPU_TEXTURE_CUBE | GPU_TEXTURE_1D | GPU_TEXTURE_3D)));
-  /* TODO(fclem): cleanup this. Don't use GPU object but blender::gpu ones. */
+  lib_assert(!(type_ & (GPU_TEXTURE_ARRAY | GPU_TEXTURE_CUBE | GPU_TEXTURE_1D | GPU_TEXTURE_3D)));
+  /* TODO: cleanup this. Don't use GPU object but blender::gpu ones. */
   GPUTexture *gputex = reinterpret_cast<GPUTexture *>(static_cast<Texture *>(this));
-  framebuffer_ = GPU_framebuffer_create(name_);
-  GPU_framebuffer_texture_attach(framebuffer_, gputex, 0, 0);
+  framebuffer_ = gpu_framebuffer_create(name_);
+  gpi_framebuffer_texture_attach(framebuffer_, gputex, 0, 0);
   has_pixels_ = true;
   return framebuffer_;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Sampler objects
- * \{ */
+/* Sampler objects */
 
 GLuint GLTexture::samplers_[GPU_SAMPLER_MAX] = {0};
 
@@ -524,8 +512,7 @@ void GLTexture::samplers_init()
      * - GL_TEXTURE_BORDER_COLOR is {0, 0, 0, 0}.
      * - GL_TEXTURE_MIN_LOD is -1000.
      * - GL_TEXTURE_MAX_LOD is 1000.
-     * - GL_TEXTURE_LOD_BIAS is 0.0f.
-     */
+     * - GL_TEXTURE_LOD_BIAS is 0.0f. */
 
     char sampler_name[128] = "\0\0";
     SNPRINTF(sampler_name,
@@ -555,7 +542,7 @@ void GLTexture::samplers_init()
 
 void GLTexture::samplers_update()
 {
-  if (!GLContext::texture_filter_anisotropic_support) {
+  if (!GLCxt::texture_filter_anisotropic_support) {
     return;
   }
 
@@ -577,27 +564,24 @@ void GLTexture::samplers_free()
   glDeleteSamplers(GPU_SAMPLER_MAX, samplers_);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Proxy texture
+/** Proxy texture
  *
- * Dummy texture to see if the implementation supports the requested size.
- * \{ */
+ * Dummy texture to see if the implementation supports the requested size. */
 
 /* NOTE: This only checks if this mipmap is valid / supported.
- * TODO(fclem): make the check cover the whole mipmap chain. */
+ * TODO: make the check cover the whole mipmap chain. */
 bool GLTexture::proxy_check(int mip)
 {
   /* Manual validation first, since some implementation have issues with proxy creation. */
-  int max_size = GPU_max_texture_size();
-  int max_3d_size = GLContext::max_texture_3d_size;
-  int max_cube_size = GLContext::max_cubemap_size;
+  int max_size = gpu_max_texture_size();
+  int max_3d_size = GLCxt::max_texture_3d_size;
+  int max_cube_size = GLCxt::max_cubemap_size;
   int size[3] = {1, 1, 1};
   this->mip_size_get(mip, size);
 
   if (type_ & GPU_TEXTURE_ARRAY) {
-    if (this->layer_count() > GPU_max_texture_layers()) {
+    if (this->layer_count() > gpu_max_texture_layers()) {
       return false;
     }
   }
@@ -623,9 +607,9 @@ bool GLTexture::proxy_check(int mip)
     }
   }
 
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_WIN, GPU_DRIVER_ANY) ||
-      GPU_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_MAC, GPU_DRIVER_OFFICIAL) ||
-      GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OFFICIAL)) {
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_WIN, GPU_DRIVER_ANY) ||
+      gpu_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_MAC, GPU_DRIVER_OFFICIAL) ||
+      gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OFFICIAL)) {
     /* Some AMD drivers have a faulty `GL_PROXY_TEXTURE_..` check.
      * (see T55888, T56185, T59351).
      * Checking with `GL_PROXY_TEXTURE_..` doesn't prevent `Out Of Memory` issue,
@@ -636,7 +620,7 @@ bool GLTexture::proxy_check(int mip)
   }
 
   if ((type_ == GPU_TEXTURE_CUBE_ARRAY) &&
-      GPU_type_matches(GPU_DEVICE_ANY, GPU_OS_MAC, GPU_DRIVER_ANY)) {
+      gpu_type_matches(GPU_DEVICE_ANY, GPU_OS_MAC, GPU_DRIVER_ANY)) {
     /* Special fix for T79703. */
     return true;
   }
@@ -688,8 +672,8 @@ bool GLTexture::proxy_check(int mip)
 void GLTexture::check_feedback_loop()
 {
   /* Recursive down sample workaround break this check.
-   * See #recursive_downsample() for more information. */
-  if (GPU_mip_render_workaround()) {
+   * See recursive_downsample() for more information. */
+  if (gpu_mip_render_workaround()) {
     return;
   }
   /* Do not check if using compute shader. */
