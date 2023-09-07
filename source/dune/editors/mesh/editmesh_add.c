@@ -157,41 +157,41 @@ static int add_primitive_cube_exec(DuneContext *C, wmOperator *op)
   ushort local_view_bits;
   const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(BLT_I18NCONTEXT_ID_MESH, "Cube"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Cube"),
                           loc,
                           rot,
                           scale,
                           local_view_bits,
                           &creation_data);
 
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_EDIT_op_call_and_selectf(em,
+  if (!MESH_EDIT_op_call_and_selectf(em,
                                 op,
                                 "verts.out",
                                 false,
                                 "create_cube matrix=%m4 size=%f calc_uvs=%b",
                                 creation_data.mat,
-                                API_float_get(op->ptr, "size"),
+                                api_float_get(op->ptr, "size"),
                                 calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* DUNEMESH_TODO make plane side this: M_SQRT2 - plane (diameter of 1.41 makes it unit size) */
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_primitive_cube_add(wmOperatorType *ot)
+void MESH_OT_primitive_cube_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Cube";
@@ -199,25 +199,25 @@ void MESH_OT_primitive_cube_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_cube_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_cube_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->exec = add_primitive_cube_ex;
+  ot->poll = ED_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_unit_props_size(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_unit_props_size(ot);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
-static const EnumPropertyItem fill_type_items[] = {
+static const EnumPropItem fill_type_items[] = {
     {0, "NOTHING", 0, "Nothing", "Don't fill at all"},
     {1, "NGON", 0, "N-Gon", "Use n-gons"},
     {2, "TRIFAN", 0, "Triangle Fan", "Use triangle fans"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static int add_primitive_circle_exec(bContext *C, wmOperator *op)
+static int add_primitive_circle_ex(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -226,46 +226,46 @@ static int add_primitive_circle_exec(bContext *C, wmOperator *op)
   bool enter_editmode;
   ushort local_view_bits;
   int cap_end, cap_tri;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  cap_end = API_enum_get(op->ptr, "fill_type");
+  cap_end = api_enum_get(op->ptr, "fill_type");
   cap_tri = (cap_end == 2);
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, NULL, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(LANG_I18NCONTEXT_ID_MESH, "Circle"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Circle"),
                           loc,
                           rot,
                           NULL,
                           local_view_bits,
                           &creation_data);
 
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_EDIT_op_call_and_selectf(
+  if (!MESH_EDIT_op_call_and_selectf(
           em,
           op,
           "verts.out",
           false,
           "create_circle segments=%i radius=%f cap_ends=%b cap_tris=%b matrix=%m4 calc_uvs=%b",
-          API_int_get(op->ptr, "vertices"),
-          API_float_get(op->ptr, "radius"),
+          api_int_get(op->ptr, "vertices"),
+          api_float_get(op->ptr, "radius"),
           cap_end,
           cap_tri,
           creation_data.mat,
           calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void MESH_OT_primitive_circle_add(wmOperatorType *ot)
@@ -276,22 +276,22 @@ void MESH_OT_primitive_circle_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_circle_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_circle_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_circle_exec;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  API_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
-  ED_object_add_unit_props_radius(ot);
-  API_def_enum(ot->api, "fill_type", fill_type_items, 0, "Fill Type", "");
+  api_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
+  ed_object_add_unit_props_radius(ot);
+  api_def_enum(ot->api, "fill_type", fill_type_items, 0, "Fill Type", "");
 
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_cylinder_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_cylinder_ex(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -299,25 +299,25 @@ static int add_primitive_cylinder_exec(DuneContext *C, wmOperator *op)
   float loc[3], rot[3], scale[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const int end_fill_type = API_enum_get(op->ptr, "end_fill_type");
+  const int end_fill_type = api_enum_get(op->ptr, "end_fill_type");
   const bool cap_end = (end_fill_type != 0);
   const bool cap_tri = (end_fill_type == 2);
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(LANG_I18NCONTEXT_ID_MESH, "Cylinder"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Cylinder"),
                           loc,
                           rot,
                           scale,
                           local_view_bits,
                           &creation_data);
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
   if (!EDBM_op_call_and_selectf(em,
@@ -326,12 +326,12 @@ static int add_primitive_cylinder_exec(DuneContext *C, wmOperator *op)
                                 false,
                                 "create_cone segments=%i radius1=%f radius2=%f cap_ends=%b "
                                 "cap_tris=%b depth=%f matrix=%m4 calc_uvs=%b",
-                                API_int_get(op->ptr, "vertices"),
-                                API_float_get(op->ptr, "radius"),
-                                API_float_get(op->ptr, "radius"),
+                                api_int_get(op->ptr, "vertices"),
+                                api_float_get(op->ptr, "radius"),
+                                api_float_get(op->ptr, "radius"),
                                 cap_end,
                                 cap_tri,
-                                API_float_get(op->ptr, "depth"),
+                                api_float_get(op->ptr, "depth"),
                                 creation_data.mat,
                                 calc_uvs)) {
     return OPERATOR_CANCELLED;
@@ -342,7 +342,7 @@ static int add_primitive_cylinder_exec(DuneContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void MESH_OT_primitive_cylinder_add(wmOperatorType *ot)
+void MESH_OT_primitive_cylinder_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Cylinder";
