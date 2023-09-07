@@ -147,7 +147,7 @@ void MESH_OT_primitive_plane_add(wmOpType *ot)
   ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_cube_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_cube_exec(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -155,7 +155,7 @@ static int add_primitive_cube_exec(DuneContext *C, wmOperator *op)
   float loc[3], rot[3], scale[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
   wm_op_view3d_unit_defaults(C, op);
   ed_object_add_generic_get_opts(
@@ -268,7 +268,7 @@ static int add_primitive_circle_ex(Cxt *C, wmOp *op)
   return OP_FINISHED;
 }
 
-void MESH_OT_primitive_circle_add(wmOperatorType *ot)
+void MESH_OT_primitive_circle_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Circle";
@@ -384,7 +384,7 @@ static int add_primitive_cone_exec(Cxt *C, wmOp *op)
   ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CXT_DATA_(I18N_CTX_ID_MESH, "Cone"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Cone"),
                           loc,
                           rot,
                           scale,
@@ -446,7 +446,7 @@ void MESH_OT_primitive_cone_add(wmOpType *ot)
   ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_grid_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_grid_exec(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -491,7 +491,7 @@ static int add_primitive_grid_exec(DuneContext *C, wmOperator *op)
   return OP_FINISHED;
 }
 
-void MESH_OT_primitive_grid_add(wmOperatorType *ot)
+void MESH_OT_primitive_grid_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Grid";
@@ -499,7 +499,7 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_grid_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_grid_exec;
+  ot->exec = add_primitive_grid_ex;
   ot->poll = ed_op_scene_editable;
 
   /* flags */
@@ -518,7 +518,7 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
   ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_monkey_ex(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -534,7 +534,7 @@ static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
       C, op, 'Y', loc, rot, NULL, &enter_editmode, &local_view_bits, NULL);
 
   obedit = make_prim_init(C,
-                          CTX_DATA_(I18N_CTX_ID_MESH, "Suzanne"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Suzanne"),
                           loc,
                           rot,
                           NULL,
@@ -543,10 +543,10 @@ static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
   dia = API_float_get(op->ptr, "size") / 2.0f;
   mul_mat3_m4_fl(creation_data.mat, dia);
 
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
   if (!EDBM_op_call_and_selectf(em,
@@ -556,7 +556,7 @@ static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
                                 "create_monkey matrix=%m4 calc_uvs=%b",
                                 creation_data.mat,
                                 calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
@@ -564,7 +564,7 @@ static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void MESH_OT_primitive_monkey_add(wmOperatorType *ot)
+void MESH_OT_primitive_monkey_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Monkey";
@@ -572,19 +572,19 @@ void MESH_OT_primitive_monkey_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_monkey_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_monkey_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_monkey_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  ED_object_add_unit_props_size(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_unit_props_size(ot);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_uvsphere_exec(bContext *C, wmOperator *op)
+static int add_primitive_uvsphere_ex(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -592,44 +592,44 @@ static int add_primitive_uvsphere_exec(bContext *C, wmOperator *op)
   float loc[3], rot[3], scale[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(I18N_CTX_ID_MESH, "Sphere"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Sphere"),
                           loc,
                           rot,
                           scale,
                           local_view_bits,
                           &creation_data);
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+   ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_op_call_and_selectf(
+  if (!mesh_op_call_and_selectf(
           em,
           op,
           "verts.out",
           false,
           "create_uvsphere u_segments=%i v_segments=%i radius=%f matrix=%m4 calc_uvs=%b",
-          API_int_get(op->ptr, "segments"),
-          API_int_get(op->ptr, "ring_count"),
-          API_float_get(op->ptr, "radius"),
+          api_int_get(op->ptr, "segments"),
+          api_int_get(op->ptr, "ring_count"),
+          api_float_get(op->ptr, "radius"),
           creation_data.mat,
           calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_primitive_uv_sphere_add(wmOperatorType *ot)
+void MESH_OT_primitive_uv_sphere_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add UV Sphere";
@@ -637,22 +637,22 @@ void MESH_OT_primitive_uv_sphere_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_uv_sphere_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_uvsphere_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_uvsphere_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  API_def_int(ot->api, "segments", 32, 3, MESH_ADD_VERTS_MAXI / 100, "Segments", "", 3, 500);
-  API_def_int(ot->api, "ring_count", 16, 3, MESH_ADD_VERTS_MAXI / 100, "Rings", "", 3, 500);
+  api_def_int(ot->api, "segments", 32, 3, MESH_ADD_VERTS_MAXI / 100, "Segments", "", 3, 500);
+  api_def_int(ot->api, "ring_count", 16, 3, MESH_ADD_VERTS_MAXI / 100, "Rings", "", 3, 500);
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_unit_props_radius(ot);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_icosphere_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_icosphere_ex(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -662,20 +662,20 @@ static int add_primitive_icosphere_exec(DuneContext *C, wmOperator *op)
   ushort local_view_bits;
   const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(I18N_CTX_ID_MESH, "Icosphere"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Icosphere"),
                           loc,
                           rot,
                           scale,
                           local_view_bits,
                           &creation_data);
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
   if (!EDBM_op_call_and_selectf(
@@ -684,19 +684,19 @@ static int add_primitive_icosphere_exec(DuneContext *C, wmOperator *op)
           "verts.out",
           false,
           "create_icosphere subdivisions=%i radius=%f matrix=%m4 calc_uvs=%b",
-          API_int_get(op->ptr, "subdivisions"),
-          API_float_get(op->ptr, "radius"),
+          api_int_get(op->ptr, "subdivisions"),
+          api_float_get(op->ptr, "radius"),
           creation_data.mat,
           calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_primitive_ico_sphere_add(wmOperatorType *ot)
+void MESH_OT_primitive_ico_sphere_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Ico Sphere";
@@ -704,16 +704,16 @@ void MESH_OT_primitive_ico_sphere_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_ico_sphere_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_icosphere_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_icosphere_exec;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  API_def_int(ot->api, "subdivisions", 2, 1, 10, "Subdivisions", "", 1, 8);
+  api_def_int(ot->api, "subdivisions", 2, 1, 10, "Subdivisions", "", 1, 8);
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_unit_props_radius(ot);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
