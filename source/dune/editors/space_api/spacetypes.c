@@ -6,9 +6,9 @@
 #include "lib_utildefines.h"
 
 #include "types_scene.h"
-#include "types_windowmanager.h"
+#include "types_wm.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_screen.h"
 
 #include "gpu_state.h"
@@ -35,12 +35,12 @@
 #include "ed_node.h"
 #include "ed_object.h"
 #include "ed_paint.h"
-#include "ed_physics.h"
+#include "ed_phys.h"
 #include "ed_render.h"
 #include "ed_scene.h"
 #include "ed_screen.h"
 #include "ed_sculpt.h"
-#include "ed_sequencer.h"
+#include "ed_seq.h"
 #include "ed_sound.h"
 #include "ed_space_api.h"
 #include "ed_transform.h"
@@ -61,14 +61,14 @@ void ed_spacetypes_init(void)
   ed_spacetype_ipo();
   ed_spacetype_image();
   ed_spacetype_node();
-  ed_spacetype_buttons();
+  ed_spacetype_btns();
   ed_spacetype_info();
   ed_spacetype_file();
   ed_spacetype_action();
   ed_spacetype_nla();
   ed_spacetype_script();
   ed_spacetype_text();
-  ed_spacetype_sequencer();
+  ed_spacetype_seq();
   ed_spacetype_console();
   ed_spacetype_userpref();
   ed_spacetype_clip();
@@ -93,7 +93,7 @@ void ed_spacetypes_init(void)
   ed_optypes_sculpt_curves();
   ed_optypes_uvedit();
   ed_optypes_paint();
-  ed_optypes_physics();
+  ed_optypes_phys();
   ed_optypes_curve();
   ed_optypes_curves();
   ed_optypes_armature();
@@ -113,7 +113,7 @@ void ed_spacetypes_init(void)
   ed_uilisttypes_ui();
 
   /* Gizmo types. */
-  ed_gizmotypes_button_2d();
+  ed_gizmotypes_btn_2d();
   ed_gizmotypes_dial_3d();
   ed_gizmotypes_move_3d();
   ed_gizmotypes_arrow_3d();
@@ -125,14 +125,14 @@ void ed_spacetypes_init(void)
   ed_gizmotypes_snap_3d();
 
   /* Register types for operators and gizmos. */
-  const ListBase *spacetypes = dune_spacetypes_list();
-  LISTBASE_FOREACH (const SpaceType *, type, spacetypes) {
+  const List *spacetypes = dune_spacetypes_list();
+  LIST_FOREACH (const SpaceType *, type, spacetypes) {
     /* Initialize gizmo types first, operator types need them. */
     if (type->gizmos) {
       type->gizmos();
     }
-    if (type->operatortypes) {
-      type->operatortypes();
+    if (type->optypes) {
+      type->optypes();
     }
   }
 }
@@ -153,14 +153,14 @@ void ed_spacemacros_init(void)
   ed_opmacros_clip();
   ed_opmacros_curve();
   ed_opmacros_mask();
-  ed_opmacros_sequencer();
+  ed_opmacros_seq();
   ed_opmacros_paint();
   ed_opmacros_pen();
 
   /* Register dropboxes (can use macros). */
   ed_dropboxes_ui();
-  const ListBase *spacetypes = dune_spacetypes_list();
-  LISTBASE_FOREACH (const SpaceType *, type, spacetypes) {
+  const List *spacetypes = dune_spacetypes_list();
+  LIST_FOREACH (const SpaceType *, type, spacetypes) {
     if (type->dropboxes) {
       type->dropboxes();
     }
@@ -179,7 +179,7 @@ void ed_spacetypes_keymap(wmKeyConfig *keyconf)
   ed_keymap_uvedit(keyconf);
   ed_keymap_curve(keyconf);
   ed_keymap_armature(keyconf);
-  ed_keymap_physics(keyconf);
+  ed_keymap_phys(keyconf);
   ed_keymap_metaball(keyconf);
   ed_keymap_paint(keyconf);
   ed_keymap_mask(keyconf);
@@ -190,12 +190,12 @@ void ed_spacetypes_keymap(wmKeyConfig *keyconf)
 
   ed_keymap_transform(keyconf);
 
-  const ListBase *spacetypes = dune_spacetypes_list();
-  LISTBASE_FOREACH (const SpaceType *, type, spacetypes) {
+  const List *spacetypes = dune_spacetypes_list();
+  LIST_FOREACH (const SpaceType *, type, spacetypes) {
     if (type->keymap) {
       type->keymap(keyconf);
     }
-    LISTBASE_FOREACH (ARegionType *, region_type, &type->regiontypes) {
+    LIST_FOREACH (ARegionType *, region_type, &type->regiontypes) {
       if (region_type->keymap) {
         region_type->keymap(keyconf);
       }
@@ -203,12 +203,12 @@ void ed_spacetypes_keymap(wmKeyConfig *keyconf)
   }
 }
 
-/* ********************** Custom Draw Call API ***************** */
+/* Custom Draw Call API ***************** */
 
 typedef struct RegionDrawCB {
   struct RegionDrawCB *next, *prev;
 
-  void (*draw)(const struct dContext *, struct ARegion *, void *);
+  void (*draw)(const struct Cxt *, struct ARegion *, void *);
   void *customdata;
 
   int type;
@@ -216,7 +216,7 @@ typedef struct RegionDrawCB {
 } RegionDrawCB;
 
 void *ed_region_draw_cb_activate(ARegionType *art,
-                                 void (*draw)(const struct Ctx *, struct ARegion *, void *),
+                                 void (*draw)(const struct Cxt *, struct ARegion *, void *),
                                  void *customdata,
                                  int type)
 {
@@ -232,7 +232,7 @@ void *ed_region_draw_cb_activate(ARegionType *art,
 
 bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
 {
-  LISTBASE_FOREACH (RegionDrawCB *, rdc, &art->drawcalls) {
+  LIST_FOREACH (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc == (RegionDrawCB *)handle) {
       lib_remlink(&art->drawcalls, rdc);
       mem_freem(rdc);
@@ -242,9 +242,9 @@ bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
   return false;
 }
 
-static void ed_region_draw_cb_draw(const Ctx *C, ARegion *region, ARegionType *art, int type)
+static void ed_region_draw_cb_draw(const Cxt *C, ARegion *region, ARegionType *art, int type)
 {
-  LISTBASE_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
+  LIST_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc->type == type) {
       rdc->draw(C, region, rdc->customdata);
 
@@ -266,7 +266,7 @@ void ed_region_surface_draw_cb_draw(ARegionType *art, int type)
 
 void ed_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*free)(void *))
 {
-  LISTBASE_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
+  LIST_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc->draw == draw_fn) {
       if (free) {
         free(rdc->customdata);
@@ -277,7 +277,7 @@ void ed_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*fr
   }
 }
 
-/* ********************* space template *********************** */
+/* space template *********************** */
 /* forward declare */
 void ed_spacetype_xxx(void);
 
