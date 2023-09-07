@@ -1,61 +1,58 @@
-/**
- * Utility functions for merging geometry once transform has finished:
+/* Util fns for merging geometry once transform has finished:
  *
- * - #EDBM_automerge
- * - #EDBM_automerge_and_split
+ * - edm_automerge
+ * - edm_automerge_and_split
  */
 
-#include "DUNE_editmesh.h"
+#include "dune_editmesh.h"
 
-#include "TYPES_object.h"
+#include "types_object.h"
 
-#include "ED_mesh.h"
+#include "ed_mesh.h"
 
-#include "tools/bmesh_intersect_edges.h"
+#include "tools/mesh_intersect_edges.h"
 
 //#define DEBUG_TIME
 #ifdef DEBUG_TIME
 #  include "PIL_time.h"
 #endif
 
-/* use bmesh operator flags for a few operators */
-#define BMO_ELE_TAG 1
+/* use mesh operator flags for a few operators */
+#define MO_ELE_TAG 1
 
-/* -------------------------------------------------------------------- */
-/** Auto-Merge Selection
+/* Auto-Merge Selection
  *
- * Used after transform operations.
- **/
+ * Used after transform operations. */
 
-void DMESH_automerge(Object *obedit, bool update, const char hflag, const float dist)
+void mesh_automerge(Object *obedit, bool update, const char hflag, const float dist)
 {
-  DuneMeshEdit *dme = DUNE_meshedit_from_object(obedit);
-  BMesh *dm = em->dm;
-  int totvert_prev = dm->totvert;
+  MeshEdit *me = dune_meshedit_from_object(obedit);
+  Mesh *mesh = em->mesh;
+  int totvert_prev = mesh->totvert;
 
-  BMOperator findop, weldop;
+  MOp findop, weldop;
 
   /* Search for doubles among all vertices, but only merge non-VERT_KEEP
    * vertices into VERT_KEEP vertices. */
-  BMO_op_initf(bm,
-               &findop,
-               BMO_FLAG_DEFAULTS,
-               "find_doubles verts=%av keep_verts=%Hv dist=%f",
-               hflag,
-               dist);
+  mo_op_initf(mesh,
+              &findop,
+              MO_FLAG_DEFAULTS,
+              "find_doubles verts=%av keep_verts=%Hv dist=%f",
+              hflag,
+              dist);
 
-  BMO_op_exec(bm, &findop);
+  mo_op_ex(mesh, &findop);
 
   /* weld the vertices */
-  BMO_op_init(bm, &weldop, BMO_FLAG_DEFAULTS, "weld_verts");
-  BMO_slot_copy(&findop, slots_out, "targetmap.out", &weldop, slots_in, "targetmap");
-  BMO_op_exec(bm, &weldop);
+  meshop_op_init(mesh, &weldop, MO_FLAG_DEFAULTS, "weld_verts");
+  meshop_slot_copy(&findop, slots_out, "targetmap.out", &weldop, slots_in, "targetmap");
+  meshop_op_ex(mesh, &weldop);
 
-  BMO_op_finish(bm, &findop);
-  BMO_op_finish(bm, &weldop);
+  meshop_op_finish(mesh, &findop);
+  meshop_op_finish(mesh, &weldop);
 
-  if ((totvert_prev != bm->totvert) && update) {
-    EDBM_update(obedit->data,
+  if ((totvert_prev != mesh->totvert) && update) {
+    editmesh_update(obedit->data,
                 &(const struct EDBMUpdate_Params){
                     .calc_looptri = true,
                     .calc_normals = false,
@@ -64,13 +61,9 @@ void DMESH_automerge(Object *obedit, bool update, const char hflag, const float 
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Auto-Merge & Split Selection
- *
- * Used after transform operations.
- **/
-
-void DMESH_automerge_and_split(Object *obedit,
+/* Auto-Merge & Split Selection
+ * Used after transform ops. */
+void mesh_automerge_and_split(Object *obedit,
                               const bool UNUSED(split_edges),
                               const bool split_faces,
                               const bool update,
@@ -79,36 +72,36 @@ void DMESH_automerge_and_split(Object *obedit,
 {
   bool ok = false;
 
-  DuneMeshEdit *dme = DUNE_meshedit_from_object(obedit);
-  DuneMesh *dm = em->dm;
+  MeshEdit *mesh = dune_meshedit_from_object(obedit);
+  Mesh *mesh = em->mesh;
 
 #ifdef DEBUG_TIME
-  em->bm = DuneMesh_mesh_copy(dm);
+  em->mesh = mesh_copy(mesh);
 
   double t1 = PIL_check_seconds_timer();
   EDBM_automerge(obedit, false, hflag, dist);
   t1 = PIL_check_seconds_timer() - t1;
 
-  DuneMesh_mesh_free(em->bm);
-  em->dm = dm;
+  Mesh_mesh_free(em->mesh);
+  em->mesh = mesh;
   double t2 = PIL_check_seconds_timer();
 #endif
 
-  DuneMeshOperator weldop;
-  DuneMeshOpSlot *slot_targetmap;
+  MeshOp weldop;
+  MeshOpSlot *slot_targetmap;
 
-  DuneMeshOperator_op_init(dm, &weldop, BMO_FLAG_DEFAULTS, "weld_verts");
-  slot_targetmap = DuneMeshOperator_slot_get(weldop.slots_in, "targetmap");
+  MeshOp_op_init(mesh, &weldop, MO_FLAG_DEFAULTS, "weld_verts");
+  slot_targetmap = MeshOp_slot_get(weldop.slots_in, "targetmap");
 
-  GHash *ghash_targetmap = BMO_SLOT_AS_GHASH(slot_targetmap);
+  GHash *ghash_targetmap = MO_SLOT_AS_GHASH(slot_targetmap);
 
-  ok = DuneMesh_mesh_intersect_edges(bm, hflag, dist, split_faces, ghash_targetmap);
+  ok = Mesh_mesh_intersect_edges(bm, hflag, dist, split_faces, ghash_targetmap);
 
   if (ok) {
-    DuneMeshOperator_op_exec(dm, &weldop);
+    MeshOp_op_ex(mesh, &weldop);
   }
 
-  DuneMeshOperator_op_finish(dm, &weldop);
+  MeshOp_op_finish(dm, &weldop);
 
 #ifdef DEBUG_TIME
   t2 = PIL_check_seconds_timer() - t2;
