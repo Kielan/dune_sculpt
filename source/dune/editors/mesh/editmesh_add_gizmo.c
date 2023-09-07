@@ -1,61 +1,58 @@
 /** Creation gizmos. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_math.h"
+#include "lib_math.h"
 
-#include "TYPES_object.h"
-#include "TYPES_scene.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "DUNE_context.h"
-#include "DUNE_editmesh.h"
-#include "DUNE_scene.h"
+#include "dune_cxt.h"
+#include "dune_editmesh.h"
+#include "dune_scene.h"
 
-#include "ED_gizmo_library.h"
-#include "ED_gizmo_utils.h"
-#include "ED_mesh.h"
-#include "ED_object.h"
-#include "ED_screen.h"
-#include "ED_undo.h"
-#include "ED_view3d.h"
+#include "ed_gizmo_lib.h"
+#include "ed_gizmo_utils.h"
+#include "ed_mesh.h"
+#include "ed_object.h"
+#include "ed_screen.h"
+#include "ed_undo.h"
+#include "ed_view3d.h"
 
-#include "API_access.h"
-#include "API_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "I18N_translation.h"
+#include "lang.h"
 
 #include "mesh_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Helper Functions **/
+/* Helper Functions **/
 
-/**
- * When we place a shape, pick a plane.
+/* When we place a shape, pick a plane.
  *
  * We may base this choice on context,
  * for now pick the "ground" based on the 3D cursor's dominant plane
- * pointing down relative to the view.
- */
-static void calc_initial_placement_point_from_view(DuneContext *C,
+ * pointing down relative to the view. */
+static void calc_initial_placement_point_from_view(Cxt *C,
                                                    const float mval[2],
                                                    float r_location[3],
                                                    float r_rotation[3][3])
 {
 
-  Scene *scene = CTX_data_scene(C);
-  ARegion *region = CTX_wm_region(C);
+  Scene *scene = cxt_data_scene(C);
+  ARegion *region = cxt_wm_region(C);
   RegionView3D *rv3d = region->regiondata;
 
   bool use_mouse_project = true; /* TODO: make optional */
 
   float cursor_matrix[4][4];
   float orient_matrix[3][3];
-  DUNE_scene_cursor_to_mat4(&scene->cursor, cursor_matrix);
+  dune_scene_cursor_to_mat4(&scene->cursor, cursor_matrix);
 
   const float dots[3] = {
       dot_v3v3(rv3d->viewinv[2], cursor_matrix[0]),
@@ -78,7 +75,7 @@ static void calc_initial_placement_point_from_view(DuneContext *C,
   if (use_mouse_project) {
     float plane[4];
     plane_from_point_normal_v3(plane, cursor_matrix[3], orient_matrix[2]);
-    if (ED_view3d_win_to_3d_on_plane(region, plane, mval, true, r_location)) {
+    if (ed_view3d_win_to_3d_on_plane(region, plane, mval, true, r_location)) {
       copy_m3_m3(r_rotation, orient_matrix);
       return;
     }
@@ -89,9 +86,7 @@ static void calc_initial_placement_point_from_view(DuneContext *C,
   copy_m3_m3(r_rotation, orient_matrix);
 }
 
-/* -------------------------------------------------------------------- */
 /** Placement Gizmo **/
-
 typedef struct GizmoPlacementGroup {
   struct wmGizmo *cage;
   struct {
@@ -101,26 +96,24 @@ typedef struct GizmoPlacementGroup {
   } data;
 } GizmoPlacementGroup;
 
-/**
- * warning Calling redo from property updates is not great.
+/* warning Calling redo from property updates is not great.
  * This is needed because changing the API doesn't cause a redo
- * and we're not using operator UI which does just this.
- */
+ * and we're not using operator UI which does just this. */
 static void gizmo_placement_exec(GizmoPlacementGroup *ggd)
 {
-  wmOperator *op = ggd->data.op;
-  if (op == WM_operator_last_redo((DuneContext *)ggd->data.context)) {
-    ED_undo_op_repeat((DuneContext *)ggd->data.context, op);
+  wmOp *op = ggd->data.op;
+  if (op == wm_op_last_redo((Cxt *)ggd->data.cxt)) {
+    ed_undo_op_repeat((Cxt *)ggd->data.cxt, op);
   }
 }
 
 static void gizmo_mesh_placement_update_from_op(GizmoPlacementGroup *ggd)
 {
-  wmOperator *op = ggd->data.op;
+  wmOp *op = ggd->data.op;
   UNUSED_VARS(op);
-  /* For now don't read back from the operator. */
+  /* For now don't read back from the op. */
 #if 0
-  API_prop_float_get_array(op->ptr, ggd->data.prop_matrix, &ggd->cage->matrix_offset[0][0]);
+  api_prop_float_get_array(op->ptr, ggd->data.prop_matrix, &ggd->cage->matrix_offset[0][0]);
 #endif
 }
 
@@ -130,7 +123,7 @@ static void gizmo_placement_prop_matrix_get(const wmGizmo *gz,
                                             void *value_p)
 {
   GizmoPlacementGroup *ggd = gz->parent_gzgroup->customdata;
-  wmOperator *op = ggd->data.op;
+  wmOp *op = ggd->data.op;
   float *value = value_p;
   LI!_assert(gz_prop->type->array_length == 16);
   UNUSED_VARS_NDEBUG(gz_prop);
@@ -146,9 +139,9 @@ static void gizmo_placement_prop_matrix_set(const wmGizmo *gz,
                                             const void *value)
 {
   GizmoPlacementGroup *ggd = gz->parent_gzgroup->customdata;
-  wmOperator *op = ggd->data.op;
+  wmOp *op = ggd->data.op;
 
-  LIB_assert(gz_prop->type->array_length == 16);
+  lib_assert(gz_prop->type->array_length == 16);
   UNUSED_VARS_NDEBUG(gz_prop);
 
   float mat[4][4];
@@ -158,18 +151,18 @@ static void gizmo_placement_prop_matrix_set(const wmGizmo *gz,
     negate_mat3_m4(mat);
   }
 
-  API_property_float_set_array(op->ptr, ggd->data.prop_matrix, &mat[0][0]);
+  api_prop_float_set_array(op->ptr, ggd->data.prop_matrix, &mat[0][0]);
 
   gizmo_placement_exec(ggd);
 }
 
-static bool gizmo_mesh_placement_poll(const DuneContext *C, wmGizmoGroupType *gzgt)
+static bool gizmo_mesh_placement_poll(const Cxt *C, wmGizmoGroupType *gzgt)
 {
-  return ED_gizmo_poll_or_unlink_delayed_from_operator(
+  return ed_gizmo_poll_or_unlink_delayed_from_op(
       C, gzgt, "MESH_OT_primitive_cube_add_gizmo");
 }
 
-static void gizmo_mesh_placement_modal_from_setup(const DuneContext *C, wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_modal_from_setup(const Cxt *C, wmGizmoGroup *gzgroup)
 {
   GizmoPlacementGroup *ggd = gzgroup->customdata;
 
@@ -187,8 +180,8 @@ static void gizmo_mesh_placement_modal_from_setup(const DuneContext *C, wmGizmoG
 
   /* Start off dragging. */
   {
-    wmWindow *win = CTX_wm_window(C);
-    ARegion *region = CTX_wm_region(C);
+    wmWindow *win = cxt_wm_window(C);
+    ARegion *region = cxt_wm_region(C);
     wmGizmo *gz = ggd->cage;
 
     {
@@ -207,8 +200,8 @@ static void gizmo_mesh_placement_modal_from_setup(const DuneContext *C, wmGizmoG
 
     if (1) {
       wmGizmoMap *gzmap = gzgroup->parent_gzmap;
-      WM_gizmo_modal_set_from_setup(gzmap,
-                                    (DuneContext *)C,
+      wm_gizmo_modal_set_from_setup(gzmap,
+                                    (Cxt *)C,
                                     ggd->cage,
                                     ED_GIZMO_CAGE3D_PART_SCALE_MAX_X_MAX_Y_MAX_Z,
                                     win->eventstate);
@@ -216,39 +209,39 @@ static void gizmo_mesh_placement_modal_from_setup(const DuneContext *C, wmGizmoG
   }
 }
 
-static void gizmo_mesh_placement_setup(const DuneContext *C, wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_setup(const Cxt *C, wmGizmoGroup *gzgroup)
 {
-  wmOperator *op = WM_operator_last_redo(C);
+  wmOp *op = wm_op_last_redo(C);
 
   if (op == NULL || !STREQ(op->type->idname, "MESH_OT_primitive_cube_add_gizmo")) {
     return;
   }
 
-  struct GizmoPlacementGroup *ggd = MEM_callocN(sizeof(GizmoPlacementGroup), __func__);
+  struct GizmoPlacementGroup *ggd = mem_callocn(sizeof(GizmoPlacementGroup), __func__);
   gzgroup->customdata = ggd;
 
   const wmGizmoType *gzt_cage = WM_gizmotype_find("GIZMO_GT_cage_3d", true);
 
-  ggd->cage = WM_gizmo_new_ptr(gzt_cage, gzgroup, NULL);
+  ggd->cage = wm_gizmo_new_ptr(gzt_cage, gzgroup, NULL);
 
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, ggd->cage->color);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, ggd->cage->color);
 
-  API_enum_set(ggd->cage->ptr,
+  api_enum_set(ggd->cage->ptr,
                "transform",
                ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE | ED_GIZMO_CAGE2D_XFORM_FLAG_TRANSLATE |
                    ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE_SIGNED);
 
-  WM_gizmo_set_flag(ggd->cage, WM_GIZMO_DRAW_VALUE, true);
+  wm_gizmo_set_flag(ggd->cage, WM_GIZMO_DRAW_VALUE, true);
 
-  ggd->data.context = (DuneContext *)C;
+  ggd->data.context = (Cxt *)C;
   ggd->data.op = op;
-  ggd->data.prop_matrix = API_struct_find_prop(op->ptr, "matrix");
+  ggd->data.prop_matrix = api_struct_find_prop(op->ptr, "matrix");
 
   gizmo_mesh_placement_update_from_op(ggd);
 
   /* Setup property callbacks */
   {
-    WM_gizmo_target_prop_def_func(ggd->cage,
+    wm_gizmo_target_prop_def_func(ggd->cage,
                                       "matrix",
                                       &(const struct wmGizmoPropFnParams){
                                           .value_get_fn = gizmo_placement_prop_matrix_get,
@@ -261,16 +254,16 @@ static void gizmo_mesh_placement_setup(const DuneContext *C, wmGizmoGroup *gzgro
   gizmo_mesh_placement_modal_from_setup(C, gzgroup);
 }
 
-static void gizmo_mesh_placement_draw_prepare(const DuneContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_draw_prepare(const Cxt *UNUSED(C), wmGizmoGroup *gzgroup)
 {
   GizmoPlacementGroup *ggd = gzgroup->customdata;
   if (ggd->data.op->next) {
-    ggd->data.op = WM_operator_last_redo((DuneContext *)ggd->data.context);
+    ggd->data.op = WM_op_last_redo((Cxt *)ggd->data.cxt);
   }
   gizmo_mesh_placement_update_from_op(ggd);
 }
 
-static void MESH_GGT_add_bounds(struct wmGizmoGroupType *gzgt)
+static void mesh_ggt_add_bounds(struct wmGizmoGroupType *gzgt)
 {
   gzgt->name = "Mesh Add Bounds";
   gzgt->idname = "MESH_GGT_add_bounds";
@@ -285,41 +278,38 @@ static void MESH_GGT_add_bounds(struct wmGizmoGroupType *gzgt)
   gzgt->draw_prepare = gizmo_mesh_placement_draw_prepare;
 }
 
-/* -------------------------------------------------------------------- */
-/** Add Cube Gizmo-Operator
- *
- * For now we use a separate operator to add a cube,
+/* Add Cube Gizmo-Operator
+ * For now we use a separate op to add a cube,
  * we can try to merge then however they are invoked differently
- * and share the same DuneMesh creation code.
- **/
+ * and share the same Mesh creation code. */
 
-static int add_primitive_cube_gizmo_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_cube_gizmo_ex(Cxt *C, wmOp *op)
 {
-  Object *obedit = CTX_data_edit_object(C);
-  DuneMeshEdit *dme = DUNE_editmesh_from_object(obedit);
+  Object *obedit = cxt_data_edit_object(C);
+  DuneMeshEdit *dme = dune_editmesh_from_object(obedit);
   float matrix[4][4];
 
   /* Get the matrix that defines the cube bounds (as set by the gizmo cage). */
   {
-    PropAPI *prop_matrix = API_struct_find_prop(op->ptr, "matrix");
-    if (API_prop_is_set(op->ptr, prop_matrix)) {
-      API_prop_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
+    PropAPI *prop_matrix = api_struct_find_prop(op->ptr, "matrix");
+    if (api_prop_is_set(op->ptr, prop_matrix)) {
+      api_prop_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
       invert_m4_m4(obedit->imat, obedit->obmat);
       mul_m4_m4m4(matrix, obedit->imat, matrix);
     }
     else {
       /* For the first update the widget may not set the matrix. */
-      return OPERATOR_FINISHED;
+      return OP_FINISHED;
     }
   }
 
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_op_call_and_selectf(em,
+  if (!mesh_op_call_and_selectf(em,
                                 op,
                                 "verts.out",
                                 false,
@@ -327,34 +317,34 @@ static int add_primitive_cube_gizmo_exec(DuneContext *C, wmOperator *op)
                                 matrix,
                                 1.0f,
                                 calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  DMESH_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
-  DMESH_update(obedit->data,
+  mesh_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
+  mesh_update(obedit->data,
               &(const struct EDBMUpdate_Params){
                   .calc_looptri = true,
                   .calc_normals = false,
                   .is_destructive = true,
               });
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int add_primitive_cube_gizmo_invoke(DuneContext *C,
-                                           wmOperator *op,
+static int add_primitive_cube_gizmo_invoke(Cxt *C,
+                                           wmOp *op,
                                            const wmEvent *UNUSED(event))
 {
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_wm_view3d(C);
 
-  int ret = add_primitive_cube_gizmo_exec(C, op);
-  if (ret & OPERATOR_FINISHED) {
+  int ret = add_primitive_cube_gizmo_ex(C, op);
+  if (ret & OP_FINISHED) {
     /* Setup gizmos */
     if (v3d && ((v3d->gizmo_flag & V3D_GIZMO_HIDE) == 0)) {
-      wmGizmoGroupType *gzgt = WM_gizmogrouptype_find("MESH_GGT_add_bounds", false);
-      if (!WM_gizmo_group_type_ensure_ptr(gzgt)) {
-        struct Main *duneMain = CTX_data_main(C);
-        WM_gizmo_group_type_reinit_ptr(duneMain, gzgt);
+      wmGizmoGroupType *gzgt = wm_gizmogrouptype_find("MESH_GGT_add_bounds", false);
+      if (!wm_gizmo_group_type_ensure_ptr(gzgt)) {
+        struct Main *duneMain = cxt_data_main(C);
+        wm_gizmo_group_type_reinit_ptr(duneMain, gzgt);
       }
     }
   }
@@ -362,7 +352,7 @@ static int add_primitive_cube_gizmo_invoke(DuneContext *C,
   return ret;
 }
 
-void MESH_OT_primitive_cube_add_gizmo(wmOperatorType *ot)
+void MESH_OT_primitive_cube_add_gizmo(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Cube";
@@ -371,19 +361,19 @@ void MESH_OT_primitive_cube_add_gizmo(wmOperatorType *ot)
 
   /* api callbacks */
   ot->invoke = add_primitive_cube_gizmo_invoke;
-  ot->exec = add_primitive_cube_gizmo_exec;
-  ot->poll = ED_operator_editmesh_view3d;
+  ot->ex = add_primitive_cube_gizmo_ex;
+  ot->poll = ed_op_editmesh_view3d;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 
   /* hidden props */
-  PropAPI *prop = API_def_float_matrix(
+  ApiProp *prop = api_def_float_matrix(
       ot->api, "matrix", 4, 4, NULL, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
-  API_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 
-  WM_gizmogrouptype_append(MESH_GGT_add_bounds);
+  wm_gizmogrouptype_append(MESH_GGT_add_bounds);
 }
