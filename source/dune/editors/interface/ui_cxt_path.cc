@@ -4,22 +4,22 @@
 
 #include "api_access.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "ui.h"
 #include "ui.hh"
 #include "ui_resources.h"
 
-#include "WM_api.h"
+#include "wm_api.h"
 
 namespace dune::ui {
 
-void ctx_path_add_generic(Vector<ContextPathItem> &path,
+void cxt_path_add_generic(Vector<CxtPathItem> &path,
                               ApiStruct &api_type,
                               void *ptr,
-                              const BIFIconID icon_override)
+                              const BIFIconId icon_override)
 {
-  /* Add the null check here to make calling functions less verbose. */
+  /* Add the null check here to make calling fns less verbose. */
   if (!ptr) {
     return;
   }
@@ -30,17 +30,15 @@ void ctx_path_add_generic(Vector<ContextPathItem> &path,
   api_struct_name_get_alloc(&api_ptr, name, sizeof(name), nullptr);
 
   /* Use a blank icon by default to check whether to retrieve it automatically from the type. */
-  const BIFIconID icon = icon_override == ICON_NONE ?
-                             static_cast<BIFIconID>(api_struct_ui_icon(api_ptr.type)) :
+  const BIFIconId icon = icon_override == ICON_NONE ?
+                             static_cast<BIFIconId>(api_struct_ui_icon(api_ptr.type)) :
                              icon_override;
 
   path.append({name, static_cast<int>(icon)});
 }
 
-/* -------------------------------------------------------------------- */
-/** Breadcrumb Template **/
-
-void template_breadcrumbs(uiLayout &layout, Span<ContextPathItem> context_path)
+/* Breadcrumb Template */
+void template_breadcrumbs(uiLayout &layout, Span<CxtPathItem> cxt_path)
 {
   uiLayout *row = uiLayoutRow(&layout, true);
   uiLayoutSetAlignment(&layout, UI_LAYOUT_ALIGN_LEFT);
@@ -52,7 +50,7 @@ void template_breadcrumbs(uiLayout &layout, Span<ContextPathItem> context_path)
     if (i > 0) {
       uiItemL(sub_row, "", ICON_RIGHTARROW_THIN);
     }
-    uiItemL(sub_row, context_path[i].name.c_str(), context_path[i].icon);
+    uiItemL(sub_row, cxt_path[i].name.c_str(), cxt_path[i].icon);
   }
 }
 
