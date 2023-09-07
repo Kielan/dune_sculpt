@@ -143,8 +143,8 @@ void MESH_OT_primitive_plane_add(wmOpType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   ed_object_add_unit_props_size(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
 static int add_primitive_cube_exec(DuneContext *C, wmOperator *op)
@@ -334,12 +334,12 @@ static int add_primitive_cylinder_ex(Cxt *C, wmOp *op)
                                 api_float_get(op->ptr, "depth"),
                                 creation_data.mat,
                                 calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void MESH_OT_primitive_cylinder_add(wmOpType *ot)
@@ -350,24 +350,24 @@ void MESH_OT_primitive_cylinder_add(wmOpType *ot)
   ot->idname = "MESH_OT_primitive_cylinder_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_cylinder_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_cylinder_exec;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  API_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
-  ED_object_add_unit_props_radius(ot);
-  API_def_float_distance(
+  api_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
+  ed_object_add_unit_props_radius(ot);
+  api_def_float_distance(
       ot->api, "depth", 2.0f, 0.0, OBJECT_ADD_SIZE_MAXF, "Depth", "", 0.001, 100.00);
-  API_def_enum(ot->api, "end_fill_type", fill_type_items, 1, "Cap Fill Type", "");
+  api_def_enum(ot->api, "end_fill_type", fill_type_items, 1, "Cap Fill Type", "");
 
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
-static int add_primitive_cone_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_cone_exec(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -375,25 +375,25 @@ static int add_primitive_cone_exec(DuneContext *C, wmOperator *op)
   float loc[3], rot[3], scale[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const int end_fill_type = API_enum_get(op->ptr, "end_fill_type");
+  const int end_fill_type = api_enum_get(op->ptr, "end_fill_type");
   const bool cap_end = (end_fill_type != 0);
   const bool cap_tri = (end_fill_type == 2);
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, scale, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(I18N_CTX_ID_MESH, "Cone"),
+                          CXT_DATA_(I18N_CTX_ID_MESH, "Cone"),
                           loc,
                           rot,
                           scale,
                           local_view_bits,
                           &creation_data);
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
   if (!EDBM_op_call_and_selectf(em,
@@ -402,23 +402,23 @@ static int add_primitive_cone_exec(DuneContext *C, wmOperator *op)
                                 false,
                                 "create_cone segments=%i radius1=%f radius2=%f cap_ends=%b "
                                 "cap_tris=%b depth=%f matrix=%m4 calc_uvs=%b",
-                                API_int_get(op->ptr, "vertices"),
-                                API_float_get(op->ptr, "radius1"),
-                                API_float_get(op->ptr, "radius2"),
+                                api_int_get(op->ptr, "vertices"),
+                                api_float_get(op->ptr, "radius1"),
+                                api_float_get(op->ptr, "radius2"),
                                 cap_end,
                                 cap_tri,
-                                API_float_get(op->ptr, "depth"),
+                                api_float_get(op->ptr, "depth"),
                                 creation_data.mat,
                                 calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_primitive_cone_add(wmOperatorType *ot)
+void MESH_OT_primitive_cone_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Cone";
@@ -426,24 +426,24 @@ void MESH_OT_primitive_cone_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_cone_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_cone_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_cone_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  API_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
-  API_def_float_distance(
+  api_def_int(ot->api, "vertices", 32, 3, MESH_ADD_VERTS_MAXI, "Vertices", "", 3, 500);
+  api_def_float_distance(
       ot->api, "radius1", 1.0f, 0.0, OBJECT_ADD_SIZE_MAXF, "Radius 1", "", 0.001, 100.00);
-  API_def_float_distance(
+  api_def_float_distance(
       ot->api, "radius2", 0.0f, 0.0, OBJECT_ADD_SIZE_MAXF, "Radius 2", "", 0.0, 100.00);
-  API_def_float_distance(
+  api_def_float_distance(
       ot->api, "depth", 2.0f, 0.0, OBJECT_ADD_SIZE_MAXF, "Depth", "", 0.001, 100.00);
-  API_def_enum(ot->api, "end_fill_type", fill_type_items, 1, "Base Fill Type", "");
+  api_def_enum(ot->api, "end_fill_type", fill_type_items, 1, "Base Fill Type", "");
 
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
 static int add_primitive_grid_exec(DuneContext *C, wmOperator *op)
@@ -454,41 +454,41 @@ static int add_primitive_grid_exec(DuneContext *C, wmOperator *op)
   float loc[3], rot[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, NULL, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(I18N_CTX_ID_MESH, "Grid"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Grid"),
                           loc,
                           rot,
                           NULL,
                           local_view_bits,
                           &creation_data);
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_EDIT_op_call_and_selectf(
+  if (!MESH_EDIT_op_call_and_selectf(
           em,
           op,
           "verts.out",
           false,
           "create_grid x_segments=%i y_segments=%i size=%f matrix=%m4 calc_uvs=%b",
-          API_int_get(op->ptr, "x_subdivisions"),
-          API_int_get(op->ptr, "y_subdivisions"),
-          API_float_get(op->ptr, "size") / 2.0f,
+          api_int_get(op->ptr, "x_subdivisions"),
+          api_int_get(op->ptr, "y_subdivisions"),
+          api_float_get(op->ptr, "size") / 2.0f,
           creation_data.mat,
           calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void MESH_OT_primitive_grid_add(wmOperatorType *ot)
@@ -500,7 +500,7 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
 
   /* api callbacks */
   ot->exec = add_primitive_grid_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -508,14 +508,14 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
   /* props */
   /* Note that if you use MESH_ADD_VERTS_MAXI for both x and y at the same time
    * you will still reach impossible values (10^12 vertices or so...). */
-  API_def_int(
+  api_def_int(
       ot->api, "x_subdivisions", 10, 1, MESH_ADD_VERTS_MAXI, "X Subdivisions", "", 1, 1000);
-  API_def_int(
+  api_def_int(
       ot->api, "y_subdivisions", 10, 1, MESH_ADD_VERTS_MAXI, "Y Subdivisions", "", 1, 1000);
 
-  ED_object_add_unit_props_size(ot);
-  ED_object_add_mesh_props(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_object_add_unit_props_size(ot);
+  ed_object_add_mesh_props(ot);
+  ed_object_add_generic_props(ot, true);
 }
 
 static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
@@ -527,10 +527,10 @@ static int add_primitive_monkey_exec(DuneContext *C, wmOperator *op)
   float dia;
   bool enter_editmode;
   ushort local_view_bits;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Y', loc, rot, NULL, &enter_editmode, &local_view_bits, NULL);
 
   obedit = make_prim_init(C,
