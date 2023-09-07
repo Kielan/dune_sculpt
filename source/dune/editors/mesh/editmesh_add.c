@@ -1,36 +1,36 @@
-#include "LIB_math.h"
-#include "LIB_sys_types.h"
+#include "lib_math.h"
+#include "lib_sys_types.h"
 
-#include "TYPES_object.h"
-#include "TYPES_scene.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "LANG_translation.h"
+#include "lang.h"
 
-#include "DUNE_context.h"
-#include "DUNE_editmesh.h"
+#include "dune_cxt.h"
+#include "dune_editmesh.h"
 
-#include "API_access.h"
-#include "API_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "ED_mesh.h"
-#include "ED_object.h"
-#include "ED_screen.h"
+#include "ed_mesh.h"
+#include "ed_object.h"
+#include "ed_screen.h"
 
 #include "mesh_intern.h" /* own include */
 
 #define MESH_ADD_VERTS_MAXI 10000000
 
-/* ********* add primitive operators ************* */
+/* add primitive operators */
 
 typedef struct MakePrimitiveData {
   float mat[4][4];
   bool was_editmode;
 } MakePrimitiveData;
 
-static Object *make_prim_init(DuneContext *C,
+static Object *make_prim_init(Cxt *C,
                               const char *idname,
                               const float loc[3],
                               const float rot[3],
@@ -38,37 +38,37 @@ static Object *make_prim_init(DuneContext *C,
                               ushort local_view_bits,
                               MakePrimitiveData *r_creation_data)
 {
-  struct Main *duneMain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  Object *obedit = CTX_data_edit_object(C);
+  struct Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  Object *obedit = cxt_data_edit_object(C);
 
   r_creation_data->was_editmode = false;
   if (obedit == NULL || obedit->type != OB_MESH) {
-    obedit = ED_object_add_type(C, OB_MESH, idname, loc, rot, false, local_view_bits);
-    ED_object_editmode_enter_ex(duneMain, scene, obedit, 0);
+    obedit = ed_object_add_type(C, OB_MESH, idname, loc, rot, false, local_view_bits);
+    ed_object_editmode_enter_ex(main, scene, obedit, 0);
 
     r_creation_data->was_editmode = true;
   }
 
-  ED_object_new_primitive_matrix(C, obedit, loc, rot, scale, r_creation_data->mat);
+  ed_object_new_primitive_matrix(C, obedit, loc, rot, scale, r_creation_data->mat);
 
   return obedit;
 }
 
-static void make_prim_finish(DuneContext *C,
+static void make_prim_finish(Cxt *C,
                              Object *obedit,
                              const MakePrimitiveData *creation_data,
                              int enter_editmode)
 {
-  DuneMeshEdit *dme = DUNE_editmesh_from_object(obedit);
+  DuneMeshEdit *dme = dune_editmesh_from_object(obedit);
   const bool exit_editmode = ((creation_data->was_editmode == true) && (enter_editmode == false));
 
   /* Primitive has all verts selected, use vert select flush
    * to push this up to edges & faces. */
-  MESHEDIT_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
+  meshedit_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
 
   /* only recalc editmode tessface if we are staying in editmode */
-  MESHEDIT_update(obedit->data,
+  meshedit_update(obedit->data,
               &(const struct EDBMUpdate_Params){
                   .calc_looptri = !exit_editmode,
                   .calc_normals = false,
@@ -77,12 +77,12 @@ static void make_prim_finish(DuneContext *C,
 
   /* userdef */
   if (exit_editmode) {
-    ED_object_editmode_exit_ex(CTX_data_main(C), CTX_data_scene(C), obedit, EM_FREEDATA);
+    ed_object_editmode_exit_ex(cxt_data_main(C), cxt_data_scene(C), obedit, EM_FREEDATA);
   }
-  WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, obedit);
+  wm_event_add_notifier(C, NC_OBJECT | ND_DRAW, obedit);
 }
 
-static int add_primitive_plane_exec(DuneContext *C, wmOperator *op)
+static int add_primitive_plane_exec(Cxt *C, wmOp *op)
 {
   MakePrimitiveData creation_data;
   Object *obedit;
@@ -90,26 +90,26 @@ static int add_primitive_plane_exec(DuneContext *C, wmOperator *op)
   float loc[3], rot[3];
   bool enter_editmode;
   ushort local_view_bits;
-  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = api_bool_get(op->ptr, "calc_uvs");
 
-  WM_operator_view3d_unit_defaults(C, op);
-  ED_object_add_generic_get_opts(
+  wm_op_view3d_unit_defaults(C, op);
+  ed_object_add_generic_get_opts(
       C, op, 'Z', loc, rot, NULL, &enter_editmode, &local_view_bits, NULL);
   obedit = make_prim_init(C,
-                          CTX_DATA_(BLT_I18NCONTEXT_ID_MESH, "Plane"),
+                          CXT_DATA_(LANG_CXT_ID_MESH, "Plane"),
                           loc,
                           rot,
                           NULL,
                           local_view_bits,
                           &creation_data);
 
-  em = DUNE_editmesh_from_object(obedit);
+  em = dune_editmesh_from_object(obedit);
 
   if (calc_uvs) {
-    ED_mesh_uv_texture_ensure(obedit->data, NULL);
+    ed_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!DMESH_EDIT_op_call_and_selectf(
+  if (!MESH_EDIT_op_call_and_selectf(
           em,
           op,
           "verts.out",
@@ -117,18 +117,18 @@ static int add_primitive_plane_exec(DuneContext *C, wmOperator *op)
           "create_grid x_segments=%i y_segments=%i size=%f matrix=%m4 calc_uvs=%b",
           0,
           0,
-          API_float_get(op->ptr, "size") / 2.0f,
+          api_float_get(op->ptr, "size") / 2.0f,
           creation_data.mat,
           calc_uvs)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   make_prim_finish(C, obedit, &creation_data, enter_editmode);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void MESH_OT_primitive_plane_add(wmOperatorType *ot)
+void MESH_OT_primitive_plane_add(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Plane";
@@ -136,13 +136,13 @@ void MESH_OT_primitive_plane_add(wmOperatorType *ot)
   ot->idname = "MESH_OT_primitive_plane_add";
 
   /* api callbacks */
-  ot->exec = add_primitive_plane_exec;
-  ot->poll = ED_operator_scene_editable;
+  ot->ex = add_primitive_plane_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_unit_props_size(ot);
+  ed_object_add_unit_props_size(ot);
   ED_object_add_mesh_props(ot);
   ED_object_add_generic_props(ot, true);
 }
