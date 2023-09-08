@@ -130,8 +130,7 @@ static void format_draw_color(const TextDrawContext *tdc, char formatchar)
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Draw Text
+/* Draw Text
  *
  * Notes on Word-Wrap
  * ==================
@@ -159,9 +158,7 @@ static void format_draw_color(const TextDrawContext *tdc, char formatchar)
  *             draw_end = pos+1
  *         pos += 1
  *     print line[draw_start:]
- * \encode
- *
- * \{ */
+ */
 
 int wrap_width(const SpaceText *st, ARegion *region)
 {
@@ -216,7 +213,7 @@ void wrap_offset(
   }
 
   max = wrap_width(st, region);
-  cursin = BLI_str_utf8_offset_to_column(linein->line, cursin);
+  cursin = lib_str_utf8_offset_to_column(linein->line, cursin);
 
   while (linep) {
     start = 0;
@@ -298,10 +295,10 @@ void wrap_offset_in_line(
   end = max;
   chop = 1;
   *offc = 0;
-  cursin = BLI_str_utf8_offset_to_column(linein->line, cursin);
+  cursin = lib_str_utf8_offset_to_column(linein->line, cursin);
 
   for (i = 0, j = 0; linein->line[j]; j += BLI_str_utf8_size_safe(linein->line + j)) {
-    int columns = BLI_str_utf8_char_width_safe(linein->line + j); /* = 1 for tab */
+    int columns = lib_str_utf8_char_width_safe(linein->line + j); /* = 1 for tab */
 
     /* Mimic replacement of tabs */
     ch = linein->line[j];
@@ -352,7 +349,7 @@ int text_get_char_pos(const SpaceText *st, const char *line, int cur)
 {
   int a = 0, i;
 
-  for (i = 0; i < cur && line[i]; i += BLI_str_utf8_size_safe(line + i)) {
+  for (i = 0; i < cur && line[i]; i += lib_str_utf8_size_safe(line + i)) {
     if (line[i] == '\t') {
       a += st->tabnumber - a % st->tabnumber;
     }
@@ -368,12 +365,12 @@ static const char *txt_utf8_forward_columns(const char *str, int columns, int *p
   int col;
   const char *p = str;
   while (*p) {
-    col = BLI_str_utf8_char_width(p);
+    col = lib_str_utf8_char_width(p);
     if (columns - col < 0) {
       break;
     }
     columns -= col;
-    p += BLI_str_utf8_size_safe(p);
+    p += lib_str_utf8_size_safe(p);
     if (columns == 0) {
       break;
     }
@@ -385,7 +382,7 @@ static const char *txt_utf8_forward_columns(const char *str, int columns, int *p
 }
 
 static int text_draw_wrapped(const SpaceText *st,
-                             const TextDrawContext *tdc,
+                             const TextDrawCxt *tdc,
                              const char *str,
                              int x,
                              int y,
@@ -419,14 +416,14 @@ static int text_draw_wrapped(const SpaceText *st,
   end = wrap = max - padding;
 
   for (i = 0, mi = 0; str[mi]; i += columns, mi += BLI_str_utf8_size_safe(str + mi)) {
-    columns = BLI_str_utf8_char_width_safe(str + mi);
+    columns = lib_str_utf8_char_width_safe(str + mi);
     if (i + columns > end) {
       /* skip hidden part of line */
       if (skip) {
         skip--;
         if (use_syntax) {
           /* currently fpos only used when formatting */
-          fpos += BLI_strnlen_utf8(str + mstart, mend - mstart);
+          fpos += lib_strnlen_utf8(str + mstart, mend - mstart);
         }
         fstart = fpos;
         mstart = mend;
@@ -442,7 +439,7 @@ static int text_draw_wrapped(const SpaceText *st,
             format_draw_color(tdc, fmt_prev = format[a]);
           }
         }
-        const int c_len = BLI_str_utf8_size_safe(str + ma);
+        const int c_len = lib_str_utf8_size_safe(str + ma);
         x += text_font_draw_character_utf8(tdc, x, y, str + ma, c_len);
         ma += c_len;
         fpos++;
@@ -473,7 +470,7 @@ static int text_draw_wrapped(const SpaceText *st,
       }
     }
 
-    const int c_len = BLI_str_utf8_size_safe(str + ma);
+    const int c_len = lib_str_utf8_size_safe(str + ma);
     x += text_font_draw_character_utf8(tdc, x, y, str + ma, c_len);
     ma += c_len;
   }
@@ -484,7 +481,7 @@ static int text_draw_wrapped(const SpaceText *st,
 }
 
 static void text_draw(const SpaceText *st,
-                      const TextDrawContext *tdc,
+                      const TextDrawCxt *tdc,
                       char *str,
                       int cshift,
                       int maxwidth,
@@ -547,11 +544,8 @@ static void text_draw(const SpaceText *st,
   flatten_string_free(&fs);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cache Utilities
- * \{ */
+/* Cache Utilities */
 
 struct DrawCache {
   int *line_height;
