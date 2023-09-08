@@ -1,34 +1,31 @@
 #include <cctype>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_text_types.h"
+#include "types_text_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
 
-#include "BKE_context.h"
-#include "BKE_screen.h"
-#include "BKE_text.h"
-#include "BKE_text_suggestions.h"
+#include "dune_cxt.h"
+#include "dune_screen.h"
+#include "dune_text.h"
+#include "dune_text_suggestions.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "wm_api.hh"
+#include "wm_types.hh"
 
-#include "ED_screen.hh"
-#include "ED_text.hh"
-#include "ED_undo.hh"
+#include "ed_screen.hh"
+#include "ed_text.hh"
+#include "ed_undo.hh"
 
-#include "UI_interface.hh"
+#include "ui_interface.hh"
 
 #include "text_format.hh"
 #include "text_intern.hh" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Public API
- * \{ */
-
+/* Public API */
 bool text_do_suggest_select(SpaceText *st, ARegion *region, const int mval[2])
 {
   const int lheight = TXT_LINE_HEIGHT(st);
@@ -115,13 +112,8 @@ void text_pop_suggest_list()
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Private API
- * \{ */
-
-static void text_autocomplete_free(bContext *C, wmOperator *op);
+/* Private API */
+static void text_autocomplete_free(Cxt *C, wmOp *op);
 
 static GHash *text_autocomplete_build(Text *text)
 {
@@ -134,16 +126,16 @@ static GHash *text_autocomplete_build(Text *text)
 
   /* first get the word we're at */
   {
-    const int i = text_find_identifier_start(text->curl->line, text->curc);
+    const int i = text_find_id_start(text->curl->line, text->curc);
     seek_len = text->curc - i;
     seek = text->curl->line + i;
 
-    // BLI_strncpy(seek, seek_ptr, seek_len);
+    // lib_strncpy(seek, seek_ptr, seek_len);
   }
 
   /* now walk over entire doc and suggest words */
   {
-    gh = BLI_ghash_str_new(__func__);
+    gh = lib_ghash_str_new(__func__);
 
     LISTBASE_FOREACH (TextLine *, linep, &text->lines) {
       size_t i_start = 0;
