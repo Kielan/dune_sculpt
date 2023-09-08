@@ -7,8 +7,8 @@ struct ScrArea;
 struct SpaceText;
 struct Text;
 struct TextLine;
-struct bContext;
-struct wmOperatorType;
+struct Cxt;
+struct wmOpType;
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,9 +21,7 @@ void draw_text_main(SpaceText *st, ARegion *region);
 void text_update_line_edited(TextLine *line);
 void text_update_edited(Text *text);
 void text_update_character_width(SpaceText *st);
-/**
- * Takes an area instead of a region, use for listeners.
- */
+/* Takes an area instead of a region, use for listeners */
 void text_scroll_to_cursor__area(SpaceText *st, ScrArea *area, bool center);
 void text_update_cursor_moved(bContext *C);
 
@@ -102,21 +100,21 @@ void TEXT_OT_open(wmOperatorType *ot);
 void TEXT_OT_reload(wmOperatorType *ot);
 void TEXT_OT_unlink(wmOperatorType *ot);
 void TEXT_OT_save(wmOperatorType *ot);
-void TEXT_OT_save_as(wmOperatorType *ot);
-void TEXT_OT_make_internal(wmOperatorType *ot);
-void TEXT_OT_run_script(wmOperatorType *ot);
-void TEXT_OT_refresh_pyconstraints(wmOperatorType *ot);
+void TEXT_OT_save_as(wmOpType *ot);
+void TEXT_OT_make_internal(wmOpType *ot);
+void TEXT_OT_run_script(wmOpType *ot);
+void TEXT_OT_refresh_pyconstraints(wmOpType *ot);
 
-void TEXT_OT_paste(wmOperatorType *ot);
-void TEXT_OT_copy(wmOperatorType *ot);
-void TEXT_OT_cut(wmOperatorType *ot);
-void TEXT_OT_duplicate_line(wmOperatorType *ot);
+void TEXT_OT_paste(wmOpType *ot);
+void TEXT_OT_copy(wmOpType *ot);
+void TEXT_OT_cut(wmOpType *ot);
+void TEXT_OT_duplicate_line(wmOpType *ot);
 
-void TEXT_OT_convert_whitespace(wmOperatorType *ot);
-void TEXT_OT_comment_toggle(wmOperatorType *ot);
-void TEXT_OT_unindent(wmOperatorType *ot);
-void TEXT_OT_indent(wmOperatorType *ot);
-void TEXT_OT_indent_or_autocomplete(wmOperatorType *ot);
+void TEXT_OT_convert_whitespace(wmOpType *ot);
+void TEXT_OT_comment_toggle(wmOpType *ot);
+void TEXT_OT_unindent(wmOpType *ot);
+void TEXT_OT_indent(wmOpType *ot);
+void TEXT_OT_indent_or_autocomplete(wmOpType *ot);
 
 void TEXT_OT_line_break(wmOperatorType *ot);
 void TEXT_OT_insert(wmOperatorType *ot);
@@ -143,21 +141,21 @@ void TEXT_OT_line_number(wmOperatorType *ot);
 void TEXT_OT_find(wmOperatorType *ot);
 void TEXT_OT_find_set_selected(wmOperatorType *ot);
 void TEXT_OT_replace(wmOperatorType *ot);
-void TEXT_OT_replace_set_selected(wmOperatorType *ot);
-void TEXT_OT_jump_to_file_at_point_internal(wmOperatorType *ot);
+void TEXT_OT_replace_set_selected(wmOpType *ot);
+void TEXT_OT_jump_to_file_at_point_internal(wmOpType *ot);
 
 /* text_find = open properties, activate search button */
-void TEXT_OT_start_find(wmOperatorType *ot);
+void TEXT_OT_start_find(wmOpType *ot);
 
-void TEXT_OT_to_3d_object(wmOperatorType *ot);
+void TEXT_OT_to_3d_object(wmOpType *ot);
 
-void TEXT_OT_resolve_conflict(wmOperatorType *ot);
+void TEXT_OT_resolve_conflict(wmOpType *ot);
 
-bool text_space_edit_poll(bContext *C);
+bool text_space_edit_poll(Cxt *C);
 
 /* `text_autocomplete.cc` */
 
-void TEXT_OT_autocomplete(wmOperatorType *ot);
+void TEXT_OT_autocomplete(wmOpType *ot);
 
 /* `space_text.cc` */
 
