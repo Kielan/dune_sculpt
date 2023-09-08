@@ -1,19 +1,17 @@
 #include <cstring>
 
-#include "BLI_blenlib.h"
+#include "lib_dune.h"
 
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "BKE_text.h"
+#include "dune_text.h"
 
 #include "text_format.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Local Literal Definitions
- * \{ */
+/* Local Literal Definitions */
 
-/** Language Directives */
+/* Language Directives */
 static const char *text_format_pov_literals_keyword_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -56,10 +54,9 @@ static const Span<const char *> text_format_pov_literals_keyword(
 
 /* POV-Ray Built-in Variables
  * list is from...
- * http://www.povray.org/documentation/view/3.7.0/212/
- */
+ * http://www.povray.org/documentation/view/3.7.0/212/ */
 
-/** Float Functions */
+/* Float Functions */
 static const char *text_format_pov_literals_reserved_data[]{
     /* Force single column, sorted list. */
     /* clang-format on */
@@ -425,11 +422,9 @@ static const char *text_format_pov_literals_builtins_data[]{
 static const Span<const char *> text_format_pov_literals_builtins(
     text_format_pov_literals_builtins_data, ARRAY_SIZE(text_format_pov_literals_builtins_data));
 
-/**
- * POV modifiers.
+/* POV modifiers.
  * See:
- * http://www.povray.org/documentation/view/3.7.0/212/
- */
+ * http://www.povray.org/documentation/view/3.7.0/212 */
 static const char *text_format_pov_literals_specialvar_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -675,14 +670,10 @@ static const char *text_format_pov_literals_bool_data[]{
 static const Span<const char *> text_format_pov_literals_bool(
     text_format_pov_literals_bool_data, ARRAY_SIZE(text_format_pov_literals_bool_data));
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Local Functions (for #TextFormatType::format_line)
- * \{ */
+/** \name Local Functions (for #TextFormatType::format_line) */
 
-/**
- * POV keyword (minus boolean & 'nil').
+/* POV keyword (minus boolean & 'nil').
  * See:
  * http://www.povray.org/documentation/view/3.7.0/212/
  */
@@ -745,13 +736,10 @@ static char txtfmt_pov_format_identifier(const char *str)
   /* clang-format on */
 
   return fmt;
-}
 
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Format Line Implementation (#TextFormatType::format_line)
- * \{ */
+/* Format Line Implementation (#TextFormatType::format_line) */
 
 static void txtfmt_pov_format_line(SpaceText *st, TextLine *line, const bool do_next)
 {
@@ -765,7 +753,7 @@ static void txtfmt_pov_format_line(SpaceText *st, TextLine *line, const bool do_
   if (line->prev && line->prev->format != nullptr) {
     fmt = line->prev->format;
     cont = fmt[strlen(fmt) + 1]; /* Just after the null-terminator */
-    BLI_assert((FMT_CONT_ALL & cont) == cont);
+    lib_assert((FMT_CONT_ALL & cont) == cont);
   }
   else {
     cont = FMT_CONT_NOP;
@@ -775,7 +763,7 @@ static void txtfmt_pov_format_line(SpaceText *st, TextLine *line, const bool do_
   if (line->format != nullptr) {
     fmt = line->format;
     cont_orig = fmt[strlen(fmt) + 1]; /* Just after the null-terminator */
-    BLI_assert((FMT_CONT_ALL & cont_orig) == cont_orig);
+    lib_assert((FMT_CONT_ALL & cont_orig) == cont_orig);
   }
   else {
     cont_orig = 0xFF;
@@ -898,7 +886,7 @@ static void txtfmt_pov_format_line(SpaceText *st, TextLine *line, const bool do_
           text_format_fill_ascii(&str, &fmt, prev, i);
         }
         else {
-          str += BLI_str_utf8_size_safe(str) - 1;
+          str += lib_str_utf8_size_safe(str) - 1;
           *fmt = FMT_TYPE_DEFAULT;
         }
       }
@@ -922,8 +910,7 @@ static void txtfmt_pov_format_line(SpaceText *st, TextLine *line, const bool do_
 }
 
 /* Registration */
-
-void ED_text_format_register_pov()
+void ed_text_format_register_pov()
 {
   static TextFormatType tft = {nullptr};
   static const char *ext[] = {"pov", "inc", "mcr", "mac", nullptr};
@@ -933,11 +920,11 @@ void ED_text_format_register_pov()
   tft.ext = ext;
   tft.comment_line = "//";
 
-  ED_text_format_register(&tft);
+  ed_text_format_register(&tft);
 
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_keyword));
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_reserved));
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_builtins));
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_specialvar));
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_bool));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_keyword));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_reserved));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_builtins));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_specialvar));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_literals_bool));
 }
