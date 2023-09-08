@@ -1,18 +1,18 @@
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_string_utils.h"
+#include "lib_dune.h"
+#include "lib_string_utils.h"
 
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "ED_text.hh"
+#include "ed_text.hh"
 
 #include "text_format.hh"
 
-/****************** flatten string **********************/
+/* flatten string **********************/
 
 static void flatten_string_append(FlattenString *fs, const char *c, int accum, int len)
 {
@@ -30,8 +30,8 @@ static void flatten_string_append(FlattenString *fs, const char *c, int accum, i
     memcpy(naccum, fs->accum, sizeof(*fs->accum) * fs->pos);
 
     if (fs->buf != fs->fixedbuf) {
-      MEM_freeN(fs->buf);
-      MEM_freeN(fs->accum);
+      mem_freen(fs->buf);
+      mem_freen(fs->accum);
     }
 
     fs->buf = nbuf;
@@ -67,7 +67,7 @@ int flatten_string(const SpaceText *st, FlattenString *fs, const char *in)
       in++;
     }
     else {
-      size_t len = BLI_str_utf8_size_safe(in);
+      size_t len = lib_str_utf8_size_safe(in);
       flatten_string_append(fs, in, r, len);
       in += len;
       total++;
@@ -82,17 +82,17 @@ int flatten_string(const SpaceText *st, FlattenString *fs, const char *in)
 void flatten_string_free(FlattenString *fs)
 {
   if (fs->buf != fs->fixedbuf) {
-    MEM_freeN(fs->buf);
+    mem_freen(fs->buf);
   }
   if (fs->accum != fs->fixedaccum) {
-    MEM_freeN(fs->accum);
+    mem_freen(fs->accum);
   }
 }
 
 int flatten_string_strlen(FlattenString *fs, const char *str)
 {
   const int len = (fs->pos - int(str - fs->buf)) - 1;
-  BLI_assert(strlen(str) == len);
+  lib_assert(strlen(str) == len);
   return len;
 }
 
@@ -100,15 +100,15 @@ int text_check_format_len(TextLine *line, uint len)
 {
   if (line->format) {
     if (strlen(line->format) < len) {
-      MEM_freeN(line->format);
-      line->format = static_cast<char *>(MEM_mallocN(len + 2, "SyntaxFormat"));
+      mem_freen(line->format);
+      line->format = static_cast<char *>(mem_mallocn(len + 2, "SyntaxFormat"));
       if (!line->format) {
         return 0;
       }
     }
   }
   else {
-    line->format = static_cast<char *>(MEM_mallocN(len + 2, "SyntaxFormat"));
+    line->format = static_cast<char *>(mem_mallocn(len + 2, "SyntaxFormat"));
     if (!line->format) {
       return 0;
     }
@@ -124,7 +124,7 @@ void text_format_fill(const char **str_p, char **fmt_p, const char type, const i
   int i = 0;
 
   while (i < len) {
-    const int size = BLI_str_utf8_size_safe(str);
+    const int size = lib_str_utf8_size_safe(str);
     *fmt++ = type;
 
     str += size;
@@ -134,7 +134,7 @@ void text_format_fill(const char **str_p, char **fmt_p, const char type, const i
   str--;
   fmt--;
 
-  BLI_assert(*str != '\0');
+  lib_assert(*str != '\0');
 
   *str_p = str;
   *fmt_p = fmt;
@@ -149,32 +149,32 @@ void text_format_fill_ascii(const char **str_p, char **fmt_p, const char type, c
   str += len - 1;
   fmt += len - 1;
 
-  BLI_assert(*str != '\0');
+  lib_assert(*str != '\0');
 
   *str_p = str;
   *fmt_p = fmt;
 }
 
 /* *** Registration *** */
-static ListBase tft_lb = {nullptr, nullptr};
-void ED_text_format_register(TextFormatType *tft)
+static List tft_lb = {nullptr, nullptr};
+void ed_text_format_register(TextFormatType *tft)
 {
-  BLI_addtail(&tft_lb, tft);
+  lib_addtail(&tft_lb, tft);
 }
 
-TextFormatType *ED_text_format_get(Text *text)
+TextFormatType *ed_text_format_get(Text *text)
 {
   if (text) {
     const char *text_ext = strchr(text->id.name + 2, '.');
     if (text_ext) {
       text_ext++; /* skip the '.' */
       /* Check all text formats in the static list */
-      LISTBASE_FOREACH (TextFormatType *, tft, &tft_lb) {
+      LIST_FOREACH (TextFormatType *, tft, &tft_lb) {
         /* All formats should have an ext, but just in case */
         const char **ext;
         for (ext = tft->ext; *ext; ext++) {
           /* If extension matches text name, return the matching tft */
-          if (BLI_strcasecmp(text_ext, *ext) == 0) {
+          if (lib_strcasecmp(text_ext, *ext) == 0) {
             return tft;
           }
         }
@@ -190,36 +190,36 @@ TextFormatType *ED_text_format_get(Text *text)
   return static_cast<TextFormatType *>(tft_lb.first);
 }
 
-const char *ED_text_format_comment_line_prefix(Text *text)
+const char *ed_text_format_comment_line_prefix(Text *text)
 {
-  const TextFormatType *format = ED_text_format_get(text);
+  const TextFormatType *format = ed_text_format_get(text);
   return format->comment_line;
 }
 
-bool ED_text_is_syntax_highlight_supported(Text *text)
+bool ed_text_is_syntax_highlight_supported(Text *text)
 {
   if (text == nullptr) {
     return false;
   }
 
-  const char *text_ext = BLI_path_extension(text->id.name + 2);
+  const char *text_ext = lib_path_extension(text->id.name + 2);
   if (text_ext == nullptr) {
     /* Extensionless data-blocks are considered highlightable as Python. */
     return true;
   }
   text_ext++; /* skip the '.' */
-  if (BLI_string_is_decimal(text_ext)) {
+  if (lib_string_is_decimal(text_ext)) {
     /* "Text.001" is treated as extensionless, and thus highlightable. */
     return true;
   }
 
   /* Check all text formats in the static list */
-  LISTBASE_FOREACH (TextFormatType *, tft, &tft_lb) {
+  LIST_FOREACH (TextFormatType *, tft, &tft_lb) {
     /* All formats should have an ext, but just in case */
     const char **ext;
     for (ext = tft->ext; *ext; ext++) {
       /* If extension matches text name, return the matching tft */
-      if (BLI_strcasecmp(text_ext, *ext) == 0) {
+      if (lib_strcasecmp(text_ext, *ext) == 0) {
         return true;
       }
     }
