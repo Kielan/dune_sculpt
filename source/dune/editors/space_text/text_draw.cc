@@ -1,55 +1,52 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "BLI_blenlib.h"
+#include "lib_dune.h"
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "BKE_context.h"
-#include "BKE_screen.h"
-#include "BKE_text.h"
-#include "BKE_text_suggestions.h"
+#include "dune_cxt.h"
+#include "dune_screen.h"
+#include "dune_text.h"
+#include "dune_text_suggestions.h"
 
-#include "ED_text.hh"
+#include "ed_text.hh"
 
-#include "GPU_immediate.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_state.h"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
 #include "text_format.hh"
 #include "text_intern.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "wm_api.hh"
+#include "wm_types.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Text Font Drawing
- * \{ */
-
-struct TextDrawContext {
+/* Text Font Drawing */
+struct TextDrawCxt {
   int font_id;
   int cwidth_px;
   int lheight_px;
   bool syntax_highlight;
 };
 
-static void text_draw_context_init(const SpaceText *st, TextDrawContext *tdc)
+static void text_draw_cxt_init(const SpaceText *st, TextDrawCxt *tdc)
 {
-  tdc->font_id = blf_mono_font;
+  tdc->font_id = font_mono_font;
   tdc->cwidth_px = 0;
   tdc->lheight_px = st->runtime.lheight_px;
-  tdc->syntax_highlight = st->showsyntax && ED_text_is_syntax_highlight_supported(st->text);
+  tdc->syntax_highlight = st->showsyntax && ed_text_is_syntax_highlight_supported(st->text);
 }
 
-static void text_font_begin(const TextDrawContext *tdc)
+static void text_font_begin(const TextDrawCxt *tdc)
 {
-  BLF_size(tdc->font_id, float(tdc->lheight_px));
+  font_size(tdc->font_id, float(tdc->lheight_px));
 }
 
 static void text_font_end(const TextDrawContext * /*tdc*/) {}
@@ -71,11 +68,11 @@ static int text_font_draw_character(const TextDrawContext *tdc, int x, int y, ch
 }
 
 static int text_font_draw_character_utf8(
-    const TextDrawContext *tdc, int x, int y, const char *c, const int c_len)
+    const TextDrawCxt *tdc, int x, int y, const char *c, const int c_len)
 {
-  BLI_assert(c_len == BLI_str_utf8_size_safe(c));
-  BLF_position(tdc->font_id, x, y, 0);
-  const int columns = BLF_draw_mono(tdc->font_id, c, c_len, tdc->cwidth_px);
+  lib_assert(c_len == lib_str_utf8_size_safe(c));
+  font_position(tdc->font_id, x, y, 0);
+  const int columns = font_draw_mono(tdc->font_id, c, c_len, tdc->cwidth_px);
 
   return tdc->cwidth_px * columns;
 }
@@ -103,25 +100,25 @@ static void format_draw_color(const TextDrawContext *tdc, char formatchar)
     case FMT_TYPE_WHITESPACE:
       break;
     case FMT_TYPE_SYMBOL:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_S);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_S);
       break;
     case FMT_TYPE_COMMENT:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_C);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_C);
       break;
     case FMT_TYPE_NUMERAL:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_N);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_N);
       break;
     case FMT_TYPE_STRING:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_L);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_L);
       break;
     case FMT_TYPE_DIRECTIVE:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_D);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_D);
       break;
     case FMT_TYPE_SPECIAL:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_V);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_V);
       break;
     case FMT_TYPE_RESERVED:
-      UI_FontThemeColor(tdc->font_id, TH_SYNTAX_R);
+      ui_FontThemeColor(tdc->font_id, TH_SYNTAX_R);
       break;
     case FMT_TYPE_KEYWORD:
       UI_FontThemeColor(tdc->font_id, TH_SYNTAX_B);
@@ -132,8 +129,6 @@ static void format_draw_color(const TextDrawContext *tdc, char formatchar)
       break;
   }
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Draw Text
