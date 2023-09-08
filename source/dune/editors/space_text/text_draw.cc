@@ -49,20 +49,20 @@ static void text_font_begin(const TextDrawCxt *tdc)
   font_size(tdc->font_id, float(tdc->lheight_px));
 }
 
-static void text_font_end(const TextDrawContext * /*tdc*/) {}
+static void text_font_end(const TextDrawCxt * /*tdc*/) {}
 
-static int text_font_draw(const TextDrawContext *tdc, int x, int y, const char *str)
+static int text_font_draw(const TextDrawCxt *tdc, int x, int y, const char *str)
 {
-  BLF_position(tdc->font_id, x, y, 0);
-  const int columns = BLF_draw_mono(tdc->font_id, str, BLF_DRAW_STR_DUMMY_MAX, tdc->cwidth_px);
+  font_position(tdc->font_id, x, y, 0);
+  const int columns = font_draw_mono(tdc->font_id, str, BLF_DRAW_STR_DUMMY_MAX, tdc->cwidth_px);
 
   return tdc->cwidth_px * columns;
 }
 
-static int text_font_draw_character(const TextDrawContext *tdc, int x, int y, char c)
+static int text_font_draw_character(const TextDrawCxt *tdc, int x, int y, char c)
 {
-  BLF_position(tdc->font_id, x, y, 0);
-  BLF_draw_mono(tdc->font_id, &c, 1, tdc->cwidth_px);
+  font_position(tdc->font_id, x, y, 0);
+  font_draw_mono(tdc->font_id, &c, 1, tdc->cwidth_px);
 
   return tdc->cwidth_px;
 }
@@ -94,7 +94,7 @@ static void txt_format_text(SpaceText *st)
 #endif
 
 /* Sets the current drawing color based on the format character specified */
-static void format_draw_color(const TextDrawContext *tdc, char formatchar)
+static void format_draw_color(const TextDrawCxt *tdc, char formatchar)
 {
   switch (formatchar) {
     case FMT_TYPE_WHITESPACE:
@@ -354,7 +354,7 @@ int text_get_char_pos(const SpaceText *st, const char *line, int cur)
       a += st->tabnumber - a % st->tabnumber;
     }
     else {
-      a += BLI_str_utf8_char_width_safe(line + i);
+      a += lib_str_utf8_char_width_safe(line + i);
     }
   }
   return a;
@@ -495,8 +495,8 @@ static void text_draw(const SpaceText *st,
   const char *in = nullptr;
 
   for (n = flatten_string(st, &fs, str), str = fs.buf; n > 0; n--) {
-    columns = BLI_str_utf8_char_width_safe(str);
-    size = BLI_str_utf8_size_safe(str);
+    columns = lib_str_utf8_char_width_safe(str);
+    size = lib_str_utf8_size_safe(str);
 
     if (!in) {
       if (w >= cshift) {
@@ -544,9 +544,7 @@ static void text_draw(const SpaceText *st,
   flatten_string_free(&fs);
 }
 
-/* -------------------------------------------------------------------- */
 /* Cache Utilities */
-
 struct DrawCache {
   int *line_height;
   int total_lines, nlines;
@@ -565,7 +563,7 @@ struct DrawCache {
 static void text_drawcache_init(SpaceText *st)
 {
   DrawCache *drawcache = static_cast<DrawCache *>(
-      MEM_callocN(sizeof(DrawCache), "text draw cache"));
+    mem_callocn(sizeof(DrawCache), "text draw cache"));
 
   drawcache->winx = -1;
   drawcache->nlines = BLI_listbase_count(&st->text->lines);
@@ -619,14 +617,14 @@ static void text_update_drawcache(SpaceText *st, ARegion *region)
       int lineno = 0, size, lines_count;
       int *fp = drawcache->line_height, *new_tail, *old_tail;
 
-      nlines = BLI_listbase_count(&txt->lines);
+      nlines = lib_list_count(&txt->lines);
       size = sizeof(int) * nlines;
 
       if (fp) {
-        fp = static_cast<int *>(MEM_reallocN(fp, size));
+        fp = static_cast<int *>(mem_reallocn(fp, size));
       }
       else {
-        fp = static_cast<int *>(MEM_callocN(size, "text drawcache line_height"));
+        fp = static_cast<int *>(mem_callocn(size, "text drawcache line_height"));
       }
 
       drawcache->valid_tail = drawcache->valid_head = 0;
@@ -666,7 +664,7 @@ static void text_update_drawcache(SpaceText *st, ARegion *region)
     MEM_SAFE_FREE(drawcache->line_height);
 
     if (full_update || drawcache->update_flag) {
-      nlines = BLI_listbase_count(&txt->lines);
+      nlines = lib_list_count(&txt->lines);
 
       if (st->showlinenrs) {
         st->runtime.line_number_display_digits = integer_digits_i(nlines);
@@ -712,8 +710,8 @@ void text_drawcache_tag_update(SpaceText *st, const bool full)
     }
 
     if (!full) {
-      int sellno = BLI_findindex(&txt->lines, txt->sell);
-      int curlno = BLI_findindex(&txt->lines, txt->curl);
+      int sellno = lib_findindex(&txt->lines, txt->sell);
+      int curlno = lib_findindex(&txt->lines, txt->curl);
 
       if (curlno < sellno) {
         drawcache->valid_head = curlno;
@@ -756,11 +754,7 @@ void text_free_caches(SpaceText *st)
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Word-Wrap Utilities
- * \{ */
+/* Word-Wrap Utilities */
 
 /* cache should be updated in caller */
 static int text_get_visible_lines_no(const SpaceText *st, int lineno)
@@ -839,11 +833,8 @@ int text_get_total_lines(SpaceText *st, ARegion *region)
   return drawcache->total_lines;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Draw Scroll-Bar
- * \{ */
+/* Draw Scroll-Bar */
 
 static void calc_text_rcts(SpaceText *st, ARegion *region, rcti *scroll, rcti *back)
 {
@@ -973,13 +964,13 @@ static void calc_text_rcts(SpaceText *st, ARegion *region, rcti *scroll, rcti *b
 
 static void draw_textscroll(const SpaceText *st, rcti *scroll, rcti *back)
 {
-  bTheme *btheme = UI_GetTheme();
-  uiWidgetColors wcol = btheme->tui.wcol_scroll;
+  Theme *theme = UI_GetTheme();
+  uiWidgetColors wcol = theme->tui.wcol_scroll;
   float col[4];
   float rad;
 
   /* Background so highlights don't go behind the scroll-bar. */
-  uint pos = GPU_vertformat_attr_add(
+  uint pos = gpu_vertformat_attr_add(
       immVertexFormat(), "pos", GPU_COMP_I32, 2, GPU_FETCH_INT_TO_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
   immUniformThemeColor(TH_BACK);
@@ -992,8 +983,8 @@ static void draw_textscroll(const SpaceText *st, rcti *scroll, rcti *back)
                         (st->flags & ST_SCROLL_SELECT) ? UI_SCROLL_PRESSED : 0);
 
   UI_draw_roundbox_corner_set(UI_CNR_ALL);
-  rad = 0.4f * min_ii(BLI_rcti_size_x(&st->runtime.scroll_region_select),
-                      BLI_rcti_size_y(&st->runtime.scroll_region_select));
+  rad = 0.4f * min_ii(lib_rcti_size_x(&st->runtime.scroll_region_select),
+                      lib_rcti_size_y(&st->runtime.scroll_region_select));
   UI_GetThemeColor3fv(TH_HILITE, col);
   col[3] = 0.18f;
 
@@ -1005,20 +996,16 @@ static void draw_textscroll(const SpaceText *st, rcti *scroll, rcti *back)
   UI_draw_roundbox_aa(&rect, true, rad, col);
 }
 
-/** \} */
+/* -------------------------------------------------------------------- */
+/** Draw Documentation */
 
 /* -------------------------------------------------------------------- */
-/** \name Draw Documentation
- * \{ */
+/** Draw Suggestion List */
 
-/* -------------------------------------------------------------------- */
-/** \name Draw Suggestion List
- * \{ */
-
-static void draw_suggestion_list(const SpaceText *st, const TextDrawContext *tdc, ARegion *region)
+static void draw_suggestion_list(const SpaceText *st, const TextDrawCxt *tdc, ARegion *region)
 {
   SuggItem *item, *first, *last, *sel;
-  char str[SUGG_LIST_WIDTH * BLI_UTF8_MAX + 1];
+  char str[SUGG_LIST_WIDTH * LIB_UTF8_MAX + 1];
   int offl, offc, vcurl, vcurc;
   int w, boxw = 0, boxh, i, x, y, *top;
   const int lheight = TXT_LINE_HEIGHT(st);
@@ -1072,7 +1059,7 @@ static void draw_suggestion_list(const SpaceText *st, const TextDrawContext *tdc
     UI_draw_box_shadow(&rect, 220);
   }
 
-  uint pos = GPU_vertformat_attr_add(
+  uint pos = gpu_vertformat_attr_add(
       immVertexFormat(), "pos", GPU_COMP_I32, 2, GPU_FETCH_INT_TO_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
 
@@ -1117,11 +1104,8 @@ static void draw_suggestion_list(const SpaceText *st, const TextDrawContext *tdc
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Draw Cursor
- * \{ */
+/* Draw Cursor */
 
 static void draw_text_decoration(SpaceText *st, ARegion *region)
 {
