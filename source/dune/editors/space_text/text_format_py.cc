@@ -1,21 +1,18 @@
 
 #include <cstring>
 
-#include "BLI_blenlib.h"
+#include "lib_dune.h"
 
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "BKE_text.h"
+#include "dune_text.h"
 
 #include "text_format.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Local Literal Definitions
- * \{ */
+/* Local Literal Definitions */
 
-/**
- * The following items are derived from this list:
+/* The following items are derived from this list:
  * \code{.py}
  * ", ".join(['"%s"' % kw
  *            for kw in sorted(__import__("keyword").kwlist + __import__("keyword").softkwlist)
@@ -82,7 +79,7 @@ static const Span<const char *> text_format_py_literals_builtinfunc(
     text_format_py_literals_builtinfunc_data,
     ARRAY_SIZE(text_format_py_literals_builtinfunc_data));
 
-/** Python special name.*/
+/* Python special name.*/
 static const char *text_format_py_literals_specialvar_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -105,11 +102,8 @@ static const char *text_format_py_literals_bool_data[]{
 static const Span<const char *> text_format_py_literals_bool(
     text_format_py_literals_bool_data, ARRAY_SIZE(text_format_py_literals_bool_data));
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Local Functions (for #TextFormatType::format_line)
- * \{ */
+/* Local Functions (for #TextFormatType::format_line) */
 
 static int txtfmt_py_find_builtinfunc(const char *string)
 {
