@@ -1,23 +1,20 @@
 #include <cstring>
 
-#include "BLI_blenlib.h"
+#include "lib_blen.h"
 
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "BKE_text.h"
+#include "dune_text.h"
 
 #include "text_format.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Local Literal Definitions
- * \{ */
+/** Local Literal Definitions */
 
-/**
- * OSL builtin function.
+/* OSL builtin function.
  * list is from
- * https://github.com/imageworks/OpenShadingLanguage/raw/master/src/doc/osl-languagespec.pdf
- */
+ * https://github.com/imageworks/OpenShadingLanguage/raw/master/src/doc/osl-languagespec.pd */
 static const char *text_format_osl_literals_builtinfunc_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -51,11 +48,9 @@ static const Span<const char *> text_format_osl_literals_builtinfunc(
     text_format_osl_literals_builtinfunc_data,
     ARRAY_SIZE(text_format_osl_literals_builtinfunc_data));
 
-/**
- * OSL reserved keywords
+/** OSL reserved keywords
  * See:
- * https://github.com/imageworks/OpenShadingLanguage/raw/master/src/doc/osl-languagespec.pdf
- */
+ * https://github.com/imageworks/OpenShadingLanguage/raw/master/src/doc/osl-languagespec.pdf */
 static const char *text_format_osl_literals_reserved_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -114,18 +109,15 @@ static const Span<const char *> text_format_osl_literals_specialvar(
     text_format_osl_literals_specialvar_data,
     ARRAY_SIZE(text_format_osl_literals_specialvar_data));
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Local Functions (for #TextFormatType::format_line)
- * \{ */
+/** \name Local Functions (for #TextFormatType::format_line) */
 
-static int txtfmt_osl_find_builtinfunc(const char *string)
+static int txtfmt_osl_find_builtinfn(const char *string)
 {
-  const int i = text_format_string_literal_find(text_format_osl_literals_builtinfunc, string);
+  const int i = text_format_string_literal_find(text_format_osl_literals_builtinfn, string);
 
   /* If next source char is an identifier (eg. 'i' in "definite") no match */
-  if (i == 0 || text_check_identifier(string[i])) {
+  if (i == 0 || text_check_id(string[i])) {
     return -1;
   }
   return i;
@@ -136,7 +128,7 @@ static int txtfmt_osl_find_reserved(const char *string)
   const int i = text_format_string_literal_find(text_format_osl_literals_reserved, string);
 
   /* If next source char is an identifier (eg. 'i' in "definite") no match */
-  if (i == 0 || text_check_identifier(string[i])) {
+  if (i == 0 || text_check_id(string[i])) {
     return -1;
   }
   return i;
@@ -147,7 +139,7 @@ static int txtfmt_osl_find_specialvar(const char *string)
   const int i = text_format_string_literal_find(text_format_osl_literals_specialvar, string);
 
   /* If next source char is an identifier (eg. 'i' in "definite") no match */
-  if (i == 0 || text_check_identifier(string[i])) {
+  if (i == 0 || text_check_id(string[i])) {
     return -1;
   }
   return i;
@@ -162,7 +154,7 @@ static int txtfmt_osl_find_preprocessor(const char *string)
     while (text_check_whitespace(string[i])) {
       i++;
     }
-    while (text_check_identifier(string[i])) {
+    while (text_check_id(string[i])) {
       i++;
     }
     return i;
@@ -189,11 +181,8 @@ static char txtfmt_osl_format_identifier(const char *str)
   return fmt;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format Line Implementation (#TextFormatType::format_line)
- * \{ */
+/* Format Line Implementation (#TextFormatType::format_line) */
 
 static void txtfmt_osl_format_line(SpaceText *st, TextLine *line, const bool do_next)
 {
@@ -357,8 +346,6 @@ static void txtfmt_osl_format_line(SpaceText *st, TextLine *line, const bool do_
 
   flatten_string_free(&fs);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Registration
