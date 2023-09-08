@@ -34,18 +34,14 @@ void flatten_string_free(FlattenString *fs);
 /* Takes a string within `fs->buf` and returns its length */
 int flatten_string_strlen(FlattenString *fs, const char *str);
 
-/**
- * Ensures the format string for the given line is long enough, reallocating
- * as needed. Allocation is done here, alone, to ensure consistency.
- */
+/* Ensures the format string for the given line is long enough, reallocating
+ * as needed. Allocation is done here, alone, to ensure consistency. */
 int text_check_format_len(TextLine *line, unsigned int len);
-/**
- * Fill the string with formatting constant,
- * advancing \a str_p and \a fmt_p
- *
- * param len: length in bytes of \a fmt_p to fill. */
+/* Fill the string with formatting constant,
+ * advancing str_p and fmt_p
+ * param len: length in bytes of fmt_p to fill. */
 void text_format_fill(const char **str_p, char **fmt_p, char type, int len);
-/* ASCII version of #text_format_fill,
+/* ASCII version of text_format_fill,
  * use when we no the text being stepped over is ascii (as is the case for most keywords) */
 void text_format_fill_ascii(const char **str_p, char **fmt_p, char type, int len);
 
@@ -72,13 +68,13 @@ struct TextFormatType {
 };
 
 enum {
-  /** White-space */
+  /* White-space */
   FMT_TYPE_WHITESPACE = '_',
-  /** Comment text */
+  /* Comment text */
   FMT_TYPE_COMMENT = '#',
-  /** Punctuation and other symbols */
+  /* Punctuation and other symbols */
   FMT_TYPE_SYMBOL = '!',
-  /** Numerals */
+  /* Numerals */
   FMT_TYPE_NUMERAL = 'n',
   /** String letters */
   FMT_TYPE_STRING = 'l',
@@ -99,9 +95,9 @@ void ed_text_format_register(TextFormatType *tft);
 
 /* formatters */
 void ed_text_format_register_py();
-void ED_text_format_register_osl();
-void ED_text_format_register_pov();
-void ED_text_format_register_pov_ini();
+void ed_text_format_register_osl();
+void ed_text_format_register_pov();
+void ed_text_format_register_pov_ini();
 
 /* Checks the specified source string #text for a string literal in string_literals array.
  * This string literal must start at the beginning of the source string.
@@ -111,7 +107,7 @@ void ED_text_format_register_pov_ini();
 int text_format_string_literal_find(const Span<const char *> string_literals, const char *text);
 
 #ifndef NDEBUG
-/* Check if #string_literals array is shorted. This validation is required since text formatters do
+/* Check if string_literals array is shorted. This validation is required since text formatters do
  * binary search on these string literals arrays. Used only for assertions. */
 const bool text_format_string_literals_check_sorted_array(
     const Span<const char *> &string_literals);
