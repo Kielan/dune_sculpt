@@ -1,17 +1,16 @@
 #include <cstring>
 
-#include "BLI_blenlib.h"
+#include "lib_dune.h"
 
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
+#include "types_space.h"
+#include "types_text.h"
 
-#include "BKE_text.h"
+#include "dune_text.h"
 
 #include "text_format.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Local Literal Definitions
- * \{ */
+/* Local Literal Definitions */
 
 /**
  * POV INI keyword (minus boolean & 'nil')
@@ -274,7 +273,7 @@ static const Span<const char *> text_format_pov_ini_literals_reserved(
     text_format_pov_ini_literals_reserved_data,
     ARRAY_SIZE(text_format_pov_ini_literals_reserved_data));
 
-/** POV INI Built-in Constants */
+/* POV INI Built-in Constants */
 static const char *text_format_pov_ini_literals_bool_data[]{
     /* Force single column, sorted list. */
     /* clang-format off */
@@ -297,11 +296,8 @@ static const char *text_format_pov_ini_literals_bool_data[]{
 static const Span<const char *> text_format_pov_ini_literals_bool(
     text_format_pov_ini_literals_bool_data, ARRAY_SIZE(text_format_pov_ini_literals_bool_data));
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Local Functions (for #TextFormatType::format_line)
- * \{ */
+/** Local Functions (for #TextFormatType::format_line) */
 
 static int txtfmt_ini_find_keyword(const char *string)
 {
@@ -342,11 +338,8 @@ static char txtfmt_pov_ini_format_identifier(const char *str)
   return fmt;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format Line Implementation (#TextFormatType::format_line)
- * \{ */
+/* Format Line Implementation (#TextFormatType::format_line) */
 
 static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool do_next)
 {
@@ -360,7 +353,7 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
   if (line->prev && line->prev->format != nullptr) {
     fmt = line->prev->format;
     cont = fmt[strlen(fmt) + 1]; /* Just after the null-terminator */
-    BLI_assert((FMT_CONT_ALL & cont) == cont);
+ib_assert((FMT_CONT_ALL & cont) == cont);
   }
   else {
     cont = FMT_CONT_NOP;
@@ -395,7 +388,7 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
       }
       *fmt = prev;
       fmt++;
-      str += BLI_str_utf8_size_safe(str);
+      str += lib_str_utf8_size_safe(str);
       continue;
     }
     /* Handle continuations */
@@ -422,7 +415,7 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
         *fmt = FMT_TYPE_STRING;
       }
 
-      str += BLI_str_utf8_size_safe(str) - 1;
+      str += lib_str_utf8_size_safe(str) - 1;
     }
     /* Not in a string... */
     else {
@@ -453,7 +446,7 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
           text_format_fill_ascii(&str, &fmt, FMT_TYPE_NUMERAL, i);
         }
         else {
-          str += BLI_str_utf8_size_safe(str) - 1;
+          str += lib_str_utf8_size_safe(str) - 1;
           *fmt = FMT_TYPE_DEFAULT;
         }
       }
@@ -483,7 +476,7 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
           text_format_fill_ascii(&str, &fmt, prev, i);
         }
         else {
-          str += BLI_str_utf8_size_safe(str) - 1;
+          str += lib_str_utf8_size_safe(str) - 1;
           *fmt = FMT_TYPE_DEFAULT;
         }
       }
@@ -506,13 +499,8 @@ static void txtfmt_pov_ini_format_line(SpaceText *st, TextLine *line, const bool
   flatten_string_free(&fs);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Registration
- * \{ */
-
-void ED_text_format_register_pov_ini()
+/* Registration */
+void ed_text_format_register_pov_ini()
 {
   static TextFormatType tft = {nullptr};
   static const char *ext[] = {"ini", nullptr};
@@ -522,10 +510,10 @@ void ED_text_format_register_pov_ini()
   tft.ext = ext;
   tft.comment_line = "//";
 
-  ED_text_format_register(&tft);
+  ed_text_format_register(&tft);
 
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_ini_literals_keyword));
-  BLI_assert(
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_ini_literals_keyword));
+  lib_assert(
       text_format_string_literals_check_sorted_array(text_format_pov_ini_literals_reserved));
-  BLI_assert(text_format_string_literals_check_sorted_array(text_format_pov_ini_literals_bool));
+  lib_assert(text_format_string_literals_check_sorted_array(text_format_pov_ini_literals_bool));
 }
