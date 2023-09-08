@@ -1,12 +1,12 @@
 #pragma once
 
-#include "BLI_span.hh"
+#include "lib_span.hh"
 
-using blender::Span;
+using dune::Span;
 
 struct Text;
 
-/* *** Flatten String *** */
+/* Flatten String */
 struct FlattenString {
   char fixedbuf[256];
   int fixedaccum[256];
@@ -16,9 +16,7 @@ struct FlattenString {
   int pos, len;
 };
 
-/**
- * Format continuation flags (stored just after the null terminator).
- */
+/* Format continuation flags (stored just after the null terminator). */
 enum {
   FMT_CONT_NOP = 0,                /* no continuation */
   FMT_CONT_QUOTESINGLE = (1 << 0), /* single quotes */
@@ -33,9 +31,7 @@ enum {
 
 int flatten_string(const SpaceText *st, FlattenString *fs, const char *in);
 void flatten_string_free(FlattenString *fs);
-/**
- * Takes a string within `fs->buf` and returns its length.
- */
+/* Takes a string within `fs->buf` and returns its length */
 int flatten_string_strlen(FlattenString *fs, const char *str);
 
 /**
@@ -47,20 +43,17 @@ int text_check_format_len(TextLine *line, unsigned int len);
  * Fill the string with formatting constant,
  * advancing \a str_p and \a fmt_p
  *
- * \param len: length in bytes of \a fmt_p to fill.
- */
+ * param len: length in bytes of \a fmt_p to fill. */
 void text_format_fill(const char **str_p, char **fmt_p, char type, int len);
-/**
- * ASCII version of #text_format_fill,
- * use when we no the text being stepped over is ascii (as is the case for most keywords)
- */
+/* ASCII version of #text_format_fill,
+ * use when we no the text being stepped over is ascii (as is the case for most keywords) */
 void text_format_fill_ascii(const char **str_p, char **fmt_p, char type, int len);
 
-/* *** Generalize Formatting *** */
+/* Generalize Formatting */
 struct TextFormatType {
   TextFormatType *next, *prev;
 
-  char (*format_identifier)(const char *string);
+  char (*format_id)(const char *string);
 
   /* Formats the specified line. If do_next is set, the process will move on to
    * the succeeding line if it is affected (eg. multi-line strings). Format strings
@@ -69,13 +62,12 @@ struct TextFormatType {
    * It is terminated with a null-terminator '\0' followed by a continuation
    * flag indicating whether the line is part of a multi-line string.
    *
-   * See: FMT_TYPE_ enums below
-   */
+   * See: FMT_TYPE_ enums below */
   void (*format_line)(SpaceText *st, TextLine *line, bool do_next);
 
   const char **ext; /* Null terminated extensions. */
 
-  /** The prefix of a single-line line comment (without trailing space). */
+  /* The prefix of a single-line line comment (without trailing space). */
   const char *comment_line;
 };
 
@@ -102,29 +94,25 @@ enum {
   FMT_TYPE_DEFAULT = 'q',
 };
 
-TextFormatType *ED_text_format_get(Text *text);
-void ED_text_format_register(TextFormatType *tft);
+TextFormatType *ed_text_format_get(Text *text);
+void ed_text_format_register(TextFormatType *tft);
 
 /* formatters */
-void ED_text_format_register_py();
+void ed_text_format_register_py();
 void ED_text_format_register_osl();
 void ED_text_format_register_pov();
 void ED_text_format_register_pov_ini();
 
-/**
- * Checks the specified source string #text for a string literal in #string_literals array.
+/* Checks the specified source string #text for a string literal in string_literals array.
  * This string literal must start at the beginning of the source string.
  *
  * If a string literal is found, the length of the string literal is returned.
- * Otherwise, 0.
- */
+ * Otherwise, 0. */
 int text_format_string_literal_find(const Span<const char *> string_literals, const char *text);
 
 #ifndef NDEBUG
-/**
- * Check if #string_literals array is shorted. This validation is required since text formatters do
- * binary search on these string literals arrays. Used only for assertions.
- */
+/* Check if #string_literals array is shorted. This validation is required since text formatters do
+ * binary search on these string literals arrays. Used only for assertions. */
 const bool text_format_string_literals_check_sorted_array(
     const Span<const char *> &string_literals);
 
