@@ -1,36 +1,36 @@
 #include <cerrno>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_text_types.h"
+#include "types_text.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_base.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_cursor_utf8.h"
+#include "lib_dune.h"
+#include "lib_math_base.h"
+#include "lib_math_vector.h"
+#include "lib_string_cursor_utf8.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "PIL_time.h"
 
-#include "BKE_context.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
-#include "BKE_text.h"
+#include "dune_context.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_report.h"
+#include "dune_text.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "wm_api.hh"
+#include "wm_types.hh"
 
-#include "ED_curve.hh"
-#include "ED_screen.hh"
-#include "ED_text.hh"
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ed_curve.hh"
+#include "ed_screen.hh"
+#include "ed_text.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
@@ -42,15 +42,12 @@
 
 static void txt_screen_clamp(SpaceText *st, ARegion *region);
 
-/* -------------------------------------------------------------------- */
-/** \name Utilities
- * \{ */
+/* Utilities */
 
-/**
- * Tests if the given character represents a start of a new line or the
+/* Tests if the given character represents a start of a new line or the
  * indentation part of a line.
- * \param c: The current character.
- * \param r_last_state: A pointer to a flag representing the last state. The
+ * param c: The current character.
+ * param r_last_state: A pointer to a flag representing the last state. The
  * flag may be modified.
  */
 static void test_line_start(char c, bool *r_last_state)
@@ -63,11 +60,9 @@ static void test_line_start(char c, bool *r_last_state)
   }
 }
 
-/**
- * This function receives a character and returns its closing pair if it exists.
- * \param character: Character to find the closing pair.
- * \return The closing pair of the character if it exists.
- */
+/* This fn receives a character and returns its closing pair if it exists.
+ * param character: Character to find the closing pair.
+ * return The closing pair of the character if it exists */
 static char text_closing_character_pair_get(const char character)
 {
 
@@ -87,12 +82,10 @@ static char text_closing_character_pair_get(const char character)
   }
 }
 
-/**
- * This function converts the indentation tabs from a buffer to spaces.
- * \param in_buf: A pointer to a cstring.
- * \param tab_size: The size, in spaces, of the tab character.
- * \param r_out_buf_len: The #strlen of the returned buffer.
- */
+/* This fn converts the indentation tabs from a buffer to spaces.
+ * param in_buf: A pointer to a cstring.
+ * param tab_size: The size, in spaces, of the tab character.
+ * param r_out_buf_len: The strlen of the returned buffer */
 static char *buf_tabs_to_spaces(const char *in_buf, const int tab_size, int *r_out_buf_len)
 {
   /* Get the number of tab characters in buffer. */
@@ -147,7 +140,7 @@ static char *buf_tabs_to_spaces(const char *in_buf, const int tab_size, int *r_o
   return out_buf;
 }
 
-BLI_INLINE int text_pixel_x_to_column(SpaceText *st, const int x)
+LIB_INLINE int text_pixel_x_to_column(SpaceText *st, const int x)
 {
   /* Add half the char width so mouse cursor selection is in between letters. */
   return (x + (st->runtime.cwidth_px / 2)) / st->runtime.cwidth_px;
@@ -165,22 +158,17 @@ static void text_select_update_primary_clipboard(const Text *text)
   if (buf == nullptr) {
     return;
   }
-  WM_clipboard_text_set(buf, true);
-  MEM_freeN(buf);
+  wm_clipboard_text_set(buf, true);
+  mem_freen(buf);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Operator Poll
- * \{ */
-
-static bool text_new_poll(bContext * /*C*/)
+/* Operator Poll */
+static bool text_new_poll(Cxt * /*C*/)
 {
   return true;
 }
 
-static bool text_data_poll(bContext *C)
+static bool text_data_poll(Cxt *C)
 {
   Text *text = CTX_data_edit_text(C);
   if (!text) {
