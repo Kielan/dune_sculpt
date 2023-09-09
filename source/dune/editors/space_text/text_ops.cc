@@ -947,7 +947,6 @@ void TEXT_OT_duplicate_line(wmOpType *ot)
   ot->flag = OPTYPE_UNDO;
 }
 
-/* -------------------------------------------------------------------- */
 /* Copy Operator */
 static void txt_copy_clipboard(Text *text)
 {
@@ -1078,12 +1077,12 @@ static int text_indent_ex(Cxt *C, wmOp * /*op*/)
   text_update_edited(text);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_indent(wmOperatorType *ot)
+void TEXT_OT_indent(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Indent";
@@ -1098,20 +1097,16 @@ void TEXT_OT_indent(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Unindent Operator
- * \{ */
+/* Unindent Operator */
 
 static int text_unindent_exec(bContext *C, wmOperator * /*op*/)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   text_drawcache_tag_update(st, false);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   txt_order_cursors(text, false);
   txt_unindent(text);
@@ -1119,36 +1114,31 @@ static int text_unindent_exec(bContext *C, wmOperator * /*op*/)
   text_update_edited(text);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_unindent(wmOperatorType *ot)
+void TEXT_OT_unindent(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Unindent";
   ot->idname = "TEXT_OT_unindent";
   ot->description = "Unindent selected text";
 
-  /* api callbacks */
-  ot->exec = text_unindent_exec;
+  /* api cbs */
+  ot->ex = text_unindent_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Line Break Operator
- * \{ */
-
-static int text_line_break_exec(bContext *C, wmOperator * /*op*/)
+/* Line Break Operator */
+static int text_line_break_ex(Cxt *C, wmOp * /*op*/)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
   int a, curts;
   int space = (text->flags & TXT_TABSTOSPACES) ? st->tabnumber : 1;
 
@@ -1156,7 +1146,7 @@ static int text_line_break_exec(bContext *C, wmOperator * /*op*/)
 
   /* Double check tabs/spaces before splitting the line. */
   curts = txt_setcurr_tab_spaces(text, space);
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
   txt_split_curline(text);
 
   for (a = 0; a < curts; a++) {
@@ -1176,12 +1166,12 @@ static int text_line_break_exec(bContext *C, wmOperator * /*op*/)
   }
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_line_break(wmOperatorType *ot)
+void TEXT_OT_line_break(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Line Break";
@@ -1189,29 +1179,24 @@ void TEXT_OT_line_break(wmOperatorType *ot)
   ot->description = "Insert line break at cursor position";
 
   /* api callbacks */
-  ot->exec = text_line_break_exec;
+  ot->ex = text_line_break_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Toggle-Comment Operator
- * \{ */
-
-static int text_comment_exec(bContext *C, wmOperator *op)
+/* Toggle-Comment Operator */
+static int text_comment_ex(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
-  int type = RNA_enum_get(op->ptr, "type");
-  const char *prefix = ED_text_format_comment_line_prefix(text);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
+  int type = api_enum_get(op->ptr, "type");
+  const char *prefix = ed_text_format_comment_line_prefix(text);
 
   text_drawcache_tag_update(st, false);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   if (txt_has_sel(text)) {
     txt_order_cursors(text, false);
@@ -1234,14 +1219,14 @@ static int text_comment_exec(bContext *C, wmOperator *op)
   text_update_edited(text);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_comment_toggle(wmOperatorType *ot)
+void TEXT_OT_comment_toggle(wmOpType *ot)
 {
-  static const EnumPropertyItem comment_items[] = {
+  static const EnumPropItem comment_items[] = {
       {0, "TOGGLE", 0, "Toggle Comments", nullptr},
       {1, "COMMENT", 0, "Comment", nullptr},
       {-1, "UNCOMMENT", 0, "Un-Comment", nullptr},
@@ -1253,53 +1238,48 @@ void TEXT_OT_comment_toggle(wmOperatorType *ot)
   ot->idname = "TEXT_OT_comment_toggle";
 
   /* api callbacks */
-  ot->exec = text_comment_exec;
+  ot->ex = text_comment_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  PropertyRNA *prop;
-  prop = RNA_def_enum(ot->srna, "type", comment_items, 0, "Type", "Add or remove comments");
-  RNA_def_property_flag(prop, PropertyFlag(PROP_HIDDEN | PROP_SKIP_SAVE));
+  ApiProp *prop;
+  prop = api_def_enum(ot->srna, "type", comment_items, 0, "Type", "Add or remove comments");
+  api_def_prop_flag(prop, PropertyFlag(PROP_HIDDEN | PROP_SKIP_SAVE));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Convert Whitespace Operator
- * \{ */
-
+/* Convert Whitespace Operator */
 enum { TO_SPACES, TO_TABS };
-static const EnumPropertyItem whitespace_type_items[] = {
+static const EnumPropItem whitespace_type_items[] = {
     {TO_SPACES, "SPACES", 0, "To Spaces", nullptr},
     {TO_TABS, "TABS", 0, "To Tabs", nullptr},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-static int text_convert_whitespace_exec(bContext *C, wmOperator *op)
+static int text_convert_whitespace_ex(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
   FlattenString fs;
   size_t a, j, max_len = 0;
-  int type = RNA_enum_get(op->ptr, "type");
+  int type = api_enum_get(op->ptr, "type");
 
   /* first convert to all space, this make it a lot easier to convert to tabs
    * because there is no mixtures of ' ' && '\t' */
-  LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
+  LIST_FOREACH (TextLine *, tmp, &text->lines) {
     char *new_line;
 
-    BLI_assert(tmp->line);
+    lib_assert(tmp->line);
 
     flatten_string(st, &fs, tmp->line);
-    new_line = BLI_strdup(fs.buf);
+    new_line = lib_strdup(fs.buf);
     flatten_string_free(&fs);
 
-    MEM_freeN(tmp->line);
+    mem_freen(tmp->line);
     if (tmp->format) {
-      MEM_freeN(tmp->format);
+      mem_freen(tmp->format);
     }
 
     /* Put new_line in the tmp->line spot still need to try and set the curc correctly. */
@@ -1312,15 +1292,15 @@ static int text_convert_whitespace_exec(bContext *C, wmOperator *op)
   }
 
   if (type == TO_TABS) {
-    char *tmp_line = static_cast<char *>(MEM_mallocN(sizeof(*tmp_line) * (max_len + 1), __func__));
+    char *tmp_line = static_cast<char *>(mem_mallocn(sizeof(*tmp_line) * (max_len + 1), __func__));
 
-    LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
+    LIST_FOREACH (TextLine *, tmp, &text->lines) {
       const char *text_check_line = tmp->line;
       const int text_check_line_len = tmp->len;
       char *tmp_line_cur = tmp_line;
       const size_t tab_len = st->tabnumber;
 
-      BLI_assert(text_check_line);
+      lib_assert(text_check_line);
 
       for (a = 0; a < text_check_line_len;) {
         /* A tab can only start at a position multiple of tab_len... */
@@ -1352,7 +1332,7 @@ static int text_convert_whitespace_exec(bContext *C, wmOperator *op)
           }
         }
         else {
-          size_t len = BLI_str_utf8_size_safe(&text_check_line[a]);
+          size_t len = lib_str_utf8_size_safe(&text_check_line[a]);
           if (tmp_line_cur != tmp_line) {
             memcpy(tmp_line_cur, &text_check_line[a], len);
             tmp_line_cur += len;
@@ -1365,38 +1345,38 @@ static int text_convert_whitespace_exec(bContext *C, wmOperator *op)
         *tmp_line_cur = '\0';
 
 #ifndef NDEBUG
-        BLI_assert(tmp_line_cur - tmp_line <= max_len);
+        lib_assert(tmp_line_cur - tmp_line <= max_len);
 
         flatten_string(st, &fs, tmp_line);
-        BLI_assert(STREQ(fs.buf, tmp->line));
+        lib_assert(STREQ(fs.buf, tmp->line));
         flatten_string_free(&fs);
 #endif
 
-        MEM_freeN(tmp->line);
+        mem_freen(tmp->line);
         if (tmp->format) {
-          MEM_freeN(tmp->format);
+          mem_freen(tmp->format);
         }
 
         /* Put new_line in the tmp->line spot
          * still need to try and set the curc correctly. */
-        tmp->line = BLI_strdup(tmp_line);
+        tmp->line = lib_strdup(tmp_line);
         tmp->len = strlen(tmp_line);
         tmp->format = nullptr;
       }
     }
 
-    MEM_freeN(tmp_line);
+    mem_freen(tmp_line);
   }
 
   text_update_edited(text);
   text_update_cursor_moved(C);
   text_drawcache_tag_update(st, true);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_convert_whitespace(wmOperatorType *ot)
+void TEXT_OT_convert_whitespace(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Convert Whitespace";
@@ -1404,14 +1384,14 @@ void TEXT_OT_convert_whitespace(wmOperatorType *ot)
   ot->description = "Convert whitespaces by type";
 
   /* api callbacks */
-  ot->exec = text_convert_whitespace_exec;
+  ot->ex = text_convert_whitespace_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->sapi,
                "type",
                whitespace_type_items,
                TO_SPACES,
@@ -1419,27 +1399,22 @@ void TEXT_OT_convert_whitespace(wmOperatorType *ot)
                "Type of whitespace to convert to");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select All Operator
- * \{ */
-
-static int text_select_all_exec(bContext *C, wmOperator * /*op*/)
+/* Select All Operator */
+static int text_select_all_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   txt_sel_all(text);
 
   text_update_cursor_moved(C);
   text_select_update_primary_clipboard(text);
 
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_select_all(wmOperatorType *ot)
+void TEXT_OT_select_all(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Select All";
@@ -1447,31 +1422,26 @@ void TEXT_OT_select_all(wmOperatorType *ot)
   ot->description = "Select all text";
 
   /* api callbacks */
-  ot->exec = text_select_all_exec;
+  ot->ex = text_select_all_ex;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select Line Operator
- * \{ */
-
-static int text_select_line_exec(bContext *C, wmOperator * /*op*/)
+/* Select Line Operator */
+static int text_select_line_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   txt_sel_line(text);
 
   text_update_cursor_moved(C);
   text_select_update_primary_clipboard(text);
 
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_select_line(wmOperatorType *ot)
+void TEXT_OT_select_line(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Select Line";
@@ -1479,32 +1449,27 @@ void TEXT_OT_select_line(wmOperatorType *ot)
   ot->description = "Select text by line";
 
   /* api callbacks */
-  ot->exec = text_select_line_exec;
+  ot->ex = text_select_line_ex;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select Word Operator
- * \{ */
-
-static int text_select_word_exec(bContext *C, wmOperator * /*op*/)
+/* Select Word Operator */
+static int text_select_word_exec(Cxt *C, wmOp * /*op*/
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
-  BLI_str_cursor_step_bounds_utf8(
+  lib_str_cursor_step_bounds_utf8(
       text->curl->line, text->curl->len, text->selc, &text->curc, &text->selc);
 
   text_update_cursor_moved(C);
   text_select_update_primary_clipboard(text);
 
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_select_word(wmOperatorType *ot)
+void TEXT_OT_select_word(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Select Word";
@@ -1512,39 +1477,35 @@ void TEXT_OT_select_word(wmOperatorType *ot)
   ot->description = "Select word under cursor";
 
   /* api callbacks */
-  ot->exec = text_select_word_exec;
+  ot->ex = text_select_word_ex;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
+/* Move Lines Operators */
 
-/* -------------------------------------------------------------------- */
-/** \name Move Lines Operators
- * \{ */
-
-static int move_lines_exec(bContext *C, wmOperator *op)
+static int move_lines_ex(Cxt *C, wmOp *op)
 {
-  Text *text = CTX_data_edit_text(C);
-  const int direction = RNA_enum_get(op->ptr, "direction");
+  Text *text = cxt_data_edit_text(C);
+  const int direction = api_enum_get(op->ptr, "direction");
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   txt_move_lines(text, direction);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
   /* run the script while editing, evil but useful */
-  if (CTX_wm_space_text(C)->live_edit) {
+  if (cxt_wm_space_text(C)->live_edit) {
     text_run_script(C, nullptr);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_move_lines(wmOperatorType *ot)
+void TEXT_OT_move_lines(wmOpType *ot)
 {
-  static const EnumPropertyItem direction_items[] = {
+  static const EnumPropItem direction_items[] = {
       {TXT_MOVE_LINE_UP, "UP", 0, "Up", ""},
       {TXT_MOVE_LINE_DOWN, "DOWN", 0, "Down", ""},
       {0, nullptr, 0, nullptr, nullptr},
@@ -1556,23 +1517,18 @@ void TEXT_OT_move_lines(wmOperatorType *ot)
   ot->description = "Move the currently selected line(s) up/down";
 
   /* api callbacks */
-  ot->exec = move_lines_exec;
+  ot->ex = move_lines_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_enum(ot->srna, "direction", direction_items, 1, "Direction", "");
+  /* props */
+  api_def_enum(ot->sapi, "direction", direction_items, 1, "Direction", "");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Move Operator
- * \{ */
-
-static const EnumPropertyItem move_type_items[] = {
+/* Move Operator */
+static const EnumPropItem move_type_items[] = {
     {LINE_BEGIN, "LINE_BEGIN", 0, "Line Begin", ""},
     {LINE_END, "LINE_END", 0, "Line End", ""},
     {FILE_TOP, "FILE_TOP", 0, "File Top", ""},
@@ -1799,9 +1755,9 @@ static void txt_wrap_move_bol(SpaceText *st, ARegion *region, const bool sel)
   chop = loop = 1;
   *charp = 0;
 
-  for (i = 0, j = 0; loop; j += BLI_str_utf8_size_safe((*linep)->line + j)) {
+  for (i = 0, j = 0; loop; j += lib_str_utf8_size_safe((*linep)->line + j)) {
     int chars;
-    int columns = BLI_str_utf8_char_width_safe((*linep)->line + j); /* = 1 for tab */
+    int columns = lib_str_utf8_char_width_safe((*linep)->line + j); /* = 1 for tab */
 
     /* Mimic replacement of tabs */
     ch = (*linep)->line[j];
@@ -1821,7 +1777,7 @@ static void txt_wrap_move_bol(SpaceText *st, ARegion *region, const bool sel)
 
         if (j >= oldc) {
           if (ch == '\0') {
-            *charp = BLI_str_utf8_offset_from_column((*linep)->line, start);
+            *charp = lib_str_utf8_offset_from_column((*linep)->line, start);
           }
           loop = 0;
           break;
@@ -1837,7 +1793,7 @@ static void txt_wrap_move_bol(SpaceText *st, ARegion *region, const bool sel)
       }
       else if (ELEM(ch, ' ', '-', '\0')) {
         if (j >= oldc) {
-          *charp = BLI_str_utf8_offset_from_column((*linep)->line, start);
+          *charp = lib_str_utf8_offset_from_column((*linep)->line, start);
           loop = 0;
           break;
         }
@@ -1883,9 +1839,9 @@ static void txt_wrap_move_eol(SpaceText *st, ARegion *region, const bool sel)
   chop = loop = 1;
   *charp = 0;
 
-  for (i = 0, j = 0; loop; j += BLI_str_utf8_size_safe((*linep)->line + j)) {
+  for (i = 0, j = 0; loop; j += lib_str_utf8_size_safe((*linep)->line + j)) {
     int chars;
-    int columns = BLI_str_utf8_char_width_safe((*linep)->line + j); /* = 1 for tab */
+    int columns = lib_str_utf8_char_width_safe((*linep)->line + j); /* = 1 for tab */
 
     /* Mimic replacement of tabs */
     ch = (*linep)->line[j];
