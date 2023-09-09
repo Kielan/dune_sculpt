@@ -14,7 +14,7 @@
 
 #include "PIL_time.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_lib_id.h"
 #include "dune_main.h"
 #include "dune_report.h"
@@ -637,17 +637,12 @@ void TEXT_OT_save(wmOpType *ot)
   ot->description = "Save active text data-block";
 
   /* api callbacks */
-  ot->exec = text_save_exec;
+  ot->ex = text_save_ex;
   ot->invoke = text_save_invoke;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Save As Operator
- * \{ */
-
+/* Save As Operator */
 static int text_save_as_exec(bContext *C, wmOperator *op)
 {
   Main *bmain = CTX_data_main(C);
@@ -658,7 +653,7 @@ static int text_save_as_exec(bContext *C, wmOperator *op)
     return OPERATOR_CANCELLED;
   }
 
-  RNA_string_get(op->ptr, "filepath", filepath);
+  api_string_get(op->ptr, "filepath", filepath);
 
   if (text->filepath) {
     MEM_freeN(text->filepath);
@@ -674,13 +669,13 @@ static int text_save_as_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-static int text_save_as_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int text_save_as_invoke(Cxt *C, wmOp *op, const wmEvent * /*event*/)
 {
-  Main *bmain = CTX_data_main(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *main = cxt_data_main(C);
+  Text *text = cxt_data_edit_text(C);
 
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    return text_save_as_exec(C, op);
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
+    return text_save_as_ex(C, op);
   }
 
   const char *filepath;
@@ -691,16 +686,16 @@ static int text_save_as_invoke(bContext *C, wmOperator *op, const wmEvent * /*ev
     filepath = text->id.name + 2;
   }
   else {
-    filepath = BKE_main_blendfile_path(bmain);
+    filepath = dune_main_dunefile_path(main);
   }
 
-  RNA_string_set(op->ptr, "filepath", filepath);
-  WM_event_add_fileselect(C, op);
+  api_string_set(op->ptr, "filepath", filepath);
+  wm_event_add_fileselect(C, op);
 
   return OPERATOR_RUNNING_MODAL;
 }
 
-void TEXT_OT_save_as(wmOperatorType *ot)
+void TEXT_OT_save_as(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Save As";
@@ -708,30 +703,25 @@ void TEXT_OT_save_as(wmOperatorType *ot)
   ot->description = "Save active text file with options";
 
   /* api callbacks */
-  ot->exec = text_save_as_exec;
+  ot->ex = text_save_as_ex;
   ot->invoke = text_save_as_invoke;
   ot->poll = text_edit_poll;
 
-  /* properties */
-  WM_operator_properties_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_TEXT | FILE_TYPE_PYSCRIPT,
-                                 FILE_SPECIAL,
-                                 FILE_SAVE,
-                                 WM_FILESEL_FILEPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT); /* XXX TODO: relative_path. */
+  /* props */
+  wm_op_props_filesel(ot,
+                      FILE_TYPE_FOLDER | FILE_TYPE_TEXT | FILE_TYPE_PYSCRIPT,
+                      FILE_SPECIAL,
+                      FILE_SAVE,
+                      WM_FILESEL_FILEPATH,
+                      FILE_DEFAULTDISPLAY,
+                      FILE_SORT_DEFAULT); /* XXX TODO: relative_path. */
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Run Script Operator
- * \{ */
-
-static int text_run_script(bContext *C, ReportList *reports)
+/* Run Script Operator */
+static int text_run_script(Cxt *C, ReportList *reports)
 {
 #ifdef WITH_PYTHON
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
   const bool is_live = (reports == nullptr);
 
   /* only for comparison */
@@ -741,45 +731,45 @@ static int text_run_script(bContext *C, ReportList *reports)
   if (BPY_run_text(C, text, reports, !is_live)) {
     if (is_live) {
       /* for nice live updates */
-      WM_event_add_notifier(C, NC_WINDOW | NA_EDITED, nullptr);
+      wm_event_add_notifier(C, NC_WINDOW | NA_EDITED, nullptr);
     }
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
   /* Don't report error messages while live editing */
   if (!is_live) {
     /* text may have freed itself */
-    if (CTX_data_edit_text(C) == text) {
+    if (cxt_data_edit_text(C) == text) {
       if (text->curl != curl_prev || curc_prev != text->curc) {
         text_update_cursor_moved(C);
-        WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+        wn_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
       }
     }
 
     /* No need to report the error, this has already been handled by #BPY_run_text. */
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 #else
   (void)C;
   (void)reports;
 #endif /* !WITH_PYTHON */
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static int text_run_script_exec(bContext *C, wmOperator *op)
+static int text_run_script_exec(Cxt *C, wmOp *op)
 {
 #ifndef WITH_PYTHON
   (void)C; /* unused */
 
-  BKE_report(op->reports, RPT_ERROR, "Python disabled in this build");
+  dune_report(op->reports, RPT_ERROR, "Python disabled in this build");
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 #else
   return text_run_script(C, op->reports);
 #endif
 }
 
-void TEXT_OT_run_script(wmOperatorType *ot)
+void TEXT_OT_run_script(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Run Script";
@@ -788,33 +778,28 @@ void TEXT_OT_run_script(wmOperatorType *ot)
 
   /* api callbacks */
   ot->poll = text_data_poll;
-  ot->exec = text_run_script_exec;
+  ot->ex = text_run_script_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Refresh Pyconstraints Operator
- * \{ */
-
-static int text_refresh_pyconstraints_exec(bContext * /*C*/, wmOperator * /*op*/)
+/* Refresh Pyconstraints Operator */
+static int text_refresh_pyconstraints_exec(Cxt * /*C*/, wmOp * /*op*/)
 {
 #ifdef WITH_PYTHON
 #  if 0
-  Main *bmain = CTX_data_main(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *main = cxt_data_main(C);
+  Text *text = cxt_data_edit_text(C);
   Object *ob;
-  bConstraint *con;
+  Constraint *con;
   short update;
 
   /* check all pyconstraints */
-  for (ob = bmain->objects.first; ob; ob = ob->id.next) {
+  for (ob = main->objects.first; ob; ob = ob->id.next) {
     update = 0;
     if (ob->type == OB_ARMATURE && ob->pose) {
-      bPoseChannel *pchan;
+      PoseChannel *pchan;
       for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
         for (con = pchan->constraints.first; con; con = con->next) {
           if (con->type == CONSTRAINT_TYPE_PYTHON) {
@@ -838,13 +823,13 @@ static int text_refresh_pyconstraints_exec(bContext * /*C*/, wmOperator * /*op*/
     }
 
     if (update) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
 #  endif
 #endif
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void TEXT_OT_refresh_pyconstraints(wmOperatorType *ot)
@@ -855,51 +840,46 @@ void TEXT_OT_refresh_pyconstraints(wmOperatorType *ot)
   ot->description = "Refresh all pyconstraints";
 
   /* api callbacks */
-  ot->exec = text_refresh_pyconstraints_exec;
+  ot->ex = text_refresh_pyconstraints_exec;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Paste Operator
- * \{ */
-
-static int text_paste_exec(bContext *C, wmOperator *op)
+/* Paste Operator */
+static int text_paste_ex(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
-  const bool selection = RNA_boolean_get(op->ptr, "selection");
+  const bool selection = api_bool_get(op->ptr, "selection");
 
   char *buf;
   int buf_len;
 
   /* No need for UTF8 validation as the conversion handles invalid sequences gracefully. */
-  buf = WM_clipboard_text_get(selection, false, &buf_len);
+  buf = wm_clipboard_text_get(selection, false, &buf_len);
 
   if (!buf) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   text_drawcache_tag_update(st, false);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   /* Convert clipboard content indentation to spaces if specified */
   if (text->flags & TXT_TABSTOSPACES) {
     char *new_buf = buf_tabs_to_spaces(buf, TXT_TABSIZE, &buf_len);
-    MEM_freeN(buf);
+    mem_freen(buf);
     buf = new_buf;
   }
 
   txt_insert_buf(text, buf, buf_len);
   text_update_edited(text);
 
-  MEM_freeN(buf);
+  mem_freen(buf);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
   /* run the script while editing, evil but useful */
   if (st->live_edit) {
@@ -909,55 +889,50 @@ static int text_paste_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void TEXT_OT_paste(wmOperatorType *ot)
+void TEXT_OT_paste(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Paste";
   ot->idname = "TEXT_OT_paste";
   ot->description = "Paste text from clipboard";
 
-  /* api callbacks */
-  ot->exec = text_paste_exec;
+  /* api cbs */
+  ot->ex = text_paste_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  PropertyRNA *prop;
-  prop = RNA_def_boolean(ot->srna,
-                         "selection",
-                         false,
-                         "Selection",
-                         "Paste text selected elsewhere rather than copied (X11/Wayland only)");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  ApiProp *prop;
+  prop = api_def_bool(ot->sapi,
+                      "selection",
+                      false,
+                      "Selection",
+                      "Paste text selected elsewhere rather than copied (X11/Wayland only)");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Duplicate Operator
- * \{ */
-
-static int text_duplicate_line_exec(bContext *C, wmOperator * /*op*/)
+/* Duplicate Operator */
+static int text_duplicate_line_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   txt_duplicate_line(text);
 
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
   /* run the script while editing, evil but useful */
-  if (CTX_wm_space_text(C)->live_edit) {
+  if (cxt_wm_space_text(C)->live_edit) {
     text_run_script(C, nullptr);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_duplicate_line(wmOperatorType *ot)
+void TEXT_OT_duplicate_line(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Duplicate Line";
@@ -965,19 +940,15 @@ void TEXT_OT_duplicate_line(wmOperatorType *ot)
   ot->description = "Duplicate the current line";
 
   /* api callbacks */
-  ot->exec = text_duplicate_line_exec;
+  ot->ex = text_duplicate_line_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Copy Operator
- * \{ */
-
+/* Copy Operator */
 static void txt_copy_clipboard(Text *text)
 {
   char *buf;
@@ -989,21 +960,21 @@ static void txt_copy_clipboard(Text *text)
   buf = txt_sel_to_buf(text, nullptr);
 
   if (buf) {
-    WM_clipboard_text_set(buf, false);
-    MEM_freeN(buf);
+    wm_clipboard_text_set(buf, false);
+    mem_freen(buf);
   }
 }
 
-static int text_copy_exec(bContext *C, wmOperator * /*op*/)
+static int text_copy_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   txt_copy_clipboard(text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_copy(wmOperatorType *ot)
+void TEXT_OT_copy(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Copy";
@@ -1011,75 +982,67 @@ void TEXT_OT_copy(wmOperatorType *ot)
   ot->description = "Copy selected text to clipboard";
 
   /* api callbacks */
-  ot->exec = text_copy_exec;
+  ot->ex = text_copy_ex;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Cut Operator
- * \{ */
-
-static int text_cut_exec(bContext *C, wmOperator * /*op*/)
+/* Cut Operator */
+static int text_cut_ex(Cxt *C, wmOp * /*op*/)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   text_drawcache_tag_update(st, false);
 
   txt_copy_clipboard(text);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
   txt_delete_selected(text);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
   /* run the script while editing, evil but useful */
   if (st->live_edit) {
     text_run_script(C, nullptr);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_cut(wmOperatorType *ot)
+void TEXT_OT_cut(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Cut";
   ot->idname = "TEXT_OT_cut";
   ot->description = "Cut selected text to clipboard";
 
-  /* api callbacks */
-  ot->exec = text_cut_exec;
+  /* api cbs */
+  ot->ex = text_cut_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Indent or Autocomplete Operator
- * \{ */
 
-static int text_indent_or_autocomplete_exec(bContext *C, wmOperator * /*op*/)
+/* Indent or Autocomplete Operator */
+static int text_indent_or_autocomplete_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
   TextLine *line = text->curl;
   bool text_before_cursor = text->curc != 0 && !ELEM(line->line[text->curc - 1], ' ', '\t');
   if (text_before_cursor && (txt_has_sel(text) == false)) {
-    WM_operator_name_call(C, "TEXT_OT_autocomplete", WM_OP_INVOKE_DEFAULT, nullptr, nullptr);
+    wm_op_name_call(C, "TEXT_OT_autocomplete", WM_OP_INVOKE_DEFAULT, nullptr, nullptr);
   }
   else {
-    WM_operator_name_call(C, "TEXT_OT_indent", WM_OP_EXEC_DEFAULT, nullptr, nullptr);
+    wm_op_name_call(C, "TEXT_OT_indent", WM_OP_EX_DEFAULT, nullptr, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_indent_or_autocomplete(wmOperatorType *ot)
+void TEXT_OT_indent_or_autocomplete(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Indent or Autocomplete";
@@ -1087,27 +1050,22 @@ void TEXT_OT_indent_or_autocomplete(wmOperatorType *ot)
   ot->description = "Indent selected text or autocomplete";
 
   /* api callbacks */
-  ot->exec = text_indent_or_autocomplete_exec;
+  ot->ex = text_indent_or_autocomplete_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Indent Operator
- * \{ */
-
-static int text_indent_exec(bContext *C, wmOperator * /*op*/)
+/* Indent Operator */
+static int text_indent_ex(Cxt *C, wmOp * /*op*/)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   text_drawcache_tag_update(st, false);
 
-  ED_text_undo_push_init(C);
+  ed_text_undo_push_init(C);
 
   if (txt_has_sel(text)) {
     txt_order_cursors(text, false);
