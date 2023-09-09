@@ -261,12 +261,12 @@ static int text_new_ex(Cxt *C, wmOp * /*op*/)
   text = dune_text_add(bmain, DATA_("Text"));
 
   /* hook into UI */
-  ui_cxt_active_but_prop_get_templateId(C, &ptr, &prop);
+  ui_cxt_active_btn_prop_get_templateId(C, &ptr, &prop);
 
   if (prop) {
     ApiPtr idptr = api_id_ptr_create(&text->id);
     api_prop_ptr_set(&ptr, prop, idptr, nullptr);
-    RNA_property_update(C, &ptr, prop);
+    api_prop_update(C, &ptr, prop);
   }
   else if (st) {
     st->text = text;
@@ -366,13 +366,13 @@ static int text_open_invoke(Cxt *C, wmOp *op, const wmEvent * /*event*/)
   Text *text = cxt_data_edit_text(C);
   const char *path = (text && text->filepath) ? text->filepath : BKE_main_blendfile_path(bmain);
 
-  if (RNA_struct_prop_is_set(op->ptr, "filepath")) {
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
     return text_open_ex(C, op);
   }
 
   text_open_init(C, op);
-  RNA_string_set(op->ptr, "filepath", path);
-  WM_event_add_fileselect(C, op);
+  api_string_set(op->ptr, "filepath", path);
+  wm_event_add_fileselect(C, op);
 
   return OP_RUNNING_MODAL;
 }
@@ -385,7 +385,7 @@ void TEXT_OT_open(wmOpType *ot)
   ot->description = "Open a new text data-block";
 
   /* api callbacks */
-  ot->exec = text_open_exec;
+  ot->ex = text_open_ex;
   ot->invoke = text_open_invoke;
   ot->cancel = text_open_cancel;
   ot->poll = text_new_poll;
@@ -394,44 +394,39 @@ void TEXT_OT_open(wmOpType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  WM_operator_properties_filesel(ot,
+  wm_op_props_filesel(ot,
                                  FILE_TYPE_FOLDER | FILE_TYPE_TEXT | FILE_TYPE_PYSCRIPT,
                                  FILE_SPECIAL,
                                  FILE_OPENFILE,
                                  WM_FILESEL_FILEPATH,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT); /* TODO: relative_path. */
-  RNA_def_boolean(
-      ot->srna, "internal", false, "Make Internal", "Make text file internal after loading");
+  api_def_bool(
+      ot->sapi, "internal", false, "Make Internal", "Make text file internal after loading");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Reload Operator
- * \{ */
-
-static int text_reload_exec(bContext *C, wmOperator *op)
+/* Reload Operator */
+static int text_reload_ex(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
+  ARegion *region = cxt_wm_region(C);
 
   /* store view & cursor state */
   const int orig_top = st->top;
-  const int orig_curl = BLI_findindex(&text->lines, text->curl);
+  const int orig_curl = lib_findindex(&text->lines, text->curl);
   const int orig_curc = text->curc;
 
   /* Don't make this part of 'poll', since 'Alt-R' will type 'R',
    * if poll checks for the filename. */
   if (text->filepath == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "This text has not been saved");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "This text has not been saved");
+    return OP_CANCELLED;
   }
 
-  if (!BKE_text_reload(text)) {
-    BKE_report(op->reports, RPT_ERROR, "Could not reopen file");
-    return OPERATOR_CANCELLED;
+  if (!dune_text_reload(text)) {
+    dune_report(op->reports, RPT_ERROR, "Could not reopen file");
+    return OP_CANCELLED;
   }
 
 #ifdef WITH_PYTHON
@@ -443,7 +438,7 @@ static int text_reload_exec(bContext *C, wmOperator *op)
   text_update_edited(text);
   text_update_cursor_moved(C);
   text_drawcache_tag_update(st, true);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
   text->flags &= ~TXT_ISDIRTY;
 
@@ -453,10 +448,10 @@ static int text_reload_exec(bContext *C, wmOperator *op)
   /* return cursor */
   txt_move_to(text, orig_curl, orig_curc, false);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_reload(wmOperatorType *ot)
+void TEXT_OT_reload(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Reload";
@@ -464,28 +459,24 @@ void TEXT_OT_reload(wmOperatorType *ot)
   ot->description = "Reload active text data-block from its file";
 
   /* api callbacks */
-  ot->exec = text_reload_exec;
-  ot->invoke = WM_operator_confirm;
+  ot->ex = text_reload_ex;
+  ot->invoke = wm_op_confirm;
   ot->poll = text_edit_poll;
 }
 
-/** \} */
+/* Delete Operator */
 
-/* -------------------------------------------------------------------- */
-/** \name Delete Operator
- * \{ */
-
-static bool text_unlink_poll(bContext *C)
+static bool text_unlink_poll(Cxt *C)
 {
   /* it should be possible to unlink texts if they're lib-linked in... */
-  return CTX_data_edit_text(C) != nullptr;
+  return cxt_data_edit_text(C) != nullptr;
 }
 
-static int text_unlink_exec(bContext *C, wmOperator * /*op*/)
+static int text_unlink_exec(Cxt *C, wmOp * /*op*/)
 {
-  Main *bmain = CTX_data_main(C);
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *main = cxt_data_main(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   /* make the previous text active, if its not there make the next text active */
   if (st) {
@@ -499,15 +490,15 @@ static int text_unlink_exec(bContext *C, wmOperator * /*op*/)
     }
   }
 
-  BKE_id_delete(bmain, text);
+  dune_id_delete(main, text);
 
   text_drawcache_tag_update(st, true);
-  WM_event_add_notifier(C, NC_TEXT | NA_REMOVED, nullptr);
+  wm_event_add_notifier(C, NC_TEXT | NA_REMOVED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_unlink(wmOperatorType *ot)
+void TEXT_OT_unlink(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Unlink";
@@ -515,35 +506,31 @@ void TEXT_OT_unlink(wmOperatorType *ot)
   ot->description = "Unlink active text data-block";
 
   /* api callbacks */
-  ot->exec = text_unlink_exec;
-  ot->invoke = WM_operator_confirm;
+  ot->ex = text_unlink_ex;
+  ot->invoke = WM_op_confirm;
   ot->poll = text_unlink_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
+/* Make Internal Operator */
 
-/* -------------------------------------------------------------------- */
-/** \name Make Internal Operator
- * \{ */
-
-static int text_make_internal_exec(bContext *C, wmOperator * /*op*/)
+static int text_make_internal_ex(Cxt *C, wmOp * /*op*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   text->flags |= TXT_ISMEM | TXT_ISDIRTY;
 
   MEM_SAFE_FREE(text->filepath);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_make_internal(wmOperatorType *ot)
+void TEXT_OT_make_internal(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Make Internal";
@@ -551,43 +538,38 @@ void TEXT_OT_make_internal(wmOperatorType *ot)
   ot->description = "Make active text file internal";
 
   /* api callbacks */
-  ot->exec = text_make_internal_exec;
+  ot->ex = text_make_internal_ex;
   ot->poll = text_edit_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Save Operator
- * \{ */
-
-static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
+/* Save Operator */
+static void txt_write_file(Main *main, Text *text, ReportList *reports)
 {
   FILE *fp;
-  BLI_stat_t st;
+  lib_stat_t st;
   char filepath[FILE_MAX];
 
   if (text->filepath == nullptr) {
-    BKE_reportf(reports, RPT_ERROR, "No file path for \"%s\"", text->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, "No file path for \"%s\"", text->id.name + 2);
     return;
   }
 
   STRNCPY(filepath, text->filepath);
-  BLI_path_abs(filepath, BKE_main_blendfile_path(bmain));
+  lib_path_abs(filepath, dune_main_dunefile_path(main));
 
   /* Check if file write permission is ok. */
-  if (BLI_exists(filepath) && !BLI_file_is_writable(filepath)) {
-    BKE_reportf(
+  if (lib_exists(filepath) && !lib_file_is_writable(filepath)) {
+    dune_reportf(
         reports, RPT_ERROR, "Cannot save text file, path \"%s\" is not writable", filepath);
     return;
   }
 
-  fp = BLI_fopen(filepath, "w");
+  fp = lib_fopen(filepath, "w");
   if (fp == nullptr) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Unable to save '%s': %s",
                 filepath,
@@ -595,7 +577,7 @@ static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
     return;
   }
 
-  LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
+  LIST_FOREACH (TextLine *, tmp, &text->lines) {
     fputs(tmp->line, fp);
     if (tmp->next) {
       fputc('\n', fp);
@@ -604,15 +586,15 @@ static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
 
   fclose(fp);
 
-  if (BLI_stat(filepath, &st) == 0) {
+  if (lib_stat(filepath, &st) == 0) {
     text->mtime = st.st_mtime;
 
     /* Report since this can be called from key shortcuts. */
-    BKE_reportf(reports, RPT_INFO, "Saved text \"%s\"", filepath);
+    dune_reportf(reports, RPT_INFO, "Saved text \"%s\"", filepath);
   }
   else {
     text->mtime = 0;
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_WARNING,
                 "Unable to stat '%s': %s",
                 filepath,
@@ -622,32 +604,32 @@ static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
   text->flags &= ~TXT_ISDIRTY;
 }
 
-static int text_save_exec(bContext *C, wmOperator *op)
+static int text_save_ex(Cxt *C, wmOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *main = cxt_data_main(C);
+  Text *text = cxt_data_edit_text(C);
 
-  txt_write_file(bmain, text, op->reports);
+  txt_write_file(main, text, op->reports);
 
   text_update_cursor_moved(C);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int text_save_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int text_save_invoke(Cxt *C, wmOp *op, const wmEvent *event)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   /* Internal and texts without a filepath will go to "Save As". */
   if (text->filepath == nullptr || (text->flags & TXT_ISMEM)) {
-    WM_operator_name_call(C, "TEXT_OT_save_as", WM_OP_INVOKE_DEFAULT, nullptr, event);
-    return OPERATOR_CANCELLED;
+    wm_op_name_call(C, "TEXT_OT_save_as", WM_OP_INVOKE_DEFAULT, nullptr, event);
+    return OP_CANCELLED;
   }
-  return text_save_exec(C, op);
+  return text_save_ex(C, op);
 }
 
-void TEXT_OT_save(wmOperatorType *ot)
+void TEXT_OT_save(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Save";
