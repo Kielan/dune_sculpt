@@ -48,8 +48,7 @@ static void txt_screen_clamp(SpaceText *st, ARegion *region);
  * indentation part of a line.
  * param c: The current character.
  * param r_last_state: A pointer to a flag representing the last state. The
- * flag may be modified.
- */
+ * flag may be modified. */
 static void test_line_start(char c, bool *r_last_state)
 {
   if (c == '\n') {
@@ -148,7 +147,7 @@ LIB_INLINE int text_pixel_x_to_column(SpaceText *st, const int x)
 
 static void text_select_update_primary_clipboard(const Text *text)
 {
-  if ((WM_capabilities_flag() & WM_CAPABILITY_PRIMARY_CLIPBOARD) == 0) {
+  if ((wm_capabilities_flag() & WM_CAPABILITY_PRIMARY_CLIPBOARD) == 0) {
     return;
   }
   if (!txt_has_sel(text)) {
@@ -170,22 +169,22 @@ static bool text_new_poll(Cxt * /*C*/)
 
 static bool text_data_poll(Cxt *C)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
   if (!text) {
     return false;
   }
   return true;
 }
 
-static bool text_edit_poll(bContext *C)
+static bool text_edit_poll(Cxt *C)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   if (!text) {
     return false;
   }
 
-  if (!BKE_id_is_editable(CTX_data_main(C), &text->id)) {
+  if (!dune_id_is_editable(cxt_data_main(C), &text->id)) {
     // BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
     return false;
   }
@@ -193,28 +192,28 @@ static bool text_edit_poll(bContext *C)
   return true;
 }
 
-bool text_space_edit_poll(bContext *C)
+bool text_space_edit_poll(Cxt *C)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
 
   if (!st || !text) {
     return false;
   }
 
-  if (!BKE_id_is_editable(CTX_data_main(C), &text->id)) {
-    // BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
+  if (!dune_id_is_editable(cxt_data_main(C), &text->id)) {
+    // dune_report(op->reports, RPT_ERROR, "Cannot edit external library data");
     return false;
   }
 
   return true;
 }
 
-static bool text_region_edit_poll(bContext *C)
+static bool text_region_edit_poll(Cxt *C)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Text *text = CTX_data_edit_text(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Text *text = cxt_data_edit_text(C);
+  ARegion *region = cxt_wm_region(C);
 
   if (!st || !text) {
     return false;
@@ -224,7 +223,7 @@ static bool text_region_edit_poll(bContext *C)
     return false;
   }
 
-  if (!BKE_id_is_editable(CTX_data_main(C), &text->id)) {
+  if (!dune_id_is_editable(cxt_data_main(C), &text->id)) {
     // BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
     return false;
   }
@@ -232,12 +231,7 @@ static bool text_region_edit_poll(bContext *C)
   return true;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Updates
- * \{ */
-
+/* Updates */
 void text_update_line_edited(TextLine *line)
 {
   if (!line) {
@@ -250,33 +244,28 @@ void text_update_line_edited(TextLine *line)
 
 void text_update_edited(Text *text)
 {
-  LISTBASE_FOREACH (TextLine *, line, &text->lines) {
+  LIST_FOREACH (TextLine *, line, &text->lines) {
     text_update_line_edited(line);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name New Operator
- * \{ */
-
-static int text_new_exec(bContext *C, wmOperator * /*op*/)
+/* New Operator */
+static int text_new_ex(Cxt *C, wmOp * /*op*/)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Main *bmain = CTX_data_main(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Main *main = cxt_data_main(C);
   Text *text;
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
 
-  text = BKE_text_add(bmain, DATA_("Text"));
+  text = dune_text_add(bmain, DATA_("Text"));
 
   /* hook into UI */
-  UI_context_active_but_prop_get_templateID(C, &ptr, &prop);
+  ui_cxt_active_but_prop_get_templateId(C, &ptr, &prop);
 
   if (prop) {
-    PointerRNA idptr = RNA_id_pointer_create(&text->id);
-    RNA_property_pointer_set(&ptr, prop, idptr, nullptr);
+    ApiPtr idptr = api_id_ptr_create(&text->id);
+    api_prop_ptr_set(&ptr, prop, idptr, nullptr);
     RNA_property_update(C, &ptr, prop);
   }
   else if (st) {
@@ -288,12 +277,12 @@ static int text_new_exec(bContext *C, wmOperator * /*op*/)
     text_drawcache_tag_update(st, true);
   }
 
-  WM_event_add_notifier(C, NC_TEXT | NA_ADDED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_ADDED, text);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_new(wmOperatorType *ot)
+void TEXT_OT_new(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "New Text";
@@ -301,51 +290,46 @@ void TEXT_OT_new(wmOperatorType *ot)
   ot->description = "Create a new text data-block";
 
   /* api callbacks */
-  ot->exec = text_new_exec;
+  ot->ex = text_new_ex;
   ot->poll = text_new_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Open Operator
- * \{ */
-
-static void text_open_init(bContext *C, wmOperator *op)
+/* Open Op */
+static void text_open_init(Cxt *C, wmOp *op)
 {
-  PropertyPointerRNA *pprop = static_cast<PropertyPointerRNA *>(
-      MEM_callocN(sizeof(PropertyPointerRNA), "OpenPropertyPointerRNA"));
+  ApiPropPtr *pprop = static_cast<ApiPropPtr *>(
+      mem_callocn(sizeof(ApiPropPtr), "ApiOpenPropPtr"));
 
   op->customdata = pprop;
-  UI_context_active_but_prop_get_templateID(C, &pprop->ptr, &pprop->prop);
+  ui_cxt_active_btn_prop_get_templateId(C, &pprop->ptr, &pprop->prop);
 }
 
-static void text_open_cancel(bContext * /*C*/, wmOperator *op)
+static void text_open_cancel(Cxt * /*C*/, wmOp *op)
 {
-  MEM_freeN(op->customdata);
+  mem_freen(op->customdata);
 }
 
-static int text_open_exec(bContext *C, wmOperator *op)
+static int text_open_ex(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  Main *bmain = CTX_data_main(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  Main *bmain = cxt_data_main(C);
   Text *text;
-  PropertyPointerRNA *pprop;
+  ApiPropPtr *pprop;
   char filepath[FILE_MAX];
-  const bool internal = RNA_boolean_get(op->ptr, "internal");
+  const bool internal = api_bool_get(op->ptr, "internal");
 
-  RNA_string_get(op->ptr, "filepath", filepath);
+  api_string_get(op->ptr, "filepath", filepath);
 
-  text = BKE_text_load_ex(bmain, filepath, BKE_main_blendfile_path(bmain), internal);
+  text = dune_text_load_ex(bmain, filepath, dune_main_dunefile_path(bmain), internal);
 
   if (!text) {
     if (op->customdata) {
-      MEM_freeN(op->customdata);
+      mem_freen(op->customdata);
     }
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   if (!op->customdata) {
@@ -353,12 +337,12 @@ static int text_open_exec(bContext *C, wmOperator *op)
   }
 
   /* hook into UI */
-  pprop = static_cast<PropertyPointerRNA *>(op->customdata);
+  pprop = static_cast<ApiPropPtr *>(op->customdata);
 
   if (pprop->prop) {
-    PointerRNA idptr = RNA_id_pointer_create(&text->id);
-    RNA_property_pointer_set(&pprop->ptr, pprop->prop, idptr, nullptr);
-    RNA_property_update(C, &pprop->ptr, pprop->prop);
+    ApiPtr idptr = api_id_ptr_create(&text->id);
+    api_prop_ptr_set(&pprop->ptr, pprop->prop, idptr, nullptr);
+    api_prop_update(C, &pprop->ptr, pprop->prop);
   }
   else if (st) {
     st->text = text;
@@ -369,31 +353,31 @@ static int text_open_exec(bContext *C, wmOperator *op)
   }
 
   text_drawcache_tag_update(st, true);
-  WM_event_add_notifier(C, NC_TEXT | NA_ADDED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_ADDED, text);
 
   MEM_freeN(op->customdata);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int text_open_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int text_open_invoke(Cxt *C, wmOp *op, const wmEvent * /*event*/)
 {
-  Main *bmain = CTX_data_main(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *bmain = cxt_data_main(C);
+  Text *text = cxt_data_edit_text(C);
   const char *path = (text && text->filepath) ? text->filepath : BKE_main_blendfile_path(bmain);
 
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    return text_open_exec(C, op);
+  if (RNA_struct_prop_is_set(op->ptr, "filepath")) {
+    return text_open_ex(C, op);
   }
 
   text_open_init(C, op);
   RNA_string_set(op->ptr, "filepath", path);
   WM_event_add_fileselect(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-void TEXT_OT_open(wmOperatorType *ot)
+void TEXT_OT_open(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Open Text";
