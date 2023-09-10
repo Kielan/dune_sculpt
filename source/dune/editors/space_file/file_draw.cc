@@ -2,72 +2,72 @@
 #include <cmath>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "AS_asset_representation.hh"
 
-#include "BLI_blenlib.h"
-#include "BLI_fileops_types.h"
-#include "BLI_math_color.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_fileops_types.h"
+#include "lib_math_color.h"
+#include "lib_utildefines.h"
 
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#  include "lib_winstuff.h"
 #endif
 
 #include "BIF_glutil.hh"
 
-#include "BKE_blendfile.h"
-#include "BKE_context.h"
-#include "BKE_report.h"
+#include "dune_dunefile.h"
+#include "dune_cxt.h"
+#include "dune_report.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "BLF_api.h"
 
-#include "IMB_imbuf_types.h"
+#include "types_imbuf.h"
 
-#include "DNA_userdef_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_userdef.h"
+#include "types_wm.h"
 
-#include "RNA_access.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_prototypes.h"
 
-#include "ED_fileselect.hh"
-#include "ED_screen.hh"
+#include "ed_fileselect.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_interface_icons.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui_interface.hh"
+#include "ui_interface_icons.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "wm_api.hh"
+#include "wm_types.hh"
 
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_state.h"
 
 #include "filelist.hh"
 
 #include "file_intern.hh" /* own include */
 
-void ED_file_path_button(bScreen *screen,
-                         const SpaceFile *sfile,
-                         FileSelectParams *params,
-                         uiBlock *block)
+void ed_file_path_btn(Screen *screen,
+                      const SpaceFile *sfile,
+                      FileSelectParams *params,
+                      uiBlock *block)
 {
-  uiBut *but;
+  uiBtn *btn;
 
-  BLI_assert_msg(params != nullptr,
+  lib_assert_msg(params != nullptr,
                  "File select parameters not set. The caller is expected to check this.");
 
-  PointerRNA params_rna_ptr = RNA_pointer_create(&screen->id, &RNA_FileSelectParams, params);
+  ApiPtr params_api_ptr = api_ptr_create(&screen->id, &ApiFileSelectParams, params);
 
-  /* callbacks for operator check functions */
-  UI_block_func_set(block, file_draw_check_cb, nullptr, nullptr);
+  /* cbs for op check fns */
+  ui_block_fn_set(block, file_draw_check_cb, nullptr, nullptr);
 
-  but = uiDefButR(block,
+  btn = uiDefBtnR(block,
                   UI_BTYPE_TEXT,
                   -1,
                   "",
@@ -75,7 +75,7 @@ void ED_file_path_button(bScreen *screen,
                   0,
                   UI_UNIT_X * 10,
                   UI_UNIT_Y,
-                  &params_rna_ptr,
+                  &params_api_ptr,
                   "directory",
                   0,
                   0.0f,
@@ -84,53 +84,53 @@ void ED_file_path_button(bScreen *screen,
                   0.0f,
                   TIP_("File path"));
 
-  BLI_assert(!UI_but_flag_is_set(but, UI_BUT_UNDO));
-  BLI_assert(!UI_but_is_utf8(but));
+  lib_assert(!ui_btn_flag_is_set(btn, UI_BTN_UNDO));
+  lib_assert(!ui_btn_is_utf8(btn));
 
-  UI_but_func_complete_set(but, autocomplete_directory, nullptr);
-  UI_but_funcN_set(but, file_directory_enter_handle, nullptr, but);
+  ui_btn_fn_complete_set(btn, autocomplete_dir, nullptr);
+  ui_btn_fnN_set(btn, file_dir_enter_handle, nullptr, btn);
 
   /* TODO: directory editing is non-functional while a library is loaded
    * until this is properly supported just disable it. */
   if (sfile && sfile->files && filelist_lib(sfile->files)) {
-    UI_but_flag_enable(but, UI_BUT_DISABLED);
+    ui_btn_flag_enable(btn, UI_BTN_DISABLED);
   }
 
   /* clear func */
-  UI_block_func_set(block, nullptr, nullptr, nullptr);
+  ui_block_fn_set(block, nullptr, nullptr, nullptr);
 }
 
 /* Dummy helper - we need dynamic tooltips here. */
-static char *file_draw_tooltip_func(bContext * /*C*/, void *argN, const char * /*tip*/)
+static char *file_draw_tooltip_func(Cxt * /*C*/, void *argN, const char * /*tip*/)
 {
   char *dyn_tooltip = static_cast<char *>(argN);
-  return BLI_strdup(dyn_tooltip);
+  return lib_strdup(dyn_tooltip);
 }
 
-static char *file_draw_asset_tooltip_func(bContext * /*C*/, void *argN, const char * /*tip*/)
+static char *file_draw_asset_tooltip_fn(Cxt * /*C*/, void *argN, const char * /*tip*/)
 {
-  const auto *asset = static_cast<blender::asset_system::AssetRepresentation *>(argN);
+  const auto *asset = static_cast<dune::asset_system::AssetRepresentation *>(argN);
   std::string complete_string = asset->get_name();
   const AssetMetaData &meta_data = asset->get_metadata();
   if (meta_data.description) {
     complete_string += '\n';
     complete_string += meta_data.description;
   }
-  return BLI_strdupn(complete_string.c_str(), complete_string.size());
+  return lib_strdupn(complete_string.c_str(), complete_string.size());
 }
 
 static void draw_tile_background(const rcti *draw_rect, int colorid, int shade)
 {
   float color[4];
   rctf draw_rect_fl;
-  BLI_rctf_rcti_copy(&draw_rect_fl, draw_rect);
+  lib_rctf_rcti_copy(&draw_rect_fl, draw_rect);
 
-  UI_GetThemeColorShade4fv(colorid, shade, color);
-  UI_draw_roundbox_corner_set(UI_CNR_ALL);
-  UI_draw_roundbox_aa(&draw_rect_fl, true, 5.0f, color);
+  ui_GetThemeColorShade4fv(colorid, shade, color);
+  ui_draw_roundbox_corner_set(UI_CNR_ALL);
+  ui_draw_roundbox_aa(&draw_rect_fl, true, 5.0f, color);
 }
 
-static void file_but_enable_drag(uiBut *but,
+static void file_btn_enable_drag(uiBtn *btn,
                                  const SpaceFile *sfile,
                                  const FileDirEntry *file,
                                  const char *path,
@@ -138,31 +138,31 @@ static void file_but_enable_drag(uiBut *but,
                                  int icon,
                                  float scale)
 {
-  ID *id;
+  Id *id;
 
   if ((id = filelist_file_get_id(file))) {
-    UI_but_drag_set_id(but, id);
+    ui_btn_drag_set_id(btn, id);
     if (preview_image) {
-      UI_but_drag_attach_image(but, preview_image, scale);
+      ui_btn_drag_attach_image(btn, preview_image, scale);
     }
   }
   else if (sfile->browse_mode == FILE_BROWSE_MODE_ASSETS &&
            (file->typeflag & FILE_TYPE_ASSET) != 0) {
-    const int import_method = ED_fileselect_asset_import_method_get(sfile, file);
-    BLI_assert(import_method > -1);
+    const int import_method = ed_fileselect_asset_import_method_get(sfile, file);
+    lib_assert(import_method > -1);
 
-    UI_but_drag_set_asset(but, file->asset, import_method, icon, preview_image, scale);
+    ui_btn_drag_set_asset(btn, file->asset, import_method, icon, preview_image, scale);
   }
   else if (preview_image) {
-    UI_but_drag_set_image(but, path, icon, preview_image, scale);
+    ui_btn_drag_set_image(btn, path, icon, preview_image, scale);
   }
   else {
     /* path is no more static, cannot give it directly to but... */
-    UI_but_drag_set_path(but, path);
+    ui_btn_drag_set_path(btn, path);
   }
 }
 
-static uiBut *file_add_icon_but(const SpaceFile *sfile,
+static uiBtn *file_add_icon_btn(const SpaceFile *sfile,
                                 uiBlock *block,
                                 const char *path,
                                 const FileDirEntry *file,
@@ -172,25 +172,25 @@ static uiBut *file_add_icon_but(const SpaceFile *sfile,
                                 int height,
                                 bool dimmed)
 {
-  uiBut *but;
+  uiBtn *btn;
 
   const int x = tile_draw_rect->xmin;
   const int y = tile_draw_rect->ymax - sfile->layout->tile_border_y - height;
 
-  /* For #uiDefIconBut(): if `a1==1.0` then a2 is alpha `0.0 - 1.0`. */
+  /* For uiDefIconBtn(): if `a1==1.0` then a2 is alpha `0.0 - 1.0`. */
   const float a1 = dimmed ? 1.0f : 0.0f;
   const float a2 = dimmed ? 0.3f : 0.0f;
-  but = uiDefIconBut(
+  btn = uiDefIconBtn(
       block, UI_BTYPE_LABEL, 0, icon, x, y, width, height, nullptr, 0.0f, 0.0f, a1, a2, nullptr);
 
   if (file->asset) {
-    UI_but_func_tooltip_set(but, file_draw_asset_tooltip_func, file->asset, nullptr);
+    ui_btn_fn_tooltip_set(btn, file_draw_asset_tooltip_fn, file->asset, nullptr);
   }
   else {
-    UI_but_func_tooltip_set(but, file_draw_tooltip_func, BLI_strdup(path), MEM_freeN);
+    ui_btn_fn_tooltip_set(btn, file_draw_tooltip_fn, lib_strdup(path), mem_freen);
   }
 
-  return but;
+  return btn;
 }
 
 static void file_draw_string(int sx,
@@ -209,11 +209,11 @@ static void file_draw_string(int sx,
     return;
   }
 
-  const uiStyle *style = UI_style_get();
+  const uiStyle *style = ui_style_get();
   fs = style->widget;
 
   STRNCPY(filename, string);
-  UI_text_clip_middle_ex(&fs, filename, width, UI_ICON_SIZE, sizeof(filename), '\0');
+  ui_text_clip_middle_ex(&fs, filename, width, UI_ICON_SIZE, sizeof(filename), '\0');
 
   /* no text clipping needed, UI_fontstyle_draw does it but is a bit too strict
    * (for buttons it works) */
@@ -225,14 +225,12 @@ static void file_draw_string(int sx,
   uiFontStyleDraw_Params font_style_params{};
   font_style_params.align = align;
 
-  UI_fontstyle_draw(&fs, &rect, filename, sizeof(filename), col, &font_style_params);
+  ui_fontstyle_draw(&fs, &rect, filename, sizeof(filename), col, &font_style_params);
 }
 
-/**
- * \param r_sx, r_sy: The lower right corner of the last line drawn, plus the height of the last
- *                    line. This is the cursor position on completion to allow drawing more text
- *                    behind that.
- */
+/* param r_sx, r_sy: The lower right corner of the last line drawn, plus the height of the last
+ *                   line. This is the cursor position on completion to allow drawing more text
+ *                   behind that. */
 static void file_draw_string_multiline(int sx,
                                        int sy,
                                        const char *string,
@@ -253,26 +251,26 @@ static void file_draw_string_multiline(int sx,
   int len = strlen(string);
 
   rcti textbox;
-  BLF_wordwrap(font_id, wrap_width);
-  BLF_enable(font_id, BLF_WORD_WRAP);
-  BLF_boundbox(font_id, string, len, &textbox);
-  BLF_disable(font_id, BLF_WORD_WRAP);
+  font_wordwrap(font_id, wrap_width);
+  font_enable(font_id, FONT_WORD_WRAP);
+  font_boundbox(font_id, string, len, &textbox);
+  font_disable(font_id, FONT_WORD_WRAP);
 
-  /* no text clipping needed, UI_fontstyle_draw does it but is a bit too strict
-   * (for buttons it works) */
+  /* no text clipping needed, ui_fontstyle_draw does it but is a bit too strict
+   * (for btns it works) */
   rect.xmin = sx;
   rect.xmax = sx + wrap_width;
   /* Need to increase the clipping rect by one more line, since the #UI_fontstyle_draw_ex() will
    * actually start drawing at (ymax - line-height). */
-  rect.ymin = sy - BLI_rcti_size_y(&textbox) - line_height;
+  rect.ymin = sy - lib_rcti_size_y(&textbox) - line_height;
   rect.ymax = sy;
 
   uiFontStyleDraw_Params font_style_params{};
   font_style_params.align = UI_STYLE_TEXT_LEFT;
   font_style_params.word_wrap = true;
 
-  ResultBLF result;
-  UI_fontstyle_draw_ex(
+  FobtResult result;
+  ui_fontstyle_draw_ex(
       &style->widget, &rect, string, len, text_col, &font_style_params, nullptr, nullptr, &result);
   if (r_sx) {
     *r_sx = result.width;
@@ -282,16 +280,16 @@ static void file_draw_string_multiline(int sx,
   }
 }
 
-void file_calc_previews(const bContext *C, ARegion *region)
+void file_calc_previews(const Cxt *C, ARegion *region)
 {
-  SpaceFile *sfile = CTX_wm_space_file(C);
+  SpaceFile *sfile = cxt_wm_space_file(C);
   View2D *v2d = &region->v2d;
 
-  ED_fileselect_init_layout(sfile, region);
-  UI_view2d_totRect_set(v2d, sfile->layout->width, sfile->layout->height);
+  ed_fileselect_init_layout(sfile, region);
+  ui_view2d_totRect_set(v2d, sfile->layout->width, sfile->layout->height);
 }
 
-static void file_add_preview_drag_but(const SpaceFile *sfile,
+static void file_add_preview_drag_btn(const SpaceFile *sfile,
                                       uiBlock *block,
                                       FileLayout *layout,
                                       const FileDirEntry *file,
@@ -305,29 +303,29 @@ static void file_add_preview_drag_but(const SpaceFile *sfile,
   rcti drag_rect = *tile_draw_rect;
   /* A bit smaller than the full tile, to increase the gap between items that users can drag from
    * for box select. */
-  BLI_rcti_pad(&drag_rect, -layout->tile_border_x, -layout->tile_border_y);
+  lib_rcti_pad(&drag_rect, -layout->tile_border_x, -layout->tile_border_y);
 
-  uiBut *but = uiDefBut(block,
+  uiBtn *btn = uiDefBtn(block,
                         UI_BTYPE_LABEL,
                         0,
                         "",
                         drag_rect.xmin,
                         drag_rect.ymin,
-                        BLI_rcti_size_x(&drag_rect),
-                        BLI_rcti_size_y(&drag_rect),
+                        lib_rcti_size_x(&drag_rect),
+                        lib_rcti_size_y(&drag_rect),
                         nullptr,
                         0.0,
                         0.0,
                         0,
                         0,
                         nullptr);
-  file_but_enable_drag(but, sfile, file, path, preview_image, icon, scale);
+  file_but_enable_drag(btn, sfile, file, path, preview_image, icon, scale);
 
   if (file->asset) {
-    UI_but_func_tooltip_set(but, file_draw_asset_tooltip_func, file->asset, nullptr);
+    ui_btn_fn_tooltip_set(btn, file_draw_asset_tooltip_fn, file->asset, nullptr);
   }
   else {
-    UI_but_func_tooltip_set(but, file_draw_tooltip_func, BLI_strdup(path), MEM_freeN);
+    ui_btn_fn_tooltip_set(btn, file_draw_tooltip_fn, lib_strdup(path), mem_freen);
   }
 }
 
