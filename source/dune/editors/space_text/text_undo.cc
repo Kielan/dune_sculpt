@@ -2,44 +2,41 @@
 #include <cerrno>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_text_types.h"
+#include "types_text.h"
 
-#include "BLI_array_store.h"
-#include "BLI_array_utils.h"
+#include "lib_array_store.h"
+#include "lib_array_utils.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "PIL_time.h"
 
-#include "BKE_context.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
-#include "BKE_text.h"
-#include "BKE_undo_system.h"
+#include "dune_cxt.h"
+#include "dune_main.h"
+#include "dune_report.h"
+#include "dune_text.h"
+#include "dune_undo_system.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "wm_api.hh"
+#include "wm_types.hh"
 
-#include "ED_curve.hh"
-#include "ED_screen.hh"
-#include "ED_text.hh"
-#include "ED_undo.hh"
+#include "ed_curve.hh"
+#include "ed_screen.hh"
+#include "ed_text.hh"
+#include "ed_undo.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui_interface.hh"
+#include "ui_resources.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "types_access.hh"
+#include "types_define.hh"
 
 #include "text_format.hh"
 #include "text_intern.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Implements ED Undo System
- * \{ */
-
+/* Implements ED Undo System */
 #define ARRAY_CHUNK_SIZE 128
 
 /**
