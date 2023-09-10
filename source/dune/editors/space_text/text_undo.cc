@@ -52,7 +52,7 @@ static void text_state_encode(TextState *state, Text *text, BArrayStore *buffer_
   size_t buf_len = 0;
   uchar *buf = (uchar *)txt_to_buf_for_undo(text, &buf_len);
   state->buf_array_state = lib_array_store_state_add(buffer_store, buf, buf_len, nullptr);
-  MEM_freeN(buf);
+  mem_freen(buf);
 
   state->cursor_line = txt_get_span(static_cast<TextLine *>(text->lines.first), text->curl);
   state->cursor_column = text->curc;
@@ -98,7 +98,7 @@ struct TextUndoStep {
 };
 
 static struct {
-  BArrayStore *buffer_store;
+  ArrayStore *buffer_store;
   int users;
 } g_text_buffers = {nullptr};
 
@@ -183,14 +183,14 @@ static void text_undosys_step_decode(
 
   text_state_decode(state, text);
 
-  SpaceText *st = CTX_wm_space_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
   if (st) {
     /* Not essential, always show text being undo where possible. */
     st->text = text;
   }
   text_update_cursor_moved(C);
   text_drawcache_tag_update(st, true);
-  WM_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
+  wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
 }
 
 static void text_undosys_step_free(UndoStep *us_p)
@@ -200,22 +200,22 @@ static void text_undosys_step_free(UndoStep *us_p)
   for (int i = 0; i < ARRAY_SIZE(us->states); i++) {
     TextState *state = &us->states[i];
     if (state->buf_array_state) {
-      BLI_array_store_state_remove(g_text_buffers.buffer_store, state->buf_array_state);
+      lib_array_store_state_remove(g_text_buffers.buffer_store, state->buf_array_state);
       g_text_buffers.users -= 1;
       if (g_text_buffers.users == 0) {
-        BLI_array_store_destroy(g_text_buffers.buffer_store);
+        lib_array_store_destroy(g_text_buffers.buffer_store);
         g_text_buffers.buffer_store = nullptr;
       }
     }
   }
 }
 
-static void text_undosys_foreach_ID_ref(UndoStep *us_p,
-                                        UndoTypeForEachIDRefFn foreach_ID_ref_fn,
+static void text_undosys_foreach_id_ref(UndoStep *us_p,
+                                        UndoTypeForEachIdRefFn foreach_id_ref_fn,
                                         void *user_data)
 {
   TextUndoStep *us = (TextUndoStep *)us_p;
-  foreach_ID_ref_fn(user_data, ((UndoRefID *)&us->text_ref));
+  foreach_id_ref_fn(user_data, ((UndoRefID *)&us->text_ref));
 }
 
 void ed_text_undosys_type(UndoType *ut)
@@ -237,12 +237,12 @@ void ed_text_undosys_type(UndoType *ut)
 /* Utilities */
 UndoStep *ed_text_undo_push_init(Cxt *C)
 {
-  UndoStack *ustack = ED_undo_stack_get();
-  Main *bmain = CTX_data_main(C);
-  wmWindowManager *wm = static_cast<wmWindowManager *>(bmain->wm.first);
+  UndoStack *ustack = ed_undo_stack_get();
+  Main *main = cxt_data_main(C);
+  WM *wm = static_cast<WM *>(main->wm.first);
   if (wm->op_undo_depth <= 1) {
-    UndoStep *us_p = BKE_undosys_step_push_init_with_type(
-        ustack, C, nullptr, BKE_UNDOSYS_TYPE_TEXT);
+    UndoStep *us_p = dune_undosys_step_push_init_with_type(
+        ustack, C, nullptr, DUNE_UNDOSYS_TYPE_TEXT);
     return us_p;
   }
   return nullptr;
