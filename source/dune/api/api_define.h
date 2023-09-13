@@ -1,33 +1,27 @@
 #pragma once
 
-/** \file
- * \ingroup RNA
- *
- * Functions used during preprocess and runtime, for defining the RNA.
- */
-
+/* Fns used during preprocess and runtime, for defining the api */
 #include <float.h>
 #include <inttypes.h>
 #include <limits.h>
 
-#include "DNA_listBase.h"
-#include "RNA_types.h"
+#include "types_list.h"
+#include "api_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef UNIT_TEST
-#  define RNA_MAX_ARRAY_LENGTH 64
+#  define API_MAX_ARRAY_LENGTH 64
 #else
-#  define RNA_MAX_ARRAY_LENGTH 32
+#  define API_MAX_ARRAY_LENGTH 32
 #endif
 
-#define RNA_MAX_ARRAY_DIMENSION 3
+#define API_MAX_ARRAY_DIMENSION 3
 
-/* Blender RNA */
-
-BlenderRNA *RNA_create(void);
+/* Dune Api */
+DuneApi *api_create(void);
 void RNA_define_free(BlenderRNA *brna);
 void RNA_free(BlenderRNA *brna);
 void RNA_define_verify_sdna(bool verify);
