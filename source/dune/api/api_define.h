@@ -22,52 +22,47 @@ extern "C" {
 
 /* Dune Api */
 DuneApi *api_create(void);
-void RNA_define_free(BlenderRNA *brna);
-void RNA_free(BlenderRNA *brna);
-void RNA_define_verify_sdna(bool verify);
-void RNA_define_animate_sdna(bool animate);
-void RNA_define_fallback_property_update(int noteflag, const char *updatefunc);
-/**
- * Properties defined when this is enabled are lib-overridable by default
- * (except for Pointer ones).
- */
-void RNA_define_lib_overridable(bool make_overridable);
+void api_define_free(DuneApi *dapi);
+void api_free(DuneApi *dapi);
+void api_define_verify_stype(bool verify);
+void api_define_animate_stype(bool animate);
+void api_define_fallback_prop_update(int noteflag, const char *updatefn);
+/* Props defined when this is enabled are lib-overridable by default
+ * (except for Pointer ones). */
+void api_define_lib_overridable(bool make_overridable);
 
-void RNA_init(void);
-void RNA_exit(void);
+void api_init(void);
+void api_exit(void);
 
 /* Struct */
-
-/**
- * Struct Definition.
- */
-StructRNA *RNA_def_struct_ptr(BlenderRNA *brna, const char *identifier, StructRNA *srnafrom);
-StructRNA *RNA_def_struct(BlenderRNA *brna, const char *identifier, const char *from);
-void RNA_def_struct_sdna(StructRNA *srna, const char *structname);
-void RNA_def_struct_sdna_from(StructRNA *srna, const char *structname, const char *propname);
-void RNA_def_struct_name_property(StructRNA *srna, PropertyRNA *prop);
-void RNA_def_struct_nested(BlenderRNA *brna, StructRNA *srna, const char *structname);
-void RNA_def_struct_flag(StructRNA *srna, int flag);
-void RNA_def_struct_clear_flag(StructRNA *srna, int flag);
-void RNA_def_struct_property_tags(StructRNA *srna, const EnumPropertyItem *prop_tag_defines);
-void RNA_def_struct_refine_func(StructRNA *srna, const char *refine);
-void RNA_def_struct_idprops_func(StructRNA *srna, const char *idproperties);
-void RNA_def_struct_register_funcs(StructRNA *srna,
+/* Struct Definition. */
+ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *identifier, StructRNA *srnafrom);
+ApiStruct *api_def_struct(DuneApi *dapi, const char *id, const char *from);
+void api_def_struct_stype(ApiStruct *sapi, const char *structname);
+void api_def_struct_stype_from(ApiStruct *sapi, const char *structname, const char *propname);
+void apu_def_struct_name_prop(ApiStruct *sapi, ApiProp *prop);
+void RNA_def_struct_nested(DuneApi *dapi, ApiStruct *sapi, const char *structname);
+void RNA_def_struct_flag(ApiStruct *sapi, int flag);
+void RNA_def_struct_clear_flag(ApiStruct *sapi, int flag);
+void RNA_def_struct_prop_tags(ApiStruct *sapi, const EnumPropItem *prop_tag_defines);
+void RNA_def_struct_refine_fn(ApiStruct *sapi, const char *refine);
+void RNA_def_struct_idprops_fn(ApiStruct *sapi, const char *idprops);
+void api_def_struct_register_fns(ApiStruct *sapi,
                                    const char *reg,
                                    const char *unreg,
                                    const char *instance);
-void RNA_def_struct_path_func(StructRNA *srna, const char *path);
+void RNA_def_struct_path_fn(ApiStruct *sapi, const char *path);
 /**
  * Only used in one case when we name the struct for the purpose of useful error messages.
  */
-void RNA_def_struct_identifier_no_struct_map(StructRNA *srna, const char *identifier);
-void RNA_def_struct_identifier(BlenderRNA *brna, StructRNA *srna, const char *identifier);
+void RNA_def_struct_id_no_struct_map(StructRNA *srna, const char *identifier);
+void RNA_def_struct_id(BlenderRNA *brna, StructRNA *srna, const char *identifier);
 void RNA_def_struct_ui_text(StructRNA *srna, const char *name, const char *description);
 void RNA_def_struct_ui_icon(StructRNA *srna, int icon);
 void RNA_struct_free_extension(StructRNA *srna, ExtensionRNA *rna_ext);
 void RNA_struct_free(BlenderRNA *brna, StructRNA *srna);
 
-void RNA_def_struct_translation_context(StructRNA *srna, const char *context);
+void api_def_struct_lang_cxt(ApiStruct *srna, const char *context);
 
 /* Compact Property Definitions */
 
