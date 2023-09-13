@@ -59,20 +59,19 @@ static SpaceLink *topbar_create(const ScrArea * /*area*/, const Scene * /*scene*
 /* Doesn't free the space-link itself. */
 static void topbar_free(SpaceLink * /*sl*/) {}
 
-/* spacetype; init callback */
-static void topbar_init(wmWM * /*wm*/, ScrArea * /*area*/) {}
+/* spacetype; init cb */
+static void topbar_init(WM * /*wm*/, ScrArea * /*area*/) {}
 
 static SpaceLink *topbar_duplicate(SpaceLink *sl)
 {
   SpaceTopBar *stopbarn = static_cast<SpaceTopBar *>(MEM_dupallocN(sl));
 
   /* clear or remove stuff from old */
-
   return (SpaceLink *)stopbarn;
 }
 
 /* add handlers, stuff you only do once or on area/region changes */
-static void topbar_main_region_init(wmWindowManager *wm, ARegion *region)
+static void topbar_main_region_init(WM *wm, ARegion *region)
 {
   wmKeyMap *keymap;
 
@@ -293,7 +292,7 @@ void ed_spacetype_topbar()
   st->duplicate = topbar_duplicate;
   st->optypes = topbar_optypes;
   st->keymap = topbar_keymap;
-  st->blend_write = topbar_space_blend_write;
+  st->dune_write = topbar_space_dune_write;
 
   /* regions: main window */
   art = static_cast<ARegionType *>(
