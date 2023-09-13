@@ -42,9 +42,9 @@
 
 static void txt_screen_clamp(SpaceText *st, ARegion *region);
 
-/* Utilities */
+/* Utils */
 
-/* Tests if the given character represents a start of a new line or the
+/* Tests if the given char represents a start of a new line or the
  * indentation part of a line.
  * param c: The current character.
  * param r_last_state: A pointer to a flag representing the last state. The
@@ -185,7 +185,7 @@ static bool text_edit_poll(Cxt *C)
   }
 
   if (!dune_id_is_editable(cxt_data_main(C), &text->id)) {
-    // BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
+    // dune_report(op->reports, RPT_ERROR, "Cannot edit external library data");
     return false;
   }
 
@@ -224,7 +224,7 @@ static bool text_region_edit_poll(Cxt *C)
   }
 
   if (!dune_id_is_editable(cxt_data_main(C), &text->id)) {
-    // BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
+    // dune_report(op->reports, RPT_ERROR, "Cannot edit external library data");
     return false;
   }
 
@@ -258,7 +258,7 @@ static int text_new_ex(Cxt *C, wmOp * /*op*/)
   ApiPtr ptr;
   ApiProp *prop;
 
-  text = dune_text_add(bmain, DATA_("Text"));
+  text = dune_text_add(main, DATA_("Text"));
 
   /* hook into UI */
   ui_cxt_active_btn_prop_get_templateId(C, &ptr, &prop);
@@ -315,7 +315,7 @@ static void text_open_cancel(Cxt * /*C*/, wmOp *op)
 static int text_open_ex(Cxt *C, wmOp *op)
 {
   SpaceText *st = cxt_wm_space_text(C);
-  Main *bmain = cxt_data_main(C);
+  Main *main = cxt_data_main(C);
   Text *text;
   ApiPropPtr *pprop;
   char filepath[FILE_MAX];
@@ -323,7 +323,7 @@ static int text_open_ex(Cxt *C, wmOp *op)
 
   api_string_get(op->ptr, "filepath", filepath);
 
-  text = dune_text_load_ex(bmain, filepath, dune_main_dunefile_path(bmain), internal);
+  text = dune_text_load_ex(main, filepath, dune_main_dunefile_path(bmain), internal);
 
   if (!text) {
     if (op->customdata) {
@@ -364,7 +364,7 @@ static int text_open_invoke(Cxt *C, wmOp *op, const wmEvent * /*event*/)
 {
   Main *bmain = cxt_data_main(C);
   Text *text = cxt_data_edit_text(C);
-  const char *path = (text && text->filepath) ? text->filepath : BKE_main_blendfile_path(bmain);
+  const char *path = (text && text->filepath) ? text->filepath : dube_main_dunefile_path(main);
 
   if (api_struct_prop_is_set(op->ptr, "filepath")) {
     return text_open_ex(C, op);
@@ -395,17 +395,17 @@ void TEXT_OT_open(wmOpType *ot)
 
   /* properties */
   wm_op_props_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_TEXT | FILE_TYPE_PYSCRIPT,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT); /* TODO: relative_path. */
+                      FILE_TYPE_FOLDER | FILE_TYPE_TEXT | FILE_TYPE_PYSCRIPT,
+                      FILE_SPECIAL,
+                      FILE_OPENFILE,
+                      WM_FILESEL_FILEPATH,
+                      FILE_DEFAULTDISPLAY,
+                      FILE_SORT_DEFAULT); /* TODO: relative_path. */
   api_def_bool(
       ot->sapi, "internal", false, "Make Internal", "Make text file internal after loading");
 }
 
-/* Reload Operator */
+/* Reload Op */
 static int text_reload_ex(Cxt *C, wmOp *op)
 {
   SpaceText *st = cxt_wm_space_text(C);
@@ -465,14 +465,13 @@ void TEXT_OT_reload(wmOpType *ot)
 }
 
 /* Delete Operator */
-
 static bool text_unlink_poll(Cxt *C)
 {
   /* it should be possible to unlink texts if they're lib-linked in... */
   return cxt_data_edit_text(C) != nullptr;
 }
 
-static int text_unlink_exec(Cxt *C, wmOp * /*op*/)
+static int text_unlink_ex(Cxt *C, wmOp * /*op*/)
 {
   Main *main = cxt_data_main(C);
   SpaceText *st = cxt_wm_space_text(C);
@@ -505,9 +504,9 @@ void TEXT_OT_unlink(wmOpType *ot)
   ot->idname = "TEXT_OT_unlink";
   ot->description = "Unlink active text data-block";
 
-  /* api callbacks */
+  /* api cbs */
   ot->ex = text_unlink_ex;
-  ot->invoke = WM_op_confirm;
+  ot->invoke = wm_op_confirm;
   ot->poll = text_unlink_poll;
 
   /* flags */
@@ -515,7 +514,6 @@ void TEXT_OT_unlink(wmOpType *ot)
 }
 
 /* Make Internal Operator */
-
 static int text_make_internal_ex(Cxt *C, wmOp * /*op*/)
 {
   Text *text = cxt_data_edit_text(C);
@@ -643,10 +641,10 @@ void TEXT_OT_save(wmOpType *ot)
 }
 
 /* Save As Operator */
-static int text_save_as_exec(bContext *C, wmOperator *op)
+static int text_save_as_ex(Cxt *C, wmOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Text *text = CTX_data_edit_text(C);
+  Main *main = cxt_data_main(C);
+  Text *text = cxt_data_edit_text(C);
   char filepath[FILE_MAX];
 
   if (!text) {
@@ -661,7 +659,7 @@ static int text_save_as_exec(bContext *C, wmOperator *op)
   text->filepath = lib_strdup(filepath);
   text->flags &= ~TXT_ISMEM;
 
-  txt_write_file(bmain, text, op->reports);
+  txt_write_file(main, text, op->reports);
 
   text_update_cursor_moved(C);
   wm_event_add_notifier(C, NC_TEXT | NA_EDITED, text);
@@ -756,7 +754,7 @@ static int text_run_script(Cxt *C, ReportList *reports)
   return OP_CANCELLED;
 }
 
-static int text_run_script_exec(Cxt *C, wmOp *op)
+static int text_run_script_ex(Cxt *C, wmOp *op)
 {
 #ifndef WITH_PYTHON
   (void)C; /* unused */
@@ -1453,7 +1451,7 @@ void TEXT_OT_select_line(wmOpType *ot)
 }
 
 /* Select Word Operator */
-static int text_select_word_exec(Cxt *C, wmOp * /*op*/
+static int text_select_word_ex(Cxt *C, wmOp * /*op*/
 {
   Text *text = cxt_data_edit_text(C);
 
@@ -1557,7 +1555,7 @@ static int text_get_cursor_rel(
 
   for (i = 0, j = 0; loop; j += BLI_str_utf8_size_safe(linein->line + j)) {
     int chars;
-    int columns = BLI_str_utf8_char_width_safe(linein->line + j); /* = 1 for tab */
+    int columns = lib_str_utf8_char_width_safe(linein->line + j); /* = 1 for tab */
 
     /* Mimic replacement of tabs */
     ch = linein->line[j];
@@ -1856,7 +1854,7 @@ static void txt_wrap_move_eol(SpaceText *st, ARegion *region, const bool sel)
         end = MIN2(end, i);
 
         if (chop) {
-          endj = BLI_str_find_prev_char_utf8((*linep)->line + j, (*linep)->line) - (*linep)->line;
+          endj = lib_str_find_prev_char_utf8((*linep)->line + j, (*linep)->line) - (*linep)->line;
         }
 
         if (endj >= oldc) {
@@ -2458,7 +2456,7 @@ static bool text_scroll_poll(Cxt *C)
 {
   /* it should be possible to still scroll linked texts to read them,
    * even if they can't be edited... */
-  return CTX_data_edit_text(C) != nullptr;
+  return cxt_data_edit_text(C) != nullptr;
 }
 
 static int text_scroll_ex(Cxt *C, wmOp *op)
@@ -2561,7 +2559,7 @@ static void text_scroll_apply(Cxt *C, wmOp *op, const wmEvent *event)
     st->top = scroll_ofs_new[1];
     st->runtime.scroll_ofs_px[0] = scroll_ofs_px_new[0];
     st->runtime.scroll_ofs_px[1] = scroll_ofs_px_new[1];
-    ED_area_tag_redraw(CTX_wm_area(C));
+    ed_area_tag_redraw(cxt_wm_area(C));
   }
 
   tsc->mval_prev[0] = mval[0];
@@ -3045,31 +3043,31 @@ static void text_cursor_set_to_pos(SpaceText *st, ARegion *region, int x, int y,
   }
 }
 
-static void text_cursor_timer_ensure(bContext *C, SetSelection *ssel)
+static void text_cursor_timer_ensure(Cxt *C, SetSelection *ssel)
 {
   if (ssel->timer == nullptr) {
-    wmWindowManager *wm = CTX_wm_manager(C);
-    wmWindow *win = CTX_wm_window(C);
+    WM *wm = cxt_wm_manager(C);
+    Window *win = cxt_wm_window(C);
 
-    ssel->timer = WM_event_timer_add(wm, win, TIMER, 0.02f);
+    ssel->timer = wm_event_timer_add(wm, win, TIMER, 0.02f);
   }
 }
 
-static void text_cursor_timer_remove(bContext *C, SetSelection *ssel)
+static void text_cursor_timer_remove(Cxt *C, SetSelection *ssel)
 {
   if (ssel->timer) {
-    wmWindowManager *wm = CTX_wm_manager(C);
-    wmWindow *win = CTX_wm_window(C);
+    WM *wm = cxt_wm_manager(C);
+    Window *win = cxt_wm_window(C);
 
-    WM_event_timer_remove(wm, win, ssel->timer);
+    wm_event_timer_remove(wm, win, ssel->timer);
   }
   ssel->timer = nullptr;
 }
 
-static void text_cursor_set_apply(bContext *C, wmOperator *op, const wmEvent *event)
+static void text_cursor_set_apply(Cxt *C, wmOp *op, const wmEvent *event)
 {
-  SpaceText *st = CTX_wm_space_text(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceText *st = cxt_wm_space_text(C);
+  ARegion *region = cxt_wm_region(C);
   SetSelection *ssel = static_cast<SetSelection *>(op->customdata);
 
   if (event->mval[1] < 0 || event->mval[1] > region->winy) {
@@ -3077,8 +3075,8 @@ static void text_cursor_set_apply(bContext *C, wmOperator *op, const wmEvent *ev
 
     if (event->type == TIMER) {
       text_cursor_set_to_pos(st, region, event->mval[0], event->mval[1], true);
-      ED_text_scroll_to_cursor(st, region, false);
-      WM_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
+      ed_text_scroll_to_cursor(st, region, false);
+      wm_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
     }
   }
   else if (!st->wordwrap && (event->mval[0] < 0 || event->mval[0] > region->winx)) {
@@ -3087,8 +3085,8 @@ static void text_cursor_set_apply(bContext *C, wmOperator *op, const wmEvent *ev
     if (event->type == TIMER) {
       text_cursor_set_to_pos(
           st, region, CLAMPIS(event->mval[0], 0, region->winx), event->mval[1], true);
-      ED_text_scroll_to_cursor(st, region, false);
-      WM_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
+      ed_text_scroll_to_cursor(st, region, false);
+      wm_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
     }
   }
   else {
@@ -3096,8 +3094,8 @@ static void text_cursor_set_apply(bContext *C, wmOperator *op, const wmEvent *ev
 
     if (event->type != TIMER) {
       text_cursor_set_to_pos(st, region, event->mval[0], event->mval[1], true);
-      ED_text_scroll_to_cursor(st, region, false);
-      WM_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
+      ed_text_scroll_to_cursor(st, region, false);
+      wm_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
 
       ssel->mval_prev[0] = event->mval[0];
       ssel->mval_prev[1] = event->mval[1];
@@ -3105,21 +3103,21 @@ static void text_cursor_set_apply(bContext *C, wmOperator *op, const wmEvent *ev
   }
 }
 
-static void text_cursor_set_exit(bContext *C, wmOperator *op)
+static void text_cursor_set_exit(Cxt *C, wmOp *op)
 {
-  SpaceText *st = CTX_wm_space_text(C);
+  SpaceText *st = cxt_wm_space_text(C);
   SetSelection *ssel = static_cast<SetSelection *>(op->customdata);
 
   text_update_cursor_moved(C);
   text_select_update_primary_clipboard(st->text);
 
-  WM_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
+  wm_event_add_notifier(C, NC_TEXT | ND_CURSOR, st->text);
 
   text_cursor_timer_remove(C, ssel);
-  MEM_freeN(ssel);
+  mem_freen(ssel);
 }
 
-static int text_selection_set_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int text_selection_set_invoke(Cxt *C, wmOp *op, const wmEvent *event)
 {
   SpaceText *st = cxt_wm_space_text(C);
   SetSelection *ssel;
@@ -3207,7 +3205,7 @@ static int text_cursor_set_invoke(Cxt *C, wmOp *op, const wmEvent *event)
   api_int_set(op->ptr, "x", event->mval[0]);
   api_int_set(op->ptr, "y", event->mval[1]);
 
-  return text_cursor_set_exec(C, op);
+  return text_cursor_set_ex(C, op);
 }
 
 void TEXT_OT_cursor_set(wmOpType *ot)
@@ -3253,7 +3251,7 @@ static int text_line_number_invoke(Cxt *C, wmOp * /*op*/, const wmEvent *event)
 
   const char event_ascii = wm_event_utf8_to_ascii(event);
   if (!(event_ascii >= '0' && event_ascii <= '9')) {
-    return OPERATOR_PASS_THROUGH;
+    return OP_PASS_THROUGH;
   }
 
   time = PIL_check_seconds_timer();
@@ -3286,7 +3284,7 @@ void TEXT_OT_line_number(wmOpType *ot)
 }
 
 /* Insert Operator */
-static int text_insert_ext *C, wmOperator *op)
+static int text_insert_ex(Cxt *C, wmOp *op)
 {
   SpaceText *st = cxt_wm_space_text(C);
   Text *text = cxt_data_edit_text(C);
@@ -3537,7 +3535,7 @@ static int text_replace_all(Cxt *C)
   return OP_FINISHED;
 }
 
-static int text_replace_exec(Cxt *C, wmOp *op)
+static int text_replace_ex(Cxt *C, wmOp *op)
 {
   bool replace_all = api_bool_get(op->ptr, "all");
   if (replace_all) {
@@ -3712,10 +3710,10 @@ static bool text_resolve_conflict_poll(Cxt *C)
   return ((text->filepath != nullptr) && !(text->flags & TXT_ISMEM));
 }
 
-static int text_resolve_conflict_exec(bContext *C, wmOperator *op)
+static int text_resolve_conflict_ex(Cxt *C, wmOp *op)
 {
-  Text *text = CTX_data_edit_text(C);
-  int resolution = RNA_enum_get(op->ptr, "resolution");
+  Text *text = cxt_data_edit_text(C);
+  int resolution = api_enum_get(op->ptr, "resolution");
 
   switch (resolution) {
     case RESOLVE_RELOAD:
@@ -3725,20 +3723,20 @@ static int text_resolve_conflict_exec(bContext *C, wmOperator *op)
     case RESOLVE_MAKE_INTERNAL:
       return text_make_internal_exec(C, op);
     case RESOLVE_IGNORE:
-      BKE_text_file_modified_ignore(text);
-      return OPERATOR_FINISHED;
+      dune_text_file_modified_ignore(text);
+      return OP_FINISHED;
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static int text_resolve_conflict_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int text_resolve_conflict_invoke(Cxt *C, wmOp *op, const wmEvent * /*event*/)
 {
-  Text *text = CTX_data_edit_text(C);
+  Text *text = cxt_data_edit_text(C);
   uiPopupMenu *pup;
   uiLayout *layout;
 
-  switch (BKE_text_file_modified_check(text)) {
+  switch (dune_text_file_modified_check(text)) {
     case 1:
       if (text->flags & TXT_ISDIRTY) {
         /* Modified locally and externally, ah. offer more possibilities. */
@@ -3796,10 +3794,10 @@ static int text_resolve_conflict_invoke(bContext *C, wmOperator *op, const wmEve
       break;
   }
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void TEXT_OT_resolve_conflict(wmOperatorType *ot)
+void TEXT_OT_resolve_conflict(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Resolve Conflict";
@@ -3807,12 +3805,12 @@ void TEXT_OT_resolve_conflict(wmOperatorType *ot)
   ot->description = "When external text is out of sync, resolve the conflict";
 
   /* api callbacks */
-  ot->exec = text_resolve_conflict_exec;
+  ot->ex = text_resolve_conflict_ex;
   ot->invoke = text_resolve_conflict_invoke;
   ot->poll = text_resolve_conflict_poll;
 
-  /* properties */
-  RNA_def_enum(ot->srna,
+  /* props */
+  api_def_enum(ot->sapi,
                "resolution",
                resolution_items,
                RESOLVE_IGNORE,
@@ -3820,37 +3818,32 @@ void TEXT_OT_resolve_conflict(wmOperatorType *ot)
                "How to solve conflict due to differences in internal and external text");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name To 3D Object Operator
- * \{ */
-
-static int text_to_3d_object_exec(bContext *C, wmOperator *op)
+/* To 3D Object Operator */
+static int text_to_3d_object_ex(Cxt *C, wmOp *op)
 {
-  const Text *text = CTX_data_edit_text(C);
-  const bool split_lines = RNA_boolean_get(op->ptr, "split_lines");
+  const Text *text = cxt_data_edit_text(C);
+  const bool split_lines = api_bool_get(op->ptr, "split_lines");
 
-  ED_text_to_object(C, text, split_lines);
+  ed_text_to_object(C, text, split_lines);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void TEXT_OT_to_3d_object(wmOperatorType *ot)
+void TEXT_OT_to_3d_object(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "To 3D Object";
   ot->idname = "TEXT_OT_to_3d_object";
   ot->description = "Create 3D text object from active text data-block";
 
-  /* api callbacks */
-  ot->exec = text_to_3d_object_exec;
+  /* api cbs */
+  ot->ex = text_to_3d_object_ex;
   ot->poll = text_data_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_boolean(
-      ot->srna, "split_lines", false, "Split Lines", "Create one object per line in the text");
+  /* props */
+  api_def_bool(
+      ot->sapi, "split_lines", false, "Split Lines", "Create one object per line in the text");
 }
