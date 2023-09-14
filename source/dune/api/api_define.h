@@ -236,14 +236,14 @@ ApiProp *api_def_float_rotation(ApiStructOrFn *cont,
                                 float softmin,
                                 float softmax);
 ApiProp *api_def_float_distance(ApiStructOrFn *cont,
-                                    const char *id,
-                                    float default_value,
-                                    float hardmin,
-                                    float hardmax,
-                                    const char *ui_name,
-                                    const char *ui_description,
-                                    float softmin,
-                                    float softmax);
+                                const char *id,
+                                float default_value,
+                                float hardmin,
+                                float hardmax,
+                                const char *ui_name,
+                                const char *ui_description,
+                                float softmin,
+                                float softmax);
 ApiProp *api_def_float_array(ApiStructOrFn *cont,
                              const char *id,
                              int len,
@@ -256,29 +256,20 @@ ApiProp *api_def_float_array(ApiStructOrFn *cont,
                              float softmax);
 
 #if 0
-PropertyRNA *RNA_def_float_dynamic_array(StructOrFunctionRNA *cont,
-                                         const char *identifier,
-                                         float hardmin,
-                                         float hardmax,
-                                         const char *ui_name,
-                                         const char *ui_description,
-                                         float softmin,
-                                         float softmax,
-                                         unsigned int dimension,
-                                         unsigned short dim_size[]);
+ApiProp *api_def_float_dynamic_array(ApiStructOrFn *cont,
+                                     const char *id,
+                                     float hardmin,
+                                     float hardmax,
+                                     const char *ui_name,
+                                     const char *ui_description,
+                                     float softmin,
+                                     float softmax,
+                                     unsigned int dimension,
+                                     unsigned short dim_size[]);
 #endif
 
-PropertyRNA *RNA_def_float_percentage(StructOrFunctionRNA *cont,
-                                      const char *identifier,
-                                      float default_value,
-                                      float hardmin,
-                                      float hardmax,
-                                      const char *ui_name,
-                                      const char *ui_description,
-                                      float softmin,
-                                      float softmax);
-PropertyRNA *RNA_def_float_factor(StructOrFunctionRNA *cont,
-                                  const char *identifier,
+ApiProp *api_def_float_percentage(ApiStructOrFn *cont,
+                                  const char *id,
                                   float default_value,
                                   float hardmin,
                                   float hardmax,
@@ -286,33 +277,41 @@ PropertyRNA *RNA_def_float_factor(StructOrFunctionRNA *cont,
                                   const char *ui_description,
                                   float softmin,
                                   float softmax);
+ApiProp *api_def_float_factor(ApiStructOrFn *cont,
+                              const char *id,
+                              float default_value,
+                              float hardmin,
+                              float hardmax,
+                              const char *ui_name,
+                              const char *ui_description,
+                              float softmin,
+                              float softmax);
 
-PropertyRNA *RNA_def_pointer(StructOrFunctionRNA *cont,
-                             const char *identifier,
-                             const char *type,
+ApiProp *api_def_ptr(ApiStructOrFn *cont,
+                     const char *id,
+                     const char *type,
+                     const char *ui_name,
+                     const char *ui_description);
+ApiProp *api_def_ptr_runtime(ApiStructOrFn *cont,
+                             const char *id,
+                             ApiStruct *type,
                              const char *ui_name,
                              const char *ui_description);
-PropertyRNA *RNA_def_pointer_runtime(StructOrFunctionRNA *cont,
-                                     const char *identifier,
-                                     StructRNA *type,
-                                     const char *ui_name,
-                                     const char *ui_description);
 
-PropertyRNA *RNA_def_collection(StructOrFunctionRNA *cont,
-                                const char *identifier,
+ApiProp *api_def_collection(ApiStructOrFn *cont,
+                                const char *id,
                                 const char *type,
                                 const char *ui_name,
                                 const char *ui_description);
-PropertyRNA *RNA_def_collection_runtime(StructOrFunctionRNA *cont,
-                                        const char *identifier,
-                                        StructRNA *type,
-                                        const char *ui_name,
-                                        const char *ui_description);
+ApiProp *api_def_collection_runtime(ApiStructOrFn *cont,
+                                    const char *id,
+                                    ApiStruct *type,
+                                    const char *ui_name,
+                                    const char *ui_description);
 
-/* Extended Property Definitions */
-
-PropertyRNA *RNA_def_property(StructOrFunctionRNA *cont,
-                              const char *identifier,
+/* Extended Prop Definitions */
+ApiProp *api_def_prop(ApiStructOrFn *cont,
+                              const char *id,
                               int type,
                               int subtype);
 
@@ -439,28 +438,28 @@ void RNA_def_property_collection_funcs(PropertyRNA *prop,
                                        const char *lookupint,
                                        const char *lookupstring,
                                        const char *assignint);
-void RNA_def_property_srna(PropertyRNA *prop, const char *type);
-void RNA_def_py_data(PropertyRNA *prop, void *py_data);
+void api_def_prop_sapi(ApiProp *prop, const char *type);
+void api_def_py_data(ApiProp *prop, void *py_data);
 
-void RNA_def_property_boolean_funcs_runtime(PropertyRNA *prop,
-                                            BooleanPropertyGetFunc getfunc,
-                                            BooleanPropertySetFunc setfunc);
-void RNA_def_property_boolean_array_funcs_runtime(PropertyRNA *prop,
+void api_def_prop_bool_fns_runtime(PropertyRNA *prop,
+                                   BoolPropGetFn getfn,
+                                   BoolPropSetFn setfn);
+void api_def_prop_bool_array_fns_runtime(PropertyRNA *prop,
                                                   BooleanArrayPropertyGetFunc getfunc,
                                                   BooleanArrayPropertySetFunc setfunc);
-void RNA_def_property_int_funcs_runtime(PropertyRNA *prop,
-                                        IntPropertyGetFunc getfunc,
-                                        IntPropertySetFunc setfunc,
-                                        IntPropertyRangeFunc rangefunc);
-void RNA_def_property_int_array_funcs_runtime(PropertyRNA *prop,
-                                              IntArrayPropertyGetFunc getfunc,
-                                              IntArrayPropertySetFunc setfunc,
-                                              IntPropertyRangeFunc rangefunc);
-void RNA_def_prop_float_fns_runtime(ApiProp *prop,
-                                    FloatPropertyGetFunc getfunc,
-                                    FloatPropertySetFunc setfunc,
-                                    FloatPropertyRangeFunc rangefunc);
-void RNA_def_prop_float_array_fns_runtime(PropertyRNA *prop,
+void api_def_prop_int_fns_runtime(ApiProp *prop,
+                                  IntPropGetFn getfn,
+                                  IntPropSetFn setfn,
+                                  IntPropRangeFn rangefn);
+void api_def_prop_int_array_fns_runtime(ApiProp *prop,
+                                        IntArrayPropGetFn getfn,
+                                        IntArrayPropSetFn setfn,
+                                        IntPropRangeFn rangefn);
+void api_def_prop_float_fns_runtime(ApiProp *prop,
+                                    FloatPropGetFn getfn,
+                                    FloatPropSetFn setfn,
+                                    FloatPropRangeFn rangefn);
+void api_def_prop_float_array_fns_runtime(ApiProp *prop,
                                           FloatArrayPropGetFn getfn,
                                           FloatArrayPropSetFn setfn,
                                           FloatPropRangeFn rangefn);
@@ -487,7 +486,7 @@ void api_def_fn_ui_description(ApiFn *fn, const char *description);
 void api_def_param_flags(ApiProp *prop,
                              PropFlag flag_prop,
                              ParamFlag flag_param);
-void RNA_def_param_clear_flags(PropRNA *prop,
+void api_def_param_clear_flags(PropRNA *prop,
                                    PropFlag flag_prop,
                                    ParamFlag flag_param);
 
