@@ -61,14 +61,12 @@ const char *api_struct_ui_description_raw(const ApiStruct *type);
 const char *api_struct_lang_cxt(const ApiStruct *type);
 int api_struct_ui_icon(const ApiStruct *type);
 
-PropertyRNA *RNA_struct_name_property(const StructRNA *type);
-const EnumPropertyItem *RNA_struct_property_tag_defines(const StructRNA *type);
-PropertyRNA *api_struct_iter_prop(StructRNA *type);
-StructRNA *api_struct_base(ApiStruct *type);
-/**
- * Use to find the sub-type directly below a base-type.
- *
- * So if type were `RNA_SpotLight`, `RNA_struct_base_of(type, &RNA_ID)` would return `&Api_Light`. */
+ApiProp *api_struct_name_prop(const ApiStruct *type);
+const EnumPropItem *api_struct_prop_tag_defines(const ApiStruct *type);
+ApiProp *api_struct_iter_prop(ApiStruct *type);
+ApiStruct *api_struct_base(ApiStruct *type);
+/* Use to find the sub-type directly below a base-type.
+ * So if type were `RNA_SpotLight`, `RNA_struct_base_of(type, &API_ID)` would return `&Api_Light`. */
 const ApiStruct *api_struct_base_child_of(const ApiStruct *type, const ApiStruct *parent_type);
 
 bool api_struct_is_id(const ApiStruct *type);
@@ -76,60 +74,52 @@ bool api_struct_is_a(const ApiStruct *type, const StructRNA *srna);
 
 bool api_struct_undo_check(const ApiStruct *type);
 
-StructRegisterFunc RNA_struct_register(StructRNA *type);
-StructUnregisterFunc RNA_struct_unregister(StructRNA *type);
-void **RNA_struct_instance(PointerRNA *ptr);
+StructRegisterFn api_struct_register(ApiStruct *type);
+StructUnregisterFn api_struct_unregister(ApiStruct *type);
+void **api_struct_instance(ApiPtr *ptr);
 
-void *RNA_struct_py_type_get(StructRNA *srna);
-void RNA_struct_py_type_set(StructRNA *srna, void *py_type);
+void *api_struct_py_type_get(ApiStructRNA *srna);
+void api_struct_py_type_set(ApiStructRNA *srna, void *py_type);
 
-void *RNA_struct_blender_type_get(StructRNA *srna);
-void RNA_struct_blender_type_set(StructRNA *srna, void *blender_type);
+void *api_struct_dune_type_get(ApiStructRNA *srna);
+void api_struct_dune_type_set(ApiStructRNA *srna, void *blender_type);
 
 struct IDProperty **RNA_struct_idprops_p(PointerRNA *ptr);
 struct IDProperty *RNA_struct_idprops(PointerRNA *ptr, bool create);
-bool RNA_struct_idprops_check(StructRNA *srna);
-bool RNA_struct_idprops_register_check(const StructRNA *type);
-bool RNA_struct_idprops_datablock_allowed(const StructRNA *type);
-/**
- * Whether given type implies datablock usage by IDProperties.
- * This is used to prevent classes allowed to have IDProperties,
+bool api_struct_idprops_check(StructRNA *srna);
+bool api_struct_idprops_register_check(const StructRNA *type);
+bool api_struct_idprops_datablock_allowed(const StructRNA *type);
+/* Whether given type implies datablock usage by IDProps.
+ * This is used to prevent classes allowed to have IDProps,
  * but not datablock ones, to indirectly use some
- * (e.g. by assigning an IDP_GROUP containing some IDP_ID pointers...).
- */
-bool RNA_struct_idprops_contains_datablock(const StructRNA *type);
-/**
- * Remove an id-property.
- */
-bool RNA_struct_idprops_unset(PointerRNA *ptr, const char *identifier);
+ * (e.g. by assigning an IDP_GROUP containing some IDP_ID ptrs...). */
+bool api_struct_idprops_contains_datablock(const ApiStruct *type);
+/* Remove an id-property. */
+bool api_struct_idprops_unset(ApiPtr *ptr, const char *id);
 
-PropertyRNA *RNA_struct_find_property(PointerRNA *ptr, const char *identifier);
-bool RNA_struct_contains_property(PointerRNA *ptr, PropertyRNA *prop_test);
-unsigned int RNA_struct_count_properties(StructRNA *srna);
+ApiProp *api_struct_find_prop(ApiPtr *ptr, const char *id);
+bool api_struct_contains_prop(ApiPtr *ptr, ApiProp *prop_test);
+unsigned int api_struct_count_props(ApiStruct *sapi);
 
-/**
- * Low level direct access to type->properties,
- * note this ignores parent classes so should be used with care.
- */
-const struct ListBase *RNA_struct_type_properties(StructRNA *srna);
-PropertyRNA *RNA_struct_type_find_property_no_base(StructRNA *srna, const char *identifier);
-/**
- * \note #RNA_struct_find_property is a higher level alternative to this function
- * which takes a #PointerRNA instead of a #StructRNA.
- */
-PropertyRNA *RNA_struct_type_find_property(StructRNA *srna, const char *identifier);
+/* Low level direct access to type->properties,
+ * note this ignores parent classes so should be used with care. */
+const struct List *api_struct_type_props(ApiStruct *sapi);
+ApiProp *api_struct_type_find_prop_no_base(ApiStruct *sapi, const char *id);
+/* api_struct_find_prop is a higher level alternative to this function
+ * which takes a ApiPtr instead of a ApiStruct. */
+ApiProp *api_struct_type_find_prop(ApiStruct *sapi, const char *id);
 
-FunctionRNA *RNA_struct_find_function(StructRNA *srna, const char *identifier);
-const struct ListBase *RNA_struct_type_functions(StructRNA *srna);
+FunctionRNA *RNA_struct_find_fn(ApiStruct *sapi, const char *id);
+const struct ListBase *RNA_struct_type_fns(ApiStruct *sapi);
 
 char *RNA_struct_name_get_alloc(PointerRNA *ptr, char *fixedbuf, int fixedlen, int *r_len);
 
 /**
  * Use when registering structs with the #STRUCT_PUBLIC_NAMESPACE flag.
  */
-bool RNA_struct_available_or_report(struct ReportList *reports, const char *identifier);
-bool RNA_struct_bl_idname_ok_or_report(struct ReportList *reports,
-                                       const char *identifier,
+bool api_struct_available_or_report(struct ReportList *reports, const char *id);
+bool api_struct_bl_idname_ok_or_report(struct ReportList *reports,
+                                       const char *id,
                                        const char *sep);
 
 /* Properties
