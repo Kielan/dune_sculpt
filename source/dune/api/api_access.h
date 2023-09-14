@@ -35,48 +35,46 @@ extern DuneApi DUNE_API;
  *
  * There is also a way to get a pointer with the information about all structs. */
 
-void api_main_pointer_create(struct Main *main, PointerRNA *r_ptr);
-void api_id_pointer_create(struct ID *id, PointerRNA *r_ptr);
-void api_pointer_create(struct ID *id, StructRNA *type, void *data, PointerRNA *r_ptr);
-bool api_pointer_is_null(const PointerRNA *ptr);
+void api_main_ptr_create(struct Main *main, ApiPtr *r_ptr);
+void api_id_ptr_create(struct Id *id, ApiPtr *r_ptr);
+void api_ptr_create(struct Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr);
+bool api_ptr_is_null(const ApiPtr *ptr);
 
-bool api_path_resolved_create(PointerRNA *ptr,
-                              struct PropertyRNA *prop,
+bool api_path_resolved_create(ApiPtr *ptr,
+                              struct ApiProp *prop,
                               int prop_index,
-                              PathResolvedRNA *r_anim_rna);
+                              ApiPathResolved *r_anim_api);
 
-void RNA_blender_rna_pointer_create(PointerRNA *r_ptr);
-void RNA_pointer_recast(PointerRNA *ptr, PointerRNA *r_ptr);
+void api_dune_api_ptr_create(ApiPtr *r_ptr);
+void api_ptr_recast(ApiPtr *ptr, ApiPtr *r_ptr);
 
-extern const PointerRNA PointerRNA_NULL;
+extern const ApiPtr ApiPtr_NULL;
 
 /* Structs */
+ApiStruct *api_struct_find(const char *id);
 
-StructRNA *RNA_struct_find(const char *identifier);
-
-const char *RNA_struct_identifier(const StructRNA *type);
-const char *RNA_struct_ui_name(const StructRNA *type);
-const char *RNA_struct_ui_name_raw(const StructRNA *type);
-const char *RNA_struct_ui_description(const StructRNA *type);
-const char *RNA_struct_ui_description_raw(const StructRNA *type);
-const char *RNA_struct_translation_context(const StructRNA *type);
-int RNA_struct_ui_icon(const StructRNA *type);
+const char *api_struct_id(const ApiStruct *type);
+const char *api_struct_ui_name(const ApiStruct *type);
+const char *api_struct_ui_name_raw(const ApiStruct *type);
+const char *api_struct_ui_description(const ApiStruct *type);
+const char *api_struct_ui_description_raw(const ApiStruct *type);
+const char *api_struct_lang_cxt(const ApiStruct *type);
+int api_struct_ui_icon(const ApiStruct *type);
 
 PropertyRNA *RNA_struct_name_property(const StructRNA *type);
 const EnumPropertyItem *RNA_struct_property_tag_defines(const StructRNA *type);
-PropertyRNA *RNA_struct_iterator_property(StructRNA *type);
-StructRNA *RNA_struct_base(StructRNA *type);
+PropertyRNA *api_struct_iter_prop(StructRNA *type);
+StructRNA *api_struct_base(ApiStruct *type);
 /**
  * Use to find the sub-type directly below a base-type.
  *
- * So if type were `RNA_SpotLight`, `RNA_struct_base_of(type, &RNA_ID)` would return `&RNA_Light`.
- */
-const StructRNA *RNA_struct_base_child_of(const StructRNA *type, const StructRNA *parent_type);
+ * So if type were `RNA_SpotLight`, `RNA_struct_base_of(type, &RNA_ID)` would return `&Api_Light`. */
+const ApiStruct *api_struct_base_child_of(const ApiStruct *type, const ApiStruct *parent_type);
 
-bool RNA_struct_is_ID(const StructRNA *type);
-bool RNA_struct_is_a(const StructRNA *type, const StructRNA *srna);
+bool api_struct_is_id(const ApiStruct *type);
+bool api_struct_is_a(const ApiStruct *type, const StructRNA *srna);
 
-bool RNA_struct_undo_check(const StructRNA *type);
+bool api_struct_undo_check(const ApiStruct *type);
 
 StructRegisterFunc RNA_struct_register(StructRNA *type);
 StructUnregisterFunc RNA_struct_unregister(StructRNA *type);
