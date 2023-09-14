@@ -65,11 +65,11 @@ void api_def_struct_lang_cxt(ApiStruct *sapi, const char *context);
 /* Compact Prop Definitions */
 typedef void ApiStructOrFn;
 
-ApiProp *api_def_bool(StructOrFunctionRNA *cont,
-                             const char *id,
-                             bool default_value,
-                             const char *ui_name,
-                             const char *ui_description);
+ApiProp *api_def_bool(ApiStructOrFn *cont,
+                      const char *id,
+                      bool default_value,
+                      const char *ui_name,
+                      const char *ui_description);
 ApiProp *api_def_bool_array(ApiStructOrFn *cont,
                             const char *id,
                             int len,
@@ -77,26 +77,26 @@ ApiProp *api_def_bool_array(ApiStructOrFn *cont,
                             const char *ui_name,
                             const char *ui_description);
 ApiProp *api_def_bool_layer(ApiStructOrFn *cont,
+                            const char *id,
+                            int len,
+                            bool *default_value,
+                            const char *ui_name,
+                            const char *ui_description);
+ApiProp *api_def_bool_layer_member(ApiStructOrFn *cont,
                                    const char *id,
                                    int len,
                                    bool *default_value,
                                    const char *ui_name,
                                    const char *ui_description);
-PropertyRNA *api_def_bool_layer_member(ApiStructOrFn *cont,
-                                          const char *id,
-                                          int len,
-                                          bool *default_value,
-                                          const char *ui_name,
-                                          const char *ui_description);
-PropertyRNA *RNA_def_bool_vector(StructOrFunctionRNA *cont,
-                                    const char *identifier,
-                                    int len,
-                                    bool *default_value,
-                                    const char *ui_name,
-                                    const char *ui_description);
+ApiProp *api_def_bool_vector(ApiStructOrFn *cont,
+                             const char *id,
+                             int len,
+                             bool *default_value,
+                             const char *ui_name,
+                             const char *ui_description);
 
-PropertyRNA *RNA_def_int(StructOrFunctionRNA *cont,
-                         const char *identifier,
+ApiProp *api_def_int(ApiStructOrFn *cont,
+                         const char *id,
                          int default_value,
                          int hardmin,
                          int hardmax,
@@ -104,90 +104,88 @@ PropertyRNA *RNA_def_int(StructOrFunctionRNA *cont,
                          const char *ui_description,
                          int softmin,
                          int softmax);
-PropertyRNA *RNA_def_int_vector(StructOrFunctionRNA *cont,
-                                const char *identifier,
-                                int len,
-                                const int *default_value,
-                                int hardmin,
-                                int hardmax,
-                                const char *ui_name,
-                                const char *ui_description,
-                                int softmin,
-                                int softmax);
-PropertyRNA *RNA_def_int_array(StructOrFunctionRNA *cont,
-                               const char *identifier,
-                               int len,
-                               const int *default_value,
-                               int hardmin,
-                               int hardmax,
-                               const char *ui_name,
-                               const char *ui_description,
-                               int softmin,
-                               int softmax);
-
-PropertyRNA *RNA_def_string(StructOrFunctionRNA *cont,
-                            const char *identifier,
-                            const char *default_value,
-                            int maxlen,
+ApiProp *api_def_int_vector(ApiStructOrFn *cont,
+                            const char *id,
+                            int len,
+                            const int *default_value,
+                            int hardmin,
+                            int hardmax,
                             const char *ui_name,
-                            const char *ui_description);
-PropertyRNA *RNA_def_string_file_path(StructOrFunctionRNA *cont,
-                                      const char *identifier,
+                            const char *ui_description,
+                            int softmin,
+                            int softmax);
+ApiProp *api_def_int_array(ApiStructOrFn *cont,
+                           const char *id,
+                           int len,
+                           const int *default_value,
+                           int hardmin,
+                           int hardmax,
+                           const char *ui_name,
+                           const char *ui_description,
+                           int softmin,
+                           int softmax);
+
+ApiProp *api_def_string(ApiStructOrFn *cont,
+                        const char *id,
+                        const char *default_value,
+                        int maxlen,
+                        const char *ui_name,
+                        const char *ui_description);
+ApiProp *api_def_string_file_path(ApiStructOrFn *cont,
+                                      const char *id,
                                       const char *default_value,
                                       int maxlen,
                                       const char *ui_name,
                                       const char *ui_description);
-PropertyRNA *RNA_def_string_dir_path(StructOrFunctionRNA *cont,
-                                     const char *identifier,
+ApiProp *api_def_string_dir_path(ApiStructOrFn *cont,
+                                     const char *id,
                                      const char *default_value,
                                      int maxlen,
                                      const char *ui_name,
                                      const char *ui_description);
-PropertyRNA *RNA_def_string_file_name(StructOrFunctionRNA *cont,
-                                      const char *identifier,
-                                      const char *default_value,
-                                      int maxlen,
-                                      const char *ui_name,
-                                      const char *ui_description);
-
-PropertyRNA *RNA_def_enum(StructOrFunctionRNA *cont,
-                          const char *identifier,
-                          const EnumPropertyItem *items,
-                          int default_value,
-                          const char *ui_name,
-                          const char *ui_description);
-/**
- * Same as above but sets #PROP_ENUM_FLAG before setting the default value.
- */
-PropertyRNA *RNA_def_enum_flag(StructOrFunctionRNA *cont,
-                               const char *identifier,
-                               const EnumPropertyItem *items,
-                               int default_value,
-                               const char *ui_name,
-                               const char *ui_description);
-void RNA_def_enum_funcs(PropertyRNA *prop, EnumPropertyItemFunc itemfunc);
-
-PropertyRNA *RNA_def_float(StructOrFunctionRNA *cont,
-                           const char *identifier,
-                           float default_value,
-                           float hardmin,
-                           float hardmax,
-                           const char *ui_name,
-                           const char *ui_description,
-                           float softmin,
-                           float softmax);
-PropertyRNA *RNA_def_float_vector(StructOrFunctionRNA *cont,
-                                  const char *identifier,
-                                  int len,
-                                  const float *default_value,
-                                  float hardmin,
-                                  float hardmax,
+ApiProp *api_def_string_file_name(ApiStructOrFn *cont,
+                                  const char *id,
+                                  const char *default_value,
+                                  int maxlen,
                                   const char *ui_name,
-                                  const char *ui_description,
-                                  float softmin,
-                                  float softmax);
-PropertyRNA *RNA_def_float_vector_xyz(StructOrFunctionRNA *cont,
-                                      const char *identifier,
+                                  const char *ui_description);
+
+ApiProp *api_def_enum(ApiStructOrFn *cont,
+                      const char *id,
+                      const EnumPropItem *items,
+                      int default_value,
+                      const char *ui_name,
+                      const char *ui_description);
+/* Same as above but sets PROP_ENUM_FLAG before setting the default value */
+ApiProp *api_def_enum_flag(ApiStructOrFn *cont,
+                           const char *id,
+                           const EnumPropItem *items,
+                           int default_value,
+                           const char *ui_name,
+                           const char *ui_description);
+void api_def_enum_fns(ApiProp *prop, EnumPropItemFn itemfn);
+
+ApiProp *api_def_float(ApiStructOrFn *cont,
+                       const char *id,
+                       float default_value,
+                       float hardmin,
+                       float hardmax,
+                       const char *ui_name,
+                       const char *ui_description,
+                       float softmin,
+                       float softmax);
+ApiProp *api_def_float_vector(ApiStructOrFn *cont,
+                              const char *id,
+                              int len,
+                              const float *default_value,
+                              float hardmin,
+                              float hardmax,
+                              const char *ui_name,
+                              const char *ui_description,
+                              float softmin,
+                              float softmax);
+ApiProp *api_def_float_vector_xyz(ApiStructOrFn *cont,
+                                      const char *id,
                                       int len,
                                       const float *default_value,
                                       float hardmin,
@@ -196,38 +194,38 @@ PropertyRNA *RNA_def_float_vector_xyz(StructOrFunctionRNA *cont,
                                       const char *ui_description,
                                       float softmin,
                                       float softmax);
-PropertyRNA *RNA_def_float_color(StructOrFunctionRNA *cont,
-                                 const char *identifier,
-                                 int len,
-                                 const float *default_value,
-                                 float hardmin,
-                                 float hardmax,
-                                 const char *ui_name,
-                                 const char *ui_description,
-                                 float softmin,
-                                 float softmax);
-PropertyRNA *RNA_def_float_matrix(StructOrFunctionRNA *cont,
-                                  const char *identifier,
-                                  int rows,
-                                  int columns,
-                                  const float *default_value,
-                                  float hardmin,
-                                  float hardmax,
-                                  const char *ui_name,
-                                  const char *ui_description,
-                                  float softmin,
-                                  float softmax);
-PropertyRNA *RNA_def_float_translation(StructOrFunctionRNA *cont,
-                                       const char *identifier,
-                                       int len,
-                                       const float *default_value,
-                                       float hardmin,
-                                       float hardmax,
-                                       const char *ui_name,
-                                       const char *ui_description,
-                                       float softmin,
-                                       float softmax);
-PropertyRNA *RNA_def_float_rotation(StructOrFunctionRNA *cont,
+ApiProp *api_def_float_color(ApiStructOrFn *cont,
+                             const char *id,
+                             int len,
+                             const float *default_value,
+                             float hardmin,
+                             float hardmax,
+                             const char *ui_name,
+                             const char *ui_description,
+                             float softmin,
+                             float softmax);
+ApiProp *api_def_float_matrix(ApiStructOrFn *cont,
+                              const char *id,
+                              int rows,
+                              int columns,
+                              const float *default_value,
+                              float hardmin,
+                              float hardmax,
+                              const char *ui_name,
+                              const char *ui_description,
+                              float softmin,
+                              float softmax);
+ApiProp *api_def_float_lang(ApiStructOrFn *cont,
+                            const char *id,
+                            int len,
+                            const float *default_value,
+                            float hardmin,
+                            float hardmax,
+                            const char *ui_name,
+                            const char *ui_description,
+                            float softmin,
+                            float softmax);
+ApiProp *RNA_def_float_rotation(StructOrFunctionRNA *cont,
                                     const char *identifier,
                                     int len,
                                     const float *default_value,
@@ -458,55 +456,51 @@ void RNA_def_property_int_array_funcs_runtime(PropertyRNA *prop,
                                               IntArrayPropertyGetFunc getfunc,
                                               IntArrayPropertySetFunc setfunc,
                                               IntPropertyRangeFunc rangefunc);
-void RNA_def_property_float_funcs_runtime(PropertyRNA *prop,
-                                          FloatPropertyGetFunc getfunc,
-                                          FloatPropertySetFunc setfunc,
-                                          FloatPropertyRangeFunc rangefunc);
-void RNA_def_property_float_array_funcs_runtime(PropertyRNA *prop,
-                                                FloatArrayPropertyGetFunc getfunc,
-                                                FloatArrayPropertySetFunc setfunc,
-                                                FloatPropertyRangeFunc rangefunc);
-void RNA_def_property_enum_funcs_runtime(PropertyRNA *prop,
-                                         EnumPropertyGetFunc getfunc,
-                                         EnumPropertySetFunc setfunc,
-                                         EnumPropertyItemFunc itemfunc);
-void RNA_def_property_string_funcs_runtime(PropertyRNA *prop,
-                                           StringPropertyGetFunc getfunc,
-                                           StringPropertyLengthFunc lengthfunc,
-                                           StringPropertySetFunc setfunc);
+void RNA_def_prop_float_fns_runtime(ApiProp *prop,
+                                    FloatPropertyGetFunc getfunc,
+                                    FloatPropertySetFunc setfunc,
+                                    FloatPropertyRangeFunc rangefunc);
+void RNA_def_prop_float_array_fns_runtime(PropertyRNA *prop,
+                                          FloatArrayPropGetFn getfn,
+                                          FloatArrayPropSetFn setfn,
+                                          FloatPropRangeFn rangefn);
+void api_def_prop_enum_fns_runtime(ApiProp *prop,
+                                   EnumPropGetFn getfn,
+                                   EnumPropSetFn setfn,
+                                   EnumPropItemFn itemfn);
+void api_def_prop_string_fns_runtime(ApiProp *prop,
+                                     StringPropGetFn getfn,
+                                     StringPropLengthFn lengthfn,
+                                     StringPropSetFn setfn);
 
-void RNA_def_property_translation_context(PropertyRNA *prop, const char *context);
+void api_def_prop_lang_cxt(ApiProp *prop, const char *cxt);
 
-/* Function */
+/* Fn */
+ApiFn *api_def_fn(ApiStruct *sapi, const char *id, const char *call);
+ApiFn *api_def_fn_runtime(ApiStruct *sapi, const char *id, CallFn call);
+/* C return value only! multiple api returns can be done with api_def_fn_output */
+void api_def_fn_return(ApiFn *fn, ApiProp *ret);
+void api_def_fn_output(ApiFn *fn, ApiProp *ret);
+void api_def_fn_flag(ApiFn *fn, int flag);
+void api_def_fn_ui_description(ApiFn *fn, const char *description);
 
-FunctionRNA *RNA_def_function(StructRNA *srna, const char *identifier, const char *call);
-FunctionRNA *RNA_def_function_runtime(StructRNA *srna, const char *identifier, CallFunc call);
-/**
- * C return value only! multiple RNA returns can be done with #RNA_def_function_output.
- */
-void RNA_def_function_return(FunctionRNA *func, PropertyRNA *ret);
-void RNA_def_function_output(FunctionRNA *func, PropertyRNA *ret);
-void RNA_def_function_flag(FunctionRNA *func, int flag);
-void RNA_def_function_ui_description(FunctionRNA *func, const char *description);
-
-void RNA_def_parameter_flags(PropertyRNA *prop,
-                             PropertyFlag flag_property,
-                             ParameterFlag flag_parameter);
-void RNA_def_parameter_clear_flags(PropertyRNA *prop,
-                                   PropertyFlag flag_property,
-                                   ParameterFlag flag_parameter);
+void api_def_param_flags(ApiProp *prop,
+                             PropFlag flag_prop,
+                             ParamFlag flag_param);
+void RNA_def_param_clear_flags(PropRNA *prop,
+                                   PropFlag flag_prop,
+                                   ParamFlag flag_param);
 
 /* Dynamic Enums
  * strings are not freed, assumed pointing to static location. */
-
-void RNA_enum_item_add(EnumPropertyItem **items, int *totitem, const EnumPropertyItem *item);
-void RNA_enum_item_add_separator(EnumPropertyItem **items, int *totitem);
-void RNA_enum_items_add(EnumPropertyItem **items, int *totitem, const EnumPropertyItem *item);
-void RNA_enum_items_add_value(EnumPropertyItem **items,
+void api_enum_item_add(EnumPropItem **items, int *totitem, const EnumPropItem *item);
+void api_enum_item_add_separator(EnumPropItem **items, int *totitem);
+void api_enum_items_add(EnumPropItem **items, int *totitem, const EnumPropItem *item);
+void api_enum_items_add_value(EnumPropItem **items,
                               int *totitem,
-                              const EnumPropertyItem *item,
+                              const EnumPropItem *item,
                               int value);
-void RNA_enum_item_end(EnumPropItem **items, int *totitem);
+void api_enum_item_end(EnumPropItem **items, int *totitem);
 
 /* Memory management */
 void api_def_struct_duplicate_ptrs(DuneApi *dapi, ApiStruct *sapi);
@@ -517,16 +511,15 @@ void api_def_prop_duplicate_ptrs(ApiStructOrFn *cont_, ApiProp *prop);
 void api_def_prop_free_ptrs(ApiProp *prop);
 int api_def_prop_free_id(ApiStructOrFn *cont_, const char *id);
 
-int RNA_def_prop_free_id_deferred_prepare(ApiStructOrFn *cont_,
-                                                      const char *id,
-                                                      void **handle);
-void RNA_def_property_free_identifier_deferred_finish(ApiStructOrFn *cont_, void *handle);
+int api_def_prop_free_id_deferred_prepare(ApiStructOrFn *cont_,
+                                          const char *id,
+                                          void **handle);
+void api_def_prop_free_id_deferred_finish(ApiStructOrFn *cont_, void *handle);
 
-void RNA_def_prop_free_ptrs_set_py_data_cb(
+void api_def_prop_free_ptrs_set_py_data_cb(
     void (*py_data_clear_fn)(ApiProp *prop));
 
 /* Utilities. */
-
 const char *api_prop_typename(PropType type);
 #define IS_TYPE_FLOAT_COMPAT(_str) (strcmp(_str, "float") == 0 || strcmp(_str, "double") == 0)
 #define IS_TYPE_INT_COMPAT(_str) \
@@ -535,7 +528,7 @@ const char *api_prop_typename(PropType type);
 #define IS_TYPE_BOOL_COMPAT(_str) \
   (IS_TYPE_INT_COMPAT(_str) || strcmp(_str, "int64_t") == 0 || strcmp(_str, "uint64_t") == 0)
 
-void api_id_sanitize(char *identifier, int prop);
+void api_id_sanitize(char *id, int prop);
 
 /* Common arguments for length. */
 extern const int api_matrix_dimsize_3x3[];
@@ -543,13 +536,12 @@ extern const int api_matrix_dimsize_4x4[];
 extern const int api_matrix_dimsize_4x2[];
 
 /* Common arguments for defaults. */
-
 extern const float api_default_axis_angle[4];
 extern const float api_default_quaternion[4];
 extern const float api_default_scale_3d[3];
 
-/** Maximum size for dynamic defined type descriptors, this value is arbitrary. */
-#define RNA_DYN_DESCR_MAX 240
+/* Maximum size for dynamic defined type descriptors, this value is arbitrary. */
+#define API_DYN_DESCR_MAX 240
 
 #ifdef __cplusplus
 }
