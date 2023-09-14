@@ -66,7 +66,7 @@ const EnumPropItem *api_struct_prop_tag_defines(const ApiStruct *type);
 ApiProp *api_struct_iter_prop(ApiStruct *type);
 ApiStruct *api_struct_base(ApiStruct *type);
 /* Use to find the sub-type directly below a base-type.
- * So if type were `RNA_SpotLight`, `RNA_struct_base_of(type, &API_ID)` would return `&Api_Light`. */
+ * So if type were `Api_SpotLight`, `api_struct_base_of(type, &API_ID)` would return `&Api_Light`. */
 const ApiStruct *api_struct_base_child_of(const ApiStruct *type, const ApiStruct *parent_type);
 
 bool api_struct_is_id(const ApiStruct *type);
@@ -174,61 +174,61 @@ void api_prop_float_ui_range(ApiPtr *ptr,
                              float *step,
                              float *precision);
 
-int api_prop_float_clamp(ApiPtr *ptr, PropertyRNA *prop, float *value);
-int api_prop_int_clamp(ApiPtr *ptr, PropertyRNA *prop, int *value);
+int api_prop_float_clamp(ApiPtr *ptr, ApiProp *prop, float *value);
+int api_prop_int_clamp(ApiPtr *ptr, ApiProp *prop, int *value);
 
-bool api_enum_id(const EnumPropItem *item, int value, const char **identifier);
-int api_enum_bitflag_ids(const EnumPropItem *item, int value, const char **identifier);
+bool api_enum_id(const EnumPropItem *item, int value, const char **id);
+int api_enum_bitflag_ids(const EnumPropItem *item, int value, const char **id);
 bool api_enum_name(const EnumPropItem *item, int value, const char **r_name);
 bool api_enum_description(const EnumPropItem *item, int value, const char **description);
 int api_enum_from_value(const EnumPropItem *item, int value);
-int api_enum_from_identifier(const EnumPropItem *item, const char *identifier);
+int api_enum_from_id(const EnumPropItem *item, const char *id);
 /* Take care using this with translated enums,
- * prefer #RNA_enum_from_identifier where possible. */
-int RNA_enum_from_name(const EnumPropertyItem *item, const char *name);
-unsigned int RNA_enum_items_count(const EnumPropertyItem *item);
+ * prefer api_enum_from_id where possible. */
+int api_enum_from_name(const EnumPropItem *item, const char *name);
+unsigned int api_enum_items_count(const EnumPropItem *item);
 
-void RNA_property_enum_items_ex(struct bContext *C,
-                                PointerRNA *ptr,
-                                PropertyRNA *prop,
-                                bool use_static,
-                                const EnumPropertyItem **r_item,
-                                int *r_totitem,
-                                bool *r_free);
-void RNA_property_enum_items(struct bContext *C,
-                             PointerRNA *ptr,
-                             PropertyRNA *prop,
-                             const EnumPropertyItem **r_item,
-                             int *r_totitem,
-                             bool *r_free);
-void RNA_property_enum_items_gettexted(struct bContext *C,
+void api_prop_enum_items_ex(struct Cxt *C,
+                            ApiPtr *ptr,
+                            ApiProp *prop,
+                            bool use_static,
+                            const EnumPropItem **r_item,
+                            int *r_totitem,
+                            bool *r_free);
+void api_prop_enum_items(struct Cxt *C,
+                         ApiPtr *ptr,
+                         ApiProp *prop,
+                         const EnumPropItem **r_item,
+                         int *r_totitem,
+                         bool *r_free);
+void RNA_prop_enum_items_gettexted(struct bContext *C,
                                        PointerRNA *ptr,
                                        PropertyRNA *prop,
                                        const EnumPropertyItem **r_item,
                                        int *r_totitem,
                                        bool *r_free);
-void RNA_property_enum_items_gettexted_all(struct bContext *C,
+void RNA_prop_enum_items_gettexted_all(struct bContext *C,
                                            PointerRNA *ptr,
                                            PropertyRNA *prop,
                                            const EnumPropertyItem **r_item,
                                            int *r_totitem,
                                            bool *r_free);
-bool RNA_property_enum_value(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, const char *identifier, int *r_value);
-bool RNA_property_enum_identifier(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **identifier);
-bool RNA_property_enum_name(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **name);
-bool RNA_property_enum_name_gettexted(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **name);
+bool RNA_prop_enum_value(
+    struct Cxt *C, ApuPtr *ptr, ApiProp *prop, const char *identifier, int *r_value);
+bool RNA_prop_enum_id(
+    struct Cxt *C, ApiPtr *ptr, ApiProp *prop, int value, const char **identifier);
+bool RNA_prop_enum_name(
+    struct Cxt *C, ApiPtr *ptr, ApiProp *prop, int value, const char **name);
+bool api_prop_enum_name_gettexted(
+    struct Cxt *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **name);
 
-bool RNA_property_enum_item_from_value(
+bool RNA_prop_enum_item_from_value(
     struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, EnumPropertyItem *r_item);
-bool RNA_property_enum_item_from_value_gettexted(
+bool RNA_prop_enum_item_from_value_gettexted(
     struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, EnumPropertyItem *r_item);
 
-int RNA_property_enum_bitflag_identifiers(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **identifier);
+int RNA_prop_enum_bitflag_ids(
+    struct Cxt *C, ApiPtr *ptr, PropertyRNA *prop, int value, const char **identifier);
 
 StructRNA *RNA_property_pointer_type(PointerRNA *ptr, PropertyRNA *prop);
 bool RNA_prop_pointer_poll(PointerRNA *ptr, PropertyRNA *prop, ApiPtr *value);
@@ -245,40 +245,31 @@ bool RNA_property_editable_index(PointerRNA *ptr, PropertyRNA *prop, const int i
 /**
  * Without lib check, only checks the flag.
  */
-bool RNA_property_editable_flag(PointerRNA *ptr, PropertyRNA *prop);
+bool RNA_prop_editable_flag(PointerRNA *ptr, PropertyRNA *prop);
 
-bool RNA_property_animateable(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_animated(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * \note Does not take into account editable status, this has to be checked separately
- * (using #RNA_property_editable_flag() usually).
- */
-bool RNA_property_overridable_get(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * Should only be used for custom properties.
- */
-bool RNA_property_overridable_library_set(PointerRNA *ptr, PropertyRNA *prop, bool is_overridable);
-bool RNA_property_overridden(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_comparable(PointerRNA *ptr, PropertyRNA *prop);
+bool RNA_prop_animateable(PointerRNA *ptr, ApiProp *prop);
+bool RNA_prop_animated(PointerRNA *ptr, ApiProp *prop);
+/* Does not take into account editable status, this has to be checked separately
+ * (using api_prop_editable_flag() usually). */
+bool api_prop_overridable_get(ApiPtr *ptr, ApiProp *prop);
+/* Should only be used for custom properties. */
+bool api_prop_overridable_lib_set(ApiPtr *ptr, ApiProp *prop, bool is_overridable);
+bool api_prop_overridden(ApiPtr *ptr, ApiProp *prop);
+bool aoi_prop_comparable(ApiPtr *ptr, ApiProp *prop);
 /**
  * This function is to check if its possible to create a valid path from the ID
- * its slow so don't call in a loop.
- */
-bool RNA_property_path_from_ID_check(PointerRNA *ptr, PropertyRNA *prop); /* slow, use with care */
+ * its slow so don't call in a loop. */
+bool api_prop_path_from_id_check(ApiPtr *ptr, ApiProp *prop); /* slow, use with care */
 
-void RNA_property_update(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop);
-/**
- * \param scene: may be NULL.
- */
-void RNA_property_update_main(struct Main *bmain,
-                              struct Scene *scene,
-                              PointerRNA *ptr,
-                              PropertyRNA *prop);
-/**
- * \note its possible this returns a false positive in the case of #PROP_CONTEXT_UPDATE
- * but this isn't likely to be a performance problem.
- */
-bool RNA_property_update_check(struct PropertyRNA *prop);
+void api_prop_update(struct Cxt *C, ApiPtr *ptr, ApiProp *prop);
+/* param scene: may be NULL. */
+void api_prop_update_main(struct Main *main,
+                          struct Scene *scene,
+                          ApiPtr *ptr,
+                          ApiProp *prop);
+/* note its possible this returns a false positive in the case of #PROP_CONTEXT_UPDATE
+ * but this isn't likely to be a performance problem. */
+bool RNA_property_update_check(struct ApiProp *prop);
 
 /* Property Data */
 
