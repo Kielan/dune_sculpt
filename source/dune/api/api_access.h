@@ -1,52 +1,46 @@
-/* Use a define instead of `#pragma once` because of `rna_internal.h` */
-#ifndef __RNA_ACCESS_H__
-#define __RNA_ACCESS_H__
-
-/** \file
- * \ingroup RNA
- */
+/* Use a define instead of `#pragma once` because of `api_internal.h` */
+#ifndef __API_ACCESS_H__
+#define __API_ACCESS_H__
 
 #include <stdarg.h>
 
-#include "RNA_types.h"
+#include "api_types.h"
 
-#include "BLI_compiler_attrs.h"
+#include "lib_compiler_attrs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct ID;
-struct IDOverrideLibrary;
-struct IDOverrideLibraryProperty;
-struct IDOverrideLibraryPropertyOperation;
-struct IDProperty;
-struct ListBase;
+struct Id;
+struct IdOverrideLib;
+struct IdOverrideLibProp;
+struct IdOverrideLibPropOp;
+struct IdProp;
+struct List;
 struct Main;
 struct ReportList;
 struct Scene;
-struct bContext;
+struct Cxt;
 
 /* Types */
-extern BlenderRNA BLENDER_RNA;
+extern DuneApi DUNE_API;
 
-/* Pointer
+/* Ptr
+ * These fns will fill in api ptrs, this can be done in three ways:
+ * - a ptr Main is created by just passing the data ptr
+ * - a ptr to a datablock can be created with the type and id data ptr
+ * - a ptr to data contained in a datablock can be created with the id type
+ *   and id data ptr, and the data type and ptr to the struct itself.
  *
- * These functions will fill in RNA pointers, this can be done in three ways:
- * - a pointer Main is created by just passing the data pointer
- * - a pointer to a datablock can be created with the type and id data pointer
- * - a pointer to data contained in a datablock can be created with the id type
- *   and id data pointer, and the data type and pointer to the struct itself.
- *
- * There is also a way to get a pointer with the information about all structs.
- */
+ * There is also a way to get a pointer with the information about all structs. */
 
-void RNA_main_pointer_create(struct Main *main, PointerRNA *r_ptr);
-void RNA_id_pointer_create(struct ID *id, PointerRNA *r_ptr);
-void RNA_pointer_create(struct ID *id, StructRNA *type, void *data, PointerRNA *r_ptr);
-bool RNA_pointer_is_null(const PointerRNA *ptr);
+void api_main_pointer_create(struct Main *main, PointerRNA *r_ptr);
+void api_id_pointer_create(struct ID *id, PointerRNA *r_ptr);
+void api_pointer_create(struct ID *id, StructRNA *type, void *data, PointerRNA *r_ptr);
+bool api_pointer_is_null(const PointerRNA *ptr);
 
-bool RNA_path_resolved_create(PointerRNA *ptr,
+bool api_path_resolved_create(PointerRNA *ptr,
                               struct PropertyRNA *prop,
                               int prop_index,
                               PathResolvedRNA *r_anim_rna);
@@ -539,19 +533,18 @@ bool RNA_path_resolve_property_full(
  *
  * This is a convenience method to avoid logic errors and ugly syntax,
  * it combines both \a RNA_path_resolve and #RNA_path_resolve_property in a single call.
- * \note Assumes all pointers provided are valid.
- * \param r_item_ptr: The final Pointer or Collection item value.
+ * note Assumes all pointers provided are valid.
+ * param r_item_ptr: The final Pointer or Collection item value.
  * You must check for its validity before use!
- * \return True only if both a valid pointer and property are found after resolving the path
+ * return True only if both a valid pointer and property are found after resolving the path
  */
-bool RNA_path_resolve_property_and_item_pointer(PointerRNA *ptr,
-                                                const char *path,
-                                                PointerRNA *r_ptr,
-                                                PropertyRNA **r_prop,
-                                                PointerRNA *r_item_ptr);
+bool api_path_resolve_prop_and_item_ptr(ApiPtr *ptr,
+                                        const char *path,
+                                        PointerRNA *r_ptr,
+                                        PropertyRNA **r_prop,
+                                        PointerRNA *r_item_ptr);
 
-/**
- * Resolve the given RNA Path to find both the pointer AND property (as well as the array index)
+/* Resolve the given RNA Path to find both the pointer AND property (as well as the array index)
  * indicated by fully resolving the path,
  * and get the value of the Pointer property (or item of the collection).
  *
