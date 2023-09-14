@@ -124,7 +124,7 @@ bool api_struct_bl_idname_ok_or_report(struct ReportList *reports,
  * Access to struct props. All this works with RNA pointers rather than
  * direct pointers to the data. */
 
-/* Property Information */
+/* Prop Information */
 const char *api_prop_id(const ApiProp *prop);
 const char *api_prop_description(ApiProp *prop);
 
@@ -152,18 +152,18 @@ char api_prop_array_item_char(ApiProp *prop, int index);
 int api_prop_array_item_index(ApiProp *prop, char name);
 
 /* return the maximum length including the \0 terminator. '0' is used when there is no maximum. */
-int RNA_prop_string_maxlength(ApiProp *prop);
+int api_prop_string_maxlength(ApiProp *prop);
 
-const char *RNA_prop_ui_name(const ApiProp *prop);
-const char *RNA_prop_ui_name_raw(const ApiPropertyRNA *prop);
-const char *RNA_prop_ui_description(const ApiPropertyRNA *prop);
-const char *RNA_prop_ui_description_raw(const ApiPropertyRNA *prop);
-const char *RNA_prop_translation_cxt(const ApiPropertyRNA *prop);
-int RNA_prop_ui_icon(const ApiPropertyRNA *prop);
+const char *api_prop_ui_name(const ApiProp *prop);
+const char *api_prop_ui_name_raw(const ApiPropertyRNA *prop);
+const char *api_prop_ui_description(const ApiPropertyRNA *prop);
+const char *api_prop_ui_description_raw(const ApiPropertyRNA *prop);
+const char *api_prop_lang_cxt(const ApiPropertyRNA *prop);
+int api_prop_ui_icon(const ApiPropertyRNA *prop);
 
 /* Dynamic Property Information */
-void RNA_property_int_range(PointerRNA *ptr, PropertyRNA *prop, int *hardmin, int *hardmax);
-void RNA_property_int_ui_range(
+void api_prop_int_range(PointerRNA *ptr, PropertyRNA *prop, int *hardmin, int *hardmax);
+void api_prop_int_ui_range(
     PointerRNA *ptr, PropertyRNA *prop, int *softmin, int *softmax, int *step);
 
 void RNA_property_float_range(PointerRNA *ptr, PropertyRNA *prop, float *hardmin, float *hardmax);
