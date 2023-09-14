@@ -70,7 +70,7 @@ ApiStruct *api_struct_base(ApiStruct *type);
 const ApiStruct *api_struct_base_child_of(const ApiStruct *type, const ApiStruct *parent_type);
 
 bool api_struct_is_id(const ApiStruct *type);
-bool api_struct_is_a(const ApiStruct *type, const StructRNA *srna);
+bool api_struct_is_a(const ApiStruct *type, const ApiStruct *sapi);
 
 bool api_struct_undo_check(const ApiStruct *type);
 
@@ -78,15 +78,15 @@ StructRegisterFn api_struct_register(ApiStruct *type);
 StructUnregisterFn api_struct_unregister(ApiStruct *type);
 void **api_struct_instance(ApiPtr *ptr);
 
-void *api_struct_py_type_get(ApiStructRNA *srna);
-void api_struct_py_type_set(ApiStructRNA *srna, void *py_type);
+void *api_struct_py_type_get(ApiStruct *sapi);
+void api_struct_py_type_set(ApiStruct *sapi, void *py_type);
 
-void *api_struct_dune_type_get(ApiStructRNA *srna);
-void api_struct_dune_type_set(ApiStructRNA *srna, void *blender_type);
+void *api_struct_dune_type_get(ApiStruct *sapi);
+void api_struct_dune_type_set(ApiStruct *sapi, void *dune_type);
 
-struct IDProperty **RNA_struct_idprops_p(PointerRNA *ptr);
-struct IDProperty *RNA_struct_idprops(PointerRNA *ptr, bool create);
-bool api_struct_idprops_check(StructRNA *srna);
+struct IdProp **api_struct_idprops_p(ApiPtr *ptr);
+struct IdProp *api_struct_idprops(ApiPtr *ptr, bool create);
+bool api_struct_idprops_check(ApiStruct *sapi);
 bool api_struct_idprops_register_check(const StructRNA *type);
 bool api_struct_idprops_datablock_allowed(const StructRNA *type);
 /* Whether given type implies datablock usage by IDProps.
@@ -109,72 +109,59 @@ ApiProp *api_struct_type_find_prop_no_base(ApiStruct *sapi, const char *id);
  * which takes a ApiPtr instead of a ApiStruct. */
 ApiProp *api_struct_type_find_prop(ApiStruct *sapi, const char *id);
 
-FunctionRNA *RNA_struct_find_fn(ApiStruct *sapi, const char *id);
-const struct ListBase *RNA_struct_type_fns(ApiStruct *sapi);
+ApiFn *api_struct_find_fn(ApiStruct *sapi, const char *id);
+const struct List *api_struct_type_fns(ApiStruct *sapi);
 
-char *RNA_struct_name_get_alloc(PointerRNA *ptr, char *fixedbuf, int fixedlen, int *r_len);
+char *api_struct_name_get_alloc(ApiPtr *ptr, char *fixedbuf, int fixedlen, int *r_len);
 
-/**
- * Use when registering structs with the #STRUCT_PUBLIC_NAMESPACE flag.
- */
+/* Use when registering structs with the STRUCT_PUBLIC_NAMESPACE flag. */
 bool api_struct_available_or_report(struct ReportList *reports, const char *id);
 bool api_struct_bl_idname_ok_or_report(struct ReportList *reports,
                                        const char *id,
                                        const char *sep);
 
-/* Properties
- *
- * Access to struct properties. All this works with RNA pointers rather than
+/* Props
+ * Access to struct props. All this works with RNA pointers rather than
  * direct pointers to the data. */
 
 /* Property Information */
+const char *api_prop_id(const ApiProp *prop);
+const char *api_prop_description(ApiProp *prop);
 
-const char *RNA_property_identifier(const PropertyRNA *prop);
-const char *RNA_property_description(PropertyRNA *prop);
+PropType api_prop_type(ApiProp *prop);
+PropSubType api_prop_subtype(ApiProp *prop);
+PropUnit api_prop_unit(ApiProp *prop);
+PropScaleType api_prop_ui_scale(ApiProp *prop);
+int api_prop_flag(ApiProp *prop);
+int api_prop_override_flag(ApiProp *prop);
+/* Get the tags set for prop as int bitfield.
+ * Doesn't perform any validity check on the set bits. api_def_prop_tags does this
+ * in debug builds (to avoid performance issues in non-debug builds), which should be
+ * the only way to set tags. Hence, at this point we assume the tag bitfield to be valid. */
+int api_prop_tags(ApiProp *prop);
+bool api_prop_builtin(ApiProp *prop);
+void *api_prop_py_data_get(ApiProp *prop);
 
-PropertyType RNA_property_type(PropertyRNA *prop);
-PropertySubType RNA_property_subtype(PropertyRNA *prop);
-PropertyUnit RNA_property_unit(PropertyRNA *prop);
-PropertyScaleType RNA_property_ui_scale(PropertyRNA *prop);
-int RNA_property_flag(PropertyRNA *prop);
-int RNA_property_override_flag(PropertyRNA *prop);
-/**
- * Get the tags set for \a prop as int bitfield.
- * \note Doesn't perform any validity check on the set bits. #RNA_def_property_tags does this
- *       in debug builds (to avoid performance issues in non-debug builds), which should be
- *       the only way to set tags. Hence, at this point we assume the tag bitfield to be valid.
- */
-int RNA_property_tags(PropertyRNA *prop);
-bool RNA_property_builtin(PropertyRNA *prop);
-void *RNA_property_py_data_get(PropertyRNA *prop);
+int api_prop_array_length(ApiPtr *ptr, ApiProp *prop);
+bool api_prop_array_check(ApiProp *prop);
+/* Return the size of Nth dimension. */
+int api_prop_multi_array_length(ApiPtr *ptr, ApiProp *prop, int dimension);
+/* Used by BPY to make an array from the python object */
+int api_prop_array_dimension(ApiPtr *ptr, ApiProp *prop, int length[]);
+char api_prop_array_item_char(ApiProp *prop, int index);
+int api_prop_array_item_index(ApiProp *prop, char name);
 
-int RNA_property_array_length(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_array_check(PropertyRNA *prop);
-/**
- * Return the size of Nth dimension.
- */
-int RNA_property_multi_array_length(PointerRNA *ptr, PropertyRNA *prop, int dimension);
-/**
- * Used by BPY to make an array from the python object.
- */
-int RNA_property_array_dimension(PointerRNA *ptr, PropertyRNA *prop, int length[]);
-char RNA_property_array_item_char(PropertyRNA *prop, int index);
-int RNA_property_array_item_index(PropertyRNA *prop, char name);
+/* return the maximum length including the \0 terminator. '0' is used when there is no maximum. */
+int RNA_prop_string_maxlength(ApiProp *prop);
 
-/**
- * \return the maximum length including the \0 terminator. '0' is used when there is no maximum.
- */
-int RNA_property_string_maxlength(PropertyRNA *prop);
-
-const char *RNA_property_ui_name(const PropertyRNA *prop);
-const char *RNA_property_ui_name_raw(const PropertyRNA *prop);
-const char *RNA_property_ui_description(const PropertyRNA *prop);
-const char *RNA_property_ui_description_raw(const PropertyRNA *prop);
-const char *RNA_property_translation_context(const PropertyRNA *prop);
-int RNA_property_ui_icon(const PropertyRNA *prop);
+const char *RNA_prop_ui_name(const ApiProp *prop);
+const char *RNA_prop_ui_name_raw(const ApiPropertyRNA *prop);
+const char *RNA_prop_ui_description(const ApiPropertyRNA *prop);
+const char *RNA_prop_ui_description_raw(const ApiPropertyRNA *prop);
+const char *RNA_prop_translation_cxt(const ApiPropertyRNA *prop);
+int RNA_prop_ui_icon(const ApiPropertyRNA *prop);
 
 /* Dynamic Property Information */
-
 void RNA_property_int_range(PointerRNA *ptr, PropertyRNA *prop, int *hardmin, int *hardmax);
 void RNA_property_int_ui_range(
     PointerRNA *ptr, PropertyRNA *prop, int *softmin, int *softmax, int *step);
@@ -246,13 +233,11 @@ int RNA_property_enum_bitflag_identifiers(
     struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int value, const char **identifier);
 
 StructRNA *RNA_property_pointer_type(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_pointer_poll(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *value);
+bool RNA_prop_pointer_poll(PointerRNA *ptr, PropertyRNA *prop, ApiPtr *value);
 
-bool RNA_property_editable(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * Version of #RNA_property_editable that tries to return additional info in \a r_info
- * that can be exposed in UI.
- */
+bool api_prop_editable(PointerRNA *ptr, PropertyRNA *prop);
+/* Version of api_prop_editable that tries to return additional info in \a r_info
+ * that can be exposed in UI. */
 bool RNA_property_editable_info(PointerRNA *ptr, PropertyRNA *prop, const char **r_info);
 /**
  * Same as RNA_property_editable(), except this checks individual items in an array.
