@@ -162,31 +162,29 @@ const char *api_prop_lang_cxt(const ApiPropertyRNA *prop);
 int api_prop_ui_icon(const ApiPropertyRNA *prop);
 
 /* Dynamic Property Information */
-void api_prop_int_range(PointerRNA *ptr, PropertyRNA *prop, int *hardmin, int *hardmax);
+void api_prop_int_range(ApiPtr *ptr, ApiProp *prop, int *hardmin, int *hardmax);
 void api_prop_int_ui_range(
-    PointerRNA *ptr, PropertyRNA *prop, int *softmin, int *softmax, int *step);
+    ApiPtr *ptr, ApiProp *prop, int *softmin, int *softmax, int *step);
 
-void RNA_property_float_range(PointerRNA *ptr, PropertyRNA *prop, float *hardmin, float *hardmax);
-void RNA_property_float_ui_range(PointerRNA *ptr,
-                                 PropertyRNA *prop,
-                                 float *softmin,
-                                 float *softmax,
-                                 float *step,
-                                 float *precision);
+void api_prop_float_range(ApiPtr *ptr, ApiProp *prop, float *hardmin, float *hardmax);
+void api_prop_float_ui_range(ApiPtr *ptr,
+                             ApiProp *prop,
+                             float *softmin,
+                             float *softmax,
+                             float *step,
+                             float *precision);
 
-int RNA_property_float_clamp(PointerRNA *ptr, PropertyRNA *prop, float *value);
-int RNA_property_int_clamp(PointerRNA *ptr, PropertyRNA *prop, int *value);
+int api_prop_float_clamp(ApiPtr *ptr, PropertyRNA *prop, float *value);
+int api_prop_int_clamp(ApiPtr *ptr, PropertyRNA *prop, int *value);
 
-bool RNA_enum_identifier(const EnumPropertyItem *item, int value, const char **identifier);
-int RNA_enum_bitflag_identifiers(const EnumPropertyItem *item, int value, const char **identifier);
-bool RNA_enum_name(const EnumPropertyItem *item, int value, const char **r_name);
-bool RNA_enum_description(const EnumPropertyItem *item, int value, const char **description);
-int RNA_enum_from_value(const EnumPropertyItem *item, int value);
-int RNA_enum_from_identifier(const EnumPropertyItem *item, const char *identifier);
-/**
- * Take care using this with translated enums,
- * prefer #RNA_enum_from_identifier where possible.
- */
+bool api_enum_id(const EnumPropItem *item, int value, const char **identifier);
+int api_enum_bitflag_ids(const EnumPropItem *item, int value, const char **identifier);
+bool api_enum_name(const EnumPropItem *item, int value, const char **r_name);
+bool api_enum_description(const EnumPropItem *item, int value, const char **description);
+int api_enum_from_value(const EnumPropItem *item, int value);
+int api_enum_from_identifier(const EnumPropItem *item, const char *identifier);
+/* Take care using this with translated enums,
+ * prefer #RNA_enum_from_identifier where possible. */
 int RNA_enum_from_name(const EnumPropertyItem *item, const char *name);
 unsigned int RNA_enum_items_count(const EnumPropertyItem *item);
 
