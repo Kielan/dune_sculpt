@@ -36,62 +36,59 @@ void api_exit(void);
 
 /* Struct */
 /* Struct Definition. */
-ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *identifier, StructRNA *srnafrom);
+ApiStruct *api_def_struct_ptr(DuneApi *dapi, const char *id, ApiStruct *sapifrom);
 ApiStruct *api_def_struct(DuneApi *dapi, const char *id, const char *from);
 void api_def_struct_stype(ApiStruct *sapi, const char *structname);
 void api_def_struct_stype_from(ApiStruct *sapi, const char *structname, const char *propname);
-void apu_def_struct_name_prop(ApiStruct *sapi, ApiProp *prop);
-void RNA_def_struct_nested(DuneApi *dapi, ApiStruct *sapi, const char *structname);
-void RNA_def_struct_flag(ApiStruct *sapi, int flag);
-void RNA_def_struct_clear_flag(ApiStruct *sapi, int flag);
-void RNA_def_struct_prop_tags(ApiStruct *sapi, const EnumPropItem *prop_tag_defines);
-void RNA_def_struct_refine_fn(ApiStruct *sapi, const char *refine);
-void RNA_def_struct_idprops_fn(ApiStruct *sapi, const char *idprops);
+void api_def_struct_name_prop(ApiStruct *sapi, ApiProp *prop);
+void api_def_struct_nested(DuneApi *dapi, ApiStruct *sapi, const char *structname);
+void api_def_struct_flag(ApiStruct *sapi, int flag);
+void api_def_struct_clear_flag(ApiStruct *sapi, int flag);
+void api_def_struct_prop_tags(ApiStruct *sapi, const EnumPropItem *prop_tag_defines);
+void api_def_struct_refine_fn(ApiStruct *sapi, const char *refine);
+void api_def_struct_idprops_fn(ApiStruct *sapi, const char *idprops);
 void api_def_struct_register_fns(ApiStruct *sapi,
-                                   const char *reg,
-                                   const char *unreg,
-                                   const char *instance);
-void RNA_def_struct_path_fn(ApiStruct *sapi, const char *path);
-/**
- * Only used in one case when we name the struct for the purpose of useful error messages.
- */
-void RNA_def_struct_id_no_struct_map(StructRNA *srna, const char *identifier);
-void RNA_def_struct_id(BlenderRNA *brna, StructRNA *srna, const char *identifier);
-void RNA_def_struct_ui_text(StructRNA *srna, const char *name, const char *description);
-void RNA_def_struct_ui_icon(StructRNA *srna, int icon);
-void RNA_struct_free_extension(StructRNA *srna, ExtensionRNA *rna_ext);
-void RNA_struct_free(BlenderRNA *brna, StructRNA *srna);
+                                 const char *reg,
+                                 const char *unreg,
+                                 const char *instance);
+void api_def_struct_path_fn(ApiStruct *sapi, const char *path);
+/* Only used in one case when we name the struct for the purpose of useful error messages. */
+void api_def_struct_id_no_struct_map(ApiStruct *sapi, const char *id);
+void api_def_struct_id(DuneApi *dapi, ApiStruct *sapu, const char *id);
+void api_def_struct_ui_text(ApiStruct *sapi, const char *name, const char *description);
+void api_def_struct_ui_icon(ApiStruct *sapi, int icon);
+void api_struct_free_extension(ApiStruct *sapi, ApiExtension *api_ext);
+void api_struct_free(DuneApi *dapu, ApiStruct *sapi);
 
-void api_def_struct_lang_cxt(ApiStruct *srna, const char *context);
+void api_def_struct_lang_cxt(ApiStruct *sapi, const char *context);
 
-/* Compact Property Definitions */
+/* Compact Prop Definitions */
+typedef void ApiStructOrFn;
 
-typedef void StructOrFunctionRNA;
-
-PropertyRNA *RNA_def_boolean(StructOrFunctionRNA *cont,
-                             const char *identifier,
+ApiProp *api_def_bool(StructOrFunctionRNA *cont,
+                             const char *id,
                              bool default_value,
                              const char *ui_name,
                              const char *ui_description);
-PropertyRNA *RNA_def_boolean_array(StructOrFunctionRNA *cont,
-                                   const char *identifier,
+ApiProp *api_def_bool_array(ApiStructOrFn *cont,
+                            const char *id,
+                            int len,
+                            bool *default_value,
+                            const char *ui_name,
+                            const char *ui_description);
+ApiProp *api_def_bool_layer(ApiStructOrFn *cont,
+                                   const char *id,
                                    int len,
                                    bool *default_value,
                                    const char *ui_name,
                                    const char *ui_description);
-PropertyRNA *RNA_def_boolean_layer(StructOrFunctionRNA *cont,
-                                   const char *identifier,
-                                   int len,
-                                   bool *default_value,
-                                   const char *ui_name,
-                                   const char *ui_description);
-PropertyRNA *RNA_def_boolean_layer_member(StructOrFunctionRNA *cont,
-                                          const char *identifier,
+PropertyRNA *api_def_bool_layer_member(ApiStructOrFn *cont,
+                                          const char *id,
                                           int len,
                                           bool *default_value,
                                           const char *ui_name,
                                           const char *ui_description);
-PropertyRNA *RNA_def_boolean_vector(StructOrFunctionRNA *cont,
+PropertyRNA *RNA_def_bool_vector(StructOrFunctionRNA *cont,
                                     const char *identifier,
                                     int len,
                                     bool *default_value,
