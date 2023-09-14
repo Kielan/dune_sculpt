@@ -16,15 +16,12 @@ struct ParamList;
 struct ApiProp;
 struct ReportList;
 struct ApiStruct;
-struct Ctx;
+struct Cxt;
 
-/**
- * Pointer
- *
- * api pointers are not a single C pointer but include the type,
- * and a pointer to the id struct that owns the struct, since
+/* Api ptrs are not a single C ptr but include the type,
+ * and a ptr to the id struct that owns the struct, since
  * in some cases this information is needed to correctly get/set
- * the properties and validate them. */
+ * the props and validate them. */
 
 typedef struct ApiPtr {
   struct Id *owner_id;
@@ -37,7 +34,7 @@ typedef struct ApiPropPtr {
   struct ApiProp *prop;
 } ApiPropPtr;
   
-  /** Stored result of an api path lookup (as used by anim-system) */
+/* Stored result of an api path lookup (as used by anim-system) */
 typedef struct ApiPathResolved {
   struct ApiPtr ptr;
   struct ApiProp *prop;
@@ -45,7 +42,7 @@ typedef struct ApiPathResolved {
   int prop_index;
 } ApiPathResolved;
 
-/* Property */
+/* Prop */
 typedef enum PropType {
   PROP_BOOL = 0,
   PROP_INT = 1,
@@ -73,8 +70,7 @@ typedef enum PropUnit {
   PROP_UNIT_TEMPERATURE = (12 << 16),  /* C */
 } PropUnit;
 
-/**
- * Use values besides #PROP_SCALE_LINEAR
+/* Use values besides PROP_SCALE_LINEAR
  * so the movement of the mouse doesn't map linearly to the value of the slider.
  *
  * For some settings it's useful to space motion in a non-linear way, see T77868.
@@ -82,20 +78,15 @@ typedef enum PropUnit {
  * NOTE: The scale types are available for all float sliders.
  * For integer sliders they are only available if they use the visible value bar.
  * Sliders with logarithmic scale and value bar must have a range > 0
- * while logarithmic sliders without the value bar can have a range of >= 0.
- */
+ * while logarithmic sliders without the value bar can have a range of >= 0. */
 typedef enum PropScaleType {
-  /** Linear scale (default). */
+  /* Linear scale (default). */
   PROP_SCALE_LINEAR = 0,
-  /**
-   * Logarithmic scale
-   * - Maximum range: `0 <= x < inf`
-   */
+  /* Logarithmic scale
+   * - Maximum range: `0 <= x < inf */
   PROP_SCALE_LOG = 1,
-  /**
-   * Cubic scale.
-   * - Maximum range: `-inf < x < inf`
-   */
+  /* Cubic scale.
+   * - Maximum range: `-inf < x < inf` */
   PROP_SCALE_CUBIC = 2,
 } PropScaleType;
 
@@ -109,10 +100,8 @@ typedef enum PropScaleType {
 
 #define API_STACK_ARRAY 32
 
-/**
- * note Also update enums in bpy_props.c and rna_rna.c when adding items here.
- * Watch it: these values are written to files as part of node socket button subtypes!
- */
+/* note Also update enums in bpy_props.c and rna_rna.c when adding items here.
+ * Watch it: these values are written to files as part of node socket button subtypes! */
 typedef enum PropSubType {
   PROP_NONE = 0,
 
@@ -136,7 +125,7 @@ typedef enum PropSubType {
   PROP_ANGLE = 16 | PROP_UNIT_ROTATION,
   PROP_TIME = 17 | PROP_UNIT_TIME,
   PROP_TIME_ABSOLUTE = 17 | PROP_UNIT_TIME_ABSOLUTE,
-  /** Distance in 3d space, don't use for pixel distance for eg. */
+  /* Distance in 3d space, don't use for pixel distance for eg. */
   PROP_DISTANCE = 18 | PROP_UNIT_LENGTH,
   PROP_DISTANCE_CAMERA = 19 | PROP_UNIT_CAMERA,
 
@@ -161,7 +150,7 @@ typedef enum PropSubType {
   PROP_LAYER = 40,
   PROP_LAYER_MEMBER = 41,
 
-  /** Light */
+  /* Light */
   PROP_POWER = 42 | PROP_UNIT_POWER,
 
   /* temperature */
@@ -172,17 +161,14 @@ typedef enum PropSubType {
 /* HIGHEST FLAG IN USE: 1 << 31
  * FREE FLAGS: 2, 9, 11, 13, 14, 15, 30 */
 typedef enum PropFlag {
-  /**
-   * Editable means the property is editable in the user
+  /* Editable means the property is editable in the user
    * interface, properties are editable by default except
-   * for pointers and collections.
-   */
+   * for pointers and collections. */
   PROP_EDITABLE = (1 << 0),
   /**
    * This property is editable even if it is lib linked,
    * meaning it will get lost on reload, but it's useful
-   * for editing.
-   */
+   * for editing. */
   PROP_LIB_EXCEPTION = (1 << 16),
   /**
    * Animatable means the property can be driven by some
@@ -203,23 +189,21 @@ typedef enum PropFlag {
   PROP_ICONS_CONSECUTIVE = (1 << 12),
   PROP_ICONS_REVERSE = (1 << 8),
 
-  /** Hidden in the user interface. */
+  /* Hidden in the user interface. */
   PROP_HIDDEN = (1 << 19),
-  /** Do not write in presets. */
+  /* Do not write in presets. */
   PROP_SKIP_SAVE = (1 << 28),
 
   /* numbers */
 
-  /** Each value is related proportionally (object scale, image size). */
+  /* Each value is related proportionally (object scale, image size). */
   PROP_PROPORTIONAL = (1 << 26),
 
   /* pointers */
   PROP_ID_REFCOUNT = (1 << 6),
 
-  /**
-   * Disallow assigning a variable to itself, eg an object tracking itself
-   * only apply this to types that are derived from an ID ().
-   */
+  /* Disallow assigning a variable to itself, eg an object tracking itself
+   * only apply this to types that are derived from an ID (). */
   PROP_ID_SELF_CHECK = (1 << 20),
   /**
    * Use for...
@@ -228,51 +212,44 @@ typedef enum PropFlag {
    *   functions know to do NULL checks before access T30865.
    */
   PROP_NEVER_NULL = (1 << 18),
-  /**
-   * Currently only used for UI, this is similar to PROP_NEVER_NULL
+  /* Currently only used for UI, this is similar to PROP_NEVER_NULL
    * except that the value may be NULL at times, used for ObData, where an Empty's will be NULL
    * but setting NULL on a mesh object is not possible.
-   * So if it's not NULL, setting NULL can't be done!
-   */
+   * So if it's not NULL, setting NULL can't be done */
   PROP_NEVER_UNLINK = (1 << 25),
 
   /**
-   * Pointers to data that is not owned by the struct.
-   * Typical example: Bone.parent, Bone.child, etc., and nearly all ID pointers.
+   * Ptrs to data that is not owned by the struct.
+   * Typical example: Bone.parent, Bone.child, etc., and nearly all ID ptrs.
    * This is crucial information for processes that walk the whole data of an ID e.g.
    * (like library override).
-   * Note that all ID pointers are enforced to this by default,
+   * Note that all ID ptrs are enforced to this by default,
    * this probably will need to be rechecked
-   * (see ugly infamous node-trees of material/texture/scene/etc.).
-   */
+   * (see ugly infamous node-trees of material/texture/scene/etc.).  */
   PROP_PTR_NO_OWNERSHIP = (1 << 7),
 
-  /**
-   * flag contains multiple enums.
+  /* flag contains multiple enums.
    * NOTE: not to be confused with `prop->enumbitflags`
    * this exposes the flag as multiple options in python and the UI.
    *
-   * note These can't be animated so use with care.
-   */
+   * note These can't be animated so use with care. */
   PROP_ENUM_FLAG = (1 << 21),
 
   /* need context for update function */
-  PROP_CTX_UPDATE = (1 << 22),
-  PROP_CTX_PROP_UPDATE = PROP_CTX_UPDATE | (1 << 27),
+  PROP_CXT_UPDATE = (1 << 22),
+  PROP_CXT_PROP_UPDATE = PROP_CXT_UPDATE | (1 << 27),
 
   /* registering */
   PROP_REGISTER = (1 << 4),
   PROP_REGISTER_OPTIONAL = PROP_REGISTER | (1 << 5),
 
-  /**
-   * Use for allocated function return values of arrays or strings
+  /* Use for allocated function return values of arrays or strings
    * for any data that should not have a reference kept.
    *
    * It can be used for properties which are dynamically allocated too.
    *
    * note Currently dynamic sized thick wrapped data isn't supported.
-   * This would be a useful addition and avoid a fixed maximum sized as in done at the moment.
-   */
+   * This would be a useful addition and avoid a fixed maximum sized as in done at the moment */
   PROP_THICK_WRAP = (1 << 23),
 
   /** This is an IDProperty, not a DNA one. */
@@ -284,11 +261,9 @@ typedef enum PropFlag {
   /** For enums not to be translated (e.g. viewlayers' names in nodes). */
   PROP_ENUM_NO_TRANSLATE = (1 << 29),
 
-  /**
-   * Don't do dependency graph tag from a property update callback.
+  /* Don't do dependency graph tag from a property update callback.
    * Use this for properties which defines interface state, for example,
-   * properties which denotes whether modifier panel is collapsed or not.
-   */
+   * properties which denotes whether modifier panel is collapsed or not. */
   PROP_NO_GRAPH_UPDATE = (1 << 30),
 } PropFlag;
 
@@ -302,47 +277,42 @@ typedef enum PropOverrideFlag {
   /** Means that the property can be overridden by a local override of some linked datablock. */
   PROPOVERRIDE_OVERRIDABLE_LIB = (1 << 0),
 
-  /**
-   * Forbid usage of this property in comparison (& hence override) code.
+  /* Forbid usage of this property in comparison (& hence override) code.
    * Useful e.g. for collections of data like mesh's geometry, particles, etc.
-   * Also for runtime data that should never be considered as part of actual Blend data (e.g.
-   * depsgraph from ViewLayers...).
-   */
+   * Also for runtime data that should never be considered as part of actual Dune data (e.g.
+   * depsgraph from ViewLayers...). */
   PROPOVERRIDE_NO_COMPARISON = (1 << 1),
 
-  /**
-   * Means the property can be fully ignored by override process.
+  /* Means the prop can be fully ignored by override process.
    * Unlike NO_COMPARISON, it can still be used by diffing code, but no override operation will be
    * created for it, and no attempt to restore the data from linked reference either.
    *
    * WARNING: This flag should be used with a lot of caution, as it completely by-passes override
    * system. It is currently only used for ID's names, since we cannot prevent local override to
-   * get a different name from the linked reference, and ID names are 'rna name property' (i.e. are
-   * used in overrides of collections of IDs). See also `BKE_lib_override_library_update()` where
+   * get a different name from the linked ref, and ID names are 'rna name property' (i.e. are
+   * used in overrides of collections of IDs). See also `dune_lib_override_lib_update()` where
    * we deal manually with the value of that property at DNA level. */
   PROPOVERRIDE_IGNORE = (1 << 2),
 
-  /*** Collections-related ***/
+  /* Collections-related */
 
-  /** The property supports insertion (collections only). */
+  /* The prop supports insertion (collections only). */
   PROPOVERRIDE_LIB_INSERTION = (1 << 10),
 
   /** Only use indices to compare items in the property, never names (collections only).
    *
    * Useful when nameprop of the items is generated from other data
-   * (e.g. name of material slots is actually name of assigned material).
-   */
+   * (e.g. name of material slots is actually name of assigned material). */
   PROPOVERRIDE_NO_PROP_NAME = (1 << 11),
 } PropOverrideFlag;
 
-/* Function params flags.
+/* Fn params flags.
  * warning 16bits only */
 typedef enum ParamFlag {
   PARM_REQUIRED = (1 << 0),
   PARM_OUTPUT = (1 << 1),
-  PARM_RNAPTR = (1 << 2),
-  /**
-   * This allows for non-breaking API updates,
+  PARM_APIPTR = (1 << 2),
+  /* This allows for non-breaking API updates,
    * when adding non-critical new parameter to a callback function.
    * This way, old py code defining funcs without that parameter would still work.
    * WARNING: any parameter after the first PYFUNC_OPTIONAL one will be considered as optional!
@@ -351,48 +321,47 @@ typedef enum ParamFlag {
   PARM_PYFUNC_OPTIONAL = (1 << 3),
 } ParamFlag;
 
-struct CollectionPropIterator;
+struct CollectionPropIter;
 struct Link;
-typedef int (*IteratorSkipFn)(struct CollectionPropertyIterator *iter, void *data);
+typedef int (*IterSkipFn)(struct CollectionPropIter *iter, void *data);
 
-typedef struct ListIterator {
+typedef struct ListIter {
   struct Link *link;
   int flag;
-  IteratorSkipFn skip;
-} ListIterator;
+  IterSkipFn skip;
+} ListIter;
 
-typedef struct ArrayIterator {
+typedef struct ArrayIter {
   char *ptr;
-  /** Past the last valid pointer, only for comparisons, ignores skipped values. */
+  /* Past the last valid pointer, only for comparisons, ignores skipped values. */
   char *endptr;
-  /** Will be freed if set. */
+  /* Will be freed if set. */
   void *free_ptr;
   int itemsize;
 
-  /**
-   * Array length with no skip functions applied,
+  /* Array length with no skip functions applied,
    * take care not to compare against index from animsys or Python indice  */
   int length;
 
   /* Optional skip function,
    * when set the array as viewed by rna can contain only a subset of the members.
    * this changes indices so quick array index lookups are not possible when skip function is used.  */
-  IteratorSkipFunc skip;
-} ArrayIterator;
+  IterSkipFn skip;
+} ArrayIter;
 
-typedef struct CountIterator {
+typedef struct CountIter {
   void *ptr;
   int item;
-} CountIterator;
+} CountIter;
 
-typedef struct CollectionPropIterator {
+typedef struct CollectionPropIter {
   /* internal */
   ApiPtr parent;
   ApiPtr builtin_parent;
   struct ApiProp *prop;
   union {
-    ArrayIterator array;
-    ListBaseIterator listbase;
+    ArrayIter array;
+    ListIter list;
     CountIterator count;
     void *custom;
   } internal;
@@ -402,24 +371,24 @@ typedef struct CollectionPropIterator {
   /* external */
   ApiPtr ptr;
   int valid;
-} CollectionPropIterator;
+} CollectionPropIter;
 
 typedef struct CollectionPtrLink {
   struct CollectionPtrLink *next, *prev;
   ApiPtr ptr;
 } CollectionPtrLink;
 
-/** Copy of ListBase for RNA. */
+/* Copy of List for API. */
 typedef struct CollectionList {
   struct CollectionPtrLink *first, *last;
-} CollectionListBase;
+} CollectionList;
 
 typedef enum RawPropType {
   PROP_RAW_UNSET = -1,
   PROP_RAW_INT, /* XXX: abused for types that are not set, eg. MFace.verts, needs fixing. */
   PROP_RAW_SHORT,
   PROP_RAW_CHAR,
-  PROP_RAW_BOOLEAN,
+  PROP_RAW_BOOL,
   PROP_RAW_DOUBLE,
   PROP_RAW_FLOAT,
 } RawPropType;
@@ -431,100 +400,97 @@ typedef struct RawArray {
   int stride;
 } RawArray;
 
-/** This struct is are typically defined in arrays which define an *enum* for RNA,
+/* This struct is are typically defined in arrays which define an *enum* for RNA,
  * which is used by the api api both for user-interface and the Python AP */
 typedef struct EnumPropItem {
-  /** The internal value of the enum, not exposed to users. */
+  /* The internal value of the enum, not exposed to users. */
   int value;
-  /**
-   * Note that identifiers must be unique within the array,
+  /* Note that identifiers must be unique within the array,
    * by convention they're upper case with underscores for separators.
    * - An empty string is used to define menu separators.
-   * - NULL denotes the end of the array of items.
-   */
+   * - NULL denotes the end of the array of items. */
   const char *id;
-  /** Optional icon, typically 'ICON_NONE' */
+  /* Optional icon, typically 'ICON_NONE' */
   int icon;
-  /** Name displayed in the interface. */
+  /* Name displayed in the interface. */
   const char *name;
-  /** Longer description used in the interface. */
+  /* Longer description used in the interface. */
   const char *description;
 } EnumPropItem;
 
-/* extended versions with PropertyRNA argument */
+/* extended versions with ApiProp argument */
 typedef bool (*BoolPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*BoolPropSetFn)(struct ApiPtr *ptr,
-                                       struct ApiProp *prop,
-                                       bool value);
+                              struct ApiProp *prop,
+                              bool value);
 typedef void (*BoolArrayPropGetFn)(struct ApiPtr *ptr,
-                                            struct ApiProp *prop,
-                                            bool *values);
+                                   struct ApiProp *prop,
+                                   bool *values);
 typedef void (*BoolArrayPropSetFn)(struct ApiPtr *ptr,
-                                            struct ApiProp *prop,
-                                            const bool *values);
+                                   struct ApiProp *prop,
+                                   const bool *values);
 typedef int (*IntPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*IntPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
 typedef void (*IntArrayPropGetFn)(struct ApiPtr *ptr,
-                                        struct ApiProp *prop,
-                                        int *values);
+                                  struct ApiProp *prop,
+                                  int *values);
 typedef void (*IntArrayPropSetFn)(struct ApiPtr *ptr,
-                                        struct ApiProp *prop,
-                                        const int *values);
+                                  struct ApiProp *prop,
+                                  const int *values);
 typedef void (*IntPropRangeFn)(struct ApiPtr *ptr,
-                                     struct ApiProp *prop,
-                                     int *min,
-                                     int *max,
-                                     int *softmin,
-                                     int *softmax);
+                               struct ApiProp *prop,
+                               int *min,
+                               int *max,
+                               int *softmin,
+                               int *softmax);
 typedef float (*FloatPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*FloatPropSetFn)(struct ApiPtr *ptr,
-                                     struct ApiProp *prop,
-                                     float value);
+                               struct ApiProp *prop,
+                               float value);
 typedef void (*FloatArrayPropGetFn)(struct ApiPtr *ptr,
-                                          struct ApiProp *prop,
-                                          float *values);
+                                    struct ApiProp *prop,
+                                    float *values);
 typedef void (*FloatArrayPropSetFn)(struct ApiPtr *ptr,
-                                          struct ApiProp *prop,
-                                          const float *values);
+                                    struct ApiProp *prop,
+                                    const float *values);
 typedef void (*FloatPropRangeFn)(struct ApiPtr *ptr,
-                                       struct ApiProp *prop,
-                                       float *min,
-                                       float *max,
-                                       float *softmin,
-                                       float *softmax);
+                                 struct ApiProp *prop,
+                                 float *min,
+                                 float *max,
+                                 float *softmin,
+                                 float *softmax);
 typedef void (*StringPropGetFn)(struct ApiPtr *ptr,
-                                      struct ApiProp *prop,
-                                      char *value);
+                                struct ApiProp *prop,
+                                char *value);
 typedef int (*StringPropLengthFn)(struct ApiPtr *ptr, struct ApiProp *prop);
-typedef void (*StringPropSetFunc)(struct ApiPtr *ptr,
-                                      struct ApiProp *prop,
-                                      const char *value);
+typedef void (*StringPropSetFn)(struct ApiPtr *ptr,
+                                struct ApiProp *prop,
+                                const char *value);
 typedef int (*EnumPropGetFn)(struct ApiPtr *ptr, struct ApiPropA *prop);
 typedef void (*EnumPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
-/* same as PropEnumItemFunc */
-typedef const EnumPropItem *(*EnumPropItemFn)(struct bContext *C,
-                                                        PointerRNA *ptr,
-                                                        struct PropertyRNA *prop,
-                                                        bool *r_free);
+/* same as PropEnumItemFn */
+typedef const EnumPropItem *(*EnumPropItemFn)(struct Cxt *C,
+                                              ApiPtr *ptr,
+                                              struct ApiProp *prop,
+                                              bool *r_free);
 
 typedef struct ApiProp ApiProp;
 
-/* Parameter List */
-
+/* Param List */
 typedef struct ParamList {
-  /** Storage for parameters*. */
+  /* Storage for params */
   void *data;
 
-  /** Function passed at creation time. */
+  /* Fn passed at creation time. */
   struct ApiFn *fn;
 
-  /** Store the parameter size. */
+  /* Store the param size. */
   int alloc_size;
 
   int arg_count, ret_count;
 } ParamList;
 
-typedef struct ParamIterator {
+typedef struct ParamIter {
   struct ParamList *parms;
   // ApiPtr fncptr; /* UNUSED */
   void *data;
@@ -532,11 +498,11 @@ typedef struct ParamIterator {
 
   ApiProp *parm;
   int valid;
-} ParamIterator;
+} ParamIter;
 
-/** Mainly to avoid confusing casts. */
+/* Mainly to avoid confusing casts. */
 typedef struct ParamDynAlloc {
-  /** Important, this breaks when set to an int. */
+  /* Important, this breaks when set to an int. */
   intptr_t array_tot;
   void *array;
 } ParamDynAlloc;
@@ -557,13 +523,12 @@ typedef struct ParamDynAlloc {
  * </pre>
  */
 typedef enum FnFlag {
-  /**
-   * Pass ID owning 'self' data
-   * (i.e. ptr->owner_id, might be same as self in case data is an ID...).
-   */
+  /* Pass ID owning 'self' data
+   * (i.e. ptr->owner_id, might be same as self in case data is an ID...) */
   FN_USE_SELF_ID = (1 << 11),
 
-  /** Do not pass the object (struct pointer) from which it is called,
+  /*
+  * Do not pass the object (struct pointer) from which it is called,
    * used to define static or class functions. */
   FN_NO_SELF = (1 << 0),
   /** Pass API type, used to define class functions, only valid when #FUNC_NO_SELF is set. */
@@ -574,32 +539,30 @@ typedef enum FnFlag {
   FN_USE_CONTEXT = (1 << 3),
   FN_USE_REPORTS = (1 << 4),
 
-  /***** Registering of Python subclasses. *****/
-  /**
-   * This function is part of the registerable class' interface,
+  /* Registering of Python subclasses. *****/
+  /* This function is part of the registerable class' interface,
    * and can be implemented/redefined in Python. */
   FN_REGISTER = (1 << 5),
   /** Subclasses can choose not to implement this function. */
   FN_REGISTER_OPTIONAL = FUNC_REGISTER | (1 << 6),
-  /**
-   * If not set, the Python function implementing this call
+  /* If not set, the Python function implementing this call
    * is not allowed to write into data-blocks.
    * Except for WindowManager and Screen currently, see api_id_write_error() in bpy_rna.  */
   FN_ALLOW_WRITE = (1 << 12),
 
-  /***** Internal flags. *****/
-  /** UNUSED CURRENTLY? ??? */
+  /* Internal flags. *****/
+  /* UNUSED CURRENTLY? ??? */
   FN_BUILTIN = (1 << 7),
-  /** UNUSED CURRENTLY. ??? */
+  /* UNUSED CURRENTLY. ??? */
   FN_EXPORT = (1 << 8),
-  /** Function has been defined at runtime, not statically in RNA source code. */
+  /* Fn has been defined at runtime, not statically in api source code. */
   FN_RUNTIME = (1 << 9),
-  /** UNUSED CURRENTLY? Function owns its identifier and description strings,
+  /** UNUSED CURRENTLY? Fn owns its id and description strings,
    * and has to free them when deleted */
   FN_FREE_PTRS = (1 << 10),
 } FnFlag;
 
-typedef void (*CallFn)(struct Ctx *C,
+typedef void (*CallFn)(struct Cxt *C,
                          struct ReportList *reports,
                          ApiPtr *ptr,
                          ParamList *parms);
@@ -607,12 +570,11 @@ typedef void (*CallFn)(struct Ctx *C,
 typedef struct ApiFn ApiFn;
 
 /* Struct */
-
 typedef enum StructFlag {
-  /** Indicates that this struct is an ID struct, and to use reference-counting. */
+  /* Indicates that this struct is an ID struct, and to use reference-counting. */
   STRUCT_ID = (1 << 0),
   STRUCT_ID_REFCOUNT = (1 << 1),
-  /** defaults on, indicates when changes in members of a StructRNA should trigger undo steps. */
+  /* defaults on, indicates when changes in members of a StructRNA should trigger undo steps. */
   STRUCT_UNDO = (1 << 2),
 
   /* internal flags */
@@ -620,36 +582,34 @@ typedef enum StructFlag {
   /* STRUCT_GENERATED = (1 << 4), */ /* UNUSED */
   STRUCT_FREE_POINTERS = (1 << 5),
   /** Menus and Panels don't need properties */
-  STRUCT_NO_IDPROPERTIES = (1 << 6),
+  STRUCT_NO_IDPROPS = (1 << 6),
   /** e.g. for Operator */
-  STRUCT_NO_DATABLOCK_IDPROPERTIES = (1 << 7),
+  STRUCT_NO_DATABLOCK_IDPROPS = (1 << 7),
   /** for PropertyGroup which contains pointers to datablocks */
-  STRUCT_CONTAINS_DATABLOCK_IDPROPERTIES = (1 << 8),
-  /** Added to type-map #BlenderRNA.structs_map */
+  STRUCT_CONTAINS_DATABLOCK_IDPROPS = (1 << 8),
+  /** Added to type-map DuneApi.structs_map */
   STRUCT_PUBLIC_NAMESPACE = (1 << 9),
   /** All subtypes are added too. */
   STRUCT_PUBLIC_NAMESPACE_INHERIT = (1 << 10),
-  /**
-   * When the #PointerRNA.owner_id is NULL, this signifies the property should be accessed
-   * without any context (the key-map UI and import/export for example).
-   * So accessing the property should not read from the current context to derive values/limits.
-   */
-  STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID = (1 << 11),
+  /* When the ApiPtr.owner_id is NULL, this signifies the prop should be accessed
+   * without any cxt (the key-map UI and import/export for example).
+   * So accessing the prop should not read from the current cxt to derive values/limits. */
+  STRUCT_NO_CXT_WITHOUT_OWNER_ID = (1 << 11),
 } StructFlag;
 
-typedef int (*StructValidateFn)(struct ApiPtr *ptr, void *data, int *have_function);
-typedef int (*StructCbFn)(struct Ctx *C,
+typedef int (*StructValidateFn)(struct ApiPtr *ptr, void *data, int *have_fn);
+typedef int (*StructCbFn)(struct Cxt *C,
                           struct ApiPtr *ptr,
                           struct ApiFn *fn,
-                          ParameterList *list);
-typedef void (*StructFreeFunc)(void *data);
-typedef struct ApiStruct *(*StructRegisterFunc)(struct Main *bmain,
-                                                struct ReportList *reports,
-                                                void *data,
-                                                const char *identifier,
-                                                StructValidateFn validate,
-                                                StructCallbackFn call,
-                                                StructFreeFn free);
+                          ParamList *list);
+typedef void (*StructFreeFn)(void *data);
+typedef struct ApiStruct *(*StructRegisterFn)(struct Main *main,
+                                              struct ReportList *reports,
+                                              void *data,
+                                              const char *id,
+                                              StructValidateFn validate,
+                                              StructCbFn call,
+                                              StructFreeFn free);
 
 typedef void (*StructUnregisterFn)(struct Main *main, struct ApiStruct *type);m
 typedef void **(*StructInstanceFn)(ApiPtr *ptr);
@@ -657,15 +617,12 @@ typedef void **(*StructInstanceFn)(ApiPtr *ptr);
 typedef struct ApiStruct ApiStruct;
 
 /* Dune Api
- * Root RNA data structure that lists all struct types. */
+ * Root API data structure that lists all struct types. */
 typedef struct ApiDune ApiDune;
 
-/**
- * Extending
- *
+/* Extending
  * This struct must be embedded in *Type structs in
- * order to make them definable through RNA.
- */
+ * order to make them definable through API */
 typedef struct ApiExtension {
   void *data;
   ApiStruct *api;
