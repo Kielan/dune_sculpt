@@ -251,7 +251,7 @@ bool api_prop_overridable_get(ApiPtr *ptr, ApiProp *prop);
 /* Should only be used for custom properties. */
 bool api_prop_overridable_lib_set(ApiPtr *ptr, ApiProp *prop, bool is_overridable);
 bool api_prop_overridden(ApiPtr *ptr, ApiProp *prop);
-bool aoi_prop_comparable(ApiPtr *ptr, ApiProp *prop);
+bool api_prop_comparable(ApiPtr *ptr, ApiProp *prop);
 /* This fn is to check if its possible to create a valid path from the ID
  * its slow so don't call in a loop. */
 bool api_prop_path_from_id_check(ApiPtr *ptr, ApiProp *prop); /* slow, use with care */
@@ -267,11 +267,11 @@ void api_prop_update_main(struct Main *main,
 bool api_prop_update_check(struct ApiProp *prop);
 
 /* Prop Data */
-bool api_prop_bool_get(ApiPtr *ptr, PropertyRNA *prop);
-void api_prop_bool_set(ApiPtr *ptr, PropertyRNA *prop, bool value);
-void api_prop_bool_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *values);
-bool api_prop_bool_get_index(PointerRNA *ptr, PropertyRNA *prop, int index);
-void api_prop_bool_set_array(PointerRNA *ptr, PropertyRNA *prop, const bool *values);
+bool api_prop_bool_get(ApiPtr *ptr, ApiProp *prop);
+void api_prop_bool_set(ApiPtr *ptr, ApiProp *prop, bool value);
+void api_prop_bool_get_array(ApiPtr *ptr, ApiProp *prop, bool *values);
+bool api_prop_bool_get_index(ApiPtr *ptr, ApiProp *prop, int index);
+void api_prop_bool_set_array(ApiPtr *ptr, ApiProp *prop, const bool *values);
 void api_prop_bool_set_index(ApiPtr *ptr, ApiProp *prop, int index, bool value);
 bool api_prop_bool_get_default(ApiPtr *ptr, ApiProp *prop);
 void api_prop_bool_get_default_array(ApiPtr *ptr, ApiProp *prop, bool *values);
@@ -321,47 +321,45 @@ int api_prop_enum_get_default(ApiPtr *ptr, ApiProp *prop);
  * param from_value: Item value to start stepping from.
  * param step: Absolute value defines step size, sign defines direction.
  * E.g to get the next item, pass 1, for the previous -1 */
-int RNA_property_enum_step(
-    const struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int from_value, int step);
+int api_prop_enum_step(
+    const struct Cxt *C, ApiPtr *ptr, ApiProp *prop, int from_value, int step);
 
-PointerRNA RNA_property_pointer_get(PointerRNA *ptr, PropertyRNA *prop) ATTR_NONNULL(1, 2);
-void RNA_property_pointer_set(PointerRNA *ptr,
-                              PropertyRNA *prop,
-                              PointerRNA ptr_value,
-                              struct ReportList *reports) ATTR_NONNULL(1, 2);
-PointerRNA RNA_property_pointer_get_default(PointerRNA *ptr, PropertyRNA *prop) ATTR_NONNULL(1, 2);
+ApiPtr api_prop_ptr_get(ApiPtr *ptr, ApiProp *prop) ATTR_NONNULL(1, 2);
+void api_prop_ptr_set(ApiPtr *ptr,
+                      ApiProp *prop,
+                      ApiPtr ptr_value,
+                      struct ReportList *reports) ATTR_NONNULL(1, 2);
+ApiPtr api_prop_ptr_get_default(ApiPtr *ptr, ApiProp *prop) ATTR_NONNULL(1, 2);
 
-void RNA_property_collection_begin(PointerRNA *ptr,
-                                   PropertyRNA *prop,
-                                   CollectionPropertyIterator *iter);
-void RNA_property_collection_next(CollectionPropertyIterator *iter);
-void RNA_property_collection_skip(CollectionPropertyIterator *iter, int num);
-void RNA_property_collection_end(CollectionPropertyIterator *iter);
-int RNA_property_collection_length(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * Return true when `RNA_property_collection_length(ptr, prop) == 0`,
- * without having to iterate over items in the collection (needed for some kinds of collections).
- */
-bool RNA_property_collection_is_empty(PointerRNA *ptr, PropertyRNA *prop);
-int RNA_property_collection_lookup_index(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *t_ptr);
-int RNA_property_collection_lookup_int(PointerRNA *ptr,
-                                       PropertyRNA *prop,
-                                       int key,
-                                       PointerRNA *r_ptr);
-int RNA_property_collection_lookup_string(PointerRNA *ptr,
-                                          PropertyRNA *prop,
-                                          const char *key,
-                                          PointerRNA *r_ptr);
-int RNA_property_collection_lookup_string_index(
-    PointerRNA *ptr, PropertyRNA *prop, const char *key, PointerRNA *r_ptr, int *r_index);
+void api_prop_collection_begin(ApiPtr *ptr,
+                              ApiProp *prop,
+                              CollectionPropIter *iter);
+void api_prop_collection_next(CollectionPropIter *iter);
+void api_prop_collection_skip(CollectionPropIter *iter, int num);
+void api_prop_collection_end(CollectionPropIter *iter);
+int api_prop_collection_length(ApiPtr *ptr, ApiProp *prop);
+/* Return true when `RNA_property_collection_length(ptr, prop) == 0`,
+ * without having to iterate over items in the collection (needed for some kinds of collections). */
+bool api_prop_collection_is_empty(ApiPtr *ptr, ApiProp *prop);
+int api_prop_collection_lookup_index(ApiPtr *ptr, ApiProp *prop, ApiPtr *t_ptr);
+int api_prop_collection_lookup_int(PointerRNA *ptr,
+                                   ApiProp *prop,
+                                   int key,
+                                   ApiPtr *r_ptr);
+int api_prop_collection_lookup_string(ApiPtr *ptr,
+                                      ApiProp *prop,
+                                      const char *key,
+                                      ApiPtr *r_ptr);
+int api_prop_collection_lookup_string_index(
+    PointerRNA *ptr, PropertyRNA *prop, const char *key, ApiPtr *r_ptr, int *r_index);
 /**
  * Zero return is an assignment error.
  */
-int RNA_property_collection_assign_int(PointerRNA *ptr,
-                                       PropertyRNA *prop,
-                                       int key,
-                                       const PointerRNA *assign_ptr);
-bool RNA_property_collection_type_get(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *r_ptr);
+int RNA_prop_collection_assign_int(ApiPtr *ptr,
+                                   ApiProp *prop,
+                                   int key,
+                                   const ApiPtr *assign_ptr);
+bool RNA_prop_collection_type_get(ApiPtr *ptr, ApiProp *prop, PointerRNA *r_ptr);
 
 /* efficient functions to set properties for arrays */
 int RNA_property_collection_raw_array(PointerRNA *ptr,
