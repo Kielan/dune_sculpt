@@ -395,9 +395,8 @@ bool api_prop_assign_default(ApiPtr *ptr, ApiProp *prop);
  * This provides a way to refer to api data while being detached from any
  * particular ptrs, which is useful in a number of applications, like
  * UI code or Actions, though efficiency is a concern. */
-
 char *api_path_append(
-    const char *path, PointerRNA *ptr, PropertyRNA *prop, int intkey, const char *strkey);
+    const char *path, ApiPtr *ptr, ApiProp *prop, int intkey, const char *strkey);
 #if 0 /* UNUSED. */
 char *api_path_back(const char *path);
 #endif
@@ -416,12 +415,11 @@ char *api_path_back(const char *path);
  */
 bool api_path_resolve(ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop);
 
-/* Resolve the given RNA Path to find the pointer and/or property + array index
+/* Resolve the given api Path to find the pointer and/or property + array index
  * indicated by fully resolving the path.
  *
- * note Assumes all pointers provided are valid.
- * return True if path can be resolved to a valid "pointer + property" OR "pointer only"
- */
+ * note Assumes all ptrs provided are valid.
+ * return True if path can be resolved to a valid "pointer + property" OR "pointer only" */
 bool api_path_resolve_full(
     ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop, int *r_index);
 /* A version of api_path_resolve_full doesn't check the value of ApiPtr.data.
@@ -483,92 +481,77 @@ bool api_path_resolve_prop_and_item_ptr(ApiPtr *ptr,
  * param r_item_ptr: The final Ptr or Collection item value.
  * You must check for its validity before use!
  * return True only if both a valid ptr and prop are found after resolving the path */
-bool api_path_resolve_prop_and_item_ptr_full(PointerRNA *ptr,
+bool api_path_resolve_prop_and_item_ptr_full(ApiPtr *ptr,
                                              const char *path,
-                                             PointerRNA *r_ptr,
-                                             PropertyRNA **r_prop,
+                                             ApiPtr *r_ptr,
+                                             ApiProp **r_prop,
                                              int *r_index,
-                                             PointerRNA *r_item_ptr);
+                                             ApiPtr *r_item_ptr);
 
-typedef struct PropertyElemRNA PropertyElemRNA;
-struct PropertyElemRNA {
-  PropertyElemRNA *next, *prev;
-  PointerRNA ptr;
-  PropertyRNA *prop;
+typedef struct ApiPropElem ApiPropElem;
+struct ApiPropElem {
+  ApiPropElem *next, *prev;
+  ApiPtr ptr;
+  ApiProp *prop;
   int index;
 };
-/**
- * Resolve the given RNA Path into a linked list of #PropertyElemRNA's.
+/* Resolve the given api Path into a linked list of ApiPropElem's.
+ * To be used when complex ops over path are needed, like e.g. get relative paths,
+ * to avoid too much string ops.
  *
- * To be used when complex operations over path are needed, like e.g. get relative paths,
- * to avoid too much string operations.
+ * return True if there was no error while resolving the path
+ * Assumes all ptrs provided are valid */
+bool api_path_resolve_elements(ApiPtr *ptr, const char *path, struct List *r_elements);
+
+/* Find the path from the structure refd by the ptr to the runtime api-defined
+ * IdProp object.
  *
- * \return True if there was no error while resolving the path
- * \note Assumes all pointers provided are valid
- */
-bool RNA_path_resolve_elements(PointerRNA *ptr, const char *path, struct ListBase *r_elements);
-
-/**
- * Find the path from the structure referenced by the pointer to the runtime RNA-defined
- * #IDProperty object.
+ * note Does *not* handle pure user-defined IdProps (a.k.a. custom props).
  *
- * \note Does *not* handle pure user-defined IDProperties (a.k.a. custom properties).
+ * param ptr: Ref to the object owning the custom prop storage.
+ * param needle: Custom prop object to find.
+ * return Relative path or NULL. */
+char *api_path_from_struct_to_idprop(ApiPtr *ptr, struct IdProp *needle);
+
+/* Find the actual Id ptr and path from it to the given Id.
  *
- * \param ptr: Reference to the object owning the custom property storage.
- * \param needle: Custom property object to find.
- * \return Relative path or NULL.
- */
-char *RNA_path_from_struct_to_idproperty(PointerRNA *ptr, struct IDProperty *needle);
+ * param id: Id ref to search the global owner for.
+ * param[out] r_path: Path from the real Id to the initial Id.
+ * return The Id ptr, or NULL in case of failure. */
+struct Id *api_find_real_id_and_path(struct Main *main, struct Id *id, const char **r_path);
 
-/**
- * Find the actual ID pointer and path from it to the given ID.
- *
- * \param id: ID reference to search the global owner for.
- * \param[out] r_path: Path from the real ID to the initial ID.
- * \return The ID pointer, or NULL in case of failure.
- */
-struct ID *RNA_find_real_ID_and_path(struct Main *bmain, struct ID *id, const char **r_path);
+char *api_path_from_id_to_struct(const ApiPtr *ptr);
 
-char *RNA_path_from_ID_to_struct(const PointerRNA *ptr);
+char *api_path_from_real_id_to_struct(struct Main *main, ApiPtr *ptr, struct Id **r_real);
 
-char *RNA_path_from_real_ID_to_struct(struct Main *bmain, PointerRNA *ptr, struct ID **r_real);
+char *api_path_from_id_to_prop(ApiPtr *ptr, ApiProp *prop);
+/* param index_dim: The dimension to show, 0 disables. 1 for 1d array, 2 for 2d. etc.
+ * param index: The *flattened* index to use when `index_dim > 0`,
+ * this is expanded when used with multi-dimensional arrays. */
+char *api_path_from_id_to_prop_index(ApiPtr *ptr,
+                                     ApiProp *prop,
+                                     int index_dim,
+                                     int index);
 
-char *RNA_path_from_ID_to_property(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * \param index_dim: The dimension to show, 0 disables. 1 for 1d array, 2 for 2d. etc.
- * \param index: The *flattened* index to use when \a `index_dim > 0`,
- * this is expanded when used with multi-dimensional arrays.
- */
-char *RNA_path_from_ID_to_property_index(PointerRNA *ptr,
-                                         PropertyRNA *prop,
-                                         int index_dim,
-                                         int index);
-
-char *RNA_path_from_real_ID_to_property_index(struct Main *bmain,
-                                              PointerRNA *ptr,
-                                              PropertyRNA *prop,
+char *api_path_from_real_id_to_prop_index(struct Main *main,
+                                              ApiPtr *ptr,
+                                              ApiProp *prop,
                                               int index_dim,
                                               int index,
-                                              struct ID **r_real_id);
+                                              struct Id **r_real_id);
 
-/**
- * \return the path to given ptr/prop from the closest ancestor of given type,
- * if any (else return NULL).
- */
-char *RNA_path_resolve_from_type_to_property(struct PointerRNA *ptr,
-                                             struct PropertyRNA *prop,
-                                             const struct StructRNA *type);
+/* return the path to given ptr/prop from the closest ancestor of given type,
+ * if any (else return NULL). */
+char *api_path_resolve_from_type_to_prop(struct PointerRNA *ptr,
+                                         struct PropertyRNA *prop,
+                                         const struct StructRNA *type);
 
-/**
- * Get the ID as a python representation, eg:
- *   bpy.data.foo["bar"]
- */
-char *RNA_path_full_ID_py(struct Main *bmain, struct ID *id);
-/**
- * Get the ID.struct as a python representation, eg:
- *   bpy.data.foo["bar"].some_struct
- */
-char *RNA_path_full_struct_py(struct Main *bmain, struct PointerRNA *ptr);
+/* Get the Id as a python representation, eg:
+ *   bpy.data.foo["bar"] */
+char *api_path_full_id_py(struct Main *bmain, struct ID *id);
+/* Get the ID.struct as a python representation, eg:
+ *   bpy.data.foo["bar"].some_struct */
+char *api_path_full_struct_py(struct Main *bmain, struct PointerRNA *ptr);
 /**
  * Get the ID.struct.property as a python representation, eg:
  *   bpy.data.foo["bar"].some_struct.some_prop[10]
