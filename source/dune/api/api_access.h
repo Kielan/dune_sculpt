@@ -26,15 +26,12 @@ struct Cxt;
 /* Types */
 extern DuneApi DUNE_API;
 
-/* Ptr
- * These fns will fill in api ptrs, this can be done in three ways:
- * - a ptr Main is created by just passing the data ptr
- * - a ptr to a datablock can be created with the type and id data ptr
- * - a ptr to data contained in a datablock can be created with the id type
- *   and id data ptr, and the data type and ptr to the struct itself.
- *
- * There is also a way to get a pointer with the information about all structs. */
-
+/* These fns will fill in api ptrs, can be done in three ways:
+ * - ptr Main is created by passing the data ptr
+ * - ptr to a datablock created w type and id data ptr
+ * - ptr to data in a datablock created w: id type,
+ *   id data ptr, data type, and ptr to the struct itself.
+ * Also possible to get a ptr w information about all structs. */
 void api_main_ptr_create(struct Main *main, ApiPtr *r_ptr);
 void api_id_ptr_create(struct Id *id, ApiPtr *r_ptr);
 void api_ptr_create(struct Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr);
@@ -52,7 +49,6 @@ extern const ApiPtr ApiPtr_NULL;
 
 /* Structs */
 ApiStruct *api_struct_find(const char *id);
-
 const char *api_struct_id(const ApiStruct *type);
 const char *api_struct_ui_name(const ApiStruct *type);
 const char *api_struct_ui_name_raw(const ApiStruct *type);
@@ -94,7 +90,7 @@ bool api_struct_idprops_datablock_allowed(const ApiStruct *type);
  * but not datablock ones, to indirectly use some
  * (e.g. by assigning an IDP_GROUP containing some IDP_ID ptrs...). */
 bool api_struct_idprops_contains_datablock(const ApiStruct *type);
-/* Remove an id-property. */
+/* Remove an id-prop. */
 bool api_struct_idprops_unset(ApiPtr *ptr, const char *id);
 
 ApiProp *api_struct_find_prop(ApiPtr *ptr, const char *id);
@@ -119,11 +115,9 @@ bool api_struct_available_or_report(struct ReportList *reports, const char *id);
 bool api_struct_bl_idname_ok_or_report(struct ReportList *reports,
                                        const char *id,
                                        const char *sep);
-
 /* Props
- * Access to struct props. All this works with RNA pointers rather than
+ * Access to struct props. All this works with api pointers rather than
  * direct pointers to the data. */
-
 /* Prop Information */
 const char *api_prop_id(const ApiProp *prop);
 const char *api_prop_description(ApiProp *prop);
@@ -338,11 +332,11 @@ void api_prop_collection_next(CollectionPropIter *iter);
 void api_prop_collection_skip(CollectionPropIter *iter, int num);
 void api_prop_collection_end(CollectionPropIter *iter);
 int api_prop_collection_length(ApiPtr *ptr, ApiProp *prop);
-/* Return true when `RNA_property_collection_length(ptr, prop) == 0`,
+/* Return true when `api_prop_collection_length(ptr, prop) == 0`,
  * without having to iterate over items in the collection (needed for some kinds of collections). */
 bool api_prop_collection_is_empty(ApiPtr *ptr, ApiProp *prop);
 int api_prop_collection_lookup_index(ApiPtr *ptr, ApiProp *prop, ApiPtr *t_ptr);
-int api_prop_collection_lookup_int(PointerRNA *ptr,
+int api_prop_collection_lookup_int(ApiPtr *ptr,
                                    ApiProp *prop,
                                    int key,
                                    ApiPtr *r_ptr);
@@ -351,164 +345,150 @@ int api_prop_collection_lookup_string(ApiPtr *ptr,
                                       const char *key,
                                       ApiPtr *r_ptr);
 int api_prop_collection_lookup_string_index(
-    PointerRNA *ptr, PropertyRNA *prop, const char *key, ApiPtr *r_ptr, int *r_index);
-/**
- * Zero return is an assignment error.
- */
-int RNA_prop_collection_assign_int(ApiPtr *ptr,
+    ApiPtr *ptr, ApiProp *prop, const char *key, ApiPtr *r_ptr, int *r_index);
+/* Zero return is an assignment error. */
+int api_prop_collection_assign_int(ApiPtr *ptr,
                                    ApiProp *prop,
                                    int key,
                                    const ApiPtr *assign_ptr);
-bool RNA_prop_collection_type_get(ApiPtr *ptr, ApiProp *prop, PointerRNA *r_ptr);
+bool api_prop_collection_type_get(ApiPtr *ptr, ApiProp *prop, PointerRNA *r_ptr);
 
 /* efficient functions to set properties for arrays */
-int RNA_property_collection_raw_array(PointerRNA *ptr,
-                                      PropertyRNA *prop,
-                                      PropertyRNA *itemprop,
-                                      RawArray *array);
-int RNA_property_collection_raw_get(struct ReportList *reports,
-                                    PointerRNA *ptr,
-                                    PropertyRNA *prop,
-                                    const char *propname,
-                                    void *array,
-                                    RawPropertyType type,
-                                    int len);
-int RNA_property_collection_raw_set(struct ReportList *reports,
-                                    PointerRNA *ptr,
-                                    PropertyRNA *prop,
-                                    const char *propname,
-                                    void *array,
-                                    RawPropertyType type,
-                                    int len);
-int RNA_raw_type_sizeof(RawPropertyType type);
-RawPropertyType RNA_property_raw_type(PropertyRNA *prop);
+int api_prop_collection_raw_array(ApiPtr *ptr,
+                                  ApiProp *prop,
+                                  ApiProp *itemprop,
+                                  RawArray *array);
+int api_prop_collection_raw_get(struct ReportList *reports,
+                                ApiPtr *ptr,
+                                ApiProp *prop,
+                                const char *propname,
+                                void *array,
+                                RawPropType type,
+                                int len);
+int api_prop_collection_raw_set(struct ReportList *reports,
+                                ApiPtr *ptr,
+                                ApiProp *prop,
+                                const char *propname,
+                                void *array,
+                                RawPropType type,
+                                int len);
+int api_raw_type_sizeof(RawPropType type);
+RawPropType api_prop_raw_type(ApiProp *prop);
 
-/* to create ID property groups */
-void RNA_property_pointer_add(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_pointer_remove(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_collection_add(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *r_ptr);
-bool RNA_property_collection_remove(PointerRNA *ptr, PropertyRNA *prop, int key);
-void RNA_property_collection_clear(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_collection_move(PointerRNA *ptr, PropertyRNA *prop, int key, int pos);
+/* to create id prop groups */
+void api_prop_ptr_add(ApiPtr *ptr, ApiProp *prop);
+void api_prop_pointer_remove(ApiPtr *ptr, ApiProp *prop);
+void api_prop_collection_add(ApiPtr *ptr, ApiProp *prop, ApiPtr *r_ptr);
+bool api_prop_collection_remove(ApiPtr *ptr, ApiProp *prop, int key);
+void api_prop_collection_clear(ApiPtr *ptr, ApiProp *prop);
+bool api_prop_collection_move(ApiPtr *ptr, ApiProp *prop, int key, int pos);
 /* copy/reset */
-bool RNA_property_copy(
-    struct Main *bmain, PointerRNA *ptr, PointerRNA *fromptr, PropertyRNA *prop, int index);
-bool RNA_property_reset(PointerRNA *ptr, PropertyRNA *prop, int index);
-bool RNA_property_assign_default(PointerRNA *ptr, PropertyRNA *prop);
+bool api_prop_copy(
+    struct Main *main, ApiPtr *ptr, ApiPtr *fromptr, ApiProp *prop, int index);
+bool api_prop_reset(ApiPtr *ptr, ApiProp *prop, int index);
+bool api_prop_assign_default(ApiPtr *ptr, ApiProp *prop);
 
 /* Path
- *
- * Experimental method to refer to structs and properties with a string,
+ * Experimental method to refer to structs and props w a string,
  * using a syntax like: scenes[0].objects["Cube"].data.verts[7].co
  *
- * This provides a way to refer to RNA data while being detached from any
- * particular pointers, which is useful in a number of applications, like
+ * This provides a way to refer to api data while being detached from any
+ * particular ptrs, which is useful in a number of applications, like
  * UI code or Actions, though efficiency is a concern. */
 
-char *RNA_path_append(
+char *api_path_append(
     const char *path, PointerRNA *ptr, PropertyRNA *prop, int intkey, const char *strkey);
 #if 0 /* UNUSED. */
-char *RNA_path_back(const char *path);
+char *api_path_back(const char *path);
 #endif
 
-/* RNA_path_resolve() variants only ensure that a valid pointer (and optionally property) exist. */
+/* api_path_resolve() variants only ensure that a valid pointer (and optionally property) exist. */
 
-/**
- * Resolve the given RNA Path to find the pointer and/or property
+/* Resolve the given api Path to find the pointer and/or property
  * indicated by fully resolving the path.
  *
- * \warning Unlike \a RNA_path_resolve_property(), that one *will* try to follow RNAPointers,
- * e.g. the path 'parent' applied to a RNAObject \a ptr will return the object.parent in \a r_ptr,
- * and a NULL \a r_prop...
+ * warning Unlike api_path_resolve_prop(), that one *will* try to follow RNAPointers,
+ * e.g. the path 'parent' applied to a ApiObject ptr will return the object.parent in \a r_ptr,
+ * and a NULL r_prop...
  *
- * \note Assumes all pointers provided are valid
- * \return True if path can be resolved to a valid "pointer + property" OR "pointer only"
+ * note Assumes all ptrs provided are valid
+ * return True if path can be resolved to a valid "ptr + prop" OR "ptr only"
  */
-bool RNA_path_resolve(PointerRNA *ptr, const char *path, PointerRNA *r_ptr, PropertyRNA **r_prop);
+bool api_path_resolve(ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop);
 
-/**
- * Resolve the given RNA Path to find the pointer and/or property + array index
+/* Resolve the given RNA Path to find the pointer and/or property + array index
  * indicated by fully resolving the path.
  *
- * \note Assumes all pointers provided are valid.
- * \return True if path can be resolved to a valid "pointer + property" OR "pointer only"
+ * note Assumes all pointers provided are valid.
+ * return True if path can be resolved to a valid "pointer + property" OR "pointer only"
  */
-bool RNA_path_resolve_full(
-    PointerRNA *ptr, const char *path, PointerRNA *r_ptr, PropertyRNA **r_prop, int *r_index);
-/**
- * A version of #RNA_path_resolve_full doesn't check the value of #PointerRNA.data.
+bool api_path_resolve_full(
+    ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop, int *r_index);
+/* A version of api_path_resolve_full doesn't check the value of ApiPtr.data.
  *
- * \note While it's correct to ignore the value of #PointerRNA.data
- * most callers need to know if the resulting pointer was found and not null.
- */
-bool RNA_path_resolve_full_maybe_null(
-    PointerRNA *ptr, const char *path, PointerRNA *r_ptr, PropertyRNA **r_prop, int *r_index);
+ * note While it's correct to ignore the value of ApiPtr.data
+ * most callers need to know if the resulting pointer was found and not null */
+bool api_path_resolve_full_maybe_null(
+    ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop, int *r_index);
 
-/* RNA_path_resolve_property() variants ensure that pointer + property both exist. */
+/* api_path_resolve_prop() variants ensure that ptr + prop both exist. */
 
-/**
- * Resolve the given RNA Path to find both the pointer AND property
+/* Resolve the given api Path to find both the ptr AND prop
  * indicated by fully resolving the path.
  *
  * This is a convenience method to avoid logic errors and ugly syntax.
- * \note Assumes all pointers provided are valid
- * \return True only if both a valid pointer and property are found after resolving the path
- */
-bool RNA_path_resolve_property(PointerRNA *ptr,
-                               const char *path,
-                               PointerRNA *r_ptr,
-                               PropertyRNA **r_prop);
+ * note Assumes all ptrs provided are valid
+ * return True only if both a valid ptr and prop are found after resolving the path */
+bool api_path_resolve_prop(ApiPtr *ptr,
+                           const char *path,
+                           ApiPtr *r_ptr,
+                           ApiProp **r_prop);
 
-/**
- * Resolve the given RNA Path to find the pointer AND property (as well as the array index)
+/* Resolve the given api Path to find the pointer AND property (as well as the array index)
  * indicated by fully resolving the path.
  *
  * This is a convenience method to avoid logic errors and ugly syntax.
- * \note Assumes all pointers provided are valid
- * \return True only if both a valid pointer and property are found after resolving the path
- */
-bool RNA_path_resolve_property_full(
-    PointerRNA *ptr, const char *path, PointerRNA *r_ptr, PropertyRNA **r_prop, int *r_index);
+ * note Assumes all pointers provided are valid
+ * return True only if both a valid pointer and property are found after resolving the path */
+bool api_path_resolve_prop_full(
+    ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop, int *r_index);
 
-/* RNA_path_resolve_property_and_item_pointer() variants ensure that pointer + property both exist,
- * and resolve last Pointer value if possible (Pointer prop or item of a Collection prop). */
+/* api_path_resolve_prop_and_item_ptr() variants ensure that ptr + prop both exist,
+ * and resolve last Ptr value if possible (Ptr prop or item of a Collection prop). */
 
-/**
- * Resolve the given RNA Path to find both the pointer AND property
+/* Resolve the given api Path to find both the pointer AND property
  * indicated by fully resolving the path, and get the value of the Pointer property
  * (or item of the collection).
  *
  * This is a convenience method to avoid logic errors and ugly syntax,
- * it combines both \a RNA_path_resolve and #RNA_path_resolve_property in a single call.
+ * it combines both api_path_resolve and #RNA_path_resolve_property in a single call.
  * note Assumes all pointers provided are valid.
  * param r_item_ptr: The final Pointer or Collection item value.
  * You must check for its validity before use!
- * return True only if both a valid pointer and property are found after resolving the path
- */
+ * return True only if both a valid pointer and property are found after resolving the path */
 bool api_path_resolve_prop_and_item_ptr(ApiPtr *ptr,
                                         const char *path,
-                                        PointerRNA *r_ptr,
-                                        PropertyRNA **r_prop,
-                                        PointerRNA *r_item_ptr);
+                                        ApiPtr *r_ptr,
+                                        ApiProp **r_prop,
+                                        ApiPtr *r_item_ptr);
 
-/* Resolve the given RNA Path to find both the pointer AND property (as well as the array index)
+/* Resolve the given api Path to find both the pointer AND prop (as well as the array index)
  * indicated by fully resolving the path,
- * and get the value of the Pointer property (or item of the collection).
+ * and get the value of the Ptr prop (or item of the collection).
  *
  * This is a convenience method to avoid logic errors and ugly syntax,
- * it combines both \a RNA_path_resolve_full and
- * \a RNA_path_resolve_property_full in a single call.
- * \note Assumes all pointers provided are valid.
- * \param r_item_ptr: The final Pointer or Collection item value.
+ * it combines both api_path_resolve_full and
+ * api_path_resolve_prop_full in a single call.
+ * Assumes all pointers provided are valid.
+ * param r_item_ptr: The final Ptr or Collection item value.
  * You must check for its validity before use!
- * \return True only if both a valid pointer and property are found after resolving the path
- */
-bool RNA_path_resolve_property_and_item_pointer_full(PointerRNA *ptr,
-                                                     const char *path,
-                                                     PointerRNA *r_ptr,
-                                                     PropertyRNA **r_prop,
-                                                     int *r_index,
-                                                     PointerRNA *r_item_ptr);
+ * return True only if both a valid ptr and prop are found after resolving the path */
+bool api_path_resolve_prop_and_item_ptr_full(PointerRNA *ptr,
+                                             const char *path,
+                                             PointerRNA *r_ptr,
+                                             PropertyRNA **r_prop,
+                                             int *r_index,
+                                             PointerRNA *r_item_ptr);
 
 typedef struct PropertyElemRNA PropertyElemRNA;
 struct PropertyElemRNA {
