@@ -289,45 +289,38 @@ bool api_prop_int_set_default(ApiProp *prop, int value);
 void api_prop_int_get_default_array(ApiPtr *ptr, ApiProp *prop, int *values);
 int api_prop_int_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
 
-float RNA_property_float_get(ApiPtr *ptr, ApiProp *prop);
-void RNA_property_float_set(ApiPtr *ptr, ApiProp *prop, float value);
-void RNA_property_float_get_array(ApiPtr *ptr, ApiProp *prop, float *values);
-void RNA_property_float_get_array_range(ApiPtr *ptr, ApiProp *prop, float values[2]);
-float RNA_property_float_get_index(ApiPtr *ptr, ApiProp *prop, int index);
-void RNA_property_float_set_array(ApiPtr *ptr, ApiProp *prop, const float *values);
-void RNA_property_float_set_index(ApiPtr *ptr, ApiProp *prop, int index, float value);
-float RNA_property_float_get_default(ApiPtr *ptr, ApiProp *prop);
-bool RNA_property_float_set_default(ApiProp *prop, float value);
-void RNA_property_float_get_default_array(ApiPtr *ptr, ApiProp *prop, float *values);
-float RNA_property_float_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
+float api_prop_float_get(ApiPtr *ptr, ApiProp *prop);
+void api_prop_float_set(ApiPtr *ptr, ApiProp *prop, float value);
+void api_prop_float_get_array(ApiPtr *ptr, ApiProp *prop, float *values);
+void api_prop_float_get_array_range(ApiPtr *ptr, ApiProp *prop, float values[2]);
+float api_prop_float_get_index(ApiPtr *ptr, ApiProp *prop, int index);
+void api_prop_float_set_array(ApiPtr *ptr, ApiProp *prop, const float *values);
+void api_prop_float_set_index(ApiPtr *ptr, ApiProp *prop, int index, float value);
+float api_prop_float_get_default(ApiPtr *ptr, ApiProp *prop);
+bool api_prop_float_set_default(ApiProp *prop, float value);
+void api_prop_float_get_default_array(ApiPtr *ptr, ApiProp *prop, float *values);
+float api_prop_float_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
 
-void RNA_property_string_get(PointerRNA *ptr, PropertyRNA *prop, char *value);
-char *RNA_property_string_get_alloc(
-    PointerRNA *ptr, PropertyRNA *prop, char *fixedbuf, int fixedlen, int *r_len);
-void RNA_property_string_set(PointerRNA *ptr, PropertyRNA *prop, const char *value);
-void RNA_property_string_set_bytes(PointerRNA *ptr, PropertyRNA *prop, const char *value, int len);
-/**
- * \return the length without `\0` terminator.
- */
-int RNA_property_string_length(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_string_get_default(PropertyRNA *prop, char *value, int max_len);
-char *RNA_property_string_get_default_alloc(
-    PointerRNA *ptr, PropertyRNA *prop, char *fixedbuf, int fixedlen, int *r_len);
-/**
- * \return the length without `\0` terminator.
- */
-int RNA_property_string_default_length(PointerRNA *ptr, PropertyRNA *prop);
+void api_prop_string_get(ApiPtr *ptr, ApiProp *prop, char *value);
+char *api_prop_string_get_alloc(
+    ApiPtr *ptr, ApiProp *prop, char *fixedbuf, int fixedlen, int *r_len);
+void api_prop_string_set(ApiPtr *ptr, ApiProp *prop, const char *value);
+void api_prop_string_set_bytes(ApiPtr *ptr, ApiProp *prop, const char *value, int len);
+/* return the length without `\0` terminator. */
+int api_prop_string_length(ApiPtr *ptr, ApiProp *prop);
+void api_prop_string_get_default(ApiProp *prop, char *value, int max_len);
+char *api_prop_string_get_default_alloc(
+    ApiPtr *ptr, ApiProp *prop, char *fixedbuf, int fixedlen, int *r_len);
+/* return the length without `\0` terminator. */
+int api_prop_string_default_length(ApiPtr *ptr, PropertyRNA *prop);
 
-int RNA_property_enum_get(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_enum_set(PointerRNA *ptr, PropertyRNA *prop, int value);
-int RNA_property_enum_get_default(PointerRNA *ptr, PropertyRNA *prop);
-/**
- * Get the value of the item that is \a step items away from \a from_value.
- *
- * \param from_value: Item value to start stepping from.
- * \param step: Absolute value defines step size, sign defines direction.
- * E.g to get the next item, pass 1, for the previous -1.
- */
+int api_prop_enum_get(ApiPtr *ptr, ApiProp *prop);
+void api_prop_enum_set(ApiPtr *ptr, ApiProp *prop, int value);
+int api_prop_enum_get_default(ApiPtr *ptr, ApiProp *prop);
+/* Get the value of the item that is step items away from from_value.
+ * param from_value: Item value to start stepping from.
+ * param step: Absolute value defines step size, sign defines direction.
+ * E.g to get the next item, pass 1, for the previous -1 */
 int RNA_property_enum_step(
     const struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int from_value, int step);
 
