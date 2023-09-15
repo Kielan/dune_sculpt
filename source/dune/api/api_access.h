@@ -87,10 +87,10 @@ void api_struct_dune_type_set(ApiStruct *sapi, void *dune_type);
 struct IdProp **api_struct_idprops_p(ApiPtr *ptr);
 struct IdProp *api_struct_idprops(ApiPtr *ptr, bool create);
 bool api_struct_idprops_check(ApiStruct *sapi);
-bool api_struct_idprops_register_check(const StructRNA *type);
-bool api_struct_idprops_datablock_allowed(const StructRNA *type);
-/* Whether given type implies datablock usage by IDProps.
- * This is used to prevent classes allowed to have IDProps,
+bool api_struct_idprops_register_check(const ApiStruct *type);
+bool api_struct_idprops_datablock_allowed(const ApiStruct *type);
+/* Whether given type implies datablock usage by IdProps.
+ * This is used to prevent classes allowed to have IdProps,
  * but not datablock ones, to indirectly use some
  * (e.g. by assigning an IDP_GROUP containing some IDP_ID ptrs...). */
 bool api_struct_idprops_contains_datablock(const ApiStruct *type);
@@ -155,13 +155,13 @@ int api_prop_array_item_index(ApiProp *prop, char name);
 int api_prop_string_maxlength(ApiProp *prop);
 
 const char *api_prop_ui_name(const ApiProp *prop);
-const char *api_prop_ui_name_raw(const ApiPropertyRNA *prop);
-const char *api_prop_ui_description(const ApiPropertyRNA *prop);
-const char *api_prop_ui_description_raw(const ApiPropertyRNA *prop);
-const char *api_prop_lang_cxt(const ApiPropertyRNA *prop);
-int api_prop_ui_icon(const ApiPropertyRNA *prop);
+const char *api_prop_ui_name_raw(const ApiProp *prop);
+const char *api_prop_ui_description(const ApiProp *prop);
+const char *api_prop_ui_description_raw(const ApiProp *prop);
+const char *api_prop_lang_cxt(const ApiProp *prop);
+int api_prop_ui_icon(const ApiProp *prop);
 
-/* Dynamic Property Information */
+/* Dynamic Prop Information */
 void api_prop_int_range(ApiPtr *ptr, ApiProp *prop, int *hardmin, int *hardmax);
 void api_prop_int_ui_range(
     ApiPtr *ptr, ApiProp *prop, int *softmin, int *softmax, int *step);
@@ -240,9 +240,7 @@ bool api_prop_editable_info(ApiPtr *ptr, ApiProp *prop, const char **r_info);
 /* Same as api_prop_editable(), except this checks individual items in an array. */
 bool api_prop_editable_index(ApiPtr *ptr, ApiProp *prop, const int index);
 
-/**
- * Without lib check, only checks the flag.
- */
+/* Without lib check, only checks the flag. */
 bool api_prop_editable_flag(ApiPtr *ptr, ApiProp *prop);
 
 bool api_prop_animateable(ApiPtr *ptr, ApiProp *prop);
@@ -266,43 +264,42 @@ void api_prop_update_main(struct Main *main,
                           ApiProp *prop);
 /* note its possible this returns a false positive in the case of #PROP_CONTEXT_UPDATE
  * but this isn't likely to be a performance problem. */
-bool RNA_property_update_check(struct ApiProp *prop);
+bool api_prop_update_check(struct ApiProp *prop);
 
-/* Property Data */
+/* Prop Data */
+bool api_prop_bool_get(ApiPtr *ptr, PropertyRNA *prop);
+void api_prop_bool_set(ApiPtr *ptr, PropertyRNA *prop, bool value);
+void api_prop_bool_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *values);
+bool api_prop_bool_get_index(PointerRNA *ptr, PropertyRNA *prop, int index);
+void api_prop_bool_set_array(PointerRNA *ptr, PropertyRNA *prop, const bool *values);
+void api_prop_bool_set_index(ApiPtr *ptr, ApiProp *prop, int index, bool value);
+bool api_prop_bool_get_default(ApiPtr *ptr, ApiProp *prop);
+void api_prop_bool_get_default_array(ApiPtr *ptr, ApiProp *prop, bool *values);
+bool api_prop_bool_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
 
-bool RNA_prop_bool_get(ApiPtr *ptr, PropertyRNA *prop);
-void RNA_prop_bool_set(ApiPtr *ptr, PropertyRNA *prop, bool value);
-void RNA_prop_bool_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *values);
-bool RNA_prop_bool_get_index(PointerRNA *ptr, PropertyRNA *prop, int index);
-void RNA_prop_bool_set_array(PointerRNA *ptr, PropertyRNA *prop, const bool *values);
-void RNA_prop_bool_set_index(ApiPtr *ptr, ApiProp *prop, int index, bool value);
-bool RNA_prop_bool_get_default(ApiPtr *ptr, ApiProp *prop);
-void RNA_prop_bool_get_default_array(ApiPtr *ptr, ApiProp *prop, bool *values);
-bool RNA_prop_bool_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
+int api_prop_int_get(ApiPtr *ptr, ApiProp *prop);
+void api_prop_int_set(ApiPtr *ptr, ApiProp *prop, int value);
+void api_prop_int_get_array(ApiPtr *ptr, ApiProp *prop, int *values);
+void api_prop_int_get_array_range(ApiPtr *ptr, ApiProp *prop, int values[2]);
+int api_prop_int_get_index(ApiPtr *ptr, ApiProp *prop, int index);
+void api_prop_int_set_array(ApiPtr *ptr, ApiProp *prop, const int *values);
+void api_prop_int_set_index(ApiPtr *ptr, ApiProp *prop, int index, int value);
+int api_prop_int_get_default(ApiPtr *ptr, ApiProp *prop);
+bool api_prop_int_set_default(ApiProp *prop, int value);
+void api_prop_int_get_default_array(ApiPtr *ptr, ApiProp *prop, int *values);
+int api_prop_int_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
 
-int RNA_property_int_get(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_int_set(PointerRNA *ptr, PropertyRNA *prop, int value);
-void RNA_property_int_get_array(PointerRNA *ptr, PropertyRNA *prop, int *values);
-void RNA_property_int_get_array_range(PointerRNA *ptr, PropertyRNA *prop, int values[2]);
-int RNA_property_int_get_index(PointerRNA *ptr, PropertyRNA *prop, int index);
-void RNA_property_int_set_array(PointerRNA *ptr, PropertyRNA *prop, const int *values);
-void RNA_property_int_set_index(PointerRNA *ptr, PropertyRNA *prop, int index, int value);
-int RNA_property_int_get_default(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_int_set_default(PropertyRNA *prop, int value);
-void RNA_property_int_get_default_array(PointerRNA *ptr, PropertyRNA *prop, int *values);
-int RNA_property_int_get_default_index(PointerRNA *ptr, PropertyRNA *prop, int index);
-
-float RNA_property_float_get(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_float_set(PointerRNA *ptr, PropertyRNA *prop, float value);
-void RNA_property_float_get_array(PointerRNA *ptr, PropertyRNA *prop, float *values);
-void RNA_property_float_get_array_range(PointerRNA *ptr, PropertyRNA *prop, float values[2]);
-float RNA_property_float_get_index(PointerRNA *ptr, PropertyRNA *prop, int index);
-void RNA_property_float_set_array(PointerRNA *ptr, PropertyRNA *prop, const float *values);
-void RNA_property_float_set_index(PointerRNA *ptr, PropertyRNA *prop, int index, float value);
-float RNA_property_float_get_default(PointerRNA *ptr, PropertyRNA *prop);
-bool RNA_property_float_set_default(PropertyRNA *prop, float value);
-void RNA_property_float_get_default_array(PointerRNA *ptr, PropertyRNA *prop, float *values);
-float RNA_property_float_get_default_index(PointerRNA *ptr, PropertyRNA *prop, int index);
+float RNA_property_float_get(ApiPtr *ptr, ApiProp *prop);
+void RNA_property_float_set(ApiPtr *ptr, ApiProp *prop, float value);
+void RNA_property_float_get_array(ApiPtr *ptr, ApiProp *prop, float *values);
+void RNA_property_float_get_array_range(ApiPtr *ptr, ApiProp *prop, float values[2]);
+float RNA_property_float_get_index(ApiPtr *ptr, ApiProp *prop, int index);
+void RNA_property_float_set_array(ApiPtr *ptr, ApiProp *prop, const float *values);
+void RNA_property_float_set_index(ApiPtr *ptr, ApiProp *prop, int index, float value);
+float RNA_property_float_get_default(ApiPtr *ptr, ApiProp *prop);
+bool RNA_property_float_set_default(ApiProp *prop, float value);
+void RNA_property_float_get_default_array(ApiPtr *ptr, ApiProp *prop, float *values);
+float RNA_property_float_get_default_index(ApiPtr *ptr, ApiProp *prop, int index);
 
 void RNA_property_string_get(PointerRNA *ptr, PropertyRNA *prop, char *value);
 char *RNA_property_string_get_alloc(
