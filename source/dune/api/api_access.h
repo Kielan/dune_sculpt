@@ -377,7 +377,7 @@ RawPropType api_prop_raw_type(ApiProp *prop);
 
 /* to create id prop groups */
 void api_prop_ptr_add(ApiPtr *ptr, ApiProp *prop);
-void api_prop_pointer_remove(ApiPtr *ptr, ApiProp *prop);
+void api_prop_ptr_remove(ApiPtr *ptr, ApiProp *prop);
 void api_prop_collection_add(ApiPtr *ptr, ApiProp *prop, ApiPtr *r_ptr);
 bool api_prop_collection_remove(ApiPtr *ptr, ApiProp *prop, int key);
 void api_prop_collection_clear(ApiPtr *ptr, ApiProp *prop);
@@ -401,18 +401,17 @@ char *api_path_append(
 char *api_path_back(const char *path);
 #endif
 
-/* api_path_resolve() variants only ensure that a valid pointer (and optionally property) exist. */
+/* api_path_resolve() variants only ensure that a valid ptr (and optionally prop) exist. */
 
-/* Resolve the given api Path to find the pointer and/or property
+/* Resolve the given api Path to find the ptr and/or prop
  * indicated by fully resolving the path.
  *
- * warning Unlike api_path_resolve_prop(), that one *will* try to follow RNAPointers,
+ * warning Unlike api_path_resolve_prop(), that one *will* try to follow ApiPtrs,
  * e.g. the path 'parent' applied to a ApiObject ptr will return the object.parent in \a r_ptr,
  * and a NULL r_prop...
  *
  * note Assumes all ptrs provided are valid
- * return True if path can be resolved to a valid "ptr + prop" OR "ptr only"
- */
+ * return True if path can be resolved to a valid "ptr + prop" OR "ptr only" */
 bool api_path_resolve(ApiPtr *ptr, const char *path, ApiPtr *r_ptr, ApiProp **r_prop);
 
 /* Resolve the given api Path to find the pointer and/or property + array index
@@ -459,18 +458,18 @@ bool api_path_resolve_prop_full(
  * (or item of the collection).
  *
  * This is a convenience method to avoid logic errors and ugly syntax,
- * it combines both api_path_resolve and #RNA_path_resolve_property in a single call.
- * note Assumes all pointers provided are valid.
+ * it combines both api_path_resolve and api_path_resolve_prop in a single call.
+ * note Assumes all ptrs provided are valid.
  * param r_item_ptr: The final Pointer or Collection item value.
  * You must check for its validity before use!
- * return True only if both a valid pointer and property are found after resolving the path */
+ * return True only if both a valid pointer and prop are found after resolving the path */
 bool api_path_resolve_prop_and_item_ptr(ApiPtr *ptr,
                                         const char *path,
                                         ApiPtr *r_ptr,
                                         ApiProp **r_prop,
                                         ApiPtr *r_item_ptr);
 
-/* Resolve the given api Path to find both the pointer AND prop (as well as the array index)
+/* Resolve the given api Path to find both the ptr AND prop (as well as the array index)
  * indicated by fully resolving the path,
  * and get the value of the Ptr prop (or item of the collection).
  *
@@ -534,195 +533,178 @@ char *api_path_from_id_to_prop_index(ApiPtr *ptr,
                                      int index);
 
 char *api_path_from_real_id_to_prop_index(struct Main *main,
-                                              ApiPtr *ptr,
-                                              ApiProp *prop,
-                                              int index_dim,
-                                              int index,
-                                              struct Id **r_real_id);
+                                          ApiPtr *ptr,
+                                          ApiProp *prop,
+                                          int index_dim,
+                                          int index,
+                                          struct Id **r_real_id);
 
 /* return the path to given ptr/prop from the closest ancestor of given type,
  * if any (else return NULL). */
-char *api_path_resolve_from_type_to_prop(struct PointerRNA *ptr,
-                                         struct PropertyRNA *prop,
-                                         const struct StructRNA *type);
+char *api_path_resolve_from_type_to_prop(struct ApiPtr *ptr,
+                                         struct ApiProp *prop,
+                                         const struct ApiStruct *type);
 
 /* Get the Id as a python representation, eg:
  *   bpy.data.foo["bar"] */
-char *api_path_full_id_py(struct Main *bmain, struct ID *id);
+char *api_path_full_id_py(struct Main *main, struct Id *id);
 /* Get the ID.struct as a python representation, eg:
  *   bpy.data.foo["bar"].some_struct */
-char *api_path_full_struct_py(struct Main *bmain, struct PointerRNA *ptr);
-/**
- * Get the ID.struct.property as a python representation, eg:
- *   bpy.data.foo["bar"].some_struct.some_prop[10]
- */
-char *RNA_path_full_property_py_ex(
-    struct Main *bmain, PointerRNA *ptr, PropertyRNA *prop, int index, bool use_fallback);
-char *RNA_path_full_property_py(struct Main *bmain,
-                                struct PointerRNA *ptr,
-                                struct PropertyRNA *prop,
-                                int index);
-/**
- * Get the struct.property as a python representation, eg:
- *   some_struct.some_prop[10]
- */
-char *RNA_path_struct_property_py(struct PointerRNA *ptr, struct PropertyRNA *prop, int index);
-/**
- * Get the struct.property as a python representation, eg:
- *   some_prop[10]
- */
-char *RNA_path_property_py(const struct PointerRNA *ptr, struct PropertyRNA *prop, int index);
+char *api_path_full_struct_py(struct Main *main, struct ApiPtr *ptr);
+/* Get the ID.struct.prop as a python representation, eg:
+ *   bpy.data.foo["bar"].some_struct.some_prop[10] */
+char *api_path_full_prop_py_ex(
+    struct Main *main, ApiPtr *ptr, ApiProp *prop, int index, bool use_fallback);
+char *api_path_full_prop_py(struct Main *main,
+                            struct ApiPtr *ptr,
+                            struct ApiProp *prop,
+                            int index);
+/* Get the struct.prop as a python representation, eg:
+ *   some_struct.some_prop[10] */
+char *api_path_struct_prop_py(struct ApiPtr *ptr, struct ApiProp *prop, int index);
+/* Get the struct.prop as a python representation, eg:
+ *   some_prop[10] */
+char *api_path_prop_py(const struct ApiPtr *ptr, struct ApiProp *prop, int index);
 
-/* Quick name based property access
+/* Quick name based prop access
  *
  * These are just an easier way to access property values without having to
- * call RNA_struct_find_property. The names have to exist as RNA properties
- * for the type in the pointer, if they do not exist an error will be printed.
+ * call api_struct_find_prop. The names have to exist as api props
+ * for the type in the ptr, if they do not exist an error will be printed.
  *
- * There is no support for pointers and collections here yet, these can be
- * added when ID properties support them. */
+ * There is no support for ptrs and collections here yet, these can be
+ * added when Id props support them. */
+bool api_bool_get(ApiPtr *ptr, const char *name);
+void api_bool_set(ApiPtr *ptr, const char *name, bool value);
+void api_bool_get_array(ApiPtr *ptr, const char *name, bool *values);
+void api_bool_set_array(ApiPtr *ptr, const char *name, const bool *values);
 
-bool RNA_boolean_get(PointerRNA *ptr, const char *name);
-void RNA_boolean_set(PointerRNA *ptr, const char *name, bool value);
-void RNA_boolean_get_array(PointerRNA *ptr, const char *name, bool *values);
-void RNA_boolean_set_array(PointerRNA *ptr, const char *name, const bool *values);
+int api_int_get(ApiPtr *ptr, const char *name);
+void api_int_set(ApiPtr *ptr, const char *name, int value);
+void api_int_get_array(ApiPtr *ptr, const char *name, int *values);
+void api_int_set_array(ApiPtr *ptr, const char *name, const int *values);
 
-int RNA_int_get(PointerRNA *ptr, const char *name);
-void RNA_int_set(PointerRNA *ptr, const char *name, int value);
-void RNA_int_get_array(PointerRNA *ptr, const char *name, int *values);
-void RNA_int_set_array(PointerRNA *ptr, const char *name, const int *values);
+float api_float_get(ApiPtr *ptr, const char *name);
+void api_float_set(ApiPtr *ptr, const char *name, float value);
+void api_float_get_array(ApiPtr *ptr, const char *name, float *values);
+void api_float_set_array(ApiPtr *ptr, const char *name, const float *values);
 
-float RNA_float_get(PointerRNA *ptr, const char *name);
-void RNA_float_set(PointerRNA *ptr, const char *name, float value);
-void RNA_float_get_array(PointerRNA *ptr, const char *name, float *values);
-void RNA_float_set_array(PointerRNA *ptr, const char *name, const float *values);
-
-int RNA_enum_get(PointerRNA *ptr, const char *name);
-void RNA_enum_set(PointerRNA *ptr, const char *name, int value);
-void RNA_enum_set_identifier(struct bContext *C,
-                             PointerRNA *ptr,
-                             const char *name,
-                             const char *id);
-bool RNA_enum_is_equal(struct bContext *C,
-                       PointerRNA *ptr,
+int api_enum_get(ApiPtr *ptr, const char *name);
+void api_enum_set(ApiPtr *ptr, const char *name, int value);
+void api_enum_set_id(struct Cxt *C,
+                     ApiPtr *ptr,
+                     const char *name,
+                     const char *id);
+bool api_enum_is_equal(struct Cxt *C,
+                       ApiPtr *ptr,
                        const char *name,
                        const char *enumname);
 
-/* Lower level functions that don't use a PointerRNA. */
-bool RNA_enum_value_from_id(const EnumPropertyItem *item, const char *identifier, int *r_value);
-bool RNA_enum_id_from_value(const EnumPropertyItem *item, int value, const char **r_identifier);
-bool RNA_enum_icon_from_value(const EnumPropertyItem *item, int value, int *r_icon);
-bool RNA_enum_name_from_value(const EnumPropertyItem *item, int value, const char **r_name);
+/* Lower level functions that don't use a ApiPtr. */
+bool api_enum_value_from_id(const EnumPropItem *item, const char *id, int *r_value);
+bool api_enum_id_from_value(const EnumPropItem *item, int value, const char **r_id);
+bool api_enum_icon_from_value(const EnumPropItem *item, int value, int *r_icon);
+bool api_enum_name_from_value(const EnumPropItem *item, int value, const char **r_name);
 
-void RNA_string_get(PointerRNA *ptr, const char *name, char *value);
-char *RNA_string_get_alloc(
-    PointerRNA *ptr, const char *name, char *fixedbuf, int fixedlen, int *r_len);
-int RNA_string_length(PointerRNA *ptr, const char *name);
-void RNA_string_set(PointerRNA *ptr, const char *name, const char *value);
+void api_string_get(ApiPtr *ptr, const char *name, char *value);
+char *api_string_get_alloc(
+    ApiPtr *ptr, const char *name, char *fixedbuf, int fixedlen, int *r_len);
+int api_string_length(ApiPtr *ptr, const char *name);
+void api_string_set(ApiPtr *ptr, const char *name, const char *value);
 
-/**
- * Retrieve the named property from PointerRNA.
- */
-PointerRNA RNA_pointer_get(PointerRNA *ptr, const char *name);
-/* Set the property name of PointerRNA ptr to ptr_value */
-void RNA_pointer_set(PointerRNA *ptr, const char *name, PointerRNA ptr_value);
-void RNA_pointer_add(PointerRNA *ptr, const char *name);
+/* Retrieve the named property from ApiPtr */
+ApiPtr api_ptr_get(ApiPtr *ptr, const char *name);
+/* Set the prop name of ApiPtr ptr to ptr_value */
+void api_ptr_set(ApiPtr *ptr, const char *name, ApiPtr ptr_value);
+void api_ptr_add(ApiPtr *ptr, const char *name);
 
-void RNA_collection_begin(PointerRNA *ptr, const char *name, CollectionPropertyIterator *iter);
-int RNA_collection_length(PointerRNA *ptr, const char *name);
-bool RNA_collection_is_empty(PointerRNA *ptr, const char *name);
-void RNA_collection_add(PointerRNA *ptr, const char *name, PointerRNA *r_value);
-void RNA_collection_clear(PointerRNA *ptr, const char *name);
+void api_collection_begin(ApiPtr *ptr, const char *name, CollectionPropIter *iter);
+int api_collection_length(ApiPtr *ptr, const char *name);
+bool api_collection_is_empty(ApiPtr *ptr, const char *name);
+void api_collection_add(ApiPtr *ptr, const char *name, ApiPtr *r_value);
+void api_collection_clear(ApiPtr *ptr, const char *name);
 
-#define RNA_BEGIN(sptr, itemptr, propname) \
+#define API_BEGIN(sptr, itemptr, propname) \
   { \
-    CollectionPropertyIterator rna_macro_iter; \
-    for (RNA_collection_begin(sptr, propname, &rna_macro_iter); rna_macro_iter.valid; \
-         RNA_property_collection_next(&rna_macro_iter)) { \
-      PointerRNA itemptr = rna_macro_iter.ptr;
+    CollectionPropIter api_macro_iter; \
+    for (api_collection_begin(sptr, propname, &api_macro_iter); api_macro_iter.valid; \
+         api_prop_collection_next(&api_macro_iter)) { \
+      ApiPtr itemptr = api_macro_iter.ptr;
 
-#define RNA_END \
+#define API_END \
   } \
-  RNA_property_collection_end(&rna_macro_iter); \
+  api_prop_collection_end(&api_macro_iter); \
   } \
   ((void)0)
 
-#define RNA_PROP_BEGIN(sptr, itemptr, prop) \
+#define API_PROP_BEGIN(sptr, itemptr, prop) \
   { \
-    CollectionPropertyIterator rna_macro_iter; \
-    for (RNA_property_collection_begin(sptr, prop, &rna_macro_iter); rna_macro_iter.valid; \
-         RNA_property_collection_next(&rna_macro_iter)) { \
-      PointerRNA itemptr = rna_macro_iter.ptr;
+    CollectionPropIter api_macro_iter; \
+    for (api_prop_collection_begin(sptr, prop, &api_macro_iter); api_macro_iter.valid; \
+         api_prop_collection_next(&api_macro_iter)) { \
+      ApiPtr itemptr = api_macro_iter.ptr;
 
-#define RNA_PROP_END \
+#define API_PROP_END \
   } \
-  RNA_property_collection_end(&rna_macro_iter); \
+  api_prop_collection_end(&api_macro_iter); \
   } \
   ((void)0)
 
-#define RNA_STRUCT_BEGIN(sptr, prop) \
+#define API_STRUCT_BEGIN(sptr, prop) \
   { \
-    CollectionPropertyIterator rna_macro_iter; \
-    for (RNA_property_collection_begin( \
-             sptr, RNA_struct_iterator_property((sptr)->type), &rna_macro_iter); \
-         rna_macro_iter.valid; \
-         RNA_property_collection_next(&rna_macro_iter)) { \
-      PropertyRNA *prop = (PropertyRNA *)rna_macro_iter.ptr.data;
+    CollectionPropIter api_macro_iter; \
+    for (api_prop_collection_begin( \
+             sptr, api_struct_iter_prop((sptr)->type), &api_macro_iter); \
+         api_macro_iter.valid; \
+         api_prop_collection_next(&api_macro_iter)) { \
+      ApiProp *prop = (ApiProp *)api_macro_iter.ptr.data;
 
-#define RNA_STRUCT_BEGIN_SKIP_RNA_TYPE(sptr, prop) \
+#define API_STRUCT_BEGIN_SKIP_API_TYPE(sptr, prop) \
   { \
-    CollectionPropertyIterator rna_macro_iter; \
-    RNA_property_collection_begin( \
-        sptr, RNA_struct_iterator_property((sptr)->type), &rna_macro_iter); \
-    if (rna_macro_iter.valid) { \
-      RNA_property_collection_next(&rna_macro_iter); \
+    CollectionPropIter api_macro_iter; \
+    api_prop_collection_begin( \
+        sptr, api_struct_iter_prop((sptr)->type), &api_macro_iter); \
+    if (api_macro_iter.valid) { \
+      api_prop_collection_next(&api_macro_iter); \
     } \
-    for (; rna_macro_iter.valid; RNA_property_collection_next(&rna_macro_iter)) { \
-      PropertyRNA *prop = (PropertyRNA *)rna_macro_iter.ptr.data;
+    for (; api_macro_iter.valid; api_prop_collection_next(&api_macro_iter)) { \
+      ApiProp *prop = (ApiProp *)api_macro_iter.ptr.data;
 
-#define RNA_STRUCT_END \
+#define API_STRUCT_END \
   } \
-  RNA_property_collection_end(&rna_macro_iter); \
+  api_prop_collection_end(&api_macro_iter); \
   } \
   ((void)0)
 
-/**
- * Check if the #IDproperty exists, for operators.
+/* Check if the Idprop exists, for ops.
  *
- * \param use_ghost: Internally an #IDProperty may exist,
- * without the RNA considering it to be "set", see #IDP_FLAG_GHOST.
- * This is used for operators, where executing an operator that has run previously
- * will re-use the last value (unless #PROP_SKIP_SAVE property is set).
+ * param use_ghost: Internally an IdProp may exist,
+ * without the api considering it to be "set", see IDP_FLAG_GHOST.
+ * This is used for ops, where executing an op that has run previously
+ * will re-use the last value (unless PROP_SKIP_SAVE prop is set).
  * In this case, the presence of the an existing value shouldn't prevent it being initialized
  * from the context. Even though the this value will be returned if it's requested,
  * it's not considered to be set (as it would if the menu item or key-map defined it's value).
  * Set `use_ghost` to true for default behavior, otherwise false to check if there is a value
- * exists internally and would be returned on request.
- */
-bool RNA_property_is_set_ex(PointerRNA *ptr, PropertyRNA *prop, bool use_ghost);
-bool RNA_property_is_set(PointerRNA *ptr, PropertyRNA *prop);
-void RNA_property_unset(PointerRNA *ptr, PropertyRNA *prop);
-/** See #RNA_property_is_set_ex documentation.  */
-bool RNA_struct_property_is_set_ex(PointerRNA *ptr, const char *identifier, bool use_ghost);
-bool RNA_struct_property_is_set(PointerRNA *ptr, const char *identifier);
-bool RNA_property_is_idprop(const PropertyRNA *prop);
-/**
- * \note Mainly for the UI.
- */
-bool RNA_property_is_unlink(PropertyRNA *prop);
-void RNA_struct_property_unset(PointerRNA *ptr, const char *identifier);
+ * exists internally and would be returned on request. */
+bool api_prop_is_set_ex(ApiPtr *ptr, ApiProp *prop, bool use_ghost);
+bool api_prop_is_set(ApiPtr *ptr, ApiProp *prop);
+void api_prop_unset(ApiPtr *ptr, ApiProp *prop);
+/** See api_prop_is_set_ex documentation.  */
+bool api_struct_prop_is_set_ex(ApiPtr *ptr, const char *id, bool use_ghost);
+bool api_struct_prop_is_set(ApiPtr *ptr, const char *id);
+bool api_prop_is_idprop(const AoiProp *prop);
+/* Mainly for the UI. */
+bool api_prop_is_unlink(ApiProp *prop);
+void api_struct_prop_unset(ApiPtr *ptr, const char *id);
 
-/**
- * Python compatible string representation of this property, (must be freed!).
- */
-char *RNA_property_as_string(
-    struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int index, int max_prop_length);
-/**
- * String representation of a property, Python compatible but can be used for display too.
- * \param C: can be NULL.
- */
-char *RNA_pointer_as_string_id(struct bContext *C, PointerRNA *ptr);
-char *RNA_pointer_as_string(struct bContext *C,
+/* Python compatible string representation of this property, (must be freed!). */
+char *api_prop_as_string(
+    struct Cxt *C, ApiPtr *ptr, PropertyRNA *prop, int index, int max_prop_length);
+/* String representation of a prop, Python compatible but can be used for display too.
+ * param C: can be NULL. */
+char *api_pointer_as_string_id(struct bContext *C, ApiPtr *ptr);
+char *api_pointer_as_string(struct bContext *C,
                             PointerRNA *ptr,
                             PropertyRNA *prop_ptr,
                             PointerRNA *ptr_prop);
