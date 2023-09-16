@@ -698,67 +698,63 @@ bool api_prop_is_idprop(const AoiProp *prop);
 bool api_prop_is_unlink(ApiProp *prop);
 void api_struct_prop_unset(ApiPtr *ptr, const char *id);
 
-/* Python compatible string representation of this property, (must be freed!). */
+/* Python compatible string representation of this prop, (must be freed!). */
 char *api_prop_as_string(
-    struct Cxt *C, ApiPtr *ptr, PropertyRNA *prop, int index, int max_prop_length);
+    struct Cxt *C, ApiPtr *ptr, ApiProp *prop, int index, int max_prop_length);
 /* String representation of a prop, Python compatible but can be used for display too.
  * param C: can be NULL. */
-char *api_pointer_as_string_id(struct bContext *C, ApiPtr *ptr);
-char *api_pointer_as_string(struct bContext *C,
-                            PointerRNA *ptr,
-                            PropertyRNA *prop_ptr,
-                            PointerRNA *ptr_prop);
-/**
- * \param C: can be NULL.
- */
-char *RNA_pointer_as_string_keywords_ex(struct bContext *C,
-                                        PointerRNA *ptr,
-                                        bool as_function,
-                                        bool all_args,
-                                        bool nested_args,
-                                        int max_prop_length,
-                                        PropertyRNA *iterprop);
-char *RNA_pointer_as_string_keywords(struct bContext *C,
-                                     PointerRNA *ptr,
-                                     bool as_function,
+char *api_ptr_as_string_id(struct Cxt *C, ApiPtr *ptr);
+char *api_ptr_as_string(struct Cxt *C,
+                            ApiPtr *ptr,
+                            ApiProp *prop_ptr,
+                            ApiPtr *ptr_prop);
+/* param C: can be NULL. */
+char *api_ptr_as_string_keywords_ex(struct Cxt *C,
+                                    ApiPtr *ptr,
+                                    bool as_fn,
+                                    bool all_args,
+                                    bool nested_args,
+                                    int max_prop_length,
+                                    ApiProp *iterprop);
+char *api_ptr_as_string_keywords(struct Cxt *C,
+                                     ApiPtr *ptr,
+                                     bool as_fn,
                                      bool all_args,
                                      bool nested_args,
                                      int max_prop_length);
-char *RNA_function_as_string_keywords(
-    struct bContext *C, FunctionRNA *func, bool as_function, bool all_args, int max_prop_length);
+char *api_fn_as_string_keywords(
+    struct Cxt *C, ApiFn *fn, bool as_fn, bool all_args, int max_prop_length);
 
-/* Function */
+/* Fn */
+const char *api_fn_id(ApiFn *fn);
+const char *api_fn_ui_description(ApiFn *fn);
+const char *api_fn_ui_description_raw(ApiFn *fn);
+int api_fn_flag(ApiFn *fn);
+int api_fn_defined(ApiFn *fn);
 
-const char *RNA_function_identifier(FunctionRNA *func);
-const char *RNA_function_ui_description(FunctionRNA *func);
-const char *RNA_function_ui_description_raw(FunctionRNA *func);
-int RNA_function_flag(FunctionRNA *func);
-int RNA_function_defined(FunctionRNA *func);
+ApiProp *api_fn_get_param(ApiPtr *ptr, ApiFn *fn, int index);
+ApiProp *api_fn_find_param(ApiPtr *ptr,
+                           ApiFn *fn,
+                           const char *id);
+const struct List *api_fn_defined_params(ApiFn *fn);
 
-PropertyRNA *RNA_function_get_parameter(PointerRNA *ptr, FunctionRNA *func, int index);
-PropertyRNA *RNA_function_find_parameter(PointerRNA *ptr,
-                                         FunctionRNA *func,
-                                         const char *identifier);
-const struct ListBase *RNA_function_defined_parameters(FunctionRNA *func);
+/* Util */
+int api_param_flag(ApiProp *prop);
 
-/* Utility */
+ParamList *api_param_list_create(ParamList *parms, ApiPtr *ptr, ApiFn *fn);
+void api_param_list_free(ParamList *parms);
+int api_param_list_size(const ParamList *parms);
+int api_param_list_arg_count(const ParamList *parms);
+int api_param_list_ret_count(const ParamList *parms);
 
-int RNA_parameter_flag(PropertyRNA *prop);
+void api_param_list_begin(ParamList *parms, ParamIter *iter);
+void api_param_list_next(ParamIt *iter);
+void api_param_list_end(ParamIter *iter);
 
-ParameterList *RNA_parameter_list_create(ParameterList *parms, PointerRNA *ptr, FunctionRNA *func);
-void RNA_parameter_list_free(ParameterList *parms);
-int RNA_parameter_list_size(const ParameterList *parms);
-int RNA_parameter_list_arg_count(const ParameterList *parms);
-int RNA_parameter_list_ret_count(const ParameterList *parms);
-
-void RNA_parameter_list_begin(ParameterList *parms, ParameterIterator *iter);
-void RNA_parameter_list_next(ParameterIterator *iter);
-void RNA_parameter_list_end(ParameterIterator *iter);
-
-void RNA_parameter_get(ParameterList *parms, PropertyRNA *parm, void **value);
-void RNA_parameter_get_lookup(ParameterList *parms, const char *identifier, void **value);
-void RNA_parameter_set(ParameterList *parms, PropertyRNA *parm, const void *value);
-void RNA_parameter_set_lookup(ParameterList *parms, const char *identifier, const void *value);
+void RNA_param_get(ParameterList *parms, PropertyRNA *parm, void **value);
+void RNA_param_get_lookup(ParameterList *parms, const char *identifier, void **value);
+void RNA_param_set(ParameterList *parms, PropertyRNA *parm, const void *value);
+void RNA_parame_set_lookup(ParameterList *parms, const char *identifier, const void *value);
 
 /* Only for PROP_DYNAMIC properties! */
 
