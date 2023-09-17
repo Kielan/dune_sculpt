@@ -431,12 +431,12 @@ void RNA_def_property_collection_funcs(ApiProp *prop,
 void api_def_prop_sapi(ApiProp *prop, const char *type);
 void api_def_py_data(ApiProp *prop, void *py_data);
 
-void api_def_prop_bool_fns_runtime(PropertyRNA *prop,
+void api_def_prop_bool_fns_runtime(ApiProp *prop,
                                    BoolPropGetFn getfn,
                                    BoolPropSetFn setfn);
 void api_def_prop_bool_array_fns_runtime(ApiProp *prop,
-                                         BoolArrayPropertyGetFunc getfunc,
-                                         BoolArrayPropertySetFunc setfunc);
+                                         BoolArrayPropGetFn getfn,
+                                         BoolArrayPropSetFn setfn);
 void api_def_prop_int_fns_runtime(ApiProp *prop,
                                   IntPropGetFn getfn,
                                   IntPropSetFn setfn,
@@ -474,11 +474,11 @@ void api_def_fn_flag(ApiFn *fn, int flag);
 void api_def_fn_ui_description(ApiFn *fn, const char *description);
 
 void api_def_param_flags(ApiProp *prop,
-                             PropFlag flag_prop,
-                             ParamFlag flag_param);
-void api_def_param_clear_flags(PropRNA *prop,
-                                   PropFlag flag_prop,
-                                   ParamFlag flag_param);
+                         PropFlag flag_prop,
+                         ParamFlag flag_param);
+void api_def_param_clear_flags(ApiProp *prop,
+                               PropFlag flag_prop,
+                               ParamFlag flag_param);
 
 /* Dynamic Enums
  * strings are not freed, assumed pointing to static location. */
