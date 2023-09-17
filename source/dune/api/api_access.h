@@ -870,84 +870,76 @@ typedef enum eApiOverrideMatch {
 typedef enum eApiOverrideMatchResult {
   /* Some new prop overrides were created to take into account
    * differences between local and ref. */
-  RNA_OVERRIDE_MATCH_RESULT_CREATED = 1 << 0,
-  /** Some properties were reset to reference values. */
-  RNA_OVERRIDE_MATCH_RESULT_RESTORED = 1 << 1,
+  API_OVERRIDE_MATCH_RESULT_CREATED = 1 << 0,
+  /* Some properties were reset to reference values. */
+  API_OVERRIDE_MATCH_RESULT_RESTORED = 1 << 1,
 } eRNAOverrideMatchResult;
 
-typedef enum eRNAOverrideStatus {
-  /** The property is overridable. */
-  RNA_OVERRIDE_STATUS_OVERRIDABLE = 1 << 0,
-  /** The property is overridden. */
-  RNA_OVERRIDE_STATUS_OVERRIDDEN = 1 << 1,
-  /** Overriding this property is mandatory when creating an override. */
-  RNA_OVERRIDE_STATUS_MANDATORY = 1 << 2,
-  /** The override status of this property is locked. */
-  RNA_OVERRIDE_STATUS_LOCKED = 1 << 3,
-} eRNAOverrideStatus;
+typedef enum eApiOverrideStatus {
+  /* The prop is overridable. */
+  API_OVERRIDE_STATUS_OVERRIDABLE = 1 << 0,
+  /* The prop is overridden. */
+  API_OVERRIDE_STATUS_OVERRIDDEN = 1 << 1,
+  /* Overriding this prop is mandatory when creating an override. */
+  API_OVERRIDE_STATUS_MANDATORY = 1 << 2,
+  /* The override status of this property is locked. */
+  API_OVERRIDE_STATUS_LOCKED = 1 << 3,
+} eApiOverrideStatus;
 
-/**
- * Check whether reference and local overridden data match (are the same),
- * with respect to given restrictive sets of properties.
- * If requested, will generate needed new property overrides, and/or restore values from reference.
+/* Check whether re and local overridden data match (are the same),
+ * with respect to given restrictive sets of props.
+ * If requested, will generate needed new prop overrides, and/or restore values from reference.
  *
- * \param r_report_flags: If given,
- * will be set with flags matching actions taken by the function on \a ptr_local.
+ * param r_report_flags: If given,
+ * will be set with flags matching actions taken by the fn on ptr_local.
  *
- * \return True if _resulting_ \a ptr_local does match \a ptr_reference.
- */
-bool RNA_struct_override_matches(struct Main *bmain,
-                                 struct PointerRNA *ptr_local,
-                                 struct PointerRNA *ptr_reference,
+ * return True if _resulting_ ptr_local does match ptr_ref. */
+bool api_struct_override_matches(struct Main *main,
+                                 struct ApiPtr *ptr_local,
+                                 struct ApiPtr *ptr_ref,
                                  const char *root_path,
                                  size_t root_path_len,
-                                 struct IDOverrideLibrary *override,
-                                 eRNAOverrideMatch flags,
-                                 eRNAOverrideMatchResult *r_report_flags);
+                                 struct IdOverrideLib *override,
+                                 eApiOverrideMatch flags,
+                                 eApiOverrideMatchResult *r_report_flags);
 
-/**
- * Store needed second operands into \a storage data-block
- * for differential override operations.
- */
-bool RNA_struct_override_store(struct Main *bmain,
-                               struct PointerRNA *ptr_local,
-                               struct PointerRNA *ptr_reference,
-                               PointerRNA *ptr_storage,
-                               struct IDOverrideLibrary *override);
+/* Store needed second operands into storage data-block
+ * for differential override ops. */
+bool api_struct_override_store(struct Main *main,
+                               struct ApiPtr *ptr_local,
+                               struct ApiPtr *ptr_ref,
+                               ApiPtr *ptr_storage,
+                               struct IdOverrideLib *override);
 
-typedef enum eRNAOverrideApplyFlag {
-  RNA_OVERRIDE_APPLY_FLAG_NOP = 0,
-  /**
-   * Hack to work around/fix older broken overrides: Do not apply override operations affecting ID
-   * pointers properties, unless the destination original value (the one being overridden) is NULL.
-   */
-  RNA_OVERRIDE_APPLY_FLAG_IGNORE_ID_POINTERS = 1 << 0,
-} eRNAOverrideApplyFlag;
+typedef enum eApiOverrideApplyFlag {
+  API_OVERRIDE_APPLY_FLAG_NOP = 0,
+  /* Hack to work around/fix older broken overrides: Do not apply override ops affecting Id
+   * ptrs props, unless the destination original value (the one being overridden) is NULL. */
+  API_OVERRIDE_APPLY_FLAG_IGNORE_ID_PTRS = 1 << 0,
+} eApiOverrideApplyFlag;
 
-/**
- * Apply given \a override operations on \a ptr_dst, using \a ptr_src
- * (and \a ptr_storage for differential ops) as source.
- */
-void RNA_struct_override_apply(struct Main *bmain,
-                               struct PointerRNA *ptr_dst,
+/* Apply given override operations on ptr_dst, using ptr_src
+ * (and ptr_storage for differential ops) as src. */
+void api_struct_override_apply(struct Main *main,
+                               struct ApiPtr *ptr_dst,
                                struct ApiPtr *ptr_src,
                                struct ApiPtr *ptr_storage,
                                struct IdOverrideLib *override,
-                               eRNAOverrideApplyFlag flag);
+                               eApiOverrideApplyFlag flag);
 
-struct IDOverrideLibraryProperty *api_prop_override_prop_find(struct Main *main,
+struct IdOverrideLibProp *api_prop_override_prop_find(struct Main *main,
                                                               ApiPtr *ptr,
                                                               ApiProp *prop,
                                                               struct Id **r_owner_id);
-struct IDOverrideLibraryProperty *api_prop_override_prop_get(struct Main *main,
-                                                                 ApiPtr *ptr,
-                                                                 ApiProp *prop,
-                                                                 bool *r_created);
+struct IdOverrideLibProp *api_prop_override_prop_get(struct Main *main,
+                                                     ApiPtr *ptr,
+                                                     ApiProp *prop,
+                                                     bool *r_created);
 
-struct IDOverrideLibPropOp *RNA_prop_override_property_operation_find(
-    struct Main *bmain,
-    PointerRNA *ptr,
-    PropertyRNA *prop,
+struct IdOverrideLibPropOp *api_prop_override_prop_op_find(
+    struct Main *main,
+    ApiPtr *ptr,
+    ApiProp *prop,
     int index,
     bool strict,
     bool *r_strict);
