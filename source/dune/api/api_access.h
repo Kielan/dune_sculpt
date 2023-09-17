@@ -748,61 +748,60 @@ int api_param_list_arg_count(const ParamList *parms);
 int api_param_list_ret_count(const ParamList *parms);
 
 void api_param_list_begin(ParamList *parms, ParamIter *iter);
-void api_param_list_next(ParamIt *iter);
+void api_param_list_next(ParamIter *iter);
 void api_param_list_end(ParamIter *iter);
 
-void RNA_param_get(ParameterList *parms, PropertyRNA *parm, void **value);
-void RNA_param_get_lookup(ParameterList *parms, const char *identifier, void **value);
-void RNA_param_set(ParameterList *parms, PropertyRNA *parm, const void *value);
-void RNA_parame_set_lookup(ParameterList *parms, const char *identifier, const void *value);
+void api_param_get(ParamList *parms, ApiProp *parm, void **value);
+void api_param_get_lookup(ParamList *parms, const char *id, void **value);
+void api_param_set(ParamList *parms, ApiProp *parm, const void *value);
+void api_param_set_lookup(ParamList *parms, const char *id, const void *value);
 
 /* Only for PROP_DYNAMIC properties! */
+int api_param_dynamic_length_get(ParamList *parms, ApiProp *parm);
+int api_param_dynamic_length_get_data(ParamList *parms, ApiProp *parm, void *data);
+void api_param_dynamic_length_set(ParamList *parms, ApiProp *parm, int length);
+void api_param_dynamic_length_set_data(ParamList *parms,
+                                       ApiProp *parm,
+                                       void *data,
+                                       int length);
 
-int RNA_parameter_dynamic_length_get(ParameterList *parms, PropertyRNA *parm);
-int RNA_parameter_dynamic_length_get_data(ParameterList *parms, PropertyRNA *parm, void *data);
-void RNA_parameter_dynamic_length_set(ParameterList *parms, PropertyRNA *parm, int length);
-void RNA_parameter_dynamic_length_set_data(ParameterList *parms,
-                                           PropertyRNA *parm,
-                                           void *data,
-                                           int length);
+int api_fn_call(struct Cxt *C,
+                struct ReportList *reports,
+                ApiPtr *ptr,
+                ApiFn *fn,
+                ParamList *parms);
+int api_fn_call_lookup(struct Cxt *C,
+                       struct ReportList *reports,
+                       ApiPtr *ptr,
+                       const char *id,
+                       ParamList *parms);
 
-int RNA_function_call(struct bContext *C,
-                      struct ReportList *reports,
-                      PointerRNA *ptr,
-                      FunctionRNA *func,
-                      ParameterList *parms);
-int RNA_function_call_lookup(struct bContext *C,
-                             struct ReportList *reports,
-                             PointerRNA *ptr,
-                             const char *identifier,
-                             ParameterList *parms);
+int api_fn_call_direct(struct Cxt *C,
+                       struct ReportList *reports,
+                       ApiPtr *ptr,
+                       ApiFn *fn,
+                       const char *format,
+                       ...) ATTR_PRINTF_FORMAT(5, 6);
+int api_fn_call_direct_lookup(struct Cxt *C,
+                              struct ReportList *reports,
+                              ApiPtr *ptr,
+                              const char *id,
+                              const char *format,
+                              ...) ATTR_PRINTF_FORMAT(5, 6);
+int api_fn_call_direct_va(struct Cxt *C,
+                          struct ReportList *reports,
+                          ApiPtr *ptr,
+                          ApiFn *fn,
+                          const char *format,
+                          va_list args);
+int api_fn_call_direct_va_lookup(struct bContext *C,
+                                 struct ReportList *reports,
+                                 PointerRNA *ptr,
+                                 const char *identifier,
+                                 const char *format,
+                                 va_list args);
 
-int RNA_function_call_direct(struct bContext *C,
-                             struct ReportList *reports,
-                             PointerRNA *ptr,
-                             FunctionRNA *func,
-                             const char *format,
-                             ...) ATTR_PRINTF_FORMAT(5, 6);
-int RNA_function_call_direct_lookup(struct bContext *C,
-                                    struct ReportList *reports,
-                                    PointerRNA *ptr,
-                                    const char *identifier,
-                                    const char *format,
-                                    ...) ATTR_PRINTF_FORMAT(5, 6);
-int RNA_function_call_direct_va(struct bContext *C,
-                                struct ReportList *reports,
-                                PointerRNA *ptr,
-                                FunctionRNA *func,
-                                const char *format,
-                                va_list args);
-int RNA_function_call_direct_va_lookup(struct bContext *C,
-                                       struct ReportList *reports,
-                                       PointerRNA *ptr,
-                                       const char *identifier,
-                                       const char *format,
-                                       va_list args);
-
-const char *RNA_translate_ui_text(const char *text,
+const char *api_translate_ui_text(const char *text,
                                   const char *text_ctxt,
                                   struct StructRNA *type,
                                   struct PropertyRNA *prop,
