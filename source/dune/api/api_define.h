@@ -311,56 +311,54 @@ ApiProp *api_def_collection_runtime(ApiStructOrFn *cont,
 
 /* Extended Prop Definitions */
 ApiProp *api_def_prop(ApiStructOrFn *cont,
-                              const char *id,
-                              int type,
-                              int subtype);
+                      const char *id,
+                      int type,
+                      int subtype);
 
-void RNA_def_property_boolean_sdna(PropertyRNA *prop,
+void api_def_prop_bool_stype(ApiProp *prop,
+                             const char *structname,
+                             const char *propname,
+                             int64_t bit);
+void api_def_prop_bool_negative_stype(ApiProp *prop,
+                                     const char *structname,
+                                     const char *propname,
+                                     int64_t bit);
+void api_def_prop_int_stype(ApiProp *prop, const char *structname, const char *propname);
+void api_def_prop_float_stype(ApiProp *prop, const char *structname, const char *propname);
+void api_def_prop_string_stype(ApiProp *prop, const char *structname, const char *propname);
+void api_def_prop_enum_stype(ApiProp *prop, const char *structname, const char *propname);
+void api_def_prop_enum_bitflag_stype(ApiProp *prop,
+                                     const char *structname,
+                                     const char *propname);
+void api_def_prop_ptr_stype(ApiProp *prop,
+                            const char *structname,
+                            const char *propname);
+void api_def_prop_collection_stype(ApiProp *prop,
                                    const char *structname,
                                    const char *propname,
-                                   int64_t bit);
-void RNA_def_property_boolean_negative_sdna(PropertyRNA *prop,
-                                            const char *structname,
-                                            const char *propname,
-                                            int64_t bit);
-void RNA_def_property_int_sdna(PropertyRNA *prop, const char *structname, const char *propname);
-void RNA_def_property_float_sdna(PropertyRNA *prop, const char *structname, const char *propname);
-void RNA_def_property_string_sdna(PropertyRNA *prop, const char *structname, const char *propname);
-void RNA_def_property_enum_sdna(PropertyRNA *prop, const char *structname, const char *propname);
-void RNA_def_property_enum_bitflag_sdna(PropertyRNA *prop,
-                                        const char *structname,
-                                        const char *propname);
-void RNA_def_property_pointer_sdna(PropertyRNA *prop,
-                                   const char *structname,
-                                   const char *propname);
-void RNA_def_property_collection_sdna(PropertyRNA *prop,
-                                      const char *structname,
-                                      const char *propname,
-                                      const char *lengthpropname);
+                                   const char *lengthpropname);
 
-void RNA_def_property_flag(PropertyRNA *prop, PropertyFlag flag);
-void RNA_def_property_clear_flag(PropertyRNA *prop, PropertyFlag flag);
-void RNA_def_property_override_flag(PropertyRNA *prop, PropertyOverrideFlag flag);
-void RNA_def_property_override_clear_flag(PropertyRNA *prop, PropertyOverrideFlag flag);
-/**
- * Add the property-tags passed as \a tags to \a prop (if valid).
+void api_def_prop_flag(ApiProp *prop, PropertyFlag flag);
+void api_def_prop_clear_flag(ApiProp *prop, PropFlag flag);
+void api_def_prop_override_flag(ApiProp *prop, PropOverrideFlag flag);
+void api_def_prop_override_clear_flag(ApiProp *prop, PropOverrideFlag flag);
+/* Add the prop-tags passed as tags to prop (if valid).
  *
- * \note Multiple tags can be set by passing them within \a tags (using bit-flags).
- * \note Doesn't do any type-checking with the tags defined in the parent #StructRNA
- * of \a prop. This should be done before (e.g. see #WM_operatortype_prop_tag).
- */
-void RNA_def_property_tags(PropertyRNA *prop, int tags);
-void RNA_def_property_subtype(PropertyRNA *prop, PropertySubType subtype);
-void RNA_def_property_array(PropertyRNA *prop, int length);
-void RNA_def_property_multi_array(PropertyRNA *prop, int dimension, const int length[]);
-void RNA_def_property_range(PropertyRNA *prop, double min, double max);
+ * note Multiple tags can be set by passing them within tags (using bit-flags).
+ * note Doesn't do any type-checking with the tags defined in the parent ApiStruct
+ * of prop. This should be done before (e.g. see wm_optype_prop_tag). */
+void RNA_def_prop_tags(ApiProp *prop, int tags);
+void RNA_def_prop_subtype(ApiProp *prop, PropertySubType subtype);
+void RNA_def_prop_array(ApiProp *prop, int length);
+void RNA_def_prop_multi_array(ApiProp *prop, int dimension, const int length[]);
+void RNA_def_prop_range(ApiProp *prop, double min, double max);
 
-void RNA_def_property_enum_items(PropertyRNA *prop, const EnumPropertyItem *item);
-void RNA_def_property_enum_native_type(PropertyRNA *prop, const char *native_enum_type);
-void RNA_def_property_string_maxlength(PropertyRNA *prop, int maxlength);
-void RNA_def_property_struct_type(PropertyRNA *prop, const char *type);
-void RNA_def_property_struct_runtime(StructOrFunctionRNA *cont,
-                                     PropertyRNA *prop,
+void RNA_def_property_enum_items(ApiProp *prop, const EnumPropertyItem *item);
+void RNA_def_property_enum_native_type(ApiProp *prop, const char *native_enum_type);
+void RNA_def_property_string_maxlength(ApiProp *prop, int maxlength);
+void RNA_def_property_struct_type(ApuProp *prop, const char *type);
+void RNA_def_property_struct_runtime(ApiStructOrFn *cont,
+                                     ApiProp *prop,
                                      StructRNA *type);
 
 void RNA_def_property_boolean_default(PropertyRNA *prop, bool value);
