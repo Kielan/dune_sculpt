@@ -618,7 +618,7 @@ static void api_def_maskParent(DuneApi *dapi)
       prop, "Id", "ID-block to which masking element would be parented to or to its property");
   api_def_prop_update(prop, 0, "api_Mask_update_parent");
 
-  prop = api_def_prop(srna, "id_type", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "id_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "id_type");
   api_def_prop_enum_items(prop, mask_id_type_items);
   api_def_prop_enum_default(prop, ID_MC);
@@ -876,26 +876,26 @@ static void rna_def_maskSpline(BlenderRNA *brna)
   RNA_def_struct_ui_text(srna, "Mask spline", "Single spline used for defining mask shape");
 
   /* offset mode */
-  prop = RNA_def_property(srna, "offset_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "offset_mode");
-  RNA_def_property_enum_items(prop, spline_offset_mode_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "offset_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "offset_mode");
+  api_def_prop_enum_items(prop, spline_offset_mode_items);
+  api_def_prop_ui_text(
       prop, "Feather Offset", "The method used for calculating the feather offset");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* weight interpolation */
-  prop = RNA_def_property(srna, "weight_interpolation", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "weight_interp");
-  RNA_def_property_enum_items(prop, spline_interpolation_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "weight_interpolation", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "weight_interp");
+  api_def_prop_enum_items(prop, spline_interpolation_items);
+  api_def_prop_ui_text(
       prop, "Weight Interpolation", "The type of weight interpolation for spline");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "rna_Mask_update_data");
 
   /* cyclic */
-  prop = RNA_def_property(srna, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MASK_SPLINE_CYCLIC);
-  RNA_def_property_ui_text(prop, "Cyclic", "Make this spline a closed loop");
+  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MASK_SPLINE_CYCLIC);
+  RNA_def_prop_ui_text(prop, "Cyclic", "Make this spline a closed loop");
   RNA_def_property_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
 
   /* fill */
