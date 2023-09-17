@@ -33,19 +33,19 @@
 
 #  include "graph.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static void rna_Mask_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Mask_update_data(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
-  WM_main_add_notifier(NC_MASK | ND_DATA, mask);
-  DEG_id_tag_update(&mask->id, 0);
+  wm_main_add_notifier(NC_MASK | ND_DATA, mask);
+  graph_id_tag_update(&mask->id, 0);
 }
 
-static void rna_Mask_update_parent(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Mask_update_parent(Main *main, Scene *scene, ApiPtr *ptr)
 {
   MaskParent *parent = ptr->data;
 
@@ -53,34 +53,34 @@ static void rna_Mask_update_parent(Main *bmain, Scene *scene, PointerRNA *ptr)
     if (GS(parent->id->name) == ID_MC) {
       MovieClip *clip = (MovieClip *)parent->id;
       MovieTracking *tracking = &clip->tracking;
-      MovieTrackingObject *object = BKE_tracking_object_get_named(tracking, parent->parent);
+      MovieTrackingObject *object = dune_tracking_object_get_named(tracking, parent->parent);
 
       if (object) {
-        int clip_framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, scene->r.cfra);
+        int clip_framenr = dune_movieclip_remap_scene_to_clip_frame(clip, scene->r.cfra);
 
         if (parent->type == MASK_PARENT_POINT_TRACK) {
-          MovieTrackingTrack *track = BKE_tracking_track_get_named(
+          MovieTrackingTrack *track = dune_tracking_track_get_named(
               tracking, object, parent->sub_parent);
 
           if (track) {
-            MovieTrackingMarker *marker = BKE_tracking_marker_get(track, clip_framenr);
+            MovieTrackingMarker *marker = dune_tracking_marker_get(track, clip_framenr);
             float marker_pos_ofs[2], parmask_pos[2];
-            MovieClipUser user = *DNA_struct_default_get(MovieClipUser);
+            MovieClipUser user = *types_struct_default_get(MovieClipUser);
 
-            BKE_movieclip_user_set_frame(&user, scene->r.cfra);
+            dune_movieclip_user_set_frame(&user, scene->r.cfra);
 
             add_v2_v2v2(marker_pos_ofs, marker->pos, track->offset);
 
-            BKE_mask_coord_from_movieclip(clip, &user, parmask_pos, marker_pos_ofs);
+            dune_mask_coord_from_movieclip(clip, &user, parmask_pos, marker_pos_ofs);
 
             copy_v2_v2(parent->parent_orig, parmask_pos);
           }
         }
         else /* if (parent->type == MASK_PARENT_PLANE_TRACK) */ {
-          MovieTrackingPlaneTrack *plane_track = BKE_tracking_plane_track_get_named(
+          MovieTrackingPlaneTrack *plane_track = dune_tracking_plane_track_get_named(
               tracking, object, parent->sub_parent);
           if (plane_track) {
-            MovieTrackingPlaneMarker *plane_marker = BKE_tracking_plane_marker_get(plane_track,
+            MovieTrackingPlaneMarker *plane_marker = dune_tracking_plane_marker_get(plane_track,
                                                                                    clip_framenr);
 
             memcpy(parent->parent_corners_orig,
@@ -93,12 +93,12 @@ static void rna_Mask_update_parent(Main *bmain, Scene *scene, PointerRNA *ptr)
     }
   }
 
-  rna_Mask_update_data(bmain, scene, ptr);
+  api_Mask_update_data(main, scene, ptr);
 }
 
 /* NOTE: this function exists only to avoid id refcounting. */
-static void rna_MaskParent_id_set(PointerRNA *ptr,
-                                  PointerRNA value,
+static void api_MaskParent_id_set(ApiPtr *ptr,
+                                  ApiPtr value,
                                   struct ReportList *UNUSED(reports))
 {
   MaskParent *mpar = (MaskParent *)ptr->data;
@@ -106,14 +106,14 @@ static void rna_MaskParent_id_set(PointerRNA *ptr,
   mpar->id = value.data;
 }
 
-static StructRNA *rna_MaskParent_id_typef(PointerRNA *ptr)
+static ApiStruct *api_MaskParent_id_typef(ApiPtr *ptr)
 {
   MaskParent *mpar = (MaskParent *)ptr->data;
 
-  return ID_code_to_RNA_type(mpar->id_type);
+  return id_code_to_api_type(mpar->id_type);
 }
 
-static void rna_MaskParent_id_type_set(PointerRNA *ptr, int value)
+static void api_MaskParent_id_type_set(ApiPtr *ptr, int value)
 {
   MaskParent *mpar = (MaskParent *)ptr->data;
 
@@ -126,29 +126,29 @@ static void rna_MaskParent_id_type_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Mask_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Mask_layers_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
-  rna_iterator_listbase_begin(iter, &mask->masklayers, NULL);
+  api_iter_list_begin(iter, &mask->masklayers, NULL);
 }
 
-static int rna_Mask_layer_active_index_get(PointerRNA *ptr)
+static int api_Mask_layer_active_index_get(ApiPtr *ptr)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
   return mask->masklay_act;
 }
 
-static void rna_Mask_layer_active_index_set(PointerRNA *ptr, int value)
+static void api_Mask_layer_active_index_set(ApiPtr *ptr, int value)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
   mask->masklay_act = value;
 }
 
-static void rna_Mask_layer_active_index_range(
-    PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void api_Mask_layer_active_index_range(
+    ApiPtr *ptr, int *min, int *max, int *softmin, int *softmax)
 {
   Mask *mask = (Mask *)ptr->owner_id;
 
@@ -159,40 +159,40 @@ static void rna_Mask_layer_active_index_range(
   *softmax = *max;
 }
 
-static char *rna_MaskLayer_path(PointerRNA *ptr)
+static char *api_MaskLayer_path(ApiPtr *ptr)
 {
   MaskLayer *masklay = (MaskLayer *)ptr->data;
   char name_esc[sizeof(masklay->name) * 2];
-  BLI_str_escape(name_esc, masklay->name, sizeof(name_esc));
-  return BLI_sprintfN("layers[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, masklay->name, sizeof(name_esc));
+  return lib_sprintfN("layers[\"%s\"]", name_esc);
 }
 
-static PointerRNA rna_Mask_layer_active_get(PointerRNA *ptr)
+static ApiPtr api_Mask_layer_active_get(ApiPtr *ptr)
 {
   Mask *mask = (Mask *)ptr->owner_id;
-  MaskLayer *masklay = BKE_mask_layer_active(mask);
+  MaskLayer *masklay = dune_mask_layer_active(mask);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_MaskLayer, masklay);
+  return api_ptr_inherit_refine(ptr, &Api_MaskLayer, masklay);
 }
 
-static void rna_Mask_layer_active_set(PointerRNA *ptr,
-                                      PointerRNA value,
+static void api_Mask_layer_active_set(ApiPtr *ptr,
+                                      ApiPtr value,
                                       struct ReportList *UNUSED(reports))
 {
   Mask *mask = (Mask *)ptr->owner_id;
   MaskLayer *masklay = (MaskLayer *)value.data;
 
-  BKE_mask_layer_active_set(mask, masklay);
+  dune_mask_layer_active_set(mask, masklay);
 }
 
-static void rna_MaskLayer_splines_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_MaskLayer_splines_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   MaskLayer *masklay = (MaskLayer *)ptr->data;
 
-  rna_iterator_listbase_begin(iter, &masklay->splines, NULL);
+  api_iter_list_begin(iter, &masklay->splines, NULL);
 }
 
-static void rna_MaskLayer_name_set(PointerRNA *ptr, const char *value)
+static void api_MaskLayer_name_set(ApiPtr *ptr, const char *value)
 {
   Mask *mask = (Mask *)ptr->owner_id;
   MaskLayer *masklay = (MaskLayer *)ptr->data;
