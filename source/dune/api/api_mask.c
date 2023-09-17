@@ -671,16 +671,16 @@ static void api_def_maskSplinePointUW(DuneApi *dapi)
   api_def_prop_float_stype(prop, NULL, "w");
   api_def_prop_range(prop, 0.0, 1.0);
   api_def_prop_ui_text(prop, "Weight", "Weight of feather point");
-  api_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* select */
   prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
   api_def_prop_ui_text(prop, "Select", "Selection status");
-  api_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 }
 
-static void api_def_maskSplinePoint(BlenderRNA *brna)
+static void api_def_maskSplinePoint(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -764,22 +764,22 @@ static void api_def_maskSplinePoint(BlenderRNA *brna)
   api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* parent */
-  prop = RNA_def_property(srna, "parent", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskParent");
+  prop = api_def_prop(sapi, "parent", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "MaskParent");
 
   /* feather points */
-  prop = RNA_def_property(srna, "feather_points", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskSplinePointUW");
-  RNA_def_property_collection_sdna(prop, NULL, "uw", "tot_uw");
-  RNA_def_property_ui_text(prop, "Feather Points", "Points defining feather");
+  prop = api_def_prop(sapi, "feather_points", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MaskSplinePointUW");
+  api_def_prop_collection_stypes(prop, NULL, "uw", "tot_uw");
+  api_def_prop_ui_text(prop, "Feather Points", "Points defining feather");
 }
 
-static void rna_def_mask_splines(BlenderRNA *brna)
+static void api_def_mask_splines(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *prop;
+  ApiProp *parm;
 
   srna = RNA_def_struct(brna, "MaskSplines", NULL);
   RNA_def_struct_sdna(srna, "MaskLayer");
