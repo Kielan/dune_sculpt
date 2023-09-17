@@ -296,7 +296,7 @@ static void api_MaskSplinePoint_ctrlpoint_set(ApiPtr *ptr, const float *values)
   copy_v2_v2(bezt->vec[1], values);
 }
 
-static int rna_MaskSplinePoint_handle_type_get(ApiPtr *ptr)
+static int api_MaskSplinePoint_handle_type_get(ApiPtr *ptr)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -328,7 +328,7 @@ static void mask_point_check_stick(MaskSplinePoint *point)
   }
 }
 
-static void rna_MaskSplinePoint_handle_type_set(PointerRNA *ptr, int value)
+static void api_MaskSplinePoint_handle_type_set(ApiPtr *ptr, int value)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -336,10 +336,10 @@ static void rna_MaskSplinePoint_handle_type_set(PointerRNA *ptr, int value)
 
   bezt->h1 = bezt->h2 = value;
   mask_point_check_stick(point);
-  BKE_mask_calc_handle_point(spline, point);
+  dune_mask_calc_handle_point(spline, point);
 }
 
-static int rna_MaskSplinePoint_handle_left_type_get(PointerRNA *ptr)
+static int api_MaskSplinePoint_handle_left_type_get(ApiPtr *ptr)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -347,7 +347,7 @@ static int rna_MaskSplinePoint_handle_left_type_get(PointerRNA *ptr)
   return bezt->h1;
 }
 
-static void rna_MaskSplinePoint_handle_left_type_set(PointerRNA *ptr, int value)
+static void api_MaskSplinePoint_handle_left_type_set(ApiPtr *ptr, int value)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -355,10 +355,10 @@ static void rna_MaskSplinePoint_handle_left_type_set(PointerRNA *ptr, int value)
 
   bezt->h1 = value;
   mask_point_check_stick(point);
-  BKE_mask_calc_handle_point(spline, point);
+  dune_mask_calc_handle_point(spline, point);
 }
 
-static int rna_MaskSplinePoint_handle_right_type_get(PointerRNA *ptr)
+static int api_MaskSplinePoint_handle_right_type_get(ApiPtr *ptr)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -366,7 +366,7 @@ static int rna_MaskSplinePoint_handle_right_type_get(PointerRNA *ptr)
   return bezt->h2;
 }
 
-static void rna_MaskSplinePoint_handle_right_type_set(PointerRNA *ptr, int value)
+static void api_MaskSplinePoint_handle_right_type_set(ApiPtr *ptr, int value)
 {
   MaskSplinePoint *point = (MaskSplinePoint *)ptr->data;
   BezTriple *bezt = &point->bezt;
@@ -374,25 +374,24 @@ static void rna_MaskSplinePoint_handle_right_type_set(PointerRNA *ptr, int value
 
   bezt->h2 = value;
   mask_point_check_stick(point);
-  BKE_mask_calc_handle_point(spline, point);
+  dune_mask_calc_handle_point(spline, point);
 }
 
-/* ** API ** */
-
-static MaskLayer *rna_Mask_layers_new(Mask *mask, const char *name)
+/* API */
+static MaskLayer *api_Mask_layers_new(Mask *mask, const char *name)
 {
-  MaskLayer *masklay = BKE_mask_layer_new(mask, name);
+  MaskLayer *masklay = dune_mask_layer_new(mask, name);
 
-  WM_main_add_notifier(NC_MASK | NA_EDITED, mask);
+  wm_main_add_notifier(NC_MASK | NA_EDITED, mask);
 
   return masklay;
 }
 
-static void rna_Mask_layers_remove(Mask *mask, ReportList *reports, PointerRNA *masklay_ptr)
+static void api_Mask_layers_remove(Mask *mask, ReportList *reports, ApiPtr *masklay_ptr)
 {
   MaskLayer *masklay = masklay_ptr->data;
-  if (BLI_findindex(&mask->masklayers, masklay) == -1) {
-    BKE_reportf(reports,
+  if (lib_findindex(&mask->masklayers, masklay) == -1) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Mask layer '%s' not found in mask '%s'",
                 masklay->name,
@@ -400,51 +399,51 @@ static void rna_Mask_layers_remove(Mask *mask, ReportList *reports, PointerRNA *
     return;
   }
 
-  BKE_mask_layer_remove(mask, masklay);
-  RNA_POINTER_INVALIDATE(masklay_ptr);
+  dune_mask_layer_remove(mask, masklay);
+  API_PTR_INVALIDATE(masklay_ptr);
 
-  WM_main_add_notifier(NC_MASK | NA_EDITED, mask);
+  wm_main_add_notifier(NC_MASK | NA_EDITED, mask);
 }
 
-static void rna_Mask_layers_clear(Mask *mask)
+static void api_Mask_layers_clear(Mask *mask)
 {
-  BKE_mask_layer_free_list(&mask->masklayers);
+  dune_mask_layer_free_list(&mask->masklayers);
 
-  WM_main_add_notifier(NC_MASK | NA_EDITED, mask);
+  wm_main_add_notifier(NC_MASK | NA_EDITED, mask);
 }
 
-static MaskSpline *rna_MaskLayer_spline_new(ID *id, MaskLayer *mask_layer)
+static MaskSpline *api_MaskLayer_spline_new(Id *id, MaskLayer *mask_layer)
 {
   Mask *mask = (Mask *)id;
   MaskSpline *new_spline;
 
-  new_spline = BKE_mask_spline_add(mask_layer);
+  new_spline = dune_mask_spline_add(mask_layer);
 
-  WM_main_add_notifier(NC_MASK | NA_EDITED, mask);
+  wm_main_add_notifier(NC_MASK | NA_EDITED, mask);
 
   return new_spline;
 }
 
-static void rna_MaskLayer_spline_remove(ID *id,
+static void api_MaskLayer_spline_remove(Id *id,
                                         MaskLayer *mask_layer,
                                         ReportList *reports,
-                                        PointerRNA *spline_ptr)
+                                        ApiPtr *spline_ptr)
 {
   Mask *mask = (Mask *)id;
   MaskSpline *spline = spline_ptr->data;
 
-  if (BKE_mask_spline_remove(mask_layer, spline) == false) {
-    BKE_reportf(
+  if (dune_mask_spline_remove(mask_layer, spline) == false) {
+    dune_reportf(
         reports, RPT_ERROR, "Mask layer '%s' does not contain spline given", mask_layer->name);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(spline_ptr);
+  API_PTR_INVALIDATE(spline_ptr);
 
-  DEG_id_tag_update(&mask->id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&mask->id, ID_RECALC_GEOMETRY);
 }
 
-static void rna_Mask_start_frame_set(PointerRNA *ptr, int value)
+static void api_Mask_start_frame_set(ApiPtr *ptr, int value)
 {
   Mask *data = (Mask *)ptr->data;
   /* MINFRAME not MINAFRAME, since some output formats can't taken negative frames */
@@ -456,7 +455,7 @@ static void rna_Mask_start_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Mask_end_frame_set(PointerRNA *ptr, int value)
+static void api_Mask_end_frame_set(ApiPtr *ptr, int value)
 {
   Mask *data = (Mask *)ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
@@ -467,7 +466,7 @@ static void rna_Mask_end_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_MaskSpline_points_add(ID *id, MaskSpline *spline, int count)
+static void api_MaskSpline_points_add(Id *id, MaskSpline *spline, int count)
 {
   Mask *mask = (Mask *)id;
   MaskLayer *layer;
@@ -479,14 +478,14 @@ static void rna_MaskSpline_points_add(ID *id, MaskSpline *spline, int count)
   }
 
   for (layer = mask->masklayers.first; layer; layer = layer->next) {
-    if (BLI_findindex(&layer->splines, spline) != -1) {
+    if (lib_findindex(&layer->splines, spline) != -1) {
       break;
     }
   }
 
   if (!layer) {
     /* Shall not happen actually */
-    BLI_assert_msg(0, "No layer found for the spline");
+    lib_assert_msg(0, "No layer found for the spline");
     return;
   }
 
@@ -494,7 +493,7 @@ static void rna_MaskSpline_points_add(ID *id, MaskSpline *spline, int count)
     active_point_index = layer->act_point - spline->points;
   }
 
-  spline->points = MEM_recallocN(spline->points,
+  spline->points = mem_recallocn(spline->points,
                                  sizeof(MaskSplinePoint) * (spline->tot_point + count));
   spline->tot_point += count;
 
@@ -502,27 +501,27 @@ static void rna_MaskSpline_points_add(ID *id, MaskSpline *spline, int count)
     layer->act_point = spline->points + active_point_index;
   }
 
-  spline_shape_index = BKE_mask_layer_shape_spline_to_index(layer, spline);
+  spline_shape_index = dune_mask_layer_shape_spline_to_index(layer, spline);
 
   for (i = 0; i < count; i++) {
     int point_index = spline->tot_point - count + i;
     MaskSplinePoint *new_point = spline->points + point_index;
     new_point->bezt.h1 = new_point->bezt.h2 = HD_ALIGN;
-    BKE_mask_calc_handle_point_auto(spline, new_point, true);
-    BKE_mask_parent_init(&new_point->parent);
+    dune_mask_calc_handle_point_auto(spline, new_point, true);
+    dune_mask_parent_init(&new_point->parent);
 
     /* Not efficient, but there's no other way for now */
-    BKE_mask_layer_shape_changed_add(layer, spline_shape_index + point_index, true, true);
+    dune_mask_layer_shape_changed_add(layer, spline_shape_index + point_index, true, true);
   }
 
-  WM_main_add_notifier(NC_MASK | ND_DATA, mask);
-  DEG_id_tag_update(&mask->id, 0);
+  wm_main_add_notifier(NC_MASK | ND_DATA, mask);
+  graph_id_tag_update(&mask->id, 0);
 }
 
-static void rna_MaskSpline_point_remove(ID *id,
+static void api_MaskSpline_point_remove(Id *id,
                                         MaskSpline *spline,
                                         ReportList *reports,
-                                        PointerRNA *point_ptr)
+                                        ApiPtr *point_ptr)
 {
   Mask *mask = (Mask *)id;
   MaskSplinePoint *point = point_ptr->data;
@@ -532,19 +531,19 @@ static void rna_MaskSpline_point_remove(ID *id,
   int point_index;
 
   for (layer = mask->masklayers.first; layer; layer = layer->next) {
-    if (BLI_findindex(&layer->splines, spline) != -1) {
+    if (lib_findindex(&layer->splines, spline) != -1) {
       break;
     }
   }
 
   if (!layer) {
     /* Shall not happen actually */
-    BKE_report(reports, RPT_ERROR, "Mask layer not found for given spline");
+    dune_report(reports, RPT_ERROR, "Mask layer not found for given spline");
     return;
   }
 
   if (point < spline->points || point >= spline->points + spline->tot_point) {
-    BKE_report(reports, RPT_ERROR, "Point is not found in given spline");
+    dune_report(reports, RPT_ERROR, "Point is not found in given spline");
     return;
   }
 
@@ -554,7 +553,7 @@ static void rna_MaskSpline_point_remove(ID *id,
 
   point_index = point - spline->points;
 
-  new_point_array = MEM_mallocN(sizeof(MaskSplinePoint) * (spline->tot_point - 1),
+  new_point_array = mem_mallocN(sizeof(MaskSplinePoint) * (spline->tot_point - 1),
                                 "remove mask point");
 
   memcpy(new_point_array, spline->points, sizeof(MaskSplinePoint) * point_index);
@@ -562,7 +561,7 @@ static void rna_MaskSpline_point_remove(ID *id,
          spline->points + point_index + 1,
          sizeof(MaskSplinePoint) * (spline->tot_point - point_index - 1));
 
-  MEM_freeN(spline->points);
+  mem_freen(spline->points);
   spline->points = new_point_array;
   spline->tot_point--;
 
@@ -578,101 +577,101 @@ static void rna_MaskSpline_point_remove(ID *id,
     }
   }
 
-  BKE_mask_layer_shape_changed_remove(
-      layer, BKE_mask_layer_shape_spline_to_index(layer, spline) + point_index, 1);
+  dune_mask_layer_shape_changed_remove(
+      layer, dune_mask_layer_shape_spline_to_index(layer, spline) + point_index, 1);
 
-  WM_main_add_notifier(NC_MASK | ND_DATA, mask);
-  DEG_id_tag_update(&mask->id, 0);
+  wm_main_add_notifier(NC_MASK | ND_DATA, mask);
+  graph_id_tag_update(&mask->id, 0);
 
-  RNA_POINTER_INVALIDATE(point_ptr);
+  API_PTR_INVALIDATE(point_ptr);
 }
 
 #else
-static void rna_def_maskParent(BlenderRNA *brna)
+static void api_def_maskParent(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem mask_id_type_items[] = {
-      {ID_MC, "MOVIECLIP", ICON_SEQUENCE, "Movie Clip", ""},
+  static const EnumPropItem mask_id_type_items[] = {
+      {ID_MC, "MOVIECLIP", ICON_SEQ, "Movie Clip", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem parent_type_items[] = {
+  static const EnumPropItem parent_type_items[] = {
       {MASK_PARENT_POINT_TRACK, "POINT_TRACK", 0, "Point Track", ""},
       {MASK_PARENT_PLANE_TRACK, "PLANE_TRACK", 0, "Plane Track", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "MaskParent", NULL);
-  RNA_def_struct_ui_text(srna, "Mask Parent", "Parenting settings for masking element");
+  sapi = api_def_struct(dapi, "MaskParent", NULL);
+  api_def_struct_ui_text(sapi, "Mask Parent", "Parenting settings for masking element");
 
-  /* Target Properties - ID-block to Drive */
-  prop = RNA_def_property(srna, "id", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ID");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  // RNA_def_property_editable_func(prop, "rna_maskSpline_id_editable");
+  /* Target Props - ID-block to Drive */
+  prop = api_def_prop(sapi, "id", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "ID");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  // api_def_prop_editable_func(prop, "rna_maskSpline_id_editable");
   /* NOTE: custom set function is ONLY to avoid rna setting a user for this. */
-  RNA_def_property_pointer_funcs(
-      prop, NULL, "rna_MaskParent_id_set", "rna_MaskParent_id_typef", NULL);
-  RNA_def_property_ui_text(
-      prop, "ID", "ID-block to which masking element would be parented to or to its property");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_parent");
+  api_def_prop_ptr_fns(
+      prop, NULL, "api_MaskParent_id_set", "api_MaskParent_id_typef", NULL);
+  api_def_prop_ui_text(
+      prop, "Id", "ID-block to which masking element would be parented to or to its property");
+  api_def_prop_update(prop, 0, "api_Mask_update_parent");
 
-  prop = RNA_def_property(srna, "id_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "id_type");
-  RNA_def_property_enum_items(prop, mask_id_type_items);
-  RNA_def_property_enum_default(prop, ID_MC);
-  RNA_def_property_enum_funcs(prop, NULL, "rna_MaskParent_id_type_set", NULL);
-  // RNA_def_property_editable_func(prop, "rna_MaskParent_id_type_editable");
-  RNA_def_property_ui_text(prop, "ID Type", "Type of ID-block that can be used");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_parent");
+  prop = api_def_prop(srna, "id_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "id_type");
+  api_def_prop_enum_items(prop, mask_id_type_items);
+  api_def_prop_enum_default(prop, ID_MC);
+  api_def_prop_enum_fns(prop, NULL, "api_MaskParent_id_type_set", NULL);
+  // api_def_prope_editable_func(prop, "api_MaskParent_id_type_editable");
+  api_def_prop_ui_text(prop, "ID Type", "Type of ID-block that can be used");
+  api_def_prop_update(prop, 0, "api_Mask_update_parent");
 
   /* type */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, parent_type_items);
-  RNA_def_property_ui_text(prop, "Parent Type", "Parent Type");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_parent");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, parent_type_items);
+  api_def_prop_ui_text(prop, "Parent Type", "Parent Type");
+  api_def_prop_update(prop, 0, "api_Mask_update_parent");
 
   /* parent */
-  prop = RNA_def_property(srna, "parent", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "parent", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
       prop, "Parent", "Name of parent object in specified data-block to which parenting happens");
-  RNA_def_property_string_maxlength(prop, MAX_ID_NAME - 2);
-  RNA_def_property_update(prop, 0, "rna_Mask_update_parent");
+  api_def_prop_string_maxlength(prop, MAX_ID_NAME - 2);
+  api_def_prop_update(prop, 0, "api_Mask_update_parent");
 
   /* sub_parent */
-  prop = RNA_def_property(srna, "sub_parent", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "sub_parent", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(
       prop,
       "Sub Parent",
       "Name of parent sub-object in specified data-block to which parenting happens");
-  RNA_def_property_string_maxlength(prop, MAX_ID_NAME - 2);
-  RNA_def_property_update(prop, 0, "rna_Mask_update_parent");
+  api_def_prop_string_maxlength(prop, MAX_ID_NAME - 2);
+  api_def_prop_update(prop, 0, "api_Mask_update_parent");
 }
 
-static void rna_def_maskSplinePointUW(BlenderRNA *brna)
+static void api_def_maskSplinePointUW(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MaskSplinePointUW", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Mask Spline UW Point", "Single point in spline segment defining feather");
+  sapi = api_def_struct(dapi, "MaskSplinePointUW", NULL);
+  api_def_struct_ui_text(
+      sapi, "Mask Spline UW Point", "Single point in spline segment defining feather");
 
   /* u */
-  prop = RNA_def_property(srna, "u", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "u");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "U", "U coordinate of point along spline segment");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "u", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "u");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "U", "U coordinate of point along spline segment");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* weight */
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "w");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Weight", "Weight of feather point");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "w");
+  api_def_prop_range(prop, 0.0, 1.0);
+  RNA_def_prop_ui_text(prop, "Weight", "Weight of feather point");
+  RNA_def_prop_update(prop, 0, "rna_Mask_update_data");
 
   /* select */
   prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
