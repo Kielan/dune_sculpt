@@ -794,25 +794,24 @@ int api_fn_call_direct_va(struct Cxt *C,
                           ApiFn *fn,
                           const char *format,
                           va_list args);
-int api_fn_call_direct_va_lookup(struct bContext *C,
+int api_fn_call_direct_va_lookup(struct Cxt *C,
                                  struct ReportList *reports,
-                                 PointerRNA *ptr,
-                                 const char *identifier,
+                                 ApiPtr *ptr,
+                                 const char *id,
                                  const char *format,
                                  va_list args);
 
-const char *api_translate_ui_text(const char *text,
-                                  const char *text_ctxt,
-                                  struct StructRNA *type,
-                                  struct PropertyRNA *prop,
-                                  int translate);
+const char *api_lang_ui_text(const char *text,
+                             const char *text_ctxt,
+                             struct ApiStruct *type,
+                             struct ApiProp *prop,
+                             int lang);
 
-/* ID */
+/* Id */
+short api_type_to_id_code(const ApiStruct *type);
+ApiStruct *id_code_to_api_type(short idcode);
 
-short RNA_type_to_ID_code(const StructRNA *type);
-StructRNA *ID_code_to_RNA_type(short idcode);
-
-#define RNA_POINTER_INVALIDATE(ptr) \
+#define API_PTR_INVALIDATE(ptr) \
   { \
     /* this is checked for validity */ \
     (ptr)->type = NULL; /* should not be needed but prevent bad pointer access, just in case */ \
@@ -822,62 +821,55 @@ StructRNA *ID_code_to_RNA_type(short idcode);
 
 /* macro which inserts the function name */
 #if defined __GNUC__
-#  define RNA_warning(format, args...) _RNA_warning("%s: " format "\n", __func__, ##args)
+#  define api_warning(format, args...) _api_warning("%s: " format "\n", __func__, ##args)
 #else
-#  define RNA_warning(format, ...) _RNA_warning("%s: " format "\n", __FUNCTION__, __VA_ARGS__)
+#  define api_warning(format, ...) _api_warning("%s: " format "\n", __FUNCTION__, __VA_ARGS__)
 #endif
 
-/** Use to implement the #RNA_warning macro which includes `__func__` suffix. */
-void _RNA_warning(const char *format, ...) ATTR_PRINTF_FORMAT(1, 2);
+/* Use to implement the api_warning macro which includes `__func__` suffix. */
+void _api_warning(const char *format, ...) ATTR_PRINTF_FORMAT(1, 2);
 
 /* Equals test. */
-
-/**
- * \note In practice, #EQ_STRICT and #EQ_COMPARE have same behavior currently,
- * and will yield same result.
- */
-typedef enum eRNACompareMode {
+/* In practice, EQ_STRICT and EQ_COMPARE have same behavior currently,
+ * and will yield same result. */
+typedef enum eApiCompareMode {
   /* Only care about equality, not full comparison. */
-  /** Set/unset ignored. */
-  RNA_EQ_STRICT,
-  /** Unset property matches anything. */
-  RNA_EQ_UNSET_MATCH_ANY,
-  /** Unset property never matches set property. */
-  RNA_EQ_UNSET_MATCH_NONE,
-  /** Full comparison. */
-  RNA_EQ_COMPARE,
-} eRNACompareMode;
+  /* Set/unset ignored. */
+  API_EQ_STRICT,
+  /* Unset prop matches anything. */
+  API_EQ_UNSET_MATCH_ANY,
+  /* Unset prop never matches set prop. */
+  API_EQ_UNSET_MATCH_NONE,
+  /* Full comparison. */
+  API_EQ_COMPARE,
+} eApiCompareMode;
 
-bool RNA_property_equals(struct Main *bmain,
-                         struct PointerRNA *ptr_a,
-                         struct PointerRNA *ptr_b,
-                         struct PropertyRNA *prop,
-                         eRNACompareMode mode);
-bool RNA_struct_equals(struct Main *bmain,
-                       struct PointerRNA *ptr_a,
-                       struct PointerRNA *ptr_b,
-                       eRNACompareMode mode);
+bool api_prop_equals(struct Main *main,
+                     struct ApiPtr *ptr_a,
+                     struct ApiPtr *ptr_b,
+                     struct ApiProp *prop,
+                     eApiCompareMode mode);
+bool api_struct_equals(struct Main *main,
+                       struct ApiPtr *ptr_a,
+                       struct ApiPtr *ptr_b,
+                       eApiCompareMode mode);
 
 /* Override. */
+/* Flags for api_struct_override_matches. */
+typedef enum eApiOverrideMatch {
+  /* Do not compare props that are not overridable. */
+  API_OVERRIDE_COMPARE_IGNORE_NON_OVERRIDABLE = 1 << 0,
+  /* Do not compare props that are already overridden. */
+  API_OVERRIDE_COMPARE_IGNORE_OVERRIDDEN = 1 << 1,
+  /* Create new prop override if needed and possible. */
+  API_OVERRIDE_COMPARE_CREATE = 1 << 16,
+  /* Restore prop's value(s) to reference ones if needed and possible. */
+  API_OVERRIDE_COMPARE_RESTORE = 1 << 17,
+} eApiOverrideMatch;
 
-/** Flags for #RNA_struct_override_matches. */
-typedef enum eRNAOverrideMatch {
-  /** Do not compare properties that are not overridable. */
-  RNA_OVERRIDE_COMPARE_IGNORE_NON_OVERRIDABLE = 1 << 0,
-  /** Do not compare properties that are already overridden. */
-  RNA_OVERRIDE_COMPARE_IGNORE_OVERRIDDEN = 1 << 1,
-
-  /** Create new property override if needed and possible. */
-  RNA_OVERRIDE_COMPARE_CREATE = 1 << 16,
-  /** Restore property's value(s) to reference ones if needed and possible. */
-  RNA_OVERRIDE_COMPARE_RESTORE = 1 << 17,
-} eRNAOverrideMatch;
-
-typedef enum eRNAOverrideMatchResult {
-  /**
-   * Some new property overrides were created to take into account
-   * differences between local and reference.
-   */
+typedef enum eApiOverrideMatchResult {
+  /* Some new prop overrides were created to take into account
+   * differences between local and ref. */
   RNA_OVERRIDE_MATCH_RESULT_CREATED = 1 << 0,
   /** Some properties were reset to reference values. */
   RNA_OVERRIDE_MATCH_RESULT_RESTORED = 1 << 1,
@@ -938,44 +930,44 @@ typedef enum eRNAOverrideApplyFlag {
  */
 void RNA_struct_override_apply(struct Main *bmain,
                                struct PointerRNA *ptr_dst,
-                               struct PointerRNA *ptr_src,
-                               struct PointerRNA *ptr_storage,
-                               struct IDOverrideLibrary *override,
+                               struct ApiPtr *ptr_src,
+                               struct ApiPtr *ptr_storage,
+                               struct IdOverrideLib *override,
                                eRNAOverrideApplyFlag flag);
 
-struct IDOverrideLibraryProperty *RNA_property_override_property_find(struct Main *bmain,
-                                                                      PointerRNA *ptr,
-                                                                      PropertyRNA *prop,
-                                                                      struct ID **r_owner_id);
-struct IDOverrideLibraryProperty *RNA_property_override_property_get(struct Main *bmain,
-                                                                     PointerRNA *ptr,
-                                                                     PropertyRNA *prop,
-                                                                     bool *r_created);
+struct IDOverrideLibraryProperty *api_prop_override_prop_find(struct Main *main,
+                                                              ApiPtr *ptr,
+                                                              ApiProp *prop,
+                                                              struct Id **r_owner_id);
+struct IDOverrideLibraryProperty *api_prop_override_prop_get(struct Main *main,
+                                                                 ApiPtr *ptr,
+                                                                 ApiProp *prop,
+                                                                 bool *r_created);
 
-struct IDOverrideLibraryPropertyOperation *RNA_property_override_property_operation_find(
+struct IDOverrideLibPropOp *RNA_prop_override_property_operation_find(
     struct Main *bmain,
     PointerRNA *ptr,
     PropertyRNA *prop,
     int index,
     bool strict,
     bool *r_strict);
-struct IDOverrideLibraryPropertyOperation *RNA_property_override_property_operation_get(
-    struct Main *bmain,
-    PointerRNA *ptr,
-    PropertyRNA *prop,
-    short operation,
+struct IdOverrideLibPropOp *api_prop_override_prop_op_get(
+    struct Main *main,
+    ApiPtr *ptr,
+    ApiProp *prop,
+    short oper,
     int index,
     bool strict,
     bool *r_strict,
     bool *r_created);
 
-eRNAOverrideStatus RNA_property_override_library_status(struct Main *bmainm,
-                                                        PointerRNA *ptr,
-                                                        PropertyRNA *prop,
-                                                        int index);
+eApiOverrideStatus api_prop_override_lib_status(struct Main *main,
+                                                ApiPtr *ptr,
+                                                ApiProp *prop,
+                                                int index);
 
-void RNA_struct_state_owner_set(const char *name);
-const char *RNA_struct_state_owner_get(void);
+void api_struct_state_owner_set(const char *name);
+const char *api_struct_state_owner_get(void);
 
 #ifdef __cplusplus
 }
