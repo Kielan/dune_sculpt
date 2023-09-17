@@ -1,129 +1,120 @@
 #pragma once
 
-/** \file
- * \ingroup RNA
- */
-
-#include "RNA_types.h"
+#include "api_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct ID;
-struct bNodeSocketType;
-struct bNodeTreeType;
-struct bNodeType;
+struct Id;
+struct NodeSocketType;
+struct NodeTreeType;
+struct NodeType;
 
 /* Types */
-#define DEF_ENUM(id) extern const EnumPropertyItem id[];
-#include "RNA_enum_items.h"
+#define DEF_ENUM(id) extern const EnumPropItem id[];
+#include "api_enum_items.h"
 
-extern const EnumPropertyItem *rna_enum_attribute_domain_itemf(struct ID *id,
-                                                               bool include_instances,
-                                                               bool *r_free);
+extern const EnumPropItem *api_enum_attribute_domain_itemf(struct Id *id,
+                                                           bool include_instances,
+                                                           bool *r_free);
 
-/**
- * For ID filters (#FILTER_ID_AC, #FILTER_ID_AR, ...) an int isn't enough. This version allows 64
- * bit integers. So can't use the regular #EnumPropertyItem. Would be nice if RNA supported this
+/* For Id filters (FILTER_ID_AC, FILTER_ID_AR, ...) an int isn't enough. This version allows 64
+ * bit integers. So can't use the regular EnumPropItem. Would be nice if RNA supported this
  * itself.
- *
- * Meant to be used with #RNA_def_property_boolean_sdna() which supports 64 bit flags as well.
- */
-struct IDFilterEnumPropertyItem {
+ * Meant to be used with api_def_prop_bool_stype() which supports 64 bit flags as well. */
+struct IdFilterEnumPropItem {
   const uint64_t flag;
-  const char *identifier;
+  const char *id;
   const int icon;
   const char *name;
   const char *description;
 };
-extern const struct IDFilterEnumPropertyItem rna_enum_id_type_filter_items[];
+extern const struct IdFilterEnumPropItem api_enum_id_type_filter_items[];
 
 /* API calls */
-int rna_node_tree_type_to_enum(struct bNodeTreeType *typeinfo);
-int rna_node_tree_idname_to_enum(const char *idname);
-struct bNodeTreeType *rna_node_tree_type_from_enum(int value);
-const EnumPropertyItem *rna_node_tree_type_itemf(void *data,
-                                                 bool (*poll)(void *data, struct bNodeTreeType *),
-                                                 bool *r_free);
-
-int rna_node_type_to_enum(struct bNodeType *typeinfo);
-int rna_node_idname_to_enum(const char *idname);
-struct bNodeType *rna_node_type_from_enum(int value);
-const EnumPropertyItem *rna_node_type_itemf(void *data,
-                                            bool (*poll)(void *data, struct bNodeType *),
-                                            bool *r_free);
-
-int rna_node_socket_type_to_enum(struct bNodeSocketType *typeinfo);
-int rna_node_socket_idname_to_enum(const char *idname);
-struct bNodeSocketType *rna_node_socket_type_from_enum(int value);
-const EnumPropertyItem *rna_node_socket_type_itemf(
-    void *data, bool (*poll)(void *data, struct bNodeSocketType *), bool *r_free);
-
-struct PointerRNA;
-struct PropertyRNA;
-struct bContext;
-
-const EnumPropertyItem *rna_TransformOrientation_itemf(struct bContext *C,
-                                                       struct PointerRNA *ptr,
-                                                       struct PropertyRNA *prop,
-                                                       bool *r_free);
-
-/**
- * Generic functions, return an enum from library data, index is the position
- * in the linked list can add more for different types as needed.
- */
-const EnumPropertyItem *RNA_action_itemf(struct bContext *C,
-                                         struct PointerRNA *ptr,
-                                         struct PropertyRNA *prop,
-                                         bool *r_free);
-#if 0
-EnumPropertyItem *RNA_action_local_itemf(struct bContext *C,
-                                         struct PointerRNA *ptr,
-                                         struct PropertyRNA *prop,
-                                         bool *r_free);
-#endif
-const EnumPropertyItem *RNA_collection_itemf(struct bContext *C,
-                                             struct PointerRNA *ptr,
-                                             struct PropertyRNA *prop,
+int api_node_tree_type_to_enum(struct NodeTreeType *typeinfo);
+int api_node_tree_idname_to_enum(const char *idname);
+struct NodeTreeType *api_node_tree_type_from_enum(int value);
+const EnumPropItem *api_node_tree_type_itemf(void *data,
+                                             bool (*poll)(void *data, struct NodeTreeType *),
                                              bool *r_free);
-const EnumPropertyItem *RNA_collection_local_itemf(struct bContext *C,
-                                                   struct PointerRNA *ptr,
-                                                   struct PropertyRNA *prop,
-                                                   bool *r_free);
-const EnumPropertyItem *RNA_image_itemf(struct bContext *C,
-                                        struct PointerRNA *ptr,
-                                        struct PropertyRNA *prop,
+
+int api_node_type_to_enum(struct NodeType *typeinfo);
+int api_node_idname_to_enum(const char *idname);
+struct NodeType *api_node_type_from_enum(int value);
+const EnumPropItem *api_node_type_itemf(void *data,
+                                        bool (*poll)(void *data, struct NodeType *),
                                         bool *r_free);
-const EnumPropertyItem *RNA_image_local_itemf(struct bContext *C,
+
+int api_node_socket_type_to_enum(struct NodeSocketType *typeinfo);
+int api_node_socket_idname_to_enum(const char *idname);
+struct NodeSocketType *api_node_socket_type_from_enum(int value);
+const EnumPropItem *api_node_socket_type_itemf(
+    void *data, bool (*poll)(void *data, struct NodeSocketType *), bool *r_free);
+
+struct ApiPtr;
+struct ApiProp;
+struct Cxt;
+
+const EnumPropItem *api_TransformOrientation_itemf(struct Cxt *C,
+                                                   struct ApiPtr *ptr,
+                                                   struct ApiProp *prop,
+                                                   bool *r_free);
+
+/* Generic fns, return an enum from lib data, index is the position
+ * in the linked list can add more for different types as needed. */
+const EnumPropItem *api_action_itemf(struct Cxt *C,
+                                    struct ApiPtr *ptr,
+                                    struct ApiProp *prop,
+                                    bool *r_free);
+#if 0
+EnumPropItem *api_action_local_itemf(struct Cxt *C,
+                                     struct Apitr *ptr,
+                                     struct ApiProp *prop,
+                                     bool *r_free);
+#endif
+const EnumPropItem *api_collection_itemf(struct Cxt *C,
+                                         struct ApiPtr *ptr,
+                                         struct ApiProp *prop,
+                                             bool *r_free);
+const EnumPropItem *api_collection_local_itemf(struct Cxt *C,
                                               struct PointerRNA *ptr,
                                               struct PropertyRNA *prop,
                                               bool *r_free);
-const EnumPropertyItem *RNA_scene_itemf(struct bContext *C,
+const EnumPropItem *RNA_image_itemf(struct Cxt *C,
+                                        struct ApiPtr *ptr,
+                                        struct ApiProp *prop,
+                                        bool *r_free);
+const EnumPropItem *RNA_image_local_itemf(struct Cxt *C,
+                                          struct ApiPtr *ptr,
+                                          struct ApiProp *prop,
+                                          bool *r_free);
+const EnumPropItem *RNA_scene_itemf(struct bContext *C,
                                         struct PointerRNA *ptr,
                                         struct PropertyRNA *prop,
                                         bool *r_free);
-const EnumPropertyItem *RNA_scene_without_active_itemf(struct bContext *C,
+const EnumPropItem *RNA_scene_without_active_itemf(struct bContext *C,
                                                        struct PointerRNA *ptr,
                                                        struct PropertyRNA *prop,
                                                        bool *r_free);
-const EnumPropertyItem *RNA_scene_local_itemf(struct bContext *C,
+const EnumPropItem *RNA_scene_local_itemf(struct bContext *C,
                                               struct PointerRNA *ptr,
                                               struct PropertyRNA *prop,
                                               bool *r_free);
-const EnumPropertyItem *RNA_movieclip_itemf(struct bContext *C,
+const EnumPropItem *RNA_movieclip_itemf(struct bContext *C,
                                             struct PointerRNA *ptr,
                                             struct PropertyRNA *prop,
                                             bool *r_free);
-const EnumPropertyItem *RNA_movieclip_local_itemf(struct bContext *C,
+const EnumPropItem *RNA_movieclip_local_itemf(struct bContext *C,
                                                   struct PointerRNA *ptr,
                                                   struct PropertyRNA *prop,
                                                   bool *r_free);
-const EnumPropertyItem *RNA_mask_itemf(struct bContext *C,
+const EnumPropItem *RNA_mask_itemf(struct bContext *C,
                                        struct PointerRNA *ptr,
                                        struct PropertyRNA *prop,
                                        bool *r_free);
-const EnumPropertyItem *RNA_mask_local_itemf(struct Ctx *C,
+const EnumPropItem *RNA_mask_local_itemf(struct Ctx *C,
                                              struct ApiPtr *ptr,
                                              struct ApiProp *prop,
                                              bool *r_free);
