@@ -1,37 +1,37 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_defaults.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h" /* SELECT */
-#include "DNA_scene_types.h"
+#include "types_defaults.h"
+#include "types_mask.h"
+#include "types_object.h" /* SELECT */
+#include "types_scene.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
+#include "dune_movieclip.h"
+#include "dune_tracking.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "DNA_movieclip_types.h"
+#  include "types_movieclip.h"
 
-#  include "BKE_mask.h"
+#  include "dune_mask.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
 #  include "RNA_access.h"
 
@@ -1116,29 +1116,29 @@ static void rna_def_mask(BlenderRNA *brna)
 
   /* frame range */
   prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "sfra");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Mask_start_frame_set", NULL);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "Start Frame", "First frame of the mask (used for sequencer)");
-  RNA_def_property_update(prop, NC_MASK | ND_DRAW, NULL);
+  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_prop_int_sdna(prop, NULL, "sfra");
+  RNA_def_prop_int_funcs(prop, NULL, "rna_Mask_start_frame_set", NULL);
+  RNA_def_prop_range(prop, MINFRAME, MAXFRAME);
+  RNA_def_prop_ui_text(prop, "Start Frame", "First frame of the mask (used for sequencer)");
+  RNA_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_TIME);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_sdna(prop, NULL, "efra");
-  RNA_def_property_int_funcs(prop, NULL, "rna_Mask_end_frame_set", NULL);
-  RNA_def_property_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_property_ui_text(prop, "End Frame", "Final frame of the mask (used for sequencer)");
-  RNA_def_property_update(prop, NC_MASK | ND_DRAW, NULL);
+  prop = api_def_prop(srna, "frame_end", PROP_INT, PROP_TIME);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_sdna(prop, NULL, "efra");
+  api_def_prop_int_funcs(prop, NULL, "rna_Mask_end_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "End Frame", "Final frame of the mask (used for sequencer)");
+  api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
   /* pointers */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 }
 
-void RNA_def_mask(BlenderRNA *brna)
+void api_def_mask(DuneApi *dapi)
 {
-  rna_def_maskParent(brna);
-  rna_def_mask(brna);
+  api_def_maskParent(dapi);
+  rna_def_mask(dapi);
 }
 
 #endif
