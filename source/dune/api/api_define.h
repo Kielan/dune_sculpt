@@ -347,87 +347,79 @@ void api_def_prop_override_clear_flag(ApiProp *prop, PropOverrideFlag flag);
  * note Multiple tags can be set by passing them within tags (using bit-flags).
  * note Doesn't do any type-checking with the tags defined in the parent ApiStruct
  * of prop. This should be done before (e.g. see wm_optype_prop_tag). */
-void RNA_def_prop_tags(ApiProp *prop, int tags);
-void RNA_def_prop_subtype(ApiProp *prop, PropertySubType subtype);
-void RNA_def_prop_array(ApiProp *prop, int length);
-void RNA_def_prop_multi_array(ApiProp *prop, int dimension, const int length[]);
-void RNA_def_prop_range(ApiProp *prop, double min, double max);
+void api_def_prop_tags(ApiProp *prop, int tags);
+void api_def_prop_subtype(ApiProp *prop, PropSubType subtype);
+void api_def_prop_array(ApiProp *prop, int length);
+void api_def_prop_multi_array(ApiProp *prop, int dimension, const int length[]);
+void api_def_prop_range(ApiProp *prop, double min, double max);
 
-void RNA_def_property_enum_items(ApiProp *prop, const EnumPropertyItem *item);
-void RNA_def_property_enum_native_type(ApiProp *prop, const char *native_enum_type);
-void RNA_def_property_string_maxlength(ApiProp *prop, int maxlength);
-void RNA_def_property_struct_type(ApuProp *prop, const char *type);
-void RNA_def_property_struct_runtime(ApiStructOrFn *cont,
-                                     ApiProp *prop,
-                                     StructRNA *type);
+void api_def_prop_enum_items(ApiProp *prop, const EnumPropItem *item);
+void api_def_prop_enum_native_type(ApiProp *prop, const char *native_enum_type);
+void api_def_prop_string_maxlength(ApiProp *prop, int maxlength);
+void api_def_prop_struct_type(ApuProp *prop, const char *type);
+void api_def_prop_struct_runtime(ApiStructOrFn *cont,
+                                 ApiProp *prop,
+                                 ApiStruct *type);
 
-void RNA_def_property_boolean_default(PropertyRNA *prop, bool value);
-void RNA_def_property_boolean_array_default(PropertyRNA *prop, const bool *array);
-void RNA_def_property_int_default(PropertyRNA *prop, int value);
-void RNA_def_property_int_array_default(PropertyRNA *prop, const int *array);
-void RNA_def_property_float_default(PropertyRNA *prop, float value);
-/**
- * Array must remain valid after this function finishes.
- */
-void RNA_def_property_float_array_default(PropertyRNA *prop, const float *array);
-void RNA_def_property_enum_default(PropertyRNA *prop, int value);
-void RNA_def_property_string_default(PropertyRNA *prop, const char *value);
+void api_def_prop_bool_default(ApiProp *prop, bool value);
+void api_def_prop_bool_array_default(ApiProp *prop, const bool *array);
+void api_def_prop_int_default(ApiProp *prop, int value);
+void api_def_prop_int_array_default(ApiProp *prop, const int *array);
+void api_def_prop_float_default(ApiProp *prop, float value);
+/* Array must remain valid after this function finishes. */
+void api_def_prop_float_array_default(ApiProp *prop, const float *array);
+void api_def_prop_enum_default(ApiProp *prop, int value);
+void api_def_prop_string_default(ApiProp *prop, const char *value);
 
-void RNA_def_property_ui_text(PropertyRNA *prop, const char *name, const char *description);
-/**
- * The values hare are a little confusing:
- *
- * \param step: Used as the value to increase/decrease when clicking on number buttons,
+void api_def_prop_ui_text(ApiProp *prop, const char *name, const char *description);
+/* The values hare are a little confusing:
+ * param step: Used as the value to increase/decrease when clicking on number buttons,
  * as well as scaling mouse input for click-dragging number buttons.
  * For floats this is (step * UI_PRECISION_FLOAT_SCALE), why? - nobody knows.
  * For ints, whole values are used.
  *
- * \param precision: The number of zeros to show
- * (as a whole number - common range is 1 - 6), see UI_PRECISION_FLOAT_MAX
- */
-void RNA_def_property_ui_range(
-    PropertyRNA *prop, double min, double max, double step, int precision);
-void RNA_def_property_ui_scale_type(PropertyRNA *prop, PropertyScaleType scale_type);
-void RNA_def_property_ui_icon(PropertyRNA *prop, int icon, int consecutive);
+ * param precision: The number of zeros to show
+ * (as a whole number - common range is 1 - 6), see UI_PRECISION_FLOAT_MAX */
+void api_def_prop_ui_range(
+    ApiProp *prop, double min, double max, double step, int precision);
+void api_def_prop_ui_scale_type(ApiProp *prop, PropScaleType scale_type);
+void api_def_prop_ui_icon(ApiProp *prop, int icon, int consecutive);
 
-void RNA_def_property_update(PropertyRNA *prop, int noteflag, const char *updatefunc);
-void RNA_def_property_editable_func(PropertyRNA *prop, const char *editable);
-void RNA_def_property_editable_array_func(PropertyRNA *prop, const char *editable);
+void api_def_prop_update(ApiProp *prop, int noteflag, const char *updatefn);
+void api_def_prop_editable_fn(ApiProp *prop, const char *editable);
+void api_def_prop_editable_array_fn(ApiProp *prop, const char *editable);
 
-/**
- * Set custom callbacks for override operations handling.
- *
- * \note \a diff callback will also be used by RNA comparison/equality functions.
- */
-void RNA_def_property_override_funcs(PropertyRNA *prop,
-                                     const char *diff,
-                                     const char *store,
-                                     const char *apply);
+/* Set custom cbs for override ops handling.
+ * note diff cb will also be used by api comparison/equality fns. */
+void api_def_prop_override_fns(ApiProp *prop,
+                               const char *diff,
+                               const char *store,
+                               const char *apply);
 
-void RNA_def_property_update_runtime(PropertyRNA *prop, const void *func);
-void RNA_def_property_poll_runtime(PropertyRNA *prop, const void *func);
+void api_def_prop_update_runtime(ApiProp *prop, const void *fn);
+void api_def_prop_poll_runtime(ApiProp *prop, const void *fn);
 
-void RNA_def_property_dynamic_array_funcs(PropertyRNA *prop, const char *getlength);
-void RNA_def_property_boolean_funcs(PropertyRNA *prop, const char *get, const char *set);
-void RNA_def_property_int_funcs(PropertyRNA *prop,
-                                const char *get,
-                                const char *set,
-                                const char *range);
-void RNA_def_property_float_funcs(PropertyRNA *prop,
-                                  const char *get,
-                                  const char *set,
-                                  const char *range);
-void RNA_def_property_enum_funcs(PropertyRNA *prop,
-                                 const char *get,
-                                 const char *set,
-                                 const char *item);
-void RNA_def_property_string_funcs(PropertyRNA *prop,
-                                   const char *get,
-                                   const char *length,
-                                   const char *set);
+void api_def_prop_dynamic_array_fns(ApiProp *prop, const char *getlength);
+void api_def_prop_bool_fns(ApiProp *prop, const char *get, const char *set);
+void api_def_prop_int_fns(ApiProp *prop,
+                          const char *get,
+                          const char *set,
+                          const char *range);
+void api_def_prop_float_fns(ApiProp *prop,
+                            const char *get,
+                            const char *set,
+                            const char *range);
+void api_def_prop_enum_fns(ApiProp *prop,
+                           const char *get,
+                           const char *set,
+                           const char *item);
+void RNA_def_prop_string_fns(ApiProp *prop,
+                             const char *get,
+                             const char *length,
+                             const char *set);
 void RNA_def_property_pointer_funcs(
     PropertyRNA *prop, const char *get, const char *set, const char *type_fn, const char *poll);
-void RNA_def_property_collection_funcs(PropertyRNA *prop,
+void RNA_def_property_collection_funcs(ApiProp *prop,
                                        const char *begin,
                                        const char *next,
                                        const char *end,
@@ -442,9 +434,9 @@ void api_def_py_data(ApiProp *prop, void *py_data);
 void api_def_prop_bool_fns_runtime(PropertyRNA *prop,
                                    BoolPropGetFn getfn,
                                    BoolPropSetFn setfn);
-void api_def_prop_bool_array_fns_runtime(PropertyRNA *prop,
-                                                  BooleanArrayPropertyGetFunc getfunc,
-                                                  BooleanArrayPropertySetFunc setfunc);
+void api_def_prop_bool_array_fns_runtime(ApiProp *prop,
+                                         BoolArrayPropertyGetFunc getfunc,
+                                         BoolArrayPropertySetFunc setfunc);
 void api_def_prop_int_fns_runtime(ApiProp *prop,
                                   IntPropGetFn getfn,
                                   IntPropSetFn setfn,
