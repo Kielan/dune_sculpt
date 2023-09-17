@@ -77,50 +77,50 @@ EnumPropItem *api_action_local_itemf(struct Cxt *C,
 const EnumPropItem *api_collection_itemf(struct Cxt *C,
                                          struct ApiPtr *ptr,
                                          struct ApiProp *prop,
-                                             bool *r_free);
+                                         bool *r_free);
 const EnumPropItem *api_collection_local_itemf(struct Cxt *C,
-                                              struct PointerRNA *ptr,
-                                              struct PropertyRNA *prop,
+                                              struct ApiPtr *ptr,
+                                              struct ApiProp *prop,
                                               bool *r_free);
-const EnumPropItem *RNA_image_itemf(struct Cxt *C,
-                                        struct ApiPtr *ptr,
-                                        struct ApiProp *prop,
-                                        bool *r_free);
-const EnumPropItem *RNA_image_local_itemf(struct Cxt *C,
+const EnumPropItem *api_image_itemf(struct Cxt *C,
+                                    struct ApiPtr *ptr,
+                                    struct ApiProp *prop,
+                                    bool *r_free);
+const EnumPropItem *api_image_local_itemf(struct Cxt *C,
                                           struct ApiPtr *ptr,
                                           struct ApiProp *prop,
                                           bool *r_free);
-const EnumPropItem *RNA_scene_itemf(struct bContext *C,
-                                        struct PointerRNA *ptr,
-                                        struct PropertyRNA *prop,
+const EnumPropItem *api_scene_itemf(struct Cxt *C,
+                                    struct ApiPtr *ptr,
+                                    struct ApiProp *prop,
+                                    bool *r_free);
+const EnumPropItem *api_scene_without_active_itemf(struct Cxt *C,
+                                                   struct ApiPtr *ptr,
+                                                   struct ApiProp *prop,
+                                                   bool *r_free);
+const EnumPropItem *api_scene_local_itemf(struct Cxt *C,
+                                          struct ApiPtr *ptr,
+                                          struct ApiProp *prop,
+                                          bool *r_free);
+const EnumPropItem *api_movieclip_itemf(struct Cxt *C,
+                                        struct ApiPtr *ptr,
+                                        struct ApiProp *prop,
                                         bool *r_free);
-const EnumPropItem *RNA_scene_without_active_itemf(struct bContext *C,
-                                                       struct PointerRNA *ptr,
-                                                       struct PropertyRNA *prop,
-                                                       bool *r_free);
-const EnumPropItem *RNA_scene_local_itemf(struct bContext *C,
-                                              struct PointerRNA *ptr,
-                                              struct PropertyRNA *prop,
+const EnumPropItem *api_movieclip_local_itemf(struct Cxt *C,
+                                              struct ApiPtr *ptr,
+                                              struct ApiProp *prop,
                                               bool *r_free);
-const EnumPropItem *RNA_movieclip_itemf(struct bContext *C,
-                                            struct PointerRNA *ptr,
-                                            struct PropertyRNA *prop,
-                                            bool *r_free);
-const EnumPropItem *RNA_movieclip_local_itemf(struct bContext *C,
-                                                  struct PointerRNA *ptr,
-                                                  struct PropertyRNA *prop,
-                                                  bool *r_free);
-const EnumPropItem *RNA_mask_itemf(struct bContext *C,
-                                       struct PointerRNA *ptr,
-                                       struct PropertyRNA *prop,
-                                       bool *r_free);
-const EnumPropItem *RNA_mask_local_itemf(struct Ctx *C,
-                                             struct ApiPtr *ptr,
+const EnumPropItem *api_mask_itemf(struct Cxt *C,
+                                   struct ApiPtr *ptr,
+                                   struct ApiProp *prop,
+                                   bool *r_free);
+const EnumPropItem *api_mask_local_itemf(struct Cxt *C,
+                                         struct ApiPtr *ptr,
                                              struct ApiProp *prop,
                                              bool *r_free);
 
-/* Non confirming, utility function. */
-const EnumPropItem *api_enum_node_tree_types_itemf_impl(struct Context *C, bool *r_free);
+/* Non confirming, util fn. */
+const EnumPropItem *api_enum_node_tree_types_itemf_impl(struct Cxt *C, bool *r_free);
 
 #ifdef __cplusplus
 }
