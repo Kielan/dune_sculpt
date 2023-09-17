@@ -802,19 +802,19 @@ static void api_def_mask_splines(BlenderRNA *brna)
   RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* active spline */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskSpline");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_MaskLayer_active_spline_get", "rna_MaskLayer_active_spline_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Spline", "Active spline of masking layer");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  RNA_def_prop_struct_type(prop, "MaskSpline");
+  RNA_def_prop_ptr_fns(
+      prop, "api_MaskLayer_active_spline_get", "api_MaskLayer_active_spline_set", NULL, NULL);
+  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  RNA_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
 
   /* active point */
-  prop = RNA_def_property(srna, "active_point", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskSplinePoint");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_MaskLayer_active_spline_point_get",
-                                 "rna_MaskLayer_active_spline_point_set",
+  prop = api_def_prop(sapi, "active_point", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "MaskSplinePoint");
+  api_def_prop_ptr_fn(prop,
+                                 "api_MaskLayer_active_spline_point_get",
+                                 "api_MaskLayer_active_spline_point_set",
                                  NULL,
                                  NULL);
   RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
