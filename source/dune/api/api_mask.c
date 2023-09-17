@@ -781,33 +781,33 @@ static void api_def_mask_splines(BlenderRNA *brna)
   ApiProp *prop;
   ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "MaskSplines", NULL);
-  RNA_def_struct_sdna(srna, "MaskLayer");
-  RNA_def_struct_ui_text(srna, "Mask Splines", "Collection of masking splines");
+  sapi = api_def_struct(dapi, "MaskSplines", NULL);
+  api_def_struct_stype(sapi, "MaskLayer");
+  api_def_struct_ui_text(sapi, "Mask Splines", "Collection of masking splines");
 
   /* Create new spline */
-  func = RNA_def_function(srna, "new", "rna_MaskLayer_spline_new");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Add a new spline to the layer");
-  parm = RNA_def_pointer(func, "spline", "MaskSpline", "", "The newly created spline");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_MaskLayer_spline_new");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Add a new spline to the layer");
+  parm = api_def_ptr(fn, "spline", "MaskSpline", "", "The newly created spline");
+  apu_def_fn_return(fn, parm);
 
   /* Remove the spline */
-  func = RNA_def_function(srna, "remove", "rna_MaskLayer_spline_remove");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Remove a spline from a layer");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "spline", "MaskSpline", "", "The spline to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_MaskLayer_spline_remove");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Remove a spline from a layer");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "spline", "MaskSpline", "", "The spline to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* active spline */
   prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
-  RNA_def_prop_struct_type(prop, "MaskSpline");
-  RNA_def_prop_ptr_fns(
+  api_def_prop_struct_type(prop, "MaskSpline");
+  api_def_prop_ptr_fns(
       prop, "api_MaskLayer_active_spline_get", "api_MaskLayer_active_spline_set", NULL, NULL);
-  RNA_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
 
   /* active point */
   prop = api_def_prop(sapi, "active_point", PROP_POINTER, PROP_NONE);
@@ -817,47 +817,47 @@ static void api_def_mask_splines(BlenderRNA *brna)
                                  "api_MaskLayer_active_spline_point_set",
                                  NULL,
                                  NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Spline", "Active spline of masking layer");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
 }
 
-static void rna_def_maskSplinePoints(BlenderRNA *brna)
+static void api_def_maskSplinePoints(DuneApi *dapi)
 {
-  StructRNA *srna;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiStruct *sapi;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "MaskSplinePoints", NULL);
-  RNA_def_struct_sdna(srna, "MaskSpline");
-  RNA_def_struct_ui_text(srna, "Mask Spline Points", "Collection of masking spline points");
+  sapi = api_def_struct(dapi, "MaskSplinePoints", NULL);
+  api_def_struct_stype(sapi, "MaskSpline");
+  api_def_struct_ui_text(sapi, "Mask Spline Points", "Collection of masking spline points");
 
   /* Create new point */
-  func = RNA_def_function(srna, "add", "rna_MaskSpline_points_add");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Add a number of point to this spline");
-  parm = RNA_def_int(
-      func, "count", 1, 0, INT_MAX, "Number", "Number of points to add to the spline", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_function(sapi, "add", "rna_MaskSpline_points_add");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Add a number of point to this spline");
+  parm = api_def_int(
+      fn, "count", 1, 0, INT_MAX, "Number", "Number of points to add to the spline", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* Remove the point */
-  func = RNA_def_function(srna, "remove", "rna_MaskSpline_point_remove");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Remove a point from a spline");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "point", "MaskSplinePoint", "", "The point to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_MaskSpline_point_remove");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Remove a point from a spline");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "point", "MaskSplinePoint", "", "The point to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 }
 
-static void rna_def_maskSpline(BlenderRNA *brna)
+static void api_def_maskSpline(DuneApi *dapi)
 {
-  static const EnumPropertyItem spline_interpolation_items[] = {
+  static const EnumPropItem spline_interpolation_items[] = {
       {MASK_SPLINE_INTERP_LINEAR, "LINEAR", 0, "Linear", ""},
       {MASK_SPLINE_INTERP_EASE, "EASE", 0, "Ease", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem spline_offset_mode_items[] = {
+  static const EnumPropItem spline_offset_mode_items[] = {
       {MASK_SPLINE_OFFSET_EVEN, "EVEN", 0, "Even", "Calculate even feather offset"},
       {MASK_SPLINE_OFFSET_SMOOTH,
        "SMOOTH",
@@ -867,13 +867,13 @@ static void rna_def_maskSpline(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_maskSplinePoint(brna);
+  api_def_maskSplinePoint(dapi);
 
-  srna = RNA_def_struct(brna, "MaskSpline", NULL);
-  RNA_def_struct_ui_text(srna, "Mask spline", "Single spline used for defining mask shape");
+  sapi = api_def_struct(dapi, "MaskSpline", NULL);
+  api_def_struct_ui_text(sapi, "Mask spline", "Single spline used for defining mask shape");
 
   /* offset mode */
   prop = api_def_prop(sapi, "offset_mode", PROP_ENUM, PROP_NONE);
@@ -889,7 +889,7 @@ static void rna_def_maskSpline(BlenderRNA *brna)
   api_def_prop_enum_items(prop, spline_interpolation_items);
   api_def_prop_ui_text(
       prop, "Weight Interpolation", "The type of weight interpolation for spline");
-  api_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* cyclic */
   prop = api_def_prop(sapi, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
@@ -899,11 +899,11 @@ static void rna_def_maskSpline(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
 
   /* fill */
-  prop = RNA_def_property(srna, "use_fill", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", MASK_SPLINE_NOFILL);
-  RNA_def_property_ui_text(prop, "Fill", "Make this spline filled");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "use_fill", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", MASK_SPLINE_NOFILL);
+  api_def_prop_ui_text(prop, "Fill", "Make this spline filled");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
 
   /* self-intersection check */
   prop = RNA_def_property(srna, "use_self_intersection_check", PROP_BOOLEAN, PROP_NONE);
