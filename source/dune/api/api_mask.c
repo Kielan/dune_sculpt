@@ -668,24 +668,24 @@ static void api_def_maskSplinePointUW(DuneApi *dapi)
 
   /* weight */
   prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
-  api_def_prop_float_sdna(prop, NULL, "w");
+  api_def_prop_float_stype(prop, NULL, "w");
   api_def_prop_range(prop, 0.0, 1.0);
-  RNA_def_prop_ui_text(prop, "Weight", "Weight of feather point");
-  RNA_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_ui_text(prop, "Weight", "Weight of feather point");
+  api_def_prop_update(prop, 0, "rna_Mask_update_data");
 
   /* select */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SELECT);
-  RNA_def_property_ui_text(prop, "Select", "Selection status");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
+  api_def_prop_ui_text(prop, "Select", "Selection status");
+  api_def_prop_update(prop, 0, "rna_Mask_update_data");
 }
 
-static void rna_def_maskSplinePoint(BlenderRNA *brna)
+static void api_def_maskSplinePoint(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem handle_type_items[] = {
+  static const EnumPropItem handle_type_items[] = {
       {HD_AUTO, "AUTO", 0, "Auto", ""},
       {HD_VECT, "VECTOR", 0, "Vector", ""},
       {HD_ALIGN, "ALIGNED", 0, "Aligned Single", ""},
@@ -694,74 +694,74 @@ static void rna_def_maskSplinePoint(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  rna_def_maskSplinePointUW(brna);
+  api_def_maskSplinePointUW(dapi);
 
-  srna = RNA_def_struct(brna, "MaskSplinePoint", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Mask Spline Point", "Single point in spline used for defining mask");
+  sapi = api_def_struct(dapi, "MaskSplinePoint", NULL);
+  api_def_struct_ui_text(
+      sapi, "Mask Spline Point", "Single point in spline used for defining mask");
 
   /* Vector values */
-  prop = RNA_def_property(srna, "handle_left", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_float_funcs(
-      prop, "rna_MaskSplinePoint_handle1_get", "rna_MaskSplinePoint_handle1_set", NULL);
-  RNA_def_property_ui_text(prop, "Handle 1", "Coordinates of the first handle");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "handle_left", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 2);
+  api_def_prop_float_fns(
+      prop, "api_MaskSplinePoint_handle1_get", "rna_MaskSplinePoint_handle1_set", NULL);
+  api_def_prop_ui_text(prop, "Handle 1", "Coordinates of the first handle");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
-  prop = RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_float_funcs(
-      prop, "rna_MaskSplinePoint_ctrlpoint_get", "rna_MaskSplinePoint_ctrlpoint_set", NULL);
-  RNA_def_property_ui_text(prop, "Control Point", "Coordinates of the control point");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "co", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 2);
+  api_def_prop_float_fns(
+      prop, "api_MaskSplinePoint_ctrlpoint_get", "api_MaskSplinePoint_ctrlpoint_set", NULL);
+  api_def_prop_ui_text(prop, "Control Point", "Coordinates of the control point");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
-  prop = RNA_def_property(srna, "handle_right", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_float_funcs(
-      prop, "rna_MaskSplinePoint_handle2_get", "rna_MaskSplinePoint_handle2_set", NULL);
-  RNA_def_property_ui_text(prop, "Handle 2", "Coordinates of the second handle");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
-
-  /* handle_type */
-  prop = RNA_def_property(srna, "handle_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_funcs(
-      prop, "rna_MaskSplinePoint_handle_type_get", "rna_MaskSplinePoint_handle_type_set", NULL);
-  RNA_def_property_enum_items(prop, handle_type_items);
-  RNA_def_property_ui_text(prop, "Handle Type", "Handle type");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "handle_right", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_array(prop, 2);
+  api_def_prop_float_fns(
+      prop, "api_MaskSplinePoint_handle2_get", "api_MaskSplinePoint_handle2_set", NULL);
+  api_def_prop_ui_text(prop, "Handle 2", "Coordinates of the second handle");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* handle_type */
-  prop = RNA_def_property(srna, "handle_left_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_MaskSplinePoint_handle_left_type_get",
-                              "rna_MaskSplinePoint_handle_left_type_set",
-                              NULL);
-  RNA_def_property_enum_items(prop, handle_type_items);
-  RNA_def_property_ui_text(prop, "Handle 1 Type", "Handle type");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "handle_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_fns(
+      prop, "rna_MaskSplinePoint_handle_type_get", "api_MaskSplinePoint_handle_type_set", NULL);
+  api_def_prop_enum_items(prop, handle_type_items);
+  api_def_prop_ui_text(prop, "Handle Type", "Handle type");
+  api_def_prop_update(prop, 0, "sapi_Mask_update_data");
+
+  /* handle_type */
+  prop = api_def_prop(sapi, "handle_left_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_fns(prop,
+                        "api_MaskSplinePoint_handle_left_type_get",
+                        "api_MaskSplinePoint_handle_left_type_set",
+                        NULL);
+  api_def_prop_enum_items(prop, handle_type_items);
+  api_def_prop_ui_text(prop, "Handle 1 Type", "Handle type");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* handle_right */
-  prop = RNA_def_property(srna, "handle_right_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_funcs(prop,
-                              "rna_MaskSplinePoint_handle_right_type_get",
-                              "rna_MaskSplinePoint_handle_right_type_set",
-                              NULL);
-  RNA_def_property_enum_items(prop, handle_type_items);
-  RNA_def_property_ui_text(prop, "Handle 2 Type", "Handle type");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "handle_right_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_fns(prop,
+                        "api_MaskSplinePoint_handle_right_type_get",
+                        "api_MaskSplinePoint_handle_right_type_set",
+                        NULL);
+  api_def_prop_enum_items(prop, handle_type_items);
+  api_def_prop_ui_text(prop, "Handle 2 Type", "Handle type");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* weight */
-  prop = RNA_def_property(srna, "weight", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "bezt.weight");
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_ui_text(prop, "Weight", "Weight of the point");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "weight", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "bezt.weight");
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_ui_text(prop, "Weight", "Weight of the point");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* select */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "bezt.f1", SELECT);
-  RNA_def_property_ui_text(prop, "Select", "Selection status");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "bezt.f1", SELECT);
+  api_def_prop_ui_text(prop, "Select", "Selection status");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* parent */
   prop = RNA_def_property(srna, "parent", PROP_POINTER, PROP_NONE);
