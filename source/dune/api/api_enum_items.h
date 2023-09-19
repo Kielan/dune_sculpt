@@ -1,17 +1,17 @@
 /* NOTE: this is included multiple times with different #defines for DEF_ENUM. */
 
 /* use in cases where only dynamic types are used */
-DEF_ENUM(DummyRNA_NULL_items)
-DEF_ENUM(DummyRNA_DEFAULT_items)
+DEF_ENUM(DummyApi_NULL_items)
+DEF_ENUM(DummyApi_DEFAULT_items)
 
 /* all others should follow 'rna_enum_*_items' naming */
-DEF_ENUM(rna_enum_id_type_items)
+DEF_ENUM(api_enum_id_type_items)
 
-DEF_ENUM(rna_enum_object_mode_items)
-DEF_ENUM(rna_enum_workspace_object_mode_items)
-DEF_ENUM(rna_enum_object_empty_drawtype_items)
-DEF_ENUM(rna_enum_object_gpencil_type_items)
-DEF_ENUM(rna_enum_metaelem_type_items)
+DEF_ENUM(api_enum_object_mode_items)
+DEF_ENUM(api_enum_workspace_object_mode_items)
+DEF_ENUM(api_enum_object_empty_drawtype_items)
+DEF_ENUM(api_enum_object_gpencil_type_items)
+DEF_ENUM(api_enum_metaelem_type_items)
 
 DEF_ENUM(rna_enum_proportional_falloff_items)
 DEF_ENUM(rna_enum_proportional_falloff_curve_only_items)
@@ -59,38 +59,38 @@ DEF_ENUM(rna_enum_views_format_items)
 DEF_ENUM(rna_enum_views_format_multilayer_items)
 DEF_ENUM(rna_enum_views_format_multiview_items)
 DEF_ENUM(rna_enum_stereo3d_display_items)
-DEF_ENUM(rna_enum_stereo3d_anaglyph_type_items)
-DEF_ENUM(rna_enum_stereo3d_interlace_type_items)
+DEF_ENUM(api_enum_stereo3d_anaglyph_type_items)
+DEF_ENUM(api_enum_stereo3d_interlace_type_items)
 
 #ifdef WITH_OPENEXR
-DEF_ENUM(rna_enum_exr_codec_items)
+DEF_ENUM(api_enum_exr_codec_items)
 #endif
-DEF_ENUM(rna_enum_color_sets_items)
+DEF_ENUM(api_enum_color_sets_items)
 
-DEF_ENUM(rna_enum_beztriple_keyframe_type_items)
-DEF_ENUM(rna_enum_beztriple_interpolation_mode_items)
-DEF_ENUM(rna_enum_beztriple_interpolation_easing_items)
-DEF_ENUM(rna_enum_fcurve_auto_smoothing_items)
-DEF_ENUM(rna_enum_keyframe_handle_type_items)
-DEF_ENUM(rna_enum_driver_target_rotation_mode_items)
+DEF_ENUM(api_enum_beztriple_keyframe_type_items)
+DEF_ENUM(api_enum_beztriple_interpolation_mode_items)
+DEF_ENUM(api_enum_beztriple_interpolation_easing_items)
+DEF_ENUM(api_enum_fcurve_auto_smoothing_items)
+DEF_ENUM(api_enum_keyframe_handle_type_items)
+DEF_ENUM(api_enum_driver_target_rotation_mode_items)
 
-DEF_ENUM(rna_enum_keyingset_path_grouping_items)
-DEF_ENUM(rna_enum_keying_flag_items)
-DEF_ENUM(rna_enum_keying_flag_items_api)
+DEF_ENUM(api_enum_keyingset_path_grouping_items)
+DEF_ENUM(api_enum_keying_flag_items)
+DEF_ENUM(api_enum_keying_flag_items_api)
 
-DEF_ENUM(rna_enum_fmodifier_type_items)
+DEF_ENUM(api_enum_fmod_type_items)
 
-DEF_ENUM(rna_enum_motionpath_bake_location_items)
+DEF_ENUM(api_enum_motionpath_bake_location_items)
 
-DEF_ENUM(rna_enum_event_value_items)
-DEF_ENUM(rna_enum_event_direction_items)
+DEF_ENUM(api_enum_event_value_items)
+DEF_ENUM(api_enum_event_direction_items)
 
-DEF_ENUM(rna_enum_event_type_items)
-DEF_ENUM(rna_enum_event_type_mask_items)
+DEF_ENUM(api_enum_event_type_items)
+DEF_ENUM(api_enum_event_type_mask_items)
 
-DEF_ENUM(rna_enum_operator_type_flag_items)
-DEF_ENUM(rna_enum_operator_return_items)
-DEF_ENUM(rna_enum_operator_property_tags)
+DEF_ENUM(api_enum_op_type_flag_items)
+DEF_ENUM(api_enum_op_return_items)
+DEF_ENUM(api_enum_op_prop_tags)
 
 DEF_ENUM(rna_enum_brush_sculpt_tool_items)
 DEF_ENUM(rna_enum_brush_uv_sculpt_tool_items)
@@ -101,54 +101,54 @@ DEF_ENUM(rna_enum_brush_gpencil_vertex_types_items)
 DEF_ENUM(rna_enum_brush_gpencil_sculpt_types_items)
 DEF_ENUM(rna_enum_brush_gpencil_weight_types_items)
 DEF_ENUM(rna_enum_brush_curves_sculpt_tool_items);
-DEF_ENUM(rna_enum_brush_image_tool_items)
+DEF_ENUM(api_enum_brush_image_tool_items)
 
-DEF_ENUM(rna_enum_axis_xy_items)
-DEF_ENUM(rna_enum_axis_xyz_items)
+DEF_ENUM(api_enum_axis_xy_items)
+DEF_ENUM(api_enum_axis_xyz_items)
 
-DEF_ENUM(rna_enum_axis_flag_xyz_items)
+DEF_ENUM(api_enum_axis_flag_xyz_items)
 
-DEF_ENUM(rna_enum_symmetrize_direction_items)
+DEF_ENUM(api_enum_symmetrize_direction_items)
 
-DEF_ENUM(rna_enum_texture_type_items)
+DEF_ENUM(api_enum_texture_type_items)
 
-DEF_ENUM(rna_enum_light_type_items)
+DEF_ENUM(api_enum_light_type_items)
 
-DEF_ENUM(rna_enum_lightprobes_type_items)
+DEF_ENUM(api_enum_lightprobes_type_items)
 
-DEF_ENUM(rna_enum_unpack_method_items)
+DEF_ENUM(api_enum_unpack_method_items)
 
-DEF_ENUM(rna_enum_object_type_items)
-DEF_ENUM(rna_enum_object_rotation_mode_items)
+DEF_ENUM(api_enum_object_type_items)
+DEF_ENUM(api_enum_object_rotation_mode_items)
 
-DEF_ENUM(rna_enum_object_type_curve_items)
+DEF_ENUM(api_enum_object_type_curve_items)
 
-DEF_ENUM(rna_enum_rigidbody_object_type_items)
-DEF_ENUM(rna_enum_rigidbody_object_shape_items)
-DEF_ENUM(rna_enum_rigidbody_constraint_type_items)
+DEF_ENUM(api_enum_rigidbody_object_type_items)
+DEF_ENUM(api_enum_rigidbody_object_shape_items)
+DEF_ENUM(api_enum_rigidbody_constraint_type_items)
 
-DEF_ENUM(rna_enum_object_axis_items)
+DEF_ENUM(api_enum_object_axis_items)
 
-DEF_ENUM(rna_enum_render_pass_type_items)
+DEF_ENUM(api_enum_render_pass_type_items)
 
-DEF_ENUM(rna_enum_bake_pass_type_items)
-DEF_ENUM(rna_enum_bake_pass_filter_type_items)
+DEF_ENUM(api_enum_bake_pass_type_items)
+DEF_ENUM(api_enum_bake_pass_filter_type_items)
 
-DEF_ENUM(rna_enum_keymap_propvalue_items)
+DEF_ENUM(api_enum_keymap_propvalue_items)
 
-DEF_ENUM(rna_enum_operator_context_items)
+DEF_ENUM(api_enum_op_cxt_items)
 
-DEF_ENUM(rna_enum_wm_report_items)
+DEF_ENUM(api_enum_wm_report_items)
 
-DEF_ENUM(rna_enum_property_type_items)
-DEF_ENUM(rna_enum_property_subtype_items)
-DEF_ENUM(rna_enum_property_unit_items)
+DEF_ENUM(api_enum_prop_type_items)
+DEF_ENUM(api_enum_prop_subtype_items)
+DEF_ENUM(api_enum_prop_unit_items)
 
-DEF_ENUM(rna_enum_shading_type_items)
+DEF_ENUM(api_enum_shading_type_items)
 
-DEF_ENUM(rna_enum_navigation_mode_items)
+DEF_ENUM(api_enum_nav_mode_items)
 
-DEF_ENUM(rna_enum_node_socket_in_out_items)
+DEF_ENUM(api_enum_node_socket_in_out_items)
 
 DEF_ENUM(api_enum_node_math_items)
 DEF_ENUM(api_enum_mapping_type_items)
@@ -206,9 +206,9 @@ DEF_ENUM(a_enum_subdivision_boundary_smooth_items)
 
 DEF_ENUM(a_enum_transform_orientation_items)
 
-/* Not available to RNA pre-processing (`makesrna`).
+/* Not available to api pre-processing (`makesrna`).
  * Defined in editors for example. */
-#ifndef API_MAKESRNA
+#ifndef API_MAKESAPI
 
 DEF_ENUM(a_enum_particle_edit_hair_brush_items)
 DEF_ENUM(a_enum_particle_edit_disconnected_hair_brush_items)
