@@ -810,13 +810,13 @@ static void api_def_mask_splines(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
 
   /* active point */
-  prop = api_def_prop(sapi, "active_point", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "active_point", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "MaskSplinePoint");
   api_def_prop_ptr_fn(prop,
-                                 "api_MaskLayer_active_spline_point_get",
-                                 "api_MaskLayer_active_spline_point_set",
-                                 NULL,
-                                 NULL);
+                      "api_MaskLayer_active_spline_point_get",
+                      "api_MaskLayer_active_spline_point_set",
+                      NULL,
+                      NULL);
   api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
   api_def_prop_ui_text(prop, "Active Spline", "Active spline of masking layer");
 }
@@ -892,148 +892,149 @@ static void api_def_maskSpline(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* cyclic */
-  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MASK_SPLINE_CYCLIC);
-  RNA_def_prop_ui_text(prop, "Cyclic", "Make this spline a closed loop");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
+  prop = api_def_prop(sapi, "use_cyclic", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MASK_SPLINE_CYCLIC);
+  api_def_prop_ui_text(prop, "Cyclic", "Make this spline a closed loop");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, "api_Mask_update_data");
 
   /* fill */
-  prop = api_def_prop(sapi, "use_fill", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_fill", PROP_BOOL, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_bool_negative_stype(prop, NULL, "flag", MASK_SPLINE_NOFILL);
   api_def_prop_ui_text(prop, "Fill", "Make this spline filled");
-  api_def_prop_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, "api_Mask_update_data");
 
   /* self-intersection check */
-  prop = RNA_def_property(srna, "use_self_intersection_check", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MASK_SPLINE_NOINTERSECT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_self_intersection_check", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MASK_SPLINE_NOINTERSECT);
+  api_def_prop_ui_text(
       prop, "Self Intersection Check", "Prevent feather from self-intersections");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, "rna_Mask_update_data");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, "api_Mask_update_data");
 
-  prop = RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskSplinePoint");
-  RNA_def_property_collection_sdna(prop, NULL, "points", "tot_point");
-  RNA_def_property_ui_text(prop, "Points", "Collection of points");
-  RNA_def_property_srna(prop, "MaskSplinePoints");
+  prop = api_def_prop(sapi, "points", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "MaskSplinePoint");
+  api_def_prop_collection_stype(prop, NULL, "points", "tot_point");
+  api_def_prop_ui_text(prop, "Points", "Collection of points");
+  api_def_prop_srna(prop, "MaskSplinePoints");
 }
 
-static void rna_def_mask_layer(BlenderRNA *brna)
+static void api_def_mask_layer(DuneApi *dapi)
 {
-  static const EnumPropertyItem masklay_blend_mode_items[] = {
-      {MASK_BLEND_MERGE_ADD, "MERGE_ADD", 0, "Merge Add", ""},
-      {MASK_BLEND_MERGE_SUBTRACT, "MERGE_SUBTRACT", 0, "Merge Subtract", ""},
-      {MASK_BLEND_ADD, "ADD", 0, "Add", ""},
-      {MASK_BLEND_SUBTRACT, "SUBTRACT", 0, "Subtract", ""},
-      {MASK_BLEND_LIGHTEN, "LIGHTEN", 0, "Lighten", ""},
-      {MASK_BLEND_DARKEN, "DARKEN", 0, "Darken", ""},
-      {MASK_BLEND_MUL, "MUL", 0, "Multiply", ""},
-      {MASK_BLEND_REPLACE, "REPLACE", 0, "Replace", ""},
-      {MASK_BLEND_DIFFERENCE, "DIFFERENCE", 0, "Difference", ""},
+  static const EnumPropItem masklay_blend_mode_items[] = {
+      {MASK_MERGE_ADD, "MERGE_ADD", 0, "Merge Add", ""},
+      {MASK_MERGE_SUBTRACT, "MERGE_SUBTRACT", 0, "Merge Subtract", ""},
+      {MASK_ADD, "ADD", 0, "Add", ""},
+      {MASK_SUBTRACT, "SUBTRACT", 0, "Subtract", ""},
+      {MASK_LIGHTEN, "LIGHTEN", 0, "Lighten", ""},
+      {MASK_DARKEN, "DARKEN", 0, "Darken", ""},
+      {MASK_MUL, "MUL", 0, "Multiply", ""},
+      {MASK_REPLACE, "REPLACE", 0, "Replace", ""},
+      {MASK_DIFFERENCE, "DIFFERENCE", 0, "Difference", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_maskSpline(brna);
-  rna_def_mask_splines(brna);
-  rna_def_maskSplinePoints(brna);
+  api_def_maskSpline(dapi);
+  api_def_mask_splines(dapi);
+  api_def_maskSplinePoints(dapi);
 
-  srna = RNA_def_struct(brna, "MaskLayer", NULL);
-  RNA_def_struct_ui_text(srna, "Mask Layer", "Single layer used for masking pixels");
-  RNA_def_struct_path_func(srna, "rna_MaskLayer_path");
+  //line immediately belownisneither dapi or sapi 
+  sapi = api_def_struct(dapi, "MaskLayer", NULL);
+  api_def_struct_ui_text(sapi, "Mask Layer", "Single layer used for masking pixels");
+  api_def_struct_path_fn(sapi, "api_MaskLayer_path");
 
   /* name */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "Unique name of layer");
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_MaskLayer_name_set");
-  RNA_def_property_string_maxlength(prop, MAX_ID_NAME - 2);
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "Unique name of layer");
+  api_def_prop_string_fns(prop, NULL, NULL, "api_MaskLayer_name_set");
+  api_def_prop_string_maxlength(prop, MAX_ID_NAME - 2);
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
+  api_def_struct_name_prop(sapi, prop);
 
   /* splines */
-  prop = RNA_def_property(srna, "splines", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_MaskLayer_splines_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_struct_type(prop, "MaskSpline");
-  RNA_def_property_ui_text(prop, "Splines", "Collection of splines which defines this layer");
-  RNA_def_property_srna(prop, "MaskSplines");
+  prop = api_def_prop(sapi, "splines", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                              "api_MaskLayer_splines_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_struct_type(prop, "MaskSpline");
+  api_def_prop_ui_text(prop, "Splines", "Collection of splines which defines this layer");
+  api_def_prop_sapi(prop, "MaskSplines");
 
   /* restrict */
-  prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "visibility_flag", MASK_HIDE_VIEW);
-  RNA_def_property_ui_text(prop, "Restrict View", "Restrict visibility in the viewport");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_VIEW_OFF, -1);
-  RNA_def_property_update(prop, NC_MASK | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "hide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "visibility_flag", MASK_HIDE_VIEW);
+  api_def_prop_ui_text(prop, "Restrict View", "Restrict visibility in the viewport");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_VIEW_OFF, -1);
+  api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "hide_select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "visibility_flag", MASK_HIDE_SELECT);
-  RNA_def_property_ui_text(prop, "Restrict Select", "Restrict selection in the viewport");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, -1);
-  RNA_def_property_update(prop, NC_MASK | ND_DRAW, NULL);
+  prop = api_def_prop(sapi, "hide_select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "visibility_flag", MASK_HIDE_SELECT);
+  api_def_prop_ui_text(prop, "Restrict Select", "Restrict selection in the viewport");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_SELECT_OFF, -1);
+  api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
-  prop = RNA_def_property(srna, "hide_render", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "visibility_flag", MASK_HIDE_RENDER);
-  RNA_def_property_ui_text(prop, "Restrict Render", "Restrict renderability");
-  RNA_def_property_ui_icon(prop, ICON_RESTRICT_RENDER_OFF, -1);
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "hide_render", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "visibility_flag", MASK_HIDE_RENDER);
+  api_def_prop_ui_text(prop, "Restrict Render", "Restrict renderability");
+  api_def_prop_ui_icon(prop, ICON_RESTRICT_RENDER_OFF, -1);
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
   /* Select (for dope-sheet). */
-  prop = RNA_def_property(srna, "select", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MASK_LAYERFLAG_SELECT);
-  RNA_def_property_ui_text(prop, "Select", "Layer is selected for editing in the Dope Sheet");
-  //  RNA_def_property_update(prop, NC_SCREEN | ND_MASK, NULL);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MASK_LAYERFLAG_SELECT);
+  api_def_prop_ui_text(prop, "Select", "Layer is selected for editing in the Dope Sheet");
+  //  api_def_prop_update(prop, NC_SCREEN | ND_MASK, NULL);
 
   /* render settings */
-  prop = RNA_def_property(srna, "alpha", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "alpha");
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
-  RNA_def_property_ui_text(prop, "Opacity", "Render Opacity");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "alpha", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "alpha");
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
+  api_def_prop_ui_text(prop, "Opacity", "Render Opacity");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
   /* weight interpolation */
-  prop = RNA_def_property(srna, "blend", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "blend");
-  RNA_def_property_enum_items(prop, masklay_blend_mode_items);
-  RNA_def_property_ui_text(prop, "Blend", "Method of blending mask layers");
-  RNA_def_property_update(prop, 0, "rna_Mask_update_data");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "blend", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "blend");
+  api_def_prop_enum_items(prop, masklay_blend_mode_items);
+  api_def_prop_ui_text(prop, "Blend", "Method of blending mask layers");
+  api_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "blend_flag", MASK_BLENDFLAG_INVERT);
-  RNA_def_property_ui_text(prop, "Restrict View", "Invert the mask black/white");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  prop = api_def_prop(sapi, "invert", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "blend_flag", MASK_BLENDFLAG_INVERT);
+  api_def_prop_ui_text(prop, "Restrict View", "Invert the mask black/white");
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "falloff", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "falloff");
-  RNA_def_property_enum_items(prop, rna_enum_proportional_falloff_curve_only_items);
-  RNA_def_property_ui_text(prop, "Falloff", "Falloff type the feather");
-  RNA_def_property_translation_context(prop,
+  prop = api_def_prop(sapi, "falloff", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "falloff");
+  api_def_prop_enum_items(prop, rna_enum_proportional_falloff_curve_only_items);
+  api_def_prop_ui_text(prop, "Falloff", "Falloff type the feather");
+  api_def_prop_lang_cxt(prop,
                                        BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
   /* filling options */
-  prop = RNA_def_property(srna, "use_fill_holes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", MASK_LAYERFLAG_FILL_DISCRETE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_fill_holes", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_negative_sdna(prop, NULL, "flag", MASK_LAYERFLAG_FILL_DISCRETE);
+  api_def_prop_ui_text(
       prop, "Calculate Holes", "Calculate holes when filling overlapping curves");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
-  prop = RNA_def_property(srna, "use_fill_overlap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", MASK_LAYERFLAG_FILL_OVERLAP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_fill_overlap", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_prop_bool_stype(prop, NULL, "flag", MASK_LAYERFLAG_FILL_OVERLAP);
+  RNA_def_prop_ui_text(
       prop, "Calculate Overlap", "Calculate self intersections and overlap before filling");
-  RNA_def_property_update(prop, NC_MASK | NA_EDITED, NULL);
+  RNA_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 }
 
 static void rna_def_masklayers(BlenderRNA *brna, PropertyRNA *cprop)
@@ -1049,78 +1050,78 @@ static void rna_def_masklayers(BlenderRNA *brna, PropertyRNA *cprop)
   RNA_def_struct_sdna(srna, "Mask");
   RNA_def_struct_ui_text(srna, "Mask Layers", "Collection of layers used by mask");
 
-  func = RNA_def_function(srna, "new", "rna_Mask_layers_new");
-  RNA_def_function_ui_description(func, "Add layer to this mask");
-  RNA_def_string(func, "name", NULL, 0, "Name", "Name of new layer");
-  parm = RNA_def_pointer(func, "layer", "MaskLayer", "", "New mask layer");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "new", "api_Mask_layers_new");
+  api_def_fn_ui_description(fn, "Add layer to this mask");
+  api_def_string(fn, "name", NULL, 0, "Name", "Name of new layer");
+  parm = api_def_ptr(fn, "layer", "MaskLayer", "", "New mask layer");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_Mask_layers_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove layer from this mask");
-  parm = RNA_def_pointer(func, "layer", "MaskLayer", "", "Shape to be removed");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "remove", "api_Mask_layers_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove layer from this mask");
+  parm = api_def_ptr(fn, "layer", "MaskLayer", "", "Shape to be removed");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* clear all layers */
-  func = RNA_def_function(srna, "clear", "rna_Mask_layers_clear");
-  RNA_def_function_ui_description(func, "Remove all mask layers");
+  fn = api_def_fn(sapi, "clear", "api_Mask_layers_clear");
+  api_def_fn_ui_description(fn, "Remove all mask layers");
 
   /* active layer */
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "MaskLayer");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_Mask_layer_active_get", "rna_Mask_layer_active_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "Active Shape", "Active layer in this mask");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "MaskLayer");
+  api_def_prop_ptr_fns(
+      prop, "api_Mask_layer_active_get", "api_Mask_layer_active_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "Active Shape", "Active layer in this mask");
 }
 
-static void rna_def_mask(BlenderRNA *brna)
+static void api_def_mask(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_mask_layer(brna);
+  api_def_mask_layer(dapi);
 
-  srna = RNA_def_struct(brna, "Mask", "ID");
-  RNA_def_struct_ui_text(srna, "Mask", "Mask data-block defining mask for compositing");
-  RNA_def_struct_ui_icon(srna, ICON_MOD_MASK);
+  sapi = api_def_struct(dapi, "Mask", "ID");
+  api_def_struct_ui_text(sapi, "Mask", "Mask data-block defining mask for compositing");
+  api_def_struct_ui_icon(sapi, ICON_MOD_MASK);
 
   /* mask layers */
-  prop = RNA_def_property(srna, "layers", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_Mask_layers_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
+  prop = api_def_prop(sapi, "layers", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_fns(prop,
+                                    "api_Mask_layers_begin",
+                                    "api_iter_list_next",
+                                    "api_iter_list_end",
+                                    "api_iter_list_get",
                                     NULL,
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_struct_type(prop, "MaskLayer");
-  RNA_def_property_ui_text(prop, "Layers", "Collection of layers which defines this mask");
-  rna_def_masklayers(brna, prop);
+  api_def_prop_struct_type(prop, "MaskLayer");
+  api_def_prop_ui_text(prop, "Layers", "Collection of layers which defines this mask");
+  api_def_masklayers(dapi, prop);
 
   /* active masklay index */
-  prop = RNA_def_property(srna, "active_layer_index", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "masklay_act");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_int_funcs(prop,
-                             "rna_Mask_layer_active_index_get",
-                             "rna_Mask_layer_active_index_set",
-                             "rna_Mask_layer_active_index_range");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "active_layer_index", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "masklay_act");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_fns(prop,
+                       "api_Mask_layer_active_index_get",
+                       "api_Mask_layer_active_index_set",
+                       "api_Mask_layer_active_index_range");
+  api_def_prop_ui_text(
       prop, "Active Shape Index", "Index of active layer in list of all mask's layers");
-  RNA_def_property_update(prop, NC_MASK | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
   /* frame range */
-  prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
+  prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
   RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_int_sdna(prop, NULL, "sfra");
-  RNA_def_prop_int_funcs(prop, NULL, "rna_Mask_start_frame_set", NULL);
+  RNA_def_prop_int_stype(prop, NULL, "sfra");
+  RNA_def_prop_int_fns(prop, NULL, "rna_Mask_start_frame_set", NULL);
   RNA_def_prop_range(prop, MINFRAME, MAXFRAME);
   RNA_def_prop_ui_text(prop, "Start Frame", "First frame of the mask (used for sequencer)");
-  RNA_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
+  api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
   prop = api_def_prop(srna, "frame_end", PROP_INT, PROP_TIME);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
