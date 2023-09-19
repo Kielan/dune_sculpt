@@ -523,7 +523,7 @@ typedef enum FnFlag {
    * and can be implemented/redefined in Python. */
   FN_REGISTER = (1 << 5),
   /** Subclasses can choose not to implement this function. */
-  FN_REGISTER_OPTIONAL = FUNC_REGISTER | (1 << 6),
+  FN_REGISTER_OPTIONAL = FN_REGISTER | (1 << 6),
   /* If not set, the Python function implementing this call
    * is not allowed to write into data-blocks.
    * Except for WindowManager and Screen currently, see api_id_write_error() in bpy_rna.  */
@@ -559,16 +559,16 @@ typedef enum StructFlag {
   /* internal flags */
   STRUCT_RUNTIME = (1 << 3),
   /* STRUCT_GENERATED = (1 << 4), */ /* UNUSED */
-  STRUCT_FREE_POINTERS = (1 << 5),
-  /** Menus and Panels don't need properties */
+  STRUCT_FREE_PTRS = (1 << 5),
+  /* Menus and Panels don't need props */
   STRUCT_NO_IDPROPS = (1 << 6),
-  /** e.g. for Operator */
+  /* e.g. for Operator */
   STRUCT_NO_DATABLOCK_IDPROPS = (1 << 7),
-  /** for PropertyGroup which contains pointers to datablocks */
+  /* for PropGroup which contains ptrs to datablocks */
   STRUCT_CONTAINS_DATABLOCK_IDPROPS = (1 << 8),
-  /** Added to type-map DuneApi.structs_map */
+  /* Added to type-map DuneApi.structs_map */
   STRUCT_PUBLIC_NAMESPACE = (1 << 9),
-  /** All subtypes are added too. */
+  /* All subtypes are added too. */
   STRUCT_PUBLIC_NAMESPACE_INHERIT = (1 << 10),
   /* When the ApiPtr.owner_id is NULL, this signifies the prop should be accessed
    * without any cxt (the key-map UI and import/export for example).
@@ -590,7 +590,7 @@ typedef struct ApiStruct *(*StructRegisterFn)(struct Main *main,
                                               StructCbFn call,
                                               StructFreeFn free);
 
-typedef void (*StructUnregisterFn)(struct Main *main, struct ApiStruct *type);m
+typedef void (*StructUnregisterFn)(struct Main *main, struct ApiStruct *type);
 typedef void **(*StructInstanceFn)(ApiPtr *ptr);
 
 typedef struct ApiStruct ApiStruct;
