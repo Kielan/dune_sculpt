@@ -1007,7 +1007,7 @@ static void api_def_mask_layer(DuneApi *dapi)
   api_def_prop_enum_stype(prop, NULL, "blend");
   api_def_prop_enum_items(prop, masklay_blend_mode_items);
   api_def_prop_ui_text(prop, "Blend", "Method of blending mask layers");
-  api_def_prop_update(prop, 0, "rna_Mask_update_data");
+  api_def_prop_update(prop, 0, "api_Mask_update_data");
   api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
   prop = api_def_prop(sapi, "invert", PROP_BOOL, PROP_NONE);
@@ -1017,38 +1017,37 @@ static void api_def_mask_layer(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "falloff", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "falloff");
-  api_def_prop_enum_items(prop, rna_enum_proportional_falloff_curve_only_items);
+  api_def_prop_enum_items(prop, api_enum_proportional_falloff_curve_only_items);
   api_def_prop_ui_text(prop, "Falloff", "Falloff type the feather");
-  api_def_prop_lang_cxt(prop,
-                                       BLT_I18NCONTEXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_CURVE_LEGACY); /* Abusing id_curve :/ */
   api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
   /* filling options */
-  prop = api_def_prop(sapi, "use_fill_holes", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_negative_sdna(prop, NULL, "flag", MASK_LAYERFLAG_FILL_DISCRETE);
+  prop = api_def_prop(sapi, "use_fill_holes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", MASK_LAYERFLAG_FILL_DISCRETE);
   api_def_prop_ui_text(
       prop, "Calculate Holes", "Calculate holes when filling overlapping curves");
   api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 
-  prop = api_def_prop(sapi, "use_fill_overlap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_prop_bool_stype(prop, NULL, "flag", MASK_LAYERFLAG_FILL_OVERLAP);
-  RNA_def_prop_ui_text(
+  prop = api_def_prop(sapi, "use_fill_overlap", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", MASK_LAYERFLAG_FILL_OVERLAP);
+  api_def_prop_ui_text(
       prop, "Calculate Overlap", "Calculate self intersections and overlap before filling");
-  RNA_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
+  api_def_prop_update(prop, NC_MASK | NA_EDITED, NULL);
 }
 
-static void rna_def_masklayers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_masklayers(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   FunctionRNA *func;
   PropertyRNA *parm;
 
-  RNA_def_property_srna(cprop, "MaskLayers");
-  srna = RNA_def_struct(brna, "MaskLayers", NULL);
-  RNA_def_struct_sdna(srna, "Mask");
-  RNA_def_struct_ui_text(srna, "Mask Layers", "Collection of layers used by mask");
+  api_def_prop_sapi(cprop, "MaskLayers");
+  sapi = api_def_struct(dapi, "MaskLayers", NULL);
+  api_def_struct_stype(sapi, "Mask");
+  api_def_struct_ui_text(sapi, "Mask Layers", "Collection of layers used by mask");
 
   fn = api_def_fn(sapi, "new", "api_Mask_layers_new");
   api_def_fn_ui_description(fn, "Add layer to this mask");
@@ -1090,14 +1089,14 @@ static void api_def_mask(DuneApi *dapi)
   /* mask layers */
   prop = api_def_prop(sapi, "layers", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_fns(prop,
-                                    "api_Mask_layers_begin",
-                                    "api_iter_list_next",
-                                    "api_iter_list_end",
-                                    "api_iter_list_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+                              "api_Mask_layers_begin",
+                              "api_iter_list_next",
+                              "api_iter_list_end",
+                              "api_iter_list_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
   api_def_prop_struct_type(prop, "MaskLayer");
   api_def_prop_ui_text(prop, "Layers", "Collection of layers which defines this mask");
   api_def_masklayers(dapi, prop);
@@ -1116,17 +1115,17 @@ static void api_def_mask(DuneApi *dapi)
 
   /* frame range */
   prop = api_def_prop(sapi, "frame_start", PROP_INT, PROP_TIME);
-  RNA_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_prop_int_stype(prop, NULL, "sfra");
-  RNA_def_prop_int_fns(prop, NULL, "rna_Mask_start_frame_set", NULL);
-  RNA_def_prop_range(prop, MINFRAME, MAXFRAME);
-  RNA_def_prop_ui_text(prop, "Start Frame", "First frame of the mask (used for sequencer)");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_int_stype(prop, NULL, "sfra");
+  api_def_prop_int_fns(prop, NULL, "api_Mask_start_frame_set", NULL);
+  api_def_prop_range(prop, MINFRAME, MAXFRAME);
+  api_def_prop_ui_text(prop, "Start Frame", "First frame of the mask (used for sequencer)");
   api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
 
-  prop = api_def_prop(srna, "frame_end", PROP_INT, PROP_TIME);
+  prop = api_def_prop(sapi, "frame_end", PROP_INT, PROP_TIME);
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_prop_int_sdna(prop, NULL, "efra");
-  api_def_prop_int_funcs(prop, NULL, "rna_Mask_end_frame_set", NULL);
+  api_def_prop_int_stype(prop, NULL, "efra");
+  api_def_prop_int_fnss(prop, NULL, "api_Mask_end_frame_set", NULL);
   api_def_prop_range(prop, MINFRAME, MAXFRAME);
   api_def_prop_ui_text(prop, "End Frame", "Final frame of the mask (used for sequencer)");
   api_def_prop_update(prop, NC_MASK | ND_DRAW, NULL);
