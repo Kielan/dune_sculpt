@@ -553,7 +553,7 @@ static void api_MaskSpline_point_remove(Id *id,
 
   point_index = point - spline->points;
 
-  new_point_array = mem_mallocN(sizeof(MaskSplinePoint) * (spline->tot_point - 1),
+  new_point_array = mem_mallocn(sizeof(MaskSplinePoint) * (spline->tot_point - 1),
                                 "remove mask point");
 
   memcpy(new_point_array, spline->points, sizeof(MaskSplinePoint) * point_index);
@@ -674,7 +674,7 @@ static void api_def_maskSplinePointUW(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* select */
-  prop = api_def_prop(sapi, "select", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "select", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", SELECT);
   api_def_prop_ui_text(prop, "Select", "Selection status");
   api_def_prop_update(prop, 0, "api_Mask_update_data");
@@ -764,7 +764,7 @@ static void api_def_maskSplinePoint(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Mask_update_data");
 
   /* parent */
-  prop = api_def_prop(sapi, "parent", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "parent", PROP_PTR, PROP_NONE);
   api_def_prop_struct_type(prop, "MaskParent");
 
   /* feather points */
@@ -774,7 +774,7 @@ static void api_def_maskSplinePoint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Feather Points", "Points defining feather");
 }
 
-static void api_def_mask_splines(BlenderRNA *brna)
+static void api_def_mask_splines(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiFn *fn;
@@ -832,7 +832,7 @@ static void api_def_maskSplinePoints(DuneApi *dapi)
   api_def_struct_ui_text(sapi, "Mask Spline Points", "Collection of masking spline points");
 
   /* Create new point */
-  fn = api_def_function(sapi, "add", "rna_MaskSpline_points_add");
+  fn = api_def_fn(sapi, "add", "api_MaskSpline_points_add");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_fn_ui_description(fn, "Add a number of point to this spline");
   parm = api_def_int(
@@ -1041,8 +1041,8 @@ static void api_def_masklayers(DuneApi *dapi, ApiProp *cprop)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
   api_def_prop_sapi(cprop, "MaskLayers");
   sapi = api_def_struct(dapi, "MaskLayers", NULL);
@@ -1137,7 +1137,7 @@ static void api_def_mask(DuneApi *dapi)
 void api_def_mask(DuneApi *dapi)
 {
   api_def_maskParent(dapi);
-  rna_def_mask(dapi);
+  api_def_mask(dapi);
 }
 
 #endif
