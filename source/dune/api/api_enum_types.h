@@ -20,7 +20,7 @@ extern const EnumPropItem *api_enum_attribute_domain_itemf(struct Id *id,
                                                            bool *r_free);
 
 /* For Id filters (FILTER_ID_AC, FILTER_ID_AR, ...) an int isn't enough. This version allows 64
- * bit integers. So can't use the regular EnumPropItem. Would be nice if RNA supported this
+ * bit integers. So can't use the regular EnumPropItem. Would be nice if api supported this
  * itself.
  * Meant to be used with api_def_prop_bool_stype() which supports 64 bit flags as well. */
 struct IdFilterEnumPropItem {
