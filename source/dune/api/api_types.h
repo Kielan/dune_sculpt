@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 struct DuneApi;
-struct FnApi;
+struct ApiFn;
 struct Id;
 struct Main;
 struct ParamList;
@@ -38,7 +38,7 @@ typedef struct ApiPropPtr {
 typedef struct ApiPathResolved {
   struct ApiPtr ptr;
   struct ApiProp *prop;
-  /** -1 for non-array access. */
+  /* -1 for non-array access. */
   int prop_index;
 } ApiPathResolved;
 
@@ -109,14 +109,14 @@ typedef enum PropSubType {
   PROP_FILEPATH = 1,
   PROP_DIRPATH = 2,
   PROP_FILENAME = 3,
-  /** A string which should be represented as bytes in python, NULL terminated though. */
+  /* A string which should be represented as bytes in python, NULL terminated though. */
   PROP_BYTESTRING = 4,
   /* 5 was used by "PROP_TRANSLATE" sub-type, which is now a flag. */
-  /** A string which should not be displayed in UI. */
+  /* A string which should not be displayed in UI. */
   PROP_PASSWORD = 6,
 
   /* numbers */
-  /** A dimension in pixel units, possibly before DPI scaling (so value may not be the final pixel
+  /* A dimension in pixel units, possibly before DPI scaling (so value may not be the final pixel
    * value but the one to apply DPI scale to). */
   PROP_PIXEL = 12,
   PROP_UNSIGNED = 13,
@@ -141,9 +141,9 @@ typedef enum PropSubType {
   PROP_AXISANGLE = 28,
   PROP_XYZ = 29,
   PROP_XYZ_LENGTH = 29 | PROP_UNIT_LENGTH,
-  /** Used for colors which would be color managed before display. */
+  /* Used for colors which would be color managed before display. */
   PROP_COLOR_GAMMA = 30,
-  /** Generic array, no units applied, only that x/y/z/w are used (Python vector). */
+  /* Generic array, no units applied, only that x/y/z/w are used (Python vector). */
   PROP_COORDS = 31,
 
   /* booleans */
@@ -161,28 +161,23 @@ typedef enum PropSubType {
 /* HIGHEST FLAG IN USE: 1 << 31
  * FREE FLAGS: 2, 9, 11, 13, 14, 15, 30 */
 typedef enum PropFlag {
-  /* Editable means the property is editable in the user
-   * interface, properties are editable by default except
-   * for pointers and collections. */
+  /* Editable means the prop is editable in the user
+   * interface, props are editable by default except
+   * for ptrs and collections. */
   PROP_EDITABLE = (1 << 0),
-  /**
-   * This property is editable even if it is lib linked,
+  /* This prop is editable even if it is lib linked,
    * meaning it will get lost on reload, but it's useful
    * for editing. */
   PROP_LIB_EXCEPTION = (1 << 16),
-  /**
-   * Animatable means the property can be driven by some
+  /* Animatable means the prop can be driven by some
    * other input, be it animation curves, expressions, ..
-   * properties are animatable by default except for pointers
-   * and collections.
-   */
+   * props are animatable by default except for ptrs
+   * and collections. */
   PROP_ANIMATABLE = (1 << 1),
-  /**
-   * This flag means when the property's widget is in 'text-edit' mode, it will be updated
+  /* This flag means when the prop's widget is in 'text-edit' mode, it will be updated
    * after every typed char, instead of waiting final validation. Used e.g. for text search-box.
-   * It will also cause UI_BUT_VALUE_CLEAR to be set for text buttons. We could add an own flag
-   * for search/filter properties, but this works just fine for now.
-   */
+   * It will also cause UI_BUT_VALUE_CLEAR to be set for text btns. We could add an own flag
+   * for search/filter props, but this works just fine for now. */
   PROP_TEXTEDIT_UPDATE = (1u << 31),
 
   /* icon */
@@ -195,22 +190,19 @@ typedef enum PropFlag {
   PROP_SKIP_SAVE = (1 << 28),
 
   /* numbers */
-
   /* Each value is related proportionally (object scale, image size). */
   PROP_PROPORTIONAL = (1 << 26),
 
-  /* pointers */
+  /* ptrs */
   PROP_ID_REFCOUNT = (1 << 6),
 
   /* Disallow assigning a variable to itself, eg an object tracking itself
    * only apply this to types that are derived from an ID (). */
   PROP_ID_SELF_CHECK = (1 << 20),
-  /**
-   * Use for...
-   * - pointers: in the UI and python so unsetting or setting to None won't work.
+  /* Use for...
+   * - ptrs: in the UI and python so unsetting or setting to None won't work.
    * - strings: so our internal generated get/length/set
-   *   functions know to do NULL checks before access T30865.
-   */
+   *   fns know to do NULL checks before access T30865. */
   PROP_NEVER_NULL = (1 << 18),
   /* Currently only used for UI, this is similar to PROP_NEVER_NULL
    * except that the value may be NULL at times, used for ObData, where an Empty's will be NULL
@@ -218,11 +210,10 @@ typedef enum PropFlag {
    * So if it's not NULL, setting NULL can't be done */
   PROP_NEVER_UNLINK = (1 << 25),
 
-  /**
-   * Ptrs to data that is not owned by the struct.
-   * Typical example: Bone.parent, Bone.child, etc., and nearly all ID ptrs.
-   * This is crucial information for processes that walk the whole data of an ID e.g.
-   * (like library override).
+  /* Ptrs to data that is not owned by the struct.
+   * Typical example: Bone.parent, Bone.child, etc., and nearly all Id ptrs.
+   * This is crucial information for processes that walk the whole data of an Id e.g.
+   * (like lib override).
    * Note that all ID ptrs are enforced to this by default,
    * this probably will need to be rechecked
    * (see ugly infamous node-trees of material/texture/scene/etc.).  */
@@ -235,7 +226,7 @@ typedef enum PropFlag {
    * note These can't be animated so use with care. */
   PROP_ENUM_FLAG = (1 << 21),
 
-  /* need context for update function */
+  /* need cxt for update function */
   PROP_CXT_UPDATE = (1 << 22),
   PROP_CXT_PROP_UPDATE = PROP_CXT_UPDATE | (1 << 27),
 
@@ -252,13 +243,13 @@ typedef enum PropFlag {
    * This would be a useful addition and avoid a fixed maximum sized as in done at the moment */
   PROP_THICK_WRAP = (1 << 23),
 
-  /** This is an IDProperty, not a DNA one. */
+  /* This is an IdProp, not a DNA one. */
   PROP_IDPROP = (1 << 10),
-  /** For dynamic arrays, and retvals of type string. */
+  /* For dynamic arrays, and retvals of type string. */
   PROP_DYNAMIC = (1 << 17),
-  /** For enum that shouldn't be contextual */
-  PROP_ENUM_NO_CTX = (1 << 24),
-  /** For enums not to be translated (e.g. viewlayers' names in nodes). */
+  /* For enum that shouldn't be contextual */
+  PROP_ENUM_NO_CXT = (1 << 24),
+  /* For enums not to be translated (e.g. viewlayers' names in nodes). */
   PROP_ENUM_NO_TRANSLATE = (1 << 29),
 
   /* Don't do dependency graph tag from a property update callback.
@@ -267,14 +258,11 @@ typedef enum PropFlag {
   PROP_NO_GRAPH_UPDATE = (1 << 30),
 } PropFlag;
 
-/**
- * Flags related to comparing and overriding RNA properties.
+/* Flags related to comparing and overriding api props.
  * Make sure enums are updated with these.
- *
- * FREE FLAGS: 2, 3, 4, 5, 6, 7, 8, 9, 12 and above.
- */
+ * FREE FLAGS: 2, 3, 4, 5, 6, 7, 8, 9, 12 and above. */
 typedef enum PropOverrideFlag {
-  /** Means that the property can be overridden by a local override of some linked datablock. */
+  /* Means that the property can be overridden by a local override of some linked datablock. */
   PROPOVERRIDE_OVERRIDABLE_LIB = (1 << 0),
 
   /* Forbid usage of this property in comparison (& hence override) code.
@@ -295,12 +283,10 @@ typedef enum PropOverrideFlag {
   PROPOVERRIDE_IGNORE = (1 << 2),
 
   /* Collections-related */
-
   /* The prop supports insertion (collections only). */
   PROPOVERRIDE_LIB_INSERTION = (1 << 10),
 
-  /** Only use indices to compare items in the property, never names (collections only).
-   *
+  /* Only use indices to compare items in the property, never names (collections only).
    * Useful when nameprop of the items is generated from other data
    * (e.g. name of material slots is actually name of assigned material). */
   PROPOVERRIDE_NO_PROP_NAME = (1 << 11),
@@ -316,8 +302,7 @@ typedef enum ParamFlag {
    * when adding non-critical new parameter to a callback function.
    * This way, old py code defining funcs without that parameter would still work.
    * WARNING: any parameter after the first PYFUNC_OPTIONAL one will be considered as optional!
-   * note only for input parameters!
-   */
+   * note only for input params!  */
   PARM_PYFUNC_OPTIONAL = (1 << 3),
 } ParamFlag;
 
@@ -362,7 +347,7 @@ typedef struct CollectionPropIter {
   union {
     ArrayIter array;
     ListIter list;
-    CountIterator count;
+    CountIter count;
     void *custom;
   } internal;
   int idprop;
@@ -507,36 +492,30 @@ typedef struct ParamDynAlloc {
   void *array;
 } ParamDynAlloc;
 
-/* Function */
-
-/**
- * Options affecting callback signature.
+/* Fn */
+/* Opts affecting cb signature.
  *
- * Those add additional parameters at the beginning of the C callback, like that:
- * <pre>
- * rna_my_fn([Id *_selfid],
+ * Those add additional params at the beginning of the C cb, like that:
+ * api_my_fn([Id *_selfid],
  *             [<TYPE_STRUCT> *self|ApiStruct *type],
  *             [Main *main],
- *             [Ctx *C],
+ *             [Cxt *C],
  *             [ReportList *reports],
- *             <other Api-defined parameters>);
- * </pre>
- */
+ *             <other Api-defined params>); */
 typedef enum FnFlag {
-  /* Pass ID owning 'self' data
+  /* Pass Id owning 'self' data
    * (i.e. ptr->owner_id, might be same as self in case data is an ID...) */
   FN_USE_SELF_ID = (1 << 11),
 
-  /*
-  * Do not pass the object (struct pointer) from which it is called,
+  /* Do not pass the object (struct pointer) from which it is called,
    * used to define static or class functions. */
   FN_NO_SELF = (1 << 0),
   /** Pass API type, used to define class functions, only valid when #FUNC_NO_SELF is set. */
   FN_USE_SELF_TYPE = (1 << 1),
 
-  /* Pass Main, Context and/or ReportList. */
+  /* Pass Main, Cxt and/or ReportList. */
   FN_USE_MAIN = (1 << 2),
-  FN_USE_CONTEXT = (1 << 3),
+  FN_USE_CXT = (1 << 3),
   FN_USE_REPORTS = (1 << 4),
 
   /* Registering of Python subclasses. *****/
@@ -557,7 +536,7 @@ typedef enum FnFlag {
   FN_EXPORT = (1 << 8),
   /* Fn has been defined at runtime, not statically in api source code. */
   FN_RUNTIME = (1 << 9),
-  /** UNUSED CURRENTLY? Fn owns its id and description strings,
+  /* UNUSED CURRENTLY? Fn owns its id and description strings,
    * and has to free them when deleted */
   FN_FREE_PTRS = (1 << 10),
 } FnFlag;
