@@ -140,51 +140,51 @@ SDNA_DEFAULT_DECL_STRUCT(AssetLibraryReference);
 SDNA_DEFAULT_DECL_STRUCT(bArmature);
 
 /* DNA_brush_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Brush);
+STYPES_DEFAULT_DECL_STRUCT(Brush);
 
-/* DNA_cachefile_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(CacheFile);
+/* types_cachefile_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(CacheFile);
 
-/* DNA_camera_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Camera);
+/* types_camera_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Camera);
 
-/* DNA_collection_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Collection);
+/* types_collection_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Collection);
 
-/* DNA_curve_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Curve);
+/* types_curve_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Curve);
 
 /* DNA_fluid_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(FluidDomainSettings);
-SDNA_DEFAULT_DECL_STRUCT(FluidFlowSettings);
-SDNA_DEFAULT_DECL_STRUCT(FluidEffectorSettings);
+STYPES_DEFAULT_DECL_STRUCT(FluidDomainSettings);
+STYPES_DEFAULT_DECL_STRUCT(FluidFlowSettings);
+STYPES_DEFAULT_DECL_STRUCT(FluidEffectorSettings);
 
-/* DNA_image_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Image);
+/* types_image_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Image);
 
-/* DNA_curves_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Curves);
+/* types_curves_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Curves);
 
-/* DNA_lattice_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Lattice);
+/* types_lattice_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Lattice);
 
-/* DNA_light_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Light);
+/* types_light_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Light);
 
-/* DNA_lightprobe_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(LightProbe);
+/* types_lightprobe_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(LightProbe);
 
-/* DNA_linestyle_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(FreestyleLineStyle);
+/* types_linestyle_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(FreestyleLineStyle);
 
 /* types_material_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Material);
+STYPES_DEFAULT_DECL_STRUCT(Material);
 
 /* types_mesh_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Mesh);
+STYPES_DEFAULT_DECL_STRUCT(Mesh);
 
 /* types_meta_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(MetaBall);
+STYPES_DEFAULT_DECL_STRUCT(MetaBall);
 
 /* type_movieclip_defaults.h */
 STYPE_DEFAULT_DECL_STRUCT(MovieClip);
@@ -192,58 +192,58 @@ STYPE_DEFAULT_DECL_STRUCT(MovieClipUser);
 STYPE_DEFAULT_DECL_STRUCT(MovieClipScopes);
 
 /* types_object_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Object);
+STYPES_DEFAULT_DECL_STRUCT(Object);
 
 /* types_particle_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(ParticleSettings);
+STYPES_DEFAULT_DECL_STRUCT(ParticleSettings);
 
 /* types_pointcloud_defaults.h */
-STYPEW_DEFAULT_DECL_STRUCT(PointCloud);
+STYPES_DEFAULT_DECL_STRUCT(PointCloud);
 
-/* DNA_scene_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Scene);
-SDNA_DEFAULT_DECL_STRUCT(ToolSettings);
+/* types_scene_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Scene);
+STYPES_DEFAULT_DECL_STRUCT(ToolSettings);
 
-/* DNA_simulation_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Simulation);
+/* types_simulation_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Simulation);
 
-/* DNA_space_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(SpaceClip);
+/* types_space_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(SpaceClip);
 
-/* DNA_speaker_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Speaker);
+/* types_speaker_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Speaker);
 
-/* DNA_texture_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Tex);
+/* types_texture_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Tex);
 
-/* DNA_view3d_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(View3D);
+/* types_view3d_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(View3D);
 
-/* DNA_volume_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(Volume);
+/* types_volume_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(Volume);
 
-/* DNA_world_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(World);
+/* types_world_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(World);
 
-/* DNA_modifier_defaults.h */
-SDNA_DEFAULT_DECL_STRUCT(ArmatureModifierData);
-SDNA_DEFAULT_DECL_STRUCT(ArrayModifierData);
-SDNA_DEFAULT_DECL_STRUCT(BevelModifierData);
-SDNA_DEFAULT_DECL_STRUCT(BooleanModifierData);
-SDNA_DEFAULT_DECL_STRUCT(BuildModifierData);
-SDNA_DEFAULT_DECL_STRUCT(CastModifierData);
+/* api_mod_defaults.h */
+STYPES_DEFAULT_DECL_STRUCT(ArmatureModData);
+STYPES_DEFAULT_DECL_STRUCT(ArrayModData);
+SDNA_DEFAULT_DECL_STRUCT(BevelModData);
+SDNA_DEFAULT_DECL_STRUCT(BooleanModData);
+SDNA_DEFAULT_DECL_STRUCT(BuildModData);
+SDNA_DEFAULT_DECL_STRUCT(CastModData);
 SDNA_DEFAULT_DECL_STRUCT(ClothSimSettings);
 SDNA_DEFAULT_DECL_STRUCT(ClothCollSettings);
-SDNA_DEFAULT_DECL_STRUCT(ClothModifierData);
-SDNA_DEFAULT_DECL_STRUCT(CollisionModifierData);
-SDNA_DEFAULT_DECL_STRUCT(CorrectiveSmoothModifierData);
-SDNA_DEFAULT_DECL_STRUCT(CurveModifierData);
-// SDNA_DEFAULT_DECL_STRUCT(DataTransferModifierData);
-SDNA_DEFAULT_DECL_STRUCT(DecimateModifierData);
-SDNA_DEFAULT_DECL_STRUCT(DisplaceModifierData);
-SDNA_DEFAULT_DECL_STRUCT(DynamicPaintModifierData);
-SDNA_DEFAULT_DECL_STRUCT(EdgeSplitModifierData);
-SDNA_DEFAULT_DECL_STRUCT(ExplodeModifierData);
+SDNA_DEFAULT_DECL_STRUCT(ClothModData);
+SDNA_DEFAULT_DECL_STRUCT(CollisionModData);
+SDNA_DEFAULT_DECL_STRUCT(CorrectiveSmoothModData);
+SDNA_DEFAULT_DECL_STRUCT(CurveModData);
+// SDNA_DEFAULT_DECL_STRUCT(DataTransferModData);
+SDNA_DEFAULT_DECL_STRUCT(DecimateModData);
+SDNA_DEFAULT_DECL_STRUCT(DisplaceModData);
+SDNA_DEFAULT_DECL_STRUCT(DynamicPaintModData);
+SDNA_DEFAULT_DECL_STRUCT(EdgeSplitModData);
+SDNA_DEFAULT_DECL_STRUCT(ExplodeModData);
 /* Fluid modifier skipped for now. */
 SDNA_DEFAULT_DECL_STRUCT(HookModifierData);
 SDNA_DEFAULT_DECL_STRUCT(LaplacianDeformModifierData);
@@ -262,27 +262,27 @@ SDNA_DEFAULT_DECL_STRUCT(ParticleSystemModifierData);
 SDNA_DEFAULT_DECL_STRUCT(RemeshModifierData);
 SDNA_DEFAULT_DECL_STRUCT(ScrewModifierData);
 /* Shape key modifier has no items. */
-SDNA_DEFAULT_DECL_STRUCT(ShrinkwrapModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SimpleDeformModifierData);
-SDNA_DEFAULT_DECL_STRUCT(NodesModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SkinModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SmoothModifierData);
+SDNA_DEFAULT_DECL_STRUCT(ShrinkwrapModData);
+SDNA_DEFAULT_DECL_STRUCT(SimpleDeformModData);
+SDNA_DEFAULT_DECL_STRUCT(NodesModData);
+SDNA_DEFAULT_DECL_STRUCT(SkinModData);
+SDNA_DEFAULT_DECL_STRUCT(SmoothModData);
 /* Softbody modifier skipped for now. */
-SDNA_DEFAULT_DECL_STRUCT(SolidifyModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SubsurfModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SurfaceModifierData);
-SDNA_DEFAULT_DECL_STRUCT(SurfaceDeformModifierData);
-SDNA_DEFAULT_DECL_STRUCT(TriangulateModifierData);
-SDNA_DEFAULT_DECL_STRUCT(UVProjectModifierData);
-SDNA_DEFAULT_DECL_STRUCT(UVWarpModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WarpModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WaveModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightedNormalModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightVGEditModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightVGMixModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightVGProximityModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeldModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WireframeModifierData);
+SDNA_DEFAULT_DECL_STRUCT(SolidifyModData);
+SDNA_DEFAULT_DECL_STRUCT(SubsurfModData);
+SDNA_DEFAULT_DECL_STRUCT(SurfaceModData);
+SDNA_DEFAULT_DECL_STRUCT(SurfaceDeformModData);
+SDNA_DEFAULT_DECL_STRUCT(TriangulateModData);
+SDNA_DEFAULT_DECL_STRUCT(UVProjectModData);
+SDNA_DEFAULT_DECL_STRUCT(UVWarpModData);
+SDNA_DEFAULT_DECL_STRUCT(WarpModData);
+SDNA_DEFAULT_DECL_STRUCT(WaveModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightedNormalModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightVGEditModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightVGMixModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightVGProximityModData);
+SDNA_DEFAULT_DECL_STRUCT(WeldModData);
+SDNA_DEFAULT_DECL_STRUCT(WireframeModData);
 
 /* DNA_gpencil_modifier_defaults.h */
 SDNA_DEFAULT_DECL_STRUCT(ArmaturePenModData);
@@ -290,35 +290,35 @@ SDNA_DEFAULT_DECL_STRUCT(ArrayPenModData);
 SDNA_DEFAULT_DECL_STRUCT(BuildPenModData);
 SDNA_DEFAULT_DECL_STRUCT(ColorPenModData);
 SDNA_DEFAULT_DECL_STRUCT(HookPenModData);
-SDNA_DEFAULT_DECL_STRUCT(LatticeGpenModifierData);
-SDNA_DEFAULT_DECL_STRUCT(MirrorGpenModifierData);
-SDNA_DEFAULT_DECL_STRUCT(MultiplyGpenModifierData);
-SDNA_DEFAULT_DECL_STRUCT(NoiseGpenModifierData);
-SDNA_DEFAULT_DECL_STRUCT(OffsetGpenModifierData);
+SDNA_DEFAULT_DECL_STRUCT(LatticePenModData);
+SDNA_DEFAULT_DECL_STRUCT(MirrorPenModData);
+SDNA_DEFAULT_DECL_STRUCT(MultiplyGpenModData);
+SDNA_DEFAULT_DECL_STRUCT(NoisePenModData);
+SDNA_DEFAULT_DECL_STRUCT(OffsetPenModData);
 SDNA_DEFAULT_DECL_STRUCT(OpacityGpenModifierData);
 SDNA_DEFAULT_DECL_STRUCT(SimplifyGpenModifierData);
 SDNA_DEFAULT_DECL_STRUCT(SmoothGpencilModifierData);
 SDNA_DEFAULT_DECL_STRUCT(SubdivGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(TextureGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(ThickGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(TimeGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(TintGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightProxGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(WeightAngleGpencilModifierData);
-SDNA_DEFAULT_DECL_STRUCT(LineartGpencilModData);
-SDNA_DEFAULT_DECL_STRUCT(LengthGpencilModData);
-SDNA_DEFAULT_DECL_STRUCT(DashGpeNModData);
-SDNA_DEFAULT_DECL_STRUCT(DashGpencilModSegment);
+SDNA_DEFAULT_DECL_STRUCT(TexturePenModData);
+SDNA_DEFAULT_DECL_STRUCT(ThickPenModData);
+SDNA_DEFAULT_DECL_STRUCT(TimePenModData);
+SDNA_DEFAULT_DECL_STRUCT(TintPenModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightProxPenModData);
+SDNA_DEFAULT_DECL_STRUCT(WeightAnglePenModData);
+SDNA_DEFAULT_DECL_STRUCT(LineartPenModData);
+SDNA_DEFAULT_DECL_STRUCT(LengthPenModData);
+SDNA_DEFAULT_DECL_STRUCT(DashPenModData);
+SDNA_DEFAULT_DECL_STRUCT(DashPenModSegment);
 SDNA_DEFAULT_DECL_STRUCT(ShrinkwrapGpencilModData);
 
-#undef SDNA_DEFAULT_DECL_STRUCT
+#undef STYPES_DEFAULT_DECL_STRUCT
 
 /* Reuse existing definitions. */
 extern const struct UserDef U_default;
 #define TYPES_DEFAULT_UserDef U_default
 
 extern const Theme U_theme_default;
-#define TYPES_DEFAULT_bTheme U_theme_default
+#define TYPES_DEFAULT_Theme U_theme_default
 
 /* Prevent assigning the wrong struct types since all elements in types_default_table are `void *`. */
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
