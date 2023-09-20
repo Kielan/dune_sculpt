@@ -1,5 +1,4 @@
 /* Types Defaults
- * ============
  *
  * This API provides direct access to DNA default structs
  * to avoid duplicating values for initialization, versioning and RNA.
@@ -9,7 +8,6 @@
  * Defining the defaults is optional since it doesn't make sense for some structs to have defaults.
  *
  * Adding Defaults
- * ---------------
  *
  * Adding/removing defaults for existing structs can be done by hand.
  * When adding new defaults for larger structs you may want to write-out the in-memory data.
@@ -19,8 +17,7 @@
  *
  * Magic numbers should be replaced with flags before committing.
  *
- * Public API
- * ----------
+ * Public Api
  *
  * The main functions to access these are:
  * - types_struct_default_get
@@ -31,7 +28,6 @@
  * note Struct members only define their members (ptrs are left as NULL set).
  *
  * Typical Usage
- * -------------
  *
  * While there is no restriction for using these defaults,
  * it's worth noting where these fns are typically used:
@@ -65,17 +61,17 @@
 #include "types_defaults.h"
 
 #include "types_armature.h"
-#include "types_asset_types.h"
-#include "types_brush_types.h"
-#include "types_cachefile_types.h"
-#include "types_camera_types.h"
-#include "types_cloth_types.h"
-#include "types_collection_types.h"
-#include "types_curve_types.h"
-#include "types_curves_types.h"
-#include "types_fluid_types.h"
-#include "types_pen_mod_types.h"
-#include "types_image_types.h"
+#include "types_asset.h"
+#include "types_brush.h"
+#include "types_cachefile.h"
+#include "types_camera.h"
+#include "types_cloth.h"
+#include "types_collection.h"
+#include "types_curve.h"
+#include "types_curves.h"
+#include "types_fluid.h"
+#include "types_pen_mod.h"
+#include "types_image.h"
 #include "types_key_types.h"
 #include "types_lattice_types.h"
 #include "types_light_types.h"
