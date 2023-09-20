@@ -1,7 +1,6 @@
 #pragma once
 
 /* internal exports only */
-
 struct ARegion;
 struct ScrArea;
 struct SpaceText;
@@ -15,7 +14,6 @@ extern "C" {
 #endif
 
 /* `text_draw.cc` */
-
 void draw_text_main(SpaceText *st, ARegion *region);
 
 void text_update_line_edited(TextLine *line);
@@ -55,14 +53,10 @@ void text_update_cursor_moved(bContext *C);
 #define TOOL_SUGG_LIST 0x01
 
 int wrap_width(const SpaceText *st, ARegion *region);
-/**
- * Sets (offl, offc) for transforming (line, curs) to its wrapped position.
- */
+/* Sets (offl, offc) for transforming (line, curs) to its wrapped position. */
 void wrap_offset(
     const SpaceText *st, ARegion *region, TextLine *linein, int cursin, int *offl, int *offc);
-/**
- * cursin - mem, offc - view.
- */
+/* cursin - mem, offc - view. */
 void wrap_offset_in_line(
     const SpaceText *st, ARegion *region, TextLine *linein, int cursin, int *offl, int *offc);
 int text_get_char_pos(const SpaceText *st, const char *line, int cur);
