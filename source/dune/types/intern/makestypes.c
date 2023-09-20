@@ -14,8 +14,7 @@
  *
  * There is a facility to get verbose output from `sdna`. Search for
  * debugSTypes. This int can be set to 0 (no output) to some int.
- * Higher numbers give more output.
- */
+ * Higher numbers give more output. */
 
 #define TYPES_DEPRECATED_ALLOW
 
@@ -54,11 +53,11 @@ static const char *includefiles[] = {
     "types_image.h",
     "types_texture.h",
     "types_light.h",
-    "DNA_material_types.h",
-    "DNA_vfont_types.h",
-    "DNA_meta_types.h",
-    "DNA_curve_types.h",
-    "DNA_mesh_types.h",
+    "types_material.h",
+    "types_vfont.h",
+    "types_meta.h",
+    "types_curve.h",
+    "types_mesh_types.h",
     "DNA_meshdata_types.h",
     "DNA_modifier_types.h",
     "DNA_lineart_types.h",
@@ -66,20 +65,20 @@ static const char *includefiles[] = {
     "DNA_object_types.h",
     "DNA_object_force_types.h",
     "DNA_object_fluidsim_types.h",
-    "DNA_world_types.h",
-    "DNA_scene_types.h",
-    "DNA_view3d_types.h",
-    "DNA_view2d_types.h",
-    "DNA_space_types.h",
-    "DNA_userdef_types.h",
-    "DNA_screen_types.h",
-    "DNA_sdna_types.h",
-    "DNA_fileglobal_types.h",
-    "DNA_sequence_types.h",
-    "DNA_session_uuid_types.h",
-    "DNA_effect_types.h",
-    "DNA_outliner_types.h",
-    "DNA_sound_types.h",
+    "types_world_types.h",
+    "types_scene_types.h",
+    "types_view3d_types.h",
+    "types_view2d_types.h",
+    "types_space_types.h",
+    "types_userdef_types.h",
+    "types_screen_types.h",
+    "types_sdna_types.h",
+    "types_fileglobal_types.h",
+    "types_seq.h",
+    "types_session_uuid_types.h",
+    "types_effect_types.h",
+    "types_outliner_types.h",
+    "types_sound_types.h",
     "DNA_collection_types.h",
     "DNA_armature_types.h",
     "DNA_action_types.h",
@@ -189,67 +188,50 @@ void lib_system_backtrace(FILE *fp)
 #endif
 
 /* Function Declarations */
-/* Ensure type \c str to is in the #types array.
+/* Ensure type c str to is in the #types array.
  * param str: Struct name without any qualifiers.
  * param size: The struct size in bytes.
  * return Index in the #types array. */
 static int add_type(const char *str, int size);
 
 /**
- * Ensure \c str is int the #names array.
- * \param str: Struct member name which may include pointer prefix & array size.
- * \return Index in the #names array.
+ * Ensure c str is int the names array.
+ * param str: Struct member name which may include pointer prefix & array size.
+ * return Index in the names array.
  */
 static int add_name(const char *str);
 
-/**
- * Search whether this structure type was already found, and if not,
- * add it.
- */
+/* Search whether this structure type was already found, and if not,
+ * add it. */
 static short *add_struct(int namecode);
 
-/**
- * Remove comments from this buffer. Assumes that the buffer refers to
- * ascii-code text.
- */
+/* Remove comments from this buffer. Assumes that the buffer refers to
+ * ascii-code text. */
 static int preprocess_include(char *maindata, const int maindata_len);
 
-/**
- * Scan this file for serializable types.
- */
+/* Scan this file for serializable types. */
 static int convert_include(const char *filename);
 
-/**
- * Determine how many bytes are needed for each struct.
- */
+/* Determine how many bytes are needed for each struct. */
 static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char *base_directory);
 
-/**
- * Construct the DNA.c file
- */
-static void dna_write(FILE *file, const void *pntr, const int size);
+/* Construct the types.c file */
+static void types_write(FILE *file, const void *pntr, const int size);
 
-/**
- * Report all structures found so far, and print their lengths.
- */
+/* Report all structures found so far, and print their lengths. */
 void print_struct_sizes(void);
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Implementation
+/* Implementation
  *
- * Make DNA string (write to file).
- * \{ */
-
-static bool match_identifier_with_len(const char *str,
-                                      const char *identifier,
-                                      const size_t identifier_len)
+ * Make DNA string (write to file). */
+static bool match_id_with_len(const char *str,
+                              const char *id,
+                              const size_t id_len)
 {
-  if (strncmp(str, identifier, identifier_len) == 0) {
+  if (strncmp(str, id, id_len) == 0) {
     /* Check `str` isn't a prefix to a longer identifier. */
-    if (isdigit(str[identifier_len]) || isalpha(str[identifier_len]) ||
-        (str[identifier_len] == '_')) {
+    if (isdigit(str[id_len]) || isalpha(str[id_len]) ||
+        (str[id_len] == '_')) {
       return false;
     }
     return true;
@@ -257,17 +239,17 @@ static bool match_identifier_with_len(const char *str,
   return false;
 }
 
-static bool match_identifier(const char *str, const char *identifier)
+static bool match_id(const char *str, const char *id)
 {
-  const size_t identifier_len = strlen(identifier);
-  return match_identifier_with_len(str, identifier, identifier_len);
+  const size_t id_len = strlen(id);
+  return match_id_with_len(str, id, id_len);
 }
 
-static bool match_identifier_and_advance(char **str_ptr, const char *identifier)
+static bool match_id_and_advance(char **str_ptr, const char *identifier)
 {
-  const size_t identifier_len = strlen(identifier);
-  if (match_identifier_with_len(*str_ptr, identifier, identifier_len)) {
-    (*str_ptr) += identifier_len;
+  const size_t id_len = strlen(id);
+  if (match_id_with_len(*str_ptr, id, id_len)) {
+    (*str_ptr) += id_len;
     return true;
   }
   return false;
@@ -275,7 +257,7 @@ static bool match_identifier_and_advance(char **str_ptr, const char *identifier)
 
 static const char *version_struct_static_from_alias(const char *str)
 {
-  const char *str_test = BLI_ghash_lookup(g_version_data.struct_map_static_from_alias, str);
+  const char *str_test = lib_ghash_lookup(g_version_data.struct_map_static_from_alias, str);
   if (str_test != NULL) {
     return str_test;
   }
@@ -284,7 +266,7 @@ static const char *version_struct_static_from_alias(const char *str)
 
 static const char *version_struct_alias_from_static(const char *str)
 {
-  const char *str_test = BLI_ghash_lookup(g_version_data.struct_map_alias_from_static, str);
+  const char *str_test = lib_ghash_lookup(g_version_data.struct_map_alias_from_static, str);
   if (str_test != NULL) {
     return str_test;
   }
@@ -295,11 +277,11 @@ static const char *version_elem_static_from_alias(const int strct, const char *e
 {
   const uint elem_alias_full_len = strlen(elem_alias_full);
   char *elem_alias = alloca(elem_alias_full_len + 1);
-  const int elem_alias_len = DNA_elem_id_strip_copy(elem_alias, elem_alias_full);
+  const int elem_alias_len = types_elem_id_strip_copy(elem_alias, elem_alias_full);
   const char *str_pair[2] = {types[strct], elem_alias};
-  const char *elem_static = BLI_ghash_lookup(g_version_data.elem_map_static_from_alias, str_pair);
+  const char *elem_static = lib_ghash_lookup(g_version_data.elem_map_static_from_alias, str_pair);
   if (elem_static != NULL) {
-    return DNA_elem_id_rename(mem_arena,
+    return types_elem_id_rename(mem_arena,
                               elem_alias,
                               elem_alias_len,
                               elem_static,
@@ -311,15 +293,13 @@ static const char *version_elem_static_from_alias(const int strct, const char *e
   return elem_alias_full;
 }
 
-/**
- * Enforce '_pad123' naming convention, disallow 'pad123' or 'pad_123',
- * special exception for [a-z] after since there is a 'pad_rot_angle' preference.
- */
+/* Enforce '_pad123' naming convention, disallow 'pad123' or 'pad_123',
+ * special exception for [a-z] after since there is a 'pad_rot_angle' preference. */
 static bool is_name_legal(const char *name)
 {
   const int name_size = strlen(name) + 1;
   char *name_strip = alloca(name_size);
-  DNA_elem_id_strip_copy(name_strip, name);
+  types_elem_id_strip_copy(name_strip, name);
 
   const char prefix[] = {'p', 'a', 'd'};
 
