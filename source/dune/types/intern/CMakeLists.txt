@@ -1,4 +1,4 @@
-add_definitions(-DWITH_DNA_GHASH)
+add_definitions(-DWITH_TYPES_GHASH)
 
 dune_include_dirs(
   ../../../../intern/atomic
@@ -8,8 +8,6 @@ dune_include_dirs(
   ..
 )
 
-
-# -----------------------------------------------------------------------------
 # Build types executable
 set(SRC
   types_utils.c
@@ -26,7 +24,7 @@ set(SRC
   ../../../../intern/guardedalloc/intern/mallocn_lockfree_impl.c
 )
 
-# SRC_DNA_INC is defined in the parent dir
+# SRC_TYPES_INC is defined in the parent dir
 add_cc_flags_custom_test(types)
 
 add_executable(types ${SRC} ${SRC_DNA_INC})
@@ -36,7 +34,7 @@ if(WIN32 AND NOT UNIX)
   target_link_libraries(types ${PTHREADS_LIBRARIES})
 endif()
 
-# Output dna.c
+# Output dunetypea.c
 add_custom_command(
   OUTPUT
     ${CMAKE_CURRENT_BINARY_DIR}/types.c
@@ -51,8 +49,6 @@ add_custom_command(
   DEPENDS makesdna
 )
 
-
-# -----------------------------------------------------------------------------
 # Build bf_types library
 set(INC
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -87,8 +83,6 @@ set_source_files_properties(
 
 dune_add_lib(dune_types "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
-
-# -----------------------------------------------------------------------------
 # Build dune_types_dunelib library
 set(INC
 
@@ -102,7 +96,7 @@ set(SRC
   ../../lib/intern/lib_assert.c
   ../../lib/intern/lib_ghash.c
   ../../lib/intern/lib_ghash_utils.c
-  ../../lib/intern/lib_linklist.c
+  ../../lib/intern/lib_list.c
   ../../lib/intern/lib_memarena.c
   ../../lib/intern/lib_mempool.c
   ../../lib/intern/endian_switch.c
@@ -129,18 +123,18 @@ set(SRC
   ../types_mesh_defaults.h
   ../types_meta_defaults.h
   ../types_mod_defaults.h
-  ../DNA_mod_types.h
-  ../DNA_movieclip_defaults.h
-  ../DNA_object_defaults.h
-  ../DNA_particle_defaults.h
-  ../DNA_pointcloud_defaults.h
+  ../types_mod_types.h
+  ../types_movieclip_defaults.h
+  ../types_object_defaults.h
+  ../types_particle_defaults.h
+  ../types_pointcloud_defaults.h
   ../types_scene_defaults.h
-  ../DNA_simulation_defaults.h
-  ../DNA_space_defaults.h
-  ../DNA_speaker_defaults.h
-  ../DNA_texture_defaults.h
-  ../DNA_vec_defaults.h
-  ../typew_view3d_defaults.h
+  ../types_simulation_defaults.h
+  ../types_space_defaults.h
+  ../types_speaker_defaults.h
+  ../types_texture_defaults.h
+  ../types_vec_defaults.h
+  ../types_view3d_defaults.h
   ../types_volume_defaults.h
   ../types_world_defaults.h
 )
