@@ -4,33 +4,32 @@
  * - wmWindowManager.windows -> #wmWindow <br>
  *   Window manager stores a list of windows.
  *
- *   - #wmWindow.screen -> #bScreen <br>
+ *   - wmWindow.screen -> #bScreen <br>
  *     Window has an active screen.
  *
- *     - #bScreen.areabase -> #ScrArea <br>
+ *     - Screen.areabase -> #ScrArea <br>
  *       Link to #ScrArea.
  *
- *       - #ScrArea.spacedata <br>
+ *       - ScrArea.spacedata <br>
  *         Stores multiple spaces via space links.
  *
- *         - #SpaceLink <br>
+ *         - SpaceLink <br>
  *           Base struct for space data for all different space types.
  *
- *       - #ScrArea.regionbase -> #ARegion <br>
+ *       - ScrArea.regionbase -> ARegion <br>
  *         Stores multiple regions.
  *
  *     - #bScreen.regionbase -> #ARegion <br>
  *       Global screen level regions, e.g. popups, popovers, menus.
  *
- *   - #wmWindow.global_areas -> #ScrAreaMap <br>
+ *   - #wmWindow.global_areas -> ScrAreaMap <br>
  *     Global screen via 'areabase', e.g. top-bar & status-bar.
  *
  *
  * Window Layout
  * =============
  *
- * <pre>
- * wmWindow -> bScreen
+ * wmWindow -> Screen
  * +----------------------------------------------------------+
  * |+-----------------------------------------+-------------+ |
  * ||ScrArea (links to 3D view)               |ScrArea      | |
@@ -49,12 +48,9 @@
  * ||+-------++----------+-------------------+|             | |
  * |+-----------------------------------------+-------------+ |
  * +----------------------------------------------------------+
- * </pre>
  *
  * Space Data
- * ==========
  *
- * <pre>
  * ScrArea's store a list of space data (SpaceLinks), each of unique type.
  * The first one is the displayed in the UI, others are added as needed.
  *
@@ -72,26 +68,23 @@
  *    +-----------------------------+   |
  *       |                              |
  *       +------------------------------+
- * </pre>
  *
  * A common way to get the space from the ScrArea:
- * \code{.c}
+ * code{.c}
  * if (area->spacetype == SPACE_VIEW3D) {
  *     View3D *v3d = area->spacedata.first;
  *     ...
- * }
- * \endcode
- */
+ * } */
 
 #pragma once
 
-struct ID;
+struct Id;
 struct ImBuf;
-struct bContext;
+struct Cxt;
 struct wmDrag;
 struct wmDropBox;
 struct wmEvent;
-struct wmOperator;
+struct wmOp;
 struct wmWindowManager;
 
 #include "BLI_compiler_attrs.h"
@@ -118,24 +111,24 @@ typedef void (*wmGenericUserDataFreeFn)(void *data);
 
 typedef struct wmGenericUserData {
   void *data;
-  /** When NULL, use #MEM_freeN. */
+  /* When NULL, use #MEM_freeN. */
   wmGenericUserDataFreeFn free_fn;
   bool use_free;
 } wmGenericUserData;
 
-typedef void (*wmGenericCallbackFn)(struct bContext *C, void *user_data);
+typedef void (*wmGenericCbFn)(struct Cxt *C, void *user_data);
 
-typedef struct wmGenericCallback {
-  wmGenericCallbackFn exec;
+typedef struct wmGenericCb {
+  wmGenericCbFn ex;
   void *user_data;
   wmGenericUserDataFreeFn free_user_data;
-} wmGenericCallback;
+} wmGenericCb;
 
-/* ************** wmOperatorType ************************ */
+/* wmOpType */
 
-/** #wmOperatorType.flag */
+/* wmOpType.flag */
 enum {
-  /** Register operators in stack after finishing (needed for redo). */
+  /* Register operators in stack after finishing (needed for redo). */
   OPTYPE_REGISTER = (1 << 0),
   /** Do an undo push after the operator runs. */
   OPTYPE_UNDO = (1 << 1),
@@ -153,31 +146,27 @@ enum {
   /** Show preset menu. */
   OPTYPE_PRESET = (1 << 7),
 
-  /**
-   * Some operators are mainly for internal use and don't make sense
+  /* Some ops are mainly for internal use and don't make sense
    * to be accessed from the search menu, even if poll() returns true.
-   * Currently only used for the search toolbox.
-   */
+   * Currently only used for the search toolbox.l */
   OPTYPE_INTERNAL = (1 << 8),
 
   /** Allow operator to run when interface is locked. */
   OPTYPE_LOCK_BYPASS = (1 << 9),
-  /** Special type of undo which doesn't store itself multiple times. */
+  /* Special type of undo which doesn't store itself multiple times. */
   OPTYPE_UNDO_GROUPED = (1 << 10),
 
-  /**
-   * Depends on the cursor location, when activated from a menu wait for mouse press.
+  /* Depends on the cursor location, when activated from a menu wait for mouse press.
    *
    * In practice these operators often end up being accessed:
    * - Directly from key bindings.
    * - As tools in the toolbar.
    *
-   * Even so, accessing from the menu should behave usefully.
-   */
+   * Even so, accessing from the menu should behave usefully. */
   OPTYPE_DEPENDS_ON_CURSOR = (1 << 11),
 };
 
-/** For #WM_cursor_grab_enable wrap axis. */
+/** For wm_cursor_grab_enable wrap axis. */
 enum {
   WM_CURSOR_WRAP_NONE = 0,
   WM_CURSOR_WRAP_X,
@@ -185,12 +174,10 @@ enum {
   WM_CURSOR_WRAP_XY,
 };
 
-/**
- * Context to call operator in for #WM_operator_name_call.
- * rna_ui.c contains EnumPropertyItem's of these, keep in sync.
- */
-typedef enum wmOperatorCallContext {
-  /* if there's invoke, call it, otherwise exec */
+/* Context to call op in for wm_op_name_call.
+ * api_ui.c contains EnumPropItem's of these, keep in sync. */
+typedef enum wmOpCallCxt {
+  /* if there's invoke, call it, otherwise ex */
   WM_OP_INVOKE_DEFAULT,
   WM_OP_INVOKE_REGION_WIN,
   WM_OP_INVOKE_REGION_CHANNELS,
@@ -198,35 +185,30 @@ typedef enum wmOperatorCallContext {
   WM_OP_INVOKE_AREA,
   WM_OP_INVOKE_SCREEN,
   /* only call exec */
-  WM_OP_EXEC_DEFAULT,
-  WM_OP_EXEC_REGION_WIN,
-  WM_OP_EXEC_REGION_CHANNELS,
-  WM_OP_EXEC_REGION_PREVIEW,
-  WM_OP_EXEC_AREA,
-  WM_OP_EXEC_SCREEN,
-} wmOperatorCallContext;
+  WM_OP_EX_DEFAULT,
+  WM_OP_EX_REGION_WIN,
+  WM_OP_EX_REGION_CHANNELS,
+  WM_OP_EX_REGION_PREVIEW,
+  WM_OP_EX_AREA,
+  WM_OP_EX_SCREEN,
+} wmOpCallCxt;
 
-#define WM_OP_CONTEXT_HAS_AREA(type) \
+#define WM_OP_CXT_HAS_AREA(type) \
   (CHECK_TYPE_INLINE(type, wmOperatorCallContext), \
    !ELEM(type, WM_OP_INVOKE_SCREEN, WM_OP_EXEC_SCREEN))
-#define WM_OP_CONTEXT_HAS_REGION(type) \
-  (WM_OP_CONTEXT_HAS_AREA(type) && !ELEM(type, WM_OP_INVOKE_AREA, WM_OP_EXEC_AREA))
+#define WM_OP_CXT_HAS_REGION(type) \
+  (WM_OP_CXT_HAS_AREA(type) && !ELEM(type, WM_OP_INVOKE_AREA, WM_OP_EXEC_AREA))
 
-/* property tags for RNA_OperatorProperties */
-typedef enum eOperatorPropTags {
+/* prop tags for RNA_OperatorProperties */
+typedef enum eOpPropTags {
   OP_PROP_TAG_ADVANCED = (1 << 0),
 } eOperatorPropTags;
 #define OP_PROP_TAG_ADVANCED ((eOperatorPropTags)OP_PROP_TAG_ADVANCED)
 
-/* -------------------------------------------------------------------- */
-/** \name #wmKeyMapItem
- * \{ */
-
-/**
- * Modifier keys, not actually used for #wmKeyMapItem (never stored in DNA), used for:
+/** \name #wmKeyMapIte */
+/* Modifier keys, not actually used for #wmKeyMapItem (never stored in DNA), used for:
  * - #wmEvent.modifier without the `KM_*_ANY` flags.
- * - #WM_keymap_add_item & #WM_modalkeymap_add_item
- */
+ * - #WM_keymap_add_item & #WM_modalkeymap_add_item */
 enum {
   KM_SHIFT = (1 << 0),
   KM_CTRL = (1 << 1),
@@ -245,15 +227,13 @@ enum {
 /* Note that #KM_ANY and #KM_NOTHING are used with these defines too. */
 #define KM_MOD_HELD 1
 
-/**
- * #wmKeyMapItem.type
- * NOTE: most types are defined in `wm_event_types.h`.
- */
+/* #wmKeyMapItem.type
+ * NOTE: most types are defined in `wm_event_types.h` */
 enum {
   KM_TEXTINPUT = -2,
 };
 
-/** #wmKeyMapItem.val */
+/** wmKeyMapItem.val */
 enum {
   KM_ANY = -1,
   KM_NOTHING = 0,
@@ -261,18 +241,14 @@ enum {
   KM_RELEASE = 2,
   KM_CLICK = 3,
   KM_DBL_CLICK = 4,
-  /**
-   * \note The cursor location at the point dragging starts is set to #wmEvent.prev_press_xy
-   * some operators such as box selection should use this location instead of #wmEvent.xy.
-   */
+  /* note The cursor location at the point dragging starts is set to #wmEvent.prev_press_xy
+   * some operators such as box selection should use this location instead of #wmEvent.xy. */
   KM_CLICK_DRAG = 5,
 };
 
-/**
- * #wmKeyMapItem.direction
+/* #wmKeyMapItem.direction
  *
- * Direction set for #KM_CLICK_DRAG key-map items. #KM_ANY (-1) to ignore direction.
- */
+ * Direction set for #KM_CLICK_DRAG key-map items. #KM_ANY (-1) to ignore direction */
 enum {
   KM_DIRECTION_N = 1,
   KM_DIRECTION_NE = 2,
@@ -284,14 +260,12 @@ enum {
   KM_DIRECTION_NW = 8,
 };
 
-/** \} */
-
-/* ************** UI Handler ***************** */
+/* UI Handler ***************** */
 
 #define WM_UI_HANDLER_CONTINUE 0
 #define WM_UI_HANDLER_BREAK 1
 
-/* ************** Notifiers ****************** */
+/* Notifiers ****************** */
 
 typedef struct wmNotifier {
   struct wmNotifier *next, *prev;
@@ -309,8 +283,7 @@ typedef struct wmNotifier {
  * 0xFF000000; category
  * 0x00FF0000; data
  * 0x0000FF00; data subtype (unused?)
- * 0x000000FF; action
- */
+ * 0x000000FF; action */
 
 /* category */
 #define NOTE_CATEGORY 0xFF000000
@@ -439,7 +412,7 @@ typedef struct wmNotifier {
 #define ND_FCURVES_ORDER (75 << 16)
 #define ND_NLA_ORDER (76 << 16)
 
-/* NC_GPENCIL */
+/* NC_PEN */
 #define ND_GPENCIL_EDITMODE (85 << 16)
 
 /* NC_GEOM Geometry */
@@ -532,18 +505,16 @@ typedef struct wmNotifier {
 #define WM_GESTURE_CIRCLE 5
 #define WM_GESTURE_STRAIGHTLINE 6
 
-/**
- * wmGesture is registered to #wmWindow.gesture, handled by operator callbacks.
- */
+/* wmGesture is registered to wmWindow.gesture, handled by operator cbs. */
 typedef struct wmGesture {
   struct wmGesture *next, *prev;
-  /** #wmEvent.type */
+  /* wmEvent.type */
   int event_type;
-  /** #wmEvent.modifier */
-  uint8_t event_modifier;
-  /** #wmEvent.keymodifier */
-  short event_keymodifier;
-  /** Gesture type define. */
+  /* wmEvent.mod */
+  uint8_t event_mod;
+  /* wmEvent.keymodifier */
+  short event_keymod;
+  /* Gesture type define. */
   int type;
   /** bounds of region to draw gesture within. */
   rcti winrct;
@@ -555,11 +526,9 @@ typedef struct wmGesture {
   /** optional, draw the active side of the straightline gesture. */
   bool draw_active_side;
 
-  /**
-   * For modal operators which may be running idle, waiting for an event to activate the gesture.
+  /* For modal operators which may be running idle, waiting for an event to activate the gesture.
    * Typically this is set when the user is click-dragging the gesture
-   * (box and circle select for eg).
-   */
+   * (box and circle select for eg).  */
   uint is_active : 1;
   /** Previous value of is-active (use to detect first run & edge cases). */
   uint is_active_prev : 1;
@@ -574,13 +543,11 @@ typedef struct wmGesture {
    * toggle. */
   uint use_flip : 1;
 
-  /**
-   * customdata
+  /* customdata
    * - for border is a #rcti.
    * - for circle is recti, (xmin, ymin) is center, xmax radius.
    * - for lasso is short array.
-   * - for straight line is a recti: (xmin,ymin) is start, (xmax, ymax) is end.
-   */
+   * - for straight line is a recti: (xmin,ymin) is start, (xmax, ymax) is end. */
   void *customdata;
 
   /** Free pointer to use for operator allocs (if set, its freed on exit). */
@@ -590,18 +557,14 @@ typedef struct wmGesture {
 /* ************** wmEvent ************************ */
 
 typedef enum eWM_EventFlag {
-  /**
-   * True if the operating system inverted the delta x/y values and resulting
+  /* True if the operating system inverted the delta x/y values and resulting
    * `prev_xy` values, for natural scroll direction.
-   * For absolute scroll direction, the delta must be negated again.
-   */
+   * For absolute scroll direction, the delta must be negated again  */
   WM_EVENT_SCROLL_INVERT = (1 << 0),
-  /**
-   * Generated by auto-repeat, note that this must only ever be set for keyboard events
+  /* Generated by auto-repeat, note that this must only ever be set for keyboard events
    * where `ISKEYBOARD(event->type) == true`.
    *
-   * See #KMI_REPEAT_IGNORE for details on how key-map handling uses this.
-   */
+   * See #KMI_REPEAT_IGNORE for details on how key-map handling uses this. */
   WM_EVENT_IS_REPEAT = (1 << 1),
   /**
    * Mouse-move events may have this flag set to force creating a click-drag event
@@ -1012,7 +975,6 @@ typedef struct wmIMEData {
 #endif
 
 /* Paint Cursor */
-
 typedef void (*wmPaintCursorDraw)(struct Cxt *C, int, int, void *customdata);
 
 /* Drag and drop */
@@ -1021,7 +983,7 @@ typedef void (*wmPaintCursorDraw)(struct Cxt *C, int, int, void *customdata);
 #define WM_DRAG_ASSET 1
 /** The user is dragging multiple assets. This is only supported in few specific cases, proper
  * multi-item support for dragging isn't supported well yet. Therefore this is kept separate from
- * #WM_DRAG_ASSET. */
+ * WM_DRAG_ASSET. */
 #define WM_DRAG_ASSET_LIST 2
 #define WM_DRAG_RNA 3
 #define WM_DRAG_PATH 4
