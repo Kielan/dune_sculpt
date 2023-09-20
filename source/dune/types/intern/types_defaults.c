@@ -1,9 +1,9 @@
-/* DNA Defaults
+/* Types Defaults
  * ============
  *
  * This API provides direct access to DNA default structs
  * to avoid duplicating values for initialization, versioning and RNA.
- * This allows DNA default definitions to be defined in a single header along side the types.
+ * This allows types default definitions to be defined in a single header along side the types.
  * So each `types_{name}.h` can have an optional `DNA_{name}_defaults.h` file along side it.
  *
  * Defining the defaults is optional since it doesn't make sense for some structs to have defaults.
@@ -23,29 +23,28 @@
  * ----------
  *
  * The main functions to access these are:
- * - #DNA_struct_default_get
- * - #DNA_struct_default_alloc
+ * - types_struct_default_get
+ * - types_struct_default_alloc
  *
- * These access the struct table #DNA_default_table using the struct number.
+ * These access the struct table types_default_table using the struct number.
  *
- * \note Struct members only define their members (pointers are left as NULL set).
+ * note Struct members only define their members (ptrs are left as NULL set).
  *
  * Typical Usage
  * -------------
  *
  * While there is no restriction for using these defaults,
- * it's worth noting where these functions are typically used:
+ * it's worth noting where these fns are typically used:
  *
  * - When creating/allocating new data.
- * - RNA property defaults, used for "Set Default Value" in the buttons right-click context menu.
+ * - api prop defaults, used for "Set Default Value" in the buttons right-click cxt menu.
  *
  * These defaults are not used:
  *
  * - When loading old files that don't contain newly added struct members (these will be zeroed)
- *   to set their values use `versioning_{BLENDER_VERSION}.c` source files.
+ *   to set their values use `versioning_{DUNE_VERSION}.c` source files.
  * - For startup file data, to update these defaults use
- *   #BLO_update_defaults_startup_blend & #blo_do_versions_userdef.
- */
+ *   loader_update_defaults_startup_blend & #blo_do_versions_userdef. */
 
 #define DNA_DEPRECATED_ALLOW
 
