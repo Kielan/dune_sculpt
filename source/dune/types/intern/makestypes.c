@@ -1,4 +1,4 @@
-/* Struct muncher for making SDNA.
+/* Struct muncher for making STYPES.
  *
  * section aboutmakestypesc About makestypes tool
  *
