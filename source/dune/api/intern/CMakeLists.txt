@@ -3,9 +3,9 @@ if(CMAKE_COMPILER_IS_GNUCC)
   string(APPEND CMAKE_C_FLAGS " -Werror=implicit-function-declaration")
 endif()
 
-# files rna_access.c rna_define.c makesrna.c intentionally excluded.
+# files api_access.c api_define.c api.c intentionally excluded.
 set(DEFSRC
-  api_ID.c
+  api_id.c
   api_action.c
   api_animation.c
   api_animviz.c
@@ -69,14 +69,14 @@ set(DEFSRC
   api_timeline.c
   api_tracking.c
   api_ui.c
-  rna_userdef.c
-  rna_vfont.c
-  rna_volume.c
-  rna_wm.c
-  rna_wm_gizmo.c
-  rna_workspace.c
-  rna_world.c
-  rna_xr.c
+  api_userdef.c
+  api_vfont.c
+  api_volume.c
+  api_wm.c
+  api_wm_gizmo.c
+  api_workspace.c
+  api_world.c
+  api_xr.c
 )
 
 if(WITH_EXPERIMENTAL_FEATURES)
@@ -394,14 +394,14 @@ target_link_libraries(api bf_dna)
 target_link_libraries(api bf_types_dunelib)
 
 if(WIN32 AND NOT UNIX)
-  target_link_libraries(makesrna ${PTHREADS_LIBRARIES})
+  target_link_libraries(api ${PTHREADS_LIBRARIES})
 endif()
 
 # Output api_*_gen.c
 # note (linux only): with crashes try add this after COMMAND: valgrind --leak-check=full --track-origins=yes
 add_custom_command(
   OUTPUT ${GENSRC}
-  COMMAND "$<TARGET_FILE:makesrna>" ${CMAKE_CURRENT_BINARY_DIR}/  ${CMAKE_CURRENT_BINARY_DIR}/../
+  COMMAND "$<TARGET_FILE:api>" ${CMAKE_CURRENT_BINARY_DIR}/  ${CMAKE_CURRENT_BINARY_DIR}/../
   DEPENDS api
 )
 
@@ -419,7 +419,7 @@ set(SRC
 )
 
 set(LIB
-  bf_dna
+  bf_types
   bf_editor_space_api
 
   bf_editor_anim
