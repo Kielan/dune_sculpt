@@ -2,40 +2,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_collection_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_workspace_types.h"
+#include "types_collection.h"
+#include "types_pen.h"
+#include "types_linestyle.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_view3d.h"
+#include "types_wm.h"
+#include "types_workspace.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_list.h"
+#include "lib_string.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_context.h"
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_sound.h"
-#include "BKE_workspace.h"
+#include "dune_cxt.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
+#include "dune_sound.h"
+#include "dune_workspace.h"
 
-#include "RE_engine.h"
+#include "render_engine.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
 #include "CLG_log.h"
 
@@ -43,11 +43,11 @@
 #  include "BPY_extern.h"
 #endif
 
-static CLG_LogRef LOG = {"bke.context"};
+static CLG_LogRef LOG = {"dune.cxt"};
 
 /* struct */
-
-struct bContext {
+m
+struct  xt {
   int thread;
 
   /* windowmanager context */
@@ -60,18 +60,14 @@ struct bContext {
     struct ARegion *region;
     struct ARegion *menu;
     struct wmGizmoGroup *gizmo_group;
-    struct bContextStore *store;
+    struct CxtStore *store;
 
-    /* Operator poll. */
-    /**
-     * Store the reason the poll function fails (static string, not allocated).
-     * For more advanced formatting use `operator_poll_msg_dyn_params`.
-     */
-    const char *operator_poll_msg;
-    /**
-     * Store values to dynamically to create the string (called when a tool-tip is shown).
-     */
-    struct bContextPollMsgDyn_Params operator_poll_msg_dyn_params;
+    /* Op poll. */
+    /* Store the reason the poll fn fails (static string, not allocated).
+     * For more advanced formatting use `op_poll_msg_dyn_params`. */
+    const char *op_poll_msg;
+    /* Store values to dynamically to create the string (called when a tool-tip is shown). */
+    struct CxtPollMsgDyn_Params op_poll_msg_dyn_params;
   } wm;
 
   /* data context */
@@ -83,19 +79,16 @@ struct bContext {
     /** True if python is initialized. */
     bool py_init;
     void *py_context;
-    /**
-     * If we need to remove members, do so in a copy
-     * (keep this to check if the copy needs freeing).
-     */
+    /* If we need to remove members, do so in a copy
+     * (keep this to check if the copy needs freeing). */
     void *py_context_orig;
   } data;
 };
 
-/* context */
-
-bContext *CTX_create(void)
+/* cxt */
+Cxt *cxt_create(void)
 {
-  bContext *C = MEM_callocN(sizeof(bContext), "bContext");
+  Cxt *C = mem_callocn(sizeof(Cxt), "Cxt");
 
   return C;
 }
@@ -630,98 +623,97 @@ void CTX_data_pointer_set(bContextDataResult *result, ID *id, StructRNA *type, v
   RNA_pointer_create(id, type, data, &result->ptr);
 }
 
-void CTX_data_pointer_set_ptr(bContextDataResult *result, const PointerRNA *ptr)
+void CTX_data_pointer_set_ptr(bContextDataResult *result, const ApiPtr *ptr)
 {
   result->ptr = *ptr;
 }
 
-void CTX_data_id_list_add(bContextDataResult *result, ID *id)
+void CTX_data_id_list_add(CxtDataResult *result, Id *id)
 {
-  CollectionPointerLink *link = MEM_callocN(sizeof(CollectionPointerLink), "CTX_data_id_list_add");
-  RNA_id_pointer_create(id, &link->ptr);
+  CollectionPointerLink *link = mem_callocn(sizeof(CollectionPtrLink), "cxt_data_id_list_add");
+  api_id_ptr_create(id, &link->ptr);
 
-  BLI_addtail(&result->list, link);
+  lib_addtail(&result->list, link);
 }
 
-void CTX_data_list_add(bContextDataResult *result, ID *id, StructRNA *type, void *data)
+void cxt_data_list_add(CxtDataResult *result, ID *id, StructRNA *type, void *data)
 {
   CollectionPointerLink *link = MEM_callocN(sizeof(CollectionPointerLink), "CTX_data_list_add");
-  RNA_pointer_create(id, type, data, &link->ptr);
+  api_ptr_create(id, type, data, &link->ptr);
 
-  BLI_addtail(&result->list, link);
+  lib_addtail(&result->list, link);
 }
 
-void CTX_data_list_add_ptr(bContextDataResult *result, const PointerRNA *ptr)
+void cxt_data_list_add_ptr(CxtDataResult *result, const ApiPtr *ptr)
 {
-  CollectionPointerLink *link = MEM_callocN(sizeof(CollectionPointerLink), "CTX_data_list_add");
+  CollectionPtrLink *link = MEM_callocN(sizeof(CollectionPtrLink), "cxt_data_list_add");
   link->ptr = *ptr;
 
   BLI_addtail(&result->list, link);
 }
 
-int ctx_data_list_count(const bContext *C, int (*func)(const bContext *, ListBase *))
+int ctx_data_list_count(const Cxt *C, int (*fb)(const Cxt *, List *))
 {
   ListBase list;
 
   if (func(C, &list)) {
-    int tot = BLI_listbase_count(&list);
-    BLI_freelistN(&list);
+    int tot = lib_list_count(&list);
+    lib_freelistn(&list);
     return tot;
   }
 
   return 0;
 }
 
-void CTX_data_dir_set(bContextDataResult *result, const char **dir)
+void cxt_data_dir_set(CxtDataResult *result, const char **dir)
 {
   result->dir = dir;
 }
 
-void CTX_data_type_set(bContextDataResult *result, short type)
+void cxt_data_type_set(CxtDataResult *result, short type)
 {
   result->type = type;
 }
 
-short CTX_data_type_get(bContextDataResult *result)
+short cxt_data_type_get(CxtDataResult *result)
 {
   return result->type;
 }
 
 /* window manager context */
-
-wmWindowManager *CTX_wm_manager(const bContext *C)
+wmWindowManager *cxt_wm_manager(const Cxt *C)
 {
   return C->wm.manager;
 }
 
-bool CTX_wm_interface_locked(const bContext *C)
+bool cxt_wm_interface_locked(const Cxt *C)
 {
   return (bool)C->wm.manager->is_interface_locked;
 }
 
-wmWindow *CTX_wm_window(const bContext *C)
+wmWindow *cxt_wm_window(const bContext *C)
 {
-  return ctx_wm_python_context_get(C, "window", &RNA_Window, C->wm.window);
+  return ctx_wm_python_context_get(C, "window", &Api_Window, C->wm.window);
 }
 
-WorkSpace *CTX_wm_workspace(const bContext *C)
+WorkSpace *cxt_wm_workspace(const bContext *C)
 {
-  return ctx_wm_python_context_get(C, "workspace", &RNA_WorkSpace, C->wm.workspace);
+  return ctx_wm_python_context_get(C, "workspace", &Api_WorkSpace, C->wm.workspace);
 }
 
 bScreen *CTX_wm_screen(const bContext *C)
 {
-  return ctx_wm_python_context_get(C, "screen", &RNA_Screen, C->wm.screen);
+  return ctx_wm_python_context_get(C, "screen", &Api_Screen, C->wm.screen);
 }
 
-ScrArea *CTX_wm_area(const bContext *C)
+ScrArea *cxt_wm_area(const Cxt *C)
 {
-  return ctx_wm_python_context_get(C, "area", &RNA_Area, C->wm.area);
+  return ctx_wm_python_context_get(C, "area", &Api_Area, C->wm.area);
 }
 
-SpaceLink *CTX_wm_space_data(const bContext *C)
+SpaceLink *cxt_wm_space_data(const Cxt *C)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_wm_area(C);
   return (area) ? area->spacedata.first : NULL;
 }
 
