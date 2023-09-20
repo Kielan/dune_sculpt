@@ -99,22 +99,22 @@ static const char *includefiles[] = {
     "DNA_fluid_types.h",
     "DNA_speaker_types.h",
     "DNA_movieclip_types.h",
-    "DNA_tracking_types.h",
-    "DNA_dynamicpaint_types.h",
-    "DNA_mask_types.h",
-    "DNA_rigidbody_types.h",
-    "DNA_freestyle_types.h",
-    "DNA_linestyle_types.h",
-    "DNA_cachefile_types.h",
-    "DNA_layer_types.h",
-    "DNA_workspace_types.h",
-    "DNA_lightprobe_types.h",
-    "DNA_curveprofile_types.h",
-    "DNA_xr_types.h",
-    "DNA_curves_types.h",
-    "DNA_pointcloud_types.h",
-    "DNA_volume_types.h",
-    "DNA_simulation_types.h",
+    "types_tracking.h",
+    "types_dynamicpaint.h",
+    "typea_mask.h",
+    "types_rigidbody.h",
+    "types_freestyle.h",
+    "types_linestyle.h",
+    "types_cachefile.h",
+    "types_layer_types.h",
+    "types_workspace.h",
+    "types_lightprobe.h",
+    "types_curveprofile.h",
+    "types_xr_types.h",
+    "types_curves_types.h",
+    "types_pointcloud_types.h",
+    "types_volume_types.h",
+    "types_simulation_types.h",
     "DNA_pointcache_types.h",
     "DNA_uuid_types.h",
     "DNA_asset_types.h",
@@ -146,12 +146,10 @@ static short *types_align_64;
 static short *types_size_32;
 /** Contains sizes as they are calculated on 64 bit systems. */
 static short *types_size_64;
-/**
- * At `sp = structs[a]` is the first address of a struct definition:
+/* At `sp = structs[a]` is the first address of a struct definition:
  * - `sp[0]` is type number.
  * - `sp[1]` is the length of the element array (next).
- * - `sp[2]` sp[3] is [(type_index, name_index), ..] (number of pairs is defined by `sp[1]`),
- */
+ * - `sp[2]` sp[3] is [(type_index, name_index), ..] (number of pairs is defined by `sp[1]`), */
 static short **structs, *structdata;
 
 /* Versioning data */
