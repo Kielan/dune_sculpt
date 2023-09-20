@@ -115,12 +115,11 @@ static const char *includefiles[] = {
     "types_pointcloud_types.h",
     "types_volume_types.h",
     "types_simulation_types.h",
-    "DNA_pointcache_types.h",
-    "DNA_uuid_types.h",
-    "DNA_asset_types.h",
+    "types_pointcache_types.h",
+    "types_uuid_types.h",
+    "types_asset_types.h",
 
     /* see comment above before editing! */
-
     /* empty string to indicate end of includefiles */
     "",
 };
@@ -140,11 +139,11 @@ static char **types;
 static short *types_size_native;
 /* Contains align requirements for a struct on 32 bit systems. */
 static short *types_align_32;
-/** Contains align requirements for a struct on 64 bit systems. */
+/* Contains align requirements for a struct on 64 bit systems. */
 static short *types_align_64;
-/** Contains sizes as they are calculated on 32 bit systems. */
+/* Contains sizes as they are calculated on 32 bit systems. */
 static short *types_size_32;
-/** Contains sizes as they are calculated on 64 bit systems. */
+/* Contains sizes as they are calculated on 64 bit systems. */
 static short *types_size_64;
 /* At `sp = structs[a]` is the first address of a struct definition:
  * - `sp[0]` is type number.
@@ -192,8 +191,7 @@ void lib_system_backtrace(FILE *fp)
  * return Index in the #types array. */
 static int add_type(const char *str, int size);
 
-/**
- * Ensure c str is int the names array.
+/* Ensure c str is int the names array.
  * param str: Struct member name which may include pointer prefix & array size.
  * return Index in the names array.
  */
@@ -286,7 +284,7 @@ static const char *version_elem_static_from_alias(const int strct, const char *e
                               strlen(elem_static),
                               elem_alias_full,
                               elem_alias_full_len,
-                              DNA_elem_id_offset_start(elem_alias_full));
+                              types_elem_id_offset_start(elem_alias_full));
   }
   return elem_alias_full;
 }
@@ -362,7 +360,7 @@ static int add_type(const char *str, int size)
 
   /* append new type */
   const int str_size = strlen(str) + 1;
-  char *cp = BLI_memarena_alloc(mem_arena, str_size);
+  char *cp = lib_memarena_alloc(mem_arena, str_size);
   memcpy(cp, str, str_size);
   types[types_len] = cp;
   types_size_native[types_len] = size;
@@ -379,12 +377,10 @@ static int add_type(const char *str, int size)
   return types_len - 1;
 }
 
-/**
- * Because of the weird way of tokenizing, we have to 'cast' function
- * pointers to ... (*f)(), whatever the original signature. In fact,
+/* Because of the weird way of tokenizing, we have to 'cast' fn
+ * ptrs to ... (*f)(), whatever the original signature. In fact,
  * we add name and type at the same time... There are two special
- * cases, unfortunately. These are explicitly checked.
- */
+ * cases, unfortunately. These are explicitly checked. */
 static int add_name(const char *str)
 {
   char buf[255]; /* stupid limit, change it :) */
@@ -397,10 +393,10 @@ static int add_name(const char *str)
   }
 
   if (str[0] == '(' && str[1] == '*') {
-    /* We handle function pointer and special array cases here, e.g.
-     * `void (*function)(...)` and `float (*array)[..]`. the array case
+    /* We handle fn ptr and special array cases here, e.g.
+     * `void (*fn)(...)` and `float (*array)[..]`. the array case
      * name is still converted to (array *)() though because it is that
-     * way in old DNA too, and works correct with #DNA_elem_size_nr. */
+     * way in old types too, and works correct with types_elem_size_nr. */
     int isfuncptr = (strchr(str + 1, '(')) != NULL;
 
     DEBUG_PRINTF(3, "\t\t\t\t*** Function pointer or multidim array pointer found\n");
@@ -459,9 +455,8 @@ static int add_name(const char *str)
       printf("Error during tokening function pointer argument list\n");
     }
 
-    /*
-     * Put `)(void)` at the end? Maybe `)()`. Should check this with
-     * old `sdna`. Actually, sometimes `)()`, sometimes `)(void...)`
+    /* Put `)(void)` at the end? Maybe `)()`. Should check this with
+     * old `stype`. Actually, sometimes `)()`, sometimes `)(void...)`
      * Alas.. such is the nature of brain-damage :(
      *
      * Sorted it out: always do )(), except for `headdraw` and
@@ -551,7 +546,7 @@ static int preprocess_include(char *maindata, const int maindata_len)
 {
   /* NOTE: len + 1, last character is a dummy to prevent
    * comparisons using uninitialized memory */
-  char *temp = MEM_mallocN(maindata_len + 1, "preprocess_include");
+  char *temp = mem_mallocn(maindata_len + 1, "preprocess_include");
   temp[maindata_len] = ' ';
 
   memcpy(temp, maindata, maindata_len);
@@ -614,7 +609,7 @@ static int preprocess_include(char *maindata, const int maindata_len)
     cp++;
   }
 
-  MEM_freeN(temp);
+  mem_freen(temp);
   return newlen;
 }
 
@@ -662,8 +657,7 @@ static void *read_file_data(const char *filename, int *r_len)
 static int convert_include(const char *filename)
 {
   /* read include file, skip structs with a '#' before it.
-   * store all data in temporal arrays.
-   */
+   * store all data in temporal arrays. */
 
   int maindata_len;
   char *maindata = read_file_data(filename, &maindata_len);
@@ -703,7 +697,7 @@ static int convert_include(const char *filename)
         md1++;
 
         /* we've got a struct name when... */
-        if (match_identifier(md1 - 7, "struct")) {
+        if (match_id(md1 - 7, "struct")) {
 
           const int strct = add_type(md1, 0);
           if (strct == -1) {
@@ -840,7 +834,7 @@ static int convert_include(const char *filename)
     md++;
   }
 
-  MEM_freeN(maindata);
+  mem_freen(maindata);
 
   return 0;
 }
@@ -931,14 +925,14 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
             /* Normally 'alloca' would be used here, however we can't in a loop.
              * Use an over-sized buffer instead. */
             char name_static[1024];
-            BLI_assert(sizeof(name_static) > namelen);
+            lib_assert(sizeof(name_static) > namelen);
 
-            DNA_elem_id_strip_copy(name_static, cp);
+            types_elem_id_strip_copy(name_static, cp);
             const char *str_pair[2] = {types[structtype], name_static};
-            const char *name_alias = BLI_ghash_lookup(g_version_data.elem_map_alias_from_static,
+            const char *name_alias = LIB_ghash_lookup(g_version_data.elem_map_alias_from_static,
                                                       str_pair);
             fprintf(file_verify,
-                    "BLI_STATIC_ASSERT(offsetof(struct %s, %s) == %d, \"DNA member offset "
+                    "LIB_STATIC_ASSERT(offsetof(struct %s, %s) == %d, \"DNA member offset "
                     "verify\");\n",
                     structname,
                     name_alias ? name_alias : name_static,
@@ -950,7 +944,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
             /* has the name an extra length? (array) */
             int mul = 1;
             if (cp[namelen - 1] == ']') {
-              mul = DNA_elem_array_size(cp);
+              mul = types_elem_array_size(cp);
             }
 
             if (mul == 0) {
@@ -959,7 +953,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                       types[structtype],
                       namelen + 1,
                       cp);
-              dna_error = 1;
+              types_error = 1;
             }
 
             /* 4-8 aligned/ */
@@ -978,7 +972,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                         "Align pointer error in struct (size_native 8): %s %s\n",
                         types[structtype],
                         cp);
-                dna_error = 1;
+                types_error = 1;
               }
             }
 
@@ -987,7 +981,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                       "Align pointer error in struct (size_64 8): %s %s\n",
                       types[structtype],
                       cp);
-              dna_error = 1;
+              types_error = 1;
             }
 
             size_native += sizeof(void *) * mul;
@@ -1009,7 +1003,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
             /* has the name an extra length? (array) */
             int mul = 1;
             if (cp[namelen - 1] == ']') {
-              mul = DNA_elem_array_size(cp);
+              mul = types_elem_array_size(cp);
             }
 
             if (mul == 0) {
@@ -1031,10 +1025,10 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
 
             /* Check 2-4-8 aligned. */
             if (!check_field_alignment(firststruct, structtype, type, size_32, cp, "32 bit")) {
-              dna_error = 1;
+              types_error = 1;
             }
             if (!check_field_alignment(firststruct, structtype, type, size_64, cp, "64 bit")) {
-              dna_error = 1;
+              types_error = 1;
             }
 
             size_native += mul * types_size_native[type];
@@ -1062,13 +1056,13 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
           types_align_64[structtype] = max_align_64;
 
           /* Sanity check 1: alignment should never be 0. */
-          BLI_assert(max_align_32);
-          BLI_assert(max_align_64);
+          lib_assert(max_align_32);
+          lib_assert(max_align_64);
 
           /* Sanity check 2: alignment should always be equal or smaller than the maximum
            * size of a build in type which is 8 bytes (ie int64_t or double). */
-          BLI_assert(max_align_32 <= 8);
-          BLI_assert(max_align_64 <= 8);
+          lib_assert(max_align_32 <= 8);
+          lib_assert(max_align_64 <= 8);
 
           if (size_32 % max_align_32) {
             /* There is an one odd case where only the 32 bit struct has alignment issues
@@ -1085,7 +1079,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                       types[structtype],
                       max_align_32 - (size_32 % max_align_32));
             }
-            dna_error = 1;
+            types_error = 1;
           }
 
           if (size_64 % max_align_64) {
@@ -1093,7 +1087,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                     "Sizeerror in 64 bit struct: %s (add %d bytes)\n",
                     types[structtype],
                     max_align_64 - (size_64 % max_align_64));
-            dna_error = 1;
+            types_error = 1;
           }
 
           if (size_native % 4 && !ELEM(size_native, 1, 2)) {
@@ -1101,12 +1095,12 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
                     "Sizeerror 4 in struct: %s (add %d bytes)\n",
                     types[structtype],
                     size_native % 4);
-            dna_error = 1;
+            types_error = 1;
           }
 
           /* Write size verification to file. */
           fprintf(file_verify,
-                  "BLI_STATIC_ASSERT(sizeof(struct %s) == %d, \"DNA struct size verify\");\n\n",
+                  "LIB_STATIC_ASSERT(sizeof(struct %s) == %d, \"DNA struct size verify\");\n\n",
                   structname,
                   size_native);
         }
@@ -1121,7 +1115,7 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
   if (unknown) {
     fprintf(stderr, "ERROR: still %d structs unknown\n", unknown);
 
-    if (debugSDNA) {
+    if (debugStruct) {
       fprintf(stderr, "*** Known structs :\n");
 
       for (int a = 0; a < structs_len; a++) {
@@ -1147,15 +1141,15 @@ static int calculate_struct_sizes(int firststruct, FILE *file_verify, const char
       }
     }
 
-    dna_error = 1;
+    types_error = 1;
   }
 
-  return dna_error;
+  return types_error;
 }
 
-#define MAX_DNA_LINE_LENGTH 20
+#define MAX_TYPES_LINE_LENGTH 20
 
-static void dna_write(FILE *file, const void *pntr, const int size)
+static void types_write(FILE *file, const void *pntr, const int size)
 {
   static int linelength = 0;
   const char *data = (const char *)pntr;
@@ -1163,7 +1157,7 @@ static void dna_write(FILE *file, const void *pntr, const int size)
   for (int i = 0; i < size; i++) {
     fprintf(file, "%d, ", data[i]);
     linelength++;
-    if (linelength >= MAX_DNA_LINE_LENGTH) {
+    if (linelength >= MAX_TYPES_LINE_LENGTH) {
       fprintf(file, "\n");
       linelength = 0;
     }
@@ -1189,47 +1183,45 @@ void print_struct_sizes(void)
   printf("*** End of list\n");
 }
 
-static int make_structDNA(const char *base_directory,
-                          FILE *file,
-                          FILE *file_offsets,
-                          FILE *file_verify)
+static int make_structTypes(const char *base_directory,
+                            FILE *file,
+                            FILE *file_offsets,
+                            FILE *file_verify)
 {
-  if (debugSDNA > 0) {
+  if (debugStruct > 0) {
     fflush(stdout);
-    printf("Running makesdna at debug level %d\n", debugSDNA);
+    printf("Running makestypes at debug level %d\n", debugSTypes);
   }
 
-  mem_arena = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+  mem_arena = lib_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
 
   /* the longest known struct is 50k, so we assume 100k is sufficient! */
-  structdata = MEM_callocN(max_data_size, "structdata");
+  structdata = mem_callocn(max_data_size, "structdata");
 
   /* a maximum of 5000 variables, must be sufficient? */
-  names = MEM_callocN(sizeof(char *) * max_array_len, "names");
-  types = MEM_callocN(sizeof(char *) * max_array_len, "types");
-  types_size_native = MEM_callocN(sizeof(short) * max_array_len, "types_size_native");
-  types_size_32 = MEM_callocN(sizeof(short) * max_array_len, "types_size_32");
-  types_size_64 = MEM_callocN(sizeof(short) * max_array_len, "types_size_64");
-  types_align_32 = MEM_callocN(sizeof(short) * max_array_len, "types_size_32");
-  types_align_64 = MEM_callocN(sizeof(short) * max_array_len, "types_size_64");
+  names = mem_callocn(sizeof(char *) * max_array_len, "names");
+  types = mem_callocn(sizeof(char *) * max_array_len, "types");
+  types_size_native = mem_callocn(sizeof(short) * max_array_len, "types_size_native");
+  types_size_32 = mem_callocn(sizeof(short) * max_array_len, "types_size_32");
+  types_size_64 = mem_callocn(sizeof(short) * max_array_len, "types_size_64");
+  types_align_32 = mem_callocn(sizeof(short) * max_array_len, "types_size_32");
+  types_align_64 = mem_callocn(sizeof(short) * max_array_len, "types_size_64");
 
-  structs = MEM_callocN(sizeof(short *) * max_array_len, "structs");
+  structs = mem_callocn(sizeof(short *) * max_array_len, "structs");
 
   /* Build versioning data */
-  DNA_alias_maps(DNA_RENAME_ALIAS_FROM_STATIC,
+  types_alias_maps(TYPES_RENAME_ALIAS_FROM_STATIC,
                  &g_version_data.struct_map_alias_from_static,
                  &g_version_data.elem_map_alias_from_static);
-  DNA_alias_maps(DNA_RENAME_STATIC_FROM_ALIAS,
+  types_alias_maps(TYPES_RENAME_STATIC_FROM_ALIAS,
                  &g_version_data.struct_map_static_from_alias,
                  &g_version_data.elem_map_static_from_alias);
 
-  /**
-   * Insertion of all known types.
+  /* Insertion of all known types.
    *
-   * \warning Order of function calls here must be aligned with #eSDNA_Type.
-   * \warning uint is not allowed! use in structs an unsigned int.
-   * \warning sizes must match #DNA_elem_type_size().
-   */
+   * warning Order of function calls here must be aligned with #eSTypes_Type.
+   * warning uint is not allowed! use in structs an unsigned int.
+   * warning sizes must match types_elem_type_size(). */
   add_type("char", 1);   /* SDNA_TYPE_CHAR */
   add_type("uchar", 1);  /* SDNA_TYPE_UCHAR */
   add_type("short", 2);  /* SDNA_TYPE_SHORT */
@@ -1237,7 +1229,7 @@ static int make_structDNA(const char *base_directory,
   add_type("int", 4);    /* SDNA_TYPE_INT */
 
   /* NOTE: long isn't supported,
-   * these are place-holders to maintain alignment with #eSDNA_Type. */
+   * these are place-holders to maintain alignment with #eSTypes_Type. */
   add_type("long", 4);  /* SDNA_TYPE_LONG */
   add_type("ulong", 4); /* SDNA_TYPE_ULONG */
 
@@ -1262,7 +1254,7 @@ static int make_structDNA(const char *base_directory,
 
     /* NOTE(nzc): `str` contains filenames.
      * Since we now include paths, I stretched it a bit. Hope this is enough :). */
-    char str[SDNA_MAX_FILENAME_LENGTH];
+    char str[STYPES_MAX_FILENAME_LENGTH];
     sprintf(str, "%s%s", base_directory, includefiles[i]);
     DEBUG_PRINTF(0, "\t|-- Converting %s\n", str);
     if (convert_include(str)) {
@@ -1277,7 +1269,7 @@ static int make_structDNA(const char *base_directory,
   }
 
   /* FOR DEBUG */
-  if (debugSDNA > 1) {
+  if (debugSTypes > 1) {
     int a, b;
     /* short *elem; */
     short num_types;
@@ -1311,7 +1303,6 @@ static int make_structDNA(const char *base_directory,
   }
 
   /* file writing */
-
   DEBUG_PRINTF(0, "Writing file ... ");
 
   if (names_len == 0 || structs_len == 0) {
@@ -1320,53 +1311,53 @@ static int make_structDNA(const char *base_directory,
   else {
     const char nil_bytes[4] = {0};
 
-    dna_write(file, "SDNA", 4);
+    types_write(file, "STypes", 4);
 
     /* write names */
-    dna_write(file, "NAME", 4);
+    types_write(file, "NAME", 4);
     int len = names_len;
-    dna_write(file, &len, 4);
+    types_write(file, &len, 4);
     /* write array */
     len = 0;
     for (int nr = 0; nr < names_len; nr++) {
       int name_size = strlen(names[nr]) + 1;
-      dna_write(file, names[nr], name_size);
+      types_write(file, names[nr], name_size);
       len += name_size;
     }
     int len_align = (len + 3) & ~3;
     if (len != len_align) {
-      dna_write(file, nil_bytes, len_align - len);
+      types_write(file, nil_bytes, len_align - len);
     }
 
     /* write TYPES */
-    dna_write(file, "TYPE", 4);
+    types_write(file, "TYPE", 4);
     len = types_len;
-    dna_write(file, &len, 4);
+    types_write(file, &len, 4);
     /* write array */
     len = 0;
     for (int nr = 0; nr < types_len; nr++) {
       int type_size = strlen(types[nr]) + 1;
-      dna_write(file, types[nr], type_size);
+      types_write(file, types[nr], type_size);
       len += type_size;
     }
     len_align = (len + 3) & ~3;
     if (len != len_align) {
-      dna_write(file, nil_bytes, len_align - len);
+      types_write(file, nil_bytes, len_align - len);
     }
 
     /* WRITE TYPELENGTHS */
-    dna_write(file, "TLEN", 4);
+    types_write(file, "TLEN", 4);
 
     len = 2 * types_len;
     if (types_len & 1) {
       len += 2;
     }
-    dna_write(file, types_size_native, len);
+    types_write(file, types_size_native, len);
 
     /* WRITE STRUCTS */
-    dna_write(file, "STRC", 4);
+    types_write(file, "STRC", 4);
     len = structs_len;
-    dna_write(file, &len, 4);
+    types_write(file, &len, 4);
 
     /* calc datablock size */
     const short *sp = structs[structs_len - 1];
@@ -1374,14 +1365,14 @@ static int make_structDNA(const char *base_directory,
     len = (intptr_t)((char *)sp - (char *)structs[0]);
     len = (len + 3) & ~3;
 
-    dna_write(file, structs[0], len);
+    types_write(file, structs[0], len);
   }
 
   /* write a simple enum with all structs offsets,
-   * should only be accessed via SDNA_TYPE_FROM_STRUCT macro */
+   * should only be accessed via STYPES_TYPE_FROM_STRUCT macro */
   {
     fprintf(file_offsets, "#pragma once\n");
-    fprintf(file_offsets, "#define SDNA_TYPE_FROM_STRUCT(id) _SDNA_TYPE_##id\n");
+    fprintf(file_offsets, "#define STYPES_TYPE_FROM_STRUCT(id) _SDNA_TYPE_##id\n");
     fprintf(file_offsets, "enum {\n");
     for (int i = 0; i < structs_len; i++) {
       const short *structpoin = structs[i];
@@ -1398,7 +1389,7 @@ static int make_structDNA(const char *base_directory,
   /* Check versioning errors which could cause duplicate names,
    * do last because names are stripped. */
   {
-    GSet *names_unique = BLI_gset_str_new_ex(__func__, 512);
+    GSet *names_unique = lib_gset_str_new_ex(__func__, 512);
     for (int struct_nr = 0; struct_nr < structs_len; struct_nr++) {
       const short *sp = structs[struct_nr];
       const char *struct_name = types[sp[0]];
@@ -1406,8 +1397,8 @@ static int make_structDNA(const char *base_directory,
       sp += 2;
       for (int a = 0; a < len; a++, sp += 2) {
         char *name = names[sp[1]];
-        DNA_elem_id_strip(name);
-        if (!BLI_gset_add(names_unique, name)) {
+        types_elem_id_strip(name);
+        if (!lib_gset_add(names_unique, name)) {
           fprintf(stderr,
                   "Error: duplicate name found '%s.%s', "
                   "likely cause is 'dna_rename_defs.h'\n",
@@ -1416,46 +1407,40 @@ static int make_structDNA(const char *base_directory,
           return 1;
         }
       }
-      BLI_gset_clear(names_unique, NULL);
+      lib_gset_clear(names_unique, NULL);
     }
-    BLI_gset_free(names_unique, NULL);
+    lib_gset_free(names_unique, NULL);
   }
 
-  MEM_freeN(structdata);
-  MEM_freeN(names);
-  MEM_freeN(types);
-  MEM_freeN(types_size_native);
-  MEM_freeN(types_size_32);
-  MEM_freeN(types_size_64);
-  MEM_freeN(types_align_32);
-  MEM_freeN(types_align_64);
-  MEM_freeN(structs);
+  mem_freeN(structdata);
+  mem_freeN(names);
+  mem_freeN(types);
+  mem_freeN(types_size_native);
+  mem_freeN(types_size_32);
+  mem_freeN(types_size_64);
+  mem_freeN(types_align_32);
+  mem_freeN(types_align_64);
+  mem_freeN(structs);
 
-  BLI_memarena_free(mem_arena);
+  lib_memarena_free(mem_arena);
 
-  BLI_ghash_free(g_version_data.struct_map_alias_from_static, NULL, NULL);
-  BLI_ghash_free(g_version_data.struct_map_static_from_alias, NULL, NULL);
-  BLI_ghash_free(g_version_data.elem_map_static_from_alias, MEM_freeN, NULL);
-  BLI_ghash_free(g_version_data.elem_map_alias_from_static, MEM_freeN, NULL);
+  lib_ghash_free(g_version_data.struct_map_alias_from_static, NULL, NULL);
+  lib_ghash_free(g_version_data.struct_map_static_from_alias, NULL, NULL);
+  lib_ghash_free(g_version_data.elem_map_static_from_alias, mem_freen, NULL);
+  lib_ghash_free(g_version_data.elem_map_alias_from_static, mem_freen, NULL);
 
   DEBUG_PRINTF(0, "done.\n");
 
   return 0;
 }
 
-/** \} */
-
-/* end make DNA. */
-
-/* -------------------------------------------------------------------- */
-/** \name Main Function
- * \{ */
-
+/* end make Types. */
+/* Main Function */
 static void make_bad_file(const char *file, int line)
 {
   FILE *fp = fopen(file, "w");
   fprintf(fp,
-          "#error \"Error! can't make correct DNA.c file from %s:%d, check alignment.\"\n",
+          "#error \"Error! can't make correct types.c file from %s:%d, check alignment.\"\n",
           __FILE__,
           line);
   fclose(fp);
@@ -1470,22 +1455,22 @@ int main(int argc, char **argv)
   int return_status = 0;
 
   if (!ELEM(argc, 4, 5)) {
-    printf("Usage: %s dna.c dna_struct_offsets.h [base directory]\n", argv[0]);
+    printf("Usage: %s types.c dna_struct_offsets.h [base directory]\n", argv[0]);
     return_status = 1;
   }
   else {
-    FILE *file_dna = fopen(argv[1], "w");
-    FILE *file_dna_offsets = fopen(argv[2], "w");
-    FILE *file_dna_verify = fopen(argv[3], "w");
-    if (!file_dna) {
+    FILE *file_types = fopen(argv[1], "w");
+    FILE *file_types_offsets = fopen(argv[2], "w");
+    FILE *file_types_verify = fopen(argv[3], "w");
+    if (!file_types) {
       printf("Unable to open file: %s\n", argv[1]);
       return_status = 1;
     }
-    else if (!file_dna_offsets) {
+    else if (!file_types_offsets) {
       printf("Unable to open file: %s\n", argv[2]);
       return_status = 1;
     }
-    else if (!file_dna_verify) {
+    else if (!file_types_verify) {
       printf("Unable to open file: %s\n", argv[3]);
       return_status = 1;
     }
@@ -1499,40 +1484,40 @@ int main(int argc, char **argv)
         base_directory = BASE_HEADER;
       }
 
-      /* NOTE: #init_structDNA() in dna_genfile.c expects `sdna->data` is 4-bytes aligned.
-       * `DNAstr[]` buffer written by `makesdna` is used for this data, so make `DNAstr` forcefully
+      /* NOTE: init_structTypes() in types_genfile.c expects `sdna->data` is 4-bytes aligned.
+       * `Typesstr[]` buffer written by `makestypes` is used for this data, so make `DNAstr` forcefully
        * 4-bytes aligned. */
 #ifdef __GNUC__
 #  define FORCE_ALIGN_4 " __attribute__((aligned(4))) "
 #else
 #  define FORCE_ALIGN_4 " "
 #endif
-      fprintf(file_dna, "extern const unsigned char DNAstr[];\n");
-      fprintf(file_dna, "const unsigned char" FORCE_ALIGN_4 "DNAstr[] = {\n");
+      fprintf(file_types, "extern const unsigned char DNAstr[];\n");
+      fprintf(file_types, "const unsigned char" FORCE_ALIGN_4 "DNAstr[] = {\n");
 #undef FORCE_ALIGN_4
 
-      if (make_structDNA(base_directory, file_dna, file_dna_offsets, file_dna_verify)) {
+      if (make_structTypee(base_directory, file_stypes, file_stypes_offsets, file_stypes_verify)) {
         /* error */
-        fclose(file_dna);
-        file_dna = NULL;
+        fclose(file_stypes);
+        file_stypes = NULL;
         make_bad_file(argv[1], __LINE__);
         return_status = 1;
       }
       else {
-        fprintf(file_dna, "};\n");
-        fprintf(file_dna, "extern const int DNAlen;\n");
-        fprintf(file_dna, "const int DNAlen = sizeof(DNAstr);\n");
+        fprintf(file_stypes, "};\n");
+        fprintf(file_stypes, "extern const int Typeslen;\n");
+        fprintf(file_stypes, "const int DNAlen = sizeof(DNAstr);\n");
       }
     }
 
-    if (file_dna) {
-      fclose(file_dna);
+    if (file_types) {
+      fclose(file_types);
     }
-    if (file_dna_offsets) {
-      fclose(file_dna_offsets);
+    if (file_types_offsets) {
+      fclose(file_types_offsets);
     }
-    if (file_dna_verify) {
-      fclose(file_dna_verify);
+    if (file_types_verify) {
+      fclose(file_types_verify);
     }
   }
 
@@ -1563,95 +1548,93 @@ int main(int argc, char **argv)
 #  pragma GCC poison long
 #endif
 
-#include "DNA_ID.h"
-#include "DNA_action_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_asset_types.h"
-#include "DNA_boid_types.h"
-#include "DNA_brush_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_camera_types.h"
-#include "DNA_cloth_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_color_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_curveprofile_types.h"
-#include "DNA_curves_types.h"
-#include "DNA_customdata_types.h"
-#include "DNA_dynamicpaint_types.h"
-#include "DNA_effect_types.h"
-#include "DNA_fileglobal_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_freestyle_types.h"
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_image_types.h"
-#include "DNA_ipo_types.h"
-#include "DNA_key_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_light_types.h"
-#include "DNA_lightprobe_types.h"
-#include "DNA_lineart_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_listBase.h"
-#include "DNA_mask_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_meta_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_nla_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_fluidsim_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_outliner_types.h"
-#include "DNA_packedFile_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_pointcache_types.h"
-#include "DNA_pointcloud_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
+#include "types_id.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_asset.h"
+#include "types_boid.h"
+#include "types_brush.h"
+#include "types_cachefile.h"
+#include "types_camera.h"
+#include "types_cloth.h"
+#include "types_collection.h"
+#include "types_color.h"
+#include "types_constraint.h"
+#include "types_curv.h"
+#include "types_curveprofile.h"
+#include "types_curves.h"
+#include "types_customdata.h"
+#include "types_dynamicpaint.h"
+#include "types_effect.h"
+#include "types_fileglobal.h"
+#include "types_fluid_types.h"
+#include "types_freestyle_types.h"
+#include "types_pen_mod.h"
+#include "types_pen.h"
+#include "types_image.h"
+#include "types_ipo.h"
+#include "types_key.h"
+#include "types_lattice.h"
+#include "types_layer.h"
+#include "types_light.h"
+#include "types_lightprobe.h"
+#include "types_lineart.h"
+#include "types_linestyle.h"
+#include "types_list.h"
+#include "types_mask.h"
+#include "types_material_types.h"
+#include "types_mesh_types.h"
+#include "types_meshdata_types.h"
+#include "types_meta_types.h"
+#include "types_mod_types.h"
+#include "types_movieclip_types.h"
+#include "types_nla_types.h"
+#include "types_node_types.h"
+#include "types_object_fluidsim_types.h"
+#include "typea_object_force_types.h"
+#include "types_object_types.h"
+#include "types_outliner_types.h"
+#include "types_packedFile_types.h"
+#include "types_particle_types.h"
+#include "types_pointcache_types.h"
+#include "types_pointcloud_types.h"
+#include "types_rigidbody_types.h"
+#include "types_scene_types.h"
 #include "DNA_screen_types.h"
-#include "DNA_sdna_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_session_uuid_types.h"
-#include "DNA_shader_fx_types.h"
-#include "DNA_simulation_types.h"
-#include "DNA_sound_types.h"
-#include "DNA_space_types.h"
-#include "DNA_speaker_types.h"
-#include "DNA_text_types.h"
-#include "DNA_texture_types.h"
-#include "DNA_tracking_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_uuid_types.h"
-#include "DNA_vec_types.h"
-#include "DNA_vfont_types.h"
-#include "DNA_view2d_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_volume_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_workspace_types.h"
-#include "DNA_world_types.h"
-#include "DNA_xr_types.h"
+#include "DNA_stypes.h"
+#include "DNA_session.h"
+#include "DNA_session_uuid.h"
+#include "DNA_shader_fx.h"
+#include "DNA_simulation.h"
+#include "DNA_sound.h"
+#include "types_space.h"
+#include "types_speaker.h"
+#include "types_text.h"
+#include "types_texture.h"
+#include "types_tracking.h"
+#include "types_userdef.h"
+#include "types_uuid.h"
+#include "types_vec.h"
+#include "types_vfont.h"
+#include "types_view2d.h"
+#include "types_view3d.h"
+#include "types_volume.h"
+#include "types_wm.h"
+#include "types_workspace.h"
+#include "types_world.h"
+#include "types_xr.h"
 
 /* end of list */
 
 /* Types Renaming Sanity Check
- *
  * Without this it's possible to reference struct members that don't exist,
  * breaking backward & forward compatibility. */
-
 static void UNUSED_FN(types_rename_defs_ensure)(void)
 {
-#define DNA_STRUCT_RENAME(old, new) (void)sizeof(new);
-#define DNA_STRUCT_RENAME_ELEM(struct_name, old, new) (void)offsetof(struct_name, new);
+#define TYPES_STRUCT_RENAME(old, new) (void)sizeof(new);
+#define TYPES_STRUCT_RENAME_ELEM(struct_name, old, new) (void)offsetof(struct_name, new);
 #include "types_rename_defs.h"
-#undef DNA_STRUCT_RENAME
-#undef DNA_STRUCT_RENAME_ELEM
+#undef TYPES_STRUCT_RENAME
+#undef TYPES_STRUCT_RENAME_ELEM
 }
