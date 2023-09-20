@@ -1,12 +1,9 @@
-/** \file
- * \ingroup DNA
+/* Struct muncher for making SDNA.
  *
- * \brief Struct muncher for making SDNA.
+ * section aboutmakestypesc About makestypes tool
  *
- * \section aboutmakesdnac About makesdna tool
- *
- * `makesdna` creates a .c file with a long string of numbers that
- * encode the Blender file format. It is fast, because it is basically
+ * `makestypes` creates a .c file with a long string of numbers that
+ * encode the Dune file format. It is fast, because it is basically
  * a binary dump. There are some details to mind when reconstructing
  * the file (endianness and byte-alignment).
  *
@@ -16,27 +13,27 @@
  * and the offsets for reaching a particular one.
  *
  * There is a facility to get verbose output from `sdna`. Search for
- * \ref debugSDNA. This int can be set to 0 (no output) to some int.
+ * debugSTypes. This int can be set to 0 (no output) to some int.
  * Higher numbers give more output.
  */
 
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_ghash.h"
-#include "BLI_memarena.h"
-#include "BLI_sys_types.h" /* for intptr_t support */
-#include "BLI_system.h"    /* for 'BLI_system_backtrace' stub. */
-#include "BLI_utildefines.h"
+#include "lib_alloca.h"
+#include "lib_ghash.h"
+#include "lib_memarena.h"
+#include "lib_sys_types.h" /* for intptr_t support */
+#include "lib_system.h"    /* for 'BLI_system_backtrace' stub. */
+#include "lib_utildefines.h"
 
-#include "dna_utils.h"
+#include "types_utils.h"
 
 #define SDNA_MAX_FILENAME_LENGTH 255
 
@@ -45,18 +42,18 @@
 static const char *includefiles[] = {
     /* if you add files here, please add them at the end
      * of makesdna.c (this file) as well */
-    "DNA_listBase.h",
-    "DNA_vec_types.h",
-    "DNA_ID.h",
-    "DNA_ipo_types.h",
-    "DNA_key_types.h",
-    "DNA_text_types.h",
-    "DNA_packedFile_types.h",
-    "DNA_gpu_types.h",
-    "DNA_camera_types.h",
-    "DNA_image_types.h",
-    "DNA_texture_types.h",
-    "DNA_light_types.h",
+    "types_list.h",
+    "types_vec.h",
+    "types_id.h",
+    "types_ipo.h",
+    "types_key.h",
+    "types_text.h",
+    "types_packedFile.h",
+    "types_gpu.h",
+    "types_camera.h",
+    "types_image.h",
+    "types_texture.h",
+    "types_light.h",
     "DNA_material_types.h",
     "DNA_vfont_types.h",
     "DNA_meta_types.h",
@@ -129,23 +126,20 @@ static const char *includefiles[] = {
     "",
 };
 
-/* -------------------------------------------------------------------- */
-/** \name Variables
- * \{ */
-
+/* Variables */
 static MemArena *mem_arena = NULL;
 
 static int max_data_size = 500000, max_array_len = 50000;
 static int names_len = 0;
 static int types_len = 0;
 static int structs_len = 0;
-/** At address `names[a]` is string `a`. */
+/* At address `names[a]` is string `a`. */
 static char **names;
-/** At address `types[a]` is string `a`. */
+/* At address `types[a]` is string `a`. */
 static char **types;
-/** At `types_size[a]` is the size of type `a` on this systems bitness (32 or 64). */
+/* At `types_size[a]` is the size of type `a` on this systems bitness (32 or 64). */
 static short *types_size_native;
-/** Contains align requirements for a struct on 32 bit systems. */
+/* Contains align requirements for a struct on 32 bit systems. */
 static short *types_align_32;
 /** Contains align requirements for a struct on 64 bit systems. */
 static short *types_align_64;
@@ -161,7 +155,7 @@ static short *types_size_64;
  */
 static short **structs, *structdata;
 
-/** Versioning data */
+/* Versioning data */
 static struct {
   GHash *struct_map_alias_from_static;
   GHash *struct_map_static_from_alias;
@@ -169,15 +163,13 @@ static struct {
   GHash *elem_map_static_from_alias;
 } g_version_data = {NULL};
 
-/**
- * Variable to control debug output of makesdna.
- * debugSDNA:
+/* Variable to control debug output of makesdna.
+ * debugSTypes:
  * - 0 = no output, except errors
  * - 1 = detail actions
  * - 2 = full trace, tell which names and types were found
- * - 4 = full trace, plus all gritty details
- */
-static int debugSDNA = 0;
+ * - 4 = full trace, plus all gritty details */
+static int debugSTypes = 0;
 static int additional_slen_offset;
 
 #define DEBUG_PRINTF(debug_level, ...) \
@@ -188,26 +180,19 @@ static int additional_slen_offset;
   } \
   ((void)0)
 
-/* stub for BLI_abort() */
+/* stub for lib_abort() */
 #ifndef NDEBUG
-void BLI_system_backtrace(FILE *fp)
+void lib_system_backtrace(FILE *fp)
 {
   (void)fp;
 }
 #endif
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Function Declarations
- * \{ */
-
-/**
- * Ensure type \c str to is in the #types array.
- * \param str: Struct name without any qualifiers.
- * \param size: The struct size in bytes.
- * \return Index in the #types array.
- */
+/* Function Declarations */
+/* Ensure type \c str to is in the #types array.
+ * param str: Struct name without any qualifiers.
+ * param size: The struct size in bytes.
+ * return Index in the #types array. */
 static int add_type(const char *str, int size);
 
 /**
