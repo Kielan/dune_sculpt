@@ -5,70 +5,70 @@ endif()
 
 # files rna_access.c rna_define.c makesrna.c intentionally excluded.
 set(DEFSRC
-  rna_ID.c
-  rna_action.c
-  rna_animation.c
-  rna_animviz.c
-  rna_armature.c
-  rna_asset.c
-  rna_attribute.c
-  rna_boid.c
-  rna_brush.c
-  rna_cachefile.c
-  rna_camera.c
-  rna_cloth.c
-  rna_collection.c
-  rna_color.c
-  rna_constraint.c
-  rna_context.c
-  rna_curve.c
-  rna_curveprofile.c
-  rna_depsgraph.c
-  rna_dynamicpaint.c
-  rna_fcurve.c
-  rna_fluid.c
-  rna_gpencil.c
-  rna_gpencil_modifier.c
-  rna_image.c
-  rna_key.c
-  rna_lattice.c
-  rna_layer.c
-  rna_light.c
-  rna_lightprobe.c
-  rna_linestyle.c
-  rna_main.c
-  rna_mask.c
-  rna_material.c
-  rna_mesh.c
-  rna_meta.c
-  rna_modifier.c
-  rna_movieclip.c
-  rna_nla.c
-  rna_nodetree.c
-  rna_object.c
-  rna_object_force.c
-  rna_packedfile.c
-  rna_palette.c
-  rna_particle.c
-  rna_pointcloud.c
-  rna_pose.c
-  rna_render.c
-  rna_rigidbody.c
-  rna_rna.c
-  rna_scene.c
-  rna_screen.c
-  rna_sculpt_paint.c
-  rna_sequencer.c
-  rna_shader_fx.c
-  rna_sound.c
-  rna_space.c
-  rna_speaker.c
-  rna_test.c
-  rna_text.c
-  rna_texture.c
-  rna_timeline.c
-  rna_tracking.c
-  rna_ui.c
+  api_ID.c
+  api_action.c
+  api_animation.c
+  api_animviz.c
+  api_armature.c
+  api_asset.c
+  api_attribute.c
+  api_boid.c
+  api_brush.c
+  api_cachefile.c
+  api_camera.c
+  api_cloth.c
+  api_collection.c
+  api_color.c
+  api_constraint.c
+  api_cxt.c
+  api_curve.c
+  api_curveprofile.c
+  api_graph.c
+  api_dynamicpaint.c
+  api_fcurve.c
+  api_fluid.c
+  api_pen.c
+  api_pen_mod.c
+  api_image.c
+  api_key.c
+  api_lattice.c
+  api_layer.c
+  api_light.c
+  api_lightprobe.c
+  api_linestyle.c
+  api_main.c
+  api_mask.c
+  api_material.c
+  api_mesh.c
+  api_meta.c
+  api_mod.c
+  api_movieclip.c
+  api_nla.c
+  api_nodetree.c
+  api_object.c
+  api_object_force.c
+  api_packedfile.c
+  api_palette.c
+  api_particle.c
+  api_pointcloud.c
+  api_pose.c
+  api_render.c
+  api_rigidbody.c
+  api.c
+  api_scene.c
+  api_screen.c
+  api_sculpt_paint.c
+  api_seq.c
+  api_shader_fx.c
+  api_sound.c
+  api_space.c
+  api_speaker.c
+  api_test.c
+  api_text.c
+  api_texture.c
+  api_timeline.c
+  api_tracking.c
+  api_ui.c
   rna_userdef.c
   rna_vfont.c
   rna_volume.c
@@ -83,40 +83,40 @@ if(WITH_EXPERIMENTAL_FEATURES)
   add_definitions(-DWITH_SIMULATION_DATABLOCK)
   add_definitions(-DWITH_NEW_CURVES_TYPE)
   list(APPEND DEFSRC
-    rna_curves.c
-    rna_simulation.c
+    api_curves.c
+    api_simulation.c
   )
 endif()
 
 set(APISRC
-  rna_action_api.c
-  rna_animation_api.c
-  rna_armature_api.c
-  rna_camera_api.c
-  rna_curve_api.c
-  rna_fcurve_api.c
-  rna_image_api.c
-  rna_lattice_api.c
-  rna_main_api.c
-  rna_material_api.c
-  rna_mesh_api.c
-  rna_meta_api.c
-  rna_object_api.c
-  rna_pose_api.c
-  rna_scene_api.c
-  rna_sequencer_api.c
-  rna_sound_api.c
-  rna_space_api.c
-  rna_text_api.c
-  rna_texture_api.c
-  rna_ui_api.c
-  rna_vfont_api.c
-  rna_wm_api.c
-  rna_wm_gizmo_api.c
-  rna_workspace_api.c
+  api_action_api.c
+  api_animation_api.c
+  api_armature_api.c
+  api_camera_api.c
+  api_curve_api.c
+  api_fcurve_api.c
+  api_image_api.c
+  api_lattice_api.c
+  api_main_api.c
+  api_material_api.c
+  api_mesh_api.c
+  api_meta_api.c
+  api_object_api.c
+  api_pose_api.c
+  api_scene_api.c
+  api_seq_api.c
+  api_sound_api.c
+  api_space_api.c
+  api_text_api.c
+  api_texture_api.c
+  api_ui_api.c
+  api_vfont_api.c
+  api_wm_api.c
+  api_wm_gizmo_api.c
+  api_workspace_api.c
 )
 
-string(REGEX REPLACE "rna_([a-zA-Z0-9_-]*).c" "${CMAKE_CURRENT_BINARY_DIR}/rna_\\1_gen.c" GENSRC "${DEFSRC}")
+string(REGEX REPLACE "api_([a-zA-Z0-9_-]*).c" "${CMAKE_CURRENT_BINARY_DIR}/rna_\\1_gen.c" GENSRC "${DEFSRC}")
 list(APPEND GENSRC
   "${CMAKE_CURRENT_BINARY_DIR}/rna_prototypes_gen.h"
   "${CMAKE_CURRENT_BINARY_DIR}/../RNA_prototypes.h"
@@ -151,18 +151,18 @@ unset(GENSRC_CFLAGS)
 unset(CMAKE_C_CLANG_TIDY)
 unset(CMAKE_CXX_CLANG_TIDY)
 
-set(SRC_RNA_INC
-  ../RNA_access.h
-  ../RNA_define.h
-  ../RNA_documentation.h
-  ../RNA_enum_items.h
-  ../RNA_enum_types.h
-  ../RNA_types.h
+set(SRC_API_INC
+  ../api_access.h
+  ../api_define.h
+  ../api_documentation.h
+  ../api_enum_items.h
+  ../api_enum_types.h
+  ../api_types.h
 )
 
 set(SRC
-  makesrna.c
-  rna_define.c
+  api.c
+  api_define.c
   ${DEFSRC}
   ${APISRC}
   ../../../../intern/clog/clog.c
@@ -180,14 +180,14 @@ set(INC
   ../../../../intern/clog
 
   # Needed for defaults forward declarations.
-  ../../blenloader
+  ../../loader
 
-  ${CMAKE_BINARY_DIR}/source/blender/makesdna/intern
+  ${CMAKE_BINARY_DIR}/source/dune/types/intern
 
-  # dna_type_offsets.h
-  ${CMAKE_CURRENT_BINARY_DIR}/../../makesdna/intern
-  # RNA_prototypes.h
-  ${CMAKE_CURRENT_BINARY_DIR}/../../makesrna/
+  # types_type_offsets.h
+  ${CMAKE_CURRENT_BINARY_DIR}/../../types/intern
+  # api_prototypes.h
+  ${CMAKE_CURRENT_BINARY_DIR}/../../api/
 )
 
 set(INC_SYS
@@ -360,25 +360,24 @@ endif()
 blender_include_dirs(
   .
   ..
-  ../../blenfont
-  ../../blenkernel
-  ../../blenlib
-  ../../blentranslation
-  ../../bmesh
-  ../../depsgraph
+  ../../font
+  ../../dune
+  ../../lib
+  ../../lang
+  ../../mesh
+  ../../graph
   ../../draw
   ../../gpu
   ../../ikplugin
   ../../imbuf
-  ../../makesdna
-  ../../modifiers
+  ../../types
+  ../../mods
   ../../nodes/
-  ../../sequencer
+  ../../seq
   ../../simulation
-  ../../windowmanager
+  ../../wm
   ../../editors/include
   ../../render
-  ../../../../intern/cycles/blender
   ../../../../intern/atomic
   ../../../../intern/glew-mx
   ../../../../intern/guardedalloc
@@ -386,10 +385,10 @@ blender_include_dirs(
   ../../../../intern/mantaflow/extern
 )
 
-add_cc_flags_custom_test(makesrna)
+add_cc_flags_custom_test(api)
 
-add_executable(makesrna ${SRC} ${SRC_RNA_INC} ${SRC_DNA_INC})
-setup_platform_linker_flags(makesrna)
+add_executable(api ${SRC} ${SRC_API_INC} ${SRC_TYPES_INC})
+setup_platform_linker_flags(api)
 
 target_link_libraries(makesrna bf_dna)
 target_link_libraries(makesrna bf_dna_blenlib)
@@ -398,18 +397,18 @@ if(WIN32 AND NOT UNIX)
   target_link_libraries(makesrna ${PTHREADS_LIBRARIES})
 endif()
 
-# Output rna_*_gen.c
+# Output api_*_gen.c
 # note (linux only): with crashes try add this after COMMAND: valgrind --leak-check=full --track-origins=yes
 add_custom_command(
   OUTPUT ${GENSRC}
   COMMAND "$<TARGET_FILE:makesrna>" ${CMAKE_CURRENT_BINARY_DIR}/  ${CMAKE_CURRENT_BINARY_DIR}/../
-  DEPENDS makesrna
+  DEPENDS api
 )
 
-# Build bf_rna
+# Build bf_api
 set(SRC
-  rna_access.c
-  rna_access_compare_override.c
+  api_access.c
+  api_access_compare_override.c
   ${GENSRC}
 
   ${SRC_RNA_INC}
@@ -444,7 +443,7 @@ set(LIB
 
 add_definitions(${GL_DEFINITIONS})
 
-blender_add_lib(bf_rna "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(bf_api "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
 # Needed so we can use dna_type_offsets.h for defaults initialization.
 add_dependencies(bf_blenkernel bf_dna)
