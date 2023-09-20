@@ -356,8 +356,8 @@ if(WITH_GMP)
   add_definitions(-DWITH_GMP)
 endif()
 
-# Build makesrna executable
-blender_include_dirs(
+# Build api executable
+dune_include_dirs(
   .
   ..
   ../../font
@@ -390,8 +390,8 @@ add_cc_flags_custom_test(api)
 add_executable(api ${SRC} ${SRC_API_INC} ${SRC_TYPES_INC})
 setup_platform_linker_flags(api)
 
-target_link_libraries(makesrna bf_dna)
-target_link_libraries(makesrna bf_dna_blenlib)
+target_link_libraries(api bf_dna)
+target_link_libraries(api bf_types_dunelib)
 
 if(WIN32 AND NOT UNIX)
   target_link_libraries(makesrna ${PTHREADS_LIBRARIES})
@@ -411,28 +411,28 @@ set(SRC
   api_access_compare_override.c
   ${GENSRC}
 
-  ${SRC_RNA_INC}
-  rna_access_internal.h
-  rna_internal.h
-  rna_internal_types.h
-  rna_mesh_utils.h
+  ${SRC_API_INC}
+  api_access_internal.h
+  api_internal.h
+  api_internal_types.h
+  api_mesh_utils.h
 )
 
 set(LIB
   bf_dna
   bf_editor_space_api
 
-  bf_editor_animation
+  bf_editor_anim
   bf_editor_armature
   bf_editor_asset
   bf_editor_curve
   bf_editor_curves
-  bf_editor_gizmo_library
-  bf_editor_gpencil
+  bf_editor_gizmo_lib
+  bf_editor_pen
   bf_editor_io
   bf_editor_mesh
   bf_editor_object
-  bf_editor_physics
+  bf_editor_phys
   bf_editor_render
   bf_editor_scene
   bf_editor_sculpt_paint
@@ -446,4 +446,4 @@ add_definitions(${GL_DEFINITIONS})
 dune_add_lib(bf_api "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
 # Needed so we can use dna_type_offsets.h for defaults initialization.
-add_dependencies(bf_blenkernel bf_dna)
+add_dependencies(bf_dune bf_dna)
