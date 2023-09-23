@@ -768,7 +768,7 @@ unsigned int api_struct_count_props(ApiStruct *sapi)
   ApiPtr struct_ptr;
   unsigned int counter = 0;
 
-  api_pyr_create(NULL, sapi, NULL, &struct_ptr);
+  api_ptr_create(NULL, sapi, NULL, &struct_ptr);
 
   API_STRUCT_BEGIN (&struct_ptr, prop) {
     counter++;
@@ -1177,10 +1177,10 @@ void api_prop_int_range(ApiPtr *ptr, ApiProp *prop, int *hardmin, int *hardmax)
   ApiIntProp *iprop = (ApiIntProp *)api_ensure_prop(prop);
   int softmin, softmax;
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IdProp *idprop = (IdProp *)prop;
     if (idprop->ui_data) {
-      IDPropertyUIDataInt *ui_data = (IDPropertyUIDataInt *)idprop->ui_data;
+      IdPropUIDataInt *ui_data = (IdPropUIDataInt *)idprop->ui_data;
       *hardmin = ui_data->min;
       *hardmax = ui_data->max;
     }
@@ -1209,16 +1209,16 @@ void api_prop_int_range(ApiPtr *ptr, ApiProp *prop, int *hardmin, int *hardmax)
   }
 }
 
-void RNA_property_int_ui_range(
-    PointerRNA *ptr, PropertyRNA *prop, int *softmin, int *softmax, int *step)
+void api_prop_int_ui_range(
+    ApiPtr *ptr, ApiProp *prop, int *softmin, int *softmax, int *step)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)rna_ensure_property(prop);
+  ApiIntProp *iprop = (ApiIntProp *)api_ensure_prop(prop);
   int hardmin, hardmax;
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IdProp *idprop = (IdProp *)prop;
     if (idprop->ui_data) {
-      IDPropertyUIDataInt *ui_data_int = (IDPropertyUIDataInt *)idprop->ui_data;
+      IdPropUIDataInt *ui_data_int = (IdPropUIDataInt *)idprop->ui_data;
       *softmin = ui_data_int->soft_min;
       *softmax = ui_data_int->soft_max;
       *step = ui_data_int->step;
@@ -1256,15 +1256,15 @@ void RNA_property_int_ui_range(
   *step = iprop->step;
 }
 
-void RNA_property_float_range(PointerRNA *ptr, PropertyRNA *prop, float *hardmin, float *hardmax)
+void api_prop_float_range(ApiPtr *ptr, ApiProp *prop, float *hardmin, float *hardmax)
 {
-  FloatPropertyRNA *fprop = (FloatPropertyRNA *)rna_ensure_property(prop);
+  ApiFloatProp *fprop = (ApiFloatProp *)api_ensure_prop(prop);
   float softmin, softmax;
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IDProp *idprop = (IdProp *)prop;
     if (idprop->ui_data) {
-      IDPropertyUIDataFloat *ui_data = (IDPropertyUIDataFloat *)idprop->ui_data;
+      IdPropUIDataFloat *ui_data = (IdPropUIDataFloat *)idprop->ui_data;
       *hardmin = (float)ui_data->min;
       *hardmax = (float)ui_data->max;
     }
@@ -1293,20 +1293,20 @@ void RNA_property_float_range(PointerRNA *ptr, PropertyRNA *prop, float *hardmin
   }
 }
 
-void RNA_property_float_ui_range(PointerRNA *ptr,
-                                 PropertyRNA *prop,
-                                 float *softmin,
-                                 float *softmax,
-                                 float *step,
-                                 float *precision)
+void api_prop_float_ui_range(ApiPtr *ptr,
+                             ApiProp *prop,
+                             float *softmin,
+                             float *softmax,
+                             float *step,
+                             float *precision)
 {
-  FloatPropertyRNA *fprop = (FloatPropertyRNA *)rna_ensure_property(prop);
+  ApiFloatProp *fprop = (ApiFloatProp *)api_ensure_prop(prop);
   float hardmin, hardmax;
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IdProp *idprop = (IdProp *)prop;
     if (idprop->ui_data) {
-      IDPropertyUIDataFloat *ui_data = (IDPropertyUIDataFloat *)idprop->ui_data;
+      IdPropUIDataFloat *ui_data = (IdPropUIDataFloat *)idprop->ui_data;
       *softmin = (float)ui_data->soft_min;
       *softmax = (float)ui_data->soft_max;
       *step = ui_data->step;
@@ -1347,11 +1347,11 @@ void RNA_property_float_ui_range(PointerRNA *ptr,
   *precision = (float)fprop->precision;
 }
 
-int RNA_property_float_clamp(PointerRNA *ptr, PropertyRNA *prop, float *value)
+int api_prop_float_clamp(ApiPtr *ptr, ApiProp *prop, float *value)
 {
   float min, max;
 
-  RNA_property_float_range(ptr, prop, &min, &max);
+  api_prop_float_range(ptr, prop, &min, &max);
 
   if (*value < min) {
     *value = min;
@@ -1364,11 +1364,11 @@ int RNA_property_float_clamp(PointerRNA *ptr, PropertyRNA *prop, float *value)
   return 0;
 }
 
-int RNA_property_int_clamp(PointerRNA *ptr, PropertyRNA *prop, int *value)
+int api_prop_int_clamp(ApiPtr *ptr, ApiProp *prop, int *value)
 {
   int min, max;
 
-  RNA_property_int_range(ptr, prop, &min, &max);
+  api_prop_int_range(ptr, prop, &min, &max);
 
   if (*value < min) {
     *value = min;
@@ -1381,15 +1381,15 @@ int RNA_property_int_clamp(PointerRNA *ptr, PropertyRNA *prop, int *value)
   return 0;
 }
 
-int RNA_property_string_maxlength(PropertyRNA *prop)
+int api_prop_string_maxlength(ApiProp *prop)
 {
-  StringPropertyRNA *sprop = (StringPropertyRNA *)rna_ensure_property(prop);
+  ApiStringProp *sprop = (ApiStringProp *)api_ensure_prop(prop);
   return sprop->maxlength;
 }
 
-StructRNA *RNA_property_pointer_type(PointerRNA *ptr, PropertyRNA *prop)
+ApiStruct *api_prop_ptr_type(ApiPtr *ptr, ApiProp *prop)
 {
-  prop = rna_ensure_property(prop);
+  prop = api_ensure_prop(prop);
 
   if (prop->type == PROP_POINTER) {
     PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
