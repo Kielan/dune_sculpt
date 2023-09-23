@@ -217,10 +217,9 @@ void api_ptr_recast(ApiPtr *ptr, ApiPtr *r_ptr)
 }
 
 /* Id Props */
-
 void api_idprop_touch(IdProp *idprop)
 {
-  /* so the property is seen as 'set' by rna */
+  /* so the prop is seen as 'set' by rna */
   idprop->flag &= ~IDP_FLAG_GHOST;
 }
 
@@ -265,11 +264,11 @@ IdProp *api_idprop_find(ApiPtr *ptr, const char *name)
     if (group->type == IDP_GROUP) {
       return IDP_GetPropFromGroup(group, name);
     }
-    /* Not sure why that happens sometimes, with nested properties... */
+    /* Not sure why that happens sometimes, with nested props... */
     /* Seems to be actually array prop, name is usually "0"... To be sorted out later. */
 #if 0
       printf(
-          "Got unexpected IDProp container when trying to retrieve %s: %d\n", name, group->type);
+          "Got unexpected IdProp container when trying to retrieve %s: %d\n", name, group->type);
 #endif
   }
 
@@ -290,7 +289,7 @@ static void api_idprop_free(ApiPtr *ptr, const char *name)
 
 static int api_ensure_prop_array_length(ApiPtr *ptr, ApiProp *prop)
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     int arraylen[API_MAX_ARRAY_DIMENSION];
     return (prop->getlength && ptr->data) ? prop->getlength(ptr, arraylen) : prop->totarraylength;
   }
@@ -416,7 +415,7 @@ static ApiProp *arraytypemap[IDP_NUMTYPES] = {
     &api_PropGroupItem_double_array,
 };
 
-void api_prop_api_or_id_get(PropertyRNA *prop,
+void api_prop_api_or_id_get(ApiProp *prop,
                             ApiPtr *ptr,
                             PropApiOrId *r_prop_api_or_id)
 {
@@ -431,7 +430,7 @@ void api_prop_api_or_id_get(PropertyRNA *prop,
   r_prop_api_or_id->ptr = *ptr;
   r_prop_api_or_id->rawprop = prop;
 
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     r_prop_api_or_id->apiprop = prop;
     r_prop_api_or_id->id = prop->id;
 
@@ -444,7 +443,7 @@ void api_prop_api_or_id_get(PropertyRNA *prop,
     }
 
     if (prop->flag & PROP_IDPROP) {
-      IDProperty *idprop = api_idprop_find(ptr, prop->id);
+      IdProp *idprop = api_idprop_find(ptr, prop->id);
 
       if (idprop != NULL && !api_idprop_verify_valid(ptr, prop, idprop)) {
         IdProp *group = api_struct_idprops(ptr, 0);
@@ -575,17 +574,17 @@ const char *api_struct_id(const ApiStruct *type)
   return type->id;
 }
 
-const char *RNA_struct_ui_name(const StructRNA *type)
+const char *api_struct_ui_name(const ApiStruct *type)
 {
-  return CTX_IFACE_(type->translation_context, type->name);
+  return CXT_IFACE_(type->lang_cxt, type->name);
 }
 
-const char *RNA_struct_ui_name_raw(const StructRNA *type)
+const char *api_struct_ui_name_raw(const ApiStruct *type)
 {
   return type->name;
 }
 
-int RNA_struct_ui_icon(const StructRNA *type)
+int api_struct_ui_icon(const ApiStruct *type)
 {
   if (type) {
     return type->icon;
@@ -593,24 +592,24 @@ int RNA_struct_ui_icon(const StructRNA *type)
   return ICON_DOT;
 }
 
-const char *RNA_struct_ui_description(const StructRNA *type)
+const char *api_struct_ui_description(const ApiStruct *type)
 {
   return TIP_(type->description);
 }
 
-const char *RNA_struct_ui_description_raw(const StructRNA *type)
+const char *api_struct_ui_description_raw(const ApiStruct *type)
 {
   return type->description;
 }
 
-const char *RNA_struct_translation_context(const StructRNA *type)
+const char *api_struct_lang_cxt(const ApiStruct *type)
 {
-  return type->translation_context;
+  return type->lang_cxt;
 }
 
-PropertyRNA *RNA_struct_name_property(const StructRNA *type)
+ApiProp *api_struct_name_prop(const ApiStruct *type)
 {
-  return type->nameproperty;
+  return type->nameprop;
 }
 
 const EnumPropItem *api_struct_prop_tag_defines(const ApiStruct *type)
@@ -679,7 +678,7 @@ bool api_struct_idprops_unset(PointerRNA *ptr, const char *id)
   return false;
 }
 
-bool api_struct_is_a(const StructRNA *type, const StructRNA *srna)
+bool api_struct_is_a(const ApiStruct *type, const StructRNA *srna)
 {
   const ApiStruct *base;
 
@@ -703,7 +702,7 @@ bool api_struct_is_a(const StructRNA *type, const StructRNA *srna)
 
 ApiProp *api_struct_find_prop(ApiPtr *ptr, const char *id)
 {
-  if (id[0] == '[' && identifier[1] == '"') {
+  if (id[0] == '[' && id[1] == '"') {
     /* id prop lookup, not so common */
     AoiProp *r_prop = NULL;
     ApiPtr r_ptr; /* only support single level props */
@@ -742,58 +741,58 @@ static ApiProp *api_struct_find_nested(ApiPtr *ptr, ApiStruct *sapi)
   return prop;
 }
 
-bool RNA_struct_contains_property(PointerRNA *ptr, PropertyRNA *prop_test)
+bool api_struct_contains_prop(ApiPtr *ptr, apiProp *prop_test)
 {
   /* NOTE: prop_test could be freed memory, only use for comparison. */
 
   /* validate the RNA is ok */
-  PropertyRNA *iterprop;
+  ApiProp *iterprop;
   bool found = false;
 
-  iterprop = RNA_struct_iterator_property(ptr->type);
+  iterprop = api_struct_iter_prop(ptr->type);
 
-  RNA_PROP_BEGIN (ptr, itemptr, iterprop) {
+  API_PROP_BEGIN (ptr, itemptr, iterprop) {
     /* PropertyRNA *prop = itemptr.data; */
-    if (prop_test == (PropertyRNA *)itemptr.data) {
+    if (prop_test == (ApiProp *)itemptr.data) {
       found = true;
       break;
     }
   }
-  RNA_PROP_END;
+  API_PROP_END;
 
   return found;
 }
 
-unsigned int RNA_struct_count_properties(StructRNA *srna)
+unsigned int api_struct_count_props(ApiStruct *sapi)
 {
-  PointerRNA struct_ptr;
+  ApiPtr struct_ptr;
   unsigned int counter = 0;
 
-  RNA_pointer_create(NULL, srna, NULL, &struct_ptr);
+  api_pyr_create(NULL, sapi, NULL, &struct_ptr);
 
-  RNA_STRUCT_BEGIN (&struct_ptr, prop) {
+  API_STRUCT_BEGIN (&struct_ptr, prop) {
     counter++;
     UNUSED_VARS(prop);
   }
-  RNA_STRUCT_END;
+  API_STRUCT_END;
 
   return counter;
 }
 
-const struct ListBase *RNA_struct_type_properties(StructRNA *srna)
+const struct List *api_struct_type_props(ApiStruct *sapi)
 {
-  return &srna->cont.properties;
+  return &sapi->cont.props;
 }
 
-PropertyRNA *RNA_struct_type_find_property_no_base(StructRNA *srna, const char *identifier)
+ApiProp *api_struct_type_find_prop_no_base(ApiStruct *sapi, const char *id)
 {
-  return BLI_findstring_ptr(&srna->cont.properties, identifier, offsetof(PropertyRNA, identifier));
+  return lib_findstring_ptr(&sapi->cont.props, id, offsetof(ApiProp, id));
 }
 
-PropertyRNA *RNA_struct_type_find_property(StructRNA *srna, const char *identifier)
+ApiProp *api_struct_type_find_prop(ApiStruct *sapi, const char *id)
 {
-  for (; srna; srna = srna->base) {
-    PropertyRNA *prop = RNA_struct_type_find_property_no_base(srna, identifier);
+  for (; sapi; sapi = sapi->base) {
+    ApiProp *prop = api_struct_type_find_prop_no_base(sapi, id);
     if (prop != NULL) {
       return prop;
     }
@@ -801,53 +800,53 @@ PropertyRNA *RNA_struct_type_find_property(StructRNA *srna, const char *identifi
   return NULL;
 }
 
-FunctionRNA *RNA_struct_find_function(StructRNA *srna, const char *identifier)
+ApiFn *api_struct_find_fn(ApiStruct *sapi, const char *id)
 {
 #if 1
-  FunctionRNA *func;
-  for (; srna; srna = srna->base) {
-    func = (FunctionRNA *)BLI_findstring_ptr(
-        &srna->functions, identifier, offsetof(FunctionRNA, identifier));
-    if (func) {
-      return func;
+  ApiFn *fn;
+  for (; sapi; sapi = sapi->base) {
+    fn = (ApiFn *)lib_findstring_ptr,
+        &sapi->fns, id, offsetof(ApiFn, id));
+    if (fn) {
+      return fn;
     }
   }
   return NULL;
 
   /* functional but slow */
 #else
-  PointerRNA tptr;
-  PropertyRNA *iterprop;
-  FunctionRNA *func;
+  ApiPtr tptr;
+  ApiProp *iterprop;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, &RNA_Struct, srna, &tptr);
-  iterprop = RNA_struct_find_property(&tptr, "functions");
+  api_pyr_create(NULL, &Api_Struct, sapi, &tptr);
+  iterprop = api_struct_find_prop(&tptr, "functions");
 
-  func = NULL;
+  fn = NULL;
 
-  RNA_PROP_BEGIN (&tptr, funcptr, iterprop) {
-    if (STREQ(identifier, RNA_function_identifier(funcptr.data))) {
-      func = funcptr.data;
+  API_PROP_BEGIN (&tptr, fnptr, iterprop) {
+    if (STREQ(id, api_fn_id(fnptr.data))) {
+      fn = fnptr.data;
       break;
     }
   }
-  RNA_PROP_END;
+  API_PROP_END;
 
-  return func;
+  return fn;
 #endif
 }
 
-const ListBase *RNA_struct_type_functions(StructRNA *srna)
+const List *api_struct_type_fns(ApiStruct *sapi)
 {
-  return &srna->functions;
+  return &sapi->fns;
 }
 
-StructRegisterFunc RNA_struct_register(StructRNA *type)
+StructRegisterFn api_struct_register(ApiStruct *type)
 {
   return type->reg;
 }
 
-StructUnregisterFunc RNA_struct_unregister(StructRNA *type)
+StructUnregisterFn api_struct_unregister(ApiStruct *type)
 {
   do {
     if (type->unreg) {
@@ -858,9 +857,9 @@ StructUnregisterFunc RNA_struct_unregister(StructRNA *type)
   return NULL;
 }
 
-void **RNA_struct_instance(PointerRNA *ptr)
+void **api_struct_instance(ApiPtr *ptr)
 {
-  StructRNA *type = ptr->type;
+  ApiStruct *type = ptr->type;
 
   do {
     if (type->instance) {
@@ -871,74 +870,74 @@ void **RNA_struct_instance(PointerRNA *ptr)
   return NULL;
 }
 
-void *RNA_struct_py_type_get(StructRNA *srna)
+void *api_struct_py_type_get(AoiStruct *sapi)
 {
-  return srna->py_type;
+  return sapi->py_type;
 }
 
-void RNA_struct_py_type_set(StructRNA *srna, void *py_type)
+void api_struct_py_type_set(ApiStruct *sapi, void *py_type)
 {
-  srna->py_type = py_type;
+  sapi->py_type = py_type;
 }
 
-void *RNA_struct_blender_type_get(StructRNA *srna)
+void *api_struct_dune_type_get(ApiStruct *sapi)
 {
-  return srna->blender_type;
+  return sapi->dune_type;
 }
 
-void RNA_struct_blender_type_set(StructRNA *srna, void *blender_type)
+void api_struct_dune_type_set(ApiStruct *sapi, void *dune_type)
 {
-  srna->blender_type = blender_type;
+  sapi->dune_type = dune_type;
 }
 
-char *RNA_struct_name_get_alloc(PointerRNA *ptr, char *fixedbuf, int fixedlen, int *r_len)
+char *api_struct_name_get_alloc(ApiPtr *ptr, char *fixedbuf, int fixedlen, int *r_len)
 {
-  PropertyRNA *nameprop;
+  ApiProp *nameprop;
 
-  if (ptr->data && (nameprop = RNA_struct_name_property(ptr->type))) {
-    return RNA_property_string_get_alloc(ptr, nameprop, fixedbuf, fixedlen, r_len);
+  if (ptr->data && (nameprop = api_struct_name_prop(ptr->type))) {
+    return api_prop_string_get_alloc(ptr, nameprop, fixedbuf, fixedlen, r_len);
   }
 
   return NULL;
 }
 
-bool RNA_struct_available_or_report(ReportList *reports, const char *identifier)
+bool api_struct_available_or_report(ReportList *reports, const char *id)
 {
-  const StructRNA *srna_exists = RNA_struct_find(identifier);
-  if (UNLIKELY(srna_exists != NULL)) {
+  const ApiStruct *sapi_exists = api_struct_find(id);
+  if (UNLIKELY(sapi_exists != NULL)) {
     /* Use comprehensive string construction since this is such a rare occurrence
      * and information here may cut down time troubleshooting. */
-    DynStr *dynstr = BLI_dynstr_new();
-    BLI_dynstr_appendf(dynstr, "Type identifier '%s' is already in use: '", identifier);
-    BLI_dynstr_append(dynstr, srna_exists->identifier);
+    DynStr *dynstr = lib_dynstr_new();
+    lib_dynstr_appendf(dynstr, "Type id '%s' is already in use: '", id);
+    lib_dynstr_append(dynstr, sapi_exists->id);
     int i = 0;
-    if (srna_exists->base) {
-      for (const StructRNA *base = srna_exists->base; base; base = base->base) {
-        BLI_dynstr_append(dynstr, "(");
-        BLI_dynstr_append(dynstr, base->identifier);
+    if (sali_exists->base) {
+      for (const ApiStruct *base = sapi_exists->base; base; base = base->base) {
+        lib_dynstr_append(dynstr, "(");
+        lib_dynstr_append(dynstr, base->id);
         i += 1;
       }
       while (i--) {
-        BLI_dynstr_append(dynstr, ")");
+        lib_dynstr_append(dynstr, ")");
       }
     }
-    BLI_dynstr_append(dynstr, "'.");
-    char *result = BLI_dynstr_get_cstring(dynstr);
-    BLI_dynstr_free(dynstr);
-    BKE_report(reports, RPT_ERROR, result);
-    MEM_freeN(result);
+    lib_dynstr_append(dynstr, "'.");
+    char *result = lib_dynstr_get_cstring(dynstr);
+    lib_dynstr_free(dynstr);
+    dune_report(reports, RPT_ERROR, result);
+    mem_freen(result);
     return false;
   }
   return true;
 }
 
-bool RNA_struct_bl_idname_ok_or_report(ReportList *reports,
-                                       const char *identifier,
+bool api_struct_bl_idname_ok_or_report(ReportList *reports,
+                                       const char *id,
                                        const char *sep)
 {
   const int len_sep = strlen(sep);
-  const int len_id = strlen(identifier);
-  const char *p = strstr(identifier, sep);
+  const int len_id = strlen(id);
+  const char *p = strstr(id, sep);
   /* TODO: make error, for now warning until add-ons update. */
 #if 1
   const int report_level = RPT_WARNING;
@@ -948,90 +947,89 @@ bool RNA_struct_bl_idname_ok_or_report(ReportList *reports,
   const bool failure = false;
 #endif
   if (p == NULL || p == identifier || p + len_sep >= identifier + len_id) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 report_level,
                 "'%s' does not contain '%s' with prefix and suffix",
-                identifier,
+                id,
                 sep);
     return failure;
   }
 
   const char *c, *start, *end, *last;
-  start = identifier;
+  start = id;
   end = p;
   last = end - 1;
   for (c = start; c != end; c++) {
     if (((*c >= 'A' && *c <= 'Z') || ((c != start) && (*c >= '0' && *c <= '9')) ||
          ((c != start) && (c != last) && (*c == '_'))) == 0) {
-      BKE_reportf(
+      dune_reportf(
           reports, report_level, "'%s' doesn't have upper case alpha-numeric prefix", identifier);
       return failure;
     }
   }
 
   start = p + len_sep;
-  end = identifier + len_id;
+  end = id + len_id;
   last = end - 1;
   for (c = start; c != end; c++) {
     if (((*c >= 'A' && *c <= 'Z') || (*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') ||
          ((c != start) && (c != last) && (*c == '_'))) == 0) {
-      BKE_reportf(reports, report_level, "'%s' doesn't have an alpha-numeric suffix", identifier);
+      dune_reportf(reports, report_level, "'%s' doesn't have an alpha-numeric suffix", identifier);
       return failure;
     }
   }
   return true;
 }
 
-/* Property Information */
-
-const char *RNA_property_identifier(const PropertyRNA *prop)
+/* Prop Information */
+const char *api_prop_id(const ApiProp *prop)
 {
-  return rna_ensure_property_identifier(prop);
+  return api_ensure_prop_id(prop);
 }
 
-const char *RNA_property_description(PropertyRNA *prop)
+const char *api_prop_description(ApiProp *prop)
 {
-  return TIP_(rna_ensure_property_description(prop));
+  return TIP_(api_ensure_prop_description(prop));
 }
 
-PropertyType RNA_property_type(PropertyRNA *prop)
+PropType api_prop_type(ApiProp *prop)
 {
-  return rna_ensure_property(prop)->type;
+  return api_ensure_prop(prop)->type;
 }
 
-PropertySubType RNA_property_subtype(PropertyRNA *prop)
+PropSubType api_prop_subtype(ApiProp *prop)
 {
-  PropertyRNA *rna_prop = rna_ensure_property(prop);
+  ApiProp *api_prop = api_ensure_prop(prop);
 
-  /* For custom properties, find and parse the 'subtype' metadata field. */
-  if (prop->magic != RNA_MAGIC) {
-    IDProperty *idprop = (IDProperty *)prop;
+  /* For custom props, find and parse the 'subtype' metadata field. */
+  if (prop->magic != API_MAGIC) {
+    IdProp *idprop = (IdProp *)prop;
 
     if (idprop->ui_data) {
-      IDPropertyUIData *ui_data = idprop->ui_data;
-      return (PropertySubType)ui_data->rna_subtype;
+      IdPropUIData *ui_data = idprop->ui_data;
+      return (PropSubType)ui_data->api_subtype;
     }
   }
 
-  return rna_prop->subtype;
+  return api_prop->subtype;
 }
 
-PropertyUnit RNA_property_unit(PropertyRNA *prop)
+PropUnit api_prop_unit(ApiProp *prop)
 {
-  return RNA_SUBTYPE_UNIT(RNA_property_subtype(prop));
+  return API_SUBTYPE_UNIT(api_prop_subtype(prop));
 }
 
-PropertyScaleType RNA_property_ui_scale(PropertyRNA *prop)
+PropScaleType api_prop_ui_scale(ApiProp *prop)
 {
-  PropertyRNA *rna_prop = rna_ensure_property(prop);
+  ApiProp *api_prop = api_ensure_prop(prop);
 
-  switch (rna_prop->type) {
+  switch (api_prop->type) {
     case PROP_INT: {
-      IntPropertyRNA *iprop = (IntPropertyRNA *)rna_prop;
+      ApiIntProp *iprop = (AoiIntProp *)api_prop;
       return iprop->ui_scale_type;
     }
     case PROP_FLOAT: {
-      FloatPropertyRNA *fprop = (FloatPropertyRNA *)rna_prop;
+      ApiFloatProp *fprop = (ApiFloatProp *)api_prop;
       return fprop->ui_scale_type;
     }
     default:
@@ -1039,64 +1037,64 @@ PropertyScaleType RNA_property_ui_scale(PropertyRNA *prop)
   }
 }
 
-int RNA_property_flag(PropertyRNA *prop)
+int api_prop_flag(ApiProp *prop)
 {
-  return rna_ensure_property(prop)->flag;
+  return api_ensure_prop(prop)->flag;
 }
 
-int RNA_property_tags(PropertyRNA *prop)
+int api_prop_tags(ApiProp *prop)
 {
-  return rna_ensure_property(prop)->tags;
+  return api_ensure_prop(prop)->tags;
 }
 
-bool RNA_property_builtin(PropertyRNA *prop)
+bool api_prop_builtin(ApiProp *prop)
 {
-  return (rna_ensure_property(prop)->flag_internal & PROP_INTERN_BUILTIN) != 0;
+  return (api_ensure_prop(prop)->flag_internal & PROP_INTERN_BUILTIN) != 0;
 }
 
-void *RNA_property_py_data_get(PropertyRNA *prop)
+void *api_prop_py_data_get(ApiProp *prop)
 {
   return prop->py_data;
 }
 
-int RNA_property_array_length(PointerRNA *ptr, PropertyRNA *prop)
+int api_prop_array_length(ApiPtr *ptr, ApiProp *prop)
 {
-  return rna_ensure_property_array_length(ptr, prop);
+  return api_ensure_prop_array_length(ptr, prop);
 }
 
-bool RNA_property_array_check(PropertyRNA *prop)
+bool api_prop_array_check(ApiProp *prop)
 {
-  return rna_ensure_property_array_check(prop);
+  return api_ensure_prop_array_check(prop);
 }
 
-int RNA_property_array_dimension(PointerRNA *ptr, PropertyRNA *prop, int length[])
+int api_prop_array_dimension(ApiPtr *ptr, ApiProp *prop, int length[])
 {
-  PropertyRNA *rprop = rna_ensure_property(prop);
+  ApiProp *rprop = api_ensure_prop(prop);
 
   if (length) {
-    rna_ensure_property_multi_array_length(ptr, prop, length);
+    api_ensure_prop_multi_array_length(ptr, prop, length);
   }
 
   return rprop->arraydimension;
 }
 
-int RNA_property_multi_array_length(PointerRNA *ptr, PropertyRNA *prop, int dim)
+int api_prop_multi_array_length(ApiPtr *ptr, AoiProp *prop, int dim)
 {
-  int len[RNA_MAX_ARRAY_DIMENSION];
+  int len[API_MAX_ARRAY_DIMENSION];
 
-  rna_ensure_property_multi_array_length(ptr, prop, len);
+  api_ensure_prop_multi_array_length(ptr, prop, len);
 
   return len[dim];
 }
 
-char RNA_property_array_item_char(PropertyRNA *prop, int index)
+char api_prop_array_item_char(ApiProp *prop, int index)
 {
   const char *vectoritem = "XYZW";
   const char *quatitem = "WXYZ";
   const char *coloritem = "RGBA";
-  PropertySubType subtype = RNA_property_subtype(prop);
+  PropSubType subtype = api_prop_subtype(prop);
 
-  BLI_assert(index >= 0);
+  lib_assert(index >= 0);
 
   /* get string to use for array index */
   if ((index < 4) && ELEM(subtype, PROP_QUATERNION, PROP_AXISANGLE)) {
@@ -1120,10 +1118,10 @@ char RNA_property_array_item_char(PropertyRNA *prop, int index)
   return '\0';
 }
 
-int RNA_property_array_item_index(PropertyRNA *prop, char name)
+int api_prop_array_item_index(ApiProp *prop, char name)
 {
-  /* Don't use custom property subtypes in RNA path lookup. */
-  PropertySubType subtype = rna_ensure_property(prop)->subtype;
+  /* Don't use custom prop subtypes in api path lookup. */
+  PropSubType subtype = api_ensure_prop(prop)->subtype;
 
   /* get index based on string name/alias */
   /* maybe a function to find char index in string would be better than all the switches */
@@ -1174,9 +1172,9 @@ int RNA_property_array_item_index(PropertyRNA *prop, char name)
   return -1;
 }
 
-void RNA_property_int_range(PointerRNA *ptr, PropertyRNA *prop, int *hardmin, int *hardmax)
+void api_prop_int_range(ApiPtr *ptr, ApiProp *prop, int *hardmin, int *hardmax)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)rna_ensure_property(prop);
+  ApiIntProp *iprop = (ApiIntProp *)api_ensure_prop(prop);
   int softmin, softmax;
 
   if (prop->magic != RNA_MAGIC) {
