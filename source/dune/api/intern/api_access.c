@@ -613,22 +613,22 @@ PropertyRNA *RNA_struct_name_property(const StructRNA *type)
   return type->nameproperty;
 }
 
-const EnumPropertyItem *RNA_struct_property_tag_defines(const StructRNA *type)
+const EnumPropItem *api_struct_prop_tag_defines(const ApiStruct *type)
 {
   return type->prop_tag_defines;
 }
 
-PropertyRNA *RNA_struct_iterator_property(StructRNA *type)
+ApiProp *api_struct_iter_prop(ApiStruct *type)
 {
-  return type->iteratorproperty;
+  return type->iterprop;
 }
 
-StructRNA *RNA_struct_base(StructRNA *type)
+ApiStruct *api_struct_base(ApiStruct *type)
 {
   return type->base;
 }
 
-const StructRNA *RNA_struct_base_child_of(const StructRNA *type, const StructRNA *parent_type)
+const ApiStruct *api_struct_base_child_of(const ApiStruct *type, const ApiStruct *parent_type)
 {
   while (type) {
     if (type->base == parent_type) {
@@ -639,37 +639,37 @@ const StructRNA *RNA_struct_base_child_of(const StructRNA *type, const StructRNA
   return NULL;
 }
 
-bool RNA_struct_is_ID(const StructRNA *type)
+bool api_struct_is_id(const ApiStruct *type)
 {
   return (type->flag & STRUCT_ID) != 0;
 }
 
-bool RNA_struct_undo_check(const StructRNA *type)
+bool api_struct_undo_check(const ApiStruct *type)
 {
   return (type->flag & STRUCT_UNDO) != 0;
 }
 
-bool RNA_struct_idprops_register_check(const StructRNA *type)
+bool api_struct_idprops_register_check(const ApiStruct *type)
 {
-  return (type->flag & STRUCT_NO_IDPROPERTIES) == 0;
+  return (type->flag & STRUCT_NO_IDPROPS) == 0;
 }
 
-bool RNA_struct_idprops_datablock_allowed(const StructRNA *type)
+bool api_struct_idprops_datablock_allowed(const ApiStruct *type)
 {
-  return (type->flag & (STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_NO_IDPROPERTIES)) == 0;
+  return (type->flag & (STRUCT_NO_DATABLOCK_IDPROPS | STRUCT_NO_IDPROPS)) == 0;
 }
 
-bool RNA_struct_idprops_contains_datablock(const StructRNA *type)
+bool api_struct_idprops_contains_datablock(const ApiStruct *type)
 {
-  return (type->flag & (STRUCT_CONTAINS_DATABLOCK_IDPROPERTIES | STRUCT_ID)) != 0;
+  return (type->flag & (STRUCT_CONTAINS_DATABLOCK_IDPROPS | STRUCT_ID)) != 0;
 }
 
-bool RNA_struct_idprops_unset(PointerRNA *ptr, const char *identifier)
+bool api_struct_idprops_unset(PointerRNA *ptr, const char *id)
 {
-  IDProperty *group = RNA_struct_idprops(ptr, 0);
+  IdProp *group = api_struct_idprops(ptr, 0);
 
   if (group) {
-    IDProperty *idp = IDP_GetPropertyFromGroup(group, identifier);
+    IdProp *idp = IDP_GetPropFromGroup(group, id);
     if (idp) {
       IDP_FreeFromGroup(group, idp);
 
@@ -679,11 +679,11 @@ bool RNA_struct_idprops_unset(PointerRNA *ptr, const char *identifier)
   return false;
 }
 
-bool RNA_struct_is_a(const StructRNA *type, const StructRNA *srna)
+bool api_struct_is_a(const StructRNA *type, const StructRNA *srna)
 {
-  const StructRNA *base;
+  const ApiStruct *base;
 
-  if (srna == &RNA_AnyType) {
+  if (srna == &Api_AnyType) {
     return true;
   }
 
@@ -701,23 +701,23 @@ bool RNA_struct_is_a(const StructRNA *type, const StructRNA *srna)
   return false;
 }
 
-PropertyRNA *RNA_struct_find_property(PointerRNA *ptr, const char *identifier)
+ApiProp *api_struct_find_prop(ApiPtr *ptr, const char *id)
 {
-  if (identifier[0] == '[' && identifier[1] == '"') {
+  if (id[0] == '[' && identifier[1] == '"') {
     /* id prop lookup, not so common */
-    PropertyRNA *r_prop = NULL;
-    PointerRNA r_ptr; /* only support single level props */
-    if (RNA_path_resolve_property(ptr, identifier, &r_ptr, &r_prop) && (r_ptr.type == ptr->type) &&
+    AoiProp *r_prop = NULL;
+    ApiPtr r_ptr; /* only support single level props */
+    if (api_path_resolve_prop(ptr, id, &r_ptr, &r_prop) && (r_ptr.type == ptr->type) &&
         (r_ptr.data == ptr->data)) {
       return r_prop;
     }
   }
   else {
     /* most common case */
-    PropertyRNA *iterprop = RNA_struct_iterator_property(ptr->type);
-    PointerRNA propptr;
+    ApiProp *iterprop = api_struct_iter_prop(ptr->type);
+    ApiPtr propptr;
 
-    if (RNA_property_collection_lookup_string(ptr, iterprop, identifier, &propptr)) {
+    if (api_prop_collection_lookup_string(ptr, iterprop, id, &propptr)) {
       return propptr.data;
     }
   }
@@ -725,19 +725,19 @@ PropertyRNA *RNA_struct_find_property(PointerRNA *ptr, const char *identifier)
   return NULL;
 }
 
-/* Find the property which uses the given nested struct */
-static PropertyRNA *RNA_struct_find_nested(PointerRNA *ptr, StructRNA *srna)
+/* Find the prop which uses the given nested struct */
+static ApiProp *api_struct_find_nested(ApiPtr *ptr, ApiStruct *sapi)
 {
-  PropertyRNA *prop = NULL;
+  ApiProp *prop = NULL;
 
-  RNA_STRUCT_BEGIN (ptr, iprop) {
+  API_STRUCT_BEGIN (ptr, iprop) {
     /* This assumes that there can only be one user of this nested struct */
-    if (RNA_property_pointer_type(ptr, iprop) == srna) {
+    if (api_prop_ptr_type(ptr, iprop) == sapi) {
       prop = iprop;
       break;
     }
   }
-  RNA_PROP_END;
+  API_PROP_END;
 
   return prop;
 }
