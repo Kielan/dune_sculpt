@@ -19,12 +19,12 @@
 #include "lib_threads.h"
 #include "lib_utildefines.h"
 
-#include "BLF_api.h"
-#include "BLT_translation.h"
+#include "font_api.h"
+#include "lang.h"
 
 #include "dune_anim_data.h"
 #include "dune_collection.h"
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_fcurve.h"
 #include "dune_idprop.h"
 #include "dune_idtype.h"
@@ -52,20 +52,19 @@
 const ApiPtt ApiPtr_NULL = {NULL};
 
 /* Init/Exit */
-
 void api_init(void)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   DUNE_API.structs_map = lib_ghash_str_new_ex(__func__, 2048);
   DUNE_API.structs_len = 0;
 
-  for (srna = DUNE_API.structs.first; srna; srna = srna->cont.next) {
-    if (!srna->cont.prophash) {
-      srna->cont.prophash = lib_ghash_str_new("RNA_init gh");
+  for (sapi = DUNE_API.structs.first; sapi; sapi = sapi->cont.next) {
+    if (!sapi->cont.prophash) {
+      srna->cont.prophash = lib_ghash_str_new("api_init gh");
 
-      for (prop = srna->cont.properties.first; prop; prop = prop->next) {
+      for (prop = sapi->cont.props.first; prop; prop = prop->next) {
         if (!(prop->flag_internal & PROP_INTERN_BUILTIN)) {
           lib_ghash_insert(srna->cont.prophash, (void *)prop->id, prop);
         }
@@ -79,12 +78,12 @@ void api_init(void)
 
 void api_exit(void)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
 
-  for (srna = DUNE_API.structs.first; srna; srna = srna->cont.next) {
-    if (srna->cont.prophash) {
-      lib_ghash_free(srna->cont.prophash, NULL, NULL);
-      srna->cont.prophash = NULL;
+  for (sapi = DUNE_API.structs.first; sapi; sapi = sapi->cont.next) {
+    if (sapi->cont.prophash) {
+      lib_ghash_free(sapi->cont.prophash, NULL, NULL);
+      sapi->cont.prophash = NULL;
     }
   }
 
@@ -92,22 +91,21 @@ void api_exit(void)
 }
 
 /* Pointer */
-
-void api_main_ptr_create(struct Main *main, PointerRNA *r_ptr)
+void api_main_ptr_create(struct Main *main, ApiPtr *r_ptr)
 {
   r_ptr->owner_id = NULL;
-  r_ptr->type = &RNA_BlendData;
+  r_ptr->type = &Api_DuneData;
   r_ptr->data = main;
 }
 
-void RNA_id_pointer_create(ID *id, PointerRNA *r_ptr)
+void api_id_ptr_create(Id *id, ApiPtr *r_ptr)
 {
-  StructRNA *type, *idtype = NULL;
+  ApiStruct *type, *idtype = NULL;
 
   if (id) {
-    PointerRNA tmp = {NULL};
+    ApiPtr tmp = {NULL};
     tmp.data = id;
-    idtype = rna_ID_refine(&tmp);
+    idtype = api_id_refine(&tmp);
 
     while (idtype->refine) {
       type = idtype->refine(&tmp);
@@ -130,9 +128,9 @@ void api_ptr_create(Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr)
   ApiStruct *idtype = NULL;
 
   if (id) {
-    PointerRNA tmp = {0};
+    ApiPtr tmp = {0};
     tmp.data = id;
-    idtype = rna_ID_refine(&tmp);
+    idtype = api_id_refine(&tmp);
   }
 #endif
 
@@ -142,7 +140,7 @@ void api_ptr_create(Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr)
 
   if (data) {
     while (r_ptr->type && r_ptr->type->refine) {
-      StructRNA *rtype = r_ptr->type->refine(r_ptr);
+      ApiStruct *rtype = r_ptr->type->refine(r_ptr);
 
       if (rtype == r_ptr->type) {
         break;
@@ -152,12 +150,12 @@ void api_ptr_create(Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr)
   }
 }
 
-bool RNA_pointer_is_null(const PointerRNA *ptr)
+bool api_ptr_is_null(const ApiPtr *ptr)
 {
   return (ptr->data == NULL) || (ptr->owner_id == NULL) || (ptr->type == NULL);
 }
 
-static void rna_pointer_inherit_id(StructRNA *type, PointerRNA *parent, PointerRNA *ptr)
+static void api_ptr_inherit_id(ApiStruct *type, ApiPtr *parent, ApiPtr *ptr)
 {
   if (type && type->flag & STRUCT_ID) {
     ptr->owner_id = ptr->data;
@@ -192,10 +190,10 @@ ApiPtr api_ptr_inherit_refine(ApiPtr *ptr, StructRNA *type, void *data)
     }
     return result;
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-void RNA_pointer_recast(PointerRNA *ptr, PointerRNA *r_ptr)
+void api_ptr_recast(ApiPtr *ptr, ApiPtr *r_ptr)
 {
 #if 0 /* works but this case if covered by more general code below. */
   if (RNA_struct_is_ID(ptr->type)) {
