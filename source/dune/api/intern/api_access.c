@@ -7,9 +7,9 @@
 
 #include "types_id.h"
 #include "typed_constraint.h"
-#include "types_modifier.h"
+#include "types_mod.h"
 #include "types_scene.h"
-#include "types_windowmanager.h"
+#include "types_wm.h"
 
 #include "lib_alloca.h"
 #include "lib_dunelib.h"
@@ -196,19 +196,19 @@ ApiPtr api_ptr_inherit_refine(ApiPtr *ptr, StructRNA *type, void *data)
 void api_ptr_recast(ApiPtr *ptr, ApiPtr *r_ptr)
 {
 #if 0 /* works but this case if covered by more general code below. */
-  if (RNA_struct_is_ID(ptr->type)) {
+  if (api_struct_is_id(ptr->type)) {
     /* simple case */
-    RNA_id_pointer_create(ptr->owner_id, r_ptr);
+    api_id_ptr_create(ptr->owner_id, r_ptr);
   }
   else
 #endif
   {
-    StructRNA *base;
-    PointerRNA t_ptr;
+    ApiStruct *base;
+    ApiPtr t_ptr;
     *r_ptr = *ptr; /* initialize as the same in case can't recast */
 
     for (base = ptr->type->base; base; base = base->base) {
-      t_ptr = rna_pointer_inherit_refine(ptr, base, ptr->data);
+      t_ptr = api_ptr_inherit_refine(ptr, base, ptr->data);
       if (t_ptr.type && t_ptr.type != ptr->type) {
         *r_ptr = t_ptr;
       }
@@ -216,54 +216,54 @@ void api_ptr_recast(ApiPtr *ptr, ApiPtr *r_ptr)
   }
 }
 
-/* ID Properties */
+/* Id Props */
 
-void rna_idproperty_touch(IDProperty *idprop)
+void api_idprop_touch(IdProp *idprop)
 {
   /* so the property is seen as 'set' by rna */
   idprop->flag &= ~IDP_FLAG_GHOST;
 }
 
-IDProperty **RNA_struct_idprops_p(PointerRNA *ptr)
+IdProp **api_struct_idprops_p(ApiPtr *ptr)
 {
-  StructRNA *type = ptr->type;
+  ApiStruct *type = ptr->type;
   if (type == NULL) {
     return NULL;
   }
-  if (type->idproperties == NULL) {
+  if (type->idprops == NULL) {
     return NULL;
   }
 
-  return type->idproperties(ptr);
+  return type->idprops(ptr);
 }
 
-IDProperty *RNA_struct_idprops(PointerRNA *ptr, bool create)
+IdProp *api_struct_idprops(ApiPtr *ptr, bool create)
 {
-  IDProperty **property_ptr = RNA_struct_idprops_p(ptr);
-  if (property_ptr == NULL) {
+  IdProp **prop_ptr = api_struct_idprops_p(ptr);
+  if (prop_ptr == NULL) {
     return NULL;
   }
 
-  if (create && *property_ptr == NULL) {
-    IDPropertyTemplate val = {0};
-    *property_ptr = IDP_New(IDP_GROUP, &val, __func__);
+  if (create && *prop_ptr == NULL) {
+    IdPropTemplate val = {0};
+    *prop_ptr = IDP_New(IDP_GROUP, &val, __func__);
   }
 
-  return *property_ptr;
+  return *prop_ptr;
 }
 
-bool RNA_struct_idprops_check(StructRNA *srna)
+bool api_struct_idprops_check(ApiStruct *sapi)
 {
-  return (srna && srna->idproperties);
+  return (sapi && sapi->idprops);
 }
 
-IDProperty *rna_idproperty_find(PointerRNA *ptr, const char *name)
+IdProp *api_idprop_find(ApiPtr *ptr, const char *name)
 {
-  IDProperty *group = RNA_struct_idprops(ptr, 0);
+  IdProp *group = api_struct_idprops(ptr, 0);
 
   if (group) {
     if (group->type == IDP_GROUP) {
-      return IDP_GetPropertyFromGroup(group, name);
+      return IDP_GetPropFromGroup(group, name);
     }
     /* Not sure why that happens sometimes, with nested properties... */
     /* Seems to be actually array prop, name is usually "0"... To be sorted out later. */
@@ -276,25 +276,25 @@ IDProperty *rna_idproperty_find(PointerRNA *ptr, const char *name)
   return NULL;
 }
 
-static void rna_idproperty_free(PointerRNA *ptr, const char *name)
+static void api_idprop_free(ApiPtr *ptr, const char *name)
 {
-  IDProperty *group = RNA_struct_idprops(ptr, 0);
+  IdProp *group = api_struct_idprops(ptr, 0);
 
   if (group) {
-    IDProperty *idprop = IDP_GetPropertyFromGroup(group, name);
+    IDProperty *idprop = IDP_GetPropFromGroup(group, name);
     if (idprop) {
       IDP_FreeFromGroup(group, idprop);
     }
   }
 }
 
-static int rna_ensure_property_array_length(PointerRNA *ptr, PropertyRNA *prop)
+static int api_ensure_prop_array_length(ApiPtr *ptr, ApiProp *prop)
 {
   if (prop->magic == RNA_MAGIC) {
-    int arraylen[RNA_MAX_ARRAY_DIMENSION];
+    int arraylen[API_MAX_ARRAY_DIMENSION];
     return (prop->getlength && ptr->data) ? prop->getlength(ptr, arraylen) : prop->totarraylength;
   }
-  IDProperty *idprop = (IDProperty *)prop;
+  IdProp *idprop = (IdProp *)prop;
 
   if (idprop->type == IDP_ARRAY) {
     return idprop->len;
@@ -302,21 +302,21 @@ static int rna_ensure_property_array_length(PointerRNA *ptr, PropertyRNA *prop)
   return 0;
 }
 
-static bool rna_ensure_property_array_check(PropertyRNA *prop)
+static bool api_ensure_prop_array_check(ApiProp *prop)
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     return (prop->getlength || prop->totarraylength);
   }
-  IDProperty *idprop = (IDProperty *)prop;
+  IdProp *idprop = (IdProp *)prop;
 
   return (idprop->type == IDP_ARRAY);
 }
 
-static void rna_ensure_property_multi_array_length(PointerRNA *ptr,
-                                                   PropertyRNA *prop,
-                                                   int length[])
+static void api_ensure_prop_multi_array_length(ApiPtr *ptr,
+                                               ApiProp *prop,
+                                               int length[])
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     if (prop->getlength) {
       prop->getlength(ptr, length);
     }
@@ -325,7 +325,7 @@ static void rna_ensure_property_multi_array_length(PointerRNA *ptr,
     }
   }
   else {
-    IDProperty *idprop = (IDProperty *)prop;
+    IdProp *idprop = (IdProp *)prop;
 
     if (idprop->type == IDP_ARRAY) {
       length[0] = idprop->len;
@@ -336,11 +336,11 @@ static void rna_ensure_property_multi_array_length(PointerRNA *ptr,
   }
 }
 
-static bool rna_idproperty_verify_valid(PointerRNA *ptr, PropertyRNA *prop, IDProperty *idprop)
+static bool api_idprop_verify_valid(ApiPtr *ptr, ApiProp *prop, IdProp *idprop)
 {
-  /* this verifies if the idproperty actually matches the property
+  /* this verifies if the idprop actually matches the property
    * description and otherwise removes it. this is to ensure that
-   * rna property access is type safe, e.g. if you defined the rna
+   * rna prop access is type safe, e.g. if you defined the rna
    * to have a certain array length you can count on that staying so */
 
   switch (idprop->type) {
@@ -350,20 +350,20 @@ static bool rna_idproperty_verify_valid(PointerRNA *ptr, PropertyRNA *prop, IDPr
       }
       break;
     case IDP_ARRAY:
-      if (rna_ensure_property_array_length(ptr, prop) != idprop->len) {
+      if (api_ensure_prop_array_length(ptr, prop) != idprop->len) {
         return false;
       }
 
       if (idprop->subtype == IDP_FLOAT && prop->type != PROP_FLOAT) {
         return false;
       }
-      if (idprop->subtype == IDP_INT && !ELEM(prop->type, PROP_BOOLEAN, PROP_INT, PROP_ENUM)) {
+      if (idprop->subtype == IDP_INT && !ELEM(prop->type, PROP_BOOL, PROP_INT, PROP_ENUM)) {
         return false;
       }
 
       break;
     case IDP_INT:
-      if (!ELEM(prop->type, PROP_BOOLEAN, PROP_INT, PROP_ENUM)) {
+      if (!ELEM(prop->type, PROP_BOOL, PROP_INT, PROP_ENUM)) {
         return false;
       }
       break;
@@ -380,7 +380,7 @@ static bool rna_idproperty_verify_valid(PointerRNA *ptr, PropertyRNA *prop, IDPr
       break;
     case IDP_GROUP:
     case IDP_ID:
-      if (prop->type != PROP_POINTER) {
+      if (prop->type != PROP_PTR) {
         return false;
       }
       break;
@@ -391,134 +391,134 @@ static bool rna_idproperty_verify_valid(PointerRNA *ptr, PropertyRNA *prop, IDPr
   return true;
 }
 
-static PropertyRNA *typemap[IDP_NUMTYPES] = {
-    &rna_PropertyGroupItem_string,
-    &rna_PropertyGroupItem_int,
-    &rna_PropertyGroupItem_float,
+static ApiProp *typemap[IDP_NUMTYPES] = {
+    &api_PropGroupItem_string,
+    &api_PropGroupItem_int,
+    &api_PropGroupItem_float,
     NULL,
     NULL,
     NULL,
-    &rna_PropertyGroupItem_group,
-    &rna_PropertyGroupItem_id,
-    &rna_PropertyGroupItem_double,
-    &rna_PropertyGroupItem_idp_array,
+    &api_PropGroupItem_group,
+    &api_PropGroupItem_id,
+    &api_PropGroupItem_double,
+    &rna_PropGroupItem_idp_array,
 };
 
-static PropertyRNA *arraytypemap[IDP_NUMTYPES] = {
+static ApiProp *arraytypemap[IDP_NUMTYPES] = {
     NULL,
-    &rna_PropertyGroupItem_int_array,
-    &rna_PropertyGroupItem_float_array,
+    &api_PropGroupItem_int_array,
+    &api_PropGroupItem_float_array,
     NULL,
     NULL,
     NULL,
-    &rna_PropertyGroupItem_collection,
+    &api_PropGroupItem_collection,
     NULL,
-    &rna_PropertyGroupItem_double_array,
+    &api_PropGroupItem_double_array,
 };
 
-void rna_property_rna_or_id_get(PropertyRNA *prop,
-                                PointerRNA *ptr,
-                                PropertyRNAOrID *r_prop_rna_or_id)
+void api_prop_api_or_id_get(PropertyRNA *prop,
+                            ApiPtr *ptr,
+                            PropApiOrId *r_prop_api_or_id)
 {
   /* This is quite a hack, but avoids some complexity in the API. we
-   * pass IDProperty structs as PropertyRNA pointers to the outside.
-   * We store some bytes in PropertyRNA structs that allows us to
-   * distinguish it from IDProperty structs. If it is an ID property,
-   * we look up an IDP PropertyRNA based on the type, and set the data
-   * pointer to the IDProperty. */
-  memset(r_prop_rna_or_id, 0, sizeof(*r_prop_rna_or_id));
+   * pass IdProp structs as ApiProp ptrs to the outside.
+   * We store some bytes in ApiProp structs that allows us 
+   * distinguish it from IdProp structs. If it is an id prop,
+   * we look up an IDP ApiProp based on the type, and set the data
+   * pointer to the IdProp. */
+  memset(r_prop_rna_or_id, 0, sizeof(*r_prop_api_or_id));
 
-  r_prop_rna_or_id->ptr = *ptr;
-  r_prop_rna_or_id->rawprop = prop;
+  r_prop_api_or_id->ptr = *ptr;
+  r_prop_api_or_id->rawprop = prop;
 
   if (prop->magic == RNA_MAGIC) {
-    r_prop_rna_or_id->rnaprop = prop;
-    r_prop_rna_or_id->identifier = prop->identifier;
+    r_prop_api_or_id->apiprop = prop;
+    r_prop_api_or_id->id = prop->id;
 
-    r_prop_rna_or_id->is_array = prop->getlength || prop->totarraylength;
-    if (r_prop_rna_or_id->is_array) {
-      int arraylen[RNA_MAX_ARRAY_DIMENSION];
-      r_prop_rna_or_id->array_len = (prop->getlength && ptr->data) ?
-                                        (uint)prop->getlength(ptr, arraylen) :
-                                        prop->totarraylength;
+    r_prop_api_or_id->is_array = prop->getlength || prop->totarraylength;
+    if (r_prop_api_or_id->is_array) {
+      int arraylen[API_MAX_ARRAY_DIMENSION];
+      r_prop_api_or_id->array_len = (prop->getlength && ptr->data) ?
+                                    (uint)prop->getlength(ptr, arraylen) :
+                                    prop->totarraylength;
     }
 
-    if (prop->flag & PROP_IDPROPERTY) {
-      IDProperty *idprop = rna_idproperty_find(ptr, prop->identifier);
+    if (prop->flag & PROP_IDPROP) {
+      IDProperty *idprop = api_idprop_find(ptr, prop->id);
 
-      if (idprop != NULL && !rna_idproperty_verify_valid(ptr, prop, idprop)) {
-        IDProperty *group = RNA_struct_idprops(ptr, 0);
+      if (idprop != NULL && !api_idprop_verify_valid(ptr, prop, idprop)) {
+        IdProp *group = api_struct_idprops(ptr, 0);
 
         IDP_FreeFromGroup(group, idprop);
         idprop = NULL;
       }
 
-      r_prop_rna_or_id->idprop = idprop;
-      r_prop_rna_or_id->is_set = idprop != NULL && (idprop->flag & IDP_FLAG_GHOST) == 0;
+      r_prop_api_or_id->idprop = idprop;
+      r_prop_api_or_id->is_set = idprop != NULL && (idprop->flag & IDP_FLAG_GHOST) == 0;
     }
     else {
-      /* Full static RNA properties are always set. */
-      r_prop_rna_or_id->is_set = true;
+      /* Full static api props are always set. */
+      r_prop_api_or_id->is_set = true;
     }
   }
   else {
-    IDProperty *idprop = (IDProperty *)prop;
+    IdProp *idprop = (IdProp *)prop;
     /* Given prop may come from the custom properties of another data, ensure we get the one from
      * given data ptr. */
-    IDProperty *idprop_evaluated = rna_idproperty_find(ptr, idprop->name);
+    IdProp *idprop_evaluated = api_idprop_find(ptr, idprop->name);
     if (idprop_evaluated != NULL && idprop->type != idprop_evaluated->type) {
       idprop_evaluated = NULL;
     }
 
-    r_prop_rna_or_id->idprop = idprop_evaluated;
-    r_prop_rna_or_id->is_idprop = true;
-    /* Full IDProperties are always set, if it exists. */
-    r_prop_rna_or_id->is_set = (idprop_evaluated != NULL);
+    r_prop_api_or_id->idprop = idprop_evaluated;
+    r_prop_api_or_id->is_idprop = true;
+    /* Full IdProps are always set, if it exists. */
+    r_prop_api_or_id->is_set = (idprop_evaluated != NULL);
 
-    r_prop_rna_or_id->identifier = idprop->name;
+    r_prop_api_or_id->id = idprop->name;
     if (idprop->type == IDP_ARRAY) {
-      r_prop_rna_or_id->rnaprop = arraytypemap[(int)(idprop->subtype)];
-      r_prop_rna_or_id->is_array = true;
-      r_prop_rna_or_id->array_len = idprop_evaluated != NULL ? (uint)idprop_evaluated->len : 0;
+      r_prop_api_or_id->rnaprop = arraytypemap[(int)(idprop->subtype)];
+      r_prop_api_or_id->is_array = true;
+      r_prop_api_or_id->array_len = idprop_evaluated != NULL ? (uint)idprop_evaluated->len : 0;
     }
     else {
-      r_prop_rna_or_id->rnaprop = typemap[(int)(idprop->type)];
+      r_prop_api_or_id->apiprop = typemap[(int)(idprop->type)];
     }
   }
 }
 
-IDProperty *rna_idproperty_check(PropertyRNA **prop, PointerRNA *ptr)
+IdProp *api_idprop_check(ApiProp **prop, ApiPtr *ptr)
 {
-  PropertyRNAOrID prop_rna_or_id;
+  PropApiOrId prop_api_or_id;
 
-  rna_property_rna_or_id_get(*prop, ptr, &prop_rna_or_id);
+  api_prop_api_or_id_get(*prop, ptr, &prop_api_or_id);
 
-  *prop = prop_rna_or_id.rnaprop;
-  return prop_rna_or_id.idprop;
+  *prop = prop_api_or_id.apiprop;
+  return prop_api_or_id.idprop;
 }
 
-PropertyRNA *rna_ensure_property_realdata(PropertyRNA **prop, PointerRNA *ptr)
+ApiProp api_ensure_prop_realdata(ApiProp **prop, ApiPtr *ptr)
 {
-  PropertyRNAOrID prop_rna_or_id;
+  PropApiOrId prop_api_or_id;
 
-  rna_property_rna_or_id_get(*prop, ptr, &prop_rna_or_id);
+  api_prop_api_or_id_get(*prop, ptr, &prop_rna_or_id);
 
-  *prop = prop_rna_or_id.rnaprop;
-  return (prop_rna_or_id.is_idprop || prop_rna_or_id.idprop != NULL) ?
-             (PropertyRNA *)prop_rna_or_id.idprop :
-             prop_rna_or_id.rnaprop;
+  *prop = prop_api_or_id.rnaprop;
+  return (prop_api_or_id.is_idprop || prop_api_or_id.idprop != NULL) ?
+             (ApiProp *)prop_api_or_id.idprop :
+             prop_rna_or_id.apiprop;
 }
 
-PropertyRNA *rna_ensure_property(PropertyRNA *prop)
+ApiProp *api_ensure_prop(ApiProp *prop)
 {
   /* the quick version if we don't need the idproperty */
 
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     return prop;
   }
 
   {
-    IDProperty *idprop = (IDProperty *)prop;
+    IdProp *idprop = (IdProp *)prop;
 
     if (idprop->type == IDP_ARRAY) {
       return arraytypemap[(int)(idprop->subtype)];
@@ -527,53 +527,52 @@ PropertyRNA *rna_ensure_property(PropertyRNA *prop)
   }
 }
 
-static const char *rna_ensure_property_identifier(const PropertyRNA *prop)
+static const char *api_ensure_prop_id(const ApiProp *prop)
 {
-  if (prop->magic == RNA_MAGIC) {
-    return prop->identifier;
+  if (prop->magic == API_MAGIC) {
+    return prop->id;
   }
-  return ((const IDProperty *)prop)->name;
+  return ((const IdProp *)prop)->name;
 }
 
-static const char *rna_ensure_property_description(const PropertyRNA *prop)
+static const char *api_ensure_prop_description(const ApiProp *prop)
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     return prop->description;
   }
 
-  const IDProperty *idprop = (const IDProperty *)prop;
+  const IdProp *idprop = (const IdProp *)prop;
   if (idprop->ui_data) {
-    const IDPropertyUIData *ui_data = idprop->ui_data;
+    const IdPropUIData *ui_data = idprop->ui_data;
     return ui_data->description;
   }
 
   return "";
 }
 
-static const char *rna_ensure_property_name(const PropertyRNA *prop)
+static const char *api_ensure_prop_name(const ApiProp *prop)
 {
   const char *name;
 
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     name = prop->name;
   }
   else {
-    name = ((const IDProperty *)prop)->name;
+    name = ((const IdProp *)prop)->name;
   }
 
   return name;
 }
 
 /* Structs */
-
-StructRNA *RNA_struct_find(const char *identifier)
+ApiStruct *api_struct_find(const char *id)
 {
-  return BLI_ghash_lookup(BLENDER_RNA.structs_map, identifier);
+  return lib_ghash_lookup(DUNE_API.structs_map, id);
 }
 
-const char *RNA_struct_identifier(const StructRNA *type)
+const char *api_struct_id(const ApiStruct *type)
 {
-  return type->identifier;
+  return type->id;
 }
 
 const char *RNA_struct_ui_name(const StructRNA *type)
