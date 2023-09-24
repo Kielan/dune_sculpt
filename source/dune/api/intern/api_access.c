@@ -911,7 +911,7 @@ bool api_struct_available_or_report(ReportList *reports, const char *id)
     lib_dynstr_appendf(dynstr, "Type id '%s' is already in use: '", id);
     lib_dynstr_append(dynstr, sapi_exists->id);
     int i = 0;
-    if (sali_exists->base) {
+    if (sapi_exists->base) {
       for (const ApiStruct *base = sapi_exists->base; base; base = base->base) {
         lib_dynstr_append(dynstr, "(");
         lib_dynstr_append(dynstr, base->id);
@@ -1392,7 +1392,7 @@ ApiStruct *api_prop_ptr_type(ApiPtr *ptr, ApiProp *prop)
   prop = api_ensure_prop(prop);
 
   if (prop->type == PROP_POINTER) {
-    PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+    ApiPtrProp *pprop = (ApiPtrProp *)prop;
 
     if (pprop->type_fn) {
       return pprop->type_fn(ptr);
@@ -1402,27 +1402,27 @@ ApiStruct *api_prop_ptr_type(ApiPtr *ptr, ApiProp *prop)
     }
   }
   else if (prop->type == PROP_COLLECTION) {
-    CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)prop;
+    ApiCollectionProp *cprop = (ApiCollectionProp *)prop;
 
     if (cprop->item_type) {
       return cprop->item_type;
     }
   }
-  /* ignore other types, RNA_struct_find_nested calls with unchecked props */
+  /* ignore other types, Rapi_struct_find_nested calls with unchecked props */
 
-  return &RNA_UnknownType;
+  return &Api_UnknownType;
 }
 
-bool RNA_property_pointer_poll(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *value)
+bool api_prop_ptr_poll(ApiPtr *ptr, ApiProp *prop, ApiPtr *value)
 {
-  prop = rna_ensure_property(prop);
+  prop = api_ensure_prop(prop);
 
-  if (prop->type == PROP_POINTER) {
-    PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+  if (prop->type == PROP_PTR) {
+    ApiPtrProp *pprop = (ApiPtrProp *)prop;
 
     if (pprop->poll) {
-      if (rna_idproperty_check(&prop, ptr)) {
-        return ((PropPointerPollFuncPy)pprop->poll)(ptr, *value, prop);
+      if (api_idprop_check(&prop, ptr)) {
+        return ((PropPtrPollFnPy)pprop->poll)(ptr, *value, prop);
       }
       return pprop->poll(ptr, *value);
     }
@@ -1430,33 +1430,33 @@ bool RNA_property_pointer_poll(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *v
     return 1;
   }
 
-  printf("%s: %s is not a pointer property.\n", __func__, prop->identifier);
+  printf("%s: %s is not a ptr prop.\n", __func__, prop->identifier);
   return 0;
 }
 
-void RNA_property_enum_items_ex(bContext *C,
-                                PointerRNA *ptr,
-                                PropertyRNA *prop,
-                                const bool use_static,
-                                const EnumPropertyItem **r_item,
-                                int *r_totitem,
-                                bool *r_free)
+void api_prop_enum_items_ex(Cxt *C,
+                            ApiPtr *ptr,
+                            ApiProp *prop,
+                            const bool use_static,
+                            const EnumPropItem **r_item,
+                            int *r_totitem,
+                            bool *r_free)
 {
-  EnumPropertyRNA *eprop = (EnumPropertyRNA *)rna_ensure_property(prop);
+  ApiEnumProp *eprop = (ApiEnumProp *)api_ensure_prop(prop);
 
   *r_free = false;
 
   if (!use_static && (eprop->item_fn != NULL)) {
-    const bool no_context = (prop->flag & PROP_ENUM_NO_CONTEXT) ||
-                            ((ptr->type->flag & STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID) &&
+    const bool no_cxt = (prop->flag & PROP_ENUM_NO_CXT) ||
+                            ((ptr->type->flag & STRUCT_NO_CXT_WITHOUT_OWNER_ID) &&
                              (ptr->owner_id == NULL));
-    if (C != NULL || no_context) {
-      const EnumPropertyItem *item;
+    if (C != NULL || no_cxt) {
+      const EnumPropItem *item;
 
-      item = eprop->item_fn(no_context ? NULL : C, ptr, prop, r_free);
+      item = eprop->item_fn(no_cxt ? NULL : C, ptr, prop, r_free);
 
-      /* any callbacks returning NULL should be fixed */
-      BLI_assert(item != NULL);
+      /* any cbs returning NULL should be fixed */
+      lib_assert(item != NULL);
 
       if (r_totitem) {
         int tot;
@@ -1477,29 +1477,29 @@ void RNA_property_enum_items_ex(bContext *C,
   }
 }
 
-void RNA_property_enum_items(bContext *C,
-                             PointerRNA *ptr,
-                             PropertyRNA *prop,
-                             const EnumPropertyItem **r_item,
-                             int *r_totitem,
-                             bool *r_free)
+void api_prop_enum_items(Cxt *C,
+                         ApiPtr *ptr,
+                         ApiProp *prop,
+                         const EnumPropItem **r_item,
+                         int *r_totitem,
+                         bool *r_free)
 {
-  RNA_property_enum_items_ex(C, ptr, prop, false, r_item, r_totitem, r_free);
+  api_prop_enum_items_ex(C, ptr, prop, false, r_item, r_totitem, r_free);
 }
 
 #ifdef WITH_INTERNATIONAL
-static void property_enum_translate(PropertyRNA *prop,
-                                    EnumPropertyItem **r_item,
-                                    const int *totitem,
-                                    bool *r_free)
+static void prop_enum_lang(ApiProp *prop,
+                           EnumPropItem **r_item,
+                           const int *totitem,
+                           bool *r_free)
 {
   if (!(prop->flag & PROP_ENUM_NO_TRANSLATE)) {
     int i;
 
     /* NOTE: Only do those tests once, and then use BLT_pgettext. */
-    bool do_iface = BLT_translate_iface();
-    bool do_tooltip = BLT_translate_tooltips();
-    EnumPropertyItem *nitem;
+    bool do_iface = lang_iface();
+    bool do_tooltip = lang_tooltips();
+    EnumPropItem *nitem;
 
     if (!(do_iface || do_tooltip)) {
       return;
@@ -1509,7 +1509,7 @@ static void property_enum_translate(PropertyRNA *prop,
       nitem = *r_item;
     }
     else {
-      const EnumPropertyItem *item = *r_item;
+      const EnumPropItem *item = *r_item;
       int tot;
 
       if (totitem) {
@@ -1517,23 +1517,23 @@ static void property_enum_translate(PropertyRNA *prop,
       }
       else {
         /* count */
-        for (tot = 0; item[tot].identifier; tot++) {
+        for (tot = 0; item[tot].id; tot++) {
           /* pass */
         }
       }
 
-      nitem = MEM_mallocN(sizeof(EnumPropertyItem) * (tot + 1), "enum_items_gettexted");
-      memcpy(nitem, item, sizeof(EnumPropertyItem) * (tot + 1));
+      nitem = mem_mallocn(sizeof(EnumPropItem) * (tot + 1), "enum_items_gettexted");
+      memcpy(nitem, item, sizeof(EnumPropItem) * (tot + 1));
 
       *r_free = true;
     }
 
-    for (i = 0; nitem[i].identifier; i++) {
+    for (i = 0; nitem[i].id; i++) {
       if (nitem[i].name && do_iface) {
-        nitem[i].name = BLT_pgettext(prop->translation_context, nitem[i].name);
+        nitem[i].name = lang_pgettext(prop->lang_cxt, nitem[i].name);
       }
       if (nitem[i].description && do_tooltip) {
-        nitem[i].description = BLT_pgettext(NULL, nitem[i].description);
+        nitem[i].description = lang_pgettext(NULL, nitem[i].description);
       }
     }
 
@@ -1542,33 +1542,33 @@ static void property_enum_translate(PropertyRNA *prop,
 }
 #endif
 
-void RNA_property_enum_items_gettexted(bContext *C,
-                                       PointerRNA *ptr,
-                                       PropertyRNA *prop,
-                                       const EnumPropertyItem **r_item,
-                                       int *r_totitem,
-                                       bool *r_free)
+void api_prop_enum_items_gettexted(Cxt *C,
+                                   ApiPtr *ptr,
+                                   ApiProp *prop,
+                                   const EnumPropItem **r_item,
+                                   int *r_totitem,
+                                   bool *r_free)
 {
-  RNA_property_enum_items(C, ptr, prop, r_item, r_totitem, r_free);
+  api_prop_enum_items(C, ptr, prop, r_item, r_totitem, r_free);
 
 #ifdef WITH_INTERNATIONAL
   /* Normally dropping 'const' is _not_ ok, in this case it's only modified if we own the memory
    * so allow the exception (callers are creating new arrays in this case). */
-  property_enum_translate(prop, (EnumPropertyItem **)r_item, r_totitem, r_free);
+  prop_enum_lang(prop, (EnumPropItem **)r_item, r_totitem, r_free);
 #endif
 }
 
-void RNA_property_enum_items_gettexted_all(bContext *C,
-                                           PointerRNA *ptr,
-                                           PropertyRNA *prop,
-                                           const EnumPropertyItem **r_item,
-                                           int *r_totitem,
-                                           bool *r_free)
+void api_prop_enum_items_gettexted_all(Cxt *C,
+                                       ApiPtr *ptr,
+                                       ApiProp *prop,
+                                       const EnumPropItem **r_item,
+                                       int *r_totitem,
+                                       bool *r_free)
 {
-  EnumPropertyRNA *eprop = (EnumPropertyRNA *)rna_ensure_property(prop);
-  int mem_size = sizeof(EnumPropertyItem) * (eprop->totitem + 1);
+  ApiEnumProp *eprop = (ApiEnumProp *)api_ensure_prop(prop);
+  int mem_size = sizeof(EnumPropItem) * (eprop->totitem + 1);
   /* first return all items */
-  EnumPropertyItem *item_array = MEM_mallocN(mem_size, "enum_gettext_all");
+  EnumPropItem *item_array = mem_mallocn(mem_size, "enum_gettext_all");
   *r_free = true;
   memcpy(item_array, eprop->item, mem_size);
 
@@ -1577,27 +1577,27 @@ void RNA_property_enum_items_gettexted_all(bContext *C,
   }
 
   if (eprop->item_fn != NULL) {
-    const bool no_context = (prop->flag & PROP_ENUM_NO_CONTEXT) ||
-                            ((ptr->type->flag & STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID) &&
+    const bool no_cxt = (prop->flag & PROP_ENUM_NO_CXT) ||
+                            ((ptr->type->flag & STRUCT_NO_CXT_WITHOUT_OWNER_ID) &&
                              (ptr->owner_id == NULL));
-    if (C != NULL || no_context) {
-      const EnumPropertyItem *item;
+    if (C != NULL || no_cxt) {
+      const EnumPropItem *item;
       int i;
       bool free = false;
 
-      item = eprop->item_fn(no_context ? NULL : NULL, ptr, prop, &free);
+      item = eprop->item_fn(no_cxt ? NULL : NULL, ptr, prop, &free);
 
       /* any callbacks returning NULL should be fixed */
-      BLI_assert(item != NULL);
+      lib_assert(item != NULL);
 
       for (i = 0; i < eprop->totitem; i++) {
         bool exists = false;
         int i_fixed;
 
         /* Items that do not exist on list are returned,
-         * but have their names/identifiers NULL'ed out. */
-        for (i_fixed = 0; item[i_fixed].identifier; i_fixed++) {
-          if (STREQ(item[i_fixed].identifier, item_array[i].identifier)) {
+         * but have their names/ids NULL'ed out. */
+        for (i_fixed = 0; item[i_fixed].id; i_fixed++) {
+          if (STREQ(item[i_fixed].id, item_array[i].identifier)) {
             exists = true;
             break;
           }
@@ -1605,33 +1605,33 @@ void RNA_property_enum_items_gettexted_all(bContext *C,
 
         if (!exists) {
           item_array[i].name = NULL;
-          item_array[i].identifier = "";
+          item_array[i].id = "";
         }
       }
 
       if (free) {
-        MEM_freeN((void *)item);
+        mem_freen((void *)item);
       }
     }
   }
 
 #ifdef WITH_INTERNATIONAL
-  property_enum_translate(prop, &item_array, r_totitem, r_free);
+  prop_enum_lang(prop, &item_array, r_totitem, r_free);
 #endif
   *r_item = item_array;
 }
 
-bool RNA_property_enum_value(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const char *identifier, int *r_value)
+bool api_prop_enum_value(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const char *id, int *r_value)
 {
-  const EnumPropertyItem *item;
+  const EnumPropItem *item;
   bool free;
   bool found;
 
-  RNA_property_enum_items(C, ptr, prop, &item, NULL, &free);
+  api_prop_enum_items(C, ptr, prop, &item, NULL, &free);
 
   if (item) {
-    const int i = RNA_enum_from_identifier(item, identifier);
+    const int i = api_enum_from_id(item, id);
     if (i != -1) {
       *r_value = item[i].value;
       found = true;
@@ -1641,7 +1641,7 @@ bool RNA_property_enum_value(
     }
 
     if (free) {
-      MEM_freeN((void *)item);
+      mem_freen((void *)item);
     }
   }
   else {
@@ -1650,31 +1650,32 @@ bool RNA_property_enum_value(
   return found;
 }
 
-bool RNA_enum_identifier(const EnumPropertyItem *item, const int value, const char **r_identifier)
+//check this one
+bool api_enum_id(const EnumPropItem *item, const int value, const char **r_id)
 {
-  const int i = RNA_enum_from_value(item, value);
+  const int i = api_enum_from_value(item, value);
   if (i != -1) {
-    *r_identifier = item[i].identifier;
+    *r_id = item[i].id;
     return true;
   }
   return false;
 }
 
-int RNA_enum_bitflag_identifiers(const EnumPropertyItem *item,
-                                 const int value,
-                                 const char **r_identifier)
+int api_enum_bitflag_id(const EnumPropItem *item,
+                        const int value,
+                        const char **r_id)
 {
   int index = 0;
-  for (; item->identifier; item++) {
-    if (item->identifier[0] && item->value & value) {
-      r_identifier[index++] = item->identifier;
+  for (; item->id; item++) {
+    if (item->id[0] && item->value & value) {
+      r_id[index++] = item->id;
     }
   }
-  r_identifier[index] = NULL;
+  r_id[index] = NULL;
   return index;
 }
 
-bool RNA_enum_name(const EnumPropertyItem *item, const int value, const char **r_name)
+bool api_enum_name(const EnumPropItem *item, const int value, const char **r_name)
 {
   const int i = RNA_enum_from_value(item, value);
   if (i != -1) {
