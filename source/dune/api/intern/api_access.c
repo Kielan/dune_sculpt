@@ -6,7 +6,7 @@
 #include "mem_guardedalloc.h"
 
 #include "types_id.h"
-#include "typed_constraint.h"
+#include "types_constraint.h"
 #include "types_mod.h"
 #include "types_scene.h"
 #include "types_wm.h"
@@ -1888,14 +1888,14 @@ int api_prop_ui_icon(const ApiProp *prop)
   return api_ensure_prop((ApiProp *)prop)->icon;
 }
 
-static bool rna_property_editable_do(PointerRNA *ptr,
-                                     PropertyRNA *prop_orig,
-                                     const int index,
-                                     const char **r_info)
+static bool api_prop_editable_do(ApiPtr *ptr,
+                                 ApiProp *prop_orig,
+                                 const int index,
+                                 const char **r_info)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
-  PropertyRNA *prop = rna_ensure_property(prop_orig);
+  ApiProp *prop = api_ensure_prop(prop_orig);
 
   const char *info = "";
   const int flag = (prop->itemeditable != NULL && index >= 0) ?
@@ -1908,12 +1908,12 @@ static bool rna_property_editable_do(PointerRNA *ptr,
   /* Early return if the property itself is not editable. */
   if ((flag & PROP_EDITABLE) == 0 || (flag & PROP_REGISTER) != 0) {
     if (r_info != NULL && (*r_info)[0] == '\0') {
-      *r_info = N_("This property is for internal use only and can't be edited");
+      *r_info = N_("This prop is for internal use only and can't be edited");
     }
     return false;
   }
 
-  /* If there is no owning ID, the property is editable at this point. */
+  /* If there is no owning Id, the prop is editable at this point. */
   if (id == NULL) {
     return true;
   }
@@ -1926,52 +1926,52 @@ static bool rna_property_editable_do(PointerRNA *ptr,
     }
     return false;
   }
-  if (ID_IS_OVERRIDE_LIBRARY(id) && !RNA_property_overridable_get(ptr, prop_orig)) {
+  if (ID_IS_OVERRIDE_LIB(id) && !api_prop_overridable_get(ptr, prop_orig)) {
     if (r_info != NULL && (*r_info)[0] == '\0') {
-      *r_info = N_("Can't edit this property from an override data-block");
+      *r_info = N_("Can't edit this prop from an override data-block");
     }
     return false;
   }
 
-  /* At this point, property is owned by a local ID and therefore fully editable. */
+  /* At this point, prop is owned by a local Id and therefore fully editable. */
   return true;
 }
 
-bool RNA_property_editable(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_editable(ApiPtr *ptr, ApiProp *prop)
 {
-  return rna_property_editable_do(ptr, prop, -1, NULL);
+  return api_prop_editable_do(ptr, prop, -1, NULL);
 }
 
-bool RNA_property_editable_info(PointerRNA *ptr, PropertyRNA *prop, const char **r_info)
+bool api_prop_editable_info(ApiPtr *ptr, ApiProp *prop, const char **r_info)
 {
-  return rna_property_editable_do(ptr, prop, -1, r_info);
+  return api_prop_editable_do(ptr, prop, -1, r_info);
 }
 
-bool RNA_property_editable_flag(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_editable_flag(ApiPtr *ptr, ApiProp *prop)
 {
   int flag;
   const char *dummy_info;
 
-  prop = rna_ensure_property(prop);
+  prop = api_ensure_prop(prop);
   flag = prop->editable ? prop->editable(ptr, &dummy_info) : prop->flag;
   return (flag & PROP_EDITABLE) != 0;
 }
 
-bool RNA_property_editable_index(PointerRNA *ptr, PropertyRNA *prop, const int index)
+bool api_prop_editable_index(ApiPtr *ptr, ApiProp *prop, const int index)
 {
-  BLI_assert(index >= 0);
+  lib_assert(index >= 0);
 
-  return rna_property_editable_do(ptr, prop, index, NULL);
+  return api_prop_editable_do(ptr, prop, index, NULL);
 }
 
-bool RNA_property_animateable(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_animateable(ApiPtr *ptr, ApiProp *prop)
 {
-  /* check that base ID-block can support animation data */
+/* check that base Id-block can support animation data */
   if (!id_can_have_animdata(ptr->owner_id)) {
     return false;
   }
 
-  prop = rna_ensure_property(prop);
+  prop = api_ensure_prop(prop);
 
   if (!(prop->flag & PROP_ANIMATABLE)) {
     return false;
@@ -1980,7 +1980,7 @@ bool RNA_property_animateable(PointerRNA *ptr, PropertyRNA *prop)
   return (prop->flag & PROP_EDITABLE) != 0;
 }
 
-bool RNA_property_animated(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_animated(ApiPtr *ptr, ApiProp *prop)
 {
   int len = 1, index;
   bool driven, special;
@@ -1989,93 +1989,93 @@ bool RNA_property_animated(PointerRNA *ptr, PropertyRNA *prop)
     return false;
   }
 
-  if (RNA_property_array_check(prop)) {
-    len = RNA_property_array_length(ptr, prop);
+  if (api_prop_array_check(prop)) {
+    len = api_prop_array_length(ptr, prop);
   }
 
   for (index = 0; index < len; index++) {
-    if (BKE_fcurve_find_by_rna(ptr, prop, index, NULL, NULL, &driven, &special)) {
+    if (dune_fcurve_find_by_api(ptr, prop, index, NULL, NULL, &driven, &special)) {
       return true;
     }
   }
 
   return false;
 }
-bool RNA_property_path_from_ID_check(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_path_from_id_check(ApiPtr *ptr, ApiProp *prop)
 {
-  char *path = RNA_path_from_ID_to_property(ptr, prop);
+  char *path = api_path_from_id_to_prop(ptr, prop);
   bool ret = false;
 
   if (path) {
-    PointerRNA id_ptr;
-    PointerRNA r_ptr;
-    PropertyRNA *r_prop;
+    ApiPtr id_ptr;
+    ApiPtr r_ptr;
+    ApiProp *r_prop;
 
-    RNA_id_pointer_create(ptr->owner_id, &id_ptr);
-    if (RNA_path_resolve(&id_ptr, path, &r_ptr, &r_prop) == true) {
+    api_id_ptr_create(ptr->owner_id, &id_ptr);
+    if (api_path_resolve(&id_ptr, path, &r_ptr, &r_prop) == true) {
       ret = (prop == r_prop);
     }
-    MEM_freeN(path);
+    mem_freen(path);
   }
 
   return ret;
 }
 
-static void rna_property_update(
-    bContext *C, Main *bmain, Scene *scene, PointerRNA *ptr, PropertyRNA *prop)
+static void api_prop_update(
+    Cxt *C, Main *main, Scene *scene, Apitr *ptr, ApiProp *prop)
 {
-  const bool is_rna = (prop->magic == RNA_MAGIC);
-  prop = rna_ensure_property(prop);
+  const bool is_api = (prop->magic == API_MAGIC);
+  prop = api_ensure_prop(prop);
 
-  if (is_rna) {
+  if (is_api) {
     if (prop->update) {
-      /* ideally no context would be needed for update, but there's some
+      /* ideally no cxt would be needed for update, but there's some
        * parts of the code that need it still, so we have this exception */
-      if (prop->flag & PROP_CONTEXT_UPDATE) {
+      if (prop->flag & PROP_CXT_UPDATE) {
         if (C) {
-          if ((prop->flag & PROP_CONTEXT_PROPERTY_UPDATE) == PROP_CONTEXT_PROPERTY_UPDATE) {
-            ((ContextPropUpdateFunc)prop->update)(C, ptr, prop);
+          if ((prop->flag & PROP_CXT_PROP_UPDATE) == PROP_CXT_PROP_UPDATE) {
+            ((CxtPropUpdateFn)prop->update)(C, ptr, prop);
           }
           else {
-            ((ContextUpdateFunc)prop->update)(C, ptr);
+            ((CxtUpdateFn)prop->update)(C, ptr);
           }
         }
       }
       else {
-        prop->update(bmain, scene, ptr);
+        prop->update(main, scene, ptr);
       }
     }
 
 #if 1
-    /* TODO(campbell): Should eventually be replaced entirely by message bus (below)
+    /* TODO: Should eventually be replaced entirely by message bus (below)
      * for now keep since COW, bugs are hard to track when we have other missing updates. */
     if (prop->noteflag) {
-      WM_main_add_notifier(prop->noteflag, ptr->owner_id);
+      wm_main_add_notifier(prop->noteflag, ptr->owner_id);
     }
 #endif
 
     /* if C is NULL, we're updating from animation.
      * avoid slow-down from f-curves by not publishing (for now). */
     if (C != NULL) {
-      struct wmMsgBus *mbus = CTX_wm_message_bus(C);
+      struct wmMsgBus *mbus = cxt_wm_message_bus(C);
       /* we could add NULL check, for now don't */
-      WM_msg_publish_rna(mbus, ptr, prop);
+      wm_msg_publish_api(mbus, ptr, prop);
     }
-    if (ptr->owner_id != NULL && ((prop->flag & PROP_NO_DEG_UPDATE) == 0)) {
+    if (ptr->owner_id != NULL && ((prop->flag & PROP_NO_GRAPH_UPDATE) == 0)) {
       const short id_type = GS(ptr->owner_id->name);
       if (ID_TYPE_IS_COW(id_type)) {
-        DEG_id_tag_update(ptr->owner_id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(ptr->owner_id, ID_RECALC_COPY_ON_WRITE);
       }
     }
     /* End message bus. */
   }
 
-  if (!is_rna || (prop->flag & PROP_IDPROPERTY)) {
+  if (!is_api || (prop->flag & PROP_IDPROP)) {
 
     /* Disclaimer: this logic is not applied consistently, causing some confusing behavior.
      *
      * - When animated (which skips update functions).
-     * - When ID-properties are edited via Python (since RNA properties aren't used in this case).
+     * - When Id-props are edited via Python (since RNA props aren't used in this case).
      *
      * Adding updates will add a lot of overhead in the case of animation.
      * For Python it may cause unexpected slow-downs for developers using ID-properties
@@ -2084,55 +2084,52 @@ static void rna_property_update(
      * So editing custom properties only causes updates in the UI,
      * keep this exception because it happens to be useful for driving settings.
      * Python developers on the other hand will need to manually 'update_tag', see: T74000. */
-    DEG_id_tag_update(ptr->owner_id,
-                      ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_PARAMETERS);
+    graph_id_tag_update(ptr->owner_id,
+                      ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_PARAMS);
 
     /* When updating an ID pointer property, tag depsgraph for update. */
-    if (prop->type == PROP_POINTER && RNA_struct_is_ID(RNA_property_pointer_type(ptr, prop))) {
-      DEG_relations_tag_update(bmain);
+    if (prop->type == PROP_POINTER && RNA_struct_is_ID(RNA_property_ptr_type(ptr, prop))) {
+      graph_relations_tag_update(main);
     }
 
-    WM_main_add_notifier(NC_WINDOW, NULL);
+    wm_main_add_notifier(NC_WINDOW, NULL);
     /* Not nice as well, but the only way to make sure material preview
      * is updated with custom nodes.
      */
-    if ((prop->flag & PROP_IDPROPERTY) != 0 && (ptr->owner_id != NULL) &&
+    if ((prop->flag & PROP_IDPROP) != 0 && (ptr->owner_id != NULL) &&
         (GS(ptr->owner_id->name) == ID_NT)) {
-      WM_main_add_notifier(NC_MATERIAL | ND_SHADING, NULL);
+      wm_main_add_notifier(NC_MATERIAL | ND_SHADING, NULL);
     }
   }
 }
 
-bool RNA_property_update_check(PropertyRNA *prop)
+bool api_prop_update_check(ApiProp *prop)
 {
-  /* NOTE: must keep in sync with #rna_property_update. */
-  return (prop->magic != RNA_MAGIC || prop->update || prop->noteflag);
+  /* NOTE: must keep in sync with api_prop_update. */
+  return (prop->magic != API_MAGIC || prop->update || prop->noteflag);
 }
 
-void RNA_property_update(bContext *C, PointerRNA *ptr, PropertyRNA *prop)
+void api_prop_update(Cxt *C, ApiPtr *ptr, ApiProp *prop)
 {
-  rna_property_update(C, CTX_data_main(C), CTX_data_scene(C), ptr, prop);
+  api_prop_update(C, cxt_data_main(C), cxt_data_scene(C), ptr, prop);
 }
 
-void RNA_property_update_main(Main *bmain, Scene *scene, PointerRNA *ptr, PropertyRNA *prop)
+void api_prop_update_main(Main *main, Scene *scene, ApiPtr *ptr, ApiProp *prop)
 {
-  rna_property_update(NULL, bmain, scene, ptr, prop);
+  api_prop_update(NULL, main, scene, ptr, prop);
 }
-
-/* ---------------------------------------------------------------------- */
 
 /* Property Data */
-
-bool RNA_property_boolean_get(PointerRNA *ptr, PropertyRNA *prop)
+bool api_prop_bool_get(ApiPtr *ptr, ApiProp *prop)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiBoolProp *bprop = (ApiBoolProp *)prop;
+  IdProp *idprop;
   bool value;
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) == false);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) == false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     value = IDP_Int(idprop) != 0;
   }
   else if (bprop->get) {
@@ -2145,26 +2142,26 @@ bool RNA_property_boolean_get(PointerRNA *ptr, PropertyRNA *prop)
     value = bprop->defaultvalue;
   }
 
-  BLI_assert(ELEM(value, false, true));
+  lib_assert(ELEM(value, false, true));
 
   return value;
 }
 
-void RNA_property_boolean_set(PointerRNA *ptr, PropertyRNA *prop, bool value)
+void api_prop_bool_set(ApiPtr *ptr, ApiProp *prop, bool value)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiBoolProp *bprop = (ApiBoolProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) == false);
-  BLI_assert(ELEM(value, false, true));
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) == false);
+  lib_assert(ELEM(value, false, true));
 
   /* just in case other values are passed */
-  BLI_assert(ELEM(value, true, false));
+  lib_assert(ELEM(value, true, false));
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     IDP_Int(idprop) = (int)value;
-    rna_idproperty_touch(idprop);
+    api_idprop_touch(idprop);
   }
   else if (bprop->set) {
     bprop->set(ptr, value);
@@ -2173,19 +2170,19 @@ void RNA_property_boolean_set(PointerRNA *ptr, PropertyRNA *prop, bool value)
     bprop->set_ex(ptr, prop, value);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
     val.i = value;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
       IDP_AddToGroup(group, IDP_New(IDP_INT, &val, prop->identifier));
     }
   }
 }
 
-static void rna_property_boolean_fill_default_array_values(
+static void api_prop_bool_fill_default_array_values(
     const bool *defarr, int defarr_length, bool defvalue, int out_length, bool *r_values)
 {
   if (defarr && defarr_length > 0) {
@@ -2201,28 +2198,28 @@ static void rna_property_boolean_fill_default_array_values(
   }
 }
 
-static void rna_property_boolean_get_default_array_values(PointerRNA *ptr,
-                                                          BoolPropertyRNA *bprop,
-                                                          bool *r_values)
+static void api_prop_bool_get_default_array_values(ApiPtr *ptr,
+                                                   ApiBoolProp *bprop,
+                                                   bool *r_values)
 {
-  int length = bprop->property.totarraylength;
-  int out_length = RNA_property_array_length(ptr, (PropertyRNA *)bprop);
+  int length = bprop->prop.totarraylength;
+  int out_length = api_prop_array_length(ptr, (ApiProp *)bprop);
 
-  rna_property_boolean_fill_default_array_values(
+  api_prop_bool_fill_default_array_values(
       bprop->defaultarray, length, bprop->defaultvalue, out_length, r_values);
 }
 
-void RNA_property_boolean_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *values)
+void api_prop_bool_get_array(ApiPtr *ptr, ApiProp *prop, bool *values)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiBoolProp *bprop = (ApiBoolProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) != false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     if (prop->arraydimension == 0) {
-      values[0] = RNA_property_boolean_get(ptr, prop);
+      values[0] = api_prop_bool_get(ptr, prop);
     }
     else {
       int *values_src = IDP_Array(idprop);
@@ -2232,7 +2229,7 @@ void RNA_property_boolean_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *va
     }
   }
   else if (prop->arraydimension == 0) {
-    values[0] = RNA_property_boolean_get(ptr, prop);
+    values[0] = api_prop_bool_get(ptr, prop);
   }
   else if (bprop->getarray) {
     bprop->getarray(ptr, values);
@@ -2241,48 +2238,48 @@ void RNA_property_boolean_get_array(PointerRNA *ptr, PropertyRNA *prop, bool *va
     bprop->getarray_ex(ptr, prop, values);
   }
   else {
-    rna_property_boolean_get_default_array_values(ptr, bprop, values);
+    api_prop_bool_get_default_array_values(ptr, bprop, values);
   }
 }
 
-bool RNA_property_boolean_get_index(PointerRNA *ptr, PropertyRNA *prop, int index)
+bool api_prop_bool_get_index(ApiPtr *ptr, ApiProp *prop, int index)
 {
-  bool tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  bool tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
   bool value;
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_boolean_get_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_bool_get_array(ptr, prop, tmp);
     value = tmp[index];
   }
   else {
     bool *tmparray;
 
-    tmparray = MEM_mallocN(sizeof(bool) * len, __func__);
-    RNA_property_boolean_get_array(ptr, prop, tmparray);
+    tmparray = mem_mallocn(sizeof(bool) * len, __func__);
+    api_prop_bool_get_array(ptr, prop, tmparray);
     value = tmparray[index];
-    MEM_freeN(tmparray);
+    mem_freen(tmparray);
   }
 
-  BLI_assert(ELEM(value, false, true));
+  lib_assert(ELEM(value, false, true));
 
   return value;
 }
 
-void RNA_property_boolean_set_array(PointerRNA *ptr, PropertyRNA *prop, const bool *values)
+void api_prop_bool_set_array(ApiPtr *ptr, ApiProp *prop, const bool *values)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiBoolProp *bprop = (ApiBoolProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) != false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     if (prop->arraydimension == 0) {
       IDP_Int(idprop) = values[0];
     }
@@ -2292,10 +2289,10 @@ void RNA_property_boolean_set_array(PointerRNA *ptr, PropertyRNA *prop, const bo
         values_dst[i] = (int)values[i];
       }
     }
-    rna_idproperty_touch(idprop);
+    api_idprop_touch(idprop);
   }
   else if (prop->arraydimension == 0) {
-    RNA_property_boolean_set(ptr, prop, values[0]);
+    api_prop_bool_set(ptr, prop, values[0]);
   }
   else if (bprop->setarray) {
     bprop->setarray(ptr, values);
@@ -2304,15 +2301,15 @@ void RNA_property_boolean_set_array(PointerRNA *ptr, PropertyRNA *prop, const bo
     bprop->setarray_ex(ptr, prop, values);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
     val.array.len = prop->totarraylength;
     val.array.type = IDP_INT;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
-      idprop = IDP_New(IDP_ARRAY, &val, prop->identifier);
+      idprop = IDP_New(IDP_ARRAY, &val, prop->id);
       IDP_AddToGroup(group, idprop);
       int *values_dst = IDP_Array(idprop);
       for (uint i = 0; i < idprop->len; i++) {
@@ -2322,84 +2319,84 @@ void RNA_property_boolean_set_array(PointerRNA *ptr, PropertyRNA *prop, const bo
   }
 }
 
-void RNA_property_boolean_set_index(PointerRNA *ptr, PropertyRNA *prop, int index, bool value)
+void api_prop_bool_set_index(ApiPtr *ptr, ApiProp *prop, int index, bool value)
 {
-  bool tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  bool tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
-  BLI_assert(ELEM(value, false, true));
+  lib_assert(api_prop_type(prop) == PROP_BOOLEAN);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
+  lib_assert(ELEM(value, false, true));
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_boolean_get_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_bool_get_array(ptr, prop, tmp);
     tmp[index] = value;
-    RNA_property_boolean_set_array(ptr, prop, tmp);
+    api_prop_bool_set_array(ptr, prop, tmp);
   }
   else {
     bool *tmparray;
 
-    tmparray = MEM_mallocN(sizeof(bool) * len, __func__);
-    RNA_property_boolean_get_array(ptr, prop, tmparray);
+    tmparray = mem_mallocn(sizeof(bool) * len, __func__);
+    api_prop_bool_get_array(ptr, prop, tmparray);
     tmparray[index] = value;
-    RNA_property_boolean_set_array(ptr, prop, tmparray);
-    MEM_freeN(tmparray);
+    api_property_bool_set_array(ptr, prop, tmparray);
+    mem_freen(tmparray);
   }
 }
 
-bool RNA_property_boolean_get_default(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
+bool api_prop_bool_get_default(ApiPtr *UNUSED(ptr), ApiProp *prop)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)rna_ensure_property(prop);
+  ApiBoolProp *bprop = (ApiBoolProp *)api_ensure_prop(prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) == false);
-  BLI_assert(ELEM(bprop->defaultvalue, false, true));
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) == false);
+  lib_assert(ELEM(bprop->defaultvalue, false, true));
 
   return bprop->defaultvalue;
 }
 
-void RNA_property_boolean_get_default_array(PointerRNA *ptr, PropertyRNA *prop, bool *values)
+void api_prop_bool_get_default_array(ApiPtr *ptr, ApiProp *prop, bool *values)
 {
-  BoolPropertyRNA *bprop = (BoolPropertyRNA *)rna_ensure_property(prop);
+  ApiBoolProp *bprop = (ApiBoolProp *)api_ensure_prop(prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) != false);
 
   if (prop->arraydimension == 0) {
     values[0] = bprop->defaultvalue;
   }
   else {
-    rna_property_boolean_get_default_array_values(ptr, bprop, values);
+    api_prop_bool_get_default_array_values(ptr, bprop, values);
   }
 }
 
-bool RNA_property_boolean_get_default_index(PointerRNA *ptr, PropertyRNA *prop, int index)
+bool api_prop_bool_get_default_index(ApiPtr *ptr, ApiProp *prop, int index)
 {
-  bool tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  bool tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_BOOLEAN);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lib_assert(api_prop_type(prop) == PROP_BOOL);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_boolean_get_default_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_bool_get_default_array(ptr, prop, tmp);
     return tmp[index];
   }
   bool *tmparray, value;
 
-  tmparray = MEM_mallocN(sizeof(bool) * len, __func__);
-  RNA_property_boolean_get_default_array(ptr, prop, tmparray);
+  tmparray = mem_mallocn(sizeof(bool) * len, __func__);
+  api_prop_bool_get_default_array(ptr, prop, tmparray);
   value = tmparray[index];
-  MEM_freeN(tmparray);
+  mem_freen(tmparray);
 
   return value;
 }
 
-int RNA_property_int_get(PointerRNA *ptr, PropertyRNA *prop)
+int api_prop_int_get(PointerRNA *ptr, PropertyRNA *prop)
 {
   IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
   IDProperty *idprop;
