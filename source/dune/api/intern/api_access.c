@@ -2735,13 +2735,13 @@ int api_prop_int_get_default_index(ApiPtr *ptr, ApiProp *prop, int index)
 
 float api_prop_float_get(ApiPtr *ptr, ApiProp *prop)
 {
-  ApiFloatProp *fprop = (ApuFloatProp *)prop;
+  ApiFloatProp *fprop = (ApiFloatProp *)prop;
   IdProp *idprop;
 
   lib_assert(api_prop_type(prop) == PROP_FLOAT);
   lib_assert(api_prop_array_check(prop) == false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     if (idprop->type == IDP_FLOAT) {
       return IDP_Float(idprop);
     }
@@ -2775,7 +2775,7 @@ void api_prop_float_set(ApiPtr *ptr, ApiProp *prop, float value)
       IDP_Double(idprop) = value;
     }
 
-    rna_idproperty_touch(idprop);
+    api_idprop_touch(idprop);
   }
   else if (fprop->set) {
     fprop->set(ptr, value);
@@ -2784,21 +2784,21 @@ void api_prop_float_set(ApiPtr *ptr, ApiProp *prop, float value)
     fprop->set_ex(ptr, prop, value);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
-    RNA_property_float_clamp(ptr, prop, &value);
+    api_prop_float_clamp(ptr, prop, &value);
 
     val.f = value;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
-      IDP_AddToGroup(group, IDP_New(IDP_FLOAT, &val, prop->identifier));
+      IDP_AddToGroup(group, IDP_New(IDP_FLOAT, &val, prop->id));
     }
   }
 }
 
-static void rna_property_float_fill_default_array_values(
+static void api_prop_float_fill_default_array_values(
     const float *defarr, int defarr_length, float defvalue, int out_length, float *r_values)
 {
   if (defarr && defarr_length > 0) {
@@ -2814,14 +2814,12 @@ static void rna_property_float_fill_default_array_values(
   }
 }
 
-/**
- * The same logic as #rna_property_float_fill_default_array_values for a double array.
- */
-static void rna_property_float_fill_default_array_values_double(const double *default_array,
-                                                                const int default_array_len,
-                                                                const double default_value,
-                                                                const int out_length,
-                                                                float *r_values)
+/* The same logic as #rna_property_float_fill_default_array_values for a double array */
+static void api_prop_float_fill_default_array_values_double(const double *default_array,
+                                                            const int default_array_len,
+                                                            const double default_value,
+                                                            const int out_length,
+                                                            float *r_values)
 {
   const int array_copy_len = MIN2(out_length, default_array_len);
 
@@ -2834,21 +2832,21 @@ static void rna_property_float_fill_default_array_values_double(const double *de
   }
 }
 
-static void rna_property_float_get_default_array_values(PointerRNA *ptr,
-                                                        FloatPropertyRNA *fprop,
-                                                        float *r_values)
+static void api_prop_float_get_default_array_values(ApiPtr *ptr,
+                                                    ApiFloatProp *fprop,
+                                                    float *r_values)
 {
-  int length = fprop->property.totarraylength;
-  int out_length = RNA_property_array_length(ptr, (PropertyRNA *)fprop);
+  int length = fprop->prop.totarraylength;
+  int out_length = api_prop_array_length(ptr, (ApiPropu *)fprop);
 
-  rna_property_float_fill_default_array_values(
+  api_prop_float_fill_default_array_values(
       fprop->defaultarray, length, fprop->defaultvalue, out_length, r_values);
 }
 
-void RNA_property_float_get_array(PointerRNA *ptr, PropertyRNA *prop, float *values)
+void api_prop_float_get_array(ApiPtr *ptr, ApiProp *prop, float *values)
 {
-  FloatPropertyRNA *fprop = (FloatPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiFloatProp *fprop = (ApiFloatProp *)prop;
+  IdProp *idprop;
   int i;
 
   lib_assert(api_prop_type(prop) == PROP_FLOAT);
@@ -2901,7 +2899,7 @@ void api_prop_float_get_array_range(ApiPtr *ptr, ApiProp *prop, float values[2])
     int i;
 
     if (array_len > 32) {
-      arr = MEM_mallocN(sizeof(float) * array_len, __func__);
+      arr = mem_mallocn(sizeof(float) * array_len, __func__);
     }
     else {
       arr = arr_stack;
@@ -2922,7 +2920,7 @@ void api_prop_float_get_array_range(ApiPtr *ptr, ApiProp *prop, float values[2])
 
 float api_prop_float_get_index(ApiPtr *ptr, ApiProp *prop, int index)
 {
-  float tmp[RNA_MAX_ARRAY_LENGTH];
+  float tmp[API_MAX_ARRAY_LENGTH];
   int len = api_ensure_prop_array_length(ptr, prop);
 
   lib_assert(api_prop_type(prop) == PROP_FLOAT);
@@ -2985,61 +2983,60 @@ void api_prop_float_set_array(ApiPtr *ptr, ApiProp *prop, const float *values)
     fprop->setarray_ex(ptr, prop, values);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
-    /* TODO: RNA_property_float_clamp_array(ptr, prop, &value); */
-
+    /* TODO: api_prop_float_clamp_array(ptr, prop, &value); */
     val.array.len = prop->totarraylength;
     val.array.type = IDP_FLOAT;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
-      idprop = IDP_New(IDP_ARRAY, &val, prop->identifier);
+      idprop = IDP_New(IDP_ARRAY, &val, prop->id);
       IDP_AddToGroup(group, idprop);
       memcpy(IDP_Array(idprop), values, sizeof(float) * idprop->len);
     }
   }
 }
 
-void RNA_property_float_set_index(PointerRNA *ptr, PropertyRNA *prop, int index, float value)
+void api_prop_float_set_index(ApiPtr *ptr, ApiProp *prop, int index, float value)
 {
-  float tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  float tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_FLOAT);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lib_assert(api_prop_type(prop) == PROP_FLOAT);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_float_get_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_float_get_array(ptr, prop, tmp);
     tmp[index] = value;
-    RNA_property_float_set_array(ptr, prop, tmp);
+    api_prop_float_set_array(ptr, prop, tmp);
   }
   else {
     float *tmparray;
 
-    tmparray = MEM_mallocN(sizeof(float) * len, __func__);
-    RNA_property_float_get_array(ptr, prop, tmparray);
+    tmparray = mem_mallocn(sizeof(float) * len, __func__);
+    api_prop_float_get_array(ptr, prop, tmparray);
     tmparray[index] = value;
-    RNA_property_float_set_array(ptr, prop, tmparray);
-    MEM_freeN(tmparray);
+    api_prop_float_set_array(ptr, prop, tmparray);
+    mem_freen(tmparray);
   }
 }
 
-float RNA_property_float_get_default(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
+float api_prop_float_get_default(ApiPtr *UNUSED(ptr), ApiProp *prop)
 {
-  FloatPropertyRNA *fprop = (FloatPropertyRNA *)rna_ensure_property(prop);
+  ApiFloatProp *fprop = (ApiFloatProp *)api_ensure_prop(prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_FLOAT);
-  BLI_assert(RNA_property_array_check(prop) == false);
+  lib_assert(api_prop_type(prop) == PROP_FLOAT);
+  lib_assert(api_prop_array_check(prop) == false);
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (const IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IdProp *idprop = (const IdProp *)prop;
     if (idprop->ui_data) {
-      BLI_assert(ELEM(idprop->type, IDP_FLOAT, IDP_DOUBLE));
-      const IDPropertyUIDataFloat *ui_data = (const IDPropertyUIDataFloat *)idprop->ui_data;
+      lib_assert(ELEM(idprop->type, IDP_FLOAT, IDP_DOUBLE));
+      const IdPropUIDataFloat *ui_data = (const IdPropUIDataFloat *)idprop->ui_data;
       return (float)ui_data->default_value;
     }
   }
@@ -3047,36 +3044,36 @@ float RNA_property_float_get_default(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
   return fprop->defaultvalue;
 }
 
-bool RNA_property_float_set_default(PropertyRNA *prop, float value)
+bool api_prop_float_set_default(ApiProp *prop, float value)
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     return false;
   }
 
-  IDProperty *idprop = (IDProperty *)prop;
-  BLI_assert(idprop->type == IDP_FLOAT);
+  IdProp *idprop = (IdProp *)prop;
+  lib_assert(idprop->type == IDP_FLOAT);
 
-  IDPropertyUIDataFloat *ui_data = (IDPropertyUIDataFloat *)IDP_ui_data_ensure(idprop);
+  IdPropUIDataFloat *ui_data = (IdPropUIDataFloat *)IDP_ui_data_ensure(idprop);
   ui_data->default_value = (double)value;
   return true;
 }
 
-void RNA_property_float_get_default_array(PointerRNA *ptr, PropertyRNA *prop, float *values)
+void api_prop_float_get_default_array(ApiPtr *ptr, ApiProp *prop, float *values)
 {
-  FloatPropertyRNA *fprop = (FloatPropertyRNA *)rna_ensure_property(prop);
+  ApiFloatProp *fprop = (ApiFloatProp *)api_ensure_prop(prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_FLOAT);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_FLOAT);
+  lib_assert(api_prop_array_check(prop) != false);
 
-  if (prop->magic != RNA_MAGIC) {
-    int length = rna_ensure_property_array_length(ptr, prop);
+  if (prop->magic != API_MAGIC) {
+    int length = api_ensure_prop_array_length(ptr, prop);
 
-    const IDProperty *idprop = (const IDProperty *)prop;
+    const IdProp *idprop = (const IdProp *)prop;
     if (idprop->ui_data) {
-      BLI_assert(idprop->type == IDP_ARRAY);
-      BLI_assert(ELEM(idprop->subtype, IDP_FLOAT, IDP_DOUBLE));
-      const IDPropertyUIDataFloat *ui_data = (const IDPropertyUIDataFloat *)idprop->ui_data;
-      rna_property_float_fill_default_array_values_double(ui_data->default_array,
+      lib_assert(idprop->type == IDP_ARRAY);
+      lib_assert(ELEM(idprop->subtype, IDP_FLOAT, IDP_DOUBLE));
+      const IdPropUIDataFloat *ui_data = (const IdPropUIDataFloat *)idprop->ui_data;
+      api_prop_float_fill_default_array_values_double(ui_data->default_array,
                                                           ui_data->default_array_len,
                                                           ui_data->default_value,
                                                           length,
@@ -3087,40 +3084,40 @@ void RNA_property_float_get_default_array(PointerRNA *ptr, PropertyRNA *prop, fl
     values[0] = fprop->defaultvalue;
   }
   else {
-    rna_property_float_get_default_array_values(ptr, fprop, values);
+    api_prop_float_get_default_array_values(ptr, fprop, values);
   }
 }
 
-float RNA_property_float_get_default_index(PointerRNA *ptr, PropertyRNA *prop, int index)
+float api_prop_float_get_default_index(ApiPtr *ptr, ApiProp *prop, int index)
 {
-  float tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  float tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_property_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_FLOAT);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lin_assert(api_prop_type(prop) == PROP_FLOAT);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_float_get_default_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_float_get_default_array(ptr, prop, tmp);
     return tmp[index];
   }
   float *tmparray, value;
 
-  tmparray = MEM_mallocN(sizeof(float) * len, __func__);
-  RNA_property_float_get_default_array(ptr, prop, tmparray);
+  tmparray = mem_mallocn(sizeof(float) * len, __func__);
+  api_prop_float_get_default_array(ptr, prop, tmparray);
   value = tmparray[index];
-  MEM_freeN(tmparray);
+  mem_freen(tmparray);
 
   return value;
 }
 
-void RNA_property_string_get(PointerRNA *ptr, PropertyRNA *prop, char *value)
+void api_prop_string_get(PointerRNA *ptr, PropertyRNA *prop, char *value)
 {
-  StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
+  ApiStringProp *sprop = (StringPropertyRNA *)prop;
   IDProperty *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_STRING);
+  lib_assert(RNA_property_type(prop) == PROP_STRING);
 
   if ((idprop = rna_idproperty_check(&prop, ptr))) {
     /* editing bytes is not 100% supported
@@ -3144,21 +3141,21 @@ void RNA_property_string_get(PointerRNA *ptr, PropertyRNA *prop, char *value)
   }
 }
 
-char *RNA_property_string_get_alloc(
-    PointerRNA *ptr, PropertyRNA *prop, char *fixedbuf, int fixedlen, int *r_len)
+char *api_prop_string_get_alloc(
+    ApiPtr *ptr, ApiProp *prop, char *fixedbuf, int fixedlen, int *r_len)
 {
   char *buf;
   int length;
 
-  BLI_assert(RNA_property_type(prop) == PROP_STRING);
+  lib_assert(api_prop_type(prop) == PROP_STRING);
 
-  length = RNA_property_string_length(ptr, prop);
+  length = api_prop_string_length(ptr, prop);
 
   if (length + 1 < fixedlen) {
     buf = fixedbuf;
   }
   else {
-    buf = MEM_mallocN(sizeof(char) * (length + 1), __func__);
+    buf = mem_mallocn(sizeof(char) * (length + 1), __func__);
   }
 
 #ifndef NDEBUG
@@ -3166,10 +3163,10 @@ char *RNA_property_string_get_alloc(
   buf[length] = 255;
 #endif
 
-  RNA_property_string_get(ptr, prop, buf);
+  api_prop_string_get(ptr, prop, buf);
 
 #ifndef NDEBUG
-  BLI_assert(buf[length] == '\0');
+  lib_assert(buf[length] == '\0');
 #endif
 
   if (r_len) {
@@ -3179,20 +3176,20 @@ char *RNA_property_string_get_alloc(
   return buf;
 }
 
-int RNA_property_string_length(PointerRNA *ptr, PropertyRNA *prop)
+int api_prop_string_length(ApiPtr *ptr, ApiProp *prop)
 {
-  StringPropertyRNA *sprop = (StringPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiStringProp *sprop = (ApiStringProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_STRING);
+  lib_assert(api_prop_type(prop) == PROP_STRING);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     if (idprop->subtype == IDP_STRING_SUB_BYTE) {
       return idprop->len;
     }
 #ifndef NDEBUG
     /* these _must_ stay in sync */
-    BLI_assert(strlen(IDP_String(idprop)) == idprop->len - 1);
+    lib_assert(strlen(IDP_String(idprop)) == idprop->len - 1);
 #endif
     return idprop->len - 1;
   }
