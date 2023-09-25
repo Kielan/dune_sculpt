@@ -1677,7 +1677,7 @@ int api_enum_bitflag_id(const EnumPropItem *item,
 
 bool api_enum_name(const EnumPropItem *item, const int value, const char **r_name)
 {
-  const int i = RNA_enum_from_value(item, value);
+  const int i = api_enum_from_value(item, value);
   if (i != -1) {
     *r_name = item[i].name;
     return true;
@@ -1685,11 +1685,11 @@ bool api_enum_name(const EnumPropItem *item, const int value, const char **r_nam
   return false;
 }
 
-bool RNA_enum_description(const EnumPropertyItem *item,
+bool api_enum_description(const EnumPropItem *item,
                           const int value,
                           const char **r_description)
 {
-  const int i = RNA_enum_from_value(item, value);
+  const int i = api_enum_from_value(item, value);
   if (i != -1) {
     *r_description = item[i].description;
     return true;
@@ -1697,29 +1697,29 @@ bool RNA_enum_description(const EnumPropertyItem *item,
   return false;
 }
 
-int RNA_enum_from_identifier(const EnumPropertyItem *item, const char *identifier)
+int api_enum_from_id(const EnumPropItem *item, const char *id)
 {
   int i = 0;
-  for (; item->identifier; item++, i++) {
-    if (item->identifier[0] && STREQ(item->identifier, identifier)) {
+  for (; item->id; item++, i++) {
+    if (item->id[0] && STREQ(item->id, id)) {
       return i;
     }
   }
   return -1;
 }
 
-int RNA_enum_from_name(const EnumPropertyItem *item, const char *name)
+int api_enum_from_name(const EnumPropItem *item, const char *name)
 {
   int i = 0;
-  for (; item->identifier; item++, i++) {
-    if (item->identifier[0] && STREQ(item->name, name)) {
+  for (; item->id; item++, i++) {
+    if (item->id[0] && STREQ(item->name, name)) {
       return i;
     }
   }
   return -1;
 }
 
-int RNA_enum_from_value(const EnumPropertyItem *item, const int value)
+int api_enum_from_value(const EnumPropItem *item, const int value)
 {
   int i = 0;
   for (; item->identifier; item++, i++) {
@@ -1730,11 +1730,11 @@ int RNA_enum_from_value(const EnumPropertyItem *item, const int value)
   return -1;
 }
 
-unsigned int RNA_enum_items_count(const EnumPropertyItem *item)
+unsigned int api_enum_items_count(const EnumPropItem *item)
 {
   unsigned int i = 0;
 
-  while (item->identifier) {
+  while (item->id) {
     item++;
     i++;
   }
@@ -1742,36 +1742,36 @@ unsigned int RNA_enum_items_count(const EnumPropertyItem *item)
   return i;
 }
 
-bool RNA_property_enum_identifier(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, const char **identifier)
+bool api_prop_enum_id(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const int value, const char **id)
 {
-  const EnumPropertyItem *item = NULL;
+  const EnumPropItem *item = NULL;
   bool free;
 
-  RNA_property_enum_items(C, ptr, prop, &item, NULL, &free);
+  api_prop_enum_items(C, ptr, prop, &item, NULL, &free);
   if (item) {
     bool result;
-    result = RNA_enum_identifier(item, value, identifier);
+    result = api_enum_id(item, value, identifier);
     if (free) {
-      MEM_freeN((void *)item);
+      mem_freen((void *)item);
     }
     return result;
   }
   return false;
 }
 
-bool RNA_property_enum_name(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, const char **name)
+bool api_prop_enum_name(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const int value, const char **name)
 {
-  const EnumPropertyItem *item = NULL;
+  const EnumPropItem *item = NULL;
   bool free;
 
-  RNA_property_enum_items(C, ptr, prop, &item, NULL, &free);
+  api_prop_enum_items(C, ptr, prop, &item, NULL, &free);
   if (item) {
     bool result;
-    result = RNA_enum_name(item, value, name);
+    result = api_enum_name(item, value, name);
     if (free) {
-      MEM_freeN((void *)item);
+      mem_freen((void *)item);
     }
 
     return result;
@@ -1779,17 +1779,17 @@ bool RNA_property_enum_name(
   return false;
 }
 
-bool RNA_property_enum_name_gettexted(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, const char **name)
+bool api_prop_enum_name_gettexted(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const int value, const char **name)
 {
   bool result;
 
-  result = RNA_property_enum_name(C, ptr, prop, value, name);
+  result = api_prop_enum_name(C, ptr, prop, value, name);
 
   if (result) {
     if (!(prop->flag & PROP_ENUM_NO_TRANSLATE)) {
-      if (BLT_translate_iface()) {
-        *name = BLT_pgettext(prop->translation_context, *name);
+      if (lang_iface()) {
+        *name = lang_pgettext(prop->lang_cxt, *name);
       }
     }
   }
@@ -1797,15 +1797,15 @@ bool RNA_property_enum_name_gettexted(
   return result;
 }
 
-bool RNA_property_enum_item_from_value(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, EnumPropertyItem *r_item)
+bool api_prop_enum_item_from_value(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const int value, EnumPropItem *r_item)
 {
-  const EnumPropertyItem *item = NULL;
+  const EnumPropItem *item = NULL;
   bool free;
 
-  RNA_property_enum_items(C, ptr, prop, &item, NULL, &free);
+  api_prop_enum_items(C, ptr, prop, &item, NULL, &free);
   if (item) {
-    const int i = RNA_enum_from_value(item, value);
+    const int i = api_enum_from_value(item, value);
     bool result;
 
     if (i != -1) {
@@ -1817,7 +1817,7 @@ bool RNA_property_enum_item_from_value(
     }
 
     if (free) {
-      MEM_freeN((void *)item);
+      mem_freen((void *)item);
     }
 
     return result;
@@ -1825,32 +1825,32 @@ bool RNA_property_enum_item_from_value(
   return false;
 }
 
-bool RNA_property_enum_item_from_value_gettexted(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, EnumPropertyItem *r_item)
+bool api_prop_enum_item_from_value_gettexted(
+     xt *C, ApiPtr *ptr, ApiProp *prop, const int value, EnumPropItem *r_item)
 {
-  const bool result = RNA_property_enum_item_from_value(C, ptr, prop, value, r_item);
+  const bool result = api_prop_enum_item_from_value(C, ptr, prop, value, r_item);
 
   if (result && !(prop->flag & PROP_ENUM_NO_TRANSLATE)) {
-    if (BLT_translate_iface()) {
-      r_item->name = BLT_pgettext(prop->translation_context, r_item->name);
+    if (lang_iface()) {
+      r_item->name = lang_pgettext(prop->lang_cxt, r_item->name);
     }
   }
 
   return result;
 }
 
-int RNA_property_enum_bitflag_identifiers(
-    bContext *C, PointerRNA *ptr, PropertyRNA *prop, const int value, const char **identifier)
+int api_prop_enum_bitflag_ids(
+    Cxt *C, ApiPtr *ptr, ApiProp *prop, const int value, const char **id)
 {
-  const EnumPropertyItem *item = NULL;
+  const EnumPropItem *item = NULL;
   bool free;
 
-  RNA_property_enum_items(C, ptr, prop, &item, NULL, &free);
+  api_prop_enum_items(C, ptr, prop, &item, NULL, &free);
   if (item) {
     int result;
-    result = RNA_enum_bitflag_identifiers(item, value, identifier);
+    result = api_enum_bitflag_ids(item, value, id);
     if (free) {
-      MEM_freeN((void *)item);
+      mem_freen((void *)item);
     }
 
     return result;
@@ -1858,34 +1858,34 @@ int RNA_property_enum_bitflag_identifiers(
   return 0;
 }
 
-const char *RNA_property_ui_name(const PropertyRNA *prop)
+const char *api_prop_ui_name(const ApiProp *prop)
 {
-  return CTX_IFACE_(prop->translation_context, rna_ensure_property_name(prop));
+  return CXT_IFACE_(prop->lang_cxt, api_ensure_prop_name(prop));
 }
 
-const char *RNA_property_ui_name_raw(const PropertyRNA *prop)
+const char *api_prop_ui_name_raw(const ApiProp *prop)
 {
-  return rna_ensure_property_name(prop);
+  return api_ensure_prop_name(prop);
 }
 
-const char *RNA_property_ui_description(const PropertyRNA *prop)
+const char *api_prop_ui_description(const ApiProp *prop)
 {
-  return TIP_(rna_ensure_property_description(prop));
+  return TIP_(api_ensure_prop_description(prop));
 }
 
-const char *RNA_property_ui_description_raw(const PropertyRNA *prop)
+const char *api_prop_ui_description_raw(const ApiProp *prop)
 {
-  return rna_ensure_property_description(prop);
+  return api_ensure_prop_description(prop);
 }
 
-const char *RNA_property_translation_context(const PropertyRNA *prop)
+const char *api_prop_lang_cxt(const ApiProp *prop)
 {
-  return rna_ensure_property((PropertyRNA *)prop)->translation_context;
+  return api_ensure_prop((ApiProp *)prop)->lang_cxt;
 }
 
-int RNA_property_ui_icon(const PropertyRNA *prop)
+int api_prop_ui_icon(const ApiProp *prop)
 {
-  return rna_ensure_property((PropertyRNA *)prop)->icon;
+  return api_ensure_prop((ApiProp *)prop)->icon;
 }
 
 static bool rna_property_editable_do(PointerRNA *ptr,
