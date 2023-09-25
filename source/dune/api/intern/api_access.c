@@ -49,7 +49,7 @@
 #include "api_access_internal.h"
 #include "api_internal.h"
 
-const ApiPtt ApiPtr_NULL = {NULL};
+const ApiPtr ApiPtr_NULL = {NULL};
 
 /* Init/Exit */
 void api_init(void)
@@ -62,7 +62,7 @@ void api_init(void)
 
   for (sapi = DUNE_API.structs.first; sapi; sapi = sapi->cont.next) {
     if (!sapi->cont.prophash) {
-      srna->cont.prophash = lib_ghash_str_new("api_init gh");
+      sapi->cont.prophash = lib_ghash_str_new("api_init gh");
 
       for (prop = sapi->cont.props.first; prop; prop = prop->next) {
         if (!(prop->flag_internal & PROP_INTERN_BUILTIN)) {
