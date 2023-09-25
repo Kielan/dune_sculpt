@@ -4,59 +4,55 @@
 #include <sys/types.h>
 #include <wctype.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LI_fileops.h"
-#include "LI_listbase.h"
-#include "LI_path_util.h"
-#include "LI_string.h"
-#include "LI_string_cursor_utf8.h"
-#include "LI_string_utf8.h"
-#include "LI_utildefines.h"
+#include "lib_fileops.h"
+#include "lib_list.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_string_cursor_utf8.h"
+#include "lib_string_utf8.h"
+#include "lib_utildefines.h"
 
-#include "LANG_translation.h"
+#include "lang.h"
 
-#include "structs_constraint_types.h"
-#include "structs_material_types.h"
-#include "structs_node_types.h"
-#include "structs_object_types.h"
-#include "structs_scene_types.h"
-#include "structs_screen_types.h"
-#include "structs_space_types.h"
-#include "structs_text_types.h"
-#include "structs_userdef_types.h"
+#include "types_constraint.h"
+#include "types_material.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_text.h"
+#include "types_userdef.h"
 
-#include "KERNEL_bpath.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_main.h"
-#include "KERNEL_node.h"
-#include "KERNEL_text.h"
+#include "kernel_bpath.h"
+#include "kernel_idtype.h"
+#include "kernel_lib_id.h"
+#include "kernel_main.h"
+#include "kernel_node.h"
+#include "kernel_text.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
 #endif
 
-/* -------------------------------------------------------------------- */
 /** Prototypes **/
-
 static void txt_pop_first(Text *text);
 static void txt_pop_last(Text *text);
 static void txt_delete_line(Text *text, TextLine *line);
 static void txt_delete_sel(Text *text);
 static void txt_make_dirty(Text *text);
 
-/* -------------------------------------------------------------------- */
 /** Text Data-Block **/
-
-static void text_init_data(ID *id)
+static void text_init_data(Id *id)
 {
   Text *text = (Text *)id;
   TextLine *tmp;
 
-  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(text, id));
+  lib_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(text, id));
 
   text->filepath = NULL;
 
@@ -65,10 +61,10 @@ static void text_init_data(ID *id)
     text->flags |= TXT_TABSTOSPACES;
   }
 
-  LIB_listbase_clear(&text->lines);
+  lib_list_clear(&text->lines);
 
-  tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
-  tmp->line = (char *)MEM_mallocN(1, "textline_string");
+  tmp = (TextLine *)mem_mallocn(sizeof(TextLine), "textline");
+  tmp->line = (char *)mem_mallocn(1, "textline_string");
   tmp->format = NULL;
 
   tmp->line[0] = 0;
@@ -77,7 +73,7 @@ static void text_init_data(ID *id)
   tmp->next = NULL;
   tmp->prev = NULL;
 
-  LIB_addhead(&text->lines, tmp);
+  lib_addhead(&text->lines, tmp);
 
   text->curl = text->lines.first;
   text->curc = 0;
@@ -85,19 +81,17 @@ static void text_init_data(ID *id)
   text->selc = 0;
 }
 
-/**
- * Only copy internal data of Text ID from source
+/* Only copy internal data of Text Id from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use KERNEL_id_copy or KERNEL_id_copy_ex for typical needs.
+ * use dune_id_copy or dune_id_copy_ex for typical needs.
  *
  * WARNING! This function will not handle ID user count!
  *
- * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
- */
+ * param flag: Copying options (see dune_lib_id.h's LIB_ID_COPY_... flags for more). */
 static void text_copy_data(Main *UNUSED(dunemain),
-                           ID *id_dst,
-                           const ID *id_src,
+                           Id *id_dst,
+                           const Id *id_src,
                            const int UNUSED(flag))
 {
   Text *text_dst = (Text *)id_dst;
@@ -105,37 +99,37 @@ static void text_copy_data(Main *UNUSED(dunemain),
 
   /* File name can be NULL. */
   if (text_src->filepath) {
-    text_dst->filepath = LIB_strdup(text_src->filepath);
+    text_dst->filepath = lib_strdup(text_src->filepath);
   }
 
   text_dst->flags |= TXT_ISDIRTY;
 
-  LIB_listbase_clear(&text_dst->lines);
+  lib_list_clear(&text_dst->lines);
   text_dst->curl = text_dst->sell = NULL;
   text_dst->compiled = NULL;
 
   /* Walk down, reconstructing. */
-  LISTBASE_FOREACH (TextLine *, line_src, &text_src->lines) {
-    TextLine *line_dst = MEM_mallocN(sizeof(*line_dst), __func__);
+  LIST_FOREACH (TextLine *, line_src, &text_src->lines) {
+    TextLine *line_dst = mem_mallocn(sizeof(*line_dst), __func__);
 
-    line_dst->line = LIB_strdup(line_src->line);
+    line_dst->line = lib_strdup(line_src->line);
     line_dst->format = NULL;
     line_dst->len = line_src->len;
 
-    LIB_addtail(&text_dst->lines, line_dst);
+    lib_addtail(&text_dst->lines, line_dst);
   }
 
   text_dst->curl = text_dst->sell = text_dst->lines.first;
   text_dst->curc = text_dst->selc = 0;
 }
 
-/** Free (or release) any data used by this text (does not free the text itself). */
-static void text_free_data(ID *id)
+/* Free (or release) any data used by this text (does not free the text itself). */
+static void text_free_data(Id *id)
 {
   /* No animation-data here. */
   Text *text = (Text *)id;
 
-  KERNEL_text_free_lines(text);
+  dune_text_free_lines(text);
 
   MEM_SAFE_FREE(text->filepath);
 #ifdef WITH_PYTHON
@@ -143,16 +137,16 @@ static void text_free_data(ID *id)
 #endif
 }
 
-static void text_foreach_path(ID *id, BPathForeachPathData *bpath_data)
+static void text_foreach_path(Id *id, BPathForeachPathData *bpath_data)
 {
   Text *text = (Text *)id;
 
   if (text->filepath != NULL) {
-    KERNEL_bpath_foreach_path_allocated_process(bpath_data, &text->filepath);
+    dune_bpath_foreach_path_allocated_process(bpath_data, &text->filepath);
   }
 }
 
-static void text_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void text_dune_write(DuneWriter *writer, Id *id, const void *id_address)
 {
   Text *text = (Text *)id;
 
@@ -165,20 +159,20 @@ static void text_dune_write(DuneWriter *writer, ID *id, const void *id_address)
   text->compiled = NULL;
 
   /* write LibData */
-  LOADER_write_id_struct(writer, Text, id_address, &text->id);
-  KERNEL_id_dune_write(writer, &text->id);
+  loader_write_id_struct(writer, Text, id_address, &text->id);
+  dune_id_dune_write(writer, &text->id);
 
   if (text->filepath) {
-    LOADER_write_string(writer, text->filepath);
+    loader_write_string(writer, text->filepath);
   }
 
   if (!(text->flags & TXT_ISEXT)) {
     /* now write the text data, in two steps for optimization in the readfunction */
-    LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
+    LIST_FOREACH (TextLine *, tmp, &text->lines) {
       LOADER_write_struct(writer, TextLine, tmp);
     }
 
-    LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
+    LIST_FOREACH (TextLine *, tmp, &text->lines) {
       LOADER_write_raw(writer, tmp->len + 1, tmp->line);
     }
   }
