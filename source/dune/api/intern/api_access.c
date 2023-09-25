@@ -46,7 +46,7 @@
 #include "types_object.h"
 #include "wm_types.h"
 
-#include "api_access_internal.h
+#include "api_access_internal.h"
 #include "api_internal.h"
 
 const ApiPtt ApiPtr_NULL = {NULL};
@@ -752,7 +752,7 @@ bool api_struct_contains_prop(ApiPtr *ptr, apiProp *prop_test)
   iterprop = api_struct_iter_prop(ptr->type);
 
   API_PROP_BEGIN (ptr, itemptr, iterprop) {
-    /* PropertyRNA *prop = itemptr.data; */
+    /* ApiProp *prop = itemptr.data; */
     if (prop_test == (ApiProp *)itemptr.data) {
       found = true;
       break;
@@ -2396,15 +2396,15 @@ bool api_prop_bool_get_default_index(ApiPtr *ptr, ApiProp *prop, int index)
   return value;
 }
 
-int api_prop_int_get(PointerRNA *ptr, PropertyRNA *prop)
+int api_prop_int_get(ApiPtr *ptr, ApiProp *prop)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiIntProp *iprop = (IntProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) == false);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) == false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
+  if ((idprop = api_idprop_check(&prop, ptr))) {
     return IDP_Int(idprop);
   }
   if (iprop->get) {
@@ -2416,20 +2416,20 @@ int api_prop_int_get(PointerRNA *ptr, PropertyRNA *prop)
   return iprop->defaultvalue;
 }
 
-void RNA_property_int_set(PointerRNA *ptr, PropertyRNA *prop, int value)
+void api_prop_int_set(ApiPtr *ptr, ApiProp *prop, int value)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiIntProp *iprop = (ApiIntProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) == false);
-  /* useful to check on bad values but set function should clamp */
-  // BLI_assert(RNA_property_int_clamp(ptr, prop, &value) == 0);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) == false);
+  /* useful to check on bad values but set fn should clamp */
+  // lib_assert(api_prop_int_clamp(ptr, prop, &value) == 0);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
-    RNA_property_int_clamp(ptr, prop, &value);
+  if ((idprop = api_idprop_check(&prop, ptr))) {
+    api_prop_int_clamp(ptr, prop, &value);
     IDP_Int(idprop) = value;
-    rna_idproperty_touch(idprop);
+    api_idprop_touch(idprop);
   }
   else if (iprop->set) {
     iprop->set(ptr, value);
@@ -2438,21 +2438,21 @@ void RNA_property_int_set(PointerRNA *ptr, PropertyRNA *prop, int value)
     iprop->set_ex(ptr, prop, value);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
-    RNA_property_int_clamp(ptr, prop, &value);
+    api_prop_int_clamp(ptr, prop, &value);
 
     val.i = value;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
-      IDP_AddToGroup(group, IDP_New(IDP_INT, &val, prop->identifier));
+      IDP_AddToGroup(group, IDP_New(IDP_INT, &val, prop->id));
     }
   }
 }
 
-static void rna_property_int_fill_default_array_values(
+static void api_prop_int_fill_default_array_values(
     const int *defarr, int defarr_length, int defvalue, int out_length, int *r_values)
 {
   if (defarr && defarr_length > 0) {
@@ -2468,37 +2468,37 @@ static void rna_property_int_fill_default_array_values(
   }
 }
 
-static void rna_property_int_get_default_array_values(PointerRNA *ptr,
-                                                      IntPropertyRNA *iprop,
-                                                      int *r_values)
+static void api_prop_int_get_default_array_values(ApiPtr *ptr,
+                                                  ApiIntProp *iprop,
+                                                  int *r_values)
 {
-  int length = iprop->property.totarraylength;
-  int out_length = RNA_property_array_length(ptr, (PropertyRNA *)iprop);
+  int length = iprop->prop.totarraylength;
+  int out_length = api_prop_array_length(ptr, (ApiProp *)iprop);
 
-  rna_property_int_fill_default_array_values(
+  api_prop_int_fill_default_array_values(
       iprop->defaultarray, length, iprop->defaultvalue, out_length, r_values);
 }
 
-void RNA_property_int_get_array(PointerRNA *ptr, PropertyRNA *prop, int *values)
+void api_prop_int_get_array(ApiPtr *ptr, ApiProp *prop, int *values)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiIntProp *iprop = (ApiIntProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) != false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
-    BLI_assert(idprop->len == RNA_property_array_length(ptr, prop) ||
-               (prop->flag & PROP_IDPROPERTY));
+  if ((idprop = api_idprop_check(&prop, ptr))) {
+    lib_assert(idprop->len == api_prop_array_length(ptr, prop) ||
+               (prop->flag & PROP_IDPROP));
     if (prop->arraydimension == 0) {
-      values[0] = RNA_property_int_get(ptr, prop);
+      values[0] = api_prop_int_get(ptr, prop);
     }
     else {
       memcpy(values, IDP_Array(idprop), sizeof(int) * idprop->len);
     }
   }
   else if (prop->arraydimension == 0) {
-    values[0] = RNA_property_int_get(ptr, prop);
+    values[0] = api_prop_int_get(ptr, prop);
   }
   else if (iprop->getarray) {
     iprop->getarray(ptr, values);
@@ -2507,20 +2507,20 @@ void RNA_property_int_get_array(PointerRNA *ptr, PropertyRNA *prop, int *values)
     iprop->getarray_ex(ptr, prop, values);
   }
   else {
-    rna_property_int_get_default_array_values(ptr, iprop, values);
+    api_prop_int_get_default_array_values(ptr, iprop, values);
   }
 }
 
-void RNA_property_int_get_array_range(PointerRNA *ptr, PropertyRNA *prop, int values[2])
+void api_prop_int_get_array_range(ApiPtr *ptr, ApiProp *prop, int values[2])
 {
-  const int array_len = RNA_property_array_length(ptr, prop);
+  const int array_len = api_prop_array_length(ptr, prop);
 
   if (array_len <= 0) {
     values[0] = 0;
     values[1] = 0;
   }
   else if (array_len == 1) {
-    RNA_property_int_get_array(ptr, prop, values);
+    api_prop_int_get_array(ptr, prop, values);
     values[1] = values[0];
   }
   else {
@@ -2529,13 +2529,13 @@ void RNA_property_int_get_array_range(PointerRNA *ptr, PropertyRNA *prop, int va
     int i;
 
     if (array_len > 32) {
-      arr = MEM_mallocN(sizeof(int) * array_len, __func__);
+      arr = mem_mallocn(sizeof(int) * array_len, __func__);
     }
     else {
       arr = arr_stack;
     }
 
-    RNA_property_int_get_array(ptr, prop, arr);
+    api_prop_int_get_array(ptr, prop, arr);
     values[0] = values[1] = arr[0];
     for (i = 1; i < array_len; i++) {
       values[0] = MIN2(values[0], arr[i]);
@@ -2543,46 +2543,46 @@ void RNA_property_int_get_array_range(PointerRNA *ptr, PropertyRNA *prop, int va
     }
 
     if (arr != arr_stack) {
-      MEM_freeN(arr);
+      mem_freen(arr);
     }
   }
 }
 
-int RNA_property_int_get_index(PointerRNA *ptr, PropertyRNA *prop, int index)
+int api_prop_int_get_index(ApiPtr *ptr, ApiProp *prop, int index)
 {
-  int tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  int tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_int_get_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_int_get_array(ptr, prop, tmp);
     return tmp[index];
   }
   int *tmparray, value;
 
-  tmparray = MEM_mallocN(sizeof(int) * len, __func__);
-  RNA_property_int_get_array(ptr, prop, tmparray);
+  tmparray = mem_mallocn(sizeof(int) * len, __func__);
+  api_prop_int_get_array(ptr, prop, tmparray);
   value = tmparray[index];
-  MEM_freeN(tmparray);
+  mem_freen(tmparray);
 
   return value;
 }
 
-void RNA_property_int_set_array(PointerRNA *ptr, PropertyRNA *prop, const int *values)
+void api_prop_int_set_array(ApiPtr *ptr, ApiProp *prop, const int *values)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)prop;
-  IDProperty *idprop;
+  ApiIntProp *iprop = (ApiIntProp *)prop;
+  IdProp *idprop;
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) != false);
 
-  if ((idprop = rna_idproperty_check(&prop, ptr))) {
-    BLI_assert(idprop->len == RNA_property_array_length(ptr, prop) ||
-               (prop->flag & PROP_IDPROPERTY));
+  if ((idprop = api_idprop_check(&prop, ptr))) {
+    lib_assert(idprop->len == api_prop_array_length(ptr, prop) ||
+               (prop->flag & PROP_IDPROP));
     if (prop->arraydimension == 0) {
       IDP_Int(idprop) = values[0];
     }
@@ -2590,10 +2590,10 @@ void RNA_property_int_set_array(PointerRNA *ptr, PropertyRNA *prop, const int *v
       memcpy(IDP_Array(idprop), values, sizeof(int) * idprop->len);
     }
 
-    rna_idproperty_touch(idprop);
+    api_idprop_touch(idprop);
   }
   else if (prop->arraydimension == 0) {
-    RNA_property_int_set(ptr, prop, values[0]);
+    api_prop_int_set(ptr, prop, values[0]);
   }
   else if (iprop->setarray) {
     iprop->setarray(ptr, values);
@@ -2602,57 +2602,56 @@ void RNA_property_int_set_array(PointerRNA *ptr, PropertyRNA *prop, const int *v
     iprop->setarray_ex(ptr, prop, values);
   }
   else if (prop->flag & PROP_EDITABLE) {
-    IDPropertyTemplate val = {0};
-    IDProperty *group;
+    IdPropTemplate val = {0};
+    IdProp *group;
 
-    /* TODO: RNA_property_int_clamp_array(ptr, prop, &value); */
-
+    /* TODO: api_prop_int_clamp_array(ptr, prop, &value); */
     val.array.len = prop->totarraylength;
     val.array.type = IDP_INT;
 
-    group = RNA_struct_idprops(ptr, 1);
+    group = api_struct_idprops(ptr, 1);
     if (group) {
-      idprop = IDP_New(IDP_ARRAY, &val, prop->identifier);
+      idprop = IDP_New(IDP_ARRAY, &val, prop->id);
       IDP_AddToGroup(group, idprop);
       memcpy(IDP_Array(idprop), values, sizeof(int) * idprop->len);
     }
   }
 }
 
-void RNA_property_int_set_index(PointerRNA *ptr, PropertyRNA *prop, int index, int value)
+void api_prop_int_set_index(ApiPtr *ptr, ApiProp *prop, int index, int value)
 {
-  int tmp[RNA_MAX_ARRAY_LENGTH];
-  int len = rna_ensure_property_array_length(ptr, prop);
+  int tmp[API_MAX_ARRAY_LENGTH];
+  int len = api_ensure_prop_array_length(ptr, prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) != false);
-  BLI_assert(index >= 0);
-  BLI_assert(index < len);
+  lib_assert(api_prop_type(prop) == PROP_INT);
+  lib_assert(api_prop_array_check(prop) != false);
+  lib_assert(index >= 0);
+  lib_assert(index < len);
 
-  if (len <= RNA_MAX_ARRAY_LENGTH) {
-    RNA_property_int_get_array(ptr, prop, tmp);
+  if (len <= API_MAX_ARRAY_LENGTH) {
+    api_prop_int_get_array(ptr, prop, tmp);
     tmp[index] = value;
-    RNA_property_int_set_array(ptr, prop, tmp);
+    api_prop_int_set_array(ptr, prop, tmp);
   }
   else {
     int *tmparray;
 
-    tmparray = MEM_mallocN(sizeof(int) * len, __func__);
-    RNA_property_int_get_array(ptr, prop, tmparray);
+    tmparray = mem_mallocn(sizeof(int) * len, __func__);
+    api_prop_int_get_array(ptr, prop, tmparray);
     tmparray[index] = value;
-    RNA_property_int_set_array(ptr, prop, tmparray);
-    MEM_freeN(tmparray);
+    api_prop_int_set_array(ptr, prop, tmparray);
+    mem_freen(tmparray);
   }
 }
 
-int RNA_property_int_get_default(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
+int api_prop_int_get_default(ApiPtr *UNUSED(ptr), ApiProp *prop)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)rna_ensure_property(prop);
+  ApiIntProp *iprop = (ApiIntProp *)api_ensure_prop(prop);
 
-  if (prop->magic != RNA_MAGIC) {
-    const IDProperty *idprop = (const IDProperty *)prop;
+  if (prop->magic != API_MAGIC) {
+    const IdProp *idprop = (const IdProp *)prop;
     if (idprop->ui_data) {
-      const IDPropertyUIDataInt *ui_data = (const IDPropertyUIDataInt *)idprop->ui_data;
+      const IdPropUIDataInt *ui_data = (const IdPropUIDataInt *)idprop->ui_data;
       return ui_data->default_value;
     }
   }
@@ -2660,26 +2659,26 @@ int RNA_property_int_get_default(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
   return iprop->defaultvalue;
 }
 
-bool RNA_property_int_set_default(PropertyRNA *prop, int value)
+bool api_prop_int_set_default(ApiProp *prop, int value)
 {
-  if (prop->magic == RNA_MAGIC) {
+  if (prop->magic == API_MAGIC) {
     return false;
   }
 
-  IDProperty *idprop = (IDProperty *)prop;
-  BLI_assert(idprop->type == IDP_INT);
+  IdProp *idprop = (IdProp *)prop;
+  lib_assert(idprop->type == IDP_INT);
 
-  IDPropertyUIDataInt *ui_data = (IDPropertyUIDataInt *)IDP_ui_data_ensure(idprop);
+  IdPropUIDataInt *ui_data = (IdPropUIDataInt *)IDP_ui_data_ensure(idprop);
   ui_data->default_value = value;
   return true;
 }
 
-void RNA_property_int_get_default_array(PointerRNA *ptr, PropertyRNA *prop, int *values)
+void api_prop_int_get_default_array(ApiPtr *ptr, ApiProp *prop, int *values)
 {
-  IntPropertyRNA *iprop = (IntPropertyRNA *)rna_ensure_property(prop);
+  ApiIntProp *iprop = (ApiIntProp *)apu_ensure_prop(prop);
 
-  BLI_assert(RNA_property_type(prop) == PROP_INT);
-  BLI_assert(RNA_property_array_check(prop) != false);
+  BLI_assert(RNA_prop_type(prop) == PROP_INT);
+  BLI_assert(RNA_prop_array_check(prop) != false);
 
   if (prop->magic != RNA_MAGIC) {
     int length = rna_ensure_property_array_length(ptr, prop);
