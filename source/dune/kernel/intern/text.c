@@ -137,12 +137,12 @@ static void text_free_data(Id *id)
 #endif
 }
 
-static void text_foreach_path(Id *id, BPathForeachPathData *bpath_data)
+static void text_foreach_path(Id *id, PathForeachPathData *path_data)
 {
   Text *text = (Text *)id;
 
   if (text->filepath != NULL) {
-    dune_bpath_foreach_path_allocated_process(bpath_data, &text->filepath);
+    dune_path_foreach_path_allocated_process(path_data, &text->filepath);
   }
 }
 
@@ -169,36 +169,36 @@ static void text_dune_write(DuneWriter *writer, Id *id, const void *id_address)
   if (!(text->flags & TXT_ISEXT)) {
     /* now write the text data, in two steps for optimization in the readfunction */
     LIST_FOREACH (TextLine *, tmp, &text->lines) {
-      LOADER_write_struct(writer, TextLine, tmp);
+      loader_write_struct(writer, TextLine, tmp);
     }
 
     LIST_FOREACH (TextLine *, tmp, &text->lines) {
-      LOADER_write_raw(writer, tmp->len + 1, tmp->line);
+     loader_write_raw(writer, tmp->len + 1, tmp->line);
     }
   }
 }
 
-static void text_dune_read_data(DuneDataReader *reader, ID *id)
+static void text_dune_read_data(DuneDataReader *reader, Id *id)
 {
   Text *text = (Text *)id;
-  LOADER_read_data_address(reader, &text->filepath);
+  loader_read_data_address(reader, &text->filepath);
 
   text->compiled = NULL;
 
 #if 0
   if (text->flags & TXT_ISEXT) {
-    KERNEL_text_reload(text);
+    kernel_text_reload(text);
   }
   /* else { */
 #endif
 
-  LOADER_read_list(reader, &text->lines);
+  loader_read_list(reader, &text->lines);
 
-  LOADER_read_data_address(reader, &text->curl);
-  LOADER_read_data_address(reader, &text->sell);
+  loader_read_data_address(reader, &text->curl);
+  loader_read_data_address(reader, &text->sell);
 
-  LISTBASE_FOREACH (TextLine *, ln, &text->lines) {
-    LOADER_read_data_address(reader, &ln->line);
+  LIST_FOREACH (TextLine *, ln, &text->lines) {
+    loader_read_data_address(reader, &ln->line);
     ln->format = NULL;
 
     if (ln->len != (int)strlen(ln->line)) {
@@ -210,7 +210,7 @@ static void text_dune_read_data(DuneDataReader *reader, ID *id)
   text->flags = (text->flags) & ~TXT_ISEXT;
 }
 
-IDTypeInfo IDType_ID_TXT = {
+IdTypeInfo IdType_ID_TXT = {
     .id_code = ID_TXT,
     .id_filter = FILTER_ID_TXT,
     .main_listbase_index = INDEX_ID_TXT,
@@ -240,30 +240,28 @@ IDTypeInfo IDType_ID_TXT = {
     .lib_override_apply_post = NULL,
 };
 
-/* -------------------------------------------------------------------- */
-/** Text Add, Free, Validation **/
-
-void KERNEL_text_free_lines(Text *text)
+/* Text Add, Free, Validation **/
+void kernel_text_free_lines(Text *text)
 {
   for (TextLine *tmp = text->lines.first, *tmp_next; tmp; tmp = tmp_next) {
     tmp_next = tmp->next;
-    MEM_freeN(tmp->line);
+    mem_freeN(tmp->line);
     if (tmp->format) {
-      MEM_freeN(tmp->format);
+      mem_freeN(tmp->format);
     }
-    MEM_freeN(tmp);
+    mem_freeN(tmp);
   }
 
-  LIB_listbase_clear(&text->lines);
+  lib_list_clear(&text->lines);
 
   text->curl = text->sell = NULL;
 }
 
-Text *KERNEL_text_add(Main *dunemain, const char *name)
+Text *dune_text_add(Main *dunemain, const char *name)
 {
   Text *ta;
 
-  ta = KERNEL_id_new(dunemain, ID_TXT, name);
+  ta = dune_id_new(dunemain, ID_TXT, name);
   /* Texts have no users by default... Set the fake user flag to ensure that this text block
    * doesn't get deleted by default when cleaning up data blocks. */
   id_us_min(&ta->id);
@@ -279,7 +277,7 @@ int txt_extended_ascii_as_utf8(char **str)
   int added = 0;
 
   while ((*str)[i]) {
-    if ((bad_char = BLI_str_utf8_invalid_byte(*str + i, length - i)) == -1) {
+    if ((bad_char = lib_str_utf8_invalid_byte(*str + i, length - i)) == -1) {
       break;
     }
 
@@ -293,7 +291,7 @@ int txt_extended_ascii_as_utf8(char **str)
     i = 0;
 
     while ((*str)[i]) {
-      if ((bad_char = LIB_str_utf8_invalid_byte((*str) + i, length - i)) == -1) {
+      if ((bad_char = lib_str_utf8_invalid_byte((*str) + i, length - i)) == -1) {
         memcpy(newstr + mi, (*str) + i, length - i + 1);
         break;
       }
@@ -301,7 +299,7 @@ int txt_extended_ascii_as_utf8(char **str)
       memcpy(newstr + mi, (*str) + i, bad_char);
 
       const int mofs = mi + bad_char;
-      LIB_str_utf8_from_unicode((*str)[i + bad_char], newstr + mofs, (length + added) - mofs);
+      lib_str_utf8_from_unicode((*str)[i + bad_char], newstr + mofs, (length + added) - mofs);
       i += bad_char + 1;
       mi += bad_char + 2;
     }
@@ -313,9 +311,7 @@ int txt_extended_ascii_as_utf8(char **str)
   return added;
 }
 
-/**
- * Removes any control characters from a text-line and fixes invalid UTF8 sequences.
- */
+/* Removes any control characters from a text-line and fixes invalid UTF8 sequences. */
 static void cleanup_textline(TextLine *tl)
 {
   int i;
@@ -338,7 +334,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 {
   int i, llen, lines_count;
 
-  LIB_assert(LIB_listbase_is_empty(&text->lines));
+  lib_assert(lib_list_is_empty(&text->lines));
 
   llen = 0;
   lines_count = 0;
@@ -389,7 +385,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 
     cleanup_textline(tmp);
 
-    LIB_addtail(&text->lines, tmp);
+    lib_addtail(&text->lines, tmp);
     /* lines_count += 1; */ /* UNUSED */
   }
 
@@ -397,7 +393,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
   text->curc = text->selc = 0;
 }
 
-bool KERNEL_text_reload(Text *text)
+bool dune_text_reload(Text *text)
 {
   unsigned char *buffer;
   size_t buffer_len;
@@ -408,20 +404,20 @@ bool KERNEL_text_reload(Text *text)
     return false;
   }
 
-  LIB_strncpy(filepath_abs, text->filepath, FILE_MAX);
-  LIB_path_abs(filepath_abs, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
+  lib_strncpy(filepath_abs, text->filepath, FILE_MAX);
+  lib_path_abs(filepath_abs, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  buffer = LIB_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
+  buffer = lib_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
   if (buffer == NULL) {
     return false;
   }
 
   /* free memory: */
-  KERNEL_text_free_lines(text);
+  dune_text_free_lines(text);
   txt_make_dirty(text);
 
   /* clear undo buffer */
-  if (LIB_stat(filepath_abs, &st) != -1) {
+  if (lib_stat(filepath_abs, &st) != -1) {
     text->mtime = st.st_mtime;
   }
   else {
@@ -434,29 +430,29 @@ bool KERNEL_text_reload(Text *text)
   return true;
 }
 
-Text *KERNEL_text_load_ex(Main *dunemain, const char *file, const char *relpath, const bool is_internal)
+Text *dune_text_load_ex(Main *dunemain, const char *file, const char *relpath, const bool is_internal)
 {
   unsigned char *buffer;
   size_t buffer_len;
   Text *ta;
   char filepath_abs[FILE_MAX];
-  LIB_stat_t st;
+  lib_stat_t st;
 
-  LIB_strncpy(filepath_abs, file, FILE_MAX);
+  lib_strncpy(filepath_abs, file, FILE_MAX);
   if (relpath) { /* Can be NULL (background mode). */
-    LIB_path_abs(filepath_abs, relpath);
+    lib_path_abs(filepath_abs, relpath);
   }
 
-  buffer = LIB_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
+  buffer = lib_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
   if (buffer == NULL) {
     return NULL;
   }
 
-  ta = KERNEL_libblock_alloc(dunemain, ID_TXT, LIB_path_basename(filepath_abs), 0);
+  ta = dune_libblock_alloc(dunemain, ID_TXT, lib_path_basename(filepath_abs), 0);
   id_us_min(&ta->id);
   id_fake_user_set(&ta->id);
 
-  LIB_listbase_clear(&ta->lines);
+  lib_list_clear(&ta->lines);
   ta->curl = ta->sell = NULL;
 
   if ((U.flag & USER_TXT_TABSTOSPACES_DISABLE) == 0) {
@@ -472,7 +468,7 @@ Text *KERNEL_text_load_ex(Main *dunemain, const char *file, const char *relpath,
   }
 
   /* clear undo buffer */
-  if (LIB_stat(filepath_abs, &st) != -1) {
+  if (lib_stat(filepath_abs, &st) != -1) {
     ta->mtime = st.st_mtime;
   }
   else {
@@ -486,28 +482,28 @@ Text *KERNEL_text_load_ex(Main *dunemain, const char *file, const char *relpath,
   return ta;
 }
 
-Text *KERNEL_text_load(Main *dunemain, const char *file, const char *relpath)
+Text *dune_text_load(Main *dunemain, const char *file, const char *relpath)
 {
   return KERNEL_text_load_ex(dunemain, file, relpath, false);
 }
 
-void KERNEL_text_clear(Text *text) /* called directly from api */
+void dune_text_clear(Text *text) /* called directly from api */
 {
   txt_sel_all(text);
   txt_delete_sel(text);
   txt_make_dirty(text);
 }
 
-void KERNEL_text_write(Text *text, const char *str) /* called directly from api */
+void dune_text_write(Text *text, const char *str) /* called directly from api */
 {
   txt_insert_buf(text, str);
   txt_move_eof(text, 0);
   txt_make_dirty(text);
 }
 
-int KERNEL_text_file_modified_check(Text *text)
+int dune_text_file_modified_check(Text *text)
 {
-  LIB_stat_t st;
+  lib_stat_t st;
   int result;
   char file[FILE_MAX];
 
@@ -515,14 +511,14 @@ int KERNEL_text_file_modified_check(Text *text)
     return 0;
   }
 
-  LIB_strncpy(file, text->filepath, FILE_MAX);
-  LIB_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
+  lib_strncpy(file, text->filepath, FILE_MAX);
+  lib_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  if (!LIB_exists(file)) {
+  if (!lib_exists(file)) {
     return 2;
   }
 
-  result = LIB_stat(file, &st);
+  result = lib_stat(file, &st);
 
   if (result == -1) {
     return -1;
@@ -539,9 +535,9 @@ int KERNEL_text_file_modified_check(Text *text)
   return 0;
 }
 
-void KERNEL_text_file_modified_ignore(Text *text)
+void dune_text_file_modified_ignore(Text *text)
 {
-  LIB_stat_t st;
+  lib_stat_t st;
   int result;
   char file[FILE_MAX];
 
@@ -556,7 +552,7 @@ void KERNEL_text_file_modified_ignore(Text *text)
     return;
   }
 
-  result = LIB_stat(file, &st);
+  result = lib_stat(file, &st);
 
   if (result == -1 || (st.st_mode & S_IFMT) != S_IFREG) {
     return;
@@ -565,8 +561,7 @@ void KERNEL_text_file_modified_ignore(Text *text)
   text->mtime = st.st_mtime;
 }
 
-/* -------------------------------------------------------------------- */
-/** Editing Utility Functions */
+/* Editing Util Functions */
 static void make_new_line(TextLine *line, char *newline)
 {
   if (line->line) {
@@ -609,7 +604,7 @@ static TextLine *txt_new_linen(const char *str, int n)
   tmp->line = MEM_mallocN(n + 1, "textline_string");
   tmp->format = NULL;
 
-  LIB_strncpy(tmp->line, (str) ? str : "", n + 1);
+  lib_strncpy(tmp->line, (str) ? str : "", n + 1);
 
   tmp->len = strlen(tmp->line);
   tmp->next = tmp->prev = NULL;
@@ -710,8 +705,7 @@ static void txt_make_dirty(Text *text)
 #endif
 }
 
-/* -------------------------------------------------------------------- */
-/** Cursor Utility Functions **/
+/* Cursor Util Fns */
 
 static void txt_curs_cur(Text *text, TextLine ***linep, int **charp)
 {
@@ -735,13 +729,11 @@ bool txt_cursor_is_line_end(const Text *text)
   return (text->selc == text->sell->len);
 }
 
-/* -------------------------------------------------------------------- */
 /* Cursor Movement Functions
  *
  * note If the user moves the cursor the space containing that cursor should be popped
  * See txt_pop_first, txt_pop_last
- * Other space-types retain their own top location.
- **/
+ * Other space-types retain their own top location. */
 
 void txt_move_up(Text *text, const bool sel)
 {
@@ -760,9 +752,9 @@ void txt_move_up(Text *text, const bool sel)
   }
 
   if ((*linep)->prev) {
-    int column = LIB_str_utf8_offset_to_column((*linep)->line, *charp);
+    int column = lib_str_utf8_offset_to_column((*linep)->line, *charp);
     *linep = (*linep)->prev;
-    *charp = LIB_str_utf8_offset_from_column((*linep)->line, column);
+    *charp = lib_str_utf8_offset_from_column((*linep)->line, column);
   }
   else {
     txt_move_bol(text, sel);
@@ -790,9 +782,9 @@ void txt_move_down(Text *text, const bool sel)
   }
 
   if ((*linep)->next) {
-    int column = LIB_str_utf8_offset_to_column((*linep)->line, *charp);
+    int column = lib_str_utf8_offset_to_column((*linep)->line, *charp);
     *linep = (*linep)->next;
-    *charp = LIB_str_utf8_offset_from_column((*linep)->line, column);
+    *charp = lib_str_utf8_offset_from_column((*linep)->line, column);
   }
   else {
     txt_move_eol(text, sel);
@@ -806,7 +798,6 @@ void txt_move_down(Text *text, const bool sel)
 int txt_calc_tab_left(TextLine *tl, int ch)
 {
   /* do nice left only if there are only spaces */
-
   int tabsize = (ch < TXT_TABSIZE) ? ch : TXT_TABSIZE;
 
   for (int i = 0; i < ch; i++) {
@@ -878,7 +869,7 @@ void txt_move_left(Text *text, const bool sel)
       (*charp) -= tabsize;
     }
     else {
-      const char *prev = LIB_str_find_prev_char_utf8((*linep)->line + *charp, (*linep)->line);
+      const char *prev = lib_str_find_prev_char_utf8((*linep)->line + *charp, (*linep)->line);
       *charp = prev - (*linep)->line;
     }
   }
@@ -923,7 +914,7 @@ void txt_move_right(Text *text, const bool sel)
       (*charp) += tabsize;
     }
     else {
-      (*charp) += LIB_str_utf8_size((*linep)->line + *charp);
+      (*charp) += lib_str_utf8_size((*linep)->line + *charp);
     }
   }
 
