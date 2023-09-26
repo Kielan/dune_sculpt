@@ -398,7 +398,7 @@ bool dune_text_reload(Text *text)
   unsigned char *buffer;
   size_t buffer_len;
   char filepath_abs[FILE_MAX];
-  LIB_stat_t st;
+  lib_stat_t st;
 
   if (!text->filepath) {
     return false;
@@ -426,7 +426,7 @@ bool dune_text_reload(Text *text)
 
   text_from_buf(text, buffer, buffer_len);
 
-  MEM_freeN(buffer);
+  mem_freen(buffer);
   return true;
 }
 
@@ -460,7 +460,7 @@ Text *dune_text_load_ex(Main *dunemain, const char *file, const char *relpath, c
   }
 
   if (is_internal == false) {
-    ta->filepath = MEM_mallocN(strlen(file) + 1, "text_name");
+    ta->filepath = mem_mallocn(strlen(file) + 1, "text_name");
     strcpy(ta->filepath, file);
   }
   else {
@@ -477,14 +477,14 @@ Text *dune_text_load_ex(Main *dunemain, const char *file, const char *relpath, c
 
   text_from_buf(ta, buffer, buffer_len);
 
-  MEM_freeN(buffer);
+  mem_freen(buffer);
 
   return ta;
 }
 
 Text *dune_text_load(Main *dunemain, const char *file, const char *relpath)
 {
-  return KERNEL_text_load_ex(dunemain, file, relpath, false);
+  return dune_text_load_ex(dunemain, file, relpath, false);
 }
 
 void dune_text_clear(Text *text) /* called directly from api */
@@ -545,10 +545,10 @@ void dune_text_file_modified_ignore(Text *text)
     return;
   }
 
-  LIB_strncpy(file, text->filepath, FILE_MAX);
-  LIB_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
+  lib_strncpy(file, text->filepath, FILE_MAX);
+  lib_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  if (!LIB_exists(file)) {
+  if (!lib_exists(file)) {
     return;
   }
 
@@ -565,10 +565,10 @@ void dune_text_file_modified_ignore(Text *text)
 static void make_new_line(TextLine *line, char *newline)
 {
   if (line->line) {
-    MEM_freeN(line->line);
+    mem_freen(line->line);
   }
   if (line->format) {
-    MEM_freeN(line->format);
+    mem_freen(line->format);
   }
 
   line->line = newline;
@@ -584,8 +584,8 @@ static TextLine *txt_new_line(const char *str)
     str = "";
   }
 
-  tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
-  tmp->line = MEM_mallocN(strlen(str) + 1, "textline_string");
+  tmp = (TextLine *)mem_mallocn(sizeof(TextLine), "textline");
+  tmp->line = mem_mallocn(strlen(str) + 1, "textline_string");
   tmp->format = NULL;
 
   strcpy(tmp->line, str);
@@ -600,8 +600,8 @@ static TextLine *txt_new_linen(const char *str, int n)
 {
   TextLine *tmp;
 
-  tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
-  tmp->line = MEM_mallocN(n + 1, "textline_string");
+  tmp = (TextLine *)mem_mallocn(sizeof(TextLine), "textline");
+  tmp->line = mem_mallocn(n + 1, "textline_string");
   tmp->format = NULL;
 
   lib_strncpy(tmp->line, (str) ? str : "", n + 1);
@@ -963,7 +963,7 @@ void txt_jump_right(Text *text, const bool sel, const bool use_init_step)
     return;
   }
 
-  LIB_str_cursor_step_utf8(
+  lib_str_cursor_step_utf8(
       (*linep)->line, (*linep)->len, charp, STRCUR_DIR_NEXT, STRCUR_JUMP_DELIM, use_init_step);
 
   if (!sel) {
@@ -1191,7 +1191,7 @@ static void txt_delete_sel(Text *text)
 
   txt_order_cursors(text, false);
 
-  buf = MEM_mallocN(text->curc + (text->sell->len - text->selc) + 1, "textline_string");
+  buf = mem_mallocn(text->curc + (text->sell->len - text->selc) + 1, "textline_string");
 
   strncpy(buf, text->curl->line, text->curc);
   strcpy(buf + text->curc, text->sell->line + text->selc);
@@ -1248,7 +1248,7 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
 
   /* Support negative indices. */
   if (startl < 0 || endl < 0) {
-    int end = LIB_listbase_count(&text->lines) - 1;
+    int end = lib_list_count(&text->lines) - 1;
     if (startl < 0) {
       startl = end + startl + 1;
     }
@@ -1267,14 +1267,14 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
     tol = froml;
   }
   else {
-    tol = LIB_findlink(&text->lines, endl);
+    tol = lib_findlink(&text->lines, endl);
     if (tol == NULL) {
       tol = text->lines.last;
     }
   }
 
-  fromllen = LIB_strlen_utf8(froml->line);
-  tollen = LIB_strlen_utf8(tol->line);
+  fromllen = lib_strlen_utf8(froml->line);
+  tollen = lib_strlen_utf8(tol->line);
 
   /* Support negative indices. */
   if (startc < 0) {
@@ -1288,13 +1288,12 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
   CLAMP(endc, 0, tollen);
 
   text->curl = froml;
-  text->curc = LIB_str_utf8_offset_from_index(froml->line, startc);
+  text->curc = lib_str_utf8_offset_from_index(froml->line, startc);
   text->sell = tol;
-  text->selc = LIB_str_utf8_offset_from_index(tol->line, endc);
+  text->selc = lib_str_utf8_offset_from_index(tol->line, endc);
 }
 
-/* -------------------------------------------------------------------- */
-/** Buffer Conversion for Undo/Redo
+/* Buffer Conversion for Undo/Redo
  *
  * Buffer conversion functions that rely on the buffer already being validated.
  *
@@ -1303,18 +1302,17 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
  *
  * Currently buffers:
  * - Always ends with a new-line.
- * - Are not null terminated.
- **/
+ * - Are not null terminated. */
 
 char *txt_to_buf_for_undo(Text *text, size_t *r_buf_len)
 {
   int buf_len = 0;
-  LISTBASE_FOREACH (const TextLine *, l, &text->lines) {
+  LIST_FOREACH (const TextLine *, l, &text->lines) {
     buf_len += l->len + 1;
   }
-  char *buf = MEM_mallocN(buf_len, __func__);
+  char *buf = mem_mallocn(buf_len, __func__);
   char *buf_step = buf;
-  LISTBASE_FOREACH (const TextLine *, l, &text->lines) {
+  LIST_FOREACH (const TextLine *, l, &text->lines) {
     memcpy(buf_step, l->line, l->len);
     buf_step += l->len;
     *buf_step++ = '\n';
@@ -1332,7 +1330,7 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
    * Good for undo since it means in practice many operations re-use all
    * except for the modified line. */
   TextLine *l_src = text->lines.first;
-  LIB_listbase_clear(&text->lines);
+  lib_list_clear(&text->lines);
   while (buf_step != buf_end && l_src) {
     /* New lines are ensured by txt_to_buf_for_undo. */
     const char *buf_step_next = strchr(buf_step, '\n');
@@ -1341,25 +1339,25 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
     TextLine *l = l_src;
     l_src = l_src->next;
     if (l->len != len) {
-      l->line = MEM_reallocN(l->line, len + 1);
+      l->line = mem_reallocn(l->line, len + 1);
       l->len = len;
     }
     MEM_SAFE_FREE(l->format);
 
     memcpy(l->line, buf_step, len);
     l->line[len] = '\0';
-    LIB_addtail(&text->lines, l);
+    lib_addtail(&text->lines, l);
     buf_step = buf_step_next + 1;
   }
 
   /* If we have extra lines. */
   while (l_src != NULL) {
     TextLine *l_src_next = l_src->next;
-    MEM_freeN(l_src->line);
+    mem_freen(l_src->line);
     if (l_src->format) {
-      MEM_freeN(l_src->format);
+      mem_freen(l_src->format);
     }
-    MEM_freeN(l_src);
+    mem_freen(l_src);
     l_src = l_src_next;
   }
 
@@ -1375,7 +1373,7 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
 
     memcpy(l->line, buf_step, len);
     l->line[len] = '\0';
-    LIB_addtail(&text->lines, l);
+    lib_addtail(&text->lines, l);
     buf_step = buf_step_next + 1;
   }
 
@@ -1385,19 +1383,17 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
   txt_make_dirty(text);
 }
 
-/* -------------------------------------------------------------------- */
-/** Cut and Paste Functions **/
-
+/* Cut and Paste Functions **/
 char *txt_to_buf(Text *text, size_t *r_buf_strlen)
 {
   /* Identical to #txt_to_buf_for_undo except that the string is nil terminated. */
   size_t buf_len = 0;
-  LISTBASE_FOREACH (const TextLine *, l, &text->lines) {
+  LIST_FOREACH (const TextLine *, l, &text->lines) {
     buf_len += l->len + 1;
   }
   char *buf = MEM_mallocN(buf_len + 1, __func__);
   char *buf_step = buf;
-  LISTBASE_FOREACH (const TextLine *, l, &text->lines) {
+  LIST_FOREACH (const TextLine *, l, &text->lines) {
     memcpy(buf_step, l->line, l->len);
     buf_step += l->len;
     *buf_step++ = '\n';
@@ -1454,7 +1450,7 @@ char *txt_sel_to_buf(Text *text, size_t *r_buf_strlen)
 
   if (linef == linel) {
     length = charl - charf;
-    buf = MEM_mallocN(length + 1, "sel buffer");
+    buf = mem_mallocn(length + 1, "sel buffer");
     memcpy(buf, linef->line + charf, length);
     buf[length] = '\0';
   }
@@ -1466,7 +1462,7 @@ char *txt_sel_to_buf(Text *text, size_t *r_buf_strlen)
       length += tmp->len + 1;
     }
 
-    buf = MEM_mallocN(length + 1, "sel buffer");
+    buf = mem_mallocn(length + 1, "sel buffer");
 
     memcpy(buf, linef->line + charf, linef->len - charf);
     length = linef->len - charf;
@@ -1504,12 +1500,12 @@ void txt_insert_buf(Text *text, const char *in_buffer)
   txt_delete_sel(text);
 
   len = strlen(in_buffer);
-  buffer = LIB_strdupn(in_buffer, len);
+  buffer = lib_strdupn(in_buffer, len);
   len += txt_extended_ascii_as_utf8(&buffer);
 
   /* Read the first line (or as close as possible */
   while (buffer[i] && buffer[i] != '\n') {
-    txt_add_raw_char(text, LIB_str_utf8_as_unicode_step(buffer, len, &i));
+    txt_add_raw_char(text, lib_str_utf8_as_unicode_step(buffer, len, &i));
   }
 
   if (buffer[i] == '\n') {
@@ -1526,7 +1522,7 @@ void txt_insert_buf(Text *text, const char *in_buffer)
 
       if (buffer[i] == '\n') {
         add = txt_new_linen(buffer + (i - l), l);
-        LIB_insertlinkbefore(&text->lines, text->curl, add);
+        lib_insertlinkbefore(&text->lines, text->curl, add);
         i++;
       }
       else {
@@ -1541,9 +1537,7 @@ void txt_insert_buf(Text *text, const char *in_buffer)
   MEM_freeN(buffer);
 }
 
-/* -------------------------------------------------------------------- */
 /** Find String in Text **/
-
 int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
 {
   TextLine *tl, *startl;
