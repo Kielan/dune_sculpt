@@ -1,25 +1,24 @@
 #include <memory>
 
-#include "BKE_asset_library.hh"
-#include "BKE_main.h"
-#include "BKE_preferences.h"
+#include "dune_asset_lib.hh"
+#include "dune_main.h"
+#include "dune_preferences.h"
 
-#include "BLI_path_util.h"
+#include "lib_path_util.h"
 
-#include "DNA_asset_types.h"
-#include "DNA_userdef_types.h"
+#include "types_asset.h"
+#include "types_userdef.h"
 
-#include "asset_library_service.hh"
+#include "asset_lib_service.hh"
 
-bool blender::bke::AssetLibrary::save_catalogs_when_file_is_saved = true;
+bool dune::kernel::AssetLib::save_catalogs_when_file_is_saved = true;
 
 /**
  * Loading an asset library at this point only means loading the catalogs. Later on this should
- * invoke reading of asset representations too.
- */
-struct AssetLibrary *BKE_asset_library_load(const char *library_path)
+ * invoke reading of asset representations too. */
+struct AssetLib *dune_asset_library_load(const char *lib_path)
 {
-  blender::bke::AssetLibraryService *service = blender::bke::AssetLibraryService::get();
+  blender::bke::AssetLibraryService *service = dune::kernel::AssetLibService::get();
   blender::bke::AssetLibrary *lib;
   if (library_path == nullptr || library_path[0] == '\0') {
     lib = service->get_asset_library_current_file();
