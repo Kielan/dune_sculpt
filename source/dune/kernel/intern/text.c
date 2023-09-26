@@ -939,7 +939,7 @@ void txt_jump_left(Text *text, const bool sel, const bool use_init_step)
     return;
   }
 
-  LIB_str_cursor_step_utf8(
+  lib_str_cursor_step_utf8(
       (*linep)->line, (*linep)->len, charp, STRCUR_DIR_PREV, STRCUR_JUMP_DELIM, use_init_step);
 
   if (!sel) {
@@ -1101,9 +1101,7 @@ void txt_move_to(Text *text, unsigned int line, unsigned int ch, const bool sel)
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Text Selection Functions **/
-
+/* Text Selection Functions **/
 static void txt_curs_swap(Text *text)
 {
   TextLine *tmpl;
@@ -1259,7 +1257,7 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
   CLAMP_MIN(startl, 0);
   CLAMP_MIN(endl, 0);
 
-  froml = LIB_findlink(&text->lines, startl);
+  froml = lib_findlink(&text->lines, startl);
   if (froml == NULL) {
     froml = text->lines.last;
   }
@@ -1572,7 +1570,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
       s = strstr(tl->line, findstr);
     }
     else {
-      s = LIB_strcasestr(tl->line, findstr);
+      s = lib_strcasestr(tl->line, findstr);
     }
     if (tl == startl) {
       break;
@@ -1590,9 +1588,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
   return 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** Line Editing Functions **/
-
+/* Line Editing Fns **/
 void txt_split_curline(Text *text)
 {
   TextLine *ins;
@@ -1605,24 +1601,22 @@ void txt_split_curline(Text *text)
   txt_delete_sel(text);
 
   /* Make the two half strings */
-
-  left = MEM_mallocN(text->curc + 1, "textline_string");
+  left = mem_mallocn(text->curc + 1, "textline_string");
   if (text->curc) {
     memcpy(left, text->curl->line, text->curc);
   }
   left[text->curc] = 0;
 
-  right = MEM_mallocN(text->curl->len - text->curc + 1, "textline_string");
+  right = mem_mallocn(text->curl->len - text->curc + 1, "textline_string");
   memcpy(right, text->curl->line + text->curc, text->curl->len - text->curc + 1);
 
-  MEM_freeN(text->curl->line);
+  mem_freen(text->curl->line);
   if (text->curl->format) {
-    MEM_freeN(text->curl->format);
+    mem_freen(text->curl->format);
   }
 
   /* Make the new TextLine */
-
-  ins = MEM_mallocN(sizeof(TextLine), "textline");
+  ins = mem_mallocn(sizeof(TextLine), "textline");
   ins->line = left;
   ins->format = NULL;
   ins->len = text->curc;
@@ -1631,7 +1625,7 @@ void txt_split_curline(Text *text)
   text->curl->format = NULL;
   text->curl->len = text->curl->len - text->curc;
 
-  BLI_insertlinkbefore(&text->lines, text->curl, ins);
+  lib_insertlinkbefore(&text->lines, text->curl, ins);
 
   text->curc = 0;
 
@@ -1648,16 +1642,16 @@ static void txt_delete_line(Text *text, TextLine *line)
     return;
   }
 
-  LIB_remlink(&text->lines, line);
+  lib_remlink(&text->lines, line);
 
   if (line->line) {
-    MEM_freeN(line->line);
+    mem_freen(line->line);
   }
   if (line->format) {
-    MEM_freeN(line->format);
+    mem_freen(line->format);
   }
 
-  MEM_freeN(line);
+  mem_freen(line);
 
   txt_make_dirty(text);
   txt_clean_text(text);
@@ -1671,11 +1665,11 @@ static void txt_combine_lines(Text *text, TextLine *linea, TextLine *lineb)
     return;
   }
 
-  tmp = MEM_mallocN(linea->len + lineb->len + 1, "textline_string");
+  tmp = mem_mallocb(linea->len + lineb->len + 1, "textline_string");
 
   s = tmp;
-  s += LIB_strcpy_rlen(s, linea->line);
-  s += LIB_strcpy_rlen(s, lineb->line);
+  s += lib_strcpy_rlen(s, linea->line);
+  s += lib_strcpy_rlen(s, lineb->line);
   (void)s;
 
   make_new_line(linea, tmp);
@@ -1696,7 +1690,7 @@ void txt_duplicate_line(Text *text)
 
   if (text->curl == text->sell) {
     textline = txt_new_line(text->curl->line);
-    LIB_insertlinkafter(&text->lines, text->curl, textline);
+    lib_insertlinkafter(&text->lines, text->curl, textline);
 
     txt_make_dirty(text);
     txt_clean_text(text);
@@ -1727,7 +1721,7 @@ void txt_delete_char(Text *text)
   }
   else { /* Just deleting a char */
     size_t c_len = text->curc;
-    c = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c = lib_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
     c_len -= text->curc;
     UNUSED_VARS(c);
 
@@ -1776,10 +1770,10 @@ void txt_backspace_char(Text *text)
     txt_pop_sel(text);
   }
   else { /* Just backspacing a char */
-    const char *prev = LIB_str_find_prev_char_utf8(text->curl->line + text->curc,
+    const char *prev = lib_str_find_prev_char_utf8(text->curl->line + text->curc,
                                                    text->curl->line);
     size_t c_len = prev - text->curl->line;
-    c = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c = lib_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
     c_len -= prev - text->curl->line;
 
     UNUSED_VARS(c);
@@ -1815,8 +1809,7 @@ static void txt_convert_tab_to_spaces(Text *text)
 {
   /* sb aims to pad adjust the tab-width needed so that the right number of spaces
    * is added so that the indentation of the line is the right width (i.e. aligned
-   * to multiples of TXT_TABSIZE)
-   */
+   * to multiples of TXT_TABSIZE)  */
   const char *sb = &tab_to_spaces[text->curc % TXT_TABSIZE];
   txt_insert_buf(text, sb);
 }
@@ -1843,9 +1836,9 @@ static bool txt_add_char_intern(Text *text, unsigned int add, bool replace_tabs)
 
   txt_delete_sel(text);
 
-  add_len = LIB_str_utf8_from_unicode(add, ch, sizeof(ch));
+  add_len = lib_str_utf8_from_unicode(add, ch, sizeof(ch));
 
-  tmp = MEM_mallocN(text->curl->len + add_len + 1, "textline_string");
+  tmp = mem_mallocn(text->curl->len + add_len + 1, "textline_string");
 
   memcpy(tmp, text->curl->line, text->curc);
   memcpy(tmp + text->curc, ch, add_len);
@@ -1896,18 +1889,18 @@ bool txt_replace_char(Text *text, unsigned int add)
   }
 
   del_size = text->curc;
-  del = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &del_size);
+  del = lib_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &del_size);
   del_size -= text->curc;
   UNUSED_VARS(del);
-  add_size = LIB_str_utf8_from_unicode(add, ch, sizeof(ch));
+  add_size = lib_str_utf8_from_unicode(add, ch, sizeof(ch));
 
   if (add_size > del_size) {
-    char *tmp = MEM_mallocN(text->curl->len + add_size - del_size + 1, "textline_string");
+    char *tmp = mem_mallocn(text->curl->len + add_size - del_size + 1, "textline_string");
     memcpy(tmp, text->curl->line, text->curc);
     memcpy(tmp + text->curc + add_size,
            text->curl->line + text->curc + del_size,
            text->curl->len - text->curc - del_size + 1);
-    MEM_freeN(text->curl->line);
+    mem_freen(text->curl->line);
     text->curl->line = tmp;
   }
   else if (add_size < del_size) {
@@ -1927,11 +1920,9 @@ bool txt_replace_char(Text *text, unsigned int add)
   return true;
 }
 
-/**
- * Generic prefix operation, use for comment & indent.
+/* Generic prefix operation, use for comment & indent.
  *
- * caller must handle undo.
- */
+ * caller must handle undo. */
 static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines)
 {
   int len, num, curc_old, selc_old;
@@ -1939,7 +1930,7 @@ static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines
 
   const int indentlen = strlen(add);
 
-  LIB_assert(!ELEM(NULL, text->curl, text->sell));
+  lib_assert(!ELEM(NULL, text->curl, text->sell));
 
   curc_old = text->curc;
   selc_old = text->selc;
@@ -1949,7 +1940,7 @@ static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines
 
     /* don't indent blank lines */
     if ((text->curl->len != 0) || (skip_blank_lines == 0)) {
-      tmp = MEM_mallocN(text->curl->len + indentlen + 1, "textline_string");
+      tmp = mem_mallocn(text->curl->len + indentlen + 1, "textline_string");
 
       text->curc = 0;
       if (text->curc) {
@@ -2003,14 +1994,12 @@ static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines
   }
 }
 
-/**
- * Generic un-prefix operation, use for comment & indent.
+/* Generic un-prefix operation, use for comment & indent.
  *
  * param require_all: When true, all non-empty lines must have this prefix.
  * Needed for comments where we might want to un-comment a block which contains some comments.
  *
- * note caller must handle undo.
- */
+ * note caller must handle undo. */
 static bool txt_select_unprefix(Text *text, const char *remove, const bool require_all)
 {
   int num = 0;
@@ -2018,7 +2007,7 @@ static bool txt_select_unprefix(Text *text, const char *remove, const bool requi
   bool unindented_first = false;
   bool changed_any = false;
 
-  LIB_assert(!ELEM(NULL, text->curl, text->sell));
+  lib_assert(!ELEM(NULL, text->curl, text->sell));
 
   if (require_all) {
     /* Check all non-empty lines use this 'remove',
@@ -2131,7 +2120,7 @@ void txt_move_lines(struct Text *text, const int direction)
 {
   TextLine *line_other;
 
-  LIB_assert(ELEM(direction, TXT_MOVE_LINE_UP, TXT_MOVE_LINE_DOWN));
+  lib_assert(ELEM(direction, TXT_MOVE_LINE_UP, TXT_MOVE_LINE_DOWN));
 
   if (!text->curl || !text->sell) {
     return;
@@ -2145,13 +2134,13 @@ void txt_move_lines(struct Text *text, const int direction)
     return;
   }
 
-  LIB_remlink(&text->lines, line_other);
+  lib_remlink(&text->lines, line_other);
 
   if (direction == TXT_MOVE_LINE_DOWN) {
-    LIB_insertlinkbefore(&text->lines, text->curl, line_other);
+    lib_insertlinkbefore(&text->lines, text->curl, line_other);
   }
   else {
-    LIB_insertlinkafter(&text->lines, text->sell, line_other);
+    lib_insertlinkafter(&text->lines, text->sell, line_other);
   }
 
   txt_make_dirty(text);
@@ -2183,8 +2172,7 @@ int txt_setcurr_tab_spaces(Text *text, int space)
     /* if we find a ':' on this line, then add a tab but not if it is:
      * 1) in a comment
      * 2) within an identifier
-     * 3) after the cursor (text->curc), i.e. when creating space before a function def T25414.
-     */
+     * 3) after the cursor (text->curc), i.e. when creating space before a function def T25414.   */
     int a;
     bool is_indent = false;
     for (a = 0; (a < text->curc) && (text->curl->line[a] != '\0'); a++) {
@@ -2215,9 +2203,7 @@ int txt_setcurr_tab_spaces(Text *text, int space)
   return i;
 }
 
-/* -------------------------------------------------------------------- */
 /* Character Queries **/
-
 int text_check_bracket(const char ch)
 {
   int a;
@@ -2262,7 +2248,7 @@ bool text_check_digit(const char ch)
   return false;
 }
 
-bool text_check_identifier(const char ch)
+bool text_check_id(const char ch)
 {
   if (ch < '0') {
     return false;
@@ -2285,7 +2271,7 @@ bool text_check_identifier(const char ch)
   return false;
 }
 
-bool text_check_identifier_nodigit(const char ch)
+bool text_check_id_nodigit(const char ch)
 {
   if (ch <= '9') {
     return false;
@@ -2306,12 +2292,12 @@ bool text_check_identifier_nodigit(const char ch)
 }
 
 #ifndef WITH_PYTHON
-int text_check_identifier_unicode(const unsigned int ch)
+int text_check_id_unicode(const unsigned int ch)
 {
   return (ch < 255 && text_check_identifier((unsigned int)ch));
 }
 
-int text_check_identifier_nodigit_unicode(const unsigned int ch)
+int text_check_id_nodigit_unicode(const unsigned int ch)
 {
   return (ch < 255 && text_check_identifier_nodigit((char)ch));
 }
@@ -2325,14 +2311,14 @@ bool text_check_whitespace(const char ch)
   return false;
 }
 
-int text_find_identifier_start(const char *str, int i)
+int text_find_id_start(const char *str, int i)
 {
   if (UNLIKELY(i <= 0)) {
     return 0;
   }
 
   while (i--) {
-    if (!text_check_identifier(str[i])) {
+    if (!text_check_id(str[i])) {
       break;
     }
   }
