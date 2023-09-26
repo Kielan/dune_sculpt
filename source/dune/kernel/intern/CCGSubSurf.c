@@ -2,30 +2,28 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "LIB_sys_types.h" /* for intptr_t support */
-#include "MEM_guardedalloc.h"
+#include "lib_sys_types.h" /* for intptr_t support */
+#include "mem_guardedalloc.h"
 
-#include "LIB_utildefines.h" /* for LIB_assert */
+#include "lib_utildefines.h" /* for LIB_assert */
 
-#include "KERNEL_ccg.h"
-#include "KERNEL_subsurf.h"
+#include "dune_ccg.h"
+#include "dune_subsurf.h"
 #include "CCGSubSurf.h"
 #include "CCGSubSurf_intern.h"
 
-int KERNEL_ccg_gridsize(int level)
+int dune_ccg_gridsize(int level)
 {
   return ccg_gridsize(level);
 }
 
-int KERNEL_ccg_factor(int low_level, int high_level)
+int dune_ccg_factor(int low_level, int high_level)
 {
-  LIB_assert(low_level > 0 && high_level > 0);
-  LIB_assert(low_level <= high_level);
+  lib_assert(low_level > 0 && high_level > 0);
+  lib_assert(low_level <= high_level);
 
   return 1 << (high_level - low_level);
 }
-
-/***/
 
 static CCGVert *_vert_new(CCGVertHDL vHDL, CCGSubSurf *ss)
 {
@@ -100,8 +98,6 @@ static void _vert_free(CCGVert *v, CCGSubSurf *ss)
 
   CCGSUBSURF_free(ss, v);
 }
-
-/***/
 
 static CCGEdge *_edge_new(CCGEdgeHDL eHDL, CCGVert *v0, CCGVert *v1, float crease, CCGSubSurf *ss)
 {
@@ -213,8 +209,6 @@ static void _face_unlinkMarkAndFree(CCGFace *f, CCGSubSurf *ss)
   }
   _face_free(f, ss);
 }
-
-/***/
 
 CCGSubSurf *ccgSubSurf_new(CCGMeshIFC *ifc,
                            int subdivLevels,
@@ -1177,7 +1171,7 @@ CCGError ccgSubSurf_stitchFaces(CCGSubSurf *ss, int lvl, CCGFace **effectedF, in
   return eCCGError_None;
 }
 
-/*** External API accessor functions ***/
+/* External API accessor functions */
 
 int ccgSubSurf_getNumVerts(const CCGSubSurf *ss)
 {
@@ -1238,7 +1232,6 @@ int ccgSubSurf_getSimpleSubdiv(const CCGSubSurf *ss)
 }
 
 /* Vert accessors */
-
 CCGVertHDL ccgSubSurf_getVertVertHandle(CCGVert *v)
 {
   return v->vHDL;
