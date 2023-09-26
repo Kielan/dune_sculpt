@@ -2,67 +2,65 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "LIB_listbase.h"
-#include "LIB_string.h"
-#include "LIB_string_utils.h"
-#include "LIB_utildefines.h"
+#include "lib_list.h"
+#include "lib_string.h"
+#include "lib_string_utils.h"
+#include "lib_utildefines.h"
 
-#include "TRANSLATION_translation.h"
+#include "lang.h"
 
-#include "KERNEL_asset.h"
-#include "KERNEL_global.h"
-#include "KERNEL_idprop.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_main.h"
-#include "KERNEL_object.h"
-#include "KERNEL_scene.h"
-#include "KERNEL_workspace.h"
+#include "dune_asset.h"
+#include "dune_global.h"
+#include "dune_idprop.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_main.h"
+#include "dune_object.h"
+#include "dune_scene.h"
+#include "dune_workspace.h"
 
-#include "structs_object_types.h"
-#include "structs_scene_types.h"
-#include "structs_screen_types.h"
-#include "structs_windowmanager_types.h"
-#include "structs_workspace_types.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_wm.h"
+#include "types_workspace.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
-/* -------------------------------------------------------------------- */
-
-static void workspace_init_data(ID *id)
+static void workspace_init_data(Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  KERNEL_asset_library_reference_init_default(&workspace->asset_library_ref);
+  dune_asset_lib_ref_init_default(&workspace->asset_lib_ref);
 }
 
 static void workspace_free_data(ID *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  KERNEL_workspace_relations_free(&workspace->hook_layout_relations);
+  dune_workspace_relations_free(&workspace->hook_layout_relations);
 
-  LIB_freelistN(&workspace->owner_ids);
-  LIB_freelistN(&workspace->layouts);
+  lib_freelistN(&workspace->owner_ids);
+  lib_freelistN(&workspace->layouts);
 
-  while (!LIB_listbase_is_empty(&workspace->tools)) {
-    KERNEL_workspace_tool_remove(workspace, workspace->tools.first);
+  while (lib_list_is_empty(&workspace->tools)) {
+    dune_workspace_tool_remove(workspace, workspace->tools.first);
   }
 
   MEM_SAFE_FREE(workspace->status_text);
 }
 
-static void workspace_foreach_id(ID *id, LibraryForeachIDData *data)
+static void workspace_foreach_id(Id *id, LibForeachIdData *data)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  LISTBASE_FOREACH (WorkSpaceLayout *, layout, &workspace->layouts) {
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, layout->screen, IDWALK_CB_USER);
+  LIST_FOREACH (WorkSpaceLayout *, layout, &workspace->layouts) {
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, layout->screen, IDWALK_CB_USER);
   }
 }
 
@@ -70,38 +68,38 @@ static void workspace_dune_write(DuneWriter *writer, ID *id, const void *id_addr
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  LOADER_write_id_struct(writer, WorkSpace, id_address, &workspace->id);
-  KERNEL_id_dune_write(writer, &workspace->id);
-  LOADER_write_struct_list(writer, WorkSpaceLayout, &workspace->layouts);
-  LOADER_write_struct_list(writer, WorkSpaceDataRelation, &workspace->hook_layout_relations);
-  LOADER_write_struct_list(writer, wmOwnerID, &workspace->owner_ids);
-  LOADER_write_struct_list(writer, bToolRef, &workspace->tools);
-  LISTBASE_FOREACH (bToolRef *, tref, &workspace->tools) {
-    if (tref->properties) {
-      IDP_DuneWrite(writer, tref->properties);
+  loader_write_id_struct(writer, WorkSpace, id_address, &workspace->id);
+  dune_id_dune_write(writer, &workspace->id);
+  loader_write_struct_list(writer, WorkSpaceLayout, &workspace->layouts);
+  loader_write_struct_list(writer, WorkSpaceDataRelation, &workspace->hook_layout_relations);
+  loader_write_struct_list(writer, wmOwnerId, &workspace->owner_ids);
+  loader_write_struct_list(writer, ToolRef, &workspace->tools);
+  LIST_FOREACH (ToolRef *, tref, &workspace->tools) {
+    if (tref->props) {
+      IDP_DuneWrite(writer, tref->props);
     }
   }
 }
 
-static void workspace_dune_read_data(DuneDataReader *reader, ID *id)
+static void workspace_dune_read_data(DuneDataReader *reader, Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  LOADER_read_list(reader, &workspace->layouts);
-  LOADER_read_list(reader, &workspace->hook_layout_relations);
-  LOADER_read_list(reader, &workspace->owner_ids);
-  LOADER_read_list(reader, &workspace->tools);
+  loader_read_list(reader, &workspace->layouts);
+  loader_read_list(reader, &workspace->hook_layout_relations);
+  loader_read_list(reader, &workspace->owner_ids);
+  loader_read_list(reader, &workspace->tools);
 
-  LISTBASE_FOREACH (WorkSpaceDataRelation *, relation, &workspace->hook_layout_relations) {
+  LIST_FOREACH (WorkSpaceDataRelation *, relation, &workspace->hook_layout_relations) {
     /* Parent pointer does not belong to workspace data and is therefore restored in lib_link step
      * of window manager. */
-    LOADER_read_data_address(reader, &relation->value);
+    loader_read_data_address(reader, &relation->value);
   }
 
-  LISTBASE_FOREACH (bToolRef *, tref, &workspace->tools) {
+  LIST_FOREACH (bToolRef *, tref, &workspace->tools) {
     tref->runtime = NULL;
-    LOADER_read_data_address(reader, &tref->properties);
-    IDP_DuneDataRead(reader, &tref->properties);
+    loader_read_data_address(reader, &tref->props);
+    IDP_DuneDataRead(reader, &tref->props);
   }
 
   workspace->status_text = NULL;
@@ -109,63 +107,63 @@ static void workspace_dune_read_data(DuneDataReader *reader, ID *id)
   id_us_ensure_real(&workspace->id);
 }
 
-static void workspace_dune_read_lib(DuneLibReader *reader, ID *id)
+static void workspace_dune_read_lib(DuneLibReader *reader, Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
-  Main *dunemain = LOADER_read_lib_get_main(reader);
+  Main *dunemain = loader_read_lib_get_main(reader);
 
   /* Restore proper 'parent' pointers to relevant data, and clean up unused/invalid entries. */
-  LISTBASE_FOREACH_MUTABLE (WorkSpaceDataRelation *, relation, &workspace->hook_layout_relations) {
+  LIST_FOREACH_MUTABLE (WorkSpaceDataRelation *, relation, &workspace->hook_layout_relations) {
     relation->parent = NULL;
-    LISTBASE_FOREACH (wmWindowManager *, wm, &dunemain->wm) {
-      LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
+    LIST_FOREACH (WM *, wm, &dunemain->wm) {
+      LIST_FOREACH (wmWindow *, win, &wm->windows) {
         if (win->winid == relation->parentid) {
           relation->parent = win->workspace_hook;
         }
       }
     }
     if (relation->parent == NULL) {
-      LIB_freelinkN(&workspace->hook_layout_relations, relation);
+      lib_freelinkn(&workspace->hook_layout_relations, relation);
     }
   }
 
-  LISTBASE_FOREACH_MUTABLE (WorkSpaceLayout *, layout, &workspace->layouts) {
-    LOADER_read_id_address(reader, id->lib, &layout->screen);
+  LIST_FOREACH_MUTABLE (WorkSpaceLayout *, layout, &workspace->layouts) {
+    loader_read_id_address(reader, id->lib, &layout->screen);
 
     if (layout->screen) {
       if (ID_IS_LINKED(id)) {
         layout->screen->winid = 0;
         if (layout->screen->temp) {
           /* delete temp layouts when appending */
-          KERNEL_workspace_layout_remove(dunemain, workspace, layout);
+          dune_workspace_layout_remove(dunemain, workspace, layout);
         }
       }
     }
     else {
       /* If we're reading a layout without screen stored, it's useless and we shouldn't keep it
        * around. */
-      KERNEL_workspace_layout_remove(dunemain, workspace, layout);
+      dune_workspace_layout_remove(dunemain, workspace, layout);
     }
   }
 }
 
-static void workspace_dune_read_expand(duneExpander *expander, ID *id)
+static void workspace_dune_read_expand(duneExpander *expander, Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
-  LISTBASE_FOREACH (WorkSpaceLayout *, layout, &workspace->layouts) {
-    LOADER_expand(expander, KERNEL_workspace_layout_screen_get(layout));
+  LIST_FOREACH (WorkSpaceLayout *, layout, &workspace->layouts) {
+    loader_expand(expander, KERNEL_workspace_layout_screen_get(layout));
   }
 }
 
 IDTypeInfo IDType_ID_WS = {
     .id_code = ID_WS,
     .id_filter = FILTER_ID_WS,
-    .main_listbase_index = INDEX_ID_WS,
+    .main_list_index = INDEX_ID_WS,
     .struct_size = sizeof(WorkSpace),
     .name = "WorkSpace",
     .name_plural = "workspaces",
-    .translation_context = TRANSLATION_I18NCONTEXT_ID_WORKSPACE,
+    .lang_cxt = LANG_CXT_ID_WORKSPACE,
     .flags = IDTYPE_FLAGS_NO_COPY | IDTYPE_FLAGS_ONLY_APPEND | IDTYPE_FLAGS_NO_ANIMDATA,
     .asset_type_info = NULL,
 
@@ -188,15 +186,13 @@ IDTypeInfo IDType_ID_WS = {
     .lib_override_apply_post = NULL,
 };
 
-/* -------------------------------------------------------------------- */
-/** Internal Utils */
-
+/* Internal Utils */
 static void workspace_layout_name_set(WorkSpace *workspace,
                                       WorkSpaceLayout *layout,
                                       const char *new_name)
 {
-  LIB_strncpy(layout->name, new_name, sizeof(layout->name));
-  LIB_uniquename(&workspace->layouts,
+  lib_strncpy(layout->name, new_name, sizeof(layout->name));
+  lib_uniquename(&workspace->layouts,
                  layout,
                  "Layout",
                  '.',
@@ -204,18 +200,16 @@ static void workspace_layout_name_set(WorkSpace *workspace,
                  sizeof(layout->name));
 }
 
-/**
- * This should only be used directly when it is to be expected that there isn't
+/* This should only be used directly when it is to be expected that there isn't
  * a layout within a workspace that wraps a screen. Usually - especially outside
- * of KERNEL_workspace - KERNEL_workspace_layout_find should be used!
- */
-static WorkSpaceLayout *workspace_layout_find_exec(const WorkSpace *workspace,
+ * of dune_workspace - dune_workspace_layout_find should be used! */
+static WorkSpaceLayout *workspace_layout_find_ex(const WorkSpace *workspace,
                                                    const duneScreen *screen)
 {
-  return LIB_findptr(&workspace->layouts, screen, offsetof(WorkSpaceLayout, screen));
+  return lib_findptr(&workspace->layouts, screen, offsetof(WorkSpaceLayout, screen));
 }
 
-static void workspace_relation_add(ListBase *relation_list,
+static void workspace_relation_add(List *relation_list,
                                    void *parent,
                                    const int parentid,
                                    void *data)
@@ -225,27 +219,27 @@ static void workspace_relation_add(ListBase *relation_list,
   relation->parentid = parentid;
   relation->value = data;
   /* add to head, if we switch back to it soon we find it faster. */
-  LIB_addhead(relation_list, relation);
+lib_addhead(relation_list, relation);
 }
-static void workspace_relation_remove(ListBase *relation_list, WorkSpaceDataRelation *relation)
+static void workspace_relation_remove(List *relation_list, WorkSpaceDataRelation *relation)
 {
-  LIB_remlink(relation_list, relation);
-  MEM_freeN(relation);
+  lib_remlink(relation_list, relation);
+  mem_freen(relation);
 }
 
-static void workspace_relation_ensure_updated(ListBase *relation_list,
+static void workspace_relation_ensure_updated(List *relation_list,
                                               void *parent,
                                               const int parentid,
                                               void *data)
 {
-  WorkSpaceDataRelation *relation = LIB_listbase_bytes_find(
+  WorkSpaceDataRelation *relation = lib_list_bytes_find(
       relation_list, &parentid, sizeof(parentid), offsetof(WorkSpaceDataRelation, parentid));
   if (relation != NULL) {
     relation->parent = parent;
     relation->value = data;
     /* reinsert at the head of the list, so that more commonly used relations are found faster. */
-    LIB_remlink(relation_list, relation);
-    LIB_addhead(relation_list, relation);
+    lib_remlink(relation_list, relation);
+    lib_addhead(relation_list, relation);
   }
   else {
     /* no matching relation found, add new one */
@@ -253,10 +247,10 @@ static void workspace_relation_ensure_updated(ListBase *relation_list,
   }
 }
 
-static void *workspace_relation_get_data_matching_parent(const ListBase *relation_list,
+static void *workspace_relation_get_data_matching_parent(const List *relation_list,
                                                          const void *parent)
 {
-  WorkSpaceDataRelation *relation = LIB_findptr(
+  WorkSpaceDataRelation *relation = lib_findptr(
       relation_list, parent, offsetof(WorkSpaceDataRelation, parent));
   if (relation != NULL) {
     return relation->value;
@@ -265,21 +259,19 @@ static void *workspace_relation_get_data_matching_parent(const ListBase *relatio
   return NULL;
 }
 
-/**
- * Checks if a screen is already used within any workspace. A screen should never be assigned to
- * multiple WorkSpaceLayouts, but that should be ensured outside of the KERNEL_workspace module
+/* Checks if a screen is already used within any workspace. A screen should never be assigned to
+ * multiple WorkSpaceLayouts, but that should be ensured outside of the dune_workspace module
  * and without such checks.
- * Hence, this should only be used as assert check before assigning a screen to a workspace.
- */
+ * Hence, this should only be used as assert check before assigning a screen to a workspace. */
 #ifndef NDEBUG
 static bool workspaces_is_screen_used
 #else
-static bool UNUSED_FUNCTION(workspaces_is_screen_used)
+static bool UNUSED_FN(workspaces_is_screen_used)
 #endif
     (const Main *dunemain, duneScreen *screen)
 {
   for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
-    if (workspace_layout_find_exec(workspace, screen)) {
+    if (workspace_layout_find_ex(workspace, screen)) {
       return true;
     }
   }
@@ -287,43 +279,41 @@ static bool UNUSED_FUNCTION(workspaces_is_screen_used)
   return false;
 }
 
-/* -------------------------------------------------------------------- */
-/** Create, Delete, Init */
-
-WorkSpace *KERNEL_workspace_add(Main *dunemain, const char *name)
+/* Create, Delete, Init */
+WorkSpace *dune_workspace_add(Main *dunemain, const char *name)
 {
-  WorkSpace *new_workspace = KERNEL_id_new(dunemain, ID_WS, name);
+  WorkSpace *new_workspace = dune_id_new(dunemain, ID_WS, name);
   id_us_ensure_real(&new_workspace->id);
   return new_workspace;
 }
 
-void KERNEL_workspace_remove(Main *dunemain, WorkSpace *workspace)
+void dune_workspace_remove(Main *dunemain, WorkSpace *workspace)
 {
   for (WorkSpaceLayout *layout = workspace->layouts.first, *layout_next; layout;
        layout = layout_next) {
     layout_next = layout->next;
-    KERNEL_workspace_layout_remove(dunemain, workspace, layout);
+    dune_workspace_layout_remove(dunemain, workspace, layout);
   }
-  KERNEL_id_free(dunemain, workspace);
+  dune_id_free(dunemain, workspace);
 }
 
-WorkSpaceInstanceHook *KERNEL_workspace_instance_hook_create(const Main *dunemain, const int winid)
+WorkSpaceInstanceHook *dune_workspace_instance_hook_create(const Main *dunemain, const int winid)
 {
   WorkSpaceInstanceHook *hook = MEM_callocN(sizeof(WorkSpaceInstanceHook), __func__);
 
   /* set an active screen-layout for each possible window/workspace combination */
   for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
-    KERNEL_workspace_active_layout_set(hook, winid, workspace, workspace->layouts.first);
+    dune_workspace_active_layout_set(hook, winid, workspace, workspace->layouts.first);
   }
 
   return hook;
 }
-void KERNEL_workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstanceHook *hook)
+void dune_workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstanceHook *hook)
 {
   /* workspaces should never be freed before wm (during which we call this function).
    * However, when running in background mode, loading a dune file may allocate windows (that need
    * to be freed) without creating workspaces. This happens in DunefileLoadingBaseTest. */
-  LIB_assert(!LIB_listbase_is_empty(&dunemain->workspaces) || G.background);
+  lib_assert(!lib_list_is_empty(&dunemain->workspaces) || G.background);
 
   /* Free relations for this hook */
   for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
@@ -337,40 +327,40 @@ void KERNEL_workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstance
     }
   }
 
-  MEM_freeN(hook);
+  mem_freeNn(hook);
 }
 
-WorkSpaceLayout *KERNEL_workspace_layout_add(Main *dunemain,
+WorkSpaceLayout *dune_workspace_layout_add(Main *main,
                                           WorkSpace *workspace,
-                                          duneScreen *screen,
+                                          Screen *screen,
                                           const char *name)
 {
-  WorkSpaceLayout *layout = MEM_callocN(sizeof(*layout), __func__);
+  WorkSpaceLayout *layout = mem_callocN(sizeof(*layout), __func__);
 
-  LIB_assert(!workspaces_is_screen_used(bmain, screen));
+  lib_assert(!workspaces_is_screen_used(main, screen));
 #ifndef DEBUG
   UNUSED_VARS(dunemain);
 #endif
   layout->screen = screen;
   id_us_plus(&layout->screen->id);
   workspace_layout_name_set(workspace, layout, name);
-  LIB_addtail(&workspace->layouts, layout);
+  lib_addtail(&workspace->layouts, layout);
 
   return layout;
 }
 
-void KERNEL_workspace_layout_remove(Main *dunemain, WorkSpace *workspace, WorkSpaceLayout *layout)
+void dune_workspace_layout_remove(Main *main, WorkSpace *workspace, WorkSpaceLayout *layout)
 {
   /* Screen should usually be set, but we call this from file reading to get rid of invalid
    * layouts. */
   if (layout->screen) {
     id_us_min(&layout->screen->id);
-    KERNEL_id_free(dunemain, layout->screen);
+    dune_id_free(main, layout->screen);
   }
-  LIB_freelinkN(&workspace->layouts, layout);
+  lib_freelinkn(&workspace->layouts, layout);
 }
 
-void KERNEL_workspace_relations_free(ListBase *relation_list)
+void dune_workspace_relations_free(ListBase *relation_list)
 {
   for (WorkSpaceDataRelation *relation = relation_list->first, *relation_next; relation;
        relation = relation_next) {
@@ -379,10 +369,8 @@ void KERNEL_workspace_relations_free(ListBase *relation_list)
   }
 }
 
-/* -------------------------------------------------------------------- */
 /** General Utils */
-
-WorkSpaceLayout *KERNEL_workspace_layout_find(const WorkSpace *workspace, const duneScreen *screen)
+WorkSpaceLayout *dune_workspace_layout_find(const WorkSpace *workspace, const Screen *screen)
 {
   WorkSpaceLayout *layout = workspace_layout_find_exec(workspace, screen);
   if (layout) {
@@ -399,8 +387,8 @@ WorkSpaceLayout *KERNEL_workspace_layout_find(const WorkSpace *workspace, const 
   return NULL;
 }
 
-WorkSpaceLayout *KERNEL_workspace_layout_find_global(const Main *dunemain,
-                                                  const duneScreen *screen,
+WorkSpaceLayout *dune_workspace_layout_find_global(const Main *main,
+                                                  const Screen *screen,
                                                   WorkSpace **r_workspace)
 {
   WorkSpaceLayout *layout;
@@ -409,7 +397,7 @@ WorkSpaceLayout *KERNEL_workspace_layout_find_global(const Main *dunemain,
     *r_workspace = NULL;
   }
 
-  for (WorkSpace *workspace = bmain->workspaces.first; workspace; workspace = workspace->id.next) {
+  for (WorkSpace *workspace = main->workspaces.first; workspace; workspace = workspace->id.next) {
     if ((layout = workspace_layout_find_exec(workspace, screen))) {
       if (r_workspace) {
         *r_workspace = workspace;
@@ -422,9 +410,9 @@ WorkSpaceLayout *KERNEL_workspace_layout_find_global(const Main *dunemain,
   return NULL;
 }
 
-WorkSpaceLayout *KERNEL_workspace_layout_iter_circular(const WorkSpace *workspace,
+WorkSpaceLayout *dune_workspace_layout_iter_circular(const WorkSpace *workspace,
                                                     WorkSpaceLayout *start,
-                                                    bool (*callback)(const WorkSpaceLayout *layout,
+                                                    bool (*cb)(const WorkSpaceLayout *layout,
                                                                      void *arg),
                                                     void *arg,
                                                     const bool iter_backward)
@@ -432,34 +420,34 @@ WorkSpaceLayout *KERNEL_workspace_layout_iter_circular(const WorkSpace *workspac
   WorkSpaceLayout *iter_layout;
 
   if (iter_backward) {
-    LISTBASE_CIRCULAR_BACKWARD_BEGIN (&workspace->layouts, iter_layout, start) {
-      if (!callback(iter_layout, arg)) {
+    LIST_CIRCULAR_BACKWARD_BEGIN (&workspace->layouts, iter_layout, start) {
+      if (!cb(iter_layout, arg)) {
         return iter_layout;
       }
     }
-    LISTBASE_CIRCULAR_BACKWARD_END(&workspace->layouts, iter_layout, start);
+    LIST_CIRCULAR_BACKWARD_END(&workspace->layouts, iter_layout, start);
   }
   else {
-    LISTBASE_CIRCULAR_FORWARD_BEGIN (&workspace->layouts, iter_layout, start) {
-      if (!callback(iter_layout, arg)) {
+    LIST_CIRCULAR_FORWARD_BEGIN (&workspace->layouts, iter_layout, start) {
+      if (!cb(iter_layout, arg)) {
         return iter_layout;
       }
     }
-    LISTBASE_CIRCULAR_FORWARD_END(&workspace->layouts, iter_layout, start);
+    LIST_CIRCULAR_FORWARD_END(&workspace->layouts, iter_layout, start);
   }
 
   return NULL;
 }
 
-void KERNEL_workspace_tool_remove(struct WorkSpace *workspace, struct bToolRef *tref)
+void dune_workspace_tool_remove(struct WorkSpace *workspace, struct bToolRef *tref)
 {
   if (tref->runtime) {
-    MEM_freeN(tref->runtime);
+    mem_freen(tref->runtime);
   }
-  if (tref->properties) {
-    IDP_FreeProperty(tref->properties);
+  if (tref->props) {
+    IDP_FreeProp(tref->props);
   }
-  LIB_remlink(&workspace->tools, tref);
+  lib_remlink(&workspace->tools, tref);
   MEM_freeN(tref);
 }
 
