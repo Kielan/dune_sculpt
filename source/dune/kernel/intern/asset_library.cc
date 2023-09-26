@@ -11,64 +11,63 @@
 
 #include "asset_lib_service.hh"
 
-bool dune::kernel::AssetLib::save_catalogs_when_file_is_saved = true;
+bool dune::AssetLib::save_catalogs_when_file_is_saved = true;
 
-/**
- * Loading an asset library at this point only means loading the catalogs. Later on this should
+/* Loading an asset lib at this point only means loading the catalogs. Later on this should
  * invoke reading of asset representations too. */
-struct AssetLib *dune_asset_library_load(const char *lib_path)
+struct AssetLib *dune_asset_lib_load(const char *lib_path)
 {
-  blender::bke::AssetLibraryService *service = dune::kernel::AssetLibService::get();
-  blender::bke::AssetLibrary *lib;
-  if (library_path == nullptr || library_path[0] == '\0') {
-    lib = service->get_asset_library_current_file();
+  dune::AssetLibService *service = dune::AssetLibService::get();
+  dune::AssetLib *lib;
+  if (lib_path == nullptr || lib_path[0] == '\0') {
+    lib = service->get_asset_lib_current_file();
   }
   else {
-    lib = service->get_asset_library_on_disk(library_path);
+    lib = service->get_asset_lib_on_disk(lib_path);
   }
-  return reinterpret_cast<struct AssetLibrary *>(lib);
+  return reinterpret_cast<struct AssetLib *>(lib);
 }
 
-bool BKE_asset_library_has_any_unsaved_catalogs()
+bool dune_asset_lib_has_any_unsaved_catalogs()
 {
-  blender::bke::AssetLibraryService *service = blender::bke::AssetLibraryService::get();
+  dune::AssetLibService *service = dune::AssetLibService::get();
   return service->has_any_unsaved_catalogs();
 }
 
-bool BKE_asset_library_find_suitable_root_path_from_path(const char *input_path,
-                                                         char *r_library_path)
+bool dune_asset_lib_find_suitable_root_path_from_path(const char *input_path,
+                                                         char *r_lib_path)
 {
-  if (bUserAssetLibrary *preferences_lib = BKE_preferences_asset_library_containing_path(
+  if (UserAssetLib *prefs_lib = dune_prefs_asset_lib_containing_path(
           &U, input_path)) {
-    BLI_strncpy(r_library_path, preferences_lib->path, FILE_MAXDIR);
+    lib_strncpy(r_lib_path, prefs_lib->path, FILE_MAXDIR);
     return true;
   }
 
-  BLI_split_dir_part(input_path, r_library_path, FILE_MAXDIR);
-  return r_library_path[0] != '\0';
+  lib_split_dir_part(input_path, r_lib_path, FILE_MAXDIR);
+  return r_lib_path[0] != '\0';
 }
 
-bool BKE_asset_library_find_suitable_root_path_from_main(const Main *bmain, char *r_library_path)
+bool dune_asset_lib_find_suitable_root_path_from_main(const Main *main, char *r_lib_path)
 {
-  return BKE_asset_library_find_suitable_root_path_from_path(bmain->filepath, r_library_path);
+  return dune_asset_lib_find_suitable_root_path_from_path(main->filepath, r_lib_path);
 }
 
-blender::bke::AssetCatalogService *BKE_asset_library_get_catalog_service(
-    const ::AssetLibrary *library_c)
+dune::AssetCatalogService *dune_asset_lib_get_catalog_service(
+    const ::AssetLib *lib_c)
 {
-  if (library_c == nullptr) {
+  if (lib_c == nullptr) {
     return nullptr;
   }
 
-  const blender::bke::AssetLibrary &library = reinterpret_cast<const blender::bke::AssetLibrary &>(
-      *library_c);
-  return library.catalog_service.get();
+  const dune::AssetLib &lib = reinterpret_cast<const dune::AssetLib &>(
+      *lib_c);
+  return lib.catalog_service.get();
 }
 
-blender::bke::AssetCatalogTree *BKE_asset_library_get_catalog_tree(const ::AssetLibrary *library)
+dune::AssetCatalogTree *dune_asset_lib_get_catalog_tree(const ::AssetLib *lib)
 {
-  blender::bke::AssetCatalogService *catalog_service = BKE_asset_library_get_catalog_service(
-      library);
+  dune::AssetCatalogService *catalog_service = dune_asset_lib_get_catalog_service(
+      lib);
   if (catalog_service == nullptr) {
     return nullptr;
   }
@@ -76,71 +75,71 @@ blender::bke::AssetCatalogTree *BKE_asset_library_get_catalog_tree(const ::Asset
   return catalog_service->get_catalog_tree();
 }
 
-void BKE_asset_library_refresh_catalog_simplename(struct AssetLibrary *asset_library,
-                                                  struct AssetMetaData *asset_data)
+void dune_asset_lib_refresh_catalog_simplename(struct AssetLib *asset_lib,
+                                               struct AssetMetaData *asset_data)
 {
-  blender::bke::AssetLibrary *lib = reinterpret_cast<blender::bke::AssetLibrary *>(asset_library);
+  dune::AssetLib *lib = reinterpret_cast<dune::AssetLib *>(asset_lib);
   lib->refresh_catalog_simplename(asset_data);
 }
 
-namespace blender::bke {
+namespace dune {
 
-AssetLibrary::AssetLibrary() : catalog_service(std::make_unique<AssetCatalogService>())
+AssetLib::AssetLib() : catalog_service(std::make_unique<AssetCatalogService>())
 {
 }
 
-AssetLibrary::~AssetLibrary()
+AssetLib::~AssetLib()
 {
-  if (on_save_callback_store_.func) {
-    on_blend_save_handler_unregister();
+  if (on_save_cb_store_.fn) {
+    on_dune_save_handler_unregister();
   }
 }
 
-void AssetLibrary::load(StringRefNull library_root_directory)
+void AssetLib::load(StringRefNull lib_root_directory)
 {
-  auto catalog_service = std::make_unique<AssetCatalogService>(library_root_directory);
+  auto catalog_service = std::make_unique<AssetCatalogService>(lib_root_directory);
   catalog_service->load_from_disk();
   this->catalog_service = std::move(catalog_service);
 }
 
-void AssetLibrary::refresh()
+void AssetLib::refresh()
 {
   this->catalog_service->reload_catalogs();
 }
 
 namespace {
-void asset_library_on_save_post(struct Main *main,
-                                struct PointerRNA **pointers,
-                                const int num_pointers,
-                                void *arg)
+void asset_lib_on_save_post(struct Main *main,
+                            struct ApiPtr **ptrs,
+                            const int num_ptrs,
+                            void *arg)
 {
-  AssetLibrary *asset_lib = static_cast<AssetLibrary *>(arg);
-  asset_lib->on_blend_save_post(main, pointers, num_pointers);
+  AssetLib *asset_lib = static_cast<AssetLib *>(arg);
+  asset_lib->on_dune_save_post(main, ptrs, num_ptrs);
 }
 
 }  // namespace
 
-void AssetLibrary::on_blend_save_handler_register()
+void AssetLib::on_dune_save_handler_register()
 {
   /* The callback system doesn't own `on_save_callback_store_`. */
-  on_save_callback_store_.alloc = false;
+  on_save_cb_store_.alloc = false;
 
-  on_save_callback_store_.func = asset_library_on_save_post;
-  on_save_callback_store_.arg = this;
+  on_save_cb_store_.fn = asset_lib_on_save_post;
+  on_save_cb_store_.arg = this;
 
-  BKE_callback_add(&on_save_callback_store_, BKE_CB_EVT_SAVE_POST);
+  dune_cb_add(&on_save_cb_store_, DUNE_CB_EVT_SAVE_POST);
 }
 
-void AssetLibrary::on_blend_save_handler_unregister()
+void AssetLib::on_dune_save_handler_unregister()
 {
-  BKE_callback_remove(&on_save_callback_store_, BKE_CB_EVT_SAVE_POST);
-  on_save_callback_store_.func = nullptr;
-  on_save_callback_store_.arg = nullptr;
+  dune_cb_remove(&on_save_cb_store_, DUNE_CB_EVT_SAVE_POST);
+  on_save_cb_store_.fn = nullptr;
+  on_save_cb_store_.arg = nullptr;
 }
 
-void AssetLibrary::on_blend_save_post(struct Main *main,
-                                      struct PointerRNA ** /*pointers*/,
-                                      const int /*num_pointers*/)
+void AssetLib::on_dune_save_post(struct Main *main,
+                                 struct ApiPtr ** /*ptrs*/,
+                                 const int /*num_ptrs*/)
 {
   if (this->catalog_service == nullptr) {
     return;
@@ -151,9 +150,9 @@ void AssetLibrary::on_blend_save_post(struct Main *main,
   }
 }
 
-void AssetLibrary::refresh_catalog_simplename(struct AssetMetaData *asset_data)
+void AssetLib::refresh_catalog_simplename(struct AssetMetaData *asset_data)
 {
-  if (BLI_uuid_is_nil(asset_data->catalog_id)) {
+  if (lib_uuid_is_nil(asset_data->catalog_id)) {
     asset_data->catalog_simple_name[0] = '\0';
     return;
   }
