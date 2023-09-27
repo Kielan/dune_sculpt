@@ -177,7 +177,6 @@ IdTypeInfo IdType_ID_VF = {
 };
 
 /* VFont */
-
 void dune_vfont_free_data(struct VFont *vfont)
 {
   if (vfont->data) {
@@ -648,12 +647,12 @@ int dune_vfont_select_get(Object *ob, int *r_start, int *r_end)
   return direction;
 }
 
-void KERNEL_vfont_select_clamp(Object *ob)
+void dune_vfont_select_clamp(Object *ob)
 {
   Curve *cu = ob->data;
   EditFont *ef = cu->editfont;
 
-  LIB_assert((ob->type == OB_FONT) && ef);
+  lib_assert((ob->type == OB_FONT) && ef);
 
   CLAMP_MAX(ef->pos, ef->len);
   CLAMP_MAX(ef->selstart, ef->len + 1);
@@ -681,7 +680,7 @@ static void textbox_scale(TextBox *tb_dst, const TextBox *tb_src, float scale)
   tb_dst->h = tb_src->h * scale;
 }
 
-/*** Used for storing per-line data for alignment & wrapping. */
+/* Used for storing per-line data for alignment & wrapping. */
 struct TempLineInfo {
   float x_min;   /* left margin */
   float x_max;   /* right margin */
@@ -689,15 +688,13 @@ struct TempLineInfo {
   int wspace_nr; /* number of white-spaces of line */
 };
 
-/* -------------------------------------------------------------------- */
-/** VFont Scale Overflow
+/* VFont Scale Overflow
  *
  * Scale the font to fit inside TextBox bounds.
  *
  * - Scale horizontally when TextBox.h is zero,
  *   otherwise scale vertically, allowing the text to wrap horizontally.
- * - Never increase scale to fit, only ever scale on overflow.
- */
+ * - Never increase scale to fit, only ever scale on overflow. */
 
 typedef struct VFontToCurveIter {
   int iteraction;
@@ -707,15 +704,13 @@ typedef struct VFontToCurveIter {
     float max;
   } bisect;
   bool ok;
-  /**
-   * Wrap words that extends beyond the text-box width (enabled by default).
+  /* Wrap words that extends beyond the text-box width (enabled by default).
    *
    * Currently only disabled when scale-to-fit is enabled,
    * so floating-point error doesn't cause unexpected wrapping, see T89241.
    *
    * This should only be set once, in the #VFONT_TO_CURVE_INIT pass
-   * otherwise iterations wont behave predictably, see T91401.
-   */
+   * otherwise iterations wont behave predictably, see T91401. */
   bool word_wrap;
   int status;
 } VFontToCurveIter;
@@ -730,8 +725,7 @@ enum {
 #define FONT_TO_CURVE_SCALE_ITERATIONS 20
 #define FONT_TO_CURVE_SCALE_THRESHOLD 0.0001f
 
-/**
- * Font metric values explained:
+/* Font metric values explained:
  *
  * Baseline: Line where the text "rests", used as the origin vertical position for the glyphs.
  * Em height: Space most glyphs should fit within.
@@ -742,8 +736,7 @@ enum {
  * And in some cases it is even the same value as FT_Face->bbox.yMax/yMin
  * (font top and bottom respectively).
  *
- * The em_height here is relative to FT_Face->bbox.
- */
+ * The em_height here is relative to FT_Face->bbox. */
 
 static float vfont_ascent(const VFontData *vfd)
 {
@@ -758,7 +751,7 @@ static bool vfont_to_curve(Object *ob,
                            Curve *cu,
                            int mode,
                            VFontToCurveIter *iter_data,
-                           ListBase *r_nubase,
+                           List *r_nubase,
                            const char32_t **r_text,
                            int *r_text_len,
                            bool *r_text_free,
@@ -803,7 +796,7 @@ static bool vfont_to_curve(Object *ob,
   /* NOTE: do calculations including the trailing '\0' of a string
    * because the cursor can be at that location. */
 
-  LIB_assert(ob == NULL || ob->type == OB_FONT);
+  lib_assert(ob == NULL || ob->type == OB_FONT);
 
   /* Set font data */
   vfont = cu->vfont;
@@ -832,15 +825,15 @@ static bool vfont_to_curve(Object *ob,
     slen = cu->len_char32;
 
     /* Create unicode string */
-    mem_tmp = MEM_malloc_arrayN((slen + 1), sizeof(*mem_tmp), "convertedmem");
+    mem_tmp = mem_malloc_arrayn((slen + 1), sizeof(*mem_tmp), "convertedmem");
     if (!mem_tmp) {
       return ok;
     }
 
-    LIB_str_utf8_as_utf32(mem_tmp, cu->str, slen + 1);
+    lib_str_utf8_as_utf32(mem_tmp, cu->str, slen + 1);
 
     if (cu->strinfo == NULL) { /* old file */
-      cu->strinfo = MEM_calloc_arrayN((slen + 4), sizeof(CharInfo), "strinfo compat");
+      cu->strinfo = mem_calloc_arrayn((slen + 4), sizeof(CharInfo), "strinfo compat");
     }
     custrinfo = cu->strinfo;
     if (!custrinfo) {
@@ -851,17 +844,17 @@ static bool vfont_to_curve(Object *ob,
   }
 
   if (cu->tb == NULL) {
-    cu->tb = MEM_calloc_arrayN(MAXTEXTBOX, sizeof(TextBox), "TextBox compat");
+    cu->tb = mem_calloc_arrayn(MAXTEXTBOX, sizeof(TextBox), "TextBox compat");
   }
 
   if (ef != NULL && ob != NULL) {
     if (ef->selboxes) {
-      MEM_freeN(ef->selboxes);
+      mem_freen(ef->selboxes);
     }
 
-    if (KERNEL_vfont_select_get(ob, &selstart, &selend)) {
+    if (dune_vfont_select_get(ob, &selstart, &selend)) {
       ef->selboxes_len = (selend - selstart) + 1;
-      ef->selboxes = MEM_calloc_arrayN(ef->selboxes_len, sizeof(EditFontSelBox), "font selboxes");
+      ef->selboxes = mem_calloc_arrayn(ef->selboxes_len, sizeof(EditFontSelBox), "font selboxes");
     }
     else {
       ef->selboxes_len = 0;
@@ -872,10 +865,10 @@ static bool vfont_to_curve(Object *ob,
   }
 
   /* calc offset and rotation of each char */
-  ct = chartransdata = MEM_calloc_arrayN((slen + 1), sizeof(struct CharTrans), "buildtext");
+  ct = chartransdata = mem_calloc_arrayn((slen + 1), sizeof(struct CharTrans), "buildtext");
 
   /* We assume the worst case: 1 character per line (is freed at end anyway) */
-  lineinfo = MEM_malloc_arrayN((slen * 2 + 1), sizeof(*lineinfo), "lineinfo");
+  lineinfo = mem_malloc_arrayn((slen * 2 + 1), sizeof(*lineinfo), "lineinfo");
 
   linedist = cu->linedist;
 
@@ -919,31 +912,31 @@ static bool vfont_to_curve(Object *ob,
 
     /* VFont Data for VFont couldn't be found */
     if (!vfd) {
-      MEM_freeN(chartransdata);
+      mem_freen(chartransdata);
       chartransdata = NULL;
-      MEM_freeN(lineinfo);
+      mem_freen(lineinfo);
       goto finally;
     }
 
     if (!ELEM(ascii, '\n', '\0')) {
-      LIB_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_READ);
+      lib_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_READ);
       che = find_vfont_char(vfd, ascii);
-      LIB_rw_mutex_unlock(&vfont_rwlock);
+      lib_rw_mutex_unlock(&vfont_rwlock);
 
       /* The character wasn't in the current curve base so load it.
        * But if the font is built-in then do not try loading since
        * whole font is in the memory already. */
-      if (che == NULL && BKE_vfont_is_builtin(vfont) == false) {
-        LIB_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_WRITE);
+      if (che == NULL && dune_vfont_is_builtin(vfont) == false) {
+        lib_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_WRITE);
         /* Check it once again, char might have been already load
          * between previous LIB_rw_mutex_unlock() and this LIB_rw_mutex_lock().
          *
          * Such a check should not be a bottleneck since it wouldn't
          * happen often once all the chars are load. */
         if ((che = find_vfont_char(vfd, ascii)) == NULL) {
-          che = KERNEL_vfontdata_char_from_freetypefont(vfont, ascii);
+          che = dune_vfontdata_char_from_freetypefont(vfont, ascii);
         }
-        LIB_rw_mutex_unlock(&vfont_rwlock);
+        lib_rw_mutex_unlock(&vfont_rwlock);
       }
     }
     else {
@@ -953,7 +946,6 @@ static bool vfont_to_curve(Object *ob,
     twidth = char_width(cu, che, info);
 
     /* Calculate positions. */
-
     if ((tb_scale.w != 0.0f) && (ct->dobreak == 0)) { /* May need wrapping. */
       const float x_available = xof_scale + tb_scale.w;
       const float x_used = (xof - tb_scale.x) + twidth;
@@ -965,7 +957,7 @@ static bool vfont_to_curve(Object *ob,
          * Assert this is a small value as large values indicate incorrect
          * calculations with scale-to-fit which shouldn't be ignored. See T89241. */
         if (x_used > x_available) {
-          LIB_assert_msg(compare_ff_relative(x_used, x_available, FLT_EPSILON, 64),
+          lib_assert_msg(compare_ff_relative(x_used, x_available, FLT_EPSILON, 64),
                          "VFontToCurveIter.scale_to_fit not set correctly!");
         }
       }
@@ -1004,7 +996,7 @@ static bool vfont_to_curve(Object *ob,
             dobreak = true;
             break;
           }
-          LIB_assert(chartransdata[j].dobreak == 0);
+          lib_assert(chartransdata[j].dobreak == 0);
         }
 
         if (dobreak) {
@@ -1125,7 +1117,6 @@ static bool vfont_to_curve(Object *ob,
   }
 
   /* Line-data is now: width of line. */
-
   if (cu->spacemode != CU_ALIGN_X_LEFT) {
     ct = chartransdata;
 
@@ -1285,13 +1276,13 @@ static bool vfont_to_curve(Object *ob,
     }
   }
 
-  MEM_freeN(lineinfo);
-  MEM_freeN(i_textbox_array);
+  mem_freen(lineinfo);
+  mem_freen(i_textbox_array);
 
   /* TEXT ON CURVE */
   /* NOTE: Only #OB_CURVES_LEGACY objects could have a path. */
   if (cu->textoncurve && cu->textoncurve->type == OB_CURVES_LEGACY) {
-    LIB_assert(cu->textoncurve->runtime.curve_cache != NULL);
+    lib_assert(cu->textoncurve->runtime.curve_cache != NULL);
     if (cu->textoncurve->runtime.curve_cache != NULL &&
         cu->textoncurve->runtime.curve_cache->anim_path_accum_length != NULL) {
       float distfac, imat[4][4], imat3[3][3], cmat[3][3];
@@ -1323,7 +1314,6 @@ static bool vfont_to_curve(Object *ob,
       }
 
       /* We put the x-coordinate exact at the curve, the y is rotated. */
-
       /* length correction */
       const float chartrans_size_x = maxx - minx;
       if (chartrans_size_x != 0.0f) {
@@ -1341,7 +1331,6 @@ static bool vfont_to_curve(Object *ob,
 
       if (distfac < 1.0f) {
         /* Path longer than text: space-mode is involved. */
-
         if (cu->spacemode == CU_ALIGN_X_RIGHT) {
           timeofs = 1.0f - distfac;
         }
@@ -1382,8 +1371,8 @@ static bool vfont_to_curve(Object *ob,
 
         /* Calculate the right loc AND the right rot separately. */
         /* `vec`, `tvec` need 4 items. */
-        KERNEL_where_on_path(cu->textoncurve, ctime, vec, tvec, NULL, NULL, NULL);
-        KERNEL_where_on_path(cu->textoncurve, ctime + dtime, tvec, rotvec, NULL, NULL, NULL);
+        dune_where_on_path(cu->textoncurve, ctime, vec, tvec, NULL, NULL, NULL);
+        dune_where_on_path(cu->textoncurve, ctime + dtime, tvec, rotvec, NULL, NULL, NULL);
 
         mul_v3_fl(vec, sizefac);
 
@@ -1484,12 +1473,12 @@ static bool vfont_to_curve(Object *ob,
   }
 
   if (mode == FO_SELCHANGE) {
-    MEM_freeN(chartransdata);
+    mem_freen(chartransdata);
     chartransdata = NULL;
   }
   else if (mode == FO_EDIT) {
     /* Make NURBS-data. */
-    KERNEL_nurbList_free(r_nubase);
+    dune_nurbList_free(r_nubase);
 
     ct = chartransdata;
     for (i = 0; i < slen; i++) {
@@ -1514,7 +1503,7 @@ static bool vfont_to_curve(Object *ob,
       }
       /* We don't want to see any character for '\n'. */
       if (cha != '\n') {
-        KERNEL_vfont_build_char(cu, r_nubase, cha, info, ct->xof, ct->yof, ct->rot, i, font_size);
+        dune_vfont_build_char(cu, r_nubase, cha, info, ct->xof, ct->yof, ct->rot, i, font_size);
       }
 
       if ((info->flag & CU_CHINFO_UNDERLINE) && (cha != '\n')) {
@@ -1548,7 +1537,7 @@ static bool vfont_to_curve(Object *ob,
 
   if (iter_data->status == VFONT_TO_CURVE_SCALE_ONCE) {
     /* That means we were in a final run, just exit. */
-    LIB_assert(cu->overflow == CU_OVERFLOW_SCALE);
+    lib_assert(cu->overflow == CU_OVERFLOW_SCALE);
     iter_data->status = VFONT_TO_CURVE_DONE;
   }
   else if (cu->overflow == CU_OVERFLOW_NONE) {
@@ -1611,7 +1600,7 @@ static bool vfont_to_curve(Object *ob,
         }
       }
       else {
-        LIB_assert(iter_data->status == VFONT_TO_CURVE_BISECT);
+        lib_assert(iter_data->status == VFONT_TO_CURVE_BISECT);
         /* Try to get the highest scale that gives us the exactly
          * number of lines we need. */
         bool valid = false;
@@ -1648,15 +1637,15 @@ static bool vfont_to_curve(Object *ob,
   if (ELEM(iter_data->status, VFONT_TO_CURVE_SCALE_ONCE, VFONT_TO_CURVE_BISECT)) {
     /* Always cleanup before going to the scale-to-fit repetition. */
     if (r_nubase != NULL) {
-      KERNEL_nurbList_free(r_nubase);
+      dune_nurbList_free(r_nubase);
     }
 
     if (chartransdata != NULL) {
-      MEM_freeN(chartransdata);
+      mem_freen(chartransdata);
     }
 
     if (ef == NULL) {
-      MEM_freeN((void *)mem);
+      mem_freen((void *)mem);
     }
     return true;
   }
@@ -1670,7 +1659,7 @@ finally:
   }
   else {
     if (ef == NULL) {
-      MEM_freeN((void *)mem);
+      mem_freen((void *)mem);
     }
   }
 
@@ -1679,7 +1668,7 @@ finally:
       *r_chartransdata = chartransdata;
     }
     else {
-      MEM_freeN(chartransdata);
+      mem_freen(chartransdata);
     }
   }
 
@@ -1695,10 +1684,10 @@ finally:
 #undef DESCENT
 #undef ASCENT
 
-bool KERNEL_vfont_to_curve_ex(Object *ob,
+bool dune_vfont_to_curve_ex(Object *ob,
                            Curve *cu,
                            int mode,
-                           ListBase *r_nubase,
+                           List *r_nubase,
                            const char32_t **r_text,
                            int *r_text_len,
                            bool *r_text_free,
@@ -1723,23 +1712,21 @@ bool KERNEL_vfont_to_curve_ex(Object *ob,
 #undef FONT_TO_CURVE_SCALE_ITERATIONS
 #undef FONT_TO_CURVE_SCALE_THRESHOLD
 
-bool KERNEL_vfont_to_curve_nubase(Object *ob, int mode, ListBase *r_nubase)
+bool dune_vfont_to_curve_nubase(Object *ob, int mode, ListBase *r_nubase)
 {
-  LIB_assert(ob->type == OB_FONT);
+  lib_assert(ob->type == OB_FONT);
 
-  return KERNEL_vfont_to_curve_ex(ob, ob->data, mode, r_nubase, NULL, NULL, NULL, NULL);
+  return dune_vfont_to_curve_ex(ob, ob->data, mode, r_nubase, NULL, NULL, NULL, NULL);
 }
 
-bool KERNEL_vfont_to_curve(Object *ob, int mode)
+bool dune_vfont_to_curve(Object *ob, int mode)
 {
   Curve *cu = ob->data;
 
-  return KERNEL_vfont_to_curve_ex(ob, ob->data, mode, &cu->nurb, NULL, NULL, NULL, NULL);
+  return dune_vfont_to_curve_ex(ob, ob->data, mode, &cu->nurb, NULL, NULL, NULL, NULL);
 }
 
-/* -------------------------------------------------------------------- */
 /** VFont Clipboard */
-
 static struct {
   char32_t *text_buffer;
   CharInfo *info_buffer;
@@ -1747,7 +1734,7 @@ static struct {
   size_t len_utf8;
 } g_vfont_clipboard = {NULL};
 
-void KERNEL_vfont_clipboard_free(void)
+void dune_vfont_clipboard_free(void)
 {
   MEM_SAFE_FREE(g_vfont_clipboard.text_buffer);
   MEM_SAFE_FREE(g_vfont_clipboard.info_buffer);
@@ -1755,22 +1742,22 @@ void KERNEL_vfont_clipboard_free(void)
   g_vfont_clipboard.len_utf8 = 0;
 }
 
-void KERNEL_vfont_clipboard_set(const char32_t *text_buf, const CharInfo *info_buf, const size_t len)
+void dune_vfont_clipboard_set(const char32_t *text_buf, const CharInfo *info_buf, const size_t len)
 {
   char32_t *text;
   CharInfo *info;
 
   /* Clean previous buffers. */
-  KERNEL_vfont_clipboard_free();
+  dune_vfont_clipboard_free();
 
-  text = MEM_malloc_arrayN((len + 1), sizeof(*text), __func__);
+  text = mem_malloc_arrayn((len + 1), sizeof(*text), __func__);
   if (text == NULL) {
     return;
   }
 
-  info = MEM_malloc_arrayN(len, sizeof(CharInfo), __func__);
+  info = mem_malloc_arrayn(len, sizeof(CharInfo), __func__);
   if (info == NULL) {
-    MEM_freeN(text);
+    mem_freen(text);
     return;
   }
 
@@ -1781,11 +1768,11 @@ void KERNEL_vfont_clipboard_set(const char32_t *text_buf, const CharInfo *info_b
   /* store new buffers */
   g_vfont_clipboard.text_buffer = text;
   g_vfont_clipboard.info_buffer = info;
-  g_vfont_clipboard.len_utf8 = BLI_str_utf32_as_utf8_len(text);
+  g_vfont_clipboard.len_utf8 = lib_str_utf32_as_utf8_len(text);
   g_vfont_clipboard.len_utf32 = len;
 }
 
-void KERNEL_vfont_clipboard_get(char32_t **r_text_buf,
+void dune_vfont_clipboard_get(char32_t **r_text_buf,
                              CharInfo **r_info_buf,
                              size_t *r_len_utf8,
                              size_t *r_len_utf32)
