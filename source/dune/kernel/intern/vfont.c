@@ -6,48 +6,48 @@
 
 #include "CLG_log.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_ghash.h"
-#include "LIB_listbase.h"
-#include "LIB_math.h"
-#include "LIB_math_base_safe.h"
-#include "LIB_path_util.h"
-#include "LIB_string.h"
-#include "LIB_string_utf8.h"
-#include "LIB_threads.h"
-#include "LIB_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_math.h"
+#include "lib_math_base_safe.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_string_utf8.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
-#include "TRANSLATION_translation.h"
+#include "lang.h"
 
-#include "structs_curve_types.h"
-#include "structs_object_types.h"
-#include "structs_packedFile_types.h"
-#include "structs_vfont_types.h"
+#include "types_curve.h"
+#include "types_object.h"
+#include "types_packedFile.h"
+#include "types_vfont.h"
 
-#include "KE_anim_path.h"
-#include "KE_bpath.h"
-#include "KE_curve.h"
-#include "KE_global.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_main.h"
-#include "KE_packedFile.h"
-#include "KE_vfont.h"
-#include "KE_vfontdata.h"
+#include "dune_anim_path.h"
+#include "dune_bpath.h"
+#include "dune_curve.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_packedFile.h"
+#include "dune_vfont.h"
+#include "dune_vfontdata.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
-static CLG_LogRef LOG = {"kernel.data_transfer"};
+static CLG_LogRef LOG = {"dune.data_transfer"};
 static ThreadRWMutex vfont_rwlock = LIB_RWLOCK_INITIALIZER;
 
-/**************************** Prototypes **************************/
+/* Prototypes */
 
 static PackedFile *get_builtin_packedfile(void);
 
-/****************************** VFont Datablock ************************/
+/* VFont Datablock */
 
-static void vfont_init_data(ID *id)
+static void vfont_init_data(Id *id)
 {
   VFont *vfont = (VFont *)id;
   PackedFile *pf = get_builtin_packedfile();
@@ -55,21 +55,21 @@ static void vfont_init_data(ID *id)
   if (pf) {
     VFontData *vfd;
 
-    vfd = KERNEL_vfontdata_from_freetypefont(pf);
+    vfd = dune_vfontdata_from_freetypefont(pf);
     if (vfd) {
       vfont->data = vfd;
 
-      BLI_strncpy(vfont->filepath, FO_BUILTIN_NAME, sizeof(vfont->filepath));
+      lib_strncpy(vfont->filepath, FO_BUILTIN_NAME, sizeof(vfont->filepath));
     }
 
     /* Free the packed file */
-    BKE_packedfile_free(pf);
+    dune_packedfile_free(pf);
   }
 }
 
 static void vfont_copy_data(Main *UNUSED(dunemain),
-                            ID *id_dst,
-                            const ID *UNUSED(id_src),
+                            Id *id_dst,
+                            const Id *UNUSED(id_src),
                             const int flag)
 {
   VFont *vfont_dst = (VFont *)id_dst;
@@ -81,19 +81,19 @@ static void vfont_copy_data(Main *UNUSED(dunemain),
   vfont_dst->temp_pf = NULL;
 
   if (vfont_dst->packedfile) {
-    vfont_dst->packedfile = KERNEL_packedfile_duplicate(vfont_dst->packedfile);
+    vfont_dst->packedfile = dune_packedfile_duplicate(vfont_dst->packedfile);
   }
 
   if (vfont_dst->data) {
-    vfont_dst->data = KERNEL_vfontdata_copy(vfont_dst->data, flag_subdata);
+    vfont_dst->data = dune_vfontdata_copy(vfont_dst->data, flag_subdata);
   }
 }
 
 /** Free (or release) any data used by this font (does not free the font itself). */
-static void vfont_free_data(ID *id)
+static void vfont_free_data(Id *id)
 {
   VFont *vfont = (VFont *)id;
-  KERNEL_vfont_free_data(vfont);
+  dune_vfont_free_data(vfont);
 
   if (vfont->packedfile) {
     KERNEL_packedfile_free(vfont->packedfile);
@@ -101,7 +101,7 @@ static void vfont_free_data(ID *id)
   }
 }
 
-static void vfont_foreach_path(ID *id, BPathForeachPathData *dunepath_data)
+static void vfont_foreach_path(Id *id, PathForeachPathData *dunepath_data)
 {
   VFont *vfont = (VFont *)id;
 
@@ -109,30 +109,30 @@ static void vfont_foreach_path(ID *id, BPathForeachPathData *dunepath_data)
     return;
   }
 
-  if (KERNEL_vfont_is_builtin(vfont)) {
+  if (dune_vfont_is_builtin(vfont)) {
     return;
   }
 
-  KERNEL_dunepath_foreach_path_fixed_process(dunepath_data, vfont->filepath);
+  dune_path_foreach_path_fixed_process(dunepath_data, vfont->filepath);
 }
 
-static void vfont_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void vfont_dune_write(DuneWriter *writer, Id *id, const void *id_address)
 {
   VFont *vf = (VFont *)id;
-  const bool is_undo = LOADER_write_is_undo(writer);
+  const bool is_undo = loader_write_is_undo(writer);
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
   vf->data = NULL;
   vf->temp_pf = NULL;
 
   /* Do not store packed files in case this is a library override ID. */
-  if (ID_IS_OVERRIDE_LIBRARY(vf) && !is_undo) {
+  if (ID_IS_OVERRIDE_LIB(vf) && !is_undo) {
     vf->packedfile = NULL;
   }
 
   /* write LibData */
-  LOVE_write_id_struct(writer, VFont, id_address, &vf->id);
-  KERNEL_id_dune_write(writer, &vf->id);
+  loader_write_id_struct(writer, VFont, id_address, &vf->id);
+  dune_id_dune_write(writer, &vf->id);
 
   /* direct data */
   KERNEL_packedfile_dune_write(writer, vf->packedfile);
@@ -143,17 +143,17 @@ static void vfont_dune_read_data(DuneDataReader *reader, ID *id)
   VFont *vf = (VFont *)id;
   vf->data = NULL;
   vf->temp_pf = NULL;
-  KERNEL_packedfile_dune_read(reader, &vf->packedfile);
+  dune_packedfile_dune_read(reader, &vf->packedfile);
 }
 
-IDTypeInfo IDType_ID_VF = {
+IdTypeInfo IdType_ID_VF = {
     .id_code = ID_VF,
     .id_filter = FILTER_ID_VF,
     .main_listbase_index = INDEX_ID_VF,
     .struct_size = sizeof(VFont),
     .name = "Font",
     .name_plural = "fonts",
-    .translation_context = TRANSLATION_I18NCONTEXT_ID_VFONT,
+    .translation_context = LANG_CXT_ID_VFONT,
     .flags = IDTYPE_FLAGS_NO_ANIMDATA | IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -176,28 +176,28 @@ IDTypeInfo IDType_ID_VF = {
     .lib_override_apply_post = NULL,
 };
 
-/***************************** VFont *******************************/
+/* VFont */
 
-void KERNEL_vfont_free_data(struct VFont *vfont)
+void dune_vfont_free_data(struct VFont *vfont)
 {
   if (vfont->data) {
     if (vfont->data->characters) {
       GHashIterator gh_iter;
       GHASH_ITER (gh_iter, vfont->data->characters) {
-        VChar *che = LIB_ghashIterator_getValue(&gh_iter);
+        VChar *che = lib_ghashIterator_getValue(&gh_iter);
 
         while (che->nurbsbase.first) {
           Nurb *nu = che->nurbsbase.first;
           if (nu->bezt) {
-            MEM_freeN(nu->bezt);
+            mem_freen(nu->bezt);
           }
-          LIB_freelinkN(&che->nurbsbase, nu);
+          lib_freelinkn(&che->nurbsbase, nu);
         }
 
-        MEM_freeN(che);
+        mem_freen(che);
       }
 
-      LIB_ghash_free(vfont->data->characters, NULL, NULL);
+      lib_ghash_free(vfont->data->characters, NULL, NULL);
     }
 
     MEM_freeN(vfont->data);
@@ -205,7 +205,7 @@ void KERNEL_vfont_free_data(struct VFont *vfont)
   }
 
   if (vfont->temp_pf) {
-    KERNEL_packedfile_free(vfont->temp_pf); /* NULL when the font file can't be found on disk */
+    dune_packedfile_free(vfont->temp_pf); /* NULL when the font file can't be found on disk */
     vfont->temp_pf = NULL;
   }
 }
@@ -213,12 +213,12 @@ void KERNEL_vfont_free_data(struct VFont *vfont)
 static const void *builtin_font_data = NULL;
 static int builtin_font_size = 0;
 
-bool KERNEL_vfont_is_builtin(const struct VFont *vfont)
+bool dune_vfont_is_builtin(const struct VFont *vfont)
 {
   return STREQ(vfont->filepath, FO_BUILTIN_NAME);
 }
 
-void KERNEL_vfont_builtin_register(const void *mem, int size)
+void dune_vfont_builtin_register(const void *mem, int size)
 {
   builtin_font_data = mem;
   builtin_font_size = size;
@@ -232,11 +232,11 @@ static PackedFile *get_builtin_packedfile(void)
     return NULL;
   }
 
-  void *mem = MEM_mallocN(builtin_font_size, "vfd_builtin");
+  void *mem = mem_mallocn(builtin_font_size, "vfd_builtin");
 
   memcpy(mem, builtin_font_data, builtin_font_size);
 
-  return KERNEL_packedfile_new_from_memory(mem, builtin_font_size);
+  return dune_packedfile_new_from_memory(mem, builtin_font_size);
 }
 
 static VFontData *vfont_get_data(VFont *vfont)
@@ -249,7 +249,7 @@ static VFontData *vfont_get_data(VFont *vfont)
   if (!vfont->data) {
     PackedFile *pf;
 
-    LIB_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&vfont_rwlock, THREAD_LOCK_WRITE);
 
     if (vfont->data) {
       /* Check data again, since it might have been already
@@ -257,11 +257,11 @@ static VFontData *vfont_get_data(VFont *vfont)
        * not accurate or threading, just prevents unneeded
        * lock if all the data is here for sure).
        */
-      LIB_rw_mutex_unlock(&vfont_rwlock);
+      lib_rw_mutex_unlock(&vfont_rwlock);
       return vfont->data;
     }
 
-    if (KERNEL_vfont_is_builtin(vfont)) {
+    if (dune_vfont_is_builtin(vfont)) {
       pf = get_builtin_packedfile();
     }
     else {
@@ -270,14 +270,14 @@ static VFontData *vfont_get_data(VFont *vfont)
 
         /* We need to copy a tmp font to memory unless it is already there */
         if (vfont->temp_pf == NULL) {
-          vfont->temp_pf = KERNEL_packedfile_duplicate(pf);
+          vfont->temp_pf = dune_packedfile_duplicate(pf);
         }
       }
       else {
-        pf = KERNEL_packedfile_new(NULL, vfont->filepath, ID_DUNE_PATH_FROM_GLOBAL(&vfont->id));
+        pf = dune_packedfile_new(NULL, vfont->filepath, ID_DUNE_PATH_FROM_GLOBAL(&vfont->id));
 
         if (vfont->temp_pf == NULL) {
-          vfont->temp_pf = KERNEL_packedfile_new(
+          vfont->temp_pf = dune_packedfile_new(
               NULL, vfont->filepath, ID_DUNE_PATH_FROM_GLOBAL(&vfont->id));
         }
       }
@@ -294,9 +294,9 @@ static VFontData *vfont_get_data(VFont *vfont)
     }
 
     if (pf) {
-      vfont->data = KERNEL_vfontdata_from_freetypefont(pf);
+      vfont->data = dune_vfontdata_from_freetypefont(pf);
       if (pf != vfont->packedfile) {
-        KERNEL_packedfile_free(pf);
+        dune_packedfile_free(pf);
       }
     }
 
@@ -306,7 +306,7 @@ static VFontData *vfont_get_data(VFont *vfont)
   return vfont->data;
 }
 
-VFont *KERNEL_vfont_load(Main *dunemain, const char *filepath)
+VFont *dune_vfont_load(Main *dunemain, const char *filepath)
 {
   char filename[FILE_MAXFILE];
   VFont *vfont = NULL;
@@ -314,14 +314,14 @@ VFont *KERNEL_vfont_load(Main *dunemain, const char *filepath)
   bool is_builtin;
 
   if (STREQ(filepath, FO_BUILTIN_NAME)) {
-    LIB_strncpy(filename, filepath, sizeof(filename));
+    lib_strncpy(filename, filepath, sizeof(filename));
 
     pf = get_builtin_packedfile();
     is_builtin = true;
   }
   else {
-    LIB_split_file_part(filepath, filename, sizeof(filename));
-    pf = KERNEL_packedfile_new(NULL, filepath, KERNEL_main_dunefile_path(dunemain));
+    lib_split_file_part(filepath, filename, sizeof(filename));
+    pf = dune_packedfile_new(NULL, filepath, dune_main_dunefile_path(dunemain));
 
     is_builtin = false;
   }
@@ -329,12 +329,12 @@ VFont *KERNEL_vfont_load(Main *dunemain, const char *filepath)
   if (pf) {
     VFontData *vfd;
 
-    vfd = KERNEL_vfontdata_from_freetypefont(pf);
+    vfd = dune_vfontdata_from_freetypefont(pf);
     if (vfd) {
       /* If there's a font name, use it for the ID name. */
-      vfont = KERNEL_libblock_alloc(bmain, ID_VF, vfd->name[0] ? vfd->name : filename, 0);
+      vfont = dune_libblock_alloc(bmain, ID_VF, vfd->name[0] ? vfd->name : filename, 0);
       vfont->data = vfd;
-      LIB_strncpy(vfont->filepath, filepath, sizeof(vfont->filepath));
+      lib_strncpy(vfont->filepath, filepath, sizeof(vfont->filepath));
 
       /* if auto-pack is on store the packed-file in de font structure */
       if (!is_builtin && (G.fileflags & G_FILE_AUTOPACK)) {
@@ -343,33 +343,33 @@ VFont *KERNEL_vfont_load(Main *dunemain, const char *filepath)
 
       /* Do not add FO_BUILTIN_NAME to temporary list-base. */
       if (!STREQ(filename, FO_BUILTIN_NAME)) {
-        vfont->temp_pf = KERNEL_packedfile_new(NULL, filepath, KERNEL_main_dunefile_path(dunemain));
+        vfont->temp_pf = dune_packedfile_new(NULL, filepath, KERNEL_main_dunefile_path(dunemain));
       }
     }
 
     /* Free the packed file */
     if (!vfont || vfont->packedfile != pf) {
-      KERNEL_packedfile_free(pf);
+      dune_packedfile_free(pf);
     }
   }
 
   return vfont;
 }
 
-VFont *KERNEL_vfont_load_exists_ex(struct Main *bmain, const char *filepath, bool *r_exists)
+VFont *dune_vfont_load_exists_ex(struct Main *main, const char *filepath, bool *r_exists)
 {
   VFont *vfont;
   char str[FILE_MAX], strtest[FILE_MAX];
 
-  LIB_strncpy(str, filepath, sizeof(str));
-  LIB_path_abs(str, KERNEL_main_dunefile_path(dunemain));
+  lib_strncpy(str, filepath, sizeof(str));
+  lib_path_abs(str, dune_main_file_path(main));
 
   /* first search an identical filepath */
-  for (vfont = dunemain->fonts.first; vfont; vfont = vfont->id.next) {
-    LIB_strncpy(strtest, vfont->filepath, sizeof(vfont->filepath));
-    LIB_path_abs(strtest, ID_DUNE_PATH(dunemain, &vfont->id));
+  for (vfont = main->fonts.first; vfont; vfont = vfont->id.next) {
+    lib_strncpy(strtest, vfont->filepath, sizeof(vfont->filepath));
+    lib_path_abs(strtest, ID_DUNE_PATH(main, &vfont->id));
 
-    if (LIB_path_cmp(strtest, str) == 0) {
+    if (lib_path_cmp(strtest, str) == 0) {
       id_us_plus(&vfont->id); /* officially should not, it doesn't link here! */
       if (r_exists) {
         *r_exists = true;
@@ -381,12 +381,12 @@ VFont *KERNEL_vfont_load_exists_ex(struct Main *bmain, const char *filepath, boo
   if (r_exists) {
     *r_exists = false;
   }
-  return KERNEL_vfont_load(dunemain, filepath);
+  return dune_vfont_load(main, filepath);
 }
 
-VFont *KERNEL_vfont_load_exists(struct Main *bmain, const char *filepath)
+VFont *dune_vfont_load_exists(struct Main *main, const char *filepath)
 {
-  return KERNEL_vfont_load_exists_ex(bmain, filepath, NULL);
+  return dune_vfont_load_exists_ex(main, filepath, NULL);
 }
 
 static VFont *which_vfont(Curve *cu, CharInfo *info)
@@ -403,7 +403,7 @@ static VFont *which_vfont(Curve *cu, CharInfo *info)
   }
 }
 
-VFont *KERNEL_vfont_builtin_get(void)
+VFont *dune_vfont_builtin_get(void)
 {
   VFont *vfont;
 
@@ -431,9 +431,9 @@ static void build_underline(Curve *cu,
                             const float font_size)
 {
   Nurb *nu2;
-  BPoint *bp;
+  Point *bp;
 
-  nu2 = (Nurb *)MEM_callocN(sizeof(Nurb), "underline_nurb");
+  nu2 = (Nurb *)mem_callocn(sizeof(Nurb), "underline_nurb");
   nu2->resolu = cu->resolu;
   nu2->bezt = NULL;
   nu2->knotsu = nu2->knotsv = NULL;
@@ -447,7 +447,7 @@ static void build_underline(Curve *cu,
   nu2->orderv = 1;
   nu2->flagu = CU_NURB_CYCLIC;
 
-  bp = (BPoint *)MEM_calloc_arrayN(4, sizeof(BPoint), "underline_bp");
+  bp = (Point *)mem_calloc_arrayn(4, sizeof(BPoint), "underline_bp");
 
   copy_v4_fl4(bp[0].vec, rect->xmin, (rect->ymax + yofs), 0.0f, 1.0f);
   copy_v4_fl4(bp[1].vec, rect->xmax, (rect->ymax + yofs), 0.0f, 1.0f);
@@ -458,7 +458,7 @@ static void build_underline(Curve *cu,
   bp[0].radius = bp[1].radius = bp[2].radius = bp[3].radius = 1.0f;
 
   nu2->bp = bp;
-  LIB_addtail(nubase, nu2);
+  lib_addtail(nubase, nu2);
 
   if (rot != 0.0f) {
     float si = sinf(rot);
@@ -485,8 +485,8 @@ static void build_underline(Curve *cu,
   mul_v2_fl(bp[3].vec, font_size);
 }
 
-void KERNEL_vfont_build_char(Curve *cu,
-                          ListBase *nubase,
+void dune_vfont_build_char(Curve *cu,
+                          List *nubase,
                           unsigned int character,
                           CharInfo *info,
                           float ofsx,
@@ -517,7 +517,7 @@ void KERNEL_vfont_build_char(Curve *cu,
   while (nu1) {
     BezTriple *bezt1 = nu1->bezt;
     if (bezt1) {
-      Nurb *nu2 = (Nurb *)MEM_mallocN(sizeof(Nurb), "duplichar_nurb");
+      Nurb *nu2 = (Nurb *)mem_mallocn(sizeof(Nurb), "duplichar_nurb");
       if (nu2 == NULL) {
         break;
       }
@@ -608,7 +608,7 @@ void KERNEL_vfont_build_char(Curve *cu,
   }
 }
 
-int KERNEL_vfont_select_get(Object *ob, int *r_start, int *r_end)
+int dune_vfont_select_get(Object *ob, int *r_start, int *r_end)
 {
   Curve *cu = ob->data;
   EditFont *ef = cu->editfont;
@@ -618,10 +618,10 @@ int KERNEL_vfont_select_get(Object *ob, int *r_start, int *r_end)
     return 0;
   }
 
-  LIB_assert(ef->len >= 0);
-  LIB_assert(ef->selstart >= 0 && ef->selstart <= ef->len + 1);
-  LIB_assert(ef->selend >= 0 && ef->selend <= ef->len + 1);
-  LIB_assert(ef->pos >= 0 && ef->pos <= ef->len);
+  lib_assert(ef->len >= 0);
+  lib_assert(ef->selstart >= 0 && ef->selstart <= ef->len + 1);
+  lib_assert(ef->selend >= 0 && ef->selend <= ef->len + 1);
+  lib_assert(ef->pos >= 0 && ef->pos <= ef->len);
 
   if (ef->selstart == 0) {
     return 0;
@@ -642,7 +642,7 @@ int KERNEL_vfont_select_get(Object *ob, int *r_start, int *r_end)
     return 0;
   }
 
-  LIB_assert(start < end + 1);
+  lib_assert(start < end + 1);
   *r_start = start;
   *r_end = end;
   return direction;
