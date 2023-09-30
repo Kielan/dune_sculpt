@@ -438,52 +438,52 @@ void dune_main_lib_weak_ref_add_item(GHash *library_weak_ref_mapping,
   UNUSED_VARS_NDEBUG(already_exist_in_mapping);
 
   lib_strncpy(new_id->lib_weak_ref->lib_filepath,
-              library_filepath,
-              sizeof(new_id->library_weak_reference->library_filepath));
-  LIB_strncpy(new_id->library_weak_reference->library_id_name,
-              library_id_name,
-              sizeof(new_id->library_weak_reference->library_id_name));
+              lib_filepath,
+              sizeof(new_id->lib_weak_reference->lib_filepath));
+  lib_strncpy(new_id->lib_weak_ref->lib_id_name,
+              lib_id_name,
+              sizeof(new_id->lib_weak_ref->lib_id_name));
   *id_p = new_id;
 }
 
-void KERNEL_main_library_weak_reference_update_item(GHash *library_weak_reference_mapping,
-                                                 const char *library_filepath,
-                                                 const char *library_id_name,
-                                                 ID *old_id,
-                                                 ID *new_id)
+void dune_main_lib_weak_ref_update_item(GHash *lib_weak_ref_mapping,
+                                        const char *lib_filepath,
+                                        const char *lib_id_name,
+                                        Id *old_id,
+                                        Id *new_id)
 {
-  LIB_assert(GS(library_id_name) == GS(old_id->name));
-  LIB_assert(GS(library_id_name) == GS(new_id->name));
-  LIB_assert(old_id->library_weak_reference != NULL);
-  LIB_assert(new_id->library_weak_reference == NULL);
-  LIB_assert(STREQ(old_id->library_weak_reference->library_filepath, library_filepath));
-  LIB_assert(STREQ(old_id->library_weak_reference->library_id_name, library_id_name));
+  lib_assert(GS(lib_id_name) == GS(old_id->name));
+  lib_assert(GS(lib_id_name) == GS(new_id->name));
+  lib_assert(old_id->lib_weak_ref != NULL);
+  lib_assert(new_id->lib_weak_ref == NULL);
+  lib_assert(STREQ(old_id->lib_weak_ref->lib_filepath, lib_filepath));
+  lib_assert(STREQ(old_id->lib_weak_ref->lib_id_name, lib_id_name));
 
   LibWeakRefKey key;
-  lib_weak_key_create(&key, library_filepath, library_id_name);
-  void **id_p = LIB_ghash_lookup_p(library_weak_reference_mapping, &key);
-  LIB_assert(id_p != NULL && *id_p == old_id);
+  lib_weak_key_create(&key, lib_filepath, lib_id_name);
+  void **id_p = lib_ghash_lookup_p(lib_weak_ref_mapping, &key);
+  lib_assert(id_p != NULL && *id_p == old_id);
 
-  new_id->library_weak_reference = old_id->library_weak_reference;
-  old_id->library_weak_reference = NULL;
+  new_id->lib_weak_ref = old_id->lib_weak_ref;
+  old_id->lib_weak_ref = NULL;
   *id_p = new_id;
 }
 
-void KERNEL_main_library_weak_reference_remove_item(GHash *library_weak_reference_mapping,
-                                                 const char *library_filepath,
-                                                 const char *library_id_name,
-                                                 ID *old_id)
+void dune_main_lib_weak_ref_remove_item(GHash *lib_weak_ref_mapping,
+                                        const char *lib_filepath,
+                                        const char *lib_id_name,
+                                        Id *old_id)
 {
-  LIB_assert(GS(library_id_name) == GS(old_id->name));
-  LIB_assert(old_id->library_weak_reference != NULL);
+  lib_assert(GS(lib_id_name) == GS(old_id->name));
+  lib_assert(old_id->lib_weak_ref != NULL);
 
   LibWeakRefKey key;
-  lib_weak_key_create(&key, library_filepath, library_id_name);
+  lib_weak_key_create(&key, lib_filepath, lib_id_name);
 
-  LI_assert(BLI_ghash_lookup(library_weak_reference_mapping, &key) == old_id);
-  BLI_ghash_remove(library_weak_reference_mapping, &key, MEM_freeN, NULL);
+  LI_assert(BLI_ghash_lookup(lib_weak_ref_mapping, &key) == old_id);
+  BLI_ghash_remove(library_weak_ref_mapping, &key, mem_freen, NULL);
 
-  MEM_SAFE_FREE(old_id->library_weak_reference);
+  MEM_SAFE_FREE(old_id->library_weak_ref);
 }
 
 DuneThumbnail *KERNEL_main_thumbnail_from_imbuf(Main *bmain, ImBuf *img)
