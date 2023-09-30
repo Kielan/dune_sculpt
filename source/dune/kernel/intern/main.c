@@ -1,40 +1,38 @@
-/**
- * Contains management of #Main database itself.
- */
+/* Contains management of #Main database itself. */
 
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_blenlib.h"
-#include "LIB_ghash.h"
-#include "LIB_mempool.h"
-#include "LIB_threads.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_mempool.h"
+#include "lib_threads.h"
 
 #include "STRUCT_ID.h"
 
-#include "KERNEL_global.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_main.h"
-#include "KERNEL_main_idmap.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_main.h"
+#include "dune_main_idmap.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-Main *KERNEL_main_new(void)
+Main *dune_main_new(void)
 {
-  Main *bmain = MEM_callocN(sizeof(Main), "new main");
-  bmain->lock = MEM_mallocN(sizeof(SpinLock), "main lock");
-  LIB_spin_init((SpinLock *)bmain->lock);
-  return bmain;
+  Main *main = mem_callocn(sizeof(Main), "new main");
+  main->lock = mem_mallocn(sizeof(SpinLock), "main lock");
+  lib_spin_init((SpinLock *)bmain->lock);
+  return main;
 }
 
-void KERNEL_main_free(Main *mainvar)
+void dune_main_free(Main *mainvar)
 {
   /* also call when reading a file, erase all, etc */
-  ListBase *lbarray[INDEX_ID_MAX];
+  List *lbarray[INDEX_ID_MAX];
   int a;
 
   /* Since we are removing whole main, no need to bother 'properly'
@@ -42,211 +40,211 @@ void KERNEL_main_free(Main *mainvar)
   const int free_flag = (LIB_ID_FREE_NO_MAIN | LIB_ID_FREE_NO_UI_USER |
                          LIB_ID_FREE_NO_USER_REFCOUNT | LIB_ID_FREE_NO_DEG_TAG);
 
-  MEM_SAFE_FREE(mainvar->blen_thumb);
+  MEM_SAFE_FREE(mainvar->dune_thumb);
 
-  a = set_listbasepointers(mainvar, lbarray);
+  a = set_listpyrs(mainvar, lbarray);
   while (a--) {
-    ListBase *lb = lbarray[a];
-    ID *id, *id_next;
+    List *lb = lbarray[a];
+    Id *id, *id_next;
 
     for (id = lb->first; id != NULL; id = id_next) {
       id_next = id->next;
 #if 1
-      KERNEL_id_free_ex(mainvar, id, free_flag, false);
+      dune_id_free_ex(mainvar, id, free_flag, false);
 #else
       /* errors freeing ID's can be hard to track down,
        * enable this so valgrind will give the line number in its error log */
       switch (a) {
         case 0:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 1:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 2:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 3:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 4:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 5:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 6:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 7:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 8:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 9:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 10:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 11:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 12:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 13:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 14:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 15:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 16:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 17:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 18:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 19:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 20:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 21:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 22:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 23:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 24:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 25:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 26:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 27:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 28:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 29:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 30:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 31:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 32:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 33:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 34:
-          KERNEL_id_free_ex(mainvar, id, free_flag, false);
+          dune_id_free_ex(mainvar, id, free_flag, false);
           break;
         default:
-          LIB_assert_unreachable();
+          lib_assert_unreachable();
           break;
       }
 #endif
     }
-    LIB_listbase_clear(lb);
+    lib_list_clear(lb);
   }
 
   if (mainvar->relations) {
-    KERNEL_main_relations_free(mainvar);
+    dune_main_relations_free(mainvar);
   }
 
   if (mainvar->id_map) {
-    KERNEL_main_idmap_destroy(mainvar->id_map);
+    dune_main_idmap_destroy(mainvar->id_map);
   }
 
-  LIB_spin_end((SpinLock *)mainvar->lock);
-  MEM_freeN(mainvar->lock);
-  MEM_freeN(mainvar);
+  lib_spin_end((SpinLock *)mainvar->lock);
+  mem_freen(mainvar->lock);
+  mem_freen(mainvar);
 }
 
-bool KERNEL_main_is_empty(struct Main *bmain)
+bool dune_main_is_empty(struct Main *main)
 {
-  ID *id_iter;
-  FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
+  Id *id_iter;
+  FOREACH_MAIN_ID_BEGIN (main, id_iter) {
     return false;
   }
   FOREACH_MAIN_ID_END;
   return true;
 }
 
-void KERNEL_main_lock(struct Main *bmain)
+void dune_main_lock(struct Main *main)
 {
-  LIB_spin_lock((SpinLock *)bmain->lock);
+  lib_spin_lock((SpinLock *)main->lock);
 }
 
-void KERNEL_main_unlock(struct Main *bmain)
+void dune_main_unlock(struct Main *main)
 {
-  LIB_spin_unlock((SpinLock *)bmain->lock);
+  lib_spin_unlock((SpinLock *)main->lock);
 }
 
-static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
+static int main_relations_create_idlink_cb(LibIdLinkCbData *cb_data)
 {
-  MainIDRelations *bmain_relations = cb_data->user_data;
-  ID *id_self = cb_data->id_self;
-  ID **id_pointer = cb_data->id_pointer;
+  MainIdRelations *main_relations = cb_data->user_data;
+  Id *id_self = cb_data->id_self;
+  Id **id_ptr = cb_data->id_ptr;
   const int cb_flag = cb_data->cb_flag;
 
-  if (*id_pointer) {
-    MainIDRelationsEntry **entry_p;
+  if (*id_ptr) {
+    MainIdRelationsEntry **entry_p;
 
-    /* Add `id_pointer` as child of `id_self`. */
+    /* Add `id_ptr` as child of `id_self`. */
     {
-      if (!LIB_ghash_ensure_p(
-              bmain_relations->relations_from_pointers, id_self, (void ***)&entry_p)) {
-        *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
+      if (!lib_ghash_ensure_p(
+              main_relations->relations_from_ptrs, id_self, (void ***)&entry_p)) {
+        *entry_p = mem_callocn(sizeof(**entry_p), __func__);
         (*entry_p)->session_uuid = id_self->session_uuid;
       }
       else {
-        LIB_assert((*entry_p)->session_uuid == id_self->session_uuid);
+        lib_assert((*entry_p)->session_uuid == id_self->session_uuid);
       }
-      MainIDRelationsEntryItem *to_id_entry = BLI_mempool_alloc(bmain_relations->entry_items_pool);
+      MainIdRelationsEntryItem *to_id_entry = lib_mempool_alloc(main_relations->entry_items_pool);
       to_id_entry->next = (*entry_p)->to_ids;
-      to_id_entry->id_pointer.to = id_pointer;
-      to_id_entry->session_uuid = (*id_pointer != NULL) ? (*id_pointer)->session_uuid :
+      to_id_entry->id_ptr.to = id_ptr;
+      to_id_entry->session_uuid = (*id_ptr != NULL) ? (*id_ptr)->session_uuid :
                                                           MAIN_ID_SESSION_UUID_UNSET;
       to_id_entry->usage_flag = cb_flag;
       (*entry_p)->to_ids = to_id_entry;
     }
 
-    /* Add `id_self` as parent of `id_pointer`. */
-    if (*id_pointer != NULL) {
-      if (!LIB_ghash_ensure_p(
-              bmain_relations->relations_from_pointers, *id_pointer, (void ***)&entry_p)) {
-        *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
-        (*entry_p)->session_uuid = (*id_pointer)->session_uuid;
+    /* Add `id_self` as parent of `id_ptr`. */
+    if (*id_ptr != NULL) {
+      if (!lib_ghash_ensure_p(
+              main_relations->relations_from_ptrs, *id_ptr, (void ***)&entry_p)) {
+        *entry_p = mem_callocn(sizeof(**entry_p), __func__);
+        (*entry_p)->session_uuid = (*id_ptr)->session_uuid;
       }
       else {
-        LIB_assert((*entry_p)->session_uuid == (*id_pointer)->session_uuid);
+        lib_assert((*entry_p)->session_uuid == (*id_ptr)->session_uuid);
       }
-      MainIDRelationsEntryItem *from_id_entry = LIB_mempool_alloc(
-          bmain_relations->entry_items_pool);
+      MainIdRelationsEntryItem *from_id_entry = lib_mempool_alloc(
+          main_relations->entry_items_pool);
       from_id_entry->next = (*entry_p)->from_ids;
-      from_id_entry->id_pointer.from = id_self;
+      from_id_entry->id_ptr.from = id_self;
       from_id_entry->session_uuid = id_self->session_uuid;
       from_id_entry->usage_flag = cb_flag;
       (*entry_p)->from_ids = from_id_entry;
@@ -256,66 +254,66 @@ static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
   return IDWALK_RET_NOP;
 }
 
-void KERNEL_main_relations_create(Main *bmain, const short flag)
+void dune_main_relations_create(Main *main, const short flag)
 {
-  if (bmain->relations != NULL) {
-    KERNEL_main_relations_free(bmain);
+  if (main->relations != NULL) {
+    dune_main_relations_free(main);
   }
 
-  bmain->relations = MEM_mallocN(sizeof(*bmain->relations), __func__);
-  bmain->relations->relations_from_pointers = BLI_ghash_new(
-      LIB_ghashutil_ptrhash, LIB_ghashutil_ptrcmp, __func__);
-  bmain->relations->entry_items_pool = LIB_mempool_create(
-      sizeof(MainIDRelationsEntryItem), 128, 128, BLI_MEMPOOL_NOP);
+  main->relations = mem_mallocn(sizeof(*main->relations), __func__);
+  main->relations->relations_from_ptrs = lib_ghash_new(
+      lib_ghashutil_ptrhash, lib_ghashutil_ptrcmp, __func__);
+  main->relations->entry_items_pool = lib_mempool_create(
+      sizeof(MainIdRelationsEntryItem), 128, 128, LIB_MEMPOOL_NOP);
 
-  bmain->relations->flag = flag;
+  main->relations->flag = flag;
 
-  ID *id;
-  FOREACH_MAIN_ID_BEGIN (bmain, id) {
+  Id *id;
+  FOREACH_MAIN_ID_BEGIN (main, id) {
     const int idwalk_flag = IDWALK_READONLY |
                             ((flag & MAINIDRELATIONS_INCLUDE_UI) != 0 ? IDWALK_INCLUDE_UI : 0);
 
-    /* Ensure all IDs do have an entry, even if they are not connected to any other. */
-    MainIDRelationsEntry **entry_p;
-    if (!LIB_ghash_ensure_p(bmain->relations->relations_from_pointers, id, (void ***)&entry_p)) {
-      *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
+    /* Ensure all Ids do have an entry, even if they are not connected to any other. */
+    MainIdRelationsEntry **entry_p;
+    if (!lib_ghash_ensure_p(main->relations->relations_from_ptrs, id, (void ***)&entry_p)) {
+      *entry_p = mem_callocn(sizeof(**entry_p), __func__);
       (*entry_p)->session_uuid = id->session_uuid;
     }
     else {
-      LIB_assert((*entry_p)->session_uuid == id->session_uuid);
+      lib_assert((*entry_p)->session_uuid == id->session_uuid);
     }
 
-    KERNEL_library_foreach_ID_link(
-        NULL, id, main_relations_create_idlink_cb, bmain->relations, idwalk_flag);
+    dune_lib_foreach_id_link(
+        NULL, id, main_relations_create_idlink_cb, main->relations, idwalk_flag);
   }
   FOREACH_MAIN_ID_END;
 }
 
-void KERNEL_main_relations_free(Main *bmain)
+void dune_main_relations_free(Main *main)
 {
-  if (bmain->relations != NULL) {
-    if (bmain->relations->relations_from_pointers != NULL) {
-      LIB_ghash_free(bmain->relations->relations_from_pointers, NULL, MEM_freeN);
+  if (main->relations != NULL) {
+    if (main->relations->relations_from_ptrs != NULL) {
+      lib_ghash_free(main->relations->relations_from_ptrs, NULL, mem_freen);
     }
-    LIB_mempool_destroy(bmain->relations->entry_items_pool);
-    MEM_freeN(bmain->relations);
+    lib_mempool_destroy(main->relations->entry_items_pool);
+    mem_freen(main->relations);
     bmain->relations = NULL;
   }
 }
 
-void KERNEL_main_relations_tag_set(struct Main *bmain,
-                                const eMainIDRelationsEntryTags tag,
-                                const bool value)
+void dune_main_relations_tag_set(struct Main *main,
+                                 const eMainIdRelationsEntryTags tag,
+                                 const bool value)
 {
-  if (bmain->relations == NULL) {
+  if (main->relations == NULL) {
     return;
   }
 
-  GHashIterator *gh_iter;
-  for (gh_iter = LIB_ghashIterator_new(bmain->relations->relations_from_pointers);
-       !LIB_ghashIterator_done(gh_iter);
-       LIB_ghashIterator_step(gh_iter)) {
-    MainIDRelationsEntry *entry = LIB_ghashIterator_getValue(gh_iter);
+  GHashIter *gh_iter;
+  for (gh_iter = lib_ghashIterator_new(main->relations->relations_from_ptrs);
+       !lib_ghashIter_done(gh_iter));
+       lib_ghashIter_step(gh_iter)) {
+    MainIdRelationsEntry *entry = lib_ghashIter_getValue(gh_iter);
     if (value) {
       entry->tags |= tag;
     }
@@ -323,18 +321,18 @@ void KERNEL_main_relations_tag_set(struct Main *bmain,
       entry->tags &= ~tag;
     }
   }
-  LIB_ghashIterator_free(gh_iter);
+  lib_ghashIter_free(gh_iter);
 }
 
-GSet *KERNEL_main_gset_create(Main *bmain, GSet *gset)
+GSet *dune_main_gset_create(Main *main, GSet *gset)
 {
   if (gset == NULL) {
-    gset = LIB_gset_new(LIB_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
+    gset = lib_gset_new(lib_ghashutil_ptrhash, lib_ghashutil_ptrcmp, __func__);
   }
 
-  ID *id;
-  FOREACH_MAIN_ID_BEGIN (bmain, id) {
-    LIB_gset_add(gset, id);
+  Id *id;
+  FOREACH_MAIN_ID_BEGIN (main, id) {
+    lib_gset_add(gset, id);
   }
   FOREACH_MAIN_ID_END;
   return gset;
@@ -351,18 +349,18 @@ static LibWeakRefKey *lib_weak_key_create(LibWeakRefKey *key,
                                           const char *id_name)
 {
   if (key == NULL) {
-    key = MEM_mallocN(sizeof(*key), __func__);
+    key = mem_mallocn(sizeof(*key), __func__);
   }
-  LIB_strncpy(key->filepath, lib_path, sizeof(key->filepath));
-  LIB_strncpy(key->id_name, id_name, sizeof(key->id_name));
+  lib_strncpy(key->filepath, lib_path, sizeof(key->filepath));
+  lib_strncpy(key->id_name, id_name, sizeof(key->id_name));
   return key;
 }
 
 static uint lib_weak_key_hash(const void *ptr)
 {
   const LibWeakRefKey *string_pair = ptr;
-  uint hash = LIB_ghashutil_strhash_p_murmur(string_pair->filepath);
-  return hash ^ LIB_ghashutil_strhash_p_murmur(string_pair->id_name);
+  uint hash = lib_ghashutil_strhash_p_murmur(string_pair->filepath);
+  return hash ^ lib_ghashutil_strhash_p_murmur(string_pair->id_name);
 }
 
 static bool lib_weak_key_cmp(const void *a, const void *b)
@@ -374,72 +372,72 @@ static bool lib_weak_key_cmp(const void *a, const void *b)
            STREQ(string_pair_a->id_name, string_pair_b->id_name));
 }
 
-GHash *KERNEL_main_library_weak_reference_create(Main *bmain)
+GHash *dune_main_lib_weak_refer_create(Main *main)
 {
-  GHash *library_weak_reference_mapping = LIB_ghash_new(
+  GHash *lib_weak_ref_mapping = lib_ghash_new(
       lib_weak_key_hash, lib_weak_key_cmp, __func__);
 
-  ListBase *lb;
-  FOREACH_MAIN_LISTBASE_BEGIN (bmain, lb) {
-    ID *id_iter = lb->first;
+  List *lb;
+  FOREACH_MAIN_LIST_BEGIN (main, lb) {
+    Id *id_iter = lb->first;
     if (id_iter == NULL) {
       continue;
     }
-    if (!KERNEL_idtype_idcode_append_is_reusable(GS(id_iter->name))) {
+    if (!dune_idtype_idcode_append_is_reusable(GS(id_iter->name))) {
       continue;
     }
-    LIB_assert(KERNEL_idtype_idcode_is_linkable(GS(id_iter->name)));
+    lib_assert(dune_idtype_idcode_is_linkable(GS(id_iter->name)));
 
-    FOREACH_MAIN_LISTBASE_ID_BEGIN (lb, id_iter) {
-      if (id_iter->library_weak_reference == NULL) {
+    FOREACH_MAIN_LIST_ID_BEGIN (lb, id_iter) {
+      if (id_iter->lib_weak_ref == NULL) {
         continue;
       }
       LibWeakRefKey *key = lib_weak_key_create(NULL,
-                                               id_iter->library_weak_reference->library_filepath,
-                                               id_iter->library_weak_reference->library_id_name);
-      LIB_ghash_insert(library_weak_reference_mapping, key, id_iter);
+                                               id_iter->lib_weak_ref->lib_filepath,
+                                               id_iter->lib_weak_ref->lib_id_name);
+      lib_ghash_insert(lib_weak_ref_mapping, key, id_iter);
     }
-    FOREACH_MAIN_LISTBASE_ID_END;
+    FOREACH_MAIN_LIST_ID_END;
   }
-  FOREACH_MAIN_LISTBASE_END;
+  FOREACH_MAIN_LIST_END;
 
-  return library_weak_reference_mapping;
+  return lib_weak_ref_mapping;
 }
 
-void KERNEL_main_library_weak_reference_destroy(GHash *library_weak_reference_mapping)
+void dune_main_lib_weak_ref_destroy(GHash *lib_weak_ref_mapping)
 {
-  LIB_ghash_free(library_weak_reference_mapping, MEM_freeN, NULL);
+  lib_ghash_free(lib_weak_ref_mapping, mem_freen, NULL);
 }
 
-ID *KERNEL_main_library_weak_reference_search_item(GHash *library_weak_reference_mapping,
-                                                const char *library_filepath,
-                                                const char *library_id_name)
+Id *dune_main_lib_weak_ref_search_item(GHash *lib_weak_ref_mapping,
+                                       const char *lib_filepath,
+                                       const char *lib_id_name)
 {
   LibWeakRefKey key;
-  lib_weak_key_create(&key, library_filepath, library_id_name);
-  return (ID *)LIB_ghash_lookup(library_weak_reference_mapping, &key);
+  lib_weak_key_create(&key, lib_filepath, lib_id_name);
+  return (Id *)lib_ghash_lookup(lib_weak_ref_mapping, &key);
 }
 
-void KERNEL_main_library_weak_reference_add_item(GHash *library_weak_reference_mapping,
-                                              const char *library_filepath,
-                                              const char *library_id_name,
-                                              ID *new_id)
+void dune_main_lib_weak_ref_add_item(GHash *library_weak_ref_mapping,
+                                     const char *lib_filepath,
+                                     const char *lib_id_name,
+                                     Id *new_id)
 {
-  LIB_assert(GS(library_id_name) == GS(new_id->name));
-  LIB_assert(new_id->library_weak_reference == NULL);
-  LIB_assert(KERNEL_idtype_idcode_append_is_reusable(GS(new_id->name)));
+  lib_assert(GS(lib_id_name) == GS(new_id->name));
+  lib_assert(new_id->lib_weak_ref == NULL);
+  lib_assert(dune_idtype_idcode_append_is_reusable(GS(new_id->name)));
 
-  new_id->library_weak_reference = MEM_mallocN(sizeof(*(new_id->library_weak_reference)),
+  new_id->lib_weak_ref = mem_mallocn(sizeof(*(new_id->lib_weak_ref)),
                                                __func__);
 
-  LibWeakRefKey *key = lib_weak_key_create(NULL, library_filepath, library_id_name);
+  LibWeakRefKey *key = lib_weak_key_create(NULL, lib_filepath, lib_id_name);
   void **id_p;
-  const bool already_exist_in_mapping = LIB_ghash_ensure_p(
-      library_weak_reference_mapping, key, &id_p);
-  LIB_assert(!already_exist_in_mapping);
+  const bool already_exist_in_mapping = lib_ghash_ensure_p(
+      lib_weak_ref_mapping, key, &id_p);
+  lib_assert(!already_exist_in_mapping);
   UNUSED_VARS_NDEBUG(already_exist_in_mapping);
 
-  LIB_strncpy(new_id->library_weak_reference->library_filepath,
+  lib_strncpy(new_id->lib_weak_ref->lib_filepath,
               library_filepath,
               sizeof(new_id->library_weak_reference->library_filepath));
   LIB_strncpy(new_id->library_weak_reference->library_id_name,
