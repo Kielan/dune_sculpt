@@ -26,18 +26,14 @@
 #include "types_text.h"
 #include "types_userdef.h"
 
-#include "kernel_bpath.h"
-#include "kernel_idtype.h"
-#include "kernel_lib_id.h"
-#include "kernel_main.h"
-#include "kernel_node.h"
-#include "kernel_text.h"
+#include "dune_path.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_node.h"
+#include "dune_text.h"
 
 #include "loader_read_write.h"
-
-#ifdef WITH_PYTHON
-#  include "BPY_extern.h"
-#endif
 
 /** Prototypes **/
 static void txt_pop_first(Text *text);
@@ -86,7 +82,7 @@ static void text_init_data(Id *id)
  * You probably never want to use that directly,
  * use dune_id_copy or dune_id_copy_ex for typical needs.
  *
- * WARNING! This function will not handle ID user count!
+ * WARNING! This fn will not handle Id user count!
  *
  * param flag: Copying options (see dune_lib_id.h's LIB_ID_COPY_... flags for more). */
 static void text_copy_data(Main *UNUSED(dunemain),
@@ -132,9 +128,6 @@ static void text_free_data(Id *id)
   dune_text_free_lines(text);
 
   MEM_SAFE_FREE(text->filepath);
-#ifdef WITH_PYTHON
-  BPY_text_free_code(text);
-#endif
 }
 
 static void text_foreach_path(Id *id, PathForeachPathData *path_data)
@@ -241,7 +234,7 @@ IdTypeInfo IdType_ID_TXT = {
 };
 
 /* Text Add, Free, Validation **/
-void kernel_text_free_lines(Text *text)
+void dune_text_free_lines(Text *text)
 {
   for (TextLine *tmp = text->lines.first, *tmp_next; tmp; tmp = tmp_next) {
     tmp_next = tmp->next;
@@ -286,7 +279,7 @@ int txt_extended_ascii_as_utf8(char **str)
   }
 
   if (added != 0) {
-    char *newstr = MEM_mallocN(length + added + 1, "text_line");
+    char *newstr = mem_mallocn(length + added + 1, "text_line");
     ptrdiff_t mi = 0;
     i = 0;
 
@@ -304,7 +297,7 @@ int txt_extended_ascii_as_utf8(char **str)
       mi += bad_char + 2;
     }
     newstr[length + added] = '\0';
-    MEM_freeN(*str);
+    mem_freen(*str);
     *str = newstr;
   }
 
@@ -326,10 +319,8 @@ static void cleanup_textline(TextLine *tl)
   tl->len += txt_extended_ascii_as_utf8(&tl->line);
 }
 
-/**
- * used for load and reload (unlike txt_insert_buf)
- * assumes all fields are empty
- */
+/** used for load and reload (unlike txt_insert_buf)
+ * assumes all fields are empty */
 static void text_from_buf(Text *text, const unsigned char *buffer, const int len)
 {
   int i, llen, lines_count;
@@ -342,8 +333,8 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
     if (buffer[i] == '\n') {
       TextLine *tmp;
 
-      tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
-      tmp->line = (char *)MEM_mallocN(llen + 1, "textline_string");
+      tmp = (TextLine *)mem_mallocn(sizeof(TextLine), "textline");
+      tmp->line = (char *)mem_mallocn(llen + 1, "textline_string");
       tmp->format = NULL;
 
       if (llen) {
@@ -354,7 +345,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 
       cleanup_textline(tmp);
 
-      LIB_addtail(&text->lines, tmp);
+      lib_addtail(&text->lines, tmp);
       lines_count += 1;
 
       llen = 0;
@@ -368,12 +359,12 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
    *   in this case content of such line would be used to fill text line buffer
    * - file is empty. in this case new line is needed to start editing from.
    * - last character in buffer is \n. in this case new line is needed to
-   *   deal with newline at end of file. (see T28087) (sergey) */
+   *   deal with newline at end of file. (see T28087) */
   if (llen != 0 || lines_count == 0 || buffer[len - 1] == '\n') {
     TextLine *tmp;
 
-    tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
-    tmp->line = (char *)MEM_mallocN(llen + 1, "textline_string");
+    tmp = (TextLine *)mem_mallocn(sizeof(TextLine), "textline");
+    tmp->line = (char *)mem_mallocn(llen + 1, "textline_string");
     tmp->format = NULL;
 
     if (llen) {
@@ -561,7 +552,7 @@ void dune_text_file_modified_ignore(Text *text)
   text->mtime = st.st_mtime;
 }
 
-/* Editing Util Functions */
+/* Editing Util Fns */
 static void make_new_line(TextLine *line, char *newline)
 {
   if (line->line) {
@@ -698,15 +689,9 @@ int txt_get_span(TextLine *from, TextLine *to)
 static void txt_make_dirty(Text *text)
 {
   text->flags |= TXT_ISDIRTY;
-#ifdef WITH_PYTHON
-  if (text->compiled) {
-    BPY_text_free_code(text);
-  }
-#endif
 }
 
 /* Cursor Util Fns */
-
 static void txt_curs_cur(Text *text, TextLine ***linep, int **charp)
 {
   *linep = &text->curl;
@@ -729,12 +714,11 @@ bool txt_cursor_is_line_end(const Text *text)
   return (text->selc == text->sell->len);
 }
 
-/* Cursor Movement Functions
+/* Cursor Movement Fns
  *
  * note If the user moves the cursor the space containing that cursor should be popped
  * See txt_pop_first, txt_pop_last
  * Other space-types retain their own top location. */
-
 void txt_move_up(Text *text, const bool sel)
 {
   TextLine **linep;
@@ -1101,7 +1085,7 @@ void txt_move_to(Text *text, unsigned int line, unsigned int ch, const bool sel)
   }
 }
 
-/* Text Selection Functions **/
+/* Text Selection Fns */
 static void txt_curs_swap(Text *text)
 {
   TextLine *tmpl;
@@ -1364,8 +1348,8 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
     const char *buf_step_next = strchr(buf_step, '\n');
     const int len = buf_step_next - buf_step;
 
-    TextLine *l = MEM_mallocN(sizeof(TextLine), "textline");
-    l->line = MEM_mallocN(len + 1, "textline_string");
+    TextLine *l = mem_mallocn(sizeof(TextLine), "textline");
+    l->line = mem_mallocn(len + 1, "textline_string");
     l->len = len;
     l->format = NULL;
 
@@ -1381,7 +1365,7 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
   txt_make_dirty(text);
 }
 
-/* Cut and Paste Functions **/
+/* Cut and Paste Fns **/
 char *txt_to_buf(Text *text, size_t *r_buf_strlen)
 {
   /* Identical to #txt_to_buf_for_undo except that the string is nil terminated. */
@@ -1389,7 +1373,7 @@ char *txt_to_buf(Text *text, size_t *r_buf_strlen)
   LIST_FOREACH (const TextLine *, l, &text->lines) {
     buf_len += l->len + 1;
   }
-  char *buf = MEM_mallocN(buf_len + 1, __func__);
+  char *buf = mem_mallocn(buf_len + 1, __func__);
   char *buf_step = buf;
   LIST_FOREACH (const TextLine *, l, &text->lines) {
     memcpy(buf_step, l->line, l->len);
@@ -1532,10 +1516,10 @@ void txt_insert_buf(Text *text, const char *in_buffer)
     }
   }
 
-  MEM_freeN(buffer);
+  mem_freen(buffer);
 }
 
-/** Find String in Text **/
+/* Find String in Text */
 int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
 {
   TextLine *tl, *startl;
@@ -1553,7 +1537,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
     s = strstr(&tl->line[text->selc], findstr);
   }
   else {
-    s = LIB_strcasestr(&tl->line[text->selc], findstr);
+    s = lib_strcasestr(&tl->line[text->selc], findstr);
   }
   while (!s) {
     tl = tl->next;
@@ -2171,7 +2155,7 @@ int txt_setcurr_tab_spaces(Text *text, int space)
   if (strstr(text->curl->line, word)) {
     /* if we find a ':' on this line, then add a tab but not if it is:
      * 1) in a comment
-     * 2) within an identifier
+     * 2) within an id
      * 3) after the cursor (text->curc), i.e. when creating space before a function def T25414.   */
     int a;
     bool is_indent = false;
