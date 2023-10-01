@@ -8,7 +8,7 @@
 
 #include "CLG_log.h"
 
-static CLG_LogRef LOG = {"kernel.asset_service"};
+static CLG_LogRef LOG = {"dune.asset_service"};
 
 namespace dune {
 
