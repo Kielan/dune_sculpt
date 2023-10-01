@@ -3,10 +3,10 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "LIB_ghash.h"
-#include "LIB_listbase.h"
-#include "LIB_mempool.h"
-#include "LIB_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_mempool.h"
+#include "lib_utildefines.h"
 
 #include "types_id.h"
 
@@ -34,16 +34,16 @@ struct IdNameLib_Key {
   const Lib *lib;
 };
 
-struct IDNameLib_TypeMap {
+struct IdNameLibTypeMap {
   GHash *map;
   short id_type;
 };
 
 /* Opaque structure, external API users only see this. */
-struct IdNameLib_Map {
+struct IdNameLibMap {
   struct IdNameLib_TypeMap type_maps[INDEX_ID_MAX];
   struct GHash *uuid_map;
-  struct Main *bmain;
+  struct Main *main;
   struct GSet *valid_id_ptrs;
   int idmap_types;
 
@@ -51,7 +51,7 @@ struct IdNameLib_Map {
   lib_mempool *type_maps_keys_pool;
 };
 
-static struct IdNameLib_TypeMap *main_idmap_from_idcode(struct IdNameLib_Map *id_map,
+static struct IdNameLibTypeMap *main_idmap_from_idcode(struct IdNameLibMap *id_map,
                                                         short id_type)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
@@ -75,7 +75,7 @@ struct IdNameLibMap *dune_main_idmap_create(struct Main *main,
 
   int index = 0;
   while (index < INDEX_ID_MAX) {
-    struct IdNameLib_TypeMap *type_map = &id_map->type_maps[index];
+    struct IdNameLibTypeMap *type_map = &id_map->type_maps[index];
     type_map->map = NULL;
     type_map->id_type = dune_idtype_idcode_iter_step(&index);
     lib_assert(type_map->id_type != 0);
@@ -115,7 +115,7 @@ struct IdNameLibMap *dune_main_idmap_create(struct Main *main,
   return id_map;
 }
 
-void dune_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
+void dune_main_idmap_insert_id(struct IdNameLibMap *id_map, Id *id)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
     const short id_type = GS(id->name);
@@ -123,7 +123,7 @@ void dune_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
 
     /* No need to do anything if map has not been lazily created yet. */
     if (LIKELY(type_map != NULL) && type_map->map != NULL) {
-      LIB_assert(id_map->type_maps_keys_pool != NULL);
+      lib_assert(id_map->type_maps_keys_pool != NULL);
 
       struct IDNameLib_Key *key = lib_mempool_alloc(id_map->type_maps_keys_pool);
       key->name = id->name + 2;
@@ -145,7 +145,7 @@ void dune_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
   }
 }
 
-void dune_main_idmap_remove_id(struct IdNameLib_Map *id_map, Id *id)
+void dune_main_idmap_remove_id(struct IdNameLibMap *id_map, Id *id)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
     const short id_type = GS(id->name);
@@ -169,7 +169,7 @@ void dune_main_idmap_remove_id(struct IdNameLib_Map *id_map, Id *id)
   }
 }
 
-struct Main *dune_main_idmap_main_get(struct IdNameLib_Map *id_map)
+struct Main *dune_main_idmap_main_get(struct IdNameLibMap *id_map)
 {
   return id_map->bmain;
 }
@@ -191,7 +191,7 @@ static bool idkey_cmp(const void *a, const void *b)
   return !STREQ(idkey_a->name, idkey_b->name) || (idkey_a->lib != idkey_b->lib);
 }
 
-Id *dune_main_idmap_lookup_name(struct IdNameLib_Map *id_map,
+Id *dune_main_idmap_lookup_name(struct IdNameLibMap *id_map,
                                short id_type,
                                const char *name,
                                const Library *lib)
