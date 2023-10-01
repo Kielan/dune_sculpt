@@ -3129,16 +3129,16 @@ static void node_free_node(NodeTree *ntree, Node *node)
 
   /* can be called for nodes outside a node tree (e.g. clipboard) */
   if (ntree) {
-    BLI_remlink(&ntree->nodes, node);
+    lib_remlink(&ntree->nodes, node);
 
     if (ntree->typeinfo->free_node_cache) {
       ntree->typeinfo->free_node_cache(ntree, node);
     }
 
-    /* texture node has bad habit of keeping exec data around */
-    if (ntree->type == NTREE_TEXTURE && ntree->execdata) {
-      ntreeTexEndExecTree(ntree->execdata);
-      ntree->execdata = nullptr;
+    /* texture node has bad habit of keeping ex data around */
+    if (ntree->type == NTREE_TEXTURE && ntree->exdata) {
+      ntreeTexEndExTree(ntree->execdata);
+      ntree->exdata = nullptr;
     }
   }
 
@@ -3146,18 +3146,18 @@ static void node_free_node(NodeTree *ntree, Node *node)
     node->typeinfo->freefunc(node);
   }
 
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->inputs) {
+  LIST_FOREACH_MUTABLE (NodeSocket *, sock, &node->inputs) {
     /* Remember, no ID user refcount management here! */
     node_socket_free(sock, false);
-    MEM_freeN(sock);
+    mem_freen(sock);
   }
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->outputs) {
+  LIST_FOREACH_MUTABLE (NodeSocket *, sock, &node->outputs) {
     /* Remember, no ID user refcount management here! */
     node_socket_free(sock, false);
     MEM_freeN(sock);
   }
 
-  BLI_freelistN(&node->internal_links);
+  lib_freelistn(&node->internal_links);
 
   if (node->prop) {
     /* Remember, no ID user refcount management here! */
@@ -3172,14 +3172,14 @@ static void node_free_node(NodeTree *ntree, Node *node)
   MEM_freeN(node);
 
   if (ntree) {
-    BKE_ntree_update_tag_node_removed(ntree);
+    dune_ntree_update_tag_node_removed(ntree);
   }
 }
 
-void ntreeFreeLocalNode(bNodeTree *ntree, bNode *node)
+void ntreeFreeLocalNode(NodeTree *ntree, Node *node)
 {
   /* For removing nodes while editing localized node trees. */
-  BLI_assert((ntree->id.tag & LIB_TAG_LOCALIZED) != 0);
+  lib_assert((ntree->id.tag & LIB_TAG_LOCALIZED) != 0);
 
   /* These two lines assume the caller might want to free a single node and maintain
    * a valid state in the node tree. */
@@ -3189,19 +3189,19 @@ void ntreeFreeLocalNode(bNodeTree *ntree, bNode *node)
   node_free_node(ntree, node);
 }
 
-void nodeRemoveNode(Main *bmain, bNodeTree *ntree, bNode *node, bool do_id_user)
+void nodeRemoveNode(Main *main, NodeTree *ntree, Node *node, bool do_id_user)
 {
-  /* This function is not for localized node trees, we do not want
-   * do to ID user refcounting and removal of animdation data then. */
-  BLI_assert((ntree->id.tag & LIB_TAG_LOCALIZED) == 0);
+  /* This fn is not for localized node trees, we do not want
+   * do to Id user refcounting and removal of animdation data then. */
+  lib_assert((ntree->id.tag & LIB_TAG_LOCALIZED) == 0);
 
   bool node_has_id = false;
 
   if (do_id_user) {
     /* Free callback for NodeCustomGroup. */
     if (node->typeinfo->freefunc_api) {
-      PointerRNA ptr;
-      RNA_pointer_create((ID *)ntree, &RNA_Node, node, &ptr);
+      ApiPtr ptr;
+      api_ptr_create((Id *)ntree, &Apiode, node, &ptr);
 
       node->typeinfo->freefunc_api(&ptr);
     }
@@ -3212,10 +3212,10 @@ void nodeRemoveNode(Main *bmain, bNodeTree *ntree, bNode *node, bool do_id_user)
       node_has_id = true;
     }
 
-    LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
+    LIST_FOREACH (NodeSocket *, sock, &node->inputs) {
       node_has_id |= socket_id_user_decrement(sock);
     }
-    LISTBASE_FOREACH (bNodeSocket *, sock, &node->outputs) {
+    LIST_FOREACH (NodeSocket *, sock, &node->outputs) {
       node_has_id |= socket_id_user_decrement(sock);
     }
   }
@@ -3224,18 +3224,18 @@ void nodeRemoveNode(Main *bmain, bNodeTree *ntree, bNode *node, bool do_id_user)
   char propname_esc[MAX_IDPROP_NAME * 2];
   char prefix[MAX_IDPROP_NAME * 2];
 
-  BLI_str_escape(propname_esc, node->name, sizeof(propname_esc));
-  BLI_snprintf(prefix, sizeof(prefix), "nodes[\"%s\"]", propname_esc);
+  lib_str_escape(propname_esc, node->name, sizeof(propname_esc));
+  lib_snprintf(prefix, sizeof(prefix), "nodes[\"%s\"]", propname_esc);
 
-  if (BKE_animdata_fix_paths_remove((ID *)ntree, prefix)) {
-    if (bmain != nullptr) {
-      DEG_relations_tag_update(bmain);
+  if (dune_animdata_fix_paths_remove((Id *)ntree, prefix)) {
+    if (main != nullptr) {
+      graph_relations_tag_update(main);
     }
   }
 
   if (node_has_id) {
-    if (bmain != nullptr) {
-      DEG_relations_tag_update(bmain);
+    if (main != nullptr) {
+      graph_relations_tag_update(main);
     }
   }
 
@@ -3246,23 +3246,23 @@ void nodeRemoveNode(Main *bmain, bNodeTree *ntree, bNode *node, bool do_id_user)
   node_free_node(ntree, node);
 }
 
-static void node_socket_interface_free(bNodeTree *UNUSED(ntree),
-                                       bNodeSocket *sock,
+static void node_socket_interface_free(NodeTree *UNUSED(ntree),
+                                       NodeSocket *sock,
                                        const bool do_id_user)
 {
   if (sock->prop) {
-    IDP_FreeProperty_ex(sock->prop, do_id_user);
+    IDP_FreeProp_ex(sock->prop, do_id_user);
   }
 
   if (sock->default_value) {
     if (do_id_user) {
       socket_id_user_decrement(sock);
     }
-    MEM_freeN(sock->default_value);
+    mem_freen(sock->default_value);
   }
 }
 
-static void free_localized_node_groups(bNodeTree *ntree)
+static void free_localized_node_groups(NodeTree *ntree)
 {
   /* Only localized node trees store a copy for each node group tree.
    * Each node group tree in a localized node tree can be freed,
@@ -3272,40 +3272,40 @@ static void free_localized_node_groups(bNodeTree *ntree)
     return;
   }
 
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP) && node->id) {
-      bNodeTree *ngroup = (bNodeTree *)node->id;
+      NodeTree *ngroup = (NodeTree *)node->id;
       ntreeFreeTree(ngroup);
-      MEM_freeN(ngroup);
+      mem_freen(ngroup);
     }
   }
 }
 
-void ntreeFreeTree(bNodeTree *ntree)
+void ntreeFreeTree(NodeTree *ntree)
 {
   ntree_free_data(&ntree->id);
-  BKE_animdata_free(&ntree->id, false);
+  dune_animdata_free(&ntree->id, false);
 }
 
-void ntreeFreeEmbeddedTree(bNodeTree *ntree)
+void ntreeFreeEmbeddedTree(NodeTree *ntree)
 {
   ntreeFreeTree(ntree);
-  BKE_libblock_free_data(&ntree->id, true);
-  BKE_libblock_free_data_py(&ntree->id);
+  dune_libblock_free_data(&ntree->id, true);
+  dune_libblock_free_data_py(&ntree->id);
 }
 
-void ntreeFreeLocalTree(bNodeTree *ntree)
+void ntreeFreeLocalTree(NodeTree *ntree)
 {
   if (ntree->id.tag & LIB_TAG_LOCALIZED) {
     ntreeFreeTree(ntree);
   }
   else {
     ntreeFreeTree(ntree);
-    BKE_libblock_free_data(&ntree->id, true);
+    dune_libblock_free_data(&ntree->id, true);
   }
 }
 
-void ntreeFreeCache(bNodeTree *ntree)
+void ntreeFreeCache(NodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -3316,10 +3316,10 @@ void ntreeFreeCache(bNodeTree *ntree)
   }
 }
 
-void ntreeSetOutput(bNodeTree *ntree)
+void ntreeSetOutput(NodeTree *ntree)
 {
   /* find the active outputs, might become tree type dependent handler */
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (node->typeinfo->nclass == NODE_CLASS_OUTPUT) {
       /* we need a check for which output node should be tagged like this, below an exception */
       if (node->type == CMP_NODE_OUTPUT_FILE) {
@@ -3328,7 +3328,7 @@ void ntreeSetOutput(bNodeTree *ntree)
 
       int output = 0;
       /* there is more types having output class, each one is checked */
-      LISTBASE_FOREACH (bNode *, tnode, &ntree->nodes) {
+      LIST_FOREACH (Node *, tnode, &ntree->nodes) {
         if (tnode->typeinfo->nclass == NODE_CLASS_OUTPUT) {
           if (ntree->type == NTREE_COMPOSIT) {
             /* same type, exception for viewer */
@@ -3364,7 +3364,7 @@ void ntreeSetOutput(bNodeTree *ntree)
     /* group node outputs use this flag too */
     if (node->type == NODE_GROUP_OUTPUT) {
       int output = 0;
-      LISTBASE_FOREACH (bNode *, tnode, &ntree->nodes) {
+      LIST_FOREACH (Node *, tnode, &ntree->nodes) {
         if (tnode->type == NODE_GROUP_OUTPUT) {
           if (tnode->flag & NODE_DO_OUTPUT) {
             output++;
@@ -3384,7 +3384,7 @@ void ntreeSetOutput(bNodeTree *ntree)
    * might be different for editor or for "real" use... */
 }
 
-bNodeTree **BKE_ntree_ptr_from_id(ID *id)
+NodeTree **dune_ntree_ptr_from_id(Id *id)
 {
   switch (GS(id->name)) {
     case ID_MA:
@@ -3406,15 +3406,15 @@ bNodeTree **BKE_ntree_ptr_from_id(ID *id)
   }
 }
 
-bNodeTree *ntreeFromID(ID *id)
+NodeTree *ntreeFromId(Id *id)
 {
-  bNodeTree **nodetree = BKE_ntree_ptr_from_id(id);
+  NodeTree **nodetree = dune_ntree_ptr_from_id(id);
   return (nodetree != nullptr) ? *nodetree : nullptr;
 }
 
-void ntreeNodeFlagSet(const bNodeTree *ntree, const int flag, const bool enable)
+void ntreeNodeFlagSet(const NodeTree *ntree, const int flag, const bool enable)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (enable) {
       node->flag |= flag;
     }
@@ -3424,7 +3424,7 @@ void ntreeNodeFlagSet(const bNodeTree *ntree, const int flag, const bool enable)
   }
 }
 
-bNodeTree *ntreeLocalize(bNodeTree *ntree)
+NodeTree *ntreeLocalize(NodeTree *ntree)
 {
   if (ntree == nullptr) {
     return nullptr;
@@ -3432,22 +3432,22 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
 
   /* Make full copy outside of Main database.
    * NOTE: previews are not copied here. */
-  bNodeTree *ltree = (bNodeTree *)BKE_id_copy_ex(
+  NodeTree *ltree = (NodeTree *)dune_id_copy_ex(
       nullptr, &ntree->id, nullptr, (LIB_ID_COPY_LOCALIZE | LIB_ID_COPY_NO_ANIMDATA));
 
   ltree->id.tag |= LIB_TAG_LOCALIZED;
 
-  LISTBASE_FOREACH (bNode *, node, &ltree->nodes) {
+  LIST_FOREACH (Node *, node, &ltree->nodes) {
     if (ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP) && node->id) {
-      node->id = (ID *)ntreeLocalize((bNodeTree *)node->id);
+      node->id = (Id *)ntreeLocalize((bNodeTree *)node->id);
     }
   }
 
   /* Ensures only a single output node is enabled. */
   ntreeSetOutput(ntree);
 
-  bNode *node_src = (bNode *)ntree->nodes.first;
-  bNode *node_local = (bNode *)ltree->nodes.first;
+  Node *node_src = (Node *)ntree->nodes.first;
+  Node *node_local = (Node *)ltree->nodes.first;
   while (node_src != nullptr) {
     node_local->original = node_src;
     node_src = node_src->next;
@@ -3461,19 +3461,19 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
   return ltree;
 }
 
-void ntreeLocalMerge(Main *bmain, bNodeTree *localtree, bNodeTree *ntree)
+void ntreeLocalMerge(Main *main, NodeTree *localtree, NodeTree *ntree)
 {
   if (ntree && localtree) {
     if (ntree->typeinfo->local_merge) {
-      ntree->typeinfo->local_merge(bmain, localtree, ntree);
+      ntree->typeinfo->local_merge(main, localtree, ntree);
     }
 
     ntreeFreeTree(localtree);
-    MEM_freeN(localtree);
+    mem_freen(localtree);
   }
 }
 
-/* ************ NODE TREE INTERFACE *************** */
+/* NODE TREE INTERFACE */
 
 static bNodeSocket *make_socket_interface(bNodeTree *ntree,
                                           eNodeSocketInOut in_out,
