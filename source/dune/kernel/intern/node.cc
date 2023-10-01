@@ -2421,7 +2421,7 @@ Node *node_copy_with_mapping(NodeTree *dst_tree,
 
   lib_list_clear(&node_dst->internal_links);
   LIST_FOREACH (const NodeLink *, src_link, &node_src.internal_links) {
-    NodeLink *dst_link = (bNodeLink *)MEM_dupallocN(src_link);
+    NodeLink *dst_link = (NodeLink *)MEM_dupallocN(src_link);
     dst_link->fromnode = node_dst;
     dst_link->tonode = node_dst;
     dst_link->fromsock = socket_map.lookup(src_link->fromsock);
@@ -2489,7 +2489,7 @@ NodeLink *nodeAddLink(
   lib_assert(tonode);
 
   if (fromsock->in_out == SOCK_OUT && tosock->in_out == SOCK_IN) {
-    link = MEM_cnew<bNodeLink>("link");
+    link = mem_cnew<NodeLink>("link");
     if (ntree) {
       lib_addtail(&ntree->links, link);
     }
@@ -2902,17 +2902,17 @@ bool BKE_node_preview_used(const bNode *node)
   return (node->typeinfo->flag & NODE_PREVIEW) != 0;
 }
 
-bNodePreview *BKE_node_preview_verify(bNodeInstanceHash *previews,
-                                      bNodeInstanceKey key,
+bNodePreview *dune_node_preview_verify(NodeInstanceHash *previews,
+                                      NodeInstanceKey key,
                                       const int xsize,
                                       const int ysize,
                                       const bool create)
 {
-  bNodePreview *preview = (bNodePreview *)BKE_node_instance_hash_lookup(previews, key);
+  NodePreview *preview = (NodePreview *)dune_node_instance_hash_lookup(previews, key);
   if (!preview) {
     if (create) {
-      preview = MEM_cnew<bNodePreview>("node preview");
-      BKE_node_instance_hash_insert(previews, key, preview);
+      preview = mem_cnew<NodePreview>("node preview");
+      dune_node_instance_hash_insert(previews, key, preview);
     }
     else {
       return nullptr;
@@ -2927,13 +2927,13 @@ bNodePreview *BKE_node_preview_verify(bNodeInstanceHash *previews,
   /* sanity checks & initialize */
   if (preview->rect) {
     if (preview->xsize != xsize || preview->ysize != ysize) {
-      MEM_freeN(preview->rect);
+      mem_freen(preview->rect);
       preview->rect = nullptr;
     }
   }
 
   if (preview->rect == nullptr) {
-    preview->rect = (unsigned char *)MEM_callocN(4 * xsize + xsize * ysize * sizeof(char[4]),
+    preview->rect = (unsigned char *)mem_callocn(4 * xsize + xsize * ysize * sizeof(char[4]),
                                                  "node preview rect");
     preview->xsize = xsize;
     preview->ysize = ysize;
@@ -2943,67 +2943,67 @@ bNodePreview *BKE_node_preview_verify(bNodeInstanceHash *previews,
   return preview;
 }
 
-bNodePreview *BKE_node_preview_copy(bNodePreview *preview)
+NodePreview *dune_node_preview_copy(NodePreview *preview)
 {
-  bNodePreview *new_preview = (bNodePreview *)MEM_dupallocN(preview);
+  NodePreview *new_preview = (NodePreview *)mem_dupallocn(preview);
   if (preview->rect) {
-    new_preview->rect = (unsigned char *)MEM_dupallocN(preview->rect);
+    new_preview->rect = (unsigned char *)mem_dupallocn(preview->rect);
   }
   return new_preview;
 }
 
-void BKE_node_preview_free(bNodePreview *preview)
+void dune_node_preview_free(NodePreview *preview)
 {
   if (preview->rect) {
-    MEM_freeN(preview->rect);
+    mem_freeb(preview->rect);
   }
-  MEM_freeN(preview);
+  mem_freen(preview);
 }
 
-static void node_preview_init_tree_recursive(bNodeInstanceHash *previews,
-                                             bNodeTree *ntree,
-                                             bNodeInstanceKey parent_key,
+static void node_preview_init_tree_recursive(NodeInstanceHash *previews,
+                                             NodeTree *ntree,
+                                             NodeInstanceKey parent_key,
                                              const int xsize,
                                              const int ysize)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-    bNodeInstanceKey key = BKE_node_instance_key(parent_key, ntree, node);
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
+    NodeInstanceKey key = dune_node_instance_key(parent_key, ntree, node);
 
-    if (BKE_node_preview_used(node)) {
+    if (dune_node_preview_used(node)) {
       node->preview_xsize = xsize;
       node->preview_ysize = ysize;
 
-      BKE_node_preview_verify(previews, key, xsize, ysize, false);
+      dune_node_preview_verify(previews, key, xsize, ysize, false);
     }
 
     if (node->type == NODE_GROUP && node->id) {
-      node_preview_init_tree_recursive(previews, (bNodeTree *)node->id, key, xsize, ysize);
+      node_preview_init_tree_recursive(previews, (NodeTree *)node->id, key, xsize, ysize);
     }
   }
 }
 
-void BKE_node_preview_init_tree(bNodeTree *ntree, int xsize, int ysize)
+void dune_node_preview_init_tree(NodeTree *ntree, int xsize, int ysize)
 {
   if (!ntree) {
     return;
   }
 
   if (!ntree->previews) {
-    ntree->previews = BKE_node_instance_hash_new("node previews");
+    ntree->previews = dune_node_instance_hash_new("node previews");
   }
 
   node_preview_init_tree_recursive(ntree->previews, ntree, NODE_INSTANCE_KEY_BASE, xsize, ysize);
 }
 
-static void node_preview_tag_used_recursive(bNodeInstanceHash *previews,
-                                            bNodeTree *ntree,
-                                            bNodeInstanceKey parent_key)
+static void node_preview_tag_used_recursive(NodeInstanceHash *previews,
+                                            NodeTree *ntree,
+                                            NodeInstanceKey parent_key)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-    bNodeInstanceKey key = BKE_node_instance_key(parent_key, ntree, node);
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
+    NodeInstanceKey key = dune_node_instance_key(parent_key, ntree, node);
 
-    if (BKE_node_preview_used(node)) {
-      BKE_node_instance_hash_tag_key(previews, key);
+    if (dune_node_preview_used(node)) {
+      dune_node_instance_hash_tag_key(previews, key);
     }
 
     if (node->type == NODE_GROUP && node->id) {
@@ -3012,46 +3012,46 @@ static void node_preview_tag_used_recursive(bNodeInstanceHash *previews,
   }
 }
 
-void BKE_node_preview_remove_unused(bNodeTree *ntree)
+void dune_node_preview_remove_unused(NodeTree *ntree)
 {
   if (!ntree || !ntree->previews) {
     return;
   }
 
   /* use the instance hash functions for tagging and removing unused previews */
-  BKE_node_instance_hash_clear_tags(ntree->previews);
+  dune_node_instance_hash_clear_tags(ntree->previews);
   node_preview_tag_used_recursive(ntree->previews, ntree, NODE_INSTANCE_KEY_BASE);
 
-  BKE_node_instance_hash_remove_untagged(ntree->previews,
-                                         (bNodeInstanceValueFP)BKE_node_preview_free);
+  dune_node_instance_hash_remove_untagged(ntree->previews,
+                                         (NodeInstanceValueFP)dune_node_preview_free);
 }
 
-void BKE_node_preview_clear(bNodePreview *preview)
+void dune_node_preview_clear(NodePreview *preview)
 {
   if (preview && preview->rect) {
-    memset(preview->rect, 0, MEM_allocN_len(preview->rect));
+    memset(preview->rect, 0, mem_allocn_len(preview->rect));
   }
 }
 
-void BKE_node_preview_clear_tree(bNodeTree *ntree)
+void dune_node_preview_clear_tree(NodeTree *ntree)
 {
   if (!ntree || !ntree->previews) {
     return;
   }
 
-  bNodeInstanceHashIterator iter;
+  NodeInstanceHashIter iter;
   NODE_INSTANCE_HASH_ITER (iter, ntree->previews) {
-    bNodePreview *preview = (bNodePreview *)BKE_node_instance_hash_iterator_get_value(&iter);
-    BKE_node_preview_clear(preview);
+    NodePreview *preview = (NodePreview *)dune_node_instance_hash_iter_get_value(&iter);
+    dune_node_preview_clear(preview);
   }
 }
 
-void BKE_node_preview_merge_tree(bNodeTree *to_ntree, bNodeTree *from_ntree, bool remove_old)
+void dune_node_preview_merge_tree(NodeTree *to_ntree, NodeTree *from_ntree, bool remove_old)
 {
   if (remove_old || !to_ntree->previews) {
     /* free old previews */
     if (to_ntree->previews) {
-      BKE_node_instance_hash_free(to_ntree->previews, (bNodeInstanceValueFP)BKE_node_preview_free);
+      dune_node_instance_hash_free(to_ntree->previews, (NodeInstanceValueFP)dune_node_preview_free);
     }
 
     /* transfer previews */
@@ -3059,35 +3059,33 @@ void BKE_node_preview_merge_tree(bNodeTree *to_ntree, bNodeTree *from_ntree, boo
     from_ntree->previews = nullptr;
 
     /* clean up, in case any to_ntree nodes have been removed */
-    BKE_node_preview_remove_unused(to_ntree);
+    dune_node_preview_remove_unused(to_ntree);
   }
   else {
     if (from_ntree->previews) {
-      bNodeInstanceHashIterator iter;
+      NodeInstanceHashIter iter;
       NODE_INSTANCE_HASH_ITER (iter, from_ntree->previews) {
-        bNodeInstanceKey key = BKE_node_instance_hash_iterator_get_key(&iter);
-        bNodePreview *preview = (bNodePreview *)BKE_node_instance_hash_iterator_get_value(&iter);
-
+        NodeInstanceKey key = dune_node_instance_hash_iter_get_key(&iter);
+        NodePreview *preview = (NodePreview *)dune_node_instance_hash_iter_get_value(&iter);
         /* replace existing previews */
-        BKE_node_instance_hash_remove(
-            to_ntree->previews, key, (bNodeInstanceValueFP)BKE_node_preview_free);
-        BKE_node_instance_hash_insert(to_ntree->previews, key, preview);
+        dune_node_instance_hash_remove(
+            to_ntree->previews, key, (NodeInstanceValueFP)dune_node_preview_free);
+        dune_node_instance_hash_insert(to_ntree->previews, key, preview);
       }
 
       /* NOTE: null free function here,
        * because pointers have already been moved over to to_ntree->previews! */
-      BKE_node_instance_hash_free(from_ntree->previews, nullptr);
+      dune_node_instance_hash_free(from_ntree->previews, nullptr);
       from_ntree->previews = nullptr;
     }
   }
 }
 
-/* ************** Free stuff ********** */
-
-void nodeUnlinkNode(bNodeTree *ntree, bNode *node)
+/* Free stuff ********** */
+void nodeUnlinkNode(NodeTree *ntree, Node *node)
 {
-  LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &ntree->links) {
-    ListBase *lb;
+  LIST_FOREACH_MUTABLE (NodeLink *, link, &ntree->links) {
+    List *lb;
     if (link->fromnode == node) {
       lb = &node->outputs;
     }
@@ -3104,7 +3102,7 @@ void nodeUnlinkNode(bNodeTree *ntree, bNode *node)
         adjust_multi_input_indices_after_removed_link(
             ntree, link->tosock, link->multi_input_socket_index);
       }
-      LISTBASE_FOREACH (bNodeSocket *, sock, lb) {
+      LIST_FOREACH (NodeSocket *, sock, lb) {
         if (link->fromsock == sock || link->tosock == sock) {
           nodeRemLink(ntree, link);
           break;
@@ -3114,18 +3112,18 @@ void nodeUnlinkNode(bNodeTree *ntree, bNode *node)
   }
 }
 
-static void node_unlink_attached(bNodeTree *ntree, bNode *parent)
+static void node_unlink_attached(NodeTree *ntree, Node *parent)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (node->parent == parent) {
       nodeDetachNode(node);
     }
   }
 }
 
-/* Free the node itself. ID user refcounting is up the caller,
+/* Free the node itself. Id user refcounting is up the caller,
  * that does not happen here. */
-static void node_free_node(bNodeTree *ntree, bNode *node)
+static void node_free_node(NodeTree *ntree, Node *node)
 {
   /* since it is called while free database, node->id is undefined */
 
