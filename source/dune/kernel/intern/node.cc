@@ -3474,19 +3474,18 @@ void ntreeLocalMerge(Main *main, NodeTree *localtree, NodeTree *ntree)
 }
 
 /* NODE TREE INTERFACE */
-
-static bNodeSocket *make_socket_interface(bNodeTree *ntree,
+static NodeSocket *make_socket_interface(bNodeTree *ntree,
                                           eNodeSocketInOut in_out,
                                           const char *idname,
                                           const char *name)
 {
-  bNodeSocketType *stype = nodeSocketTypeFind(idname);
+  NodeSocketType *stype = nodeSocketTypeFind(idname);
   if (stype == nullptr) {
     return nullptr;
   }
 
-  bNodeSocket *sock = MEM_cnew<bNodeSocket>("socket template");
-  BLI_strncpy(sock->idname, stype->idname, sizeof(sock->idname));
+  NodeSocket *sock = mem_cnew<NodeSocket>("socket template");
+  lib_strncpy(sock->idname, stype->idname, sizeof(sock->idname));
   node_socket_set_typeinfo(ntree, sock, stype);
   sock->in_out = in_out;
   sock->type = SOCK_CUSTOM; /* int type undefined by default */
@@ -3495,27 +3494,27 @@ static bNodeSocket *make_socket_interface(bNodeTree *ntree,
   const int own_index = ntree->cur_index++;
   /* use the own_index as socket identifier */
   if (in_out == SOCK_IN) {
-    BLI_snprintf(sock->identifier, MAX_NAME, "Input_%d", own_index);
+    lib_snprintf(sock->id, MAX_NAME, "Input_%d", own_index);
   }
   else {
-    BLI_snprintf(sock->identifier, MAX_NAME, "Output_%d", own_index);
+    lib_snprintf(sock->identifier, MAX_NAME, "Output_%d", own_index);
   }
 
   sock->limit = (in_out == SOCK_IN ? 1 : 0xFFF);
 
-  BLI_strncpy(sock->name, name, NODE_MAXSTR);
+  lib_strncpy(sock->name, name, NODE_MAXSTR);
   sock->storage = nullptr;
   sock->flag |= SOCK_COLLAPSED;
 
   return sock;
 }
 
-bNodeSocket *ntreeFindSocketInterface(bNodeTree *ntree,
+NodeSocket *ntreeFindSocketInterface(bNodeTree *ntree,
                                       eNodeSocketInOut in_out,
                                       const char *identifier)
 {
-  ListBase *sockets = (in_out == SOCK_IN) ? &ntree->inputs : &ntree->outputs;
-  LISTBASE_FOREACH (bNodeSocket *, iosock, sockets) {
+  List *sockets = (in_out == SOCK_IN) ? &ntree->inputs : &ntree->outputs;
+  LIST_FOREACH (NodeSocket *, iosock, sockets) {
     if (STREQ(iosock->identifier, identifier)) {
       return iosock;
     }
@@ -3523,44 +3522,44 @@ bNodeSocket *ntreeFindSocketInterface(bNodeTree *ntree,
   return nullptr;
 }
 
-bNodeSocket *ntreeAddSocketInterface(bNodeTree *ntree,
+NodeSocket *ntreeAddSocketInterface(bNodeTree *ntree,
                                      eNodeSocketInOut in_out,
                                      const char *idname,
                                      const char *name)
 {
-  bNodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
+  NodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
   if (in_out == SOCK_IN) {
-    BLI_addtail(&ntree->inputs, iosock);
+    lib_addtail(&ntree->inputs, iosock);
   }
   else if (in_out == SOCK_OUT) {
-    BLI_addtail(&ntree->outputs, iosock);
+    lib_addtail(&ntree->outputs, iosock);
   }
-  BKE_ntree_update_tag_interface(ntree);
+  dune_ntree_update_tag_interface(ntree);
   return iosock;
 }
 
-bNodeSocket *ntreeInsertSocketInterface(bNodeTree *ntree,
-                                        eNodeSocketInOut in_out,
-                                        const char *idname,
-                                        bNodeSocket *next_sock,
-                                        const char *name)
+NodeSocket *ntreeInsertSocketInterface(NodeTree *ntree,
+                                       eNodeSocketInOut in_out,
+                                       const char *idname,
+                                       NodeSocket *next_sock,
+                                       const char *name)
 {
-  bNodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
+  NodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
   if (in_out == SOCK_IN) {
-    BLI_insertlinkbefore(&ntree->inputs, next_sock, iosock);
+    lib_insertlinkbefore(&ntree->inputs, next_sock, iosock);
   }
   else if (in_out == SOCK_OUT) {
-    BLI_insertlinkbefore(&ntree->outputs, next_sock, iosock);
+    lib_insertlinkbefore(&ntree->outputs, next_sock, iosock);
   }
-  BKE_ntree_update_tag_interface(ntree);
+  dune_ntree_update_tag_interface(ntree);
   return iosock;
 }
 
-struct bNodeSocket *ntreeAddSocketInterfaceFromSocket(bNodeTree *ntree,
-                                                      bNode *from_node,
-                                                      bNodeSocket *from_sock)
+struct NodeSocket *ntreeAddSocketInterfaceFromSocket(NodeTree *ntree,
+                                                     Node *from_node,
+                                                     NodeSocket *from_sock)
 {
-  bNodeSocket *iosock = ntreeAddSocketInterface(
+  NodeSocket *iosock = ntreeAddSocketInterface(
       ntree, static_cast<eNodeSocketInOut>(from_sock->in_out), from_sock->idname, from_sock->name);
   if (iosock) {
     if (iosock->typeinfo->interface_from_socket) {
@@ -3570,12 +3569,12 @@ struct bNodeSocket *ntreeAddSocketInterfaceFromSocket(bNodeTree *ntree,
   return iosock;
 }
 
-struct bNodeSocket *ntreeInsertSocketInterfaceFromSocket(bNodeTree *ntree,
-                                                         bNodeSocket *next_sock,
-                                                         bNode *from_node,
-                                                         bNodeSocket *from_sock)
+struct NodeSocket *ntreeInsertSocketInterfaceFromSocket(NodeTree *ntree,
+                                                        NodeSocket *next_sock,
+                                                        Node *from_node,
+                                                        NodeSocket *from_sock)
 {
-  bNodeSocket *iosock = ntreeInsertSocketInterface(
+  NodeSocket *iosock = ntreeInsertSocketInterface(
       ntree,
       static_cast<eNodeSocketInOut>(from_sock->in_out),
       from_sock->idname,
@@ -3589,111 +3588,109 @@ struct bNodeSocket *ntreeInsertSocketInterfaceFromSocket(bNodeTree *ntree,
   return iosock;
 }
 
-void ntreeRemoveSocketInterface(bNodeTree *ntree, bNodeSocket *sock)
+void ntreeRemoveSocketInterface(NodeTree *ntree, NodeSocket *sock)
 {
   /* this is fast, this way we don't need an in_out argument */
-  BLI_remlink(&ntree->inputs, sock);
-  BLI_remlink(&ntree->outputs, sock);
+  lib_remlink(&ntree->inputs, sock);
+  lib_remlink(&ntree->outputs, sock);
 
   node_socket_interface_free(ntree, sock, true);
-  MEM_freeN(sock);
+  mem_freen(sock);
 
-  BKE_ntree_update_tag_interface(ntree);
+  dune_ntree_update_tag_interface(ntree);
 }
 
 /* generates a valid RNA identifier from the node tree name */
-static void ntree_interface_identifier_base(bNodeTree *ntree, char *base)
+static void ntree_interface_id_base(NodeTree *ntree, char *base)
 {
   /* generate a valid RNA identifier */
   sprintf(base, "NodeTreeInterface_%s", ntree->id.name + 2);
-  RNA_identifier_sanitize(base, false);
+  api_id_sanitize(base, false);
 }
 
 /* check if the identifier is already in use */
-static bool ntree_interface_unique_identifier_check(void *UNUSED(data), const char *identifier)
+static bool ntree_interface_unique_id_check(void *UNUSED(data), const char *id)
 {
-  return (RNA_struct_find(identifier) != nullptr);
+  return (api_struct_find(id) != nullptr);
 }
 
 /* generates the actual unique identifier and ui name and description */
-static void ntree_interface_identifier(bNodeTree *ntree,
-                                       const char *base,
-                                       char *identifier,
-                                       int maxlen,
-                                       char *name,
-                                       char *description)
+static void ntree_interface_id(NodeTree *ntree,
+                               const char *base,
+                               char *id,
+                               int maxlen,
+                               char *name,
+                               char *description)
 {
-  /* There is a possibility that different node tree names get mapped to the same identifier
+  /* There is a possibility that different node tree names get mapped to the same id
    * after sanitation (e.g. "SomeGroup_A", "SomeGroup.A" both get sanitized to "SomeGroup_A").
-   * On top of the sanitized id string add a number suffix if necessary to avoid duplicates.
-   */
+   * On top of the sanitized id string add a number suffix if necessary to avoid duplicates.  */
   identifier[0] = '\0';
-  BLI_uniquename_cb(
-      ntree_interface_unique_identifier_check, nullptr, base, '_', identifier, maxlen);
+  lib_uniquename_cb(
+      ntree_interface_unique_id_check, nullptr, base, '_', identifier, maxlen);
 
   sprintf(name, "Node Tree %s Interface", ntree->id.name + 2);
-  sprintf(description, "Interface properties of node group %s", ntree->id.name + 2);
+  sprintf(description, "Interface props of node group %s", ntree->id.name + 2);
 }
 
-static void ntree_interface_type_create(bNodeTree *ntree)
+static void ntree_interface_type_create(NodeTree *ntree)
 {
-  /* strings are generated from base string + ID name, sizes are sufficient */
-  char base[MAX_ID_NAME + 64], identifier[MAX_ID_NAME + 64], name[MAX_ID_NAME + 64],
+  /* strings are generated from base string + Id name, sizes are sufficient */
+  char base[MAX_ID_NAME + 64], id[MAX_ID_NAME + 64], name[MAX_ID_NAME + 64],
       description[MAX_ID_NAME + 64];
 
-  /* generate a valid RNA identifier */
-  ntree_interface_identifier_base(ntree, base);
-  ntree_interface_identifier(ntree, base, identifier, sizeof(identifier), name, description);
+  /* generate a valid api id */
+  ntree_interface_id_base(ntree, base);
+  ntree_interface_id(ntree, base, id, sizeof(id), name, description);
 
-  /* register a subtype of PropertyGroup */
-  StructRNA *srna = RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_PropertyGroup);
-  RNA_def_struct_ui_text(srna, name, description);
-  RNA_def_struct_duplicate_pointers(&BLENDER_RNA, srna);
+  /* register a subtype of PropGroup */
+  ApiStruct *sapi = api_def_struct_ptr(&DUNE_API, id, &ApiPropGroup);
+  api_def_struct_ui_text(sapi, name, description);
+  api_def_struct_duplicate_ptrs(&DUNE_API, sapi);
 
-  /* associate the RNA type with the node tree */
-  ntree->interface_type = srna;
-  RNA_struct_blender_type_set(srna, ntree);
+  /* associate the api type with the node tree */
+  ntree->interface_type = sapi;
+  api_struct_dune_type_set(sapi, ntree);
 
-  /* add socket properties */
-  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->inputs) {
-    bNodeSocketType *stype = sock->typeinfo;
-    if (stype && stype->interface_register_properties) {
-      stype->interface_register_properties(ntree, sock, srna);
+  /* add socket props */
+  LIST_FOREACH (NodeSocket *, sock, &ntree->inputs) {
+    NodeSocketType *stype = sock->typeinfo;
+    if (stype && stype->interface_register_props) {
+      stype->interface_register_props(ntree, sock, sapi);
     }
   }
-  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->outputs) {
-    bNodeSocketType *stype = sock->typeinfo;
-    if (stype && stype->interface_register_properties) {
-      stype->interface_register_properties(ntree, sock, srna);
+  LIST_FOREACH (NodeSocket *, sock, &ntree->outputs) {
+    NodeSocketType *stype = sock->typeinfo;
+    if (stype && stype->interface_register_props) {
+      stype->interface_register_props(ntree, sock, sapi);
     }
   }
 }
 
-StructRNA *ntreeInterfaceTypeGet(bNodeTree *ntree, bool create)
+StructApi *ntreeInterfaceTypeGet(NodeTree *ntree, bool create)
 {
   if (ntree->interface_type) {
-    /* strings are generated from base string + ID name, sizes are sufficient */
+    /* strings are generated from base string + Id name, sizes are sufficient */
     char base[MAX_ID_NAME + 64], identifier[MAX_ID_NAME + 64], name[MAX_ID_NAME + 64],
         description[MAX_ID_NAME + 64];
 
-    /* A bit of a hack: when changing the ID name, update the RNA type identifier too,
+    /* A bit of a hack: when changing the Id name, update the api type id too,
      * so that the names match. This is not strictly necessary to keep it working,
-     * but better for identifying associated NodeTree blocks and RNA types.
-     */
-    StructRNA *srna = ntree->interface_type;
+     * but better for identifying associated NodeTree blocks and api types. */
+    ApiStruct *sapi = ntree->interface_type;
 
-    ntree_interface_identifier_base(ntree, base);
+    ntree_interface_id_base(ntree, base);
 
     /* RNA identifier may have a number suffix, but should start with the idbase string */
-    if (!STREQLEN(RNA_struct_identifier(srna), base, sizeof(base))) {
-      /* generate new unique RNA identifier from the ID name */
-      ntree_interface_identifier(ntree, base, identifier, sizeof(identifier), name, description);
+    if (!STREQLEN(api_struct_id(sapi), base, sizeof(base))) {
+      /* generate new unique RNA identifier from the Id name */
+      ntree_interface_id(ntree, base, id, sizeof(id), name, description);
 
-      /* rename the RNA type */
-      RNA_def_struct_free_pointers(&BLENDER_RNA, srna);
-      RNA_def_struct_identifier(&BLENDER_RNA, srna, identifier);
-      RNA_def_struct_ui_text(srna, name, description);
-      RNA_def_struct_duplicate_pointers(&BLENDER_RNA, srna);
+      /* rename the api type */
+      api_def_struct_free_ptrs(&DUNE_api, sapi);
+      RNA_def_struct_identifier(&DUNE_API, sapi, id);
+      RNA_def_struct_ui_text(sapi, name, description);
+      RNA_def_struct_duplicate_ptrs(&DUNE_API, sapi);
     }
   }
   else if (create) {
