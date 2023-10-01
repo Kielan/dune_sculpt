@@ -1,106 +1,102 @@
 /* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
 #ifdef WIN32
-#  include "LIB_winstuff.h"
+#  include "lib_winstuff.h"
 #endif
 
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "TYPES_collection.h"
-#include "TYPES_defaults.h"
-#include "TYPES_gpencil.h"
-#include "TYPES_mask.h"
-#include "TYPES_scene.h"
-#include "TYPES_screen.h"
-#include "TYPES_space.h"
-#include "TYPES_text.h"
-#include "TYPES_view3d.h"
-#include "TYPES_workspace.h"
+#include "types_collection.h"
+#include "types_defaults.h"
+#include "types_pen.h"
+#include "types_mask.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_text.h"
+#include "types_view3d.h"
+#include "types_workspace.h"
 
-#include "LIB_ghash.h"
-#include "LIB_listbase.h"
-#include "LIB_math_vector.h"
-#include "LIB_mempool.h"
-#include "LIB_rect.h"
-#include "LIB_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_math_vector.h"
+#include "lib_mempool.h"
+#include "lib_rect.h"
+#include "lib_utildefines.h"
 
-#include "LANG_translation.h"
+#include "lang.h"
 
-#include "KERNEL_gpencil.h"
-#include "KERNEL_icons.h"
-#include "KERNEL_idprop.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_node.h"
-#include "KERNEL_screen.h"
-#include "KERNEL_workspace.h"
+#include "dune_pen.h"
+#include "dune_icons.h"
+#include "dune_idprop.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_node.h"
+#include "dune_screen.h"
+#include "dune_workspace.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
-#ifdef WITH_PYTHON
-#  include "BPY_extern.h"
-#endif
-
-static void screen_free_data(ID *id)
+static void screen_free_data(Id *id)
 {
-  duneScreen *screen = (duneScreen *)id;
+  Screen *screen = (Screen *)id;
 
   /* No animation-data here. */
 
-  LISTBASE_FOREACH (ARegion *, region, &screen->regionbase) {
-    KERNEL_area_region_free(NULL, region);
+  LIST_FOREACH (ARegion *, region, &screen->regionbase) {
+    dune_area_region_free(NULL, region);
   }
 
-  LIB_freelistN(&screen->regionbase);
+  lib_freelistn(&screen->regionbase);
 
-  KERNEL_screen_area_map_free(AREAMAP_FROM_SCREEN(screen));
+  dune_screen_area_map_free(AREAMAP_FROM_SCREEN(screen));
 
-  KERNEL_previewimg_free(&screen->preview);
+  dune_previewimg_free(&screen->preview);
 
   /* Region and timer are freed by the window manager. */
   MEM_SAFE_FREE(screen->tool_tip);
 }
 
-static void screen_foreach_id_dopesheet(LibraryForeachIDData *data, bDopeSheet *ads)
+static void screen_foreach_id_dopesheet(LibForeachIdData *data, DopeSheet *ads)
 {
   if (ads != NULL) {
-    KERNEL_LIB_FOREACHID_PROCESS_ID(data, ads->source, IDWALK_CB_NOP);
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, ads->filter_grp, IDWALK_CB_NOP);
+    DUNE_LIB_FOREACHID_PROCESS_ID(data, ads->source, IDWALK_CB_NOP);
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, ads->filter_grp, IDWALK_CB_NOP);
   }
 }
 
-void KERNEL_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area)
+void dune_screen_foreach_id_screen_area(LibForeachIdData *data, ScrArea *area)
 {
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, area->full, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, area->full, IDWALK_CB_NOP);
 
   /* TODO: this should be moved to a callback in `SpaceType`, defined in each editor's own code.
    * Will be for a later round of cleanup though... */
-  LISTBASE_FOREACH (SpaceLink *, sl, &area->spacedata) {
+  LIST_FOREACH (SpaceLink *, sl, &area->spacedata) {
     switch (sl->spacetype) {
       case SPACE_VIEW3D: {
         View3D *v3d = (View3D *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->camera, IDWALK_CB_NOP);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->ob_center, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->camera, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->ob_center, IDWALK_CB_NOP);
         if (v3d->localvd) {
-          KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->localvd->camera, IDWALK_CB_NOP);
+          DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->localvd->camera, IDWALK_CB_NOP);
         }
         break;
       }
       case SPACE_GRAPH: {
         SpaceGraph *sipo = (SpaceGraph *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
-                                                screen_foreach_id_dopesheet(data, sipo->ads));
+        DUNE_LIB_FOREACHID_PROCESS_FN_CALL(data,
+                                           screen_foreach_id_dopesheet(data, sipo->ads));
         break;
       }
-      case SPACE_PROPERTIES: {
-        SpaceProperties *sbuts = (SpaceProperties *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_ID(data, sbuts->pinid, IDWALK_CB_NOP);
+      case SPACE_PROPS: {
+        SpaceProps *sbtns = (SpaceProps *)sl;
+        DUNE_LIB_FOREACHID_PROCESS_ID(data, sbuts->pinid, IDWALK_CB_NOP);
         break;
       }
       case SPACE_FILE:
@@ -108,47 +104,47 @@ void KERNEL_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *a
       case SPACE_ACTION: {
         SpaceAction *saction = (SpaceAction *)sl;
         screen_foreach_id_dopesheet(data, &saction->ads);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, saction->action, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, saction->action, IDWALK_CB_NOP);
         break;
       }
       case SPACE_IMAGE: {
         SpaceImage *sima = (SpaceImage *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->image, IDWALK_CB_USER_ONE);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->mask_info.mask, IDWALK_CB_USER_ONE);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->gpd, IDWALK_CB_USER);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->image, IDWALK_CB_USER_ONE);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->mask_info.mask, IDWALK_CB_USER_ONE);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->gpd, IDWALK_CB_USER);
         break;
       }
       case SPACE_SEQ: {
         SpaceSeq *sseq = (SpaceSeq *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sseq->gpd, IDWALK_CB_USER);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sseq->gpd, IDWALK_CB_USER);
         break;
       }
       case SPACE_NLA: {
         SpaceNla *snla = (SpaceNla *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
-                                                screen_foreach_id_dopesheet(data, snla->ads));
+        DUNE_LIB_FOREACHID_PROCESS_FN_CALL(data,
+                                           screen_foreach_id_dopesheet(data, snla->ads));
         break;
       }
       case SPACE_TEXT: {
         SpaceText *st = (SpaceText *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, st->text, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, st->text, IDWALK_CB_NOP);
         break;
       }
       case SPACE_SCRIPT: {
         SpaceScript *scpt = (SpaceScript *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scpt->script, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scpt->script, IDWALK_CB_NOP);
         break;
       }
       case SPACE_OUTLINER: {
         SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_ID(data, space_outliner->search_tse.id, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_ID(data, space_outliner->search_tse.id, IDWALK_CB_NOP);
         if (space_outliner->treestore != NULL) {
           TreeStoreElem *tselem;
-          LIB_mempool_iter iter;
+          lib_mempool_iter iter;
 
-          LIB_mempool_iternew(space_outliner->treestore, &iter);
+          lib_mempool_iternew(space_outliner->treestore, &iter);
           while ((tselem = LIB_mempool_iterstep(&iter))) {
-            KERNEL_LIB_FOREACHID_PROCESS_ID(data, tselem->id, IDWALK_CB_NOP);
+            DUNE_LIB_FOREACHID_PROCESS_ID(data, tselem->id, IDWALK_CB_NOP);
           }
         }
         break;
@@ -156,23 +152,23 @@ void KERNEL_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *a
       case SPACE_NODE: {
         SpaceNode *snode = (SpaceNode *)sl;
         const bool is_private_nodetree = snode->id != NULL &&
-                                         ntreeFromID(snode->id) == snode->nodetree;
+                                         ntreeFromId(snode->id) == snode->nodetree;
 
-        KERNEL_LIB_FOREACHID_PROCESS_ID(data, snode->id, IDWALK_CB_NOP);
-        KERNEL_LIB_FOREACHID_PROCESS_ID(data, snode->from, IDWALK_CB_NOP);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
+        DUNE_LIB_FOREACHID_PROCESS_ID(data, snode->id, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_ID(data, snode->from, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(
             data, snode->nodetree, is_private_nodetree ? IDWALK_CB_EMBEDDED : IDWALK_CB_USER_ONE);
 
-        LISTBASE_FOREACH (bNodeTreePath *, path, &snode->treepath) {
+        LIST_FOREACH (NodeTreePath *, path, &snode->treepath) {
           if (path == snode->treepath.first) {
             /* first nodetree in path is same as snode->nodetree */
-            KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data,
+            DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data,
                                               path->nodetree,
                                               is_private_nodetree ? IDWALK_CB_EMBEDDED :
                                                                     IDWALK_CB_USER_ONE);
           }
           else {
-            KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, path->nodetree, IDWALK_CB_USER_ONE);
+            DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, path->nodetree, IDWALK_CB_USER_ONE);
           }
 
           if (path->nodetree == NULL) {
@@ -180,18 +176,18 @@ void KERNEL_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *a
           }
         }
 
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, snode->edittree, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, snode->edittree, IDWALK_CB_NOP);
         break;
       }
       case SPACE_CLIP: {
         SpaceClip *sclip = (SpaceClip *)sl;
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->clip, IDWALK_CB_USER_ONE);
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->mask_info.mask, IDWALK_CB_USER_ONE);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->clip, IDWALK_CB_USER_ONE);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->mask_info.mask, IDWALK_CB_USER_ONE);
         break;
       }
       case SPACE_SPREADSHEET: {
         SpaceSpreadsheet *sspreadsheet = (SpaceSpreadsheet *)sl;
-        LISTBASE_FOREACH (SpreadsheetContext *, context, &sspreadsheet->context_path) {
+        LIST_FOREACH (SpreadsheetContext *, context, &sspreadsheet->context_path) {
           if (context->type == SPREADSHEET_CONTEXT_OBJECT) {
             KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
                 data, ((SpreadsheetContextObject *)context)->object, IDWALK_CB_NOP);
