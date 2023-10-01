@@ -1,9 +1,9 @@
-#include "LIB_sys_types.h" /* for intptr_t support */
-#include "MEM_guardedalloc.h"
+#include "lib_sys_types.h" /* for intptr_t support */
+#include "mem_guardedalloc.h"
 
-#include "LIB_math.h"
-#include "LIB_task.h"
-#include "LIB_utildefines.h" /* for BLI_assert */
+#include "lib_math.h"
+#include "lib_task.h"
+#include "lib_utildefines.h" /* for lib_assert */
 
 #include "CCGSubSurf.h"
 #include "CCGSubSurf_intern.h"
@@ -11,7 +11,7 @@
 #define FACE_calcIFNo(f, lvl, S, x, y, no) \
   _face_calcIFNo(f, lvl, S, x, y, no, subdivLevels, vertDataSize)
 
-/* TODO(sergey): Deduplicate the following functions/ */
+/* TODO: Deduplicate the following fns */
 static void *_edge_getCoVert(CCGEdge *e, CCGVert *v, int lvl, int x, int dataSize)
 {
   int levelBase = ccg_edgebase(lvl);
@@ -20,7 +20,6 @@ static void *_edge_getCoVert(CCGEdge *e, CCGVert *v, int lvl, int x, int dataSiz
   }
   return &EDGE_getLevelData(e)[dataSize * (levelBase + (1 << lvl) - x)];
 }
-/* *************************************************** */
 
 static int _edge_isBoundary(const CCGEdge *e)
 {
@@ -322,9 +321,9 @@ static void ccgSubSurf__calcVertNormals(CCGSubSurf *ss,
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(
+    lib_task_parallel_range(
         0, numEffectedF, &data, ccgSubSurf__calcVertNormals_faces_accumulate_cb, &settings);
   }
 
@@ -354,17 +353,17 @@ static void ccgSubSurf__calcVertNormals(CCGSubSurf *ss,
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(
+    lib_task_parallel_range(
         0, numEffectedE, &data, ccgSubSurf__calcVertNormals_edges_accumulate_cb, &settings);
   }
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(
+    lib_task_parallel_range(
         0, numEffectedF, &data, ccgSubSurf__calcVertNormals_faces_finalize_cb, &settings);
   }
 
@@ -415,8 +414,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_midpoints_cb(
   int S, x, y;
 
   /* interior face midpoints
-   * - old interior face points
-   */
+   * - old interior face points */
   for (S = 0; S < f->numVerts; S++) {
     for (y = 0; y < gridSize - 1; y++) {
       for (x = 0; x < gridSize - 1; x++) {
@@ -435,8 +433,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_midpoints_cb(
 
   /* interior edge midpoints
    * - old interior edge points
-   * - new interior face midpoints
-   */
+   * - new interior face midpoints */
   for (S = 0; S < f->numVerts; S++) {
     for (x = 0; x < gridSize - 1; x++) {
       int fx = x * 2 + 1;
@@ -451,8 +448,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_midpoints_cb(
 
     /* interior face interior edge midpoints
      * - old interior face points
-     * - new interior face midpoints
-     */
+     * - new interior face midpoints */
 
     /* vertical */
     for (x = 1; x < gridSize - 1; x++) {
@@ -508,8 +504,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_centerpoints_shift_
   /* interior center point shift
    * - old face center point (shifting)
    * - old interior edge points
-   * - new interior face midpoints
-   */
+   * - new interior face midpoints */
   VertDataZero(q_thread, ss);
   for (S = 0; S < f->numVerts; S++) {
     VertDataAdd(q_thread, FACE_getIFCo(f, nextLvl, S, 1, 1), ss);
@@ -530,8 +525,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_centerpoints_shift_
     /* interior face shift
      * - old interior face point (shifting)
      * - new interior edge midpoints
-     * - new interior face midpoints
-     */
+     * - new interior face midpoints */
     for (x = 1; x < gridSize - 1; x++) {
       for (y = 1; y < gridSize - 1; y++) {
         int fx = x * 2;
@@ -563,8 +557,7 @@ static void ccgSubSurf__calcSubdivLevel_interior_faces_edges_centerpoints_shift_
     /* interior edge interior shift
      * - old interior edge point (shifting)
      * - new interior edge midpoints
-     * - new interior face midpoints
-     */
+     * - new interior face midpoints */
     for (x = 1; x < gridSize - 1; x++) {
       int fx = x * 2;
       const float *co = FACE_getIECo(f, curLvl, S, x);
@@ -666,9 +659,9 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(0,
+    lib_task_parallel_range(0,
                             numEffectedF,
                             &data,
                             ccgSubSurf__calcSubdivLevel_interior_faces_edges_midpoints_cb,
@@ -677,8 +670,7 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
 
   /* exterior edge midpoints
    * - old exterior edge points
-   * - new interior face midpoints
-   */
+   * - new interior face midpoints */
   /* Not worth parallelizing. */
   for (ptrIdx = 0; ptrIdx < numEffectedE; ptrIdx++) {
     CCGEdge *e = (CCGEdge *)effectedE[ptrIdx];
@@ -735,8 +727,7 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
   /* exterior vertex shift
    * - old vertex points (shifting)
    * - old exterior edge points
-   * - new interior face midpoints
-   */
+   * - new interior face midpoints */
   /* Not worth parallelizing. */
   for (ptrIdx = 0; ptrIdx < numEffectedV; ptrIdx++) {
     CCGVert *v = (CCGVert *)effectedV[ptrIdx];
@@ -870,8 +861,7 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
   /* exterior edge interior shift
    * - old exterior edge midpoints (shifting)
    * - old exterior edge midpoints
-   * - new interior face midpoints
-   */
+   * - new interior face midpoints */
   /* Not worth parallelizing. */
   for (ptrIdx = 0; ptrIdx < numEffectedE; ptrIdx++) {
     CCGEdge *e = (CCGEdge *)effectedE[ptrIdx];
@@ -966,9 +956,9 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(0,
+    lib_task_parallel_range(0,
                             numEffectedF,
                             &data,
                             ccgSubSurf__calcSubdivLevel_interior_faces_edges_centerpoints_shift_cb,
@@ -987,9 +977,9 @@ static void ccgSubSurf__calcSubdivLevel(CCGSubSurf *ss,
 
   {
     TaskParallelSettings settings;
-    LIB_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = CCG_TASK_LIMIT;
-    LIB_task_parallel_range(
+    lib_task_parallel_range(
         0, numEffectedF, &data, ccgSubSurf__calcSubdivLevel_verts_copydata_cb, &settings);
   }
 }
@@ -1006,9 +996,9 @@ void ccgSubSurf__sync_legacy(CCGSubSurf *ss)
   int curLvl, nextLvl;
   void *q = ss->q, *r = ss->r;
 
-  effectedV = MEM_mallocN(sizeof(*effectedV) * ss->vMap->numEntries, "CCGSubsurf effectedV");
-  effectedE = MEM_mallocN(sizeof(*effectedE) * ss->eMap->numEntries, "CCGSubsurf effectedE");
-  effectedF = MEM_mallocN(sizeof(*effectedF) * ss->fMap->numEntries, "CCGSubsurf effectedF");
+  effectedV = mem_mallocn(sizeof(*effectedV) * ss->vMap->numEntries, "CCGSubsurf effectedV");
+  effectedE = mem_mallocn(sizeof(*effectedE) * ss->eMap->numEntries, "CCGSubsurf effectedE");
+  effectedF = mem_mallocn(sizeof(*effectedF) * ss->fMap->numEntries, "CCGSubsurf effectedF");
   numEffectedV = numEffectedE = numEffectedF = 0;
   for (i = 0; i < ss->vMap->curSize; i++) {
     CCGVert *v = (CCGVert *)ss->vMap->buckets[i];
@@ -1287,8 +1277,7 @@ void ccgSubSurf__sync_legacy(CCGSubSurf *ss)
 #endif
 }
 
-/* ** Public API exposed to other areas which depends on old CCG code. ** */
-
+/* Public API exposed to other areas which depends on old CCG code. */
 CCGError ccgSubSurf_updateNormals(CCGSubSurf *ss, CCGFace **effectedF, int numEffectedF)
 {
   CCGVert **effectedV;
@@ -1314,10 +1303,10 @@ CCGError ccgSubSurf_updateNormals(CCGSubSurf *ss, CCGFace **effectedF, int numEf
     effectedF[i]->flags = 0;
   }
 
-  MEM_freeN(effectedE);
-  MEM_freeN(effectedV);
+  mem_freen(effectedE);
+  mem_freen(effectedV);
   if (freeF) {
-    MEM_freeN(effectedF);
+    mem_freen(effectedF);
   }
 
   return eCCGError_None;
@@ -1349,10 +1338,10 @@ CCGError ccgSubSurf_updateLevels(CCGSubSurf *ss, int lvl, CCGFace **effectedF, i
     effectedF[i]->flags = 0;
   }
 
-  MEM_freeN(effectedE);
-  MEM_freeN(effectedV);
+  mem_freen(effectedE);
+  mem_freen(effectedV);
   if (freeF) {
-    MEM_freeN(effectedF);
+    mem_freen(effectedF);
   }
 
   return eCCGError_None;
