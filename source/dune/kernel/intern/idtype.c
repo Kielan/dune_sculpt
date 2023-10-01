@@ -1,50 +1,49 @@
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_utildefines.h"
 
 #include "CLG_log.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_ID.h"
-#include "DNA_collection_types.h"
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
+#include "types_id.h"
+#include "types_collection.h"
+#include "types_node.h"
+#include "types_scene.h"
 
-#include "BKE_main.h"
-#include "BKE_node.h"
+#include "dune_main.h"
+#include "dune_node.h"
 
-#include "BKE_idtype.h"
+#include "dune_idtype.h"
 
 // static CLG_LogRef LOG = {"bke.idtype"};
-
-uint BKE_idtype_cache_key_hash(const void *key_v)
+uint dune_idtype_cache_key_hash(const void *key_v)
 {
-  const IDCacheKey *key = key_v;
-  size_t hash = BLI_ghashutil_uinthash(key->id_session_uuid);
-  hash = BLI_ghashutil_combine_hash(hash, BLI_ghashutil_uinthash((uint)key->offset_in_ID));
-  return (uint)BLI_ghashutil_combine_hash(hash, BLI_ghashutil_ptrhash(key->cache_v));
+  const IdCacheKey *key = key_v;
+  size_t hash = lib_ghashutil_uinthash(key->id_session_uuid);
+  hash = lib_ghashutil_combine_hash(hash, lib_ghashutil_uinthash((uint)key->offset_in_ID));
+  return (uint)lib_ghashutil_combine_hash(hash, lib_ghashutil_ptrhash(key->cache_v));
 }
 
-bool BKE_idtype_cache_key_cmp(const void *key_a_v, const void *key_b_v)
+bool dune_idtype_cache_key_cmp(const void *key_a_v, const void *key_b_v)
 {
-  const IDCacheKey *key_a = key_a_v;
-  const IDCacheKey *key_b = key_b_v;
+  const IdCacheKey *key_a = key_a_v;
+  const IdCacheKey *key_b = key_b_v;
   return (key_a->id_session_uuid != key_b->id_session_uuid) ||
          (key_a->offset_in_ID != key_b->offset_in_ID) || (key_a->cache_v != key_b->cache_v);
 }
 
-static IDTypeInfo *id_types[INDEX_ID_MAX] = {NULL};
+static IdTypeInfo *id_types[INDEX_ID_MAX] = {NULL};
 
 static void id_type_init(void)
 {
 #define INIT_TYPE(_id_code) \
   { \
-    BLI_assert(IDType_##_id_code.main_listbase_index == INDEX_##_id_code); \
-    id_types[INDEX_##_id_code] = &IDType_##_id_code; \
+    lib_assert(IdType_##_id_code.main_list_index == INDEX_##_id_code); \
+    id_types[INDEX_##_id_code] = &IdType_##_id_code; \
   } \
   (void)0
 
@@ -90,21 +89,21 @@ static void id_type_init(void)
   INIT_TYPE(ID_SIM);
 
   /* Special naughty boy... */
-  BLI_assert(IDType_ID_LINK_PLACEHOLDER.main_listbase_index == INDEX_ID_NULL);
-  id_types[INDEX_ID_NULL] = &IDType_ID_LINK_PLACEHOLDER;
+  lib_assert(IDType_ID_LINK_PLACEHOLDER.main_listbase_index == INDEX_ID_NULL);
+  id_types[INDEX_ID_NULL] = &IdType_ID_LINK_PLACEHOLDER;
 
 #undef INIT_TYPE
 }
 
-void BKE_idtype_init(void)
+void dune_idtype_init(void)
 {
   /* Initialize data-block types. */
   id_type_init();
 }
 
-const IDTypeInfo *BKE_idtype_get_info_from_idcode(const short id_code)
+const IdTypeInfo *dune_idtype_get_info_from_idcode(const short id_code)
 {
-  int id_index = BKE_idtype_idcode_to_index(id_code);
+  int id_index = dune_idtype_idcode_to_index(id_code);
 
   if (id_index >= 0 && id_index < ARRAY_SIZE(id_types) && id_types[id_index] != NULL &&
       id_types[id_index]->name[0] != '\0') {
@@ -114,12 +113,12 @@ const IDTypeInfo *BKE_idtype_get_info_from_idcode(const short id_code)
   return NULL;
 }
 
-const IDTypeInfo *BKE_idtype_get_info_from_id(const ID *id)
+const IdTypeInfo *dune_idtype_get_info_from_id(const Id *id)
 {
-  return BKE_idtype_get_info_from_idcode(GS(id->name));
+  return dune_idtype_get_info_from_idcode(GS(id->name));
 }
 
-static const IDTypeInfo *idtype_get_info_from_name(const char *idtype_name)
+static const IdTypeInfo *idtype_get_info_from_name(const char *idtype_name)
 {
   for (int i = ARRAY_SIZE(id_types); i--;) {
     if (id_types[i] != NULL && STREQ(idtype_name, id_types[i]->name)) {
@@ -131,75 +130,74 @@ static const IDTypeInfo *idtype_get_info_from_name(const char *idtype_name)
 }
 
 /* Various helpers/wrappers around #IDTypeInfo structure. */
-
-const char *BKE_idtype_idcode_to_name(const short idcode)
+const char *dune_idtype_idcode_to_name(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
   return id_type != NULL ? id_type->name : NULL;
 }
 
-const char *BKE_idtype_idcode_to_name_plural(const short idcode)
+const char *dune_idtype_idcode_to_name_plural(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
   return id_type != NULL ? id_type->name_plural : NULL;
 }
 
-const char *BKE_idtype_idcode_to_translation_context(const short idcode)
+const char *dune_idtype_idcode_to_lang_cxt(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
-  return id_type != NULL ? id_type->translation_context : BLT_I18NCONTEXT_DEFAULT;
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
+  return id_type != NULL ? id_type->lang_cxt : LANG_CXT_DEFAULT;
 }
 
-short BKE_idtype_idcode_from_name(const char *idtype_name)
+short dune_idtype_idcode_from_name(const char *idtype_name)
 {
-  const IDTypeInfo *id_type = idtype_get_info_from_name(idtype_name);
-  BLI_assert(id_type);
+  const IdTypeInfo *id_type = idtype_get_info_from_name(idtype_name);
+  lib_assert(id_type);
   return id_type != NULL ? id_type->id_code : 0;
 }
 
-bool BKE_idtype_idcode_is_valid(const short idcode)
+bool dune_idtype_idcode_is_valid(const short idcode)
 {
-  return BKE_idtype_get_info_from_idcode(idcode) != NULL ? true : false;
+  return dune_idtype_get_info_from_idcode(idcode) != NULL ? true : false;
 }
 
-bool BKE_idtype_idcode_is_linkable(const short idcode)
+bool dune_idtype_idcode_is_linkable(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
   return id_type != NULL ? (id_type->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0 : false;
 }
 
-bool BKE_idtype_idcode_is_only_appendable(const short idcode)
+bool dune_idtype_idcode_is_only_appendable(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
   if (id_type != NULL && (id_type->flags & IDTYPE_FLAGS_ONLY_APPEND) != 0) {
     /* Only appendable ID types should also always be linkable. */
-    BLI_assert((id_type->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0);
+    lib_assert((id_type->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0);
     return true;
   }
   return false;
 }
 
-bool BKE_idtype_idcode_append_is_reusable(const short idcode)
+bool dune_idtype_idcode_append_is_reusable(const short idcode)
 {
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_idcode(idcode);
-  BLI_assert(id_type != NULL);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_idcode(idcode);
+  lib_assert(id_type != NULL);
   if (id_type != NULL && (id_type->flags & IDTYPE_FLAGS_APPEND_IS_REUSABLE) != 0) {
     /* All appendable ID types should also always be linkable. */
-    BLI_assert((id_type->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0);
+    lib_assert((id_type->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0);
     return true;
   }
   return false;
 }
 
-uint64_t BKE_idtype_idcode_to_idfilter(const short idcode)
+uint64_t dune_idtype_idcode_to_idfilter(const short idcode)
 {
 #define CASE_IDFILTER(_id) \
-  case ID_##_id: \
+  case Id_##_id: \
     return FILTER_ID_##_id
 
   switch (idcode) {
@@ -245,7 +243,7 @@ uint64_t BKE_idtype_idcode_to_idfilter(const short idcode)
 #undef CASE_IDFILTER
 }
 
-short BKE_idtype_idcode_from_idfilter(const uint64_t idfilter)
+short dune_idtype_idcode_from_idfilter(const uint64_t idfilter)
 {
 #define CASE_IDFILTER(_id) \
   case FILTER_ID_##_id: \
@@ -293,7 +291,7 @@ short BKE_idtype_idcode_from_idfilter(const uint64_t idfilter)
 #undef CASE_IDFILTER
 }
 
-int BKE_idtype_idcode_to_index(const short idcode)
+int dune_idtype_idcode_to_index(const short idcode)
 {
 #define CASE_IDINDEX(_id) \
   case ID_##_id: \
@@ -352,7 +350,7 @@ int BKE_idtype_idcode_to_index(const short idcode)
 #undef CASE_IDINDEX
 }
 
-short BKE_idtype_idcode_from_index(const int index)
+short dune_idtype_idcode_from_index(const int index)
 {
 #define CASE_IDCODE(_id) \
   case INDEX_ID_##_id: \
@@ -411,40 +409,40 @@ short BKE_idtype_idcode_from_index(const int index)
 #undef CASE_IDCODE
 }
 
-short BKE_idtype_idcode_iter_step(int *index)
+short dune_idtype_idcode_iter_step(int *index)
 {
-  return (*index < ARRAY_SIZE(id_types)) ? BKE_idtype_idcode_from_index((*index)++) : 0;
+  return (*index < ARRAY_SIZE(id_types)) ? dune_idtype_idcode_from_index((*index)++) : 0;
 }
 
-void BKE_idtype_id_foreach_cache(struct ID *id,
-                                 IDTypeForeachCacheFunctionCallback function_callback,
+void dune_idtype_id_foreach_cache(struct Id *id,
+                                 IdTypeForeachCacheFnCb fn_cb,
                                  void *user_data)
 {
-  const IDTypeInfo *type_info = BKE_idtype_get_info_from_id(id);
+  const IdTypeInfo *type_info = dune_idtype_get_info_from_id(id);
   if (type_info->foreach_cache != NULL) {
-    type_info->foreach_cache(id, function_callback, user_data);
+    type_info->foreach_cache(id, fn_cb, user_data);
   }
 
   /* Handle 'private IDs'. */
-  bNodeTree *nodetree = ntreeFromID(id);
+  NodeTree *nodetree = ntreeFromId(id);
   if (nodetree != NULL) {
-    type_info = BKE_idtype_get_info_from_id(&nodetree->id);
+    type_info = dune_idtype_get_info_from_id(&nodetree->id);
     if (type_info == NULL) {
       /* Very old .blend file seem to have empty names for their embedded node trees, see
        * `blo_do_versions_250()`. Assume those are nodetrees then. */
-      type_info = BKE_idtype_get_info_from_idcode(ID_NT);
+      type_info = dune_idtype_get_info_from_idcode(ID_NT);
     }
     if (type_info->foreach_cache != NULL) {
-      type_info->foreach_cache(&nodetree->id, function_callback, user_data);
+      type_info->foreach_cache(&nodetree->id, fn_cb, user_data);
     }
   }
 
   if (GS(id->name) == ID_SCE) {
     Scene *scene = (Scene *)id;
     if (scene->master_collection != NULL) {
-      type_info = BKE_idtype_get_info_from_id(&scene->master_collection->id);
+      type_info = dune_idtype_get_info_from_id(&scene->master_collection->id);
       if (type_info->foreach_cache != NULL) {
-        type_info->foreach_cache(&scene->master_collection->id, function_callback, user_data);
+        type_info->foreach_cache(&scene->master_collection->id, fn_cb, user_data);
       }
     }
   }
