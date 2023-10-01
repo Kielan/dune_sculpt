@@ -19,7 +19,7 @@
 
 #include "dune_idtype.h"
 
-// static CLG_LogRef LOG = {"bke.idtype"};
+// static CLG_LogRef LOG = {"kernel.idtype"};
 uint dune_idtype_cache_key_hash(const void *key_v)
 {
   const IdCacheKey *key = key_v;
@@ -346,9 +346,9 @@ int dune_idtype_idcode_to_index(const short idcode)
   }
 
   return -1;
+}
 
 #undef CASE_IDINDEX
-}
 
 short dune_idtype_idcode_from_index(const int index)
 {
@@ -423,13 +423,13 @@ void dune_idtype_id_foreach_cache(struct Id *id,
     type_info->foreach_cache(id, fn_cb, user_data);
   }
 
-  /* Handle 'private IDs'. */
+  /* Handle 'private Ids'. */
   NodeTree *nodetree = ntreeFromId(id);
   if (nodetree != NULL) {
     type_info = dune_idtype_get_info_from_id(&nodetree->id);
     if (type_info == NULL) {
-      /* Very old .blend file seem to have empty names for their embedded node trees, see
-       * `blo_do_versions_250()`. Assume those are nodetrees then. */
+      /* Very old .dune file seem to have empty names for their embedded node trees, see
+       * `loader_do_versions_250()`. Assume those are nodetrees then. */
       type_info = dune_idtype_get_info_from_idcode(ID_NT);
     }
     if (type_info->foreach_cache != NULL) {
