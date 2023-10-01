@@ -10,7 +10,7 @@
 
 static CLG_LogRef LOG = {"kernel.asset_service"};
 
-namespace dune::kernel {
+namespace dune {
 
 std::unique_ptr<AssetLibService> AssetLibService::instance_;
 bool AssetLibService::atexit_handler_registered_ = false;
@@ -108,7 +108,7 @@ static void on_dunefile_load(struct Main * /*Main*/,
 
 void AssetLibService::app_handler_register()
 {
-  /* The callback system doesn't own `on_load_callback_store_`. */
+  /* The callback system doesn't own `on_load_cb_store_`. */
   on_load_cb_store_.alloc = false;
 
   on_load_cb_store_.fn = &on_dunefile_load;
@@ -119,7 +119,7 @@ void AssetLibService::app_handler_register()
 
 void AssetLibService::app_handler_unregister()
 {
-  dune_db_remove(&on_load_cb_store_, DUNE_CB_EVT_LOAD_PRE);
+  dune_cb_remove(&on_load_cb_store_, DUNE_CB_EVT_LOAD_PRE);
   on_load_cb_store_.fn = nullptr;
   on_load_cb_store_.arg = nullptr;
 }
