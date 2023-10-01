@@ -14,119 +14,116 @@
 #  include <dirent.h>
 #  include <unistd.h>
 #else
-#  include "BLI_winstuff.h"
+#  include "lib_winstuff.h"
 #  include <io.h>
 #endif
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_freestyle_types.h"
-#include "DNA_image_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_fluidsim_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_pointcache_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_sound_types.h"
-#include "DNA_text_types.h"
-#include "DNA_texture_types.h"
-#include "DNA_vfont_types.h"
-#include "DNA_volume_types.h"
+#include "types_brush.h"
+#include "types_cachefile.h"
+#include "types_fluid.h"
+#include "types_freestyle.h"
+#include "types_image.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_mod.h"
+#include "types_movieclip.h"
+#include "types_node.h"
+#include "types_object_fluidsim.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_pointcache.h"
+#include "types_scene.h"
+#include "types_seq.h"
+#include "types_sound.h"
+#include "types_text.h"
+#include "types_texture.h"
+#include "types_vfont.h"
+#include "types_volume.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "BKE_idtype.h"
-#include "BKE_image.h"
-#include "BKE_lib_id.h"
-#include "BKE_library.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
-#include "BKE_report.h"
-#include "BKE_vfont.h"
+#include "dune_idtype.h"
+#include "dune_image.h"
+#include "dune_lib_id.h"
+#include "dune_lib.h"
+#include "dune_main.h"
+#include "dune_node.h"
+#include "dune_report.h"
+#include "dune_vfont.h"
 
-#include "BKE_bpath.h" /* own include */
+#include "dune_path.h" /* own include */
 
 #include "CLG_log.h"
 
-#include "SEQ_iterator.h"
+#include "seq_iter.h"
 
 #ifndef _MSC_VER
-#  include "BLI_strict_flags.h"
+#  include "lib_strict_flags.h"
 #endif
 
-static CLG_LogRef LOG = {"bke.bpath"};
+static CLG_LogRef LOG = {"dune.path"};
 
-/* -------------------------------------------------------------------- */
-/** \name Generic File Path Traversal API
- * \{ */
-
-void BKE_bpath_foreach_path_id(BPathForeachPathData *bpath_data, ID *id)
+/* Generic File Path Traversal API */
+void dune_path_foreach_path_id(PathForeachPathData *path_data, Id *id)
 {
-  const eBPathForeachFlag flag = bpath_data->flag;
-  const char *absbase = (flag & BKE_BPATH_FOREACH_PATH_ABSOLUTE) ?
-                            ID_BLEND_PATH(bpath_data->bmain, id) :
+  const ePForIdeachFlag flag = path_data->flag;
+  const char *absbase = (flag & PATH_FOREACH_PATH_ABSOLUTE) ?
+                            ID_DUNE_PATH(path_data->main, id) :
                             nullptr;
-  bpath_data->absolute_base_path = absbase;
-  bpath_data->owner_id = id;
-  bpath_data->is_path_modified = false;
+  path_data->absolute_base_path = absbase;
+  path_data->owner_id = id;
+  path_data->is_path_mod = false;
 
-  if ((flag & BKE_BPATH_FOREACH_PATH_SKIP_LINKED) && ID_IS_LINKED(id)) {
+  if ((flag & PATH_FOREACH_PATH_SKIP_LINKED) && ID_IS_LINKED(id)) {
     return;
   }
 
-  if (id->library_weak_reference != nullptr &&
-      (flag & BKE_BPATH_TRAVERSE_SKIP_WEAK_REFERENCES) == 0) {
-    BKE_bpath_foreach_path_fixed_process(bpath_data,
-                                         id->library_weak_reference->library_filepath,
-                                         sizeof(id->library_weak_reference->library_filepath));
+  if (id->lib_weak_ref != nullptr &&
+      (flag & PATH_TRAVERSE_SKIP_WEAK_REF) == 0) {
+    path_foreach_path_fixed_process(path_data,
+                                    id->lib_weak_ref->lib_filepath,
+                                    sizeof(id->lib_weak_ref->lib_filepath));
   }
 
-  bNodeTree *embedded_node_tree = ntreeFromID(id);
+  NodeTree *embedded_node_tree = ntreeFromId(id);
   if (embedded_node_tree != nullptr) {
-    BKE_bpath_foreach_path_id(bpath_data, &embedded_node_tree->id);
+    path_foreach_path_id(bpath_data, &embedded_node_tree->id);
   }
 
-  const IDTypeInfo *id_type = BKE_idtype_get_info_from_id(id);
+  const IdTypeInfo *id_type = dune_idtype_get_info_from_id(id);
 
-  BLI_assert(id_type != nullptr);
+  lib_assert(id_type != nullptr);
   if (id_type == nullptr || id_type->foreach_path == nullptr) {
     return;
   }
 
-  id_type->foreach_path(id, bpath_data);
+  id_type->foreach_path(id, path_data);
 
-  if (bpath_data->is_path_modified) {
-    DEG_id_tag_update(id, ID_RECALC_SOURCE | ID_RECALC_COPY_ON_WRITE);
+  if (path_data->is_path_mod) {
+    dune_graph_id_tag_update(id, ID_RECALC_SOURCE | ID_RECALC_COPY_ON_WRITE);
   }
 }
 
-void BKE_bpath_foreach_path_main(BPathForeachPathData *bpath_data)
+void dune_path_foreach_path_main(PathForeachPathData *path_data)
 {
-  ID *id;
-  FOREACH_MAIN_ID_BEGIN (bpath_data->bmain, id) {
-    BKE_bpath_foreach_path_id(bpath_data, id);
+  Id *id;
+  FOREACH_MAIN_ID_BEGIN (path_data->main, id) {
+    dune_path_foreach_path_id(path_data, id);
   }
   FOREACH_MAIN_ID_END;
 }
 
-bool BKE_bpath_foreach_path_fixed_process(BPathForeachPathData *bpath_data,
+bool dune_path_foreach_path_fixed_process(PathForeachPathData *path_data,
                                           char *path,
                                           size_t path_maxncpy)
 {
-  const char *absolute_base_path = bpath_data->absolute_base_path;
+  const char *absolute_base_path = path_data->absolute_base_path;
 
   char path_src_buf[FILE_MAX];
   const char *path_src;
@@ -134,7 +131,7 @@ bool BKE_bpath_foreach_path_fixed_process(BPathForeachPathData *bpath_data,
 
   if (absolute_base_path) {
     STRNCPY(path_src_buf, path);
-    BLI_path_abs(path_src_buf, absolute_base_path);
+    lib_path_abs(path_src_buf, absolute_base_path);
     path_src = path_src_buf;
   }
   else {
@@ -144,48 +141,48 @@ bool BKE_bpath_foreach_path_fixed_process(BPathForeachPathData *bpath_data,
   /* so functions can check old value */
   STRNCPY(path_dst, path);
 
-  if (bpath_data->callback_function(bpath_data, path_dst, sizeof(path_dst), path_src)) {
-    BLI_strncpy(path, path_dst, path_maxncpy);
-    bpath_data->is_path_modified = true;
+  if (path_data->cb_fn(path_data, path_dst, sizeof(path_dst), path_src)) {
+    lib_strncpy(path, path_dst, path_maxncpy);
+    bpath_data->is_path_mod = true;
     return true;
   }
 
   return false;
 }
 
-bool BKE_bpath_foreach_path_dirfile_fixed_process(BPathForeachPathData *bpath_data,
+bool dune_path_foreach_path_dirfile_fixed_process(PathForeachPathData *path_data,
                                                   char *path_dir,
                                                   size_t path_dir_maxncpy,
                                                   char *path_file,
                                                   size_t path_file_maxncpy)
 {
-  const char *absolute_base_path = bpath_data->absolute_base_path;
+  const char *absolute_base_path = path_data->absolute_base_path;
 
   char path_src[FILE_MAX];
   char path_dst[FILE_MAX];
 
-  BLI_path_join(path_src, sizeof(path_src), path_dir, path_file);
+  lib_path_join(path_src, sizeof(path_src), path_dir, path_file);
 
   /* So that functions can access the old value. */
   STRNCPY(path_dst, path_src);
 
   if (absolute_base_path) {
-    BLI_path_abs(path_src, absolute_base_path);
+    lib_path_abs(path_src, absolute_base_path);
   }
 
-  if (bpath_data->callback_function(
-          bpath_data, path_dst, sizeof(path_dst), (const char *)path_src)) {
-    BLI_path_split_dir_file(path_dst, path_dir, path_dir_maxncpy, path_file, path_file_maxncpy);
-    bpath_data->is_path_modified = true;
+  if (apath_data->cb_fn(
+        path_data, path_dst, sizeof(path_dst), (const char *)path_src)) {
+    lib_path_split_dir_file(path_dst, path_dir, path_dir_maxncpy, path_file, path_file_maxncpy);
+    path_data->is_path_mod = true;
     return true;
   }
 
   return false;
 }
 
-bool BKE_bpath_foreach_path_allocated_process(BPathForeachPathData *bpath_data, char **path)
+bool dune_path_foreach_path_allocated_process(PathForeachPathData *path_data, char **path)
 {
-  const char *absolute_base_path = bpath_data->absolute_base_path;
+  const char *absolute_base_path = path_data->absolute_base_path;
 
   char path_src_buf[FILE_MAX];
   const char *path_src;
@@ -193,83 +190,71 @@ bool BKE_bpath_foreach_path_allocated_process(BPathForeachPathData *bpath_data, 
 
   if (absolute_base_path) {
     STRNCPY(path_src_buf, *path);
-    BLI_path_abs(path_src_buf, absolute_base_path);
+    lib_path_abs(path_src_buf, absolute_base_path);
     path_src = path_src_buf;
   }
   else {
     path_src = *path;
   }
 
-  if (bpath_data->callback_function(bpath_data, path_dst, sizeof(path_dst), path_src)) {
-    MEM_freeN(*path);
-    (*path) = BLI_strdup(path_dst);
-    bpath_data->is_path_modified = true;
+  if (path_data->cb_fn(path_data, path_dst, sizeof(path_dst), path_src)) {
+    mem_freen(*path);
+    (*path) = lib_strdup(path_dst);
+    path_data->is_path_mod = true;
     return true;
   }
 
   return false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Check Missing Files
- * \{ */
-
-static bool check_missing_files_foreach_path_cb(BPathForeachPathData *bpath_data,
+/* name Check Missing Files */
+static bool check_missing_files_foreach_path_cb(PathForeachPathData *path_data,
                                                 char * /*path_dst*/,
                                                 size_t /*path_dst_maxncpy*/,
 
                                                 const char *path_src)
 {
-  ReportList *reports = (ReportList *)bpath_data->user_data;
+  ReportList *reports = (ReportList *)path_data->user_data;
 
-  if (!BLI_exists(path_src)) {
-    BKE_reportf(reports, RPT_WARNING, "Path '%s' not found", path_src);
+  if (!lib_exists(path_src)) {
+    dune_reportf(reports, RPT_WARNING, "Path '%s' not found", path_src);
   }
 
   return false;
 }
 
-void BKE_bpath_missing_files_check(Main *bmain, ReportList *reports)
+void dune_path_missing_files_check(Main *main, ReportList *reports)
 {
-  BPathForeachPathData path_data{};
-  path_data.bmain = bmain;
-  path_data.callback_function = check_missing_files_foreach_path_cb;
-  path_data.flag = BKE_BPATH_FOREACH_PATH_ABSOLUTE | BKE_BPATH_FOREACH_PATH_SKIP_PACKED |
-                   BKE_BPATH_FOREACH_PATH_RESOLVE_TOKEN | BKE_BPATH_TRAVERSE_SKIP_WEAK_REFERENCES;
+  PathForeachPathData path_data{};
+  path_data.main = main;
+  path_data.cb_fn = check_missing_files_foreach_path_cb;
+  path_data.flag = PATH_FOREACH_PATH_ABSOLUTE | DUNE_BPATH_FOREACH_PATH_SKIP_PACKED |
+                   PATH_FOREACH_PATH_RESOLVE_TOKEN | DUNE_BPATH_TRAVERSE_SKIP_WEAK_REFERENCES;
   path_data.user_data = reports;
-  BKE_bpath_foreach_path_main(&path_data);
+  dune_path_foreach_path_main(&path_data);
 
-  if (BLI_listbase_is_empty(&reports->list)) {
-    BKE_reportf(reports, RPT_INFO, "No missing files");
+  if (lib_list_is_empty(&reports->list)) {
+    dune_reportf(reports, RPT_INFO, "No missing files");
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Find Missing Files
- * \{ */
-
+/* Find Missing Files */
 #define MAX_DIR_RECURSE 16
 #define FILESIZE_INVALID_DIRECTORY -1
 
-/**
- * Find the given filename recursively in the given search directory and its sub-directories.
+/* Find the given filename recursively in the given search directory and its sub-directories.
  *
- * \note Use the biggest matching file found, so that thumbnails don't get used by mistake.
+ * note Use the biggest matching file found, so that thumbnails don't get used by mistake.
  *
- * \param search_directory: Directory to search in.
- * \param filename_src: Search for this filename.
- * \param r_filepath_new: The path of the new found file will be copied here, caller must
+ * param search_directory: Directory to search in.
+ * param filename_src: Search for this filename.
+ * param r_filepath_new: The path of the new found file will be copied here, caller must
  *                        initialize as empty string.
- * \param r_filesize: Size of the file, `FILESIZE_INVALID_DIRECTORY` if search directory could not
+ * param r_filesize: Size of the file, `FILESIZE_INVALID_DIRECTORY` if search directory could not
  *                    be opened.
- * \param r_recurse_depth: Current recursion depth.
+ * param r_recurse_depth: Current recursion depth.
  *
- * \return true if found, false otherwise.
- */
+ * return true if found, false otherwise. */
 static bool missing_files_find__recursive(const char *search_directory,
                                           const char *filename_src,
                                           char r_filepath_new[FILE_MAX],
@@ -279,7 +264,7 @@ static bool missing_files_find__recursive(const char *search_directory,
   /* TODO: Move this function to BLI_path_utils? The 'biggest size' behavior is quite specific
    * though... */
   DIR *dir;
-  BLI_stat_t status;
+  lib_stat_t status;
   char path[FILE_MAX];
   int64_t size;
   bool found = false;
@@ -299,19 +284,19 @@ static bool missing_files_find__recursive(const char *search_directory,
       continue;
     }
 
-    BLI_path_join(path, sizeof(path), search_directory, de->d_name);
+    lib_path_join(path, sizeof(path), search_directory, de->d_name);
 
-    if (BLI_stat(path, &status) == -1) {
+    if (lib_stat(path, &status) == -1) {
       CLOG_WARN(&LOG, "Cannot get file status (`stat()`) of '%s'", path);
       continue;
     }
 
     if (S_ISREG(status.st_mode)) {                                  /* It is a file. */
-      if (BLI_path_ncmp(filename_src, de->d_name, FILE_MAX) == 0) { /* Names match. */
+      if (lib_path_ncmp(filename_src, de->d_name, FILE_MAX) == 0) { /* Names match. */
         size = status.st_size;
         if ((size > 0) && (size > *r_filesize)) { /* Find the biggest matching file. */
           *r_filesize = size;
-          BLI_strncpy(r_filepath_new, path, FILE_MAX);
+          lib_strncpy(r_filepath_new, path, FILE_MAX);
           found = true;
         }
       }
@@ -330,55 +315,55 @@ static bool missing_files_find__recursive(const char *search_directory,
   return found;
 }
 
-struct BPathFind_Data {
+struct PathFind_Data {
   const char *basedir;
   const char *searchdir;
   ReportList *reports;
   bool find_all; /* Also search for files which current path is still valid. */
 };
 
-static bool missing_files_find_foreach_path_cb(BPathForeachPathData *bpath_data,
+static bool missing_files_find_foreach_path_cb(PathForeachPathData *path_data,
                                                char *path_dst,
                                                size_t path_dst_maxncpy,
                                                const char *path_src)
 {
-  BPathFind_Data *data = (BPathFind_Data *)bpath_data->user_data;
+  PathFind_Data *data = (PathFind_Data *)path_data->user_data;
   char filepath_new[FILE_MAX];
 
   int64_t filesize = FILESIZE_INVALID_DIRECTORY;
   int recurse_depth = 0;
   bool is_found;
 
-  if (!data->find_all && BLI_exists(path_src)) {
+  if (!data->find_all && lib_exists(path_src)) {
     return false;
   }
 
   filepath_new[0] = '\0';
 
   is_found = missing_files_find__recursive(
-      data->searchdir, BLI_path_basename(path_src), filepath_new, &filesize, &recurse_depth);
+      data->searchdir, lib_path_basename(path_src), filepath_new, &filesize, &recurse_depth);
 
   if (filesize == FILESIZE_INVALID_DIRECTORY) {
-    BKE_reportf(data->reports,
+    dune_reportf(data->reports,
                 RPT_WARNING,
                 "Could not open the directory '%s'",
-                BLI_path_basename(data->searchdir));
+                lib_path_basename(data->searchdir));
     return false;
   }
   if (is_found == false) {
-    BKE_reportf(data->reports,
+    dune_reportf(data->reports,
                 RPT_WARNING,
                 "Could not find '%s' in '%s'",
-                BLI_path_basename(path_src),
+                lib_path_basename(path_src),
                 data->searchdir);
     return false;
   }
 
   /* Keep the path relative if the previous one was relative. */
-  if (BLI_path_is_rel(path_dst)) {
-    BLI_path_rel(filepath_new, data->basedir);
+  if (lib_path_is_rel(path_dst)) {
+    lib_path_rel(filepath_new, data->basedir);
   }
-  BLI_strncpy(path_dst, filepath_new, path_dst_maxncpy);
+  lib_strncpy(path_dst, filepath_new, path_dst_maxncpy);
   return true;
 }
 
@@ -481,7 +466,7 @@ void dune_path_relative_rebase(Main *main,
 }
 
 /* Make Paths Relative Or Absolute */
-struct BPathRemap_Data {
+struct PathRemap_Data {
   const char *basedir;
   ReportList *reports;
 
@@ -608,12 +593,12 @@ struct PathStore {
   char filepath[0];
 };
 
-static bool bpath_list_append(BPathForeachPathData *bpath_data,
+static bool path_list_append(PathForeachPathData *path_data,
                               char * /*path_dst*/,
                               size_t /*path_dst_maxncpy*/,
                               const char *path_src)
 {
-  ListBase *path_list = static_cast<ListBase *>(bpath_data->user_data);
+  List *path_list = static_cast<List *>(path_data->user_data);
   size_t path_size = strlen(path_src) + 1;
 
   /* NOTE: the PathStore and its string are allocated together in a single alloc. */
@@ -628,9 +613,9 @@ static bool bpath_list_append(BPathForeachPathData *bpath_data,
 }
 
 static bool path_list_restore(PathForeachPathData *path_data,
-                               char *path_dst,
-                               size_t path_dst_maxncpy,
-                               const char *path_src)
+                              char *path_dst,
+                              size_t path_dst_maxncpy,
+                              const char *path_src)
 {
   List *path_list = static_cast<List *>(path_data->user_data);
 
