@@ -73,90 +73,88 @@
 #include "dune_mask.h"
 #include "dune_node.h"
 #include "dune_object.h"
-#include "KERNEL_paint.h"
-#include "KERNEL_pointcache.h"
-#include "KERNEL_rigidbody.h"
-#include "KERNEL_scene.h"
-#include "KERNEL_screen.h"
-#include "KERNEL_sound.h"
-#include "KERNEL_unit.h"
-#include "KERNEL_workspace.h"
-#include "KERNEL_world.h"
+#include "dune_paint.h"
+#include "dune_pointcache.h"
+#include "dune_rigidbody.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
+#include "dune_sound.h"
+#include "dune_unit.h"
+#include "dune_workspace.h"
+#include "dune_world.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_build.h"
+#include "graph_debug.h"
+#include "graph_query.h"
 
-#include "RE_engine.h"
+#include "render_engine.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
-#include "SEQ_edit.h"
-#include "SEQ_iterator.h"
-#include "SEQ_sequencer.h"
+#include "seq_edit.h"
+#include "seq_iter.h"
+#include "seq_seq.h"
 
-#include "LOADER_read_write.h"
-
-#include "engines/eevee/eevee_lightcache.h"
+#include "loader_read_write.h"
 
 #include "PIL_time.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-static void scene_init_data(ID *id)
+static void scene_init_data(Id *id)
 {
   Scene *scene = (Scene *)id;
   const char *colorspace_name;
   SceneRenderView *srv;
   CurveMapping *mblur_shutter_curve;
 
-  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(scene, id));
+  lib_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(scene, id));
 
-  MEMCPY_STRUCT_AFTER(scene, TYPES_struct_default_get(Scene), id);
+  MEMCPY_STRUCT_AFTER(scene, types_struct_default_get(Scene), id);
 
-  LIB_strncpy(scene->r.bake.filepath, U.renderdir, sizeof(scene->r.bake.filepath));
+  lib_strncpy(scene->r.bake.filepath, U.renderdir, sizeof(scene->r.bake.filepath));
 
   mblur_shutter_curve = &scene->r.mblur_shutter_curve;
-  KERNEL_curvemapping_set_defaults(mblur_shutter_curve, 1, 0.0f, 0.0f, 1.0f, 1.0f);
-  KERNEL_curvemapping_init(mblur_shutter_curve);
-  KERNEL_curvemap_reset(mblur_shutter_curve->cm,
+  dune_curvemapping_set_defaults(mblur_shutter_curve, 1, 0.0f, 0.0f, 1.0f, 1.0f);
+  dune_curvemapping_init(mblur_shutter_curve);
+  dune_curvemap_reset(mblur_shutter_curve->cm,
                      &mblur_shutter_curve->clipr,
                      CURVE_PRESET_MAX,
                      CURVEMAP_SLOPE_POS_NEG);
 
-  scene->toolsettings = DNA_struct_default_alloc(ToolSettings);
+  scene->toolsettings = types_struct_default_alloc(ToolSettings);
 
   scene->toolsettings->autokey_mode = (uchar)U.autokey_mode;
 
   /* grease pencil multiframe falloff curve */
-  scene->toolsettings->gp_sculpt.cur_falloff = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
-  CurveMapping *gp_falloff_curve = scene->toolsettings->gp_sculpt.cur_falloff;
-  KERNEL_curvemapping_init(gp_falloff_curve);
-  KERNEL_curvemap_reset(
-      gp_falloff_curve->cm, &gp_falloff_curve->clipr, CURVE_PRESET_GAUSS, CURVEMAP_SLOPE_POSITIVE);
+  scene->toolsettings->pen_sculpt.cur_falloff = dune_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
+  CurveMapping *pen_falloff_curve = scene->toolsettings->pen_sculpt.cur_falloff;
+  dune_curvemapping_init(pen_falloff_curve);
+  dune_curvemap_reset(
+      gp_falloff_curve->cm, &pen_falloff_curve->clipr, CURVE_PRESET_GAUSS, CURVEMAP_SLOPE_POSITIVE);
 
-  scene->toolsettings->gp_sculpt.cur_primitive = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
+  scene->toolsettings->pen_sculpt.cur_primitive = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
   CurveMapping *gp_primitive_curve = scene->toolsettings->gp_sculpt.cur_primitive;
-  KERNEL_curvemapping_init(gp_primitive_curve);
-  KERNEL_curvemap_reset(gp_primitive_curve->cm,
-                     &gp_primitive_curve->clipr,
+  dune_curvemapping_init(pen_primitive_curve);
+  dune_curvemap_reset(pen_primitive_curve->cm,
+                     &pen_primitive_curve->clipr,
                      CURVE_PRESET_BELL,
                      CURVEMAP_SLOPE_POSITIVE);
 
   scene->unit.system = USER_UNIT_METRIC;
   scene->unit.scale_length = 1.0f;
-  scene->unit.length_unit = (uchar)BKE_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_LENGTH);
-  scene->unit.mass_unit = (uchar)BKE_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_MASS);
-  scene->unit.time_unit = (uchar)BKE_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_TIME);
-  scene->unit.temperature_unit = (uchar)BKE_unit_base_of_type_get(USER_UNIT_METRIC,
+  scene->unit.length_unit = (uchar)dune_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_LENGTH);
+  scene->unit.mass_unit = (uchar)dune_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_MASS);
+  scene->unit.time_unit = (uchar)dune_unit_base_of_type_get(USER_UNIT_METRIC, B_UNIT_TIME);
+  scene->unit.temperature_unit = (uchar)dune_unit_base_of_type_get(USER_UNIT_METRIC,
                                                                   B_UNIT_TEMPERATURE);
 
   /* Anti-Aliasing threshold. */
-  scene->grease_pencil_settings.smaa_threshold = 1.0f;
+  scene->pen_settings.smaa_threshold = 1.0f;
 
   {
     ParticleEditSettings *pset;
@@ -167,23 +165,23 @@ static void scene_init_data(ID *id)
     pset->brush[PE_BRUSH_CUT].strength = 1.0f;
   }
 
-  LIB_strncpy(scene->r.engine, RE_engine_id_BLENDER_EEVEE, sizeof(scene->r.engine));
+  lib_strncpy(scene->r.engine, render_engine_id_EEVEE, sizeof(scene->r.engine));
 
-  LIB_strncpy(scene->r.pic, U.renderdir, sizeof(scene->r.pic));
+  lib_strncpy(scene->r.pic, U.renderdir, sizeof(scene->r.pic));
 
   /* NOTE: in header_info.c the scene copy happens...,
    * if you add more to renderdata it has to be checked there. */
 
   /* multiview - stereo */
-  KERNEL_scene_add_render_view(scene, STEREO_LEFT_NAME);
+  dune_scene_add_render_view(scene, STEREO_LEFT_NAME);
   srv = scene->r.views.first;
-  LIB_strncpy(srv->suffix, STEREO_LEFT_SUFFIX, sizeof(srv->suffix));
+  lib_strncpy(srv->suffix, STEREO_LEFT_SUFFIX, sizeof(srv->suffix));
 
-  KERNEL_scene_add_render_view(scene, STEREO_RIGHT_NAME);
+  dune_scene_add_render_view(scene, STEREO_RIGHT_NAME);
   srv = scene->r.views.last;
-  LIB_strncpy(srv->suffix, STEREO_RIGHT_SUFFIX, sizeof(srv->suffix));
+  lib_strncpy(srv->suffix, STEREO_RIGHT_SUFFIX, sizeof(srv->suffix));
 
-  KERNEL_sound_reset_scene_runtime(scene);
+  dune_sound_reset_scene_runtime(scene);
 
   /* color management */
   colorspace_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_SEQUENCER);
