@@ -452,13 +452,13 @@ static void scene_foreach_toolsettings_id_pointer_process(
 {
   switch (action) {
     case SCENE_FOREACH_UNDO_RESTORE: {
-      ID *id_old = *id_old_p;
+      Id *id_old = *id_old_p;
       /* Old data has not been remapped to new values of the pointers, if we want to keep the old
        * pointer here we need its new address. */
-      ID *id_old_new = id_old != NULL ? BLO_read_get_new_id_address(reader, id_old->lib, id_old) :
+      Id *id_old_new = id_old != NULL ? loader_read_get_new_id_address(reader, id_old->lib, id_old) :
                                         NULL;
       if (id_old_new != NULL) {
-        LIB_assert(ELEM(id_old, id_old_new, id_old_new->orig_id));
+        lib_assert(ELEM(id_old, id_old_new, id_old_new->orig_id));
         *id_old_p = id_old_new;
         if (cb_flag & IDWALK_CB_USER) {
           id_us_plus_no_lib(id_old_new);
@@ -468,12 +468,12 @@ static void scene_foreach_toolsettings_id_pointer_process(
       }
       /* We failed to find a new valid pointer for the previous ID, just keep the current one as
        * if we had been under SCENE_FOREACH_UNDO_NO_RESTORE case. */
-      SWAP(ID *, *id_p, *id_old_p);
+      SWAP(Id *, *id_p, *id_old_p);
       break;
     }
     case SCENE_FOREACH_UNDO_NO_RESTORE:
       /* Counteract the swap of the whole ToolSettings container struct. */
-      SWAP(ID *, *id_p, *id_old_p);
+      SWAP(Id *, *id_p, *id_old_p);
       break;
   }
 }
@@ -481,40 +481,40 @@ static void scene_foreach_toolsettings_id_pointer_process(
 /* Special handling is needed here, as `scene_foreach_toolsettings` (and its dependency
  * `scene_foreach_paint`) are also used by `scene_undo_preserve`, where `LibraryForeachIDData
  * *data` is NULL. */
-#define KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER( \
+#define DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER( \
     __data, __id, __do_undo_restore, __action, __reader, __id_old, __cb_flag) \
   { \
     if (__do_undo_restore) { \
       scene_foreach_toolsettings_id_pointer_process( \
-          (ID **)&(__id), __action, __reader, (ID **)&(__id_old), __cb_flag); \
+          (ID **)&(__id), __action, __reader, (Id **)&(__id_old), __cb_flag); \
     } \
     else { \
-      LIB_assert((__data) != NULL); \
-      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(__data, __id, __cb_flag); \
+      lib_assert((__data) != NULL); \
+      DUNE_LIB_FOREACHID_PROCESS_IDSUPER(__data, __id, __cb_flag); \
     } \
   } \
   (void)0
 
-#define KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL( \
+#define DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL( \
     __data, __do_undo_restore, __func_call) \
   { \
     if (__do_undo_restore) { \
       __func_call; \
     } \
     else { \
-      LIB_assert((__data) != NULL); \
-      KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(__data, __func_call); \
+      lib_assert((__data) != NULL); \
+      DUNE_LIB_FOREACHID_PROCESS_FN_CALL(__data, __func_call); \
     } \
   } \
   (void)0
 
-static void scene_foreach_paint(LibraryForeachIDData *data,
+static void scene_foreach_paint(LibForeachIdData *data,
                                 Paint *paint,
                                 const bool do_undo_restore,
                                 DuneLibReader *reader,
                                 Paint *paint_old)
 {
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   paint->brush,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -527,12 +527,11 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
      *    this is equivalent to simply looping over slots from `paint`.
      *  - In case we do `undo_restore`, we only want to consider the slots from the old one, since
      *    those are the one we keep in the end.
-     *    + In case the new data has less valid slots, we feed in a dummy NULL pointer.
-     *    + In case the new data has more valid slots, the extra ones are ignored.
-     */
+     *    + In case the new data has less valid slots, we feed in a dummy NULL ptr.
+     *    + In case the new data has more valid slots, the extra ones are ignored. */
     Brush *brush_tmp = NULL;
     Brush **brush_p = i < paint->tool_slots_len ? &paint->tool_slots[i].brush : &brush_tmp;
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                     *brush_p,
                                                     do_undo_restore,
                                                     SCENE_FOREACH_UNDO_RESTORE,
@@ -540,7 +539,7 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
                                                     paint_old->brush,
                                                     IDWALK_CB_USER);
   }
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   paint->palette,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -549,27 +548,27 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
                                                   IDWALK_CB_USER);
 }
 
-static void scene_foreach_toolsettings(LibraryForeachIDData *data,
+static void scene_foreach_toolsettings(LibForeachIdData *data,
                                        ToolSettings *toolsett,
                                        const bool do_undo_restore,
                                        DuneLibReader *reader,
                                        ToolSettings *toolsett_old)
 {
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.scene,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
                                                   toolsett_old->particle.scene,
                                                   IDWALK_CB_NOP);
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
                                                   toolsett_old->particle.object,
                                                   IDWALK_CB_NOP);
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.shape_object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
@@ -579,21 +578,21 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
 
   scene_foreach_paint(
       data, &toolsett->imapaint.paint, do_undo_restore, reader, &toolsett_old->imapaint.paint);
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.stencil,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
                                                   reader,
                                                   toolsett_old->imapaint.stencil,
                                                   IDWALK_CB_USER);
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.clone,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
                                                   reader,
                                                   toolsett_old->imapaint.clone,
                                                   IDWALK_CB_USER);
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.canvas,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -602,7 +601,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                                   IDWALK_CB_USER);
 
   if (toolsett->vpaint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -612,7 +611,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->vpaint->paint));
   }
   if (toolsett->wpaint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -622,7 +621,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->wpaint->paint));
   }
   if (toolsett->sculpt) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -630,7 +629,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             do_undo_restore,
                             reader,
                             &toolsett_old->sculpt->paint));
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                     toolsett->sculpt->gravity_object,
                                                     do_undo_restore,
                                                     SCENE_FOREACH_UNDO_NO_RESTORE,
@@ -639,7 +638,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                                     IDWALK_CB_NOP);
   }
   if (toolsett->uvsculpt) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -648,48 +647,48 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             reader,
                             &toolsett_old->uvsculpt->paint));
   }
-  if (toolsett->gp_paint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+  if (toolsett->pen_paint) {
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
-                            &toolsett->gp_paint->paint,
+                            &toolsett->pen_paint->paint,
                             do_undo_restore,
                             reader,
-                            &toolsett_old->gp_paint->paint));
+                            &toolsett_old->pe _paint->paint));
   }
-  if (toolsett->gp_vertexpaint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+  if (toolsett->pen_vertexpaint) {
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
-                            &toolsett->gp_vertexpaint->paint,
+                            &toolsett->pen_vertexpaint->paint,
                             do_undo_restore,
                             reader,
-                            &toolsett_old->gp_vertexpaint->paint));
+                            &toolsett_old->pen_vertexpaint->paint));
   }
-  if (toolsett->gp_sculptpaint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+  if (toolsett->pen_sculptpaint) {
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
-                            &toolsett->gp_sculptpaint->paint,
+                            &toolsett->pen_sculptpaint->paint,
                             do_undo_restore,
                             reader,
-                            &toolsett_old->gp_sculptpaint->paint));
+                            &toolsett_old->pen_sculptpaint->paint));
   }
   if (toolsett->gp_weightpaint) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
-                            &toolsett->gp_weightpaint->paint,
+                            &toolsett->pen_weightpaint->paint,
                             do_undo_restore,
                             reader,
-                            &toolsett_old->gp_weightpaint->paint));
+                            &toolsett_old->pen_weightpaint->paint));
   }
   if (toolsett->curves_sculpt) {
-    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -699,8 +698,8 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->curves_sculpt->paint));
   }
 
-  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
-                                                  toolsett->gp_sculpt.guide.reference_object,
+  DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+                                                  toolsett->pen_sculpt.guide.reference_object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
