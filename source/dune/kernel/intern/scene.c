@@ -184,45 +184,45 @@ static void scene_init_data(Id *id)
   dune_sound_reset_scene_runtime(scene);
 
   /* color management */
-  colorspace_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_SEQUENCER);
+  colorspace_name = imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_SEQ);
 
-  KERNEL_color_managed_display_settings_init(&scene->display_settings);
-  KERNEL_color_managed_view_settings_init_render(
+  dune_color_managed_display_settings_init(&scene->display_settings);
+  dune_color_managed_view_settings_init_render(
       &scene->view_settings, &scene->display_settings, "Filmic");
-  LIB_strncpy(scene->sequencer_colorspace_settings.name,
+  lib_strncpy(scene->seq_colorspace_settings.name,
               colorspace_name,
               sizeof(scene->sequencer_colorspace_settings.name));
 
-  KERNEL_image_format_init(&scene->r.im_format, true);
-  KERNEL_image_format_init(&scene->r.bake.im_format, true);
+  dune_image_format_init(&scene->r.im_format, true);
+  dune_image_format_init(&scene->r.bake.im_format, true);
 
   /* Curve Profile */
-  scene->toolsettings->custom_bevel_profile_preset = BKE_curveprofile_add(PROF_PRESET_LINE);
+  scene->toolsettings->custom_bevel_profile_preset = dune_curveprofile_add(PROF_PRESET_LINE);
 
-  /* Sequencer */
-  scene->toolsettings->sequencer_tool_settings = SEQ_tool_settings_init();
+  /* Seq */
+  scene->toolsettings->seq_tool_settings = seq_tool_settings_init();
 
   for (size_t i = 0; i < ARRAY_SIZE(scene->orientation_slots); i++) {
     scene->orientation_slots[i].index_custom = -1;
   }
 
   /* Master Collection */
-  scene->master_collection = KERNEL_collection_master_add();
+  scene->master_collection = dune_collection_master_add();
 
-  KERNEL_view_layer_add(scene, "ViewLayer", NULL, VIEWLAYER_ADD_NEW);
+  dune_view_layer_add(scene, "ViewLayer", NULL, VIEWLAYER_ADD_NEW);
 }
 
 static void scene_copy_markers(Scene *scene_dst, const Scene *scene_src, const int flag)
 {
-  LIB_duplicatelist(&scene_dst->markers, &scene_src->markers);
-  LISTBASE_FOREACH (TimeMarker *, marker, &scene_dst->markers) {
+  lib_duplicatelist(&scene_dst->markers, &scene_src->markers);
+  LIST_FOREACH (TimeMarker *, marker, &scene_dst->markers) {
     if (marker->prop != NULL) {
-      marker->prop = IDP_CopyProperty_ex(marker->prop, flag);
+      marker->prop = IDP_CopyProp_ex(marker->prop, flag);
     }
   }
 }
 
-static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
+static void scene_copy_data(Main *main, Id *id_dst, const Id *id_src, const int flag)
 {
   Scene *scene_dst = (Scene *)id_dst;
   const Scene *scene_src = (const Scene *)id_src;
@@ -232,36 +232,36 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
   const int flag_private_id_data = flag & ~LIB_ID_CREATE_NO_ALLOCATE;
 
   scene_dst->ed = NULL;
-  scene_dst->depsgraph_hash = NULL;
+  scene_dst->graph_hash = NULL;
   scene_dst->fps_info = NULL;
 
   /* Master Collection */
   if (scene_src->master_collection) {
-    KERNEL_id_copy_ex(bmain,
-                   (ID *)scene_src->master_collection,
-                   (ID **)&scene_dst->master_collection,
+    dune_id_copy_ex(main,
+                   (Id *)scene_src->master_collection,
+                   (Id **)&scene_dst->master_collection,
                    flag_private_id_data);
   }
 
   /* View Layers */
-  LIB_duplicatelist(&scene_dst->view_layers, &scene_src->view_layers);
+  lib_duplicatelist(&scene_dst->view_layers, &scene_src->view_layers);
   for (ViewLayer *view_layer_src = scene_src->view_layers.first,
                  *view_layer_dst = scene_dst->view_layers.first;
        view_layer_src;
        view_layer_src = view_layer_src->next, view_layer_dst = view_layer_dst->next) {
-    KERNEL_view_layer_copy_data(scene_dst, scene_src, view_layer_dst, view_layer_src, flag_subdata);
+    dune_view_layer_copy_data(scene_dst, scene_src, view_layer_dst, view_layer_src, flag_subdata);
   }
 
   scene_copy_markers(scene_dst, scene_src, flag);
 
-  LIB_duplicatelist(&(scene_dst->transform_spaces), &(scene_src->transform_spaces));
-  LIB_duplicatelist(&(scene_dst->r.views), &(scene_src->r.views));
-  KERNEL_keyingsets_copy(&(scene_dst->keyingsets), &(scene_src->keyingsets));
+  lib_duplicatelist(&(scene_dst->transform_spaces), &(scene_src->transform_spaces));
+  lib_duplicatelist(&(scene_dst->r.views), &(scene_src->r.views));
+  dune_keyingsets_copy(&(scene_dst->keyingsets), &(scene_src->keyingsets));
 
   if (scene_src->nodetree) {
-    KERNEL_id_copy_ex(
-        bmain, (ID *)scene_src->nodetree, (ID **)&scene_dst->nodetree, flag_private_id_data);
-    KERNEL_libblock_relink_ex(bmain,
+    dune_id_copy_ex(
+        main, (Id *)scene_src->nodetree, (Id **)&scene_dst->nodetree, flag_private_id_data);
+    dune_libblock_relink_ex(main,
                            scene_dst->nodetree,
                            (void *)(&scene_src->id),
                            &scene_dst->id,
@@ -269,85 +269,85 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
   }
 
   if (scene_src->rigidbody_world) {
-    scene_dst->rigidbody_world = KERNEL_rigidbody_world_copy(scene_src->rigidbody_world,
+    scene_dst->rigidbody_world = dune_rigidbody_world_copy(scene_src->rigidbody_world,
                                                           flag_subdata);
   }
 
   /* copy color management settings */
-  KERNEL_color_managed_display_settings_copy(&scene_dst->display_settings,
+  dune_color_managed_display_settings_copy(&scene_dst->display_settings,
                                           &scene_src->display_settings);
-  KERNEL_color_managed_view_settings_copy(&scene_dst->view_settings, &scene_src->view_settings);
-  KERNEL_color_managed_colorspace_settings_copy(&scene_dst->sequencer_colorspace_settings,
-                                             &scene_src->sequencer_colorspace_settings);
+  dune_color_managed_view_settings_copy(&scene_dst->view_settings, &scene_src->view_settings);
+  dune_color_managed_colorspace_settings_copy(&scene_dst->seq_colorspace_settings,
+                                             &scene_src->seq_colorspace_settings);
 
-  KERNEL_image_format_copy(&scene_dst->r.im_format, &scene_src->r.im_format);
-  KERNEL_image_format_copy(&scene_dst->r.bake.im_format, &scene_src->r.bake.im_format);
+  dune_image_format_copy(&scene_dst->r.im_format, &scene_src->r.im_format);
+  dune_image_format_copy(&scene_dst->r.bake.im_format, &scene_src->r.bake.im_format);
 
-  KERNEL_curvemapping_copy_data(&scene_dst->r.mblur_shutter_curve, &scene_src->r.mblur_shutter_curve);
+  dune_curvemapping_copy_data(&scene_dst->r.mblur_shutter_curve, &scene_src->r.mblur_shutter_curve);
 
   /* tool settings */
-  scene_dst->toolsettings = KERNEL_toolsettings_copy(scene_dst->toolsettings, flag_subdata);
+  scene_dst->toolsettings = dune_toolsettings_copy(scene_dst->toolsettings, flag_subdata);
 
   /* make a private copy of the avicodecdata */
   if (scene_src->r.avicodecdata) {
-    scene_dst->r.avicodecdata = MEM_dupallocN(scene_src->r.avicodecdata);
-    scene_dst->r.avicodecdata->lpFormat = MEM_dupallocN(scene_dst->r.avicodecdata->lpFormat);
-    scene_dst->r.avicodecdata->lpParms = MEM_dupallocN(scene_dst->r.avicodecdata->lpParms);
+    scene_dst->r.avicodecdata = mem_dupallocn(scene_src->r.avicodecdata);
+    scene_dst->r.avicodecdata->lpFormat = mem_dupallocn(scene_dst->r.avicodecdata->lpFormat);
+    scene_dst->r.avicodecdata->lpParms = mem_dupallocn(scene_dst->r.avicodecdata->lpParms);
   }
 
   if (scene_src->display.shading.prop) {
-    scene_dst->display.shading.prop = IDP_CopyProperty(scene_src->display.shading.prop);
+    scene_dst->display.shading.prop = IDP_CopyProp(scene_src->display.shading.prop);
   }
 
-  KERNEL_sound_reset_scene_runtime(scene_dst);
+  dune_sound_reset_scene_runtime(scene_dst);
 
   /* Copy sequencer, this is local data! */
   if (scene_src->ed) {
-    scene_dst->ed = MEM_callocN(sizeof(*scene_dst->ed), __func__);
+    scene_dst->ed = mem_callocn(sizeof(*scene_dst->ed), __func__);
     scene_dst->ed->seqbasep = &scene_dst->ed->seqbase;
-    SEQ_sequence_base_dupli_recursive(scene_src,
-                                      scene_dst,
-                                      &scene_dst->ed->seqbase,
-                                      &scene_src->ed->seqbase,
-                                      SEQ_DUPE_ALL,
-                                      flag_subdata);
+    seq_base_dupli_recursive(scene_src,
+                             scene_dst,
+                             &scene_dst->ed->seqbase,
+                             &scene_src->ed->seqbase,
+                             SEQ_DUPE_ALL,
+                             flag_subdata);
   }
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    KERNEL_previewimg_id_copy(&scene_dst->id, &scene_src->id);
+    dune_previewimg_id_copy(&scene_dst->id, &scene_src->id);
   }
   else {
     scene_dst->preview = NULL;
   }
 
-  KERNEL_scene_copy_data_eevee(scene_dst, scene_src);
+  dune_scene_copy_data_eevee(scene_dst, scene_src);
 }
 
 static void scene_free_markers(Scene *scene, bool do_id_user)
 {
-  LISTBASE_FOREACH_MUTABLE (TimeMarker *, marker, &scene->markers) {
+  LIST_FOREACH_MUTABLE (TimeMarker *, marker, &scene->markers) {
     if (marker->prop != NULL) {
-      IDP_FreePropertyContent_ex(marker->prop, do_id_user);
-      MEM_freeN(marker->prop);
+      IDP_FreePropContent_ex(marker->prop, do_id_user);
+      mem_freen(marker->prop);
     }
-    MEM_freeN(marker);
+    mem_freen(marker);
   }
 }
 
-static void scene_free_data(ID *id)
+static void scene_free_data(Id *id)
 {
 
   Scene *scene = (Scene *)id;
   const bool do_id_user = false;
 
-  SEQ_editing_free(scene, do_id_user);
+  seq_editing_free(scene, do_id_user);
 
-  KERNEL_keyingsets_free(&scene->keyingsets);
+  dune_keyingsets_free(&scene->keyingsets);
 
   /* is no lib link block, but scene extension */
   if (scene->nodetree) {
     ntreeFreeEmbeddedTree(scene->nodetree);
-    MEM_freeN(scene->nodetree);
+    mem_freen(scene->nodetree);
     scene->nodetree = NULL;
   }
 
@@ -357,41 +357,41 @@ static void scene_free_data(ID *id)
      * worse, pointing to data actually belonging to new BMain! */
     scene->rigidbody_world->constraints = NULL;
     scene->rigidbody_world->group = NULL;
-    KERNEL_rigidbody_free_world(scene);
+    dune_rigidbody_free_world(scene);
   }
 
   if (scene->r.avicodecdata) {
     free_avicodecdata(scene->r.avicodecdata);
-    MEM_freeN(scene->r.avicodecdata);
+    mem_freen(scene->r.avicodecdata);
     scene->r.avicodecdata = NULL;
   }
 
   scene_free_markers(scene, do_id_user);
-  LIB_freelistN(&scene->transform_spaces);
-  LIB_freelistN(&scene->r.views);
+  lib_freelistn(&scene->transform_spaces);
+  lib_freelistn(&scene->r.views);
 
-  KERNEL_toolsettings_free(scene->toolsettings);
+  dune_toolsettings_free(scene->toolsettings);
   scene->toolsettings = NULL;
 
-  KERNEL_scene_free_depsgraph_hash(scene);
+  dune_scene_free_graph_hash(scene);
 
   MEM_SAFE_FREE(scene->fps_info);
 
-  KERNEL_sound_destroy_scene(scene);
+  dune_sound_destroy_scene(scene);
 
-  KERNEL_color_managed_view_settings_free(&scene->view_settings);
-  KERNEL_image_format_free(&scene->r.im_format);
-  KERNEL_image_format_free(&scene->r.bake.im_format);
+  dune_color_managed_view_settings_free(&scene->view_settings);
+  dune_image_format_free(&scene->r.im_format);
+  dune_image_format_free(&scene->r.bake.im_format);
 
-  KERNEL_previewimg_free(&scene->preview);
-  KERNEL_curvemapping_free_data(&scene->r.mblur_shutter_curve);
+  dune_previewimg_free(&scene->preview);
+  dune_curvemapping_free_data(&scene->r.mblur_shutter_curve);
 
   for (ViewLayer *view_layer = scene->view_layers.first, *view_layer_next; view_layer;
        view_layer = view_layer_next) {
     view_layer_next = view_layer->next;
 
-    LIB_remlink(&scene->view_layers, view_layer);
-    KERNEL_view_layer_free_ex(view_layer, do_id_user);
+    lib_remlink(&scene->view_layers, view_layer);
+    dune_view_layer_free_ex(view_layer, do_id_user);
   }
 
   /* Master Collection */
