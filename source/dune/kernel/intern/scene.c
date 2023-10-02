@@ -400,40 +400,33 @@ static void scene_free_data(Id *id)
    * for objects directly in the master collection? then other
    * collections in the scene need to do it too? */
   if (scene->master_collection) {
-    KERNEL_collection_free_data(scene->master_collection);
-    KERNEL_libblock_free_data_py(&scene->master_collection->id);
-    MEM_freeN(scene->master_collection);
+    dune_collection_free_data(scene->master_collection);
+    dune_libblock_free_data_py(&scene->master_collection->id);
+    mem_freen(scene->master_collection);
     scene->master_collection = NULL;
   }
 
-  if (scene->eevee.light_cache_data) {
-    EEVEE_lightcache_free(scene->eevee.light_cache_data);
-    scene->eevee.light_cache_data = NULL;
-  }
-
   if (scene->display.shading.prop) {
-    IDP_FreeProperty(scene->display.shading.prop);
+    IDP_FreeProp(scene->display.shading.prop);
     scene->display.shading.prop = NULL;
   }
 
   /* These are freed on doversion. */
-  LIB_assert(scene->layer_properties == NULL);
+  lib_assert(scene->layer_props == NULL);
 }
 
 static void scene_foreach_rigidbodyworldSceneLooper(struct RigidBodyWorld *UNUSED(rbw),
-                                                    ID **id_pointer,
+                                                    Id **id_ptr,
                                                     void *user_data,
                                                     int cb_flag)
 {
-  LibraryForeachIDData *data = (LibraryForeachIDData *)user_data;
-  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-      data, KERNEL_lib_query_foreachid_process(data, id_pointer, cb_flag));
+  LibForeachIdData *data = (LibForeachIdData *)user_data;
+ DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
+      data, dune_lib_query_foreachid_process(data, id_ptr, cb_flag));
 }
 
-/**
- * This code is shared by both the regular `foreach_id` looper, and the code trying to restore or
- * preserve ID pointers like brushes across undo-steps.
- */
+/* This code is shared by both the regular `foreach_id` looper, and the code trying to restore or
+ * preserve Id ptrs like brushes across undo-steps. */
 typedef enum eSceneForeachUndoPreserveProcess {
   /* Undo when preserving tool-settings from old scene, we also want to try to preserve that ID
    * pointer from its old scene's value. */
@@ -443,18 +436,18 @@ typedef enum eSceneForeachUndoPreserveProcess {
   SCENE_FOREACH_UNDO_NO_RESTORE,
 } eSceneForeachUndoPreserveProcess;
 
-static void scene_foreach_toolsettings_id_pointer_process(
-    ID **id_p,
+static void scene_foreach_toolsettings_id_ptr_process(
+    Id **id_p,
     const eSceneForeachUndoPreserveProcess action,
     DuneLibReader *reader,
-    ID **id_old_p,
+    Id **id_old_p,
     const uint cb_flag)
 {
   switch (action) {
     case SCENE_FOREACH_UNDO_RESTORE: {
       Id *id_old = *id_old_p;
-      /* Old data has not been remapped to new values of the pointers, if we want to keep the old
-       * pointer here we need its new address. */
+      /* Old data has not been remapped to new values of the ptrs, if we want to keep the old
+       * ptr here we need its new address. */
       Id *id_old_new = id_old != NULL ? loader_read_get_new_id_address(reader, id_old->lib, id_old) :
                                         NULL;
       if (id_old_new != NULL) {
@@ -485,8 +478,8 @@ static void scene_foreach_toolsettings_id_pointer_process(
     __data, __id, __do_undo_restore, __action, __reader, __id_old, __cb_flag) \
   { \
     if (__do_undo_restore) { \
-      scene_foreach_toolsettings_id_pointer_process( \
-          (ID **)&(__id), __action, __reader, (Id **)&(__id_old), __cb_flag); \
+      scene_foreach_toolsettings_id_ptr_process( \
+          (Id **)&(__id), __action, __reader, (Id **)&(__id_old), __cb_flag); \
     } \
     else { \
       lib_assert((__data) != NULL); \
@@ -677,7 +670,7 @@ static void scene_foreach_toolsettings(LibForeachIdData *data,
                             reader,
                             &toolsett_old->pen_sculptpaint->paint));
   }
-  if (toolsett->gp_weightpaint) {
+  if (toolsett->pen_weightpaint) {
     DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL(
         data,
         do_undo_restore,
@@ -699,40 +692,40 @@ static void scene_foreach_toolsettings(LibForeachIdData *data,
   }
 
   DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
-                                                  toolsett->pen_sculpt.guide.reference_object,
+                                                  toolsett->pen_sculpt.guide.ref_object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
-                                                  toolsett_old->gp_sculpt.guide.reference_object,
+                                                  toolsett_old->pen_sculpt.guide.ref_object,
                                                   IDWALK_CB_NOP);
 }
 
-#undef KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER
-#undef KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL
+#undef DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER
+#undef DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FN_CALL
 
-static void scene_foreach_layer_collection(LibraryForeachIDData *data, ListBase *lb)
+static void scene_foreach_layer_collection(LibForeachIdData *data, List *lb)
 {
-  LISTBASE_FOREACH (LayerCollection *, lc, lb) {
-    /* XXX This is very weak. The whole idea of keeping pointers to private IDs is very bad
+  LIST_FOREACH (LayerCollection *, lc, lb) {
+    /* This is very weak. The whole idea of keeping ptrs to private Ids is very bad
      * anyway... */
     const int cb_flag = (lc->collection != NULL &&
                          (lc->collection->id.flag & LIB_EMBEDDED_DATA) != 0) ?
                             IDWALK_CB_EMBEDDED :
                             IDWALK_CB_NOP;
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, lc->collection, cb_flag);
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, lc->collection, cb_flag);
     scene_foreach_layer_collection(data, &lc->layer_collections);
   }
 }
 
-static bool seq_foreach_member_id_cb(Sequence *seq, void *user_data)
+static bool seq_foreach_member_id_cb(Seq *seq, void *user_data)
 {
-  LibraryForeachIDData *data = (LibraryForeachIDData *)user_data;
+  LibForeachIdData *data = (LibForeachIdData *)user_data;
 
 #define FOREACHID_PROCESS_IDSUPER(_data, _id_super, _cb_flag) \
   { \
     CHECK_TYPE(&((_id_super)->id), ID *); \
-    KERNEL_lib_query_foreachid_process((_data), (ID **)&(_id_super), (_cb_flag)); \
-    if (KERNEL_lib_query_foreachid_iter_stop((_data))) { \
+    dune_lib_query_foreachid_process((_data), (ID **)&(_id_super), (_cb_flag)); \
+    if (dune_lib_query_foreachid_iter_stop((_data))) { \
       return false; \
     } \
   } \
@@ -743,9 +736,9 @@ static bool seq_foreach_member_id_cb(Sequence *seq, void *user_data)
   FOREACHID_PROCESS_IDSUPER(data, seq->clip, IDWALK_CB_USER);
   FOREACHID_PROCESS_IDSUPER(data, seq->mask, IDWALK_CB_USER);
   FOREACHID_PROCESS_IDSUPER(data, seq->sound, IDWALK_CB_USER);
-  IDP_foreach_property(
-      seq->prop, IDP_TYPE_FILTER_ID, BKE_lib_query_idpropertiesForeachIDLink_callback, data);
-  LISTBASE_FOREACH (SequenceModifierData *, smd, &seq->modifiers) {
+  IDP_foreach_prop(
+      seq->prop, IDP_TYPE_FILTER_ID, dune_lib_query_idpropsForeachIdLink_cb, data);
+  LIST_FOREACH (SeqModData *, smd, &seq->mods) {
     FOREACHID_PROCESS_IDSUPER(data, smd->mask_id, IDWALK_CB_USER);
   }
 
@@ -759,328 +752,322 @@ static bool seq_foreach_member_id_cb(Sequence *seq, void *user_data)
   return true;
 }
 
-static void scene_foreach_id(ID *id, LibraryForeachIDData *data)
+static void scene_foreach_id(Id *id, LibForeachIdData *data)
 {
   Scene *scene = (Scene *)id;
 
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->camera, IDWALK_CB_NOP);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->world, IDWALK_CB_USER);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->set, IDWALK_CB_NEVER_SELF);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->clip, IDWALK_CB_USER);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->gpd, IDWALK_CB_USER);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->r.bake.cage_object, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->camera, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->world, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->set, IDWALK_CB_NEVER_SELF);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->clip, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->pendata, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->r.bake.cage_object, IDWALK_CB_NOP);
   if (scene->nodetree) {
-    /* nodetree **are owned by IDs**, treat them as mere sub-data and not real ID! */
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&scene->nodetree));
+    /* nodetree **are owned by Ids**, treat them as mere sub-data and not real ID! */
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
+        data, dune_lib_foreach_id_embedded(data, (Id **)&scene->nodetree));
   }
   if (scene->ed) {
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, SEQ_for_each_callback(&scene->ed->seqbase, seq_foreach_member_id_cb, data));
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
+        data, seq_for_each_cb(&scene->ed->seqbase, seq_foreach_member_id_cb, data));
   }
 
-  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
-                                          BKE_keyingsets_foreach_id(data, &scene->keyingsets));
+  DUNE_LIB_FOREACHID_PROCESS_FN_CALL(data,
+                                     dune_keyingsets_foreach_id(data, &scene->keyingsets));
 
   /* This pointer can be NULL during old files reading, better be safe than sorry. */
   if (scene->master_collection != NULL) {
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&scene->master_collection));
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
+        data, dune_lib_foreach_id_embedded(data, (Id **)&scene->master_collection));
   }
 
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, view_layer->mat_override, IDWALK_CB_USER);
+  LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, view_layer->mat_override, IDWALK_CB_USER);
 
-    LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
-      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
-          data, base->object, IDWALK_CB_NOP | IDWALK_CB_OVERRIDE_LIBRARY_NOT_OVERRIDABLE);
+    LIST_FOREACH (Base *, base, &view_layer->object_bases) {
+      DUNE_LIB_FOREACHID_PROCESS_IDSUPER(
+          data, base->object, IDWALK_CB_NOP | IDWALK_CB_OVERRIDE_LIB_NOT_OVERRIDABLE);
     }
 
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
         data, scene_foreach_layer_collection(data, &view_layer->layer_collections));
 
-    LISTBASE_FOREACH (FreestyleModuleConfig *, fmc, &view_layer->freestyle_config.modules) {
+    LIST_FOREACH (FreestyleModuleConfig *, fmc, &view_layer->freestyle_config.modules) {
       if (fmc->script) {
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fmc->script, IDWALK_CB_NOP);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, fmc->script, IDWALK_CB_NOP);
       }
     }
 
-    LISTBASE_FOREACH (FreestyleLineSet *, fls, &view_layer->freestyle_config.linesets) {
+    LIST_FOREACH (FreestyleLineSet *, fls, &view_layer->freestyle_config.linesets) {
       if (fls->group) {
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->group, IDWALK_CB_USER);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->group, IDWALK_CB_USER);
       }
 
       if (fls->linestyle) {
-        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->linestyle, IDWALK_CB_USER);
+        DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->linestyle, IDWALK_CB_USER);
       }
     }
   }
 
-  LISTBASE_FOREACH (TimeMarker *, marker, &scene->markers) {
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+  LIST_FOREACH (TimeMarker *, marker, &scene->markers) {
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
         data,
-        IDP_foreach_property(marker->prop,
+        IDP_foreach_prop(marker->prop,
                              IDP_TYPE_FILTER_ID,
-                             KERNEL_lib_query_idpropertiesForeachIDLink_callback,
+                             dune_lib_query_idpropsForeachIdLink_cb,
                              data));
   }
 
   ToolSettings *toolsett = scene->toolsettings;
   if (toolsett) {
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
         data, scene_foreach_toolsettings(data, toolsett, false, NULL, toolsett));
   }
 
   if (scene->rigidbody_world) {
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    DUNE_LIB_FOREACHID_PROCESS_FN_CALL(
         data,
-        KERNEL_rigidbody_world_id_loop(
+        dune_rigidbody_world_id_loop(
             scene->rigidbody_world, scene_foreach_rigidbodyworldSceneLooper, data));
   }
 }
 
-static void scene_foreach_cache(ID *id,
-                                IDTypeForeachCacheFunctionCallback function_callback,
+static void scene_foreach_cache(Id *id,
+                                IdTypeForeachCacheFnCb fn_cb,
                                 void *user_data)
 {
   Scene *scene = (Scene *)id;
-  IDCacheKey key = {
+  IdCacheKey key = {
       .id_session_uuid = id->session_uuid,
       .offset_in_ID = offsetof(Scene, eevee.light_cache_data),
       .cache_v = scene->eevee.light_cache_data,
   };
 
-  function_callback(id,
-                    &key,
-                    (void **)&scene->eevee.light_cache_data,
-                    IDTYPE_CACHE_CB_FLAGS_PERSISTENT,
-                    user_data);
+  fn_cb(id,
+        &key,
+        (void **)&scene->eevee.light_cache_data,
+        IDTYPE_CACHE_CB_FLAGS_PERSISTENT,
+        user_data);
 }
 
-static bool seq_foreach_path_callback(Sequence *seq, void *user_data)
+static bool seq_foreach_path_callback(Seq *seq, void *user_data)
 {
   if (SEQ_HAS_PATH(seq)) {
     StripElem *se = seq->strip->stripdata;
-    BPathForeachPathData *bpath_data = (BPathForeachPathData *)user_data;
+    PathForeachPathData *bpath_data = (PathForeachPathData *)user_data;
 
     if (ELEM(seq->type, SEQ_TYPE_MOVIE, SEQ_TYPE_SOUND_RAM) && se) {
-      KERNEL_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
+      dune_path_foreach_path_dirfile_fixed_process(path_data, seq->strip->dir, se->name);
     }
     else if ((seq->type == SEQ_TYPE_IMAGE) && se) {
       /* NOTE: An option not to loop over all strips could be useful? */
       unsigned int len = (unsigned int)MEM_allocN_len(se) / (unsigned int)sizeof(*se);
       unsigned int i;
 
-      if (bpath_data->flag & KERNEL_BPATH_FOREACH_PATH_SKIP_MULTIFILE) {
+      if (path_data->flag & DUNE_PATH_FOREACH_PATH_SKIP_MULTIFILE) {
         /* only operate on one path */
         len = MIN2(1u, len);
       }
 
       for (i = 0; i < len; i++, se++) {
-        KERNEL_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
+        dune_path_foreach_path_dirfile_fixed_process(path_data, seq->strip->dir, se->name);
       }
     }
     else {
       /* simple case */
-      KERNEL_bpath_foreach_path_fixed_process(bpath_data, seq->strip->dir);
+      dune_path_foreach_path_fixed_process(path_data, seq->strip->dir);
     }
   }
   return true;
 }
 
-static void scene_foreach_path(ID *id, BPathForeachPathData *bpath_data)
+static void scene_foreach_path(Id *id, PathForeachPathData *path_data)
 {
   Scene *scene = (Scene *)id;
   if (scene->ed != NULL) {
-    SEQ_for_each_callback(&scene->ed->seqbase, seq_foreach_path_callback, bpath_data);
+    seq_for_each_cb(&scene->ed->seqbase, seq_foreach_path_cb, path_data);
   }
 }
 
-static void scene_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void scene_dune_write(DuneWriter *writer, Id *id, const void *id_address)
 {
   Scene *sce = (Scene *)id;
 
-  if (LOADER_write_is_undo(writer)) {
+  if (loader_write_is_undo(writer)) {
     /* Clean up, important in undo case to reduce false detection of changed data-blocks. */
-    /* XXX This UI data should not be stored in Scene at all... */
+    /* This UI data should not be stored in Scene at all... */
     memset(&sce->cursor, 0, sizeof(sce->cursor));
   }
 
   /* write LibData */
-  LOADER_write_id_struct(writer, Scene, id_address, &sce->id);
-  KERNEL_id_dune_write(writer, &sce->id);
+  loader_write_id_struct(writer, Scene, id_address, &sce->id);
+  dune_id_write(writer, &sce->id);
 
   if (sce->adt) {
-    KERNEL_animdata_dune_write(writer, sce->adt);
+    dune_animdata_dune_write(writer, sce->adt);
   }
-  KERNEL_keyingsets_dune_write(writer, &sce->keyingsets);
+  dune_keyingsets_dune_write(writer, &sce->keyingsets);
 
   /* direct data */
   ToolSettings *tos = sce->toolsettings;
-  LOADER_write_struct(writer, ToolSettings, tos);
+  loader_write_struct(writer, ToolSettings, tos);
   if (tos->vpaint) {
-    LOADER_write_struct(writer, VPaint, tos->vpaint);
-    KERNEL_paint_dune_write(writer, &tos->vpaint->paint);
+    loader_write_struct(writer, VPaint, tos->vpaint);
+    dune_paint_dune_write(writer, &tos->vpaint->paint);
   }
   if (tos->wpaint) {
-    LOADER_write_struct(writer, VPaint, tos->wpaint);
-    KERNEL_paint_dune_write(writer, &tos->wpaint->paint);
+    loader_write_struct(writer, VPaint, tos->wpaint);
+    dune_paint_write(writer, &tos->wpaint->paint);
   }
   if (tos->sculpt) {
-    LOADER_write_struct(writer, Sculpt, tos->sculpt);
-    KERNEL_paint_dune_write(writer, &tos->sculpt->paint);
+    loader_write_struct(writer, Sculpt, tos->sculpt);
+    dune_paint_write(writer, &tos->sculpt->paint);
   }
   if (tos->uvsculpt) {
-    LOADER_write_struct(writer, UvSculpt, tos->uvsculpt);
-    KERNEL_paint_dune_write(writer, &tos->uvsculpt->paint);
+    loader_write_struct(writer, UvSculpt, tos->uvsculpt);
+    dune_paint_write(writer, &tos->uvsculpt->paint);
   }
-  if (tos->gp_paint) {
-    LOADER_write_struct(writer, GpPaint, tos->gp_paint);
-    KERNEL_paint_dune_write(writer, &tos->gp_paint->paint);
+  if (tos->pen_paint) {
+  loader_write_struct(writer, PenPaint, tos->pen_paint);
+    dune_paint_write(writer, &tos->prn_paint->paint);
   }
-  if (tos->gp_vertexpaint) {
-    LOADER_write_struct(writer, GpVertexPaint, tos->gp_vertexpaint);
-    KERNEL_paint_dune_write(writer, &tos->gp_vertexpaint->paint);
+  if (tos->pen_vertexpaint) {
+    loader_write_struct(writer, PenVertexPaint, tos->pen_vertexpaint);
+    dune_paint_write(writer, &tos->pen_vertexpaint->paint);
   }
-  if (tos->gp_sculptpaint) {
-    LOADER_write_struct(writer, GpSculptPaint, tos->gp_sculptpaint);
-    KERNEL_paint_dune_write(writer, &tos->gp_sculptpaint->paint);
+  if (tos->pen_sculptpaint) {
+    loader_write_struct(writer, PenSculptPaint, tos->pen_sculptpaint);
+    dune_paint_write(writer, &tos->pen_sculptpaint->paint);
   }
-  if (tos->gp_weightpaint) {
-    LOADER_write_struct(writer, GpWeightPaint, tos->gp_weightpaint);
-    KERNEL_paint_dune_write(writer, &tos->gp_weightpaint->paint);
+  if (tos->pen_weightpaint) {
+    loader_write_struct(writer, PenWeightPaint, tos->pen_weightpaint);
+    dune_paint_write(writer, &tos->pen_weightpaint->paint);
   }
   if (tos->curves_sculpt) {
-    LOADER_write_struct(writer, CurvesSculpt, tos->curves_sculpt);
-    KERNEL_paint_dune_write(writer, &tos->curves_sculpt->paint);
+    loader_write_struct(writer, CurvesSculpt, tos->curves_sculpt);
+    dune_paint_write(writer, &tos->curves_sculpt->paint);
   }
-  /* write grease-pencil custom ipo curve to file */
-  if (tos->gp_interpolate.custom_ipo) {
-    KERNEL_curvemapping_dune_write(writer, tos->gp_interpolate.custom_ipo);
+  /* write pen custom ipo curve to file */
+  if (tos->pen_interpolate.custom_ipo) {
+    dune_curvemapping_write(writer, tos->pen_interpolate.custom_ipo);
   }
-  /* write grease-pencil multiframe falloff curve to file */
-  if (tos->gp_sculpt.cur_falloff) {
-    KERNEL_curvemapping_dune_write(writer, tos->gp_sculpt.cur_falloff);
+  /* write pen multiframe falloff curve to file */
+  if (tos->pen_sculpt.cur_falloff) {
+    dune_curvemapping_write(writer, tos->pen_sculpt.cur_falloff);
   }
-  /* write grease-pencil primitive curve to file */
-  if (tos->gp_sculpt.cur_primitive) {
-    KERNEL_curvemapping_dune_write(writer, tos->gp_sculpt.cur_primitive);
+  /* write pen primitive curve to file */
+  if (tos->pen_sculpt.cur_primitive) {
+    dune_curvemapping_write(writer, tos->pen_sculpt.cur_primitive);
   }
   /* Write the curve profile to the file. */
   if (tos->custom_bevel_profile_preset) {
-    KERNEL_curveprofile_dune_write(writer, tos->custom_bevel_profile_preset);
+    dune_curveprofile_write(writer, tos->custom_bevel_profile_preset);
   }
-  if (tos->sequencer_tool_settings) {
-    LOADER_write_struct(writer, SequencerToolSettings, tos->sequencer_tool_settings);
+  if (tos->seq_tool_settings) {
+    loader_write_struct(writer, SeqToolSettings, tos->seq_tool_settings);
   }
 
-  KERNEL_paint_dune_write(writer, &tos->imapaint.paint);
+  dune_paint_write(writer, &tos->imapaint.paint);
 
   Editing *ed = sce->ed;
   if (ed) {
-    LOADER_write_struct(writer, Editing, ed);
+    loader_write_struct(writer, Editing, ed);
 
-    SEQ_dune_write(writer, &ed->seqbase);
+    seq_dune_write(writer, &ed->seqbase);
     /* new; meta stack too, even when its nasty restore code */
-    LISTBASE_FOREACH (MetaStack *, ms, &ed->metastack) {
-      LOADER_write_struct(writer, MetaStack, ms);
+    LIST_FOREACH (MetaStack *, ms, &ed->metastack) {
+      loader_write_struct(writer, MetaStack, ms);
     }
   }
 
   if (sce->r.avicodecdata) {
-    LOADER_write_struct(writer, AviCodecData, sce->r.avicodecdata);
+    loader_write_struct(writer, AviCodecData, sce->r.avicodecdata);
     if (sce->r.avicodecdata->lpFormat) {
-      LOADER_write_raw(writer, (size_t)sce->r.avicodecdata->cbFormat, sce->r.avicodecdata->lpFormat);
+      loader_write_raw(writer, (size_t)sce->r.avicodecdata->cbFormat, sce->r.avicodecdata->lpFormat);
     }
     if (sce->r.avicodecdata->lpParms) {
-      LOADER_write_raw(writer, (size_t)sce->r.avicodecdata->cbParms, sce->r.avicodecdata->lpParms);
+      loader_write_raw(writer, (size_t)sce->r.avicodecdata->cbParms, sce->r.avicodecdata->lpParms);
     }
   }
 
-  /* writing dynamic list of TimeMarkers to the blend file */
-  LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    LOADER_write_struct(writer, TimeMarker, marker);
+  /* writing dynamic list of TimeMarkers to the dune file */
+  LIST_FOREACH (TimeMarker *, marker, &sce->markers) {
+    loader_write_struct(writer, TimeMarker, marker);
 
     if (marker->prop != NULL) {
       IDP_DuneWrite(writer, marker->prop);
     }
   }
 
-  /* writing dynamic list of TransformOrientations to the blend file */
-  LISTBASE_FOREACH (TransformOrientation *, ts, &sce->transform_spaces) {
-    LOADER_write_struct(writer, TransformOrientation, ts);
+  /* writing dynamic list of TransformOrientations to the dune file */
+  LIST_FOREACH (TransformOrientation *, ts, &sce->transform_spaces) {
+    loader_write_struct(writer, TransformOrientation, ts);
   }
 
-  /* writing MultiView to the blend file */
-  LISTBASE_FOREACH (SceneRenderView *, srv, &sce->r.views) {
-    LOADER_write_struct(writer, SceneRenderView, srv);
+  /* writing MultiView to the dune file */
+  LIST_FOREACH (SceneRenderView *, srv, &sce->r.views) {
+    loader_write_struct(writer, SceneRenderView, srv);
   }
 
   if (sce->nodetree) {
-    LOADER_write_struct(writer, bNodeTree, sce->nodetree);
+    loader_write_struct(writer, NodeTree, sce->nodetree);
     ntreeDuneWrite(writer, sce->nodetree);
   }
 
-  KERNEL_color_managed_view_settings_dune_write(writer, &sce->view_settings);
-  KERNEL_image_format_dune_write(writer, &sce->r.im_format);
-  KERNEL_image_format_dune_write(writer, &sce->r.bake.im_format);
+  dune_color_managed_view_settings_write(writer, &sce->view_settings);
+  dune_image_format_write(writer, &sce->r.im_format);
+  dune_image_format_write(writer, &sce->r.bake.im_format);
 
   /* writing RigidBodyWorld data to the blend file */
   if (sce->rigidbody_world) {
     /* Set deprecated pointers to prevent crashes of older Blenders */
     sce->rigidbody_world->pointcache = sce->rigidbody_world->shared->pointcache;
     sce->rigidbody_world->ptcaches = sce->rigidbody_world->shared->ptcaches;
-    LOADER_write_struct(writer, RigidBodyWorld, sce->rigidbody_world);
+    loader_write_struct(writer, RigidBodyWorld, sce->rigidbody_world);
 
-    LOADER_write_struct(writer, RigidBodyWorld_Shared, sce->rigidbody_world->shared);
-    LOADER_write_struct(writer, EffectorWeights, sce->rigidbody_world->effector_weights);
-    KERNEL_ptcache_dune_write(writer, &(sce->rigidbody_world->shared->ptcaches));
+    loader_write_struct(writer, RigidBodyWorld_Shared, sce->rigidbody_world->shared);
+    loader_write_struct(writer, EffectorWeights, sce->rigidbody_world->effector_weights);
+    dune_ptcache_write(writer, &(sce->rigidbody_world->shared->ptcaches));
   }
 
-  KERNEL_previewimg_dune_write(writer, sce->preview);
-  KERNEL_curvemapping_curves_dune_write(writer, &sce->r.mblur_shutter_curve);
+  dune_previewimg_write(writer, sce->preview);
+  dune_curvemapping_curves_write(writer, &sce->r.mblur_shutter_curve);
 
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    KERNEL_view_layer_dune_write(writer, view_layer);
+  LIST_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
+    dune_view_layer_write(writer, view_layer);
   }
 
   if (sce->master_collection) {
-    LOADER_write_struct(writer, Collection, sce->master_collection);
-    KERNEL_collection_dune_write_nolib(writer, sce->master_collection);
+    loader_write_struct(writer, Collection, sce->master_collection);
+    dune_collection_write_nolib(writer, sce->master_collection);
   }
 
-  /* Eevee Lightcache */
-  if (sce->eevee.light_cache_data && !LOADER_write_is_undo(writer)) {
-    LOADER_write_struct(writer, LightCache, sce->eevee.light_cache_data);
-    EEVEE_lightcache_dune_write(writer, sce->eevee.light_cache_data);
-  }
-
-  KERNEL_screen_view3d_shading_dune_write(writer, &sce->display.shading);
+  dune_screen_view3d_shading_write(writer, &sce->display.shading);
 
   /* Freed on doversion. */
-  LIB_assert(sce->layer_properties == NULL);
+  lib_assert(sce->layer_props == NULL);
 }
 
-static void direct_link_paint_helper(DuneDataReader *reader, const Scene *scene, Paint **paint)
+static void direct_link_paint_helper(DataReader *reader, const Scene *scene, Paint **paint)
 {
   /* TODO: is this needed. */
-  LOADER_read_data_address(reader, paint);
+  loader_read_data_address(reader, paint);
 
   if (*paint) {
-    KERNEL_paint_dune_read_data(reader, scene, *paint);
+    dune_paint_read_data(reader, scene, *paint);
   }
 }
 
-static void link_recurs_seq(DuneDataReader *reader, ListBase *lb)
+static void link_recurs_seq(DataReader *reader, List *lb)
 {
-  LOADER_read_list(reader, lb);
+  loader_read_list(reader, lb);
 
-  LISTBASE_FOREACH_MUTABLE (Sequence *, seq, lb) {
+  LIST_FOREACH_MUTABLE (Seq *, seq, lb) {
     /* Sanity check. */
-    if (!SEQ_valid_strip_channel(seq)) {
-      LIB_freelinkN(lb, seq);
-      LOADER_read_data_reports(reader)->count.sequence_strips_skipped++;
+    if (!seq_valid_strip_channel(seq)) {
+      lib_freelinkn(lb, seq);
+      loader_read_data_reports(reader)->count.seq_strips_skipped++;
     }
     else if (seq->seqbase.first) {
       link_recurs_seq(reader, &seq->seqbase);
@@ -1088,32 +1075,32 @@ static void link_recurs_seq(DuneDataReader *reader, ListBase *lb)
   }
 }
 
-static void scene_dune_read_data(DuneDataReader *reader, ID *id)
+static void scene_read_data(DataReader *reader, Id *id)
 {
   Scene *sce = (Scene *)id;
 
-  sce->depsgraph_hash = NULL;
+  sce->graph_hash = NULL;
   sce->fps_info = NULL;
 
   memset(&sce->customdata_mask, 0, sizeof(sce->customdata_mask));
   memset(&sce->customdata_mask_modal, 0, sizeof(sce->customdata_mask_modal));
 
-  KERNEL_sound_reset_scene_runtime(sce);
+  dune_sound_reset_scene_runtime(sce);
 
   /* set users to one by default, not in lib-link, this will increase it for compo nodes */
   id_us_ensure_real(&sce->id);
 
-  LOADER_read_list(reader, &(sce->base));
+  loader_read_list(reader, &(sce->base));
 
-  LOADER_read_data_address(reader, &sce->adt);
-  KERNEL_animdata_dune_read_data(reader, sce->adt);
+  loader_read_data_address(reader, &sce->adt);
+  dune_animdata_dune_read_data(reader, sce->adt);
 
-  LOADER_read_list(reader, &sce->keyingsets);
-  KERNEL_keyingsets_dune_read_data(reader, &sce->keyingsets);
+  loader_read_list(reader, &sce->keyingsets);
+  dune_keyingsets_dune_read_data(reader, &sce->keyingsets);
 
-  LOADER_read_data_address(reader, &sce->basact);
+  loader_read_data_address(reader, &sce->basact);
 
-  LOADER_read_data_address(reader, &sce->toolsettings);
+  loader_read_data_address(reader, &sce->toolsettings);
   if (sce->toolsettings) {
 
     /* Reset last_location and last_hit, so they are not remembered across sessions. In some files
@@ -1126,39 +1113,39 @@ static void scene_dune_read_data(DuneDataReader *reader, ID *id)
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->vpaint);
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->wpaint);
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->uvsculpt);
-    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->gp_paint);
-    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->gp_vertexpaint);
-    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->gp_sculptpaint);
-    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->gp_weightpaint);
+    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->pen_paint);
+    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->pen_vertexpaint);
+    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->pen_sculptpaint);
+    direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->pen_weightpaint);
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->curves_sculpt);
 
-    KERNEL_paint_dune_read_data(reader, sce, &sce->toolsettings->imapaint.paint);
+    dune_paint_read_data(reader, sce, &sce->toolsettings->imapaint.paint);
 
     sce->toolsettings->particle.paintcursor = NULL;
     sce->toolsettings->particle.scene = NULL;
     sce->toolsettings->particle.object = NULL;
     sce->toolsettings->gp_sculpt.paintcursor = NULL;
 
-    /* relink grease pencil interpolation curves */
-    LOADER_read_data_address(reader, &sce->toolsettings->gp_interpolate.custom_ipo);
-    if (sce->toolsettings->gp_interpolate.custom_ipo) {
-      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_interpolate.custom_ipo);
+    /* relink pen interpolation curves */
+    loader_read_data_address(reader, &sce->toolsettings->pen_interpolate.custom_ipo);
+    if (sce->toolsettings->pen_interpolate.custom_ipo) {
+      dune_curvemapping_dune_read(reader, sce->toolsettings->pen_interpolate.custom_ipo);
     }
-    /* relink grease pencil multiframe falloff curve */
-    LOADER_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_falloff);
-    if (sce->toolsettings->gp_sculpt.cur_falloff) {
-      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_sculpt.cur_falloff);
+    /* relink pen multiframe falloff curve */
+    loader_read_data_address(reader, &sce->toolsettings->pen_sculpt.cur_falloff);
+    if (sce->toolsettings->pen_sculpt.cur_falloff) {
+      dune_curvemapping_read(reader, sce->toolsettings->pen_sculpt.cur_falloff);
     }
-    /* relink grease pencil primitive curve */
-    LOADER_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_primitive);
-    if (sce->toolsettings->gp_sculpt.cur_primitive) {
-      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_sculpt.cur_primitive);
+    /* relink pen primitive curve */
+    loader_read_data_address(reader, &sce->toolsettings->pen_sculpt.cur_primitive);
+    if (sce->toolsettings->pen_sculpt.cur_primitive) {
+      dune_curvemapping_dune_read(reader, sce->toolsettings->pen_sculpt.cur_primitive);
     }
 
     /* Relink toolsettings curve profile */
-    LOADER_read_data_address(reader, &sce->toolsettings->custom_bevel_profile_preset);
+    loader_read_data_address(reader, &sce->toolsettings->custom_bevel_profile_preset);
     if (sce->toolsettings->custom_bevel_profile_preset) {
-      KERNEL_curveprofile_dune_read(reader, sce->toolsettings->custom_bevel_profile_preset);
+      dune_curveprofile_dune_read(reader, sce->toolsettings->custom_bevel_profile_preset);
     }
 
     LOADER_read_data_address(reader, &sce->toolsettings->sequencer_tool_settings);
