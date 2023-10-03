@@ -11,7 +11,7 @@
 #include "types_collection.h"
 #include "types_curveprofile.h"
 #include "types_defaults.h"
-#include "typew_pen.h"
+#include "types_pen.h"
 #include "types_linestyle.h"
 #include "types_mask.h"
 #include "types_material.h"
@@ -28,7 +28,7 @@
 #include "types_vfont.h"
 #include "types_view3d.h"
 #include "types_win.h"
-#include "typew_workspace.h"
+#include "types_workspace.h"
 #include "types_world.h"
 
 #include "dune_cbs.h"
@@ -130,15 +130,15 @@ static void scene_init_data(Id *id)
 
   scene->toolsettings->autokey_mode = (uchar)U.autokey_mode;
 
-  /* grease pencil multiframe falloff curve */
+  /* pen multiframe falloff curve */
   scene->toolsettings->pen_sculpt.cur_falloff = dune_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
   CurveMapping *pen_falloff_curve = scene->toolsettings->pen_sculpt.cur_falloff;
   dune_curvemapping_init(pen_falloff_curve);
   dune_curvemap_reset(
       gp_falloff_curve->cm, &pen_falloff_curve->clipr, CURVE_PRESET_GAUSS, CURVEMAP_SLOPE_POSITIVE);
 
-  scene->toolsettings->pen_sculpt.cur_primitive = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
-  CurveMapping *gp_primitive_curve = scene->toolsettings->gp_sculpt.cur_primitive;
+  scene->toolsettings->pen_sculpt.cur_primitive = dune_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
+  CurveMapping *pen_primitive_curve = scene->toolsettings->gp_sculpt.cur_primitive;
   dune_curvemapping_init(pen_primitive_curve);
   dune_curvemap_reset(pen_primitive_curve->cm,
                      &pen_primitive_curve->clipr,
@@ -169,7 +169,7 @@ static void scene_init_data(Id *id)
 
   lib_strncpy(scene->r.pic, U.renderdir, sizeof(scene->r.pic));
 
-  /* NOTE: in header_info.c the scene copy happens...,
+  /* in header_info.c the scene copy happens..
    * if you add more to renderdata it has to be checked there. */
 
   /* multiview - stereo */
@@ -504,7 +504,7 @@ static void scene_foreach_toolsettings_id_ptr_process(
 static void scene_foreach_paint(LibForeachIdData *data,
                                 Paint *paint,
                                 const bool do_undo_restore,
-                                DuneLibReader *reader,
+                                LibReader *reader,
                                 Paint *paint_old)
 {
   DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
@@ -544,7 +544,7 @@ static void scene_foreach_paint(LibForeachIdData *data,
 static void scene_foreach_toolsettings(LibForeachIdData *data,
                                        ToolSettings *toolsett,
                                        const bool do_undo_restore,
-                                       DuneLibReader *reader,
+                                       LibReader *reader,
                                        ToolSettings *toolsett_old)
 {
   DUNE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
@@ -723,8 +723,8 @@ static bool seq_foreach_member_id_cb(Seq *seq, void *user_data)
 
 #define FOREACHID_PROCESS_IDSUPER(_data, _id_super, _cb_flag) \
   { \
-    CHECK_TYPE(&((_id_super)->id), ID *); \
-    dune_lib_query_foreachid_process((_data), (ID **)&(_id_super), (_cb_flag)); \
+    CHECK_TYPE(&((_id_super)->id), Id *); \
+    dune_lib_query_foreachid_process((_data), (Id **)&(_id_super), (_cb_flag)); \
     if (dune_lib_query_foreachid_iter_stop((_data))) { \
       return false; \
     } \
@@ -890,7 +890,7 @@ static void scene_foreach_path(Id *id, PathForeachPathData *path_data)
   }
 }
 
-static void scene_dune_write(DuneWriter *writer, Id *id, const void *id_address)
+static void scene_dune_write(Writer *writer, Id *id, const void *id_address)
 {
   Scene *sce = (Scene *)id;
 
@@ -974,7 +974,7 @@ static void scene_dune_write(DuneWriter *writer, Id *id, const void *id_address)
   if (ed) {
     loader_write_struct(writer, Editing, ed);
 
-    seq_dune_write(writer, &ed->seqbase);
+    seq_write(writer, &ed->seqbase);
     /* new; meta stack too, even when its nasty restore code */
     LIST_FOREACH (MetaStack *, ms, &ed->metastack) {
       loader_write_struct(writer, MetaStack, ms);
@@ -1012,7 +1012,7 @@ static void scene_dune_write(DuneWriter *writer, Id *id, const void *id_address)
 
   if (sce->nodetree) {
     loader_write_struct(writer, NodeTree, sce->nodetree);
-    ntreeDuneWrite(writer, sce->nodetree);
+    ntreeWrite(writer, sce->nodetree);
   }
 
   dune_color_managed_view_settings_write(writer, &sce->view_settings);
@@ -1148,30 +1148,30 @@ static void scene_read_data(DataReader *reader, Id *id)
       dune_curveprofile_dune_read(reader, sce->toolsettings->custom_bevel_profile_preset);
     }
 
-    LOADER_read_data_address(reader, &sce->toolsettings->sequencer_tool_settings);
+    loader_read_data_address(reader, &sce->toolsettings->sequencer_tool_settings);
   }
 
   if (sce->ed) {
-    ListBase *old_seqbasep = &sce->ed->seqbase;
+    List *old_seqbasep = &sce->ed->seqbase;
 
-    LOADER_read_data_address(reader, &sce->ed);
+    loader_read_data_address(reader, &sce->ed);
     Editing *ed = sce->ed;
 
-    LOADER_read_data_address(reader, &ed->act_seq);
+    loader_read_data_address(reader, &ed->act_seq);
     ed->cache = NULL;
     ed->prefetch_job = NULL;
-    ed->runtime.sequence_lookup = NULL;
+    ed->runtime.seq_lookup = NULL;
 
-    /* recursive link sequences, lb will be correctly initialized */
+    /* recursive link seqs, lb will be correctly initialized */
     link_recurs_seq(reader, &ed->seqbase);
 
-    /* Read in sequence member data. */
-    SEQ_dune_read(reader, &ed->seqbase);
+    /* Read in seq member data. */
+    seq_read(reader, &ed->seqbase);
 
     /* link metastack, slight abuse of structs here,
      * have to restore pointer to internal part in struct */
     {
-      Sequence temp;
+      Seq temp;
       void *poin;
       intptr_t offset;
 
@@ -1182,31 +1182,31 @@ static void scene_read_data(DataReader *reader, Id *id)
         ed->seqbasep = &ed->seqbase;
       }
       else {
-        poin = POINTER_OFFSET(ed->seqbasep, -offset);
+        poin = PTR_OFFSET(ed->seqbasep, -offset);
 
-        poin = LOADER_read_get_new_data_address(reader, poin);
+        poin = loader_read_get_new_data_address(reader, poin);
 
         if (poin) {
-          ed->seqbasep = (ListBase *)POINTER_OFFSET(poin, offset);
+          ed->seqbasep = (List *)PTR_OFFSET(poin, offset);
         }
         else {
           ed->seqbasep = &ed->seqbase;
         }
       }
       /* stack */
-      LOADER_read_list(reader, &(ed->metastack));
+      loader_read_list(reader, &(ed->metastack));
 
-      LISTBASE_FOREACH (MetaStack *, ms, &ed->metastack) {
-        LOADER_read_data_address(reader, &ms->parseq);
+      LIST_FOREACH (MetaStack *, ms, &ed->metastack) {
+        loader_read_data_address(reader, &ms->parseq);
 
         if (ms->oldbasep == old_seqbasep) {
           ms->oldbasep = &ed->seqbase;
         }
         else {
-          poin = POINTER_OFFSET(ms->oldbasep, -offset);
-          poin = LOADER_read_get_new_data_address(reader, poin);
+          poin = PTR_OFFSET(ms->oldbasep, -offset);
+          poin = loader_read_get_new_data_address(reader, poin);
           if (poin) {
-            ms->oldbasep = (ListBase *)POINTER_OFFSET(poin, offset);
+            ms->oldbasep = (List *)PTR_OFFSET(poin, offset);
           }
           else {
             ms->oldbasep = &ed->seqbase;
@@ -1221,43 +1221,43 @@ static void scene_read_data(DataReader *reader, Id *id)
   sce->r.mode &= ~R_NO_CAMERA_SWITCH;
 #endif
 
-  LOADER_read_data_address(reader, &sce->r.avicodecdata);
+  loader_read_data_address(reader, &sce->r.avicodecdata);
   if (sce->r.avicodecdata) {
-    LOADER_read_data_address(reader, &sce->r.avicodecdata->lpFormat);
-    LOADER_read_data_address(reader, &sce->r.avicodecdata->lpParms);
+    loader_read_data_address(reader, &sce->r.avicodecdata->lpFormat);
+    loader_read_data_address(reader, &sce->r.avicodecdata->lpParms);
   }
-  LOADER_read_list(reader, &(sce->markers));
-  LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    LOADER_read_data_address(reader, &marker->prop);
-    IDP_DuneDataRead(reader, &marker->prop);
-  }
-
-  LOADER_read_list(reader, &(sce->transform_spaces));
-  LOADER_read_list(reader, &(sce->r.layers));
-  LOADER_read_list(reader, &(sce->r.views));
-
-  LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    LOADER_read_data_address(reader, &srl->prop);
-    IDP_DuneDataRead(reader, &srl->prop);
-    LOADER_read_list(reader, &(srl->freestyleConfig.modules));
-    LOADER_read_list(reader, &(srl->freestyleConfig.linesets));
+  loader_read_list(reader, &(sce->markers));
+  LIST_FOREACH (TimeMarker *, marker, &sce->markers) {
+    loader_read_data_address(reader, &marker->prop);
+    IDP_DataRead(reader, &marker->prop);
   }
 
-  KERNEL_color_managed_view_settings_dune_read_data(reader, &sce->view_settings);
-  KERNEL_image_format_dune_read_data(reader, &sce->r.im_format);
-  KERNEL_image_format_dune_read_data(reader, &sce->r.bake.im_format);
+  loader_read_list(reader, &(sce->transform_spaces));
+  loader_read_list(reader, &(sce->r.layers));
+  loader_read_list(reader, &(sce->r.views));
 
-  LOADER_read_data_address(reader, &sce->rigidbody_world);
+  LIST_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
+    loader_read_data_address(reader, &srl->prop);
+    IDP_DataRead(reader, &srl->prop);
+    loader_read_list(reader, &(srl->freestyleConfig.modules));
+    loader_read_list(reader, &(srl->freestyleConfig.linesets));
+  }
+
+  dune_color_managed_view_settings_read_data(reader, &sce->view_settings);
+  dune_image_format_read_data(reader, &sce->r.im_format);
+  dune_image_format_read_data(reader, &sce->r.bake.im_format);
+
+  loader_read_data_address(reader, &sce->rigidbody_world);
   RigidBodyWorld *rbw = sce->rigidbody_world;
   if (rbw) {
-    LOADER_read_data_address(reader, &rbw->shared);
+    loader_read_data_address(reader, &rbw->shared);
 
     if (rbw->shared == NULL) {
       /* Link deprecated caches if they exist, so we can use them for versioning.
        * We should only do this when rbw->shared == NULL, because those pointers
-       * are always set (for compatibility with older Blenders). We mustn't link
+       * are always set (for compatibility with older Dunes). We mustn't link
        * the same pointcache twice. */
-      KERNEL_ptcache_dune_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
+      dune_ptcache_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
 
       /* make sure simulation starts from the beginning after loading file */
       if (rbw->pointcache) {
@@ -1265,13 +1265,12 @@ static void scene_read_data(DataReader *reader, Id *id)
       }
     }
     else {
-      /* must nullify the reference to physics sim object, since it no-longer exist
-       * (and will need to be recalculated)
-       */
+      /* must nullify the reference to phys sim object, since it no-longer exist
+       * (and will need to be recalculated) */
       rbw->shared->physics_world = NULL;
 
       /* link caches */
-      KERNEL_ptcache_dune_read_data(reader, &rbw->shared->ptcaches, &rbw->shared->pointcache, false);
+      dune_ptcache_read_data(reader, &rbw->shared->ptcaches, &rbw->shared->pointcache, false);
 
       /* make sure simulation starts from the beginning after loading file */
       if (rbw->shared->pointcache) {
@@ -1282,53 +1281,45 @@ static void scene_read_data(DataReader *reader, Id *id)
     rbw->numbodies = 0;
 
     /* set effector weights */
-    LOADER_read_data_address(reader, &rbw->effector_weights);
+    loader_read_data_address(reader, &rbw->effector_weights);
     if (!rbw->effector_weights) {
-      rbw->effector_weights = KERNEL_effector_add_weights(NULL);
+      rbw->effector_weights = dune_effector_add_weights(NULL);
     }
   }
 
-  LOADER_read_data_address(reader, &sce->preview);
-  KERNEL_previewimg_dune_read(reader, sce->preview);
+  loader_read_data_address(reader, &sce->preview);
+  dune_previewimg_read(reader, sce->preview);
 
-  KERNEL_curvemapping_dune_read(reader, &sce->r.mblur_shutter_curve);
+  dune_curvemapping_read(reader, &sce->r.mblur_shutter_curve);
 
 #ifdef USE_COLLECTION_COMPAT_28
   /* this runs before the very first doversion */
   if (sce->collection) {
-    LOADER_read_data_address(reader, &sce->collection);
-    KERNEL_collection_compat_dune_read_data(reader, sce->collection);
+    loader_read_data_address(reader, &sce->collection);
+    loader_collection_compat_read_data(reader, sce->collection);
   }
 #endif
 
   /* insert into global old-new map for reading without UI (link_global accesses it again) */
-  LOADER_read_glob_list(reader, &sce->view_layers);
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    KERNEL_view_layer_dune_read_data(reader, view_layer);
+  loader_read_glob_list(reader, &sce->view_layers);
+  LIST_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
+    dune_view_layer_read_data(reader, view_layer);
   }
 
-  if (LOADER_read_data_is_undo(reader)) {
+  if (loader_read_data_is_undo(reader)) {
     /* If it's undo do nothing here, caches are handled by higher-level generic calling code. */
   }
-  else {
-    /* else try to read the cache from file. */
-    LOADER_read_data_address(reader, &sce->eevee.light_cache_data);
-    if (sce->eevee.light_cache_data) {
-      EEVEE_lightcache_blend_read_data(reader, sce->eevee.light_cache_data);
-    }
-  }
-  EEVEE_lightcache_info_update(&sce->eevee);
 
-  KERNEL_screen_view3d_shading_dune_read_data(reader, &sce->display.shading);
+  dune_screen_view3d_shading_read_data(reader, &sce->display.shading);
 
-  LOADER_read_data_address(reader, &sce->layer_properties);
-  IDP_DuneDataRead(reader, &sce->layer_properties);
+  loader_read_data_address(reader, &sce->layer_properties);
+  IDP_DataRead(reader, &sce->layer_properties);
 }
 
-/* patch for missing scene IDs, can't be in do-versions */
-static void composite_patch(bNodeTree *ntree, Scene *scene)
+/* patch for missing scene Ids, can't be in do-versions */
+static void composite_patch(NodeTree *ntree, Scene *scene)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (node->id == NULL &&
         ((node->type == CMP_NODE_R_LAYERS) ||
          (node->type == CMP_NODE_CRYPTOMATTE && node->custom1 == CMP_CRYPTOMATTE_SRC_RENDER))) {
@@ -1337,63 +1328,63 @@ static void composite_patch(bNodeTree *ntree, Scene *scene)
   }
 }
 
-static void scene_dune_read_lib(DuneLibReader *reader, ID *id)
+static void scene_read_lib(LibReader *reader, Id *id)
 {
   Scene *sce = (Scene *)id;
 
-  KERNEL_keyingsets_dune_read_lib(reader, &sce->id, &sce->keyingsets);
+  dune_keyingsets_read_lib(reader, &sce->id, &sce->keyingsets);
 
-  LOADER_read_id_address(reader, sce->id.lib, &sce->camera);
-  LOADER_read_id_address(reader, sce->id.lib, &sce->world);
-  LOADER_read_id_address(reader, sce->id.lib, &sce->set);
-  LOADER_read_id_address(reader, sce->id.lib, &sce->gpd);
+  loader_read_id_address(reader, sce->id.lib, &sce->camera);
+  loader_read_id_address(reader, sce->id.lib, &sce->world);
+  loader_read_id_address(reader, sce->id.lib, &sce->set);
+  loader_read_id_address(reader, sce->id.lib, &sce->gpd);
 
-  KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->imapaint.paint);
+  dune_paint_read_lib(reader, sce, &sce->toolsettings->imapaint.paint);
   if (sce->toolsettings->sculpt) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->sculpt->paint);
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->sculpt->paint);
   }
   if (sce->toolsettings->vpaint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->vpaint->paint);
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->vpaint->paint);
   }
   if (sce->toolsettings->wpaint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->wpaint->paint);
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->wpaint->paint);
   }
   if (sce->toolsettings->uvsculpt) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->uvsculpt->paint);
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->uvsculpt->paint);
   }
-  if (sce->toolsettings->gp_paint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_paint->paint);
+  if (sce->toolsettings->pen_paint) {
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->gp_paint->paint);
   }
-  if (sce->toolsettings->gp_vertexpaint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_vertexpaint->paint);
+  if (sce->toolsettings->pen_vertexpaint) {
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->gp_vertexpaint->paint);
   }
-  if (sce->toolsettings->gp_sculptpaint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_sculptpaint->paint);
+  if (sce->toolsettings->pen_sculptpaint) {
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->gp_sculptpaint->paint);
   }
-  if (sce->toolsettings->gp_weightpaint) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_weightpaint->paint);
+  if (sce->toolsettings->pen_weightpaint) {
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->gp_weightpaint->paint);
   }
   if (sce->toolsettings->curves_sculpt) {
-    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->curves_sculpt->paint);
+    dune_paint_read_lib(reader, sce, &sce->toolsettings->curves_sculpt->paint);
   }
 
   if (sce->toolsettings->sculpt) {
-    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->sculpt->gravity_object);
+    loader_read_id_address(reader, sce->id.lib, &sce->toolsettings->sculpt->gravity_object);
   }
 
   if (sce->toolsettings->imapaint.stencil) {
-    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.stencil);
+    loader_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.stencil);
   }
 
   if (sce->toolsettings->imapaint.clone) {
-    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.clone);
+    loader_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.clone);
   }
 
   if (sce->toolsettings->imapaint.canvas) {
-    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.canvas);
+    loader_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.canvas);
   }
 
-  LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->particle.shape_object);
+  loader_read_id_address(reader, sce->id.lib, &sce->toolsettings->particle.shape_object);
 
   LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->gp_sculpt.guide.reference_object);
 
