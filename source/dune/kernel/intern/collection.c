@@ -406,9 +406,9 @@ Collection *dune_collection_add(Main *main, Collection *collection_parent, const
 }
 
 void dune_collection_add_from_object(Main *main,
-                                    Scene *scene,
-                                    const Object *ob_src,
-                                    Collection *collection_dst)
+                                     Scene *scene,
+                                     const Object *ob_src,
+                                     Collection *collection_dst)
 {
   bool is_instantiated = false;
 
@@ -808,12 +808,7 @@ Collection *dune_collection_master_add()
   return master_collection;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Cyclic Checks
- * \{ */
-
+/* Cyclic Checks */
 static bool collection_object_cyclic_check_internal(Object *object, Collection *collection)
 {
   if (object->instance_collection) {
@@ -843,95 +838,85 @@ static bool collection_object_cyclic_check_internal(Object *object, Collection *
   return false;
 }
 
-bool BKE_collection_object_cyclic_check(Main *bmain, Object *object, Collection *collection)
+bool dune_collection_object_cyclic_check(Main *main, Object *object, Collection *collection)
 {
   /* first flag all collections */
-  BKE_main_id_tag_listbase(&bmain->collections, LIB_TAG_DOIT, true);
+  dune_main_id_tag_list(&main->collections, LIB_TAG_DOIT, true);
 
   return collection_object_cyclic_check_internal(object, collection);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Object Membership
- * \{ */
-
-bool BKE_collection_has_object(Collection *collection, const Object *ob)
+/* Collection Object Membership */
+bool dune_collection_has_object(Collection *collection, const Object *ob)
 {
   if (ELEM(NULL, collection, ob)) {
     return false;
   }
 
-  return (BLI_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob)));
+  return (lib_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob)));
 }
 
-bool BKE_collection_has_object_recursive(Collection *collection, Object *ob)
+bool dune_collection_has_object_recursive(Collection *collection, Object *ob)
 {
   if (ELEM(NULL, collection, ob)) {
     return false;
   }
 
-  const ListBase objects = BKE_collection_object_cache_get(collection);
-  return (BLI_findptr(&objects, ob, offsetof(Base, object)));
+  const List objects = dune_collection_object_cache_get(collection);
+  return (lib_findptr(&objects, ob, offsetof(Base, object)));
 }
 
-bool BKE_collection_has_object_recursive_instanced(Collection *collection, Object *ob)
+bool dune_collection_has_object_recursive_instanced(Collection *collection, Object *ob)
 {
   if (ELEM(NULL, collection, ob)) {
     return false;
   }
 
-  const ListBase objects = BKE_collection_object_cache_instanced_get(collection);
-  return (BLI_findptr(&objects, ob, offsetof(Base, object)));
+  const List objects = dune_collection_object_cache_instanced_get(collection);
+  return (lib_findptr(&objects, ob, offsetof(Base, object)));
 }
 
 static Collection *collection_next_find(Main *bmain, Scene *scene, Collection *collection)
 {
   if (scene && collection == scene->master_collection) {
-    return bmain->collections.first;
+    return main->collections.first;
   }
 
   return collection->id.next;
 }
 
-Collection *BKE_collection_object_find(Main *bmain,
+Collection *dune_collection_object_find(Main *main,
                                        Scene *scene,
                                        Collection *collection,
                                        Object *ob)
 {
   if (collection) {
-    collection = collection_next_find(bmain, scene, collection);
+    collection = collection_next_find(main, scene, collection);
   }
   else if (scene) {
     collection = scene->master_collection;
   }
   else {
-    collection = bmain->collections.first;
+    collection = main->collections.first;
   }
 
   while (collection) {
-    if (BKE_collection_has_object(collection, ob)) {
+    if (dune_collection_has_object(collection, ob)) {
       return collection;
     }
-    collection = collection_next_find(bmain, scene, collection);
+    collection = collection_next_find(main, scene, collection);
   }
   return NULL;
 }
 
-bool BKE_collection_is_empty(const Collection *collection)
+bool dune_collection_is_empty(const Collection *collection)
 {
-  return BLI_listbase_is_empty(&collection->gobject) &&
-         BLI_listbase_is_empty(&collection->children);
+  return lib_list_is_empty(&collection->gobject) &&
+         lib_list_is_empty(&collection->children);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Objects
- * \{ */
-
-static void collection_tag_update_parent_recursive(Main *bmain,
+/* Collection Objects */
+static void collection_tag_update_parent_recursive(Main *main,
                                                    Collection *collection,
                                                    const int flag)
 {
@@ -939,20 +924,20 @@ static void collection_tag_update_parent_recursive(Main *bmain,
     return;
   }
 
-  DEG_id_tag_update_ex(bmain, &collection->id, flag);
+  graph_id_tag_update_ex(main, &collection->id, flag);
 
-  LISTBASE_FOREACH (CollectionParent *, collection_parent, &collection->parents) {
+  LIST_FOREACH (CollectionParent *, collection_parent, &collection->parents) {
     if (collection_parent->collection->flag & COLLECTION_IS_MASTER) {
       /* We don't care about scene/master collection here. */
       continue;
     }
-    collection_tag_update_parent_recursive(bmain, collection_parent->collection, flag);
+    collection_tag_update_parent_recursive(main, collection_parent->collection, flag);
   }
 }
 
 static Collection *collection_parent_editable_find_recursive(Collection *collection)
 {
-  if (!ID_IS_LINKED(collection) && !ID_IS_OVERRIDE_LIBRARY(collection)) {
+  if (!ID_IS_LINKED(collection) && !ID_IS_OVERRIDE_LIB(collection)) {
     return collection;
   }
 
@@ -960,9 +945,9 @@ static Collection *collection_parent_editable_find_recursive(Collection *collect
     return NULL;
   }
 
-  LISTBASE_FOREACH (CollectionParent *, collection_parent, &collection->parents) {
+  LIST_FOREACH (CollectionParent *, collection_parent, &collection->parents) {
     if (!ID_IS_LINKED(collection_parent->collection) &&
-        !ID_IS_OVERRIDE_LIBRARY(collection_parent->collection)) {
+        !ID_IS_OVERRIDE_LIB(collection_parent->collection)) {
       return collection_parent->collection;
     }
     Collection *editable_collection = collection_parent_editable_find_recursive(
@@ -976,7 +961,7 @@ static Collection *collection_parent_editable_find_recursive(Collection *collect
 }
 
 static bool collection_object_add(
-    Main *bmain, Collection *collection, Object *ob, int flag, const bool add_us)
+    Main *main, Collection *collection, Object *ob, int flag, const bool add_us)
 {
   if (ob->instance_collection) {
     /* Cyclic dependency check. */
@@ -986,83 +971,83 @@ static bool collection_object_add(
     }
   }
 
-  CollectionObject *cob = BLI_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob));
+  CollectionObject *cob = lib_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob));
   if (cob) {
     return false;
   }
 
-  cob = MEM_callocN(sizeof(CollectionObject), __func__);
+  cob = mem_callocn(sizeof(CollectionObject), __func__);
   cob->ob = ob;
-  BLI_addtail(&collection->gobject, cob);
-  BKE_collection_object_cache_free(collection);
+  lib_addtail(&collection->gobject, cob);
+  dune_collection_object_cache_free(collection);
 
   if (add_us && (flag & LIB_ID_CREATE_NO_USER_REFCOUNT) == 0) {
     id_us_plus(&ob->id);
   }
 
   if ((flag & LIB_ID_CREATE_NO_MAIN) == 0) {
-    collection_tag_update_parent_recursive(bmain, collection, ID_RECALC_COPY_ON_WRITE);
+    collection_tag_update_parent_recursive(main, collection, ID_RECALC_COPY_ON_WRITE);
   }
 
   if ((flag & LIB_ID_CREATE_NO_MAIN) == 0) {
-    BKE_rigidbody_main_collection_object_add(bmain, collection, ob);
+    dune_rigidbody_main_collection_object_add(main, collection, ob);
   }
 
   return true;
 }
 
-static bool collection_object_remove(Main *bmain,
+static bool collection_object_remove(Main *main,
                                      Collection *collection,
                                      Object *ob,
                                      const bool free_us)
 {
-  CollectionObject *cob = BLI_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob));
+  CollectionObject *cob = lib_findptr(&collection->gobject, ob, offsetof(CollectionObject, ob));
   if (cob == NULL) {
     return false;
   }
 
-  BLI_freelinkN(&collection->gobject, cob);
-  BKE_collection_object_cache_free(collection);
+  lib_freelinkn(&collection->gobject, cob);
+  dune_collection_object_cache_free(collection);
 
   if (free_us) {
-    BKE_id_free_us(bmain, ob);
+    dune_id_free_us(main, ob);
   }
   else {
     id_us_min(&ob->id);
   }
 
-  collection_tag_update_parent_recursive(bmain, collection, ID_RECALC_COPY_ON_WRITE);
+  collection_tag_update_parent_recursive(main, collection, ID_RECALC_COPY_ON_WRITE);
 
   return true;
 }
 
-bool BKE_collection_object_add_notest(Main *bmain, Collection *collection, Object *ob)
+bool dune_collection_object_add_notest(Main *main, Collection *collection, Object *ob)
 {
   if (ob == NULL) {
     return false;
   }
 
-  /* Only case where this pointer can be NULL is when scene itself is linked, this case should
+  /* Only case where this ptr can be NULL is when scene itself is linked, this case should
    * never be reached. */
-  BLI_assert(collection != NULL);
+  lib_assert(collection != NULL);
   if (collection == NULL) {
     return false;
   }
 
-  if (!collection_object_add(bmain, collection, ob, 0, true)) {
+  if (!collection_object_add(main, collection, ob, 0, true)) {
     return false;
   }
 
-  if (BKE_collection_is_in_scene(collection)) {
-    BKE_main_collection_sync(bmain);
+  if (dune_collection_is_in_scene(collection)) {
+    dune_main_collection_sync(main);
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_GEOMETRY);
+  grqph_id_tag_update(&collection->id, ID_RECALC_GEOMETRY);
 
   return true;
 }
 
-bool BKE_collection_object_add(Main *bmain, Collection *collection, Object *ob)
+bool dune_collection_object_add(Main *main, Collection *collection, Object *ob)
 {
   if (collection == NULL) {
     return false;
@@ -1070,17 +1055,17 @@ bool BKE_collection_object_add(Main *bmain, Collection *collection, Object *ob)
 
   collection = collection_parent_editable_find_recursive(collection);
 
-  return BKE_collection_object_add_notest(bmain, collection, ob);
+  return dune_collection_object_add_notest(main, collection, ob);
 }
 
-void BKE_collection_object_add_from(Main *bmain, Scene *scene, Object *ob_src, Object *ob_dst)
+void dune_collection_object_add_from(Main *main, Scene *scene, Object *ob_src, Object *ob_dst)
 {
   bool is_instantiated = false;
 
   FOREACH_SCENE_COLLECTION_BEGIN (scene, collection) {
-    if (!ID_IS_LINKED(collection) && !ID_IS_OVERRIDE_LIBRARY(collection) &&
-        BKE_collection_has_object(collection, ob_src)) {
-      collection_object_add(bmain, collection, ob_dst, 0, true);
+    if (!ID_IS_LINKED(collection) && !ID_IS_OVERRIDE_LIB(collection) &&
+        dune_collection_has_object(collection, ob_src)) {
+      collection_object_add(main, collection, ob_dst, 0, true);
       is_instantiated = true;
     }
   }
@@ -1089,108 +1074,102 @@ void BKE_collection_object_add_from(Main *bmain, Scene *scene, Object *ob_src, O
   if (!is_instantiated) {
     /* In case we could not find any non-linked collections in which instantiate our ob_dst,
      * fallback to scene's master collection... */
-    collection_object_add(bmain, scene->master_collection, ob_dst, 0, true);
+    collection_object_add(main, scene->master_collection, ob_dst, 0, true);
   }
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 }
 
-bool BKE_collection_object_remove(Main *bmain,
-                                  Collection *collection,
-                                  Object *ob,
-                                  const bool free_us)
+bool dune_collection_object_remove(Main *main,
+                                   Collection *collection,
+                                   Object *ob,
+                                   const bool free_us)
 {
   if (ELEM(NULL, collection, ob)) {
     return false;
   }
 
-  if (!collection_object_remove(bmain, collection, ob, free_us)) {
+  if (!collection_object_remove(main, collection, ob, free_us)) {
     return false;
   }
 
-  if (BKE_collection_is_in_scene(collection)) {
-    BKE_main_collection_sync(bmain);
+  if (dune_collection_is_in_scene(collection)) {
+    dune_main_collection_sync(main);
   }
 
-  DEG_id_tag_update(&collection->id, ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&collection->id, ID_RECALC_GEOMETRY);
 
   return true;
 }
 
-/**
- * Remove object from all collections of scene
- * \param collection_skip: Don't remove base from this collection.
- */
+/* Remove object from all collections of scene
+ * param collection_skip: Don't remove base from this collection. */
 static bool scene_collections_object_remove(
-    Main *bmain, Scene *scene, Object *ob, const bool free_us, Collection *collection_skip)
+    Main *main, Scene *scene, Object *ob, const bool free_us, Collection *collection_skip)
 {
   bool removed = false;
 
   if (collection_skip == NULL) {
-    BKE_scene_remove_rigidbody_object(bmain, scene, ob, free_us);
+    dune_scene_remove_rigidbody_object(main, scene, ob, free_us);
   }
 
   FOREACH_SCENE_COLLECTION_BEGIN (scene, collection) {
     if (collection != collection_skip) {
-      removed |= collection_object_remove(bmain, collection, ob, free_us);
+      removed |= collection_object_remove(main, collection, ob, free_us);
     }
   }
   FOREACH_SCENE_COLLECTION_END;
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 
   return removed;
 }
 
-bool BKE_scene_collections_object_remove(Main *bmain, Scene *scene, Object *ob, const bool free_us)
+bool dune_scene_collections_object_remove(Main *main, Scene *scene, Object *ob, const bool free_us)
 {
-  return scene_collections_object_remove(bmain, scene, ob, free_us, NULL);
+  return scene_collections_object_remove(main, scene, ob, free_us, NULL);
 }
 
-/*
- * Remove all NULL objects from collections.
- * This is used for library remapping, where these pointers have been set to NULL.
- * Otherwise this should never happen.
- */
+/* Remove all NULL objects from collections.
+ * This is used for lib remapping, where these ptrs have been set to NULL.
+ * Otherwise this should never happen. */
 static void collection_object_remove_nulls(Collection *collection)
 {
   bool changed = false;
 
-  LISTBASE_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
+  LIST_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
     if (cob->ob == NULL) {
-      BLI_freelinkN(&collection->gobject, cob);
+      lib_freelinkn(&collection->gobject, cob);
       changed = true;
     }
   }
 
   if (changed) {
-    BKE_collection_object_cache_free(collection);
+    dune_collection_object_cache_free(collection);
   }
 }
 
-void BKE_collections_object_remove_nulls(Main *bmain)
+void dune_collections_object_remove_nulls(Main *main)
 {
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+  LIST_FOREACH (Scene *, scene, &main->scenes) {
     collection_object_remove_nulls(scene->master_collection);
   }
 
-  LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+  LIST_FOREACH (Collection *, collection, &main->collections) {
     collection_object_remove_nulls(collection);
   }
 }
 
-/*
- * Remove all duplicate objects from collections.
- * This is used for library remapping, happens when remapping an object to another one already
- * present in the collection. Otherwise this should never happen.
- */
+/* Remove all duplicate objects from collections.
+ * This is used for lib remapping, happens when remapping an object to another one already
+ * present in the collection. Otherwise this should never happen. */
 static void collection_object_remove_duplicates(Collection *collection)
 {
   bool changed = false;
 
-  LISTBASE_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
+  LIST_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
     if (cob->ob->runtime.collection_management) {
-      BLI_freelinkN(&collection->gobject, cob);
+      lib_freelinkn(&collection->gobject, cob);
       changed = true;
       continue;
     }
@@ -1198,49 +1177,49 @@ static void collection_object_remove_duplicates(Collection *collection)
   }
 
   /* Cleanup. */
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
     cob->ob->runtime.collection_management = false;
   }
 
   if (changed) {
-    BKE_collection_object_cache_free(collection);
+    dune_collection_object_cache_free(collection);
   }
 }
 
-void BKE_collections_object_remove_duplicates(struct Main *bmain)
+void dune_collections_object_remove_duplicates(struct Main *main)
 {
-  LISTBASE_FOREACH (Object *, ob, &bmain->objects) {
+  LIST_FOREACH (Object *, ob, &main->objects) {
     ob->runtime.collection_management = false;
   }
 
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+  LIST_FOREACH (Scene *, scene, &main->scenes) {
     collection_object_remove_duplicates(scene->master_collection);
   }
 
-  LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+  LIST_FOREACH (Collection *, collection, &main->collections) {
     collection_object_remove_duplicates(collection);
   }
 }
 
 static void collection_null_children_remove(Collection *collection)
 {
-  LISTBASE_FOREACH_MUTABLE (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH_MUTABLE (CollectionChild *, child, &collection->children) {
     if (child->collection == NULL) {
-      BLI_freelinkN(&collection->children, child);
+      lib_freelinkn(&collection->children, child);
     }
   }
 }
 
 static void collection_missing_parents_remove(Collection *collection)
 {
-  LISTBASE_FOREACH_MUTABLE (CollectionParent *, parent, &collection->parents) {
+  LIST_FOREACH_MUTABLE (CollectionParent *, parent, &collection->parents) {
     if ((parent->collection == NULL) || !collection_find_child(parent->collection, collection)) {
-      BLI_freelinkN(&collection->parents, parent);
+      lib_freelinkn(&collection->parents, parent);
     }
   }
 }
 
-void BKE_collections_child_remove_nulls(Main *bmain,
+void dune_collections_child_remove_nulls(Main *main,
                                         Collection *parent_collection,
                                         Collection *child_collection)
 {
@@ -1251,66 +1230,60 @@ void BKE_collections_child_remove_nulls(Main *bmain,
     else {
       /* We need to do the checks in two steps when more than one collection may be involved,
        * otherwise we can miss some cases...
-       * Also, master collections are not in bmain, so we also need to loop over scenes.
-       */
-      LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+       * Also, master collections are not in bmain, so we also need to loop over scenes */
+      LIST_FOREACH (Collection *, collection, &main->collections) {
         collection_null_children_remove(collection);
       }
-      LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+      LIST_FOREACH (Scene *, scene, &bmain->scenes) {
         collection_null_children_remove(scene->master_collection);
       }
     }
 
-    LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+    LIST_FOREACH (Collection *, collection, &main->collections) {
       collection_missing_parents_remove(collection);
     }
-    LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+    LIST_FOREACH (Scene *, scene, &main->scenes) {
       collection_missing_parents_remove(scene->master_collection);
     }
   }
   else {
-    LISTBASE_FOREACH_MUTABLE (CollectionParent *, parent, &child_collection->parents) {
+    LIST_FOREACH_MUTABLE (CollectionParent *, parent, &child_collection->parents) {
       collection_null_children_remove(parent->collection);
 
       if (!collection_find_child(parent->collection, child_collection)) {
-        BLI_freelinkN(&child_collection->parents, parent);
+        lib_freelinkn(&child_collection->parents, parent);
       }
     }
   }
 }
 
-void BKE_collection_object_move(
-    Main *bmain, Scene *scene, Collection *collection_dst, Collection *collection_src, Object *ob)
+void dune_collection_object_move(
+    Main *main, Scene *scene, Collection *collection_dst, Collection *collection_src, Object *ob)
 {
   /* In both cases we first add the object, then remove it from the other collections.
    * Otherwise we lose the original base and whether it was active and selected. */
   if (collection_src != NULL) {
-    if (BKE_collection_object_add(bmain, collection_dst, ob)) {
-      BKE_collection_object_remove(bmain, collection_src, ob, false);
+    if (dune_collection_object_add(main, collection_dst, ob)) {
+      dune_collection_object_remove(main, collection_src, ob, false);
     }
   }
   else {
     /* Adding will fail if object is already in collection.
      * However we still need to remove it from the other collections. */
-    BKE_collection_object_add(bmain, collection_dst, ob);
-    scene_collections_object_remove(bmain, scene, ob, false, collection_dst);
+    dune_collection_object_add(main, collection_dst, ob);
+    scene_collections_object_remove(main, scene, ob, false, collection_dst);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Scene Membership
- * \{ */
-
-bool BKE_collection_is_in_scene(Collection *collection)
+/* Collection Scene Membership */
+bool dune_collection_is_in_scene(Collection *collection)
 {
   if (collection->flag & COLLECTION_IS_MASTER) {
     return true;
   }
 
-  LISTBASE_FOREACH (CollectionParent *, cparent, &collection->parents) {
-    if (BKE_collection_is_in_scene(cparent->collection)) {
+  LIST_FOREACH (CollectionParent *, cparent, &collection->parents) {
+    if (dune_collection_is_in_scene(cparent->collection)) {
       return true;
     }
   }
@@ -1318,24 +1291,21 @@ bool BKE_collection_is_in_scene(Collection *collection)
   return false;
 }
 
-void BKE_collections_after_lib_link(Main *bmain)
+void dune_collections_after_lib_link(Main *main)
 {
   /* Need to update layer collections because objects might have changed
    * in linked files, and because undo push does not include updated base
    * flags since those are refreshed after the operator completes. */
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Collection Children
- * \{ */
+/* Collection Children */
 
 static bool collection_instance_find_recursive(Collection *collection,
                                                Collection *instance_collection)
 {
-  LISTBASE_FOREACH (CollectionObject *, collection_object, &collection->gobject) {
+  LIST_FOREACH (CollectionObject *, collection_object, &collection->gobject) {
     if (collection_object->ob != NULL &&
         /* Object from a given collection should never instantiate that collection either. */
         ELEM(collection_object->ob->instance_collection, instance_collection, collection)) {
@@ -1343,7 +1313,7 @@ static bool collection_instance_find_recursive(Collection *collection,
     }
   }
 
-  LISTBASE_FOREACH (CollectionChild *, collection_child, &collection->children) {
+  LIST_FOREACH (CollectionChild *, collection_child, &collection->children) {
     if (collection_child->collection != NULL &&
         collection_instance_find_recursive(collection_child->collection, instance_collection)) {
       return true;
@@ -1353,7 +1323,7 @@ static bool collection_instance_find_recursive(Collection *collection,
   return false;
 }
 
-bool BKE_collection_cycle_find(Collection *new_ancestor, Collection *collection)
+bool dune_collection_cycle_find(Collection *new_ancestor, Collection *collection)
 {
   if (collection == new_ancestor) {
     return true;
@@ -1363,8 +1333,8 @@ bool BKE_collection_cycle_find(Collection *new_ancestor, Collection *collection)
     collection = new_ancestor;
   }
 
-  LISTBASE_FOREACH (CollectionParent *, parent, &new_ancestor->parents) {
-    if (BKE_collection_cycle_find(parent->collection, collection)) {
+  LIST_FOREACH (CollectionParent *, parent, &new_ancestor->parents) {
+    if (dune_collection_cycle_find(parent->collection, collection)) {
       return true;
     }
   }
@@ -1379,7 +1349,7 @@ static bool collection_instance_fix_recursive(Collection *parent_collection,
 {
   bool cycles_found = false;
 
-  LISTBASE_FOREACH (CollectionObject *, collection_object, &parent_collection->gobject) {
+  LIST_FOREACH (CollectionObject *, collection_object, &parent_collection->gobject) {
     if (collection_object->ob != NULL &&
         collection_object->ob->instance_collection == collection) {
       id_us_min(&collection->id);
@@ -1388,7 +1358,7 @@ static bool collection_instance_fix_recursive(Collection *parent_collection,
     }
   }
 
-  LISTBASE_FOREACH (CollectionChild *, collection_child, &parent_collection->children) {
+  LIST_FOREACH (CollectionChild *, collection_child, &parent_collection->children) {
     if (collection_instance_fix_recursive(collection_child->collection, collection)) {
       cycles_found = true;
     }
@@ -1397,18 +1367,18 @@ static bool collection_instance_fix_recursive(Collection *parent_collection,
   return cycles_found;
 }
 
-static bool collection_cycle_fix_recursive(Main *bmain,
+static bool collection_cycle_fix_recursive(Main main,
                                            Collection *parent_collection,
                                            Collection *collection)
 {
   bool cycles_found = false;
 
-  LISTBASE_FOREACH_MUTABLE (CollectionParent *, parent, &parent_collection->parents) {
-    if (BKE_collection_cycle_find(parent->collection, collection)) {
-      BKE_collection_child_remove(bmain, parent->collection, parent_collection);
+  LIST_FOREACH_MUTABLE (CollectionParent *, parent, &parent_collection->parents) {
+    if (dune_collection_cycle_find(parent->collection, collection)) {
+      dune_collection_child_remove(bmain, parent->collection, parent_collection);
       cycles_found = true;
     }
-    else if (collection_cycle_fix_recursive(bmain, parent->collection, collection)) {
+    else if (collection_cycle_fix_recursive(main, parent->collection, collection)) {
       cycles_found = true;
     }
   }
@@ -1416,20 +1386,20 @@ static bool collection_cycle_fix_recursive(Main *bmain,
   return cycles_found;
 }
 
-bool BKE_collection_cycles_fix(Main *bmain, Collection *collection)
+bool dune_collection_cycles_fix(Main *main, Collection *collection)
 {
-  return collection_cycle_fix_recursive(bmain, collection, collection) ||
+  return collection_cycle_fix_recursive(main, collection, collection) ||
          collection_instance_fix_recursive(collection, collection);
 }
 
 static CollectionChild *collection_find_child(Collection *parent, Collection *collection)
 {
-  return BLI_findptr(&parent->children, collection, offsetof(CollectionChild, collection));
+  return lib_findptr(&parent->children, collection, offsetof(CollectionChild, collection));
 }
 
 static bool collection_find_child_recursive(const Collection *parent, const Collection *collection)
 {
-  LISTBASE_FOREACH (const CollectionChild *, child, &parent->children) {
+  LIST_FOREACH (const CollectionChild *, child, &parent->children) {
     if (child->collection == collection) {
       return true;
     }
@@ -1461,26 +1431,26 @@ static bool collection_child_add(Collection *parent,
   if (child) {
     return false;
   }
-  if (BKE_collection_cycle_find(parent, collection)) {
+  if (dune_collection_cycle_find(parent, collection)) {
     return false;
   }
 
-  child = MEM_callocN(sizeof(CollectionChild), "CollectionChild");
+  child = mem_callocn(sizeof(CollectionChild), "CollectionChild");
   child->collection = collection;
-  BLI_addtail(&parent->children, child);
+  lib_addtail(&parent->children, child);
 
   /* Don't add parent links for depsgraph datablocks, these are not kept in sync. */
   if ((flag & LIB_ID_CREATE_NO_MAIN) == 0) {
     CollectionParent *cparent = MEM_callocN(sizeof(CollectionParent), "CollectionParent");
     cparent->collection = parent;
-    BLI_addtail(&collection->parents, cparent);
+    lib_addtail(&collection->parents, cparent);
   }
 
   if (add_us) {
     id_us_plus(&collection->id);
   }
 
-  BKE_collection_object_cache_free(parent);
+  dune_collection_object_cache_free(parent);
 
   return true;
 }
@@ -1493,67 +1463,67 @@ static bool collection_child_remove(Collection *parent, Collection *collection)
   }
 
   CollectionParent *cparent = collection_find_parent(collection, parent);
-  BLI_freelinkN(&collection->parents, cparent);
-  BLI_freelinkN(&parent->children, child);
+  lib_freelinkn(&collection->parents, cparent);
+  lib_freelinkn(&parent->children, child);
 
   id_us_min(&collection->id);
 
-  BKE_collection_object_cache_free(parent);
+  dune_collection_object_cache_free(parent);
 
   return true;
 }
 
-bool BKE_collection_child_add(Main *bmain, Collection *parent, Collection *child)
+bool dune_collection_child_add(Main *main, Collection *parent, Collection *child)
 {
   if (!collection_child_add(parent, child, 0, true)) {
     return false;
   }
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(bmain);
   return true;
 }
 
-bool BKE_collection_child_add_no_sync(Collection *parent, Collection *child)
+bool dune_collection_child_add_no_sync(Collection *parent, Collection *child)
 {
   return collection_child_add(parent, child, 0, true);
 }
 
-bool BKE_collection_child_remove(Main *bmain, Collection *parent, Collection *child)
+bool dune_collection_child_remove(Main *main, Collection *parent, Collection *child)
 {
   if (!collection_child_remove(parent, child)) {
     return false;
   }
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
   return true;
 }
 
-void BKE_collection_parent_relations_rebuild(Collection *collection)
+void dune_collection_parent_relations_rebuild(Collection *collection)
 {
-  LISTBASE_FOREACH_MUTABLE (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH_MUTABLE (CollectionChild *, child, &collection->children) {
     /* Check for duplicated children (can happen with remapping e.g.). */
     CollectionChild *other_child = collection_find_child(collection, child->collection);
     if (other_child != child) {
-      BLI_freelinkN(&collection->children, child);
+      lib_freelinkn(&collection->children, child);
       continue;
     }
 
     /* Invalid child, either without a collection, or because it creates a dependency cycle. */
-    if (child->collection == NULL || BKE_collection_cycle_find(collection, child->collection)) {
-      BLI_freelinkN(&collection->children, child);
+    if (child->collection == NULL || dune_collection_cycle_find(collection, child->collection)) {
+      lib_freelinkn(&collection->children, child);
       continue;
     }
 
     /* Can happen when remapping data partially out-of-Main (during advanced ID management
-     * operations like lib-override resync e.g.). */
+     * ops like lib-override resync e.g.). */
     if ((child->collection->id.tag & (LIB_TAG_NO_MAIN | LIB_TAG_COPIED_ON_WRITE)) != 0) {
       continue;
     }
 
-    BLI_assert(collection_find_parent(child->collection, collection) == NULL);
+    lib_assert(collection_find_parent(child->collection, collection) == NULL);
     CollectionParent *cparent = MEM_callocN(sizeof(CollectionParent), __func__);
     cparent->collection = collection;
-    BLI_addtail(&child->collection->parents, cparent);
+    lib_addtail(&child->collection->parents, cparent);
   }
 }
 
@@ -1564,10 +1534,10 @@ static void collection_parents_rebuild_recursive(Collection *collection)
     return;
   }
 
-  BKE_collection_parent_relations_rebuild(collection);
+  dune_collection_parent_relations_rebuild(collection);
   collection->tag &= ~COLLECTION_TAG_RELATION_REBUILD;
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
     /* See comment above in `BKE_collection_parent_relations_rebuild`. */
     if ((child->collection->id.tag & (LIB_TAG_NO_MAIN | LIB_TAG_COPIED_ON_WRITE)) != 0) {
       continue;
@@ -1576,22 +1546,21 @@ static void collection_parents_rebuild_recursive(Collection *collection)
   }
 }
 
-void BKE_main_collections_parent_relations_rebuild(Main *bmain)
+void dune_main_collections_parent_relations_rebuild(Main *main)
 {
-  /* Only collections not in bmain (master ones in scenes) have no parent... */
-  LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
-    BLI_freelistN(&collection->parents);
+  /* Only collections not in main (master ones in scenes) have no parent... */
+  LIST_FOREACH (Collection *, collection, &main->collections) {
+    lib_freelistn(&collection->parents);
 
     collection->tag |= COLLECTION_TAG_RELATION_REBUILD;
   }
 
   /* Scene's master collections will be 'root' parent of most of our collections, so start with
    * them. */
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
-    /* This function can be called from readfile.c, when this pointer is not guaranteed to be NULL.
-     */
+  LIST_FOREACH (Scene *, scene, &bmain->scenes) {
+    /* This fn can be called from readfile.c, when this pointer is not guaranteed to be NULL. */
     if (scene->master_collection != NULL) {
-      BLI_assert(BLI_listbase_is_empty(&scene->master_collection->parents));
+      lib_assert(lib_lis_is_empty(&scene->master_collection->parents));
       scene->master_collection->tag |= COLLECTION_TAG_RELATION_REBUILD;
       collection_parents_rebuild_recursive(scene->master_collection);
     }
@@ -1599,7 +1568,7 @@ void BKE_main_collections_parent_relations_rebuild(Main *bmain)
 
   /* We may have parent chains outside of scene's master_collection context? At least, readfile's
    * lib_link_collection_data() seems to assume that, so do the same here. */
-  LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+  LIST_FOREACH (Collection *, collection, &main->collections) {
     if (collection->tag & COLLECTION_TAG_RELATION_REBUILD) {
       /* NOTE: we do not have easy access to 'which collections is root' info in that case, which
        * means test for cycles in collection relationships may fail here. I don't think that is an
@@ -1609,12 +1578,7 @@ void BKE_main_collections_parent_relations_rebuild(Main *bmain)
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Index
- * \{ */
-
+/* Collection Index */
 static Collection *collection_from_index_recursive(Collection *collection,
                                                    const int index,
                                                    int *index_current)
@@ -1625,7 +1589,7 @@ static Collection *collection_from_index_recursive(Collection *collection,
 
   (*index_current)++;
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
     Collection *nested = collection_from_index_recursive(child->collection, index, index_current);
     if (nested != NULL) {
       return nested;
@@ -1649,8 +1613,8 @@ static bool collection_objects_select(ViewLayer *view_layer, Collection *collect
     return false;
   }
 
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
-    Base *base = BKE_view_layer_base_find(view_layer, cob->ob);
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
+    Base *base = dune_view_layer_base_find(view_layer, cob->ob);
 
     if (base) {
       if (deselect) {
@@ -1668,7 +1632,7 @@ static bool collection_objects_select(ViewLayer *view_layer, Collection *collect
     }
   }
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
     if (collection_objects_select(view_layer, collection, deselect)) {
       changed = true;
     }
@@ -1677,25 +1641,20 @@ static bool collection_objects_select(ViewLayer *view_layer, Collection *collect
   return changed;
 }
 
-bool BKE_collection_objects_select(ViewLayer *view_layer, Collection *collection, bool deselect)
+bool dune_collection_objects_select(ViewLayer *view_layer, Collection *collection, bool deselect)
 {
   LayerCollection *layer_collection = BKE_layer_collection_first_from_scene_collection(view_layer,
                                                                                        collection);
 
   if (layer_collection != NULL) {
-    return BKE_layer_collection_objects_select(view_layer, layer_collection, deselect);
+    return dune_layer_collection_objects_select(view_layer, layer_collection, deselect);
   }
 
   return collection_objects_select(view_layer, collection, deselect);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection move (outliner drag & drop)
- * \{ */
-
-bool BKE_collection_move(Main *bmain,
+/* Collection move (outliner drag & drop) */
+bool dune_collection_move(Main *main,
                          Collection *to_parent,
                          Collection *from_parent,
                          Collection *relative,
@@ -1705,7 +1664,7 @@ bool BKE_collection_move(Main *bmain,
   if (collection->flag & COLLECTION_IS_MASTER) {
     return false;
   }
-  if (BKE_collection_cycle_find(to_parent, collection)) {
+  if (dune_collection_cycle_find(to_parent, collection)) {
     return false;
   }
 
@@ -1722,26 +1681,24 @@ bool BKE_collection_move(Main *bmain,
     CollectionChild *relative_child = collection_find_child(to_parent, relative);
 
     if (relative_child) {
-      BLI_remlink(&to_parent->children, child);
+      lib_remlink(&to_parent->children, child);
 
       if (relative_after) {
-        BLI_insertlinkafter(&to_parent->children, relative_child, child);
+        li _insertlinkafter(&to_parent->children, relative_child, child);
       }
       else {
-        BLI_insertlinkbefore(&to_parent->children, relative_child, child);
+        lib_insertlinkbefore(&to_parent->children, relative_child, child);
       }
 
-      BKE_collection_object_cache_free(to_parent);
+      dune_collection_object_cache_free(to_parent);
     }
   }
 
   /* Update layer collections. */
-  BKE_main_collection_sync(bmain);
+  dund_main_collection_sync(main);
 
   return true;
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Iterators
