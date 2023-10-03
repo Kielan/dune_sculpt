@@ -1169,7 +1169,7 @@ static void scene_read_data(DataReader *reader, Id *id)
     seq_read(reader, &ed->seqbase);
 
     /* link metastack, slight abuse of structs here,
-     * have to restore pointer to internal part in struct */
+     * have to restore ptr to internal part in struct */
     {
       Seq temp;
       void *poin;
@@ -1177,7 +1177,7 @@ static void scene_read_data(DataReader *reader, Id *id)
 
       offset = ((intptr_t) & (temp.seqbase)) - ((intptr_t)&temp);
 
-      /* root pointer */
+      /* root ptr */
       if (ed->seqbasep == old_seqbasep) {
         ed->seqbasep = &ed->seqbase;
       }
@@ -1265,7 +1265,7 @@ static void scene_read_data(DataReader *reader, Id *id)
       }
     }
     else {
-      /* must nullify the reference to phys sim object, since it no-longer exist
+      /* must nullify the ref to phys sim object, since it no-longer exist
        * (and will need to be recalculated) */
       rbw->shared->physics_world = NULL;
 
@@ -1388,31 +1388,31 @@ static void scene_read_lib(LibReader *reader, Id *id)
 
   LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->gp_sculpt.guide.reference_object);
 
-  LISTBASE_FOREACH_MUTABLE (Base *, base_legacy, &sce->base) {
-    LOADER_read_id_address(reader, sce->id.lib, &base_legacy->object);
+  LIST_FOREACH_MUTABLE (Base *, base_legacy, &sce->base) {
+    loader_read_id_address(reader, sce->id.lib, &base_legacy->object);
 
     if (base_legacy->object == NULL) {
-      LOADER_reportf_wrap(LOADER_read_lib_reports(reader),
+      loader_reportf_wrap(loader_read_lib_reports(reader),
                        RPT_WARNING,
                        TIP_("LIB: object lost from scene: '%s'"),
                        sce->id.name + 2);
-      LIB_remlink(&sce->base, base_legacy);
+      lib_remlink(&sce->base, base_legacy);
       if (base_legacy == sce->basact) {
         sce->basact = NULL;
       }
-      MEM_freeN(base_legacy);
+      mem_freen(base_legacy);
     }
   }
 
   if (sce->ed) {
-    SEQ_dune_read_lib(reader, sce, &sce->ed->seqbase);
+    seq_dune_read_lib(reader, sce, &sce->ed->seqbase);
   }
 
-  LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
+  LIST_FOREACH (TimeMarker *, marker, &sce->markers) {
     IDP_DuneReadLib(reader, marker->prop);
 
     if (marker->camera) {
-      LOADER_read_id_address(reader, sce->id.lib, &marker->camera);
+      loader_read_id_address(reader, sce->id.lib, &marker->camera);
     }
   }
 
@@ -1420,13 +1420,13 @@ static void scene_read_lib(LibReader *reader, Id *id)
   if (sce->rigidbody_world) {
     RigidBodyWorld *rbw = sce->rigidbody_world;
     if (rbw->group) {
-      LOADER_read_id_address(reader, sce->id.lib, &rbw->group);
+      loader_read_id_address(reader, sce->id.lib, &rbw->group);
     }
     if (rbw->constraints) {
-      LOADER_read_id_address(reader, sce->id.lib, &rbw->constraints);
+      loader_read_id_address(reader, sce->id.lib, &rbw->constraints);
     }
     if (rbw->effector_weights) {
-      LOADER_read_id_address(reader, sce->id.lib, &rbw->effector_weights->group);
+      loader_read_id_address(reader, sce->id.lib, &rbw->effector_weights->group);
     }
   }
 
@@ -1434,31 +1434,31 @@ static void scene_read_lib(LibReader *reader, Id *id)
     composite_patch(sce->nodetree, sce);
   }
 
-  LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    LOADER_read_id_address(reader, sce->id.lib, &srl->mat_override);
-    LISTBASE_FOREACH (FreestyleModuleConfig *, fmc, &srl->freestyleConfig.modules) {
-      LOADER_read_id_address(reader, sce->id.lib, &fmc->script);
+  LIST_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
+    loader_read_id_address(reader, sce->id.lib, &srl->mat_override);
+    LIST_FOREACH (FreestyleModuleConfig *, fmc, &srl->freestyleConfig.modules) {
+      loader_read_id_address(reader, sce->id.lib, &fmc->script);
     }
-    LISTBASE_FOREACH (FreestyleLineSet *, fls, &srl->freestyleConfig.linesets) {
-      LOADER_read_id_address(reader, sce->id.lib, &fls->linestyle);
-      LOADER_read_id_address(reader, sce->id.lib, &fls->group);
+    LIST_FOREACH (FreestyleLineSet *, fls, &srl->freestyleConfig.linesets) {
+      loader_read_id_address(reader, sce->id.lib, &fls->linestyle);
+      loader_read_id_address(reader, sce->id.lib, &fls->group);
     }
   }
   /* Motion Tracking */
-  LOADER_read_id_address(reader, sce->id.lib, &sce->clip);
+  loader_read_id_address(reader, sce->id.lib, &sce->clip);
 
 #ifdef USE_COLLECTION_COMPAT_28
   if (sce->collection) {
-    KERNEL_collection_compat_dune_read_lib(reader, sce->id.lib, sce->collection);
+    dune_collection_compat_dune_read_lib(reader, sce->id.lib, sce->collection);
   }
 #endif
 
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    KERNEL_view_layer_dune_read_lib(reader, sce->id.lib, view_layer);
+  LIST_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
+    dune_view_layer_read_lib(reader, sce->id.lib, view_layer);
   }
 
   if (sce->r.bake.cage_object) {
-    LOADER_read_id_address(reader, sce->id.lib, &sce->r.bake.cage_object);
+    loader_read_id_address(reader, sce->id.lib, &sce->r.bake.cage_object);
   }
 
 #ifdef USE_SETSCENE_CHECK
@@ -1468,89 +1468,89 @@ static void scene_read_lib(LibReader *reader, Id *id)
 #endif
 }
 
-static void scene_dune_read_expand(DuneExpander *expander, ID *id)
+static void scene_dune_read_expand(Expander *expander, Id *id)
 {
   Scene *sce = (Scene *)id;
 
-  LISTBASE_FOREACH (Base *, base_legacy, &sce->base) {
-    LOADER_expand(expander, base_legacy->object);
+  LIST_FOREACH (Base *, base_legacy, &sce->base) {
+    loader_expand(expander, base_legacy->object);
   }
-  LOADER_expand(expander, sce->camera);
-  LOADER_expand(expander, sce->world);
+  loader_expand(expander, sce->camera);
+  loader_expand(expander, sce->world);
 
-  KERNEL_keyingsets_dune_read_expand(expander, &sce->keyingsets);
+  dune_keyingsets_read_expand(expander, &sce->keyingsets);
 
   if (sce->set) {
-    LOADER_expand(expander, sce->set);
+    loadet_expand(expander, sce->set);
   }
 
-  LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    LOADER_expand(expander, srl->mat_override);
-    LISTBASE_FOREACH (FreestyleModuleConfig *, module, &srl->freestyleConfig.modules) {
+  LIST_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
+    loader_expand(expander, srl->mat_override);
+    LIST_FOREACH (FreestyleModuleConfig *, module, &srl->freestyleConfig.modules) {
       if (module->script) {
-        LOADER_expand(expander, module->script);
+        loader_expand(expander, module->script);
       }
     }
-    LISTBASE_FOREACH (FreestyleLineSet *, lineset, &srl->freestyleConfig.linesets) {
+    LIST_FOREACH (FreestyleLineSet *, lineset, &srl->freestyleConfig.linesets) {
       if (lineset->group) {
-        LOADER_expand(expander, lineset->group);
+        loader_expand(expander, lineset->group);
       }
-      LOADER_expand(expander, lineset->linestyle);
+      loader_expand(expander, lineset->linestyle);
     }
   }
 
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    IDP_DuneReadExpand(expander, view_layer->id_properties);
+  LIST_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
+    IDP_ReadExpand(expander, view_layer->id_props);
 
-    LISTBASE_FOREACH (FreestyleModuleConfig *, module, &view_layer->freestyle_config.modules) {
+    LIST_FOREACH (FreestyleModuleConfig *, module, &view_layer->freestyle_config.modules) {
       if (module->script) {
-        LOADER_expand(expander, module->script);
+        loader_expand(expander, module->script);
       }
     }
 
-    LISTBASE_FOREACH (FreestyleLineSet *, lineset, &view_layer->freestyle_config.linesets) {
+    LIST_FOREACH (FreestyleLineSet *, lineset, &view_layer->freestyle_config.linesets) {
       if (lineset->group) {
-        LOADER_expand(expander, lineset->group);
+        loader_expand(expander, lineset->group);
       }
-      LOADER_expand(expander, lineset->linestyle);
+      loader_expand(expander, lineset->linestyle);
     }
   }
 
-  if (sce->gpd) {
-    LOADER_expand(expander, sce->gpd);
+  if (sce->pen) {
+    loader_expand(expander, sce->gpd);
   }
 
   if (sce->ed) {
-    SEQ_dune_read_expand(expander, &sce->ed->seqbase);
+    seq_dune_read_expand(expander, &sce->ed->seqbase);
   }
 
   if (sce->rigidbody_world) {
-    LOADER_expand(expander, sce->rigidbody_world->group);
-    LOADER_expand(expander, sce->rigidbody_world->constraints);
+    loader_expand(expander, sce->rigidbody_world->group);
+    loader_expand(expander, sce->rigidbody_world->constraints);
   }
 
-  LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    IDP_DuneReadExpand(expander, marker->prop);
+  LIST_FOREACH (TimeMarker *, marker, &sce->markers) {
+    IDP_ReadExpand(expander, marker->prop);
 
     if (marker->camera) {
-      LOADER_expand(expander, marker->camera);
+      loader_expand(expander, marker->camera);
     }
   }
 
-  LOADER_expand(expander, sce->clip);
+  loader_expand(expander, sce->clip);
 
 #ifdef USE_COLLECTION_COMPAT_28
   if (sce->collection) {
-    KERNEL_collection_compat_dune_read_expand(expander, sce->collection);
+    dune_collection_compat_read_expand(expander, sce->collection);
   }
 #endif
 
   if (sce->r.bake.cage_object) {
-    LOADER_expand(expander, sce->r.bake.cage_object);
+    loader_expand(expander, sce->r.bake.cage_object);
   }
 }
 
-static void scene_undo_preserve(DuneLibReader *reader, ID *id_new, ID *id_old)
+static void scene_undo_preserve(LibReader *reader, ID *id_new, ID *id_old)
 {
   Scene *scene_new = (Scene *)id_new;
   Scene *scene_old = (Scene *)id_old;
@@ -1566,27 +1566,27 @@ static void scene_undo_preserve(DuneLibReader *reader, ID *id_new, ID *id_old)
   }
 }
 
-static void scene_lib_override_apply_post(ID *id_dst, ID *UNUSED(id_src))
+static void scene_lib_override_apply_post(Id *id_dst, Id *UNUSED(id_src))
 {
   Scene *scene = (Scene *)id_dst;
 
   if (scene->rigidbody_world != NULL) {
-    PTCacheID pid;
-    KERNEL_ptcache_id_from_rigidbody(&pid, NULL, scene->rigidbody_world);
-    LISTBASE_FOREACH (PointCache *, point_cache, pid.ptcaches) {
+    PTCacheId pid;
+    dune_ptcache_id_from_rigidbody(&pid, NULL, scene->rigidbody_world);
+    LIST_FOREACH (PointCache *, point_cache, pid.ptcaches) {
       point_cache->flag |= PTCACHE_FLAG_INFO_DIRTY;
     }
   }
 }
 
-IDTypeInfo IDType_ID_SCE = {
+IdTypeInfo IdType_ID_SCE = {
     .id_code = ID_SCE,
     .id_filter = FILTER_ID_SCE,
-    .main_listbase_index = INDEX_ID_SCE,
+    .main_list_index = INDEX_ID_SCE,
     .struct_size = sizeof(Scene),
     .name = "Scene",
     .name_plural = "scenes",
-    .translation_context = BLT_I18NCONTEXT_ID_SCENE,
+    .lang_cxt = LANG_CXT_ID_SCENE,
     .flags = 0,
     .asset_type_info = NULL,
 
@@ -1611,29 +1611,29 @@ IDTypeInfo IDType_ID_SCE = {
     .lib_override_apply_post = scene_lib_override_apply_post,
 };
 
-const char *RE_engine_id_DUNE_EEVEE = "DUNE_EEVEE";
-const char *RE_engine_id_DUNE_WORKBENCH = "DUNE_WORKBENCH";
-const char *RE_engine_id_CYCLES = "CYCLES";
+const char *render_engine_id_DUNE_EEVEE = "DUNE_EEVEE";
+const char *render_engine_id_DUNE_WORKBENCH = "DUNE_WORKBENCH";
+const char *render_engine_id_CYCLES = "CYCLES";
 
 void free_avicodecdata(AviCodecData *acd)
 {
   if (acd) {
     if (acd->lpFormat) {
-      MEM_freeN(acd->lpFormat);
+      mem_freen(acd->lpFormat);
       acd->lpFormat = NULL;
       acd->cbFormat = 0;
     }
     if (acd->lpParms) {
-      MEM_freeN(acd->lpParms);
+      mem_freen(acd->lpParms);
       acd->lpParms = NULL;
       acd->cbParms = 0;
     }
   }
 }
 
-static void remove_sequencer_fcurves(Scene *sce)
+static void remove_seq_fcurves(Scene *sce)
 {
-  AnimData *adt = KERNEL_animdata_from_id(&sce->id);
+  AnimData *adt = dune_animdata_from_id(&sce->id);
 
   if (adt && adt->action) {
     FCurve *fcu, *nextfcu;
@@ -1641,217 +1641,207 @@ static void remove_sequencer_fcurves(Scene *sce)
     for (fcu = adt->action->curves.first; fcu; fcu = nextfcu) {
       nextfcu = fcu->next;
 
-      if ((fcu->rna_path) && strstr(fcu->rna_path, "sequences_all")) {
+      if ((fcu->api_path) && strstr(fcu->api_path, "seqs_all")) {
         action_groups_remove_channel(adt->action, fcu);
-        KERNEL_fcurve_free(fcu);
+        dune_fcurve_free(fcu);
       }
     }
   }
 }
 
-ToolSettings *KERNEL_toolsettings_copy(ToolSettings *toolsettings, const int flag)
+ToolSettings *dune_toolsettings_copy(ToolSettings *toolsettings, const int flag)
 {
   if (toolsettings == NULL) {
     return NULL;
   }
-  ToolSettings *ts = MEM_dupallocN(toolsettings);
+  ToolSettings *ts = mem_dupallocn(toolsettings);
   if (ts->vpaint) {
-    ts->vpaint = MEM_dupallocN(ts->vpaint);
-    KERNEL_paint_copy(&ts->vpaint->paint, &ts->vpaint->paint, flag);
+    ts->vpaint = mem_dupallocn(ts->vpaint);
+    dune_paint_copy(&ts->vpaint->paint, &ts->vpaint->paint, flag);
   }
   if (ts->wpaint) {
-    ts->wpaint = MEM_dupallocN(ts->wpaint);
-    KERNEL_paint_copy(&ts->wpaint->paint, &ts->wpaint->paint, flag);
+    ts->wpaint = mem_dupallocn(ts->wpaint);
+    dune_paint_copy(&ts->wpaint->paint, &ts->wpaint->paint, flag);
   }
   if (ts->sculpt) {
-    ts->sculpt = MEM_dupallocN(ts->sculpt);
-    KERNEL_paint_copy(&ts->sculpt->paint, &ts->sculpt->paint, flag);
+    ts->sculpt = mem_dupallocn(ts->sculpt);
+    dune_paint_copy(&ts->sculpt->paint, &ts->sculpt->paint, flag);
   }
   if (ts->uvsculpt) {
-    ts->uvsculpt = MEM_dupallocN(ts->uvsculpt);
-    KERNEL_paint_copy(&ts->uvsculpt->paint, &ts->uvsculpt->paint, flag);
+    ts->uvsculpt = mem_dupallocn(ts->uvsculpt);
+    dune_paint_copy(&ts->uvsculpt->paint, &ts->uvsculpt->paint, flag);
   }
-  if (ts->gp_paint) {
-    ts->gp_paint = MEM_dupallocN(ts->gp_paint);
-    KERNEL_paint_copy(&ts->gp_paint->paint, &ts->gp_paint->paint, flag);
+  if (ts->pen_paint) {
+    ts->pen_paint = MEM_dupallocn(ts->pen_paint);
+    dune_paint_copy(&ts->pen_paint->paint, &ts->pen_paint->paint, flag);
   }
-  if (ts->gp_vertexpaint) {
-    ts->gp_vertexpaint = MEM_dupallocN(ts->gp_vertexpaint);
-    KERNEL_paint_copy(&ts->gp_vertexpaint->paint, &ts->gp_vertexpaint->paint, flag);
+  if (ts->pen_vertexpaint) {
+    ts->pen_vertexpaint = mem_dupallocn(ts->pen_vertexpaint);
+    dune_paint_copy(&ts->prn_vertexpaint->paint, &ts->pen_vertexpaint->paint, flag);
   }
-  if (ts->gp_sculptpaint) {
-    ts->gp_sculptpaint = MEM_dupallocN(ts->gp_sculptpaint);
-    KERNEL_paint_copy(&ts->gp_sculptpaint->paint, &ts->gp_sculptpaint->paint, flag);
+  if (ts->pen_sculptpaint) {
+    ts->pen_sculptpaint = mem_dupallocn(ts->pen_sculptpaint);
+    dune_paint_copy(&ts->pen_sculptpaint->paint, &ts->pen_sculptpaint->paint, flag);
   }
-  if (ts->gp_weightpaint) {
-    ts->gp_weightpaint = MEM_dupallocN(ts->gp_weightpaint);
-    KERNEL_paint_copy(&ts->gp_weightpaint->paint, &ts->gp_weightpaint->paint, flag);
+  if (ts->pen_weightpaint) {
+    ts->pen_weightpaint = mem_dupallocn(ts->pen_weightpaint);
+    dune_paint_copy(&ts->pen_weightpaint->paint, &ts->pen_weightpaint->paint, flag);
   }
   if (ts->curves_sculpt) {
-    ts->curves_sculpt = MEM_dupallocN(ts->curves_sculpt);
-    KERNEL_paint_copy(&ts->curves_sculpt->paint, &ts->curves_sculpt->paint, flag);
+    ts->curves_sculpt = mem_dupallocn(ts->curves_sculpt);
+    dune_paint_copy(&ts->curves_sculpt->paint, &ts->curves_sculpt->paint, flag);
   }
 
-  KERNEL_paint_copy(&ts->imapaint.paint, &ts->imapaint.paint, flag);
+  dune_paint_copy(&ts->imapaint.paint, &ts->imapaint.paint, flag);
   ts->particle.paintcursor = NULL;
   ts->particle.scene = NULL;
   ts->particle.object = NULL;
 
-  /* duplicate Grease Pencil interpolation curve */
-  ts->gp_interpolate.custom_ipo = KERNEL_curvemapping_copy(ts->gp_interpolate.custom_ipo);
-  /* Duplicate Grease Pencil multiframe falloff. */
-  ts->gp_sculpt.cur_falloff = KERNEL_curvemapping_copy(ts->gp_sculpt.cur_falloff);
-  ts->gp_sculpt.cur_primitive = KERNEL_curvemapping_copy(ts->gp_sculpt.cur_primitive);
+  /* duplicate Pen interpolation curve */
+  ts->pen_interpolate.custom_ipo = dune_curvemapping_copy(ts->pen_interpolate.custom_ipo);
+  /* Duplicate Pen multiframe falloff. */
+  ts->pen_sculpt.cur_falloff = dune_curvemapping_copy(ts->pen_sculpt.cur_falloff);
+  ts->pen_sculpt.cur_primitive = dune_curvemapping_copy(ts->pen_sculpt.cur_primitive);
 
-  ts->custom_bevel_profile_preset = KERNEL_curveprofile_copy(ts->custom_bevel_profile_preset);
+  ts->custom_bevel_profile_preset = dune_curveprofile_copy(ts->custom_bevel_profile_preset);
 
-  ts->sequencer_tool_settings = SEQ_tool_settings_copy(ts->sequencer_tool_settings);
+  ts->seq_tool_settings = seq_tool_settings_copy(ts->seq_tool_settings);
   return ts;
 }
 
-void KERNEL_toolsettings_free(ToolSettings *toolsettings)
+void dune_toolsettings_free(ToolSettings *toolsettings)
 {
   if (toolsettings == NULL) {
     return;
   }
   if (toolsettings->vpaint) {
-    KERNEL_paint_free(&toolsettings->vpaint->paint);
-    MEM_freeN(toolsettings->vpaint);
+    dune_paint_free(&toolsettings->vpaint->paint);
+    mem_freen(toolsettings->vpaint);
   }
   if (toolsettings->wpaint) {
-    KERNEL_paint_free(&toolsettings->wpaint->paint);
-    MEM_freeN(toolsettings->wpaint);
+    dune_paint_free(&toolsettings->wpaint->paint);
+    mem_freen(toolsettings->wpaint);
   }
   if (toolsettings->sculpt) {
-    KERNEL_paint_free(&toolsettings->sculpt->paint);
-    MEM_freeN(toolsettings->sculpt);
+    dune_paint_free(&toolsettings->sculpt->paint);
+    mem_freen(toolsettings->sculpt);
   }
   if (toolsettings->uvsculpt) {
-    KERNEL_paint_free(&toolsettings->uvsculpt->paint);
-    MEM_freeN(toolsettings->uvsculpt);
+    dune_paint_free(&toolsettings->uvsculpt->paint);
+    mem_freen(toolsettings->uvsculpt);
   }
-  if (toolsettings->gp_paint) {
-    KERNEL_paint_free(&toolsettings->gp_paint->paint);
-    MEM_freeN(toolsettings->gp_paint);
+  if (toolsettings->pen_paint) {
+    dune_paint_free(&toolsettings->pen_paint->paint);
+    mem_freen(toolsettings->pen_paint);
   }
-  if (toolsettings->gp_vertexpaint) {
-    KERNEL_paint_free(&toolsettings->gp_vertexpaint->paint);
-    MEM_freeN(toolsettings->gp_vertexpaint);
+  if (toolsettings->pen_vertexpaint) {
+    dune_paint_free(&toolsettings->pen_vertexpaint->paint);
+    mem_freen(toolsettings->pen_vertexpaint);
   }
-  if (toolsettings->gp_sculptpaint) {
-    KERNEL_paint_free(&toolsettings->gp_sculptpaint->paint);
-    MEM_freeN(toolsettings->gp_sculptpaint);
+  if (toolsettings->pen_sculptpaint) {
+    dune_paint_free(&toolsettings->pen_sculptpaint->paint);
+    mem_freen(toolsettings->pen_sculptpaint);
   }
-  if (toolsettings->gp_weightpaint) {
-    KERNEL_paint_free(&toolsettings->gp_weightpaint->paint);
-    MEM_freeN(toolsettings->gp_weightpaint);
+  if (toolsettings->pen_weightpaint) {
+    dune_paint_free(&toolsettings->pen_weightpaint->paint);
+    mem_freen(toolsettings->pen_weightpaint);
   }
   if (toolsettings->curves_sculpt) {
-    KERNEL_paint_free(&toolsettings->curves_sculpt->paint);
-    MEM_freeN(toolsettings->curves_sculpt);
+    dune_paint_free(&toolsettings->curves_sculpt->paint);
+    mem_freen(toolsettings->curves_sculpt);
   }
-  KERNEL_paint_free(&toolsettings->imapaint.paint);
+  dune_paint_free(&toolsettings->imapaint.paint);
 
-  /* free Grease Pencil interpolation curve */
-  if (toolsettings->gp_interpolate.custom_ipo) {
-    KERNEL_curvemapping_free(toolsettings->gp_interpolate.custom_ipo);
+  /* free Pen interpolation curve */
+  if (toolsettings->pen_interpolate.custom_ipo) {
+    dune_curvemapping_free(toolsettings->pen_interpolate.custom_ipo);
   }
-  /* free Grease Pencil multiframe falloff curve */
-  if (toolsettings->gp_sculpt.cur_falloff) {
-    KERNEL_curvemapping_free(toolsettings->gp_sculpt.cur_falloff);
+  /* free Pen multiframe falloff curve */
+  if (toolsettings->pen_sculpt.cur_falloff) {
+    dune_curvemapping_free(toolsettings->pen_sculpt.cur_falloff);
   }
-  if (toolsettings->gp_sculpt.cur_primitive) {
-    KERNEL_curvemapping_free(toolsettings->gp_sculpt.cur_primitive);
+  if (toolsettings->pen_sculpt.cur_primitive) {
+    dune_curvemapping_free(toolsettings->pen_sculpt.cur_primitive);
   }
 
   if (toolsettings->custom_bevel_profile_preset) {
-    KERNEL_curveprofile_free(toolsettings->custom_bevel_profile_preset);
+    dune_curveprofile_free(toolsettings->custom_bevel_profile_preset);
   }
 
-  if (toolsettings->sequencer_tool_settings) {
-    SEQ_tool_settings_free(toolsettings->sequencer_tool_settings);
+  if (toolsettings->seq_tool_settings) {
+    seq_tool_settings_free(toolsettings->seq_tool_settings);
   }
 
-  MEM_freeN(toolsettings);
+  mem_freen(toolsettings);
 }
 
-void KERNEL_scene_copy_data_eevee(Scene *sce_dst, const Scene *sce_src)
-{
-  /* Copy eevee data between scenes. */
-  sce_dst->eevee = sce_src->eevee;
-  sce_dst->eevee.light_cache_data = NULL;
-  sce_dst->eevee.light_cache_info[0] = '\0';
-  /* TODO: Copy the cache. */
-}
-
-Scene *KERNEL_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
+Scene *dune_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
 {
   Scene *sce_copy;
 
-  /* TODO: this should/could most likely be replaced by call to more generic code at some point...
+  /* This should/could most likely be replaced by call to more generic code at some point...
    * But for now, let's keep it well isolated here. */
   if (type == SCE_COPY_EMPTY) {
-    ListBase rv;
+    List rv;
 
-    sce_copy = KERNEL_scene_add(bmain, sce->id.name + 2);
+    sce_copy = dune_scene_add(main, sce->id.name + 2);
 
     rv = sce_copy->r.views;
-    KERNEL_curvemapping_free_data(&sce_copy->r.mblur_shutter_curve);
+    dune_curvemapping_free_data(&sce_copy->r.mblur_shutter_curve);
     sce_copy->r = sce->r;
     sce_copy->r.views = rv;
     sce_copy->unit = sce->unit;
     sce_copy->physics_settings = sce->physics_settings;
     sce_copy->audio = sce->audio;
-    KERNEL_scene_copy_data_eevee(sce_copy, sce);
 
-    if (sce->id.properties) {
-      sce_copy->id.properties = IDP_CopyProperty(sce->id.properties);
+    if (sce->id.props) {
+      sce_copy->id.props = IDP_CopyProp(sce->id.props);
     }
 
-    KERNEL_sound_destroy_scene(sce_copy);
+    dune_sound_destroy_scene(sce_copy);
 
     /* copy color management settings */
-    KERNEL_color_managed_display_settings_copy(&sce_copy->display_settings, &sce->display_settings);
-    KERNEL_color_managed_view_settings_copy(&sce_copy->view_settings, &sce->view_settings);
-    KERNEL_color_managed_colorspace_settings_copy(&sce_copy->sequencer_colorspace_settings,
-                                               &sce->sequencer_colorspace_settings);
+    dune_color_managed_display_settings_copy(&sce_copy->display_settings, &sce->display_settings);
+    dune_color_managed_view_settings_copy(&sce_copy->view_settings, &sce->view_settings);
+    dune_color_managed_colorspace_settings_copy(&sce_copy->seq_colorspace_settings,
+                                               &sce->seq_colorspace_settings);
 
-    KERNEL_image_format_copy(&sce_copy->r.im_format, &sce->r.im_format);
-    KERNEL_image_format_copy(&sce_copy->r.bake.im_format, &sce->r.bake.im_format);
+    dune_image_format_copy(&sce_copy->r.im_format, &sce->r.im_format);
+    dune_image_format_copy(&sce_copy->r.bake.im_format, &sce->r.bake.im_format);
 
-    KERNEL_curvemapping_copy_data(&sce_copy->r.mblur_shutter_curve, &sce->r.mblur_shutter_curve);
+    dune_curvemapping_copy_data(&sce_copy->r.mblur_shutter_curve, &sce->r.mblur_shutter_curve);
 
     /* viewport display settings */
     sce_copy->display = sce->display;
 
     /* tool settings */
-    KERNEL_toolsettings_free(sce_copy->toolsettings);
-    sce_copy->toolsettings = KERNEL_toolsettings_copy(sce->toolsettings, 0);
+    dune_toolsettings_free(sce_copy->toolsettings);
+    sce_copy->toolsettings = dune_toolsettings_copy(sce->toolsettings, 0);
 
     /* make a private copy of the avicodecdata */
     if (sce->r.avicodecdata) {
-      sce_copy->r.avicodecdata = MEM_dupallocN(sce->r.avicodecdata);
-      sce_copy->r.avicodecdata->lpFormat = MEM_dupallocN(sce_copy->r.avicodecdata->lpFormat);
-      sce_copy->r.avicodecdata->lpParms = MEM_dupallocN(sce_copy->r.avicodecdata->lpParms);
+      sce_copy->r.avicodecdata = mem_dupallocn(sce->r.avicodecdata);
+      sce_copy->r.avicodecdata->lpFormat = mem_dupallocn(sce_copy->r.avicodecdata->lpFormat);
+      sce_copy->r.avicodecdata->lpParms = mem_dupallocn(sce_copy->r.avicodecdata->lpParms);
     }
 
-    KERNEL_sound_reset_scene_runtime(sce_copy);
+    dune_sound_reset_scene_runtime(sce_copy);
 
-    /* grease pencil */
-    sce_copy->gpd = NULL;
+    /* pen */
+    sce_copy->pen = NULL;
 
     sce_copy->preview = NULL;
 
     return sce_copy;
   }
 
-  eDupli_ID_Flags duplicate_flags = U.dupflag | USER_DUP_OBJECT;
+  eIdFlagsDup duplicate_flags = U.dupflag | USER_DUP_OBJECT;
 
-  sce_copy = (Scene *)KERNEL_id_copy(bmain, (ID *)sce);
+  sce_copy = (Scene *)dune_id_copy(main, (Id *)sce);
   id_us_min(&sce_copy->id);
   id_us_ensure_real(&sce_copy->id);
 
-  KERNEL_animdata_duplicate_id_action(bmain, &sce_copy->id, duplicate_flags);
+  dune_animdata_duplicate_id_action(main, &sce_copy->id, duplicate_flags);
 
   /* Extra actions, most notably SCE_FULL_COPY also duplicates several 'children' datablocks. */
 
@@ -1862,7 +1852,7 @@ Scene *KERNEL_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
     const int copy_flags = LIB_ID_COPY_DEFAULT;
 
     if (!is_subprocess) {
-      KERNEL_main_id_newptr_and_tag_clear(bmain);
+      dune_main_id_newptr_and_tag_clear(main);
     }
     if (is_root_id) {
       /* In case root duplicated ID is linked, assume we want to get a local copy of it and
@@ -1873,35 +1863,35 @@ Scene *KERNEL_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
     }
 
     /* Copy Freestyle LineStyle datablocks. */
-    LISTBASE_FOREACH (ViewLayer *, view_layer_dst, &sce_copy->view_layers) {
-      LISTBASE_FOREACH (FreestyleLineSet *, lineset, &view_layer_dst->freestyle_config.linesets) {
-        KERNEL_id_copy_for_duplicate(bmain, (ID *)lineset->linestyle, duplicate_flags, copy_flags);
+    LIST_FOREACH (ViewLayer *, view_layer_dst, &sce_copy->view_layers) {
+      LIST_FOREACH (FreestyleLineSet *, lineset, &view_layer_dst->freestyle_config.linesets) {
+        dune_id_copy_for_duplicate(main, (Id *)lineset->linestyle, duplicate_flags, copy_flags);
       }
     }
 
-    /* Full copy of world (included animations) */
-    KERNEL_id_copy_for_duplicate(bmain, (ID *)sce->world, duplicate_flags, copy_flags);
+    /* Full copy of world (included anims) */
+    dune_id_copy_for_duplicate(bmain, (Id *)sce->world, duplicate_flags, copy_flags);
 
-    /* Full copy of GreasePencil. */
-    KERNEL_id_copy_for_duplicate(bmain, (ID *)sce->gpd, duplicate_flags, copy_flags);
+    /* Full copy of Pen */
+    dune_id_copy_for_duplicate(main, (Id *)sce->pen, duplicate_flags, copy_flags);
 
     /* Deep-duplicate collections and objects (using preferences' settings for which sub-data to
      * duplicate along the object itself). */
-    KERNEL_collection_duplicate(
-        bmain, NULL, sce_copy->master_collection, duplicate_flags, LIB_ID_DUPLICATE_IS_SUBPROCESS);
+    dune_collection_duplicate(
+        main, NULL, sce_copy->master_collection, duplicate_flags, LIB_ID_DUPLICATE_IS_SUBPROCESS);
 
     /* Rigid body world collections may not be instantiated as scene's collections, ensure they
      * also get properly duplicated. */
     if (sce_copy->rigidbody_world != NULL) {
       if (sce_copy->rigidbody_world->group != NULL) {
-        KERNEL_collection_duplicate(bmain,
+        dune_collection_duplicate(main,
                                  NULL,
                                  sce_copy->rigidbody_world->group,
                                  duplicate_flags,
                                  LIB_ID_DUPLICATE_IS_SUBPROCESS);
       }
       if (sce_copy->rigidbody_world->constraints != NULL) {
-        KERNEL_collection_duplicate(bmain,
+        dune_collection_duplicate(main,
                                  NULL,
                                  sce_copy->rigidbody_world->constraints,
                                  duplicate_flags,
@@ -1910,50 +1900,50 @@ Scene *KERNEL_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
     }
 
     if (!is_subprocess) {
-      /* This code will follow into all ID links using an ID tagged with LIB_TAG_NEW. */
-      KERNEL_libblock_relink_to_newid(bmain, &sce_copy->id, 0);
+      /* This code will follow into all Id links using an ID tagged with LIB_TAG_NEW. */
+      dune_libblock_relink_to_newid(main, &sce_copy->id, 0);
 
 #ifndef NDEBUG
-      /* Call to `KERNEL_libblock_relink_to_newid` above is supposed to have cleared all those
+      /* Call to `dune_libblock_relink_to_newid` above is supposed to have cleared all those
        * flags. */
-      ID *id_iter;
-      FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
-        LIB_assert((id_iter->tag & LIB_TAG_NEW) == 0);
+      Id *id_iter;
+      FOREACH_MAIN_ID_BEGIN (main, id_iter) {
+        lib_assert((id_iter->tag & LIB_TAG_NEW) == 0);
       }
       FOREACH_MAIN_ID_END;
 #endif
 
       /* Cleanup. */
-      KERNEL_main_id_newptr_and_tag_clear(bmain);
+      dune_main_id_newptr_and_tag_clear(main);
 
-      KERNEL_main_collection_sync(bmain);
+      dune_main_collection_sync(main);
     }
   }
   else {
     /* Remove sequencer if not full copy */
     /* XXX Why in Hell? :/ */
-    remove_sequencer_fcurves(sce_copy);
-    SEQ_editing_free(sce_copy, true);
+    remove_seq_fcurves(sce_copy);
+    seq_editing_free(sce_copy, true);
   }
 
   return sce_copy;
 }
 
-void KERNEL_scene_groups_relink(Scene *sce)
+void dune_scene_groups_relink(Scene *sce)
 {
   if (sce->rigidbody_world) {
-    KERNEL_rigidbody_world_groups_relink(sce->rigidbody_world);
+    dune_rigidbody_world_groups_relink(sce->rigidbody_world);
   }
 }
 
-bool KERNEL_scene_can_be_removed(const Main *bmain, const Scene *scene)
+bool dune_scene_can_be_removed(const Main *main, const Scene *scene)
 {
   /* Linked scenes can always be removed. */
   if (ID_IS_LINKED(scene)) {
     return true;
   }
   /* Local scenes can only be removed, when there is at least one local scene left. */
-  LISTBASE_FOREACH (Scene *, other_scene, &bmain->scenes) {
+  LIST_FOREACH (Scene *, other_scene, &main->scenes) {
     if (other_scene != scene && !ID_IS_LINKED(other_scene)) {
       return true;
     }
@@ -1961,31 +1951,31 @@ bool KERNEL_scene_can_be_removed(const Main *bmain, const Scene *scene)
   return false;
 }
 
-Scene *KERNEL_scene_add(Main *bmain, const char *name)
+Scene *dune_scene_add(Main *main, const char *name)
 {
   Scene *sce;
 
-  sce = KERNEL_id_new(bmain, ID_SCE, name);
+  sce = dune_id_new(main, ID_SCE, name);
   id_us_min(&sce->id);
   id_us_ensure_real(&sce->id);
 
   return sce;
 }
 
-bool KERNEL_scene_object_find(Scene *scene, Object *ob)
+bool dune_scene_object_find(Scene *scene, Object *ob)
 {
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    if (LIB_findptr(&view_layer->object_bases, ob, offsetof(Base, object))) {
+  LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+    if (lib_findptr(&view_layer->object_bases, ob, offsetof(Base, object))) {
       return true;
     }
   }
   return false;
 }
 
-Object *KERNEL_scene_object_find_by_name(const Scene *scene, const char *name)
+Object *dune_scene_object_find_by_name(const Scene *scene, const char *name)
 {
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
+  LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+    LIST_FOREACH (Base *, base, &view_layer->object_bases) {
       if (STREQ(base->object->id.name + 2, name)) {
         return base->object;
       }
@@ -1994,45 +1984,45 @@ Object *KERNEL_scene_object_find_by_name(const Scene *scene, const char *name)
   return NULL;
 }
 
-void KERNEL_scene_set_background(Main *bmain, Scene *scene)
+void dune_scene_set_background(Main *main, Scene *scene)
 {
   Object *ob;
 
   /* check for cyclic sets, for reading old files but also for definite security (py?) */
-  KERNEL_scene_validate_setscene(bmain, scene);
+  dune_scene_validate_setscene(bmain, scene);
 
   /* deselect objects (for dataselect) */
-  for (ob = bmain->objects.first; ob; ob = ob->id.next) {
+  for (ob = main->objects.first; ob; ob = ob->id.next) {
     ob->flag &= ~SELECT;
   }
 
   /* copy layers and flags from bases to objects */
-  LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
+  LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+    LIST_FOREACH (Base *, base, &view_layer->object_bases) {
       ob = base->object;
       /* collection patch... */
-      KERNEL_scene_object_base_flag_sync_from_base(base);
+      dune_scene_object_base_flag_sync_from_base(base);
     }
   }
   /* No full animation update, this to enable render code to work
    * (render code calls own animation updates). */
 }
 
-Scene *KERNEL_scene_set_name(Main *bmain, const char *name)
+Scene *dune_scene_set_name(Main *main, const char *name)
 {
-  Scene *sce = (Scene *)KERNEL_libblock_find_name(bmain, ID_SCE, name);
+  Scene *sce = (Scene *)dune_libblock_find_name(main, ID_SCE, name);
   if (sce) {
-    KERNEL_scene_set_background(bmain, sce);
-    printf("Scene switch for render: '%s' in file: '%s'\n", name, KERNEL_main_blendfile_path(bmain));
+    dune_scene_set_background(main, sce);
+    printf("Scene switch for render: '%s' in file: '%s'\n", name, dune_main_file_path(main));
     return sce;
   }
 
-  printf("Can't find scene: '%s' in file: '%s'\n", name, KERNEL_main_dunefile_path(bmain));
+  printf("Can't find scene: '%s' in file: '%s'\n", name, dune_main_file_path(main));
   return NULL;
 }
 
-int KERNEL_scene_base_iter_next(
-    Depsgraph *depsgraph, SceneBaseIter *iter, Scene **scene, int val, Base **base, Object **ob)
+int dune_scene_base_iter_next(
+    Graph *graph, SceneBaseIter *iter, Scene **scene, int val, Base **base, Object **ob)
 {
   bool run_again = true;
 
@@ -2050,8 +2040,8 @@ int KERNEL_scene_base_iter_next(
 
       /* the first base */
       if (iter->phase == F_START) {
-        ViewLayer *view_layer = (depsgraph) ? DEG_get_evaluated_view_layer(depsgraph) :
-                                              BKE_view_layer_context_active_PLACEHOLDER(*scene);
+        ViewLayer *view_layer = (depsgraph) ? graph_get_evaluated_view_layer(graph) :
+                                              dune_view_layer_cxt_active_PLACEHOLDER(*scene);
         *base = view_layer->object_bases.first;
         if (*base) {
           *ob = (*base)->object;
@@ -2061,7 +2051,7 @@ int KERNEL_scene_base_iter_next(
           /* exception: empty scene layer */
           while ((*scene)->set) {
             (*scene) = (*scene)->set;
-            ViewLayer *view_layer_set = BKE_view_layer_default_render(*scene);
+            ViewLayer *view_layer_set = dune_view_layer_default_render(*scene);
             if (view_layer_set->object_bases.first) {
               *base = view_layer_set->object_bases.first;
               *ob = (*base)->object;
@@ -2082,7 +2072,7 @@ int KERNEL_scene_base_iter_next(
               /* (*scene) is finished, now do the set */
               while ((*scene)->set) {
                 (*scene) = (*scene)->set;
-                ViewLayer *view_layer_set = BKE_view_layer_default_render(*scene);
+                ViewLayer *view_layer_set = dune_view_layer_default_render(*scene);
                 if (view_layer_set->object_bases.first) {
                   *base = view_layer_set->object_bases.first;
                   *ob = (*base)->object;
@@ -2099,12 +2089,12 @@ int KERNEL_scene_base_iter_next(
       }
       else {
         if (iter->phase != F_DUPLI) {
-          if (depsgraph && (*base)->object->transflag & OB_DUPLI) {
+          if (graph && (*base)->object->transflag & OB_DUPLI) {
             /* Collections cannot be duplicated for meta-balls yet,
              * this enters eternal loop because of
              * makeDispListMBall getting called inside of collection_duplilist */
             if ((*base)->object->instance_collection == NULL) {
-              iter->duplilist = object_duplilist(depsgraph, (*scene), (*base)->object);
+              iter->duplilist = object_duplilist(graph, (*scene), (*base)->object);
 
               iter->dupob = iter->duplilist->first;
 
@@ -2156,16 +2146,16 @@ int KERNEL_scene_base_iter_next(
   return iter->phase;
 }
 
-bool KERNEL_scene_has_view_layer(const Scene *scene, const ViewLayer *layer)
+bool dune_scene_has_view_layer(const Scene *scene, const ViewLayer *layer)
 {
-  return LIB_findindex(&scene->view_layers, layer) != -1;
+  return lib_findindex(&scene->view_layers, layer) != -1;
 }
 
-Scene *KERNEL_scene_find_from_collection(const Main *bmain, const Collection *collection)
+Scene *dune_scene_find_from_collection(const Main *main, const Collection *collection)
 {
-  for (Scene *scene = bmain->scenes.first; scene; scene = scene->id.next) {
-    LISTBASE_FOREACH (ViewLayer *, layer, &scene->view_layers) {
-      if (KERNEL_view_layer_has_collection(layer, collection)) {
+  for (Scene *scene = main->scenes.first; scene; scene = scene->id.next) {
+    LIST_FOREACH (ViewLayer *, layer, &scene->view_layers) {
+      if (dune_view_layer_has_collection(layer, collection)) {
         return scene;
       }
     }
@@ -2175,19 +2165,19 @@ Scene *KERNEL_scene_find_from_collection(const Main *bmain, const Collection *co
 }
 
 #ifdef DURIAN_CAMERA_SWITCH
-Object *KERNEL_scene_camera_switch_find(Scene *scene)
+Object *dune_scene_camera_switch_find(Scene *scene)
 {
   if (scene->r.mode & R_NO_CAMERA_SWITCH) {
     return NULL;
   }
 
-  const int ctime = (int)KERNEL_scene_ctime_get(scene);
+  const int ctime = (int)dune_scene_ctime_get(scene);
   int frame = -(MAXFRAME + 1);
   int min_frame = MAXFRAME + 1;
   Object *camera = NULL;
   Object *first_camera = NULL;
 
-  LISTBASE_FOREACH (TimeMarker *, m, &scene->markers) {
+  LIST_FOREACH (TimeMarker *, m, &scene->markers) {
     if (m->camera && (m->camera->visibility_flag & OB_HIDE_RENDER) == 0) {
       if ((m->frame <= ctime) && (m->frame > frame)) {
         camera = m->camera;
@@ -2208,8 +2198,7 @@ Object *KERNEL_scene_camera_switch_find(Scene *scene)
   if (camera == NULL) {
     /* If there's no marker to the left of current frame,
      * use camera from left-most marker to solve all sort
-     * of Schrodinger uncertainties.
-     */
+     * of Schrodinger uncertainties.  */
     return first_camera;
   }
 
@@ -2217,13 +2206,13 @@ Object *KERNEL_scene_camera_switch_find(Scene *scene)
 }
 #endif
 
-bool KERNEL_scene_camera_switch_update(Scene *scene)
+bool dune_scene_camera_switch_update(Scene *scene)
 {
 #ifdef DURIAN_CAMERA_SWITCH
-  Object *camera = BKE_scene_camera_switch_find(scene);
+  Object *camera = dune_scene_camera_switch_find(scene);
   if (camera && (camera != scene->camera)) {
     scene->camera = camera;
-    DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
     return true;
   }
 #else
@@ -2232,9 +2221,9 @@ bool KERNEL_scene_camera_switch_update(Scene *scene)
   return false;
 }
 
-const char *KERNEL_scene_find_marker_name(const Scene *scene, int frame)
+const char *dune_scene_find_marker_name(const Scene *scene, int frame)
 {
-  const ListBase *markers = &scene->markers;
+  const List *markers = &scene->markers;
   const TimeMarker *m1, *m2;
 
   /* search through markers for match */
@@ -2255,7 +2244,7 @@ const char *KERNEL_scene_find_marker_name(const Scene *scene, int frame)
   return NULL;
 }
 
-const char *KERNEL_scene_find_last_marker_name(const Scene *scene, int frame)
+const char *dune_scene_find_last_marker_name(const Scene *scene, int frame)
 {
   const TimeMarker *marker, *best_marker = NULL;
   int best_frame = -MAXFRAME * 2;
@@ -2273,7 +2262,7 @@ const char *KERNEL_scene_find_last_marker_name(const Scene *scene, int frame)
   return best_marker ? best_marker->name : NULL;
 }
 
-int KERNEL_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds, int frame)
+int dune_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds, int frame)
 {
   const int fps = round_db_to_int(FPS * interval_in_seconds);
   const int second_prev = frame - mod_i(frame, fps);
@@ -2283,22 +2272,22 @@ int KERNEL_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds,
   return (delta_prev < delta_next) ? second_prev : second_next;
 }
 
-void KERNEL_scene_remove_rigidbody_object(struct Main *bmain,
-                                       Scene *scene,
-                                       Object *ob,
-                                       const bool free_us)
+void dune_scene_remove_rigidbody_object(struct Main *main,
+                                        Scene *scene,
+                                        Object *ob,
+                                        const bool free_us)
 {
   /* remove rigid body constraint from world before removing object */
   if (ob->rigidbody_constraint) {
-    KERNEL_rigidbody_remove_constraint(bmain, scene, ob, free_us);
+    dune_rigidbody_remove_constraint(main, scene, ob, free_us);
   }
   /* remove rigid body object from world before removing object */
   if (ob->rigidbody_object) {
-    KERNEL_rigidbody_remove_object(bmain, scene, ob, free_us);
+    dune_rigidbody_remove_object(main, scene, ob, free_us);
   }
 }
 
-bool KERNEL_scene_validate_setscene(Main *bmain, Scene *sce)
+bool dune_scene_validate_setscene(Main *main, Scene *sce)
 {
   Scene *sce_iter;
   int a, totscene;
@@ -2306,7 +2295,7 @@ bool KERNEL_scene_validate_setscene(Main *bmain, Scene *sce)
   if (sce->set == NULL) {
     return true;
   }
-  totscene = LIB_listbase_count(&bmain->scenes);
+  totscene = lib_list_count(&main->scenes);
 
   for (a = 0, sce_iter = sce; sce_iter->set; sce_iter = sce_iter->set, a++) {
     /* more iterations than scenes means we have a cycle */
@@ -2320,7 +2309,7 @@ bool KERNEL_scene_validate_setscene(Main *bmain, Scene *sce)
   return true;
 }
 
-float KERNEL_scene_ctime_get(const Scene *scene)
+float dune_scene_ctime_get(const Scene *scene)
 {
-  return KERNEL_scene_frame_to_ctime(scene, scene->r.cfra);
+  return dune_scene_frame_to_ctime(scene, scene->r.cfra);
 }
