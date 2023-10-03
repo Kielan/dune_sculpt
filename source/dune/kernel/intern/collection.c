@@ -1299,9 +1299,7 @@ void dune_collections_after_lib_link(Main *main)
   dune_main_collection_sync(main);
 }
 
-/* -------------------------------------------------------------------- */
 /* Collection Children */
-
 static bool collection_instance_find_recursive(Collection *collection,
                                                Collection *instance_collection)
 {
@@ -1412,14 +1410,14 @@ static bool collection_find_child_recursive(const Collection *parent, const Coll
   return false;
 }
 
-bool BKE_collection_has_collection(const Collection *parent, const Collection *collection)
+bool dune_collection_has_collection(const Collection *parent, const Collection *collection)
 {
   return collection_find_child_recursive(parent, collection);
 }
 
 static CollectionParent *collection_find_parent(Collection *child, Collection *collection)
 {
-  return BLI_findptr(&child->parents, collection, offsetof(CollectionParent, collection));
+  return lib_findptr(&child->parents, collection, offsetof(CollectionParent, collection));
 }
 
 static bool collection_child_add(Collection *parent,
@@ -1521,7 +1519,7 @@ void dune_collection_parent_relations_rebuild(Collection *collection)
     }
 
     lib_assert(collection_find_parent(child->collection, collection) == NULL);
-    CollectionParent *cparent = MEM_callocN(sizeof(CollectionParent), __func__);
+    CollectionParent *cparent = mem_callocn(sizeof(CollectionParent), __func__);
     cparent->collection = collection;
     lib_addtail(&child->collection->parents, cparent);
   }
@@ -1598,7 +1596,7 @@ static Collection *collection_from_index_recursive(Collection *collection,
   return NULL;
 }
 
-Collection *BKE_collection_from_index(Scene *scene, const int index)
+Collection *dune_collection_from_index(Scene *scene, const int index)
 {
   int index_current = 0;
   Collection *master_collection = scene->master_collection;
@@ -1700,26 +1698,22 @@ bool dune_collection_move(Main *main,
   return true;
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Iterators
- * \{ */
-
-/* Scene collection iterator. */
-
+/* Iters */
+/* Scene collection iter. */
 typedef struct CollectionsIteratorData {
   Scene *scene;
   void **array;
   int tot, cur;
 } CollectionsIteratorData;
 
-static void scene_collection_callback(Collection *collection,
-                                      BKE_scene_collections_Cb callback,
-                                      void *data)
+static void scene_collection_cb(Collection *collection,
+                                dune_scene_collections_Cb cb,
+                                void *data)
 {
-  callback(collection, data);
+  cb(collection, data);
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-    scene_collection_callback(child->collection, callback, data);
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
+    scene_collection_cb(child->collection, cb, data);
   }
 }
 
@@ -1748,37 +1742,37 @@ static void scene_collections_array(Scene *scene,
   }
 
   Collection *collection = scene->master_collection;
-  BLI_assert(collection != NULL);
-  scene_collection_callback(collection, scene_collections_count, r_collections_array_len);
+  lib_assert(collection != NULL);
+  scene_collection_cb(collection, scene_collections_count, r_collections_array_len);
 
-  BLI_assert(*r_collections_array_len > 0);
+  lib_assert(*r_collections_array_len > 0);
 
-  Collection **array = MEM_malloc_arrayN(
+  Collection **array = mem_malloc_arrayn(
       *r_collections_array_len, sizeof(Collection *), "CollectionArray");
   *r_collections_array = array;
-  scene_collection_callback(collection, scene_collections_build_array, &array);
+  scene_collection_cb(collection, scene_collections_build_array, &array);
 }
 
-void BKE_scene_collections_iterator_begin(BLI_Iterator *iter, void *data_in)
+void dune_scene_collections_iter_begin(LibIter *iter, void *data_in)
 {
   Scene *scene = data_in;
-  CollectionsIteratorData *data = MEM_callocN(sizeof(CollectionsIteratorData), __func__);
+  CollectionsIterData *data = mem_callocn(sizeof(CollectionsIterData), __func__);
 
   data->scene = scene;
 
-  BLI_ITERATOR_INIT(iter);
+  LIB_ITER_INIT(iter);
   iter->data = data;
 
   scene_collections_array(scene, (Collection ***)&data->array, &data->tot);
-  BLI_assert(data->tot != 0);
+  lib_assert(data->tot != 0);
 
   data->cur = 0;
   iter->current = data->array[data->cur];
 }
 
-void BKE_scene_collections_iterator_next(struct BLI_Iterator *iter)
+void dune_scene_collections_iter_next(struct LibIter *iter)
 {
-  CollectionsIteratorData *data = iter->data;
+  CollectionsIterData *data = iter->data;
 
   if (++data->cur < data->tot) {
     iter->current = data->array[data->cur];
@@ -1788,32 +1782,31 @@ void BKE_scene_collections_iterator_next(struct BLI_Iterator *iter)
   }
 }
 
-void BKE_scene_collections_iterator_end(struct BLI_Iterator *iter)
+void dune_scene_collections_iter_end(struct LibIter *iter)
 {
-  CollectionsIteratorData *data = iter->data;
+  CollectionsIterData *data = iter->data;
 
   if (data) {
     if (data->array) {
-      MEM_freeN(data->array);
+      mem_freen(data->array);
     }
-    MEM_freeN(data);
+    mem_freen(data);
   }
   iter->valid = false;
 }
 
 /* scene objects iterator */
-
-typedef struct SceneObjectsIteratorData {
+typedef struct SceneObjectsIterData {
   GSet *visited;
   CollectionObject *cob_next;
-  BLI_Iterator scene_collection_iter;
-} SceneObjectsIteratorData;
+  LibIter scene_collection_iter;
+} SceneObjectsIterData;
 
-static void scene_objects_iterator_begin(BLI_Iterator *iter, Scene *scene, GSet *visited_objects)
+static void scene_objects_iter_begin(LibIter *iter, Scene *scene, GSet *visited_objects)
 {
-  SceneObjectsIteratorData *data = MEM_callocN(sizeof(SceneObjectsIteratorData), __func__);
+  SceneObjectsIterData *data = mem_callocn(sizeof(SceneObjectsIterData), __func__);
 
-  BLI_ITERATOR_INIT(iter);
+  LIB_ITER_INIT(iter);
   iter->data = data;
 
   /* Lookup list to make sure that each object is only processed once. */
@@ -1821,34 +1814,32 @@ static void scene_objects_iterator_begin(BLI_Iterator *iter, Scene *scene, GSet 
     data->visited = visited_objects;
   }
   else {
-    data->visited = BLI_gset_ptr_new(__func__);
+    data->visited = lib_gset_ptr_new(__func__);
   }
 
   /* We wrap the scenecollection iterator here to go over the scene collections. */
-  BKE_scene_collections_iterator_begin(&data->scene_collection_iter, scene);
+  dune_scene_collections_iterator_begin(&data->scene_collection_iter, scene);
 
   Collection *collection = data->scene_collection_iter.current;
   data->cob_next = collection->gobject.first;
 
-  BKE_scene_objects_iterator_next(iter);
+  dune_scene_objects_iter_next(iter);
 }
 
-void BKE_scene_objects_iterator_begin(BLI_Iterator *iter, void *data_in)
+void dune_scene_objects_iter_begin(LibIter *iter, void *data_in)
 {
   Scene *scene = data_in;
 
-  scene_objects_iterator_begin(iter, scene, NULL);
+  scene_objects_iter_begin(iter, scene, NULL);
 }
 
-/**
- * Ensures we only get each object once, even when included in several collections.
- */
+/* Ensures we only get each object once, even when included in several collections */
 static CollectionObject *object_base_unique(GSet *gs, CollectionObject *cob)
 {
   for (; cob != NULL; cob = cob->next) {
     Object *ob = cob->ob;
     void **ob_key_p;
-    if (!BLI_gset_ensure_p_ex(gs, ob, &ob_key_p)) {
+    if (!lib_gset_ensure_p_ex(gs, ob, &ob_key_p)) {
       *ob_key_p = ob;
       return cob;
     }
@@ -1856,9 +1847,9 @@ static CollectionObject *object_base_unique(GSet *gs, CollectionObject *cob)
   return NULL;
 }
 
-void BKE_scene_objects_iterator_next(BLI_Iterator *iter)
+void dune_scene_objects_iter_next(LibIter *iter)
 {
-  SceneObjectsIteratorData *data = iter->data;
+  SceneObjectsIterData *data = iter->data;
   CollectionObject *cob = data->cob_next ? object_base_unique(data->visited, data->cob_next) :
                                            NULL;
 
@@ -1867,9 +1858,9 @@ void BKE_scene_objects_iterator_next(BLI_Iterator *iter)
     iter->current = cob->ob;
   }
   else {
-    /* if this is the last object of this ListBase look at the next Collection */
+    /* if this is the last object of this List look at the next Collection */
     Collection *collection;
-    BKE_scene_collections_iterator_next(&data->scene_collection_iter);
+    dune_scene_collections_iter_next(&data->scene_collection_iter);
     do {
       collection = data->scene_collection_iter.current;
       /* get the first unique object of this collection */
@@ -1879,7 +1870,7 @@ void BKE_scene_objects_iterator_next(BLI_Iterator *iter)
         iter->current = new_cob->ob;
         return;
       }
-      BKE_scene_collections_iterator_next(&data->scene_collection_iter);
+      dune_scene_collections_iter_next(&data->scene_collection_iter);
     } while (data->scene_collection_iter.valid);
 
     if (!data->scene_collection_iter.valid) {
@@ -1888,32 +1879,32 @@ void BKE_scene_objects_iterator_next(BLI_Iterator *iter)
   }
 }
 
-void BKE_scene_objects_iterator_end(BLI_Iterator *iter)
+void dune_scene_objects_iter_end(LibIter *iter)
 {
-  SceneObjectsIteratorData *data = iter->data;
+  SceneObjectsIterData *data = iter->data;
   if (data) {
-    BKE_scene_collections_iterator_end(&data->scene_collection_iter);
+    dune_scene_collections_iter_end(&data->scene_collection_iter);
     if (data->visited != NULL) {
-      BLI_gset_free(data->visited, NULL);
+      lib_gset_free(data->visited, NULL);
     }
-    MEM_freeN(data);
+    mem_freen(data);
   }
 }
 
-GSet *BKE_scene_objects_as_gset(Scene *scene, GSet *objects_gset)
+GSet *dune_scene_objects_as_gset(Scene *scene, GSet *objects_gset)
 {
-  BLI_Iterator iter;
-  scene_objects_iterator_begin(&iter, scene, objects_gset);
+  LibIter iter;
+  scene_objects_iter_begin(&iter, scene, objects_gset);
   while (iter.valid) {
-    BKE_scene_objects_iterator_next(&iter);
+    dune_scene_objects_iter_next(&iter);
   }
 
   /* `return_gset` is either given `objects_gset` (if non-NULL), or the GSet allocated by the
-   * iterator. Either way, we want to get it back, and prevent `BKE_scene_objects_iterator_end`
+   * iterator. Either way, we want to get it back, and prevent `dune_scene_objects_iter_end`
    * from freeing it. */
-  GSet *return_gset = ((SceneObjectsIteratorData *)iter.data)->visited;
-  ((SceneObjectsIteratorData *)iter.data)->visited = NULL;
-  BKE_scene_objects_iterator_end(&iter);
+  GSet *return_gset = ((SceneObjectsIterData *)iter.data)->visited;
+  ((SceneObjectsIterData *)iter.data)->visited = NULL;
+  dune_scene_objects_iter_end(&iter);
 
   return return_gset;
 }
