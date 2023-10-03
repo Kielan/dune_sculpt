@@ -4,9 +4,9 @@
 #  error This is a C++-only header file.
 #endif
 
-#include "BKE_asset_library.hh"
+#include "dune_asset_lib.hh"
 
-#include "BLI_map.hh"
+#include "lib_map.hh"
 
 #include <memory>
 
@@ -19,7 +19,7 @@ namespace blender::bke {
  * a new one is created -- hence the "singleton-ish". This ensures only information about relevant
  * asset libraries is loaded.
  *
- * \note How Asset libraries are identified may change in the future.
+ * How Asset libs are identified may change in the future.
  *  For now they are assumed to be:
  * - on disk (identified by the absolute directory), or
  * - the "current file" library (which is in memory but could have catalogs
