@@ -1,64 +1,54 @@
-
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup bke
- */
-
 /* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
 #include <string.h>
 
-#include "BLI_blenlib.h"
-#include "BLI_iterator.h"
-#include "BLI_listbase.h"
-#include "BLI_math_base.h"
-#include "BLI_threads.h"
-#include "BLT_translation.h"
+#include "lib_dune.h"
+#include "lib_iter.h"
+#include "lib_list.h"
+#include "lib_math_base.h"
+#include "lib_threads.h"
+#include "lib.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_collection.h"
-#include "BKE_icons.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_main.h"
-#include "BKE_object.h"
-#include "BKE_rigidbody.h"
-#include "BKE_scene.h"
+#include "dune_anim_data.h"
+#include "dune_collection.h"
+#include "dune_icons.h"
+#include "dune_idprop.h"
+#include "dune_idtype.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_lib_remap.h"
+#include "dune_main.h"
+#include "dune_object.h"
+#include "dune_rigidbody.h"
+#include "dune_scene.h"
 
-#include "DNA_defaults.h"
+#include "types_defaults.h"
 
-#include "DNA_ID.h"
-#include "DNA_collection_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_object_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
+#include "types_id.h"
+#include "types_collection.h"
+#include "types_layer.h"
+#include "types_object.h"
+#include "types_rigidbody.h"
+#include "types_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLO_read_write.h"
+#include "loader_read_write.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Prototypes
- * \{ */
-
+/* Prototypes */
 static bool collection_child_add(Collection *parent,
                                  Collection *collection,
                                  const int flag,
                                  const bool add_us);
 static bool collection_child_remove(Collection *parent, Collection *collection);
 static bool collection_object_add(
-    Main *bmain, Collection *collection, Object *ob, int flag, const bool add_us);
-static bool collection_object_remove(Main *bmain,
+    Main *main, Collection *collection, Object *ob, int flag, const bool add_us);
+static bool collection_object_remove(Main *main,
                                      Collection *collection,
                                      Object *ob,
                                      const bool free_us);
@@ -69,41 +59,35 @@ static CollectionParent *collection_find_parent(Collection *child, Collection *c
 static bool collection_find_child_recursive(const Collection *parent,
                                             const Collection *collection);
 
-/** \} */
+/* Collection Data-Block */
 
-/* -------------------------------------------------------------------- */
-/** \name Collection Data-Block
- * \{ */
-
-static void collection_init_data(ID *id)
+static void collection_init_data(Id *id)
 {
   Collection *collection = (Collection *)id;
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(collection, id));
+  lib_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(collection, id));
 
-  MEMCPY_STRUCT_AFTER(collection, DNA_struct_default_get(Collection), id);
+  MEMCPY_STRUCT_AFTER(collection, types_struct_default_get(Collection), id);
 }
 
-/**
- * Only copy internal data of Collection ID from source
+/* Only copy internal data of Collection Id from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use #BKE_id_copy or #BKE_id_copy_ex for typical needs.
+ * use dune_id_copy or dune_id_copy_ex for typical needs.
  *
- * WARNING! This function will not handle ID user count!
+ * WARNING! This fn will not handle Id user count!
  *
- * \param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
- */
-static void collection_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
+ * param flag: Copying options (see dune_lib_id.h's LIB_ID_COPY_... flags for more) */
+static void collection_copy_data(Main *main, Id *id_dst, const Id *id_src, const int flag)
 {
   Collection *collection_dst = (Collection *)id_dst;
   const Collection *collection_src = (const Collection *)id_src;
 
-  BLI_assert(((collection_src->flag & COLLECTION_IS_MASTER) != 0) ==
+  lib_assert(((collection_src->flag & COLLECTION_IS_MASTER) != 0) ==
              ((collection_src->id.flag & LIB_EMBEDDED_DATA) != 0));
 
   /* Do not copy collection's preview (same behavior as for objects). */
-  if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0 && false) { /* XXX TODO: temp hack. */
-    BKE_previewimg_id_copy(&collection_dst->id, &collection_src->id);
+  if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0 && false) { /* TODO: temp hack. */
+    dune_previewimg_id_copy(&collection_dst->id, &collection_src->id);
   }
   else {
     collection_dst->preview = NULL;
@@ -111,95 +95,95 @@ static void collection_copy_data(Main *bmain, ID *id_dst, const ID *id_src, cons
 
   collection_dst->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
   collection_dst->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
-  BLI_listbase_clear(&collection_dst->object_cache);
-  BLI_listbase_clear(&collection_dst->object_cache_instanced);
+  lib_list_clear(&collection_dst->object_cache);
+  lib_list_clear(&collection_dst->object_cache_instanced);
 
-  BLI_listbase_clear(&collection_dst->gobject);
-  BLI_listbase_clear(&collection_dst->children);
-  BLI_listbase_clear(&collection_dst->parents);
+  lib_list_clear(&collection_dst->gobject);
+  lib_list_clear(&collection_dst->children);
+  lib_list_clear(&collection_dst->parents);
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection_src->children) {
+  LIST_FOREACH (CollectionChild *, child, &collection_src->children) {
     collection_child_add(collection_dst, child->collection, flag, false);
   }
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection_src->gobject) {
-    collection_object_add(bmain, collection_dst, cob->ob, flag, false);
+  LIST_FOREACH (CollectionObject *, cob, &collection_src->gobject) {
+    collection_object_add(main, collection_dst, cob->ob, flag, false);
   }
 }
 
-static void collection_free_data(ID *id)
+static void collection_free_data(Id *id)
 {
   Collection *collection = (Collection *)id;
 
   /* No animation-data here. */
-  BKE_previewimg_free(&collection->preview);
+  dube_previewimg_free(&collection->preview);
 
-  BLI_freelistN(&collection->gobject);
-  BLI_freelistN(&collection->children);
-  BLI_freelistN(&collection->parents);
+  lib_freelistn(&collection->gobject);
+  lib_freelistn(&collection->children);
+  lib_freelistn(&collection->parents);
 
-  BKE_collection_object_cache_free(collection);
+  dune_collection_object_cache_free(collection);
 }
 
-static void collection_foreach_id(ID *id, LibraryForeachIDData *data)
+static void collection_foreach_id(Id *id, LibForeachIdData *data)
 {
   Collection *collection = (Collection *)id;
 
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, cob->ob, IDWALK_CB_USER);
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, cob->ob, IDWALK_CB_USER);
   }
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(
         data, child->collection, IDWALK_CB_NEVER_SELF | IDWALK_CB_USER);
   }
-  LISTBASE_FOREACH (CollectionParent *, parent, &collection->parents) {
-    /* XXX This is very weak. The whole idea of keeping pointers to private IDs is very bad
+  LIST_FOREACH (CollectionParent *, parent, &collection->parents) {
+    /* This is very weak. The whole idea of keeping pointers to private IDs is very bad
      * anyway... */
     const int cb_flag = ((parent->collection != NULL &&
                           (parent->collection->id.flag & LIB_EMBEDDED_DATA) != 0) ?
                              IDWALK_CB_EMBEDDED :
                              IDWALK_CB_NOP);
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(
         data, parent->collection, IDWALK_CB_NEVER_SELF | IDWALK_CB_LOOPBACK | cb_flag);
   }
 }
 
-static ID *collection_owner_get(Main *bmain, ID *id)
+static Id *collection_owner_get(Main *main, Id *id)
 {
   if ((id->flag & LIB_EMBEDDED_DATA) == 0) {
     return id;
   }
-  BLI_assert((id->tag & LIB_TAG_NO_MAIN) == 0);
+  lib_assert((id->tag & LIB_TAG_NO_MAIN) == 0);
 
   Collection *master_collection = (Collection *)id;
-  BLI_assert((master_collection->flag & COLLECTION_IS_MASTER) != 0);
+  lib_assert((master_collection->flag & COLLECTION_IS_MASTER) != 0);
 
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+  LIST_FOREACH (Scene *, scene, &main->scenes) {
     if (scene->master_collection == master_collection) {
       return &scene->id;
     }
   }
 
-  BLI_assert_msg(0, "Embedded collection with no owner. Critical Main inconsistency.");
+  lib_assert_msg(0, "Embedded collection with no owner. Critical Main inconsistency.");
   return NULL;
 }
 
-void BKE_collection_blend_write_nolib(BlendWriter *writer, Collection *collection)
+void dune_collection_blend_write_nolib(Writer *writer, Collection *collection)
 {
-  BKE_id_blend_write(writer, &collection->id);
+  dune_id_write(writer, &collection->id);
 
-  /* Shared function for collection data-blocks and scene master collection. */
-  BKE_previewimg_blend_write(writer, collection->preview);
+  /* Shared fn for collection data-blocks and scene master collection. */
+  dune_previewimg_write(writer, collection->preview);
 
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
-    BLO_write_struct(writer, CollectionObject, cob);
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
+    loader_write_struct(writer, CollectionObject, cob);
   }
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-    BLO_write_struct(writer, CollectionChild, child);
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
+    loader_write_struct(writer, CollectionChild, child);
   }
 }
 
-static void collection_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void dune_collection_write(Writer *writer, Id *id, const void *id_address)
 {
   Collection *collection = (Collection *)id;
 
@@ -207,160 +191,160 @@ static void collection_blend_write(BlendWriter *writer, ID *id, const void *id_a
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
   collection->tag = 0;
-  BLI_listbase_clear(&collection->object_cache);
-  BLI_listbase_clear(&collection->object_cache_instanced);
-  BLI_listbase_clear(&collection->parents);
+  lib_list_clear(&collection->object_cache);
+  lib_list_clear(&collection->object_cache_instanced);
+  lib_list_clear(&collection->parents);
 
   /* write LibData */
-  BLO_write_id_struct(writer, Collection, id_address, &collection->id);
+  loader_write_id_struct(writer, Collection, id_address, &collection->id);
 
   BKE_collection_blend_write_nolib(writer, collection);
 }
 
 #ifdef USE_COLLECTION_COMPAT_28
-void BKE_collection_compat_blend_read_data(BlendDataReader *reader, SceneCollection *sc)
+void dube_collection_compat_read_data(DataReader *reader, SceneCollection *sc)
 {
-  BLO_read_list(reader, &sc->objects);
-  BLO_read_list(reader, &sc->scene_collections);
+  loader_read_list(reader, &sc->objects);
+  loader_read_list(reader, &sc->scene_collections);
 
-  LISTBASE_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
-    BKE_collection_compat_blend_read_data(reader, nsc);
+  LIST_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
+    dune_collection_compat_read_data(reader, nsc);
   }
 }
 #endif
 
-void BKE_collection_blend_read_data(BlendDataReader *reader, Collection *collection)
+void dune_collection_read_data(DataReader *reader, Collection *collection)
 {
-  BLO_read_list(reader, &collection->gobject);
-  BLO_read_list(reader, &collection->children);
+  loader_read_list(reader, &collection->gobject);
+  loader_read_list(reader, &collection->children);
 
-  BLO_read_data_address(reader, &collection->preview);
-  BKE_previewimg_blend_read(reader, collection->preview);
+  loader_read_data_address(reader, &collection->preview);
+  dune_previewimg_read(reader, collection->preview);
 
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
   collection->tag = 0;
-  BLI_listbase_clear(&collection->object_cache);
-  BLI_listbase_clear(&collection->object_cache_instanced);
-  BLI_listbase_clear(&collection->parents);
+  lib_list_clear(&collection->object_cache);
+  lib_list_clear(&collection->object_cache_instanced);
+  lib_list_clear(&collection->parents);
 
 #ifdef USE_COLLECTION_COMPAT_28
   /* This runs before the very first doversion. */
-  BLO_read_data_address(reader, &collection->collection);
+  loader_read_data_address(reader, &collection->collection);
   if (collection->collection != NULL) {
-    BKE_collection_compat_blend_read_data(reader, collection->collection);
+    dune_collection_compat_read_data(reader, collection->collection);
   }
 
-  BLO_read_data_address(reader, &collection->view_layer);
+  loader_read_data_address(reader, &collection->view_layer);
   if (collection->view_layer != NULL) {
-    BKE_view_layer_blend_read_data(reader, collection->view_layer);
+    dune_view_layer_read_data(reader, collection->view_layer);
   }
 #endif
 }
 
-static void collection_blend_read_data(BlendDataReader *reader, ID *id)
+static void dune_collection_read_data(DataReader *reader, Id *id)
 {
   Collection *collection = (Collection *)id;
-  BKE_collection_blend_read_data(reader, collection);
+  dune_collection_read_data(reader, collection);
 }
 
-static void lib_link_collection_data(BlendLibReader *reader, Library *lib, Collection *collection)
+static void lib_link_collection_data(LibReader *reader, Lib *lib, Collection *collection)
 {
-  LISTBASE_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
-    BLO_read_id_address(reader, lib, &cob->ob);
+  LIST_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
+    loader_read_id_address(reader, lib, &cob->ob);
 
     if (cob->ob == NULL) {
-      BLI_freelinkN(&collection->gobject, cob);
+      lib_freelinkn(&collection->gobject, cob);
     }
   }
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-    BLO_read_id_address(reader, lib, &child->collection);
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
+    loader_read_id_address(reader, lib, &child->collection);
   }
 }
 
 #ifdef USE_COLLECTION_COMPAT_28
-void BKE_collection_compat_blend_read_lib(BlendLibReader *reader,
-                                          Library *lib,
-                                          SceneCollection *sc)
+void dune_collection_compat_read_lib(LibReader *reader,
+                                     Lib *lib,
+                                     SceneCollection *sc)
 {
-  LISTBASE_FOREACH (LinkData *, link, &sc->objects) {
-    BLO_read_id_address(reader, lib, &link->data);
-    BLI_assert(link->data);
+  LIST_FOREACH (LinkData *, link, &sc->objects) {
+    loader_read_id_address(reader, lib, &link->data);
+    lib_assert(link->data);
   }
 
-  LISTBASE_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
-    BKE_collection_compat_blend_read_lib(reader, lib, nsc);
+  LIST_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
+    dune_collection_compat_read_lib(reader, lib, nsc);
   }
 }
 #endif
 
-void BKE_collection_blend_read_lib(BlendLibReader *reader, Collection *collection)
+void dune_collection_read_lib(LibReader *reader, Collection *collection)
 {
 #ifdef USE_COLLECTION_COMPAT_28
   if (collection->collection) {
-    BKE_collection_compat_blend_read_lib(reader, collection->id.lib, collection->collection);
+    dune_collection_compat_read_lib(reader, collection->id.lib, collection->collection);
   }
 
   if (collection->view_layer) {
-    BKE_view_layer_blend_read_lib(reader, collection->id.lib, collection->view_layer);
+    dune_view_layer_read_lib(reader, collection->id.lib, collection->view_layer);
   }
 #endif
 
   lib_link_collection_data(reader, collection->id.lib, collection);
 }
 
-static void collection_blend_read_lib(BlendLibReader *reader, ID *id)
+static void dune_collection_read_lib(LibReader *reader, Id *id)
 {
   Collection *collection = (Collection *)id;
-  BKE_collection_blend_read_lib(reader, collection);
+  dune_collection_read_lib(reader, collection);
 }
 
 #ifdef USE_COLLECTION_COMPAT_28
-void BKE_collection_compat_blend_read_expand(struct BlendExpander *expander,
+void dune_collection_compat_dune_read_expand(struct Expander *expander,
                                              struct SceneCollection *sc)
 {
-  LISTBASE_FOREACH (LinkData *, link, &sc->objects) {
-    BLO_expand(expander, link->data);
+  LIST_FOREACH (LinkData *, link, &sc->objects) {
+    loader_expand(expander, link->data);
   }
 
-  LISTBASE_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
-    BKE_collection_compat_blend_read_expand(expander, nsc);
+  LIST_FOREACH (SceneCollection *, nsc, &sc->scene_collections) {
+    dune_collection_compat_read_expand(expander, nsc);
   }
 }
 #endif
 
-void BKE_collection_blend_read_expand(BlendExpander *expander, Collection *collection)
+void dune_collection_read_expand(Expander *expander, Collection *collection)
 {
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
-    BLO_expand(expander, cob->ob);
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
+    loader_expand(expander, cob->ob);
   }
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-    BLO_expand(expander, child->collection);
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
+    loader_expand(expander, child->collection);
   }
 
 #ifdef USE_COLLECTION_COMPAT_28
   if (collection->collection != NULL) {
-    BKE_collection_compat_blend_read_expand(expander, collection->collection);
+    dune_collection_compat_read_expand(expander, collection->collection);
   }
 #endif
 }
 
-static void collection_blend_read_expand(BlendExpander *expander, ID *id)
+static void dune_collection_read_expand(Expander *expander, Id *id)
 {
   Collection *collection = (Collection *)id;
-  BKE_collection_blend_read_expand(expander, collection);
+  dune_collection_read_expand(expander, collection);
 }
 
-IDTypeInfo IDType_ID_GR = {
+IdTypeInfo IdType_ID_GR = {
     .id_code = ID_GR,
     .id_filter = FILTER_ID_GR,
-    .main_listbase_index = INDEX_ID_GR,
+    .main_list_index = INDEX_ID_GR,
     .struct_size = sizeof(Collection),
     .name = "Collection",
     .name_plural = "collections",
-    .translation_context = BLT_I18NCONTEXT_ID_COLLECTION,
+    .lang_cxt = LANG_CXT_ID_COLLECTION,
     .flags = IDTYPE_FLAGS_NO_ANIMDATA,
     .asset_type_info = NULL,
 
@@ -373,24 +357,20 @@ IDTypeInfo IDType_ID_GR = {
     .foreach_path = NULL,
     .owner_get = collection_owner_get,
 
-    .blend_write = collection_blend_write,
-    .blend_read_data = collection_blend_read_data,
-    .blend_read_lib = collection_blend_read_lib,
-    .blend_read_expand = collection_blend_read_expand,
+    .dune_write = collectio_write,
+    .dune_read_data = collection_read_data,
+    .dune_read_lib = collection_read_lib,
+    .dune_read_expand = collection_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Collection
- * \{ */
+/* Add Collection */
 
 /* Add new collection, without view layer syncing. */
-static Collection *collection_add(Main *bmain,
+static Collection *collection_add(Main *main,
                                   Collection *collection_parent,
                                   const char *name_custom)
 {
@@ -401,11 +381,11 @@ static Collection *collection_add(Main *bmain,
     STRNCPY(name, name_custom);
   }
   else {
-    BKE_collection_new_name_get(collection_parent, name);
+    dune_collection_new_name_get(collection_parent, name);
   }
 
   /* Create new collection. */
-  Collection *collection = BKE_id_new(bmain, ID_GR, name);
+  Collection *collection = dune_id_new(main, ID_GR, name);
 
   /* We increase collection user count when linking to Collections. */
   id_us_min(&collection->id);
@@ -418,14 +398,14 @@ static Collection *collection_add(Main *bmain,
   return collection;
 }
 
-Collection *BKE_collection_add(Main *bmain, Collection *collection_parent, const char *name_custom)
+Collection *dune_collection_add(Main *main, Collection *collection_parent, const char *name_custom)
 {
-  Collection *collection = collection_add(bmain, collection_parent, name_custom);
-  BKE_main_collection_sync(bmain);
+  Collection *collection = collection_add(main, collection_parent, name_custom);
+  dune_main_collection_sync(main);
   return collection;
 }
 
-void BKE_collection_add_from_object(Main *bmain,
+void dune_collection_add_from_object(Main *main,
                                     Scene *scene,
                                     const Object *ob_src,
                                     Collection *collection_dst)
@@ -433,7 +413,7 @@ void BKE_collection_add_from_object(Main *bmain,
   bool is_instantiated = false;
 
   FOREACH_SCENE_COLLECTION_BEGIN (scene, collection) {
-    if (!ID_IS_LINKED(collection) && BKE_collection_has_object(collection, ob_src)) {
+    if (!ID_IS_LINKED(collection) && dune_collection_has_object(collection, ob_src)) {
       collection_child_add(collection, collection_dst, 0, true);
       is_instantiated = true;
     }
@@ -444,10 +424,10 @@ void BKE_collection_add_from_object(Main *bmain,
     collection_child_add(scene->master_collection, collection_dst, 0, true);
   }
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 }
 
-void BKE_collection_add_from_collection(Main *bmain,
+void dune_collection_add_from_collection(Main *main,
                                         Scene *scene,
                                         Collection *collection_src,
                                         Collection *collection_dst)
@@ -471,26 +451,21 @@ void BKE_collection_add_from_collection(Main *bmain,
     collection_child_add(scene->master_collection, collection_dst, 0, true);
   }
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Free and Delete Collection
- * \{ */
-
-void BKE_collection_free_data(Collection *collection)
+/* Free and Delete Collection */
+void dune_collection_free_data(Collection *collection)
 {
-  BKE_libblock_free_data(&collection->id, false);
+  dune_libblock_free_data(&collection->id, false);
   collection_free_data(&collection->id);
 }
 
-bool BKE_collection_delete(Main *bmain, Collection *collection, bool hierarchy)
+bool dune_collection_delete(Main *main, Collection *collection, bool hierarchy)
 {
   /* Master collection is not real datablock, can't be removed. */
   if (collection->flag & COLLECTION_IS_MASTER) {
-    BLI_assert_msg(0, "Scene master collection can't be deleted");
+    lib_assert_msg(0, "Scene master collection can't be deleted");
     return false;
   }
 
@@ -498,21 +473,21 @@ bool BKE_collection_delete(Main *bmain, Collection *collection, bool hierarchy)
     /* Remove child objects. */
     CollectionObject *cob = collection->gobject.first;
     while (cob != NULL) {
-      collection_object_remove(bmain, collection, cob->ob, true);
+      collection_object_remove(main, collection, cob->ob, true);
       cob = collection->gobject.first;
     }
 
     /* Delete all child collections recursively. */
     CollectionChild *child = collection->children.first;
     while (child != NULL) {
-      BKE_collection_delete(bmain, child->collection, hierarchy);
+      dune_collection_delete(main, child->collection, hierarchy);
       child = collection->children.first;
     }
   }
   else {
     /* Link child collections into parent collection. */
-    LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
-      LISTBASE_FOREACH (CollectionParent *, cparent, &collection->parents) {
+    LIST_FOREACH (CollectionChild *, child, &collection->children) {
+      LIST_FOREACH (CollectionParent *, cparent, &collection->parents) {
         Collection *parent = cparent->collection;
         collection_child_add(parent, child->collection, 0, true);
       }
@@ -521,35 +496,30 @@ bool BKE_collection_delete(Main *bmain, Collection *collection, bool hierarchy)
     CollectionObject *cob = collection->gobject.first;
     while (cob != NULL) {
       /* Link child object into parent collections. */
-      LISTBASE_FOREACH (CollectionParent *, cparent, &collection->parents) {
+      LIST_FOREACH (CollectionParent *, cparent, &collection->parents) {
         Collection *parent = cparent->collection;
-        collection_object_add(bmain, parent, cob->ob, 0, true);
+        collection_object_add(main, parent, cob->ob, 0, true);
       }
 
       /* Remove child object. */
-      collection_object_remove(bmain, collection, cob->ob, true);
+      collection_object_remove(main, collection, cob->ob, true);
       cob = collection->gobject.first;
     }
   }
 
-  BKE_id_delete(bmain, collection);
+  dune_id_delete(main, collection);
 
-  BKE_main_collection_sync(bmain);
+  dune_main_collection_sync(main);
 
   return true;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Copy
- * \{ */
-
-static Collection *collection_duplicate_recursive(Main *bmain,
+/* Collection Copy */
+static Collection *collection_duplicate_recursive(Main *main,
                                                   Collection *parent,
                                                   Collection *collection_old,
-                                                  const eDupli_ID_Flags duplicate_flags,
-                                                  const eLibIDDuplicateFlags duplicate_options)
+                                                  const eIdFlagsDup duplicate_flags,
+                                                  const eLibIdFlagsDup duplicate_options)
 {
   Collection *collection_new;
   bool do_full_process = false;
@@ -560,13 +530,13 @@ static Collection *collection_duplicate_recursive(Main *bmain,
   if (is_collection_master) {
     /* We never duplicate master collections here, but we can still deep-copy their objects and
      * collections. */
-    BLI_assert(parent == NULL);
+    lib_assert(parent == NULL);
     collection_new = collection_old;
     do_full_process = true;
   }
   else if (collection_old->id.newid == NULL) {
-    collection_new = (Collection *)BKE_id_copy_for_duplicate(
-        bmain, (ID *)collection_old, duplicate_flags, LIB_ID_COPY_DEFAULT);
+    collection_new = (Collection *)dune_id_copy_for_duplicate(
+        main, (Id *)collection_old, duplicate_flags, LIB_ID_COPY_DEFAULT);
 
     if (collection_new == collection_old) {
       return collection_new;
@@ -587,8 +557,8 @@ static Collection *collection_duplicate_recursive(Main *bmain,
       CollectionChild *child_new = collection_find_child(parent, collection_new);
 
       if (child && child_new) {
-        BLI_remlink(&parent->children, child_new);
-        BLI_insertlinkafter(&parent->children, child, child_new);
+        lib_remlink(&parent->children, child_new);
+        lib_insertlinkafter(&parent->children, child, child_new);
       }
     }
   }
@@ -605,18 +575,18 @@ static Collection *collection_duplicate_recursive(Main *bmain,
      * case, where both old and new collections are the same.
      * Otherwise, depending on naming scheme and sorting, we may end up duplicating the new objects
      * we just added, in some infinite loop. */
-    LISTBASE_FOREACH (CollectionObject *, cob, &collection_old->gobject) {
+    LIST_FOREACH (CollectionObject *, cob, &collection_old->gobject) {
       Object *ob_old = cob->ob;
 
       if (ob_old->id.newid == NULL) {
-        BKE_object_duplicate(
-            bmain, ob_old, duplicate_flags, duplicate_options | LIB_ID_DUPLICATE_IS_SUBPROCESS);
+        dune_object_duplicate(
+            main, ob_old, duplicate_flags, duplicate_options | LIB_ID_DUPLICATE_IS_SUBPROCESS);
       }
     }
 
     /* We can loop on collection_old's objects, but have to consider it mutable because with master
      * collections collection_old and collection_new are the same data here. */
-    LISTBASE_FOREACH_MUTABLE (CollectionObject *, cob, &collection_old->gobject) {
+    LIST_FOREACH_MUTABLE (CollectionObject *, cob, &collection_old->gobject) {
       Object *ob_old = cob->ob;
       Object *ob_new = (Object *)ob_old->id.newid;
 
@@ -626,18 +596,18 @@ static Collection *collection_duplicate_recursive(Main *bmain,
         continue;
       }
 
-      collection_object_add(bmain, collection_new, ob_new, 0, true);
-      collection_object_remove(bmain, collection_new, ob_old, false);
+      collection_object_add(main, collection_new, ob_new, 0, true);
+      collection_object_remove(main, collection_new, ob_old, false);
     }
   }
 
   /* We can loop on collection_old's children,
    * that list is currently identical the collection_new' children, and won't be changed here. */
-  LISTBASE_FOREACH_MUTABLE (CollectionChild *, child, &collection_old->children) {
+  LIST_FOREACH_MUTABLE (CollectionChild *, child, &collection_old->children) {
     Collection *child_collection_old = child->collection;
 
     Collection *child_collection_new = collection_duplicate_recursive(
-        bmain, collection_new, child_collection_old, duplicate_flags, duplicate_options);
+        main, collection_new, child_collection_old, duplicate_flags, duplicate_options);
     if (child_collection_new != child_collection_old) {
       collection_child_remove(collection_new, child_collection_old);
     }
@@ -646,17 +616,17 @@ static Collection *collection_duplicate_recursive(Main *bmain,
   return collection_new;
 }
 
-Collection *BKE_collection_duplicate(Main *bmain,
+Collection *dune_collection_duplicate(Main *main,
                                      Collection *parent,
                                      Collection *collection,
-                                     eDupli_ID_Flags duplicate_flags,
-                                     eLibIDDuplicateFlags duplicate_options)
+                                     eIdFlagsDup duplicate_flags,
+                                     eLibIdFlagsDup duplicate_options)
 {
   const bool is_subprocess = (duplicate_options & LIB_ID_DUPLICATE_IS_SUBPROCESS) != 0;
   const bool is_root_id = (duplicate_options & LIB_ID_DUPLICATE_IS_ROOT_ID) != 0;
 
   if (!is_subprocess) {
-    BKE_main_id_newptr_and_tag_clear(bmain);
+    dune_main_id_newptr_and_tag_clear(main);
   }
   if (is_root_id) {
     /* In case root duplicated ID is linked, assume we want to get a local copy of it and duplicate
@@ -668,65 +638,60 @@ Collection *BKE_collection_duplicate(Main *bmain,
   }
 
   Collection *collection_new = collection_duplicate_recursive(
-      bmain, parent, collection, duplicate_flags, duplicate_options);
+      main, parent, collection, duplicate_flags, duplicate_options);
 
   if (!is_subprocess) {
     /* `collection_duplicate_recursive` will also tag our 'root' collection, which is not required
      * unless its duplication is a sub-process of another one. */
     collection_new->id.tag &= ~LIB_TAG_NEW;
 
-    /* This code will follow into all ID links using an ID tagged with LIB_TAG_NEW. */
-    BKE_libblock_relink_to_newid(bmain, &collection_new->id, 0);
+    /* This code will follow into all Id links using an ID tagged with LIB_TAG_NEW. */
+    dune_libblock_relink_to_newid(main, &collection_new->id, 0);
 
 #ifndef NDEBUG
-    /* Call to `BKE_libblock_relink_to_newid` above is supposed to have cleared all those flags. */
-    ID *id_iter;
-    FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
+    /* Call to `dune_libblock_relink_to_newid` above is supposed to have cleared all those flags. */
+    Id *id_iter;
+    FOREACH_MAIN_ID_BEGIN (main, id_iter) {
       if (id_iter->tag & LIB_TAG_NEW) {
-        BLI_assert((id_iter->tag & LIB_TAG_NEW) == 0);
+        lib_assert((id_iter->tag & LIB_TAG_NEW) == 0);
       }
     }
     FOREACH_MAIN_ID_END;
 #endif
 
-    /* Cleanup. */
-    BKE_main_id_newptr_and_tag_clear(bmain);
+    /* Cleanup */
+    dune_main_id_newptr_and_tag_clear(main);
 
-    BKE_main_collection_sync(bmain);
+    dune_main_collection_sync(main);
   }
 
   return collection_new;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Naming
- * \{ */
-
-void BKE_collection_new_name_get(Collection *collection_parent, char *rname)
+/* Collection Naming */
+void dune_collection_new_name_get(Collection *collection_parent, char *rname)
 {
   char *name;
 
   if (!collection_parent) {
-    name = BLI_strdup("Collection");
+    name = lib_strdup("Collection");
   }
   else if (collection_parent->flag & COLLECTION_IS_MASTER) {
-    name = BLI_sprintfN("Collection %d", BLI_listbase_count(&collection_parent->children) + 1);
+    name = lib_sprintfn("Collection %d", lib_list_count(&collection_parent->children) + 1);
   }
   else {
-    const int number = BLI_listbase_count(&collection_parent->children) + 1;
+    const int number = lib_list_count(&collection_parent->children) + 1;
     const int digits = integer_digits_i(number);
     const int max_len = sizeof(collection_parent->id.name) - 1 /* NULL terminator */ -
                         (1 + digits) /* " %d" */ - 2 /* ID */;
-    name = BLI_sprintfN("%.*s %d", max_len, collection_parent->id.name + 2, number);
+    name = lib_sprintfn("%.*s %d", max_len, collection_parent->id.name + 2, number);
   }
 
-  BLI_strncpy(rname, name, MAX_NAME);
-  MEM_freeN(name);
+  lib_strncpy(rname, name, MAX_NAME);
+  mem_freen(name);
 }
 
-const char *BKE_collection_ui_name_get(struct Collection *collection)
+const char *dune_collection_ui_name_get(struct Collection *collection)
 {
   if (collection->flag & COLLECTION_IS_MASTER) {
     return IFACE_("Scene Collection");
@@ -735,26 +700,21 @@ const char *BKE_collection_ui_name_get(struct Collection *collection)
   return collection->id.name + 2;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Object List Cache
- * \{ */
-
-static void collection_object_cache_fill(ListBase *lb,
+/* Object List Cache */
+static void collection_object_cache_fill(List *lb,
                                          Collection *collection,
                                          int parent_restrict,
                                          bool with_instances)
 {
   int child_restrict = collection->flag | parent_restrict;
 
-  LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
-    Base *base = BLI_findptr(lb, cob->ob, offsetof(Base, object));
+  LIST_FOREACH (CollectionObject *, cob, &collection->gobject) {
+    Base *base = lib_findptr(lb, cob->ob, offsetof(Base, object));
 
     if (base == NULL) {
-      base = MEM_callocN(sizeof(Base), "Object Base");
+      base = mem_callocn(sizeof(Base), "Object Base");
       base->object = cob->ob;
-      BLI_addtail(lb, base);
+      lib_addtail(lb, base);
       if (with_instances && cob->ob->instance_collection) {
         collection_object_cache_fill(
             lb, cob->ob->instance_collection, child_restrict, with_instances);
@@ -772,38 +732,38 @@ static void collection_object_cache_fill(ListBase *lb,
     }
   }
 
-  LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  LIST_FOREACH (CollectionChild *, child, &collection->children) {
     collection_object_cache_fill(lb, child->collection, child_restrict, with_instances);
   }
 }
 
-ListBase BKE_collection_object_cache_get(Collection *collection)
+List dune_collection_object_cache_get(Collection *collection)
 {
   if (!(collection->flag & COLLECTION_HAS_OBJECT_CACHE)) {
-    static ThreadMutex cache_lock = BLI_MUTEX_INITIALIZER;
+    static ThreadMutex cache_lock = LIB_MUTEX_INITIALIZER;
 
-    BLI_mutex_lock(&cache_lock);
+    lib_mutex_lock(&cache_lock);
     if (!(collection->flag & COLLECTION_HAS_OBJECT_CACHE)) {
       collection_object_cache_fill(&collection->object_cache, collection, 0, false);
       collection->flag |= COLLECTION_HAS_OBJECT_CACHE;
     }
-    BLI_mutex_unlock(&cache_lock);
+    lib_mutex_unlock(&cache_lock);
   }
 
   return collection->object_cache;
 }
 
-ListBase BKE_collection_object_cache_instanced_get(Collection *collection)
+List dune_collection_object_cache_instanced_get(Collection *collection)
 {
   if (!(collection->flag & COLLECTION_HAS_OBJECT_CACHE_INSTANCED)) {
-    static ThreadMutex cache_lock = BLI_MUTEX_INITIALIZER;
+    static ThreadMutex cache_lock = LIB_MUTEX_INITIALIZER;
 
-    BLI_mutex_lock(&cache_lock);
+    lib_mutex_lock(&cache_lock);
     if (!(collection->flag & COLLECTION_HAS_OBJECT_CACHE_INSTANCED)) {
       collection_object_cache_fill(&collection->object_cache_instanced, collection, 0, true);
       collection->flag |= COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
     }
-    BLI_mutex_unlock(&cache_lock);
+    lib_mutex_unlock(&cache_lock);
   }
 
   return collection->object_cache_instanced;
@@ -814,35 +774,30 @@ static void collection_object_cache_free(Collection *collection)
   /* Clear own cache an for all parents, since those are affected by changes as well. */
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
   collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
-  BLI_freelistN(&collection->object_cache);
-  BLI_freelistN(&collection->object_cache_instanced);
+  lib_freelistn(&collection->object_cache);
+  lib_freelistn(&collection->object_cache_instanced);
 
-  LISTBASE_FOREACH (CollectionParent *, parent, &collection->parents) {
+  LIST_FOREACH (CollectionParent *, parent, &collection->parents) {
     collection_object_cache_free(parent->collection);
   }
 }
 
-void BKE_collection_object_cache_free(Collection *collection)
+void dune_collection_object_cache_free(Collection *collection)
 {
   collection_object_cache_free(collection);
 }
 
-Base *BKE_collection_or_layer_objects(const ViewLayer *view_layer, Collection *collection)
+Base *dune_collection_or_layer_objects(const ViewLayer *view_layer, Collection *collection)
 {
   if (collection) {
-    return BKE_collection_object_cache_get(collection).first;
+    return dune_collection_object_cache_get(collection).first;
   }
 
   return FIRSTBASE(view_layer);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Scene Master Collection
- * \{ */
-
-Collection *BKE_collection_master_add()
+/* Scene Master Collection */
+Collection *dune_collection_master_add()
 {
   /* Not an actual datablock, but owned by scene. */
   Collection *master_collection = BKE_libblock_alloc(
