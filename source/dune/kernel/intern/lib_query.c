@@ -1,59 +1,55 @@
 #include <stdlib.h>
 
-#include "DNA_anim_types.h"
+#include "types_anim.h"
 
-#include "BLI_ghash.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_linklist_stack.h"
+#include "lib_list.h"
+#include "lib_utildefines.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
+#include "dune_anim_data.h"
+#include "dune_idprop.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_main.h"
+#include "dune_node.h"
 
 /* status */
 enum {
   IDWALK_STOP = 1 << 0,
 };
 
-typedef struct LibraryForeachIDData {
-  Main *bmain;
-  /**
-   * 'Real' ID, the one that might be in `bmain`, only differs from self_id when the later is a
-   * private one.
-   */
-  ID *owner_id;
-  /**
-   * ID from which the current ID pointer is being processed. It may be an embedded ID like master
-   * collection or root node tree.
-   */
-  ID *self_id;
+typedef struct LibForeachIdData {
+  Main *main;
+  /* 'Real' Id, the one that might be in `main`, only differs from self_id when the later is a
+   * private one. */
+  Id *owner_id;
+  /* Id from which the current Id ptr is being processed. It may be an embedded Id like master
+   * collection or root node tree. */
+  Id *self_id;
 
-  /** Flags controlling the behavior of the 'foreach id' looping code. */
+  /* Flags controlling the behavior of the 'foreach id' looping code. */
   int flag;
-  /** Generic flags to be passed to all callback calls for current processed data. */
+  /* Generic flags to be passed to all cb calls for current processed data. */
   int cb_flag;
-  /** Callback flags that are forbidden for all callback calls for current processed data. */
+  /* Cb flags that are forbidden for all cb calls for current processed data. */
   int cb_flag_clear;
 
-  /* Function to call for every ID pointers of current processed data, and its opaque user data
-   * pointer. */
-  LibraryIDLinkCallback callback;
+  /* Fn to call for every Id ptrs of current processed data, and its opaque user data
+   * ptr. */
+  LibIdLinkCb cb;
   void *user_data;
-  /** Store the returned value from the callback, to decide how to continue the processing of ID
+  /** Store the returned value from the cb, to decide how to continue the processing of ID
    * pointers for current data. */
   int status;
 
   /* To handle recursion. */
-  GSet *ids_handled; /* All IDs that are either already done, or still in ids_todo stack. */
-  BLI_LINKSTACK_DECLARE(ids_todo, ID *);
-} LibraryForeachIDData;
+  GSet *ids_handled; /* All Ids that are either already done, or still in ids_todo stack. */
+  LIB_LINKSTACK_DECLARE(ids_todo, Id *);
+} LibForeachIdData;
 
-bool BKE_lib_query_foreachid_iter_stop(LibraryForeachIDData *data)
+bool dune_lib_query_foreachid_iter_stop(LibraryForeachIDData *data)
 {
   return (data->status & IDWALK_STOP) != 0;
 }
