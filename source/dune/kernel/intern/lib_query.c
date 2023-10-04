@@ -49,60 +49,60 @@ typedef struct LibForeachIdData {
   LIB_LINKSTACK_DECLARE(ids_todo, Id *);
 } LibForeachIdData;
 
-bool dune_lib_query_foreachid_iter_stop(LibraryForeachIDData *data)
+bool dune_lib_query_foreachid_iter_stop(LibForeachIdData *data)
 {
   return (data->status & IDWALK_STOP) != 0;
 }
 
-void BKE_lib_query_foreachid_process(LibraryForeachIDData *data, ID **id_pp, int cb_flag)
+void dune_lib_query_foreachid_process(LibForeachIdData *data, Id **id_pp, int cb_flag)
 {
-  if (BKE_lib_query_foreachid_iter_stop(data)) {
+  if (dune_lib_query_foreachid_iter_stop(data)) {
     return;
   }
 
   const int flag = data->flag;
-  ID *old_id = *id_pp;
+  Id *old_id = *id_pp;
 
-  /* Update the callback flags with the ones defined (or forbidden) in `data` by the generic
+  /* Update the cb flags with the ones defined (or forbidden) in `data` by the generic
    * caller code. */
   cb_flag = ((cb_flag | data->cb_flag) & ~data->cb_flag_clear);
 
-  /* Update the callback flags with some extra information regarding overrides: all 'loopback',
-   * 'internal', 'embedded' etc. ID pointers are never overridable. */
-  if (cb_flag & (IDWALK_CB_INTERNAL | IDWALK_CB_LOOPBACK | IDWALK_CB_OVERRIDE_LIBRARY_REFERENCE)) {
-    cb_flag |= IDWALK_CB_OVERRIDE_LIBRARY_NOT_OVERRIDABLE;
+  /* Update the cb flags with some extra information regarding overrides: all 'loopback',
+   * 'internal', 'embedded' etc. Id ptrs are never overridable. */
+  if (cb_flag & (IDWALK_CB_INTERNAL | IDWALK_CB_LOOPBACK | IDWALK_CB_OVERRIDE_LIB_REF)) {
+    cb_flag |= IDWALK_CB_OVERRIDE_LIB_NOT_OVERRIDABLE;
   }
 
-  const int callback_return = data->callback(
-      &(struct LibraryIDLinkCallbackData){.user_data = data->user_data,
-                                          .bmain = data->bmain,
+  const int cb_return = data->cb(
+      &(struct LibIdLinkCbData){.user_data = data->user_data,
+                                          .main = data->main,
                                           .id_owner = data->owner_id,
                                           .id_self = data->self_id,
-                                          .id_pointer = id_pp,
+                                          .id_ptr = id_pp,
                                           .cb_flag = cb_flag});
   if (flag & IDWALK_READONLY) {
-    BLI_assert(*(id_pp) == old_id);
+    lib_assert(*(id_pp) == old_id);
   }
   if (old_id && (flag & IDWALK_RECURSE)) {
-    if (BLI_gset_add((data)->ids_handled, old_id)) {
+    if (lib_gset_add((data)->ids_handled, old_id)) {
       if (!(callback_return & IDWALK_RET_STOP_RECURSION)) {
-        BLI_LINKSTACK_PUSH(data->ids_todo, old_id);
+        LIB_LINKSTACK_PUSH(data->ids_todo, old_id);
       }
     }
   }
-  if (callback_return & IDWALK_RET_STOP_ITER) {
+  if (cb_return & IDWALK_RET_STOP_ITER) {
     data->status |= IDWALK_STOP;
   }
 }
 
-int BKE_lib_query_foreachid_process_flags_get(LibraryForeachIDData *data)
+int dune_lib_query_foreachid_process_flags_get(LibForeachIdData *data)
 {
   return data->flag;
 }
 
-int BKE_lib_query_foreachid_process_callback_flag_override(LibraryForeachIDData *data,
-                                                           const int cb_flag,
-                                                           const bool do_replace)
+int dune_lib_query_foreachid_process_cb_flag_override(LibForeachIdData *data,
+                                                      const int cb_flag,
+                                                      const bool do_replace)
 {
   const int cb_flag_backup = data->cb_flag;
   if (do_replace) {
@@ -114,36 +114,36 @@ int BKE_lib_query_foreachid_process_callback_flag_override(LibraryForeachIDData 
   return cb_flag_backup;
 }
 
-static bool library_foreach_ID_link(Main *bmain,
-                                    ID *id_owner,
-                                    ID *id,
-                                    LibraryIDLinkCallback callback,
-                                    void *user_data,
-                                    int flag,
-                                    LibraryForeachIDData *inherit_data);
+static bool lib_foreach_id_link(Main *main,
+                                Id *id_owner,
+                                Id *id,
+                                LibIdLinkCb cb,
+                                void *user_data,
+                                int flag,
+                                LibForeachIdData *inherit_data);
 
-void BKE_lib_query_idpropertiesForeachIDLink_callback(IDProperty *id_prop, void *user_data)
+void dune_lib_query_idpropsForeachIdLink_cb(IdProp *id_prop, void *user_data)
 {
-  BLI_assert(id_prop->type == IDP_ID);
+  lib_assert(id_prop->type == IDP_ID);
 
-  LibraryForeachIDData *data = (LibraryForeachIDData *)user_data;
-  const int cb_flag = IDWALK_CB_USER | ((id_prop->flag & IDP_FLAG_OVERRIDABLE_LIBRARY) ?
+  LibForeachIdData *data = (LibForeachIdData *)user_data;
+  const int cb_flag = IDWALK_CB_USER | ((id_prop->flag & IDP_FLAG_OVERRIDABLE_LIB) ?
                                             0 :
-                                            IDWALK_CB_OVERRIDE_LIBRARY_NOT_OVERRIDABLE);
-  BKE_LIB_FOREACHID_PROCESS_ID(data, id_prop->data.pointer, cb_flag);
+                                            IDWALK_CB_OVERRIDE_LIB_NOT_OVERRIDABLE);
+  DUNE_LIB_FOREACHID_PROCESS_ID(data, id_prop->data.ptr, cb_flag);
 }
 
-void BKE_library_foreach_ID_embedded(LibraryForeachIDData *data, ID **id_pp)
+void dune_lib_foreach_id_embedded(LibForeachIdData *data, Id **id_pp)
 {
   /* Needed e.g. for callbacks handling relationships. This call shall be absolutely read-only. */
   ID *id = *id_pp;
   const int flag = data->flag;
 
-  BKE_lib_query_foreachid_process(data, id_pp, IDWALK_CB_EMBEDDED);
-  if (BKE_lib_query_foreachid_iter_stop(data)) {
+  dune_lib_query_foreachid_process(data, id_pp, IDWALK_CB_EMBEDDED);
+  if (dune_lib_query_foreachid_iter_stop(data)) {
     return;
   }
-  BLI_assert(id == *id_pp);
+  lib_assert(id == *id_pp);
 
   if (id == NULL) {
     return;
