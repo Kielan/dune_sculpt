@@ -283,7 +283,7 @@ static bool lib_foreach_id_link(Main *main,
       continue;
     }
 
-    /* NOTE: ID.lib ptr is purposefully fully ignored here...
+    /* Id.lib ptr is purposefully fully ignored here...
      * We may want to add it at some point? */
     if (flag & IDWALK_DO_INTERNAL_RUNTIME_PTRS) {
       CB_INVOKE_ID(id->newid, IDWALK_CB_INTERNAL);
@@ -300,9 +300,9 @@ static bool lib_foreach_id_link(Main *main,
     }
 
     IDP_foreach_prop(id->props,
-                         IDP_TYPE_FILTER_ID,
-                         dune_lib_query_idpropsForeachIdLink_cb,
-                         &data);
+                     IDP_TYPE_FILTER_ID,
+                     dune_lib_query_idpropsForeachIdLink_cb,
+                     &data);
     if (dune_lib_query_foreachid_iter_stop(&data)) {
       lib_foreach_id_data_cleanup(&data);
       return false;
@@ -377,7 +377,7 @@ uint64_t dune_lib_id_can_use_filter_id(const Id *id_owner)
     return FILTER_ID_ALL;
   }
 
-  switch ((ID_Type)id_type_owner) {
+  switch ((IdType)id_type_owner) {
     case ID_LI:
       /* ID_LI doesn't exist as filter_id. */
       return 0;
@@ -465,7 +465,7 @@ uint64_t dune_lib_id_can_use_filter_id(const Id *id_owner)
 
 bool dune_lib_id_can_use_idtype(Id *id_owner, const short id_type_used)
 {
-  /* any type of ID can be used in custom props. */
+  /* any type of Id can be used in custom props. */
   if (id_owner->props) {
     return true;
   }
@@ -675,7 +675,6 @@ static void lib_query_unused_ids_tag_recurse(Main *main,
   const int required_usages = (IDWALK_CB_USER | IDWALK_CB_USER_ONE);
 
   /* This id may be tagged as unused if none of its users are 'valid', as defined above.
-   *
    * First recursively check all its valid users, if all of them can be tagged as
    * unused, then we can tag this id as such too. */
   bool has_valid_from_users = false;
@@ -688,40 +687,40 @@ static void lib_query_unused_ids_tag_recurse(Main *main,
 
     Id *id_from = id_from_item->id_ptr.from;
     if ((id_from->flag & LIB_EMBEDDED_DATA) != 0) {
-      /* Directly 'by-pass' to actual real ID owner. */
-      const IdTypeInfo *type_info_from = BKE_idtype_get_info_from_id(id_from);
-      BLI_assert(type_info_from->owner_get != NULL);
+      /* Directly 'by-pass' to actual real Id owner. */
+      const IdTypeInfo *type_info_from = dune_idtype_get_info_from_id(id_from);
+      lib_assert(type_info_from->owner_get != NULL);
       id_from = type_info_from->owner_get(bmain, id_from);
     }
 
     lib_query_unused_ids_tag_recurse(
-        bmain, tag, do_local_ids, do_linked_ids, id_from, r_num_tagged);
+        main, tag, do_local_ids, do_linked_ids, id_from, r_num_tagged);
     if ((id_from->tag & tag) == 0) {
       has_valid_from_users = true;
       break;
     }
   }
   if (!has_valid_from_users) {
-    /* This ID has no 'valid' users, tag it as unused. */
+    /* This Id has no 'valid' users, tag it as unused. */
     id->tag |= tag;
     if (r_num_tagged != NULL) {
       r_num_tagged[INDEX_ID_NULL]++;
-      r_num_tagged[BKE_idtype_idcode_to_index(GS(id->name))]++;
+      r_num_tagged[dune_idtype_idcode_to_index(GS(id->name))]++;
     }
   }
 }
 
-void BKE_lib_query_unused_ids_tag(Main *bmain,
+void dune_lib_query_unused_ids_tag(Main *main,
                                   const int tag,
                                   const bool do_local_ids,
                                   const bool do_linked_ids,
                                   const bool do_tag_recursive,
                                   int *r_num_tagged)
 {
-  /* First loop, to only check for immediately unused IDs (those with 0 user count).
-   * NOTE: It also takes care of clearing given tag for used IDs. */
-  ID *id;
-  FOREACH_MAIN_ID_BEGIN (bmain, id) {
+  /* First loop, to only check for immediately unused Ids (those with 0 user count).
+   * NOTE: It also takes care of clearing given tag for used Ids. */
+  Id *id;
+  FOREACH_MAIN_ID_BEGIN (main, id) {
     if ((!do_linked_ids && ID_IS_LINKED(id)) || (!do_local_ids && !ID_IS_LINKED(id))) {
       id->tag &= ~tag;
     }
@@ -729,7 +728,7 @@ void BKE_lib_query_unused_ids_tag(Main *bmain,
       id->tag |= tag;
       if (r_num_tagged != NULL) {
         r_num_tagged[INDEX_ID_NULL]++;
-        r_num_tagged[BKE_idtype_idcode_to_index(GS(id->name))]++;
+        r_num_tagged[dune_idtype_idcode_to_index(GS(id->name))]++;
       }
     }
     else {
@@ -742,18 +741,18 @@ void BKE_lib_query_unused_ids_tag(Main *bmain,
     return;
   }
 
-  BKE_main_relations_create(bmain, 0);
-  FOREACH_MAIN_ID_BEGIN (bmain, id) {
-    lib_query_unused_ids_tag_recurse(bmain, tag, do_local_ids, do_linked_ids, id, r_num_tagged);
+  dune_main_relations_create(main, 0);
+  FOREACH_MAIN_ID_BEGIN (main, id) {
+    lib_query_unused_ids_tag_recurse(main, tag, do_local_ids, do_linked_ids, id, r_num_tagged);
   }
   FOREACH_MAIN_ID_END;
-  BKE_main_relations_free(bmain);
+  dune_main_relations_free(main);
 }
 
-static int foreach_libblock_used_linked_data_tag_clear_cb(LibraryIDLinkCallbackData *cb_data)
+static int foreach_libblock_used_linked_data_tag_clear_cb(LibIdLinkCbData *cb_data)
 {
-  ID *self_id = cb_data->id_self;
-  ID **id_p = cb_data->id_pointer;
+  Id *self_id = cb_data->id_self;
+  Id **id_p = cb_data->id_pointer;
   const int cb_flag = cb_data->cb_flag;
   bool *is_changed = cb_data->user_data;
 
@@ -775,12 +774,12 @@ static int foreach_libblock_used_linked_data_tag_clear_cb(LibraryIDLinkCallbackD
   return IDWALK_RET_NOP;
 }
 
-void BKE_library_unused_linked_data_set_tag(Main *bmain, const bool do_init_tag)
+void dune_lib_unused_linked_data_set_tag(Main *bmain, const bool do_init_tag)
 {
-  ID *id;
+  Id *id;
 
   if (do_init_tag) {
-    FOREACH_MAIN_ID_BEGIN (bmain, id) {
+    FOREACH_MAIN_ID_BEGIN (main, id) {
       if (id->lib && (id->tag & LIB_TAG_INDIRECT) != 0) {
         id->tag |= LIB_TAG_DOIT;
       }
@@ -793,34 +792,34 @@ void BKE_library_unused_linked_data_set_tag(Main *bmain, const bool do_init_tag)
 
   for (bool do_loop = true; do_loop;) {
     do_loop = false;
-    FOREACH_MAIN_ID_BEGIN (bmain, id) {
+    FOREACH_MAIN_ID_BEGIN (main, id) {
       /* We only want to check that ID if it is currently known as used... */
       if ((id->tag & LIB_TAG_DOIT) == 0) {
-        BKE_library_foreach_ID_link(
-            bmain, id, foreach_libblock_used_linked_data_tag_clear_cb, &do_loop, IDWALK_READONLY);
+        dune_lib_foreach_id_link(
+            main, id, foreach_libblock_used_linked_data_tag_clear_cb, &do_loop, IDWALK_READONLY);
       }
     }
     FOREACH_MAIN_ID_END;
   }
 }
 
-void BKE_library_indirectly_used_data_tag_clear(Main *bmain)
+void dune_lib_indirectly_used_data_tag_clear(Main *main)
 {
-  ListBase *lb_array[INDEX_ID_MAX];
+  List *list_array[INDEX_ID_MAX];
 
   bool do_loop = true;
   while (do_loop) {
-    int i = set_listbasepointers(bmain, lb_array);
+    int i = set_listptrs(main, list_array);
     do_loop = false;
 
     while (i--) {
-      LISTBASE_FOREACH (ID *, id, lb_array[i]) {
+      LIST_FOREACH (Id *, id, list_array[i]) {
         if (!ID_IS_LINKED(id) || id->tag & LIB_TAG_DOIT) {
-          /* Local or non-indirectly-used ID (so far), no need to check it further. */
+          /* Local or non-indirectly-used Id (so far), no need to check it further. */
           continue;
         }
-        BKE_library_foreach_ID_link(
-            bmain, id, foreach_libblock_used_linked_data_tag_clear_cb, &do_loop, IDWALK_READONLY);
+        dune_lib_foreach_id_link(
+            main, id, foreach_libblock_used_linked_data_tag_clear_cb, &do_loop, IDWALK_READONLY);
       }
     }
   }
