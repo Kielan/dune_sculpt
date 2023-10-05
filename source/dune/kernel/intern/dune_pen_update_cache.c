@@ -3,7 +3,7 @@
 #include "BKE_gpencil_update_cache.h"
 
 #include "BLI_dlrbTree.h"
-#include "BLI_listbase.h"
+#include "BLI_listbas.h"
 
 #include "BKE_gpencil.h"
 
