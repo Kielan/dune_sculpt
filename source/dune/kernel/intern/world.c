@@ -2,59 +2,59 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-/* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+/* Allow using deprecated functionality for .dune file I/O. */
+#define TYPES_DEPRECATED_ALLOW
 
-#include "structs_defaults.h"
-#include "structs_scene_types.h"
-#include "structs_texture_types.h"
-#include "structs_world_types.h"
+#include "types_defaults.h"
+#include "types_scene.h"
+#include "types_texture.h"
+#include "types_world.h"
 
-#include "LIB_listbase.h"
-#include "LIB_utildefines.h"
+#include "lib_list.h"
+#include "lib_utildefines.h"
 
-#include "KERNEL_anim_data.h"
-#include "KERNEL_icons.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_main.h"
-#include "KERNEL_node.h"
-#include "KERNEL_world.h"
+#include "dune_anim_data.h"
+#include "dune_icons.h"
+#include "dune_idtype.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_main.h"
+#include "dune_node.h"
+#include "dune_world.h"
 
-#include "TRANSLATION_translation.h"
+#include "lang.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "GPU_material.h"
+#include "gpu_material.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
-/** Free (or release) any data used by this world (does not free the world itself). */
-static void world_free_data(ID *id)
+/* Free (or release) any data used by this world (does not free the world itself). */
+static void world_free_data(Id *id)
 {
   World *wrld = (World *)id;
 
-  DRW_drawdata_free(id);
+  drawdata_free(id);
 
   /* is no lib link block, but world extension */
   if (wrld->nodetree) {
     ntreeFreeEmbeddedTree(wrld->nodetree);
-    MEM_freeN(wrld->nodetree);
+    mem_freen(wrld->nodetree);
     wrld->nodetree = NULL;
   }
 
-  GPU_material_free(&wrld->gpumaterial);
+  gpy_material_free(&wrld->gpumaterial);
 
-  KERNEL_icon_id_delete((struct ID *)wrld);
-  KERNEL_previewimg_free(&wrld->preview);
+  dune_icon_id_delete((struct ID *)wrld);
+  dune_previewimg_free(&wrld->preview);
 }
 
-static void world_init_data(ID *id)
+static void world_init_data(Id *id)
 {
   World *wrld = (World *)id;
   LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(wrld, id));
