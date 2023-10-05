@@ -3,47 +3,47 @@
 
 #include "CLG_log.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "structs_ID.h"
-#include "structs_collection_types.h"
-#include "structs_key_types.h"
-#include "structs_object_types.h"
-#include "structs_scene_types.h"
+#include "types_id.h"
+#include "types_collection.h"
+#include "types_key.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "graph.h"
+#include "graph_build.h"
 
-#include "KE_armature.h"
-#include "KE_collection.h"
-#include "KE_global.h"
-#include "KE_idtype.h"
-#include "KE_key.h"
-#include "KE_layer.h"
-#include "KE_lib_id.h"
-#include "KE_lib_override.h"
-#include "KE_lib_query.h"
-#include "KE_lib_remap.h"
-#include "KE_main.h"
-#include "KE_node.h"
-#include "KE_report.h"
-#include "KE_scene.h"
+#include "dune_armature.h"
+#include "dune_collection.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_key.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_override.h"
+#include "dune_lib_query.h"
+#include "dune_lib_remap.h"
+#include "dune_main.h"
+#include "dune_node.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "LOADER_readfile.h"
+#include "loader_readfile.h"
 
-#include "LI_ghash.h"
-#include "LI_linklist.h"
-#include "LI_listbase.h"
-#include "LI_memarena.h"
-#include "LI_string.h"
-#include "LI_task.h"
-#include "LI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_linklist.h"
+#include "lib_list.h"
+#include "lib_memarena.h"
+#include "lib_string.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
 #include "PIL_time.h"
 
-#include "API_access.h"
-#include "API_prototypes.h"
-#include "API_types.h"
+#include "api_access.h"
+#include "api_prototypes.h"
+#include "api_types.h"
 
 #include "atomic_ops.h"
 
@@ -54,55 +54,55 @@
 #  include "PIL_time_utildefines.h"
 #endif
 
-static CLG_LogRef LOG = {"kernel.liboverride"};
+static CLG_LogRef LOG = {"dune.liboverride"};
 
-static void lib_override_library_property_copy(IDOverrideLibraryProperty *op_dst,
-                                               IDOverrideLibraryProperty *op_src);
-static void lib_override_library_property_operation_copy(
-    IDOverrideLibraryPropertyOperation *opop_dst, IDOverrideLibraryPropertyOperation *opop_src);
+static void lib_override_lib_prop_copy(IdOverrideLibProp *op_dst,
+                                       IdOverrideLibProp *op_src);
+static void lib_override_lib_prop_op_copy(
+    IdOverrideLibPropOp *opop_dst, IdOverrideLibPropOp *opop_src);
 
-static void lib_override_library_property_clear(IDOverrideLibraryProperty *op);
-static void lib_override_library_property_operation_clear(
-    IDOverrideLibraryPropertyOperation *opop);
+static void lib_override_lib_prop_clear(IdOverrideLibProp *op);
+static void lib_override_lib_prop_op_clear(
+    IdOverrideLibPropOp *opop);
 
-/** Get override data for a given ID. Needed because of our beloved shape keys snowflake. */
-BLI_INLINE IDOverrideLibrary *lib_override_get(Main *bmain, ID *id, ID **r_owner_id)
+/* Get override data for a given ID. Needed because of our beloved shape keys snowflake. */
+LIB_INLINE IdOverrideLib *lib_override_get(Main *main, Id *id, Id **r_owner_id)
 {
   if (r_owner_id != NULL) {
     *r_owner_id = id;
   }
   if (id->flag & LIB_EMBEDDED_DATA_LIB_OVERRIDE) {
-    const IDTypeInfo *id_type = KERNEL_idtype_get_info_from_id(id);
+    const IdTypeInfo *id_type = dune_idtype_get_info_from_id(id);
     if (id_type->owner_get != NULL) {
-      ID *owner_id = id_type->owner_get(dunemain, id);
+      Id *owner_id = id_type->owner_get(dunemain, id);
       if (r_owner_id != NULL) {
         *r_owner_id = owner_id;
       }
-      return owner_id->override_library;
+      return owner_id->override_lib;
     }
     LIB_assert_msg(0, "IDTypeInfo of liboverride-embedded ID with no owner getter");
   }
-  return id->override_library;
+  return id->override_lib;
 }
 
-IDOverrideLibrary *KERNEL_lib_override_library_init(ID *local_id, ID *reference_id)
+IdOverrideLib *dune_lib_override_lib_init(Id *local_id, Id *ref_id)
 {
   /* If reference_id is NULL, we are creating an override template for purely local data.
-   * Else, reference *must* be linked data. */
-  LIB_assert(reference_id == NULL || ID_IS_LINKED(reference_id));
-  LIB_assert(local_id->override_library == NULL);
+   * Else, ref *must* be linked data. */
+  lib_assert(ref_id == NULL || ID_IS_LINKED(ref_id));
+  lib_assert(local_id->override_lib == NULL);
 
-  ID *ancestor_id;
-  for (ancestor_id = reference_id; ancestor_id != NULL && ancestor_id->override_library != NULL &&
-                                   ancestor_id->override_library->reference != NULL;
-       ancestor_id = ancestor_id->override_library->reference) {
+  Id *ancestor_id;
+  for (ancestor_id = ref_id; ancestor_id != NULL && ancestor_id->override_lib != NULL &&
+                                   ancestor_id->override_lib->ref != NULL;
+       ancestor_id = ancestor_id->override_lib->ref) {
     /* pass */
   }
 
-  if (ancestor_id != NULL && ancestor_id->override_library != NULL) {
+  if (ancestor_id != NULL && ancestor_id->override_lib != NULL) {
     /* Original ID has a template, use it! */
-    KERNEL_lib_override_library_copy(local_id, ancestor_id, true);
-    if (local_id->override_library->reference != reference_id) {
+    dune_lib_override_lib_copy(local_id, ancestor_id, true);
+    if (local_id->override_lib->ref != ref_id) {
       id_us_min(local_id->override_library->reference);
       local_id->override_library->reference = reference_id;
       id_us_plus(local_id->override_library->reference);
@@ -111,84 +111,84 @@ IDOverrideLibrary *KERNEL_lib_override_library_init(ID *local_id, ID *reference_
   }
 
   /* Else, generate new empty override. */
-  local_id->override_library = MEM_callocN(sizeof(*local_id->override_library), __func__);
-  local_id->override_library->reference = reference_id;
-  id_us_plus(local_id->override_library->reference);
-  local_id->tag &= ~LIB_TAG_OVERRIDE_LIBRARY_REFOK;
+  local_id->override_lib = MEM_callocN(sizeof(*local_id->override_lib), __func__);
+  local_id->override_lib->ref = ref_id;
+  id_us_plus(local_id->override_lib->ref);
+  local_id->tag &= ~LIB_TAG_OVERRIDE_LIB_REFOK;
   /* TODO: do we want to add tag or flag to referee to mark it as such? */
-  return local_id->override_library;
+  return local_id->override_lib;
 }
 
-void KERNEL_lib_override_library_copy(ID *dst_id, const ID *src_id, const bool do_full_copy)
+void dune_lib_override_lib_copy(Id *dst_id, const Id *src_id, const bool do_full_copy)
 {
-  LIB_assert(ID_IS_OVERRIDE_LIBRARY(src_id) || ID_IS_OVERRIDE_LIBRARY_TEMPLATE(src_id));
+  lib_assert(ID_IS_OVERRIDE_LIB(src_id) || ID_IS_OVERRIDE_LIB_TEMPLATE(src_id));
 
-  if (dst_id->override_library != NULL) {
-    if (src_id->override_library == NULL) {
-      KERNEL_lib_override_library_free(&dst_id->override_library, true);
+  if (dst_id->override_lib != NULL) {
+    if (src_id->override_lib == NULL) {
+      dunw_lib_override_lib_free(&dst_id->override_lib, true);
       return;
     }
 
-    KERNEL_lib_override_library_clear(dst_id->override_library, true);
+    dune_lib_override_lib_clear(dst_id->override_lib, true);
   }
-  else if (src_id->override_library == NULL) {
+  else if (src_id->override_lib == NULL) {
     /* Virtual overrides of embedded data does not require any extra work. */
     return;
   }
   else {
-    KERNEL_lib_override_library_init(dst_id, NULL);
+    dune_lib_override_lib_init(dst_id, NULL);
   }
 
-  /* If source is already overriding data, we copy it but reuse its reference for dest ID.
+  /* If source is already overriding data, we copy it but reuse its ref for dest ID.
    * Otherwise, source is only an override template, it then becomes reference of dest ID. */
-  dst_id->override_library->reference = src_id->override_library->reference ?
-                                            src_id->override_library->reference :
-                                            (ID *)src_id;
-  id_us_plus(dst_id->override_library->reference);
+  dst_id->override_lib->ref = src_id->override_lib->ref ?
+                                            src_id->override_lib->ref :
+                                            (Id *)src_id;
+  id_us_plus(dst_id->override_lib->ref);
 
-  dst_id->override_library->hierarchy_root = src_id->override_library->hierarchy_root;
-  dst_id->override_library->flag = src_id->override_library->flag;
+  dst_id->override_lib->hierarchy_root = src_id->override_lib->hierarchy_root;
+  dst_id->override_lib->flag = src_id->override_lib->flag;
 
   if (do_full_copy) {
-    LIB_duplicatelist(&dst_id->override_library->properties,
-                      &src_id->override_library->properties);
-    for (IDOverrideLibraryProperty *op_dst = dst_id->override_library->properties.first,
-                                   *op_src = src_id->override_library->properties.first;
+    lib_duplicatelist(&dst_id->override_lib->props,
+                      &src_id->override_lib->props);
+    for (IdOverrideLibProp *op_dst = dst_id->override_lib->props.first,
+                                   *op_src = src_id->override_lib->props.first;
          op_dst;
          op_dst = op_dst->next, op_src = op_src->next) {
       lib_override_library_property_copy(op_dst, op_src);
     }
   }
 
-  dst_id->tag &= ~LIB_TAG_OVERRIDE_LIBRARY_REFOK;
+  dst_id->tag &= ~LIB_TAG_OVERRIDE_LIB_REFOK;
 }
 
-void KERNEL_lib_override_library_clear(IDOverrideLibrary *override, const bool do_id_user)
+void dune_lib_override_lib_clear(IdOverrideLib *override, const bool do_id_user)
 {
-  LIB_assert(override != NULL);
+  lib_assert(override != NULL);
 
-  if (!ELEM(NULL, override->runtime, override->runtime->api_path_to_override_properties)) {
-    LIB_ghash_clear(override->runtime->api_path_to_override_properties, NULL, NULL);
+  if (!ELEM(NULL, override->runtime, override->runtime->api_path_to_override_props)) {
+    lib_ghash_clear(override->runtime->api_path_to_override_props, NULL, NULL);
   }
 
-  LISTBASE_FOREACH (IDOverrideLibraryProperty *, op, &override->properties) {
-    lib_override_library_property_clear(op);
+  LIST_FOREACH (IdOverrideLibProp *, op, &override->props) {
+    lib_override_lib_prop_clear(op);
   }
-  LIB_freelistN(&override->properties);
+  lib_freelistn(&override->props);
 
   if (do_id_user) {
-    id_us_min(override->reference);
+    id_us_min(override->ref);
     /* override->storage should never be refcounted... */
   }
 }
 
-void KERNEL_lib_override_library_free(struct IDOverrideLibrary **override, const bool do_id_user)
+void dune_lib_override_lib_free(struct IdOverrideLib **override, const bool do_id_user)
 {
-  LIB_assert(*override != NULL);
+  lib_assert(*override != NULL);
 
   if ((*override)->runtime != NULL) {
-    if ((*override)->runtime->api_path_to_override_properties != NULL) {
-      LIB_ghash_free((*override)->runtime->rna_path_to_override_properties, NULL, NULL);
+    if ((*override)->runtime->api_path_to_override_props != NULL) {
+      lib_ghash_free((*override)->runtime->rna_path_to_override_props, NULL, NULL);
     }
     MEM_SAFE_FREE((*override)->runtime);
   }
