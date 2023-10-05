@@ -39,14 +39,14 @@ static void workspace_init_data(Id *id)
   dune_asset_lib_ref_init_default(&workspace->asset_lib_ref);
 }
 
-static void workspace_free_data(ID *id)
+static void workspace_free_data(Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
   dune_workspace_relations_free(&workspace->hook_layout_relations);
 
-  lib_freelistN(&workspace->owner_ids);
-  lib_freelistN(&workspace->layouts);
+  lib_freelistn(&workspace->owner_ids);
+  lib_freelistn(&workspace->layouts);
 
   while (lib_list_is_empty(&workspace->tools)) {
     dune_workspace_tool_remove(workspace, workspace->tools.first);
@@ -64,7 +64,7 @@ static void workspace_foreach_id(Id *id, LibForeachIdData *data)
   }
 }
 
-static void workspace_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void workspace_dune_write(Writer *writer, Id *id, const void *id_address)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
@@ -96,7 +96,7 @@ static void workspace_dune_read_data(DuneDataReader *reader, Id *id)
     loader_read_data_address(reader, &relation->value);
   }
 
-  LIST_FOREACH (bToolRef *, tref, &workspace->tools) {
+  LIST_FOREACH (ToolRef *, tref, &workspace->tools) {
     tref->runtime = NULL;
     loader_read_data_address(reader, &tref->props);
     IDP_DuneDataRead(reader, &tref->props);
@@ -107,7 +107,7 @@ static void workspace_dune_read_data(DuneDataReader *reader, Id *id)
   id_us_ensure_real(&workspace->id);
 }
 
-static void workspace_dune_read_lib(DuneLibReader *reader, Id *id)
+static void workspace_dune_read_lib(LibReader *reader, Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
   Main *dunemain = loader_read_lib_get_main(reader);
@@ -147,16 +147,16 @@ static void workspace_dune_read_lib(DuneLibReader *reader, Id *id)
   }
 }
 
-static void workspace_dune_read_expand(duneExpander *expander, Id *id)
+static void workspace_dune_read_expand(Expander *expander, Id *id)
 {
   WorkSpace *workspace = (WorkSpace *)id;
 
   LIST_FOREACH (WorkSpaceLayout *, layout, &workspace->layouts) {
-    loader_expand(expander, KERNEL_workspace_layout_screen_get(layout));
+    loader_expand(expander, dune_workspace_layout_screen_get(layout));
   }
 }
 
-IDTypeInfo IDType_ID_WS = {
+IdTypeInfo IdTypeWS = {
     .id_code = ID_WS,
     .id_filter = FILTER_ID_WS,
     .main_list_index = INDEX_ID_WS,
@@ -204,7 +204,7 @@ static void workspace_layout_name_set(WorkSpace *workspace,
  * a layout within a workspace that wraps a screen. Usually - especially outside
  * of dune_workspace - dune_workspace_layout_find should be used! */
 static WorkSpaceLayout *workspace_layout_find_ex(const WorkSpace *workspace,
-                                                   const duneScreen *screen)
+                                                 const Screen *screen)
 {
   return lib_findptr(&workspace->layouts, screen, offsetof(WorkSpaceLayout, screen));
 }
@@ -214,7 +214,7 @@ static void workspace_relation_add(List *relation_list,
                                    const int parentid,
                                    void *data)
 {
-  WorkSpaceDataRelation *relation = MEM_callocN(sizeof(*relation), __func__);
+  WorkSpaceDataRelation *relation = mem_callocN(sizeof(*relation), __func__);
   relation->parent = parent;
   relation->parentid = parentid;
   relation->value = data;
@@ -268,7 +268,7 @@ static bool workspaces_is_screen_used
 #else
 static bool UNUSED_FN(workspaces_is_screen_used)
 #endif
-    (const Main *dunemain, duneScreen *screen)
+    (const Main *dunemain, Screen *screen)
 {
   for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
     if (workspace_layout_find_ex(workspace, screen)) {
@@ -280,9 +280,9 @@ static bool UNUSED_FN(workspaces_is_screen_used)
 }
 
 /* Create, Delete, Init */
-WorkSpace *dune_workspace_add(Main *dunemain, const char *name)
+WorkSpace *workspace_add(Main *dunemain, const char *name)
 {
-  WorkSpace *new_workspace = dune_id_new(dunemain, ID_WS, name);
+  WorkSpace *new_workspace = id_new(dunemain, IdWS, name);
   id_us_ensure_real(&new_workspace->id);
   return new_workspace;
 }
@@ -292,23 +292,23 @@ void dune_workspace_remove(Main *dunemain, WorkSpace *workspace)
   for (WorkSpaceLayout *layout = workspace->layouts.first, *layout_next; layout;
        layout = layout_next) {
     layout_next = layout->next;
-    dune_workspace_layout_remove(dunemain, workspace, layout);
+    workspace_layout_remove(dunemain, workspace, layout);
   }
-  dune_id_free(dunemain, workspace);
+  id_free(dunemain, workspace);
 }
 
-WorkSpaceInstanceHook *dune_workspace_instance_hook_create(const Main *dunemain, const int winid)
+WorkSpaceInstanceHook *workspace_instance_hook_create(const Main *dunemain, const int winid)
 {
-  WorkSpaceInstanceHook *hook = MEM_callocN(sizeof(WorkSpaceInstanceHook), __func__);
+  WorkSpaceInstanceHook *hook = mem_callocn(sizeof(WorkSpaceInstanceHook), __func__);
 
   /* set an active screen-layout for each possible window/workspace combination */
   for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
-    dune_workspace_active_layout_set(hook, winid, workspace, workspace->layouts.first);
+    workspace_active_layout_set(hook, winid, workspace, workspace->layouts.first);
   }
 
   return hook;
 }
-void dune_workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstanceHook *hook)
+void workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstanceHook *hook)
 {
   /* workspaces should never be freed before wm (during which we call this function).
    * However, when running in background mode, loading a dune file may allocate windows (that need
@@ -331,9 +331,9 @@ void dune_workspace_instance_hook_free(const Main *dunemain, WorkSpaceInstanceHo
 }
 
 WorkSpaceLayout *dune_workspace_layout_add(Main *main,
-                                          WorkSpace *workspace,
-                                          Screen *screen,
-                                          const char *name)
+                                           WorkSpace *workspace,
+                                           Screen *screen,
+                                           const char *name)
 {
   WorkSpaceLayout *layout = mem_callocN(sizeof(*layout), __func__);
 
@@ -349,7 +349,7 @@ WorkSpaceLayout *dune_workspace_layout_add(Main *main,
   return layout;
 }
 
-void dune_workspace_layout_remove(Main *main, WorkSpace *workspace, WorkSpaceLayout *layout)
+void workspace_layout_remove(Main *main, WorkSpace *workspace, WorkSpaceLayout *layout)
 {
   /* Screen should usually be set, but we call this from file reading to get rid of invalid
    * layouts. */
@@ -360,7 +360,7 @@ void dune_workspace_layout_remove(Main *main, WorkSpace *workspace, WorkSpaceLay
   lib_freelinkn(&workspace->layouts, layout);
 }
 
-void dune_workspace_relations_free(ListBase *relation_list)
+void dune_workspace_relations_free(ListB *relation_list)
 {
   for (WorkSpaceDataRelation *relation = relation_list->first, *relation_next; relation;
        relation = relation_next) {
@@ -369,7 +369,7 @@ void dune_workspace_relations_free(ListBase *relation_list)
   }
 }
 
-/** General Utils */
+/* General Utils */
 WorkSpaceLayout *dune_workspace_layout_find(const WorkSpace *workspace, const Screen *screen)
 {
   WorkSpaceLayout *layout = workspace_layout_find_exec(workspace, screen);
@@ -387,9 +387,9 @@ WorkSpaceLayout *dune_workspace_layout_find(const WorkSpace *workspace, const Sc
   return NULL;
 }
 
-WorkSpaceLayout *dune_workspace_layout_find_global(const Main *main,
-                                                  const Screen *screen,
-                                                  WorkSpace **r_workspace)
+WorkSpaceLayout *workspace_layout_find_global(const Main *main,
+                                              const Screen *screen,
+                                              WorkSpace **r_workspace)
 {
   WorkSpaceLayout *layout;
 
@@ -439,7 +439,7 @@ WorkSpaceLayout *dune_workspace_layout_iter_circular(const WorkSpace *workspace,
   return NULL;
 }
 
-void dune_workspace_tool_remove(struct WorkSpace *workspace, struct bToolRef *tref)
+void workspace_tool_remove(struct WorkSpace *workspace, struct ToolRef *tref)
 {
   if (tref->runtime) {
     mem_freen(tref->runtime);
@@ -448,24 +448,24 @@ void dune_workspace_tool_remove(struct WorkSpace *workspace, struct bToolRef *tr
     IDP_FreeProp(tref->props);
   }
   lib_remlink(&workspace->tools, tref);
-  MEM_freeN(tref);
+  mem_freen(tref);
 }
 
-bool KERNEL_workspace_owner_id_check(const WorkSpace *workspace, const char *owner_id)
+bool workspace_owner_id_check(const WorkSpace *workspace, const char *owner_id)
 {
   if ((*owner_id == '\0') || ((workspace->flags & WORKSPACE_USE_FILTER_BY_ORIGIN) == 0)) {
     return true;
   }
 
   /* We could use hash lookup, for now this list is highly likely under < ~16 items. */
-  return LIB_findstring(&workspace->owner_ids, owner_id, offsetof(wmOwnerID, name)) != NULL;
+  return LIB_findstring(&workspace->owner_ids, owner_id, offsetof(WinOwnerId, name)) != NULL;
 }
 
-void KERNEL_workspace_id_tag_all_visible(Main *bmain, int tag)
+void workspace_id_tag_all_visible(Main *main, int tag)
 {
-  KERNEL_main_id_tag_listbase(&dunemain->workspaces, tag, false);
+  main_id_tag_list(&main->workspaces, tag, false);
   wmWindowManager *wm = dunemain->wm.first;
-  LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
+  LIST_FOREACH (Win *, win, &wm->windows) {
     WorkSpace *workspace = KERNEL_workspace_active_get(win->workspace_hook);
     workspace->id.tag |= tag;
   }
@@ -473,12 +473,11 @@ void KERNEL_workspace_id_tag_all_visible(Main *bmain, int tag)
 
 /* -------------------------------------------------------------------- */
 /** Getters/Setters */
-
-WorkSpace *KERNEL_workspace_active_get(WorkSpaceInstanceHook *hook)
+WorkSpace *workspace_active_get(WorkSpaceInstanceHook *hook)
 {
   return hook->active;
 }
-void KERNEL_workspace_active_set(WorkSpaceInstanceHook *hook, WorkSpace *workspace)
+void workspace_active_set(WorkSpaceInstanceHook *hook, WorkSpace *workspace)
 {
   /* DO NOT check for `hook->active == workspace` here. Caller code is supposed to do it if
    * that optimization is possible and needed.
@@ -498,13 +497,13 @@ void KERNEL_workspace_active_set(WorkSpaceInstanceHook *hook, WorkSpace *workspa
   }
 }
 
-WorkSpaceLayout *KERNEL_workspace_active_layout_get(const WorkSpaceInstanceHook *hook)
+WorkSpaceLayout *workspace_active_layout_get(const WorkSpaceInstanceHook *hook)
 {
   return hook->act_layout;
 }
 
-WorkSpaceLayout *KERNEL_workspace_active_layout_for_workspace_get(const WorkSpaceInstanceHook *hook,
-                                                               const WorkSpace *workspace)
+WorkSpaceLayout *workspace_active_layout_for_workspace_get(const WorkSpaceInstanceHook *hook,
+                                                                  const WorkSpace *workspace)
 {
   /* If the workspace is active, the active layout can be returned, no need for a lookup. */
   if (hook->active == workspace) {
@@ -515,41 +514,41 @@ WorkSpaceLayout *KERNEL_workspace_active_layout_for_workspace_get(const WorkSpac
   return workspace_relation_get_data_matching_parent(&workspace->hook_layout_relations, hook);
 }
 
-void KERNEL_workspace_active_layout_set(WorkSpaceInstanceHook *hook,
-                                     const int winid,
-                                     WorkSpace *workspace,
-                                     WorkSpaceLayout *layout)
+void workspace_active_layout_set(WorkSpaceInstanceHook *hook,
+                                 const int winid,
+                                 WorkSpace *workspace,
+                                 WorkSpaceLayout *layout)
 {
   hook->act_layout = layout;
   workspace_relation_ensure_updated(&workspace->hook_layout_relations, hook, winid, layout);
 }
 
-bScreen *KERNEL_workspace_active_screen_get(const WorkSpaceInstanceHook *hook)
+Screen *workspace_active_screen_get(const WorkSpaceInstanceHook *hook)
 {
   return hook->act_layout->screen;
 }
-void KERNEL_workspace_active_screen_set(WorkSpaceInstanceHook *hook,
-                                     const int winid,
-                                     WorkSpace *workspace,
-                                     duneScreen *screen)
+void workspace_active_screen_set(WorkSpaceInstanceHook *hook,
+                                 const int winid,
+                                 WorkSpace *workspace,
+                                 Screen *screen)
 {
   /* we need to find the WorkspaceLayout that wraps this screen */
-  WorkSpaceLayout *layout = KERNEL_workspace_layout_find(hook->active, screen);
-  KERNEL_workspace_active_layout_set(hook, winid, workspace, layout);
+  WorkSpaceLayout *layout = workspace_layout_find(hook->active, screen);
+  workspace_active_layout_set(hook, winid, workspace, layout);
 }
 
-const char *KERNEL_workspace_layout_name_get(const WorkSpaceLayout *layout)
+const char *workspace_layout_name_get(const WorkSpaceLayout *layout)
 {
   return layout->name;
 }
-void KERNEL_workspace_layout_name_set(WorkSpace *workspace,
-                                   WorkSpaceLayout *layout,
-                                   const char *new_name)
+void workspace_layout_name_set(WorkSpace *workspace,
+                               WorkSpaceLayout *layout,
+                               const char *new_name)
 {
   workspace_layout_name_set(workspace, layout, new_name);
 }
 
-duneScreen *KERNEL_workspace_layout_screen_get(const WorkSpaceLayout *layout)
+Screen *workspace_layout_screen_get(const WorkSpaceLayout *layout)
 {
   return layout->screen;
 }
