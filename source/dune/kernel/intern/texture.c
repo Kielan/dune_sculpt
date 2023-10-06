@@ -13,7 +13,7 @@
 
 #include "lang.h"
 
-/* Allow using deprecated functionality for .blend file I/O. */
+/* Allow using deprecated functionality for .dune file I/O. */
 #define TYPES_DEPRECATED_ALLOW
 
 #include "types_brush.h"
@@ -78,7 +78,7 @@ static void texture_copy_data(Main *main, Id *id_dst, const Id *id_src, const in
     texture_dst->coba = mem_dupallocn(texture_dst->coba);
   }
   if (texture_src->nodetree) {
-    if (texture_src->nodetree->execdata) {
+    if (texture_src->nodetree->exdata) {
       ntreeTexEndExTree(texture_src->nodetree->exdata);
     }
 
@@ -87,7 +87,7 @@ static void texture_copy_data(Main *main, Id *id_dst, const Id *id_src, const in
     }
     else {
       id_copy_ex(
-          dunemain, (Id *)texture_src->nodetree, (Id **)&texture_dst->nodetree, flag_private_id_data);
+          main, (Id *)texture_src->nodetree, (Id **)&texture_dst->nodetree, flag_private_id_data);
     }
   }
 
@@ -116,7 +116,7 @@ static void texture_free_data(Id *id)
   previewimg_free(&texture->preview);
 }
 
-static void texture_foreach_id(Id *id, LibForeachIdData *data)
+static void texture_foreach_id(Id *id, ForeachIdData *data)
 {
   Tex *texture = (Tex *)id;
   if (texture->nodetree) {
@@ -146,8 +146,8 @@ static void texture_write(Writer *writer, Id *id, const void *id_address)
 
   /* nodetree is integral part of texture, no libdata */
   if (tex->nodetree) {
-    LOADER_write_struct(writer, NodeTree, tex->nodetree);
-    ntreeDuneWrite(writer, tex->nodetree);
+    loader_write_struct(writer, NodeTree, tex->nodetree);
+    ntreeWrite(writer, tex->nodetree);
   }
 
   previewimg_write(writer, tex->preview);
@@ -218,7 +218,6 @@ void texture_mtex_foreach_id(ForeachIdData *data, MTex *mtex)
 }
 
 /* Mapping */
-
 TexMapping *texture_mapping_add(int type)
 {
   TexMapping *texmap = mem_callocn(sizeof(TexMapping), "TexMapping");
@@ -598,7 +597,7 @@ void texture_pointdensity_init_data(PointDensity *pd)
 
 PointDensity *texture_pointdensity_add(void)
 {
-  PointDensity *pd = MEM_callocN(sizeof(PointDensity), "pointdensity");
+  PointDensity *pd = mem_callocn(sizeof(PointDensity), "pointdensity");
   texture_pointdensity_init_data(pd);
   return pd;
 }
@@ -607,7 +606,7 @@ PointDensity *texture_pointdensity_copy(const PointDensity *pd, const int UNUSED
 {
   PointDensity *pdn;
 
-  pdn = MEM_dupallocN(pd);
+  pdn = mem_dupallocn(pd);
   pdn->point_tree = NULL;
   pdn->point_data = NULL;
   if (pdn->coba) {
@@ -648,7 +647,7 @@ bool texture_is_image_user(const struct Tex *tex)
 
 bool texture_dependsOnTime(const struct Tex *texture)
 {
-  if (texture->ima && KERNEL_image_is_animated(texture->ima)) {
+  if (texture->ima && image_is_animated(texture->ima)) {
     return true;
   }
   if (texture->adt) {
@@ -680,7 +679,7 @@ void texture_get_value_ex(const Scene *scene,
   result_type = multitex_ext_safe(texture, tex_co, texres, pool, do_color_manage, false);
 
   /* if the texture gave an RGB value, we assume it didn't give a valid
-   * intensity, since this is in the context of modifiers don't use perceptual color conversion.
+   * intensity, since this is in the context of mods don't use perceptual color conversion.
    * if the texture didn't give an RGB value, copy the intensity across */
   if (result_type & TEX_RGB) {
     texres->tin = (1.0f / 3.0f) * (texres->trgba[0] + texres->trgba[1] + texres->trgba[2]);
@@ -700,7 +699,7 @@ void texture_get_value(const Scene *scene,
 }
 
 static void texture_nodes_fetch_images_for_pool(Tex *texture,
-                                                bNodeTree *ntree,
+                                                NodeTree *ntree,
                                                 struct ImagePool *pool)
 {
   LIST_FOREACH (Node *, node, &ntree->nodes) {
@@ -709,14 +708,14 @@ static void texture_nodes_fetch_images_for_pool(Tex *texture,
       image_pool_acquire_ibuf(image, &texture->iuser, pool);
     }
     else if (node->type == NODE_GROUP && node->id != NULL) {
-      /* TODO(sergey): Do we need to control recursion here? */
-      NodeTree *nested_tree = (bNodeTree *)node->id;
+      /* Do we need to control recursion here? */
+      NodeTree *nested_tree = (NodeTree *)node->id;
       texture_nodes_fetch_images_for_pool(texture, nested_tree, pool);
     }
   }
 }
 
-void KERNEL_texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
+void texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
 {
   if (texture->nodetree != NULL) {
     texture_nodes_fetch_images_for_pool(texture, texture->nodetree, pool);
@@ -724,7 +723,7 @@ void KERNEL_texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
   else {
     if (texture->type == TEX_IMAGE) {
       if (texture->ima != NULL) {
-        KERNEL_image_pool_acquire_ibuf(texture->ima, &texture->iuser, pool);
+        image_pool_acquire_ibuf(texture->ima, &texture->iuser, pool);
       }
     }
   }
