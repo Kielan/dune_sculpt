@@ -50,29 +50,27 @@ static void world_free_data(Id *id)
 
   gpy_material_free(&wrld->gpumaterial);
 
-  dune_icon_id_delete((struct ID *)wrld);
-  dune_previewimg_free(&wrld->preview);
+  icon_id_delete((struct Id *)wrld);
+  previewimg_free(&wrld->preview);
 }
 
 static void world_init_data(Id *id)
 {
   World *wrld = (World *)id;
-  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(wrld, id));
+  lib_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(wrld, id));
 
-  MEMCPY_STRUCT_AFTER(wrld, DNA_struct_default_get(World), id);
+  MEMCPY_STRUCT_AFTER(wrld, types_struct_default_get(World), id);
 }
 
-/**
- * Only copy internal data of World ID from source
+/* Only copy internal data of World Id from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use KERNEL_id_copy or KERNEL_id_copy_ex for typical needs.
+ * use dune_id_copy or id_copy_ex for typical needs.
  *
- * WARNING! This function will not handle ID user count!
+ * WARNING! This fn will not handle Id user count!
  *
- * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
- */
-static void world_copy_data(Main *dunemain, ID *id_dst, const ID *id_src, const int flag)
+ * param flag: Copying options (see lib_id.h's LIB_ID_COPY_... flags for more). */
+static void world_copy_data(Main *main, Id *id_dst, const Id *id_src, const int flag)
 {
   World *wrld_dst = (World *)id_dst;
   const World *wrld_src = (const World *)id_src;
@@ -86,88 +84,88 @@ static void world_copy_data(Main *dunemain, ID *id_dst, const ID *id_src, const 
       wrld_dst->nodetree = ntreeLocalize(wrld_src->nodetree);
     }
     else {
-      KERNEL_id_copy_ex(
-          dunemain, (ID *)wrld_src->nodetree, (ID **)&wrld_dst->nodetree, flag_private_id_data);
+      id_copy_ex(
+          dune, (Id *)wrld_src->nodetree, (Id **)&wrld_dst->nodetree, flag_private_id_data);
     }
   }
 
-  LIB_listbase_clear(&wrld_dst->gpumaterial);
-  LIB_listbase_clear((ListBase *)&wrld_dst->drawdata);
+  lib_list_clear(&wrld_dst->gpumaterial);
+  lib_list_clear((List *)&wrld_dst->drawdata);
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    KERNEL_previewimg_id_copy(&wrld_dst->id, &wrld_src->id);
+    dune_previewimg_id_copy(&wrld_dst->id, &wrld_src->id);
   }
   else {
     wrld_dst->preview = NULL;
   }
 }
 
-static void world_foreach_id(ID *id, LibraryForeachIDData *data)
+static void world_foreach_id(Id *id, LibForeachIdData *data)
 {
   World *world = (World *)id;
 
   if (world->nodetree) {
-    /* nodetree **are owned by IDs**, treat them as mere sub-data and not real ID! */
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&world->nodetree));
+    /* nodetree **are owned by Ids**, treat them as mere sub-data and not real ID! */
+    FOREACHID_PROCESS_FN_CALL(
+        data, foreach_id_embedded(data, (Id **)&world->nodetree));
   }
 }
 
-static void world_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void world_write(Writer *writer, Id *id, const void *id_address)
 {
   World *wrld = (World *)id;
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
-  LIB_listbase_clear(&wrld->gpumaterial);
+  lib_list_clear(&wrld->gpumaterial);
 
   /* write LibData */
-  LOADER_write_id_struct(writer, World, id_address, &wrld->id);
-  KERNEL_id_dune_write(writer, &wrld->id);
+  loader_write_id_struct(writer, World, id_address, &wrld->id);
+  id_write(writer, &wrld->id);
 
   if (wrld->adt) {
-    KERNEL_animdata_dune_write(writer, wrld->adt);
+    animdata_write(writer, wrld->adt);
   }
 
   /* nodetree is integral part of world, no libdata */
   if (wrld->nodetree) {
-    LOADER_write_struct(writer, bNodeTree, wrld->nodetree);
-    ntreeDuneWrite(writer, wrld->nodetree);
+    write_struct(writer, NodeTree, wrld->nodetree);
+    ntreeWrite(writer, wrld->nodetree);
   }
 
-  KERNEL_previewimg_blend_write(writer, wrld->preview);
+  previewimg_write(writer, wrld->preview);
 }
 
-static void world_dune_read_data(DuneDataReader *reader, ID *id)
+static void world_read_data(DataReader *reader, Id *id)
 {
   World *wrld = (World *)id;
-  LOADER_read_data_address(reader, &wrld->adt);
-  KERNEL_animdata_dune_read_data(reader, wrld->adt);
+  loader_read_data_address(reader, &wrld->adt);
+  animdata_read_data(reader, wrld->adt);
 
-  LOADER_read_data_address(reader, &wrld->preview);
-  KERNEL_previewimg_dune_read(reader, wrld->preview);
-  LIB_listbase_clear(&wrld->gpumaterial);
+  loader_read_data_address(reader, &wrld->preview);
+  previewimg_read(reader, wrld->preview);
+  lib_list_clear(&wrld->gpumaterial);
 }
 
-static void world_dune_read_lib(DuneLibReader *reader, ID *id)
+static void world_read_lib(LibReader *reader, Id *id)
 {
   World *wrld = (World *)id;
-  LOADER_read_id_address(reader, wrld->id.lib, &wrld->ipo); /* XXX deprecated, old animation system */
+  loader_read_id_address(reader, wrld->id.lib, &wrld->ipo); /* deprecated, old animation system */
 }
 
-static void world_dune_read_expand(DuneExpander *expander, ID *id)
+static void world_read_expand(Expander *expander, Id *id)
 {
   World *wrld = (World *)id;
-  LOADER_expand(expander, wrld->ipo); /* XXX deprecated, old animation system */
+  loader_expand(expander, wrld->ipo); /* deprecated, old animation system */
 }
 
-IDTypeInfo IDType_ID_WO = {
-    .id_code = ID_WO,
+IdTypeInfo IdTypeWrld = {
+    .id_code = IdWrld,
     .id_filter = FILTER_ID_WO,
-    .main_listbase_index = INDEX_ID_WO,
+    .main_list_index = INDEX_ID_WO,
     .struct_size = sizeof(World),
     .name = "World",
     .name_plural = "worlds",
-    .translation_context = BLT_I18NCONTEXT_ID_WORLD,
+    .lang_cxt = LANG_CXT_ID_WORLD,
     .flags = IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -180,27 +178,27 @@ IDTypeInfo IDType_ID_WO = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .dune_write = world_blend_write,
-    .dune_read_data = world_blend_read_data,
-    .dune_read_lib = world_blend_read_lib,
-    .dune_read_expand = world_blend_read_expand,
+    .dune_write = world_write,
+    .dune_read_data = world_read_data,
+    .dune_read_lib = world_read_lib,
+    .dune_read_expand = world_read_expand,
 
     .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-World *KERNEL_world_add(Main *dunemain, const char *name)
+World *world_add(Main *main, const char *name)
 {
   World *wrld;
 
-  wrld = KERNEL_id_new(dunemain, ID_WO, name);
+  wrld = id_new(main, IdWrld, name);
 
   return wrld;
 }
 
-void KERNEL_world_eval(struct Depsgraph *depsgraph, World *world)
+void world_eval(struct Graph *graph, World *world)
 {
-  DEG_debug_print_eval(depsgraph, __func__, world->id.name, world);
-  GPU_material_free(&world->gpumaterial);
+  graph_debug_print_eval(graph, __func__, world->id.name, world);
+  gpu_material_free(&world->gpumaterial);
 }
