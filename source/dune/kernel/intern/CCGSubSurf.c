@@ -12,12 +12,12 @@
 #include "CCGSubSurf.h"
 #include "CCGSubSurf_intern.h"
 
-int dune_ccg_gridsize(int level)
+int ccg_gridsize(int level)
 {
   return ccg_gridsize(level);
 }
 
-int dune_ccg_factor(int low_level, int high_level)
+int ccg_factor(int low_level, int high_level)
 {
   lib_assert(low_level > 0 && high_level > 0);
   lib_assert(low_level <= high_level);
@@ -274,8 +274,8 @@ void ccgSubSurf_free(CCGSubSurf *ss)
     ccg_ehash_free(ss->oldEMap, (EHEntryFreeFP)_edge_free, ss);
     ccg_ehash_free(ss->oldVMap, (EHEntryFreeFP)_vert_free, ss);
 
-    MEM_freeN(ss->tempVerts);
-    MEM_freeN(ss->tempEdges);
+    mem_freen(ss->tempVerts);
+    mem_freen(ss->tempEdges);
   }
 
   CCGSUBSURF_free(ss, ss->r);
@@ -422,8 +422,6 @@ void ccgSubSurf_setNumLayers(CCGSubSurf *ss, int numLayers)
 {
   ss->meshIFC.numLayers = numLayers;
 }
-
-/***/
 
 CCGError ccgSubSurf_initFullSync(CCGSubSurf *ss)
 {
@@ -664,8 +662,8 @@ CCGError ccgSubSurf_syncFace(
 
   if (UNLIKELY(numVerts > ss->lenTempArrays)) {
     ss->lenTempArrays = (numVerts < ss->lenTempArrays * 2) ? ss->lenTempArrays * 2 : numVerts;
-    ss->tempVerts = MEM_reallocN(ss->tempVerts, sizeof(*ss->tempVerts) * ss->lenTempArrays);
-    ss->tempEdges = MEM_reallocN(ss->tempEdges, sizeof(*ss->tempEdges) * ss->lenTempArrays);
+    ss->tempVerts = mem_reallocn(ss->tempVerts, sizeof(*ss->tempVerts) * ss->lenTempArrays);
+    ss->tempEdges = mem_reallocn(ss->tempEdges, sizeof(*ss->tempEdges) * ss->lenTempArrays);
   }
 
   if (ss->syncState == eSyncState_Partial) {
@@ -805,8 +803,8 @@ CCGError ccgSubSurf_processSync(CCGSubSurf *ss)
     ccg_ehash_free(ss->oldFMap, (EHEntryFreeFP)_face_unlinkMarkAndFree, ss);
     ccg_ehash_free(ss->oldEMap, (EHEntryFreeFP)_edge_unlinkMarkAndFree, ss);
     ccg_ehash_free(ss->oldVMap, (EHEntryFreeFP)_vert_free, ss);
-    MEM_freeN(ss->tempEdges);
-    MEM_freeN(ss->tempVerts);
+    mem_freen(ss->tempEdges);
+    mem_freen(ss->tempVerts);
 
     ss->lenTempArrays = 0;
 
@@ -831,7 +829,7 @@ void ccgSubSurf__allFaces(CCGSubSurf *ss, CCGFace ***faces, int *numFaces, int *
   int i, num;
 
   if (*faces == NULL) {
-    array = MEM_mallocN(sizeof(*array) * ss->fMap->numEntries, "CCGSubsurf allFaces");
+    array = mem_mallocn(sizeof(*array) * ss->fMap->numEntries, "CCGSubsurf allFaces");
     num = 0;
     for (i = 0; i < ss->fMap->curSize; i++) {
       CCGFace *f = (CCGFace *)ss->fMap->buckets[i];
@@ -862,8 +860,8 @@ void ccgSubSurf__effectedFaceNeighbors(CCGSubSurf *ss,
   CCGEdge **arrayE;
   int numV, numE, i, j;
 
-  arrayV = MEM_mallocN(sizeof(*arrayV) * ss->vMap->numEntries, "CCGSubsurf arrayV");
-  arrayE = MEM_mallocN(sizeof(*arrayE) * ss->eMap->numEntries, "CCGSubsurf arrayV");
+  arrayV = mem_mallocn(sizeof(*arrayV) * ss->vMap->numEntries, "CCGSubsurf arrayV");
+  arrayE = mem_mallocn(sizeof(*arrayE) * ss->eMap->numEntries, "CCGSubsurf arrayV");
   numV = numE = 0;
 
   for (i = 0; i < numFaces; i++) {
@@ -951,7 +949,7 @@ CCGError ccgSubSurf_updateFromFaces(CCGSubSurf *ss, int lvl, CCGFace **effectedF
   }
 
   if (freeF) {
-    MEM_freeN(effectedF);
+    mem_freen(effectedF);
   }
 
   return eCCGError_None;
@@ -999,7 +997,7 @@ CCGError ccgSubSurf_updateToFaces(CCGSubSurf *ss, int lvl, CCGFace **effectedF, 
   }
 
   if (freeF) {
-    MEM_freeN(effectedF);
+    mem_freen(effectedF);
   }
 
   return eCCGError_None;
@@ -1162,17 +1160,16 @@ CCGError ccgSubSurf_stitchFaces(CCGSubSurf *ss, int lvl, CCGFace **effectedF, in
     effectedF[i]->flags = 0;
   }
 
-  MEM_freeN(effectedE);
-  MEM_freeN(effectedV);
+  mem_freen(effectedE);
+  mem_freen(effectedV);
   if (freeF) {
-    MEM_freeN(effectedF);
+    mem_freen(effectedF);
   }
 
   return eCCGError_None;
 }
 
-/* External API accessor functions */
-
+/* External API accessor fns */
 int ccgSubSurf_getNumVerts(const CCGSubSurf *ss)
 {
   return ss->vMap->numEntries;
@@ -1283,7 +1280,6 @@ void *ccgSubSurf_getVertLevelData(CCGSubSurf *ss, CCGVert *v, int level)
 }
 
 /* Edge accessors */
-
 CCGEdgeHDL ccgSubSurf_getEdgeEdgeHandle(CCGEdge *e)
 {
   return e->eHDL;
@@ -1340,7 +1336,6 @@ float ccgSubSurf_getEdgeCrease(CCGEdge *e)
 }
 
 /* Face accessors */
-
 CCGFaceHDL ccgSubSurf_getFaceFaceHandle(CCGFace *f)
 {
   return f->fHDL;
@@ -1410,8 +1405,7 @@ void *ccgSubSurf_getFaceGridData(CCGSubSurf *ss, CCGFace *f, int gridIndex, int 
       f, ss->subdivLevels, gridIndex, x, y, ss->subdivLevels, ss->meshIFC.vertDataSize);
 }
 
-/*** External API iterator functions ***/
-
+/* External API iter fns */
 void ccgSubSurf_initVertIterator(CCGSubSurf *ss, CCGVertIterator *viter)
 {
   ccg_ehashIterator_init(ss->vMap, viter);
@@ -1464,7 +1458,7 @@ void ccgFaceIterator_next(CCGFaceIterator *fi)
   ccg_ehashIterator_next((EHashIterator *)fi);
 }
 
-/*** Extern API final vert/edge/face interface ***/
+/* Extern API final vert/edge/face interface ***/
 
 int ccgSubSurf_getNumFinalVerts(const CCGSubSurf *ss)
 {
@@ -1490,8 +1484,6 @@ int ccgSubSurf_getNumFinalFaces(const CCGSubSurf *ss)
   int numFinalFaces = ss->numGrids * ((gridSize - 1) * (gridSize - 1));
   return numFinalFaces;
 }
-
-/***/
 
 void CCG_key(CCGKey *key, const CCGSubSurf *ss, int level)
 {
