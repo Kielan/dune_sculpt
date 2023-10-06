@@ -11,8 +11,8 @@ extern "C" {
 
 struct AssetLibRef;
 struct AssetMetaData;
-struct DuneDataReader;
-struct DuneWriter;
+struct DataReader;
+struct Writer;
 struct Id;
 struct IdProp;
 struct PreviewImage;
@@ -25,8 +25,8 @@ typedef struct AssetTypeInfo {
   PreSaveFn pre_save_fn;
 } AssetTypeInfo;
 
-struct AssetMetaData *dune_asset_metadata_create(void);
-void dune_asset_metadata_free(struct AssetMetaData **asset_data);
+struct AssetMetaData *asset_metadata_create(void);
+void asset_metadata_free(struct AssetMetaData **asset_data);
 
 struct AssetTagEnsureResult {
   struct AssetTag *tag;
@@ -34,29 +34,29 @@ struct AssetTagEnsureResult {
   bool is_new;
 };
 
-struct AssetTag *dune_asset_metadata_tag_add(struct AssetMetaData *asset_data, const char *name);
-/* Make sure there is a tag with name \a name, create one if needed. */
-struct AssetTagEnsureResult dune_asset_metadata_tag_ensure(struct AssetMetaData *asset_data,
-                                                          const char *name);
-void dune_asset_metadata_tag_remove(struct AssetMetaData *asset_data, struct AssetTag *tag);
+struct AssetTag *asset_metadata_tag_add(struct AssetMetaData *asset_data, const char *name);
+/* Make sure there is a tag with name name, create one if needed. */
+struct AssetTagEnsureResult asset_metadata_tag_ensure(struct AssetMetaData *asset_data,
+                                                      const char *name);
+void asset_metadata_tag_remove(struct AssetMetaData *asset_data, struct AssetTag *tag);
 
-/* Clean up the catalog ID (white-spaces removed, length reduced, etc.) and assign it. */
-void dune_asset_metadata_catalog_id_clear(struct AssetMetaData *asset_data);
-void dune_asset_metadata_catalog_id_set(struct AssetMetaData *asset_data,
-                                       bUUID catalog_id,
-                                       const char *catalog_simple_name);
+/* Clean up the catalog Id (white-spaces removed, length reduced, etc.) and assign it. */
+void asset_metadata_catalog_id_clear(struct AssetMetaData *asset_data);
+void asset_metadata_catalog_id_set(struct AssetMetaData *asset_data,
+                                   UUID catalog_id,
+                                   const char *catalog_simple_name);
 
-void dune_asset_lib_ref_init_default(struct AssetLibRef *lib_ref);
+void asset_lib_ref_init_default(struct AssetLibRef *lib_ref);
 
-void BKE_asset_metadata_idprop_ensure(struct AssetMetaData *asset_data, struct IDProperty *prop);
-struct IDProperty *BKE_asset_metadata_idprop_find(const struct AssetMetaData *asset_data,
-                                                  const char *name) ATTR_WARN_UNUSED_RESULT;
+void asset_metadata_idprop_ensure(struct AssetMetaData *asset_data, struct IdProp *prop);
+struct IdProp *asset_metadata_idprop_find(const struct AssetMetaData *asset_data,
+                                          const char *name) ATTR_WARN_UNUSED_RESULT;
 
-struct PreviewImage *BKE_asset_metadata_preview_get_from_id(const struct AssetMetaData *asset_data,
-                                                            const struct ID *owner_id);
+struct PreviewImage *asset_metadata_preview_get_from_id(const struct AssetMetaData *asset_data,
+                                                        const struct Id *owner_id);
 
-void BKE_asset_metadata_write(struct BlendWriter *writer, struct AssetMetaData *asset_data);
-void BKE_asset_metadata_read(struct BlendDataReader *reader, struct AssetMetaData *asset_data);
+void asset_metadata_write(struct Writer *writer, struct AssetMetaData *asset_data);
+void asset_metadata_read(struct DataReader *reader, struct AssetMetaData *asset_data);
 
 #ifdef __cplusplus
 }
