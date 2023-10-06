@@ -4,16 +4,15 @@
 #  error This is a C++ header.
 #endif
 
-#include "BLI_function_ref.hh"
-#include "BLI_string_ref.hh"
-#include "BLI_sys_types.h"
+#include "lib_fn_ref.hh"
+#include "lib_string_ref.hh"
+#include "lib_sys_types.h"
 
 #include <string>
 
-namespace blender::bke {
+namespace dune {
 
-/**
- * Location of an Asset Catalog in the catalog tree, denoted by slash-separated path components.
+/* Location of an Asset Catalog in the catalog tree, denoted by slash-separated path components.
  *
  * Each path component is a string that is not allowed to have slashes or colons. The latter is to
  * make things easy to save in the colon-delimited Catalog Definition File format.
@@ -33,9 +32,7 @@ class AssetCatalogPath {
   friend std::ostream &operator<<(std::ostream &stream, const AssetCatalogPath &path_to_append);
 
  private:
-  /**
-   * The path itself, such as "Agents/Secret/327".
-   */
+  /* The path itself, such as "Agents/Secret/327". */
   std::string path_ = "";
 
  public:
@@ -67,22 +64,19 @@ class AssetCatalogPath {
   AssetCatalogPath &operator=(const AssetCatalogPath &other_path) = default;
   AssetCatalogPath &operator=(AssetCatalogPath &&other_path) = default;
 
-  /** Concatenate two paths, returning the new path. */
+  /* Concatenate two paths, returning the new path. */
   AssetCatalogPath operator/(const AssetCatalogPath &path_to_append) const;
 
   /* False when the path is empty, true otherwise. */
   operator bool() const;
 
-  /**
-   * Clean up the path. This ensures:
+  /* Clean up the path. This ensures:
    * - Every path component is stripped of its leading/trailing spaces.
    * - Empty components (caused by double slashes or leading/trailing slashes) are removed.
-   * - Invalid characters are replaced with valid ones.
-   */
+   * - Invalid characters are replaced with valid ones.  */
   [[nodiscard]] AssetCatalogPath cleanup() const;
 
-  /**
-   * \return true only if the given path is a parent of this catalog's path.
+  /* return true only if the given path is a parent of this catalog's path.
    * When this catalog's path is equal to the given path, return true as well.
    * In other words, this defines a weak subset.
    *
@@ -90,37 +84,32 @@ class AssetCatalogPath {
    * False: "path/there" is not contained in "some/path/there".
    *
    * Note that non-cleaned-up paths (so for example starting or ending with a
-   * slash) are not supported, and result in undefined behavior.
-   */
+   * slash) are not supported, and result in undefined behavior. */
   bool is_contained_in(const AssetCatalogPath &other_path) const;
 
-  /**
-   * \return the parent path, or an empty path if there is no parent.
-   */
+  /* return the parent path, or an empty path if there is no parent. */
   AssetCatalogPath parent() const;
 
-  /**
-   * Change the initial part of the path from `from_path` to `to_path`.
+  /* Change the initial part of the path from `from_path` to `to_path`
    * If this path does not start with `from_path`, return an empty path as result.
    *
    * Example:
    *
    * AssetCatalogPath path("some/path/to/some/catalog");
-   * path.rebase("some/path", "new/base") -> "new/base/to/some/catalog"
-   */
+   * path.rebase("some/path", "new/base") -> "new/base/to/some/catalog" */
   AssetCatalogPath rebase(const AssetCatalogPath &from_path,
                           const AssetCatalogPath &to_path) const;
 
-  /** Call the callback function for each path component, in left-to-right order. */
-  using ComponentIteratorFn = FunctionRef<void(StringRef component_name, bool is_last_component)>;
+  /* Call the callback function for each path component, in left-to-right order. */
+  using ComponentIteratorFn = FnRef<void(StringRef component_name, bool is_last_component)>;
   void iterate_components(ComponentIteratorFn callback) const;
 
  protected:
-  /** Strip leading/trailing spaces and replace disallowed characters. */
+  /* Strip leading/trailing spaces and replace disallowed characters. */
   static std::string cleanup_component(StringRef component_name);
 };
 
-/** Output the path as string. */
+/* Output the path as string. */
 std::ostream &operator<<(std::ostream &stream, const AssetCatalogPath &path_to_append);
 
-}  // namespace blender::bke
+}  // namespace dune
