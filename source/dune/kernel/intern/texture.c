@@ -3,192 +3,192 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_kdopbvh.h"
-#include "LIB_listbase.h"
-#include "LIB_math.h"
-#include "LIB_math_color.h"
-#include "LIB_utildefines.h"
+#include "lib_kdopbvh.h"
+#include "lib_list.h"
+#include "lib_math.h"
+#include "lib_math_color.h"
+#include "lib_utildefines.h"
 
-#include "TRANSLATION_translation.h"
+#include "lang.h"
 
 /* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
-#include "structs_brush_types.h"
-#include "structs_color_types.h"
-#include "structs_defaults.h"
-#include "structs_key_types.h"
-#include "structs_linestyle_types.h"
-#include "structs_material_types.h"
-#include "structs_node_types.h"
-#include "structs_object_types.h"
-#include "structs_particle_types.h"
+#include "types_brush.h"
+#include "types_color.h"
+#include "types_defaults.h"
+#include "types_key.h"
+#include "types_linestyle.h"
+#include "types_material.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_particle.h"
 
-#include "IMB_imbuf.h"
+#include "imbuf.h"
 
-#include "KERNEL_main.h"
+#include "dune_main.h"
 
-#include "KERNEL_anim_data.h"
-#include "KERNEL_colorband.h"
-#include "KERNEL_colortools.h"
-#include "KERNEL_icons.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_image.h"
-#include "KERNEL_key.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_material.h"
-#include "KERNEL_node.h"
-#include "KERNEL_scene.h"
-#include "KERNEL_texture.h"
+#include "dune_anim_data.h"
+#include "dune_colorband.h"
+#include "dune_colortools.h"
+#include "dune_icons.h"
+#include "dune_idtype.h"
+#include "dune_image.h"
+#include "dune_key.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_material.h"
+#include "dune_node.h"
+#include "dune_scene.h"
+#include "dune_texture.h"
 
-#include "NOD_texture.h"
+#include "node_texture.h"
 
-#include "RE_texture.h"
+#include "render_texture.h"
 
-#include "LOADER_read_write.h"
+#include "loader_read_write.h"
 
-static void texture_init_data(ID *id)
+static void texture_init_data(Id *id)
 {
   Tex *texture = (Tex *)id;
 
-  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(texture, id));
+  lib_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(texture, id));
 
   MEMCPY_STRUCT_AFTER(texture, structs_struct_default_get(Tex), id);
 
-  KERNEL_imageuser_default(&texture->iuser);
+  imageuser_default(&texture->iuser);
 }
 
-static void texture_copy_data(Main *dunemain, ID *id_dst, const ID *id_src, const int flag)
+static void texture_copy_data(Main *main, Id *id_dst, const Id *id_src, const int flag)
 {
   Tex *texture_dst = (Tex *)id_dst;
   const Tex *texture_src = (const Tex *)id_src;
 
   const bool is_localized = (flag & LIB_ID_CREATE_LOCAL) != 0;
-  /* We always need allocation of our private ID data. */
+  /* We always need allocation of our private Id data. */
   const int flag_private_id_data = flag & ~LIB_ID_CREATE_NO_ALLOCATE;
 
-  if (!KERNEL_texture_is_image_user(texture_src)) {
+  if (!texture_is_image_user(texture_src)) {
     texture_dst->ima = NULL;
   }
 
   if (texture_dst->coba) {
-    texture_dst->coba = MEM_dupallocN(texture_dst->coba);
+    texture_dst->coba = mem_dupallocn(texture_dst->coba);
   }
   if (texture_src->nodetree) {
     if (texture_src->nodetree->execdata) {
-      ntreeTexEndExecTree(texture_src->nodetree->execdata);
+      ntreeTexEndExTree(texture_src->nodetree->exdata);
     }
 
     if (is_localized) {
       texture_dst->nodetree = ntreeLocalize(texture_src->nodetree);
     }
     else {
-      KERNEL_id_copy_ex(
-          dunemain, (ID *)texture_src->nodetree, (ID **)&texture_dst->nodetree, flag_private_id_data);
+      id_copy_ex(
+          dunemain, (Id *)texture_src->nodetree, (Id **)&texture_dst->nodetree, flag_private_id_data);
     }
   }
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    KERNEL_previewimg_id_copy(&texture_dst->id, &texture_src->id);
+    previewimg_id_copy(&texture_dst->id, &texture_src->id);
   }
   else {
     texture_dst->preview = NULL;
   }
 }
 
-static void texture_free_data(ID *id)
+static void texture_free_data(Id *id)
 {
   Tex *texture = (Tex *)id;
 
   /* is no lib link block, but texture extension */
   if (texture->nodetree) {
     ntreeFreeEmbeddedTree(texture->nodetree);
-    MEM_freeN(texture->nodetree);
+    mem_freen(texture->nodetree);
     texture->nodetree = NULL;
   }
 
   MEM_SAFE_FREE(texture->coba);
 
-  KERNEL_icon_id_delete((ID *)texture);
-  KERNEL_previewimg_free(&texture->preview);
+  icon_id_delete((Id *)texture);
+  previewimg_free(&texture->preview);
 }
 
-static void texture_foreach_id(ID *id, LibraryForeachIDData *data)
+static void texture_foreach_id(Id *id, LibForeachIdData *data)
 {
   Tex *texture = (Tex *)id;
   if (texture->nodetree) {
-    /* nodetree **are owned by IDs**, treat them as mere sub-data and not real ID! */
-    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&texture->nodetree));
+    /* nodetree **are owned by Ids**, treat them as mere sub-data and not real ID! */
+    FOREACHID_PROCESS_FN_CALL(
+        data, lib_foreach_id_embedded(data, (Id **)&texture->nodetree));
   }
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, texture->ima, IDWALK_CB_USER);
+  FOREACHID_PROCESS_IDSUPER(data, texture->ima, IDWALK_CB_USER);
 }
 
-static void texture_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void texture_write(Writer *writer, Id *id, const void *id_address)
 {
   Tex *tex = (Tex *)id;
 
   /* write LibData */
-  LOADER_write_id_struct(writer, Tex, id_address, &tex->id);
-  KERNEL_id_dune_write(writer, &tex->id);
+  loader_write_id_struct(writer, Tex, id_address, &tex->id);
+  id_write(writer, &tex->id);
 
   if (tex->adt) {
-    KERNEL_animdata_dune_write(writer, tex->adt);
+    animdata_write(writer, tex->adt);
   }
 
   /* direct data */
   if (tex->coba) {
-    LOADER_write_struct(writer, ColorBand, tex->coba);
+    loader_write_struct(writer, ColorBand, tex->coba);
   }
 
   /* nodetree is integral part of texture, no libdata */
   if (tex->nodetree) {
-    LOADER_write_struct(writer, bNodeTree, tex->nodetree);
+    LOADER_write_struct(writer, NodeTree, tex->nodetree);
     ntreeDuneWrite(writer, tex->nodetree);
   }
 
-  KERNEL_previewimg_dune_write(writer, tex->preview);
+  previewimg_write(writer, tex->preview);
 }
 
-static void texture_dune_read_data(DuneDataReader *reader, ID *id)
+static void texture_read_data(DataReader *reader, Id *id)
 {
   Tex *tex = (Tex *)id;
-  LOADER_read_data_address(reader, &tex->adt);
-  KERNEL_animdata_dune_read_data(reader, tex->adt);
+  loader_read_data_address(reader, &tex->adt);
+  animdata_read_data(reader, tex->adt);
 
-  LOADER_read_data_address(reader, &tex->coba);
+  loader_read_data_address(reader, &tex->coba);
 
-  LOADER_read_data_address(reader, &tex->preview);
-  KERNEL_previewimg_dune_read(reader, tex->preview);
+  loader_read_data_address(reader, &tex->preview);
+  previewimg_read(reader, tex->preview);
 
   tex->iuser.scene = NULL;
 }
 
-static void texture_dune_read_lib(DuneLibReader *reader, ID *id)
+static void texture_read_lib(LibReader *reader, Id *id)
 {
   Tex *tex = (Tex *)id;
-  LOADER_read_id_address(reader, tex->id.lib, &tex->ima);
-  LOADER_read_id_address(reader, tex->id.lib, &tex->ipo); /* XXX deprecated - old animation system */
+  loader_read_id_address(reader, tex->id.lib, &tex->ima);
+  loader_read_id_address(reader, tex->id.lib, &tex->ipo); /* deprecated - old animation system */
 }
 
-static void texture_dune_read_expand(DuneExpander *expander, ID *id)
+static void texture_read_expand(Expander *expander, Id *id)
 {
   Tex *tex = (Tex *)id;
-  LOADER_expand(expander, tex->ima);
-  LOADER_expand(expander, tex->ipo); /* XXX deprecated - old animation system */
+  loader_expand(expander, tex->ima);
+  loader_expand(expander, tex->ipo); /* deprecated - old animation system */
 }
 
-IDTypeInfo IDType_ID_TE = {
+IdTypeInfo IdType_TE = {
     .id_code = ID_TE,
     .id_filter = FILTER_ID_TE,
-    .main_listbase_index = INDEX_ID_TE,
+    .main_list_index = INDEX_ID_TE,
     .struct_size = sizeof(Tex),
     .name = "Texture",
     .name_plural = "textures",
-    .translation_context = BLT_I18NCONTEXT_ID_TEXTURE,
+    .lang_cxt = LANG_CXT_ID_TEXTURE,
     .flags = IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -201,34 +201,34 @@ IDTypeInfo IDType_ID_TE = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .dune_write = texture_dune_write,
-    .dune_read_data = texture_dune_read_data,
-    .dune_read_lib = texture_dune_read_lib,
-    .dune_read_expand = texture_dune_read_expand,
+    .dune_write = texture_write,
+    .dune_read_data = texture_read_data,
+    .dune_read_lib = texture_read_lib,
+    .dune_read_expand = texture_read_expand,
 
     .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-void KERNEL_texture_mtex_foreach_id(LibraryForeachIDData *data, MTex *mtex)
+void texture_mtex_foreach_id(ForeachIdData *data, MTex *mtex)
 {
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->object, IDWALK_CB_NOP);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->tex, IDWALK_CB_USER);
+  FOREACHID_PROCESS_IDSUPER(data, mtex->object, IDWALK_CB_NOP);
+  FOREACHID_PROCESS_IDSUPER(data, mtex->tex, IDWALK_CB_USER);
 }
 
-/* ****************** Mapping ******************* */
+/* Mapping */
 
-TexMapping *KERNEL_texture_mapping_add(int type)
+TexMapping *texture_mapping_add(int type)
 {
-  TexMapping *texmap = MEM_callocN(sizeof(TexMapping), "TexMapping");
+  TexMapping *texmap = mem_callocn(sizeof(TexMapping), "TexMapping");
 
-  KERNEL_texture_mapping_default(texmap, type);
+  texture_mapping_default(texmap, type);
 
   return texmap;
 }
 
-void KERNEL_texture_mapping_default(TexMapping *texmap, int type)
+void texture_mapping_default(TexMapping *texmap, int type)
 {
   memset(texmap, 0, sizeof(TexMapping));
 
@@ -243,7 +243,7 @@ void KERNEL_texture_mapping_default(TexMapping *texmap, int type)
   texmap->type = type;
 }
 
-void KERNEL_texture_mapping_init(TexMapping *texmap)
+void texture_mapping_init(TexMapping *texmap)
 {
   float smat[4][4], rmat[4][4], tmat[4][4], proj[4][4], size[3];
 
@@ -321,20 +321,20 @@ void KERNEL_texture_mapping_init(TexMapping *texmap)
   }
 }
 
-ColorMapping *KERNEL_texture_colormapping_add(void)
+ColorMapping *texture_colormapping_add(void)
 {
-  ColorMapping *colormap = MEM_callocN(sizeof(ColorMapping), "ColorMapping");
+  ColorMapping *colormap = mem_callocn(sizeof(ColorMapping), "ColorMapping");
 
-  KERNEL_texture_colormapping_default(colormap);
+  texture_colormapping_default(colormap);
 
   return colormap;
 }
 
-void KERNEL_texture_colormapping_default(ColorMapping *colormap)
+void texture_colormapping_default(ColorMapping *colormap)
 {
   memset(colormap, 0, sizeof(ColorMapping));
 
-  KERNEL_colorband_init(&colormap->coba, true);
+  colorband_init(&colormap->coba, true);
 
   colormap->bright = 1.0;
   colormap->contrast = 1.0;
@@ -347,52 +347,43 @@ void KERNEL_texture_colormapping_default(ColorMapping *colormap)
   colormap->dune_factor = 0.0f;
 }
 
-/* ******************* TEX ************************ */
-
-/* ------------------------------------------------------------------------- */
-
-void KERNEL_texture_default(Tex *tex)
+/* TEX */
+void texture_default(Tex *tex)
 {
   texture_init_data(&tex->id);
 }
 
-void KERNEL_texture_type_set(Tex *tex, int type)
+void texture_type_set(Tex *tex, int type)
 {
   tex->type = type;
 }
 
-/* ------------------------------------------------------------------------- */
-
-Tex *KERNEL_texture_add(Main *dunemain, const char *name)
+Tex *texture_add(Main *main, const char *name)
 {
   Tex *tex;
 
-  tex = KERNEL_id_new(dunemain, ID_TE, name);
+  tex = id_new(main, IdTE, name);
 
   return tex;
 }
 
-/* ------------------------------------------------------------------------- */
-
-void KERNEL_texture_mtex_default(MTex *mtex)
+void texture_mtex_default(MTex *mtex)
 {
   memcpy(mtex, structs_struct_default_get(MTex), sizeof(*mtex));
 }
 
-/* ------------------------------------------------------------------------- */
-
-MTex *KERNEL_texture_mtex_add(void)
+MTex *texture_mtex_add(void)
 {
   MTex *mtex;
 
-  mtex = MEM_callocN(sizeof(MTex), "KERNEL_texture_mtex_add");
+  mtex = mem_callocn(sizeof(MTex), "texture_mtex_add");
 
-  KERNEL_texture_mtex_default(mtex);
+  texture_mtex_default(mtex);
 
   return mtex;
 }
 
-MTex *KERNEL_texture_mtex_add_id(ID *id, int slot)
+MTex *texture_mtex_add_id(Id *id, int slot)
 {
   MTex **mtex_ar;
   short act;
@@ -424,17 +415,15 @@ MTex *KERNEL_texture_mtex_add_id(ID *id, int slot)
   }
 
   if (mtex_ar[slot]) {
-    id_us_min((ID *)mtex_ar[slot]->tex);
-    MEM_freeN(mtex_ar[slot]);
+    id_us_min((Id *)mtex_ar[slot]->tex);
+    mem_freen(mtex_ar[slot]);
     mtex_ar[slot] = NULL;
   }
 
-  mtex_ar[slot] = KERNEL_texture_mtex_add();
+  mtex_ar[slot] = texture_mtex_add();
 
   return mtex_ar[slot];
 }
-
-/* ------------------------------------------------------------------------- */
 
 Tex *give_current_linestyle_texture(FreestyleLineStyle *linestyle)
 {
@@ -461,7 +450,7 @@ void set_current_linestyle_texture(FreestyleLineStyle *linestyle, Tex *newtex)
 
   if (newtex) {
     if (!linestyle->mtex[act]) {
-      linestyle->mtex[act] = KERNEL_texture_mtex_add();
+      linestyle->mtex[act] = texture_mtex_add();
       linestyle->mtex[act]->texco = TEXCO_STROKE;
     }
 
@@ -473,7 +462,7 @@ void set_current_linestyle_texture(FreestyleLineStyle *linestyle, Tex *newtex)
   }
 }
 
-bool give_active_mtex(ID *id, MTex ***mtex_ar, short *act)
+bool give_active_mtex(Id *id, MTex ***mtex_ar, short *act)
 {
   switch (GS(id->name)) {
     case ID_LS:
@@ -499,7 +488,7 @@ bool give_active_mtex(ID *id, MTex ***mtex_ar, short *act)
   return true;
 }
 
-void set_active_mtex(ID *id, short act)
+void set_active_mtex(Id *id, short act)
 {
   if (act < 0) {
     act = 0;
@@ -564,7 +553,7 @@ void set_current_particle_texture(ParticleSettings *part, Tex *newtex)
 
   if (newtex) {
     if (!part->mtex[act]) {
-      part->mtex[act] = BKE_texture_mtex_add();
+      part->mtex[act] = texture_mtex_add();
       part->mtex[act]->texco = TEXCO_ORCO;
       part->mtex[act]->blendtype = MTEX_MUL;
     }
@@ -577,9 +566,7 @@ void set_current_particle_texture(ParticleSettings *part, Tex *newtex)
   }
 }
 
-/* ------------------------------------------------------------------------- */
-
-void KERNEL_texture_pointdensity_init_data(PointDensity *pd)
+void texture_pointdensity_init_data(PointDensity *pd)
 {
   pd->flag = 0;
   pd->radius = 0.3f;
@@ -592,31 +579,31 @@ void KERNEL_texture_pointdensity_init_data(PointDensity *pd)
   pd->noise_depth = 1;
   pd->noise_fac = 1.0f;
   pd->noise_influence = TEX_PD_NOISE_STATIC;
-  pd->coba = BKE_colorband_add(true);
+  pd->coba = colorband_add(true);
   pd->speed_scale = 1.0f;
   pd->totpoints = 0;
   pd->object = NULL;
   pd->psys = 0;
   pd->psys_cache_space = TEX_PD_WORLDSPACE;
-  pd->falloff_curve = KERNEL_curvemapping_add(1, 0, 0, 1, 1);
+  pd->falloff_curve = curvemapping_add(1, 0, 0, 1, 1);
 
   pd->falloff_curve->preset = CURVE_PRESET_LINE;
   pd->falloff_curve->flag &= ~CUMA_EXTEND_EXTRAPOLATE;
-  KERNEL_curvemap_reset(pd->falloff_curve->cm,
+  curvemap_reset(pd->falloff_curve->cm,
                      &pd->falloff_curve->clipr,
                      pd->falloff_curve->preset,
                      CURVEMAP_SLOPE_POSITIVE);
-  KERNEL_curvemapping_changed(pd->falloff_curve, false);
+  curvemapping_changed(pd->falloff_curve, false);
 }
 
-PointDensity *KERNEL_texture_pointdensity_add(void)
+PointDensity *texture_pointdensity_add(void)
 {
   PointDensity *pd = MEM_callocN(sizeof(PointDensity), "pointdensity");
-  KERNEL_texture_pointdensity_init_data(pd);
+  texture_pointdensity_init_data(pd);
   return pd;
 }
 
-PointDensity *KERNEL_texture_pointdensity_copy(const PointDensity *pd, const int UNUSED(flag))
+PointDensity *texture_pointdensity_copy(const PointDensity *pd, const int UNUSED(flag))
 {
   PointDensity *pdn;
 
@@ -624,32 +611,31 @@ PointDensity *KERNEL_texture_pointdensity_copy(const PointDensity *pd, const int
   pdn->point_tree = NULL;
   pdn->point_data = NULL;
   if (pdn->coba) {
-    pdn->coba = MEM_dupallocN(pdn->coba);
+    pdn->coba = mem_dupallocn(pdn->coba);
   }
-  pdn->falloff_curve = KERNEL_curvemapping_copy(pdn->falloff_curve); /* can be NULL */
+  pdn->falloff_curve = curvemapping_copy(pdn->falloff_curve); /* can be NULL */
   return pdn;
 }
 
-void KERNEL_texture_pointdensity_free_data(PointDensity *pd)
+void texture_pointdensity_free_data(PointDensity *pd)
 {
   if (pd->point_tree) {
-    LIB_bvhtree_free(pd->point_tree);
+    lib_bvhtree_free(pd->point_tree);
     pd->point_tree = NULL;
   }
   MEM_SAFE_FREE(pd->point_data);
   MEM_SAFE_FREE(pd->coba);
 
-  KERNEL_curvemapping_free(pd->falloff_curve); /* can be NULL */
+  curvemapping_free(pd->falloff_curve); /* can be NULL */
 }
 
-void KERNEL_texture_pointdensity_free(PointDensity *pd)
+void texture_pointdensity_free(PointDensity *pd)
 {
-  KERNEL_texture_pointdensity_free_data(pd);
-  MEM_freeN(pd);
+  texture_pointdensity_free_data(pd);
+  mem_freen(pd);
 }
-/* ------------------------------------------------------------------------- */
 
-bool KERNEL_texture_is_image_user(const struct Tex *tex)
+bool texture_is_image_user(const struct Tex *tex)
 {
   switch (tex->type) {
     case TEX_IMAGE: {
@@ -660,7 +646,7 @@ bool KERNEL_texture_is_image_user(const struct Tex *tex)
   return false;
 }
 
-bool KERNEL_texture_dependsOnTime(const struct Tex *texture)
+bool texture_dependsOnTime(const struct Tex *texture)
 {
   if (texture->ima && KERNEL_image_is_animated(texture->ima)) {
     return true;
@@ -676,20 +662,18 @@ bool KERNEL_texture_dependsOnTime(const struct Tex *texture)
   return false;
 }
 
-/* ------------------------------------------------------------------------- */
-
-void KERNEL_texture_get_value_ex(const Scene *scene,
-                              Tex *texture,
-                              const float *tex_co,
-                              TexResult *texres,
-                              struct ImagePool *pool,
-                              bool use_color_management)
+void texture_get_value_ex(const Scene *scene,
+                          Tex *texture,
+                          const float *tex_co,
+                          TexResult *texres,
+                          struct ImagePool *pool,
+                          bool use_color_management)
 {
   int result_type;
   bool do_color_manage = false;
 
   if (scene && use_color_management) {
-    do_color_manage = KERNEL_scene_check_color_management_enabled(scene);
+    do_color_manage = scene_check_color_management_enabled(scene);
   }
 
   /* no node textures for now */
@@ -697,8 +681,7 @@ void KERNEL_texture_get_value_ex(const Scene *scene,
 
   /* if the texture gave an RGB value, we assume it didn't give a valid
    * intensity, since this is in the context of modifiers don't use perceptual color conversion.
-   * if the texture didn't give an RGB value, copy the intensity across
-   */
+   * if the texture didn't give an RGB value, copy the intensity across */
   if (result_type & TEX_RGB) {
     texres->tin = (1.0f / 3.0f) * (texres->trgba[0] + texres->trgba[1] + texres->trgba[2]);
   }
@@ -707,27 +690,27 @@ void KERNEL_texture_get_value_ex(const Scene *scene,
   }
 }
 
-void KERNEL_texture_get_value(const Scene *scene,
-                           Tex *texture,
-                           const float *tex_co,
-                           TexResult *texres,
-                           bool use_color_management)
+void texture_get_value(const Scene *scene,
+                       Tex *texture,
+                       const float *tex_co,
+                       TexResult *texres,
+                       bool use_color_management)
 {
-  KERNEL_texture_get_value_ex(scene, texture, tex_co, texres, NULL, use_color_management);
+  texture_get_value_ex(scene, texture, tex_co, texres, NULL, use_color_management);
 }
 
 static void texture_nodes_fetch_images_for_pool(Tex *texture,
                                                 bNodeTree *ntree,
                                                 struct ImagePool *pool)
 {
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+  LIST_FOREACH (Node *, node, &ntree->nodes) {
     if (node->type == SH_NODE_TEX_IMAGE && node->id != NULL) {
       Image *image = (Image *)node->id;
-      KERNEL_image_pool_acquire_ibuf(image, &texture->iuser, pool);
+      image_pool_acquire_ibuf(image, &texture->iuser, pool);
     }
     else if (node->type == NODE_GROUP && node->id != NULL) {
       /* TODO(sergey): Do we need to control recursion here? */
-      bNodeTree *nested_tree = (bNodeTree *)node->id;
+      NodeTree *nested_tree = (bNodeTree *)node->id;
       texture_nodes_fetch_images_for_pool(texture, nested_tree, pool);
     }
   }
