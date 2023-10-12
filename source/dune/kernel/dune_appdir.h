@@ -14,10 +14,8 @@ extern "C" {
 struct List;
 
 /* Sanity check to ensure correct API use in debug mode.
- *
  * Run this once the first level of arguments has been passed so we can be sure
  * `--env-system-datafiles`, and other `--env-*` arguments has been passed.
- *
  * Without this any callers to this module that run early on,
  * will miss out on changes from parsing arguments. */
 void dune_appdir_init(void);
@@ -25,8 +23,7 @@ void dune_appdir_exit(void);
 
 /* Get the folder that's the "natural" starting point for browsing files on an OS.
  * - Unix: `$HOME`
- * - Windows: `%userprofile%/Documents`
- *
+ * - Windows: `%userprofile%/Documents
  * note On Windows `Users/{MyUserName}/Documents` is used as it's the default location to save
  * documents. */
 const char *dune_appdir_folder_default(void) ATTR_WARN_UNUSED_RESULT;
@@ -39,23 +36,19 @@ const char *dune_appdir_folder_home(void);
 /* Get the user's document directory, i.e.
  * - Linux: `$HOME/Documents`
  * - Windows: `%userprofile%/Documents`
- *
  * If this can't be found using OS queries (via Ghost), try manually finding it.
- *
  * returns True if the path is valid and points to an existing directory. */
 bool dune_appdir_folder_documents(char *dir);
 /* Get the user's cache directory, i.e.
- * - Linux: `$HOME/.cache/blender/`
+ * - Linux: `$HOME/.cache/dune/`
  * - Windows: `%USERPROFILE%\AppData\Local\Dune Foundation\Dune\`
  * - MacOS: `/Library/Caches/Dune`
- *
  * returns True if the path is valid. It doesn't create or checks format
  * if the `dune` folder exists. It does check if the parent of the path exists. */
 bool dune_appdir_folder_caches(char *r_path, size_t path_len);
-/* Get a folder out of the \a folder_id presets for paths.
- *
+/* Get a folder out of the folder_id presets for paths
  * param subfolder: The name of a directory to check for,
- * this may contain path separators but must resolve to a directory, checked with #BLI_is_dir.
+ * this may contain path separators but must resolve to a directory, checked with lib_is_dir.
  * return The path if found, NULL string if not. */
 bool dune_appdir_folder_id_ex(int folder_id, const char *subfolder, char *path, size_t path_len);
 const char *dune_appdir_folder_id(int folder_id, const char *subfolder);
@@ -89,9 +82,9 @@ bool dune_appdir_font_folder_default(char *dir);
 
 /* Find Python executable. */
 bool dune_appdir_program_python_search(char *fullpath,
-                                      size_t fullpath_len,
-                                      int version_major,
-                                      int version_minor);
+                                       size_t fullpath_len,
+                                       int version_major,
+                                       int version_minor);
 
 /* Initialize path to temporary directory. */
 void dune_tempdir_init(const char *userdir);
@@ -120,16 +113,16 @@ enum {
   DUNE_SYSTEM_PYTHON = 54,
 };
 
-/* for BKE_appdir_folder_id_version only */
+/* for dune_appdir_folder_id_version only */
 enum {
   DUNE_RESOURCE_PATH_USER = 0,
   DUNE_RESOURCE_PATH_LOCAL = 1,
   DUNE_RESOURCE_PATH_SYSTEM = 2,
 };
 
-#define DUNE_STARTUP_FILE "startup.blend"
-#define DUNE_USERPREF_FILE "userpref.blend"
-#define DUNE_QUIT_FILE "quit.blend"
+#define DUNE_STARTUP_FILE "startup.dune"
+#define DUNE_USERPREF_FILE "userpref.dune"
+#define DUNE_QUIT_FILE "quit.dune"
 #define DUNE_BOOKMARK_FILE "bookmarks.txt"
 #define DUNE_HISTORY_FILE "recent-files.txt"
 #define DUNE_PLATFORM_SUPPORT_FILE "platform_support.txt"
