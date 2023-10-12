@@ -1,7 +1,5 @@
 #pragma once
 
-/* Duner utils */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
