@@ -1,37 +1,37 @@
 #pragma once
 
-#include "BLI_compiler_attrs.h"
-#include "BLI_rect.h"
+#include "lib_compiler_attrs.h"
+#include "lib_rect.h"
 
-#include "DNA_listBase.h"
-#include "RNA_types.h"
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "types_list.h"
+#include "api_types.h"
+#include "ui.h"
+#include "ui_resources.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct ARegion;
-struct AnimationEvalContext;
+struct AnimEvalCxt;
 struct CurveMapping;
 struct CurveProfile;
-struct ID;
+struct Id;
 struct ImBuf;
 struct Scene;
-struct bContext;
-struct bContextStore;
-struct uiHandleButtonData;
+struct Cxt;
+struct CxtStore;
+struct uiHandleBtnData;
 struct uiLayout;
 struct uiStyle;
-struct uiUndoStack_Text;
+struct uiUndoStackTxt;
 struct uiWidgetColors;
-struct wmEvent;
-struct wmKeyConfig;
-struct wmOperatorType;
-struct wmTimer;
+struct WinEvent;
+struct WinKeyConfig;
+struct WinOpType;
+struct WinTimer;
 
-/* ****************** general defines ************** */
+/* general defines */
 
 #define RNA_NO_INDEX -1
 #define RNA_ENUM_VALUE -2
@@ -51,31 +51,31 @@ struct wmTimer;
 #define UI_PANEL_MINX 100
 #define UI_PANEL_MINY 70
 
-/** Popover width (multiplied by #U.widget_unit) */
+/* Popover width (multiplied by #U.widget_unit) */
 #define UI_POPOVER_WIDTH_UNITS 10
 
-/** #uiBut.flag */
+/* uiBtn.flag */
 enum {
-  /** Use when the button is pressed. */
+  /* Use when the btn is pressed. */
   UI_SELECT = (1 << 0),
-  /** Temporarily hidden (scrolled out of the view). */
+  /* Temp hidden (scrolled out of the view). */
   UI_SCROLLED = (1 << 1),
   UI_ACTIVE = (1 << 2),
   UI_HAS_ICON = (1 << 3),
   UI_HIDDEN = (1 << 4),
-  /** Display selected, doesn't impact interaction. */
+  /* Display selected, doesn't impact interaction. */
   UI_SELECT_DRAW = (1 << 5),
-  /** Property search filter is active and the button does not match. */
+  /* Prop search filter is active and the bn does not match. */
   UI_SEARCH_FILTER_NO_MATCH = (1 << 6),
   /* WARNING: rest of #uiBut.flag in UI_interface.h */
 };
 
-/** #uiBut.dragflag */
+/* uiBtn.dragflag */
 enum {
-  UI_BUT_DRAGPOIN_FREE = (1 << 0),
+  UI_BTN_DRAGPOIN_FREE = (1 << 0),
 };
 
-/** #uiBut.pie_dir */
+/* uiBtn.pie_dir */
 typedef enum RadialDirection {
   UI_RADIAL_NONE = -1,
   UI_RADIAL_N = 0,
@@ -95,54 +95,54 @@ extern const short ui_radial_dir_to_angle[8];
 /* internal panel drawing defines */
 #define PNL_HEADER (UI_UNIT_Y * 1.25) /* 24 default */
 
-/* bit button defines */
-/* Bit operations */
-#define UI_BITBUT_TEST(a, b) (((a) & (1 << (b))) != 0)
-#define UI_BITBUT_VALUE_TOGGLED(a, b) ((a) ^ (1 << (b)))
-#define UI_BITBUT_VALUE_ENABLED(a, b) ((a) | (1 << (b)))
-#define UI_BITBUT_VALUE_DISABLED(a, b) ((a) & ~(1 << (b)))
+/* bit btn defines */
+/* Bit opns */
+#define UI_BITBTN_TEST(a, b) (((a) & (1 << (b))) != 0)
+#define UI_BITBTN_VALUE_TOGGLED(a, b) ((a) ^ (1 << (b)))
+#define UI_BITBTN_VALUE_ENABLED(a, b) ((a) | (1 << (b)))
+#define UI_BITBTN_VALUE_DISABLED(a, b) ((a) & ~(1 << (b)))
 
 /* bit-row */
-#define UI_BITBUT_ROW(min, max) \
+#define UI_BITBTN_ROW(min, max) \
   (((max) >= 31 ? 0xFFFFFFFF : (1 << ((max) + 1)) - 1) - ((min) ? ((1 << (min)) - 1) : 0))
 
-/** Split number-buttons by ':' and align left/right. */
-#define USE_NUMBUTS_LR_ALIGN
+/* Split number-btns by ':' and align left/right. */
+#define USE_NUMBTNS_LR_ALIGN
 
-/** Use new 'align' computation code. */
-#define USE_UIBUT_SPATIAL_ALIGN
+/* Use new 'align' computation code. */
+#define USE_UIBTN_SPATIAL_ALIGN
 
-/** #PieMenuData.flags */
+/* PieMenuData.flags */
 enum {
-  /** Pie menu item collision is detected at 90 degrees. */
+  /* Pie menu item collision is detected at 90 degrees. */
   UI_PIE_DEGREES_RANGE_LARGE = (1 << 0),
-  /** Use initial center of pie menu to calculate direction. */
+  /* Use initial center of pie menu to calculate direction. */
   UI_PIE_INITIAL_DIRECTION = (1 << 1),
-  /** Pie menu is drag style. */
+  /* Pie menu is drag style. */
   UI_PIE_DRAG_STYLE = (1 << 2),
-  /** Mouse not far enough from center position. */
+  /* Mouse not far enough from center position. */
   UI_PIE_INVALID_DIR = (1 << 3),
-  /** Pie menu changed to click style, click to confirm. */
+  /* Pie menu changed to click style, click to confirm. */
   UI_PIE_CLICK_STYLE = (1 << 4),
   /** Pie animation finished, do not calculate any more motion. */
-  UI_PIE_ANIMATION_FINISHED = (1 << 5),
+  UI_PIE_ANIM_FINISHED = (1 << 5),
   /** Pie gesture selection has been done, now wait for mouse motion to end. */
   UI_PIE_GESTURE_END_WAIT = (1 << 6),
 };
 
 #define PIE_CLICK_THRESHOLD_SQ 50.0f
 
-/** The maximum number of items a radial menu (pie menu) can contain. */
+/* The max num of items a radial menu (pie menu) can contain. */
 #define PIE_MAX_ITEMS 8
 
-struct uiBut {
-  struct uiBut *next, *prev;
+struct uiBtn {
+  struct uiBtn *next, *prev;
 
-  /** Pointer back to the layout item holding this button. */
+  /* Ptr back to the layout item holding this btn. */
   uiLayout *layout;
   int flag, drawflag;
-  eButType type;
-  eButPointerType pointype;
+  eBtnType type;
+  eBtnPtrType pointype;
   short bit, bitnr, retval, strwidth, alignnr;
   short ofs, pos, selsta, selend;
 
@@ -158,230 +158,222 @@ struct uiBut {
   /* both these values use depends on the button type
    * (polymorphic struct or union would be nicer for this stuff) */
 
-  /**
-   * For #uiBut.type:
+  /* For uiBtn.type:
    * - UI_BTYPE_LABEL:        Use `(a1 == 1.0f)` to use a2 as a blending factor (imaginative!).
    * - UI_BTYPE_SCROLL:       Use as scroll size.
-   * - UI_BTYPE_SEARCH_MENU:  Use as number or rows.
-   */
+   * - UI_BTYPE_SEARCH_MENU:  Use as number or rows. */
   float a1;
 
-  /**
-   * For #uiBut.type:
+  /* For uiBtn.type:
    * - UI_BTYPE_HSVCIRCLE:    Use to store the luminosity.
    * - UI_BTYPE_LABEL:        If `(a1 == 1.0f)` use a2 as a blending factor.
-   * - UI_BTYPE_SEARCH_MENU:  Use as number or columns.
-   */
+   * - UI_BTYPE_SEARCH_MENU:  Use as number or columns. */
   float a2;
 
   uchar col[4];
 
-  uiButHandleFunc func;
-  void *func_arg1;
-  void *func_arg2;
+  uiBtnHandleFn fn;
+  void *fn_arg1;
+  void *fn_arg2;
 
-  uiButHandleNFunc funcN;
-  void *func_argN;
+  uiBtnHandleNFn fn;
+  void *fn_arg;
 
-  struct bContextStore *context;
+  struct CxtStore *cxt;
 
-  uiButCompleteFunc autocomplete_func;
-  void *autofunc_arg;
+  uiBtnCompleteFn autocomplete_fn;
+  void *autofn_arg;
 
-  uiButHandleRenameFunc rename_func;
+  uiBtnHandleRenameFn rename_fn;
   void *rename_arg1;
   void *rename_orig;
 
-  /** Run an action when holding the button down. */
-  uiButHandleHoldFunc hold_func;
+  /* Run an action when holding the btn down. */
+  uiBtnHandleHoldFn hold_fn;
   void *hold_argN;
 
   const char *tip;
-  uiButToolTipFunc tip_func;
+  uiBtnToolTipFn tip_fn;
   void *tip_arg;
-  uiFreeArgFunc tip_arg_free;
+  uiFreeArgFn tip_arg_free;
 
-  /** info on why button is disabled, displayed in tooltip */
+  /* info on why btn is disabled, displayed in tooltip */
   const char *disabled_info;
 
-  BIFIconID icon;
-  /** Copied from the #uiBlock.emboss */
+  BIFIconId icon;
+  /* Copied from the uiBlock.emboss */
   eUIEmbossType emboss;
-  /** direction in a pie menu, used for collision detection (RadialDirection) */
+  /* direction in a pie menu, used for collision detection (RadialDirection) */
   signed char pie_dir;
-  /** could be made into a single flag */
+  /* could be made into a single flag */
   bool changed;
-  /** so buttons can support unit systems which are not RNA */
+  /* so btns can support unit systems which are not RNA */
   uchar unit_type;
-  short modifier_key;
+  short mod_key;
   short iconadd;
 
-  /** #UI_BTYPE_BLOCK data */
-  uiBlockCreateFunc block_create_func;
+  /* UI_BTYPE_BLOCK data */
+  uiBlockCreateFn block_create_fn;
 
-  /** #UI_BTYPE_PULLDOWN / #UI_BTYPE_MENU data */
-  uiMenuCreateFunc menu_create_func;
+  /* UI_BTYPE_PULLDOWN / UI_BTYPE_MENU data */
+  uiMenuCreateFn menu_create_fn;
 
-  uiMenuStepFunc menu_step_func;
+  uiMenuStepFn menu_step_fn;
 
-  /* RNA data */
-  struct PointerRNA rnapoin;
-  struct PropertyRNA *rnaprop;
-  int rnaindex;
+  /* api data */
+  struct ApiPtr apiptr;
+  struct ApiProp *apiprop;
+  int apiindex;
 
-  /* Operator data */
-  struct wmOperatorType *optype;
-  struct PointerRNA *opptr;
-  wmOperatorCallContext opcontext;
+  /* Op data */
+  struct WinOpType *optype;
+  struct ApiPtr *opptr;
+  WinOpCallCxt opcxt;
 
-  /** When non-zero, this is the key used to activate a menu items (`a-z` always lower case). */
+  /* When non-zero, this is the key used to activate a menu items (`a-z` always lower case). */
   uchar menu_key;
 
-  ListBase extra_op_icons; /** #uiButExtraOpIcon */
+  List extra_op_icons; /* uiBtnExtraOpIcon */
 
-  /* Drag-able data, type is WM_DRAG_... */
+  /* Drag-able data, type is WIN_DRAG_... */
   char dragtype;
   short dragflag;
-  void *dragpoin;
-  struct ImBuf *imb;
+  void *dragptr;
+  struct ImBuf *imbuf;
   float imb_scale;
 
-  /** Active button data (set when the user is hovering or interacting with a button). */
-  struct uiHandleButtonData *active;
+  /* Active btn data (set when the user is hovering or interacting with a btn). */
+  struct uiHandleBtnData *active;
 
-  /** Custom button data (borrowed, not owned). */
+  /* Custom butn data (borrowed, not owned). */
   void *custom_data;
 
   char *editstr;
   double *editval;
   float *editvec;
 
-  uiButPushedStateFunc pushed_state_func;
+  uiBtnPushedStateFn pushed_state_fn;
   const void *pushed_state_arg;
 
-  /* pointer back */
+  /* ptr back */
   uiBlock *block;
 };
 
-/** Derived struct for #UI_BTYPE_NUM */
-typedef struct uiButNumber {
-  uiBut but;
+/* Derived struct for UI_BTYPE_NUM */
+typedef struct uiBtnNumber {
+  uiBtn btn;
 
   float step_size;
   float precision;
-} uiButNumber;
+} uiBtnNumber;
 
-/** Derived struct for #UI_BTYPE_COLOR */
-typedef struct uiButColor {
-  uiBut but;
+/* Derived struct for UI_BTYPE_COLOR */
+typedef struct uiBtnColor {
+  uiBtn btn;
 
   bool is_pallete_color;
   int palette_color_index;
-} uiButColor;
+} uiBtnColor;
 
-/** Derived struct for #UI_BTYPE_TAB */
-typedef struct uiButTab {
-  uiBut but;
+/* Derived struct for UI_BTYPE_TAB */
+typedef struct uiBtnTab {
+  uiBtn btn;
   struct MenuType *menu;
-} uiButTab;
+} uiBtnTab;
 
-/** Derived struct for #UI_BTYPE_SEARCH_MENU */
-typedef struct uiButSearch {
-  uiBut but;
+/* Derived struct for UI_BTYPE_SEARCH_MENU */
+typedef struct BtnSearch {
+  Btn btn;
 
-  uiButSearchCreateFn popup_create_fn;
-  uiButSearchUpdateFn items_update_fn;
+  BtnSearchCreateFn popup_create_fn;
+  BtnSearchUpdateFn items_update_fn;
   void *item_active;
 
   void *arg;
-  uiFreeArgFunc arg_free_fn;
+  uiFreeArgFn arg_free_fn;
 
-  uiButSearchContextMenuFn item_context_menu_fn;
-  uiButSearchTooltipFn item_tooltip_fn;
+  BtnSearchCxtMenuFn item_cxt_menu_fn;
+  BtnSearchTooltipFn item_tooltip_fn;
 
   const char *item_sep_string;
 
-  struct PointerRNA rnasearchpoin;
-  struct PropertyRNA *rnasearchprop;
+  struct ApiPtr apisearchptr;
+  struct ApiProp *apisearchprop;
 
-  /**
-   * The search box only provides suggestions, it does not force
-   * the string to match one of the search items when applying.
-   */
+  /* The search box only provides suggestions, it does not force
+   * the string to match one of the search items when applying. */
   bool results_are_suggestions;
-} uiButSearch;
+} BtnSearch;
 
-/** Derived struct for #UI_BTYPE_DECORATOR */
-typedef struct uiButDecorator {
-  uiBut but;
+/* Derived struct for BTYPE_DECORATOR */
+typedef struct BtnDecorator {
+  uiBtn btn;
 
-  struct PointerRNA rnapoin;
-  struct PropertyRNA *rnaprop;
-  int rnaindex;
-} uiButDecorator;
+  struct ApiPtr apiptr;
+  struct ApiProp *apiprop;
+  int apiindex;
+} BtnDecorator;
 
-/** Derived struct for #UI_BTYPE_PROGRESS_BAR. */
-typedef struct uiButProgressbar {
-  uiBut but;
+/* Derived struct for BTYPE_PROGRESS_BAR. */
+typedef struct BtnProgressbar {
+  Btn btn;
 
   /* 0..1 range */
   float progress;
-} uiButProgressbar;
+} BtnProgressbar;
 
-/** Derived struct for #UI_BTYPE_TREEROW. */
-typedef struct uiButTreeRow {
-  uiBut but;
+/* Derived struct for BTYPE_TREEROW. */
+typedef struct BtnTreeRow {
+  Btn btn;
 
   uiTreeViewItemHandle *tree_item;
   int indentation;
-} uiButTreeRow;
+} BtnTreeRow;
 
-/** Derived struct for #UI_BTYPE_HSVCUBE. */
-typedef struct uiButHSVCube {
-  uiBut but;
+/* Derived struct for BTYPE_HSVCUBE. */
+typedef struct BtnHSVCube {
+  Btn btn;
 
-  eButGradientType gradient_type;
-} uiButHSVCube;
+  eBtnGradientType gradient_type;
+} BtnHSVCube;
 
-/** Derived struct for #UI_BTYPE_COLORBAND. */
-typedef struct uiButColorBand {
-  uiBut but;
+/* Derived struct for BTYPE_COLORBAND. */
+typedef struct BtnColorBand {
+  uiBtn btn;
 
   struct ColorBand *edit_coba;
-} uiButColorBand;
+} BtnColorBand;
 
-/** Derived struct for #UI_BTYPE_CURVEPROFILE. */
-typedef struct uiButCurveProfile {
-  uiBut but;
+/* Derived struct for BTYPE_CURVEPROFILE. */
+typedef struct BtnCurveProfile {
+  Btn btn;
 
   struct CurveProfile *edit_profile;
-} uiButCurveProfile;
+} BtnCurveProfile;
 
-/** Derived struct for #UI_BTYPE_CURVE. */
-typedef struct uiButCurveMapping {
-  uiBut but;
+/* Derived struct for BTYPE_CURVE. */
+typedef struct BtnCurveMapping {
+  Btn btn;
 
   struct CurveMapping *edit_cumap;
-  eButGradientType gradient_type;
-} uiButCurveMapping;
+  eBtnGradientType gradient_type;
+} BtnCurveMapping;
 
-/**
- * Additional, superimposed icon for a button, invoking an operator.
- */
-typedef struct uiButExtraOpIcon {
-  struct uiButExtraOpIcon *next, *prev;
+/* Additional, superimposed icon for a btn, invoking an op */
+typedef struct BtnExtraOpIcon {
+  struct BtnExtraOpIcon *next, *prev;
 
-  BIFIconID icon;
-  struct wmOperatorCallParams *optype_params;
+  BIFIconId icon;
+  struct WinOpCallParams *optype_params;
 
   bool highlighted;
   bool disabled;
-} uiButExtraOpIcon;
+} BtnExtraOpIcon;
 
 typedef struct ColorPicker {
   struct ColorPicker *next, *prev;
 
-  /** Color in HSV or HSL, in color picking color space. Used for HSV cube,
+  /* Color in HSV or HSL, in color picking color space. Used for HSV cube,
    * circle and slider widgets. The color picking space is perceptually
    * linear for intuitive editing. */
   float hsv_perceptual[3];
@@ -389,12 +381,12 @@ typedef struct ColorPicker {
   float hsv_perceptual_init[3];
   bool is_init;
 
-  /** HSV or HSL color in scene linear color space value used for number
+  /* HSV or HSL color in scene linear color space value used for number
    * buttons. This is scene linear so that there is a clear correspondence
    * to the scene linear RGB values. */
   float hsv_scene_linear[3];
 
-  /** Cubic saturation for the color wheel. */
+  /* Cubic saturation for the color wheel. */
   bool use_color_cubic;
   bool use_color_lock;
   bool use_luminosity_lock;
@@ -402,11 +394,11 @@ typedef struct ColorPicker {
 } ColorPicker;
 
 typedef struct ColorPickerData {
-  ListBase list;
+  List list;
 } ColorPickerData;
 
 struct PieMenuData {
-  /** store title and icon to allow access when pie levels are created */
+  /* store title and icon to allow access when pie levels are created */
   const char *title;
   int icon;
 
@@ -421,54 +413,52 @@ struct PieMenuData {
   float alphafac;
 };
 
-/** #uiBlock.content_hints */
+/* uiBlock.content_hints */
 enum eBlockContentHints {
-  /** In a menu block, if there is a single sub-menu button, we add some
+  /* In a menu block, if there is a single sub-menu btn, we add some
    * padding to the right to put nicely aligned triangle icons there. */
-  UI_BLOCK_CONTAINS_SUBMENU_BUT = (1 << 0),
+  UI_BLOCK_CONTAINS_SUBMENU_BTN = (1 << 0),
 };
 
-/**
- * A group of button references, used by property search to keep track of sets of buttons that
- * should be searched together. For example, in property split layouts number buttons and their
- * labels (and even their decorators) are separate buttons, but they must be searched and
- * highlighted together.
- */
-typedef struct uiButtonGroup {
+/* A group of btn refs, used by prop search to keep track of sets of btns that
+ * should be searched together. For example, in prop split layouts number btns and their
+ * labels (and even their decorators) are separate btns, but they must be searched and
+ * highlighted together. */
+typedef struct BtnGroup {
   void *next, *prev;
-  ListBase buttons; /* #LinkData with #uiBut data field. */
+  List btns; /* LinkData with Btn data field. */
   short flag;
-} uiButtonGroup;
+} BtnGroup;
 
-/* #uiButtonGroup.flag. */
-typedef enum uiButtonGroupFlag {
-  /** While this flag is set, don't create new button groups for layout item calls. */
-  UI_BUTTON_GROUP_LOCK = (1 << 0),
-  /** The buttons in this group are inside a panel header. */
-  UI_BUTTON_GROUP_PANEL_HEADER = (1 << 1),
-} uiButtonGroupFlag;
+/* BtnGroup.flag. */
+typedef enum BtnGroupFlag {
+  /* While this flag is set, don't create new btn groups for layout item calls. */
+  BTN_GROUP_LOCK = (1 << 0),
+  /* The btns in this group are inside a panel header. */
+  UI_BTN_GROUP_PANEL_HEADER = (1 << 1),
+} BtnGroupFlag;
 
 struct uiBlock {
   uiBlock *next, *prev;
 
-  ListBase buttons;
+  List btns;
   struct Panel *panel;
   uiBlock *oldblock;
 
-  /** Used for `UI_butstore_*` runtime function. */
-  ListBase butstore;
+  /* Used for `ui_btnstore_*` runtime fn */
+  List btnstore;
 
-  ListBase button_groups; /* #uiButtonGroup. */
+  List btn_groups; /* BtnGroup. */
 
-  ListBase layouts;
+  List layouts;
   struct uiLayout *curlayout;
 
-  ListBase contexts;
+  List cxts;
 
-  /** A block can store "views" on data-sets. Currently tree-views (#AbstractTreeView) only.
+  /* A block can store "views" on data-sets. Currently tree-views (AbstractTreeView) only.
    * Others are imaginable, e.g. table-views, grid-views, etc. These are stored here to support
    * state that is persistent over redraws (e.g. collapsed tree-view items). */
-  ListBase views;
+  List views;
 
   char name[UI_MAX_NAME_STR];
 
@@ -477,44 +467,44 @@ struct uiBlock {
   rctf rect;
   float aspect;
 
-  /** Unique hash used to implement popup menu memory. */
+  /* Unique hash used to implement popup menu memory. */
   uint puphash;
 
-  uiButHandleFunc func;
-  void *func_arg1;
-  void *func_arg2;
+  uiBtnHandleFn fn;
+  void *fn_arg1;
+  void *fn_arg2;
 
-  uiButHandleNFunc funcN;
-  void *func_argN;
+  BtnHandleNFn fnN;
+  void *fn_argN;
 
-  uiMenuHandleFunc butm_func;
-  void *butm_func_arg;
+  MenuHandleFn btn_menu_fn;
+  void *btn_menu_fn_arg;
 
-  uiBlockHandleFunc handle_func;
-  void *handle_func_arg;
+  uiBlockHandleFn handle_fn;
+  void *handle_fn_arg;
 
-  /** Custom interaction data. */
-  uiBlockInteraction_CallbackData custom_interaction_callbacks;
+  /* Custom interaction data. */
+  uiBlockInteraction_CbData custom_interaction_cbs;
 
-  /** Custom extra event handling. */
-  int (*block_event_func)(const struct bContext *C, struct uiBlock *, const struct wmEvent *);
+  /* Custom extra event handling. */
+  int (*block_event_fn)(const struct Cxt *C, struct uiBlock *, const struct WinEvent *);
 
-  /** Custom extra draw function for custom blocks. */
-  void (*drawextra)(const struct bContext *C, void *idv, void *arg1, void *arg2, rcti *rect);
+  /* Custom extra draw function for custom blocks. */
+  void (*drawextra)(const struct Cxt *C, void *idv, void *arg1, void *arg2, rcti *rect);
   void *drawextra_arg1;
   void *drawextra_arg2;
 
   int flag;
   short alignnr;
-  /** Hints about the buttons of this block. Used to avoid iterating over
-   * buttons to find out if some criteria is met by any. Instead, check this
-   * criteria when adding the button and set a flag here if it's met. */
-  short content_hints; /* #eBlockContentHints */
+  /* Hints about the buttons of this block. Used to avoid itering over
+   * btns to find out if some criteria is met by any. Instead, check this
+   * criteria when adding the btn and set a flag here if it's met. */
+  short content_hints; /* eBlockContentHints */
 
   char direction;
-  /** UI_BLOCK_THEME_STYLE_* */
+  /* BLOCK_THEME_STYLE_* */
   char theme_style;
-  /** Copied to #uiBut.emboss */
+  /* Copied to Btn.emboss */
   eUIEmbossType emboss;
   bool auto_open;
   char _pad[5];
@@ -523,47 +513,45 @@ struct uiBlock {
   const char *lockstr;
 
   bool lock;
-  /** To keep blocks while drawing and free them afterwards. */
+  /* To keep blocks while drawing and free them afterwards. */
   bool active;
-  /** To avoid tool-tip after click. */
+  /* To avoid tool-tip after click. */
   bool tooltipdisabled;
-  /** True when #UI_block_end has been called. */
+  /* True when ui_block_end has been called. */
   bool endblock;
 
-  /** for doing delayed */
+  /* for doing delayed */
   eBlockBoundsCalc bounds_type;
-  /** Offset to use when calculating bounds (in pixels). */
+  /* Offset to use when calculating bounds (in pixels). */
   int bounds_offset[2];
-  /** for doing delayed */
+  /* for doing delayed */
   int bounds, minbounds;
 
-  /** Pull-downs, to detect outside, can differ per case how it is created. */
+  /* Pull-downs, to detect outside, can differ per case how it is created. */
   rctf safety;
-  /** #uiSafetyRct list */
-  ListBase saferct;
+  /* uiSafetyRct list */
+  List saferct;
 
   uiPopupBlockHandle *handle;
 
-  /** use so presets can find the operator,
-   * across menus and from nested popups which fail for operator context. */
-  struct wmOperator *ui_operator;
+  /* use so presets can find the op,
+   * across menus and from nested popups which fail for op cxt. */
+  struct WinOp *ui_op;
 
-  /** XXX hack for dynamic operator enums */
+  /* hack for dynamic op enums */
   void *evil_C;
 
-  /** unit system, used a lot for numeric buttons so include here
+  /* unit system, used a lot for numeric btns so include here
    * rather than fetching through the scene every time. */
   struct UnitSettings *unit;
-  /** \note only accessed by color picker templates. */
+  /* only accessed by color picker templates. */
   ColorPickerData color_pickers;
 
-  /** Block for color picker with gamma baked in. */
+  /* Block for color picker with gamma baked in. */
   bool is_color_gamma_picker;
 
-  /**
-   * Display device name used to display this block,
-   * used by color widgets to transform colors from/to scene linear.
-   */
+  /* Display device name used to display this block,
+   * used by color widgets to transform colors from/to scene linear */
   char display_device[64];
 
   struct PieMenuData pie_data;
@@ -576,7 +564,6 @@ typedef struct uiSafetyRct {
 } uiSafetyRct;
 
 /* interface.c */
-
 void ui_fontscale(float *points, float aspect);
 
 extern void ui_block_to_region_fl(const struct ARegion *region,
@@ -597,139 +584,110 @@ extern void ui_block_to_window_rctf(const struct ARegion *region,
                                     rctf *rct_dst,
                                     const rctf *rct_src);
 extern float ui_block_to_window_scale(const struct ARegion *region, uiBlock *block);
-/**
- * For mouse cursor.
- */
-extern void ui_window_to_block_fl(const struct ARegion *region,
-                                  uiBlock *block,
-                                  float *x,
-                                  float *y);
-extern void ui_window_to_block(const struct ARegion *region, uiBlock *block, int *x, int *y);
-extern void ui_window_to_block_rctf(const struct ARegion *region,
-                                    uiBlock *block,
-                                    rctf *rct_dst,
-                                    const rctf *rct_src);
-extern void ui_window_to_region(const struct ARegion *region, int *x, int *y);
-extern void ui_window_to_region_rcti(const struct ARegion *region,
-                                     rcti *rect_dst,
-                                     const rcti *rct_src);
-extern void ui_window_to_region_rctf(const struct ARegion *region,
+/* For mouse cursor. */
+extern void ui_win_to_block_fl(const struct ARegion *region,
+                               uiBlock *block,
+                               float *x,
+                               float *y);
+extern void ui_win_to_block(const struct ARegion *region, uiBlock *block, int *x, int *y);
+extern void ui_win_to_block_rctf(const struct ARegion *region,
+                                 uiBlock *block,
+                                 rctf *rct_dst,
+                                 const rctf *rct_src);
+extern void ui_win_to_region(const struct ARegion *region, int *x, int *y);
+extern void ui_win_to_region_rcti(const struct ARegion *region,
+                                  rcti *rect_dst,
+                                  const rcti *rct_src);
+extern void ui_win_to_region_rctf(const struct ARegion *region,
                                      rctf *rect_dst,
                                      const rctf *rct_src);
-extern void ui_region_to_window(const struct ARegion *region, int *x, int *y);
-/**
- * Popups will add a margin to #ARegion.winrct for shadow,
- * for interactivity (point-inside tests for eg), we want the winrct without the margin added.
- */
+extern void ui_region_to_win(const struct ARegion *region, int *x, int *y);
+/* Popups will add a margin to ARegion.winrct for shadow,
+ * for interactivity (point-inside tests for eg), we want the winrct without the margin added. */
 extern void ui_region_winrct_get_no_margin(const struct ARegion *region, struct rcti *r_rect);
 
-/**
- * Reallocate the button (new address is returned) for a new button type.
+/* Reallocate the btn (new address is returned) for a new btn type.
  * This should generally be avoided and instead the correct type be created right away.
  *
- * \note Only the #uiBut data can be kept. If the old button used a derived type (e.g. #uiButTab),
- *       the data that is not inside #uiBut will be lost.
- */
-uiBut *ui_but_change_type(uiBut *but, eButType new_type);
+ * Only the Btn data can be kept. If the old btn used a derived type (e.g. BtnTab),
+ * the data that is not inside Btn will be lost. */
+uiBut *btn_change_type(Btn *btn, eBtnType new_type);
 
-extern double ui_but_value_get(uiBut *but);
-extern void ui_but_value_set(uiBut *but, double value);
-/**
- * For picker, while editing HSV.
- */
-extern void ui_but_hsv_set(uiBut *but);
-/**
- * For buttons pointing to color for example.
- */
-extern void ui_but_v3_get(uiBut *but, float vec[3]);
-/**
- * For buttons pointing to color for example.
- */
-extern void ui_but_v3_set(uiBut *but, const float vec[3]);
+extern double btn_value_get(Btn *btn);
+extern void btn_value_set(Btn *btn, double value);
+/* For picker, while editing HSV */
+extern void btn_hsv_set(uiBtn *btn);
+/* For btns pointing to color for example. */
+extern void btn_v3_get(uiBtn *btn, float vec[3]);
+/* For btns pointing to color for example */
+extern void btn_v3_set(Btn *btn, const float vec[3]);
 
 extern void ui_hsvcircle_vals_from_pos(
     const rcti *rect, float mx, float my, float *r_val_rad, float *r_val_dist);
-/**
- * Cursor in HSV circle, in float units -1 to 1, to map on radius.
- */
+/* Cursor in HSV circle, in float units -1 to 1, to map on radius. */
 extern void ui_hsvcircle_pos_from_vals(
     const ColorPicker *cpicker, const rcti *rect, const float *hsv, float *xpos, float *ypos);
 extern void ui_hsvcube_pos_from_vals(
-    const struct uiButHSVCube *hsv_but, const rcti *rect, const float *hsv, float *xp, float *yp);
+    const struct BtnHSVCube *hsv_btn, const rcti *rect, const float *hsv, float *xp, float *yp);
 
-/**
- * \param float_precision: For number buttons the precision
- * to use or -1 to fallback to the button default.
- * \param use_exp_float: Use exponent representation of floats
- * when out of reasonable range (outside of 1e3/1e-3).
- */
-extern void ui_but_string_get_ex(uiBut *but,
+/* param float_precision: For number btns the precision
+ * to use or -1 to fallback to the btn default.
+ * param use_exp_float: Use exponent representation of floats
+ * when out of reasonable range (outside of 1e3/1e-3) */
+extern void btn_string_get_ex(Btn *btn,
                                  char *str,
                                  size_t maxlen,
                                  int float_precision,
                                  bool use_exp_float,
                                  bool *r_use_exp_float) ATTR_NONNULL(1, 2);
-extern void ui_but_string_get(uiBut *but, char *str, size_t maxlen) ATTR_NONNULL();
-/**
- * A version of #ui_but_string_get_ex for dynamic buffer sizes
- * (where #ui_but_string_get_max_length returns 0).
- *
- * \param r_str_size: size of the returned string (including terminator).
- */
-extern char *ui_but_string_get_dynamic(uiBut *but, int *r_str_size);
-/**
- * \param str: will be overwritten.
- */
-extern void ui_but_convert_to_unit_alt_name(uiBut *but, char *str, size_t maxlen) ATTR_NONNULL();
-extern bool ui_but_string_set(struct bContext *C, uiBut *but, const char *str) ATTR_NONNULL();
-extern bool ui_but_string_eval_number(struct bContext *C,
-                                      const uiBut *but,
-                                      const char *str,
-                                      double *value) ATTR_NONNULL();
-extern int ui_but_string_get_max_length(uiBut *but);
-/**
- * Clear & exit the active button's string..
- */
-extern void ui_but_active_string_clear_and_exit(struct bContext *C, uiBut *but) ATTR_NONNULL();
-/**
- * Use handling code to set a string for the button. Handles the case where the string is set for a
- * search button while the search menu is open, so the results are updated accordingly.
- * This is basically the same as pasting the string into the button.
- */
-extern void ui_but_set_string_interactive(struct bContext *C, uiBut *but, const char *value);
-extern uiBut *ui_but_drag_multi_edit_get(uiBut *but);
+extern void btn_string_get(Btn *btn, char *str, size_t maxlen) ATTR_NONNULL();
+/* A version of btn_string_get_ex for dynamic buffer sizes
+ * (where btn_string_get_max_length returns 0).
+ * param r_str_size: size of the returned string (including terminator). */
+extern char *ui_btn_string_get_dynamic(Btn *btn, int *r_str_size);
+/* param str: will be overwritten. */
+extern void btn_convert_to_unit_alt_name(Btn *btn, char *str, size_t maxlen) ATTR_NONNULL();
+extern bool btn_string_set(struct Cxt *C, Btn *btn, const char *str) ATTR_NONNULL();
+extern bool btn_string_eval_number(struct Cxt *C,
+                                   const Btn *btn,
+                                   const char *str,
+                                   double *value) ATTR_NONNULL();
+extern int btn_string_get_max_length(Btn *btn);
+/* Clear & exit the active btn's string */
+extern void btn_active_string_clear_and_exit(struct Cxt *C, Btn *btn) ATTR_NONNULL();
+/* Use handling code to set a string for the btn. Handles the case where the string is set for a
+ * search btn while the search menu is open, so the results are updated accordingly.
+ * This is basically the same as pasting the string into the btn. */
+extern void btn_set_string_interactive(struct Cxt *C, Btn *btn, const char *value);
+extern Btn *btn_drag_multi_edit_get(Btn *btn);
 
-void ui_def_but_icon(uiBut *but, int icon, int flag);
-/**
- * Avoid using this where possible since it's better not to ask for an icon in the first place.
- */
-void ui_def_but_icon_clear(uiBut *but);
+void btn_def_icon(Btn *btn, int icon, int flag);
+/* Avoid using this where possible since it's better not to ask for an icon in the first place. */
+void btn_def_icon_clear(Btn *btn);
 
-void ui_but_extra_operator_icons_free(uiBut *but);
+void btn_extra_op_icons_free(Btn *btn);
 
-extern void ui_but_rna_menu_convert_to_panel_type(struct uiBut *but, const char *panel_type);
-extern void ui_but_rna_menu_convert_to_menu_type(struct uiBut *but, const char *menu_type);
-extern bool ui_but_menu_draw_as_popover(const uiBut *but);
+extern void btn_api_menu_convert_to_panel_type(struct Btn *btn, const char *panel_type);
+extern void btn_api_menu_convert_to_menu_type(struct Btn *btn, const char *menu_type);
+extern bool btn_menu_draw_as_popover(const Btn *btn);
 
-void ui_but_range_set_hard(uiBut *but);
-void ui_but_range_set_soft(uiBut *but);
+void btn_range_set_hard(Btn *btn);
+void btn_range_set_soft(Btn *btn);
 
-bool ui_but_context_poll_operator(struct bContext *C, struct wmOperatorType *ot, const uiBut *but);
-/**
- * Check if the operator \a ot poll is successful with the context given by \a but (optionally).
- * \param but: The button that might store context. Can be NULL for convenience (e.g. if there is
- *             no button to take context from, but we still want to poll the operator).
- */
-bool ui_but_context_poll_operator_ex(struct bContext *C,
-                                     const uiBut *but,
-                                     const struct wmOperatorCallParams *optype_params);
+bool btn_cxt_poll_op(struct Cxt *C, struct WinOpType *ot, const Btn *btn);
+/* Check if the op ot poll is successful with the context given by btn (optionally).
+ * param btn: The btn that might store cxt. Can be NULL for convenience (e.g. if there is
+ * no btn to take cxt from, but we still want to poll the op). */
+bool btn_cxt_poll_op_ex(struct Cxt *C,
+                        const Btn *btn,
+                        const struct WinOpCallParams *optype_params);
 
-extern void ui_but_update(uiBut *but);
-extern void ui_but_update_edited(uiBut *but);
-extern PropertyScaleType ui_but_scale_type(const uiBut *but) ATTR_WARN_UNUSED_RESULT;
-extern bool ui_but_is_float(const uiBut *but) ATTR_WARN_UNUSED_RESULT;
-extern bool ui_but_is_bool(const uiBut *but) ATTR_WARN_UNUSED_RESULT;
-extern bool ui_but_is_unit(const uiBut *but) ATTR_WARN_UNUSED_RESULT;
+extern void btn_update(Btn *btn);
+extern void btn_update_edited(Btn *btn);
+extern PropScaleType btn_scale_type(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
+extern bool btn_is_float(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
+extern bool btn_is_bool(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
+extern bool btn_is_unit(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
 /**
  * Check if this button is similar enough to be grouped with another.
  */
