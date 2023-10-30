@@ -27,7 +27,7 @@
 #include "dune_screen.h"
 #include "dune_text.h"
 
-#include "IMB_colormanagement.h"
+#include "imbuf_colormanagement.h"
 
 #include "graph.h"
 
@@ -55,7 +55,7 @@
 #include "ed_screen.h"
 #include "ed_text.h"
 
-/** Immediate redraw helper
+/* Immediate redraw helper
  *
  * Generally handlers shouldn't do any redrawing, that includes the layout/btn definitions. That
  * violates the Model-View-Controller pattern.
@@ -101,9 +101,9 @@ static int copy_py_cmd_btnex(Cxt *C, wmOp *UNUSED(op))
   return OP_CANCELLED;
 }
 
-static void UI_OT_copy_pycmd_btn(wmOpType *ot)
+static void UI_OT_copy_pycmd_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Copy Python Command";
   ot->idname = "UI_OT_copy_pycmd_btnn";
   ot->description = "Copy the Python command matching this button";
@@ -116,21 +116,20 @@ static void UI_OT_copy_pycmd_btn(wmOpType *ot)
   ot->flag = OPTYPE_REGISTER;
 }
 
-/* -------------------------------------------------------------------- */
-/* Reset to Default Values Btn Operator **/
 
+/* Reset to Default Values Btn Op **/
 static int op_btnprop_finish(Cxt *C, ApiPtr *ptr, ApiProp *prop)
 {
   Id *id = ptr->owner_id;
 
-  /* perform updates required for this property */
+  /* perform updates required for this prop */
   apiprop_update(C, ptr, prop);
 
-  /* as if we pressed the button */
+  /* as if we pressed the btn */
   ui_cxt_active_btnprop_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
-   * edits on the screen or on operator settings.
+   * edits on the screen or on op settings.
    * it might be better to move undo's inline */
   if (id && ID_CHECK_UNDO(id)) {
     /* do nothing, go ahead with undo */
@@ -163,7 +162,7 @@ static bool reset_default_btnpoll(Cxt *C)
   return (ptr.data && prop && apiprop_editable(&ptr, prop));
 }
 
-static int reset_default_btnEx(Cxt *C, wmOp *op)
+static int reset_default_btnEx(Cxt *C, WinOp *op)
 {
   ApiPtr ptr;
   ApiProp *prop;
@@ -173,7 +172,7 @@ static int reset_default_btnEx(Cxt *C, wmOp *op)
   /* try to reset the nominated setting to its default value */
   ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
-  /* if there is a valid property that is editable... */
+  /* if there is a valid prop that is editable... */
   if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
     if (ApiProp_reset(&ptr, prop, (all) ? -1 : index)) {
       return op_btnprop_finish_with_undo(C, &ptr, prop);
@@ -183,14 +182,14 @@ static int reset_default_btnEx(Cxt *C, wmOp *op)
   return OP_CANCELLED;
 }
 
-static void UI_OT_reset_default_btn(wmOpType *ot)
+static void UI_OT_reset_default_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Reset to Default Value";
   ot->idname = "UI_OT_reset_default_btn";
   ot->description = "Reset this prop's value to its default value";
 
-  /* callbacks */
+  /* cbs */
   ot->poll = reset_default_btnpoll;
   ot->ex = reset_default_btnEx;
 
@@ -199,13 +198,11 @@ static void UI_OT_reset_default_btn(wmOpType *ot)
    * is responsible for the undo push. */
   ot->flag = 0;
 
-  /* properties */
+  /* props */
   api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
-/* -------------------------------------------------------------------- */
-/** Assign Value as Default Button Operator **/
-
+/* Assign Value as Default Button Operator */
 static bool assign_default_btn_poll(Cxt *C)
 {
   ApiProp ptr;
@@ -224,7 +221,7 @@ static bool assign_default_btn_poll(Cxt *C)
   return false;
 }
 
-static int assign_default_btnEx(Cxt *C, wmOp *UNUSED(op))
+static int assign_default_btnEx(Cxt *C, WinOp *UNUSED(op))
 {
   ApiPtr ptr;
   ApiProp *prop;
@@ -243,32 +240,31 @@ static int assign_default_btnEx(Cxt *C, wmOp *UNUSED(op))
   return OP_CANCELLED;
 }
 
-static void UI_OT_assign_default_btn(wmOpType *ot)
+static void UI_OT_assign_default_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Assign Value as Default";
-  ot->idname = "UI_OT_assign_default_button";
+  ot->idname = "UI_OT_assign_default_btn";
   ot->description = "Set this property's current value as the new default";
 
-  /* callbacks */
+  /* cbs */
   ot->poll = assign_default_btn_poll;
-  ot->exec = assign_default_btn_ex;
+  ot->ex = assign_default_btn_ex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/* -------------------------------------------------------------------- */
-/** Unset Property Button Operator **/
 
-static int unset_btnprop_ex(DuneContext *C, wmOperator *UNUSED(op))
+/* Unset Property Button Op */
+static int unset_btnprop_ex(Cxt *C, WinOp *UNUSED(op))
 {
   ApiProp ptr;
   ApiProp *prop;
   int index;
 
-  /* try to unset the nominated property */
-  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
+  /* try to unset the nominated prop */
+  ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
   if (ptr.data && prop && apiprop_editable(&ptr, prop) &&
@@ -278,29 +274,27 @@ static int unset_btnprop_ex(DuneContext *C, wmOperator *UNUSED(op))
     return op_btnprop_finish(C, &ptr, prop);
   }
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static void UI_OT_unset_btnprop(wmOperatorType *ot)
+static void UI_OT_unset_btnprop(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Unset Property";
+  /* ids */
+  ot->name = "Unset Prop";
   ot->idname = "UI_OT_unset_btnprop";
-  ot->description = "Clear the property and use default or generated value in operators";
+  ot->description = "Clear the prop and use default or generated value in ops";
 
-  /* callbacks */
+  /* cbs */
   ot->poll = ED_op_regionactive;
-  ot->exec = unset_btnprop_ex;
+  ot->ex = unset_btnprop_ex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/* -------------------------------------------------------------------- */
-/** Define Override Type Operator */
-
-/* Note that we use different values for UI/UX than 'real' override operations, user does not care
- * whether it's added or removed for the differential operation e.g. */
+/* Define Override Type Op */
+/* Note that we use different values for UI/UX than 'real' override op, user does not care
+ * whether it's added or removed for the differential op e.g. */
 enum {
   UIOverride_Type_NOOP = 0,
   UIOverride_Type_Replace = 1,
@@ -309,7 +303,7 @@ enum {
   /* TODO: should/can we expose insert/remove ones for collections? Doubt it... */
 };
 
-static EnumPropertyItem override_type_items[] = {
+static EnumPropItem override_type_items[] = {
     {UIOverride_Type_NOOP,
      "NOOP",
      0,
@@ -333,7 +327,7 @@ static EnumPropertyItem override_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static bool override_type_set_btnpoll(DuneContext *C)
+static bool override_type_set_btnpoll(Cxt *C)
 {
   ApiPtr ptr;
   ApiPtr *prop;
@@ -347,7 +341,7 @@ static bool override_type_set_btnpoll(DuneContext *C)
   return (ptr.data && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDABLE));
 }
 
-static int override_type_set_btnex(Cxt *C, wmOp *op)
+static int override_type_set_btnex(Cxt *C, WinOp *op)
 {
   ApiProp ptr;
   ApiProp *prop;
@@ -401,31 +395,31 @@ static int override_type_set_btnex(Cxt *C, wmOp *op)
   }
 
   /* Outliner e.g. has to be aware of this change. */
-  wm_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
+  win_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
   return op_btnprop_finish(C, &ptr, prop);
 }
 
 static int override_type_set_btn_invoke(Cxt *C,
-                                        wmOp *op,
-                                        const wmEvent *UNUSED(event))
+                                        WinOp *op,
+                                        const WinEvent *UNUSED(event))
 {
 #if 0 /* Disabled for now */
-  return wm_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
+  return win_menu_invoke_ex(C, op, WIN_OP_INVOKE_DEFAULT);
 #else
   api_enum_set(op->ptr, "type", IDOVERRIDE_LIB_OP_REPLACE);
   return override_type_set_btnex(C, op);
 #endif
 }
 
-static void UI_OT_override_type_set_btn(wmOpType *ot)
+static void UI_OT_override_type_set_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Define Override Type";
   ot->idname = "UI_OT_override_type_set_btn";
   ot->description = "Create an override op, or set the type of an existing one";
 
-  /* callbacks */
+  /* cbs */
   ot->poll = override_type_set_btnpoll;
   ot->ex = override_type_set_btnex;
   ot->invoke = override_type_set_btninvoke;
@@ -433,7 +427,7 @@ static void UI_OT_override_type_set_btn(wmOpType *ot)
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
+  /* props */
   api_def_bool(ot->sapi, "all", 1, "All", "Reset to default values all elements of the array");
   ot->prop = api_def_enum(ot->sapi,
                           "type",
@@ -441,7 +435,7 @@ static void UI_OT_override_type_set_btn(wmOpType *ot)
                           UIOverride_Type_Replace,
                           "Type",
                           "Type of override op");
-  /* TODO: add itemf callback, not all options are available for all data types... */
+  /* TODO: add itemf cb, not all options are available for all data types... */
 }
 
 static bool override_remove_btnpoll(Cxt *C)
@@ -458,9 +452,9 @@ static bool override_remove_btnpoll(Cxt *C)
   return (ptr.data && ptr.owner_id && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDDEN));
 }
 
-static int override_remove_btnex(Cxt *C, wmOp *op)
+static int override_remove_btnex(Cxt *C, WinOp *op)
 {
-  Main *duneMain = cxt_data_main(C);
+  Main *dunemain = cxt_data_main(C);
   ApiPtr ptr, id_refptr, src;
   ApiPtr *prop;
   int index;
@@ -470,9 +464,9 @@ static int override_remove_btnex(Cxt *C, wmOp *op)
   ui_cxt_active_btnprop_get(C, &ptr, &prop, &index);
 
   Id *id = ptr.owner_id;
-  IdOverrideLibProp *oprop = apiprop_override_prop_find(duneMain, &ptr, prop, &id);
+  IdOverrideLibProp *oprop = apiprop_override_prop_find(dunemain, &ptr, prop, &id);
   lib_assert(oprop != NULL);
-  lib_assert(id != NULL && id->override_library != NULL);
+  lib_assert(id != NULL && id->override_lib != NULL);
 
   const bool is_template = ID_IS_OVERRIDE_LIB_TEMPLATE(id);
 
@@ -480,15 +474,15 @@ static int override_remove_btnex(Cxt *C, wmOp *op)
    * If this is an override template, we obviously do not need to restore anything. */
   if (!is_template) {
     ApiProp *src_prop;
-    apiid_ptr_create(id->override_lib->reference, &id_refptr);
+    apiid_ptr_create(id->override_lib->ref, &id_refptr);
     if (!apipath_resolve_prop(&id_refptr, oprop->api_path, &src, &src_prop)) {
-      lib_assert_msg(0, "Failed to create matching source (linked data) API pointer");
+      lib_assert_msg(0, "Failed to create matching source (linked data) API ptr");
     }
   }
 
   if (!all && index != -1) {
     bool is_strict_find;
-    /* Remove override operation for given item,
+    /* Remove override op for given item,
      * add singular operations for the other items as needed. */
     IdOverrideLibPropOp *opop = dune_lib_override_libprop_op_find(
         oprop, NULL, NULL, index, index, false, &is_strict_find);
@@ -513,10 +507,10 @@ static int override_remove_btnex(Cxt *C, wmOp *op)
     }
   }
   else {
-    /* Just remove whole generic override operation of this property. */
+    /* Just remove whole generic override op of this prop. */
     dune_lib_override_libprop_delete(id->override_lib, oprop);
     if (!is_template) {
-      apiProp_copy(duneMain, &ptr, &src, prop, -1);
+      apiProp_copy(dunemain, &ptr, &src, prop, -1);
     }
   }
 
@@ -526,9 +520,9 @@ static int override_remove_btnex(Cxt *C, wmOp *op)
   return op_btnprop_finish(C, &ptr, prop);
 }
 
-static void UI_OT_override_remove_btn(wmOpType *ot)
+static void UI_OT_override_remove_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Remove Override";
   ot->idname = "UI_OT_override_remove_btn";
   ot->description = "Remove an override operation";
@@ -540,37 +534,35 @@ static void UI_OT_override_remove_btn(wmOpType *ot)
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
+  /* props */
   api_def_bool(ot->sapi, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
-/* -------------------------------------------------------------------- */
-/** Copy To Selected Operator **/
-
+/* Copy To Selected Op */
 #define NOT_NULL(assignment) ((assignment) != NULL)
 #define NOT_API_NULL(assignment) ((assignment).data != NULL)
 
 static void ui_cxt_selected_bones_via_pose(Cxt *C, List *r_lb)
 {
-  List lb;
+  List list;
   lb = cxt_data_collection_get(C, "selected_pose_bones");
 
-  if (!lib_list_is_empty(&lb)) {
-    LIST_FOREACH (CollectionPtrLink *, link, &lb) {
-      DunePoseChannel *pchan = link->ptr.data;
-      apiptr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
+  if (!lib_list_is_empty(&list)) {
+    LIST_FOREACH (CollectionPtrLink *, link, &list) {
+      PoseChannel *pchan = link->ptr.data;
+      apiptr_create(link->ptr.owner_id, &ApiBone, pchan->bone, &link->ptr);
     }
   }
 
-  *r_lb = lb;
+  *r_lb = list;
 }
 
-bool ui_cxt_copy_to_selected_list(DuneContext *C,
-                                      ApiPtr *ptr,
-                                      ApiProp *prop,
-                                      ListBase *r_lb,
-                                      bool *r_use_path_from_id,
-                                      char **r_path)
+bool ui_cxt_copy_to_selected_list(Cxt *C,
+                                  ApiPtr *ptr,
+                                  ApiProp *prop,
+                                  List *r_list,
+                                  bool *r_use_path_from_id,
+                                  char **r_path)
 {
   *r_use_path_from_id = false;
   *r_path = NULL;
@@ -594,7 +586,7 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     if (NOT_API_NULL(
             owner_ptr = cxt_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
       if (NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-        *r_lb = cxt_data_collection_get(C, "selected_pose_bones");
+        *r_list = cxt_data_collection_get(C, "selected_pose_bones");
       }
       else {
         DunePoseChannel *pchan = owner_ptr.data;
@@ -611,7 +603,7 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
       if (NOT_API_NULL(
               owner_ptr = cxt_data_ptr_get_type_silent(C, "active_bone", &Api_EditBone)) &&
           NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-        *r_lb = cxt_data_collection_get(C, "selected_editable_bones");
+        *r_list = cxt_data_collection_get(C, "selected_editable_bones");
       }
 
       /* Add other simple cases here (Node, NodeSocket, Sequence, ViewLayer etc). */
@@ -631,26 +623,26 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     *r_lb = cxt_data_collection_get(C, "selected_pose_bones");
   }
   else if (api_struct_is_a(ptr->type, &api_Bone)) {
-    ui_cxt_selected_bones_via_pose(C, r_lb);
+    ui_cxt_selected_bones_via_pose(C, r_list);
   }
-  else if (api_struct_is_a(ptr->type, &api_Sequence)) {
-    /* Special case when we do this for 'Sequence.lock'.
-     * (if the sequence is locked, it won't be in "selected_editable_sequences"). */
+  else if (api_struct_is_a(ptr->type, &apa_Sequence)) {
+    /* Special case when we do this for 'Seq.lock'.
+     * (if the seq is locked, it won't be in "selected_editable_seqs"). */
     const char *prop_id = api_prop_id(prop);
     if (STREQ(prop_id, "lock")) {
-      *r_lb = cxt_data_collection_get(C, "selected_sequences");
+      *r_list = cxt_data_collection_get(C, "selected_seqs");
     }
     else {
-      *r_lb = ctx_data_collection_get(C, "selected_editable_sequences");
+      *r_list = cxt_data_collection_get(C, "selected_editable_seqs");
     }
-    /* Account for properties only being available for some sequence types. */
+    /* Account for props only being available for some seq types. */
     ensure_list_items_contain_prop = true;
   }
   else if (api_struct_is_a(ptr->type, &api_FCurve)) {
-    *r_lb = cxt_data_collection_get(C, "selected_editable_fcurves");
+    *r_list = cxt_data_collection_get(C, "selected_editable_fcurves");
   }
   else if (api_struct_is_a(ptr->type, &api_Keyframe)) {
-    *r_lb = cxt_data_collection_get(C, "selected_editable_keyframes");
+    *r_list = cxt_data_collection_get(C, "selected_editable_keyframes");
   }
   else if (api_struct_is_a(ptr->type, &api_Action)) {
     *r_lb = cxt_data_collection_get(C, "selected_editable_actions");
@@ -668,16 +660,16 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     *r_path = path_from_bone;
   }
   else if (api_struct_is_a(ptr->type, &api_Node) || api_struct_is_a(ptr->type, &api_NodeSocket)) {
-    List lb = {NULL, NULL};
+    List list = {NULL, NULL};
     char *path = NULL;
     Node *node = NULL;
 
     /* Get the node we're editing */
-    if (api_struct_is_a(ptr->type, &api_NodeSocket)) {
-      NodeTree *ntree = (bNodeTree *)ptr->owner_id;
+    if (api_struct_is_a(ptr->type, &ApiNodeSocket)) {
+      NodeTree *ntree = (NodeTree *)ptr->owner_id;
       NodeSocket *sock = ptr->data;
       if (nodeFindNode(ntree, sock, &node, NULL)) {
-        if ((path = api_path_resolve_from_type_to_prop(ptr, prop, &RNA_Node)) != NULL) {
+        if ((path = api_path_resolve_from_type_to_prop(ptr, prop, &ApiNode)) != NULL) {
           /* we're good! */
         }
         else {
@@ -691,14 +683,14 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
 
     /* Now filter by type */
     if (node) {
-      lb = cxt_data_collection_get(C, "selected_nodes");
+      nodelist = cxt_data_collection_get(C, "selected_nodes");
 
-      LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &lb) {
+      LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &nodelist) {
         Node *node_data = link->ptr.data;
 
         if (node_data->type != node->type) {
-          lib_remlink(&lb, link);
-          mem_freen(link);
+          lib_remlink(&nodelist, link);
+          mem_free(link);
         }
       }
     }
@@ -710,19 +702,19 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
     Id *id = ptr->owner_id;
 
     if (GS(id->name) == ID_OB) {
-      *r_lb = cxt_data_collection_get(C, "selected_editable_objects");
+      *r_list = cxt_data_collection_get(C, "selected_editable_objects");
       *r_use_path_from_id = true;
       *r_path = api_path_from_id_to_prop(ptr, prop);
     }
     else if (OB_DATA_SUPPORT_ID(GS(id->name))) {
       /* check we're using the active object */
       const short id_code = GS(id->name);
-      List lb = cxt_data_collection_get(C, "selected_editable_objects");
+      List list = cxt_data_collection_get(C, "selected_editable_objects");
       char *path = api_path_from_id_to_prop(ptr, prop);
 
       /* de-duplicate obdata */
       if (!lib_list_is_empty(&lb)) {
-        LIST_FOREACH (CollectionPtrLink *, link, &lb) {
+        LIST_FOREACH (CollectionPtrLink *, link, &list) {
           Object *ob = (Object *)link->ptr.owner_id;
           if (ob->data) {
             Id *id_data = ob->data;
@@ -730,13 +722,13 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
           }
         }
 
-        LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &lb) {
+        LIST_FOREACH_MUTABLE (CollectionPtrLink *, link, &list) {
           Object *ob = (Object *)link->ptr.owner_id;
           Id *id_data = ob->data;
 
           if ((id_data == NULL) || (id_data->tag & LIB_TAG_DOIT) == 0 || ID_IS_LINKED(id_data) ||
               (GS(id_data->name) != id_code)) {
-            lib_remlink(&lb, link);
+            lib_remlink(&list, link);
             mem_freen(link);
           }
           else {
@@ -750,24 +742,24 @@ bool ui_cxt_copy_to_selected_list(DuneContext *C,
         }
       }
 
-      *r_lb = lb;
+      *r_list = list;
       *r_path = path;
     }
     else if (GS(id->name) == ID_SCE) {
-      /* Sequencer's ID is scene :/ */
-      /* Try to recursively find an RNA_Sequence ancestor,
+      /* Seq's Id is scene :/ */
+      /* Try to recursively find an ApiSeq ancestor,
        * to handle situations like T41062... */
-      if ((*r_path = api_path_resolve_from_type_to_prop(ptr, prop, &Api_Seq)) != NULL) {
-        /* Special case when we do this for 'Sequence.lock'.
-         * (if the sequence is locked, it won't be in "selected_editable_sequences"). */
-        const char *prop_id = api_prop_identifier(prop);
+      if ((*r_path = api_path_resolve_from_type_to_prop(ptr, prop, &ApiSeq)) != NULL) {
+        /* Special case when we do this for 'Seq.lock'.
+         * (if the sequence is locked, it won't be in "selected_editable_seqs"). */
+        const char *prop_id = api_prop_id(prop);
         if (STREQ(prop_id, "lock")) {
-          *r_lb = cxt_data_collection_get(C, "selected_seqs");
+          *r_list = cxt_data_collection_get(C, "selected_seqs");
         }
         else {
-          *r_lb = cxt_data_collection_get(C, "selected_editable_seqs");
+          *r_list = cxt_data_collection_get(C, "selected_editable_seqs");
         }
-        /* Account for properties only being available for some sequence types. */
+        /* Account for props only being available for some seq types. */
         ensure_list_items_contain_prop = true;
       }
     }
@@ -801,119 +793,29 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
 {
   ApiPtr idptr;
   ApiProp *lprop;
-  ApiPtr lptr;
+  ApiPtr linkptr;
 
   if (ptr_link->data == ptr->data) {
     return false;
   }
 
   if (use_path_from_id) {
-    /* Path relative to ID. */
+    /* Path relative to Id. */
     lprop = NULL;
     api_id_ptr_create(ptr_link->owner_id, &idptr);
-    api_path_resolve_prop(&idptr, path, &lptr, &lprop);
+    api_path_resolve_prop(&idptr, path, &linkptr, &lprop);
   }
   else if (path) {
     /* Path relative to elements from list. */
     lprop = NULL;
-    api_path_resolve_prop(ptr_link, path, &lptr, &lprop);
+    api_path_resolve_prop(ptr_link, path, &linkptr, &lprop);
   }
   else {
-    lptr = *ptr_link;
+    linkptr = *ptr_link;
     lprop = prop;
   }
 
-  if (lptr.data == ptr->data) {
-    /* temp_ptr might not be the same as ptr_link! */
-    return false;
-  }
-
-  /* Skip non-existing properties on link. This was previously covered with the `lprop != prop`
-   * check but we are now more permissive when it comes to ID properties, see below. */
-  if (lprop == NULL) {
-    return false;
-  }
-
-  if (api_prop_type(lprop) != api_prop_type(prop)) {
-    return false;
-  }
-
-  /* Check prop ptrs matching.
-   * For ID props, these ptrs match:
-   * - If the prop is API defined on an existing class (and they are equally named).
-   * - Never for ID props on specific ID (even if they are equally named).
-   * - Never for NodesModSettings props (even if they are equally named).
-   *
-   * Be permissive on ID props in the following cases:
-   * - NodesModSettings props
-   *   - (special check: only if the node-group matches, since the 'Input_n' props are name
-   *      based and similar on potentially very different node-groups).
-   * - ID props on specific ID
-   *   - (no special check, copying seems OK [even if type does not match -- does not do anything
-   *      then]) */
-  bool ignore_prop_eq = api_prop_is_idprop(lprop) && api_prop_is_idprop(prop);
-  if (api_struct_is_a(lptr.type, &Api_NodesMod) &&
-      api_struct_is_a(ptr->type, &Api_NodesMod)) {
-    ignore_prop_eq = false;
-
-    NodesModData *nmd_link = (NodesModData *)lptr.data;
-    NodesModData *nmd_src = (NodesModData *)ptr->data;
-    if (nmd_link->node_group == nmd_src->node_group) {
-      ignore_prop_eq = true;
-    }
-  }
-
-  if ((lprop != prop) && !ignore_prop_eq) {
-    return false;
-  }
-
-  if (!api_prop_editable(&lptr, lprop)) {
-    return false;
-  }
-
-  if (r_ptr) {
-    *r_ptr = lptr;
-  }
-  if (r_prop) {
-    *r_prop = lprop;
-  }
-
-  return true;
-}
-
-bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
-                                   ApiPtr *ptr_link,
-                                   ApiProp *prop,
-                                   const char *path,
-                                   bool use_path_from_id,
-                                   ApiPtr *r_ptr,
-                                   ApiProp **r_prop)
-{
-  ApiPtr idptr;
-  ApiProp *lprop;
-  ApiPtr lptr;
-
-  if (ptr_link->data == ptr->data) {
-    return false;
-  }
-
-  if (use_path_from_id) {
-    /* Path relative to ID. */
-    lprop = NULL;
-    api_id_ptr_create(ptr_link->owner_id, &idptr);
-    api_path_resolve_prop(&idptr, path, &lptr, &lprop);
-  }
-  else if (path) {
-    /* Path relative to elements from list. */
-    lprop = NULL;
-    api_path_resolve_prop(ptr_link, path, &lptr, &lprop);
-  }
-  else {
-    lptr = *ptr_link;
-    lprop = prop;
-  }
-
-  if (lptr.data == ptr->data) {
+  if (linkptr.data == ptr->data) {
     /* temp_ptr might not be the same as ptr_link! */
     return false;
   }
@@ -931,20 +833,19 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
   /* Check prop ptrs matching.
    * For Id props, these ptrs match:
    * - If the prop is API defined on an existing class (and they are equally named).
-   * - Never for ID props on specific ID (even if they are equally named).
+   * - Never for Id props on specific Id (even if they are equally named).
    * - Never for NodesModSettings props (even if they are equally named).
    *
    * Be permissive on Id props in the following cases:
    * - NodesModSettings props
-   *   - (special check: only if the node-group matches, since the 'Input_n' properties are name
+   *   - (special check: only if the node-group matches, since the 'Input_n' props are name
    *      based and similar on potentially very different node-groups).
-   * - ID props on specific ID
+   * - Id props on specific Id
    *   - (no special check, copying seems OK [even if type does not match -- does not do anything
-   *      then])
-   */
+   *      then]) */
   bool ignore_prop_eq = api_prop_is_idprop(lprop) && api_prop_is_idprop(prop);
-  if (api_struct_is_a(lptr.type, &Api_NodesMod) &&
-      api_struct_is_a(ptr->type, &Api_NodesMod)) {
+  if (api_struct_is_a(lptr.type, &ApiNodesMod) &&
+      api_struct_is_a(ptr->type, &ApiNodesMod)) {
     ignore_prop_eq = false;
 
     NodesModData *nmd_link = (NodesModData *)lptr.data;
@@ -958,7 +859,98 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
     return false;
   }
 
-  if (!api_prop_editable(&lptr, lprop)) {
+  if (!api_prop_editable(&linkptr, lprop)) {
+    return false;
+  }
+
+  if (r_ptr) {
+    *r_ptr = linkptr;
+  }
+  if (r_prop) {
+    *r_prop = lprop;
+  }
+
+  return true;
+}
+
+bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
+                                   ApiPtr *ptr_link,
+                                   ApiProp *prop,
+                                   const char *path,
+                                   bool use_path_from_id,
+                                   ApiPtr *r_ptr,
+                                   ApiProp **r_prop)
+{
+  ApiPtr idptr;
+  ApiProp *linkprop;
+  ApiPtr linkptr;
+
+  if (ptr_link->data == ptr->data) {
+    return false;
+  }
+
+  if (use_path_from_id) {
+    /* Path relative to Id */
+    linkprop = NULL;
+    api_id_ptr_create(ptr_link->owner_id, &idptr);
+    api_path_resolve_prop(&idptr, path, &linkptr, &linkprop);
+  }
+  else if (path) {
+    /* Path relative to elements from list. */
+    lprop = NULL;
+    api_path_resolve_prop(ptr_link, path, &lptr, &lprop);
+  }
+  else {
+    linkptr = *ptr_link;
+    linkprop = prop;
+  }
+
+  if (linkptr.data == ptr->data) {
+    /* temp_ptr might not be the same as ptr_link! */
+    return false;
+  }
+
+  /* Skip non-existing props on link. This was previously covered with the `linkprop != prop`
+   * check but we are now more permissive when it comes to Id props, see below. */
+  if (lprop == NULL) {
+    return false;
+  }
+
+  if (api_prop_type(linkprop) != api_prop_type(prop)) {
+    return false;
+  }
+
+  /* Check prop ptrs matching.
+   * For Id props, these ptrs match:
+   * - If the prop is API defined on an existing class (and they are equally named).
+   * - Never for Id props on specific Id (even if they are equally named).
+   * - Never for NodesModSettings props (even if they are equally named).
+   *
+   * Be permissive on Id props in the following cases:
+   * - NodesModSettings props
+   *   - (special check: only if the node-group matches, since the 'Input_n' properties are name
+   *      based and similar on potentially very different node-groups).
+   * - Id props on specific Id
+   *   - (no special check, copying seems OK [even if type does not match -- does not do anything
+   *      then])
+   */
+  bool ignore_prop_eq = api_prop_is_idprop(linkprop) && api_prop_is_idprop(prop);
+  if (api_struct_is_a(lptr.type, &ApiNodesMod) &&
+      api_struct_is_a(ptr->type, &ApiNodesMod)) {
+    ignore_prop_eq = false;
+
+    NodesModData *nmd_link = (NodesModData *)linkptr.data;
+    NodesModData *nmd_src = (NodesModData *)ptr->data;
+    if (nmd_link->node_group == nmd_src->node_group) {
+      ignore_prop_eq = true;
+    }
+  }
+
+  if ((linkprop != prop) && !ignore_prop_eq) {
+    return false;
+  }
+
+  if (!api_prop_editable(&lptr, linkprop)) {
     return false;
   }
 
@@ -975,7 +967,7 @@ bool ui_cxt_copy_to_selected_check(ApiPtr *ptr,
 /* Called from both ex & poll.
  * Normally we wouldn't call a loop from within a poll fn,
  * however this is a special case, and for regular poll calls, getting
- * the context from the btn will fail early. */
+ * the cxt from the btn will fail early. */
 static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
 {
   Main *main = cxt_data_main(C);
@@ -994,9 +986,9 @@ static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
 
   char *path = NULL;
   bool use_path_from_id;
-  List lb = {NULL};
+  List list = {NULL};
 
-  if (!ui_cxt_copy_to_selected_list(C, &ptr, prop, &lb, &use_path_from_id, &path)) {
+  if (!ui_cxt_copy_to_selected_list(C, &ptr, prop, &list, &use_path_from_id, &path)) {
     return false;
   }
   if (lib_list_is_empty(&lb)) {
@@ -1004,13 +996,13 @@ static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
     return false;
   }
 
-  LIST_FOREACH (CollectionPtrLink *, link, &lb) {
+  LIST_FOREACH (CollectionPtrLink *, link, &list) {
     if (link->ptr.data == ptr.data) {
       continue;
     }
 
     if (!ui_cxt_copy_to_selected_check(
-            &ptr, &link->ptr, prop, path, use_path_from_id, &lptr, &lprop)) {
+            &ptr, &link->ptr, prop, path, use_path_from_id, &linkptr, &linkprop)) {
       continue;
     }
 
@@ -1018,14 +1010,14 @@ static bool copy_to_selected_btn(Cxt *C, bool all, bool poll)
       success = true;
       break;
     }
-    if (api_prop_copy(main, &lptr, &ptr, prop, (all) ? -1 : index)) {
-      api_prop_update(C, &lptr, prop);
+    if (api_prop_copy(main, &linkptr, &ptr, prop, (all) ? -1 : index)) {
+      api_prop_update(C, &linkptr, prop);
       success = true;
     }
   }
 
   MEM_SAFE_FREE(path);
-  lib_freelistn(&lb);
+  lib_freelist(&list);
 
   return success;
 }
@@ -1035,7 +1027,7 @@ static bool copy_to_selected_btn_poll(Cxt *C)
   return copy_to_selected_btn(C, false, true);
 }
 
-static int copy_to_selected_btn_ex(Cxt *C, wmOp *op)
+static int copy_to_selected_btn_ex(Cxt *C, WinOp *op)
 {
   bool success;
 
@@ -1046,14 +1038,14 @@ static int copy_to_selected_btn_ex(Cxt *C, wmOp *op)
   return (success) ? OP_FINISHED : OP_CANCELLED;
 }
 
-static void UI_OT_copy_to_selected_btn(wmOpType *ot)
+static void UI_OT_copy_to_selected_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Copy to Selected";
   ot->idname = "UI_OT_copy_to_selected_btn";
   ot->description = "Copy prop from this object to selected objects or bones";
 
-  /* callbacks */
+  /* cbs */
   ot->poll = copy_to_selected_btn_poll;
   ot->ex = copy_to_selected_btn_ex;
 
@@ -1065,7 +1057,6 @@ static void UI_OT_copy_to_selected_btn(wmOpType *ot)
 }
 
 /* Jump to Target Op */
-
 /** Jump to the object or bone ref by the ptr, or check if it is possible. */
 static bool jump_to_target_ptr(Cxt *C, ApiPtr ptr, const bool poll)
 {
@@ -1073,18 +1064,18 @@ static bool jump_to_target_ptr(Cxt *C, ApiPtr ptr, const bool poll)
     return false;
   }
 
-  /* Verify pointer type. */
+  /* Verify ptr type. */
   char bone_name[MAXBONENAME];
   const ApiStruct *target_type = NULL;
 
-  if (ELEM(ptr.type, &Api_EditBone, &Api_PoseBone, &Api_Bone)) {
+  if (ELEM(ptr.type, &ApiEditBone, &ApiPoseBone, &ApiBone)) {
     api_string_get(&ptr, "name", bone_name);
     if (bone_name[0] != '\0') {
-      target_type = &Api_Bone;
+      target_type = &ApiBone;
     }
   }
-  else if (api_struct_is_a(ptr.type, &RNA_Object)) {
-    target_type = &Api_Object;
+  else if (api_struct_is_a(ptr.type, &ApiObject)) {
+    target_type = &ApiObject;
   }
 
   if (target_type == NULL) {
@@ -1103,7 +1094,7 @@ static bool jump_to_target_ptr(Cxt *C, ApiPtr ptr, const bool poll)
   }
 
   bool ok = false;
-  if ((base == NULL) || ((target_type == &RNA_Bone) && (base->object->type != OB_ARMATURE))) {
+  if ((base == NULL) || ((target_type == &ApiBone) && (base->object->type != OB_ARMATURE))) {
     /* pass */
   }
   else if (poll) {
@@ -1150,12 +1141,12 @@ static bool jump_to_target_btn(Cxt *C, bool poll)
     }
     /* For string properties with prop_search, look up the search collection item. */
     if (type == PROP_STRING) {
-      const uiBtn *btn = ui_cxt_active_btn_get(C);
-      const uiBtnSearch *search_btn = (btn->type == UI_BTYPE_SEARCH_MENU) ? (uiBtnSearch *)btn :
+      const Btn *btn = ui_cxt_active_btn_get(C);
+      const BtnSearch *search_btn = (btn->type == BTYPE_SEARCH_MENU) ? (BtnSearch *)btn :
                                                                             NULL;
 
       if (search_btn && search_btn->items_update_fn == ui_api_collection_search_update_fn) {
-        uiApiCollectionSearch *coll_search = search_but->arg;
+        uiApiCollectionSearch *coll_search = search_btn->arg;
 
         char str_buf[MAXBONENAME];
         char *str_ptr = api_prop_string_get_alloc(&ptr, prop, str_buf, sizeof(str_buf), NULL);
@@ -1182,21 +1173,21 @@ bool ui_jump_to_target_btn_poll(Cxt *C)
   return jump_to_target_btn(C, true);
 }
 
-static int jump_to_target_btn_ex(Cxt *C, wmOp *UNUSED(op))
+static int jump_to_target_btn_ex(Cxt *C, WinOp *UNUSED(op))
 {
   const bool success = jump_to_target_btn(C, false);
 
   return (success) ? OP_FINISHED : OP_CANCELLED;
 }
 
-static void UI_OT_jump_to_target_btn(wmOpType *ot)
+static void UI_OT_jump_to_target_btn(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Jump to Target";
   ot->idname = "UI_OT_jump_to_target_btn";
   ot->description = "Switch to the target object or bone";
 
-  /* callbacks */
+  /* cbss */
   ot->poll = ui_jump_to_target_btn_poll;
   ot->ex = jump_to_target_btn_ex;
 
@@ -1205,12 +1196,10 @@ static void UI_OT_jump_to_target_btn(wmOpType *ot)
 }
 
 /* Edit Python Source Operator */
-
 #ifdef WITH_PYTHON
 
-/* ------------------------------------------------------------------------- */
-/* EditSource Utility funcs and operator,
- * NOTE: this includes utility functions and button matching checks. */
+/* EditSource Utility fns and op,
+ * NOTE: this includes util fns and btn matching checks. */
 
 typedef struct uiEditSourceStore {
   uiBtn btn_orig;
@@ -1222,7 +1211,7 @@ typedef struct uiEditSourceBtnStore {
   int py_dbg_line_number;
 } uiEditSourceBtnStore;
 
-/* should only ever be set while the edit source operator is running */
+/* should only ever be set while the edit source op is running */
 static struct uiEditSourceStore *ui_editsource_info = NULL;
 
 bool ui_editsource_enable_check(void)
@@ -1230,12 +1219,12 @@ bool ui_editsource_enable_check(void)
   return (ui_editsource_info != NULL);
 }
 
-static void ui_editsource_active_btn_set(uiBtn *btn)
+static void ui_editsource_active_btn_set(Btn *btn)
 {
   lib_assert(ui_editsource_info == NULL);
 
   ui_editsource_info = mem_callocn(sizeof(uiEditSourceStore), __func__);
-  memcpy(&ui_editsource_info->btn_orig, btn, sizeof(uiBtn));
+  memcpy(&ui_editsource_info->btn_orig, btn, sizeof(Btn));
 
   ui_editsource_info->hash = lib_ghash_ptr_new(__func__);
 }
@@ -1247,7 +1236,7 @@ static void ui_editsource_active_btn_clear(void)
   ui_editsource_info = NULL;
 }
 
-static bool ui_editsource_uibtn_match(uiBtn *btn_a, uiBtn *btn_b)
+static bool ui_editsource_btn_match(Btn *btn_a, Btn *btn_b)
 {
 #  if 0
   printf("matching btns: '%s' == '%s'\n", btn_a->drawstr, btn_b->drawstr);
@@ -1265,7 +1254,7 @@ static bool ui_editsource_uibtn_match(uiBtn *btn_a, uiBtn *btn_b)
   return false;
 }
 
-void ui_editsource_active_btn_test(uiBtn *btn)
+void ui_editsource_active_btn_test(Btn *btn)
 {
   extern void PyC_FileAndNum_Safe(const char **r_filename, int *r_lineno);
 
@@ -1292,7 +1281,7 @@ void ui_editsource_active_btn_test(uiBtn *btn)
   lin_ghash_insert(ui_editsource_info->hash, btn, btn_store);
 }
 
-void ui_editsource_btn_replace(const uiBtn *old_btn, uiBtn *new_btn)
+void ui_editsource_btn_replace(const Btn *old_btn, Btn *new_btn)
 {
   uiEditSourceBtnStore *btn_store = lib_ghash_lookup(ui_editsource_info->hash, old_btn);
   if (btn_store) {
@@ -1302,7 +1291,7 @@ void ui_editsource_btn_replace(const uiBtn *old_btn, uiBtn *new_btn)
 }
 
 static int editsource_text_edit(Cxt *C,
-                                wmOp *op,
+                                WinOp *op,
                                 const char filepath[FILE_MAX],
                                 const int line)
 {
@@ -1320,7 +1309,7 @@ static int editsource_text_edit(Cxt *C,
   }
 
   if (text == NULL) {
-    text = dune_text_load(main, filepath, BKE_main_blendfile_path(bmain));
+    text = dune_text_load(main, filepath, dine_main_file_path(main));
   }
 
   if (text == NULL) {
@@ -1341,34 +1330,34 @@ static int editsource_text_edit(Cxt *C,
   return OP_FINISHED;
 }
 
-static int editsource_ex(Cxt *C, wmOp *op)
+static int editsource_ex(Cxt *C, WinOp *op)
 {
-  uiBtn *btn = ui_cxt_active_btn_get(C);
+  Btn *btn = ui_cxt_active_btn_get(C);
 
   if (btn) {
     GHashIter ghi;
     struct uiEditSourceBtnStore *btn_store = NULL;
 
-    ARegion *region = cxt_wm_region(C);
+    ARegion *region = cxt_win_region(C);
     int ret;
 
     /* needed else the active btn does not get tested */
-    ui_screen_free_active_btn_highlight(C, cxt_wm_screen(C));
+    ui_screen_free_active_btn_highlight(C, cxt_win_screen(C));
 
     // printf("%s: begin\n", __func__);
 
-    /* take care not to return before calling ui_editsource_active_but_clear */
+    /* take care not to return before calling ui_editsource_active_btn_clear */
     ui_editsource_active_btn_set(btn);
 
-    /* redraw and get active button python info */
+    /* redraw and get active btn python info */
     ui_region_redraw_immediately(C, region);
 
     for (lib_ghashIter_init(&ghi, ui_editsource_info->hash);
          lib_ghashIter_done(&ghi) == false;
          lib_ghashIter_step(&ghi)) {
-      uiBtn *btn_key = lib_ghashIter_getKey(&ghi);
-      if (btn_key && ui_editsource_uibtn_match(&ui_editsource_info->btn_orig, btn_key)) {
-        btn_store = lib_ghashIterator_getValue(&ghi);
+      Btn *btn_key = lib_ghashIter_getKey(&ghi);
+      if (btn_key && ui_editsource_btn_match(&ui_editsource_info->btn_orig, btn_key)) {
+        btn_store = lib_ghashIter_getValue(&ghi);
         break;
       }
     }
@@ -1388,33 +1377,32 @@ static int editsource_ex(Cxt *C, wmOp *op)
       ret = OP_CANCELLED;
     }
 
-    ui_editsource_active_but_clear();
+    ui_editsource_active_btn_clear();
 
     // printf("%s: end\n", __func__);
 
     return ret;
   }
 
-  dune_report(op->reports, RPT_ERROR, "Active button not found");
+  dune_report(op->reports, RPT_ERROR, "Active btn not found");
   return OP_CANCELLED;
 }
 
-static void UI_OT_editsource(wmOpType *ot)
+static void UI_OT_editsource(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Edit Source";
   ot->idname = "UI_OT_editsource";
-  ot->description = "Edit UI source code of the active button";
+  ot->description = "Edit UI source code of the active btn";
 
-  /* callbacks */
+  /* cbs */
   ot->ex = editsource_ex;
 }
 
-/* Edit Translation Operator */
-
-/* EditTranslation utility funcs and operator,
- * this includes utility functions and button matching checks.
- * this only works in conjunction with a Python operator! */
+/* Edit Translation Op */
+/* EditTranslation util fns and operator,
+ * this includes util fns and btn matching checks.
+ * this only works in conjunction with a Python op! */
 static void edittranslation_find_po_file(const char *root,
                                          const char *uilng,
                                          char *path,
@@ -1463,7 +1451,7 @@ static void edittranslation_find_po_file(const char *root,
   path[0] = '\0';
 }
 
-static int edittranslation_ex(Cxt *C, wmOp *op)
+static int edittranslation_ex(Cxt *C, WinOp *op)
 {
   uiBtn *btn = ui_cxt_active_btn_get(C);
   if (btn == NULL) {
@@ -1471,7 +1459,7 @@ static int edittranslation_ex(Cxt *C, wmOp *op)
     return OP_CANCELLED;
   }
 
-  wmOpType *ot;
+  WinOpType *ot;
   ApiPtr ptr;
   char popath[FILE_MAX];
   const char *root = U.i18ndir;
@@ -1495,7 +1483,7 @@ static int edittranslation_ex(Cxt *C, wmOp *op)
                "Directory' path to a valid directory");
     return OP_CANCELLED;
   }
-  ot = wm_optype_find(EDTSRC_LANG_OP_NAME, 0);
+  ot = win_optype_find(EDTSRC_LANG_OP_NAME, 0);
   if (ot == NULL) {
     dune_reportf(op->reports,
                 RPT_ERROR,
@@ -1513,21 +1501,21 @@ static int edittranslation_ex(Cxt *C, wmOp *op)
     return OP_CANCELLED;
   }
 
-  ui_but_string_info_get(C,
-                         btn,
-                         &btn_label,
-                         &api_label,
-                         &enum_label,
-                         &btn_tip,
-                         &api_tip,
-                         &enum_tip,
-                         &api_struct,
-                         &api_prop,
-                         &api_enum,
-                         &api_cxt,
-                         NULL);
+  btn_string_info_get(C,
+                      btn,
+                      &btn_label,
+                      &api_label,
+                      &enum_label,
+                      &btn_tip,
+                      &api_tip,
+                      &enum_tip,
+                      &api_struct,
+                      &api_prop,
+                      &api_enum,
+                      &api_cxt,
+                      NULL);
 
-  wm_op_props_create_ptr(&ptr, ot);
+  win_op_props_create_ptr(&ptr, ot);
   api_string_set(&ptr, "lang", uilng);
   api_string_set(&ptr, "po_file", popath);
   api_string_set(&ptr, "btn_label", btn_label.strinfo);
@@ -1540,7 +1528,7 @@ static int edittranslation_ex(Cxt *C, wmOp *op)
   api_string_set(&ptr, "api_prop", api_prop.strinfo);
   api_string_set(&ptr, "api_enum", api_enum.strinfo);
   api_string_set(&ptr, "api_cxt", api_cxt.strinfo);
-  const int ret = wm_op_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, &ptr, NULL);
+  const int ret = win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, &ptr, NULL);
 
   /* Clean up */
   if (btn_label.strinfo) {
@@ -1577,46 +1565,46 @@ static int edittranslation_ex(Cxt *C, wmOp *op)
   return ret;
 }
 
-static void UI_OT_edittranslation_init(wmOpType *ot)
+static void UI_OT_edittranslation_init(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Edit Translation";
   ot->idname = "UI_OT_edittranslation_init";
   ot->description = "Edit current lang for the active btn";
 
-  /* callbacks */
+  /* cbs */
   ot->ex = edittranslation_ex;
 }
 
 #endif /* WITH_PYTHON */
 
-/* Reload Translation Operator */
-static int reloadtranslation_ex(Cxt *UNUSED(C), wmOp *UNUSED(op))
+/* Reload Translation Op */
+static int reloadtranslation_ex(Cxt *UNUSED(C), WinOp *UNUSED(op))
 {
   lang_init();
-  BLF_cache_clear();
+  font_cache_clear();
   lang_set(NULL);
   ui_reinit_font();
   return OP_FINISHED;
 }
 
-static void UI_OT_reloadtranslation(wmOpType *ot)
+static void UI_OT_reloadtranslation(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Reload Translation";
   ot->idname = "UI_OT_reloadtranslation";
   ot->description = "Force a full reload of UI translation";
 
-  /* callbacks */
+  /* cbs */
   ot->ex = reloadtranslation_ex;
 }
 
 /* Press Btn Op */
-static int ui_btn_press_invoke(Cxt *C, wmOp *op, const wmEvent *event)
+static int ui_btn_press_invoke(Cxt *C, WinOp *op, const WinEvent *event)
 {
-  Screen *screen = cxt_wm_screen(C);
+  Screen *screen = cxt_win_screen(C);
   const bool skip_depressed = api_bool_get(op->ptr, "skip_depressed");
-  ARegion *region_prev = cxt_wm_region(C);
+  ARegion *region_prev = cxt_win_region(C);
   ARegion *region = screen ? dune_screen_find_region_xy(screen, RGN_TYPE_ANY, event->xy) : NULL;
 
   if (region == NULL) {
@@ -1627,9 +1615,9 @@ static int ui_btn_press_invoke(Cxt *C, wmOp *op, const wmEvent *event)
     return OP_PASS_THROUGH;
   }
 
-  cxt_wm_region_set(C, region);
-  uiBtn *btn = ui_cxt_active_btn_get(C);
-  cxt_wm_region_set(C, region_prev);
+  cxt_win_region_set(C, region);
+  Btn *btn = ui_cxt_active_btn_get(C);
+  cxt_win_region_set(C, region_prev);
 
   if (btn == NULL) {
     return OP_PASS_THROUGH;
@@ -1638,24 +1626,24 @@ static int ui_btn_press_invoke(Cxt *C, wmOp *op, const wmEvent *event)
     return OP_PASS_THROUGH;
   }
 
-  /* Weak, this is a workaround for 'ui_btn_is_tool', which checks the operator type,
+  /* Weak, this is a workaround for 'ui_btn_is_tool', which checks the op type,
    * having this avoids a minor drawing glitch. */
   void *btn_optype = btn->optype;
 
-  ui_btn_execute(C, region, but);
+  ui_btn_ex(C, region, btn);
 
   btn->optype = btn_optype;
 
-  wm_event_add_mousemove(cxt_wm_window(C));
+  win_event_add_mousemove(cxt_win_window(C));
 
   return OP_FINISHED;
 }
 
-static void UI_OT_btn_ex(wmOpType *ot)
+static void UI_OT_btn_ex(WinOpType *ot)
 {
-  ot->name = "Press Button";
+  ot->name = "Press Btn";
   ot->idname = "UI_OT_btn_ex";
-  ot->description = "Presses active button";
+  ot->description = "Presses active btn";
 
   ot->invoke = ui_btn_press_invoke;
   ot->flag = OPTYPE_INTERNAL;
@@ -1663,8 +1651,8 @@ static void UI_OT_btn_ex(wmOpType *ot)
   api_def_bool(ot->sapi, "skip_depressed", 0, "Skip Depressed", "");
 }
 
-/* Text Btn Clear Operator **/
-static int btn_string_clear_ex(Cxt *C, wmOp *UNUSED(op))
+/* Text Btn Clear Op */
+static int btn_string_clear_ex(Cxt *C, WinOp *UNUSED(op))
 {
   uiBtn *btn = ui_cxt_active_btn_get_respect_menu(C);
 
@@ -1675,9 +1663,9 @@ static int btn_string_clear_ex(Cxt *C, wmOp *UNUSED(op))
   return OP_FINISHED;
 }
 
-static void UI_OT_btn_string_clear(wmOpType *ot)
+static void UI_OT_btn_string_clear(WinOpType *ot)
 {
-  ot->name = "Clear Button String";
+  ot->name = "Clear Btn String";
   ot->idname = "UI_OT_btn_string_clear";
   ot->description = "Unsets the text of the active button";
 
@@ -1686,14 +1674,14 @@ static void UI_OT_btn_string_clear(wmOpType *ot)
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-/* Drop Color Operator **/
-bool ui_drop_color_poll(struct Cxt *C, wmDrag *drag, const wmEvent *UNUSED(event))
+/* Drop Color Op **/
+bool ui_drop_color_poll(struct Cxt *C, WinDrag *drag, const WinEvent *UNUSED(event))
 {
   /* should only return true for regions that include buttons, for now
    * return true always */
   if (drag->type == WM_DRAG_COLOR) {
-    SpaceImage *sima = cxt_wm_space_image(C);
-    ARegion *region = cxt_wm_region(C);
+    SpaceImage *sima = cxt_win_space_image(C);
+    ARegion *region = cxt_win_region(C);
 
     if (ui_btn_active_drop_color(C)) {
       return 1;
@@ -1708,7 +1696,7 @@ bool ui_drop_color_poll(struct Cxt *C, wmDrag *drag, const wmEvent *UNUSED(event
   return 0;
 }
 
-void UI_drop_color_copy(wmDrag *drag, wmDropBox *drop)
+void UI_drop_color_copy(WinDrag *drag, WinDropBox *drop)
 {
   uiDragColorHandle *drag_info = drag->poin;
 
@@ -1716,22 +1704,22 @@ void UI_drop_color_copy(wmDrag *drag, wmDropBox *drop)
   api_bool_set(drop->ptr, "gamma", drag_info->gamma_corrected);
 }
 
-static int drop_color_invoke(Cxt *C, wmOp *op, const wmEvent *event)
+static int drop_color_invoke(Cxt *C, WinOp *op, const WinEvent *event)
 {
-  ARegion *region = cxt_wm_region(C);
-  uiBtn *btn = NULL;
+  ARegion *region = cxt_win_region(C);
+  Btn *btn = NULL;
   float color[4];
   bool gamma;
 
   api_float_get_array(op->ptr, "color", color);
   gamma = api_bool_get(op->ptr, "gamma");
 
-  /* find button under mouse, check if it has api color prop and
+  /* find btn under mouse, check if it has api color prop and
    * if it does copy the data */
-  btn = ui_region_find_active_but(region);
+  btn = ui_region_find_active_btn(region);
 
   if (btn && btn->type == UI_BTYPE_COLOR && btn->apiprop) {
-    const int color_len = api_prop_array_length(&btn->apipoin, but->rnaprop);
+    const int color_len = api_prop_array_length(&btn->apiptr, but->apiprop);
     lib_assert(color_len <= 4);
 
     /* keep alpha channel as-is */
