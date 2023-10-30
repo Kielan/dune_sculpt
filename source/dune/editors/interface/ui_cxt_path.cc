@@ -10,7 +10,7 @@
 #include "ui.hh"
 #include "ui_resources.h"
 
-#include "wm_api.h"
+#include "win_api.h"
 
 namespace dune::ui {
 
