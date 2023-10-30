@@ -32,14 +32,13 @@ struct WinOpType;
 struct WinTimer;
 
 /* general defines */
-
-#define RNA_NO_INDEX -1
-#define RNA_ENUM_VALUE -2
+#define API_NO_INDEX -1
+#define API_ENUM_VALUE -2
 
 #define UI_MENU_PADDING (int)(0.2f * UI_UNIT_Y)
 
 #define UI_MENU_WIDTH_MIN (UI_UNIT_Y * 9)
-/** Some extra padding added to menus containing sub-menu icons. */
+/* Some extra padding added to menus containing sub-menu icons. */
 #define UI_MENU_SUBMENU_PADDING (6 * UI_DPI_FAC)
 
 /* menu scrolling */
@@ -54,7 +53,7 @@ struct WinTimer;
 /* Popover width (multiplied by #U.widget_unit) */
 #define UI_POPOVER_WIDTH_UNITS 10
 
-/* uiBtn.flag */
+/* Btn.flag */
 enum {
   /* Use when the btn is pressed. */
   UI_SELECT = (1 << 0),
@@ -67,15 +66,15 @@ enum {
   UI_SELECT_DRAW = (1 << 5),
   /* Prop search filter is active and the bn does not match. */
   UI_SEARCH_FILTER_NO_MATCH = (1 << 6),
-  /* WARNING: rest of #uiBut.flag in UI_interface.h */
+  /* Rest of Btn.flag in ui_interface.h */
 };
 
-/* uiBtn.dragflag */
+/* Btn.dragflag */
 enum {
-  UI_BTN_DRAGPOIN_FREE = (1 << 0),
+  BTN_DRAGPOIN_FREE = (1 << 0),
 };
 
-/* uiBtn.pie_dir */
+/* Btn.pie_dir */
 typedef enum RadialDirection {
   UI_RADIAL_NONE = -1,
   UI_RADIAL_N = 0,
@@ -158,13 +157,13 @@ struct uiBtn {
   /* both these values use depends on the button type
    * (polymorphic struct or union would be nicer for this stuff) */
 
-  /* For uiBtn.type:
+  /* For Btn.type:
    * - UI_BTYPE_LABEL:        Use `(a1 == 1.0f)` to use a2 as a blending factor (imaginative!).
    * - UI_BTYPE_SCROLL:       Use as scroll size.
    * - UI_BTYPE_SEARCH_MENU:  Use as number or rows. */
   float a1;
 
-  /* For uiBtn.type:
+  /* For Btn.type:
    * - UI_BTYPE_HSVCIRCLE:    Use to store the luminosity.
    * - UI_BTYPE_LABEL:        If `(a1 == 1.0f)` use a2 as a blending factor.
    * - UI_BTYPE_SEARCH_MENU:  Use as number or columns. */
@@ -181,19 +180,19 @@ struct uiBtn {
 
   struct CxtStore *cxt;
 
-  uiBtnCompleteFn autocomplete_fn;
+  BtnCompleteFn autocomplete_fn;
   void *autofn_arg;
 
-  uiBtnHandleRenameFn rename_fn;
+  BtnHandleRenameFn rename_fn;
   void *rename_arg1;
   void *rename_orig;
 
   /* Run an action when holding the btn down. */
-  uiBtnHandleHoldFn hold_fn;
+  BtnHandleHoldFn hold_fn;
   void *hold_argN;
 
   const char *tip;
-  uiBtnToolTipFn tip_fn;
+  BtnToolTipFn tip_fn;
   void *tip_arg;
   uiFreeArgFn tip_arg_free;
 
@@ -259,27 +258,27 @@ struct uiBtn {
   uiBlock *block;
 };
 
-/* Derived struct for UI_BTYPE_NUM */
-typedef struct uiBtnNumber {
-  uiBtn btn;
+/* Derived struct for BTYPE_NUM */
+typedef struct BtnNumber {
+  Btn btn;
 
   float step_size;
   float precision;
-} uiBtnNumber;
+} BtnNumber;
 
-/* Derived struct for UI_BTYPE_COLOR */
-typedef struct uiBtnColor {
-  uiBtn btn;
+/* Derived struct for BTYPE_COLOR */
+typedef struct BtnColor {
+  Btn btn;
 
   bool is_pallete_color;
   int palette_color_index;
-} uiBtnColor;
+} BtnColor;
 
-/* Derived struct for UI_BTYPE_TAB */
-typedef struct uiBtnTab {
-  uiBtn btn;
+/* Derived struct for BTYPE_TAB */
+typedef struct BtnTab {
+  Btn btn;
   struct MenuType *menu;
-} uiBtnTab;
+} BtnTab;
 
 /* Derived struct for UI_BTYPE_SEARCH_MENU */
 typedef struct BtnSearch {
@@ -688,25 +687,18 @@ extern PropScaleType btn_scale_type(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
 extern bool btn_is_float(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
 extern bool btn_is_bool(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
 extern bool btn_is_unit(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
-/**
- * Check if this button is similar enough to be grouped with another.
- */
-extern bool ui_but_is_compatible(const uiBut *but_a, const uiBut *but_b) ATTR_WARN_UNUSED_RESULT;
-extern bool ui_but_is_rna_valid(uiBut *but) ATTR_WARN_UNUSED_RESULT;
-/**
- * Checks if the button supports cycling next/previous menu items (ctrl+mouse-wheel).
- */
-extern bool ui_but_supports_cycling(const uiBut *but) ATTR_WARN_UNUSED_RESULT;
+/* Check if this btn is similar enough to be grouped with another */
+extern bool btn_is_compatible(const Btn *btn_a, const Btn *btn_b) ATTR_WARN_UNUSED_RESULT;
+extern bool btn_is_rna_valid(uiBut *but) ATTR_WARN_UNUSED_RESULT;
+/* Checks if the btn supports cycling next/previous menu items (ctrl+mouse-wheel). */
+extern bool btn_supports_cycling(const Btn *btn) ATTR_WARN_UNUSED_RESULT;
 
-/**
- * Check if the button is pushed, this is only meaningful for some button types.
- *
- * \return (0 == UNSELECT), (1 == SELECT), (-1 == DO-NOTHING)
- */
-extern int ui_but_is_pushed_ex(uiBut *but, double *value) ATTR_WARN_UNUSED_RESULT;
-extern int ui_but_is_pushed(uiBut *but) ATTR_WARN_UNUSED_RESULT;
+/* Check if the button is pushed, this is only meaningful for some btn types.
+ * return (0 == UNSELECT), (1 == SELECT), (-1 == DO-NOTHING) */
+extern int btn_is_pushed_ex(Btn *btn, double *value) ATTR_WARN_UNUSED_RESULT;
+extern int btn_is_pushed(Btn *btn) ATTR_WARN_UNUSED_RESULT;
 
-void ui_but_override_flag(struct Main *bmain, uiBut *but);
+void btn_override_flag(struct Main *main, Btn *btn);
 
 extern void ui_block_bounds_calc(uiBlock *block);
 
@@ -714,68 +706,67 @@ extern struct ColorManagedDisplay *ui_block_cm_display_get(uiBlock *block);
 void ui_block_cm_to_display_space_v3(uiBlock *block, float pixel[3]);
 
 /* interface_regions.c */
-
 struct uiKeyNavLock {
-  /** Set when we're using keyboard-input. */
+  /* Set when we're using keyboard-input. */
   bool is_keynav;
-  /** Only used to check if we've moved the cursor. */
+  /* Only used to check if we've moved the cursor. */
   int event_xy[2];
 };
 
-typedef uiBlock *(*uiBlockHandleCreateFunc)(struct bContext *C,
-                                            struct uiPopupBlockHandle *handle,
-                                            void *arg1);
+typedef uiBlock *(*uiBlockHandleCreateFn)(struct Cxt *C,
+                                          struct uiPopupBlockHandle *handle,
+                                          void *arg1);
 
 struct uiPopupBlockCreate {
-  uiBlockCreateFunc create_func;
-  uiBlockHandleCreateFunc handle_create_func;
+  uiBlockCreateFn create_fn;
+  uiBlockHandleCreateFn handle_create_fn;
   void *arg;
-  uiFreeArgFunc arg_free;
+  uiFreeArgFn arg_free;
 
   int event_xy[2];
 
-  /** Set when popup is initialized from a button. */
-  struct ARegion *butregion;
-  uiBut *but;
+  /* Set when popup is initialized from a btn. */
+  struct ARegion *btnregion;
+  Btn *btn;
 };
 
 struct uiPopupBlockHandle {
   /* internal */
   struct ARegion *region;
 
-  /** Use only for #UI_BLOCK_MOVEMOUSE_QUIT popups. */
+  /* Use only for UI_BLOCK_MOVEMOUSE_QUIT popups. */
   float towards_xy[2];
   double towardstime;
   bool dotowards;
 
   bool popup;
-  void (*popup_func)(struct bContext *C, void *arg, int event);
-  void (*cancel_func)(struct bContext *C, void *arg);
+  void (*popup_fn)(struct Cxt *C, void *arg, int event);
+  void (*cancel_fn)(struct Cxt *C, void *arg);
   void *popup_arg;
 
-  /** Store data for refreshing popups. */
+  /* Store data for refreshing popups. */
   struct uiPopupBlockCreate popup_create_vars;
-  /** True if we can re-create the popup using #uiPopupBlockHandle.popup_create_vars. */
+  /* True if we can re-create the popup using uiPopupBlockHandle.popup_create_vars. */
   bool can_refresh;
   bool refresh;
 
-  struct wmTimer *scrolltimer;
+  struct WinTimer *scrolltimer;
   float scrolloffset;
 
   struct uiKeyNavLock keynav_state;
 
-  /* for operator popups */
-  struct wmOperator *popup_op;
-  struct ScrArea *ctx_area;
-  struct ARegion *ctx_region;
+  /* for op popups */
+  struct WinOp *popup_op;
+  struct ScrArea *cxt_area;
+  struct ARegion *cxt_region;
 
   /* return values */
-  int butretval;
+  int btnretval;
   int menuretval;
   int retvalue;
   float retvec[4];
 
-  /** Menu direction. */
+  /* Menu direction. */
   int direction;
 
   /* Previous values so we don't resize or reposition on refresh. */
