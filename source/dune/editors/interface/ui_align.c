@@ -11,13 +11,13 @@
 
 #include "mem_guardedalloc.h"
 
-#ifdef USE_UIBUT_SPATIAL_ALIGN
+#ifdef USE_UIBTN_SPATIAL_ALIGN
 
-/* This struct stores a (simplified) 2D representation of all buttons of a same align group,
+/* This struct stores a (simplified) 2D representation of all btns of a same align group,
  * with their immediate neighbors (if found),
- * and needed value to compute 'stitching' of aligned buttons.
+ * and needed value to compute 'stitching' of aligned btns.
  *
- * note: This simplistic struct cannot fully represent complex layouts where buttons share some
+ * note: This simplistic struct cannot fully represent complex layouts where btns share some
  *       'align space' with several others (see schema below), we'd need linked list and more
  *       complex code to handle that. However, looks like we can do without that for now,
  *       which is rather lucky!
@@ -31,22 +31,21 @@
  *       </pre>
  *
  *       This will probably not work in all possible cases,
- *       but not sure we want to support such exotic cases anyway.
- */
+ *       but not sure we want to support such exotic cases anyway. */
 typedef struct BtnAlign {
   uiBtn *btn;
 
-  /* Neighbor buttons */
+  /* Neighbor btns */
   struct BtnAlign *neighbors[4];
 
-  /* Pointers to coordinates (rctf values) of the button. */
+  /* Pointers to coordinates (rctf values) of the btn. */
   float *borders[4];
 
   /* Distances to the neighbors. */
   float dists[4];
 
   /* Flags, used to mark whether we should 'stitch'
-   * the corners of this button with its neighbors' ones. */
+   * the corners of this btn with its neighbors' ones. */
   char flags[4];
 } BtnAlign;
 
@@ -84,7 +83,7 @@ enum {
 /* Stitch flag from side value. */
 #  define STITCH(_s) (1 << (_s))
 
-/* Max distance between to buttons for them to be 'mergeable'. */
+/* Max distance between to btns for them to be 'mergeable'. */
 #  define MAX_DELTA 0.45f * max_ii(UI_UNIT_Y, UI_UNIT_X)
 
 bool btn_can_align(const uiBtn *btn)
@@ -101,10 +100,10 @@ bool btn_can_align(const uiBtn *btn)
           (lib_rctf_size_y(&btn->rect) > 0.0f));
 }
 
-/* This fn checks a pair of buttons (assumed in a same align group),
+/* This fn checks a pair of btns (assumed in a same align group),
  * and if they are neighbors, set needed data accordingly.
  *
- * note It is designed to be called in total random order of buttons.
+ * note It is designed to be called in total random order of btns.
  * Order-based optimizations are done by caller. */
 static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other)
 {
@@ -125,18 +124,18 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
         (*btnal->borders[RIGHT] <= *btnal_other->borders[LEFT])),
   };
 
-  /* Early out in case buttons share no column or line, or if none can align... */
-  if (!(btns_share[0] || buts_share[1]) || !(butal_can_align || butal_other_can_align)) {
+  /* Early out in case btns share no column or line, or if none can align... */
+  if (!(btns_share[0] || btns_share[1]) || !(btnal_can_align || btnal_other_can_align)) {
     return;
   }
 
   for (side = 0; side < RIGHT; side++) {
-    /* We are only interested in buttons which share a same line
+    /* We are only interested in btns which share a same line
      * (LEFT/RIGHT sides) or column (TOP/DOWN sides). */
     if (btns_share[IS_COLUMN(side)]) {
       side_opp = OPPOSITE(side);
 
-      /* We check both opposite sides at once, because with very small buttons,
+      /* We check both opposite sides at once, because with very small btns,
        * delta could be below max_delta for the wrong side
        * (that is, in horizontal case, the total width of two btns can be below max_delta).
        * We rely on exact zero value here as an 'already processed' flag,
@@ -156,7 +155,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
         if (delta <= btnal->dists[side]) {
           {
             /* We found an as close or closer neighbor.
-             * If both buttons are alignable, we set them as each other neighbors.
+             * If both btns are alignable, we set them as each other neighbors.
              * Else, we have an unalignable one, we need to reset the others matching
              * neighbor to NULL if its 'proximity distance'
              * is really lower with current one.
@@ -164,7 +163,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
              * NOTE: We cannot only execute that piece of code in case we found a
              *       **closer** neighbor, due to the limited way we represent neighbors
              *       (btns only know **one** neighbor on each side, when they can
-             *       actually have several ones), it would prevent some buttons to be
+             *       actually have several ones), it would prevent some btns to be
              *       properly 'neighborly-initialized'. */
             if (btnal_can_align && btnal_other_can_align) {
               btnal->neighbors[side] = btnal_other;
@@ -195,8 +194,8 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
 
             /* We have a pair of neighbors, we have to check whether we
              *   can stitch their matching corners.
-             *   E.g. if btnal_other is on the left of butal (that is, side == LEFT),
-             *        if both TOP (side_s1) coordinates of buttons are close enough,
+             *   E.g. if btnal_other is on the left of btnal (that is, side == LEFT),
+             *        if both TOP (side_s1) coordinates of btns are close enough,
              *        we can stitch their upper matching corners,
              *        and same for DOWN (side_s2) side. */
             delta = fabsf(*btnal->borders[side_s1] - *btnal_other->borders[side_s1]);
@@ -211,7 +210,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
             }
           }
         }
-        /* We assume two buttons can only share one side at most - for until
+        /* We assume two btns can only share one side at most - for until
          * we have spherical UI. */
         return;
       }
@@ -227,7 +226,7 @@ static void block_align_proximity_compute(BtnAlign *btnal, BtnAlign *btnal_other
  * |   BTN 3   |
  * +-----------+
  *
- * Here, BTN 3 RIGHT side would not get 'dragged' to align with BUT 1 RIGHT side,
+ * Here, BTN 3 RIGHT side would not get 'dragged' to align with BTN 1 RIGHT side,
  * since BTN 3 has not RIGHT neighbor.
  * So, this fn, when called with BTN 1, will 'walk' the whole column in side_s1 direction
  * (TOP or DOWN when called for RIGHT side), and force btns like BTN 3 to align as needed,
@@ -298,7 +297,7 @@ static int ui_block_align_btnal_cmp(const void *a, const void *b)
   }
 
   /* Sort vertically.
-   * Note that Y of buttons is decreasing (first buttons have higher Y value than later ones). */
+   * Note that Y of btns is decreasing (first btns have higher Y value than later ones). */
   if (*btnal->borders[TOP] != *btnal_other->borders[TOP]) {
     return (*btnal_other->borders[TOP] > *btnal->borders[TOP]) ? 1 : -1;
   }
@@ -353,7 +352,7 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
   const int sides_to_ui_btn_align_flags[4] = SIDE_TO_UI_BTN_ALIGN;
 
   BtnAlign *btnal_array;
-  BtnAlign *butal, *btnal_other;
+  BtnAlign *btnal, *btnal_other;
   int side;
 
   /* First loop: we count number of btns belonging to an align group,
@@ -370,7 +369,7 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
     }
 
     if (btn->alignnr != 0) {
-      num_buttons++;
+      num_btns++;
     }
   }
 
@@ -418,12 +417,12 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
     const short alignnr = btnal->btn->alignnr;
 
     int j;
-    for (j = i + 1, btnal_other = &btnal_array[i + 1]; j < num_buttons; j++, butal_other++) {
+    for (j = i + 1, btnal_other = &btnal_array[i + 1]; j < num_btns; j++, btnal_other++) {
       const float max_delta = MAX_DELTA;
 
-      /* Since they are sorted, buttons after current btnal can only be of same or higher
+      /* Since they are sorted, btns after current btnal can only be of same or higher
        * group, and once they are not of same group, we know we can break this sub-loop and
-       * start checking with next butal. */
+       * start checking with next btnal. */
       if (btnal_other->btn->alignnr != alignnr) {
         break;
       }
@@ -439,7 +438,7 @@ void blockalign_calc(uiBlock *block, const ARegion *region)
     }
   }
 
-  /* Fourth loop: we have all our 'aligned' buttons as a 'map' in btnal_array. We need to:
+  /* Fourth loop: we have all our 'aligned' btns as a 'map' in btnal_array. We need to:
    *     - update their relevant coordinates to stitch them.
    *     - assign them valid flags */
   for (i = 0; i < num_btns; i++) {
@@ -525,8 +524,8 @@ static bool btnlist_is_horiz(uiBtn *btn1, uiBtn *btn2)
     return true;
   }
 
-  dx = fabsf(btn1->rect.xmax - but2->rect.xmin);
-  dy = fabsf(btn1->rect.ymin - but2->rect.ymax);
+  dx = fabsf(btn1->rect.xmax - btn2->rect.xmin);
+  dy = fabsf(btn1->rect.ymin - btn2->rect.ymax);
 
   return (dx <= dy);
 }
@@ -553,7 +552,7 @@ static void blockalign_btn_calc(uiBtn *first, short nr)
 
   /* NOTE: manipulation of 'flag' in the loop below is confusing.
    * In some cases it's assigned, other times OR is used. */
-  for (btn = first, prev = NULL; brn && btn->alignnr == nr; prev = but, but = but->next) {
+  for (btn = first, prev = NULL; brn && btn->alignnr == nr; prev = btn, btn = btn->next) {
     next = btn->next;
     if (next && next->alignnr != nr) {
       next = NULL;
@@ -692,7 +691,7 @@ void blockalign_calc(uiBlock *block, const struct ARegion *UNUSED(region))
 {
   short nr;
 
-  /* align buttons with same align nr */
+  /* align btns with same align nr */
   LIST_FOREACH (uiBtn *, btn, &block->btnlist) {
     if (btn->alignnr) {
       nr = btn->alignnr;
