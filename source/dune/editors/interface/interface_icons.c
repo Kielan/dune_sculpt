@@ -1542,13 +1542,13 @@ static void icon_draw_cache_texture_flush_ex(GPUTexture *texture,
   const int img_binding = gpu_shader_get_texture_binding(shader, "image");
   gpu_texture_bind_ex(texture, GPU_SAMPLER_ICON, img_binding, false);
 
-  GPUBatch *quad = GPU_batch_preset_quad();
-  GPU_batch_set_shader(quad, shader);
-  GPU_batch_draw_instanced(quad, texture_draw_calls->calls);
+  GPUBatch *quad = gpu_batch_preset_quad();
+  gpu_batch_set_shader(quad, shader);
+  gpu_batch_draw_instanced(quad, texture_draw_calls->calls);
 
-  GPU_texture_unbind(texture);
-  GPU_uniformbuf_unbind(ubo);
-  GPU_uniformbuf_free(ubo);
+  gpu_texture_unbind(texture);
+  gpu_uniformbuf_unbind(ubo);
+  gpu_uniformbuf_free(ubo);
 
   texture_draw_calls->calls = 0;
 }
@@ -1566,9 +1566,9 @@ static void icon_draw_cache_flush_ex(bool only_full_caches)
 
   if (should_draw) {
     /* We need to flush widget base first to ensure correct ordering. */
-    UI_widgetbase_draw_cache_flush();
+    ui_widgetbase_draw_cache_flush();
 
-    GPU_blend(GPU_BLEND_ALPHA_PREMULT);
+    gpu_blend(GPU_BLEND_ALPHA_PREMULT);
 
     if (!only_full_caches || g_icon_draw_cache.normal.calls == ICON_DRAW_CACHE_SIZE) {
       icon_draw_cache_texture_flush_ex(icongltex.tex[0], &g_icon_draw_cache.normal);
@@ -1578,13 +1578,13 @@ static void icon_draw_cache_flush_ex(bool only_full_caches)
       icon_draw_cache_texture_flush_ex(icongltex.tex[1], &g_icon_draw_cache.border);
     }
 
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
   }
 }
 
-void UI_icon_draw_cache_end(void)
+void ui_icon_draw_cache_end(void)
 {
-  BLI_assert(g_icon_draw_cache.enabled == true);
+  lib_assert(g_icon_draw_cache.enabled == true);
   g_icon_draw_cache.enabled = false;
 
   /* Don't change blend state if it's not needed. */
@@ -1592,9 +1592,9 @@ void UI_icon_draw_cache_end(void)
     return;
   }
 
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
   icon_draw_cache_flush_ex(false);
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_blend(GPU_BLEND_NONE);
 }
 
 static void icon_draw_texture_cached(float x,
@@ -1611,7 +1611,7 @@ static void icon_draw_texture_cached(float x,
 {
 
   float mvp[4][4];
-  GPU_matrix_model_view_projection_get(mvp);
+  gpu_matrix_model_view_projection_get(mvp);
 
   IconTextureDrawCall *texture_call = with_border ? &g_icon_draw_cache.border :
                                                     &g_icon_draw_cache.normal;
@@ -1660,9 +1660,9 @@ static void icon_draw_texture(float x,
   }
 
   /* We need to flush widget base first to ensure correct ordering. */
-  UI_widgetbase_draw_cache_flush();
+  ui_widgetbase_draw_cache_flush();
 
-  GPU_blend(GPU_BLEND_ALPHA_PREMULT);
+  gpu_blend(GPU_BLEND_ALPHA_PREMULT);
 
   const float x1 = ix * icongltex.invw;
   const float x2 = (ix + ih) * icongltex.invw;
@@ -1671,33 +1671,33 @@ static void icon_draw_texture(float x,
 
   GPUTexture *texture = with_border ? icongltex.tex[1] : icongltex.tex[0];
 
-  GPUShader *shader = GPU_shader_get_builtin_shader(GPU_SHADER_2D_IMAGE_RECT_COLOR);
-  GPU_shader_bind(shader);
+  GPUShader *shader = gpu_shader_get_builtin_shader(GPU_SHADER_2D_IMAGE_RECT_COLOR);
+  gpu_shader_bind(shader);
 
-  const int img_binding = GPU_shader_get_texture_binding(shader, "image");
-  const int color_loc = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_COLOR);
-  const int rect_tex_loc = GPU_shader_get_uniform(shader, "rect_icon");
-  const int rect_geom_loc = GPU_shader_get_uniform(shader, "rect_geom");
+  const int img_binding = gpu_shader_get_texture_binding(shader, "image");
+  const int color_loc = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_COLOR);
+  const int rect_tex_loc = gpu_shader_get_uniform(shader, "rect_icon");
+  const int rect_geom_loc = gpu_shader_get_uniform(shader, "rect_geom");
 
   if (rgb) {
-    GPU_shader_uniform_vector(shader, color_loc, 4, 1, (float[4]){UNPACK3(rgb), alpha});
+    gpu_shader_uniform_vector(shader, color_loc, 4, 1, (float[4]){UNPACK3(rgb), alpha});
   }
   else {
-    GPU_shader_uniform_vector(shader, color_loc, 4, 1, (float[4]){alpha, alpha, alpha, alpha});
+    gpu_shader_uniform_vector(shader, color_loc, 4, 1, (float[4]){alpha, alpha, alpha, alpha});
   }
 
-  GPU_shader_uniform_vector(shader, rect_tex_loc, 4, 1, (float[4]){x1, y1, x2, y2});
-  GPU_shader_uniform_vector(shader, rect_geom_loc, 4, 1, (float[4]){x, y, x + w, y + h});
+  gpu_shader_uniform_vector(shader, rect_tex_loc, 4, 1, (float[4]){x1, y1, x2, y2});
+  gpu_shader_uniform_vector(shader, rect_geom_loc, 4, 1, (float[4]){x, y, x + w, y + h});
 
-  GPU_texture_bind_ex(texture, GPU_SAMPLER_ICON, img_binding, false);
+  gpu_texture_bind_ex(texture, GPU_SAMPLER_ICON, img_binding, false);
 
-  GPUBatch *quad = GPU_batch_preset_quad();
-  GPU_batch_set_shader(quad, shader);
-  GPU_batch_draw(quad);
+  GPUBatch *quad = gpu_batch_preset_quad();
+  gpu_batch_set_shader(quad, shader);
+  gpu_batch_draw(quad);
 
-  GPU_texture_unbind(texture);
+  gpu_texture_unbind(texture);
 
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 }
 
 /* Drawing size for preview images */
@@ -1724,11 +1724,11 @@ static void icon_draw_size(float x,
                            const uchar mono_rgba[4],
                            const bool mono_border)
 {
-  bTheme *btheme = UI_GetTheme();
+  Theme *theme = ui_GetTheme();
   const float fdraw_size = (float)draw_size;
 
-  Icon *icon = BKE_icon_get(icon_id);
-  alpha *= btheme->tui.icon_alpha;
+  Icon *icon = dune_icon_get(icon_id);
+  alpha *= theme->tui.icon_alpha;
 
   if (icon == NULL) {
     if (G.debug & G_DEBUG) {
@@ -1744,14 +1744,14 @@ static void icon_draw_size(float x,
   DrawInfo *di = icon_ensure_drawinfo(icon);
 
   /* We need to flush widget base first to ensure correct ordering. */
-  UI_widgetbase_draw_cache_flush();
+  ui_widgetbase_draw_cache_flush();
 
   if (di->type == ICON_TYPE_IMBUF) {
     ImBuf *ibuf = icon->obj;
 
-    GPU_blend(GPU_BLEND_ALPHA_PREMULT);
+    gpu_blend(GPU_BLEND_ALPHA_PREMULT);
     icon_draw_rect(x, y, w, h, aspect, ibuf->x, ibuf->y, ibuf->rect, alpha, desaturate);
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
   }
   else if (di->type == ICON_TYPE_VECTOR) {
     /* vector icons use the uiBlock transformation, they are not drawn
@@ -1760,7 +1760,7 @@ static void icon_draw_size(float x,
   }
   else if (di->type == ICON_TYPE_GEOM) {
 #ifdef USE_UI_TOOLBAR_HACK
-    /* TODO(campbell): scale icons up for toolbar,
+    /* TODO: scale icons up for toolbar,
      * we need a way to detect larger buttons and do this automatic. */
     {
       float scale = (float)ICON_DEFAULT_HEIGHT_TOOLBAR / (float)ICON_DEFAULT_HEIGHT;
@@ -1782,16 +1782,16 @@ static void icon_draw_size(float x,
         IMB_freeImBuf(ibuf);
       }
       if (invert != geom_inverted) {
-        BKE_icon_geom_invert_lightness(icon->obj);
+        dune_icon_geom_invert_lightness(icon->obj);
       }
-      ibuf = BKE_icon_geom_rasterize(icon->obj, w, h);
+      ibuf = dune_icon_geom_rasterize(icon->obj, w, h);
       di->data.geom.image_cache = ibuf;
       di->data.geom.inverted = invert;
     }
 
-    GPU_blend(GPU_BLEND_ALPHA_PREMULT);
+    gpu_blend(GPU_BLEND_ALPHA_PREMULT);
     icon_draw_rect(x, y, w, h, aspect, w, h, ibuf->rect, alpha, desaturate);
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
   }
   else if (di->type == ICON_TYPE_EVENT) {
     const short event_type = di->data.input.event_type;
@@ -1820,7 +1820,7 @@ static void icon_draw_size(float x,
       rgba_uchar_to_float(color, (const uchar *)mono_rgba);
     }
     else {
-      UI_GetThemeColor4fv(TH_TEXT, color);
+      ui_GetThemeColor4fv(TH_TEXT, color);
     }
 
     mul_v4_fl(color, alpha);
@@ -1861,7 +1861,7 @@ static void icon_draw_size(float x,
     icon_draw_rect(x, y, w, h, aspect, iimg->w, iimg->h, iimg->rect, alpha, desaturate);
   }
   else if (di->type == ICON_TYPE_PREVIEW) {
-    PreviewImage *pi = (icon->id_type != 0) ? BKE_previewimg_id_ensure((ID *)icon->obj) :
+    PreviewImage *pi = (icon->id_type != 0) ? dune_previewimg_id_ensure((ID *)icon->obj) :
                                               icon->obj;
 
     if (pi) {
@@ -1872,14 +1872,14 @@ static void icon_draw_size(float x,
       }
 
       /* Preview images use premultiplied alpha. */
-      GPU_blend(GPU_BLEND_ALPHA_PREMULT);
+      gpu_blend(GPU_BLEND_ALPHA_PREMULT);
       icon_draw_rect(
           x, y, w, h, aspect, pi->w[size], pi->h[size], pi->rect[size], alpha, desaturate);
-      GPU_blend(GPU_BLEND_ALPHA);
+      gpu_blend(GPU_BLEND_ALPHA);
     }
   }
   else if (di->type == ICON_TYPE_GPLAYER) {
-    BLI_assert(icon->obj != NULL);
+    lib_assert(icon->obj != NULL);
 
     /* Just draw a colored rect - Like for vicon_colorset_draw() */
 #ifndef WITH_HEADLESS
@@ -1889,7 +1889,7 @@ static void icon_draw_size(float x,
 }
 
 static void ui_id_preview_image_render_size(
-    const bContext *C, Scene *scene, ID *id, PreviewImage *pi, int size, const bool use_job)
+    const Cxt *C, Scene *scene, Id *id, PreviewImage *pi, int size, const bool use_job)
 {
   /* changed only ever set by dynamic icons */
   if (((pi->flag[size] & PRV_CHANGED) || !pi->rect[size])) {
@@ -1900,9 +1900,9 @@ static void ui_id_preview_image_render_size(
   }
 }
 
-void UI_icon_render_id_ex(const bContext *C,
+void ui_icon_render_id_ex(const Cxt *C,
                           Scene *scene,
-                          ID *id_to_render,
+                          Id *id_to_render,
                           const enum eIconSizes size,
                           const bool use_job,
                           PreviewImage *r_preview_image)
@@ -1910,34 +1910,34 @@ void UI_icon_render_id_ex(const bContext *C,
   ui_id_preview_image_render_size(C, scene, id_to_render, r_preview_image, size, use_job);
 }
 
-void UI_icon_render_id(
-    const bContext *C, Scene *scene, ID *id, const enum eIconSizes size, const bool use_job)
+void ui_icon_render_id(
+    const Cxt *C, Scene *scene, Id *id, const enum eIconSizes size, const bool use_job)
 {
-  PreviewImage *pi = BKE_previewimg_id_ensure(id);
+  PreviewImage *pi = dune_previewimg_id_ensure(id);
   if (pi == NULL) {
     return;
   }
 
-  ID *id_to_render = id;
+  Id *id_to_render = id;
 
   /* For objects, first try if a preview can created via the object data. */
   if (GS(id->name) == ID_OB) {
     Object *ob = (Object *)id;
-    if (ED_preview_id_is_supported(ob->data)) {
+    if (ed_preview_id_is_supported(ob->data)) {
       id_to_render = ob->data;
     }
   }
 
-  if (!ED_preview_id_is_supported(id_to_render)) {
+  if (!ed_preview_id_is_supported(id_to_render)) {
     return;
   }
 
-  UI_icon_render_id_ex(C, scene, id_to_render, size, use_job, pi);
+  ui_icon_render_id_ex(C, scene, id_to_render, size, use_job, pi);
 }
 
-static void ui_id_icon_render(const bContext *C, ID *id, bool use_jobs)
+static void ui_id_icon_render(const Cxt *C, Id *id, bool use_jobs)
 {
-  PreviewImage *pi = BKE_previewimg_id_ensure(id);
+  PreviewImage *pi = dune_previewimg_id_ensure(id);
 
   if (!pi) {
     return;
@@ -1948,28 +1948,28 @@ static void ui_id_icon_render(const bContext *C, ID *id, bool use_jobs)
   }
 }
 
-static int ui_id_brush_get_icon(const bContext *C, ID *id)
+static int ui_id_brush_get_icon(const Cxt *C, Id *id)
 {
   Brush *br = (Brush *)id;
 
   if (br->flag & BRUSH_CUSTOM_ICON) {
-    BKE_icon_id_ensure(id);
+    dune_icon_id_ensure(id);
     ui_id_icon_render(C, id, true);
   }
   else {
-    Object *ob = CTX_data_active_object(C);
-    const EnumPropertyItem *items = NULL;
+    Object *ob = cxt_data_active_object(C);
+    const EnumPropItem *items = NULL;
     ePaintMode paint_mode = PAINT_MODE_INVALID;
-    ScrArea *area = CTX_wm_area(C);
+    ScrArea *area = cxt_win_area(C);
     char space_type = area->spacetype;
     /* Fallback to 3D view. */
-    if (space_type == SPACE_PROPERTIES) {
+    if (space_type == SPACE_PROPS) {
       space_type = SPACE_VIEW3D;
     }
 
-    /* XXX: this is not nice, should probably make brushes
+    /* this is not nice, should probably make brushes
      * be strictly in one paint mode only to avoid
-     * checking various context stuff here */
+     * checking various cxt stuff here */
 
     if ((space_type == SPACE_VIEW3D) && ob) {
       if (ob->mode & OB_MODE_SCULPT) {
@@ -1996,106 +1996,106 @@ static int ui_id_brush_get_icon(const bContext *C, ID *id)
 
     /* reset the icon */
     if ((ob != NULL) &&
-        (ob->mode & (OB_MODE_PAINT_GPENCIL | OB_MODE_VERTEX_GPENCIL | OB_MODE_SCULPT_GPENCIL |
-                     OB_MODE_WEIGHT_GPENCIL)) &&
-        (br->gpencil_settings != NULL)) {
-      switch (br->gpencil_settings->icon_id) {
-        case GP_BRUSH_ICON_PENCIL:
-          br->id.icon_id = ICON_GPBRUSH_PENCIL;
+        (ob->mode & (OB_MODE_PAINT_PEN | OB_MODE_VERTEX_GPEN | OB_MODE_SCULPT_PEN |
+                     OB_MODE_WEIGHT_GPEN)) &&
+        (br->pen_settings != NULL)) {
+      switch (br->pen_settings->icon_id) {
+        case PEN_BRUSH_ICON_PENCIL:
+          br->id.icon_id = ICON_PEN_BRUSH_PENCIL;
           break;
-        case GP_BRUSH_ICON_PEN:
-          br->id.icon_id = ICON_GPBRUSH_PEN;
+        case PEN_BRUSH_ICON_PEN:
+          br->id.icon_id = ICON_PEN_BRUSH_PEN;
           break;
-        case GP_BRUSH_ICON_INK:
-          br->id.icon_id = ICON_GPBRUSH_INK;
+        case PEN_BRUSH_ICON_INK:
+          br->id.icon_id = ICON_PEN_BRUSH_INK;
           break;
-        case GP_BRUSH_ICON_INKNOISE:
-          br->id.icon_id = ICON_GPBRUSH_INKNOISE;
+        case PEN_BRUSH_ICON_INKNOISE:
+          br->id.icon_id = ICON_PEN_BRUSH_INKNOISE;
           break;
-        case GP_BRUSH_ICON_BLOCK:
-          br->id.icon_id = ICON_GPBRUSH_BLOCK;
+        case PEN_BRUSH_ICON_BLOCK:
+          br->id.icon_id = ICON_PEN_BRUSH_BLOCK;
           break;
-        case GP_BRUSH_ICON_MARKER:
-          br->id.icon_id = ICON_GPBRUSH_MARKER;
+        case PEN_BRUSH_ICON_MARKER:
+          br->id.icon_id = ICON_PEN_BRUSH_MARKER;
           break;
-        case GP_BRUSH_ICON_FILL:
-          br->id.icon_id = ICON_GPBRUSH_FILL;
+        case PEN_BRUSH_ICON_FILL:
+          br->id.icon_id = ICON_PEN_BRUSH_FILL;
           break;
-        case GP_BRUSH_ICON_AIRBRUSH:
-          br->id.icon_id = ICON_GPBRUSH_AIRBRUSH;
+        case PEN_BRUSH_ICON_AIRBRUSH:
+          br->id.icon_id = ICON_PEN_BRUSH_AIRBRUSH;
           break;
-        case GP_BRUSH_ICON_CHISEL:
-          br->id.icon_id = ICON_GPBRUSH_CHISEL;
+        case PEN_BRUSH_ICON_CHISEL:
+          br->id.icon_id = ICON_PEN_BRUSH_CHISEL;
           break;
-        case GP_BRUSH_ICON_ERASE_SOFT:
-          br->id.icon_id = ICON_GPBRUSH_ERASE_SOFT;
+        case PEN_BRUSH_ICON_ERASE_SOFT:
+          br->id.icon_id = ICON_PEN_BRUSH_ERASE_SOFT;
           break;
-        case GP_BRUSH_ICON_ERASE_HARD:
-          br->id.icon_id = ICON_GPBRUSH_ERASE_HARD;
+        case PEN_BRUSH_ICON_ERASE_HARD:
+          br->id.icon_id = ICON_PEN_BRUSH_ERASE_HARD;
           break;
-        case GP_BRUSH_ICON_ERASE_STROKE:
-          br->id.icon_id = ICON_GPBRUSH_ERASE_STROKE;
+        case PEN_BRUSH_ICON_ERASE_STROKE:
+          br->id.icon_id = ICON_PEN_BRUSH_ERASE_STROKE;
           break;
-        case GP_BRUSH_ICON_TINT:
+        case PEN_BRUSH_ICON_TINT:
           br->id.icon_id = ICON_BRUSH_TEXDRAW;
           break;
-        case GP_BRUSH_ICON_VERTEX_DRAW:
+        case PEN_BRUSH_ICON_VERTEX_DRAW:
           br->id.icon_id = ICON_BRUSH_MIX;
           break;
-        case GP_BRUSH_ICON_VERTEX_BLUR:
+        case PEN_BRUSH_ICON_VERTEX_BLUR:
           br->id.icon_id = ICON_BRUSH_BLUR;
           break;
-        case GP_BRUSH_ICON_VERTEX_AVERAGE:
-          br->id.icon_id = ICON_BRUSH_BLUR;
+        case PEN_BRUSH_ICON_VERTEX_AVERAGE:
+          br->id.icon_id = ICON_PEN_BRUSH_BLUR;
           break;
-        case GP_BRUSH_ICON_VERTEX_SMEAR:
-          br->id.icon_id = ICON_BRUSH_BLUR;
+        case PEN_BRUSH_ICON_VERTEX_SMEAR:
+          br->id.icon_id = ICON_PEN_BRUSH_BLUR;
           break;
-        case GP_BRUSH_ICON_VERTEX_REPLACE:
-          br->id.icon_id = ICON_BRUSH_MIX;
+        case PEN_BRUSH_ICON_VERTEX_REPLACE:
+          br->id.icon_id = ICON_PEN_BRUSH_MIX;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_SMOOTH:
-          br->id.icon_id = ICON_GPBRUSH_SMOOTH;
+        case PEN_BRUSH_ICON_BRUSH_SMOOTH:
+          br->id.icon_id = ICON_PEN_BRUSH_SMOOTH;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_THICKNESS:
-          br->id.icon_id = ICON_GPBRUSH_THICKNESS;
+        case PEN_BRUSH_ICON_BRUSH_THICKNESS:
+          br->id.icon_id = ICON_PEN_BRUSH_THICKNESS;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_STRENGTH:
-          br->id.icon_id = ICON_GPBRUSH_STRENGTH;
+        case PEN_BRUSH_ICON_BRUSH_STRENGTH:
+          br->id.icon_id = ICON_PEN_BRUSH_STRENGTH;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_RANDOMIZE:
-          br->id.icon_id = ICON_GPBRUSH_RANDOMIZE;
+        case PEN_BRUSH_ICON_BRUSH_RANDOMIZE:
+          br->id.icon_id = ICON_PEN_BRUSH_RANDOMIZE;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_GRAB:
-          br->id.icon_id = ICON_GPBRUSH_GRAB;
+        case PEN_BRUSH_ICON_BRUSH_GRAB:
+          br->id.icon_id = ICON_PEN_BRUSH_GRAB;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_PUSH:
-          br->id.icon_id = ICON_GPBRUSH_PUSH;
+        case PEN_BRUSH_ICON_BRUSH_PUSH:
+          br->id.icon_id = ICON_PEN_BRUSH_PUSH;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_TWIST:
-          br->id.icon_id = ICON_GPBRUSH_TWIST;
+        case PEN_BRUSH_ICON_BRUSH_TWIST:
+          br->id.icon_id = ICON_PEN_BRUSH_TWIST;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_PINCH:
-          br->id.icon_id = ICON_GPBRUSH_PINCH;
+        case PEN_BRUSH_ICON_BRUSH_PINCH:
+          br->id.icon_id = ICON_PEN_BRUSH_PINCH;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_CLONE:
-          br->id.icon_id = ICON_GPBRUSH_CLONE;
+        case PEN_BRUSH_ICON_BRUSH_CLONE:
+          br->id.icon_id = ICON_PEN_BRUSH_CLONE;
           break;
-        case GP_BRUSH_ICON_GPBRUSH_WEIGHT:
-          br->id.icon_id = ICON_GPBRUSH_WEIGHT;
+        case PEN_BRUSH_ICON_PEN_BRUSH_WEIGHT:
+          br->id.icon_id = ICON_PEN_BRUSH_WEIGHT;
           break;
         default:
-          br->id.icon_id = ICON_GPBRUSH_PEN;
+          br->id.icon_id = ICON_PEN_BRUSH;
           break;
       }
       return id->icon_id;
     }
 
     if (paint_mode != PAINT_MODE_INVALID) {
-      items = BKE_paint_get_tool_enum_from_paintmode(paint_mode);
-      const uint tool_offset = BKE_paint_get_brush_tool_offset_from_paintmode(paint_mode);
-      const int tool_type = *(char *)POINTER_OFFSET(br, tool_offset);
-      if (!items || !RNA_enum_icon_from_value(items, tool_type, &id->icon_id)) {
+      items = dune_paint_get_tool_enum_from_paintmode(paint_mode);
+      const uint tool_offset = dune_paint_get_brush_tool_offset_from_paintmode(paint_mode);
+      const int tool_type = *(char *)PTR_OFFSET(br, tool_offset);
+      if (!items || !api_enum_icon_from_value(items, tool_type, &id->icon_id)) {
         id->icon_id = 0;
       }
     }
@@ -2107,16 +2107,16 @@ static int ui_id_brush_get_icon(const bContext *C, ID *id)
   return id->icon_id;
 }
 
-static int ui_id_screen_get_icon(const bContext *C, ID *id)
+static int ui_id_screen_get_icon(const Cxt *C, Id *id)
 {
-  BKE_icon_id_ensure(id);
+  dune_icon_id_ensure(id);
   /* Don't use jobs here, off-screen rendering doesn't like this and crashes. */
   ui_id_icon_render(C, id, false);
 
   return id->icon_id;
 }
 
-int ui_id_icon_get(const bContext *C, ID *id, const bool big)
+int ui_id_icon_get(const Cxt *C, Id *id, const bool big)
 {
   int iconid = 0;
 
@@ -2130,15 +2130,15 @@ int ui_id_icon_get(const bContext *C, ID *id, const bool big)
     case ID_IM: /* fall through */
     case ID_WO: /* fall through */
     case ID_LA: /* fall through */
-      iconid = BKE_icon_id_ensure(id);
+      iconid = dune_icon_id_ensure(id);
       /* checks if not exists, or changed */
-      UI_icon_render_id(C, NULL, id, big ? ICON_SIZE_PREVIEW : ICON_SIZE_ICON, true);
+      ui_icon_render_id(C, NULL, id, big ? ICON_SIZE_PREVIEW : ICON_SIZE_ICON, true);
       break;
     case ID_SCR:
       iconid = ui_id_screen_get_icon(C, id);
       break;
     case ID_GR:
-      iconid = UI_icon_color_from_collection((Collection *)id);
+      iconid = ui_icon_color_from_collection((Collection *)id);
       break;
     default:
       break;
@@ -2147,19 +2147,19 @@ int ui_id_icon_get(const bContext *C, ID *id, const bool big)
   return iconid;
 }
 
-int UI_icon_from_library(const ID *id)
+int ui_icon_from_lib(const Id *id)
 {
   if (ID_IS_LINKED(id)) {
     if (id->tag & LIB_TAG_MISSING) {
-      return ICON_LIBRARY_DATA_BROKEN;
+      return ICON_LIB_DATA_BROKEN;
     }
     if (id->tag & LIB_TAG_INDIRECT) {
-      return ICON_LIBRARY_DATA_INDIRECT;
+      return ICON_LIB_DATA_INDIRECT;
     }
-    return ICON_LIBRARY_DATA_DIRECT;
+    return ICON_LIB_DATA_DIRECT;
   }
-  if (ID_IS_OVERRIDE_LIBRARY(id)) {
-    return ICON_LIBRARY_DATA_OVERRIDE;
+  if (ID_IS_OVERRIDE_LIB(id)) {
+    return ICON_LIB_DATA_OVERRIDE;
   }
   if (ID_IS_ASSET(id)) {
     return ICON_ASSET_MANAGER;
@@ -2168,28 +2168,28 @@ int UI_icon_from_library(const ID *id)
   return ICON_NONE;
 }
 
-int UI_icon_from_rnaptr(const bContext *C, PointerRNA *ptr, int rnaicon, const bool big)
+int ui_icon_from_apiptr(const Cxt *C, ApiPtr *ptr, int apiicon, const bool big)
 {
-  ID *id = NULL;
+  Id *id = NULL;
 
   if (!ptr->data) {
-    return rnaicon;
+    return apiicon;
   }
 
-  /* try ID, material, texture or dynapaint slot */
-  if (RNA_struct_is_ID(ptr->type)) {
+  /* try id, material, texture or dynapaint slot */
+  if (api_struct_is_id(ptr->type)) {
     id = ptr->owner_id;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_MaterialSlot)) {
-    id = RNA_pointer_get(ptr, "material").data;
+  else if (_struct_is_a(ptr->type, &ApiMaterialSlot)) {
+    id = api_ptr_get(ptr, "material").data;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_TextureSlot)) {
-    id = RNA_pointer_get(ptr, "texture").data;
+  else if (api_struct_is_a(ptr->type, &ApiTextureSlot)) {
+    id = api_ptr_get(ptr, "texture").data;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_FileBrowserFSMenuEntry)) {
-    return RNA_int_get(ptr, "icon");
+  else if (api_struct_is_a(ptr->type, &ApiFileBrowserFSMenuEntry)) {
+    return api_int_get(ptr, "icon");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_DynamicPaintSurface)) {
+  else if (api_struct_is_a(ptr->type, &ApiDynamicPaintSurface)) {
     DynamicPaintSurface *surface = ptr->data;
 
     if (surface->format == MOD_DPAINT_SURFACE_F_PTEX) {
@@ -2202,7 +2202,7 @@ int UI_icon_from_rnaptr(const bContext *C, PointerRNA *ptr, int rnaicon, const b
       return ICON_FILE_IMAGE;
     }
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_StudioLight)) {
+  else if (api_struct_is_a(ptr->type, &ApiStudioLight)) {
     StudioLight *sl = ptr->data;
     switch (sl->flag & STUDIOLIGHT_FLAG_ORIENTATIONS) {
       case STUDIOLIGHT_TYPE_STUDIO:
@@ -2215,17 +2215,17 @@ int UI_icon_from_rnaptr(const bContext *C, PointerRNA *ptr, int rnaicon, const b
     }
   }
 
-  /* get icon from ID */
+  /* get icon from Id */
   if (id) {
     const int icon = ui_id_icon_get(C, id, big);
 
-    return icon ? icon : rnaicon;
+    return icon ? icon : apiicon;
   }
 
-  return rnaicon;
+  return apiicon;
 }
 
-int UI_icon_from_idcode(const int idcode)
+int ui_icon_from_idcode(const int idcode)
 {
   switch ((ID_Type)idcode) {
     case ID_AC:
@@ -2311,23 +2311,23 @@ int UI_icon_from_idcode(const int idcode)
   return ICON_NONE;
 }
 
-int UI_icon_from_object_mode(const int mode)
+int ui_icon_from_object_mode(const int mode)
 {
   switch ((eObjectMode)mode) {
     case OB_MODE_OBJECT:
       return ICON_OBJECT_DATAMODE;
     case OB_MODE_EDIT:
-    case OB_MODE_EDIT_GPENCIL:
+    case OB_MODE_EDIT_PEN:
       return ICON_EDITMODE_HLT;
     case OB_MODE_SCULPT:
-    case OB_MODE_SCULPT_GPENCIL:
+    case OB_MODE_SCULPT_PEN:
     case OB_MODE_SCULPT_CURVES:
       return ICON_SCULPTMODE_HLT;
     case OB_MODE_VERTEX_PAINT:
-    case OB_MODE_VERTEX_GPENCIL:
+    case OB_MODE_VERTEX_PEN:
       return ICON_VPAINT_HLT;
     case OB_MODE_WEIGHT_PAINT:
-    case OB_MODE_WEIGHT_GPENCIL:
+    case OB_MODE_WEIGHT_PEN:
       return ICON_WPAINT_HLT;
     case OB_MODE_TEXTURE_PAINT:
       return ICON_TPAINT_HLT;
@@ -2335,13 +2335,13 @@ int UI_icon_from_object_mode(const int mode)
       return ICON_PARTICLEMODE;
     case OB_MODE_POSE:
       return ICON_POSE_HLT;
-    case OB_MODE_PAINT_GPENCIL:
-      return ICON_GREASEPENCIL;
+    case OB_MODE_PAINT_PEN:
+      return ICON_PEN;
   }
   return ICON_NONE;
 }
 
-int UI_icon_color_from_collection(const Collection *collection)
+int ui_icon_color_from_collection(const Collection *collection)
 {
   int icon = ICON_OUTLINER_COLLECTION;
 
@@ -2352,22 +2352,22 @@ int UI_icon_color_from_collection(const Collection *collection)
   return icon;
 }
 
-void UI_icon_draw(float x, float y, int icon_id)
+void ui_icon_draw(float x, float y, int icon_id)
 {
-  UI_icon_draw_ex(x, y, icon_id, U.inv_dpi_fac, 1.0f, 0.0f, NULL, false);
+  ui_icon_draw_ex(x, y, icon_id, U.inv_dpi_fac, 1.0f, 0.0f, NULL, false);
 }
 
 void UI_icon_draw_alpha(float x, float y, int icon_id, float alpha)
 {
-  UI_icon_draw_ex(x, y, icon_id, U.inv_dpi_fac, alpha, 0.0f, NULL, false);
+  ui_icon_draw_ex(x, y, icon_id, U.inv_dpi_fac, alpha, 0.0f, NULL, false);
 }
 
-void UI_icon_draw_preview(float x, float y, int icon_id, float aspect, float alpha, int size)
+void ui_icon_draw_preview(float x, float y, int icon_id, float aspect, float alpha, int size)
 {
-  icon_draw_size(x, y, icon_id, aspect, alpha, ICON_SIZE_PREVIEW, size, false, NULL, false);
+  ui_icon_draw_size(x, y, icon_id, aspect, alpha, ICON_SIZE_PREVIEW, size, false, NULL, false);
 }
 
-void UI_icon_draw_ex(float x,
+void ui_icon_draw_ex(float x,
                      float y,
                      int icon_id,
                      float aspect,
@@ -2389,9 +2389,8 @@ void UI_icon_draw_ex(float x,
                  mono_border);
 }
 
-/* ********** Alert Icons ********** */
-
-ImBuf *UI_icon_alert_imbuf_get(eAlertIcon icon)
+/* Alert Icons */
+ImBuf *ui_icon_alert_imbuf_get(eAlertIcon icon)
 {
 #ifdef WITH_HEADLESS
   UNUSED_VARS(icon);
@@ -2401,13 +2400,13 @@ ImBuf *UI_icon_alert_imbuf_get(eAlertIcon icon)
   icon = MIN2(icon, ALERT_ICON_MAX - 1);
   const int left = icon * ALERT_IMG_SIZE;
   const rcti crop = {left, left + ALERT_IMG_SIZE - 1, 0, ALERT_IMG_SIZE - 1};
-  ImBuf *ibuf = IMB_ibImageFromMemory((const uchar *)datatoc_alert_icons_png,
+  ImBuf *ibuf = imbuf_ImageFromMemory((const uchar *)datatoc_alert_icons_png,
                                       datatoc_alert_icons_png_size,
-                                      IB_rect,
+                                      imbuf_rect,
                                       NULL,
                                       "alert_icon");
-  IMB_rect_crop(ibuf, &crop);
-  IMB_premultiply_alpha(ibuf);
+  imbuf_rect_crop(ibuf, &crop);
+  imbuf_premultiply_alpha(ibuf);
   return ibuf;
 #endif
 }
