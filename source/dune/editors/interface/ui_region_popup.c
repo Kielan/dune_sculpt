@@ -260,11 +260,11 @@ static void ui_popup_block_position(Win *win,
     offset_x += lib_rctf_size_x(&btnrct) / ((dir2 == UI_DIR_LEFT) ? 2 : -2);
   }
 
-  /* Apply offset, buttons in window coords. */
+  /* Apply offset, btns in window coords. */
   LIST_FOREACH (Btn *, bt, &block->btns) {
     ui_block_to_win_rctf(btnregion, btn->block, &bt->rect, &bt->rect);
 
-    BLI_rctf_translate(&bt->rect, offset_x, offset_y);
+    lib_rctf_translate(&bt->rect, offset_x, offset_y);
 
     /* ui_but_update recalculates drawstring size in pixels */
     ui_btn_update(bt);
@@ -274,22 +274,21 @@ static void ui_popup_block_position(Win *win,
 
   /* Safety calculus. */
   {
-    const float midx = lib_rctf_cent_x(&butrct);
-    const float midy = lib_rctf_cent_y(&butrct);
+    const float midx = lib_rctf_cent_x(&btnrct);
+    const float midy = lib_rctf_cent_y(&btnrct);
 
-    /* when you are outside parent button, safety there should be smaller */
-
+    /* when you are outside parent btn, safety there should be smaller */
     const int s1 = 40 * U.dpi_fac;
     const int s2 = 3 * U.dpi_fac;
 
-    /* parent button to left */
+    /* parent btn to left */
     if (midx < block->rect.xmin) {
       block->safety.xmin = block->rect.xmin - s2;
     }
     else {
       block->safety.xmin = block->rect.xmin - s1;
     }
-    /* parent button to right */
+    /* parent btn to right */
     if (midx > block->rect.xmax) {
       block->safety.xmax = block->rect.xmax + s2;
     }
@@ -297,7 +296,7 @@ static void ui_popup_block_position(Win *win,
       block->safety.xmax = block->rect.xmax + s1;
     }
 
-    /* parent button on bottom */
+    /* parent btn on bottom */
     if (midy < block->rect.ymin) {
       block->safety.ymin = block->rect.ymin - s2;
     }
@@ -325,76 +324,69 @@ static void ui_popup_block_position(Win *win,
   }
 
   /* Keep a list of these, needed for pull-down menus. */
-  uiSafetyRct *saferct = MEM_callocN(sizeof(uiSafetyRct), "uiSafetyRct");
-  saferct->parent = butrct;
+  uiSafetyRct *saferct = mem_calloc(sizeof(uiSafetyRct), "uiSafetyRct");
+  saferct->parent = btnrct;
   saferct->safety = block->safety;
-  BLI_freelistN(&block->saferct);
-  BLI_duplicatelist(&block->saferct, &but->block->saferct);
-  BLI_addhead(&block->saferct, saferct);
+  lib_freelist(&block->saferct);
+  lib_duplicatelist(&block->saferct, &btn->block->saferct);
+  lib_addhead(&block->saferct, saferct);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Menu Block Creation
- * \{ */
-
-static void ui_block_region_refresh(const bContext *C, ARegion *region)
+/* Menu Block Creation */
+static void ui_block_region_refresh(const Cxt *C, ARegion *region)
 {
-  ScrArea *ctx_area = CTX_wm_area(C);
-  ARegion *ctx_region = CTX_wm_region(C);
+  ScrArea *cxt_area = cxt_win_area(C);
+  ARegion *cxt_region = cxt_win_region(C);
 
   if (region->do_draw & RGN_REFRESH_UI) {
-    ScrArea *handle_ctx_area;
-    ARegion *handle_ctx_region;
+    ScrArea *handle_cxt_area;
+    ARegion *handle_cxt_region;
 
     region->do_draw &= ~RGN_REFRESH_UI;
-    LISTBASE_FOREACH_MUTABLE (uiBlock *, block, &region->uiblocks) {
+    LIST_FOREACH_MUTABLE (uiBlock *, block, &region->uiblocks) {
       uiPopupBlockHandle *handle = block->handle;
 
       if (handle->can_refresh) {
-        handle_ctx_area = handle->ctx_area;
-        handle_ctx_region = handle->ctx_region;
+        handle_cxt_area = handle->cxt_area;
+        handle_cxt_region = handle->cxt_region;
 
-        if (handle_ctx_area) {
-          CTX_wm_area_set((bContext *)C, handle_ctx_area);
+        if (handle_cxt_area) {
+          cxt_win_area_set((Cxt *)C, handle_cxt_area);
         }
-        if (handle_ctx_region) {
-          CTX_wm_region_set((bContext *)C, handle_ctx_region);
+        if (handle_cxt_region) {
+          cxt_win_region_set((Cxt *)C, handle_cxt_region);
         }
 
-        uiBut *but = handle->popup_create_vars.but;
-        ARegion *butregion = handle->popup_create_vars.butregion;
-        ui_popup_block_refresh((bContext *)C, handle, butregion, but);
+        Btn *btn = handle->popup_create_vars.btn;
+        ARegion *btnregion = handle->popup_create_vars.btnregion;
+        ui_popup_block_refresh((Cxt *)C, handle, btnregion, btn);
       }
     }
   }
 
-  CTX_wm_area_set((bContext *)C, ctx_area);
-  CTX_wm_region_set((bContext *)C, ctx_region);
+  cxt_win_area_set((Cxt *)C, cxt_area);
+  cxt_win_region_set((Cxt *)C, cxt_region);
 }
 
-static void ui_block_region_draw(const bContext *C, ARegion *region)
+static void ui_block_region_draw(const Cxt *C, ARegion *region)
 {
-  LISTBASE_FOREACH (uiBlock *, block, &region->uiblocks) {
-    UI_block_draw(C, block);
+  LIST_FOREACH (uiBlock *, block, &region->uiblocks) {
+    ui_block_draw(C, block);
   }
 }
 
-/**
- * Use to refresh centered popups on screen resizing (for splash).
- */
-static void ui_block_region_popup_window_listener(const wmRegionListenerParams *params)
+/* Use to refresh centered popups on screen resizing (for splash). */
+static void ui_block_region_popup_win_listener(const WinRegionListenerParams *params)
 {
   ARegion *region = params->region;
-  wmNotifier *wmn = params->notifier;
+  WinNotifier *winnotifier = params->notifier;
 
-  switch (wmn->category) {
-    case NC_WINDOW: {
-      switch (wmn->action) {
+  switch (winnotifier->category) {
+    case NC_WIN: {
+      switch (winnotifier->action) {
         case NA_EDITED: {
-          /* window resize */
-          ED_region_tag_refresh_ui(region);
+          /* win resize */
+          ed_region_tag_refresh_ui(region);
           break;
         }
       }
@@ -403,7 +395,7 @@ static void ui_block_region_popup_window_listener(const wmRegionListenerParams *
   }
 }
 
-static void ui_popup_block_clip(wmWindow *window, uiBlock *block)
+static void ui_popup_block_clip(Win *win, uiBlock *block)
 {
   const float xmin_orig = block->rect.xmin;
   const int margin = UI_SCREEN_MARGIN;
@@ -413,8 +405,8 @@ static void ui_popup_block_clip(wmWindow *window, uiBlock *block)
     return;
   }
 
-  winx = WM_window_pixels_x(window);
-  winy = WM_window_pixels_y(window);
+  winx = win_pixels_x(win);
+  winy = win_pixels_y(win);
 
   /* shift to left if outside of view */
   if (block->rect.xmax > winx - margin) {
@@ -438,9 +430,9 @@ static void ui_popup_block_clip(wmWindow *window, uiBlock *block)
 
   /* ensure menu items draw inside left/right boundary */
   const float xofs = block->rect.xmin - xmin_orig;
-  LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
-    bt->rect.xmin += xofs;
-    bt->rect.xmax += xofs;
+  LIST_FOREACH (Btn *, btn, &block->btns) {
+    btn->rect.xmin += xofs;
+    btn->rect.xmax += xofs;
   }
 }
 
@@ -448,57 +440,57 @@ void ui_popup_block_scrolltest(uiBlock *block)
 {
   block->flag &= ~(UI_BLOCK_CLIPBOTTOM | UI_BLOCK_CLIPTOP);
 
-  LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
-    bt->flag &= ~UI_SCROLLED;
+  LIST_FOREACH (Btn *, bt, &block->btns) {
+    btn->flag &= ~UI_SCROLLED;
   }
 
-  if (block->buttons.first == block->buttons.last) {
+  if (block->btns.first == block->btns.last) {
     return;
   }
 
-  /* mark buttons that are outside boundary */
-  LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
-    if (bt->rect.ymin < block->rect.ymin) {
-      bt->flag |= UI_SCROLLED;
+  /* mark btns that are outside boundary */
+  LIST_FOREACH (Btn *, btn, &block->btns) {
+    if (btn->rect.ymin < block->rect.ymin) {
+      btn->flag |= UI_SCROLLED;
       block->flag |= UI_BLOCK_CLIPBOTTOM;
     }
-    if (bt->rect.ymax > block->rect.ymax) {
-      bt->flag |= UI_SCROLLED;
+    if (btn->rect.ymax > block->rect.ymax) {
+      btn->flag |= UI_SCROLLED;
       block->flag |= UI_BLOCK_CLIPTOP;
     }
   }
 
-  /* mark buttons overlapping arrows, if we have them */
-  LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
+  /* mark btns overlapping arrows, if we have them */
+  LIST_FOREACH (Btn *, btn, &block->btns) {
     if (block->flag & UI_BLOCK_CLIPBOTTOM) {
-      if (bt->rect.ymin < block->rect.ymin + UI_MENU_SCROLL_ARROW) {
-        bt->flag |= UI_SCROLLED;
+      if (btn->rect.ymin < block->rect.ymin + UI_MENU_SCROLL_ARROW) {
+        btn->flag |= UI_SCROLLED;
       }
     }
     if (block->flag & UI_BLOCK_CLIPTOP) {
-      if (bt->rect.ymax > block->rect.ymax - UI_MENU_SCROLL_ARROW) {
-        bt->flag |= UI_SCROLLED;
+      if (btn->rect.ymax > block->rect.ymax - UI_MENU_SCROLL_ARROW) {
+        btn->flag |= UI_SCROLLED;
       }
     }
   }
 }
 
-static void ui_popup_block_remove(bContext *C, uiPopupBlockHandle *handle)
+static void ui_popup_block_remove(Cxt *C, uiPopupBlockHandle *handle)
 {
-  wmWindow *ctx_win = CTX_wm_window(C);
-  ScrArea *ctx_area = CTX_wm_area(C);
-  ARegion *ctx_region = CTX_wm_region(C);
+  Win *cxt_win = cxt_win(C);
+  ScrArea *cxt_area = cxt_win_area(C);
+  ARegion *cxt_region = cxt_win_region(C);
 
-  wmWindowManager *wm = CTX_wm_manager(C);
-  wmWindow *win = ctx_win;
-  bScreen *screen = CTX_wm_screen(C);
+  WinManager *wm = cxt_win_manager(C);
+  Win *win = cxt_win;
+  Screen *screen = cxt_wm_screen(C);
 
   /* There may actually be a different window active than the one showing the popup, so lookup real
    * one. */
-  if (BLI_findindex(&screen->regionbase, handle->region) == -1) {
-    LISTBASE_FOREACH (wmWindow *, win_iter, &wm->windows) {
-      screen = WM_window_get_active_screen(win_iter);
-      if (BLI_findindex(&screen->regionbase, handle->region) != -1) {
+  if (lib_findindex(&screen->regionbase, handle->region) == -1) {
+    LIST_FOREACH (Win *, win_iter, &wm->windows) {
+      screen = win_get_active_screen(win_iter);
+      if (lib_findindex(&screen->regionbase, handle->region) != -1) {
         win = win_iter;
         break;
       }
