@@ -1,3 +1,4 @@
+/* PopUp Region (Generic) */
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,54 +42,54 @@ void ui_popup_translate(ARegion *region, const int mdiff[2])
     lib_rctf_init(&handle->prev_block_rect, 0, 0, 0, 0);
 
     LIST_FOREACH (uiSafetyRct *, saferct, &block->saferct) {
-      BLI_rctf_translate(&saferct->parent, UNPACK2(mdiff));
-      BLI_rctf_translate(&saferct->safety, UNPACK2(mdiff));
+      lib_rctf_translate(&saferct->parent, UNPACK2(mdiff));
+      lib_rctf_translate(&saferct->safety, UNPACK2(mdiff));
     }
   }
 }
 
 /* position block relative to but, result is in window space */
-static void ui_popup_block_position(wmWindow *window,
-                                    ARegion *butregion,
-                                    uiBut *but,
+static void ui_popup_block_position(Win *win,
+                                    ARegion *btnregion,
+                                    Btn *btn,
                                     uiBlock *block)
 {
   uiPopupBlockHandle *handle = block->handle;
 
-  /* Compute button position in window coordinates using the source
-   * button region/block, to position the popup attached to it. */
+  /* Compute btn position in win coordinates using the source
+   * btn region/block, to position the popup attached to it. */
   rctf butrct;
 
   if (!handle->refresh) {
-    ui_block_to_window_rctf(butregion, but->block, &butrct, &but->rect);
+    ui_block_to_win_rctf(btnregion, btn->block, &btnrct, &btn->rect);
 
     /* widget_roundbox_set has this correction too, keep in sync */
-    if (but->type != UI_BTYPE_PULLDOWN) {
-      if (but->drawflag & UI_BUT_ALIGN_TOP) {
-        butrct.ymax += U.pixelsize;
+    if (btn->type != BTYPE_PULLDOWN) {
+      if (btn->drawflag & BTN_ALIGN_TOP) {
+        btnrct.ymax += U.pixelsize;
       }
-      if (but->drawflag & UI_BUT_ALIGN_LEFT) {
-        butrct.xmin -= U.pixelsize;
+      if (btn->drawflag & BTN_ALIGN_LEFT) {
+        btnrct.xmin -= U.pixelsize;
       }
     }
 
-    handle->prev_butrct = butrct;
+    handle->prev_btnrct = btnrct;
   }
   else {
-    /* For refreshes, keep same button position so popup doesn't move. */
-    butrct = handle->prev_butrct;
+    /* For refreshes, keep same btn position so popup doesn't move. */
+    btnrct = handle->prev_btnrct;
   }
 
-  /* Compute block size in window space, based on buttons contained in it. */
+  /* Compute block size in window space, based on btns contained in it. */
   if (block->rect.xmin == 0.0f && block->rect.xmax == 0.0f) {
-    if (block->buttons.first) {
-      BLI_rctf_init_minmax(&block->rect);
+    if (block->btns.first) {
+      lib_rctf_init_minmax(&block->rect);
 
-      LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
-        if (block->content_hints & UI_BLOCK_CONTAINS_SUBMENU_BUT) {
+      LIST_FOREACH (Btn *, bt, &block->btns) {
+        if (block->content_hints & UI_BLOCK_CONTAINS_SUBMENU_BTN) {
           bt->rect.xmax += UI_MENU_SUBMENU_PADDING;
         }
-        BLI_rctf_union(&block->rect, &bt->rect);
+        lib_rctf_union(&block->rect, &bt->rect);
       }
     }
     else {
@@ -98,11 +99,11 @@ static void ui_popup_block_position(wmWindow *window,
     }
   }
 
-  ui_block_to_window_rctf(butregion, but->block, &block->rect, &block->rect);
+  ui_block_to_win_rctf(btnregion, btn->block, &block->rect, &block->rect);
 
   /* Compute direction relative to button, based on available space. */
-  const int size_x = BLI_rctf_size_x(&block->rect) + 0.2f * UI_UNIT_X; /* 4 for shadow */
-  const int size_y = BLI_rctf_size_y(&block->rect) + 0.2f * UI_UNIT_Y;
+  const int size_x = lib_rctf_size_x(&block->rect) + 0.2f * UI_UNIT_X; /* 4 for shadow */
+  const int size_y = lib_rctf_size_y(&block->rect) + 0.2f * UI_UNIT_Y;
   const int center_x = (block->direction & UI_DIR_CENTER_X) ? size_x / 2 : 0;
   const int center_y = (block->direction & UI_DIR_CENTER_Y) ? size_y / 2 : 0;
 
@@ -111,29 +112,29 @@ static void ui_popup_block_position(wmWindow *window,
   if (!handle->refresh) {
     bool left = 0, right = 0, top = 0, down = 0;
 
-    const int win_x = WM_window_pixels_x(window);
-    const int win_y = WM_window_pixels_y(window);
+    const int win_x = win_pixels_x(win);
+    const int win_y = win_pixels_y(win);
 
     /* Take into account maximum size so we don't have to flip on refresh. */
     const float max_size_x = max_ff(size_x, handle->max_size_x);
     const float max_size_y = max_ff(size_y, handle->max_size_y);
 
     /* check if there's space at all */
-    if (butrct.xmin - max_size_x + center_x > 0.0f) {
+    if (btnrct.xmin - max_size_x + center_x > 0.0f) {
       left = 1;
     }
-    if (butrct.xmax + max_size_x - center_x < win_x) {
+    if (btnrct.xmax + max_size_x - center_x < win_x) {
       right = 1;
     }
-    if (butrct.ymin - max_size_y + center_y > 0.0f) {
+    if (btnrct.ymin - max_size_y + center_y > 0.0f) {
       down = 1;
     }
-    if (butrct.ymax + max_size_y - center_y < win_y) {
+    if (btnrct.ymax + max_size_y - center_y < win_y) {
       top = 1;
     }
 
     if (top == 0 && down == 0) {
-      if (butrct.ymin - max_size_y < win_y - butrct.ymax - max_size_y) {
+      if (btnrct.ymin - max_size_y < win_y - btnrct.ymax - max_size_y) {
         top = 1;
       }
       else {
@@ -184,7 +185,7 @@ static void ui_popup_block_position(wmWindow *window,
       if (dir1 == UI_DIR_DOWN && down == 0) {
         dir1 = UI_DIR_UP;
       }
-      BLI_assert(dir2 != UI_DIR_UP);
+      lib_assert(dir2 != UI_DIR_UP);
       //          if (dir2 == UI_DIR_UP   && top == 0)  { dir2 = UI_DIR_DOWN; }
       if (dir2 == UI_DIR_DOWN && down == 0) {
         dir2 = UI_DIR_UP;
@@ -204,77 +205,77 @@ static void ui_popup_block_position(wmWindow *window,
   /* Compute offset based on direction. */
   float offset_x = 0, offset_y = 0;
 
-  /* Ensure buttons don't come between the parent button and the popup, see: T63566. */
+  /* Ensure btns don't come between the parent button and the popup, see: T63566. */
   const float offset_overlap = max_ff(U.pixelsize, 1.0f);
 
   if (dir1 == UI_DIR_LEFT) {
-    offset_x = (butrct.xmin - block->rect.xmax) + offset_overlap;
+    offset_x = (btnrct.xmin - block->rect.xmax) + offset_overlap;
     if (dir2 == UI_DIR_UP) {
-      offset_y = butrct.ymin - block->rect.ymin - center_y - UI_MENU_PADDING;
+      offset_y = btnrct.ymin - block->rect.ymin - center_y - UI_MENU_PADDING;
     }
     else {
-      offset_y = butrct.ymax - block->rect.ymax + center_y + UI_MENU_PADDING;
+      offset_y = btnrct.ymax - block->rect.ymax + center_y + UI_MENU_PADDING;
     }
   }
   else if (dir1 == UI_DIR_RIGHT) {
-    offset_x = (butrct.xmax - block->rect.xmin) - offset_overlap;
+    offset_x = (btnrct.xmax - block->rect.xmin) - offset_overlap;
     if (dir2 == UI_DIR_UP) {
-      offset_y = butrct.ymin - block->rect.ymin - center_y - UI_MENU_PADDING;
+      offset_y = btnrct.ymin - block->rect.ymin - center_y - UI_MENU_PADDING;
     }
     else {
-      offset_y = butrct.ymax - block->rect.ymax + center_y + UI_MENU_PADDING;
+      offset_y = btnrct.ymax - block->rect.ymax + center_y + UI_MENU_PADDING;
     }
   }
   else if (dir1 == UI_DIR_UP) {
-    offset_y = (butrct.ymax - block->rect.ymin) - offset_overlap;
+    offset_y = (btnrct.ymax - block->rect.ymin) - offset_overlap;
     if (dir2 == UI_DIR_RIGHT) {
-      offset_x = butrct.xmax - block->rect.xmax + center_x;
+      offset_x = btnrct.xmax - block->rect.xmax + center_x;
     }
     else {
-      offset_x = butrct.xmin - block->rect.xmin - center_x;
+      offset_x = btnrct.xmin - block->rect.xmin - center_x;
     }
     /* changed direction? */
     if ((dir1 & block->direction) == 0) {
       /* TODO: still do */
-      UI_block_order_flip(block);
+      ui_block_order_flip(block);
     }
   }
   else if (dir1 == UI_DIR_DOWN) {
-    offset_y = (butrct.ymin - block->rect.ymax) + offset_overlap;
+    offset_y = (btnrct.ymin - block->rect.ymax) + offset_overlap;
     if (dir2 == UI_DIR_RIGHT) {
-      offset_x = butrct.xmax - block->rect.xmax + center_x;
+      offset_x = btnrct.xmax - block->rect.xmax + center_x;
     }
     else {
-      offset_x = butrct.xmin - block->rect.xmin - center_x;
+      offset_x = btnrct.xmin - block->rect.xmin - center_x;
     }
     /* changed direction? */
     if ((dir1 & block->direction) == 0) {
       /* TODO: still do */
-      UI_block_order_flip(block);
+      ui_block_order_flip(block);
     }
   }
 
   /* Center over popovers for eg. */
   if (block->direction & UI_DIR_CENTER_X) {
-    offset_x += BLI_rctf_size_x(&butrct) / ((dir2 == UI_DIR_LEFT) ? 2 : -2);
+    offset_x += lib_rctf_size_x(&btnrct) / ((dir2 == UI_DIR_LEFT) ? 2 : -2);
   }
 
   /* Apply offset, buttons in window coords. */
-  LISTBASE_FOREACH (uiBut *, bt, &block->buttons) {
-    ui_block_to_window_rctf(butregion, but->block, &bt->rect, &bt->rect);
+  LIST_FOREACH (Btn *, bt, &block->btns) {
+    ui_block_to_win_rctf(btnregion, btn->block, &bt->rect, &bt->rect);
 
     BLI_rctf_translate(&bt->rect, offset_x, offset_y);
 
     /* ui_but_update recalculates drawstring size in pixels */
-    ui_but_update(bt);
+    ui_btn_update(bt);
   }
 
-  BLI_rctf_translate(&block->rect, offset_x, offset_y);
+  lib_rctf_translate(&block->rect, offset_x, offset_y);
 
   /* Safety calculus. */
   {
-    const float midx = BLI_rctf_cent_x(&butrct);
-    const float midy = BLI_rctf_cent_y(&butrct);
+    const float midx = lib_rctf_cent_x(&butrct);
+    const float midy = lib_rctf_cent_y(&butrct);
 
     /* when you are outside parent button, safety there should be smaller */
 
