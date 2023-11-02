@@ -497,36 +497,36 @@ static void ui_popup_block_remove(Cxt *C, uiPopupBlockHandle *handle)
     }
   }
 
-  BLI_assert(win && screen);
+  lib_assert(win && screen);
 
-  CTX_wm_window_set(C, win);
+  cxt_win_set(C, win);
   ui_region_temp_remove(C, screen, handle->region);
 
   /* Reset context (area and region were NULL'ed when changing context window). */
-  CTX_wm_window_set(C, ctx_win);
-  CTX_wm_area_set(C, ctx_area);
-  CTX_wm_region_set(C, ctx_region);
+  cxt_win_set(C, cxt_win);
+  cxt_win_area_set(C, cxt_area);
+  cxt_win_region_set(C, cxt_region);
 
   /* reset to region cursor (only if there's not another menu open) */
-  if (BLI_listbase_is_empty(&screen->regionbase)) {
+  if (lib_list_is_empty(&screen->regionbase)) {
     win->tag_cursor_refresh = true;
   }
 
   if (handle->scrolltimer) {
-    WM_event_remove_timer(wm, win, handle->scrolltimer);
+    win_event_remove_timer(wm, win, handle->scrolltimer);
   }
 }
 
-uiBlock *ui_popup_block_refresh(bContext *C,
+uiBlock *ui_popup_block_refresh(Cxt *C,
                                 uiPopupBlockHandle *handle,
-                                ARegion *butregion,
-                                uiBut *but)
+                                ARegion *btnregion,
+                                uiBtn *btn)
 {
   const int margin = UI_POPUP_MARGIN;
   wmWindow *window = CTX_wm_window(C);
   ARegion *region = handle->region;
 
-  const uiBlockCreateFunc create_func = handle->popup_create_vars.create_func;
+  const uiBlockCreateFn create_func = handle->popup_create_vars.create_func;
   const uiBlockHandleCreateFunc handle_create_func = handle->popup_create_vars.handle_create_func;
   void *arg = handle->popup_create_vars.arg;
 
@@ -535,19 +535,19 @@ uiBlock *ui_popup_block_refresh(bContext *C,
 
   handle->refresh = (block_old != NULL);
 
-  BLI_assert(!handle->refresh || handle->can_refresh);
+  lib_assert(!handle->refresh || handle->can_refresh);
 
 #ifdef DEBUG
-  wmEvent *event_back = window->eventstate;
-  wmEvent *event_last_back = window->event_last_handled;
+  WinEvent *event_back = win->eventstate;
+  WinEvent *event_last_back = win->event_last_handled;
 #endif
 
   /* create ui block */
   if (create_func) {
-    block = create_func(C, region, arg);
+    block = create_fn(C, region, arg);
   }
   else {
-    block = handle_create_func(C, handle, arg);
+    block = handle_create_fn(C, handle, arg);
   }
 
   /* callbacks _must_ leave this for us, otherwise we can't call UI_block_update_from_old */
