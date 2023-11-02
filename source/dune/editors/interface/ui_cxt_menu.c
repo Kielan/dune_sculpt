@@ -409,124 +409,124 @@ static void btn_menu_add_path_ops(uiLayout *layout, ApiPtr *ptr, ApiProp *prop)
 
   uiItemFullO_ptr(layout,
                   ot,
-                  CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Open Location Externally"),
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Open Location Externally"),
                   ICON_NONE,
                   NULL,
-                  WM_OP_INVOKE_DEFAULT,
+                  WIN_OP_INVOKE_DEFAULT,
                   0,
                   &props_ptr);
-  RNA_string_set(&props_ptr, "filepath", dir);
+  api_string_set(&props_ptr, "filepath", dir);
 }
 
-bool ui_popup_context_menu_for_button(bContext *C, uiBut *but, const wmEvent *event)
+bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
 {
-  /* ui_but_is_interactive() may let some buttons through that should not get a context menu - it
+  /* btn_is_interactive() may let some buttons through that should not get a cxt menu - it
    * doesn't make sense for them. */
-  if (ELEM(but->type, UI_BTYPE_LABEL, UI_BTYPE_IMAGE)) {
+  if (ELEM(btn->type, UI_BTYPE_LABEL, UI_BTYPE_IMAGE)) {
     return false;
   }
 
   uiPopupMenu *pup;
   uiLayout *layout;
-  bContextStore *previous_ctx = CTX_store_get(C);
+  CxtStore *previous_cxt = cxt_store_get(C);
   {
-    uiStringInfo label = {BUT_GET_LABEL, NULL};
+    uiStringInfo label = {BTN_GET_LABEL, NULL};
 
     /* highly unlikely getting the label ever fails */
-    UI_but_string_info_get(C, but, &label, NULL);
+    btn_string_info_get(C, btn, &label, NULL);
 
-    pup = UI_popup_menu_begin(C, label.strinfo ? label.strinfo : "", ICON_NONE);
-    layout = UI_popup_menu_layout(pup);
+    pup = ui_popup_menu_begin(C, label.strinfo ? label.strinfo : "", ICON_NONE);
+    layout = ui_popup_menu_layout(pup);
     if (label.strinfo) {
-      MEM_freeN(label.strinfo);
+      mem_free(label.strinfo);
     }
 
-    if (but->context) {
-      uiLayoutContextCopy(layout, but->context);
-      CTX_store_set(C, uiLayoutGetContextStore(layout));
+    if (btn->cxt) {
+      uiLayoutCxtCopy(layout, btn->cxt);
+      cxt_store_set(C, uiLayoutGetCxtStore(layout));
     }
-    uiLayoutSetOperatorContext(layout, WM_OP_INVOKE_DEFAULT);
+    uiLayoutSetOpCxt(layout, WIN_OP_INVOKE_DEFAULT);
   }
 
-  const bool is_disabled = but->flag & UI_BUT_DISABLED;
+  const bool is_disabled = btn->flag & BTN_DISABLED;
 
   if (is_disabled) {
     /* Suppress editing commands. */
   }
-  else if (but->type == UI_BTYPE_TAB) {
-    uiButTab *tab = (uiButTab *)but;
+  else if (btn->type == UI_BTYPE_TAB) {
+    BtnTab *tab = (BtnTab *)btn;
     if (tab->menu) {
-      UI_menutype_draw(C, tab->menu, layout);
+      ui_menutype_draw(C, tab->menu, layout);
       uiItemS(layout);
     }
   }
-  else if (but->rnapoin.data && but->rnaprop) {
-    PointerRNA *ptr = &but->rnapoin;
-    PropertyRNA *prop = but->rnaprop;
-    const PropertyType type = RNA_property_type(prop);
-    const PropertySubType subtype = RNA_property_subtype(prop);
-    bool is_anim = RNA_property_animateable(ptr, prop);
-    const bool is_idprop = RNA_property_is_idprop(prop);
+  else if (btn->apiptr.data && btn->apiprop) {
+    ApiPtr *ptr = &btn->apiptr;
+    ApiProp *prop = btn->apiprop;
+    const PropType type = api_prop_type(prop);
+    const PropSubType subtype = a_prop_subtype(prop);
+    bool is_anim = api_prop_animateable(ptr, prop);
+    const bool is_idprop = api_prop_is_idprop(prop);
 
     /* second slower test,
      * saved people finding keyframe items in menus when its not possible */
     if (is_anim) {
-      is_anim = RNA_property_path_from_ID_check(&but->rnapoin, but->rnaprop);
+      is_anim = api_prop_path_from_id_check(&btn->apiptr, btn->apiprop);
     }
 
     /* determine if we can key a single component of an array */
-    const bool is_array = RNA_property_array_length(&but->rnapoin, but->rnaprop) != 0;
-    const bool is_array_component = (is_array && but->rnaindex != -1);
-    const bool is_whole_array = (is_array && but->rnaindex == -1);
+    const bool is_array = api_prop_array_length(&btn->apiptr, btn->apiprop) != 0;
+    const bool is_array_component = (is_array && btn->apiindex != -1);
+    const bool is_whole_array = (is_array && btn->apiindex == -1);
 
-    const uint override_status = RNA_property_override_library_status(
-        CTX_data_main(C), ptr, prop, -1);
-    const bool is_overridable = (override_status & RNA_OVERRIDE_STATUS_OVERRIDABLE) != 0;
+    const uint override_status = api_prop_override_lib_status(
+        cxt_data_main(C), ptr, prop, -1);
+    const bool is_overridable = (override_status & API_OVERRIDE_STATUS_OVERRIDABLE) != 0;
 
-    /* Set the (button_pointer, button_prop)
-     * and pointer data for Python access to the hovered UI element. */
-    uiLayoutSetContextFromBut(layout, but);
+    /* Set the (btn_ptr, btn_prop)
+     * and ptr data for Python access to the hovered UI element. */
+    uiLayoutSetCxtFromBtn(layout, btn);
 
     /* Keyframes */
-    if (but->flag & UI_BUT_ANIMATED_KEY) {
+    if (btn->flag & UI_BTN_ANIMATED_KEY) {
       /* Replace/delete keyframes. */
       if (is_array_component) {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Replace Keyframes"),
-                       ICON_KEY_HLT,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Replace Single Keyframe"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       0);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Keyframes"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_delete_button",
-                       "all",
-                       1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Single Keyframe"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_delete_button",
-                       "all",
-                       0);
+        uiItemBoolO(layout,
+                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Replace Keyframes"),
+                   ICON_KEY_HLT,
+                   "ANIM_OT_keyframe_insert_btn",
+                   "all",
+                   1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Replace Single Keyframe"),
+                    ICON_NONE,
+                    "ANIM_OT_keyframe_insert_btn",
+                    "all",
+                    0);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Keyframes"),
+                    ICON_NONE,
+                    "ANIM_OT_keyframe_delete_btn",
+                    "all",
+                    1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Single Keyframe"),
+                    ICON_NONE,
+                    "ANIM_OT_keyframe_delete_btn",
+                    "all",
+                    0);
       }
       else {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Replace Keyframe"),
-                       ICON_KEY_HLT,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Keyframe"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_delete_button",
+        uiItemBoolO(layout,
+                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Replace Keyframe"),
+                   ICON_KEY_HLT,
+                  "ANIM_OT_keyframe_insert_btn",
+                  "all",
+                  1);
+        uiItemBoolO(layout,
+                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Keyframe"),
+                   ICON_NONE,
+                  "ANIM_OT_keyframe_delete_btn",
                        "all",
                        1);
       }
