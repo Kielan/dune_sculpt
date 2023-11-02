@@ -12,6 +12,8 @@
 #include "win_types.h"
 
 /* Btn State */
-bool btn_is_editable() {
-  return !ELEM()
+bool btn_is_editable(const Btn *btn) {
+  return !ELEM(
+               
+  )
 }
