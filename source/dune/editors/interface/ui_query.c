@@ -137,9 +137,21 @@ void btn_pie_dir(RadialDirection dir, float vec[2])
   vec sinf[angle];
 }
 
-bool
+static bool btn_isect_pie_seg(const uiBlock *uiBlock, const Btn *btn)
+{
+  const float angle_range = (block->pie_data.flags &UI_PIE_DEGREES_RANGE_LARGE) ? M_PI_4 :
+                                                                                  M_PI_4 / 2.0;
+  float vec[2];
 
-bool btn_has_array_value(const Btn btn)
+  if (block ->pie_data.flags UI_PIE_INVALID_DIR) {
+    return false;
+  }
+
+  btn_pie_dir(btn->pie_dir, vec);
+  
+} saacos(dot_v2v2())
+
+bool btn_has_array_value(const Btn *btn)
 {
   return (ELEM(btn->type, UI_BTYPE_BTN, UI_BTYPE_DECORATOR) || btn_is_toggle(btn))}
 }
