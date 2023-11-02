@@ -1,104 +1,89 @@
-later */
-
-/** \file
- * \ingroup edinterface
- *
- * Generic context popup menus.
- */
+/* Generic cxt popup menus. */
 
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
+#include "types_scene.h"
+#include "types_screen.h"
 
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_addon.h"
-#include "BKE_context.h"
-#include "BKE_idprop.h"
-#include "BKE_screen.h"
+#include "dune_addon.h"
+#include "dune_cxt.h"
+#include "dune_idprop.h"
+#include "dune_screen.h"
 
-#include "ED_asset.h"
-#include "ED_keyframing.h"
-#include "ED_screen.h"
+#include "ed_asset.h"
+#include "ed_keyframing.h"
+#include "de_screen.h"
 
-#include "UI_interface.h"
+#include "ui.h"
 
-#include "interface_intern.h"
+#include "ui_intern.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
-#ifdef WITH_PYTHON
-#  include "BPY_extern.h"
-#  include "BPY_extern_run.h"
-#endif
-
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 /* This hack is needed because we don't have a good way to
- * re-reference keymap items once added: T42944 */
+ * re-ref keymap items once added: T42944 */
 #define USE_KEYMAP_ADD_HACK
 
-/* -------------------------------------------------------------------- */
-/** \name Button Context Menu
- * \{ */
-
-static IDProperty *shortcut_property_from_rna(bContext *C, uiBut *but)
+/* Btn Cxt Menu */
+static IdProp *shortcut_prop_from_api(Cxt *C, Btn *btn)
 {
-  /* Compute data path from context to property. */
-
-  /* If this returns null, we won't be able to bind shortcuts to these RNA properties.
-   * Support can be added at #wm_context_member_from_ptr. */
-  char *final_data_path = WM_context_path_resolve_property_full(
-      C, &but->rnapoin, but->rnaprop, but->rnaindex);
+  /* Compute data path from cxt to prop. */
+  /* If this returns null, we won't be able to bind shortcuts to these api props.
+   * Support can be added at win_cxt_member_from_ptr. */
+  char *final_data_path = win_cxt_path_resolve_prop_full(
+      C, &btn->apiptr, btn->apiprop, btn->rapiindex);
   if (final_data_path == NULL) {
     return NULL;
   }
 
-  /* Create ID property of data path, to pass to the operator. */
-  const IDPropertyTemplate val = {0};
-  IDProperty *prop = IDP_New(IDP_GROUP, &val, __func__);
+  /* Create Id prop of data path, to pass to the op. */
+  const IdPropTemplate val = {0};
+  IdProp *prop = IDP_New(IDP_GROUP, &val, __func__);
   IDP_AddToGroup(prop, IDP_NewString(final_data_path, "data_path", strlen(final_data_path) + 1));
 
-  MEM_freeN((void *)final_data_path);
+  mem_free((void *)final_data_path);
 
   return prop;
 }
 
-static const char *shortcut_get_operator_property(bContext *C, uiBut *but, IDProperty **r_prop)
+static const char *shortcut_get_op_prop(Cxt *C, Btn *btn, IdProp **r_prop)
 {
-  if (but->optype) {
+  if (btn->optype) {
     /* Operator */
-    *r_prop = (but->opptr && but->opptr->data) ? IDP_CopyProperty(but->opptr->data) : NULL;
+    *r_prop = (btn->opptr && btn->opptr->data) ? IDP_CopyProp(btn->opptr->data) : NULL;
     return but->optype->idname;
   }
 
-  if (but->rnaprop) {
-    const PropertyType rnaprop_type = RNA_property_type(but->rnaprop);
+  if (btn->apiprop) {
+    const PropType apiprop_type = api_prop_type(btn->apiprop);
 
-    if (rnaprop_type == PROP_BOOLEAN) {
-      /* Boolean */
-      *r_prop = shortcut_property_from_rna(C, but);
+    if (apiprop_type == PROP_BOOL) {
+      /* Bool */
+      *r_prop = shortcut_prop_from_api(C, btn);
       if (*r_prop == NULL) {
         return NULL;
       }
-      return "WM_OT_context_toggle";
+      return "WM_OT_cxt_toggle";
     }
-    if (rnaprop_type == PROP_ENUM) {
+    if (apiprop_type == PROP_ENUM) {
       /* Enum */
-      *r_prop = shortcut_property_from_rna(C, but);
+      *r_prop = shortcut_prop_from_api(C, btn);
       if (*r_prop == NULL) {
         return NULL;
       }
-      return "WM_OT_context_menu_enum";
+      return "WM_OT_cxt_menu_enum";
     }
   }
 
@@ -106,66 +91,66 @@ static const char *shortcut_get_operator_property(bContext *C, uiBut *but, IDPro
   return NULL;
 }
 
-static void shortcut_free_operator_property(IDProperty *prop)
+static void shortcut_free_op_prop(IdProp *prop)
 {
   if (prop) {
-    IDP_FreeProperty(prop);
+    IDP_FreeProp(prop);
   }
 }
 
-static void but_shortcut_name_func(bContext *C, void *arg1, int UNUSED(event))
+static void btn_shortcut_name_fn(Cxt *C, void *arg1, int UNUSED(event))
 {
-  uiBut *but = (uiBut *)arg1;
+  Btn *btn = (Btn *)arg1;
   char shortcut_str[128];
 
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
   if (idname == NULL) {
     return;
   }
 
   /* complex code to change name of button */
-  if (WM_key_event_operator_string(
-          C, idname, but->opcontext, prop, true, shortcut_str, sizeof(shortcut_str))) {
-    ui_but_add_shortcut(but, shortcut_str, true);
+  if (win_key_event_op_string(
+          C, idname, btn->opcxt, prop, true, shortcut_str, sizeof(shortcut_str))) {
+    btn_add_shortcut(btn, shortcut_str, true);
   }
   else {
     /* simply strip the shortcut */
-    ui_but_add_shortcut(but, NULL, true);
+    btn_add_shortcut(btn, NULL, true);
   }
 
-  shortcut_free_operator_property(prop);
+  shortcut_free_op_prop(prop);
 }
 
-static uiBlock *menu_change_shortcut(bContext *C, ARegion *region, void *arg)
+static uiBlock *menu_change_shortcut(Cxt *C, ARegion *region, void *arg)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  uiBut *but = (uiBut *)arg;
-  PointerRNA ptr;
-  const uiStyle *style = UI_style_get_dpi();
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  WinManager *wm = cxt_wm(C);
+  Btn *btn = (Btn *)arg;
+  ApiPtr ptr;
+  const uiStyle *style = ui_style_get_dpi();
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
-  wmKeyMap *km;
-  wmKeyMapItem *kmi = WM_key_event_operator(C,
-                                            idname,
-                                            but->opcontext,
-                                            prop,
-                                            EVT_TYPE_MASK_HOTKEY_INCLUDE,
-                                            EVT_TYPE_MASK_HOTKEY_EXCLUDE,
-                                            &km);
+  WinKeyMap *km;
+  WinKeyMapItem *kmi = win_key_event_op(C,
+                                        idname,
+                                        btn->opcxt,
+                                        prop,
+                                        EVT_TYPE_MASK_HOTKEY_INCLUDE,
+                                        EVT_TYPE_MASK_HOTKEY_EXCLUDE,
+                                        &km);
   U.runtime.is_dirty = true;
 
-  BLI_assert(kmi != NULL);
+  lib_assert(kmi != NULL);
 
-  RNA_pointer_create(&wm->id, &RNA_KeyMapItem, kmi, &ptr);
+  api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &ptr);
 
-  uiBlock *block = UI_block_begin(C, region, "_popup", UI_EMBOSS);
-  UI_block_func_handle_set(block, but_shortcut_name_func, but);
-  UI_block_flag_enable(block, UI_BLOCK_MOVEMOUSE_QUIT);
-  UI_block_direction_set(block, UI_DIR_CENTER_Y);
+  uiBlock *block = ui_block_begin(C, region, "_popup", UI_EMBOSS);
+  ui_block_fn_handle_set(block, btn_shortcut_name_fn, btn);
+  ui_block_flag_enable(block, UI_BLOCK_MOVEMOUSE_QUIT);
+  ui_block_direction_set(block, UI_DIR_CENTER_Y);
 
-  uiLayout *layout = UI_block_layout(block,
+  uiLayout *layout = ui_block_layout(block,
                                      UI_LAYOUT_VERTICAL,
                                      UI_LAYOUT_PANEL,
                                      0,
@@ -175,13 +160,13 @@ static uiBlock *menu_change_shortcut(bContext *C, ARegion *region, void *arg)
                                      0,
                                      style);
 
-  uiItemL(layout, CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Change Shortcut"), ICON_HAND);
+  uiItemL(layout, CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Change Shortcut"), ICON_HAND);
   uiItemR(layout, &ptr, "type", UI_ITEM_R_FULL_EVENT | UI_ITEM_R_IMMEDIATE, "", ICON_NONE);
 
-  UI_block_bounds_set_popup(
+  ui_block_bounds_set_popup(
       block, 6 * U.dpi_fac, (const int[2]){-100 * U.dpi_fac, 36 * U.dpi_fac});
 
-  shortcut_free_operator_property(prop);
+  shortcut_free_op_prop(prop);
 
   return block;
 }
@@ -190,38 +175,38 @@ static uiBlock *menu_change_shortcut(bContext *C, ARegion *region, void *arg)
 static int g_kmi_id_hack;
 #endif
 
-static uiBlock *menu_add_shortcut(bContext *C, ARegion *region, void *arg)
+static uiBlock *menu_add_shortcut(Cxt *C, ARegion *region, void *arg)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  uiBut *but = (uiBut *)arg;
-  PointerRNA ptr;
-  const uiStyle *style = UI_style_get_dpi();
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  WinManager *wm = cxt_wm(C);
+  Btn *btn = (Btn *)arg;
+  ApiPtr ptr;
+  const uiStyle *style = ui_style_get_dpi();
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
   /* XXX this guess_opname can potentially return a different keymap
    * than being found on adding later... */
-  wmKeyMap *km = WM_keymap_guess_opname(C, idname);
-  wmKeyMapItem *kmi = WM_keymap_add_item(km, idname, EVT_AKEY, KM_PRESS, 0, 0, KM_ANY);
+  WinKeyMap *km = win_keymap_guess_opname(C, idname);
+  WinKeyMapItem *kmi = win_keymap_add_item(km, idname, EVT_AKEY, KM_PRESS, 0, 0, KM_ANY);
   const int kmi_id = kmi->id;
 
   /* This takes ownership of prop, or prop can be NULL for reset. */
-  WM_keymap_item_properties_reset(kmi, prop);
+  win_keymap_item_props_reset(kmi, prop);
 
   /* update and get pointers again */
-  WM_keyconfig_update(wm);
+  win_keyconfig_update(wm);
   U.runtime.is_dirty = true;
 
-  km = WM_keymap_guess_opname(C, idname);
-  kmi = WM_keymap_item_find_id(km, kmi_id);
+  km = win_keymap_guess_opname(C, idname);
+  kmi = win_keymap_item_find_id(km, kmi_id);
 
-  RNA_pointer_create(&wm->id, &RNA_KeyMapItem, kmi, &ptr);
+  api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &ptr);
 
-  uiBlock *block = UI_block_begin(C, region, "_popup", UI_EMBOSS);
-  UI_block_func_handle_set(block, but_shortcut_name_func, but);
-  UI_block_direction_set(block, UI_DIR_CENTER_Y);
+  uiBlock *block = ui_block_begin(C, region, "_popup", UI_EMBOSS);
+  ui_block_fn_handle_set(block, btn_shortcut_name_fn, btn);
+  ui_block_direction_set(block, UI_DIR_CENTER_Y);
 
-  uiLayout *layout = UI_block_layout(block,
+  uiLayout *layout = ui_block_layout(block,
                                      UI_LAYOUT_VERTICAL,
                                      UI_LAYOUT_PANEL,
                                      0,
@@ -231,10 +216,10 @@ static uiBlock *menu_add_shortcut(bContext *C, ARegion *region, void *arg)
                                      0,
                                      style);
 
-  uiItemL(layout, CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Assign Shortcut"), ICON_HAND);
+  uiItemL(layout, CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Assign Shortcut"), ICON_HAND);
   uiItemR(layout, &ptr, "type", UI_ITEM_R_FULL_EVENT | UI_ITEM_R_IMMEDIATE, "", ICON_NONE);
 
-  UI_block_bounds_set_popup(
+  ui_block_bounds_set_popup(
       block, 6 * U.dpi_fac, (const int[2]){-100 * U.dpi_fac, 36 * U.dpi_fac});
 
 #ifdef USE_KEYMAP_ADD_HACK
@@ -244,204 +229,182 @@ static uiBlock *menu_add_shortcut(bContext *C, ARegion *region, void *arg)
   return block;
 }
 
-static void menu_add_shortcut_cancel(struct bContext *C, void *arg1)
+static void menu_add_shortcut_cancel(struct Cxt *C, void *arg1)
 {
-  uiBut *but = (uiBut *)arg1;
+  Btn *btn = (Btn *)arg1;
 
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
 #ifdef USE_KEYMAP_ADD_HACK
-  wmKeyMap *km = WM_keymap_guess_opname(C, idname);
+  WinKeyMap *km = win_keymap_guess_opname(C, idname);
   const int kmi_id = g_kmi_id_hack;
-  UNUSED_VARS(but);
+  UNUSED_VARS(btn);
 #else
-  int kmi_id = WM_key_event_operator_id(C, idname, but->opcontext, prop, true, &km);
+  int kmi_id = win_key_event_op_id(C, idname, btn->opcxt, prop, true, &km);
 #endif
 
-  shortcut_free_operator_property(prop);
+  shortcut_free_op_prop(prop);
 
-  wmKeyMapItem *kmi = WM_keymap_item_find_id(km, kmi_id);
-  WM_keymap_remove_item(km, kmi);
+  WinKeyMapItem *kmi = win_keymap_item_find_id(km, kmi_id);
+  win_keymap_remove_item(km, kmi);
 }
 
-static void popup_change_shortcut_func(bContext *C, void *arg1, void *UNUSED(arg2))
+static void popup_change_shortcut_fn(Cxt *C, void *arg1, void *UNUSED(arg2))
 {
-  uiBut *but = (uiBut *)arg1;
-  UI_popup_block_invoke(C, menu_change_shortcut, but, NULL);
+  Btn *btn = (Btn *)arg1;
+  ui_popup_block_invoke(C, menu_change_shortcut, btn, NULL);
 }
 
-static void remove_shortcut_func(bContext *C, void *arg1, void *UNUSED(arg2))
+static void remove_shortcut_fn(Cxt *C, void *arg1, void *UNUSED(arg2))
 {
-  uiBut *but = (uiBut *)arg1;
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  Btn *btn = (Btn *)arg1;
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
-  wmKeyMap *km;
-  wmKeyMapItem *kmi = WM_key_event_operator(C,
-                                            idname,
-                                            but->opcontext,
-                                            prop,
-                                            EVT_TYPE_MASK_HOTKEY_INCLUDE,
-                                            EVT_TYPE_MASK_HOTKEY_EXCLUDE,
-                                            &km);
-  BLI_assert(kmi != NULL);
+  WinKeyMap *km;
+  WinKeyMapItem *kmi = win_key_event_op(C,
+                                        idname,
+                                        btn->opcxt,
+                                        prop,
+                                        EVT_TYPE_MASK_HOTKEY_INCLUDE,
+                                        EVT_TYPE_MASK_HOTKEY_EXCLUDE,
+                                        &km);
+  lib_assert(kmi != NULL);
 
-  WM_keymap_remove_item(km, kmi);
+  win_keymap_remove_item(km, kmi);
   U.runtime.is_dirty = true;
 
-  shortcut_free_operator_property(prop);
-  but_shortcut_name_func(C, but, 0);
+  shortcut_free_op_prop(prop);
+  btn_shortcut_name_fn(C, btn, 0);
 }
 
-static void popup_add_shortcut_func(bContext *C, void *arg1, void *UNUSED(arg2))
+static void popup_add_shortcut_fn(Cxt *C, void *arg1, void *UNUSED(arg2))
 {
-  uiBut *but = (uiBut *)arg1;
-  UI_popup_block_ex(C, menu_add_shortcut, NULL, menu_add_shortcut_cancel, but, NULL);
+  Btn *btn = (Btn *)arg1;
+  ui_popup_block_ex(C, menu_add_shortcut, NULL, menu_add_shortcut_cancel, btn, NULL);
 }
 
-static bool ui_but_is_user_menu_compatible(bContext *C, uiBut *but)
+static bool btn_is_user_menu_compatible(Cxt *C, Btn *btn)
 {
   bool result = false;
-  if (but->optype) {
+  if (btn->optype) {
     result = true;
   }
-  else if (but->rnaprop) {
-    if (RNA_property_type(but->rnaprop) == PROP_BOOLEAN) {
-      char *data_path = WM_context_path_resolve_full(C, &but->rnapoin);
+  else if (btn->apiprop) {
+    if (api_prop_type(btn->apiprop) == PROP_BOOL) {
+      char *data_path = win_cxt_path_resolve_full(C, &btn->apiptr);
       if (data_path != NULL) {
-        MEM_freeN(data_path);
+        mem_free(data_path);
         result = true;
       }
     }
   }
-  else if (UI_but_menutype_get(but)) {
+  else if (btn_menutype_get(btn)) {
     result = true;
   }
 
   return result;
 }
 
-static bUserMenuItem *ui_but_user_menu_find(bContext *C, uiBut *but, bUserMenu *um)
+static UserMenuItem *btn_user_menu_find(Cxt *C, Btn *btn, UserMenu *um)
 {
-  if (but->optype) {
-    IDProperty *prop = (but->opptr) ? but->opptr->data : NULL;
-    return (bUserMenuItem *)ED_screen_user_menu_item_find_operator(
-        &um->items, but->optype, prop, but->opcontext);
+  if (btn->optype) {
+    IdProp *prop = (btn->opptr) ? btn->opptr->data : NULL;
+    return (UserMenuItem *)ed_screen_user_menu_item_find_op(
+        &um->items, btn->optype, prop, btn->opcxt);
   }
-  if (but->rnaprop) {
-    char *member_id_data_path = WM_context_path_resolve_full(C, &but->rnapoin);
-    const char *prop_id = RNA_property_identifier(but->rnaprop);
-    bUserMenuItem *umi = (bUserMenuItem *)ED_screen_user_menu_item_find_prop(
-        &um->items, member_id_data_path, prop_id, but->rnaindex);
-    MEM_freeN(member_id_data_path);
+  if (btn->apiprop) {
+    char *member_id_data_path = win_cxt_path_resolve_full(C, &btn->apiptr);
+    const char *prop_id = api_prop_id(btn->apiprop);
+    UserMenuItem *umi = (UserMenuItem *)ed_screen_user_menu_item_find_prop(
+        &um->items, member_id_data_path, prop_id, btn->apiindex);
+    mem_free(member_id_data_path);
     return umi;
   }
 
-  MenuType *mt = UI_but_menutype_get(but);
+  MenuType *mt = btn_menutype_get(btn);
   if (mt != NULL) {
-    return (bUserMenuItem *)ED_screen_user_menu_item_find_menu(&um->items, mt);
+    return (UserMenuItem *)ed_screen_user_menu_item_find_menu(&um->items, mt);
   }
   return NULL;
 }
 
-static void ui_but_user_menu_add(bContext *C, uiBut *but, bUserMenu *um)
+static void btn_user_menu_add(Cxt *C, Btn *btn, UserMenu *um)
 {
-  BLI_assert(ui_but_is_user_menu_compatible(C, but));
+  lib_assert(btn_is_user_menu_compatible(C, btn));
 
-  char drawstr[sizeof(but->drawstr)];
-  ui_but_drawstr_without_sep_char(but, drawstr, sizeof(drawstr));
+  char drawstr[sizeof(btn->drawstr)];
+  btn_drawstr_without_sep_char(btn, drawstr, sizeof(drawstr));
 
   MenuType *mt = NULL;
-  if (but->optype) {
+  if (btn->optype) {
     if (drawstr[0] == '\0') {
-      /* Hard code overrides for generic operators. */
-      if (UI_but_is_tool(but)) {
+      /* Hard code overrides for generic ops. */
+      if (btn_is_tool(btn)) {
         char idname[64];
-        RNA_string_get(but->opptr, "name", idname);
-#ifdef WITH_PYTHON
-        {
-          const char *expr_imports[] = {"bpy", "bl_ui", NULL};
-          char expr[256];
-          SNPRINTF(expr,
-                   "bl_ui.space_toolsystem_common.item_from_id("
-                   "bpy.context, "
-                   "bpy.context.space_data.type, "
-                   "'%s').label",
-                   idname);
-          char *expr_result = NULL;
-          if (BPY_run_string_as_string(C, expr_imports, expr, NULL, &expr_result)) {
-            STRNCPY(drawstr, expr_result);
-            MEM_freeN(expr_result);
-          }
-          else {
-            BLI_assert(0);
-            STRNCPY(drawstr, idname);
-          }
-        }
-#else
+        api_string_get(btn->opptr, "name", idname);
         STRNCPY(drawstr, idname);
-#endif
       }
     }
-    ED_screen_user_menu_item_add_operator(
-        &um->items, drawstr, but->optype, but->opptr ? but->opptr->data : NULL, but->opcontext);
+    ed_screen_user_menu_item_add_op(
+        &um->items, drawstr, btn->optype, btn->opptr ? btn->opptr->data : NULL, btn->opcxt);
   }
-  else if (but->rnaprop) {
+  else if (btn->apiprop) {
     /* NOTE: 'member_id' may be a path. */
-    char *member_id_data_path = WM_context_path_resolve_full(C, &but->rnapoin);
-    const char *prop_id = RNA_property_identifier(but->rnaprop);
-    /* NOTE: ignore 'drawstr', use property idname always. */
-    ED_screen_user_menu_item_add_prop(&um->items, "", member_id_data_path, prop_id, but->rnaindex);
-    MEM_freeN(member_id_data_path);
+    char *member_id_data_path = win_cxt_path_resolve_full(C, &btn->apiptr);
+    const char *prop_id = api_prop_id(btn->apiprop);
+    /* NOTE: ignore 'drawstr', use prop idname always. */
+    ed_screen_user_menu_item_add_prop(&um->items, "", member_id_data_path, prop_id, btn->apiindex);
+    mem_free(member_id_data_path);
   }
-  else if ((mt = UI_but_menutype_get(but))) {
-    ED_screen_user_menu_item_add_menu(&um->items, drawstr, mt);
+  else if ((mt = btn_menutype_get(btn))) {
+    ed_screen_user_menu_item_add_menu(&um->items, drawstr, mt);
   }
 }
 
-static void popup_user_menu_add_or_replace_func(bContext *C, void *arg1, void *UNUSED(arg2))
+static void popup_user_menu_add_or_replace_fn(Cxt *C, void *arg1, void *UNUSED(arg2))
 {
-  uiBut *but = arg1;
-  bUserMenu *um = ED_screen_user_menu_ensure(C);
+  Btn *btn = arg1;
+  UserMenu *um = ed_screen_user_menu_ensure(C);
   U.runtime.is_dirty = true;
-  ui_but_user_menu_add(C, but, um);
+  btn_user_menu_add(C, btn, um);
 }
 
-static void popup_user_menu_remove_func(bContext *UNUSED(C), void *arg1, void *arg2)
+static void popup_user_menu_remove_fn(Cxt *UNUSED(C), void *arg1, void *arg2)
 {
-  bUserMenu *um = arg1;
-  bUserMenuItem *umi = arg2;
+  UserMenu *um = arg1;
+  UserMenuItem *umi = arg2;
   U.runtime.is_dirty = true;
-  ED_screen_user_menu_item_remove(&um->items, umi);
+  ed_screen_user_menu_item_remove(&um->items, umi);
 }
 
-static void ui_but_menu_add_path_operators(uiLayout *layout, PointerRNA *ptr, PropertyRNA *prop)
+static void btn_menu_add_path_ops(uiLayout *layout, ApiPtr *ptr, ApiProp *prop)
 {
-  const PropertySubType subtype = RNA_property_subtype(prop);
-  wmOperatorType *ot = WM_operatortype_find("WM_OT_path_open", true);
+  const PropSubType subtype = api_prop_subtype(prop);
+  WinOpType *ot = win_optype_find("WM_OT_path_open", true);
   char filepath[FILE_MAX];
   char dir[FILE_MAXDIR];
   char file[FILE_MAXFILE];
-  PointerRNA props_ptr;
+  ApiPtr props_ptr;
 
-  BLI_assert(ELEM(subtype, PROP_FILEPATH, PROP_DIRPATH));
+  lib_assert(ELEM(subtype, PROP_FILEPATH, PROP_DIRPATH));
   UNUSED_VARS_NDEBUG(subtype);
 
-  RNA_property_string_get(ptr, prop, filepath);
-  BLI_split_dirfile(filepath, dir, file, sizeof(dir), sizeof(file));
+  api_prop_string_get(ptr, prop, filepath);
+  lib_split_dirfile(filepath, dir, file, sizeof(dir), sizeof(file));
 
   if (file[0]) {
-    BLI_assert(subtype == PROP_FILEPATH);
+    lib_assert(subtype == PROP_FILEPATH);
     uiItemFullO_ptr(layout,
                     ot,
-                    CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Open File Externally"),
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Open File Externally"),
                     ICON_NONE,
                     NULL,
-                    WM_OP_INVOKE_DEFAULT,
+                    WIN_OP_INVOKE_DEFAULT,
                     0,
                     &props_ptr);
-    RNA_string_set(&props_ptr, "filepath", filepath);
+    api_string_set(&props_ptr, "filepath", filepath);
   }
 
   uiItemFullO_ptr(layout,
