@@ -534,61 +534,61 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
       /* keyframe settings */
       uiItemS(layout);
     }
-    else if (but->flag & UI_BUT_DRIVEN) {
+    else if (btn->flag & UI_BTN_DRIVEN) {
       /* pass */
     }
     else if (is_anim) {
       if (is_array_component) {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Insert Keyframes"),
+        uiItemBoolO(layout,
+                       CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Keyframes"),
                        ICON_KEY_HLT,
                        "ANIM_OT_keyframe_insert_button",
                        "all",
                        1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Insert Single Keyframe"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       0);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Single Keyframe"),
+                    ICON_NONE,
+                    "ANIM_OT_keyframe_insert_btn",
+                    "all",
+                    0);
       }
       else {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Insert Keyframe"),
-                       ICON_KEY_HLT,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Keyframe"),
+                    ICON_KEY_HLT,
+                    "ANIM_OT_keyframe_insert_btn",
+                    "all",
+                    1);
       }
     }
 
-    if ((but->flag & UI_BUT_ANIMATED) && (but->rnapoin.type != &RNA_NlaStrip)) {
+    if ((btn->flag & UI_BTN_ANIMATED) && (btn->apiptr.type != &ApiNlaStrip)) {
       if (is_array_component) {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Clear Keyframes"),
-                       ICON_KEY_DEHLT,
-                       "ANIM_OT_keyframe_clear_button",
-                       "all",
-                       1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Clear Single Keyframes"),
-                       ICON_NONE,
-                       "ANIM_OT_keyframe_clear_button",
-                       "all",
-                       0);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Clear Keyframes"),
+                    ICON_KEY_DEHLT,
+                    "ANIM_OT_keyframe_clear_btn",
+                    "all",
+                    1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Clear Single Keyframes"),
+                    ICON_NONE,
+                    "ANIM_OT_keyframe_clear_btn",
+                    "all",
+                    0);
       }
       else {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Clear Keyframes"),
-                       ICON_KEY_DEHLT,
-                       "ANIM_OT_keyframe_clear_button",
-                       "all",
-                       1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Clear Keyframes"),
+                    ICON_KEY_DEHLT,
+                    "ANIM_OT_keyframe_clear_btn",
+                    "all",
+                    1);
       }
     }
 
     /* Drivers */
-    if (but->flag & UI_BUT_DRIVEN) {
+    if (btn->flag & UI_BUT_DRIVEN) {
       uiItemS(layout);
 
       if (is_array_component) {
