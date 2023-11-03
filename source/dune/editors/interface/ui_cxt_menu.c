@@ -1,5 +1,4 @@
 /* Generic cxt popup menus. */
-
 #include <string.h>
 
 #include "mem_guardedalloc.h"
@@ -588,77 +587,77 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
 
     /* Drivers */
-    if (btn->flag & UI_BUT_DRIVEN) {
+    if (btn->flag & UI_BTN_DRIVEN) {
       uiItemS(layout);
 
       if (is_array_component) {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Drivers"),
-                       ICON_X,
-                       "ANIM_OT_driver_button_remove",
-                       "all",
-                       1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Single Driver"),
-                       ICON_NONE,
-                       "ANIM_OT_driver_button_remove",
-                       "all",
-                       0);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Drivers"),
+                    ICON_X,
+                    "ANIM_OT_driver_btn_remove",
+                    "all",
+                    1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Single Driver"),
+                    ICON_NONE,
+                    "ANIM_OT_driver_bTn_remove",
+                    "all",
+                    0);
       }
       else {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Delete Driver"),
-                       ICON_X,
-                       "ANIM_OT_driver_button_remove",
-                       "all",
-                       1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Driver"),
+                    ICON_X,
+                    "ANIM_OT_driver_btn_remove",
+                    "all",
+                    1);
       }
 
       if (!is_whole_array) {
         uiItemO(layout,
-                CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy Driver"),
+                CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Driver"),
                 ICON_NONE,
-                "ANIM_OT_copy_driver_button");
-        if (ANIM_driver_can_paste()) {
+                "ANIM_OT_copy_driver_btn");
+        if (anime_driver_can_paste()) {
           uiItemO(layout,
-                  CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Paste Driver"),
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Paste Driver"),
                   ICON_NONE,
-                  "ANIM_OT_paste_driver_button");
+                  "ANIM_OT_paste_driver_btn");
         }
 
         uiItemO(layout,
-                CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Edit Driver"),
+                CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Edit Driver"),
                 ICON_DRIVER,
-                "ANIM_OT_driver_button_edit");
+                "ANIM_OT_driver_btn_edit");
       }
 
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Open Drivers Editor"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Open Drivers Editor"),
               ICON_NONE,
               "SCREEN_OT_drivers_editor_show");
     }
-    else if (but->flag & (UI_BUT_ANIMATED_KEY | UI_BUT_ANIMATED)) {
+    else if (btn->flag & (UI_BTN_ANIMATED_KEY | UI_BTN_ANIMATED)) {
       /* pass */
     }
     else if (is_anim) {
       uiItemS(layout);
 
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Add Driver"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add Driver"),
               ICON_DRIVER,
-              "ANIM_OT_driver_button_add");
+              "ANIM_OT_driver_btn_add");
 
       if (!is_whole_array) {
-        if (ANIM_driver_can_paste()) {
+        if (anim_driver_can_paste()) {
           uiItemO(layout,
-                  CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Paste Driver"),
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Paste Driver"),
                   ICON_NONE,
-                  "ANIM_OT_paste_driver_button");
+                  "ANIM_OT_paste_driver_btn");
         }
       }
 
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Open Drivers Editor"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Open Drivers Editor"),
               ICON_NONE,
               "SCREEN_OT_drivers_editor_show");
     }
@@ -669,72 +668,72 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
       uiItemS(layout);
 
       if (is_array_component) {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Add All to Keying Set"),
+        uiItemBoolO(layout,
+                       CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add All to Keying Set"),
                        ICON_KEYINGSET,
-                       "ANIM_OT_keyingset_button_add",
+                       "ANIM_OT_keyingset_btn_add",
                        "all",
                        1);
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Add Single to Keying Set"),
-                       ICON_NONE,
-                       "ANIM_OT_keyingset_button_add",
-                       "all",
-                       0);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add Single to Keying Set"),
+                    ICON_NONE,
+                    "ANIM_OT_keyingset_btn_add",
+                    "all",
+                    0);
         uiItemO(layout,
-                CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove from Keying Set"),
+                CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove from Keying Set"),
                 ICON_NONE,
-                "ANIM_OT_keyingset_button_remove");
+                "ANIM_OT_keyingset_btn_remove");
       }
       else {
-        uiItemBooleanO(layout,
-                       CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Add to Keying Set"),
-                       ICON_KEYINGSET,
-                       "ANIM_OT_keyingset_button_add",
-                       "all",
-                       1);
+        uiItemBoolO(layout,
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add to Keying Set"),
+                    ICON_KEYINGSET,
+                    "ANIM_OT_keyingset_btn_add",
+                    "all",
+                    1);
         uiItemO(layout,
-                CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove from Keying Set"),
+                CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove from Keying Set"),
                 ICON_NONE,
-                "ANIM_OT_keyingset_button_remove");
+                "ANIM_OT_keyingset_btn_remove");
       }
     }
 
     if (is_overridable) {
-      wmOperatorType *ot;
-      PointerRNA op_ptr;
-      /* Override Operators */
+      WinOpType *ot;
+      ApiPtr op_ptr;
+      /* Override Ops */
       uiItemS(layout);
 
-      if (but->flag & UI_BUT_OVERRIDDEN) {
+      if (btn->flag & UI_BTN_OVERRIDDEN) {
         if (is_array_component) {
 #if 0 /* Disabled for now. */
-          ot = WM_operatortype_find("UI_OT_override_type_set_button", false);
+          ot = win_optype_find("UI_OT_override_type_set_btn", false);
           uiItemFullO_ptr(
-              layout, ot, "Overrides Type", ICON_NONE, NULL, WM_OP_INVOKE_DEFAULT, 0, &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", true);
+              layout, ot, "Overrides Type", ICON_NONE, NULL, WIN_OP_INVOKE_DEFAULT, 0, &op_ptr);
+          api_bool_set(&op_ptr, "all", true);
           uiItemFullO_ptr(layout,
                           ot,
                           "Single Override Type",
                           ICON_NONE,
                           NULL,
-                          WM_OP_INVOKE_DEFAULT,
+                          WIN_OP_INVOKE_DEFAULT,
                           0,
                           &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", false);
+          api_bool_set(&op_ptr, "all", false);
 #endif
-          uiItemBooleanO(layout,
-                         CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove Overrides"),
-                         ICON_X,
-                         "UI_OT_override_remove_button",
-                         "all",
-                         true);
-          uiItemBooleanO(layout,
-                         CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove Single Override"),
-                         ICON_X,
-                         "UI_OT_override_remove_button",
-                         "all",
-                         false);
+          uiItemBoolO(layout,
+                      CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove Overrides"),
+                      ICON_X,
+                      "UI_OT_override_remove_btn",
+                      "all",
+                      true);
+          uiItemBoolO(layout,
+                      CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove Single Override"),
+                      ICON_X,
+                      "UI_OT_override_remove_btn",
+                      "all",
+                      false);
         }
         else {
 #if 0 /* Disabled for now. */
@@ -743,161 +742,161 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
                       "Override Type",
                       ICON_NONE,
                       NULL,
-                      WM_OP_INVOKE_DEFAULT,
+                      WIN_OP_INVOKE_DEFAULT,
                       0,
                       &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", false);
+          api_bool_set(&op_ptr, "all", false);
 #endif
-          uiItemBooleanO(layout,
-                         CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove Override"),
-                         ICON_X,
-                         "UI_OT_override_remove_button",
-                         "all",
-                         true);
+          uiItemBoolO(layout,
+                      CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove Override"),
+                      ICON_X,
+                      "UI_OT_override_remove_btn",
+                      "all",
+                      true);
         }
       }
       else {
         if (is_array_component) {
-          ot = WM_operatortype_find("UI_OT_override_type_set_button", false);
+          ot = win_optype_find("UI_OT_override_type_set_btn", false);
           uiItemFullO_ptr(layout,
                           ot,
-                          CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Define Overrides"),
+                          CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Define Overrides"),
                           ICON_NONE,
                           NULL,
-                          WM_OP_INVOKE_DEFAULT,
+                          WIN_OP_INVOKE_DEFAULT,
                           0,
                           &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", true);
+          api_bool_set(&op_ptr, "all", true);
           uiItemFullO_ptr(layout,
                           ot,
-                          CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Define Single Override"),
+                          CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Define Single Override"),
                           ICON_NONE,
                           NULL,
-                          WM_OP_INVOKE_DEFAULT,
+                          WIN_OP_INVOKE_DEFAULT,
                           0,
                           &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", false);
+          api_bool_set(&op_ptr, "all", false);
         }
         else {
           uiItemFullO(layout,
-                      "UI_OT_override_type_set_button",
-                      CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Define Override"),
+                      "UI_OT_override_type_set_btn",
+                      CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Define Override"),
                       ICON_NONE,
                       NULL,
-                      WM_OP_INVOKE_DEFAULT,
+                      WIN_OP_INVOKE_DEFAULT,
                       0,
                       &op_ptr);
-          RNA_boolean_set(&op_ptr, "all", false);
+          api_bool_set(&op_ptr, "all", false);
         }
       }
     }
 
     uiItemS(layout);
 
-    /* Property Operators */
+    /* Prop Ops */
 
-    /* Copy Property Value
-     * Paste Property Value */
+    /* Copy Prop Value
+     * Paste Prop Value */
 
     if (is_array_component) {
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Reset All to Default Values"),
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Reset All to Default Values"),
                      ICON_LOOP_BACK,
-                     "UI_OT_reset_default_button",
+                     "UI_OT_reset_default_btn",
                      "all",
                      1);
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Reset Single to Default Value"),
-                     ICON_NONE,
-                     "UI_OT_reset_default_button",
-                     "all",
-                     0);
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Reset Single to Default Value"),
+                  ICON_NONE,
+                  "UI_OT_reset_default_btn",
+                  "all",
+                  0);
     }
     else {
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Reset to Default Value"),
-                     ICON_LOOP_BACK,
-                     "UI_OT_reset_default_button",
-                     "all",
-                     1);
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Reset to Default Value"),
+                  ICON_LOOP_BACK,
+                  "UI_OT_reset_default_btn",
+                  "all",
+                  1);
     }
 
     if (is_idprop && !is_array && ELEM(type, PROP_INT, PROP_FLOAT)) {
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Assign Value as Default"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Assign Value as Default"),
               ICON_NONE,
-              "UI_OT_assign_default_button");
+              "UI_OT_assign_default_btn");
 
       uiItemS(layout);
     }
 
     if (is_array_component) {
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy All to Selected"),
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy All to Selected"),
                      ICON_NONE,
-                     "UI_OT_copy_to_selected_button",
+                     "UI_OT_copy_to_selected_btn",
                      "all",
                      true);
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy Single to Selected"),
-                     ICON_NONE,
-                     "UI_OT_copy_to_selected_button",
-                     "all",
-                     false);
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Single to Selected"),
+                  ICON_NONE,
+                  "UI_OT_copy_to_selected_btn",
+                  "all",
+                  false);
     }
     else {
-      uiItemBooleanO(layout,
-                     CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy to Selected"),
-                     ICON_NONE,
-                     "UI_OT_copy_to_selected_button",
-                     "all",
-                     true);
+      uiItemBoolO(layout,
+                  CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy to Selected"),
+                  ICON_NONE,
+                  "UI_OT_copy_to_selected_btn",
+                  "all",
+                  true);
     }
 
     uiItemO(layout,
-            CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy Data Path"),
+            CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Data Path"),
             ICON_NONE,
             "UI_OT_copy_data_path_button");
-    uiItemBooleanO(layout,
-                   CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy Full Data Path"),
-                   ICON_NONE,
-                   "UI_OT_copy_data_path_button",
-                   "full_path",
-                   true);
+    uiItemBoolO(layout,
+                CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Full Data Path"),
+                ICON_NONE,
+                "UI_OT_copy_data_path_btn",
+                "full_path",
+                true);
 
     if (ptr->owner_id && !is_whole_array &&
-        ELEM(type, PROP_BOOLEAN, PROP_INT, PROP_FLOAT, PROP_ENUM)) {
+        ELEM(type, PROP_BOOL, PROP_INT, PROP_FLOAT, PROP_ENUM)) {
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Copy as New Driver"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy as New Driver"),
               ICON_NONE,
-              "UI_OT_copy_as_driver_button");
+              "UI_OT_copy_as_driver_btn");
     }
 
     uiItemS(layout);
 
     if (type == PROP_STRING && ELEM(subtype, PROP_FILEPATH, PROP_DIRPATH)) {
-      ui_but_menu_add_path_operators(layout, ptr, prop);
+      btn_menu_add_path_ops(layout, ptr, prop);
       uiItemS(layout);
     }
   }
 
   {
-    const ARegion *region = CTX_wm_menu(C) ? CTX_wm_menu(C) : CTX_wm_region(C);
-    uiButTreeRow *treerow_but = (uiButTreeRow *)ui_tree_row_find_mouse_over(region, event->xy);
-    if (treerow_but) {
-      BLI_assert(treerow_but->but.type == UI_BTYPE_TREEROW);
-      UI_tree_view_item_context_menu_build(
-          C, treerow_but->tree_item, uiLayoutColumn(layout, false));
+    const ARegion *region = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_region(C);
+    uiBtnTreeRow *treerow_btn = (uiBtnTreeRow *)ui_tree_row_find_mouse_over(region, event->xy);
+    if (treerow_btn) {
+      lib_assert(treerow_btn->btn.type == UI_BTYPE_TREEROW);
+      ui_tree_view_item_cxt_menu_build(
+          C, treerow_btn->tree_item, uiLayoutColumn(layout, false));
       uiItemS(layout);
     }
   }
 
-  /* If the button represents an id, it can set the "id" context pointer. */
-  if (ED_asset_can_mark_single_from_context(C)) {
-    ID *id = CTX_data_pointer_get_type(C, "id", &RNA_ID).data;
+  /* If the btn represents an id, it can set the "id" context pointer. */
+  if (ed_asset_can_mark_single_from_cxt(C)) {
+    Id *id = cxt_data_ptr_get_type(C, "id", &ApiId).data;
 
     /* Gray out items depending on if data-block is an asset. Preferably this could be done via
-     * operator poll, but that doesn't work since the operator also works with "selected_ids",
+     * op poll, but that doesn't work since the operator also works with "selected_ids",
      * which isn't cheap to check. */
     uiLayout *sub = uiLayoutColumn(layout, true);
     uiLayoutSetEnabled(sub, !id->asset_data);
@@ -908,43 +907,43 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     uiItemS(layout);
   }
 
-  /* Pointer properties and string properties with
+  /* Ptr props and string props with
    * prop_search support jumping to target object/bone. */
-  if (but->rnapoin.data && but->rnaprop) {
-    const PropertyType prop_type = RNA_property_type(but->rnaprop);
-    if (((prop_type == PROP_POINTER) ||
-         (prop_type == PROP_STRING && but->type == UI_BTYPE_SEARCH_MENU &&
-          ((uiButSearch *)but)->items_update_fn == ui_rna_collection_search_update_fn)) &&
-        ui_jump_to_target_button_poll(C)) {
+  if (btn->apiptr.data && btn->apiprop) {
+    const PropType prop_type = api_prop_type(btn->apiprop);
+    if (((prop_type == PROP_PTR) ||
+         (prop_type == PROP_STRING && btn->type == UI_BTYPE_SEARCH_MENU &&
+          ((BtnSearch *)btn)->items_update_fn == ui_api_collection_search_update_fn)) &&
+        ui_jump_to_target_btn_poll(C)) {
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Jump to Target"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Jump to Target"),
               ICON_NONE,
-              "UI_OT_jump_to_target_button");
+              "UI_OT_jump_to_target_btn");
       uiItemS(layout);
     }
   }
 
   /* Favorites Menu */
-  if (ui_but_is_user_menu_compatible(C, but)) {
+  if (btn_is_user_menu_compatible(C, btn)) {
     uiBlock *block = uiLayoutGetBlock(layout);
     const int w = uiLayoutGetWidth(layout);
     bool item_found = false;
 
     uint um_array_len;
-    bUserMenu **um_array = ED_screen_user_menus_find(C, &um_array_len);
+    UserMenu **um_array = ed_screen_user_menus_find(C, &um_array_len);
     for (int um_index = 0; um_index < um_array_len; um_index++) {
-      bUserMenu *um = um_array[um_index];
+      UserMenu *um = um_array[um_index];
       if (um == NULL) {
         continue;
       }
-      bUserMenuItem *umi = ui_but_user_menu_find(C, but, um);
+      UserMenuItem *umi = btn_user_menu_find(C, btn, um);
       if (umi != NULL) {
-        uiBut *but2 = uiDefIconTextBut(
+        Btn *btn2 = uiDefIconTextBtn(
             block,
-            UI_BTYPE_BUT,
+            BTYPE_BTN,
             0,
             ICON_MENU_PANEL,
-            CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove from Quick Favorites"),
+            CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove from Quick Favorites"),
             0,
             0,
             w,
@@ -955,21 +954,21 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
             0,
             0,
             "");
-        UI_but_func_set(but2, popup_user_menu_remove_func, um, umi);
+        btn_fn_set(btn2, popup_user_menu_remove_fn, um, umi);
         item_found = true;
       }
     }
     if (um_array) {
-      MEM_freeN(um_array);
+      mem_free(um_array);
     }
 
     if (!item_found) {
-      uiBut *but2 = uiDefIconTextBut(
+      Btn *btn2 = uiDefIconTextBtn(
           block,
-          UI_BTYPE_BUT,
+          BTYPE_BTN,
           0,
           ICON_MENU_PANEL,
-          CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Add to Quick Favorites"),
+          CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add to Quick Favorites"),
           0,
           0,
           w,
@@ -979,32 +978,32 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
           0,
           0,
           0,
-          "Add to a user defined context menu (stored in the user preferences)");
-      UI_but_func_set(but2, popup_user_menu_add_or_replace_func, but, NULL);
+          "Add to a user defined context menu (stored in the user prefs)");
+      btn_fn_set(btn2, popup_user_menu_add_or_replace_fn, btn, NULL);
     }
 
     uiItemS(layout);
   }
 
   /* Shortcut menu */
-  IDProperty *prop;
-  const char *idname = shortcut_get_operator_property(C, but, &prop);
+  IdProp *prop;
+  const char *idname = shortcut_get_op_prop(C, btn, &prop);
   if (idname != NULL) {
     uiBlock *block = uiLayoutGetBlock(layout);
     const int w = uiLayoutGetWidth(layout);
 
     /* We want to know if this op has a shortcut, be it hotkey or not. */
-    wmKeyMap *km;
-    wmKeyMapItem *kmi = WM_key_event_operator(
-        C, idname, but->opcontext, prop, EVT_TYPE_MASK_ALL, 0, &km);
+    WinKeyMap *km;
+    WinKeyMapItem *kmi = win_key_event_op(
+        C, idname, btn->opcxt, prop, EVT_TYPE_MASK_ALL, 0, &km);
 
     /* We do have a shortcut, but only keyboard ones are editable that way... */
     if (kmi) {
-      if (ISKEYBOARD(kmi->type) || ISNDOF_BUTTON(kmi->type)) {
-#if 0 /* would rather use a block but, but gets weirdly positioned... */
-        uiDefBlockBut(block,
+      if (ISKEYBOARD(kmi->type) || ISNDOF_BTN(kmi->type)) {
+#if 0 /* would rather use a block btn, btn gets weirdly positioned... */
+        uiDefBlockBtn(block,
                       menu_change_shortcut,
-                      but,
+                      btn,
                       "Change Shortcut",
                       0,
                       0,
@@ -1013,12 +1012,12 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
                       "");
 #endif
 
-        uiBut *but2 = uiDefIconTextBut(
+        Btn *btn2 = uiDefIconTextBtn(
             block,
-            UI_BTYPE_BUT,
+            BTYPE_BTN,
             0,
             ICON_HAND,
-            CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Change Shortcut"),
+            CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Change Shortcut"),
             0,
             0,
             w,
@@ -1029,34 +1028,34 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
             0,
             0,
             "");
-        UI_but_func_set(but2, popup_change_shortcut_func, but, NULL);
+        btn_fn_set(btn2, popup_change_shortcut_fn, btn, NULL);
       }
       else {
-        uiBut *but2 = uiDefIconTextBut(block,
-                                       UI_BTYPE_BUT,
-                                       0,
-                                       ICON_HAND,
-                                       IFACE_("Non-Keyboard Shortcut"),
-                                       0,
-                                       0,
-                                       w,
-                                       UI_UNIT_Y,
-                                       NULL,
-                                       0,
-                                       0,
-                                       0,
-                                       0,
-                                       TIP_("Only keyboard shortcuts can be edited that way, "
-                                            "please use User Preferences otherwise"));
-        UI_but_flag_enable(but2, UI_BUT_DISABLED);
+        Btn *btn2 = uiDefIconTextBtn(block,
+                                     BTYPE_BTN,
+                                     0,
+                                     ICON_HAND,
+                                     IFACE_("Non-Keyboard Shortcut"),
+                                     0,
+                                     0,
+                                     w,
+                                     UI_UNIT_Y,
+                                     NULL,
+                                     0,
+                                     0,
+                                     0,
+                                     0,
+                                     TIP_("Only keyboard shortcuts can be edited that way, "
+                                          "please use User Preferences otherwise"));
+        btn_flag_enable(btn2, BTN_DISABLED);
       }
 
-      uiBut *but2 = uiDefIconTextBut(
+      Btn *btn2 = uiDefIconTextBtn(
           block,
-          UI_BTYPE_BUT,
+          UI_BTYPE_BTN,
           0,
           ICON_BLANK1,
-          CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Remove Shortcut"),
+          CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove Shortcut"),
           0,
           0,
           w,
@@ -1067,16 +1066,16 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
           0,
           0,
           "");
-      UI_but_func_set(but2, remove_shortcut_func, but, NULL);
+      btn_fn_set(btn2, remove_shortcut_fn, btn, NULL);
     }
     /* only show 'assign' if there's a suitable key map for it to go in */
-    else if (WM_keymap_guess_opname(C, idname)) {
-      uiBut *but2 = uiDefIconTextBut(
+    else if (win_keymap_guess_opname(C, idname)) {
+      Btn *btn2 = uiDefIconTextBtn(
           block,
-          UI_BTYPE_BUT,
+          UI_BTYPE_BTN,
           0,
           ICON_HAND,
-          CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Assign Shortcut"),
+          CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Assign Shortcut"),
           0,
           0,
           w,
@@ -1087,13 +1086,13 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
           0,
           0,
           "");
-      UI_but_func_set(but2, popup_add_shortcut_func, but, NULL);
+      btn_fn_set(btn2, popup_add_shortcut_fn, btn, NULL);
     }
 
-    shortcut_free_operator_property(prop);
+    shortcut_free_op_prop(prop);
 
-    /* Set the operator pointer for python access */
-    uiLayoutSetContextFromBut(layout, but);
+    /* Set the op ptr for python access */
+    uiLayoutSetCxtFromBtn(layout, btn);
 
     uiItemS(layout);
   }
@@ -1101,65 +1100,65 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
   { /* Docs */
     char buf[512];
 
-    if (UI_but_online_manual_id(but, buf, sizeof(buf))) {
-      PointerRNA ptr_props;
+    if (btn_online_manual_id(btn, buf, sizeof(buf))) {
+      ApiPtr ptr_props;
       uiItemO(layout,
-              CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Online Manual"),
+              CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Online Manual"),
               ICON_URL,
-              "WM_OT_doc_view_manual_ui_context");
+              "WIN_OT_doc_view_manual_ui_cxt");
 
       if (U.flag & USER_DEVELOPER_UI) {
         uiItemFullO(layout,
-                    "WM_OT_doc_view",
-                    CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Online Python Reference"),
+                    "WIN_OT_doc_view",
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Online Python Reference"),
                     ICON_NONE,
                     NULL,
-                    WM_OP_EXEC_DEFAULT,
+                    WIN_OP_EX_DEFAULT,
                     0,
                     &ptr_props);
-        RNA_string_set(&ptr_props, "doc_id", buf);
+        api_string_set(&ptr_props, "doc_id", buf);
       }
     }
   }
 
-  if (but->optype && U.flag & USER_DEVELOPER_UI) {
-    uiItemO(layout, NULL, ICON_NONE, "UI_OT_copy_python_command_button");
+  if (btn->optype && U.flag & USER_DEVELOPER_UI) {
+    uiItemO(layout, NULL, ICON_NONE, "UI_OT_copy_python_command_btn");
   }
 
-  /* perhaps we should move this into (G.debug & G_DEBUG) - campbell */
+  /* perhaps we should move this into (G.debug & G_DEBUG) */
   if (U.flag & USER_DEVELOPER_UI) {
-    if (ui_block_is_menu(but->block) == false) {
+    if (ui_block_is_menu(btn->block) == false) {
       uiItemFullO(
-          layout, "UI_OT_editsource", NULL, ICON_NONE, NULL, WM_OP_INVOKE_DEFAULT, 0, NULL);
+          layout, "UI_OT_editsource", NULL, ICON_NONE, NULL, WIN_OP_INVOKE_DEFAULT, 0, NULL);
     }
   }
 
-  if (BKE_addon_find(&U.addons, "ui_translate")) {
+  if (dune_addon_find(&U.addons, "ui_translate")) {
     uiItemFullO(layout,
                 "UI_OT_edittranslation_init",
                 NULL,
                 ICON_NONE,
                 NULL,
-                WM_OP_INVOKE_DEFAULT,
+                WIN_OP_INVOKE_DEFAULT,
                 0,
                 NULL);
   }
 
-  /* Show header tools for header buttons. */
-  if (ui_block_is_popup_any(but->block) == false) {
-    const ARegion *region = CTX_wm_region(C);
+  /* Show header tools for header btns. */
+  if (ui_block_is_popup_any(btn->block) == false) {
+    const ARegion *region = cxt_win_region(C);
 
     if (!region) {
       /* skip */
     }
     else if (ELEM(region->regiontype, RGN_TYPE_HEADER, RGN_TYPE_TOOL_HEADER)) {
-      uiItemMenuF(layout, IFACE_("Header"), ICON_NONE, ED_screens_header_tools_menu_create, NULL);
+      uiItemMenuF(layout, IFACE_("Header"), ICON_NONE, ed_screens_header_tools_menu_create, NULL);
     }
     else if (region->regiontype == RGN_TYPE_NAV_BAR) {
       uiItemMenuF(layout,
-                  IFACE_("Navigation Bar"),
+                  IFACE_("Nav Bar"),
                   ICON_NONE,
-                  ED_screens_navigation_bar_tools_menu_create,
+                  ed_screens_nav_bar_tools_menu_create,
                   NULL);
     }
     else if (region->regiontype == RGN_TYPE_FOOTER) {
@@ -1167,41 +1166,36 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
   }
 
-  /* UI List item context menu. Scripts can add items to it, by default there's nothing shown. */
-  const ARegion *region = CTX_wm_menu(C) ? CTX_wm_menu(C) : CTX_wm_region(C);
+  /* UI List item cxt menu. Scripts can add items to it, by default there's nothing shown. */
+  const ARegion *region = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_region(C);
   const bool is_inside_listbox = ui_list_find_mouse_over(region, event) != NULL;
   const bool is_inside_listrow = is_inside_listbox ?
                                      ui_list_row_find_mouse_over(region, event->xy) != NULL :
                                      false;
   if (is_inside_listrow) {
-    MenuType *mt = WM_menutype_find("UI_MT_list_item_context_menu", true);
+    MenuType *mt = win_menutype_find("UI_MT_list_item_cxt_menu", true);
     if (mt) {
-      UI_menutype_draw(C, mt, uiLayoutColumn(layout, false));
+      ui_menutype_draw(C, mt, uiLayoutColumn(layout, false));
     }
   }
 
-  MenuType *mt = WM_menutype_find("WM_MT_button_context", true);
+  MenuType *mt = win_menutype_find("WIN_MT_btn_cxt", true);
   if (mt) {
-    UI_menutype_draw(C, mt, uiLayoutColumn(layout, false));
+    ui_menutype_draw(C, mt, uiLayoutColumn(layout, false));
   }
 
-  if (but->context) {
-    CTX_store_set(C, previous_ctx);
+  if (btn->cxt) {
+    cxt_store_set(C, previous_ctx);
   }
 
-  return UI_popup_menu_end_or_cancel(C, pup);
+  return ui_popup_menu_end_or_cancel(C, pup);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Panel Context Menu
- * \{ */
-
-void ui_popup_context_menu_for_panel(bContext *C, ARegion *region, Panel *panel)
+/* Panel Cxt Menu */
+void ui_popup_cxt_menu_for_panel(Cxt *C, ARegion *region, Panel *panel)
 {
-  bScreen *screen = CTX_wm_screen(C);
-  const bool has_panel_category = UI_panel_category_is_visible(region);
+  Screen *screen = cxt_win_screen(C);
+  const bool has_panel_category = ui_panel_category_is_visible(region);
   const bool any_item_visible = has_panel_category;
 
   if (!any_item_visible) {
@@ -1210,19 +1204,19 @@ void ui_popup_context_menu_for_panel(bContext *C, ARegion *region, Panel *panel)
   if (panel->type->parent != NULL) {
     return;
   }
-  if (!UI_panel_can_be_pinned(panel)) {
+  if (!ui_panel_can_be_pinned(panel)) {
     return;
   }
 
-  PointerRNA ptr;
-  RNA_pointer_create(&screen->id, &RNA_Panel, panel, &ptr);
+  ApiPtr ptr;
+  api_ptr_create(&screen->id, &ApiPanel, panel, &ptr);
 
-  uiPopupMenu *pup = UI_popup_menu_begin(C, IFACE_("Panel"), ICON_NONE);
-  uiLayout *layout = UI_popup_menu_layout(pup);
+  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Panel"), ICON_NONE);
+  uiLayout *layout = ui_popup_menu_layout(pup);
 
   if (has_panel_category) {
     char tmpstr[80];
-    BLI_snprintf(tmpstr,
+    li _snprintf(tmpstr,
                  sizeof(tmpstr),
                  "%s" UI_SEP_CHAR_S "%s",
                  IFACE_("Pin"),
@@ -1232,9 +1226,9 @@ void ui_popup_context_menu_for_panel(bContext *C, ARegion *region, Panel *panel)
     /* evil, force shortcut flag */
     {
       uiBlock *block = uiLayoutGetBlock(layout);
-      uiBut *but = block->buttons.last;
-      but->flag |= UI_BUT_HAS_SEP_CHAR;
+      Btn *btn = block->btns.last;
+      btn->flag |= UI_BTN_HAS_SEP_CHAR;
     }
   }
-  UI_popup_menu_end(C, pup);
+  ui_popup_menu_end(C, pup);
 }
