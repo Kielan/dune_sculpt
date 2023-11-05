@@ -1,13 +1,13 @@
 /* Defines:
  * UI_OT_eyedropper_color */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "types_screen_types.h"
-#include "DNA_space_types.h"
+#include "types_screen.h"
+#include "types_space.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
+#include "lib_list.h"
+#include "lib_math_vector.h"
 #include "lib_string.h"
 
 #include "dune_cxt.h"
