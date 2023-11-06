@@ -586,3 +586,587 @@ static void ui_mouse_scale_warp(BtnHandleData *data,
   *r_mx = (data->dragstartx * (1.0f - fac) + mx * fac);
   *r_my = (data->dragstarty * (1.0f - fac) + my * fac);
 }
+
+/** \name UI Utilities
+ * \{ */
+
+/**
+ * Ignore mouse movements within some horizontal pixel threshold before starting to drag
+ */
+static bool ui_but_dragedit_update_mval(uiHandleButtonData *data, int mx)
+{
+  if (mx == data->draglastx) {
+    return false;
+  }
+
+  if (data->draglock) {
+    if (abs(mx - data->dragstartx) <= BUTTON_DRAGLOCK_THRESH) {
+      return false;
+    }
+#ifdef USE_DRAG_MULTINUM
+    if (ELEM(data->multi_data.init,
+             uiHandleButtonMulti::INIT_UNSET,
+             uiHandleButtonMulti::INIT_SETUP)) {
+      return false;
+    }
+#endif
+    data->draglock = false;
+    data->dragstartx = mx; /* ignore mouse movement within drag-lock */
+  }
+
+  return true;
+}
+
+static bool ui_rna_is_userdef(PointerRNA *ptr, PropertyRNA *prop)
+{
+  /* Not very elegant, but ensures preference changes force re-save. */
+
+  if (!prop) {
+    return false;
+  }
+  if (RNA_property_flag(prop) & PROP_NO_DEG_UPDATE) {
+    return false;
+  }
+
+  StructRNA *base = RNA_struct_base(ptr->type);
+  if (base == nullptr) {
+    base = ptr->type;
+  }
+  return ELEM(base,
+              &RNA_AddonPreferences,
+              &RNA_KeyConfigPreferences,
+              &RNA_KeyMapItem,
+              &RNA_UserAssetLibrary);
+}
+
+bool UI_but_is_userdef(const uiBut *but)
+{
+  /* This is read-only, RNA API isn't using const when it could. */
+  return ui_rna_is_userdef((PointerRNA *)&but->rnapoin, but->rnaprop);
+}
+
+static void ui_rna_update_preferences_dirty(PointerRNA *ptr, PropertyRNA *prop)
+{
+  if (ui_rna_is_userdef(ptr, prop)) {
+    U.runtime.is_dirty = true;
+    WM_main_add_notifier(NC_WINDOW, nullptr);
+  }
+}
+
+static void ui_but_update_preferences_dirty(uiBut *but)
+{
+  ui_rna_update_preferences_dirty(&but->rnapoin, but->rnaprop);
+}
+
+static void ui_afterfunc_update_preferences_dirty(uiAfterFunc *after)
+{
+  ui_rna_update_preferences_dirty(&after->rnapoin, after->rnaprop);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Button Snap Values
+ * \{ */
+
+enum eSnapType {
+  SNAP_OFF = 0,
+  SNAP_ON,
+  SNAP_ON_SMALL,
+};
+
+static enum eSnapType ui_event_to_snap(const wmEvent *event)
+{
+  return (event->modifier & KM_CTRL) ? (event->modifier & KM_SHIFT) ? SNAP_ON_SMALL : SNAP_ON :
+                                       SNAP_OFF;
+}
+
+static bool ui_event_is_snap(const wmEvent *event)
+{
+  return (ELEM(event->type, EVT_LEFTCTRLKEY, EVT_RIGHTCTRLKEY) ||
+          ELEM(event->type, EVT_LEFTSHIFTKEY, EVT_RIGHTSHIFTKEY));
+}
+
+static void ui_color_snap_hue(const enum eSnapType snap, float *r_hue)
+{
+  const float snap_increment = (snap == SNAP_ON_SMALL) ? 24 : 12;
+  BLI_assert(snap != SNAP_OFF);
+  *r_hue = roundf((*r_hue) * snap_increment) / snap_increment;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Button Apply/Revert
+ * \{ */
+
+static ListBase UIAfterFuncs = {nullptr, nullptr};
+
+static uiAfterFunc *ui_afterfunc_new()
+{
+  uiAfterFunc *after = MEM_new<uiAfterFunc>(__func__);
+  /* Safety asserts to check if members were 0 initialized properly. */
+  BLI_assert(after->next == nullptr && after->prev == nullptr);
+  BLI_assert(after->undostr[0] == '\0');
+
+  BLI_addtail(&UIAfterFuncs, after);
+
+  return after;
+}
+
+/**
+ * For executing operators after the button is pressed.
+ * (some non operator buttons need to trigger operators), see: #37795.
+ *
+ * \param context_but: A button from which to get the context from (`uiBut.context`) for the
+ *                     operator execution.
+ *
+ * \note Ownership over \a properties is moved here. The #uiAfterFunc owns it now.
+ * \note Can only call while handling buttons.
+ */
+static void ui_handle_afterfunc_add_operator_ex(wmOperatorType *ot,
+                                                PointerRNA **properties,
+                                                wmOperatorCallContext opcontext,
+                                                const uiBut *context_but)
+{
+  uiAfterFunc *after = ui_afterfunc_new();
+
+  after->optype = ot;
+  after->opcontext = opcontext;
+  if (properties) {
+    after->opptr = *properties;
+    *properties = nullptr;
+  }
+
+  if (context_but && context_but->context) {
+    after->context = *context_but->context;
+  }
+
+  if (context_but) {
+    ui_but_drawstr_without_sep_char(context_but, after->drawstr, sizeof(after->drawstr));
+  }
+}
+
+void ui_handle_afterfunc_add_operator(wmOperatorType *ot, wmOperatorCallContext opcontext)
+{
+  ui_handle_afterfunc_add_operator_ex(ot, nullptr, opcontext, nullptr);
+}
+
+static void popup_check(bContext *C, wmOperator *op)
+{
+  if (op && op->type->check) {
+    op->type->check(C, op);
+  }
+}
+
+/**
+ * Check if a #uiAfterFunc is needed for this button.
+ */
+static bool ui_afterfunc_check(const uiBlock *block, const uiBut *but)
+{
+  return (but->func || but->apply_func || but->funcN || but->rename_func || but->optype ||
+          but->rnaprop || block->handle_func ||
+          (but->type == UI_BTYPE_BUT_MENU && block->butm_func) ||
+          (block->handle && block->handle->popup_op));
+}
+
+/**
+ * These functions are postponed and only executed after all other
+ * handling is done, i.e. menus are closed, in order to avoid conflicts
+ * with these functions removing the buttons we are working with.
+ */
+static void ui_apply_but_func(bContext *C, uiBut *but)
+{
+  uiBlock *block = but->block;
+  if (!ui_afterfunc_check(block, but)) {
+    return;
+  }
+
+  uiAfterFunc *after = ui_afterfunc_new();
+
+  if (but->func && ELEM(but, but->func_arg1, but->func_arg2)) {
+    /* exception, this will crash due to removed button otherwise */
+    but->func(C, but->func_arg1, but->func_arg2);
+  }
+  else {
+    after->func = but->func;
+  }
+
+  after->func_arg1 = but->func_arg1;
+  after->func_arg2 = but->func_arg2;
+
+  after->apply_func = but->apply_func;
+
+  after->funcN = but->funcN;
+  after->func_argN = (but->func_argN) ? MEM_dupallocN(but->func_argN) : nullptr;
+
+  after->rename_func = but->rename_func;
+  after->rename_arg1 = but->rename_arg1;
+  after->rename_orig = but->rename_orig; /* needs free! */
+
+  after->handle_func = block->handle_func;
+  after->handle_func_arg = block->handle_func_arg;
+  after->retval = but->retval;
+
+  if (but->type == UI_BTYPE_BUT_MENU) {
+    after->butm_func = block->butm_func;
+    after->butm_func_arg = block->butm_func_arg;
+    after->a2 = but->a2;
+  }
+
+  if (block->handle) {
+    after->popup_op = block->handle->popup_op;
+  }
+
+  after->optype = btn->optype;
+  after->opcxt = btn->opcxt;
+  after->opptr = btn->opptr;
+
+  after->apiptr = btn->apiptr;
+  after->apiprop = btn-apiprop;
+
+  if (btn->type == BTYPE_SEARCH_MENU) {
+    BtnSearch *search_btn = (BtnSearch *)btn;
+    after->search_arg_free_fn = search_btn->arg_free_fn;
+    after->search_arg = search_btn->arg;
+    search_btn->arg_free_fn = nullptr;
+    search_btn->arg = nullptr;
+  }
+
+  if (btn->active != nullptr) {
+    uiHandleBtnData *data = btn->active;
+    if (data->custom_interaction_handle != nullptr) {
+      after->custom_interaction_callbacks = block->custom_interaction_cbs;
+      after->custom_interaction_handle = data->custom_interaction_handle;
+
+      /* Ensure this callback runs once and last. */
+      uiAfterFn *after_prev = after->prev;
+      if (after_prev && (after_prev->custom_interaction_handle == data->custom_interaction_handle))
+      {
+        after_prev->custom_interaction_handle = nullptr;
+        memset(&after_prev->custom_interaction_callbacks,
+               0x0,
+               sizeof(after_prev->custom_interaction_cbs));
+      }
+      else {
+        after->custom_interaction_handle->user_count++;
+      }
+    }
+  }
+
+  if (btn->cxt) {
+    after->cxt = *btn->cxt;
+  }
+
+  btn_drawstr_without_sep_char(btn, after->drawstr, sizeof(after->drawstr));
+
+  btn->optype = nullptr;
+  btn->opcxt = WinOpCallCxt(0);
+  btn->opptr = nullptr;
+}
+
+/* typically call ui_apply_btn_undo(), ui_apply_btn_autokey() */
+static void ui_apply_but_undo(Btn *btn)
+{
+  if (!(but->flag & UI_BUT_UNDO)) {
+    return;
+  }
+
+  const char *str = nullptr;
+  size_t str_len_clip = SIZE_MAX - 1;
+  bool skip_undo = false;
+
+  /* define which string to use for undo */
+  if (btn->type == BTYPE_MENU) {
+    str = btn->drawstr;
+    str_len_clip = ubtn_drawstr_len_without_sep_char(btn);
+  }
+  else if (btn->drawstr[0]) {
+    str = btn->drawstr;
+    str_len_clip = btn_drawstr_len_without_sep_char(btn);
+  }
+  else {
+    str = btn->tip;
+    str_len_clip = btn_tip_len_only_first_line(btn);
+  }
+
+  /* fallback, else we don't get an undo! */
+  if (str == nullptr || str[0] == '\0' || str_len_clip == 0) {
+    str = "Unknown Action";
+    str_len_clip = strlen(str);
+  }
+
+  /* Optionally override undo when undo system doesn't support storing properties. */
+  if (btn->apipoin.owner_id) {
+    /* Exception for renaming ID data, we always need undo pushes in this case,
+     * because undo systems track data by their ID, see: #67002. */
+    /* Exception for active shape-key, since changing this in edit-mode updates
+     * the shape key from object mode data. */
+    if (ELEM(btn->apiprop, &api_id_name, &api_Object_active_shape_key_index)) {
+      /* pass */
+    }
+    else {
+      Id *id = btn->apipoin.owner_id;
+      if (!ed_undo_is_legacy_compatible_for_prop(static_cast<bContext *>(but->block->evil_C),
+                                                     id)) {
+        skip_undo = true;
+      }
+    }
+  }
+
+  if (skip_undo == false) {
+    /* disable all undo pushes from UI changes from sculpt mode as they cause memfile undo
+     * steps to be written which cause lag: #71434. */
+    if (dune_paintmode_get_active_from_context(static_cast<bContext *>(but->block->evil_C)) ==
+        PAINT_MODE_SCULPT)
+    {
+      skip_undo = true;
+    }
+  }
+
+  if (skip_undo) {
+    str = "";
+  }
+
+  /* Delayed, after all other fns run, popups are closed, etc. */
+  uiAfterFn *after = ui_afterfn_new();
+  lib_strncpy(after->undostr, str, min_zz(str_len_clip + 1, sizeof(after->undostr)));
+}
+
+static void ui_apply_btn_autokey(Cxt *C, uiBut *but)
+{
+  Scene *scene = cxt_data_scene(C);
+
+  /* try autokey */
+  btn_anim_autokey(C, btn, scene, scene->r.cfra);
+
+  if (!btn->apiprop) {
+    return;
+  }
+
+  if (api_prop_subtype(btn->apiprop) == PROP_PASSWORD) {
+    return;
+  }
+
+  /* make a little report about what we've done! */
+  char *buf = win_prop_pystring_assign(C, &by ->apiptr, btn->apiprop, btn->apiindex);
+  if (buf) {
+    dune_report(cxt_win_reports(C), RPT_PROP, buf);
+    mem_free(buf);
+
+    win_ev_add_notifier(C, NC_SPACE | ND_SPACE_INFO_REPORT, nullptr);
+  }
+}
+
+static void ui_apply_btn_fns_after(Cxt *C)
+{
+  /* Copy to avoid recursive calls. */
+  ListBase fns = UIAfterFns;
+  BLI_list_clear(&UIAfterFns);
+
+  LIST_FOREACH_MUTABLE (uiAfterFn *, afterf, &fns) {
+    uiAfterFn after = *afterf; /* Copy to avoid memory leak on exit(). */
+    lib_remlink(&fns, afterf);
+    mem_delete(afterf);
+
+    if (after.cxt) {
+      cxt_store_set(C, &after.cxt.value());
+    }
+
+    if (after.popup_op) {
+      popup_check(C, after.popup_op);
+    }
+
+    PointerRNA opptr;
+    if (after.opptr) {
+      /* free in advance to avoid leak on exit */
+      opptr = *after.opptr;
+      mem_free(after.opptr);
+    }
+
+    if (after.optype) {
+      win_op_name_call_ptr_with_depends_on_cursor(C,
+                                                       after.optype,
+                                                       after.opcxt,
+                                                       (after.opptr) ? &opptr : nullptr,
+                                                       nullptr,
+                                                       after.drawstr);
+    }
+
+    if (after.opptr) {
+      win_op_props_free(&opptr);
+    }
+
+    if (after.apiptr.data) {
+      api_prop_update(C, &after.apiptr, after.apiprop);
+    }
+
+    if (after.cxt) {
+      cxt_store_set(C, nullptr);
+    }
+
+    if (after.fn) {
+      after.fn(C, after.fn_arg1, after.fn_arg2);
+    }
+    if (after.apply_fn) {
+      after.apply_fn(*C);
+    }
+    if (after.fn) {
+      after.fn(C, after.fn_arg, after.fn_arg2);
+    }
+    if (after.fn_arg) {
+      mem_free(after.fn_arg);
+    }
+
+    if (after.handle_fn) {
+      after.handle_fn(C, after.handle_func_arg, after.retval);
+    }
+    if (after.btnm_fn) {
+      after.btnm_fn(C, after.btnm_fn_arg, after.a2);
+    }
+
+    if (after.rename_fn) {
+      after.rename_fn(C, after.rename_arg1, static_cast<char *>(after.rename_orig));
+    }
+    if (after.rename_orig) {
+      mem_free(after.rename_orig);
+    }
+
+    if (after.search_arg_free_fn) {
+      after.search_arg_free_fn(after.search_arg);
+    }
+
+    if (after.custom_interaction_handle != nullptr) {
+      after.custom_interaction_handle->user_count--;
+      lib_assert(after.custom_interaction_handle->user_count >= 0);
+      if (after.custom_interaction_handle->user_count == 0) {
+        ui_block_interaction_update(
+            C, &after.custom_interaction_cbs, after.custom_interaction_handle);
+        ui_block_interaction_end(
+            C, &after.custom_interaction_cbs, after.custom_interaction_handle);
+      }
+      after.custom_interaction_handle = nullptr;
+    }
+
+    ui_afterfn_update_prefs_dirty(&after);
+
+    if (after.undostr[0]) {
+      ed_undo_push(C, after.undostr);
+    }
+  }
+}
+
+static void btn_apply_BTN(Cxt *C, Btn *btn, uiHandleBtnData *data)
+{
+  btn_apply_fn(C, btn);
+
+  data->retval = btn->retval;
+  data->applied = true;
+}
+
+static void ui_apply_btn_BTNM(Cxt *C, Btn *btn, uiHandleBtnData *data)
+{
+  btn_value_set(btn, btn->hardmin);
+  apply_btn_fn(C, btn);
+
+  data->retval = btn->retval;
+  data->applied = true;
+}
+
+static void btn_apply_BLOCK(Cxt *C, Btn *byn, uiHandleBtnData *data)
+{
+  if (btn->type == BTYPE_MENU) {
+    btn_value_set(btn, data->value);
+  }
+
+  btn_update_edited(btn);
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
+  data->applied = true;
+}
+
+static void btn_apply_TOG(Cxt *C, Btn *btn, uiHandleBtnData *data)
+{
+  const double value = btn_value_get(byn);
+  int value_toggle;
+  if (b5->bit) {
+    value_toggle = BITBTN_VALUE_TOGGLED(int(value), btn->bitnr);
+  }
+  else {
+    value_toggle = (value == 0.0);
+  }
+
+  btn_value_set(btn, double(value_toggle));
+  if (ELEM(btn->type, BTYPE_ICON_TOGGLE, BTYPE_ICON_TOGGLE_N)) {
+    btn_update_edited(btn);
+  }
+
+  btn_apply_fn(C, btn);
+
+  data->retval = btn->retval;
+  data->applied = true;
+}
+
+static void ui_apply_btn_ROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnData *data)
+{
+  ui_btn_value_set(btn, btn->hardmax);
+
+  ui_apply_btn_fn(C, btn);
+
+  /* states of other row btns */
+  LIST_FOREACH (Btn *, bt, &block->btns) {
+    if (bt != btn && bt->ptr == btn->ptr && ELEM(bt->type, BTYPE_ROW, BTYPE_LISTROW)) {
+      btn_update_edited(bt);
+    }
+  }
+
+  data->retval = btn->retval;
+  data->applied = true;
+}
+
+static void ui_apply_btn_VIEW_ITEM(Cxt *C,
+                                   uiBlock *block,
+                                   uiBtn *btn,
+                                   uiHandleBtnData *data)
+{
+  if (data->apply_through_extra_icon) {
+    /* Don't apply this, it would cause unintended tree-row toggling when clicking on extra icons.
+     */
+    return;
+  }
+  ui_apply_btn_ROW(C, block, btn, data);
+}
+
+/* note Ownership of props is moved here. The uiAfterFn owns it now.
+ *
+ * param cxt_btn: The btn to use cxt from when calling or polling the op.
+ *
+ * returns true if the op was ex'd, otherwise false. */
+static bool ui_list_invoke_item_op(Cxt *C,
+                                         const Btn *cxt_btn,
+                                         WinOpType *ot,
+                                         ApiPtr **props)
+{
+  if (!btn_cxt_poll_op(C, ot, cxt_btn)) {
+    return false;
+  }
+
+  /* Allow the context to be set from the hovered button, so the list item draw callback can set
+   * context for the operators. */
+  ui_handle_afterfn_add_op_ex(ot, props, WIN_OP_INVOKE_DEFAULT, cxt_btn);
+  return true;
+}
+
+static void ui_apply_but_LISTROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnData *data)
+{
+  Btn *listbox = ui_list_find_from_row(data->region, btn);
+  if (listbox) {
+    uiList *list = static_cast<uiList *>(listbox->custom_data);
+    if (list && list->dyn_data->custom_activate_optype) {
+      ui_list_invoke_item_operator(
+          C, but, list->dyn_data->custom_activate_optype, &list->dyn_data->custom_activate_opptr);
+    }
+  }
+
+  ui_apply_btn_ROW(C, block, but, data);
+}
