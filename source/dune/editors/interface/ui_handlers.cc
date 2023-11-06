@@ -5,132 +5,117 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_curveprofile_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
+#include "types_brush.h"
+#include "types_curveprofile.h"
+#include "types_scene.h"
+#include "types_screen.h"
 
-#include "BLI_array.hh"
-#include "BLI_array_utils.h"
-#include "BLI_linklist.h"
-#include "BLI_listbase.h"
-#include "BLI_math_geom.h"
-#include "BLI_rect.h"
-#include "BLI_sort_utils.h"
-#include "BLI_string.h"
-#include "BLI_string_cursor_utf8.h"
-#include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
+#include "lib_array.hh"
+#include "lib_array_utils.h"
+#include "lib_linklist.h"
+#include "lib_list.h"
+#include "lib_math_geom.h"
+#include "lib_rect.h"
+#include "lib_sort_utils.h"
+#include "lib_string.h"
+#include "lib_string_cursor_utf8.h"
+#include "lib_string_utf8.h"
+#include "lib_utildefines.h"
 
 #include "PIL_time.h"
 
-#include "BKE_animsys.h"
-#include "BKE_blender_undo.h"
-#include "BKE_brush.hh"
-#include "BKE_colorband.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_curveprofile.h"
-#include "BKE_movieclip.h"
-#include "BKE_paint.hh"
-#include "BKE_report.h"
-#include "BKE_screen.hh"
-#include "BKE_tracking.h"
-#include "BKE_unit.h"
+#include "dune_animsys.h"
+#include "dune_undo.h"
+#include "dune_brush.hh"
+#include "dune_colorband.h"
+#include "dune_colortools.h"
+#include "dune_cxt.h"
+#include "dune_curveprofile.h"
+#include "dune_movieclip.h"
+#include "dune_paint.hh"
+#include "dune_report.h"
+#include "dune_screen.hh"
+#include "dune_tracking.h"
+#include "dune_unit.h"
 
 #include "GHOST_C-api.h"
 
-#include "IMB_colormanagement.h"
+#include "imbuf_colormanagement.h"
 
-#include "ED_screen.hh"
-#include "ED_undo.hh"
+#include "ed_screen.hh"
+#include "ed_undo.hh"
 
-#include "UI_interface.hh"
-#include "UI_string_search.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_string_search.hh"
+#include "ui_view2d.hh"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "interface_intern.hh"
+#include "ui_intern.hh"
 
-#include "RNA_access.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_prototypes.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
-#include "wm_event_system.h"
+#include "win_api.hh"
+#include "win_types.hh"
+#include "win_ev_system.h"
 
 #ifdef WITH_INPUT_IME
-#  include "BLT_lang.h"
-#  include "BLT_translation.h"
-#  include "wm_window.hh"
+#  include "lang.h"
+#  include "lang_translation.h"
+#  include "win.hh"
 #endif
 
-/* -------------------------------------------------------------------- */
-/** \name Feature Defines
+/* Feature Defines
  *
  * These defines allow developers to locally toggle functionality which
  * may be useful for testing (especially conflicts in dragging).
  * Ideally the code would be refactored to support this functionality in a less fragile way.
  * Until then keep these defines.
- * \{ */
+ */
 
-/** Place the mouse at the scaled down location when un-grabbing. */
+/* Place the mouse at the scaled down location when un-grabbing. */
 #define USE_CONT_MOUSE_CORRECT
-/** Support dragging toggle buttons. */
+/* Support dragging toggle btns. */
 #define USE_DRAG_TOGGLE
 
-/** Support dragging multiple number buttons at once. */
+/* Support dragging multiple number btns at once. */
 #define USE_DRAG_MULTINUM
 
-/** Allow dragging/editing all other selected items at once. */
+/* Allow dragging/editing all other selected items at once. */
 #define USE_ALLSELECT
 
-/**
- * Check to avoid very small mouse-moves from jumping away from keyboard navigation,
- * while larger mouse motion will override keyboard input, see: #34936.
- */
+/* Check to avoid very small mouse-moves from jumping away from keyboard nav,
+ * while larger mouse motion will override keyboard input, see: #34936. */
 #define USE_KEYNAV_LIMIT
 
-/** Support dragging popups by their header. */
+/* Support dragging popups by their header. */
 #define USE_DRAG_POPUP
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Local Defines
- * \{ */
-
-/**
- * The buffer side used for password strings, where the password is stored internally,
- * but not displayed.
- */
+/* Local Defines */
+/* The buffer side used for password strings, where the password is stored internally,
+ * but not displayed. */
 #define UI_MAX_PASSWORD_STR 128
 
-/**
- * This is a lower limit on the soft minimum of the range.
+/* This is a lower limit on the soft minimum of the range.
  * Usually the derived lower limit from the visible precision is higher,
  * so this number is the backup minimum.
  *
  * Logarithmic scale does not work with a minimum value of zero,
  * but we want to support it anyway. It is set to 0.5e... for
  * correct rounding since when the tweaked value is lower than
- * the log minimum (lower limit), it will snap to 0.
- */
+ * the log minimum (lower limit), it will snap to 0. */
 #define UI_PROP_SCALE_LOG_MIN 0.5e-8f
-/**
- * This constant defines an offset for the precision change in
+/* This constant defines an offset for the precision change in
  * snap rounding, when going to higher values. It is set to
- * `0.5 - log10(3) = 0.03` to make the switch at `0.3` values.
- */
+ * `0.5 - log10(3) = 0.03` to make the switch at `0.3` values. */
 #define UI_PROP_SCALE_LOG_SNAP_OFFSET 0.03f
 
-/**
- * When #USER_CONTINUOUS_MOUSE is disabled or tablet input is used,
- * Use this as a maximum soft range for mapping cursor motion to the value.
- * Otherwise min/max of #FLT_MAX, #INT_MAX cause small adjustments to jump to large numbers.
+/* When USER_CONTINUOUS_MOUSE is disabled or tablet input is used,
+ * Use this as a max soft range for mapping cursor motion to the value.
+ * Otherwise min/max of FLT_MAX, INT_MAX cause small adjustments to jump to large numbers.
  *
  * This is needed for values such as location & dimensions which don't have a meaningful min/max,
  * Instead of mapping cursor motion to the min/max, map the motion to the click-step.
@@ -140,60 +125,51 @@
  */
 #define UI_DRAG_MAP_SOFT_RANGE_PIXEL_MAX 1000
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Local Prototypes
- * \{ */
-
+/* Local Prototypes */
 struct uiBlockInteraction_Handle;
 
-static int ui_do_but_EXIT(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event);
-static bool ui_but_find_select_in_enum__cmp(const uiBut *but_a, const uiBut *but_b);
-static void ui_textedit_string_set(uiBut *but, uiHandleButtonData *data, const char *str);
-static void button_tooltip_timer_reset(bContext *C, uiBut *but);
+static int btn_EXIT(Cxt *C, Btn *btn, uiHandleBtnData *data, const WinEv *ev);
+static bool btn_find_select_in_enum__cmp(const Btn *btn_a, const Btn *btn_b);
+static void ui_textedit_string_set(Btn *btn, uiHandleBtnData *data, const char *str);
+static void btn_tooltip_timer_reset(Cxt *C, Btn *btn);
 
-static void ui_block_interaction_begin_ensure(bContext *C,
+static void ui_block_interaction_begin_ensure(Cxt *C,
                                               uiBlock *block,
-                                              uiHandleButtonData *data,
+                                              uiHandleBtnData *data,
                                               const bool is_click);
-static uiBlockInteraction_Handle *ui_block_interaction_begin(bContext *C,
+static uiBlockInteraction_Handle *ui_block_interaction_begin(Cxt *C,
                                                              uiBlock *block,
                                                              const bool is_click);
-static void ui_block_interaction_end(bContext *C,
-                                     uiBlockInteraction_CallbackData *callbacks,
+static void ui_block_interaction_end(Cxt *C,
+                                     uiBlockInteraction_CbData *cbs,
                                      uiBlockInteraction_Handle *interaction);
-static void ui_block_interaction_update(bContext *C,
-                                        uiBlockInteraction_CallbackData *callbacks,
+static void ui_block_interaction_update(Cxt *C,
+                                        uiBlockInteraction_CbData *cbs,
                                         uiBlockInteraction_Handle *interaction);
 
 #ifdef USE_KEYNAV_LIMIT
-static void ui_mouse_motion_keynav_init(uiKeyNavLock *keynav, const wmEvent *event);
-static bool ui_mouse_motion_keynav_test(uiKeyNavLock *keynav, const wmEvent *event);
+static void ui_mouse_motion_keynav_init(uiKeyNavLock *keynav, const WinEv *ev);
+static bool ui_mouse_motion_keynav_test(uiKeyNavLock *keynav, const WinEv *ev);
 #endif
 
-/** \} */
+/* Structs & Defines */
 
-/* -------------------------------------------------------------------- */
-/** \name Structs & Defines
- * \{ */
-
-#define BUTTON_FLASH_DELAY 0.020
+#define BTN_FLASH_DELAY 0.020
 #define MENU_SCROLL_INTERVAL 0.1
 #define PIE_MENU_INTERVAL 0.01
-#define BUTTON_AUTO_OPEN_THRESH 0.2
-#define BUTTON_MOUSE_TOWARDS_THRESH 1.0
+#define BTN_AUTO_OPEN_THRESH 0.2
+#define BTN_MOUSE_TOWARDS_THRESH 1.0
 /** Pixels to move the cursor to get out of keyboard navigation. */
-#define BUTTON_KEYNAV_PX_LIMIT 8
+#define BTN_KEYNAV_PX_LIMIT 8
 
-/** Margin around the menu, use to check if we're moving towards this rectangle (in pixels). */
+/* Margin around the menu, use to check if we're moving towards this rectangle (in pixels). */
 #define MENU_TOWARDS_MARGIN 20
-/** Tolerance for closing menus (in pixels). */
+/* Tolerance for closing menus (in pixels). */
 #define MENU_TOWARDS_WIGGLE_ROOM 64
-/** Drag-lock distance threshold (in pixels). */
-#define BUTTON_DRAGLOCK_THRESH 3
+/* Drag-lock distance threshold (in pixels). */
+#define BTN_DRAGLOCK_THRESH 3
 
-enum uiButtonActivateType {
+enum BtnActivateType {
   BUTTON_ACTIVATE_OVER,
   BUTTON_ACTIVATE,
   BUTTON_ACTIVATE_APPLY,
