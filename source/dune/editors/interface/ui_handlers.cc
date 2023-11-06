@@ -73,8 +73,7 @@
  * These defines allow developers to locally toggle functionality which
  * may be useful for testing (especially conflicts in dragging).
  * Ideally the code would be refactored to support this functionality in a less fragile way.
- * Until then keep these defines.
- */
+ * Until then keep these defines. */
 
 /* Place the mouse at the scaled down location when un-grabbing. */
 #define USE_CONT_MOUSE_CORRECT
@@ -170,25 +169,25 @@ static bool ui_mouse_motion_keynav_test(uiKeyNavLock *keynav, const WinEv *ev);
 #define BTN_DRAGLOCK_THRESH 3
 
 enum BtnActivateType {
-  BUTTON_ACTIVATE_OVER,
-  BUTTON_ACTIVATE,
-  BUTTON_ACTIVATE_APPLY,
-  BUTTON_ACTIVATE_TEXT_EDITING,
-  BUTTON_ACTIVATE_OPEN,
+  BTN_ACTIVATE_OVER,
+  BTN_ACTIVATE,
+  BTN_ACTIVATE_APPLY,
+  BTN_ACTIVATE_TEXT_EDITING,
+  BTN_ACTIVATE_OPEN,
 };
 
-enum uiHandleButtonState {
-  BUTTON_STATE_INIT,
-  BUTTON_STATE_HIGHLIGHT,
-  BUTTON_STATE_WAIT_FLASH,
-  BUTTON_STATE_WAIT_RELEASE,
-  BUTTON_STATE_WAIT_KEY_EVENT,
-  BUTTON_STATE_NUM_EDITING,
-  BUTTON_STATE_TEXT_EDITING,
-  BUTTON_STATE_TEXT_SELECTING,
-  BUTTON_STATE_MENU_OPEN,
-  BUTTON_STATE_WAIT_DRAG,
-  BUTTON_STATE_EXIT,
+enum uiHandleBtnState {
+  BTN_STATE_INIT,
+  BTN_STATE_HIGHLIGHT,
+  BTN_STATE_WAIT_FLASH,
+  BTN_STATE_WAIT_RELEASE,
+  BTN_STATE_WAIT_KEY_EVENT,
+  BTN_STATE_NUM_EDITING,
+  BTN_STATE_TEXT_EDITING,
+  BTN_STATE_TEXT_SELECTING,
+  BTN_STATE_MENU_OPEN,
+  BTN_STATE_WAIT_DRAG,
+  BTN_STATE_EXIT,
 };
 
 enum uiMenuScrollType {
@@ -201,13 +200,11 @@ enum uiMenuScrollType {
 struct uiBlockInteraction_Handle {
   uiBlockInteraction_Params params;
   void *user_data;
-  /**
-   * This is shared between #uiHandleButtonData and #uiAfterFunc,
+  /* This is shared between #uiHandleButtonData and #uiAfterFunc,
    * the last user runs the end callback and frees the data.
    *
    * This is needed as the order of freeing changes depending on
-   * accepting/canceling the operation.
-   */
+   * accepting/canceling the operation. */
   int user_count;
 };
 
@@ -218,7 +215,7 @@ struct uiBlockInteraction_Handle {
 #  define USE_ALLSELECT_LAYER_HACK
 
 struct uiSelectContextElem {
-  PointerRNA ptr;
+  ApiPtrPointerRNA ptr;
   union {
     bool val_b;
     int val_i;
@@ -238,76 +235,70 @@ struct uiSelectContextStore {
   bool is_copy;
 };
 
-static bool ui_selectcontext_begin(bContext *C, uiBut *but, uiSelectContextStore *selctx_data);
-static void ui_selectcontext_end(uiBut *but, uiSelectContextStore *selctx_data);
-static void ui_selectcontext_apply(bContext *C,
-                                   uiBut *but,
-                                   uiSelectContextStore *selctx_data,
-                                   const double value,
-                                   const double value_orig);
+static bool ui_selectcxt_begin(Cxt *C, Btn *btn, uiSelectCxtStore *selcxt_data);
+static void ui_selectcxt_end(Btn *btn, uiSelectCxtStore *selcxt_data);
+static void ui_selectcxt_apply(Cxt *C,
+                               Btn *btn,
+                               uiSelectCxtStore *selcxt_data,
+                               const double value,
+                               const double value_orig);
 
-/**
- * Ideally we would only respond to events which are expected to be used for multi button editing
+/* Ideally we would only respond to events which are expected to be used for multi btn editing
  * (additionally checking if this is a mouse[wheel] or return-key event to avoid the ALT conflict
  * with button array pasting, see #108096, but unfortunately wheel events are not part of
- * `win->eventstate` with modifiers held down. Instead, the conflict is avoided by specifically
+ * `win->evstate` with modifiers held down. Instead, the conflict is avoided by specifically
  * filtering out CTRL ALT V in #ui_apply_but(). */
-#  define IS_ALLSELECT_EVENT(event) (((event)->modifier & KM_ALT) != 0)
+#  define IS_ALLSELECT_EVENT(event) (((event)->mod & KM_ALT) != 0)
 
-/** just show a tinted color so users know its activated */
-#  define UI_BUT_IS_SELECT_CONTEXT UI_BUT_NODE_ACTIVE
+/* just show a tinted color so users know its activated */
+#  define BTN_IS_SELECT_CXT BTN_NODE_ACTIVE
 
 #endif /* USE_ALLSELECT */
 
 #ifdef USE_DRAG_MULTINUM
 
-/**
- * how far to drag before we check for gesture direction (in pixels),
- * NOTE: half the height of a button is about right... */
+/* how far to drag before we check for gesture direction (in pixels),
+ * NOTE: half the height of a btn is about right... */
 #  define DRAG_MULTINUM_THRESHOLD_DRAG_X (UI_UNIT_Y / 4)
 
-/**
- * How far to drag horizontally
- * before we stop checking which buttons the gesture spans (in pixels),
- * locking down the buttons so we can drag freely without worrying about vertical movement.
- */
+/* How far to drag horizontally
+ * before we stop checking which btns the gesture spans (in pixels),
+ * locking down the btns so we can drag freely without worrying about vertical movement. */
 #  define DRAG_MULTINUM_THRESHOLD_DRAG_Y (UI_UNIT_Y / 4)
 
-/**
- * How strict to be when detecting a vertical gesture:
+/* How strict to be when detecting a vertical gesture:
  * [0.5 == sloppy], [0.9 == strict], (unsigned dot-product).
  *
  * \note We should be quite strict here,
  * since doing a vertical gesture by accident should be avoided,
- * however with some care a user should be able to do a vertical movement without _missing_.
- */
+ * however with some care a user should be able to do a vertical movement without _missing_. */
 #  define DRAG_MULTINUM_THRESHOLD_VERTICAL (0.75f)
 
 /* a simple version of uiHandleButtonData when accessing multiple buttons */
-struct uiButMultiState {
+struct BtnMultiState {
   double origvalue;
   uiBut *but;
 
 #  ifdef USE_ALLSELECT
-  uiSelectContextStore select_others;
+  uiSelectCxtStore select_others;
 #  endif
 };
 
-struct uiHandleButtonMulti {
+struct uiHandleBtnMulti {
   enum {
-    /** gesture direction unknown, wait until mouse has moved enough... */
+    /* gesture direction unknown, wait until mouse has moved enough... */
     INIT_UNSET = 0,
-    /** vertical gesture detected, flag buttons interactively (UI_BUT_DRAG_MULTI) */
+    /* vertical gesture detected, flag btns interactively (UI_BTN_DRAG_MULTI) */
     INIT_SETUP,
-    /** flag buttons finished, apply horizontal motion to active and flagged */
+    /* flag btns finished, apply horizontal motion to active and flagged */
     INIT_ENABLE,
-    /** vertical gesture _not_ detected, take no further action */
+    /* vertical gesture _not_ detected, take no further action */
     INIT_DISABLE,
   } init;
 
-  bool has_mbuts; /* any buttons flagged UI_BUT_DRAG_MULTI */
+  bool has_mbuts; /* any btns flagged UI_BTN_DRAG_MULTI */
   LinkNode *mbuts;
-  uiButStore *bs_mbuts;
+  uiBtnStore *bs_mbtns;
 
   bool is_proportional;
 
@@ -320,7 +311,7 @@ struct uiHandleButtonMulti {
   float drag_dir[2];
 
   /* values copied direct from event->xy
-   * used to detect buttons between the current and initial mouse position */
+   * used to detect btns between the current and initial mouse position */
   int drag_start[2];
 
   /* store x location once INIT_SETUP is set,
@@ -330,21 +321,21 @@ struct uiHandleButtonMulti {
 
 #endif /* USE_DRAG_MULTINUM */
 
-struct uiHandleButtonData {
-  wmWindowManager *wm;
-  wmWindow *window;
+struct uiHandleBtnData {
+  WinManager *wm;
+  Win *win;
   ScrArea *area;
-  ARegion *region;
+  ARgn *rgn;
 
   bool interactive;
 
   /* overall state */
-  uiHandleButtonState state;
+  uiHandleBtnState state;
   int retval;
   /* booleans (could be made into flags) */
   bool cancel, escapecancel;
   bool applied, applied_interactive;
-  /* Button is being applied through an extra icon. */
+  /* Btn is being applied through an extra icon. */
   bool apply_through_extra_icon;
   bool changed_cursor;
   wmTimer *flashtimer;
@@ -359,25 +350,23 @@ struct uiHandleButtonData {
 
   /* True when alt is held and the preference for displaying tooltips should be ignored. */
   bool tooltip_force;
-  /**
-   * Behave as if #UI_BUT_DISABLED is set (without drawing grayed out).
+  /* Behave as if BTN_DISABLED is set (without drawing grayed out).
    * Needed so non-interactive labels can be activated for the purpose of showing tool-tips,
-   * without them blocking interaction with nodes, see: #97386.
-   */
+   * without them blocking interaction with nodes, see: #97386. */
   bool disable_force;
 
   /* auto open */
   bool used_mouse;
-  wmTimer *autoopentimer;
+  WinTimer *autoopentimer;
 
   /* auto open (hold) */
-  wmTimer *hold_action_timer;
+  WinTimer *hold_action_timer;
 
   /* text selection/editing */
   /* size of 'str' (including terminator) */
   int str_maxncpy;
-  /* Button text selection:
-   * extension direction, selextend, inside ui_do_but_TEX */
+  /* Btn text selection:
+   * extension direction, selextend, inside btn_TXT */
   int sel_pos_init;
   /* Allow reallocating str/editstr and using 'maxlen' to track alloc size (maxlen + 1) */
   bool is_str_dynamic;
@@ -393,35 +382,35 @@ struct uiHandleButtonData {
   float dragf, dragfstart;
   CBData *dragcbd;
 
-  /** Soft min/max with #UI_DRAG_MAP_SOFT_RANGE_PIXEL_MAX applied. */
+  /** Soft min/max with UI_DRAG_MAP_SOFT_RANGE_PIXEL_MAX applied. */
   float drag_map_soft_min;
   float drag_map_soft_max;
 
 #ifdef USE_CONT_MOUSE_CORRECT
-  /* when ungrabbing buttons which are #ui_but_is_cursor_warp(),
+  /* when ungrabbing btns which are btn_is_cursor_warp(),
    * we may want to position them.
-   * FLT_MAX signifies do-nothing, use #ui_block_to_window_fl()
+   * FLT_MAX signifies do-nothing, use ui_block_to_win_fl()
    * to get this into a usable space. */
   float ungrab_mval[2];
 #endif
 
-  /* Menu open, see: #UI_screen_free_active_but_highlight. */
+  /* Menu open, see: UI_screen_free_active_btn_highlight. */
   uiPopupBlockHandle *menu;
   int menuretval;
 
-  /* Search box see: #UI_screen_free_active_but_highlight. */
-  ARegion *searchbox;
+  /* Search box see: UI_screen_free_active_btn_highlight. */
+  ARgn *searchbox;
 #ifdef USE_KEYNAV_LIMIT
   uiKeyNavLock searchbox_keynav_state;
 #endif
 
 #ifdef USE_DRAG_MULTINUM
-  /* Multi-buttons will be updated in unison with the active button. */
-  uiHandleButtonMulti multi_data;
+  /* Multi-btns will be updated in unison with the active btn. */
+  uiHandleBtnMulti multi_data;
 #endif
 
 #ifdef USE_ALLSELECT
-  uiSelectContextStore select_others;
+  uiSelectCxtStore select_others;
 #endif
 
   uiBlockInteraction_Handle *custom_interaction_handle;
@@ -430,97 +419,92 @@ struct uiHandleButtonData {
   uiUndoStack_Text *undo_stack_text;
 
   /* post activate */
-  uiButtonActivateType posttype;
-  uiBut *postbut;
+  BtnActivateType posttype;
+  Btn *postbtn;
 };
 
-struct uiAfterFunc {
-  uiAfterFunc *next, *prev;
+struct uiAfterFn {
+  uiAfterFn *next, *prev;
 
-  uiButHandleFunc func;
-  void *func_arg1;
-  void *func_arg2;
-  /** C++ version of #func above, without need for void pointer arguments. */
-  std::function<void(bContext &)> apply_func;
+  BtnHandleFn fn;
+  void *fn_arg1;
+  void *fn_arg2;
+  /* C++ version of fn above, without need for void ptr arguments. */
+  std::fn<void(Cxt &)> apply_fn;
 
-  uiButHandleNFunc funcN;
-  void *func_argN;
+  BtnHandleNFn fn;
+  void *fn_arg;
 
-  uiButHandleRenameFunc rename_func;
+  BtnHandleRenameFn rename_fn;
   void *rename_arg1;
   void *rename_orig;
 
-  uiBlockHandleFunc handle_func;
-  void *handle_func_arg;
+  uiBlockHandleFn handle_fn;
+  void *handle_fn_arg;
   int retval;
 
-  uiMenuHandleFunc butm_func;
-  void *butm_func_arg;
+  uiMenuHandleFn btnm_fn;
+  void *btnm_fn_arg;
   int a2;
 
-  wmOperator *popup_op;
-  wmOperatorType *optype;
-  wmOperatorCallContext opcontext;
-  PointerRNA *opptr;
+  WinOp *popup_op;
+  WinOpType *optype;
+  WinOpCallCxt opcxt;
+  ApiPtr *opptr;
 
-  PointerRNA rnapoin;
-  PropertyRNA *rnaprop;
+  ApiPtr apiptr;
+  ApiProp *apiprop;
 
   void *search_arg;
-  uiFreeArgFunc search_arg_free_fn;
+  uiFreeArgFn search_arg_free_fn;
 
-  uiBlockInteraction_CallbackData custom_interaction_callbacks;
+  uiBlockInteraction_CbData custom_interaction_cbs;
   uiBlockInteraction_Handle *custom_interaction_handle;
 
-  std::optional<bContextStore> context;
+  std::optional<CxtStore> cxt;
 
-  char undostr[BKE_UNDO_STR_MAX];
+  char undostr[DUNE_UNDO_STR_MAX];
   char drawstr[UI_MAX_DRAW_STR];
 };
 
-static void button_activate_init(bContext *C,
-                                 ARegion *region,
-                                 uiBut *but,
-                                 uiButtonActivateType type);
-static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState state);
-static void button_activate_exit(
-    bContext *C, uiBut *but, uiHandleButtonData *data, const bool mousemove, const bool onfree);
-static int ui_handler_region_menu(bContext *C, const wmEvent *event, void *userdata);
-static void ui_handle_button_activate(bContext *C,
-                                      ARegion *region,
-                                      uiBut *but,
-                                      uiButtonActivateType type);
-static bool ui_do_but_extra_operator_icon(bContext *C,
-                                          uiBut *but,
-                                          uiHandleButtonData *data,
-                                          const wmEvent *event);
-static void ui_do_but_extra_operator_icons_mousemove(uiBut *but,
-                                                     uiHandleButtonData *data,
-                                                     const wmEvent *event);
-static void ui_numedit_begin_set_values(uiBut *but, uiHandleButtonData *data);
+static void btn_activate_init(Cxt *C,
+                              ARgn *rgn,
+                              Btn *btn,
+                              BtnActivateType type);
+static void btn_activate_state(Cxt *C, Btn *btn, uiHandleBtnState state);
+static void btn_activate_exit(
+    Cxt *C, Btn *btn, uiHandleBtnData *data, const bool mousemove, const bool onfree);
+static int ui_handler_rgn_menu(Cxt *C, const WinEv *ev, void *userdata);
+static void ui_handle_btn_activate(Cxt *C,
+                                   ARgn *rgn,
+                                   Btn *btn,
+                                   BtnActivateType type);
+static bool btn_do_extra_op_icon(Cxt *C,
+                                 Btn *btn,
+                                 uiHandleBtnData *data,
+                                 const WinEv *ev);
+static void ui_do_but_extra_op_icons_mousemove(Btn *by ,
+                                                     uiHandleBtnData *data,
+                                                     const WinEv *ev);
+static void ui_numedit_begin_set_values(Btn *btn, uiHandleBtnData *data);
 
 #ifdef USE_DRAG_MULTINUM
-static void ui_multibut_restore(bContext *C, uiHandleButtonData *data, uiBlock *block);
-static uiButMultiState *ui_multibut_lookup(uiHandleButtonData *data, const uiBut *but);
+static void multibtn_restore(bContext *C, uiHandleBtnData *data, uiBlock *block);
+static BtnMultiState *ui_multibtn_lookup(uiHandleBtnData *data, const uiBtn *btn);
 #endif
 
-/* buttons clipboard */
-static ColorBand but_copypaste_coba = {0};
-static CurveMapping but_copypaste_curve = {0};
-static bool but_copypaste_curve_alive = false;
-static CurveProfile but_copypaste_profile = {0};
-static bool but_copypaste_profile_alive = false;
+/* btns clipboard */
+static ColorBand btn_copypaste_coba = {0};
+static CurveMapping bt _copypaste_curve = {0};
+static bool btn_copypaste_curve_alive = false;
+static CurveProfile btn_copypaste_profile = {0};
+static bool btn_copypaste_profile_alive = false;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name UI Queries
- * \{ */
-
+/* UI Queries */
 bool btn_is_editing(const Btn *btn)
 {
   const BtnHandleData *data = btn->active;
-  return (data && ELEM(data->state, BTN_STATE_TEXT_EDITING, BUTTON_STATE_NUM_EDITING));
+  return (data && ELEM(data->state, BTN_STATE_TEXT_EDITING, BTN_STATE_NUM_EDITING));
 }
 
 void ui_pan_to_scroll(const WinEv *ev, int *type, int *val)
@@ -557,7 +541,7 @@ void ui_pan_to_scroll(const WinEv *ev, int *type, int *val)
 static bool btn_find_select_in_enum__cmp(const Btn *btn_a, const Btn *btn_b)
 {
   return ((btn_a->type == btn_b->type) && (btn_a->alignnr == btn_b->alignnr) &&
-          (btn_a->point == btn_b->point) && (btn_a->apipoint.type == btn_b->apipoint.type) &&
+          (btn_a->ptr == btn_b->ptr) && (btn_a->apiptr.type == btn_b->apiptr.type) &&
           (btn_a->apiprop == btn_b->apiprop));
 }
 
