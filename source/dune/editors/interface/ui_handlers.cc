@@ -587,26 +587,22 @@ static void ui_mouse_scale_warp(BtnHandleData *data,
   *r_my = (data->dragstarty * (1.0f - fac) + my * fac);
 }
 
-/** \name UI Utilities
- * \{ */
-
-/**
- * Ignore mouse movements within some horizontal pixel threshold before starting to drag
- */
-static bool ui_but_dragedit_update_mval(uiHandleButtonData *data, int mx)
+/* UI Utils */
+/* Ignore mouse movements within some horizontal pixel threshold before starting to drag */
+static bool btn_dragedit_update_mval(uiHandleButtonData *data, int mx)
 {
   if (mx == data->draglastx) {
     return false;
   }
 
   if (data->draglock) {
-    if (abs(mx - data->dragstartx) <= BUTTON_DRAGLOCK_THRESH) {
+    if (abs(mx - data->dragstartx) <= BTN_DRAGLOCK_THRESH) {
       return false;
     }
 #ifdef USE_DRAG_MULTINUM
     if (ELEM(data->multi_data.init,
-             uiHandleButtonMulti::INIT_UNSET,
-             uiHandleButtonMulti::INIT_SETUP)) {
+             uiHandleBtnMulti::INIT_UNSET,
+             uiHandleBtnMulti::INIT_SETUP)) {
       return false;
     }
 #endif
@@ -617,114 +613,103 @@ static bool ui_but_dragedit_update_mval(uiHandleButtonData *data, int mx)
   return true;
 }
 
-static bool ui_rna_is_userdef(PointerRNA *ptr, PropertyRNA *prop)
+static bool ui_api_is_userdef(ApiPter *ptr, ApiProp *prop)
 {
-  /* Not very elegant, but ensures preference changes force re-save. */
+  /* Not very elegant, but ensures pref changes force re-save. */
 
   if (!prop) {
     return false;
   }
-  if (RNA_property_flag(prop) & PROP_NO_DEG_UPDATE) {
+  if (api_prop_flag(prop) & PROP_NO_GRAPH_UPDATE) {
     return false;
   }
 
-  StructRNA *base = RNA_struct_base(ptr->type);
+  ApuStruct *base = api_struct_base(ptr->type);
   if (base == nullptr) {
     base = ptr->type;
   }
   return ELEM(base,
-              &RNA_AddonPreferences,
-              &RNA_KeyConfigPreferences,
-              &RNA_KeyMapItem,
-              &RNA_UserAssetLibrary);
+              &ApiAddonPrefs,
+              &ApiKeyConfigPrefs,
+              &ApiKeyMapItem,
+              &ApiUserAssetLib);
 }
 
-bool UI_but_is_userdef(const uiBut *but)
+bool btn_is_userdef(const Btn *btn)
 {
-  /* This is read-only, RNA API isn't using const when it could. */
-  return ui_rna_is_userdef((PointerRNA *)&but->rnapoin, but->rnaprop);
+  /* This is read-only, Api isn't using const when it could. */
+  return ui_api_is_userdef((ApiPtr *)&btn->apiptr, btm->apiprop);
 }
 
-static void ui_rna_update_preferences_dirty(PointerRNA *ptr, PropertyRNA *prop)
+static void ui_api_update_prefs_dirty(ApiPtr *ptr, ApiProp *prop)
 {
-  if (ui_rna_is_userdef(ptr, prop)) {
+  if (ui_api_is_userdef(ptr, prop)) {
     U.runtime.is_dirty = true;
-    WM_main_add_notifier(NC_WINDOW, nullptr);
+    win_main_add_notifier(NC_WIN, nullptr);
   }
 }
 
-static void ui_but_update_preferences_dirty(uiBut *but)
+static void btn_update_prefs_dirty(Btn *byn)
 {
-  ui_rna_update_preferences_dirty(&but->rnapoin, but->rnaprop);
+  ui_api_update_prefs_dirty(&btn->apiptr, btn->apiprop);
 }
 
-static void ui_afterfunc_update_preferences_dirty(uiAfterFunc *after)
+static void ui_afterfn_update_prefs_dirty(uiAfterFn *after)
 {
-  ui_rna_update_preferences_dirty(&after->rnapoin, after->rnaprop);
+  ui_api_update_prefs_dirty(&after->apiptr, after->apiprop);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Button Snap Values
- * \{ */
-
+/* Btn Snap Values */
 enum eSnapType {
   SNAP_OFF = 0,
   SNAP_ON,
   SNAP_ON_SMALL,
 };
 
-static enum eSnapType ui_event_to_snap(const wmEvent *event)
+static enum eSnapType ui_event_to_snap(const WinEv *ev)
 {
-  return (event->modifier & KM_CTRL) ? (event->modifier & KM_SHIFT) ? SNAP_ON_SMALL : SNAP_ON :
+  return (ev->mod & KM_CTRL) ? (ev->mod & KM_SHIFT) ? SNAP_ON_SMALL : SNAP_ON :
                                        SNAP_OFF;
 }
 
-static bool ui_event_is_snap(const wmEvent *event)
+static bool ui_ev_is_snap(const WinEv *ev)
 {
-  return (ELEM(event->type, EVT_LEFTCTRLKEY, EVT_RIGHTCTRLKEY) ||
-          ELEM(event->type, EVT_LEFTSHIFTKEY, EVT_RIGHTSHIFTKEY));
+  return (ELEM(ev->type, EV_LEFTCTRLKEY, EV_RIGHTCTRLKEY) ||
+          ELEM(ev->type, EV_LEFTSHIFTKEY, EV_RIGHTSHIFTKEY));
 }
 
 static void ui_color_snap_hue(const enum eSnapType snap, float *r_hue)
 {
   const float snap_increment = (snap == SNAP_ON_SMALL) ? 24 : 12;
-  BLI_assert(snap != SNAP_OFF);
+  lib_assert(snap != SNAP_OFF);
   *r_hue = roundf((*r_hue) * snap_increment) / snap_increment;
 }
 
-/** \} */
+/* Btn Apply/Revert */
+static List UIAfterFns = {nullptr, nullptr};
 
-/* -------------------------------------------------------------------- */
-/** \name Button Apply/Revert
- * \{ */
-
-static ListBase UIAfterFuncs = {nullptr, nullptr};
-
-static uiAfterFunc *ui_afterfunc_new()
+static uiAfterFn *ui_afterfn_new()
 {
-  uiAfterFunc *after = MEM_new<uiAfterFunc>(__func__);
+  uiAfterFn *after = mem_new<uiAfterFn>(__func__);
   /* Safety asserts to check if members were 0 initialized properly. */
-  BLI_assert(after->next == nullptr && after->prev == nullptr);
-  BLI_assert(after->undostr[0] == '\0');
+  lib_assert(after->next == nullptr && after->prev == nullptr);
+  lib_assert(after->undostr[0] == '\0');
 
-  BLI_addtail(&UIAfterFuncs, after);
+  lib_addtail(&UIAfterFns, after);
 
   return after;
 }
 
-/**
- * For executing operators after the button is pressed.
- * (some non operator buttons need to trigger operators), see: #37795.
+/* For executing ops after the btn is pressed.
+ * (some non op btns need to trigger ops), see: #37795.
  *
- * \param context_but: A button from which to get the context from (`uiBut.context`) for the
- *                     operator execution.
+ * param cxt_btn: A btn from which to get the cxt from (`Btn.cxt`) for the
+ *                     op execution.
  *
  * \note Ownership over \a properties is moved here. The #uiAfterFunc owns it now.
  * \note Can only call while handling buttons.
  */
-static void ui_handle_afterfunc_add_operator_ex(wmOperatorType *ot,
+static void ui_handle_afterfn_add_operator_ex(wmOperatorType *ot,
                                                 PointerRNA **properties,
                                                 wmOperatorCallContext opcontext,
                                                 const uiBut *context_but)
