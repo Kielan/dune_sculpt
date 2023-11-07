@@ -298,7 +298,7 @@ struct uiHandleBtnMulti {
 
   bool has_mbuts; /* any btns flagged UI_BTN_DRAG_MULTI */
   LinkNode *mbuts;
-  uiBtnStore *bs_mbtns;
+  BtnStore *bs_mbtns;
 
   bool is_proportional;
 
@@ -321,7 +321,7 @@ struct uiHandleBtnMulti {
 
 #endif /* USE_DRAG_MULTINUM */
 
-struct uiHandleBtnData {
+struct BtnHandleData {
   WinManager *wm;
   Win *win;
   ScrArea *area;
@@ -330,7 +330,7 @@ struct uiHandleBtnData {
   bool interactive;
 
   /* overall state */
-  uiHandleBtnState state;
+  BtnHandleState state;
   int retval;
   /* booleans (could be made into flags) */
   bool cancel, escapecancel;
@@ -341,7 +341,7 @@ struct uiHandleBtnData {
   WinTimer *flashtimer;
 
   /* edited value */
-  /* use 'ui_textedit_string_set' to assign new strings */
+  /* use 'ui_txtedit_string_set' to assign new strings */
   char *str;
   char *origstr;
   double value, origvalue, startvalue;
@@ -475,22 +475,22 @@ static void btn_activate_state(Cxt *C, Btn *btn, uiHandleBtnState state);
 static void btn_activate_exit(
     Cxt *C, Btn *btn, uiHandleBtnData *data, const bool mousemove, const bool onfree);
 static int ui_handler_rgn_menu(Cxt *C, const WinEv *ev, void *userdata);
-static void ui_handle_btn_activate(Cxt *C,
+static void btn_handle_activate(Cxt *C,
                                    ARgn *rgn,
                                    Btn *btn,
                                    BtnActivateType type);
 static bool btn_do_extra_op_icon(Cxt *C,
                                  Btn *btn,
-                                 uiHandleBtnData *data,
+                                 BtnHandleData *data,
                                  const WinEv *ev);
-static void ui_do_but_extra_op_icons_mousemove(Btn *by ,
-                                                     uiHandleBtnData *data,
-                                                     const WinEv *ev);
-static void ui_numedit_begin_set_values(Btn *btn, uiHandleBtnData *data);
+static void btn_do_extra_op_icons_mousemove(Btn *btn,
+                                            BtnHandleData *data,
+                                            const WinEv *ev);
+static void ui_numedit_begin_set_values(Btn *btn, BtnHandleData *data);
 
 #ifdef USE_DRAG_MULTINUM
-static void multibtn_restore(bContext *C, uiHandleBtnData *data, uiBlock *block);
-static BtnMultiState *ui_multibtn_lookup(uiHandleBtnData *data, const uiBtn *btn);
+static void multibtn_restore(Cxt *C, BtnHandleData *data, uiBlock *block);
+static BtnMultiState *ui_multibtn_lookup(BtnHandleData *data, const uiBtn *btn);
 #endif
 
 /* btns clipboard */
@@ -709,94 +709,90 @@ static uiAfterFn *ui_afterfn_new()
  * \note Ownership over \a properties is moved here. The #uiAfterFunc owns it now.
  * \note Can only call while handling buttons.
  */
-static void ui_handle_afterfn_add_operator_ex(wmOperatorType *ot,
-                                                PointerRNA **properties,
-                                                wmOperatorCallContext opcontext,
-                                                const uiBut *context_but)
+static void ui_handle_afterfn_add_operator_ex(WinOpType *ot,
+                                              ApiPtr **props,
+                                              WinOpCallCxt opcxt,
+                                              const Btn *cxt_btn)
 {
-  uiAfterFunc *after = ui_afterfunc_new();
+  uiAfterFn *after = ui_afterfn_new();
 
   after->optype = ot;
-  after->opcontext = opcontext;
-  if (properties) {
-    after->opptr = *properties;
-    *properties = nullptr;
+  after->opcxt = opcxt;
+  if (props) {
+    after->opptr = *props;
+    *props = nullptr;
   }
 
-  if (context_but && context_but->context) {
-    after->context = *context_but->context;
+  if (cxt_btn && cxt_btn->cxt) {
+    after->cxt = *cxt_btn->cxt;
   }
 
-  if (context_but) {
-    ui_but_drawstr_without_sep_char(context_but, after->drawstr, sizeof(after->drawstr));
+  if (cxt_btn) {
+    btn_drawstr_without_sep_char(cxt_btn, after->drawstr, sizeof(after->drawstr));
   }
 }
 
-void ui_handle_afterfunc_add_operator(wmOperatorType *ot, wmOperatorCallContext opcontext)
+void ui_handle_afterfn_add_op(WinOpType *ot, WinOpCallCxt opcxt)
 {
-  ui_handle_afterfunc_add_operator_ex(ot, nullptr, opcontext, nullptr);
+  ui_handle_afterfn_add_op_ex(ot, nullptr, opcxt, nullptr);
 }
 
-static void popup_check(bContext *C, wmOperator *op)
+static void popup_check(Cxt *C, WinOp *op)
 {
   if (op && op->type->check) {
     op->type->check(C, op);
   }
 }
 
-/**
- * Check if a #uiAfterFunc is needed for this button.
- */
-static bool ui_afterfunc_check(const uiBlock *block, const uiBut *but)
+/* Check if a uiAfterFn is needed for this btn */
+static bool ui_afterfn_check(const uiBlock *block, const Btn *btn)
 {
-  return (but->func || but->apply_func || but->funcN || but->rename_func || but->optype ||
-          but->rnaprop || block->handle_func ||
-          (but->type == UI_BTYPE_BUT_MENU && block->butm_func) ||
+  return (btn->fn || btn->apply_fn || btn->fn || btn->rename_fn || btn->optype ||
+          btn->apiprop || block->handle_func ||
+          (btn->type == BTYPE_BTN_MENU && block->btnm_fn) ||
           (block->handle && block->handle->popup_op));
 }
 
-/**
- * These functions are postponed and only executed after all other
+/* These fns are postponed and only ex'd after all other
  * handling is done, i.e. menus are closed, in order to avoid conflicts
- * with these functions removing the buttons we are working with.
- */
-static void ui_apply_but_func(bContext *C, uiBut *but)
+ * with these fns removing the buttons we are working with */
+static void btn_apply_fn(Cxt *C, Btn *btn)
 {
-  uiBlock *block = but->block;
-  if (!ui_afterfunc_check(block, but)) {
+  uiBlock *block = btn->block;
+  if (!ui_afterfn_check(block, btn)) {
     return;
   }
 
-  uiAfterFunc *after = ui_afterfunc_new();
+  uiAfterFn *after = ui_afterfn_new();
 
-  if (but->func && ELEM(but, but->func_arg1, but->func_arg2)) {
-    /* exception, this will crash due to removed button otherwise */
-    but->func(C, but->func_arg1, but->func_arg2);
+  if (btn->fn && ELEM(btn, btn->fn_arg1, btn->fn_arg2)) {
+    /* exception, this will crash due to removed btn otherwise */
+    btn->fn(C, btn->fn_arg1, btn->fn_arg2);
   }
   else {
-    after->func = but->func;
+    after->fn = btn->fn;
   }
 
-  after->func_arg1 = but->func_arg1;
-  after->func_arg2 = but->func_arg2;
+  after->fn_arg1 = btn->fn_arg1;
+  after->fn_arg2 = btn->fn_arg2;
 
-  after->apply_func = but->apply_func;
+  after->apply_fn = btn->apply_fn;
 
-  after->funcN = but->funcN;
-  after->func_argN = (but->func_argN) ? MEM_dupallocN(but->func_argN) : nullptr;
+  after->fn = btn->fn;
+  after->fn_arg = (btn->fn_arg) ? mem_dupalloc(btn->fn_arg) : nullptr;
 
-  after->rename_func = but->rename_func;
-  after->rename_arg1 = but->rename_arg1;
-  after->rename_orig = but->rename_orig; /* needs free! */
+  after->rename_fn = btn->rename_fn;
+  after->rename_arg1 = btn->rename_arg1;
+  after->rename_orig = btn->rename_orig; /* needs free! */
 
-  after->handle_func = block->handle_func;
-  after->handle_func_arg = block->handle_func_arg;
-  after->retval = but->retval;
+  after->handle_fn = block->handle_fn;
+  after->handle_fn_arg = block->handle_fn_arg;
+  after->retval = btn->retval;
 
-  if (but->type == UI_BTYPE_BUT_MENU) {
-    after->butm_func = block->butm_func;
-    after->butm_func_arg = block->butm_func_arg;
-    after->a2 = but->a2;
+  if (btn->type == BTYPE_BTN_MENU) {
+    after->btnm_fn = block->btn_fn;
+    after->btnm_fn_arg = block->btnm_fn_arg;
+    after->a2 = btn->a2;
   }
 
   if (block->handle) {
@@ -819,7 +815,7 @@ static void ui_apply_but_func(bContext *C, uiBut *but)
   }
 
   if (btn->active != nullptr) {
-    uiHandleBtnData *data = btn->active;
+    BtnHandleData *data = btn->active;
     if (data->custom_interaction_handle != nullptr) {
       after->custom_interaction_callbacks = block->custom_interaction_cbs;
       after->custom_interaction_handle = data->custom_interaction_handle;
@@ -851,9 +847,9 @@ static void ui_apply_but_func(bContext *C, uiBut *but)
 }
 
 /* typically call ui_apply_btn_undo(), ui_apply_btn_autokey() */
-static void ui_apply_but_undo(Btn *btn)
+static void btn_apply_undo(Btn *btn)
 {
-  if (!(but->flag & UI_BUT_UNDO)) {
+  if (!(btn->flag & BTN_UNDO)) {
     return;
   }
 
@@ -864,7 +860,7 @@ static void ui_apply_but_undo(Btn *btn)
   /* define which string to use for undo */
   if (btn->type == BTYPE_MENU) {
     str = btn->drawstr;
-    str_len_clip = ubtn_drawstr_len_without_sep_char(btn);
+    str_len_clip = btn_drawstr_len_without_sep_char(btn);
   }
   else if (btn->drawstr[0]) {
     str = btn->drawstr;
@@ -881,19 +877,19 @@ static void ui_apply_but_undo(Btn *btn)
     str_len_clip = strlen(str);
   }
 
-  /* Optionally override undo when undo system doesn't support storing properties. */
-  if (btn->apipoin.owner_id) {
-    /* Exception for renaming ID data, we always need undo pushes in this case,
-     * because undo systems track data by their ID, see: #67002. */
+  /* Optionally override undo when undo system doesn't support storing props. */
+  if (btn->apiptr.owner_id) {
+    /* Exception for renaming Id data, we always need undo pushes in this case,
+     * because undo systems track data by their Id, see: #67002. */
     /* Exception for active shape-key, since changing this in edit-mode updates
      * the shape key from object mode data. */
     if (ELEM(btn->apiprop, &api_id_name, &api_Object_active_shape_key_index)) {
       /* pass */
     }
     else {
-      Id *id = btn->apipoin.owner_id;
-      if (!ed_undo_is_legacy_compatible_for_prop(static_cast<bContext *>(but->block->evil_C),
-                                                     id)) {
+      Id *id = btn->apiptr.owner_id;
+      if (!ed_undo_is_legacy_compatible_for_prop(static_cast<Cxt *>(btn->block->evil_C),
+                                                 id)) {
         skip_undo = true;
       }
     }
@@ -902,7 +898,7 @@ static void ui_apply_but_undo(Btn *btn)
   if (skip_undo == false) {
     /* disable all undo pushes from UI changes from sculpt mode as they cause memfile undo
      * steps to be written which cause lag: #71434. */
-    if (dune_paintmode_get_active_from_context(static_cast<bContext *>(but->block->evil_C)) ==
+    if (dune_paintmode_get_active_from_context(static_cast<Cxt *>(btn->block->evil_C)) ==
         PAINT_MODE_SCULPT)
     {
       skip_undo = true;
@@ -918,7 +914,7 @@ static void ui_apply_but_undo(Btn *btn)
   lib_strncpy(after->undostr, str, min_zz(str_len_clip + 1, sizeof(after->undostr)));
 }
 
-static void ui_apply_btn_autokey(Cxt *C, uiBut *but)
+static void btn_apply_autokey(Cxt *C, Btn *btn)
 {
   Scene *scene = cxt_data_scene(C);
 
@@ -946,8 +942,8 @@ static void ui_apply_btn_autokey(Cxt *C, uiBut *but)
 static void ui_apply_btn_fns_after(Cxt *C)
 {
   /* Copy to avoid recursive calls. */
-  ListBase fns = UIAfterFns;
-  BLI_list_clear(&UIAfterFns);
+  List fns = UIAfterFns;
+  lin_list_clear(&UIAfterFns);
 
   LIST_FOREACH_MUTABLE (uiAfterFn *, afterf, &fns) {
     uiAfterFn after = *afterf; /* Copy to avoid memory leak on exit(). */
@@ -962,7 +958,7 @@ static void ui_apply_btn_fns_after(Cxt *C)
       popup_check(C, after.popup_op);
     }
 
-    PointerRNA opptr;
+    ApiPtr opptr;
     if (after.opptr) {
       /* free in advance to avoid leak on exit */
       opptr = *after.opptr;
@@ -971,11 +967,11 @@ static void ui_apply_btn_fns_after(Cxt *C)
 
     if (after.optype) {
       win_op_name_call_ptr_with_depends_on_cursor(C,
-                                                       after.optype,
-                                                       after.opcxt,
-                                                       (after.opptr) ? &opptr : nullptr,
-                                                       nullptr,
-                                                       after.drawstr);
+                                                  after.optype,
+                                                  after.opcxt,
+                                                  (after.opptr) ? &opptr : nullptr,
+                                                  nullptr,
+                                                  after.drawstr);
     }
 
     if (after.opptr) {
@@ -1004,7 +1000,7 @@ static void ui_apply_btn_fns_after(Cxt *C)
     }
 
     if (after.handle_fn) {
-      after.handle_fn(C, after.handle_func_arg, after.retval);
+      after.handle_fn(C, after.handle_fn_arg, after.retval);
     }
     if (after.btnm_fn) {
       after.btnm_fn(C, after.btnm_fn_arg, after.a2);
@@ -1041,7 +1037,7 @@ static void ui_apply_btn_fns_after(Cxt *C)
   }
 }
 
-static void btn_apply_BTN(Cxt *C, Btn *btn, uiHandleBtnData *data)
+static void btn_apply_BTN(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
 
@@ -1049,7 +1045,7 @@ static void btn_apply_BTN(Cxt *C, Btn *btn, uiHandleBtnData *data)
   data->applied = true;
 }
 
-static void ui_apply_btn_BTNM(Cxt *C, Btn *btn, uiHandleBtnData *data)
+static void btn_apply_BTNM(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_value_set(btn, btn->hardmin);
   apply_btn_fn(C, btn);
@@ -1058,7 +1054,7 @@ static void ui_apply_btn_BTNM(Cxt *C, Btn *btn, uiHandleBtnData *data)
   data->applied = true;
 }
 
-static void btn_apply_BLOCK(Cxt *C, Btn *byn, uiHandleBtnData *data)
+static void btn_apply_BLOCK(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   if (btn->type == BTYPE_MENU) {
     btn_value_set(btn, data->value);
@@ -1070,9 +1066,9 @@ static void btn_apply_BLOCK(Cxt *C, Btn *byn, uiHandleBtnData *data)
   data->applied = true;
 }
 
-static void btn_apply_TOG(Cxt *C, Btn *btn, uiHandleBtnData *data)
+static void btn_apply_TOG(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  const double value = btn_value_get(byn);
+  const double value = btn_value_get(btn);
   int value_toggle;
   if (b5->bit) {
     value_toggle = BITBTN_VALUE_TOGGLED(int(value), btn->bitnr);
@@ -1092,7 +1088,7 @@ static void btn_apply_TOG(Cxt *C, Btn *btn, uiHandleBtnData *data)
   data->applied = true;
 }
 
-static void ui_apply_btn_ROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnData *data)
+static void btn_apply_ROW(Cxt *C, uiBlock *block, Btn *btn, BtnHandleData *data)
 {
   ui_btn_value_set(btn, btn->hardmax);
 
@@ -1109,17 +1105,16 @@ static void ui_apply_btn_ROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnData *
   data->applied = true;
 }
 
-static void ui_apply_btn_VIEW_ITEM(Cxt *C,
-                                   uiBlock *block,
-                                   uiBtn *btn,
-                                   uiHandleBtnData *data)
+static void btn_apply_VIEW_ITEM(Cxt *C,
+                                uiBlock *block,
+                                Btn *btn,
+                                BtnHandleData *data)
 {
   if (data->apply_through_extra_icon) {
-    /* Don't apply this, it would cause unintended tree-row toggling when clicking on extra icons.
-     */
+    /* Don't apply this, it would cause unintended tree-row toggling when clicking on extra icons */
     return;
   }
-  ui_apply_btn_ROW(C, block, btn, data);
+  btn_apply_ROW(C, block, btn, data);
 }
 
 /* note Ownership of props is moved here. The uiAfterFn owns it now.
@@ -1128,9 +1123,9 @@ static void ui_apply_btn_VIEW_ITEM(Cxt *C,
  *
  * returns true if the op was ex'd, otherwise false. */
 static bool ui_list_invoke_item_op(Cxt *C,
-                                         const Btn *cxt_btn,
-                                         WinOpType *ot,
-                                         ApiPtr **props)
+                                   const Btn *cxt_btn,
+                                   WinOpType *ot,
+                                   ApiPtr **props)
 {
   if (!btn_cxt_poll_op(C, ot, cxt_btn)) {
     return false;
@@ -1142,99 +1137,99 @@ static bool ui_list_invoke_item_op(Cxt *C,
   return true;
 }
 
-static void ui_apply_but_LISTROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnData *data)
+static void btn_apply_LISTROW(Cxt *C, uiBlock *block, Btn *btn, BtnHandleData *data)
 {
-  Btn *listbox = ui_list_find_from_row(data->region, btn);
+  Btn *listbox = ui_list_find_from_row(data->rgn, btn);
   if (listbox) {
     uiList *list = static_cast<uiList *>(listbox->custom_data);
     if (list && list->dyn_data->custom_activate_optype) {
-      ui_list_invoke_item_operator(
-          C, but, list->dyn_data->custom_activate_optype, &list->dyn_data->custom_activate_opptr);
+      ui_list_invoke_item_op(
+          C, btn, list->dyn_data->custom_activate_optype, &list->dyn_data->custom_activate_opptr);
     }
   }
 
-  ui_apply_btn_ROW(C, block, but, data);
+  btn_apply_ROW(C, block, btn, data);
 }
 
-static void ui_apply_but_TEX(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_TEX(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   if (!data->str) {
     return;
   }
 
-  ui_but_string_set(C, but, data->str);
-  ui_but_update_edited(but);
+  btn_string_set(C, btn, data->str);
+  btn_update_edited(btn);
 
   /* give butfunc a copy of the original text too.
    * feature used for bone renaming, channels, etc.
    * afterfunc frees rename_orig */
-  if (data->origstr && (but->flag & UI_BUT_TEXTEDIT_UPDATE)) {
+  if (data->origstr && (btn->flag & BTN_TEXTEDIT_UPDATE)) {
     /* In this case, we need to keep origstr available,
      * to restore real org string in case we cancel after having typed something already. */
-    but->rename_orig = BLI_strdup(data->origstr);
+    btn->rename_orig = lib_strdup(data->origstr);
   }
   /* only if there are afterfuncs, otherwise 'renam_orig' isn't freed */
-  else if (ui_afterfunc_check(but->block, but)) {
-    but->rename_orig = data->origstr;
+  else if (ui_afterfn_check(btn->block, btn)) {
+    btn->rename_orig = data->origstr;
     data->origstr = nullptr;
   }
 
-  void *orig_arg2 = but->func_arg2;
+  void *orig_arg2 = btn->fn_arg2;
 
   /* If arg2 isn't in use already, pass the active search item through it. */
-  if ((but->func_arg2 == nullptr) && (but->type == UI_BTYPE_SEARCH_MENU)) {
-    uiButSearch *search_but = (uiButSearch *)but;
-    but->func_arg2 = search_but->item_active;
+  if ((btn->fn_arg2 == nullptr) && (btn->type == BTYPE_SEARCH_MENU)) {
+    BtnSearch *search_btn = (BtnSearch *)btn;
+    btn->fn_arg2 = search_btn->item_active;
     if ((U.flag & USER_FLAG_RECENT_SEARCHES_DISABLE) == 0) {
-      blender::ui::string_search::add_recent_search(search_but->item_active_str);
+      dune::ui::string_search::add_recent_search(search_btn->item_active_str);
     }
   }
 
-  ui_apply_but_func(C, but);
+  btn_apply_btn_fn(C, btn);
 
-  but->func_arg2 = orig_arg2;
+  btn->fn_arg2 = orig_arg2;
 
-  data->retval = but->retval;
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_TAB(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_TAB(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   if (data->str) {
-    ui_but_string_set(C, but, data->str);
-    ui_but_update_edited(but);
+    btn_string_set(C, btn, data->str);
+    btn_update_edited(but);
   }
   else {
-    ui_but_value_set(but, but->hardmax);
-    ui_apply_but_func(C, but);
+    btn_value_set(btn, btn->hardmax);
+    btn_apply_fn(C, btn);
   }
 
-  data->retval = but->retval;
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_NUM(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_NUM(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   if (data->str) {
     /* This is intended to avoid unnecessary updates when the value stays the same, however there
      * are issues with the current implementation. It does not work with multi-button editing
-     * (#89996) or operator popups where a number button requires an update even if the value is
+     * (#89996) or op popups where a number btn requires an update even if the value is
      * unchanged (#89996).
      *
      * Trying to detect changes at this level is not reliable. Instead it could be done at the
-     * level of RNA update/set, skipping RNA update if RNA set did not change anything, instead
-     * of skipping all button updates. */
+     * level of api update/set, skipping api update if api set did not change anything, instead
+     * of skipping all btn updates. */
 #if 0
     double value;
     /* Check if the string value is a number and cancel if it's equal to the startvalue. */
-    if (ui_but_string_eval_number(C, but, data->str, &value) && (value == data->startvalue)) {
+    if (btn_string_eval_number(C, btn, data->str, &value) && (value == data->startvalue)) {
       data->cancel = true;
       return;
     }
 #endif
 
-    if (ui_but_string_set(C, but, data->str)) {
-      data->value = ui_but_value_get(but);
+    if (btn_string_set(C, btn, data->str)) {
+      data->value = btn_value_get(btn);
     }
     else {
       data->cancel = true;
@@ -1242,98 +1237,93 @@ static void ui_apply_but_NUM(bContext *C, uiBut *but, uiHandleButtonData *data)
     }
   }
   else {
-    ui_but_value_set(but, data->value);
+    btn_value_set(btn, data->value);
   }
 
-  ui_but_update_edited(but);
-  ui_apply_but_func(C, but);
+  btn_update_edited(btn);
+  btn_apply_fn(C, btn);
 
-  data->retval = but->retval;
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_VEC(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_VEC(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_but_v3_set(but, data->vec);
-  ui_but_update_edited(but);
-  ui_apply_but_func(C, but);
+  btn_v3_set(btn, data->vec);
+  btn_update_edited(btn);
+  btn_apply_fn(C, btn);
 
-  data->retval = but->retval;
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_COLORBAND(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_COLORBAND(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_CURVE(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_CURVE(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_CURVEPROFILE(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_CURVEPROFILE(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Button Drag Multi-Number
- * \{ */
-
+/* Btn Drag Multi-Number */
 #ifdef USE_DRAG_MULTINUM
 
-/* small multi-but api */
-static void ui_multibut_add(uiHandleButtonData *data, uiBut *but)
+/* small multi-btn api */
+static void multibtn_add(BtnHandleData *data, Btn *btn)
 {
-  BLI_assert(but->flag & UI_BUT_DRAG_MULTI);
-  BLI_assert(data->multi_data.has_mbuts);
+  lib_assert(btn->flag & BTN_DRAG_MULTI);
+  lib_assert(data->multi_data.has_mbuts);
 
-  uiButMultiState *mbut_state = MEM_cnew<uiButMultiState>(__func__);
-  mbut_state->but = but;
-  mbut_state->origvalue = ui_but_value_get(but);
+  BtnMultiState *mbtn_state = mem_cnew<BtnMultiState>(__func__);
+  mbtn_state->btn = btn;
+  mbtn_state->origvalue = btn_value_get(btn);
 #  ifdef USE_ALLSELECT
-  mbut_state->select_others.is_copy = data->select_others.is_copy;
+  mbtn_state->select_others.is_copy = data->select_others.is_copy;
 #  endif
 
-  BLI_linklist_prepend(&data->multi_data.mbuts, mbut_state);
+  lib_linklist_prepend(&data->multi_data.mbtns, mbtn_state);
 
-  UI_butstore_register(data->multi_data.bs_mbuts, &mbut_state->but);
+  btnstore_register(data->multi_data.bs_mbtns, &mbtn_state->btn);
 }
 
-static uiButMultiState *ui_multibut_lookup(uiHandleButtonData *data, const uiBut *but)
+static BtnMultiState *multibtn_lookup(BtnHandleData *data, const Btn *btn)
 {
-  for (LinkNode *l = data->multi_data.mbuts; l; l = l->next) {
-    uiButMultiState *mbut_state = static_cast<uiButMultiState *>(l->link);
+  for (LinkNode *l = data->multi_data.mbtns; l; l = l->next) {
+    BtnMultiState *mbtn_state = static_cast<BtnMultiState *>(l->link);
 
-    if (mbut_state->but == but) {
-      return mbut_state;
+    if (mbtn_state->btn == btn) {
+      return mbtn_state;
     }
   }
 
   return nullptr;
 }
 
-static void ui_multibut_restore(bContext *C, uiHandleButtonData *data, uiBlock *block)
+static void multibtn_restore(Cxt *C, BtnHandleData *data, uiBlock *block)
 {
-  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
-    if (but->flag & UI_BUT_DRAG_MULTI) {
-      uiButMultiState *mbut_state = ui_multibut_lookup(data, but);
-      if (mbut_state) {
-        ui_but_value_set(but, mbut_state->origvalue);
+  LIST_FOREACH (Btn *, btn, &block->btns) {
+    if (btn->flag & BTN_DRAG_MULTI) {
+      BtnMultiState *mbtn_state = multibtn_lookup(data, btn);
+      if (mbtn_state) {
+        btn_value_set(btn, mbtn_state->origvalue);
 
 #  ifdef USE_ALLSELECT
-        if (mbut_state->select_others.elems_len > 0) {
-          ui_selectcontext_apply(
-              C, but, &mbut_state->select_others, mbut_state->origvalue, mbut_state->origvalue);
+        if (mbtn_state->select_others.elems_len > 0) {
+          ui_selcxt_apply(
+              C, btn, &mbtn_state->sel_others, mbtn_state->origvalue, mbtn_state->origvalue);
         }
 #  else
         UNUSED_VARS(C);
@@ -1343,39 +1333,39 @@ static void ui_multibut_restore(bContext *C, uiHandleButtonData *data, uiBlock *
   }
 }
 
-static void ui_multibut_free(uiHandleButtonData *data, uiBlock *block)
+static void ui_multibtn_free(BtnHandleData *data, uiBlock *block)
 {
 #  ifdef USE_ALLSELECT
   if (data->multi_data.mbuts) {
     LinkNode *list = data->multi_data.mbuts;
     while (list) {
       LinkNode *next = list->next;
-      uiButMultiState *mbut_state = static_cast<uiButMultiState *>(list->link);
+      BtnMultiState *mbtn_state = static_cast<BtnMultiState *>(list->link);
 
-      if (mbut_state->select_others.elems) {
-        MEM_freeN(mbut_state->select_others.elems);
+      if (mbtn_state->select_others.elems) {
+        mem_free(mbtn_state->select_others.elems);
       }
 
-      MEM_freeN(list->link);
-      MEM_freeN(list);
+      mem_free(list->link);
+      mem_free(list);
       list = next;
     }
   }
 #  else
-  BLI_linklist_freeN(data->multi_data.mbuts);
+  lib_linklist_free(data->multi_data.mbtns);
 #  endif
 
-  data->multi_data.mbuts = nullptr;
+  data->multi_data.mbtns = nullptr;
 
-  if (data->multi_data.bs_mbuts) {
-    UI_butstore_free(block, data->multi_data.bs_mbuts);
-    data->multi_data.bs_mbuts = nullptr;
+  if (data->multi_data.bs_mbtns) {
+    btnstore_free(block, data->multi_data.bs_mbtns);
+    data->multi_data.bs_mbtns = nullptr;
   }
 }
 
-static bool ui_multibut_states_tag(uiBut *but_active,
-                                   uiHandleButtonData *data,
-                                   const wmEvent *event)
+static bool multibtn_states_tag(Btn *btn_active,
+                                BtnHandleBtnData *data,
+                                const WinEv *ev)
 {
   float seg[2][2];
   bool changed = false;
@@ -1383,40 +1373,40 @@ static bool ui_multibut_states_tag(uiBut *but_active,
   seg[0][0] = data->multi_data.drag_start[0];
   seg[0][1] = data->multi_data.drag_start[1];
 
-  seg[1][0] = event->xy[0];
-  seg[1][1] = event->xy[1];
+  seg[1][0] = ev->xy[0];
+  seg[1][1] = ev->xy[1];
 
-  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_SETUP);
+  lib_assert(data->multi_data.init == BtnHandleMulti::INIT_SETUP);
 
-  ui_window_to_block_fl(data->region, but_active->block, &seg[0][0], &seg[0][1]);
-  ui_window_to_block_fl(data->region, but_active->block, &seg[1][0], &seg[1][1]);
+  ui_win_to_block_fl(data->rgn, btn_active->block, &seg[0][0], &seg[0][1]);
+  ui_win_to_block_fl(data->rgn, btn_active->block, &seg[1][0], &seg[1][1]);
 
-  data->multi_data.has_mbuts = false;
+  data->multi_data.has_mbtns = false;
 
-  /* follow ui_but_find_mouse_over_ex logic */
-  LISTBASE_FOREACH (uiBut *, but, &but_active->block->buttons) {
+  /* follow btn_find_mouse_over_ex logic */
+  LIST_FOREACH (Btn *, btn, &btn_active->block->btns) {
     bool drag_prev = false;
     bool drag_curr = false;
 
     /* re-set each time */
-    if (but->flag & UI_BUT_DRAG_MULTI) {
-      but->flag &= ~UI_BUT_DRAG_MULTI;
+    if (btn->flag & UI_BTN_DRAG_MULTI) {
+      btn->flag &= ~UI_BTN_DRAG_MULTI;
       drag_prev = true;
     }
 
-    if (ui_but_is_interactive(but, false)) {
+    if (btn_is_interactive(btn, false)) {
 
       /* drag checks */
-      if (but_active != but) {
-        if (ui_but_is_compatible(but_active, but)) {
+      if (btn_active != btn) {
+        if (btn_is_compatible(btn_active, btn)) {
 
-          BLI_assert(but->active == nullptr);
+          lib_assert(btn->active == nullptr);
 
           /* finally check for overlap */
-          if (BLI_rctf_isect_segment(&but->rect, seg[0], seg[1])) {
+          if (lib_rctf_isect_segment(&btn->rect, seg[0], seg[1])) {
 
-            but->flag |= UI_BUT_DRAG_MULTI;
-            data->multi_data.has_mbuts = true;
+            btn->flag |= BTN_DRAG_MULTI;
+            data->multi_data.has_mbtns = true;
             drag_curr = true;
           }
         }
@@ -1429,24 +1419,24 @@ static bool ui_multibut_states_tag(uiBut *but_active,
   return changed;
 }
 
-static void ui_multibut_states_create(uiBut *but_active, uiHandleButtonData *data)
+static void multibtn_states_create(Btn *btn_active, BtnHandleData *data)
 {
-  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_SETUP);
-  BLI_assert(data->multi_data.has_mbuts);
+  lib_assert(data->multi_data.init == BtnHandleMulti::INIT_SETUP);
+  lib_assert(data->multi_data.has_mbtns);
 
-  data->multi_data.bs_mbuts = UI_butstore_create(but_active->block);
+  data->multi_data.bs_mbtns = btnstore_create(btn_active->block);
 
-  LISTBASE_FOREACH (uiBut *, but, &but_active->block->buttons) {
-    if (but->flag & UI_BUT_DRAG_MULTI) {
-      ui_multibut_add(data, but);
+  LIST_FOREACH (Btn *, btn, &btn_active->block->btns) {
+    if (btn->flag & BTN_DRAG_MULTI) {
+      multibtn_add(data, btn);
     }
   }
 
-  /* Edit buttons proportionally to each other.
+  /* Edit btns proportionally to each other.
    * NOTE: if we mix buttons which are proportional and others which are not,
    * this may work a bit strangely. */
-  if ((but_active->rnaprop && (RNA_property_flag(but_active->rnaprop) & PROP_PROPORTIONAL)) ||
-      ELEM(but_active->unit_type, RNA_SUBTYPE_UNIT_VALUE(PROP_UNIT_LENGTH)))
+  if ((btn_active->apiprop && (api_prop_flag(btn_active->apiprop) & PROP_PROPORTIONAL)) ||
+      ELEM(btn_active->unit_type, API_SUBTYPE_UNIT_VALUE(PROP_UNIT_LENGTH)))
   {
     if (data->origvalue != 0.0) {
       data->multi_data.is_proportional = true;
@@ -1454,24 +1444,24 @@ static void ui_multibut_states_create(uiBut *but_active, uiHandleButtonData *dat
   }
 }
 
-static void ui_multibut_states_apply(bContext *C, uiHandleButtonData *data, uiBlock *block)
+static void multibtn_states_apply(Cxt *C, BtnHandleData *data, uiBlock *block)
 {
-  ARegion *region = data->region;
+  ARgn *rgn = data->rgn;
   const double value_delta = data->value - data->origvalue;
   const double value_scale = data->multi_data.is_proportional ? (data->value / data->origvalue) :
                                                                 0.0;
 
-  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_ENABLE);
-  BLI_assert(data->multi_data.skip == false);
+  lib_assert(data->multi_data.init == BtnHandleMulti::INIT_ENABLE);
+  lib_assert(data->multi_data.skip == false);
 
-  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
-    if (!(but->flag & UI_BUT_DRAG_MULTI)) {
+  LIST_FOREACH (Btn *, btn, &block->btns) {
+    if (!(btn->flag & BTN_DRAG_MULTI)) {
       continue;
     }
 
-    BtnMultiState *mbtn_state = ui_multibut_lookup(data, but);
+    BtnMultiState *mbtn_state = multibtn_lookup(data, btn);
 
-    if (mbut_state == nullptr) {
+    if (mbtn_state == nullptr) {
       /* Highly unlikely. */
       printf("%s: Can't find btn\n", __func__);
       /* While this avoids crashing, multi-button dragging will fail,
@@ -1480,13 +1470,13 @@ static void ui_multibut_states_apply(bContext *C, uiHandleButtonData *data, uiBl
     }
 
     void *active_back;
-    btn_ex_begin(C, region, but, &active_back);
+    btn_ex_begin(C, rgn, btn, &active_back);
 
 #  ifdef USE_ALLSELECT
     if (data->sel_others.is_enabled) {
       /* init once! */
-      if (mbut_state->sel_others.elems_len == 0) {
-        ui_selectcontext_begin(C, btn, &mbtn_state->sel_others);
+      if (mbtn_state->sel_others.elems_len == 0) {
+        ui_selectcxt_begin(C, btn, &mbtn_state->sel_others);
       }
       if (mbtn_state->select_others.elems_len == 0) {
         mbtn_state->select_others.elems_len = -1;
@@ -1494,8 +1484,8 @@ static void ui_multibut_states_apply(bContext *C, uiHandleButtonData *data, uiBl
     }
 
     /* Needed so we apply the right deltas. */
-    btn->active->origvalue = mbut_state->origvalue;
-    btn->active->select_others = mbut_state->select_others;
+    btn->active->origvalue = mbtn_state->origvalue;
+    btn->active->select_others = mbtn_state->select_others;
     btn->active->select_others.do_free = false;
 #  endif
 
@@ -1538,7 +1528,7 @@ static bool btn_drag_toggle_is_supported(const Btn *btn)
     return true;
   }
   if (btn_is_decorator(btn)) {
-    return ELEM(but->icon,
+    return ELEM(btn->icon,
                 ICON_DECORATE,
                 ICON_DECORATE_KEYFRAME,
                 ICON_DECORATE_ANIM,
@@ -1566,7 +1556,7 @@ static int btn_drag_toggle_pushed_state(Btn *btn)
 struct uiDragToggleHandle {
   /* init */
   int pushed_state;
-  float but_cent_start[2];
+  float btn_cent_start[2];
 
   bool is_xy_lock_init;
   bool xy_lock[2];
@@ -1630,7 +1620,7 @@ static bool ui_drag_toggle_set_xy_xy(
 
 static void ui_drag_toggle_set(Cxt *C, uiDragToggleHandle *drag_info, const int xy_input[2])
 {
-  ARgn *rgn = cxt_win_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
   bool do_draw = false;
 
   /* Initialize Locking:
@@ -1709,7 +1699,7 @@ static int ui_handler_rgn_drag_toggle(Cxt *C, const WinEv *ev, void *userdata)
 
   if (done) {
     Win *win = cxt_win(C);
-    const ARgn *rhn = cxt_win_rgn(C);
+    const ARgn *rgn = cxt_win_rgn(C);
     Btn *btn = btn_find_mouse_over_ex(
         region, drag_info->xy_init, true, false, nullptr, nullptr);
 
@@ -1725,16 +1715,16 @@ static int ui_handler_rgn_drag_toggle(Cxt *C, const WinEv *ev, void *userdata)
     ui_handler_rgn_drag_toggle_remove(C, drag_info);
 
     win_ev_add_mousemove(win);
-    return WM_UI_HANDLER_BREAK;
+    return WIN_UI_HANDLER_BREAK;
   }
-  return WM_UI_HANDLER_CONTINUE;
+  return WIN_UI_HANDLER_CONTINUE;
 }
 
 static bool btn_is_drag_toggle(const Btn *btn)
 {
   return ((ui_drag_toggle_btn_is_supported(btn) == true) &&
           /* Menu check is important so the btn dragged over isn't removed instantly. */
-          (ui_block_is_menu(but->block) == false));
+          (ui_block_is_menu(btn->block) == false));
 }
 
 #endif /* USE_DRAG_TOGGLE */
@@ -1996,7 +1986,6 @@ static void ui_selcxt_apply(Cxt *C,
 #endif /* USE_ALLSEL */
 
 /* Btn Drag */
-
 static bool btn_drag_init(Cxt *C,
                           Btn *btn,
                           BtnHandleData *data,
@@ -2115,7 +2104,6 @@ static bool btn_drag_init(Cxt *C,
 }
 
 /* Btn Apply */
-
 static void btn_apply_IMG(Cxt *C, Btn *btn, BtnHandleData *data)
 {
   btn_apply_fn(C, btn);
@@ -2184,7 +2172,7 @@ static void btn_apply(
     }
     else
 #  endif
-        if (data->select_others.elems_len == 0)
+        if (data->sel_others.elems_len == 0)
     {
       Win *win = cxt_win(C);
       Ev *ev = win->evstate;
@@ -2413,7 +2401,7 @@ static void btn_set_float_array(
       copy_v3_v3(data->vec, values);
     }
     else {
-      data->value = values[but->rnaindex];
+      data->value = values[but->apiindex];
     }
   }
 
@@ -2583,52 +2571,52 @@ static void btn_copy_colorband(Btn *btn)
   }
 }
 
-static void ui_but_paste_colorband(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_paste_colorband(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  if (but_copypaste_coba.tot != 0) {
-    if (!but->poin) {
-      but->poin = reinterpret_cast<char *>(MEM_cnew<ColorBand>(__func__));
+  if (btn_copypaste_coba.tot != 0) {
+    if (!btn->ptr) {
+      btn->ptr = reinterpret_cast<char *>(me,_cnew<ColorBand>(__func__));
     }
 
-    button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+    btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
     memcpy(data->coba, &but_copypaste_coba, sizeof(ColorBand));
-    button_activate_state(C, but, BUTTON_STATE_EXIT);
+    btn_activate_state(C, btn, BTN_STATE_EXIT);
   }
 }
 
-static void ui_but_copy_curvemapping(uiBut *but)
+static void btn_copy_curvemapping(Btn *btn)
 {
-  if (but->poin != nullptr) {
-    but_copypaste_curve_alive = true;
-    BKE_curvemapping_free_data(&but_copypaste_curve);
-    BKE_curvemapping_copy_data(&but_copypaste_curve, (CurveMapping *)but->poin);
+  if (btn->ptr != nullptr) {
+    btn_copypaste_curve_alive = true;
+    dune_curvemapping_free_data(&btn_copypaste_curve);
+    dune_curvemapping_copy_data(&btn_copypaste_curve, (CurveMapping *)btn->ptr);
   }
 }
 
-static void ui_but_paste_curvemapping(bContext *C, uiBut *but)
+static void btn_paste_curvemapping(Cxt *C, Btn *btn)
 {
-  if (but_copypaste_curve_alive) {
-    if (!but->poin) {
-      but->poin = reinterpret_cast<char *>(MEM_cnew<CurveMapping>(__func__));
+  if (btn_copypaste_curve_alive) {
+    if (!btn->ptr) {
+      btn->ptr = reinterpret_cast<char *>(mem_cnew<CurveMapping>(__func__));
     }
 
-    button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
-    BKE_curvemapping_free_data((CurveMapping *)but->poin);
-    BKE_curvemapping_copy_data((CurveMapping *)but->poin, &but_copypaste_curve);
-    button_activate_state(C, but, BUTTON_STATE_EXIT);
+    btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
+    dune_curvemapping_free_data((CurveMapping *)btn->ptr);
+    dune_curvemapping_copy_data((CurveMapping *)btn->ptr, &btn_copypaste_curve);
+    btn_activate_state(C, btn, BTN_STATE_EXIT);
   }
 }
 
-static void ui_but_copy_CurveProfile(uiBut *but)
+static void btn_copy_CurveProfile(Btn *btn)
 {
-  if (but->poin != nullptr) {
-    but_copypaste_profile_alive = true;
-    BKE_curveprofile_free_data(&but_copypaste_profile);
-    BKE_curveprofile_copy_data(&but_copypaste_profile, (CurveProfile *)but->poin);
+  if (btn->ptr != nullptr) {
+    btn_copypaste_profile_alive = true;
+    dune_curveprofile_free_data(&btn_copypaste_profile);
+    dune_curveprofile_copy_data(&btn_copypaste_profile, (CurveProfile *)btn->ptr);
   }
 }
 
-static void ui_but_paste_CurveProfile(bContext *C, uiBut *but)
+static void ui_but_paste_CurveProfile(bContext *C, uiBut *btn)
 {
   if (but_copypaste_profile_alive) {
     if (!but->poin) {
