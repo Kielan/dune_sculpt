@@ -1842,95 +1842,95 @@ static bool ui_selcxt_begin(Cxt *C, Btn *btn, uiSelCxtStore *selcxt_data)
   return success;
 }
 
-static void ui_selectcontext_end(uiBut *but, uiSelectContextStore *selctx_data)
+static void ui_selcxt_end(Btn *btn, uiSelCxtStore *selcxt_data)
 {
-  if (selctx_data->do_free) {
-    if (selctx_data->elems) {
-      MEM_freeN(selctx_data->elems);
+  if (selcxt_data->do_free) {
+    if (selcxt_data->elems) {
+      mem_free(selcxt_data->elems);
     }
   }
 
-  but->flag &= ~UI_BUT_IS_SELECT_CONTEXT;
+  btn->flag &= ~BTN_IS_SEL_CXT;
 }
 
-static void ui_selectcontext_apply(bContext *C,
-                                   uiBut *but,
-                                   uiSelectContextStore *selctx_data,
-                                   const double value,
-                                   const double value_orig)
+static void ui_selcxt_apply(Cxt *C,
+                            Btn *btn,
+                            uiSelCxtStore *selcxt_data,
+                            const double value,
+                            const double value_orig)
 {
-  if (selctx_data->elems) {
-    PropertyRNA *prop = but->rnaprop;
-    PropertyRNA *lprop = but->rnaprop;
-    const int index = but->rnaindex;
-    const bool use_delta = (selctx_data->is_copy == false);
+  if (selcxt_data->elems) {
+    ApiProp *prop = btn->apiprop;
+    ApiProp *lprop = btn->apiprop;
+    const int index = btn->apiindex;
+    const bool use_delta = (selcxt_data->is_copy == false);
 
     union {
       bool b;
       int i;
       float f;
       char *str;
-      PointerRNA p;
+      ApiPtr p;
     } delta, min, max;
 
-    const bool is_array = RNA_property_array_check(prop);
-    const int rna_type = RNA_property_type(prop);
+    const bool is_array = api_prop_array_check(prop);
+    const int api_type = api_prop_type(prop);
 
-    if (rna_type == PROP_FLOAT) {
+    if (api_type == PROP_FLOAT) {
       delta.f = use_delta ? (value - value_orig) : value;
-      RNA_property_float_range(&but->rnapoin, prop, &min.f, &max.f);
+      api_prop_float_range(&btn->apiptr, prop, &min.f, &max.f);
     }
-    else if (rna_type == PROP_INT) {
+    else if (api_type == PROP_INT) {
       delta.i = use_delta ? (int(value) - int(value_orig)) : int(value);
-      RNA_property_int_range(&but->rnapoin, prop, &min.i, &max.i);
+      api_prop_int_range(&btn->apiptr, prop, &min.i, &max.i);
     }
-    else if (rna_type == PROP_ENUM) {
+    else if (api_type == PROP_ENUM) {
       /* Not a delta in fact. */
-      delta.i = RNA_property_enum_get(&but->rnapoin, prop);
+      delta.i = api_prop_enum_get(&btn->apiptr, prop);
     }
-    else if (rna_type == PROP_BOOLEAN) {
+    else if (api_type == PROP_BOOL) {
       if (is_array) {
         /* Not a delta in fact. */
-        delta.b = RNA_property_boolean_get_index(&but->rnapoin, prop, index);
+        delta.b = api_prop_bool_get_index(&btn->apiptr, prop, index);
       }
       else {
         /* Not a delta in fact. */
-        delta.b = RNA_property_boolean_get(&but->rnapoin, prop);
+        delta.b = api_prop_bool_get(&btn->apiptr, prop);
       }
     }
-    else if (rna_type == PROP_POINTER) {
+    else if (api_type == PROP_PTR) {
       /* Not a delta in fact. */
-      delta.p = RNA_property_pointer_get(&but->rnapoin, prop);
+      delta.p = api_prop_ptr_get(&btn->apiptr, prop);
     }
-    else if (rna_type == PROP_STRING) {
+    else if (api_type == PROP_STRING) {
       /* Not a delta in fact. */
-      delta.str = RNA_property_string_get_alloc(&but->rnapoin, prop, nullptr, 0, nullptr);
+      delta.str = api_prop_string_get_alloc(&btn->apiptr, prop, nullptr, 0, nullptr);
     }
 
 #  ifdef USE_ALLSELECT_LAYER_HACK
-    /* make up for not having 'handle_layer_buttons' */
+    /* make up for not having 'handle_layer_btns' */
     {
-      const PropertySubType subtype = RNA_property_subtype(prop);
+      const PropSubType subtype = api_prop_subtype(prop);
 
-      if ((rna_type == PROP_BOOLEAN) && ELEM(subtype, PROP_LAYER, PROP_LAYER_MEMBER) && is_array &&
-          /* could check for 'handle_layer_buttons' */
-          but->func)
+      if ((api_type == PROP_BOOL) && ELEM(subtype, PROP_LAYER, PROP_LAYER_MEMBER) && is_array &&
+          /* could check for 'handle_layer_btns' */
+          btn->fn)
       {
-        wmWindow *win = CTX_wm_window(C);
-        if ((win->eventstate->modifier & KM_SHIFT) == 0) {
-          const int len = RNA_property_array_length(&but->rnapoin, prop);
-          bool *tmparray = static_cast<bool *>(MEM_callocN(sizeof(bool) * len, __func__));
+        Win *win = cxt_win(C);
+        if ((win->evstate->mod & KM_SHIFT) == 0) {
+          const int len = api_prop_array_length(&btn->apiptr, prop);
+          bool *tmparray = static_cast<bool *>(mem_calloc(sizeof(bool) * len, __func__));
 
           tmparray[index] = true;
 
-          for (int i = 0; i < selctx_data->elems_len; i++) {
-            uiSelectContextElem *other = &selctx_data->elems[i];
-            PointerRNA lptr = other->ptr;
-            RNA_property_boolean_set_array(&lptr, lprop, tmparray);
-            RNA_property_update(C, &lptr, lprop);
+          for (int i = 0; i < selcxt_data->elems_len; i++) {
+            uiSelCxtElem *other = &selcxt_data->elems[i];
+            ApiPtr lptr = other->ptr;
+            api_prop_bool_set_array(&lptr, lprop, tmparray);
+            api_prop_update(C, &lptr, lprop);
           }
 
-          MEM_freeN(tmparray);
+          mem_free(tmparray);
 
           return;
         }
@@ -1938,131 +1938,127 @@ static void ui_selectcontext_apply(bContext *C,
     }
 #  endif
 
-    for (int i = 0; i < selctx_data->elems_len; i++) {
-      uiSelectContextElem *other = &selctx_data->elems[i];
-      PointerRNA lptr = other->ptr;
+    for (int i = 0; i < selcxt_data->elems_len; i++) {
+      uiSelCxtElem *other = &selcxt_data->elems[i];
+      ApiPtr lptr = other->ptr;
 
-      if (rna_type == PROP_FLOAT) {
+      if (api_type == PROP_FLOAT) {
         float other_value = use_delta ? (other->val_f + delta.f) : delta.f;
         CLAMP(other_value, min.f, max.f);
         if (is_array) {
-          RNA_property_float_set_index(&lptr, lprop, index, other_value);
+          api_prop_float_set_index(&lptr, lprop, index, other_value);
         }
         else {
-          RNA_property_float_set(&lptr, lprop, other_value);
+          api_prop_float_set(&lptr, lprop, other_value);
         }
       }
-      else if (rna_type == PROP_INT) {
+      else if (api_type == PROP_INT) {
         int other_value = use_delta ? (other->val_i + delta.i) : delta.i;
         CLAMP(other_value, min.i, max.i);
         if (is_array) {
-          RNA_property_int_set_index(&lptr, lprop, index, other_value);
+          api_prop_int_set_index(&lptr, lprop, index, other_value);
         }
         else {
-          RNA_property_int_set(&lptr, lprop, other_value);
+          api_prop_int_set(&lptr, lprop, other_value);
         }
       }
-      else if (rna_type == PROP_BOOLEAN) {
+      else if (api_type == PROP_BOOL) {
         const bool other_value = delta.b;
         if (is_array) {
-          RNA_property_boolean_set_index(&lptr, lprop, index, other_value);
+          api_prop_bool_set_index(&lptr, lprop, index, other_value);
         }
         else {
-          RNA_property_boolean_set(&lptr, lprop, delta.b);
+          api_prop_bool_set(&lptr, lprop, delta.b);
         }
       }
-      else if (rna_type == PROP_ENUM) {
+      else if (api_type == PROP_ENUM) {
         const int other_value = delta.i;
-        BLI_assert(!is_array);
-        RNA_property_enum_set(&lptr, lprop, other_value);
+        lib_assert(!is_array);
+        api_prop_enum_set(&lptr, lprop, other_value);
       }
-      else if (rna_type == PROP_POINTER) {
-        const PointerRNA other_value = delta.p;
-        RNA_property_pointer_set(&lptr, lprop, other_value, nullptr);
+      else if (api_type == PROP_PTR) {
+        const ApiPtr other_value = delta.p;
+        api_prop_ptr_set(&lptr, lprop, other_value, nullptr);
       }
-      else if (rna_type == PROP_STRING) {
+      else if (api_type == PROP_STRING) {
         const char *other_value = delta.str;
-        RNA_property_string_set(&lptr, lprop, other_value);
+        api_prop_string_set(&lptr, lprop, other_value);
       }
 
-      RNA_property_update(C, &lptr, prop);
+      api_prop_update(C, &lptr, prop);
     }
-    if (rna_type == PROP_STRING) {
-      MEM_freeN(delta.str);
+    if (api_type == PROP_STRING) {
+      mem_free(delta.str);
     }
   }
 }
 
-#endif /* USE_ALLSELECT */
+#endif /* USE_ALLSEL */
 
-/** \} */
+/* Btn Drag */
 
-/* -------------------------------------------------------------------- */
-/** \name Button Drag
- * \{ */
-
-static bool ui_but_drag_init(bContext *C,
-                             uiBut *but,
-                             uiHandleButtonData *data,
-                             const wmEvent *event)
+static bool btn_drag_init(Cxt *C,
+                          Btn *btn,
+                          BtnHandleData *data,
+                          const WinEv *ev)
 {
   /* prevent other WM gestures to start while we try to drag */
-  WM_gestures_remove(CTX_wm_window(C));
+  win_gestures_remove(cxt_win(C));
 
   /* Clamp the maximum to half the UI unit size so a high user preference
    * doesn't require the user to drag more than half the default button height. */
   const int drag_threshold = min_ii(
-      WM_event_drag_threshold(event),
-      int((UI_UNIT_Y / 2) * ui_block_to_window_scale(data->region, but->block)));
+      win_ev_drag_threshold(ev),
+      int((UI_UNIT_Y / 2) * ui_block_to_win_scale(data->rgn, btn->block)));
 
-  if (abs(data->dragstartx - event->xy[0]) + abs(data->dragstarty - event->xy[1]) > drag_threshold)
+  if (abs(data->dragstartx - ev->xy[0]) + abs(data->dragstarty - ev->xy[1]) > drag_threshold)
   {
-    button_activate_state(C, but, BUTTON_STATE_EXIT);
+    btn_activate_state(C, btn, BTN_STATE_EXIT);
     data->cancel = true;
 #ifdef USE_DRAG_TOGGLE
-    if (ui_drag_toggle_but_is_supported(but)) {
-      uiDragToggleHandle *drag_info = MEM_cnew<uiDragToggleHandle>(__func__);
-      ARegion *region_prev;
+    if (ui_drag_toggle_btn_is_supported(btn)) {
+      uiDragToggleHandle *drag_info = mem_cnew<uiDragToggleHandle>(__func__);
+      ARgn *rgn_prev;
 
       /* call here because regular mouse-up event won't run,
-       * typically 'button_activate_exit()' handles this */
-      ui_apply_but_autokey(C, but);
+       * typically 'btn_activate_exit()' handles this */
+      ui_apply_but_autokey(C, btn);
 
-      drag_info->pushed_state = ui_drag_toggle_but_pushed_state(but);
-      drag_info->but_cent_start[0] = BLI_rctf_cent_x(&but->rect);
-      drag_info->but_cent_start[1] = BLI_rctf_cent_y(&but->rect);
+      drag_info->pushed_state = btn_drag_toggle_pushed_state(btn);
+      drag_info->btn_cent_start[0] = lib_rctf_cent_x(&btn->rect);
+      drag_info->btn_cent_start[1] = lib_rctf_cent_y(&btn->rect);
       copy_v2_v2_int(drag_info->xy_init, event->xy);
       copy_v2_v2_int(drag_info->xy_last, event->xy);
 
       /* needed for toggle drag on popups */
-      region_prev = CTX_wm_region(C);
-      CTX_wm_region_set(C, data->region);
+      rgn_prev = cxt_win_rgn(C);
+      cxt_win_rgn_set(C, data->rgn);
 
-      WM_event_add_ui_handler(C,
-                              &data->window->modalhandlers,
-                              ui_handler_region_drag_toggle,
-                              ui_handler_region_drag_toggle_remove,
-                              drag_info,
-                              WM_HANDLER_BLOCKING);
+      win_ev_add_ui_handler(C,
+                            &data->win->modalhandlers,
+                            ui_handler_rgn_drag_toggle,
+                            ui_handler_rgn_drag_toggle_remove,
+                            drag_info,
+                            WIN_HANDLER_BLOCKING);
 
-      CTX_wm_region_set(C, region_prev);
+      cxt_win_rgn_set(C, rgn_prev);
 
       /* Initialize alignment for single row/column regions,
        * otherwise we use the relative position of the first other button dragged over. */
-      if (ELEM(data->region->regiontype,
+      if (ELEM(data->rgn->rgntype,
                RGN_TYPE_NAV_BAR,
                RGN_TYPE_HEADER,
                RGN_TYPE_TOOL_HEADER,
                RGN_TYPE_FOOTER,
                RGN_TYPE_ASSET_SHELF_HEADER))
       {
-        const int region_alignment = RGN_ALIGN_ENUM_FROM_MASK(data->region->alignment);
+        const int rgn_alignment = RGN_ALIGN_ENUM_FROM_MASK(data->rgn->alignment);
         int lock_axis = -1;
 
-        if (ELEM(region_alignment, RGN_ALIGN_LEFT, RGN_ALIGN_RIGHT)) {
+        if (ELEM(rgn_alignment, RGN_ALIGN_LEFT, RGN_ALIGN_RIGHT)) {
           lock_axis = 0;
         }
-        else if (ELEM(region_alignment, RGN_ALIGN_TOP, RGN_ALIGN_BOTTOM)) {
+        else if (ELEM(rgn_alignment, RGN_ALIGN_TOP, RGN_ALIGN_BOTTOM)) {
           lock_axis = 1;
         }
         if (lock_axis != -1) {
@@ -2073,44 +2069,44 @@ static bool ui_but_drag_init(bContext *C,
     }
     else
 #endif
-        if (but->type == UI_BTYPE_COLOR)
+        if (btn->type == BTYPE_COLOR)
     {
       bool valid = false;
-      uiDragColorHandle *drag_info = MEM_cnew<uiDragColorHandle>(__func__);
+      uiDragColorHandle *drag_info = mem_cnew<uiDragColorHandle>(__func__);
 
-      /* TODO: support more button pointer types. */
-      if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
-        ui_but_v3_get(but, drag_info->color);
+      /* TODO: support more btn ptr types. */
+      if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR_GAMMA) {
+        btn_v3_get(btn, drag_info->color);
         drag_info->gamma_corrected = true;
         valid = true;
       }
-      else if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR) {
+      else if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR) {
         ui_but_v3_get(but, drag_info->color);
         drag_info->gamma_corrected = false;
         valid = true;
       }
-      else if (ELEM(but->pointype, UI_BUT_POIN_FLOAT, UI_BUT_POIN_CHAR)) {
-        ui_but_v3_get(but, drag_info->color);
-        copy_v3_v3(drag_info->color, (float *)but->poin);
+      else if (ELEM(btn->ptrtype, BTN_PTR_FLOAT, BTN_PTR_CHAR)) {
+        btn_v3_get(btn, drag_info->color);
+        copy_v3_v3(drag_info->color, (float *)btn->ptr);
         valid = true;
       }
 
       if (valid) {
-        WM_event_start_drag(C, ICON_COLOR, WM_DRAG_COLOR, drag_info, 0.0, WM_DRAG_FREE_DATA);
+        win_ev_start_drag(C, ICON_COLOR, WIN_DRAG_COLOR, drag_info, 0.0, WIN_DRAG_FREE_DATA);
       }
       else {
-        MEM_freeN(drag_info);
+        mem_free(drag_info);
         return false;
       }
     }
-    else if (but->type == UI_BTYPE_VIEW_ITEM) {
-      const uiButViewItem *view_item_but = (uiButViewItem *)but;
-      if (view_item_but->view_item) {
-        return UI_view_item_drag_start(C, view_item_but->view_item);
+    else if (btn->type == BTYPE_VIEW_ITEM) {
+      const BtnViewItem *view_item_btn = (BtnViewItem *)btn;
+      if (view_item_btn->view_item) {
+        return ui_view_item_drag_start(C, view_item_btn->view_item);
       }
     }
     else {
-      ui_but_drag_start(C, but);
+      btn_drag_start(C, btn);
     }
     return true;
   }
@@ -2118,44 +2114,40 @@ static bool ui_but_drag_init(bContext *C,
   return false;
 }
 
-/** \} */
+/* Btn Apply */
 
-/* -------------------------------------------------------------------- */
-/** \name Button Apply
- * \{ */
-
-static void ui_apply_but_IMAGE(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_IMG(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_HISTOGRAM(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_HISTOGRAM(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_WAVEFORM(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_WAVEFORM(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but_TRACKPREVIEW(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void btn_apply_TRACKPREVIEW(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  ui_apply_but_func(C, but);
-  data->retval = but->retval;
+  btn_apply_fn(C, btn);
+  data->retval = btn->retval;
   data->applied = true;
 }
 
-static void ui_apply_but(
-    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const bool interactive)
+static void btn_apply(
+    Cxt *C, uiBlock *block, Btn *btn, BtnHandleData *data, const bool interactive)
 {
-  const eButType but_type = but->type; /* Store as const to quiet maybe uninitialized warning. */
+  const eBtnType btn_type = btn->type; /* Store as const to quiet maybe uninitialized warning. */
 
   data->retval = 0;
 
@@ -2167,7 +2159,7 @@ static void ui_apply_but(
     }
 
     if (data->str) {
-      MEM_freeN(data->str);
+      mem_free(data->str);
     }
     data->str = data->origstr;
     data->origstr = nullptr;
@@ -2187,173 +2179,173 @@ static void ui_apply_but(
 
 #ifdef USE_ALLSELECT
 #  ifdef USE_DRAG_MULTINUM
-    if (but->flag & UI_BUT_DRAG_MULTI) {
+    if (btn->flag & BTN_DRAG_MULTI) {
       /* pass */
     }
     else
 #  endif
         if (data->select_others.elems_len == 0)
     {
-      wmWindow *win = CTX_wm_window(C);
-      wmEvent *event = win->eventstate;
+      Win *win = cxt_win(C);
+      Ev *ev = win->evstate;
       /* May have been enabled before activating, don't do for array pasting. */
-      if (data->select_others.is_enabled || IS_ALLSELECT_EVENT(event)) {
-        /* See comment for #IS_ALLSELECT_EVENT why this needs to be filtered here. */
-        const bool is_array_paste = (event->val == KM_PRESS) &&
-                                    (event->modifier & (KM_CTRL | KM_OSKEY)) &&
-                                    (event->modifier & KM_SHIFT) == 0 && (event->type == EVT_VKEY);
+      if (data->sel_others.is_enabled || IS_ALLSEL_EV(ev)) {
+        /* See comment for IS_ALLSEL_EV why this needs to be filtered here. */
+        const bool is_array_paste = (ev->val == KM_PRESS) &&
+                                    (ev->mod & (KM_CTRL | KM_OSKEY)) &&
+                                    (ev->mod & KM_SHIFT) == 0 && (ev->type == EVT_VKEY);
         if (!is_array_paste) {
-          ui_selectcontext_begin(C, but, &data->select_others);
-          data->select_others.is_enabled = true;
+          ui_selcxt_begin(C, btn, &data->sel_others);
+          data->sel_others.is_enabled = true;
         }
       }
     }
-    if (data->select_others.elems_len == 0) {
+    if (data->sel_others.elems_len == 0) {
       /* Don't check again. */
-      data->select_others.elems_len = -1;
+      data->sel_others.elems_len = -1;
     }
 #endif
   }
 
   /* ensures we are writing actual values */
-  char *editstr = but->editstr;
-  double *editval = but->editval;
-  float *editvec = but->editvec;
+  char *editstr = btn->editstr;
+  double *editval = btn->editval;
+  float *editvec = btn->editvec;
   ColorBand *editcoba;
   CurveMapping *editcumap;
   CurveProfile *editprofile;
-  if (but_type == UI_BTYPE_COLORBAND) {
-    uiButColorBand *but_coba = (uiButColorBand *)but;
-    editcoba = but_coba->edit_coba;
+  if (btn_type == BTYPE_COLORBAND) {
+    BtnColorBand *btn_coba = (BtnColorBand *)btn;
+    editcoba = btn_coba->edit_coba;
   }
-  else if (but_type == UI_BTYPE_CURVE) {
-    uiButCurveMapping *but_cumap = (uiButCurveMapping *)but;
-    editcumap = but_cumap->edit_cumap;
+  else if (btn_type == BTYPE_CURVE) {
+    BtnCurveMapping *btn_cumap = (BtnCurveMapping *)btn;
+    editcumap = btn_cumap->edit_cumap;
   }
-  else if (but_type == UI_BTYPE_CURVEPROFILE) {
-    uiButCurveProfile *but_profile = (uiButCurveProfile *)but;
-    editprofile = but_profile->edit_profile;
+  else if (btn_type == BTYPE_CURVEPROFILE) {
+    BtnCurveProfile *btn_profile = (BtnCurveProfile *)btn;
+    editprofile = btn_profile->edit_profile;
   }
-  but->editstr = nullptr;
-  but->editval = nullptr;
-  but->editvec = nullptr;
-  if (but_type == UI_BTYPE_COLORBAND) {
-    uiButColorBand *but_coba = (uiButColorBand *)but;
-    but_coba->edit_coba = nullptr;
+  btn->editstr = nullptr;
+  btn->editval = nullptr;
+  btn->editvec = nullptr;
+  if (btn_type == BTYPE_COLORBAND) {
+    BtnColorBand *btn_coba = (BtnColorBand *)btn;
+    btn_coba->edit_coba = nullptr;
   }
-  else if (but_type == UI_BTYPE_CURVE) {
-    uiButCurveMapping *but_cumap = (uiButCurveMapping *)but;
-    but_cumap->edit_cumap = nullptr;
+  else if (btn_type == BTYPE_CURVE) {
+    BtnCurveMapping *btn_cumap = (BtnCurveMapping *)btn;
+    btn_cumap->edit_cumap = nullptr;
   }
-  else if (but_type == UI_BTYPE_CURVEPROFILE) {
-    uiButCurveProfile *but_profile = (uiButCurveProfile *)but;
-    but_profile->edit_profile = nullptr;
+  else if (btn_type == BTYPE_CURVEPROFILE) {
+    BtnCurveProfile *btn_profile = (BtnCurveProfile *)btn;
+    btn_profile->edit_profile = nullptr;
   }
 
   /* handle different types */
-  switch (but_type) {
-    case UI_BTYPE_BUT:
-    case UI_BTYPE_DECORATOR:
-      ui_apply_but_BUT(C, but, data);
+  switch (btn_type) {
+    case BTYPE_BTN:
+    case BTYPE_DECORATOR:
+      btn_apply_BTN(C, btn, data);
       break;
-    case UI_BTYPE_TEXT:
-    case UI_BTYPE_SEARCH_MENU:
-      ui_apply_but_TEX(C, but, data);
+    case BTYPE_TEXT:
+    case BTYPE_SEARCH_MENU:
+      btn_apply_TEX(C, btn, data);
       break;
-    case UI_BTYPE_BUT_TOGGLE:
-    case UI_BTYPE_TOGGLE:
-    case UI_BTYPE_TOGGLE_N:
-    case UI_BTYPE_ICON_TOGGLE:
-    case UI_BTYPE_ICON_TOGGLE_N:
-    case UI_BTYPE_CHECKBOX:
-    case UI_BTYPE_CHECKBOX_N:
-      ui_apply_but_TOG(C, but, data);
+    case BTYPE_BTN_TOGGLE:
+    case BTYPE_TOGGLE:
+    case BTYPE_TOGGLE_N:
+    case BTYPE_ICON_TOGGLE:
+    case BTYPE_ICON_TOGGLE_N:
+    case BTYPE_CHECKBOX:
+    case BTYPE_CHECKBOX_N:
+      btn_apply_TOG(C, btn, data);
       break;
-    case UI_BTYPE_ROW:
-      ui_apply_but_ROW(C, block, but, data);
+    case BTYPE_ROW:
+      btn_apply_ROW(C, block, btn, data);
       break;
-    case UI_BTYPE_VIEW_ITEM:
-      ui_apply_but_VIEW_ITEM(C, block, but, data);
+    case BTYPE_VIEW_ITEM:
+      btn_apply_VIEW_ITEM(C, block, btn, data);
       break;
-    case UI_BTYPE_LISTROW:
-      ui_apply_but_LISTROW(C, block, but, data);
+    case BTYPE_LISTROW:
+      btn_apply_LISTROW(C, block, btn, data);
       break;
-    case UI_BTYPE_TAB:
-      ui_apply_but_TAB(C, but, data);
+    case BTYPE_TAB:
+      btn_apply_TAB(C, btn, data);
       break;
-    case UI_BTYPE_SCROLL:
-    case UI_BTYPE_GRIP:
-    case UI_BTYPE_NUM:
-    case UI_BTYPE_NUM_SLIDER:
-      ui_apply_but_NUM(C, but, data);
+    case BTYPE_SCROLL:
+    case BTYPE_GRIP:
+    case BTYPE_NUM:
+    case BTYPE_NUM_SLIDER:
+      btn_apply_NUM(C, btn, data);
       break;
-    case UI_BTYPE_MENU:
-    case UI_BTYPE_BLOCK:
-    case UI_BTYPE_PULLDOWN:
-      ui_apply_but_BLOCK(C, but, data);
+    case BTYPE_MENU:
+    case BTYPE_BLOCK:
+    case BTYPE_PULLDOWN:
+      btn_apply_BLOCK(C, btn, data);
       break;
-    case UI_BTYPE_COLOR:
+    case BTYPE_COLOR:
       if (data->cancel) {
-        ui_apply_but_VEC(C, but, data);
+        btn_apply_VEC(C, btn, data);
       }
       else {
-        ui_apply_but_BLOCK(C, but, data);
+        btn_apply_BLOCK(C, btn, data);
       }
       break;
-    case UI_BTYPE_BUT_MENU:
-      ui_apply_but_BUTM(C, but, data);
+    case BTYPE_BTN_MENU:
+      btn_apply_BUTM(C, btn, data);
       break;
-    case UI_BTYPE_UNITVEC:
-    case UI_BTYPE_HSVCUBE:
-    case UI_BTYPE_HSVCIRCLE:
-      ui_apply_but_VEC(C, but, data);
+    case BTYPE_UNITVEC:
+    case BTYPE_HSVCUBE:
+    case BTYPE_HSVCIRCLE:
+      btn_apply_VEC(C, btn, data);
       break;
-    case UI_BTYPE_COLORBAND:
-      ui_apply_but_COLORBAND(C, but, data);
+    case BTYPE_COLORBAND:
+      btn_apply_COLORBAND(C, btn, data);
       break;
-    case UI_BTYPE_CURVE:
-      ui_apply_but_CURVE(C, but, data);
+    case BTYPE_CURVE:
+      btn_apply_CURVE(C, btn, data);
       break;
-    case UI_BTYPE_CURVEPROFILE:
-      ui_apply_but_CURVEPROFILE(C, but, data);
+    case BTYPE_CURVEPROFILE:
+      btn_apply_CURVEPROFILE(C, btn, data);
       break;
-    case UI_BTYPE_KEY_EVENT:
-    case UI_BTYPE_HOTKEY_EVENT:
-      ui_apply_but_BUT(C, but, data);
+    case BTYPE_KEY_EVENT:
+    case BTYPE_HOTKEY_EVENT:
+      btn_apply_BTN(C, btn, data);
       break;
-    case UI_BTYPE_IMAGE:
-      ui_apply_but_IMAGE(C, but, data);
+    case BTYPE_IMAGE:
+      btn_apply_IMAGE(C, btn, data);
       break;
-    case UI_BTYPE_HISTOGRAM:
-      ui_apply_but_HISTOGRAM(C, but, data);
+    case BTYPE_HISTOGRAM:
+      btn_apply_HISTOGRAM(C, btn, data);
       break;
-    case UI_BTYPE_WAVEFORM:
-      ui_apply_but_WAVEFORM(C, but, data);
+    case BTYPE_WAVEFORM:
+      btn_apply_WAVEFORM(C, btn, data);
       break;
-    case UI_BTYPE_TRACK_PREVIEW:
-      ui_apply_but_TRACKPREVIEW(C, but, data);
+    case BTYPE_TRACK_PREVIEW:
+      btn_apply_TRACKPREVIEW(C, btn, data);
       break;
     default:
       break;
   }
 
 #ifdef USE_DRAG_MULTINUM
-  if (data->multi_data.has_mbuts) {
-    if ((data->multi_data.init == uiHandleButtonMulti::INIT_ENABLE) &&
+  if (data->multi_data.has_mbtns) {
+    if ((data->multi_data.init == BtnHandleMulti::INIT_ENABLE) &&
         (data->multi_data.skip == false))
     {
       if (data->cancel) {
-        ui_multibut_restore(C, data, block);
+        multibtn_restore(C, data, block);
       }
       else {
-        ui_multibut_states_apply(C, data, block);
+        multibtn_states_apply(C, data, block);
       }
     }
   }
 #endif
 
 #ifdef USE_ALLSELECT
-  ui_selectcontext_apply(C, but, &data->select_others, data->value, data->origvalue);
+  ui_selcxt_apply(C, btn, &data->sel_others, data->value, data->origvalue);
 #endif
 
   if (data->cancel) {
@@ -2361,68 +2353,63 @@ static void ui_apply_but(
     zero_v3(data->origvec);
   }
 
-  but->editstr = editstr;
-  but->editval = editval;
-  but->editvec = editvec;
-  if (but_type == UI_BTYPE_COLORBAND) {
-    uiButColorBand *but_coba = (uiButColorBand *)but;
+  btn->editstr = editstr;
+  btn->editval = editval;
+  btn->editvec = editvec;
+  if (btn_type == BTYPE_COLORBAND) {
+    BtnColorBand *btn_coba = (BtnColorBand *)btn;
     but_coba->edit_coba = editcoba;
   }
-  else if (but_type == UI_BTYPE_CURVE) {
-    uiButCurveMapping *but_cumap = (uiButCurveMapping *)but;
-    but_cumap->edit_cumap = editcumap;
+  else if (btn_type == BTYPE_CURVE) {
+    BtnCurveMapping *but_cumap = (BtnCurveMapping *)btn;
+    btn_cumap->edit_cumap = editcumap;
   }
-  else if (but_type == UI_BTYPE_CURVEPROFILE) {
-    uiButCurveProfile *but_profile = (uiButCurveProfile *)but;
-    but_profile->edit_profile = editprofile;
+  else if (btn_type == BTYPE_CURVEPROFILE) {
+    BtnCurveProfile *btn_profile = (BtnCurveProfile *)btn;
+    btn_profile->edit_profile = editprofile;
   }
 
   if (data->custom_interaction_handle != nullptr) {
     ui_block_interaction_update(
-        C, &block->custom_interaction_callbacks, data->custom_interaction_handle);
+        C, &block->custom_interaction_cbs, data->custom_interaction_handle);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Button Copy & Paste
- * \{ */
-
-static void ui_but_get_pasted_text_from_clipboard(const bool ensure_utf8,
-                                                  char **r_buf_paste,
-                                                  int *r_buf_len)
+/* Btn Copy & Paste */
+static void btn_get_pasted_text_from_clipboard(const bool ensure_utf8,
+                                               char **r_buf_paste,
+                                               int *r_buf_len)
 {
   /* get only first line even if the clipboard contains multiple lines */
   int length;
-  char *text = WM_clipboard_text_get_firstline(false, ensure_utf8, &length);
+  char *text = win_clipboard_text_get_firstline(false, ensure_utf8, &length);
 
   if (text) {
     *r_buf_paste = text;
     *r_buf_len = length;
   }
   else {
-    *r_buf_paste = static_cast<char *>(MEM_callocN(sizeof(char), __func__));
+    *r_buf_paste = static_cast<char *>(mem_calloc(sizeof(char), __func__));
     *r_buf_len = 0;
   }
 }
 
-static int get_but_property_array_length(uiBut *but)
+static int btn_prop_array_length(Btn *btn)
 {
-  return RNA_property_array_length(&but->rnapoin, but->rnaprop);
+  return api_prop_array_length(&btn->apiptr, btn->apiprop);
 }
 
-static void ui_but_set_float_array(
-    bContext *C, uiBut *but, uiHandleButtonData *data, const float *values, const int values_len)
+static void btn_set_float_array(
+    Cxt *C, Btn *btn, BtnHandleData *data, const float *values, const int values_len)
 {
-  button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+  btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
 
   for (int i = 0; i < values_len; i++) {
-    RNA_property_float_set_index(&but->rnapoin, but->rnaprop, i, values[i]);
+    api_prop_float_set_index(&btn->apiptr, btn->apiprop, i, values[i]);
   }
   if (data) {
-    if (but->type == UI_BTYPE_UNITVEC) {
-      BLI_assert(values_len == 3);
+    if (btn->type == BTYPE_UNITVEC) {
+      lib_assert(values_len == 3);
       copy_v3_v3(data->vec, values);
     }
     else {
@@ -2430,7 +2417,7 @@ static void ui_but_set_float_array(
     }
   }
 
-  button_activate_state(C, but, BUTTON_STATE_EXIT);
+  btn_activate_state(C, btn, BTN_STATE_EXIT);
 }
 
 static void float_array_to_string(const float *values,
@@ -2442,23 +2429,23 @@ static void float_array_to_string(const float *values,
   int ofs = 0;
   output[ofs++] = '[';
   for (int i = 0; i < values_len; i++) {
-    ofs += BLI_snprintf_rlen(
+    ofs += lib_snprintf_rlen(
         output + ofs, output_maxncpy - ofs, (i != values_end) ? "%f, " : "%f]", values[i]);
   }
 }
 
-static void ui_but_copy_numeric_array(uiBut *but, char *output, int output_maxncpy)
+static void btn_copy_numeric_array(Btn *btn, char *output, int output_maxncpy)
 {
-  const int values_len = get_but_property_array_length(but);
-  blender::Array<float, 16> values(values_len);
-  RNA_property_float_get_array(&but->rnapoin, but->rnaprop, values.data());
+  const int values_len = btn_get_prop_array_length(btn);
+  dune::Array<float, 16> values(values_len);
+  api_prop_float_get_array(&btn->apiptr, btn->apiprop, values.data());
   float_array_to_string(values.data(), values_len, output, output_maxncpy);
 }
 
 static bool parse_float_array(char *text, float *values, int values_len_expected)
 {
   /* can parse max 4 floats for now */
-  BLI_assert(0 <= values_len_expected && values_len_expected <= 4);
+  lib_assert(0 <= values_len_expected && values_len_expected <= 4);
 
   float v[5];
   const int values_len_actual = sscanf(
@@ -2471,56 +2458,56 @@ static bool parse_float_array(char *text, float *values, int values_len_expected
   return false;
 }
 
-static void ui_but_paste_numeric_array(bContext *C,
-                                       uiBut *but,
-                                       uiHandleButtonData *data,
-                                       char *buf_paste)
+static void btn_paste_numeric_array(Cxt *C,
+                                    Btn *btn,
+                                    BtnHandleBtnData *data,
+                                    char *buf_paste)
 {
-  const int values_len = get_but_property_array_length(but);
+  const int values_len = btn_get_prop_array_length(btn);
   if (values_len > 4) {
     /* not supported for now */
     return;
   }
 
-  blender::Array<float, 16> values(values_len);
+  dune::Array<float, 16> values(values_len);
 
   if (parse_float_array(buf_paste, values.data(), values_len)) {
-    ui_but_set_float_array(C, but, data, values.data(), values_len);
+    btn_set_float_array(C, btn, data, values.data(), values_len);
   }
   else {
-    WM_report(RPT_ERROR, "Expected an array of numbers: [n, n, ...]");
+    win_report(RPT_ERROR, "Expected an array of numbers: [n, n, ...]");
   }
 }
 
-static void ui_but_copy_numeric_value(uiBut *but, char *output, int output_maxncpy)
+static void btn_copy_numeric_value(Btn *btn, char *output, int output_maxncpy)
 {
   /* Get many decimal places, then strip trailing zeros.
    * NOTE: too high values start to give strange results. */
-  ui_but_string_get_ex(but, output, output_maxncpy, UI_PRECISION_FLOAT_MAX, false, nullptr);
-  BLI_str_rstrip_float_zero(output, '\0');
+  btn_string_get_ex(btn, output, output_maxncpy, UI_PRECISION_FLOAT_MAX, false, nullptr);
+  lib_str_rstrip_float_zero(output, '\0');
 }
 
-static void ui_but_paste_numeric_value(bContext *C,
-                                       uiBut *but,
-                                       uiHandleButtonData *data,
-                                       char *buf_paste)
+static void btn_paste_numeric_value(Cxt *C,
+                                    Btn *btn,
+                                    BtnHandleData *data,
+                                    char *buf_paste)
 {
   double value;
-  if (ui_but_string_eval_number(C, but, buf_paste, &value)) {
-    button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+  if (btn_string_eval_number(C, btn, buf_paste, &value)) {
+    btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
     data->value = value;
-    ui_but_string_set(C, but, buf_paste);
-    button_activate_state(C, but, BUTTON_STATE_EXIT);
+    btn_string_set(C, btn, buf_paste);
+    btn_activate_state(C, btn, BTN_STATE_EXIT);
   }
   else {
-    WM_report(RPT_ERROR, "Expected a number");
+    win_report(RPT_ERROR, "Expected a number");
   }
 }
 
-static void ui_but_paste_normalized_vector(bContext *C,
-                                           uiBut *but,
-                                           uiHandleButtonData *data,
-                                           char *buf_paste)
+static void btn_paste_normalized_vector(Cxt *C,
+                                        Btn *btn,
+                                        BtnHandleData *data,
+                                        char *buf_paste)
 {
   float xyz[3];
   if (parse_float_array(buf_paste, xyz, 3)) {
@@ -2528,71 +2515,71 @@ static void ui_but_paste_normalized_vector(bContext *C,
       /* better set Z up then have a zero vector */
       xyz[2] = 1.0;
     }
-    ui_but_set_float_array(C, but, data, xyz, 3);
+    btn_set_float_array(C, btn, data, xyz, 3);
   }
   else {
-    WM_report(RPT_ERROR, "Paste expected 3 numbers, formatted: '[n, n, n]'");
+    win_report(RPT_ERROR, "Paste expected 3 numbers, formatted: '[n, n, n]'");
   }
 }
 
-static void ui_but_copy_color(uiBut *but, char *output, int output_maxncpy)
+static void btn_copy_color(Btn *btn, char *output, int output_maxncpy)
 {
   float rgba[4];
 
-  if (but->rnaprop && get_but_property_array_length(but) == 4) {
-    rgba[3] = RNA_property_float_get_index(&but->rnapoin, but->rnaprop, 3);
+  if (btn->apiprop && btn_get_prop_array_length(btn) == 4) {
+    rgba[3] = api_prop_float_get_index(&btn->apiptr, btn->apiprop, 3);
   }
   else {
     rgba[3] = 1.0f;
   }
 
-  ui_but_v3_get(but, rgba);
+  btn_v3_get(btn, rgba);
 
   /* convert to linear color to do compatible copy between gamma and non-gamma */
-  if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+  if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR_GAMMA) {
     srgb_to_linearrgb_v3_v3(rgba, rgba);
   }
 
   float_array_to_string(rgba, 4, output, output_maxncpy);
 }
 
-static void ui_but_paste_color(bContext *C, uiBut *but, char *buf_paste)
+static void btn_paste_color(Cxt *C, Btn *btn, char *buf_paste)
 {
   float rgba[4];
   if (parse_float_array(buf_paste, rgba, 4)) {
-    if (but->rnaprop) {
+    if (btn->apiprop) {
       /* Assume linear colors in buffer. */
-      if (RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+      if (api_prop_subtype(btn->apiprop) == PROP_COLOR_GAMMA) {
         linearrgb_to_srgb_v3_v3(rgba, rgba);
       }
 
       /* Some color properties are RGB, not RGBA. */
-      const int array_len = get_but_property_array_length(but);
-      BLI_assert(ELEM(array_len, 3, 4));
-      ui_but_set_float_array(C, but, nullptr, rgba, array_len);
+      const int array_len = btn_get_prop_array_length(btn);
+      lib_assert(ELEM(array_len, 3, 4));
+      btn_set_float_array(C, btn, nullptr, rgba, array_len);
     }
   }
   else {
-    WM_report(RPT_ERROR, "Paste expected 4 numbers, formatted: '[n, n, n, n]'");
+    win_report(RPT_ERROR, "Paste expected 4 numbers, formatted: '[n, n, n, n]'");
   }
 }
 
-static void ui_but_copy_text(uiBut *but, char *output, int output_maxncpy)
+static void btn_copy_text(Btn *btn, char *output, int output_maxncpy)
 {
-  ui_but_string_get(but, output, output_maxncpy);
+  btn_string_get(btn, output, output_maxncpy);
 }
 
-static void ui_but_paste_text(bContext *C, uiBut *but, uiHandleButtonData *data, char *buf_paste)
+static void btn_paste_txt(Cxt *C, Btn *btn, BtnHandleData *data, char *buf_paste)
 {
-  BLI_assert(but->active == data);
+  lib_assert(btn->active == data);
   UNUSED_VARS_NDEBUG(data);
-  ui_but_set_string_interactive(C, but, buf_paste);
+  btn_set_string_interactive(C, btn, buf_paste);
 }
 
-static void ui_but_copy_colorband(uiBut *but)
+static void btn_copy_colorband(Btn *btn)
 {
-  if (but->poin != nullptr) {
-    memcpy(&but_copypaste_coba, but->poin, sizeof(ColorBand));
+  if (btn->ptr != nullptr) {
+    memcpy(&btn_copypaste_coba, btn->poin, sizeof(ColorBand));
   }
 }
 
