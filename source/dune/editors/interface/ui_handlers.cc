@@ -4518,4 +4518,926 @@ static int ui_do_but_BUT(bContext *C, uiBut *but, uiHandleButtonData *data, cons
   return WM_UI_HANDLER_CONTINUE;
 }
 
+static bool ui_numedit_but_SLI(uiBut *but,
+                               uiHandleButtonData *data,
+                               int mx,
+                               const bool is_horizontal,
+                               const bool is_motion,
+                               const bool snap,
+                               const bool shift)
+{
+  float cursor_x_range, f, tempf, softmin, softmax, softrange;
+  int temp, lvalue;
+  bool changed = false;
+  float mx_fl, my_fl;
 
+  /* prevent unwanted drag adjustments, test motion so modifier keys refresh. */
+  if ((but->type != UI_BTYPE_SCROLL) && (is_motion || data->draglock) &&
+      (ui_but_dragedit_update_mval(data, mx) == false))
+  {
+    return changed;
+  }
+
+  ui_block_interaction_begin_ensure(
+      static_cast<bContext *>(but->block->evil_C), but->block, data, false);
+
+  const PropertyScaleType scale_type = ui_but_scale_type(but);
+
+  softmin = but->softmin;
+  softmax = but->softmax;
+  softrange = softmax - softmin;
+
+  /* yes, 'mx' as both x/y is intentional */
+  ui_mouse_scale_warp(data, mx, mx, &mx_fl, &my_fl, shift);
+
+  if (but->type == UI_BTYPE_NUM_SLIDER) {
+    cursor_x_range = BLI_rctf_size_x(&but->rect);
+  }
+  else if (but->type == UI_BTYPE_SCROLL) {
+    const float size = (is_horizontal) ? BLI_rctf_size_x(&but->rect) :
+                                         -BLI_rctf_size_y(&but->rect);
+    cursor_x_range = size * (but->softmax - but->softmin) /
+                     (but->softmax - but->softmin + but->a1);
+  }
+  else {
+    const float ofs = (BLI_rctf_size_y(&but->rect) / 2.0f);
+    cursor_x_range = (BLI_rctf_size_x(&but->rect) - ofs);
+  }
+
+  f = (mx_fl - data->dragstartx) / cursor_x_range + data->dragfstart;
+  CLAMP(f, 0.0f, 1.0f);
+
+  /* deal with mouse correction */
+#ifdef USE_CONT_MOUSE_CORRECT
+  if (ui_but_is_cursor_warp(but)) {
+    /* OK but can go outside bounds */
+    if (is_horizontal) {
+      data->ungrab_mval[0] = but->rect.xmin + (f * cursor_x_range);
+      data->ungrab_mval[1] = BLI_rctf_cent_y(&but->rect);
+    }
+    else {
+      data->ungrab_mval[1] = but->rect.ymin + (f * cursor_x_range);
+      data->ungrab_mval[0] = BLI_rctf_cent_x(&but->rect);
+    }
+    BLI_rctf_clamp_pt_v(&but->rect, data->ungrab_mval);
+  }
+#endif
+  /* done correcting mouse */
+
+  switch (scale_type) {
+    case PROP_SCALE_LINEAR: {
+      tempf = softmin + f * softrange;
+      break;
+    }
+    case PROP_SCALE_LOG: {
+      tempf = powf(softmax / softmin, f) * softmin;
+      break;
+    }
+    case PROP_SCALE_CUBIC: {
+      const float cubicmin = cube_f(softmin);
+      const float cubicmax = cube_f(softmax);
+      const float cubicrange = cubicmax - cubicmin;
+      tempf = cube_f(softmin + f * softrange);
+      tempf = (tempf - cubicmin) / cubicrange * softrange + softmin;
+      break;
+    }
+  }
+  temp = round_fl_to_int(tempf);
+
+  if (snap) {
+    if (ELEM(tempf, softmin, softmax)) {
+      /* pass */
+    }
+    else if (ui_but_is_float(but)) {
+
+      if (shift) {
+        if (ELEM(tempf, softmin, softmax)) {
+        }
+        else if (softrange < 2.10f) {
+          tempf = roundf(tempf * 100.0f) * 0.01f;
+        }
+        else if (softrange < 21.0f) {
+          tempf = roundf(tempf * 10.0f) * 0.1f;
+        }
+        else {
+          tempf = roundf(tempf);
+        }
+      }
+      else {
+        if (softrange < 2.10f) {
+          tempf = roundf(tempf * 10.0f) * 0.1f;
+        }
+        else if (softrange < 21.0f) {
+          tempf = roundf(tempf);
+        }
+        else {
+          tempf = roundf(tempf * 0.1f) * 10.0f;
+        }
+      }
+    }
+    else {
+      temp = 10 * (temp / 10);
+      tempf = temp;
+    }
+  }
+
+  if (!ui_but_is_float(but)) {
+    lvalue = round(data->value);
+
+    CLAMP(temp, softmin, softmax);
+
+    if (temp != lvalue) {
+      data->value = temp;
+      data->dragchange = true;
+      changed = true;
+    }
+  }
+  else {
+    CLAMP(tempf, softmin, softmax);
+
+    if (tempf != float(data->value)) {
+      data->value = tempf;
+      data->dragchange = true;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+static int ui_do_but_SLI(
+    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  int click = 0;
+  int retval = WM_UI_HANDLER_CONTINUE;
+
+  int mx = event->xy[0];
+  int my = event->xy[1];
+  ui_window_to_block(data->region, block, &mx, &my);
+
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    int type = event->type, val = event->val;
+
+    if (type == MOUSEPAN) {
+      ui_pan_to_scroll(event, &type, &val);
+    }
+
+    /* XXX hardcoded keymap check.... */
+    if ((type == MOUSEPAN) && (event->modifier & KM_CTRL)) {
+      /* allow accumulating values, otherwise scrolling gets preference */
+      retval = WM_UI_HANDLER_BREAK;
+    }
+    else if ((type == WHEELDOWNMOUSE) && (event->modifier & KM_CTRL)) {
+      mx = but->rect.xmin;
+      click = 2;
+    }
+    else if ((type == WHEELUPMOUSE) && (event->modifier & KM_CTRL)) {
+      mx = but->rect.xmax;
+      click = 2;
+    }
+    else if (event->val == KM_PRESS) {
+      if (ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && (event->modifier & KM_CTRL)) {
+        button_activate_state(C, but, BUTTON_STATE_TEXT_EDITING);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+#ifndef USE_ALLSELECT
+      /* alt-click on sides to get "arrows" like in UI_BTYPE_NUM buttons,
+       * and match wheel usage above */
+      else if ((event->type == LEFTMOUSE) && (event->modifier & KM_ALT)) {
+        int halfpos = BLI_rctf_cent_x(&but->rect);
+        click = 2;
+        if (mx < halfpos) {
+          mx = but->rect.xmin;
+        }
+        else {
+          mx = but->rect.xmax;
+        }
+      }
+#endif
+      else if (event->type == LEFTMOUSE) {
+        data->dragstartx = mx;
+        data->draglastx = mx;
+        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+      else if (ELEM(event->type, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
+        click = 1;
+      }
+      else if (event->type == EVT_MINUSKEY && event->val == KM_PRESS) {
+        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+        data->value = -data->value;
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+    }
+#ifdef USE_DRAG_MULTINUM
+    copy_v2_v2_int(data->multi_data.drag_start, event->xy);
+#endif
+  }
+  else if (data->state == BUTTON_STATE_NUM_EDITING) {
+    if (ELEM(event->type, EVT_ESCKEY, RIGHTMOUSE)) {
+      if (event->val == KM_PRESS) {
+        data->cancel = true;
+        data->escapecancel = true;
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+      }
+    }
+    else if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      if (data->dragchange) {
+#ifdef USE_DRAG_MULTINUM
+        /* If we started multi-button but didn't drag, then edit. */
+        if (data->multi_data.init == uiHandleButtonMulti::INIT_SETUP) {
+          click = 1;
+        }
+        else
+#endif
+        {
+          button_activate_state(C, but, BUTTON_STATE_EXIT);
+        }
+      }
+      else {
+#ifdef USE_CONT_MOUSE_CORRECT
+        /* reset! */
+        copy_v2_fl(data->ungrab_mval, FLT_MAX);
+#endif
+        click = 1;
+      }
+    }
+    else if ((event->type == MOUSEMOVE) || ui_event_is_snap(event)) {
+      const bool is_motion = (event->type == MOUSEMOVE);
+#ifdef USE_DRAG_MULTINUM
+      data->multi_data.drag_dir[0] += abs(data->draglastx - mx);
+      data->multi_data.drag_dir[1] += abs(data->draglasty - my);
+#endif
+      if (ui_numedit_but_SLI(but,
+                             data,
+                             mx,
+                             true,
+                             is_motion,
+                             event->modifier & KM_CTRL,
+                             event->modifier & KM_SHIFT))
+      {
+        ui_numedit_apply(C, block, but, data);
+      }
+
+#ifdef USE_DRAG_MULTINUM
+      else if (data->multi_data.has_mbuts) {
+        if (data->multi_data.init == uiHandleButtonMulti::INIT_ENABLE) {
+          ui_multibut_states_apply(C, data, block);
+        }
+      }
+#endif
+    }
+    retval = WM_UI_HANDLER_BREAK;
+  }
+  else if (data->state == BUTTON_STATE_TEXT_EDITING) {
+    ui_do_but_textedit(C, block, but, data, event);
+    retval = WM_UI_HANDLER_BREAK;
+  }
+  else if (data->state == BUTTON_STATE_TEXT_SELECTING) {
+    ui_do_but_textedit_select(C, block, but, data, event);
+    retval = WM_UI_HANDLER_BREAK;
+  }
+
+  if (click) {
+    if (click == 2) {
+      const PropertyScaleType scale_type = ui_but_scale_type(but);
+
+      /* nudge slider to the left or right */
+      float f, tempf, softmin, softmax, softrange;
+      int temp;
+
+      button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+
+      softmin = but->softmin;
+      softmax = but->softmax;
+      softrange = softmax - softmin;
+
+      tempf = data->value;
+      temp = int(data->value);
+
+#if 0
+      if (but->type == SLI) {
+        /* same as below */
+        f = float(mx - but->rect.xmin) / (BLI_rctf_size_x(&but->rect));
+      }
+      else
+#endif
+      {
+        f = float(mx - but->rect.xmin) / BLI_rctf_size_x(&but->rect);
+      }
+
+      if (scale_type == PROP_SCALE_LOG) {
+        f = powf(softmax / softmin, f) * softmin;
+      }
+      else {
+        f = softmin + f * softrange;
+      }
+
+      if (!ui_but_is_float(but)) {
+        int value_step = 1;
+        if (f < temp) {
+          temp -= value_step;
+        }
+        else {
+          temp += value_step;
+        }
+
+        if (temp >= softmin && temp <= softmax) {
+          data->value = temp;
+        }
+        else {
+          data->cancel = true;
+        }
+      }
+      else {
+        if (tempf >= softmin && tempf <= softmax) {
+          float value_step;
+          if (scale_type == PROP_SCALE_LOG) {
+            value_step = powf(10.0f, roundf(log10f(tempf) + UI_PROP_SCALE_LOG_SNAP_OFFSET) - 1.0f);
+          }
+          else {
+            value_step = 0.01f;
+          }
+
+          if (f < tempf) {
+            tempf -= value_step;
+          }
+          else {
+            tempf += value_step;
+          }
+
+          CLAMP(tempf, softmin, softmax);
+          data->value = tempf;
+        }
+        else {
+          data->cancel = true;
+        }
+      }
+
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      retval = WM_UI_HANDLER_BREAK;
+    }
+    else {
+      /* edit the value directly */
+      button_activate_state(C, but, BUTTON_STATE_TEXT_EDITING);
+      retval = WM_UI_HANDLER_BREAK;
+    }
+  }
+
+  data->draglastx = mx;
+  data->draglasty = my;
+
+  return retval;
+}
+
+static int ui_do_but_SCROLL(
+    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  int retval = WM_UI_HANDLER_CONTINUE;
+  const bool horizontal = (BLI_rctf_size_x(&but->rect) > BLI_rctf_size_y(&but->rect));
+
+  int mx = event->xy[0];
+  int my = event->xy[1];
+  ui_window_to_block(data->region, block, &mx, &my);
+
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    if (event->val == KM_PRESS) {
+      if (event->type == LEFTMOUSE) {
+        if (horizontal) {
+          data->dragstartx = mx;
+          data->draglastx = mx;
+        }
+        else {
+          data->dragstartx = my;
+          data->draglastx = my;
+        }
+        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+    }
+  }
+  else if (data->state == BUTTON_STATE_NUM_EDITING) {
+    if (event->type == EVT_ESCKEY) {
+      if (event->val == KM_PRESS) {
+        data->cancel = true;
+        data->escapecancel = true;
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+      }
+    }
+    else if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    }
+    else if (event->type == MOUSEMOVE) {
+      const bool is_motion = (event->type == MOUSEMOVE);
+      if (ui_numedit_but_SLI(
+              but, data, (horizontal) ? mx : my, horizontal, is_motion, false, false)) {
+        ui_numedit_apply(C, block, but, data);
+      }
+    }
+
+    retval = WM_UI_HANDLER_BREAK;
+  }
+
+  return retval;
+}
+
+static int ui_do_but_GRIP(
+    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  int retval = WM_UI_HANDLER_CONTINUE;
+  const bool horizontal = (BLI_rctf_size_x(&but->rect) < BLI_rctf_size_y(&but->rect));
+
+  /* NOTE: Having to store org point in window space and recompute it to block "space" each time
+   *       is not ideal, but this is a way to hack around behavior of ui_window_to_block(), which
+   *       returns different results when the block is inside a panel or not...
+   *       See #37739.
+   */
+
+  int mx = event->xy[0];
+  int my = event->xy[1];
+  ui_window_to_block(data->region, block, &mx, &my);
+
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    if (event->val == KM_PRESS) {
+      if (event->type == LEFTMOUSE) {
+        data->dragstartx = event->xy[0];
+        data->dragstarty = event->xy[1];
+        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+    }
+  }
+  else if (data->state == BUTTON_STATE_NUM_EDITING) {
+    if (event->type == EVT_ESCKEY) {
+      if (event->val == KM_PRESS) {
+        data->cancel = true;
+        data->escapecancel = true;
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+      }
+    }
+    else if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    }
+    else if (event->type == MOUSEMOVE) {
+      int dragstartx = data->dragstartx;
+      int dragstarty = data->dragstarty;
+      ui_window_to_block(data->region, block, &dragstartx, &dragstarty);
+      data->value = data->origvalue + (horizontal ? mx - dragstartx : dragstarty - my);
+      ui_numedit_apply(C, block, but, data);
+    }
+
+    retval = WM_UI_HANDLER_BREAK;
+  }
+
+  return retval;
+}
+
+static int ui_do_but_LISTROW(bContext *C,
+                             uiBut *but,
+                             uiHandleButtonData *data,
+                             const wmEvent *event)
+{
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    /* hack to pass on ctrl+click and double click to overlapping text
+     * editing field for editing list item names
+     */
+    if ((ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && (event->val == KM_PRESS) &&
+         (event->modifier & KM_CTRL)) ||
+        (event->type == LEFTMOUSE && event->val == KM_DBL_CLICK))
+    {
+      uiBut *labelbut = ui_but_list_row_text_activate(
+          C, but, data, event, BUTTON_ACTIVATE_TEXT_EDITING);
+      if (labelbut) {
+        /* Nothing else to do. */
+        return WM_UI_HANDLER_BREAK;
+      }
+    }
+  }
+
+  return ui_do_but_EXIT(C, but, data, event);
+}
+
+static int ui_do_but_BLOCK(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+
+    /* First handle click on icon-drag type button. */
+    if (event->type == LEFTMOUSE && ui_but_drag_is_draggable(but) && event->val == KM_PRESS) {
+      if (ui_but_contains_point_px_icon(but, data->region, event)) {
+        button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+        data->dragstartx = event->xy[0];
+        data->dragstarty = event->xy[1];
+        return WM_UI_HANDLER_BREAK;
+      }
+    }
+#ifdef USE_DRAG_TOGGLE
+    if (event->type == LEFTMOUSE && event->val == KM_PRESS && ui_but_is_drag_toggle(but)) {
+      button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+      data->dragstartx = event->xy[0];
+      data->dragstarty = event->xy[1];
+      return WM_UI_HANDLER_BREAK;
+    }
+#endif
+    /* regular open menu */
+    if (ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
+      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
+      return WM_UI_HANDLER_BREAK;
+    }
+    if (ui_but_supports_cycling(but)) {
+      if (ELEM(event->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (event->modifier & KM_CTRL))
+      {
+        int type = event->type;
+        int val = event->val;
+
+        /* Convert pan to scroll-wheel. */
+        if (type == MOUSEPAN) {
+          ui_pan_to_scroll(event, &type, &val);
+
+          if (type == MOUSEPAN) {
+            return WM_UI_HANDLER_BREAK;
+          }
+        }
+
+        const int direction = (type == WHEELDOWNMOUSE) ? 1 : -1;
+
+        data->value = ui_but_menu_step(but, direction);
+
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        ui_apply_but(C, but->block, but, data, true);
+
+        /* Button's state need to be changed to EXIT so moving mouse away from this mouse
+         * wouldn't lead to cancel changes made to this button, but changing state to EXIT also
+         * makes no button active for a while which leads to triggering operator when doing fast
+         * scrolling mouse wheel. using post activate stuff from button allows to make button be
+         * active again after checking for all that mouse leave and cancel stuff, so quick
+         * scroll wouldn't be an issue anymore. Same goes for scrolling wheel in another
+         * direction below (sergey).
+         */
+        data->postbut = but;
+        data->posttype = BUTTON_ACTIVATE_OVER;
+
+        /* without this, a new interface that draws as result of the menu change
+         * won't register that the mouse is over it, eg:
+         * Alt+MouseWheel over the render slots, without this,
+         * the slot menu fails to switch a second time.
+         *
+         * The active state of the button could be maintained some other way
+         * and remove this mouse-move event.
+         */
+        WM_event_add_mousemove(data->window);
+
+        return WM_UI_HANDLER_BREAK;
+      }
+    }
+  }
+  else if (data->state == BUTTON_STATE_WAIT_DRAG) {
+
+    /* this function also ends state */
+    if (ui_but_drag_init(C, but, data, event)) {
+      return WM_UI_HANDLER_BREAK;
+    }
+
+    /* outside icon quit, not needed if drag activated */
+    if (0 == ui_but_contains_point_px_icon(but, data->region, event)) {
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      data->cancel = true;
+      return WM_UI_HANDLER_BREAK;
+    }
+
+    if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
+      return WM_UI_HANDLER_BREAK;
+    }
+  }
+
+  return WM_UI_HANDLER_CONTINUE;
+}
+
+static bool ui_numedit_but_UNITVEC(
+    uiBut *but, uiHandleButtonData *data, int mx, int my, const enum eSnapType snap)
+{
+  float mrad;
+  bool changed = true;
+
+  /* button is presumed square */
+  /* if mouse moves outside of sphere, it does negative normal */
+
+  /* note that both data->vec and data->origvec should be normalized
+   * else we'll get a harmless but annoying jump when first clicking */
+
+  float *fp = data->origvec;
+  const float rad = BLI_rctf_size_x(&but->rect);
+  const float radsq = rad * rad;
+
+  int mdx, mdy;
+  if (fp[2] > 0.0f) {
+    mdx = (rad * fp[0]);
+    mdy = (rad * fp[1]);
+  }
+  else if (fp[2] > -1.0f) {
+    mrad = rad / sqrtf(fp[0] * fp[0] + fp[1] * fp[1]);
+
+    mdx = 2.0f * mrad * fp[0] - (rad * fp[0]);
+    mdy = 2.0f * mrad * fp[1] - (rad * fp[1]);
+  }
+  else {
+    mdx = mdy = 0;
+  }
+
+  float dx = float(mx + mdx - data->dragstartx);
+  float dy = float(my + mdy - data->dragstarty);
+
+  fp = data->vec;
+  mrad = dx * dx + dy * dy;
+  if (mrad < radsq) { /* inner circle */
+    fp[0] = dx;
+    fp[1] = dy;
+    fp[2] = sqrtf(radsq - dx * dx - dy * dy);
+  }
+  else { /* outer circle */
+
+    mrad = rad / sqrtf(mrad); /* veclen */
+
+    dx *= (2.0f * mrad - 1.0f);
+    dy *= (2.0f * mrad - 1.0f);
+
+    mrad = dx * dx + dy * dy;
+    if (mrad < radsq) {
+      fp[0] = dx;
+      fp[1] = dy;
+      fp[2] = -sqrtf(radsq - dx * dx - dy * dy);
+    }
+  }
+  normalize_v3(fp);
+
+  if (snap != SNAP_OFF) {
+    const int snap_steps = (snap == SNAP_ON) ? 4 : 12; /* 45 or 15 degree increments */
+    const float snap_steps_angle = M_PI / snap_steps;
+    float angle, angle_snap;
+
+    /* round each axis of 'fp' to the next increment
+     * do this in "angle" space - this gives increments of same size */
+    for (int i = 0; i < 3; i++) {
+      angle = asinf(fp[i]);
+      angle_snap = roundf(angle / snap_steps_angle) * snap_steps_angle;
+      fp[i] = sinf(angle_snap);
+    }
+    normalize_v3(fp);
+    changed = !compare_v3v3(fp, data->origvec, FLT_EPSILON);
+  }
+
+  data->draglastx = mx;
+  data->draglasty = my;
+
+  return changed;
+}
+
+static void ui_palette_set_active(uiButColor *color_but)
+{
+  if (color_but->is_pallete_color) {
+    Palette *palette = (Palette *)color_but->rnapoin.owner_id;
+    PaletteColor *color = static_cast<PaletteColor *>(color_but->rnapoin.data);
+    palette->active_color = BLI_findindex(&palette->colors, color);
+  }
+}
+
+static int ui_do_but_COLOR(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  BLI_assert(but->type == UI_BTYPE_COLOR);
+  uiButColor *color_but = (uiButColor *)but;
+
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    /* First handle click on icon-drag type button. */
+    if (event->type == LEFTMOUSE && ui_but_drag_is_draggable(but) && event->val == KM_PRESS) {
+      ui_palette_set_active(color_but);
+      if (ui_but_contains_point_px_icon(but, data->region, event)) {
+        button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+        data->dragstartx = event->xy[0];
+        data->dragstarty = event->xy[1];
+        return WM_UI_HANDLER_BREAK;
+      }
+    }
+#ifdef USE_DRAG_TOGGLE
+    if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
+      ui_palette_set_active(color_but);
+      button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+      data->dragstartx = event->xy[0];
+      data->dragstarty = event->xy[1];
+      return WM_UI_HANDLER_BREAK;
+    }
+#endif
+    /* regular open menu */
+    if (ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
+      ui_palette_set_active(color_but);
+      button_activate_state(C, but, BUTTON_STATE_MENU_OPEN);
+      return WM_UI_HANDLER_BREAK;
+    }
+    if (ELEM(event->type, MOUSEPAN, WHEELDOWNMOUSE, WHEELUPMOUSE) && (event->modifier & KM_CTRL)) {
+      ColorPicker *cpicker = static_cast<ColorPicker *>(but->custom_data);
+      float hsv_static[3] = {0.0f};
+      float *hsv = cpicker ? cpicker->hsv_perceptual : hsv_static;
+      float col[3];
+
+      ui_but_v3_get(but, col);
+      rgb_to_hsv_compat_v(col, hsv);
+
+      if (event->type == WHEELDOWNMOUSE) {
+        hsv[2] = clamp_f(hsv[2] - 0.05f, 0.0f, 1.0f);
+      }
+      else if (event->type == WHEELUPMOUSE) {
+        hsv[2] = clamp_f(hsv[2] + 0.05f, 0.0f, 1.0f);
+      }
+      else {
+        const float fac = 0.005 * (event->xy[1] - event->prev_xy[1]);
+        hsv[2] = clamp_f(hsv[2] + fac, 0.0f, 1.0f);
+      }
+
+      hsv_to_rgb_v(hsv, data->vec);
+      ui_but_v3_set(but, data->vec);
+
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      ui_apply_but(C, but->block, but, data, true);
+      return WM_UI_HANDLER_BREAK;
+    }
+    if (color_but->is_pallete_color && (event->type == EVT_DELKEY) && (event->val == KM_PRESS)) {
+      Palette *palette = (Palette *)but->rnapoin.owner_id;
+      PaletteColor *color = static_cast<PaletteColor *>(but->rnapoin.data);
+
+      BKE_palette_color_remove(palette, color);
+
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+
+      /* this is risky. it works OK for now,
+       * but if it gives trouble we should delay execution */
+      but->rnapoin = PointerRNA_NULL;
+      but->rnaprop = nullptr;
+
+      return WM_UI_HANDLER_BREAK;
+    }
+  }
+  else if (data->state == BUTTON_STATE_WAIT_DRAG) {
+
+    /* this function also ends state */
+    if (ui_but_drag_init(C, but, data, event)) {
+      return WM_UI_HANDLER_BREAK;
+    }
+
+    /* outside icon quit, not needed if drag activated */
+    if (0 == ui_but_contains_point_px_icon(but, data->region, event)) {
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      data->cancel = true;
+      return WM_UI_HANDLER_BREAK;
+    }
+
+    if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      if (color_but->is_pallete_color) {
+        if ((event->modifier & KM_CTRL) == 0) {
+          float color[3];
+          Paint *paint = BKE_paint_get_active_from_context(C);
+          Brush *brush = BKE_paint_brush(paint);
+
+          if (brush->flag & BRUSH_USE_GRADIENT) {
+            float *target = &brush->gradient->data[brush->gradient->cur].r;
+
+            if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+              RNA_property_float_get_array(&but->rnapoin, but->rnaprop, target);
+              IMB_colormanagement_srgb_to_scene_linear_v3(target, target);
+            }
+            else if (but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR) {
+              RNA_property_float_get_array(&but->rnapoin, but->rnaprop, target);
+            }
+          }
+          else {
+            Scene *scene = CTX_data_scene(C);
+            bool updated = false;
+
+            if (btn->apiprop && RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+              api_prop_float_get_array(&but->rnapoin, but->rnaprop, color);
+              dune_brush_color_set(scene, brush, color);
+              updated = true;
+            }
+            else if (btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_COLOR) {
+              api_prop_float_get_array(&btn->apiptr, btn->apiprop, color);
+              imbuf_colormanagement_scene_linear_to_srgb_v3(color, color);
+              dune_brush_color_set(scene, brush, color);
+              updated = true;
+            }
+
+            if (updated) {
+              ApiProp *brush_color_prop;
+
+              ApiPtr brush_ptr = api_id_ptr_create(&brush->id);
+              brush_color_prop = api_struct_find_prop(&brush_ptr, "color");
+              api_prop_update(C, &brush_ptr, brush_color_prop);
+            }
+          }
+
+          btn_activate_state(C, btn, BTN_STATE_EXIT);
+        }
+        else {
+          btn_activate_state(C, btn, BTN_STATE_MENU_OPEN);
+        }
+      }
+      else {
+        btn_activate_state(C, btn, BTN_STATE_MENU_OPEN);
+      }
+      return WIN_UI_HANDLER_BREAK;
+    }
+  }
+
+  return WIN_UI_HANDLER_CONTINUE;
+}
+
+static int btn_do_UNITVEC(
+    Cxt *C, uiBlock *block, Btn *byn, BtnHandleData *data, const WinEv *ev)
+{
+  int mx = ev->xy[0];
+  int my = ev->xy[1];
+  ui_win_to_block(data->rgn, block, &mx, &my);
+
+  if (data->state == BTN_STATE_HIGHLIGHT) {
+    if (ev->type == LEFTMOUSE && ev->val == KM_PRESS) {
+      const enum eSnapType snap = ui_ev_to_snap(ev);
+      data->dragstartx = mx;
+      data->dragstarty = my;
+      data->draglastx = mx;
+      data->draglasty = my;
+      btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
+
+      /* also do drag the first time */
+      if (ui_numedit_btn_UNITVEC(btn, data, mx, my, snap)) {
+        ui_numedit_apply(C, block, btn, data);
+      }
+
+      return WIN_UI_HANDLER_BREAK;
+    }
+  }
+  else if (data->state == BTN_STATE_NUM_EDITING) {
+    if ((ev->type == MOUSEMOVE) || ui_ev_is_snap(ev)) {
+      if (mx != data->draglastx || my != data->draglasty || ev->type != MOUSEMOVE) {
+        const enum eSnapType snap = ui_ev_to_snap(event);
+        if (ui_numedit_but_UNITVEC(btn, data, mx, my, snap)) {
+          ui_numedit_apply(C, block, btn, data);
+        }
+      }
+    }
+    else if (ELEM(ev->type, EVT_ESCKEY, RIGHTMOUSE)) {
+      if (ev->val == KM_PRESS) {
+        data->cancel = true;
+        data->escapecancel = true;
+        btn_activate_state(C, btn, BTN_STATE_EXIT);
+      }
+    }
+    else if (ev->type == LEFTMOUSE && ev->val == KM_RELEASE) {
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
+    }
+
+    return WM_UI_HANDLER_BREAK;
+  }
+
+  return WM_UI_HANDLER_CONTINUE;
+}
+
+/* scales a vector so no axis exceeds max
+ * (could become lib_math fn) */
+static void clamp_axis_max_v3(float v[3], const float max)
+{
+  const float v_max = max_fff(v[0], v[1], v[2]);
+  if (v_max > max) {
+    mul_v3_fl(v, max / v_max);
+    if (v[0] > max) {
+      v[0] = max;
+    }
+    if (v[1] > max) {
+      v[1] = max;
+    }
+    if (v[2] > max) {
+      v[2] = max;
+    }
+  }
+}
+
+static void ui_rgb_to_color_picker_HSVCUBE_compat_v(const BtnHSVCube *hsv_btn,
+                                                    const float rgb[3],
+                                                    float hsv[3])
+{
+  if (hsv_btn->gradient_type == UI_GRAD_L_ALT) {
+    rgb_to_hsl_compat_v(rgb, hsv);
+  }
+  else {
+    rgb_to_hsv_compat_v(rgb, hsv);
+  }
+}
+
+static void ui_rgb_to_color_picker_HSVCUBE_v(const BtnHSVCube *hsv_btn,
+                                             const float rgb[3],
+                                             float hsv[3])
+{
+  if (hsv_byt->gradient_type == UI_GRAD_L_ALT) {
+    rgb_to_hsl_v(rgb, hsv);
+  }
+  else {
+    rgb_to_hsv_v(rgb, hsv);
+  }
+}
