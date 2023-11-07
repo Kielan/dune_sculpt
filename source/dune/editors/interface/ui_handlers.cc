@@ -4943,35 +4943,35 @@ static int ui_do_but_GRIP(
 
   int mx = event->xy[0];
   int my = event->xy[1];
-  ui_window_to_block(data->region, block, &mx, &my);
+  ui_win_to_block(data->rgn, block, &mx, &my);
 
-  if (data->state == BUTTON_STATE_HIGHLIGHT) {
-    if (event->val == KM_PRESS) {
-      if (event->type == LEFTMOUSE) {
-        data->dragstartx = event->xy[0];
-        data->dragstarty = event->xy[1];
-        button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+  if (data->state == BTN_STATE_HIGHLIGHT) {
+    if (ev->val == KM_PRESS) {
+      if (ev->type == LEFTMOUSE) {
+        data->dragstartx = ev->xy[0];
+        data->dragstarty = ev->xy[1];
+        btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
         retval = WM_UI_HANDLER_BREAK;
       }
     }
   }
-  else if (data->state == BUTTON_STATE_NUM_EDITING) {
-    if (event->type == EVT_ESCKEY) {
-      if (event->val == KM_PRESS) {
+  else if (data->state == BTN_STATE_NUM_EDITING) {
+    if (ev->type == EV_ESCKEY) {
+      if (ev->val == KM_PRESS) {
         data->cancel = true;
         data->escapecancel = true;
-        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        btn_activate_state(C, btn, BTN_STATE_EXIT);
       }
     }
-    else if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
-      button_activate_state(C, but, BUTTON_STATE_EXIT);
+    else if (ev->type == LEFTMOUSE && ev->val == KM_RELEASE) {
+      btn_activate_state(C, btn, BTN_STATE_EXIT);
     }
-    else if (event->type == MOUSEMOVE) {
+    else if (ev->type == MOUSEMOVE) {
       int dragstartx = data->dragstartx;
       int dragstarty = data->dragstarty;
-      ui_window_to_block(data->region, block, &dragstartx, &dragstarty);
+      ui_win_to_block(data->region, block, &dragstartx, &dragstarty);
       data->value = data->origvalue + (horizontal ? mx - dragstartx : dragstarty - my);
-      ui_numedit_apply(C, block, but, data);
+      ui_numedit_apply(C, block, btn, data);
     }
 
     retval = WM_UI_HANDLER_BREAK;
@@ -4980,42 +4980,42 @@ static int ui_do_but_GRIP(
   return retval;
 }
 
-static int ui_do_but_LISTROW(bContext *C,
-                             uiBut *but,
-                             uiHandleButtonData *data,
-                             const wmEvent *event)
+static int btn_do_LISTROW(Cxt *C,
+                          Btn *btn,
+                          BtnHandleData *data,
+                          const WinEv *ev)
 {
-  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+  if (data->state == BTN_STATE_HIGHLIGHT) {
     /* hack to pass on ctrl+click and double click to overlapping text
      * editing field for editing list item names
      */
-    if ((ELEM(event->type, LEFTMOUSE, EVT_PADENTER, EVT_RETKEY) && (event->val == KM_PRESS) &&
-         (event->modifier & KM_CTRL)) ||
-        (event->type == LEFTMOUSE && event->val == KM_DBL_CLICK))
+    if ((ELEM(ev->type, LEFTMOUSE, EV_PADENTER, EV_RETKEY) && (ev->val == KM_PRESS) &&
+         (ev->mod & KM_CTRL)) ||
+        (ev->type == LEFTMOUSE && ev->val == KM_DBL_CLICK))
     {
-      uiBut *labelbut = ui_but_list_row_text_activate(
-          C, but, data, event, BUTTON_ACTIVATE_TEXT_EDITING);
-      if (labelbut) {
+      Btn *labelbtn = btn_list_row_txt_activate(
+          C, btn, data, ev, BTN_ACTIVATE_TXT_EDITING);
+      if (labelbtn) {
         /* Nothing else to do. */
-        return WM_UI_HANDLER_BREAK;
+        return WIN_UI_HANDLER_BREAK;
       }
     }
   }
 
-  return ui_do_but_EXIT(C, but, data, event);
+  return btn_do_EXIT(C, btn, data, event);
 }
 
-static int ui_do_but_BLOCK(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+static int btn_do_BLOCK(Cxt *C, Btn *btn, BtnHandleData *data, const WinEv *ev)
 {
-  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+  if (data->state == BTN_STATE_HIGHLIGHT) {
 
     /* First handle click on icon-drag type button. */
-    if (event->type == LEFTMOUSE && ui_but_drag_is_draggable(but) && event->val == KM_PRESS) {
-      if (ui_but_contains_point_px_icon(but, data->region, event)) {
-        button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
-        data->dragstartx = event->xy[0];
-        data->dragstarty = event->xy[1];
-        return WM_UI_HANDLER_BREAK;
+    if (ev->type == LEFTMOUSE && btn_drag_is_draggable(btn) && ev->val == KM_PRESS) {
+      if (btn_contains_point_px_icon(btn, data->rgn, ev)) {
+        btn_activate_state(C, btn, BTN_STATE_WAIT_DRAG);
+        data->dragstartx = ev->xy[0];
+        data->dragstarty = ev->xy[1];
+        return WIN_UI_HANDLER_BREAK;
       }
     }
 #ifdef USE_DRAG_TOGGLE
