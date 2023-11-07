@@ -223,8 +223,8 @@ struct uiSelectContextElem {
   };
 };
 
-struct uiSelectContextStore {
-  uiSelectContextElem *elems;
+struct uiSelCxtStore {
+  uiSelCxtElem *elems;
   int elems_len;
   bool do_free;
   bool is_enabled;
@@ -235,9 +235,9 @@ struct uiSelectContextStore {
   bool is_copy;
 };
 
-static bool ui_selectcxt_begin(Cxt *C, Btn *btn, uiSelectCxtStore *selcxt_data);
-static void ui_selectcxt_end(Btn *btn, uiSelectCxtStore *selcxt_data);
-static void ui_selectcxt_apply(Cxt *C,
+static bool ui_selcxt_begin(Cxt *C, Btn *btn, uiSelectCxtStore *selcxt_data);
+static void ui_selcxt_end(Btn *btn, uiSelectCxtStore *selcxt_data);
+static void ui_selcxt_apply(Cxt *C,
                                Btn *btn,
                                uiSelectCxtStore *selcxt_data,
                                const double value,
@@ -248,10 +248,10 @@ static void ui_selectcxt_apply(Cxt *C,
  * with button array pasting, see #108096, but unfortunately wheel events are not part of
  * `win->evstate` with modifiers held down. Instead, the conflict is avoided by specifically
  * filtering out CTRL ALT V in #ui_apply_but(). */
-#  define IS_ALLSELECT_EVENT(event) (((event)->mod & KM_ALT) != 0)
+#  define IS_ALLSEL_EV(event) (((event)->mod & KM_ALT) != 0)
 
 /* just show a tinted color so users know its activated */
-#  define BTN_IS_SELECT_CXT BTN_NODE_ACTIVE
+#  define BTN_IS_SEL_CXT BTN_NODE_ACTIVE
 
 #endif /* USE_ALLSELECT */
 
@@ -277,10 +277,10 @@ static void ui_selectcxt_apply(Cxt *C,
 /* a simple version of uiHandleButtonData when accessing multiple buttons */
 struct BtnMultiState {
   double origvalue;
-  uiBut *but;
+  Btn *btn;
 
 #  ifdef USE_ALLSELECT
-  uiSelectCxtStore select_others;
+  uiSelectCxtStore sel_others;
 #  endif
 };
 
@@ -338,7 +338,7 @@ struct uiHandleBtnData {
   /* Btn is being applied through an extra icon. */
   bool apply_through_extra_icon;
   bool changed_cursor;
-  wmTimer *flashtimer;
+  WinTimer *flashtimer;
 
   /* edited value */
   /* use 'ui_textedit_string_set' to assign new strings */
@@ -409,8 +409,8 @@ struct uiHandleBtnData {
   uiHandleBtnMulti multi_data;
 #endif
 
-#ifdef USE_ALLSELECT
-  uiSelectCxtStore select_others;
+#ifdef USE_ALLSEL
+  uiSelCxtStore select_others;
 #endif
 
   uiBlockInteraction_Handle *custom_interaction_handle;
@@ -1154,4 +1154,690 @@ static void ui_apply_but_LISTROW(Cxt *C, uiBlock *block, Btn *btn, uiHandleBtnDa
   }
 
   ui_apply_btn_ROW(C, block, but, data);
+}
+
+static void ui_apply_but_TEX(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  if (!data->str) {
+    return;
+  }
+
+  ui_but_string_set(C, but, data->str);
+  ui_but_update_edited(but);
+
+  /* give butfunc a copy of the original text too.
+   * feature used for bone renaming, channels, etc.
+   * afterfunc frees rename_orig */
+  if (data->origstr && (but->flag & UI_BUT_TEXTEDIT_UPDATE)) {
+    /* In this case, we need to keep origstr available,
+     * to restore real org string in case we cancel after having typed something already. */
+    but->rename_orig = BLI_strdup(data->origstr);
+  }
+  /* only if there are afterfuncs, otherwise 'renam_orig' isn't freed */
+  else if (ui_afterfunc_check(but->block, but)) {
+    but->rename_orig = data->origstr;
+    data->origstr = nullptr;
+  }
+
+  void *orig_arg2 = but->func_arg2;
+
+  /* If arg2 isn't in use already, pass the active search item through it. */
+  if ((but->func_arg2 == nullptr) && (but->type == UI_BTYPE_SEARCH_MENU)) {
+    uiButSearch *search_but = (uiButSearch *)but;
+    but->func_arg2 = search_but->item_active;
+    if ((U.flag & USER_FLAG_RECENT_SEARCHES_DISABLE) == 0) {
+      blender::ui::string_search::add_recent_search(search_but->item_active_str);
+    }
+  }
+
+  ui_apply_but_func(C, but);
+
+  but->func_arg2 = orig_arg2;
+
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_TAB(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  if (data->str) {
+    ui_but_string_set(C, but, data->str);
+    ui_but_update_edited(but);
+  }
+  else {
+    ui_but_value_set(but, but->hardmax);
+    ui_apply_but_func(C, but);
+  }
+
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_NUM(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  if (data->str) {
+    /* This is intended to avoid unnecessary updates when the value stays the same, however there
+     * are issues with the current implementation. It does not work with multi-button editing
+     * (#89996) or operator popups where a number button requires an update even if the value is
+     * unchanged (#89996).
+     *
+     * Trying to detect changes at this level is not reliable. Instead it could be done at the
+     * level of RNA update/set, skipping RNA update if RNA set did not change anything, instead
+     * of skipping all button updates. */
+#if 0
+    double value;
+    /* Check if the string value is a number and cancel if it's equal to the startvalue. */
+    if (ui_but_string_eval_number(C, but, data->str, &value) && (value == data->startvalue)) {
+      data->cancel = true;
+      return;
+    }
+#endif
+
+    if (ui_but_string_set(C, but, data->str)) {
+      data->value = ui_but_value_get(but);
+    }
+    else {
+      data->cancel = true;
+      return;
+    }
+  }
+  else {
+    ui_but_value_set(but, data->value);
+  }
+
+  ui_but_update_edited(but);
+  ui_apply_but_func(C, but);
+
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_VEC(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  ui_but_v3_set(but, data->vec);
+  ui_but_update_edited(but);
+  ui_apply_but_func(C, but);
+
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_COLORBAND(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  ui_apply_but_func(C, but);
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_CURVE(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  ui_apply_but_func(C, but);
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+static void ui_apply_but_CURVEPROFILE(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  ui_apply_but_func(C, but);
+  data->retval = but->retval;
+  data->applied = true;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Button Drag Multi-Number
+ * \{ */
+
+#ifdef USE_DRAG_MULTINUM
+
+/* small multi-but api */
+static void ui_multibut_add(uiHandleButtonData *data, uiBut *but)
+{
+  BLI_assert(but->flag & UI_BUT_DRAG_MULTI);
+  BLI_assert(data->multi_data.has_mbuts);
+
+  uiButMultiState *mbut_state = MEM_cnew<uiButMultiState>(__func__);
+  mbut_state->but = but;
+  mbut_state->origvalue = ui_but_value_get(but);
+#  ifdef USE_ALLSELECT
+  mbut_state->select_others.is_copy = data->select_others.is_copy;
+#  endif
+
+  BLI_linklist_prepend(&data->multi_data.mbuts, mbut_state);
+
+  UI_butstore_register(data->multi_data.bs_mbuts, &mbut_state->but);
+}
+
+static uiButMultiState *ui_multibut_lookup(uiHandleButtonData *data, const uiBut *but)
+{
+  for (LinkNode *l = data->multi_data.mbuts; l; l = l->next) {
+    uiButMultiState *mbut_state = static_cast<uiButMultiState *>(l->link);
+
+    if (mbut_state->but == but) {
+      return mbut_state;
+    }
+  }
+
+  return nullptr;
+}
+
+static void ui_multibut_restore(bContext *C, uiHandleButtonData *data, uiBlock *block)
+{
+  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
+    if (but->flag & UI_BUT_DRAG_MULTI) {
+      uiButMultiState *mbut_state = ui_multibut_lookup(data, but);
+      if (mbut_state) {
+        ui_but_value_set(but, mbut_state->origvalue);
+
+#  ifdef USE_ALLSELECT
+        if (mbut_state->select_others.elems_len > 0) {
+          ui_selectcontext_apply(
+              C, but, &mbut_state->select_others, mbut_state->origvalue, mbut_state->origvalue);
+        }
+#  else
+        UNUSED_VARS(C);
+#  endif
+      }
+    }
+  }
+}
+
+static void ui_multibut_free(uiHandleButtonData *data, uiBlock *block)
+{
+#  ifdef USE_ALLSELECT
+  if (data->multi_data.mbuts) {
+    LinkNode *list = data->multi_data.mbuts;
+    while (list) {
+      LinkNode *next = list->next;
+      uiButMultiState *mbut_state = static_cast<uiButMultiState *>(list->link);
+
+      if (mbut_state->select_others.elems) {
+        MEM_freeN(mbut_state->select_others.elems);
+      }
+
+      MEM_freeN(list->link);
+      MEM_freeN(list);
+      list = next;
+    }
+  }
+#  else
+  BLI_linklist_freeN(data->multi_data.mbuts);
+#  endif
+
+  data->multi_data.mbuts = nullptr;
+
+  if (data->multi_data.bs_mbuts) {
+    UI_butstore_free(block, data->multi_data.bs_mbuts);
+    data->multi_data.bs_mbuts = nullptr;
+  }
+}
+
+static bool ui_multibut_states_tag(uiBut *but_active,
+                                   uiHandleButtonData *data,
+                                   const wmEvent *event)
+{
+  float seg[2][2];
+  bool changed = false;
+
+  seg[0][0] = data->multi_data.drag_start[0];
+  seg[0][1] = data->multi_data.drag_start[1];
+
+  seg[1][0] = event->xy[0];
+  seg[1][1] = event->xy[1];
+
+  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_SETUP);
+
+  ui_window_to_block_fl(data->region, but_active->block, &seg[0][0], &seg[0][1]);
+  ui_window_to_block_fl(data->region, but_active->block, &seg[1][0], &seg[1][1]);
+
+  data->multi_data.has_mbuts = false;
+
+  /* follow ui_but_find_mouse_over_ex logic */
+  LISTBASE_FOREACH (uiBut *, but, &but_active->block->buttons) {
+    bool drag_prev = false;
+    bool drag_curr = false;
+
+    /* re-set each time */
+    if (but->flag & UI_BUT_DRAG_MULTI) {
+      but->flag &= ~UI_BUT_DRAG_MULTI;
+      drag_prev = true;
+    }
+
+    if (ui_but_is_interactive(but, false)) {
+
+      /* drag checks */
+      if (but_active != but) {
+        if (ui_but_is_compatible(but_active, but)) {
+
+          BLI_assert(but->active == nullptr);
+
+          /* finally check for overlap */
+          if (BLI_rctf_isect_segment(&but->rect, seg[0], seg[1])) {
+
+            but->flag |= UI_BUT_DRAG_MULTI;
+            data->multi_data.has_mbuts = true;
+            drag_curr = true;
+          }
+        }
+      }
+    }
+
+    changed |= (drag_prev != drag_curr);
+  }
+
+  return changed;
+}
+
+static void ui_multibut_states_create(uiBut *but_active, uiHandleButtonData *data)
+{
+  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_SETUP);
+  BLI_assert(data->multi_data.has_mbuts);
+
+  data->multi_data.bs_mbuts = UI_butstore_create(but_active->block);
+
+  LISTBASE_FOREACH (uiBut *, but, &but_active->block->buttons) {
+    if (but->flag & UI_BUT_DRAG_MULTI) {
+      ui_multibut_add(data, but);
+    }
+  }
+
+  /* Edit buttons proportionally to each other.
+   * NOTE: if we mix buttons which are proportional and others which are not,
+   * this may work a bit strangely. */
+  if ((but_active->rnaprop && (RNA_property_flag(but_active->rnaprop) & PROP_PROPORTIONAL)) ||
+      ELEM(but_active->unit_type, RNA_SUBTYPE_UNIT_VALUE(PROP_UNIT_LENGTH)))
+  {
+    if (data->origvalue != 0.0) {
+      data->multi_data.is_proportional = true;
+    }
+  }
+}
+
+static void ui_multibut_states_apply(bContext *C, uiHandleButtonData *data, uiBlock *block)
+{
+  ARegion *region = data->region;
+  const double value_delta = data->value - data->origvalue;
+  const double value_scale = data->multi_data.is_proportional ? (data->value / data->origvalue) :
+                                                                0.0;
+
+  BLI_assert(data->multi_data.init == uiHandleButtonMulti::INIT_ENABLE);
+  BLI_assert(data->multi_data.skip == false);
+
+  LISTBASE_FOREACH (uiBut *, but, &block->buttons) {
+    if (!(but->flag & UI_BUT_DRAG_MULTI)) {
+      continue;
+    }
+
+    BtnMultiState *mbtn_state = ui_multibut_lookup(data, but);
+
+    if (mbut_state == nullptr) {
+      /* Highly unlikely. */
+      printf("%s: Can't find btn\n", __func__);
+      /* While this avoids crashing, multi-button dragging will fail,
+       * which is still a bug from the user perspective. See #83651. */
+      continue;
+    }
+
+    void *active_back;
+    btn_ex_begin(C, region, but, &active_back);
+
+#  ifdef USE_ALLSELECT
+    if (data->sel_others.is_enabled) {
+      /* init once! */
+      if (mbut_state->sel_others.elems_len == 0) {
+        ui_selectcontext_begin(C, btn, &mbtn_state->sel_others);
+      }
+      if (mbtn_state->select_others.elems_len == 0) {
+        mbtn_state->select_others.elems_len = -1;
+      }
+    }
+
+    /* Needed so we apply the right deltas. */
+    btn->active->origvalue = mbut_state->origvalue;
+    btn->active->select_others = mbut_state->select_others;
+    btn->active->select_others.do_free = false;
+#  endif
+
+    lib_assert(active_back == nullptr);
+    /* No need to check 'data->state' here. */
+    if (data->str) {
+      /* Entering text (set all). */
+      btn->active->value = data->value;
+      btn_string_set(C, but, data->str);
+    }
+    else {
+      /* Dragging (use delta). */
+      if (data->multi_data.is_proportional) {
+        btn->active->value = mbut_state->origvalue * value_scale;
+      }
+      else {
+        btn->active->value = mbut_state->origvalue + value_delta;
+      }
+
+      /* Clamp based on soft limits, see #40154. */
+      CLAMP(btn->active->value, double(btn->softmin), double(but->softmax));
+    }
+
+    btn_ex_end(C, rgn, btn, active_back);
+  }
+}
+
+#endif /* USE_DRAG_MULTINUM */
+
+/* Btn Drag Toggle */
+#ifdef USE_DRAG_TOGGLE
+
+/* Helpers that wrap bool fns, to support different kinds of btns. */
+static bool btn_drag_toggle_is_supported(const Btn *btn)
+{
+  if (btn->flag & BTN_DISABLED) {
+    return false;
+  }
+  if (btn_is_bool(btn)) {
+    return true;
+  }
+  if (btn_is_decorator(btn)) {
+    return ELEM(but->icon,
+                ICON_DECORATE,
+                ICON_DECORATE_KEYFRAME,
+                ICON_DECORATE_ANIM,
+                ICON_DECORATE_OVERRIDE);
+  }
+  return false;
+}
+
+/* Button pushed state to compare if other btns match. Can be more
+ * then just true or false for toggle btns with more than 2 states. */
+static int btn_drag_toggle_pushed_state(Btn *btn)
+{
+  if (btn->apiptr.data == nullptr && btn->ptr == nullptr && btn->icon) {
+    /* Assume icon ids a unique state, for btns that
+     * work through fns cbs and don't have an bool
+     * value that indicates the state. */
+    return btn->icon + btn->iconadd;
+  }
+  if (btn_is_bool(btn)) {
+    return btn_is_pushed(btn);
+  }
+  return 0;
+}
+
+struct uiDragToggleHandle {
+  /* init */
+  int pushed_state;
+  float but_cent_start[2];
+
+  bool is_xy_lock_init;
+  bool xy_lock[2];
+
+  int xy_init[2];
+  int xy_last[2];
+};
+
+static bool ui_drag_toggle_set_xy_xy(
+    Cxt *C, ARgn *rgn, const int pushed_state, const int xy_src[2], const int xy_dst[2])
+{
+  /* popups such as layers won't re-evaluate on redraw */
+  const bool do_check = (rgn->rgntype == RGN_TYPE_TEMPORARY);
+  bool changed = false;
+
+  LIST_FOREACH (uiBlock *, block, &rgn->uiblocks) {
+    float xy_a_block[2] = {float(xy_src[0]), float(xy_src[1])};
+    float xy_b_block[2] = {float(xy_dst[0]), float(xy_dst[1])};
+
+    ui_win_to_block_fl(region, block, &xy_a_block[0], &xy_a_block[1]);
+    ui_win_to_block_fl(region, block, &xy_b_block[0], &xy_b_block[1]);
+
+    LIST_FOREACH (Btn *, btn, &block->btns) {
+      /* NOTE: ctrl is always true here because (at least for now)
+       * we always want to consider text control in this case, even when not embossed. */
+
+      if (!btn_is_interactive(btn, true)) {
+        continue;
+      }
+      if (!lib_rctf_isect_segment(&btn->rect, xy_a_block, xy_b_block)) {
+        continue;
+      }
+      if (!ui_drag_toggle_btn_is_supported(but)) {
+        continue;
+      }
+      /* is it pressed? */
+      const int pushed_state_btn = ui_drag_toggle_btn_pushed_state(btn);
+      if (pushed_state_btn == pushed_state) {
+        continue;
+      }
+
+      /* execute the btn */
+      btn_ex(C, rgn, btn);
+      if (do_check) {
+        btn_update_edited(btn);
+      }
+      if (U.runtime.is_dirty == false) {
+        btn_update_prefs_dirty(btn);
+      }
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    /* apply now, not on release (or if handlers are canceled for whatever reason) */
+    btn_apply_fns_after(C);
+  }
+
+  return changed;
+}
+
+static void ui_drag_toggle_set(Cxt *C, uiDragToggleHandle *drag_info, const int xy_input[2])
+{
+  ARgn *rgn = cxt_win_region(C);
+  bool do_draw = false;
+
+  /* Initialize Locking:
+   *
+   * Check if we need to initialize the lock axis by finding if the first
+   * btn we mouse over is X or Y aligned, then lock the mouse to that axis after.  */
+  if (drag_info->is_xy_lock_init == false) {
+    /* first store the buttons original coords */
+    Btn *btn = btn_find_mouse_over_ex(rgn, xy_input, true, false, nullptr, nullptr);
+
+    if (btn) {
+      if (btn->flag & BTN_DRAG_LOCK) {
+        const float btn_cent_new[2] = {
+            lib_rctf_cent_x(&btn->rect),
+            lib_rctf_cent_y(&btn->rect),
+        };
+
+        /* check if this is a different btn,
+         * chances are high the btn won't move about :) */
+        if (len_manhattan_v2v2(drag_info->tn_cent_start, btn_cent_new) > 1.0f) {
+          if (fabsf(drag_info->btn_cent_start[0] - btn_cent_new[0]) <
+              fabsf(drag_info->btn_cent_start[1] - btn_cent_new[1]))
+          {
+            drag_info->xy_lock[0] = true;
+          }
+          else {
+            drag_info->xy_lock[1] = true;
+          }
+          drag_info->is_xy_lock_init = true;
+        }
+      }
+      else {
+        drag_info->is_xy_lock_init = true;
+      }
+    }
+  }
+  /* done with axis locking */
+
+  int xy[2];
+  xy[0] = (drag_info->xy_lock[0] == false) ? xy_input[0] : drag_info->xy_last[0];
+  xy[1] = (drag_info->xy_lock[1] == false) ? xy_input[1] : drag_info->xy_last[1];
+
+  /* touch all buttons between last mouse coord and this one */
+  do_draw = ui_drag_toggle_set_xy_xy(C, rgn, drag_info->pushed_state, drag_info->xy_last, xy);
+
+  if (do_draw) {
+    ed_rgn_tag_redraw(region);
+  }
+
+  copy_v2_v2_int(drag_info->xy_last, xy);
+}
+
+static void ui_handler_rgn_drag_toggle_remove(Cxt * /*C*/, void *userdata)
+{
+  uiDragToggleHandle *drag_info = static_cast<uiDragToggleHandle *>(userdata);
+  mem_free(drag_info);
+}
+
+static int ui_handler_rgn_drag_toggle(Cxt *C, const WinEv *ev, void *userdata)
+{
+  uiDragToggleHandle *drag_info = static_cast<uiDragToggleHandle *>(userdata);
+  bool done = false;
+
+  switch (ev->type) {
+    case LEFTMOUSE: {
+      if (ev->val == KM_RELEASE) {
+        done = true;
+      }
+      break;
+    }
+    case MOUSEMOVE: {
+      ui_drag_toggle_set(C, drag_info, ev->xy);
+      break;
+    }
+  }
+
+  if (done) {
+    Win *win = cxt_win(C);
+    const ARgn *rhn = cxt_win_rgn(C);
+    Btn *btn = btn_find_mouse_over_ex(
+        region, drag_info->xy_init, true, false, nullptr, nullptr);
+
+    if (btn) {
+      btn_apply_undo(btn);
+    }
+
+    win_ev_remove_ui_handler(&win->modalhandlers,
+                               ui_handler_region_drag_toggle,
+                               ui_handler_region_drag_toggle_remove,
+                               drag_info,
+                               false);
+    ui_handler_rgn_drag_toggle_remove(C, drag_info);
+
+    win_ev_add_mousemove(win);
+    return WM_UI_HANDLER_BREAK;
+  }
+  return WM_UI_HANDLER_CONTINUE;
+}
+
+static bool btn_is_drag_toggle(const Btn *btn)
+{
+  return ((ui_drag_toggle_btn_is_supported(btn) == true) &&
+          /* Menu check is important so the btn dragged over isn't removed instantly. */
+          (ui_block_is_menu(but->block) == false));
+}
+
+#endif /* USE_DRAG_TOGGLE */
+
+#ifdef USE_ALLSEL
+
+static bool ui_selcxt_begin(Cxt *C, Btn *btn, uiSelCxtStore *selcxt_data)
+{
+  ApiPtr lptr;
+  ApiProp *lprop;
+  bool success = false;
+
+  char *path = nullptr;
+  List list = {nullptr};
+
+  ApiPtr ptr = btn->apiptr;
+  ApiProp *prop = btn->apiprop;
+  const int index = btn->apiindex;
+
+  /* for now don't support whole colors */
+  if (index == -1) {
+    return false;
+  }
+
+  /* if there is a valid property that is editable... */
+  if (ptr.data && prop) {
+    bool use_path_from_id;
+
+    /* some facts we want to know */
+    const bool is_array = api_prop_array_check(prop);
+    const int api_type = api_prop_type(prop);
+
+    if (ui_cxt_copy_to_selected_list(C, &ptr, prop, &lb, &use_path_from_id, &path) &&
+        !lib_list_is_empty(&lb))
+    {
+      selcxt_data->elems_len = lib_list_count(&list);
+      selcxt_data->elems = static_cast<uiSelCxtElem *>(
+          mem_malloc(sizeof(uiSelCxtElem) * selcxt_data->elems_len, __func__));
+      int i;
+      LIST_FOREACH_INDEX (CollectionPtrLink *, link, &lb, i) {
+        if (i >= selcxt_data->elems_len) {
+          break;
+        }
+
+        if (!ui_cxt_copy_to_selected_check(
+                &ptr, &link->ptr, prop, path, use_path_from_id, &lptr, &lprop))
+        {
+          selcxt_data->elems_len -= 1;
+          i -= 1;
+          continue;
+        }
+
+        uiSelCxtElem *other = &selcxt_data->elems[i];
+        other->ptr = lptr;
+        if (is_array) {
+          if (api_type == PROP_FLOAT) {
+            other->val_f = api_prop_float_get_index(&lptr, lprop, index);
+          }
+          else if (api_type == PROP_INT) {
+            other->val_i = api_prop_int_get_index(&lptr, lprop, index);
+          }
+          /* ignored for now */
+#  if 0
+          else if (api_type == PROP_BOOL) {
+            other->val_b = api_prop_bool_get_index(&lptr, lprop, index);
+          }
+#  endif
+        }
+        else {
+          if (api_type == PROP_FLOAT) {
+            other->val_f = api_prop_float_get(&lptr, lprop);
+          }
+          else if (api_type == PROP_INT) {
+            other->val_i = api_prop_int_get(&lptr, lprop);
+          }
+          /* ignored for now */
+#  if 0
+          else if (api_type == PROP_BOOL) {
+            other->val_b = api_prop_bool_get(&lptr, lprop);
+          }
+          else if (rna_type == PROP_ENUM) {
+            other->val_i = api_prop_enum_get(&lptr, lprop);
+          }
+#  endif
+        }
+      }
+      success = (selcxt_data->elems_len != 0);
+    }
+  }
+
+  if (selcxt_data->elems_len == 0) {
+    MEM_SAFE_FREE(selcxt_data->elems);
+  }
+
+  MEM_SAFE_FREE(path);
+  lib_freelist(&list);
+
+  /* caller can clear */
+  selcxt_data->do_free = true;
+
+  if (success) {
+    btn->flag |= BTN_IS_SEL_CXT;
+  }
+
+  return success;
 }
