@@ -3537,3 +3537,985 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
   }
 #endif
 }
+
+static void ui_textedit_next_but(uiBlock *block, uiBut *actbut, uiHandleButtonData *data)
+{
+  /* Label and round-box can overlap real buttons (backdrops...). */
+  if (ELEM(actbut->type,
+           UI_BTYPE_LABEL,
+           UI_BTYPE_SEPR,
+           UI_BTYPE_SEPR_LINE,
+           UI_BTYPE_ROUNDBOX,
+           UI_BTYPE_LISTBOX))
+  {
+    return;
+  }
+
+  for (uiBut *but = actbut->next; but; but = but->next) {
+    if (ui_but_is_editable_as_text(but)) {
+      if (!(but->flag & UI_BUT_DISABLED)) {
+        data->postbut = but;
+        data->posttype = BUTTON_ACTIVATE_TEXT_EDITING;
+        return;
+      }
+    }
+  }
+  for (uiBut *but = static_cast<uiBut *>(block->buttons.first); but != actbut; but = but->next) {
+    if (ui_but_is_editable_as_text(but)) {
+      if (!(but->flag & UI_BUT_DISABLED)) {
+        data->postbut = but;
+        data->posttype = BUTTON_ACTIVATE_TEXT_EDITING;
+        return;
+      }
+    }
+  }
+}
+
+static void ui_textedit_prev_but(uiBlock *block, uiBut *actbut, uiHandleButtonData *data)
+{
+  /* Label and round-box can overlap real buttons (backdrops...). */
+  if (ELEM(actbut->type,
+           UI_BTYPE_LABEL,
+           UI_BTYPE_SEPR,
+           UI_BTYPE_SEPR_LINE,
+           UI_BTYPE_ROUNDBOX,
+           UI_BTYPE_LISTBOX))
+  {
+    return;
+  }
+
+  for (uiBut *but = actbut->prev; but; but = but->prev) {
+    if (ui_but_is_editable_as_text(but)) {
+      if (!(but->flag & UI_BUT_DISABLED)) {
+        data->postbut = but;
+        data->posttype = BUTTON_ACTIVATE_TEXT_EDITING;
+        return;
+      }
+    }
+  }
+  for (uiBut *but = static_cast<uiBut *>(block->buttons.last); but != actbut; but = but->prev) {
+    if (ui_but_is_editable_as_text(but)) {
+      if (!(but->flag & UI_BUT_DISABLED)) {
+        data->postbut = but;
+        data->posttype = BUTTON_ACTIVATE_TEXT_EDITING;
+        return;
+      }
+    }
+  }
+}
+
+/**
+ * Return the jump type used for cursor motion & back-space/delete actions.
+ */
+static eStrCursorJumpType ui_textedit_jump_type_from_event(const wmEvent *event)
+{
+/* TODO: Do not enable these Apple-specific modifiers until we also support them in
+ * text objects, console, and text editor to keep everything consistent - Harley. */
+#if defined(__APPLE__) && 0
+  if (event->modifier & KM_OSKEY) {
+    return STRCUR_JUMP_ALL;
+  }
+  if (event->modifier & KM_ALT) {
+    return STRCUR_JUMP_DELIM;
+  }
+#else
+  if (event->modifier & KM_CTRL) {
+    return STRCUR_JUMP_DELIM;
+  }
+#endif
+  return STRCUR_JUMP_NONE;
+}
+
+static void ui_do_but_textedit(
+    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  int retval = WM_UI_HANDLER_CONTINUE;
+  bool changed = false, inbox = false, update = false, skip_undo_push = false;
+
+#ifdef WITH_INPUT_IME
+  wmWindow *win = CTX_wm_window(C);
+  const wmIMEData *ime_data = win->ime_data;
+  const bool is_ime_composing = ime_data && win->ime_data_is_composing;
+#else
+  const bool is_ime_composing = false;
+#endif
+
+  switch (event->type) {
+    case MOUSEMOVE:
+    case MOUSEPAN:
+      if (data->searchbox) {
+#ifdef USE_KEYNAV_LIMIT
+        if ((event->type == MOUSEMOVE) &&
+            ui_mouse_motion_keynav_test(&data->searchbox_keynav_state, event))
+        {
+          /* pass */
+        }
+        else {
+          ui_searchbox_event(C, data->searchbox, but, data->region, event);
+        }
+#else
+        ui_searchbox_event(C, data->searchbox, but, data->region, event);
+#endif
+      }
+      ui_do_but_extra_operator_icons_mousemove(but, data, event);
+
+      break;
+    case RIGHTMOUSE:
+    case EVT_ESCKEY:
+      if (event->val == KM_PRESS) {
+        /* Support search context menu. */
+        if (event->type == RIGHTMOUSE) {
+          if (data->searchbox) {
+            if (ui_searchbox_event(C, data->searchbox, but, data->region, event)) {
+              /* Only break if the event was handled. */
+              break;
+            }
+          }
+        }
+
+#ifdef WITH_INPUT_IME
+        /* skips button handling since it is not wanted */
+        if (is_ime_composing) {
+          break;
+        }
+#endif
+        data->cancel = true;
+        data->escapecancel = true;
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        retval = WM_UI_HANDLER_BREAK;
+      }
+      break;
+    case LEFTMOUSE: {
+      /* Allow clicks on extra icons while editing. */
+      if (ui_do_but_extra_operator_icon(C, but, data, event)) {
+        break;
+      }
+
+      const bool had_selection = but->selsta != but->selend;
+
+      /* exit on LMB only on RELEASE for searchbox, to mimic other popups,
+       * and allow multiple menu levels */
+      if (data->searchbox) {
+        inbox = ui_searchbox_inside(data->searchbox, event->xy);
+      }
+
+      bool is_press_in_button = false;
+      if (ELEM(event->val, KM_PRESS, KM_DBL_CLICK)) {
+        float mx = event->xy[0];
+        float my = event->xy[1];
+        ui_window_to_block_fl(data->region, block, &mx, &my);
+
+        if (ui_but_contains_pt(but, mx, my)) {
+          is_press_in_button = true;
+        }
+      }
+
+      /* for double click: we do a press again for when you first click on button
+       * (selects all text, no cursor pos) */
+      if (ELEM(event->val, KM_PRESS, KM_DBL_CLICK)) {
+        if (is_press_in_button) {
+          ui_textedit_set_cursor_pos(but, data, event->xy[0]);
+          but->selsta = but->selend = but->pos;
+          data->sel_pos_init = but->pos;
+
+          button_activate_state(C, but, BUTTON_STATE_TEXT_SELECTING);
+          retval = WM_UI_HANDLER_BREAK;
+        }
+        else if (inbox == false) {
+          /* if searchbox, click outside will cancel */
+          if (data->searchbox) {
+            data->cancel = data->escapecancel = true;
+          }
+          button_activate_state(C, but, BUTTON_STATE_EXIT);
+          retval = WM_UI_HANDLER_BREAK;
+        }
+      }
+
+      /* only select a word in button if there was no selection before */
+      if (event->val == KM_DBL_CLICK && had_selection == false) {
+        if (is_press_in_button) {
+          const int str_len = strlen(data->str);
+          /* This may not be necessary, additional check to ensure `pos` is never out of range,
+           * since negative values aren't acceptable, see: #113154. */
+          CLAMP(but->pos, 0, str_len);
+
+          int selsta, selend;
+          BLI_str_cursor_step_bounds_utf8(data->str, str_len, but->pos, &selsta, &selend);
+          but->pos = short(selend);
+          but->selsta = short(selsta);
+          but->selend = short(selend);
+          /* Anchor selection to the left side unless the last word. */
+          data->sel_pos_init = ((selend == str_len) && (selsta != 0)) ? selend : selsta;
+          retval = WM_UI_HANDLER_BREAK;
+          changed = true;
+        }
+      }
+      else if (inbox) {
+        /* if we allow activation on key press,
+         * it gives problems launching operators #35713. */
+        if (event->val == KM_RELEASE) {
+          button_activate_state(C, but, BUTTON_STATE_EXIT);
+          retval = WM_UI_HANDLER_BREAK;
+        }
+      }
+      break;
+    }
+  }
+
+  if (event->val == KM_PRESS && !is_ime_composing) {
+    switch (event->type) {
+      case EVT_VKEY:
+      case EVT_XKEY:
+      case EVT_CKEY:
+#if defined(__APPLE__)
+        if (ELEM(event->modifier, KM_OSKEY, KM_CTRL))
+#else
+        if (event->modifier == KM_CTRL)
+#endif
+        {
+          if (event->type == EVT_VKEY) {
+            changed = ui_textedit_copypaste(but, data, UI_TEXTEDIT_PASTE);
+          }
+          else if (event->type == EVT_CKEY) {
+            changed = ui_textedit_copypaste(but, data, UI_TEXTEDIT_COPY);
+          }
+          else if (event->type == EVT_XKEY) {
+            changed = ui_textedit_copypaste(but, data, UI_TEXTEDIT_CUT);
+          }
+
+          retval = WM_UI_HANDLER_BREAK;
+        }
+        break;
+      case EVT_RIGHTARROWKEY:
+      case EVT_LEFTARROWKEY: {
+        const eStrCursorJumpDirection direction = (event->type == EVT_RIGHTARROWKEY) ?
+                                                      STRCUR_DIR_NEXT :
+                                                      STRCUR_DIR_PREV;
+        const eStrCursorJumpType jump = ui_textedit_jump_type_from_event(event);
+        ui_textedit_move(but, data, direction, event->modifier & KM_SHIFT, jump);
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      }
+      case WHEELDOWNMOUSE:
+      case EVT_DOWNARROWKEY:
+        if (data->searchbox) {
+#ifdef USE_KEYNAV_LIMIT
+          ui_mouse_motion_keynav_init(&data->searchbox_keynav_state, event);
+#endif
+          ui_searchbox_event(C, data->searchbox, but, data->region, event);
+          break;
+        }
+        if (event->type == WHEELDOWNMOUSE) {
+          break;
+        }
+        ATTR_FALLTHROUGH;
+      case EVT_ENDKEY:
+        ui_textedit_move(but, data, STRCUR_DIR_NEXT, event->modifier & KM_SHIFT, STRCUR_JUMP_ALL);
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      case WHEELUPMOUSE:
+      case EVT_UPARROWKEY:
+        if (data->searchbox) {
+#ifdef USE_KEYNAV_LIMIT
+          ui_mouse_motion_keynav_init(&data->searchbox_keynav_state, event);
+#endif
+          ui_searchbox_event(C, data->searchbox, but, data->region, event);
+          break;
+        }
+        if (event->type == WHEELUPMOUSE) {
+          break;
+        }
+        ATTR_FALLTHROUGH;
+      case EVT_HOMEKEY:
+        ui_textedit_move(but, data, STRCUR_DIR_PREV, event->modifier & KM_SHIFT, STRCUR_JUMP_ALL);
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      case EVT_PADENTER:
+      case EVT_RETKEY:
+        button_activate_state(C, but, BUTTON_STATE_EXIT);
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      case EVT_DELKEY:
+      case EVT_BACKSPACEKEY: {
+        const eStrCursorJumpDirection direction = (event->type == EVT_DELKEY) ? STRCUR_DIR_NEXT :
+                                                                                STRCUR_DIR_PREV;
+        const eStrCursorJumpType jump = ui_textedit_jump_type_from_event(event);
+        changed = ui_textedit_delete(but, data, direction, jump);
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      }
+
+      case EVT_AKEY:
+
+        /* Ctrl-A: Select all. */
+#if defined(__APPLE__)
+        /* OSX uses Command-A system-wide, so add it. */
+        if (ELEM(event->modifier, KM_OSKEY, KM_CTRL))
+#else
+        if (event->modifier == KM_CTRL)
+#endif
+        {
+          ui_textedit_move(but, data, STRCUR_DIR_PREV, false, STRCUR_JUMP_ALL);
+          ui_textedit_move(but, data, STRCUR_DIR_NEXT, true, STRCUR_JUMP_ALL);
+          retval = WM_UI_HANDLER_BREAK;
+        }
+        break;
+
+      case EVT_TABKEY:
+        /* There is a key conflict here, we can't tab with auto-complete. */
+        if (but->autocomplete_func || data->searchbox) {
+          const int autocomplete = ui_textedit_autocomplete(C, but, data);
+          changed = autocomplete != AUTOCOMPLETE_NO_MATCH;
+
+          if (autocomplete == AUTOCOMPLETE_FULL_MATCH) {
+            button_activate_state(C, but, BUTTON_STATE_EXIT);
+          }
+        }
+        else if ((event->modifier & (KM_CTRL | KM_ALT | KM_OSKEY)) == 0) {
+          /* Use standard keys for cycling through buttons Tab, Shift-Tab to reverse. */
+          if (event->modifier & KM_SHIFT) {
+            ui_textedit_prev_but(block, but, data);
+          }
+          else {
+            ui_textedit_next_but(block, but, data);
+          }
+          button_activate_state(C, but, BUTTON_STATE_EXIT);
+        }
+        retval = WM_UI_HANDLER_BREAK;
+        break;
+      case EVT_ZKEY: {
+        /* Ctrl-Z or Ctrl-Shift-Z: Undo/Redo (allowing for OS-Key on Apple). */
+
+        const bool is_redo = (event->modifier & KM_SHIFT);
+        if (
+#if defined(__APPLE__)
+            ((event->modifier & KM_OSKEY) && ((event->modifier & (KM_ALT | KM_CTRL)) == 0)) ||
+#endif
+            ((event->modifier & KM_CTRL) && ((event->modifier & (KM_ALT | KM_OSKEY)) == 0)))
+        {
+          int undo_pos;
+          const char *undo_str = ui_textedit_undo(
+              data->undo_stack_text, is_redo ? 1 : -1, &undo_pos);
+          if (undo_str != nullptr) {
+            ui_textedit_string_set(but, data, undo_str);
+
+            /* Set the cursor & clear selection. */
+            but->pos = undo_pos;
+            but->selsta = but->pos;
+            but->selend = but->pos;
+            changed = true;
+          }
+          retval = WM_UI_HANDLER_BREAK;
+          skip_undo_push = true;
+        }
+        break;
+      }
+    }
+
+    if ((event->utf8_buf[0]) && (retval == WM_UI_HANDLER_CONTINUE)
+#ifdef WITH_INPUT_IME
+        && !is_ime_composing && !WM_event_is_ime_switch(event)
+#endif
+    )
+    {
+      char utf8_buf_override[2] = {'\0', '\0'};
+      const char *utf8_buf = event->utf8_buf;
+
+      /* Exception that's useful for number buttons, some keyboard
+       * numpads have a comma instead of a period. */
+      if (ELEM(but->type, UI_BTYPE_NUM, UI_BTYPE_NUM_SLIDER)) { /* Could use `data->min`. */
+        if ((event->type == EVT_PADPERIOD) && (utf8_buf[0] == ',')) {
+          utf8_buf_override[0] = '.';
+          utf8_buf = utf8_buf_override;
+        }
+      }
+
+      if (utf8_buf[0]) {
+        const int utf8_buf_len = BLI_str_utf8_size_or_error(utf8_buf);
+        BLI_assert(utf8_buf_len != -1);
+        changed = ui_textedit_insert_buf(but, data, utf8_buf, utf8_buf_len);
+      }
+
+      retval = WM_UI_HANDLER_BREAK;
+    }
+    /* textbutton with this flag: do live update (e.g. for search buttons) */
+    if (but->flag & UI_BUT_TEXTEDIT_UPDATE) {
+      update = true;
+    }
+  }
+
+#ifdef WITH_INPUT_IME
+  if (event->type == WM_IME_COMPOSITE_START) {
+    changed = true;
+    if (but->selend > but->selsta) {
+      ui_textedit_delete_selection(but, data);
+    }
+  }
+  else if (event->type == WM_IME_COMPOSITE_EVENT) {
+    changed = true;
+    if (ime_data->result_len) {
+      if (ELEM(but->type, UI_BTYPE_NUM, UI_BTYPE_NUM_SLIDER) &&
+          STREQ(ime_data->str_result, "\xE3\x80\x82"))
+      {
+        /* Convert Ideographic Full Stop (U+3002) to decimal point when entering numbers. */
+        ui_textedit_insert_ascii(but, data, '.');
+      }
+      else {
+        ui_textedit_insert_buf(but, data, ime_data->str_result, ime_data->result_len);
+      }
+    }
+  }
+  else if (event->type == WM_IME_COMPOSITE_END) {
+    changed = true;
+  }
+#endif
+
+  if (changed) {
+    /* The undo stack may be nullptr if an event exits editing. */
+    if ((skip_undo_push == false) && (data->undo_stack_text != nullptr)) {
+      ui_textedit_undo_push(data->undo_stack_text, data->str, but->pos);
+    }
+
+    /* only do live update when but flag request it (UI_BUT_TEXTEDIT_UPDATE). */
+    if (update && data->interactive) {
+      ui_apply_but(C, block, but, data, true);
+    }
+    else {
+      ui_but_update_edited(but);
+    }
+    but->changed = true;
+
+    if (data->searchbox) {
+      ui_searchbox_update(C, data->searchbox, but, true); /* true = reset */
+    }
+  }
+
+  if (changed || (retval == WM_UI_HANDLER_BREAK)) {
+    ED_region_tag_redraw(data->region);
+  }
+}
+
+static void ui_do_but_textedit_select(
+    bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+  int retval = WM_UI_HANDLER_CONTINUE;
+
+  switch (event->type) {
+    case MOUSEMOVE: {
+      int mx = event->xy[0];
+      int my = event->xy[1];
+      ui_window_to_block(data->region, block, &mx, &my);
+
+      ui_textedit_set_cursor_select(but, data, event->xy[0]);
+      retval = WM_UI_HANDLER_BREAK;
+      break;
+    }
+    case LEFTMOUSE:
+      if (event->val == KM_RELEASE) {
+        button_activate_state(C, but, BUTTON_STATE_TEXT_EDITING);
+      }
+      retval = WM_UI_HANDLER_BREAK;
+      break;
+  }
+
+  if (retval == WM_UI_HANDLER_BREAK) {
+    ui_but_update(but);
+    ED_region_tag_redraw(data->region);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Button Number Editing (various types)
+ * \{ */
+
+static void ui_numedit_begin_set_values(uiBut *but, uiHandleButtonData *data)
+{
+  data->startvalue = ui_but_value_get(but);
+  data->origvalue = data->startvalue;
+  data->value = data->origvalue;
+}
+
+static void ui_numedit_begin(uiBut *but, uiHandleButtonData *data)
+{
+  if (but->type == UI_BTYPE_CURVE) {
+    uiButCurveMapping *but_cumap = (uiButCurveMapping *)but;
+    but_cumap->edit_cumap = (CurveMapping *)but->poin;
+  }
+  else if (but->type == UI_BTYPE_CURVEPROFILE) {
+    uiButCurveProfile *but_profile = (uiButCurveProfile *)but;
+    but_profile->edit_profile = (CurveProfile *)but->poin;
+  }
+  else if (but->type == UI_BTYPE_COLORBAND) {
+    uiButColorBand *but_coba = (uiButColorBand *)but;
+    data->coba = (ColorBand *)but->poin;
+    but_coba->edit_coba = data->coba;
+  }
+  else if (ELEM(but->type, UI_BTYPE_UNITVEC, UI_BTYPE_HSVCUBE, UI_BTYPE_HSVCIRCLE, UI_BTYPE_COLOR))
+  {
+    ui_but_v3_get(but, data->origvec);
+    copy_v3_v3(data->vec, data->origvec);
+    but->editvec = data->vec;
+  }
+  else {
+    ui_numedit_begin_set_values(but, data);
+    but->editval = &data->value;
+
+    float softmin = but->softmin;
+    float softmax = but->softmax;
+    float softrange = softmax - softmin;
+    const PropertyScaleType scale_type = ui_but_scale_type(but);
+
+    float log_min = (scale_type == PROP_SCALE_LOG) ? max_ff(softmin, UI_PROP_SCALE_LOG_MIN) : 0.0f;
+
+    if ((but->type == UI_BTYPE_NUM) && (ui_but_is_cursor_warp(but) == false)) {
+      uiButNumber *number_but = (uiButNumber *)but;
+
+      if (scale_type == PROP_SCALE_LOG) {
+        log_min = max_ff(log_min, powf(10, -number_but->precision) * 0.5f);
+      }
+      /* Use a minimum so we have a predictable range,
+       * otherwise some float buttons get a large range. */
+      const float value_step_float_min = 0.1f;
+      const bool is_float = ui_but_is_float(but);
+      const double value_step = is_float ?
+                                    double(number_but->step_size * UI_PRECISION_FLOAT_SCALE) :
+                                    int(number_but->step_size);
+      const float drag_map_softrange_max = UI_DRAG_MAP_SOFT_RANGE_PIXEL_MAX * UI_SCALE_FAC;
+      const float softrange_max = min_ff(
+          softrange,
+          2 * (is_float ? min_ff(value_step, value_step_float_min) *
+                              (drag_map_softrange_max / value_step_float_min) :
+                          drag_map_softrange_max));
+
+      if (softrange > softrange_max) {
+        /* Center around the value, keeping in the real soft min/max range. */
+        softmin = data->origvalue - (softrange_max / 2);
+        softmax = data->origvalue + (softrange_max / 2);
+        if (!isfinite(softmin)) {
+          softmin = (data->origvalue > 0.0f ? FLT_MAX : -FLT_MAX);
+        }
+        if (!isfinite(softmax)) {
+          softmax = (data->origvalue > 0.0f ? FLT_MAX : -FLT_MAX);
+        }
+
+        if (softmin < but->softmin) {
+          softmin = but->softmin;
+          softmax = softmin + softrange_max;
+        }
+        else if (softmax > but->softmax) {
+          softmax = but->softmax;
+          softmin = softmax - softrange_max;
+        }
+
+        /* Can happen at extreme values. */
+        if (UNLIKELY(softmin == softmax)) {
+          if (data->origvalue > 0.0) {
+            softmin = nextafterf(softmin, -FLT_MAX);
+          }
+          else {
+            softmax = nextafterf(softmax, FLT_MAX);
+          }
+        }
+
+        softrange = softmax - softmin;
+      }
+    }
+
+    if (softrange == 0.0f) {
+      data->dragfstart = 0.0f;
+    }
+    else {
+      switch (scale_type) {
+        case PROP_SCALE_LINEAR: {
+          data->dragfstart = (float(data->value) - softmin) / softrange;
+          break;
+        }
+        case PROP_SCALE_LOG: {
+          BLI_assert(log_min != 0.0f);
+          const float base = softmax / log_min;
+          data->dragfstart = logf(float(data->value) / log_min) / logf(base);
+          break;
+        }
+        case PROP_SCALE_CUBIC: {
+          const float cubic_min = cube_f(softmin);
+          const float cubic_max = cube_f(softmax);
+          const float cubic_range = cubic_max - cubic_min;
+          const float f = (float(data->value) - softmin) * cubic_range / softrange + cubic_min;
+          data->dragfstart = (cbrtf(f) - softmin) / softrange;
+          break;
+        }
+      }
+    }
+    data->dragf = data->dragfstart;
+
+    data->drag_map_soft_min = softmin;
+    data->drag_map_soft_max = softmax;
+  }
+
+  data->dragchange = false;
+  data->draglock = true;
+}
+
+static void ui_numedit_end(uiBut *but, uiHandleButtonData *data)
+{
+  but->editval = nullptr;
+  but->editvec = nullptr;
+  if (but->type == UI_BTYPE_COLORBAND) {
+    uiButColorBand *but_coba = (uiButColorBand *)but;
+    but_coba->edit_coba = nullptr;
+  }
+  else if (but->type == UI_BTYPE_CURVE) {
+    uiButCurveMapping *but_cumap = (uiButCurveMapping *)but;
+    but_cumap->edit_cumap = nullptr;
+  }
+  else if (but->type == UI_BTYPE_CURVEPROFILE) {
+    uiButCurveProfile *but_profile = (uiButCurveProfile *)but;
+    but_profile->edit_profile = nullptr;
+  }
+  data->dragstartx = 0;
+  data->draglastx = 0;
+  data->dragchange = false;
+  data->dragcbd = nullptr;
+  data->dragsel = 0;
+}
+
+static void ui_numedit_apply(bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data)
+{
+  if (data->interactive) {
+    ui_apply_but(C, block, but, data, true);
+  }
+  else {
+    ui_but_update(but);
+  }
+
+  ED_region_tag_redraw(data->region);
+}
+
+static void ui_but_extra_operator_icon_apply(bContext *C, uiBut *but, uiButExtraOpIcon *op_icon)
+{
+  but->active->apply_through_extra_icon = true;
+
+  if (but->active->interactive) {
+    ui_apply_but(C, but->block, but, but->active, true);
+  }
+  button_activate_state(C, but, BUTTON_STATE_EXIT);
+  WM_operator_name_call_ptr_with_depends_on_cursor(C,
+                                                   op_icon->optype_params->optype,
+                                                   op_icon->optype_params->opcontext,
+                                                   op_icon->optype_params->opptr,
+                                                   nullptr,
+                                                   nullptr);
+
+  /* Force recreation of extra operator icons (pseudo update). */
+  ui_but_extra_operator_icons_free(but);
+
+  WM_event_add_mousemove(CTX_wm_window(C));
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Menu/Popup Begin/End (various popup types)
+ * \{ */
+
+static void ui_block_open_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  uiBlockCreateFunc func = nullptr;
+  uiBlockHandleCreateFunc handlefunc = nullptr;
+  uiMenuCreateFunc menufunc = nullptr;
+  uiMenuCreateFunc popoverfunc = nullptr;
+  void *arg = nullptr;
+
+  switch (but->type) {
+    case UI_BTYPE_BLOCK:
+    case UI_BTYPE_PULLDOWN:
+      if (but->menu_create_func) {
+        menufunc = but->menu_create_func;
+        arg = but->poin;
+      }
+      else {
+        func = but->block_create_func;
+        arg = but->poin ? but->poin : but->func_argN;
+      }
+      break;
+    case UI_BTYPE_MENU:
+    case UI_BTYPE_POPOVER:
+      BLI_assert(but->menu_create_func);
+      if ((but->type == UI_BTYPE_POPOVER) || ui_but_menu_draw_as_popover(but)) {
+        popoverfunc = but->menu_create_func;
+      }
+      else {
+        menufunc = but->menu_create_func;
+      }
+      arg = but->poin;
+      break;
+    case UI_BTYPE_COLOR:
+      ui_but_v3_get(but, data->origvec);
+      copy_v3_v3(data->vec, data->origvec);
+      but->editvec = data->vec;
+
+      if (ui_but_menu_draw_as_popover(but)) {
+        popoverfunc = but->menu_create_func;
+      }
+      else {
+        handlefunc = ui_block_func_COLOR;
+      }
+      arg = but;
+      break;
+
+      /* quiet warnings for unhandled types */
+    default:
+      break;
+  }
+
+  if (func || handlefunc) {
+    data->menu = ui_popup_block_create(C, data->region, but, func, handlefunc, arg, nullptr);
+    if (but->block->handle) {
+      data->menu->popup = but->block->handle->popup;
+    }
+  }
+  else if (menufunc) {
+    data->menu = ui_popup_menu_create(C, data->region, but, menufunc, arg);
+    if (MenuType *mt = UI_but_menutype_get(but)) {
+      STRNCPY(data->menu->menu_idname, mt->idname);
+    }
+    if (but->block->handle) {
+      data->menu->popup = but->block->handle->popup;
+    }
+  }
+  else if (popoverfunc) {
+    data->menu = ui_popover_panel_create(C, data->region, but, popoverfunc, arg);
+    if (but->block->handle) {
+      data->menu->popup = but->block->handle->popup;
+    }
+  }
+
+#ifdef USE_ALLSELECT
+  {
+    if (IS_ALLSELECT_EVENT(data->window->eventstate)) {
+      data->select_others.is_enabled = true;
+    }
+  }
+#endif
+
+  /* this makes adjacent blocks auto open from now on */
+  // if (but->block->auto_open == 0) {
+  //  but->block->auto_open = 1;
+  //}
+}
+
+static void ui_block_open_end(bContext *C, uiBut *but, uiHandleButtonData *data)
+{
+  if (but) {
+    but->editval = nullptr;
+    but->editvec = nullptr;
+
+    but->block->auto_open_last = PIL_check_seconds_timer();
+  }
+
+  if (data->menu) {
+    ui_popup_block_free(C, data->menu);
+    data->menu = nullptr;
+  }
+}
+
+int ui_but_menu_direction(uiBut *but)
+{
+  uiHandleButtonData *data = but->active;
+
+  if (data && data->menu) {
+    return data->menu->direction;
+  }
+
+  return 0;
+}
+
+/**
+ * Hack for #uiList #UI_BTYPE_LISTROW buttons to "give" events to overlaying #UI_BTYPE_TEXT
+ * buttons (Ctrl-Click rename feature & co).
+ */
+static uiBut *ui_but_list_row_text_activate(bContext *C,
+                                            uiBut *but,
+                                            uiHandleButtonData *data,
+                                            const wmEvent *event,
+                                            uiButtonActivateType activate_type)
+{
+  ARegion *region = CTX_wm_region(C);
+  uiBut *labelbut = ui_but_find_mouse_over_ex(region, event->xy, true, false, nullptr, nullptr);
+
+  if (labelbut && labelbut->type == UI_BTYPE_TEXT && !(labelbut->flag & UI_BUT_DISABLED)) {
+    /* exit listrow */
+    data->cancel = true;
+    button_activate_exit(C, but, data, false, false);
+
+    /* Activate the text button. */
+    button_activate_init(C, region, labelbut, activate_type);
+
+    return labelbut;
+  }
+  return nullptr;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Events for Various Button Types
+ * \{ */
+
+static uiButExtraOpIcon *ui_but_extra_operator_icon_mouse_over_get(uiBut *but,
+                                                                   ARegion *region,
+                                                                   const wmEvent *event)
+{
+  if (BLI_listbase_is_empty(&but->extra_op_icons)) {
+    return nullptr;
+  }
+
+  int x = event->xy[0], y = event->xy[1];
+  ui_window_to_block(region, but->block, &x, &y);
+  if (!BLI_rctf_isect_pt(&but->rect, x, y)) {
+    return nullptr;
+  }
+
+  const float icon_size = 0.8f * BLI_rctf_size_y(&but->rect); /* ICON_SIZE_FROM_BUTRECT */
+  float xmax = but->rect.xmax;
+  /* Same as in 'widget_draw_extra_icons', icon padding from the right edge. */
+  xmax -= 0.2 * icon_size;
+
+  /* Handle the padding space from the right edge as the last button. */
+  if (x > xmax) {
+    return static_cast<uiButExtraOpIcon *>(but->extra_op_icons.last);
+  }
+
+  /* Inverse order, from right to left. */
+  LISTBASE_FOREACH_BACKWARD (uiButExtraOpIcon *, op_icon, &but->extra_op_icons) {
+    if ((x > (xmax - icon_size)) && x <= xmax) {
+      return op_icon;
+    }
+    xmax -= icon_size;
+  }
+
+  return nullptr;
+}
+
+static bool ui_do_but_extra_operator_icon(bContext *C,
+                                          uiBut *but,
+                                          uiHandleButtonData *data,
+                                          const wmEvent *event)
+{
+  uiButExtraOpIcon *op_icon = ui_but_extra_operator_icon_mouse_over_get(but, data->region, event);
+
+  if (!op_icon) {
+    return false;
+  }
+
+  /* Only act on release, avoids some glitches. */
+  if (event->val != KM_RELEASE) {
+    /* Still swallow events on the icon. */
+    return true;
+  }
+
+  ED_region_tag_redraw(data->region);
+  button_tooltip_timer_reset(C, but);
+
+  ui_but_extra_operator_icon_apply(C, but, op_icon);
+  /* NOTE: 'but', 'data' may now be freed, don't access. */
+
+  return true;
+}
+
+static void ui_do_but_extra_operator_icons_mousemove(uiBut *but,
+                                                     uiHandleButtonData *data,
+                                                     const wmEvent *event)
+{
+  uiButExtraOpIcon *old_highlighted = nullptr;
+
+  /* Unset highlighting of all first. */
+  LISTBASE_FOREACH (uiButExtraOpIcon *, op_icon, &but->extra_op_icons) {
+    if (op_icon->highlighted) {
+      old_highlighted = op_icon;
+    }
+    op_icon->highlighted = false;
+  }
+
+  uiButExtraOpIcon *hovered = ui_but_extra_operator_icon_mouse_over_get(but, data->region, event);
+
+  if (hovered) {
+    hovered->highlighted = true;
+  }
+
+  if (old_highlighted != hovered) {
+    ED_region_tag_redraw_no_rebuild(data->region);
+  }
+}
+
+#ifdef USE_DRAG_TOGGLE
+/* Shared by any button that supports drag-toggle. */
+static bool ui_do_but_ANY_drag_toggle(
+    bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event, int *r_retval)
+{
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    if (event->type == LEFTMOUSE && event->val == KM_PRESS && ui_but_is_drag_toggle(but)) {
+      ui_apply_but(C, but->block, but, data, true);
+      button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+      data->dragstartx = event->xy[0];
+      data->dragstarty = event->xy[1];
+      *r_retval = WM_UI_HANDLER_BREAK;
+      return true;
+    }
+  }
+  else if (data->state == BUTTON_STATE_WAIT_DRAG) {
+    /* NOTE: the 'BUTTON_STATE_WAIT_DRAG' part of 'ui_do_but_EXIT' could be refactored into
+     * its own function */
+    data->applied = false;
+    *r_retval = ui_do_but_EXIT(C, but, data, event);
+    return true;
+  }
+  return false;
+}
+#endif /* USE_DRAG_TOGGLE */
+
+static int ui_do_but_BUT(bContext *C, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
+{
+#ifdef USE_DRAG_TOGGLE
+  {
+    int retval;
+    if (ui_do_but_ANY_drag_toggle(C, but, data, event, &retval)) {
+      return retval;
+    }
+  }
+#endif
+
+  if (data->state == BUTTON_STATE_HIGHLIGHT) {
+    if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
+      button_activate_state(C, but, BUTTON_STATE_WAIT_RELEASE);
+      return WM_UI_HANDLER_BREAK;
+    }
+    if (event->type == LEFTMOUSE && event->val == KM_RELEASE && but->block->handle) {
+      /* regular buttons will be 'UI_SELECT', menu items 'UI_HOVER' */
+      if (!(but->flag & (UI_SELECT | UI_HOVER))) {
+        data->cancel = true;
+      }
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      return WM_UI_HANDLER_BREAK;
+    }
+    if (ELEM(event->type, EVT_PADENTER, EVT_RETKEY) && event->val == KM_PRESS) {
+      button_activate_state(C, but, BUTTON_STATE_WAIT_FLASH);
+      return WM_UI_HANDLER_BREAK;
+    }
+  }
+  else if (data->state == BUTTON_STATE_WAIT_RELEASE) {
+    if (event->type == LEFTMOUSE && event->val == KM_RELEASE) {
+      if (!(but->flag & UI_SELECT)) {
+        data->cancel = true;
+      }
+      button_activate_state(C, but, BUTTON_STATE_EXIT);
+      return WM_UI_HANDLER_BREAK;
+    }
+  }
+
+  return WM_UI_HANDLER_CONTINUE;
+}
+
+
