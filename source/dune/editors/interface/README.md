@@ -1,10 +1,11 @@
 Glossary
 
-ARgn - Area Region
 Area - Area
-Btn - btn
+ARgn - Area Region
+Btn - Button
+Cxt - Context
+HUD - heads up display
 Pnl - Panel
 Rgn - Region
 UI - User Interface
-HUD - heads up display
-
+Win - Window
