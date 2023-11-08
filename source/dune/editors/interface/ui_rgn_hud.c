@@ -13,8 +13,8 @@
 #include "dune_cxt.h"
 #include "dune_screen.h"
 
-#include "wm_api.h"
-#include "wm_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "api_access.h"
 
@@ -23,59 +23,59 @@
 
 #include "lang.h"
 
-#include "entity_screen.h"
-#include "entity_undo.h"
+#include "ent_screen.h"
+#include "ent_undo.h"
 
 #include "gpu_framebuffer.h"
 #include "ui_intern.h"
 
-/** Utilities **/
-struct HudRegionData {
-  short regionid;
+/* Utils */
+struct HudRgnData {
+  short rgnid;
 };
 
-static bool last_redo_poll(const Cxt *C, short region_type)
+static bool last_redo_poll(const Cxt *C, short rgn_type)
 {
-  wmOp *op = wn_op_last_redo(C);
+  WinOp *op = win_op_last_redo(C);
   if (op == NULL) {
     return false;
   }
 
   bool success = false;
   {
-    /* Make sure that we are using the same region type as the original
+    /* Make sure that we are using the same rgn type as the original
      * op call. Otherwise we would be polling the op with the
      * wrong cxt. */
-    ScrArea *area = cxt_wm_area(C);
-    ARegion *region_op = (region_type != -1) ? dune_area_find_region_type(area, region_type) : NULL;
-    ARegion *region_prev = cxt_wm_region(C);
-    cxt_wm_region_set((Cxt *)C, region_op);
+    ScrArea *area = cxt_win_area(C);
+    ARgn *rgn_op = (rgn_type != -1) ? dune_area_find_rgn_type(area, rgn_type) : NULL;
+    ARgn *rgn_prev = cxt_win_rgn(C);
+    cxt_win_rgn_set((Cxt *)C, rgn_op);
 
-    if (wm_op_repeat_check(C, op) && wm_op_check_ui_empty(op->type) == false) {
-      success = wm_op_poll((Cxt *)C, op->type);
+    if (win_op_repeat_check(C, op) && win_op_check_ui_empty(op->type) == false) {
+      success = win_op_poll((Cxt *)C, op->type);
     }
-    cxt_wm_region_set((Cxt *)C, region_prev);
+    cxt_win_rgn_set((Cxt *)C, rgn_prev);
   }
   return success;
 }
 
-static void hud_region_hide(ARegion *region)
+static void hud_rgn_hide(ARgn *rgn)
 {
-  region->flag |= RGN_FLAG_HIDDEN;
-  /* Avoids setting 'AREA_FLAG_REGION_SIZE_UPDATE'
-   * since other regions don't depend on this. */
-  lib_rcti_init(&region->winrct, 0, 0, 0, 0);
+  rgn->flag |= RGN_FLAG_HIDDEN;
+  /* Avoids setting 'AREA_FLAG_RGN_SIZE_UPDATE'
+   * since other rgns don't depend on this. */
+  lib_rcti_init(&rgn->winrct, 0, 0, 0, 0);
 }
 
-/** Redo Panel **/
-static bool hud_panel_op_redo_poll(const Cxt *C, PanelType *UNUSED(pt))
+/* Redo Pnl **/
+static bool hud_pnl_op_redo_poll(const Cxt *C, PnlType *UNUSED(pt))
 {
-  ScrArea *area = cxt_wm_area(C);
-  ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HUD);
-  if (region != NULL) {
-    struct HudRegionData *hrd = region->regiondata;
+  ScrArea *area = cxt_win_area(C);
+  ARgn *rgn = dune_area_find_rgn_type(area, RGN_TYPE_HUD);
+  if (rgn != NULL) {
+    struct HudRgnData *hrd = rgn->rgndata;
     if (hrd != NULL) {
-      return last_redo_poll(C, hrd->regionid);
+      return last_redo_poll(C, hrd->rgnid);
     }
   }
   return false;
