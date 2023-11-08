@@ -1476,17 +1476,17 @@ static void multibtn_states_apply(Cxt *C, BtnHandleData *data, uiBlock *block)
     if (data->sel_others.is_enabled) {
       /* init once! */
       if (mbtn_state->sel_others.elems_len == 0) {
-        ui_selectcxt_begin(C, btn, &mbtn_state->sel_others);
+        ui_selcxt_begin(C, btn, &mbtn_state->sel_others);
       }
-      if (mbtn_state->select_others.elems_len == 0) {
-        mbtn_state->select_others.elems_len = -1;
+      if (mbtn_state->sel_others.elems_len == 0) {
+        mbtn_state->sel_others.elems_len = -1;
       }
     }
 
     /* Needed so we apply the right deltas. */
     btn->active->origvalue = mbtn_state->origvalue;
-    btn->active->select_others = mbtn_state->select_others;
-    btn->active->select_others.do_free = false;
+    btn->active->sel_others = mbtn_state->sel_others;
+    btn->active->sel_others.do_free = false;
 #  endif
 
     lib_assert(active_back == nullptr);
@@ -1494,19 +1494,19 @@ static void multibtn_states_apply(Cxt *C, BtnHandleData *data, uiBlock *block)
     if (data->str) {
       /* Entering text (set all). */
       btn->active->value = data->value;
-      btn_string_set(C, but, data->str);
+      btn_string_set(C, btn, data->str);
     }
     else {
       /* Dragging (use delta). */
       if (data->multi_data.is_proportional) {
-        btn->active->value = mbut_state->origvalue * value_scale;
+        btn->active->value = mbtn_state->origvalue * value_scale;
       }
       else {
-        btn->active->value = mbut_state->origvalue + value_delta;
+        btn->active->value = mbtn_state->origvalue + value_delta;
       }
 
       /* Clamp based on soft limits, see #40154. */
-      CLAMP(btn->active->value, double(btn->softmin), double(but->softmax));
+      CLAMP(btn->active->value, double(btn->softmin), double(btn->softmax));
     }
 
     btn_ex_end(C, rgn, btn, active_back);
@@ -2448,7 +2448,7 @@ static bool parse_float_array(char *text, float *values, int values_len_expected
 
 static void btn_paste_numeric_array(Cxt *C,
                                     Btn *btn,
-                                    BtnHandleBtnData *data,
+                                    BtnHandleData *data,
                                     char *buf_paste)
 {
   const int values_len = btn_get_prop_array_length(btn);
@@ -2579,7 +2579,7 @@ static void btn_paste_colorband(Cxt *C, Btn *btn, BtnHandleData *data)
     }
 
     btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
-    memcpy(data->coba, &but_copypaste_coba, sizeof(ColorBand));
+    memcpy(data->coba, &btn_copypaste_coba, sizeof(ColorBand));
     btn_activate_state(C, btn, BTN_STATE_EXIT);
   }
 }
@@ -2616,53 +2616,53 @@ static void btn_copy_CurveProfile(Btn *btn)
   }
 }
 
-static void ui_but_paste_CurveProfile(bContext *C, uiBut *btn)
+static void btn_paste_CurveProfile(Cxt *C, Btn *btn)
 {
-  if (but_copypaste_profile_alive) {
-    if (!but->poin) {
-      but->poin = reinterpret_cast<char *>(MEM_cnew<CurveProfile>(__func__));
+  if (btn_copypaste_profile_alive) {
+    if (!btn->ptr) {
+      btn->ptr = reinterpret_cast<char *>(mem_cnew<CurveProfile>(__func__));
     }
 
-    button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
-    BKE_curveprofile_free_data((CurveProfile *)but->poin);
-    BKE_curveprofile_copy_data((CurveProfile *)but->poin, &but_copypaste_profile);
-    button_activate_state(C, but, BUTTON_STATE_EXIT);
+    btn_activate_state(C, btn, BTN_STATE_NUM_EDITING);
+    dune_curveprofile_free_data((CurveProfile *)btn->ptr);
+    dune_curveprofile_copy_data((CurveProfile *)btn->ptr, &btn_copypaste_profile);
+    btn_activate_state(C, btn, BTN_STATE_EXIT);
   }
 }
 
-static void ui_but_copy_operator(bContext *C, uiBut *but, char *output, int output_maxncpy)
+static void btn_copy_op(Cxt *C, Btn *btn, char *output, int output_maxncpy)
 {
-  PointerRNA *opptr = UI_but_operator_ptr_get(but);
+  ApiPtr *opptr = btn_op_ptr_get(btn);
 
   char *str;
-  str = WM_operator_pystring_ex(C, nullptr, false, true, but->optype, opptr);
-  BLI_strncpy(output, str, output_maxncpy);
-  MEM_freeN(str);
+  str = win_op_pystring_ex(C, nullptr, false, true, btn->optype, opptr);
+  lib_strncpy(output, str, output_maxncpy);
+  mem_free(str);
 }
 
-static bool ui_but_copy_menu(uiBut *but, char *output, int output_maxncpy)
+static bool btn_copy_menu(Btn *btn, char *output, int output_maxncpy)
 {
-  MenuType *mt = UI_but_menutype_get(but);
+  MenuType *mt = btn_menutype_get(btn);
   if (mt) {
-    BLI_snprintf(output, output_maxncpy, "bpy.ops.wm.call_menu(name=\"%s\")", mt->idname);
+    lib_snprintf(output, output_maxncpy, "bpy.ops.win.call_menu(name=\"%s\")", mt->idname);
     return true;
   }
   return false;
 }
 
-static bool ui_but_copy_popover(uiBut *but, char *output, int output_maxncpy)
+static bool btn_copy_popover(Btn *btn, char *output, int output_maxncpy)
 {
-  PanelType *pt = UI_but_paneltype_get(but);
+  PanelType *pt = btn_paneltype_get(btn);
   if (pt) {
-    BLI_snprintf(output, output_maxncpy, "bpy.ops.wm.call_panel(name=\"%s\")", pt->idname);
+    lib_snprintf(output, output_maxncpy, "bpy.ops.win.call_panel(name=\"%s\")", pt->idname);
     return true;
   }
   return false;
 }
 
-static void ui_but_copy(bContext *C, uiBut *but, const bool copy_array)
+static void btn_copy(Cxt *C, Btn *btn, const bool copy_array)
 {
-  if (ui_but_contains_password(but)) {
+  if (btn_contains_password(btn)) {
     return;
   }
 
@@ -2673,76 +2673,76 @@ static void ui_but_copy(bContext *C, uiBut *but, const bool copy_array)
   /* Left false for copying internal data (color-band for eg). */
   bool is_buf_set = false;
 
-  const bool has_required_data = !(but->poin == nullptr && but->rnapoin.data == nullptr);
+  const bool has_required_data = !(btn->ptr == nullptr && btn->apiptr.data == nullptr);
 
-  switch (but->type) {
-    case UI_BTYPE_NUM:
-    case UI_BTYPE_NUM_SLIDER:
+  switch (btn->type) {
+    case BTYPE_NUM:
+    case BTYPE_NUM_SLIDER:
       if (!has_required_data) {
         break;
       }
-      if (copy_array && ui_but_has_array_value(but)) {
-        ui_but_copy_numeric_array(but, buf, buf_maxncpy);
+      if (copy_array && btn_has_array_value(btn)) {
+        btn_copy_numeric_array(btn, buf, buf_maxncpy);
       }
       else {
-        ui_but_copy_numeric_value(but, buf, buf_maxncpy);
+        btn_copy_numeric_value(btn, buf, buf_maxncpy);
       }
       is_buf_set = true;
       break;
 
-    case UI_BTYPE_UNITVEC:
+    case BTYPE_UNITVEC:
       if (!has_required_data) {
         break;
       }
-      ui_but_copy_numeric_array(but, buf, buf_maxncpy);
+      btn_copy_numeric_array(btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
-    case UI_BTYPE_COLOR:
+    case BTYPE_COLOR:
       if (!has_required_data) {
         break;
       }
-      ui_but_copy_color(but, buf, buf_maxncpy);
+      btn_copy_color(btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
-    case UI_BTYPE_TEXT:
-    case UI_BTYPE_SEARCH_MENU:
+    case BTYPE_TXT:
+    case BTYPE_SEARCH_MENU:
       if (!has_required_data) {
         break;
       }
-      ui_but_copy_text(but, buf, buf_maxncpy);
+      btn_copy_text(btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
-    case UI_BTYPE_COLORBAND:
-      ui_but_copy_colorband(but);
+    case BTYPE_COLORBAND:
+      btn_copy_colorband(btn);
       break;
 
-    case UI_BTYPE_CURVE:
-      ui_but_copy_curvemapping(but);
+    case BTYPE_CURVE:
+      btn_copy_curvemapping(btn);
       break;
 
-    case UI_BTYPE_CURVEPROFILE:
-      ui_but_copy_CurveProfile(but);
+    case BTYPE_CURVEPROFILE:
+      btn_copy_CurveProfile(btn);
       break;
 
-    case UI_BTYPE_BUT:
-      if (!but->optype) {
+    case BTYPE_BTN:
+      if (!btn->optype) {
         break;
       }
-      ui_but_copy_operator(C, but, buf, buf_maxncpy);
+      btn_copy_op(C, btn, buf, buf_maxncpy);
       is_buf_set = true;
       break;
 
-    case UI_BTYPE_MENU:
-    case UI_BTYPE_PULLDOWN:
-      if (ui_but_copy_menu(but, buf, buf_maxncpy)) {
+    case BTYPE_MENU:
+    case BTYPE_PULLDOWN:
+      if (btn_copy_menu(btn, buf, buf_maxncpy)) {
         is_buf_set = true;
       }
       break;
-    case UI_BTYPE_POPOVER:
-      if (ui_but_copy_popover(but, buf, buf_maxncpy)) {
+    case BTYPE_POPOVER:
+      if (btn_copy_popover(btn, buf, buf_maxncpy)) {
         is_buf_set = true;
       }
       break;
@@ -2752,275 +2752,263 @@ static void ui_but_copy(bContext *C, uiBut *but, const bool copy_array)
   }
 
   if (is_buf_set) {
-    WM_clipboard_text_set(buf, false);
+    win_clipboard_txt_set(buf, false);
   }
 }
 
-static void ui_but_paste(bContext *C, uiBut *but, uiHandleButtonData *data, const bool paste_array)
+static void btn_paste(Cxt *C, Btn *btn, BtnHandleData *data, const bool paste_array)
 {
-  BLI_assert((but->flag & UI_BUT_DISABLED) == 0); /* caller should check */
+  lib_assert((btn->flag & BTN_DISABLED) == 0); /* caller should check */
 
   int buf_paste_len = 0;
   char *buf_paste;
-  ui_but_get_pasted_text_from_clipboard(UI_but_is_utf8(but), &buf_paste, &buf_paste_len);
+  btn_get_pasted_text_from_clipboard(btn_is_utf8(btn), &buf_paste, &buf_paste_len);
 
-  const bool has_required_data = !(but->poin == nullptr && but->rnapoin.data == nullptr);
+  const bool has_required_data = !(btn->ptr == nullptr && btn->apiptr.data == nullptr);
 
-  switch (but->type) {
-    case UI_BTYPE_NUM:
-    case UI_BTYPE_NUM_SLIDER:
+  switch (btn->type) {
+    case BTYPE_NUM:
+    case BTYPE_NUM_SLIDER:
       if (!has_required_data) {
         break;
       }
-      if (paste_array && ui_but_has_array_value(but)) {
-        ui_but_paste_numeric_array(C, but, data, buf_paste);
+      if (paste_array && btn_has_array_value(btn)) {
+        btn_paste_numeric_array(C, btn, data, buf_paste);
       }
       else {
-        ui_but_paste_numeric_value(C, but, data, buf_paste);
+        btn_paste_numeric_value(C, btn, data, buf_paste);
       }
       break;
 
-    case UI_BTYPE_UNITVEC:
+    case BTYPE_UNITVEC:
       if (!has_required_data) {
         break;
       }
-      ui_but_paste_normalized_vector(C, but, data, buf_paste);
+      btn_paste_normalized_vector(C, btn, data, buf_paste);
       break;
 
-    case UI_BTYPE_COLOR:
+    case BTYPE_COLOR:
       if (!has_required_data) {
         break;
       }
-      ui_but_paste_color(C, but, buf_paste);
+      btn_paste_color(C, btn, buf_paste);
       break;
 
-    case UI_BTYPE_TEXT:
-    case UI_BTYPE_SEARCH_MENU:
+    case BTYPE_TEXT:
+    case BTYPE_SEARCH_MENU:
       if (!has_required_data) {
         break;
       }
-      ui_but_paste_text(C, but, data, buf_paste);
+      btn_paste_text(C, btn, data, buf_paste);
       break;
 
-    case UI_BTYPE_COLORBAND:
-      ui_but_paste_colorband(C, but, data);
+    case BTYPE_COLORBAND:
+      btn_paste_colorband(C, btn, data);
       break;
 
-    case UI_BTYPE_CURVE:
-      ui_but_paste_curvemapping(C, but);
+    case BTYPE_CURVE:
+      btn_paste_curvemapping(C, btn);
       break;
 
-    case UI_BTYPE_CURVEPROFILE:
-      ui_but_paste_CurveProfile(C, but);
+    case BTYPE_CURVEPROFILE:
+      btn_paste_CurveProfile(C, btn);
       break;
 
     default:
       break;
   }
 
-  MEM_freeN((void *)buf_paste);
+  mem_free((void *)buf_paste);
 }
 
-void ui_but_clipboard_free()
+void btn_clipboard_free()
 {
-  BKE_curvemapping_free_data(&but_copypaste_curve);
-  BKE_curveprofile_free_data(&but_copypaste_profile);
+  dune_curvemapping_free_data(&btn_copypaste_curve);
+  dune_curveprofile_free_data(&btn_copypaste_profile);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Button Text Password
- *
- * Functions to convert password strings that should not be displayed
+/* Btn Text Password
+ * Fns to convert password strings that should not be displayed
  * to asterisk representation (e.g. 'mysecretpasswd' -> '*************')
  *
  * It converts every UTF-8 character to an asterisk, and also remaps
  * the cursor position and selection start/end.
  *
- * \note remapping is used, because password could contain UTF-8 characters.
- *
- * \{ */
+ * \note remapping is used, because password could contain UTF-8 characters. */
 
-static int ui_text_position_from_hidden(uiBut *but, int pos)
+static int ui_txt_position_from_hidden(Btn *btn, int pos)
 {
-  const char *butstr = (but->editstr) ? but->editstr : but->drawstr;
+  const char *btnstr = (btn->editstr) ? but->editstr : btn->drawstr;
   const char *strpos = butstr;
   const char *str_end = butstr + strlen(butstr);
   for (int i = 0; i < pos; i++) {
-    strpos = BLI_str_find_next_char_utf8(strpos, str_end);
+    strpos = lib_str_find_next_char_utf8(strpos, str_end);
   }
 
-  return (strpos - butstr);
+  return (strpos - btnstr);
 }
 
-static int ui_text_position_to_hidden(uiBut *but, int pos)
+static int ui_txt_pos_to_hidden(Btn *btn, int pos)
 {
-  const char *butstr = (but->editstr) ? but->editstr : but->drawstr;
-  return BLI_strnlen_utf8(butstr, pos);
+  const char *btnstr = (btn->editstr) ? btn->editstr : btn->drawstr;
+  return lib_strnlen_utf8(btnstr, pos);
 }
 
-void ui_but_text_password_hide(char password_str[UI_MAX_PASSWORD_STR],
-                               uiBut *but,
+void btn_txt_password_hide(char password_str[UI_MAX_PASSWORD_STR],
+                               Btn *btn,
                                const bool restore)
 {
-  if (!(but->rnaprop && RNA_property_subtype(but->rnaprop) == PROP_PASSWORD)) {
+  if (!(btn->apiprop && api_prop_subtype(btn->apiprop) == PROP_PASSWORD)) {
     return;
   }
 
-  char *butstr = (but->editstr) ? but->editstr : but->drawstr;
+  char *btnstr = (btn->editstr) ? btn->editstr : btn->drawstr;
 
   if (restore) {
     /* restore original string */
-    BLI_strncpy(butstr, password_str, UI_MAX_PASSWORD_STR);
+    lib_strncpy(btnstr, password_str, UI_MAX_PASSWORD_STR);
 
     /* remap cursor positions */
-    if (but->pos >= 0) {
-      but->pos = ui_text_position_from_hidden(but, but->pos);
-      but->selsta = ui_text_position_from_hidden(but, but->selsta);
-      but->selend = ui_text_position_from_hidden(but, but->selend);
+    if (btn->pos >= 0) {
+      btn->pos = ui_text_pos_from_hidden(btn, btn->pos);
+      btn->selsta = ui_txt_pos_from_hidden(btn, btn->selsta);
+      btn->selend = ui_txt_pos_from_hidden(btn, btn->selend);
     }
   }
   else {
     /* convert text to hidden text using asterisks (e.g. pass -> ****) */
-    const size_t len = BLI_strlen_utf8(butstr);
+    const size_t len = lib_strlen_utf8(btnstr);
 
     /* remap cursor positions */
-    if (but->pos >= 0) {
-      but->pos = ui_text_position_to_hidden(but, but->pos);
-      but->selsta = ui_text_position_to_hidden(but, but->selsta);
-      but->selend = ui_text_position_to_hidden(but, but->selend);
+    if (btn->pos >= 0) {
+      btn->pos = ui_txt_pos_to_hidden(btn, btn->pos);
+      btn->selsta = ui_txt_pos_to_hidden(btn, btn->selsta);
+      btn->selend = ui_txt_pos_to_hidden(btn, btn->selend);
     }
 
     /* save original string */
-    BLI_strncpy(password_str, butstr, UI_MAX_PASSWORD_STR);
-    memset(butstr, '*', len);
-    butstr[len] = '\0';
+    lib_strncpy(password_str, btnstr, UI_MAX_PASSWORD_STR);
+    memset(btnstr, '*', len);
+    btnstr[len] = '\0';
   }
 }
 
-/** \} */
+/* Btn Text Selection/Editing */
 
-/* -------------------------------------------------------------------- */
-/** \name Button Text Selection/Editing
- * \{ */
-
-void ui_but_set_string_interactive(bContext *C, uiBut *but, const char *value)
+void btn_set_string_interactive(Cxt *C, Btn *btn, const char *value)
 {
   /* Caller should check. */
-  BLI_assert((but->flag & UI_BUT_DISABLED) == 0);
+  lib_assert((btn->flag & BTN_DISABLED) == 0);
 
-  button_activate_state(C, but, BUTTON_STATE_TEXT_EDITING);
-  ui_textedit_string_set(but, but->active, value);
+  btn_activate_state(C, btn, BTN_STATE_TXT_EDITING);
+  ui_textedit_string_set(btn, btn->active, value);
 
-  if (but->type == UI_BTYPE_SEARCH_MENU && but->active) {
-    but->changed = true;
-    ui_searchbox_update(C, but->active->searchbox, but, true);
+  if (btn->type == BTYPE_SEARCH_MENU && btn->active) {
+    btn->changed = true;
+    ui_searchbox_update(C, btn->active->searchbox, btn, true);
   }
 
-  button_activate_state(C, but, BUTTON_STATE_EXIT);
+  btn_activate_state(C, btn, BTN_STATE_EXIT);
 }
 
-void ui_but_active_string_clear_and_exit(bContext *C, uiBut *but)
+void btn_active_string_clear_and_exit(Cxt *C, Btn *btn)
 {
-  if (!but->active) {
+  if (!btn->active) {
     return;
   }
 
   /* most likely nullptr, but let's check, and give it temp zero string */
-  if (!but->active->str) {
-    but->active->str = static_cast<char *>(MEM_callocN(1, "temp str"));
+  if (!btn->active->str) {
+    btn->active->str = static_cast<char *>(mem_calloc(1, "temp str"));
   }
-  but->active->str[0] = 0;
+  btn->active->str[0] = 0;
 
-  ui_apply_but_TEX(C, but, but->active);
-  button_activate_state(C, but, BUTTON_STATE_EXIT);
+  btn_apply_TEX(C, btn, btn->active);
+  btn_activate_state(C, btn, BTN_STATE_EXIT);
 }
 
-static void ui_textedit_string_ensure_max_length(uiBut *but,
-                                                 uiHandleButtonData *data,
-                                                 int str_maxncpy)
+static void ui_txtedit_string_ensure_max_length(Btn *btn,
+                                                BtnHandleData *data,
+                                                int str_maxncpy)
 {
-  BLI_assert(data->is_str_dynamic);
-  BLI_assert(data->str == but->editstr);
+  lib_assert(data->is_str_dynamic);
+  lib_assert(data->str == btn->editstr);
 
   if (str_maxncpy > data->str_maxncpy) {
-    data->str = but->editstr = static_cast<char *>(
-        MEM_reallocN(data->str, sizeof(char) * str_maxncpy));
+    data->str = btn->editstr = static_cast<char *>(
+        mem_realloc(data->str, sizeof(char) * str_maxncpy));
     data->str_maxncpy = str_maxncpy;
   }
 }
 
-static void ui_textedit_string_set(uiBut *but, uiHandleButtonData *data, const char *str)
+static void ui_txtedit_string_set(Btn *btn, BtnHandleData *data, const char *str)
 {
   if (data->is_str_dynamic) {
-    ui_textedit_string_ensure_max_length(but, data, strlen(str) + 1);
+    ui_txtedit_string_ensure_max_length(btn, data, strlen(str) + 1);
   }
 
-  if (UI_but_is_utf8(but)) {
-    BLI_strncpy_utf8(data->str, str, data->str_maxncpy);
+  if (btn_is_utf8(but)) {
+    lib_strncpy_utf8(data->str, str, data->str_maxncpy);
   }
   else {
-    BLI_strncpy(data->str, str, data->str_maxncpy);
+    lib_strncpy(data->str, str, data->str_maxncpy);
   }
 }
 
-static bool ui_textedit_delete_selection(uiBut *but, uiHandleButtonData *data)
+static bool ui_txtedit_delete_selection(Btn *btn, BtnHandleData *data)
 {
   char *str = data->str;
   const int len = strlen(str);
   bool changed = false;
-  if (but->selsta != but->selend && len) {
-    memmove(str + but->selsta, str + but->selend, (len - but->selend) + 1);
+  if (btn->selsta != btn->selend && len) {
+    memmove(str + btn->selsta, str + btn->selend, (len - btn->selend) + 1);
     changed = true;
   }
 
-  but->pos = but->selend = but->selsta;
+  btn->pos = bn->selend = btn->selsta;
   return changed;
 }
 
-/**
- * \param x: Screen space cursor location - #wmEvent.x
+/* param x: Screen space cursor location - WinEv.x
  *
- * \note `but->block->aspect` is used here, so drawing button style is getting scaled too.
- */
-static void ui_textedit_set_cursor_pos(uiBut *but, uiHandleButtonData *data, const float x)
+ * `btn->block->aspect` is used here, so drawing btn style is getting scaled too. */
+static void ui_txtedit_set_cursor_pos(Btn *btn, BtnHandleData *data, const float x)
 {
-  /* XXX pass on as arg. */
-  uiFontStyle fstyle = UI_style_get()->widget;
-  const float aspect = but->block->aspect;
+  /* pass on as arg. */
+  uiFontStyle fstyle = ui_style_get()->widget;
+  const float aspect = btn->block->aspect;
 
-  float startx = but->rect.xmin;
+  float startx = btn->rect.xmin;
   float starty_dummy = 0.0f;
   char password_str[UI_MAX_PASSWORD_STR];
   /* treat 'str_last' as null terminator for str, no need to modify in-place */
-  const char *str = but->editstr, *str_last;
+  const char *str = btn->editstr, *str_last;
 
-  ui_block_to_window_fl(data->region, but->block, &startx, &starty_dummy);
+  ui_block_to_win_fl(data->rgn, btn->block, &startx, &starty_dummy);
 
   ui_fontscale(&fstyle.points, aspect);
 
-  UI_fontstyle_set(&fstyle);
+  ui_fontstyle_set(&fstyle);
 
-  ui_but_text_password_hide(password_str, but, false);
+  btn_txt_password_hide(password_str, btn, false);
 
-  if (ELEM(but->type, UI_BTYPE_TEXT, UI_BTYPE_SEARCH_MENU)) {
-    if (but->flag & UI_HAS_ICON) {
+  if (ELEM(btn->type, BTYPE_TEXT, BTYPE_SEARCH_MENU)) {
+    if (btn->flag & UI_HAS_ICON) {
       startx += UI_ICON_SIZE / aspect;
     }
   }
-  startx += (UI_TEXT_MARGIN_X * U.widget_unit - U.pixelsize) / aspect;
+  startx += (UI_TXT_MARGIN_X * U.widget_unit - U.pixelsize) / aspect;
 
   /* mouse dragged outside the widget to the left */
   if (x < startx) {
-    int i = but->ofs;
+    int i = btn->ofs;
 
-    str_last = &str[but->ofs];
+    str_last = &str[btn->ofs];
 
     while (i > 0) {
-      if (BLI_str_cursor_step_prev_utf8(str, but->ofs, &i)) {
+      if (lib_str_cursor_step_prev_utf8(str, btn->ofs, &i)) {
         /* 0.25 == scale factor for less sensitivity */
-        if (BLF_width(fstyle.uifont_id, str + i, (str_last - str) - i) > (startx - x) * 0.25f) {
+        if (font_width(fstyle.uifont_id, str + i, (str_last - str) - i) > (startx - x) * 0.25f) {
           break;
         }
       }
@@ -3028,47 +3016,45 @@ static void ui_textedit_set_cursor_pos(uiBut *but, uiHandleButtonData *data, con
         break; /* unlikely but possible */
       }
     }
-    but->ofs = i;
-    but->pos = but->ofs;
+    btn->ofs = i;
+    btn->pos = btn->ofs;
   }
   /* mouse inside the widget, mouse coords mapped in widget space */
   else {
-    but->pos = but->ofs + BLF_str_offset_from_cursor_position(
-                              fstyle.uifont_id, str + but->ofs, INT_MAX, int(x - startx));
+    btn->pos = btn->ofs + font_str_ofs_from_cursor_pos(
+                              fstyle.uifont_id, str + btn->ofs, INT_MAX, int(x - startx));
   }
 
-  ui_but_text_password_hide(password_str, but, true);
+  btn_text_password_hide(password_str, btn, true);
 }
 
-static void ui_textedit_set_cursor_select(uiBut *but, uiHandleButtonData *data, const float x)
+static void ui_txtedit_set_cursor_sel(Btn *btn, BtnHandleData *data, const float x)
 {
-  ui_textedit_set_cursor_pos(but, data, x);
+  ui_txtedit_set_cursor_pos(btn, data, x);
 
-  but->selsta = but->pos;
-  but->selend = data->sel_pos_init;
-  if (but->selend < but->selsta) {
-    std::swap(but->selsta, but->selend);
+  btn->selsta = btn->pos;
+  btn->selend = data->sel_pos_init;
+  if (btn->selend < btn->selsta) {
+    std::swap(btn->selsta, btn->selend);
   }
 
-  ui_but_update(but);
+  btn_update(btn);
 }
 
-/**
- * This is used for both utf8 and ascii
+/* This is used for both utf8 and ascii
  *
- * For unicode buttons, \a buf is treated as unicode.
- */
-static bool ui_textedit_insert_buf(uiBut *but,
-                                   uiHandleButtonData *data,
-                                   const char *buf,
-                                   int buf_len)
+ * For unicode btns, buf is treated as unicode. */
+static bool ui_txtedit_insert_buf(Btn *btn,
+                                  BtnHandleData *data,
+                                  const char *buf,
+                                  int buf_len)
 {
   int len = strlen(data->str);
-  const int str_maxncpy_new = len - (but->selend - but->selsta) + 1;
+  const int str_maxncpy_new = len - (btn->selend - btn->selsta) + 1;
   bool changed = false;
 
   if (data->is_str_dynamic) {
-    ui_textedit_string_ensure_max_length(but, data, str_maxncpy_new + buf_len);
+    ui_txtedit_string_ensure_max_length(btn, data, str_maxncpy_new + buf_len);
   }
 
   if (str_maxncpy_new <= data->str_maxncpy) {
@@ -3076,15 +3062,15 @@ static bool ui_textedit_insert_buf(uiBut *but,
     size_t step = buf_len;
 
     /* type over the current selection */
-    if ((but->selend - but->selsta) > 0) {
-      changed = ui_textedit_delete_selection(but, data);
+    if ((btn->selend - btn->selsta) > 0) {
+      changed = ui_textedit_delete_sel(btn, data);
       len = strlen(str);
     }
 
     if ((len + step >= data->str_maxncpy) && (data->str_maxncpy - (len + 1) > 0)) {
-      if (UI_but_is_utf8(but)) {
+      if (btn_is_utf8(but)) {
         /* Shorten 'step' to a utf8 aligned size that fits. */
-        BLI_strnlen_utf8_ex(buf, data->str_maxncpy - (len + 1), &step);
+        lib_strnlen_utf8_ex(buf, data->str_maxncpy - (len + 1), &step);
       }
       else {
         step = data->str_maxncpy - (len + 1);
@@ -3092,9 +3078,9 @@ static bool ui_textedit_insert_buf(uiBut *but,
     }
 
     if (step && (len + step < data->str_maxncpy)) {
-      memmove(&str[but->pos + step], &str[but->pos], (len + 1) - but->pos);
-      memcpy(&str[but->pos], buf, step * sizeof(char));
-      but->pos += step;
+      memmove(&str[btn->pos + step], &str[btn->pos], (len + 1) - btn->pos);
+      memcpy(&str[btn->pos], buf, step * sizeof(char));
+      btn->pos += step;
       changed = true;
     }
   }
@@ -3103,31 +3089,31 @@ static bool ui_textedit_insert_buf(uiBut *but,
 }
 
 #ifdef WITH_INPUT_IME
-static bool ui_textedit_insert_ascii(uiBut *but, uiHandleButtonData *data, const char ascii)
+static bool ui_txtedit_insert_ascii(Btn *btn, BtnHandleData *data, const char ascii)
 {
-  BLI_assert(isascii(ascii));
+  lib_assert(isascii(ascii));
   const char buf[2] = {ascii, '\0'};
-  return ui_textedit_insert_buf(but, data, buf, sizeof(buf) - 1);
+  return ui_txtedit_insert_buf(btn, data, buf, sizeof(buf) - 1);
 }
 #endif
 
-static void ui_textedit_move(uiBut *but,
-                             uiHandleButtonData *data,
+static void ui_txtedit_move(Btn *btn,
+                             BtnHandleData *data,
                              eStrCursorJumpDirection direction,
-                             const bool select,
+                             const bool sel,
                              eStrCursorJumpType jump)
 {
   const char *str = data->str;
   const int len = strlen(str);
-  const int pos_prev = but->pos;
-  const bool has_sel = (but->selend - but->selsta) > 0;
+  const int pos_prev = btn->pos;
+  const bool has_sel = (btn->selend - btn->selsta) > 0;
 
-  ui_but_update(but);
+  btn_update(but);
 
   /* special case, quit selection and set cursor */
-  if (has_sel && !select) {
+  if (has_sel && !sel) {
     if (jump == STRCUR_JUMP_ALL) {
-      but->selsta = but->selend = but->pos = direction ? len : 0;
+      btn->selsta = btn->selend = btn->pos = direction ? len : 0;
     }
     else {
       if (direction) {
@@ -3141,32 +3127,32 @@ static void ui_textedit_move(uiBut *but,
   }
   else {
     int pos_i = but->pos;
-    BLI_str_cursor_step_utf8(str, len, &pos_i, direction, jump, true);
+    lib_str_cursor_step_utf8(str, len, &pos_i, direction, jump, true);
     but->pos = pos_i;
 
     if (select) {
       if (has_sel == false) {
         /* Holding shift but with no previous selection. */
-        but->selsta = but->pos;
-        but->selend = pos_prev;
+        btn->selsta = btn->pos;
+        btn->selend = pos_prev;
       }
-      else if (but->selsta == pos_prev) {
-        /* Previous selection, extending start position. */
-        but->selsta = but->pos;
+      else if (btn->selsta == pos_prev) {
+        /* Previous sel, extending start position. */
+        btn->selsta = btn->pos;
       }
       else {
-        /* Previous selection, extending end position. */
-        but->selend = but->pos;
+        /* Previous sel, extending end position. */
+        btn->selend = btn->pos;
       }
     }
-    if (but->selend < but->selsta) {
-      std::swap(but->selsta, but->selend);
+    if (btn->selend < btn->selsta) {
+      std::swap(btn->selsta, btn->selend);
     }
   }
 }
 
-static bool ui_textedit_delete(uiBut *but,
-                               uiHandleButtonData *data,
+static bool ui_txtedit_delete(Btn *btn,
+                               BtnHandleData *data,
                                eStrCursorJumpDirection direction,
                                eStrCursorJumpType jump)
 {
@@ -3180,34 +3166,34 @@ static bool ui_textedit_delete(uiBut *but,
       changed = true;
     }
     str[0] = '\0';
-    but->pos = 0;
+    btn->pos = 0;
   }
   else if (direction) { /* delete */
-    if ((but->selend - but->selsta) > 0) {
-      changed = ui_textedit_delete_selection(but, data);
+    if ((btn->selend - btn->selsta) > 0) {
+      changed = ui_txtedit_delete_sel(btn, data);
     }
-    else if (but->pos >= 0 && but->pos < len) {
-      int pos = but->pos;
+    else if (btn->pos >= 0 && btn->pos < len) {
+      int pos = btn->pos;
       int step;
-      BLI_str_cursor_step_utf8(str, len, &pos, direction, jump, true);
-      step = pos - but->pos;
-      memmove(&str[but->pos], &str[but->pos + step], (len + 1) - (but->pos + step));
+      lib_str_cursor_step_utf8(str, len, &pos, direction, jump, true);
+      step = pos - btn->pos;
+      memmove(&str[btn->pos], &str[btn->pos + step], (len + 1) - (btn->pos + step));
       changed = true;
     }
   }
   else { /* backspace */
     if (len != 0) {
-      if ((but->selend - but->selsta) > 0) {
-        changed = ui_textedit_delete_selection(but, data);
+      if ((btn->selend - btn->selsta) > 0) {
+        changed = ui_txtedit_delete_sel(btn, data);
       }
-      else if (but->pos > 0) {
-        int pos = but->pos;
+      else if (btn->pos > 0) {
+        int pos = btn->pos;
         int step;
 
-        BLI_str_cursor_step_utf8(str, len, &pos, direction, jump, true);
-        step = but->pos - pos;
-        memmove(&str[but->pos - step], &str[but->pos], (len + 1) - but->pos);
-        but->pos -= step;
+        lib_str_cursor_step_utf8(str, len, &pos, direction, jump, true);
+        step = btn->pos - pos;
+        memmove(&str[btn->pos - step], &str[btn->pos], (len + 1) - btn->pos);
+        btn->pos -= step;
         changed = true;
       }
     }
@@ -3216,66 +3202,66 @@ static bool ui_textedit_delete(uiBut *but,
   return changed;
 }
 
-static int ui_textedit_autocomplete(bContext *C, uiBut *but, uiHandleButtonData *data)
+static int ui_txtedit_autocomplete(Ctxt *C, Btn *btn, BtnHandleData *data)
 {
   char *str = data->str;
 
   int changed;
   if (data->searchbox) {
-    changed = ui_searchbox_autocomplete(C, data->searchbox, but, data->str);
+    changed = ui_searchbox_autocomplete(C, data->searchbox, btn, data->str);
   }
   else {
-    changed = but->autocomplete_func(C, str, but->autofunc_arg);
+    changed = btn->autocomplete_fn(C, str, btn->autofn_arg);
   }
 
-  but->pos = strlen(str);
-  but->selsta = but->selend = but->pos;
+  btn->pos = strlen(str);
+  btn->selsta = btn->selend = btn->pos;
 
   return changed;
 }
 
-/* mode for ui_textedit_copypaste() */
+/* mode for ui_txtedit_copypaste() */
 enum {
-  UI_TEXTEDIT_PASTE = 1,
-  UI_TEXTEDIT_COPY,
-  UI_TEXTEDIT_CUT,
+  UI_TXTEDIT_PASTE = 1,
+  UI_TXTEDIT_COPY,
+  UI_TXTEDIT_CUT,
 };
 
-static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const int mode)
+static bool ui_txtedit_copypaste(Btn *btn, BtnHandleData *data, const int mode)
 {
   bool changed = false;
 
   /* paste */
-  if (mode == UI_TEXTEDIT_PASTE) {
+  if (mode == UI_TXTEDIT_PASTE) {
     /* extract the first line from the clipboard */
     int buf_len;
-    char *pbuf = WM_clipboard_text_get_firstline(false, UI_but_is_utf8(but), &buf_len);
+    char *pbuf = win_clipboard_txt_get_firstline(false, btn_is_utf8(btn), &buf_len);
 
     if (pbuf) {
-      ui_textedit_insert_buf(but, data, pbuf, buf_len);
+      ui_txtedit_insert_buf(btn, data, pbuf, buf_len);
 
       changed = true;
 
-      MEM_freeN(pbuf);
+      mem_free(pbuf);
     }
   }
   /* cut & copy */
-  else if (ELEM(mode, UI_TEXTEDIT_COPY, UI_TEXTEDIT_CUT)) {
+  else if (ELEM(mode, UI_TXTEDIT_COPY, UI_TXTEDIT_CUT)) {
     /* copy the contents to the copypaste buffer */
-    const int sellen = but->selend - but->selsta;
+    const int sellen = btn->selend - btn->selsta;
     char *buf = static_cast<char *>(
-        MEM_mallocN(sizeof(char) * (sellen + 1), "ui_textedit_copypaste"));
+        mem_malloc(sizeof(char) * (sellen + 1), "ui_txtedit_copypaste"));
 
-    memcpy(buf, data->str + but->selsta, sellen);
+    memcpy(buf, data->str + btn->selsta, sellen);
     buf[sellen] = '\0';
 
-    WM_clipboard_text_set(buf, false);
-    MEM_freeN(buf);
+    win_clipboard_txt_set(buf, false);
+    mem_free(buf);
 
     /* for cut only, delete the selection afterwards */
-    if (mode == UI_TEXTEDIT_CUT) {
-      if ((but->selend - but->selsta) > 0) {
-        changed = ui_textedit_delete_selection(but, data);
+    if (mode == UI_TXTEDIT_CUT) {
+      if ((btn->selend - btn->selsta) > 0) {
+        changed = ui_txtedit_delete_sel(btn, data);
       }
     }
   }
@@ -3284,40 +3270,40 @@ static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const in
 }
 
 #ifdef WITH_INPUT_IME
-/* Enable IME, and setup #uiBut IME data. */
-static void ui_textedit_ime_begin(wmWindow *win, uiBut * /*but*/)
+/* Enable IME, and setup Btn IME data. */
+static void ui_txtedit_ime_begin(Win *win, Btn * /*btn*/)
 {
-  /* XXX Is this really needed? */
+  /* Is this really needed? */
   int x, y;
 
-  BLI_assert(win->ime_data == nullptr);
+  lib_assert(win->ime_data == nullptr);
 
   /* enable IME and position to cursor, it's a trick */
-  x = win->eventstate->xy[0];
+  x = win->evstate->xy[0];
   /* flip y and move down a bit, prevent the IME panel cover the edit button */
-  y = win->eventstate->xy[1] - 12;
+  y = win->evstate->xy[1] - 12;
 
-  wm_window_IME_begin(win, x, y, 0, 0, true);
+  win_IME_begin(win, x, y, 0, 0, true);
 }
 
-/* Disable IME, and clear #uiBut IME data. */
-static void ui_textedit_ime_end(wmWindow *win, uiBut * /*but*/)
+/* Disable IME, and clear Btn IME data. */
+static void ui_txtedit_ime_end(Win *win, Btn * /*btn*/)
 {
-  wm_window_IME_end(win);
+  win_IME_end(win);
 }
 
-void ui_but_ime_reposition(uiBut *but, int x, int y, bool complete)
+void btn_ime_reposition(Btn *btn, int x, int y, bool complete)
 {
-  BLI_assert(but->active);
+  lib_assert(btn->active);
 
-  ui_region_to_window(but->active->region, &x, &y);
-  wm_window_IME_begin(but->active->window, x, y - 4, 0, 0, complete);
+  ui_rgn_to_win(btn->active->rgn, &x, &y);
+  win_IME_begin(btn->active->win, x, y - 4, 0, 0, complete);
 }
 
-const wmIMEData *ui_but_ime_data_get(uiBut *but)
+const WinIMEData *btn_ime_data_get(Btn *btn)
 {
-  if (but->active && but->active->window) {
-    return but->active->window->ime_data;
+  if (btn->active && btn->active->win) {
+    return btn->active->win->ime_data;
   }
   else {
     return nullptr;
@@ -3325,10 +3311,10 @@ const wmIMEData *ui_but_ime_data_get(uiBut *but)
 }
 #endif /* WITH_INPUT_IME */
 
-static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
+static void ui_txtedit_begin(Cxt *C, Btn *btn, BtnHandleData *data)
 {
-  wmWindow *win = data->window;
-  const bool is_num_but = ELEM(but->type, UI_BTYPE_NUM, UI_BTYPE_NUM_SLIDER);
+  Win *win = data->win;
+  const bool is_num_btn = ELEM(btn->type, BTYPE_NUM, BTYPE_NUM_SLIDER);
   bool no_zero_strip = false;
 
   MEM_SAFE_FREE(data->str);
@@ -3338,7 +3324,7 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
   if (data->applied_interactive) {
     /* remove any small changes so canceling edit doesn't restore invalid value: #40538 */
     data->cancel = true;
-    ui_apply_but(C, but->block, but, data, true);
+    btn_apply(C, btn->block, btn, data, true);
     data->cancel = false;
 
     data->applied_interactive = false;
@@ -3346,8 +3332,8 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
 #endif
 
 #ifdef USE_ALLSELECT
-  if (is_num_but) {
-    if (IS_ALLSELECT_EVENT(win->eventstate)) {
+  if (is_num_btn) {
+    if (IS_ALLSELECT_EV(win->eventstate)) {
       data->select_others.is_enabled = true;
       data->select_others.is_copy = true;
     }
