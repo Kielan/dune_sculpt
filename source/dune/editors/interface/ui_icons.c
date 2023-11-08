@@ -25,7 +25,7 @@
 #include "types_pen.h"
 #include "types_object.h"
 #include "types_screen.h"
-#include "types_sequence.h"
+#include "types_seq.h"
 #include "types_space.h"
 
 #include "api_access.h"
