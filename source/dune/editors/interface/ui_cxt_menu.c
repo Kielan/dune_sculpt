@@ -60,7 +60,7 @@ static IdProp *shortcut_prop_from_api(Cxt *C, Btn *btn)
 static const char *shortcut_get_op_prop(Cxt *C, Btn *btn, IdProp **r_prop)
 {
   if (btn->optype) {
-    /* Operator */
+    /* Op */
     *r_prop = (btn->opptr && btn->opptr->data) ? IDP_CopyProp(btn->opptr->data) : NULL;
     return but->optype->idname;
   }
@@ -97,7 +97,7 @@ static void shortcut_free_op_prop(IdProp *prop)
   }
 }
 
-static void btn_shortcut_name_fn(Cxt *C, void *arg1, int UNUSED(event))
+static void btn_shortcut_name_fn(Cxt *C, void *arg1, int UNUSED(ev))
 {
   Btn *btn = (Btn *)arg1;
   char shortcut_str[128];
@@ -108,8 +108,8 @@ static void btn_shortcut_name_fn(Cxt *C, void *arg1, int UNUSED(event))
     return;
   }
 
-  /* complex code to change name of button */
-  if (win_key_event_op_string(
+  /* complex code to change name of btn */
+  if (win_key_ev_op_string(
           C, idname, btn->opcxt, prop, true, shortcut_str, sizeof(shortcut_str))) {
     btn_add_shortcut(btn, shortcut_str, true);
   }
@@ -121,9 +121,9 @@ static void btn_shortcut_name_fn(Cxt *C, void *arg1, int UNUSED(event))
   shortcut_free_op_prop(prop);
 }
 
-static uiBlock *menu_change_shortcut(Cxt *C, ARegion *region, void *arg)
+static uiBlock *menu_change_shortcut(Cxt *C, ARgn *rgn, void *arg)
 {
-  WinManager *wm = cxt_wm(C);
+  WinMngr *wam = cxt_wm(C);
   Btn *btn = (Btn *)arg;
   ApiPtr ptr;
   const uiStyle *style = ui_style_get_dpi();
@@ -131,27 +131,27 @@ static uiBlock *menu_change_shortcut(Cxt *C, ARegion *region, void *arg)
   const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
   WinKeyMap *km;
-  WinKeyMapItem *kmi = win_key_event_op(C,
-                                        idname,
-                                        btn->opcxt,
-                                        prop,
-                                        EVT_TYPE_MASK_HOTKEY_INCLUDE,
-                                        EVT_TYPE_MASK_HOTKEY_EXCLUDE,
-                                        &km);
+  WinKeyMapItem *kmi = win_key_ev_op(C,
+                                     idname,
+                                     btn->opcxt,
+                                     prop,
+                                     EV_TYPE_MASK_HOTKEY_INCLUDE,
+                                     EV_TYPE_MASK_HOTKEY_EXCLUDE,
+                                     &km);
   U.runtime.is_dirty = true;
 
   lib_assert(kmi != NULL);
 
   api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &ptr);
 
-  uiBlock *block = ui_block_begin(C, region, "_popup", UI_EMBOSS);
+  uiBlock *block = ui_block_begin(C, rgn, "_popup", UI_EMBOSS);
   ui_block_fn_handle_set(block, btn_shortcut_name_fn, btn);
   ui_block_flag_enable(block, UI_BLOCK_MOVEMOUSE_QUIT);
   ui_block_direction_set(block, UI_DIR_CENTER_Y);
 
   uiLayout *layout = ui_block_layout(block,
-                                     UI_LAYOUT_VERTICAL,
-                                     UI_LAYOUT_PANEL,
+                                     UI_LAYOUT_VERT,
+                                     UI_LAYOUT_PNL,
                                      0,
                                      0,
                                      U.widget_unit * 10,
@@ -174,19 +174,19 @@ static uiBlock *menu_change_shortcut(Cxt *C, ARegion *region, void *arg)
 static int g_kmi_id_hack;
 #endif
 
-static uiBlock *menu_add_shortcut(Cxt *C, ARegion *region, void *arg)
+static uiBlock *menu_add_shortcut(Cxt *C, ARgn *rgn, void *arg)
 {
-  WinManager *wm = cxt_wm(C);
+  WinMngr *wm = cxt_wm(C);
   Btn *btn = (Btn *)arg;
   ApiPtr ptr;
   const uiStyle *style = ui_style_get_dpi();
   IdProp *prop;
   const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
-  /* XXX this guess_opname can potentially return a different keymap
+  /* this guess_opname can potentially return a different keymap
    * than being found on adding later... */
   WinKeyMap *km = win_keymap_guess_opname(C, idname);
-  WinKeyMapItem *kmi = win_keymap_add_item(km, idname, EVT_AKEY, KM_PRESS, 0, 0, KM_ANY);
+  WinKeyMapItem *kmi = win_keymap_add_item(km, idname, EV_AKEY, KM_PRESS, 0, 0, KM_ANY);
   const int kmi_id = kmi->id;
 
   /* This takes ownership of prop, or prop can be NULL for reset. */
@@ -201,13 +201,13 @@ static uiBlock *menu_add_shortcut(Cxt *C, ARegion *region, void *arg)
 
   api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &ptr);
 
-  uiBlock *block = ui_block_begin(C, region, "_popup", UI_EMBOSS);
+  uiBlock *block = ui_block_begin(C, rgn, "_popup", UI_EMBOSS);
   ui_block_fn_handle_set(block, btn_shortcut_name_fn, btn);
   ui_block_direction_set(block, UI_DIR_CENTER_Y);
 
   uiLayout *layout = ui_block_layout(block,
-                                     UI_LAYOUT_VERTICAL,
-                                     UI_LAYOUT_PANEL,
+                                     UI_LAYOUT_VERT,
+                                     UI_LAYOUT_PNL,
                                      0,
                                      0,
                                      U.widget_unit * 10,
@@ -240,7 +240,7 @@ static void menu_add_shortcut_cancel(struct Cxt *C, void *arg1)
   const int kmi_id = g_kmi_id_hack;
   UNUSED_VARS(btn);
 #else
-  int kmi_id = win_key_event_op_id(C, idname, btn->opcxt, prop, true, &km);
+  int kmi_id = win_key_ev_op_id(C, idname, btn->opcxt, prop, true, &km);
 #endif
 
   shortcut_free_op_prop(prop);
@@ -262,13 +262,13 @@ static void remove_shortcut_fn(Cxt *C, void *arg1, void *UNUSED(arg2))
   const char *idname = shortcut_get_op_prop(C, btn, &prop);
 
   WinKeyMap *km;
-  WinKeyMapItem *kmi = win_key_event_op(C,
-                                        idname,
-                                        btn->opcxt,
-                                        prop,
-                                        EVT_TYPE_MASK_HOTKEY_INCLUDE,
-                                        EVT_TYPE_MASK_HOTKEY_EXCLUDE,
-                                        &km);
+  WinKeyMapItem *kmi = win_key_ev_op(C,
+                                     idname,
+                                     btn->opcxt,
+                                     prop,
+                                     EV_TYPE_MASK_HOTKEY_INCLUDE,
+                                     EV_TYPE_MASK_HOTKEY_EXCLUDE,
+                                     &km);
   lib_assert(kmi != NULL);
 
   win_keymap_remove_item(km, kmi);
@@ -417,11 +417,11 @@ static void btn_menu_add_path_ops(uiLayout *layout, ApiPtr *ptr, ApiProp *prop)
   api_string_set(&props_ptr, "filepath", dir);
 }
 
-bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
+bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEv *ev)
 {
-  /* btn_is_interactive() may let some buttons through that should not get a cxt menu - it
+  /* btn_is_interactive() may let some btns through that should not get a cxt menu - it
    * doesn't make sense for them. */
-  if (ELEM(btn->type, UI_BTYPE_LABEL, UI_BTYPE_IMAGE)) {
+  if (ELEM(btn->type, BTYPE_LABEL, BTYPE_IMAGE)) {
     return false;
   }
 
@@ -452,7 +452,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
   if (is_disabled) {
     /* Suppress editing commands. */
   }
-  else if (btn->type == UI_BTYPE_TAB) {
+  else if (btn->type == BTYPE_TAB) {
     BtnTab *tab = (BtnTab *)btn;
     if (tab->menu) {
       ui_menutype_draw(C, tab->menu, layout);
@@ -487,7 +487,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     uiLayoutSetCxtFromBtn(layout, btn);
 
     /* Keyframes */
-    if (btn->flag & UI_BTN_ANIMATED_KEY) {
+    if (btn->flag & BTN_ANIMATED_KEY) {
       /* Replace/delete keyframes. */
       if (is_array_component) {
         uiItemBoolO(layout,
@@ -519,9 +519,9 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
         uiItemBoolO(layout,
                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Replace Keyframe"),
                    ICON_KEY_HLT,
-                  "ANIM_OT_keyframe_insert_btn",
-                  "all",
-                  1);
+                   "ANIM_OT_keyframe_insert_btn",
+                   "all",
+                   1);
         uiItemBoolO(layout,
                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Keyframe"),
                    ICON_NONE,
@@ -533,17 +533,17 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
       /* keyframe settings */
       uiItemS(layout);
     }
-    else if (btn->flag & UI_BTN_DRIVEN) {
+    else if (btn->flag & BTN_DRIVEN) {
       /* pass */
     }
     else if (is_anim) {
       if (is_array_component) {
         uiItemBoolO(layout,
-                       CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Keyframes"),
-                       ICON_KEY_HLT,
-                       "ANIM_OT_keyframe_insert_button",
-                       "all",
-                       1);
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Keyframes"),
+                    ICON_KEY_HLT,
+                    "ANIM_OT_keyframe_insert_btn",
+                    "all",
+                    1);
         uiItemBoolO(layout,
                     CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Insert Single Keyframe"),
                     ICON_NONE,
@@ -561,7 +561,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
       }
     }
 
-    if ((btn->flag & UI_BTN_ANIMATED) && (btn->apiptr.type != &ApiNlaStrip)) {
+    if ((btn->flag & BTN_ANIMATED) && (btn->apiptr.type != &ApiNlaStrip)) {
       if (is_array_component) {
         uiItemBoolO(layout,
                     CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Clear Keyframes"),
@@ -587,7 +587,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
 
     /* Drivers */
-    if (btn->flag & UI_BTN_DRIVEN) {
+    if (btn->flag & BTN_DRIVEN) {
       uiItemS(layout);
 
       if (is_array_component) {
@@ -600,7 +600,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
         uiItemBoolO(layout,
                     CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Delete Single Driver"),
                     ICON_NONE,
-                    "ANIM_OT_driver_bTn_remove",
+                    "ANIM_OT_driver_btn_remove",
                     "all",
                     0);
       }
@@ -618,7 +618,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
                 CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Driver"),
                 ICON_NONE,
                 "ANIM_OT_copy_driver_btn");
-        if (anime_driver_can_paste()) {
+        if (anim_driver_can_paste()) {
           uiItemO(layout,
                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Paste Driver"),
                   ICON_NONE,
@@ -636,7 +636,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
               ICON_NONE,
               "SCREEN_OT_drivers_editor_show");
     }
-    else if (btn->flag & (UI_BTN_ANIMATED_KEY | UI_BTN_ANIMATED)) {
+    else if (btn->flag & (BTN_ANIMATED_KEY | BTN_ANIMATED)) {
       /* pass */
     }
     else if (is_anim) {
@@ -663,17 +663,17 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
 
     /* Keying Sets */
-    /* TODO: check on modifyability of Keying Set when doing this */
+    /* Check on modifyability of Keying Set when doing this */
     if (is_anim) {
       uiItemS(layout);
 
       if (is_array_component) {
         uiItemBoolO(layout,
-                       CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add All to Keying Set"),
-                       ICON_KEYINGSET,
-                       "ANIM_OT_keyingset_btn_add",
-                       "all",
-                       1);
+                    CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add All to Keying Set"),
+                    ICON_KEYINGSET,
+                    "ANIM_OT_keyingset_btn_add",
+                    "all",
+                    1);
         uiItemBoolO(layout,
                     CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Add Single to Keying Set"),
                     ICON_NONE,
@@ -705,7 +705,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
       /* Override Ops */
       uiItemS(layout);
 
-      if (btn->flag & UI_BTN_OVERRIDDEN) {
+      if (btn->flag & BTN_OVERRIDDEN) {
         if (is_array_component) {
 #if 0 /* Disabled for now. */
           ot = win_optype_find("UI_OT_override_type_set_btn", false);
@@ -794,17 +794,15 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     uiItemS(layout);
 
     /* Prop Ops */
-
     /* Copy Prop Value
      * Paste Prop Value */
-
     if (is_array_component) {
       uiItemBoolO(layout,
                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Reset All to Default Values"),
-                     ICON_LOOP_BACK,
-                     "UI_OT_reset_default_btn",
-                     "all",
-                     1);
+                  ICON_LOOP_BACK,
+                  "UI_OT_reset_default_btn",
+                  "all",
+                  1);
       uiItemBoolO(layout,
                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Reset Single to Default Value"),
                   ICON_NONE,
@@ -833,10 +831,10 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     if (is_array_component) {
       uiItemBoolO(layout,
                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy All to Selected"),
-                     ICON_NONE,
-                     "UI_OT_copy_to_selected_btn",
-                     "all",
-                     true);
+                  ICON_NONE,
+                  "UI_OT_copy_to_selected_btn",
+                  "all",
+                  true);
       uiItemBoolO(layout,
                   CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Single to Selected"),
                   ICON_NONE,
@@ -856,7 +854,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     uiItemO(layout,
             CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Data Path"),
             ICON_NONE,
-            "UI_OT_copy_data_path_button");
+            "UI_OT_copy_data_path_btn");
     uiItemBoolO(layout,
                 CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Copy Full Data Path"),
                 ICON_NONE,
@@ -881,22 +879,22 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
   }
 
   {
-    const ARegion *region = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_region(C);
-    uiBtnTreeRow *treerow_btn = (uiBtnTreeRow *)ui_tree_row_find_mouse_over(region, event->xy);
+    const ARgn *rgn = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_rgn(C);
+    BtnTreeRow *treerow_btn = (BtnTreeRow *)ui_tree_row_find_mouse_over(rgn, ev->xy);
     if (treerow_btn) {
-      lib_assert(treerow_btn->btn.type == UI_BTYPE_TREEROW);
+      lib_assert(treerow_btn->btn.type == BTYPE_TREEROW);
       ui_tree_view_item_cxt_menu_build(
           C, treerow_btn->tree_item, uiLayoutColumn(layout, false));
       uiItemS(layout);
     }
   }
 
-  /* If the btn represents an id, it can set the "id" context pointer. */
+  /* If the btn represents an id, it can set the "id" cxt ptr */
   if (ed_asset_can_mark_single_from_cxt(C)) {
     Id *id = cxt_data_ptr_get_type(C, "id", &ApiId).data;
 
     /* Gray out items depending on if data-block is an asset. Preferably this could be done via
-     * op poll, but that doesn't work since the operator also works with "selected_ids",
+     * op poll, but that doesn't work since the op also works with "selected_ids",
      * which isn't cheap to check. */
     uiLayout *sub = uiLayoutColumn(layout, true);
     uiLayoutSetEnabled(sub, !id->asset_data);
@@ -912,7 +910,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
   if (btn->apiptr.data && btn->apiprop) {
     const PropType prop_type = api_prop_type(btn->apiprop);
     if (((prop_type == PROP_PTR) ||
-         (prop_type == PROP_STRING && btn->type == UI_BTYPE_SEARCH_MENU &&
+         (prop_type == PROP_STRING && btn->type == BTYPE_SEARCH_MENU &&
           ((BtnSearch *)btn)->items_update_fn == ui_api_collection_search_update_fn)) &&
         ui_jump_to_target_btn_poll(C)) {
       uiItemO(layout,
@@ -963,7 +961,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
 
     if (!item_found) {
-      Btn *btn2 = uiDefIconTextBtn(
+      Btn *btn2 = uiDefIconTxtBtn(
           block,
           BTYPE_BTN,
           0,
@@ -978,7 +976,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
           0,
           0,
           0,
-          "Add to a user defined context menu (stored in the user prefs)");
+          "Add to a user defined cxt menu (stored in the user prefs)");
       btn_fn_set(btn2, popup_user_menu_add_or_replace_fn, btn, NULL);
     }
 
@@ -994,8 +992,8 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
 
     /* We want to know if this op has a shortcut, be it hotkey or not. */
     WinKeyMap *km;
-    WinKeyMapItem *kmi = win_key_event_op(
-        C, idname, btn->opcxt, prop, EVT_TYPE_MASK_ALL, 0, &km);
+    WinKeyMapItem *kmi = win_key_ev_op(
+        C, idname, btn->opcxt, prop, EV_TYPE_MASK_ALL, 0, &km);
 
     /* We do have a shortcut, but only keyboard ones are editable that way... */
     if (kmi) {
@@ -1012,7 +1010,7 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
                       "");
 #endif
 
-        Btn *btn2 = uiDefIconTextBtn(
+        Btn *btn2 = uiDefIconTxtBtn(
             block,
             BTYPE_BTN,
             0,
@@ -1031,28 +1029,28 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
         btn_fn_set(btn2, popup_change_shortcut_fn, btn, NULL);
       }
       else {
-        Btn *btn2 = uiDefIconTextBtn(block,
-                                     BTYPE_BTN,
-                                     0,
-                                     ICON_HAND,
-                                     IFACE_("Non-Keyboard Shortcut"),
-                                     0,
-                                     0,
-                                     w,
-                                     UI_UNIT_Y,
-                                     NULL,
-                                     0,
-                                     0,
-                                     0,
-                                     0,
-                                     TIP_("Only keyboard shortcuts can be edited that way, "
-                                          "please use User Preferences otherwise"));
+        Btn *btn2 = BtnDefIconTxt(block,
+                                  BTYPE_BTN,
+                                  0,
+                                  ICON_HAND,
+                                  IFACE_("Non-Keyboard Shortcut"),
+                                  0,
+                                  0,
+                                  w,
+                                  UI_UNIT_Y,
+                                  NULL,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  TIP_("Only keyboard shortcuts can be edited that way, "
+                                       "please use User Prefs otherwise"));
         btn_flag_enable(btn2, BTN_DISABLED);
       }
 
-      Btn *btn2 = uiDefIconTextBtn(
+      Btn *btn2 = BtnDefIconTxt(
           block,
-          UI_BTYPE_BTN,
+          BTYPE_BTN,
           0,
           ICON_BLANK1,
           CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Remove Shortcut"),
@@ -1070,9 +1068,9 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
     /* only show 'assign' if there's a suitable key map for it to go in */
     else if (win_keymap_guess_opname(C, idname)) {
-      Btn *btn2 = uiDefIconTextBtn(
+      Btn *btn2 = BtnDefIconTxt(
           block,
-          UI_BTYPE_BTN,
+          BTYPE_BTN,
           0,
           ICON_HAND,
           CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Assign Shortcut"),
@@ -1133,9 +1131,9 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
     }
   }
 
-  if (dune_addon_find(&U.addons, "ui_translate")) {
+  if (dune_addon_find(&U.addons, "ui_lang")) {
     uiItemFullO(layout,
-                "UI_OT_edittranslation_init",
+                "UI_OT_editlang_init",
                 NULL,
                 ICON_NONE,
                 NULL,
@@ -1146,31 +1144,31 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
 
   /* Show header tools for header btns. */
   if (ui_block_is_popup_any(btn->block) == false) {
-    const ARegion *region = cxt_win_region(C);
+    const ARgn *rgn = cxt_win_rgn(C);
 
-    if (!region) {
+    if (!rgn) {
       /* skip */
     }
-    else if (ELEM(region->regiontype, RGN_TYPE_HEADER, RGN_TYPE_TOOL_HEADER)) {
+    else if (ELEM(rgn->rgntype, RGN_TYPE_HEADER, RGN_TYPE_TOOL_HEADER)) {
       uiItemMenuF(layout, IFACE_("Header"), ICON_NONE, ed_screens_header_tools_menu_create, NULL);
     }
-    else if (region->regiontype == RGN_TYPE_NAV_BAR) {
+    else if (rgn->rgntype == RGN_TYPE_NAV_BAR) {
       uiItemMenuF(layout,
                   IFACE_("Nav Bar"),
                   ICON_NONE,
                   ed_screens_nav_bar_tools_menu_create,
                   NULL);
     }
-    else if (region->regiontype == RGN_TYPE_FOOTER) {
+    else if (rgn->rgntype == RGN_TYPE_FOOTER) {
       uiItemMenuF(layout, IFACE_("Footer"), ICON_NONE, ED_screens_footer_tools_menu_create, NULL);
     }
   }
 
   /* UI List item cxt menu. Scripts can add items to it, by default there's nothing shown. */
-  const ARegion *region = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_region(C);
-  const bool is_inside_listbox = ui_list_find_mouse_over(region, event) != NULL;
+  const ARgn *rgn = cxt_win_menu(C) ? cxt_win_menu(C) : cxt_win_rgn(C);
+  const bool is_inside_listbox = ui_list_find_mouse_over(rgn, ev) != NULL;
   const bool is_inside_listrow = is_inside_listbox ?
-                                     ui_list_row_find_mouse_over(region, event->xy) != NULL :
+                                     ui_list_row_find_mouse_over(rgn, ev->xy) != NULL :
                                      false;
   if (is_inside_listrow) {
     MenuType *mt = win_menutype_find("UI_MT_list_item_cxt_menu", true);
@@ -1185,36 +1183,36 @@ bool ui_popup_cxt_menu_for_btn(Cxt *C, Btn *btn, const WinEvent *event)
   }
 
   if (btn->cxt) {
-    cxt_store_set(C, previous_ctx);
+    cxt_store_set(C, previous_cxt);
   }
 
   return ui_popup_menu_end_or_cancel(C, pup);
 }
 
 /* Panel Cxt Menu */
-void ui_popup_cxt_menu_for_panel(Cxt *C, ARegion *region, Panel *panel)
+void ui_popup_cxt_menu_for_pnl(Cxt *C, ARgn *rgn, Pnl *pnl)
 {
   Screen *screen = cxt_win_screen(C);
-  const bool has_panel_category = ui_panel_category_is_visible(region);
-  const bool any_item_visible = has_panel_category;
+  const bool has_pnl_category = ui_pnl_category_is_visible(rgn);
+  const bool any_item_visible = has_pnl_category;
 
   if (!any_item_visible) {
     return;
   }
-  if (panel->type->parent != NULL) {
+  if (pnl->type->parent != NULL) {
     return;
   }
-  if (!ui_panel_can_be_pinned(panel)) {
+  if (!ui_pnl_can_be_pinned(pnl)) {
     return;
   }
 
   ApiPtr ptr;
-  api_ptr_create(&screen->id, &ApiPanel, panel, &ptr);
+  api_ptr_create(&screen->id, &ApiPnl, pnl, &ptr);
 
   uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Panel"), ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
 
-  if (has_panel_category) {
+  if (has_pnl_category) {
     char tmpstr[80];
     li _snprintf(tmpstr,
                  sizeof(tmpstr),
@@ -1227,7 +1225,7 @@ void ui_popup_cxt_menu_for_panel(Cxt *C, ARegion *region, Panel *panel)
     {
       uiBlock *block = uiLayoutGetBlock(layout);
       Btn *btn = block->btns.last;
-      btn->flag |= UI_BTN_HAS_SEP_CHAR;
+      btn->flag |= BTN_HAS_SEP_CHAR;
     }
   }
   ui_popup_menu_end(C, pup);
