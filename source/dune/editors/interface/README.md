@@ -10,5 +10,6 @@ Pnl - Panel
 Rgn - Region
 Scr - Screen
 ScrArea - Screen Area
+Seq - Sequence
 UI - User Interface
 Win - Window
