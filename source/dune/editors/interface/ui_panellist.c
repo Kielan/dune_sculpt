@@ -24,15 +24,15 @@
 
 #include "api_access.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-#include "wm_api.h"
-#include "wm_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "ed_screen.h"
 
-#include "ui_interface.h"
-#include "ui_interface_icons.h"
+#include "ui_.h"
+#include "ui_icons.h"
 #include "ui_resources.h"
 #include "ui_view2d.h"
 
@@ -41,10 +41,9 @@
 #include "gpu_matrix.h"
 #include "gpi_state.h"
 
-#include "interface_intern.h"
+#include "ui_intern.h"
 
-/** Defines & Structs **/
-
+/* Defines & Structs **/
 #define ANIM_TIME 0.30
 #define ANIM_INTERVAL 0.02
 
@@ -74,88 +73,88 @@ typedef enum uiPanelMouseState {
   PANEL_MOUSE_INSIDE_HEADER,  /** Mouse is in the panel header. */
 } uiPanelMouseState;
 
-typedef enum uiHandlePanelState {
-  PANEL_STATE_DRAG,
-  PANEL_STATE_ANIM,
-  PANEL_STATE_EXIT,
-} uiHandlePanelState;
+typedef enum uiPnlHandleState {
+  PNL_STATE_DRAG,
+  PNL_STATE_ANIM,
+  PNL_STATE_EXIT,
+} uiPnlHandleState;
 
-typedef struct uiHandlePanelData {
-  uiHandlePanelState state;
+typedef struct uiPnlHandleData {
+  uiPnlHandleState state;
   /* Animation. */
-  wmTimer *animtimer;
+  WinTimer *animtimer;
   double starttime;
   /* Dragging. */
   int startx, starty;
   int startofsx, startofsy;
   float start_cur_xmin, start_cur_ymin;
-} uiHandlePanelData;
+} uiPnlHandleData;
 
-typedef struct PanelSort {
-  Panel *panel;
+typedef struct PnlSort {
+  Pnl *pnl;
   int new_offset_x;
   int new_offset_y;
-} PanelSort;
+} PnlSort;
 
-static void panel_set_expansion_from_list_data(const Cxt *C, Panel *panel);
-static int get_panel_real_size_y(const Panel *panel);
-static void panel_activate_state(const Cxt *C, Panel *panel, uiHandlePanelState state);
-static int compare_panel(const void *a, const void *b);
-static bool panel_type_context_poll(ARegion *region,
-                                    const PanelType *panel_type,
-                                    const char *cxt);
+static void pnl_set_expansion_from_list_data(const Cxt *C, Pnl *pnl);
+static int get_pnl_real_size_y(const Pnl *pnl);
+static void pnl_activate_state(const Cxt *C, Pnl *pnl, uiPnlHandleState state);
+static int compare_pnl(const void *a, const void *b);
+static bool pnl_type_cxt_poll(ARgn *rgn,
+                              const PnlType *pnl_type,
+                              const char *cxt);
 
-/** Local Functions **/
-static bool panel_active_anim_changed(List *lb,
-                                      Panel **r_panel_animation,
-                                      bool *r_no_animation)
+/* Local Fns */
+static bool pnl_active_anim_changed(List *list,
+                                    Pnl **r_pnl_anim,
+                                    bool *r_no_anim)
 {
-  LIST_FOREACH (Panel *, panel, lb) {
-    /* Detect panel active flag changes. */
-    if (!(panel->type && panel->type->parent)) {
-      if ((panel->runtime_flag & PANEL_WAS_ACTIVE) && !(panel->runtime_flag & PANEL_ACTIVE)) {
+  LIST_FOREACH (Pnl *, pnl, list) {
+    /* Detect pnl active flag changes. */
+    if (!(pnl->type && pnl->type->parent)) {
+      if ((pnl->runtime_flag & PNL_WAS_ACTIVE) && !(pnl->runtime_flag & PNL_ACTIVE)) {
         return true;
       }
-      if (!(panel->runtime_flag & PANEL_WAS_ACTIVE) && (panel->runtime_flag & PANEL_ACTIVE)) {
+      if (!(pnl->runtime_flag & PNL_WAS_ACTIVE) && (pnl->runtime_flag & PNL_ACTIVE)) {
         return true;
       }
     }
 
-    /* Detect changes in panel expansions. */
-    if ((bool)(panel->runtime_flag & PANEL_WAS_CLOSED) != ui_panel_is_closed(panel)) {
-      *r_panel_animation = panel;
+    /* Detect changes in pnl expansions. */
+    if ((bool)(pnl->runtime_flag & PNL_WAS_CLOSED) != ui_pnl_is_closed(pnl)) {
+      *r_pnl_anim = pnl;
       return false;
     }
 
-    if ((panel->runtime_flag & PANEL_ACTIVE) && !ui_panel_is_closed(panel)) {
-      if (panel_active_animation_changed(&panel->children, r_panel_animation, r_no_animation)) {
+    if ((pnl->runtime_flag & PNL_ACTIVE) && !ui_pnl_is_closed(pnl)) {
+      if (pnl_active_anim_changed(&pnl->children, r_pnl_anim, r_no_anim)) {
         return true;
       }
     }
 
-    /* Detect animation. */
-    if (panel->activedata) {
-      uiHandlePanelData *data = panel->activedata;
-      if (data->state == PANEL_STATE_ANIMATION) {
-        *r_panel_animation = panel;
+    /* Detect anim */
+    if (pnl->activedata) {
+      uiHandlePnlData *data = pnl->activedata;
+      if (data->state == PNL_STATE_ANIM) {
+        *r_pnl_anim = pnl;
       }
       else {
-        /* Don't animate while handling other interaction. */
-        *r_no_animation = true;
+        /* Don't anim while handling other interaction. */
+        *r_no_anim = true;
       }
     }
-    if ((panel->runtime_flag & PANEL_ANIM_ALIGN) && !(*r_panel_animation)) {
-      *r_panel_animation = panel;
+    if ((pnl->runtime_flag & PNL_ANIM_ALIGN) && !(*r_pnl_anim)) {
+      *r_pnl_anim = p l;
     }
   }
 
   return false;
 }
 
-/* return: true if the properties editor switch tabs since the last layout pass. **/
-static bool props_space_needs_realign(const ScrArea *area, const ARegion *region)
+/* rtrn true if the props ed switch tabs since the last layout pass. **/
+static bool props_space_needs_realign(const ScrArea *area, const ARgn *rgn)
 {
-  if (area->spacetype == SPACE_PROPS && region->regiontype == RGN_TYPE_WINDOW) {
+  if (area->spacetype == SPACE_PROPS && rgn->rgntype == RGN_TYPE_WIN) {
     SpaceProps *sbtns = area->spacedata.first;
 
     if (sbtns->mainbo != sbtns->mainb) {
@@ -166,25 +165,25 @@ static bool props_space_needs_realign(const ScrArea *area, const ARegion *region
   return false;
 }
 
-static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_panel_animation)
+static bool pnls_need_realign(const ScrArea *area, ARgn *rgn, Pnl **r_pnl_anim)
 {
-  *r_panel_anim = NULL;
+  *r_pnl_anim = NULL;
 
-  if (props_space_needs_realign(area, region)) {
+  if (props_space_needs_realign(area, rgn)) {
     return true;
   }
 
-  /* Detect if a panel was added or removed. */
-  Panel *panel_anim = NULL;
+  /* Detect if a pnl was added or removed. */
+  Pnl *pnl_anim = NULL;
   bool no_anim = false;
-  if (panel_active_anim_changed(&region->panels, &panel_anim, &no_anim)) {
+  if (pnl_active_anim_changed(&rgn->pnls, &pnl_anim, &no_anim)) {
     return true;
   }
 
-  /* Detect panel marked for anim, if we're not already animating. */
-  if (panel_anim) {
+  /* Detect pnl marked for anim, if we're not already animating. */
+  if (pnl_anim) {
     if (!no_anim) {
-      *r_panel_anim = panel_anim;
+      *r_pnl_anim = pnl_anim;
     }
     return true;
   }
@@ -192,119 +191,117 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
   return false;
 }
 
-/* Fns for Instanced PanelList **/
-static PanelList *panellist_add_instanced(ARegion *region,
-                                  List *panels,
-                                  PanelType *panel_type,
+/* Fns for Instanced PnlList */
+static PnlList *pnllist_add_instanced(ARgn *rgn,
+                                  List *pmls,
+                                  PnlType *pnl_type,
                                   ApiPtr *custom_data)
 {
-  PanelList *panellist = mem_callocn(sizeof(Panel), __func__);
-  panel->type = panel_type;
-  lib_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
+  PnlList *pnllist = mem_callocn(sizeof(Pnl), __func__);
+  pnl->type = pnl_type;
+  lib_strncpy(pnl->pnlname, panel_type->idname, sizeof(pnl->pnlname));
 
-  panel->runtime.custom_data_ptr = custom_data;
-  panel->runtime_flag |= PANEL_NEW_ADDED;
+  pnl->runtime.custom_data_ptr = custom_data;
+  pnl->runtime_flag |= PNL_NEW_ADDED;
 
-  /* Add the panel's children too. Although they aren't instanced panels, we can still use this
-   * function to create them, as UI_panel_begin does other things we don't need to do. */
-  LIST_FOREACH (LinkData *, child, &panel_type->children) {
-    PanelType *child_type = child->data;
-    panellistinstanced_add(region, &panel->children, child_type, custom_data);
+  /* Add the pnl's children too. Although they aren't instanced pnls, we can still use this
+   * fn to create them, as ui_pnl_begin does other things we don't need to do. */
+  LIST_FOREACH (LinkData *, child, &pnl_type->children) {
+    PnlType *child_type = child->data;
+    pnllistinstanced_add(region, &pnl->children, child_type, custom_data);
   }
 
-  /* Make sure the panel is added to the end of the display-order as well. This is needed for
+  /* Make sure the pnl is added to the end of the display-order as well. This is needed for
    * loading existing files.
-   *
    * NOTE: We could use special behavior to place it after the panel that starts the list of
-   * instanced panels, but that would add complexity that isn't needed for now. */
+   * instanced pnls, btn that would add complexity that isn't needed for now. */
   int max_sortorder = 0;
-  LIST_FOREACH (Panel *, existing_panel, panels) {
-    if (existing_panel->sortorder > max_sortorder) {
-      max_sortorder = existing_panel->sortorder;
+  LIST_FOREACH (Pnl *, existing_pnl, pnls) {
+    if (existing_pnl->sortorder > max_sortorder) {
+      max_sortorder = existing_pnl->sortorder;
     }
   }
-  panel->sortorder = max_sortorder + 1;
+  pnl->sortorder = max_sortorder + 1;
 
-  lib_addtail(panels, panel);
+  lib_addtail(pnls, pnl);
 
-  return panel;
+  return pnl;
 }
 
-Panel *panellistinstanced_add(const Cxt *C,
-                              ARegion *region,
-                              List *panels,
-                              const char *panel_idname,
+Pnl *pnllistinstanced_add(const Cxt *C,
+                              ARgn *rgn,
+                              List *pnls,
+                              const char *pnl_idname,
                               ApiPtr *custom_data)
 {
-  ARegionType *region_type = region->type;
+  ARgnType *rgn_type = rgn->type;
 
-  PanelType *panel_type = lib_findstring(
-      &region_type->paneltypes, panel_idname, offsetof(PanelType, idname));
+  PnlType *pnl_type = lib_findstring(
+      &rgn_type->pnltypes, pnl_idname, offsetof(PnlType, idname));
 
-  if (panel_type == NULL) {
-    printf("Panel type '%s' not found.\n", panel_idname);
+  if (pnl_type == NULL) {
+    printf("Pnl type '%s' not found.\n", pnl_idname);
     return NULL;
   }
 
-  Panel *new_panel = panellistinstanced_add(region, panels, panel_type, custom_data);
+  Pnl *new_pnl = pnllistinstanced_add(rgn, pnls, pnl_type, custom_data);
 
-  /* Do this after #panellistinstanced_add so all sub-panels are added. */
-  panel_set_expansion_from_list_data(C, new_panel);
+  /* Do this after pnllistinstanced_add so all sub-pnls are added. */
+  pnl_set_expansion_from_list_data(C, new_pnl);
 
-  return new_panel;
+  return new_pnl;
 }
 
-void panellist_unique_str(Panel *panel, char *r_name)
+void pnllist_unique_str(Pnl *pnl, char *r_name)
 {
-  /* The panel sort-order will be unique for a specific panel type because the instanced
-   * panel list is regenerated for every change in the data order / length. */
-  snprintf(r_name, INSTANCED_PANEL_UNIQUE_STR_LEN, "%d", panel->sortorder);
+  /* Pnl sort-order will be unique for a specific pnl type bc the instanced
+   * pnl list is regen'd for every change in the data order/length. */
+  snprintf(r_name, INSTANCED_PNL_UNIQUE_STR_LEN, "%d", pnl->sortorder);
 }
 
-/* Free a panel and its children. Custom data is shared by the panel and its children
- * and is freed by ui_panellistinstanced_free.
- *
- * note: The only panels that should need to be deleted at runtime are panels with the
- * PANEL_TYPE_INSTANCED flag set. */
-static void panel_delete(const Cxt *C, ARegion *region, List *panels, Panel *panel)
+/* Free a pnl and its children. Custom data is shared by the pnl and its children
+ * and is freed by ui_pnllistinstanced_free.
+ * note: The only pnls that should need to be deleted at runtime are pnls with the
+ * PNL_TYPE_INSTANCED flag set. */
+static void panel_delete(const Cxt *C, ARgn *rgn, List *pnls, Pnl *pnl)
 {
   /* Recursively delete children. */
-  LIST_FOREACH_MUTABLE (Panel *, child, &panel->children) {
-    panel_delete(C, region, &panel->children, child);
+  LIST_FOREACH_MUTABLE (Pnl *, child, &pnl->children) {
+    pnl_delete(C, rgn, &pnl->children, child);
   }
-  lib_freelistn(&panel->children);
+  lib_freelistn(&pml->children);
 
-  lib_remlink(panels, panel);
-  if (panel->activedata) {
-    mem_freen(panel->activedata);
+  lib_remlink(pnls, pnl);
+  if (pnl->activedata) {
+    mem_freen(pnl->activedata);
   }
-  mem_freen(panel);
+  mem_freen(pnl);
 }
 
-void panellistinstanced_free(const Cxt *C, ARegion *region)
+void pnllistinstanced_free(const Cxt *C, ARgn *rgn)
 {
-  /* Delete panels with the instanced flag. */
-  LIST_FOREACH_MUTABLE (Panel *, panel, &region->panels) {
-    if ((panel->type != NULL) && (panel->type->flag & PANEL_TYPE_INSTANCED)) {
-      /* Make sure the panel's handler is removed before deleting it. */
-      if (C != NULL && panel->activedata != NULL) {
-        panel_activate_state(C, panel, PANEL_STATE_EXIT);
+  /* Delete pnls with the instanced flag. */
+  LIST_FOREACH_MUTABLE (Pnl *, pnl, &rgn->pnls) {
+    if ((pnl->type != NULL) && (pnl->type->flag & PNL_TYPE_INSTANCED)) {
+      /* Make sure the pnl's handler is removed before deleting it. */
+      if (C != NULL && pnl->activedata != NULL) {
+        pnl_activate_state(C, pnl, PNL_STATE_EXIT);
       }
 
-      /* Free panel's custom data. */
-      if (panel->runtime.custom_data_ptr != NULL) {
-        mem_freen(panel->runtime.custom_data_ptr);
+      /* Free pnl's custom data. */
+      if (pnl->runtime.custom_data_ptr != NULL) {
+        mem_freen(pnl->runtime.custom_data_ptr);
       }
 
-      /* Free the panel and its sub-panels. */
-      panel_delete(C, region, &region->panels, panel);
+      /* Free the pnl and its sub-pnls. */
+      pnl_delete(C, rgn, &rgn->pnls, pnl);
     }
   }
 }
 
-bool ui_panellist_matches_data(ARegion *region,
-                               List *data,
-                               uiListPanelIdFromDataFn panel_idname_fn)
+bool ui_pnllist_matches_data(ARgn *rgn,
+                             List *data,
+                             uiListPnlIdFromDataFn pnl_idname_fn)
 {
   /* Check for NULL data. */
   int data_len = 0;
@@ -319,22 +316,22 @@ bool ui_panellist_matches_data(ARegion *region,
   }
 
   int i = 0;
-  LIST_FOREACH (Panel *, panel, &region->panels) {
-    if (panel->type != NULL && panel->type->flag & PANEL_TYPE_INSTANCED) {
+  LIST_FOREACH (Pnl *, pnl, &rgn->pnls) {
+    if (pnl->type != NULL && pnl->type->flag & PNL_TYPE_INSTANCED) {
       /* The panels were reordered by drag and drop. */
-      if (panel->flag & PNL_INSTANCED_LIST_ORDER_CHANGED) {
+      if (pnl->flag & PNL_INSTANCED_LIST_ORDER_CHANGED) {
         return false;
       }
 
-      /* We reached the last data item before the last instanced panel. */
+      /* We reached the last data item before the last instanced pnl. */
       if (data_link == NULL) {
         return false;
       }
 
-      /* Check if the panel type matches the panel type from the data item. */
-      char panel_idname[MAX_NAME];
-      panel_idname_fn(data_link, panel_idname);
-      if (!STREQ(panel_idname, panel->type->idname)) {
+      /* Check if the pnl type matches the pnl type from the data item. */
+      char pnl_idname[MAX_NAME];
+      pnl_idname_fn(data_link, pnl_idname);
+      if (!STREQ(pnl_idname, pnl->type->idname)) {
         return false;
       }
 
@@ -343,7 +340,7 @@ bool ui_panellist_matches_data(ARegion *region,
     }
   }
 
-  /* If we didn't make it to the last list item, the panel list isn't complete. */
+  /* If we didn't make it to the last list item, the pnl list isn't complete. */
   if (i != data_len) {
     return false;
   }
@@ -351,74 +348,74 @@ bool ui_panellist_matches_data(ARegion *region,
   return true;
 }
 
-static void panellistinstanced_reorder(Cxt *C, ARegion *region, PanelList *panellist_drag)
+static void pnllistinstanced_reorder(Cxt *C, ARgn *rgn, PnlList *pnllist_drag)
 {
-  /* Without a type we cannot access the reorder callback. */
-  if (drag_panel->type == NULL) {
+  /* Without a type we cannot access the reorder cb. */
+  if (drag_pnl->type == NULL) {
     return;
   }
-  /* Don't reorder if this instanced panel doesn't support drag and drop reordering. */
-  if (drag_panel->type->reorder == NULL) {
+  /* Don't reorder if this instanced pnl doesn't support drag and drop reordering. */
+  if (drag_pnl->type->reorder == NULL) {
     return;
   }
 
   char *cxt = NULL;
-  if (!panellist_category_is_visible(region)) {
-    cxt = drag_panel->type->cxt;
+  if (!pnllist_category_is_visible(rgn)) {
+    cxt = drag_pnl->type->cxt;
   }
 
-  /* Find how many instanced panels with this context string. */
-  int panellist_len = 0;
+  /* Find how many instanced pnls with this cxt string. */
+  int pnllist_len = 0;
   int start_index = -1;
-  LIST_FOREACH (const Panel *, panel, &region->panellist) {
-    if (panel->type) {
-      if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_cxt_poll(region, panel->type, cxt)) {
-          if (panel == drag_panel) {
+  LIST_FOREACH (const Pnl *, pnl, &rgn->pnllist) {
+    if (pnl->type) {
+      if (pnl->type->flag & PNL_TYPE_INSTANCED) {
+        if (pnl_type_cxt_poll(rgn, pnl->type, cxt)) {
+          if (pnl == drag_pnl) {
             lib_assert(start_index == -1); /* This panel should only appear once. */
-            start_index = list_panels_len;
+            start_index = list_pnls_len;
           }
-          panellist_len++;
+          pnllist_len++;
         }
       }
     }
   }
-  lib_assert(start_index != -1); /* The drag panel should definitely be in the list. */
+  lib_assert(start_index != -1); /* The drag pnl should definitely be in the list. */
 
-  /* Sort the matching instanced panels by their display order. */
-  PanelSort *panel_sort = mem_callocn(list_panels_len * sizeof(*panel_sort), __func__);
-  PanelSort *sort_index = panel_sort;
-  LIST_FOREACH (Panel *, panel, &region->panels) {
-    if (panel->type) {
-      if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_cxt_poll(region, panel->type, cxt)) {
+  /* Sort the matching instanced pnls by their display order. */
+  PnlSort *pnl_sort = mem_callocn(list_pnls_len * sizeof(*pnl_sort), __func__);
+  PnlSort *sort_index = pnl_sort;
+  LIST_FOREACH (Panel *, pnl, &rgn->pnls) {
+    if (pnl->type) {
+      if (pnl->type->flag & PNL_TYPE_INSTANCED) {
+        if (pnl_type_cxt_poll(rgn, pnl->type, cxt)) {
           sort_index->panel = panel;
           sort_index++;
         }
       }
     }
   }
-  qsort(panel_sort, list_panels_len, sizeof(*panel_sort), compare_panel);
+  qsort(pnl_sort, list_pnls_len, sizeof(*pnl_sort), compare_pnl);
 
-  /* Find how many of those panels are above this panel. */
+  /* Find how many of those panels are above this pnl. */
   int move_to_index = 0;
   for (; move_to_index < list_panels_len; move_to_index++) {
-    if (panel_sort[move_to_index].panel == drag_panel) {
+    if (pnl_sort[move_to_index].pnl == drag_pnl) {
       break;
     }
   }
 
-  mem_freen(panel_sort);
+  mem_freen(pnl_sort);
 
   if (move_to_index == start_index) {
-    /* In this case, the reorder was not changed, so don't do any updates or call the callback. */
+    /* This case: the reorder was not changed, don't do any updates or call the cb. */
     return;
   }
 
   /* Set the bit to tell the interface to instanced the list. */
-  drag_panel->flag |= PNL_INSTANCED_LIST_ORDER_CHANGED;
+  drag_pnl->flag |= PNL_INSTANCED_LIST_ORDER_CHANGED;
 
-  cxt_store_set(C, drag_panel->runtime.ctx);
+  cxt_store_set(C, drag_pnl->runtime.ctx);
 
   /* Finally, move this panel's list item to the new index in its list. */
   drag_panel->type->reorder(C, drag_panel, move_to_index);
@@ -426,210 +423,209 @@ static void panellistinstanced_reorder(Cxt *C, ARegion *region, PanelList *panel
   cxt_store_set(C, NULL);
 }
 
-/* Recursive implementation for #panellistdata_expansion.
- *
- * return: Whether the closed flag for the panel or any sub-panels changed. */
-static bool panellistdata_expand_recursive(Panel *panel, short flag, short *flag_index)
+/* Recursive implementation for pnllistdata_expansion.
+ * return: Whether the closed flag for the panel or any sub-pnls changed. */
+static bool pnllistdata_expand_recursive(Pnl *pnl, short flag, short *flag_index)
 {
   const bool open = (flag & (1 << *flag_index));
-  bool changed = (open == ui_panel_is_closed(panel));
+  bool changed = (open == ui_pnl_is_closed(pnl));
 
-  SET_FLAG_FROM_TEST(panel->flag, !open, PNL_CLOSED);
+  SET_FLAG_FROM_TEST(pnl->flag, !open, PNL_CLOSED);
 
-  LIST_FOREACH (Panel *, child, &panel->children) {
+  LIST_FOREACH (Pnl *, child, &pnl->children) {
     *flag_index = *flag_index + 1;
-    changed |= panellistdata_expand_recursive(child, flag, flag_index);
+    changed |= pnllistdata_expand_recursive(child, flag, flag_index);
   }
   return changed;
 }
 
-/* Set the expansion of the panel and its sub-panels from the flag stored in the
+/* Set the expansion of the pnl and its sub-pnls from the flag stored in the
  * corresponding list data. The flag has expansion stored in each bit in depth first order */
-static void panellistdata_set_expansion_from(const Cxt *C, Panel *panel)
+static void pnllistdata_set_expansion_from(const Cxt *C, Pnl *pnl)
 {
-  lib_assert(panel->type != NULL);
-  lib_assert(panel->type->flag & PANEL_TYPE_INSTANCED);
-  if (panel->type->get_list_data_expand_flag == NULL) {
-    /* Instanced panel doesn't support loading expansion. */
+  lib_assert(pnl->type != NULL);
+  lib_assert(pnl->type->flag & PNL_TYPE_INSTANCED);
+  if (pnl->type->get_list_data_expand_flag == NULL) {
+    /* Instanced pnl doesn't support loading expansion. */
     return;
   }
 
-  const short expand_flag = panel->type->get_list_data_expand_flag(C, panel);
+  const short expand_flag = pnl->type->get_list_data_expand_flag(C, pnl);
   short flag_index = 0;
 
   /* Start panel animation if the open state was changed. */
-  if (panellistdata_expand_recursive(panel, expand_flag, &flag_index)) {
-    panel_activate_state(C, panel, PANEL_STATE_ANIMATION);
+  if (pnllistdata_expand_recursive(pml, expand_flag, &flag_index)) {
+    pnl_activate_state(C, pnl, PNL_STATE_ANIM);
   }
 }
 
 /* Set expansion based on the data for instanced panels */
-static void region_panellistdata_expand(const Cxt *C, ARegion *region)
+static void rgn_pnllistdata_expand(const Cxt *C, ARgn *rgn)
 {
-  LIST_FOREACH (Panel *, panel, &region->panels) {
-    if (panel->runtime_flag & PANEL_ACTIVE) {
-      PanelType *panel_type = panel->type;
-      if (panel_type != NULL && panel->type->flag & PANEL_TYPE_INSTANCED) {
-        panellistdata_expand(C, panel);
+  LIST_FOREACH (Pnl *, pnl, &rgn->pnls) {
+    if (pnl->runtime_flag & PNL_ACTIVE) {
+      PnlType *panel_type = pnl->type;
+      if (pnl_type != NULL && pnl->type->flag & PNl_TYPE_INSTANCED) {
+        pnllistdata_expand(C, pnl);
       }
     }
   }
 }
 
-/* Recursive implementation for #panellistdata_flag_expand_set */
-static void panellist_expand_flag_get(const Panel *panel, short *flag, short *flag_index)
+/* Recursive impl for pnllistdata_flag_expand_set */
+static void pnllist_expand_flag_get(const Pnl *pnl, short *flag, short *flag_index)
 {
-  const bool open = !(panellist->flag & PNL_CLOSED);
+  const bool open = !(pnllist->flag & PNL_CLOSED);
   SET_FLAG_FROM_TEST(*flag, open, (1 << *flag_index));
 
-  LIST_FOREACH (const Panel *, child, &panel->children) {
+  LIST_FOREACH (const Pnl *, child, &pnl->children) {
     *flag_index = *flag_index + 1;
-    get_panel_expand_flag(child, flag, flag_index);
+    get_pnl_expand_flag(child, flag, flag_index);
   }
 }
 
-/* Call the callback to store the panel and sub-panel expansion settings in the list item that
+/* Call the cb to store the pnl and sub-pnl expansion settings in the list item that
  * corresponds to each instanced panel.
  *
- * note: This needs to iterate through all of the region's panels because the panel with changed
- * expansion might have been the sub-panel of an instanced panel, meaning it might not know
+ * note: This needs to it through all of the rgn's panels because the pnl with changed
+ * expansion might have been the sub-pnl of an instanced pnl, meaning it might not know
  * which list item it corresponds to. */
-static void panellistdata_expand_flag_set(const Cxt *C, const ARegion *region)
+static void pnllistdata_expand_flag_set(const Cxt *C, const ARgn *rgn)
 {
-  LIST_FOREACH (Panel *, panel, &region->panels) {
-    PanelType *panel_type = panel->type;
-    if (panel_type == NULL) {
+  LIST_FOREACH (Pnl *, pnl, &rgn->pnls) {
+    PnlType *pnl_type = pnl->type;
+    if (pnl_type == NULL) {
       continue;
     }
 
-    /* Check for #PANEL_ACTIVE so we only set the expand flag for active panels. */
-    if (panellist_type->flag & PANEL_TYPE_INSTANCED && panel->runtime_flag & PANEL_ACTIVE) {
+    /* Check for PNL_ACTIVE so we only set the expand flag for active pnls. */
+    if (pnllist_type->flag & PNL_TYPE_INSTANCED && pnl->runtime_flag & PNL_ACTIVE) {
       short expand_flag;
       short flag_index = 0;
-      panellist_expand_flag_get(panellist, &expand_flag, &flag_index);
-      if (panel->type->set_list_data_expand_flag) {
-        panellist->type->set_list_data_expand_flag(C, panellist, expand_flag);
+      pnllist_expand_flag_get(pnllist, &expand_flag, &flag_index);
+      if (pnl->type->set_list_data_expand_flag) {
+        pnllist->type->set_list_data_expand_flag(C, pnllist, expand_flag);
       }
     }
   }
 }
 
-/** Panels **/
-static bool panellistdata_custom_active_get(const PanelList *panellist)
+/* Panels */
+static bool pnllistdata_custom_active_get(const PnlList *pnllist)
 {
   /* The caller should make sure the panel is active and has a type. */
-  lib_assert(panellist_is_active(panel));
-  lib_assert(panellist->type != NULL);
+  lib_assert(pnllist_is_active(pnl));
+  lib_assert(pnllist->type != NULL);
 
-  if (panellist->type->active_prop[0] != '\0') {
-    ApiPtr *ptr = panellist_custom_data_get(panel);
+  if (pnllist->type->active_prop[0] != '\0') {
+    ApiPtr *ptr = pnllist_custom_data_get(panel);
     if (ptr != NULL && !api_ptr_is_null(ptr)) {
-      return api_bool_get(ptr, panel->type->active_prop);
+      return api_bool_get(ptr, pnl->type->active_prop);
     }
   }
 
   return false;
 }
 
-static void panellist_custom_data_active_set(Panel *panel)
+static void pnllist_custom_data_active_set(Pnl *pnl)
 {
-  /* Since the panel is interacted with, it should be active and have a type. */
-  lib_assert(panellist_is_active(panel));
-  lib_assert(panellist->type != NULL);
+  /* Since the panel is interacted with, it should be active and have a type */
+  lib_assert(pnllist_is_active(panel));
+  lib_assert(pnllist->type != NULL);
 
-  if (panellist->type->active_prop[0] != '\0') {
-    ApiPtr *ptr =panellistdata_custom__get(panel);
-    lib_assert(api_struct_find_prop(ptr, panellist->type->active_prop) != NULL);
+  if (pnllist->type->active_prop[0] != '\0') {
+    ApiPtr *ptr = pnllistdata_custom__get(pnl);
+    lib_assert(api_struct_find_prop(ptr, pnllist->type->active_prop) != NULL);
     if (ptr != NULL && !api_ptr_is_null(ptr)) {
       api_bool_set(ptr, panellist->type->active_prop, true);
     }
   }
 }
 
-/* Set flag state for a panel and its sub-panels. **/
-static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
+/* Set flag state for a panel and its sub-pnls. **/
+static void pnllist_flag_set_recursive(Pnl *pnl, short flag, bool value)
 {
-  SET_FLAG_FROM_TEST(panel->flag, value, flag);
+  SET_FLAG_FROM_TEST(pnl->flag, value, flag);
 
-  LIST_FOREACH (Panel *, child, &panel->children) {
-    panellist_flag_set_recursive(child, flag, value);
+  LIST_FOREACH (Pnl *, child, &pnl->children) {
+    pnllist_flag_set_recursive(child, flag, value);
   }
 }
 
-/* Set runtime flag state for a panel and its sub-panels. **/
-static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool value)
+/* Set runtime flag state for a panel and its sub-pnls. **/
+static void pnllist_runtimeflag_set_recursive(Pnl *pnl, short flag, bool value)
 {
-  SET_FLAG_FROM_TEST(panel->runtime_flag, value, flag);
+  SET_FLAG_FROM_TEST(pnl->runtime_flag, value, flag);
 
-  LIST_FOREACH (Panel *, sub_panel, &panel->children) {
-    panel_set_runtime_flag_recursive(sub_panel, flag, value);
+  LIST_FOREACH (Pnl *, sub_pnl, &pnl->children) {
+    pnl_set_runtime_flag_recursive(sub_pnl, flag, value);
   }
 }
 
-static void panellist_collapse_all(ARegion *region, const PanelList *from_panellist)
+static void pnllist_collapse_all(ARgn *rgn, const PnlList *from_pnllist)
 {
-  const bool has_category_tabs = panellist_category_is_visible(region);
-  const char *category = has_category_tabs ? panellist_category_active_get(region, false) : NULL;
-  const PanelType *from_pt = from_panel->type;
+  const bool has_category_tabs = pnllist_category_is_visible(rgn);
+  const char *category = has_category_tabs ? pnllist_category_active_get(rgn, false) : NULL;
+  const PnlType *from_pt = from_pnl->type;
 
-  LIST_FOREACH (Panel *, panel, &region->panels) {
-    PanelType *pt = panel->type;
+  LIST_FOREACH (Pnl *, pnl, &rgn->pnls) {
+    PnlType *pt = pnl->type;
 
     /* Close panels with headers in the same context. */
-    if (pt && from_pt && !(pt->flag & PANEL_TYPE_NO_HEADER)) {
-      if (!pt->ctx[0] || !from_pt->ctx[0] || STREQ(pt->ctx, from_pt->ctx)) {
-        if ((panel->flag & PNL_PIN) || !category || !pt->category[0] ||
+    if (pt && from_pt && !(pt->flag & PML_TYPE_NO_HEADER)) {
+      if (!pt->cxt[0] || !from_pt->cxt[0] || STREQ(pt->cxt, from_pt->cxt)) {
+        if ((pnl->flag & PNL_PIN) || !category || !pt->category[0] ||
             STREQ(pt->category, category)) {
-          panel->flag |= PNL_CLOSED;
+          pnl->flag |= PNL_CLOSED;
         }
       }
     }
   }
 }
 
-static bool panellist_type_cxt_poll(ARegion *region,
-                                    const PanelType *panel_type,
+static bool pnllist_type_cxt_poll(ARgn *rgn,
+                                    const PnlType *pnl_type,
                                     const char *cxt)
 {
-  if (!lib_list_is_empty(&region->panellist_category)) {
-    return STREQ(panel_type->category, panellist_category_active_get(region, false));
+  if (!lib_list_is_empty(&rgn->p llist_category)) {
+    return STREQ(pnl_type->category, pnllist_category_active_get(rgn, false));
   }
 
-  if (panel_type->context[0] && STREQ(panel_type->ctx, ctx)) {
+  if (pnl_type->cxt[0] && STREQ(pnl_type->cxt, cxt)) {
     return true;
   }
 
   return false;
 }
 
-PanelList *panellist_find_by_type(List *lb, const PanelType *pt)
+PnlList *pnllist_find_by_type(List *list, const P lType *pt)
 {
   const char *idname = pt->idname;
 
-  LIST_FOREACH (Panel *, panel, lb) {
-    if (STREQLEN(panel->panelname, idname, sizeof(panel->panelname))) {
-      return panel;
+  LIST_FOREACH (Pnl *, pnl, list) {
+    if (STREQLEN(pnl->pnlname, idname, sizeof(pnl->pnlname))) {
+      return pnl;
     }
   }
   return NULL;
 }
 
-PanelList *panellist_begin(
-    ARegion *region, List *lb, uiBlock *block, PanelType *pt, PanelList *panellist, bool *r_open)
+PnlList *pnllist_begin(
+    ARgn *rgn, List *list, uiBlock *block, PnlType *pt, PnlList *pnllist, bool *r_open)
 {
-  PanelList *panellist_last;
-  const char *drawname = cxt_IFACE_(pt->translation_cxt, pt->label);
+  PnlList *pnllist_last;
+  const char *drawname = cxt_IFACE_(pt->lang_cxt, pt->label);
   const char *idname = pt->idname;
-  const bool newpanel = (panel == NULL);
+  const bool newpnl = (pnl == NULL);
 
-  if (newpanel) {
-    panel = mem_callocn(sizeof(Panel), __func__);
-    panel->type = pt;
-    lib_strncpy(panel->panelname, idname, sizeof(panel->panelname));
+  if (newpnl) {
+    pnl = mem_callocn(sizeof(Pnl), __func__);
+    pnl->type = pt;
+    lib_strncpy(pnl->pnlname, idname, sizeof(pnl->pnlname));
 
-    if (pt->flag & PANEL_TYPE_DEFAULT_CLOSED) {
+    if (pt->flag & PNL_TYPE_DEFAULT_CLOSED) {
       panel->flag |= PNL_CLOSED;
-      panel->runtime_flag |= PANEL_WAS_CLOSED;
+      panel->runtime_flag |= PNL_WAS_CLOSED;
     }
 
     panel->ofsx = 0;
@@ -640,7 +636,7 @@ PanelList *panellist_begin(
     panel->blocksizey = 0;
     panel->runtime_flag |= PANEL_NEW_ADDED;
 
-    lib_addtail(lb, panel);
+    lib_addtail(list, panel);
   }
   else {
     /* Panel already exists. */
@@ -653,10 +649,10 @@ PanelList *panellist_begin(
 
   /* If a new panel is added, we insert it right after the panel that was last added.
    * This way new panels are inserted in the right place between versions. */
-  for (panel_last = lb->first; panel_last; panel_last = panel_last->next) {
+  for (panel_last = list->first; panel_last; panel_last = panel_last->next) {
     if (panel_last->runtime_flag & PANEL_LAST_ADDED) {
-      lib_remlink(lb, panel);
-      lib_insertlinkafter(lb, panel_last, panel);
+      lib_remlink(list, panel);
+      lib_insertlinkafter(list, panel_last, panel);
       break;
     }
   }
@@ -664,7 +660,7 @@ PanelList *panellist_begin(
   if (newpanel) {
     panel->sortorder = (panel_last) ? panel_last->sortorder + 1 : 0;
 
-    LIST_FOREACH (Panel *, panel_next, lb) {
+    LIST_FOREACH (Panel *, panel_next, list) {
       if (panel_next != panel && panel_next->sortorder >= panel->sortorder) {
         panel_next->sortorder++;
       }
@@ -678,7 +674,7 @@ PanelList *panellist_begin(
   /* Assign the new panel to the block. */
   block->panel = panel;
   panel->runtime_flag |= PANEL_ACTIVE | PANEL_LAST_ADDED;
-  if (region->alignment == RGN_ALIGN_FLOAT) {
+  if (rgn->alignment == RGN_ALIGN_FLOAT) {
     uiblock_theme_style_set(block, UI_BLOCK_THEME_STYLE_POPUP);
   }
 
@@ -697,7 +693,7 @@ void ui_panel_headerbtns_begin(Panel *panel)
 {
   uiBlock *block = panel->runtime.block;
 
-  ui_block_new_btn_group(block, UI_BTN_GROUP_LOCK | UI_BTN_GROUP_PANEL_HEADER);
+  ui_block_new_btn_group(block, BTN_GROUP_LOCK | BTN_GROUP_PANEL_HEADER);
 }
 
 void ui_panellist_headerbtns_end(Panel *panel)
@@ -707,16 +703,16 @@ void ui_panellist_headerbtns_end(Panel *panel)
   /* A btn group should always be created in ui_panellist_headerbtns_begin. */
   lib_assert(!lib_list_is_empty(&block->btn_groups));
 
-  uiBtnGroup *btn_group = block->btn_groups.last;
+  BtnGroup *btn_group = block->btn_groups.last;
 
-  btn_group->flag &= ~UI_BTN_GROUP_LOCK;
+  btn_group->flag &= ~BTN_GROUP_LOCK;
 
   /* Repurpose the first header btn group if it is empty, in case the first btn added to
    * the panel doesn't add a new group (if the btn is created directly rather than through an
    * interface layout call). */
   if (lib_list_is_single(&block->btn_groups) &&
       lib_list_is_empty(&btn_group->btns)) {
-    btn_group->flag &= ~UI_BTN_GROUP_PANEL_HEADER;
+    btn_group->flag &= ~BTN_GROUP_PANEL_HEADER;
   }
   else {
     /* Always add a new btn group. Although this may result in many empty groups, without it,
@@ -726,10 +722,10 @@ void ui_panellist_headerbtns_end(Panel *panel)
   }
 }
 
-static float panellist_region_offset_x_get(const ARegion *region)
+static float panellist_rgn_offset_x_get(const ARgn *rgn)
 {
-  if (ui_panellist_category_visible(region)) {
-    if (RGN_ALIGN_ENUM_FROM_MASK(region->alignment) != RGN_ALIGN_RIGHT) {
+  if (ui_panellist_category_visible(rgn)) {
+    if (RGN_ALIGN_ENUM_FROM_MASK(rgn->alignment) != RGN_ALIGN_RIGHT) {
       return UI_PANEL_CATEGORY_MARGIN_WIDTH;
     }
   }
@@ -746,7 +742,7 @@ static void view2d_map_cur_using_mask(const View2D *v2d, rctf *r_curmasked)
     const float sizex = lib_rcti_size_x(&v2d->mask);
     const float sizey = lib_rcti_size_y(&v2d->mask);
 
-    /* prevent tiny or narrow regions to get
+    /* prevent tiny or narrow rgns to get
      * invalid coordinates - mask can get negative even... */
     if (sizex > 0.0f && sizey > 0.0f) {
       const float dx = lib_rctf_size_x(&v2d->cur) / (sizex + 1);
@@ -793,7 +789,7 @@ void ui_view2d_view_ortho(const View2D *v2d)
    * to eliminate scaling artifacts */
   view2d_map_cur_using_mask(v2d, &curmasked);
 
-  lib_rctf_translate(&curmasked, -xofs, -yofs);
+  lib_rctf_trans(&curmasked, -xofs, -yofs);
 
   /* This flag set by outliner, for icons */
   if (v2d->flag & V2D_PIXELOFS_X) {
@@ -809,7 +805,7 @@ void ui_view2d_view_ortho(const View2D *v2d)
   wmOrtho2(curmasked.xmin, curmasked.xmax, curmasked.ymin, curmasked.ymax);
 }
 
-void ui_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
+void ui_view2d_view_orthoSpecial(ARgn *rgn, View2D *v2d, const bool xaxis)
 {
   rctf curmasked;
   float xofs, yofs;
@@ -827,23 +823,23 @@ void ui_view2d_view_orthoSpecial(ARegion *region, View2D *v2d, const bool xaxis)
 
   /* only set matrix with 'cur' coordinates on relevant axes */
   if (xaxis) {
-    wmOrtho2(curmasked.xmin - xofs, curmasked.xmax - xofs, -yofs, region->winy - yofs);
+    winOrtho2(curmasked.xmin - xofs, curmasked.xmax - xofs, -yofs, rgn->winy - yofs);
   }
   else {
-    wmOrtho2(-xofs, region->winx - xofs, curmasked.ymin - yofs, curmasked.ymax - yofs);
+    winOrtho2(-xofs, rgn->winx - xofs, curmasked.ymin - yofs, curmasked.ymax - yofs);
   }
 }
 
-void ui_view2d_view_restore(const bContext *C)
+void ui_view2d_view_restore(const Cxt *C)
 {
-  ARegion *region = cxt_wm_region(C);
-  const int width = lib_rcti_size_x(&region->winrct) + 1;
-  const int height = lib_rcti_size_y(&region->winrct) + 1;
+  ARgn *rgn = cxt_win_rgn(C);
+  const int width = lib_rcti_size_x(&rgn->winrct) + 1;
+  const int height = lib_rcti_size_y(&rgn->winrct) + 1;
 
-  wmOrtho2(0.0f, (float)width, 0.0f, (float)height);
+  winOrtho2(0.0f, (float)width, 0.0f, (float)height);
   gpu_matrix_identity_set();
 
-  //  ed_region_pixelspace(cxt_wm_region(C));
+  //  ed_rgn_pixelspace(cxt_wm_rgn(C));
 }
 
 /* Grid-Line Drawing */
@@ -955,7 +951,7 @@ static void grid_axis_start_and_count(
 }
 
 typedef struct DotGridLevelInfo {
-  /* The factor applied to the #min_step argument. This could be easily computed in runtime,
+  /* The factor applied to the min_step argument. This could be easily computed in runtime,
    * but seeing it together with the other values is helpful. */
   float step_factor;
   /* The normalized zoom level at which the grid level starts to fade in.
@@ -1037,7 +1033,6 @@ void ui_view2d_dot_grid_draw(const View2D *v2d,
 }
 
 /* Scrollers */
-
 /* View2DScrollers is typedef'd in ui_view2d.h
  * warning The start of this struct must not change, as view2d_ops.c uses this too.
  * For now, we don't need to have a separate (internal) header for structs like this... */
@@ -1045,8 +1040,8 @@ struct View2DScrollers {
   /* focus bubbles */
   /* focus bubbles */
   /* focus bubbles */
-  int vert_min, vert_max; /* vertical scrollbar */
-  int hor_min, hor_max;   /* horizontal scrollbar */
+  int vert_min, vert_max; /* vert scrollbar */
+  int hor_min, hor_max;   /* hor scrollbar */
 
   /* Exact size of slider backdrop. */
   rcti hor, vert;
@@ -1099,11 +1094,11 @@ void ui_view2d_scrollers_calc(View2D *v2d,
   r_scrollers->hor = hor;
 
   /* scroller 'btns':
-   * - These should always remain within the visible region of the scrollbar
-   * - They represent the region of 'tot' that is visible in 'cur' */
+   * - These should always remain within the visible rgn of the scrollbar
+   * - They represent the rgn of 'tot' that is visible in 'cur' */
 
   /* horizontal scrollers */
-  if (scroll & V2D_SCROLL_HORIZONTAL) {
+  if (scroll & V2D_SCROLL_HOR) {
     /* scroller 'button' extents */
     totsize = lib_rctf_size_x(&v2d->tot);
     scrollsize = (float)lib_rcti_size_x(&hor);
@@ -1141,7 +1136,7 @@ void ui_view2d_scrollers_calc(View2D *v2d,
   }
 
   /* vertical scrollers */
-  if (scroll & V2D_SCROLL_VERTICAL) {
+  if (scroll & V2D_SCROLL_VERT) {
     /* scroller 'button' extents */
     totsize = lib_rctf_size_y(&v2d->tot);
     scrollsize = (float)lib_rcti_size_y(&vert);
@@ -1186,7 +1181,7 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
   Theme *theme = ui_GetTheme();
   rcti vert, hor;
   const int scroll = view2d_scroll_mapped(v2d->scroll);
-  const char emboss_alpha = btheme->tui.widget_emboss[3];
+  const char emboss_alpha = theme->tui.widget_emboss[3];
   uchar scrollers_back_color[4];
 
   /* Color for scrollbar backs */
@@ -1197,8 +1192,8 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
   hor = scrollers.hor;
 
   /* horizontal scrollbar */
-  if (scroll & V2D_SCROLL_HORIZONTAL) {
-    uiWidgetColors wcol = btheme->tui.wcol_scroll;
+  if (scroll & V2D_SCROLL_HOR) {
+    uiWidgetColors wcol = theme->tui.wcol_scroll;
     const float alpha_fac = v2d->alpha_hor / 255.0f;
     rcti slider;
     int state;
@@ -1219,9 +1214,9 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      * - zooming on x-axis is allowed (no scroll otherwise)
      * - slider bubble is large enough (no overdraw confusion)
      * - scale is shown on the scroller
-     *   (workaround to make sure that button windows don't show these,
+     *   (workaround to make sure that btn windws don't show these,
      *   and only the time-grids with their zoom-ability can do so). */
-    if ((v2d->keepzoom & V2D_LOCKZOOM_X) == 0 && (v2d->scroll & V2D_SCROLL_HORIZONTAL_HANDLES) &&
+    if ((v2d->keepzoom & V2D_LOCKZOOM_X) == 0 && (v2d->scroll & V2D_SCROLL_HOR_HANDLES) &&
         (lib_rcti_size_x(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
     }
@@ -1231,7 +1226,7 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
 
   /* vertical scrollbar */
   if (scroll & V2D_SCROLL_VERTICAL) {
-    uiWidgetColors wcol = btheme->tui.wcol_scroll;
+    uiWidgetColors wcol = theme->tui.wcol_scroll;
     rcti slider;
     const float alpha_fac = v2d->alpha_vert / 255.0f;
     int state;
@@ -1252,9 +1247,9 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
      * - zooming on y-axis is allowed (no scroll otherwise)
      * - slider bubble is large enough (no overdraw confusion)
      * - scale is shown on the scroller
-     *   (workaround to make sure that button windows don't show these,
+     *   (workaround to make sure that btn windws don't show these,
      *   and only the time-grids with their zoomability can do so) */
-    if ((v2d->keepzoom & V2D_LOCKZOOM_Y) == 0 && (v2d->scroll & V2D_SCROLL_VERTICAL_HANDLES) &&
+    if ((v2d->keepzoom & V2D_LOCKZOOM_Y) == 0 && (v2d->scroll & V2D_SCROLL_VERT_HANDLES) &&
         (lib_rcti_size_y(&slider) > V2D_SCROLL_HANDLE_SIZE_HOTSPOT)) {
       state |= UI_SCROLL_ARROWS;
     }
@@ -1266,7 +1261,7 @@ void ui_view2d_scrollers_draw(View2D *v2d, const rcti *mask_custom)
   theme->tui.widget_emboss[3] = emboss_alpha;
 }
 
-/* List View Utilities */
+/* List View Utils */
 void ui_view2d_listview_view_to_cell(float columnwidth,
                                      float rowheight,
                                      float startx,
@@ -1298,28 +1293,28 @@ void ui_view2d_listview_view_to_cell(float columnwidth,
 }
 
 /* Coordinate Conversions */
-float ui_view2d_region_to_view_x(const struct View2D *v2d, float x)
+float ui_view2d_rgn_to_view_x(const struct View2D *v2d, float x)
 {
   return (v2d->cur.xmin +
           (lib_rctf_size_x(&v2d->cur) * (x - v2d->mask.xmin) / lib_rcti_size_x(&v2d->mask)));
 }
-float ui_view2d_region_to_view_y(const struct View2D *v2d, float y)
+float ui_view2d_rgn_to_view_y(const struct View2D *v2d, float y)
 {
   return (v2d->cur.ymin +
           (lib_rctf_size_y(&v2d->cur) * (y - v2d->mask.ymin) / lib_rcti_size_y(&v2d->mask)));
 }
 
-void ui_view2d_region_to_view(
+void ui_view2d_rgn_to_view(
     const View2D *v2d, float x, float y, float *r_view_x, float *r_view_y)
 {
-  *r_view_x = ui_view2d_region_to_view_x(v2d, x);
-  *r_view_y = ui_view2d_region_to_view_y(v2d, y);
+  *r_view_x = ui_view2d_rgn_to_view_x(v2d, x);
+  *r_view_y = ui_view2d_rgn_to_view_y(v2d, y);
 }
 
-void ui_view2d_region_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf *rect_dst)
+void ui_view2d_rgn_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf *rect_dst)
 {
-  const float cur_size[2] = {BLI_rctf_size_x(&v2d->cur), BLI_rctf_size_y(&v2d->cur)};
-  const float mask_size[2] = {BLI_rcti_size_x(&v2d->mask), BLI_rcti_size_y(&v2d->mask)};
+  const float cur_size[2] = {lib_rctf_size_x(&v2d->cur), lib_rctf_size_y(&v2d->cur)};
+  const float mask_size[2] = {lib_rcti_size_x(&v2d->mask), lib_rcti_size_y(&v2d->mask)};
 
   rect_dst->xmin = (v2d->cur.xmin +
                     (cur_size[0] * (rect_src->xmin - v2d->mask.xmin) / mask_size[0]));
@@ -1331,19 +1326,19 @@ void ui_view2d_region_to_view_rctf(const View2D *v2d, const rctf *rect_src, rctf
                     (cur_size[1] * (rect_src->ymax - v2d->mask.ymin) / mask_size[1]));
 }
 
-float ui_view2d_view_to_region_x(const View2D *v2d, float x)
+float ui_view2d_view_to_rgn_x(const View2D *v2d, float x)
 {
   return (v2d->mask.xmin +
-          (((x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur)) * BLI_rcti_size_x(&v2d->mask)));
+          (((x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur)) * lib_rcti_size_x(&v2d->mask)));
 }
-float ui_view2d_view_to_region_y(const View2D *v2d, float y)
+float ui_view2d_view_to_rgn_y(const View2D *v2d, float y)
 {
   return (v2d->mask.ymin +
-          (((y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur)) * BLI_rcti_size_y(&v2d->mask)));
+          (((y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur)) * lib_rcti_size_y(&v2d->mask)));
 }
 
-bool ui_view2d_view_to_region_clip(
-    const View2D *v2d, float x, float y, int *r_region_x, int *r_region_y)
+bool ui_view2d_view_to_rgn_clip(
+    const View2D *v2d, float x, float y, int *r_rgn_x, int *r_rgn_y)
 {
   /* express given coordinates as proportional values */
   x = (x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur);
@@ -1351,20 +1346,20 @@ bool ui_view2d_view_to_region_clip(
 
   /* check if values are within bounds */
   if ((x >= 0.0f) && (x <= 1.0f) && (y >= 0.0f) && (y <= 1.0f)) {
-    *r_region_x = (int)(v2d->mask.xmin + (x * BLI_rcti_size_x(&v2d->mask)));
-    *r_region_y = (int)(v2d->mask.ymin + (y * BLI_rcti_size_y(&v2d->mask)));
+    *r_rgn_x = (int)(v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask)));
+    *r_rgn_y = (int)(v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask)));
 
     return true;
   }
 
   /* set initial value in case coordinate lies outside of bounds */
-  *r_region_x = *r_region_y = V2D_IS_CLIPPED;
+  *r_rgn_x = *r_rhn_y = V2D_IS_CLIPPED;
 
   return false;
 }
 
-void ui_view2d_view_to_region(
-    const View2D *v2d, float x, float y, int *r_region_x, int *r_region_y)
+void ui_view2d_view_to_rgn(
+    const View2D *v2d, float x, float y, int *r_rgn_x, int *r_rgn_y)
 {
   /* Step 1: express given coordinates as proportional values. */
   x = (x - v2d->cur.xmin) / lib_rctf_size_x(&v2d->cur);
@@ -1374,12 +1369,12 @@ void ui_view2d_view_to_region(
   x = v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask));
   y = v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask));
 
-  /* Although we don't clamp to lie within region bounds, we must avoid exceeding size of ints. */
-  *r_region_x = clamp_float_to_int(x);
-  *r_region_y = clamp_float_to_int(y);
+  /* Although we don't clamp to lie within rgn bounds, we must avoid exceeding size of ints. */
+  *r_rgn_x = clamp_float_to_int(x);
+  *r_rgn_y = clamp_float_to_int(y);
 }
 
-void ui_view2d_view_to_region_fl(
+void ui_view2d_view_to_rgn_fl(
     const View2D *v2d, float x, float y, float *r_region_x, float *r_region_y)
 {
   /* express given coordinates as proportional values */
@@ -1387,11 +1382,11 @@ void ui_view2d_view_to_region_fl(
   y = (y - v2d->cur.ymin) / lib_rctf_size_y(&v2d->cur);
 
   /* convert proportional distances to screen coordinates */
-  *r_region_x = v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask));
-  *r_region_y = v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask));
+  *r_rgn_x = v2d->mask.xmin + (x * lib_rcti_size_x(&v2d->mask));
+  *r_rgn_y = v2d->mask.ymin + (y * lib_rcti_size_y(&v2d->mask));
 }
 
-void ui_view2d_view_to_region_rcti(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
+void ui_view2d_view_to_rgn_rcti(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
 {
   const float cur_size[2] = {lib_rctf_size_x(&v2d->cur), lib_rctf_size_y(&v2d->cur)};
   const float mask_size[2] = {lib_rcti_size_x(&v2d->mask), lib_rcti_size_y(&v2d->mask)};
@@ -1412,7 +1407,7 @@ void ui_view2d_view_to_region_rcti(const View2D *v2d, const rctf *rect_src, rcti
   clamp_rctf_to_rcti(rect_dst, &rect_tmp);
 }
 
-void ui_view2d_view_to_region_m4(const View2D *v2d, float matrix[4][4])
+void ui_view2d_view_to_rgn_m4(const View2D *v2d, float matrix[4][4])
 {
   rctf mask;
   unit_m4(matrix);
@@ -1420,7 +1415,7 @@ void ui_view2d_view_to_region_m4(const View2D *v2d, float matrix[4][4])
   lib_rctf_transform_calc_m4_pivot_min(&v2d->cur, &mask, matrix);
 }
 
-bool ui_view2d_view_to_region_rcti_clip(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
+bool ui_view2d_view_to_rgn_rcti_clip(const View2D *v2d, const rctf *rect_src, rcti *rect_dst)
 {
   const float cur_size[2] = {lib_rctf_size_x(&v2d->cur), lib_rctf_size_y(&v2d->cur)};
   const float mask_size[2] = {lib_rcti_size_x(&v2d->mask), lib_rcti_size_y(&v2d->mask)};
@@ -1451,37 +1446,37 @@ bool ui_view2d_view_to_region_rcti_clip(const View2D *v2d, const rctf *rect_src,
   return false;
 }
 
-/* Utilities */
+/* Utils */
 View2D *ui_view2d_fromcxt(const Cxt *C)
 {
-  ScrArea *area = cxt_wm_area(C);
-  ARegion *region = cxt_wm_region(C);
+  ScrArea *area = cxt_win_area(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
   if (area == NULL) {
     return NULL;
   }
-  if (region == NULL) {
+  if (rgn == NULL) {
     return NULL;
   }
-  return &(region->v2d);
+  return &(rgn->v2d);
 }
 
 View2D *ui_view2d_fromcxt_rwin(const Cxt *C)
 {
-  ScrArea *area = cxt_wm_area(C);
-  ARegion *region = cxt_wm_region(C);
+  ScrArea *area = cxt_win_area(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
   if (area == NULL) {
     return NULL;
   }
-  if (region == NULL) {
+  if (rgn == NULL) {
     return NULL;
   }
-  if (region->regiontype != RGN_TYPE_WINDOW) {
-    ARegion *region_win = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
-    return region_win ? &(region_win->v2d) : NULL;
+  if (rgn->rgntype != RGN_TYPE_WIN) {
+    ARgn *rgn_win = dune_area_find_rgn_type(area, RGN_TYPE_WIN);
+    return rgn_win ? &(rgn_win->v2d) : NULL;
   }
-  return &(region->v2d);
+  return &(rgn->v2d);
 }
 
 void ui_view2d_scroller_size_get(const View2D *v2d, float *r_x, float *r_y)
@@ -1489,16 +1484,16 @@ void ui_view2d_scroller_size_get(const View2D *v2d, float *r_x, float *r_y)
   const int scroll = view2d_scroll_mapped(v2d->scroll);
 
   if (r_x) {
-    if (scroll & V2D_SCROLL_VERTICAL) {
-      *r_x = (scroll & V2D_SCROLL_VERTICAL_HANDLES) ? V2D_SCROLL_HANDLE_WIDTH : V2D_SCROLL_WIDTH;
+    if (scroll & V2D_SCROLL_VERT) {
+      *r_x = (scroll & V2D_SCROLL_VERT_HANDLES) ? V2D_SCROLL_HANDLE_WIDTH : V2D_SCROLL_WIDTH;
     }
     else {
       *r_x = 0;
     }
   }
   if (r_y) {
-    if (scroll & V2D_SCROLL_HORIZONTAL) {
-      *r_y = (scroll & V2D_SCROLL_HORIZONTAL_HANDLES) ? V2D_SCROLL_HANDLE_HEIGHT :
+    if (scroll & V2D_SCROLL_HOR) {
+      *r_y = (scroll & V2D_SCROLL_HOR_HANDLES) ? V2D_SCROLL_HANDLE_HEIGHT :
                                                         V2D_SCROLL_HEIGHT;
     }
     else {
@@ -1575,7 +1570,7 @@ void ui_view2d_offset(struct View2D *v2d, float xfac, float yfac)
   ui_view2d_curRect_validate(v2d);
 }
 
-char ui_view2d_mouse_in_scrollers_ex(const ARegion *region,
+char ui_view2d_mouse_in_scrollers_ex(const ARgn *rgn,
                                      const View2D *v2d,
                                      const int xy[2],
                                      int *r_scroll)
@@ -1584,17 +1579,17 @@ char ui_view2d_mouse_in_scrollers_ex(const ARegion *region,
   *r_scroll = scroll;
 
   if (scroll) {
-    /* Move to region-coordinates. */
+    /* Move to rgn-coordinates. */
     const int co[2] = {
-        xy[0] - region->winrct.xmin,
-        xy[1] - region->winrct.ymin,
+        xy[0] - rgn->winrct.xmin,
+        xy[1] - rgn->winrct.ymin,
     };
-    if (scroll & V2D_SCROLL_HORIZONTAL) {
-      if (IN_2D_HORIZ_SCROLL(v2d, co)) {
+    if (scroll & V2D_SCROLL_HOR) {
+      if (IN_2D_HOR_SCROLL(v2d, co)) {
         return 'h';
       }
     }
-    if (scroll & V2D_SCROLL_VERTICAL) {
+    if (scroll & V2D_SCROLL_VERT) {
       if (IN_2D_VERT_SCROLL(v2d, co)) {
         return 'v';
       }
@@ -1604,7 +1599,7 @@ char ui_view2d_mouse_in_scrollers_ex(const ARegion *region,
   return 0;
 }
 
-char ui_view2d_rect_in_scrollers_ex(const ARegion *region,
+char ui_view2d_rect_in_scrollers_ex(const ARgn *rgn,
                                     const View2D *v2d,
                                     const rcti *rect,
                                     int *r_scroll)
@@ -1613,16 +1608,16 @@ char ui_view2d_rect_in_scrollers_ex(const ARegion *region,
   *r_scroll = scroll;
 
   if (scroll) {
-    /* Move to region-coordinates. */
-    rcti rect_region = *rect;
-    lib_rcti_translate(&rect_region, -region->winrct.xmin, region->winrct.ymin);
+    /* Move to rgn-coordinates. */
+    rcti rect_rgn = *rect;
+    lib_rcti_translate(&rect_rgn, -rgn->winrct.xmin, rgn->winrct.ymin);
     if (scroll & V2D_SCROLL_HORIZONTAL) {
-      if (IN_2D_HORIZ_SCROLL_RECT(v2d, &rect_region)) {
+      if (IN_2D_HOR_SCROLL_RECT(v2d, &rect_rgn)) {
         return 'h';
       }
     }
-    if (scroll & V2D_SCROLL_VERTICAL) {
-      if (IN_2D_VERT_SCROLL_RECT(v2d, &rect_region)) {
+    if (scroll & V2D_SCROLL_VERT) {
+      if (IN_2D_VERT_SCROLL_RECT(v2d, &rect_rgn)) {
         return 'v';
       }
     }
@@ -1631,16 +1626,16 @@ char ui_view2d_rect_in_scrollers_ex(const ARegion *region,
   return 0;
 }
 
-char ui_view2d_mouse_in_scrollers(const ARegion *region, const View2D *v2d, const int xy[2])
+char ui_view2d_mouse_in_scrollers(const ARgn *rgn, const View2D *v2d, const int xy[2])
 {
   int scroll_dummy = 0;
-  return ui_view2d_mouse_in_scrollers_ex(region, v2d, xy, &scroll_dummy);
+  return ui_view2d_mouse_in_scrollers_ex(rgn, v2d, xy, &scroll_dummy);
 }
 
-char ui_view2d_rect_in_scrollers(const ARegion *region, const View2D *v2d, const rcti *rect)
+char ui_view2d_rect_in_scrollers(const ARgn *rgn, const View2D *v2d, const rcti *rect)
 {
   int scroll_dummy = 0;
-  return ui_view2d_rect_in_scrollers_ex(region, v2d, rect, &scroll_dummy);
+  return ui_view2d_rect_in_scrollers_ex(rgn, v2d, rect, &scroll_dummy);
 }
 
 /* View2D Text Drawing Cache */
@@ -1668,7 +1663,7 @@ void ui_view2d_text_cache_add(
 
   lib_assert(str_len == strlen(str));
 
-  if (ui_view2d_view_to_region_clip(v2d, x, y, &mval[0], &mval[1])) {
+  if (ui_view2d_view_to_rgn_clip(v2d, x, y, &mval[0], &mval[1])) {
     const int alloc_len = str_len + 1;
     View2DString *v2s;
 
@@ -1698,7 +1693,7 @@ void view2d_text_cache_add_rectf(
 
   lib_assert(str_len == strlen(str));
 
-  if (view2d_view_to_region_rcti_clip(v2d, rect_view, &rect)) {
+  if (view2d_view_to_rgn_rcti_clip(v2d, rect_view, &rect)) {
     const int alloc_len = str_len + 1;
     View2DString *v2s;
 
@@ -1721,18 +1716,18 @@ void view2d_text_cache_add_rectf(
   }
 }
 
-void view2d_txt_cache_draw(ARegion *region)
+void view2d_txt_cache_draw(ARgn *rgn)
 {
   View2DString *v2s;
   int col_pack_prev = 0;
 
-  /* investigate using BLF_ascender() */
-  const int font_id = BLF_default();
+  /* investigate using font_ascender() */
+  const int font_id = font_default();
 
-  BLF_set_default();
-  const float default_height = g_v2d_strings ? BLF_height(font_id, "28", 3) : 0.0f;
+  font_set_default();
+  const float default_height = g_v2d_strings ? font_height(font_id, "28", 3) : 0.0f;
 
-  wmOrtho2_region_pixelspace(region);
+  winOrtho2_rgn_pixelspace(rgn);
 
   for (v2s = g_v2d_strings; v2s; v2s = v2s->next) {
     int xofs = 0, yofs;
@@ -1743,24 +1738,24 @@ void view2d_txt_cache_draw(ARegion *region)
     }
 
     if (col_pack_prev != v2s->col.pack) {
-      BLF_color3ubv(font_id, v2s->col.ub);
+      font_color3ubv(font_id, v2s->col.ub);
       col_pack_prev = v2s->col.pack;
     }
 
     if (v2s->rect.xmin >= v2s->rect.xmax) {
-      BLF_draw_default((float)(v2s->mval[0] + xofs),
+      font_draw_default((float)(v2s->mval[0] + xofs),
                        (float)(v2s->mval[1] + yofs),
                        0.0,
                        v2s->str,
-                       BLF_DRAW_STR_DUMMY_MAX);
+                       FONT_DRAW_STR_DUMMY_MAX);
     }
     else {
-      BLF_enable(font_id, BLF_CLIPPING);
-      BLF_clipping(
+      font_enable(font_id, FONT_CLIPPING);
+      font_clipping(
           font_id, v2s->rect.xmin - 4, v2s->rect.ymin - 4, v2s->rect.xmax + 4, v2s->rect.ymax + 4);
-      BLF_draw_default(
-          v2s->rect.xmin + xofs, v2s->rect.ymin + yofs, 0.0f, v2s->str, BLF_DRAW_STR_DUMMY_MAX);
-      BLF_disable(font_id, BLF_CLIPPING);
+      font_draw_default(
+          v2s->rect.xmin + xofs, v2s->rect.ymin + yofs, 0.0f, v2s->str, FONT_DRAW_STR_DUMMY_MAX);
+      font_disable(font_id, FONT_CLIPPING);
     }
   }
   g_v2d_strings = NULL;
