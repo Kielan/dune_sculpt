@@ -1,35 +1,31 @@
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.h"
+#include "dune_cxt.h"
 
-#include "ED_gizmo_library.hh"
-#include "ED_screen.hh"
+#include "ed_gizmo_lib.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RNA_access.hh"
+#include "api_access.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_view2d.hh"
+#include "ui_view2d.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name View2D Navigation Gizmo Group
- *
- * A simpler version of #VIEW3D_GGT_navigate
- *
- * Written to be used by different kinds of 2D view types.
- * \{ */
+/* View2D Nav Gizmo Group
+ * A simpler version of VIEW3D_GGT_nav
+ * Written to be used by different kinds of 2D view types. */
 
 /* Size of main icon. */
 #define GIZMO_SIZE 80
-/* Factor for size of smaller button. */
+/* Factor for size of smaller btn. */
 #define GIZMO_MINI_FAC 0.35f
-/* How much mini buttons offset from the primary. */
+/* How much mini btns offset from the primary. */
 #define GIZMO_MINI_OFFSET_FAC 0.38f
 
 enum {
@@ -39,75 +35,75 @@ enum {
   GZ_INDEX_TOTAL = 2,
 };
 
-struct NavigateGizmoInfo {
+struct NavGizmoInfo {
   const char *opname;
   const char *gizmo;
   uint icon;
 };
 
-static NavigateGizmoInfo g_navigate_params_for_space_image[GZ_INDEX_TOTAL] = {
+static NavGizmoInfo g_nav_params_for_space_img[GZ_INDEX_TOTAL] = {
     {
-        "IMAGE_OT_view_pan",
-        "GIZMO_GT_button_2d",
+        "IMG_OT_view_pan",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_PAN,
     },
     {
-        "IMAGE_OT_view_zoom",
-        "GIZMO_GT_button_2d",
+        "IMG_OT_view_zoom",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_ZOOM,
     },
 };
 
-static NavigateGizmoInfo g_navigate_params_for_space_clip[GZ_INDEX_TOTAL] = {
+static NavGizmoInfo g_nav_params_for_space_clip[GZ_INDEX_TOTAL] = {
     {
         "CLIP_OT_view_pan",
-        "GIZMO_GT_button_2d",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_PAN,
     },
     {
         "CLIP_OT_view_zoom",
-        "GIZMO_GT_button_2d",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_ZOOM,
     },
 };
 
-static NavigateGizmoInfo g_navigate_params_for_view2d[GZ_INDEX_TOTAL] = {
+static NavGizmoInfo g_nav_params_for_view2d[GZ_INDEX_TOTAL] = {
     {
         "VIEW2D_OT_pan",
-        "GIZMO_GT_button_2d",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_PAN,
     },
     {
         "VIEW2D_OT_zoom",
-        "GIZMO_GT_button_2d",
+        "GIZMO_GT_btn_2d",
         ICON_VIEW_ZOOM,
     },
 };
 
-static NavigateGizmoInfo *navigate_params_from_space_type(short space_type)
+static NavGizmoInfo *nav_params_from_space_type(short space_type)
 {
   switch (space_type) {
     case SPACE_IMAGE:
-      return g_navigate_params_for_space_image;
+      return g_nav_params_for_space_image;
     case SPACE_CLIP:
-      return g_navigate_params_for_space_clip;
+      return g_nav_params_for_space_clip;
     default:
-      /* Used for sequencer. */
-      return g_navigate_params_for_view2d;
+      /* Used for seq */
+      return g_nav_params_for_view2d;
   }
 }
 
-struct NavigateWidgetGroup {
-  wmGizmo *gz_array[GZ_INDEX_TOTAL];
+struct NavWidgetGroup {
+  WinGizmo *gz_array[GZ_INDEX_TOTAL];
   /* Store the view state to check for changes. */
   struct {
     rcti rect_visible;
   } state;
 };
 
-static bool WIDGETGROUP_navigate_poll(const bContext *C, wmGizmoGroupType * /*gzgt*/)
+static bool WIDGETGROUP_nav_poll(const Cxt *C, WinGizmoGroupType * /*gzgt*/)
 {
-  if ((U.uiflag & USER_SHOW_GIZMO_NAVIGATE) == 0) {
+  if ((U.uiflag & USER_SHOW_GIZMO_NAV) == 0) {
     return false;
   }
   ScrArea *area = CTX_wm_area(C);
