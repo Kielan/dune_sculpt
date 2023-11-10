@@ -1,132 +1,120 @@
-/** \file
- * \ingroup edinterface
- *
- * Search available menu items via the user interface & key-maps.
- * Accessed via the #WM_OT_search_menu operator.
- */
-
+/* Search available menu items via the ui & key-maps.
+ * Accessed via the WIN_OT_search_menu op. */
 #include <cstdio>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_action_types.h"
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_shader_fx_types.h"
-#include "DNA_texture_types.h"
+#include "types_action.h"
+#include "types_pen_mod.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_shader_fx.h"
+#include "types_texture.h"
 
-#include "BLI_dynstr.h"
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_map.hh"
-#include "BLI_math_matrix.h"
-#include "BLI_memarena.h"
-#include "BLI_set.hh"
-#include "BLI_stack.hh"
-#include "BLI_string.h"
-#include "BLI_string_utils.hh"
-#include "BLI_utildefines.h"
+#include "lib_dynstr.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_map.hh"
+#include "lib_math_matrix.h"
+#include "lib_memarena.h"
+#include "lib_set.hh"
+#include "lib_stack.hh"
+#include "lib_string.h"
+#include "lib_string_utils.hh"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_screen.hh"
+#include "dune_cxt.h"
+#include "dune_global.h"
+#include "dune_screen.hh"
 
-#include "ED_screen.hh"
+#include "ed_screen.hh"
 
-#include "RNA_access.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_prototypes.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
-#include "UI_string_search.hh"
-#include "interface_intern.hh"
+#include "ui.hh"
+#include "ui_string_search.hh"
+#include "ui_intern.hh"
 
 /* For key-map item access. */
-#include "wm_event_system.h"
+#include "win_ev_system.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Menu Search Template Implementation
- * \{ */
-
-/**
- * Use when #menu_items_from_ui_create is called with `include_all_areas`.
- * so we can run the menu item in the area it was extracted from.
- */
-struct MenuSearch_Context {
-  /**
-   * Index into `Area.ui_type` #EnumPropertyItem or the top-bar when -1.
-   * Needed to get the display-name to use as a prefix for each menu item.
-   */
+/* Menu Search Template Implementation */
+/* Use when menu_items_from_ui_create is called with `include_all_areas`.
+ * so we can run the menu item in the area it was extracted from */
+struct MenuSearchCxt {
+  /* Index into `Area.ui_type` EnumPropItem or the top-bar when -1.
+   * Needed to get the display-name to use as a prefix for each menu item. */
   int space_type_ui_index;
 
   ScrArea *area;
-  ARegion *region;
+  ARgn *rgn;
 };
 
-struct MenuSearch_Parent {
-  MenuSearch_Parent *parent;
+struct MenuSearchParent {
+  MenuSearchParent *parent;
   const char *drawstr;
 
-  /** Set while writing menu items only. */
-  MenuSearch_Parent *temp_child;
+  /* Set while writing menu items only. */
+  MenuSearchParent *temp_child;
 };
 
-struct MenuSearch_Item {
-  MenuSearch_Item *next, *prev;
+struct MenuSearchItem {
+  MenuSearchItem *next, *prev;
   const char *drawstr;
   const char *drawwstr_full;
   int icon;
   int state;
 
-  MenuSearch_Parent *menu_parent;
+  MenuSearchParent *menu_parent;
   MenuType *mt;
 
   enum Type {
-    Operator = 1,
-    RNA = 2,
+    Op = 1,
+    api = 2,
   } type;
 
   union {
-    /** Operator menu item. */
+    /* Op menu item. */
     struct {
-      wmOperatorType *type;
-      PointerRNA *opptr;
-      wmOperatorCallContext opcontext;
-      const bContextStore *context;
+      WinOpType *type;
+      ApiPtr *opptr;
+      WinOpCallCxt opcxt;
+      const CxtStore *cxt;
     } op;
 
-    /** Property (only for check-box/boolean). */
+    /* Prop (only for check-box/bool). */
     struct {
-      PointerRNA ptr;
-      PropertyRNA *prop;
+      ApiPtr ptr;
+      ApiProp *prop;
       int index;
-      /** Only for enum buttons. */
+      /* Only for enum btns. */
       int enum_value;
-    } rna;
+    } api;
   };
 
-  /** Set when we need each menu item to be able to set its own context. may be nullptr. */
-  MenuSearch_Context *wm_context;
+  /* Set when we need each menu item to be able to set its own cxt. may be nullptr. */
+  MenuSearchCxt *win_cxt;
 };
 
-struct MenuSearch_Data {
-  /** MenuSearch_Item */
-  ListBase items;
-  /** Use for all small allocations. */
+struct MenuSearchData {
+  /* MenuSearchItem */
+  List items;
+  /* Use for all small allocations. */
   MemArena *memarena;
 
-  /** Use for context menu, to fake a button to create a context menu. */
+  /* Use for cxt menu, to fake a btn to create a cxt menu. */
   struct {
-    uiBut but;
+    Btn btn;
     uiBlock block;
-  } context_menu_data;
+  } cxt_menu_data;
 };
 
 static int menu_item_sort_by_drawstr_full(const void *menu_item_a_v, const void *menu_item_b_v)
@@ -139,59 +127,59 @@ static int menu_item_sort_by_drawstr_full(const void *menu_item_a_v, const void 
 static const char *strdup_memarena(MemArena *memarena, const char *str)
 {
   const uint str_size = strlen(str) + 1;
-  char *str_dst = (char *)BLI_memarena_alloc(memarena, str_size);
+  char *str_dst = (char *)lib_memarena_alloc(memarena, str_size);
   memcpy(str_dst, str, str_size);
   return str_dst;
 }
 
 static const char *strdup_memarena_from_dynstr(MemArena *memarena, DynStr *dyn_str)
 {
-  const uint str_size = BLI_dynstr_get_len(dyn_str) + 1;
-  char *str_dst = (char *)BLI_memarena_alloc(memarena, str_size);
-  BLI_dynstr_get_cstring_ex(dyn_str, str_dst);
+  const uint str_size = lib_dynstr_get_len(dyn_str) + 1;
+  char *str_dst = (char *)lib_memarena_alloc(memarena, str_size);
+  lib_dynstr_get_cstring_ex(dyn_str, str_dst);
   return str_dst;
 }
 
-static bool menu_items_from_ui_create_item_from_button(MenuSearch_Data *data,
+static bool menu_items_from_ui_create_item_from_btn(MenuSearchData *data,
                                                        MemArena *memarena,
                                                        MenuType *mt,
-                                                       uiBut *but,
-                                                       MenuSearch_Context *wm_context,
+                                                       Btn *btn,
+                                                       MenuSearchCxt *win_cxt,
                                                        MenuSearch_Parent *menu_parent)
 {
-  MenuSearch_Item *item = nullptr;
+  MenuSearchItem *item = nullptr;
 
   /* Use override if the name is empty, this can happen with popovers. */
   std::string drawstr_override;
-  const char *drawstr_sep = (but->flag & UI_BUT_HAS_SEP_CHAR) ?
-                                strrchr(but->drawstr, UI_SEP_CHAR) :
+  const char *drawstr_sep = (btn->flag & BTN_HAS_SEP_CHAR) ?
+                                strrchr(btn->drawstr, UI_SEP_CHAR) :
                                 nullptr;
-  const bool drawstr_is_empty = (drawstr_sep == but->drawstr) || (but->drawstr[0] == '\0');
+  const bool drawstr_is_empty = (drawstr_sep == btn->drawstr) || (btn->drawstr[0] == '\0');
 
-  if (but->optype != nullptr) {
+  if (btn->optype != nullptr) {
     if (drawstr_is_empty) {
-      drawstr_override = WM_operatortype_name(but->optype, but->opptr);
+      drawstr_override = win_optype_name(btn->optype, btn->opptr);
     }
 
-    item = (MenuSearch_Item *)BLI_memarena_calloc(memarena, sizeof(*item));
-    item->type = MenuSearch_Item::Type::Operator;
+    item = (MenuSearch_Item *)lib_memarena_calloc(memarena, sizeof(*item));
+    item->type = MenuSearch_Item::Type::Op;
 
-    item->op.type = but->optype;
-    item->op.opcontext = but->opcontext;
-    item->op.context = but->context ? MEM_new<bContextStore>(__func__, *but->context) : nullptr;
-    item->op.opptr = but->opptr;
-    but->opptr = nullptr;
+    item->op.type = btn->optype;
+    item->op.opcxt = btn->opcxt;
+    item->op.cxt = btn->cxt ? mem_new<CxtStore>(__func__, *btn->cxt) : nullptr;
+    item->op.opptr = btn->opptr;
+    btn->opptr = nullptr;
   }
-  else if (but->rnaprop != nullptr) {
-    const int prop_type = RNA_property_type(but->rnaprop);
+  else if (btn->apiprop != nullptr) {
+    const int prop_type = api_prop_type(btn->apiprop);
 
     if (drawstr_is_empty) {
       if (prop_type == PROP_ENUM) {
-        const int value_enum = int(but->hardmax);
-        EnumPropertyItem enum_item;
-        if (RNA_property_enum_item_from_value_gettexted((bContext *)but->block->evil_C,
-                                                        &but->rnapoin,
-                                                        but->rnaprop,
+        const int value_enum = int(btn->hardmax);
+        EnumPropItem enum_item;
+        if (api_prop_enum_item_from_value_gettxted((Cxt *)btn->block->evil_C,
+                                                        &btn->apiptr,
+                                                        btn->apiprop,
                                                         value_enum,
                                                         &enum_item))
         {
@@ -203,11 +191,11 @@ static bool menu_items_from_ui_create_item_from_button(MenuSearch_Data *data,
         }
       }
       else {
-        drawstr_override = RNA_property_ui_name(but->rnaprop);
+        drawstr_override = api_prop_ui_name(btn->apiprop);
       }
     }
 
-    if (!ELEM(prop_type, PROP_BOOLEAN, PROP_ENUM)) {
+    if (!ELEM(prop_type, PROP_BOOL, PROP_ENUM)) {
       /* Note that these buttons are not prevented,
        * but aren't typically used in menus. */
       printf("Button '%s' in menu '%s' is a menu item with unsupported RNA type %d\n",
