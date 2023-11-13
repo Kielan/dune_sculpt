@@ -1,79 +1,79 @@
 #include <math.h>
 
-#include "BLI_jitter_2d.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.h"
-#include "BLI_threads.h"
+#include "lib_jitter_2d.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_string_utils.h"
+#include "lib_threads.h"
 
-#include "BKE_armature.h"
-#include "BKE_camera.h"
-#include "BKE_collection.h"
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_global.h"
-#include "BKE_image.h"
-#include "BKE_key.h"
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "DUNE_scene.h"
-#include "DUNE_studiolight.h"
-#include "DUNE_unit.h"
+#include "dune_armature.h"
+#include "dune_camera.h"
+#include "dune_collection.h"
+#include "dune_cxt.h"
+#include "dune_customdata.h"
+#include "dune_global.h"
+#include "dune_img.h"
+#include "dune_key.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_obj.h"
+#include "dune_paint.h"
+#include "dune_scene.h"
+#include "dune_studiolight.h"
+#include "dune_unit.h"
 
-#include "BLF_api.h"
+#include "font.h"
 
-#include "LANG_translation.h"
+#include "lang.h"
 
-#include "TYPES_armature.h"
-#include "TYPES_brush.h"
-#include "TYPES_camera.h"
-#include "TYPES_key.h"
-#include "TYPES_mesh.h"
-#include "TYPES_object.h"
-#include "TYPES_view3d.h"
-#include "TYPES_windowmanager.h"
+#include "types_armature.h"
+#include "types_brush.h"
+#include "types_camera.h"
+#include "types_key.h"
+#include "types_mesh.h"
+#include "types_obj.h"
+#include "types_view3d.h"
+#include "types_wm.h"
 
-#include "DRW_engine.h"
-#include "DRW_select_buffer.h"
+#include "draw_engine.h"
+#include "draw_sel_buffer.h"
 
-#include "ED_gpencil.h"
-#include "ED_info.h"
-#include "ED_keyframing.h"
-#include "ED_screen.h"
-#include "ED_screen_types.h"
-#include "ED_transform.h"
-#include "ED_view3d_offscreen.h"
+#include "ed_pen.h"
+#include "ed_info.h"
+#include "ed_keyframing.h"
+#include "ed_screen.h"
+#include "ed_screen_types.h"
+#include "ed_transform.h"
+#include "ed_view3d_offscreen.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
-#include "GPU_batch.h"
-#include "GPU_batch_presets.h"
-#include "GPU_framebuffer.h"
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_material.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
-#include "GPU_viewport.h"
+#include "gpu_batch.h"
+#include "gpu_batch_presets.h"
+#include "gpu_framebuffer.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_material.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
+#include "gpu_viewport.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h"
 
-#include "RE_engine.h"
+#include "render_engine.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
-#include "API_access.h"
+#include "api_access.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
 #include "view3d_intern.h" /* own include */
 
@@ -81,26 +81,24 @@
 
 #define VIEW3D_OVERLAY_LINEHEIGHT (0.9f * U.widget_unit)
 
-/* -------------------------------------------------------------------- */
-/** General Functions **/
-
-void ED_view3d_update_viewmat(Depsgraph *depsgraph,
+/* General Fns */
+void ed_view3d_update_viewmat(Graph *graph,
                               const Scene *scene,
                               View3D *v3d,
-                              ARegion *region,
+                              ARgn *rhn,
                               const float viewmat[4][4],
                               const float winmat[4][4],
                               const rcti *rect,
                               bool offscreen)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
-  /* setup window matrices */
+  /* setup win matrices */
   if (winmat) {
     copy_m4_m4(rv3d->winmat, winmat);
   }
   else {
-    view3d_winmatrix_set(depsgraph, region, v3d, rect);
+    view3d_winmatrix_set(graph, rgn, v3d, rect);
   }
 
   /* setup view matrix */
@@ -110,11 +108,11 @@ void ED_view3d_update_viewmat(Depsgraph *depsgraph,
   else {
     float rect_scale[2];
     if (rect) {
-      rect_scale[0] = (float)BLI_rcti_size_x(rect) / (float)region->winx;
-      rect_scale[1] = (float)BLI_rcti_size_y(rect) / (float)region->winy;
+      rect_scale[0] = (float)lib_rcti_size_x(rect) / (float)rgn->winx;
+      rect_scale[1] = (float)lib_rcti_size_y(rect) / (float)rgn->winy;
     }
-    /* NOTE: calls BKE_object_where_is_calc for camera... */
-    view3d_viewmatrix_set(depsgraph, scene, v3d, rv3d, rect ? rect_scale : NULL);
+    /* calls dune_obj_where_is_calc for camera... */
+    view3d_viewmatrix_set(graph, scene, v3d, rv3d, rect ? rect_scale : NULL);
   }
   /* update utility matrices */
   mul_m4_m4m4(rv3d->persmat, rv3d->winmat, rv3d->viewmat);
@@ -122,13 +120,12 @@ void ED_view3d_update_viewmat(Depsgraph *depsgraph,
   invert_m4_m4(rv3d->viewinv, rv3d->viewmat);
 
   /* calculate GLSL view dependent values */
-
-  /* store window coordinates scaling/offset */
+  /* store win coordinates scaling/offset */
   if (!offscreen && rv3d->persp == RV3D_CAMOB && v3d->camera) {
     rctf cameraborder;
-    ED_view3d_calc_camera_border(scene, depsgraph, region, v3d, rv3d, &cameraborder, false);
-    rv3d->viewcamtexcofac[0] = (float)region->winx / LIB_rctf_size_x(&cameraborder);
-    rv3d->viewcamtexcofac[1] = (float)region->winy / LIB_rctf_size_y(&cameraborder);
+    ed_view3d_calc_camera_border(scene, graph, rgn, v3d, rv3d, &cameraborder, false);
+    rv3d->viewcamtexcofac[0] = (float)rgn->winx / lib_rctf_size_x(&cameraborder);
+    rv3d->viewcamtexcofac[1] = (float)rgn->winy / lib_rctf_size_y(&cameraborder);
 
     rv3d->viewcamtexcofac[2] = -rv3d->viewcamtexcofac[0] * cameraborder.xmin / (float)region->winx;
     rv3d->viewcamtexcofac[3] = -rv3d->viewcamtexcofac[1] * cameraborder.ymin / (float)region->winy;
@@ -138,7 +135,7 @@ void ED_view3d_update_viewmat(Depsgraph *depsgraph,
     rv3d->viewcamtexcofac[2] = rv3d->viewcamtexcofac[3] = 0.0f;
   }
 
-  /* Calculate pixel-size factor once, this is used for lights and object-centers. */
+  /* Calculate pixel-size factor once, this is used for lights and obj-centers. */
   {
     /* '1.0f / len_v3(v1)'  replaced  'len_v3(rv3d->viewmat[0])'
      * because of float point precision problems at large values T23908. */
@@ -156,52 +153,52 @@ void ED_view3d_update_viewmat(Depsgraph *depsgraph,
     len_px = 2.0f / sqrtf(min_ff(len_squared_v3(v1), len_squared_v3(v2)));
 
     if (rect) {
-      len_sc = (float)max_ii(LIB_rcti_size_x(rect), LIB_rcti_size_y(rect));
+      len_sc = (float)max_ii(lib_rcti_size_x(rect), lib_rcti_size_y(rect));
     }
     else {
-      len_sc = (float)MAX2(region->winx, region->winy);
+      len_sc = (float)MAX2(rgn->winx, rgn->winy);
     }
 
     rv3d->pixsize = len_px / len_sc;
   }
 }
 
-static void view3d_main_region_setup_view(Depsgraph *depsgraph,
+static void view3d_main_rgn_setup_view(Graph *graph,
                                           Scene *scene,
                                           View3D *v3d,
-                                          ARegion *region,
+                                          Rgn *rgn,
                                           const float viewmat[4][4],
                                           const float winmat[4][4],
                                           const rcti *rect)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
-  ED_view3d_update_viewmat(depsgraph, scene, v3d, region, viewmat, winmat, rect, false);
+  ed_view3d_update_viewmat(graph, scene, v3d, rg, viewmat, winmat, rect, false);
 
   /* set for opengl */
-  GPU_matrix_projection_set(rv3d->winmat);
-  GPU_matrix_set(rv3d->viewmat);
+  gpu_matrix_projection_set(rv3d->winmat);
+  gpu_matrix_set(rv3d->viewmat);
 }
 
-static void view3d_main_region_setup_offscreen(Depsgraph *depsgraph,
-                                               const Scene *scene,
-                                               View3D *v3d,
-                                               ARegion *region,
-                                               const float viewmat[4][4],
-                                               const float winmat[4][4])
+static void view3d_main_rgn_setup_offscreen(Graph *graph,
+                                            const Scene *scene,
+                                            View3D *v3d,
+                                            ARgn *rgn,
+                                            const float viewmat[4][4],
+                                            const float winmat[4][4])
 {
-  RegionView3D *rv3d = region->regiondata;
-  ED_view3d_update_viewmat(depsgraph, scene, v3d, region, viewmat, winmat, NULL, true);
+  RgnView3D *rv3d = rgn->rgndata;
+  ed_view3d_update_viewmat(graph, scene, v3d, rgn, viewmat, winmat, NULL, true);
 
   /* set for opengl */
-  GPU_matrix_projection_set(rv3d->winmat);
-  GPU_matrix_set(rv3d->viewmat);
+  gpu_matrix_projection_set(rv3d->winmat);
+  gpu_matrix_set(rv3d->viewmat);
 }
 
-static bool view3d_stereo3d_active(wmWindow *win,
+static bool view3d_stereo3d_active(Win *win,
                                    const Scene *scene,
                                    View3D *v3d,
-                                   RegionView3D *rv3d)
+                                   RgnView3D *rv3d)
 {
   if ((scene->r.scemode & R_MULTIVIEW) == 0) {
     return false;
@@ -217,11 +214,11 @@ static bool view3d_stereo3d_active(wmWindow *win,
       break;
     case STEREO_3D_ID:
       /* win will be NULL when calling this from the selection or draw loop. */
-      if ((win == NULL) || (WM_stereo3d_enabled(win, true) == false)) {
+      if ((win == NULL) || (won_stereo3d_enabled(win, true) == false)) {
         return false;
       }
       if (((scene->r.views_format & SCE_VIEWS_FORMAT_MULTIVIEW) != 0) &&
-          !DUNE_scene_multiview_is_stereo3d(&scene->r)) {
+          !dune_scene_multiview_is_stereo3d(&scene->r)) {
         return false;
       }
       break;
@@ -240,10 +237,10 @@ static bool view3d_stereo3d_active(wmWindow *win,
  * we have no winmatrix (i.e., projection matrix) defined at that time.
  * Since the camera and the camera shift are needed for the winmat calculation
  * we do a small hack to replace it temporarily so we don't need to change the
- * view3d)main_region_setup_view() code to account for that.
+ * view3d)main_rgn_setup_view() code to account for that.
  */
 static void view3d_stereo3d_setup(
-    Depsgraph *depsgraph, Scene *scene, View3D *v3d, ARegion *region, const rcti *rect)
+    Graph *graph, Scene *scene, View3D *v3d, ARgn *rgn, const rcti *rect)
 {
   bool is_left;
   const char *names[2] = {STEREO_LEFT_NAME, STEREO_RIGHT_NAME};
@@ -264,81 +261,81 @@ static void view3d_stereo3d_setup(
     float shiftx;
 
     data = (Camera *)v3d->camera->data;
-    data_eval = (Camera *)DEG_get_evaluated_id(depsgraph, &data->id);
+    data_eval = (Camera *)graph_get_eval_id(graph, &data->id);
 
     shiftx = data_eval->shiftx;
 
-    LIB_thread_lock(LOCK_VIEW3D);
-    data_eval->shiftx = DUNE_camera_multiview_shift_x(&scene->r, v3d->camera, viewname);
+    lib_thread_lock(LOCK_VIEW3D);
+    data_eval->shiftx = dune_camera_multiview_shift_x(&scene->r, v3d->camera, viewname);
 
-    DUNE_camera_multiview_view_matrix(&scene->r, v3d->camera, is_left, viewmat);
-    view3d_main_region_setup_view(depsgraph, scene, v3d, region, viewmat, NULL, rect);
+    dune_camera_multiview_view_matrix(&scene->r, v3d->camera, is_left, viewmat);
+    view3d_main_rgn_setup_view(graph, scene, v3d, rgn, viewmat, NULL, rect);
 
     data_eval->shiftx = shiftx;
-    LIB_thread_unlock(LOCK_VIEW3D);
+    lib_thread_unlock(LOCK_VIEW3D);
   }
   else { /* SCE_VIEWS_FORMAT_MULTIVIEW */
     float viewmat[4][4];
-    Object *view_ob = v3d->camera;
-    Object *camera = DUNE_camera_multiview_render(scene, v3d->camera, viewname);
+    Obj *view_ob = v3d->camera;
+    Obj *camera = dune_camera_multiview_render(scene, v3d->camera, viewname);
 
-    LIB_thread_lock(LOCK_VIEW3D);
+    lib_thread_lock(LOCK_VIEW3D);
     v3d->camera = camera;
 
-    DUNE_camera_multiview_view_matrix(&scene->r, camera, false, viewmat);
-    view3d_main_region_setup_view(depsgraph, scene, v3d, region, viewmat, NULL, rect);
+    dune_camera_multiview_view_matrix(&scene->r, camera, false, viewmat);
+    view3d_main_rgn_setup_view(graph, scene, v3d, rgn, viewmat, NULL, rect);
 
     v3d->camera = view_ob;
-    LIB_thread_unlock(LOCK_VIEW3D);
+    lib_thread_unlock(LOCK_VIEW3D);
   }
 }
 
 #ifdef WITH_XR_OPENXR
-static void view3d_xr_mirror_setup(const wmWindowManager *wm,
-                                   Depsgraph *depsgraph,
+static void view3d_xr_mirror_setup(const WinMngr *wm,
+                                   Graph graph,
                                    Scene *scene,
                                    View3D *v3d,
-                                   ARegion *region,
+                                   ARgn *rgn,
                                    const rcti *rect)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float viewmat[4][4];
   const float lens_old = v3d->lens;
 
-  if (!WM_xr_session_state_viewer_pose_matrix_info_get(&wm->xr, viewmat, &v3d->lens)) {
+  if (!win_xr_session_state_viewer_pose_matrix_info_get(&win->xr, viewmat, &v3d->lens)) {
     /* Can't get info from XR session, use fallback values. */
     copy_m4_m4(viewmat, rv3d->viewmat);
     v3d->lens = lens_old;
   }
-  view3d_main_region_setup_view(depsgraph, scene, v3d, region, viewmat, NULL, rect);
+  view3d_main_rgn_setup_view(graph, scene, v3d, rgn, viewmat, NULL, rect);
 
   /* Set draw flags. */
   SET_FLAG_FROM_TEST(v3d->flag2,
-                     (wm->xr.session_settings.draw_flags & V3D_OFSDRAW_XR_SHOW_CONTROLLERS) != 0,
+                     (win->xr.session_settings.draw_flags & V3D_OFSDRAW_XR_SHOW_CONTROLLERS) != 0,
                      V3D_XR_SHOW_CONTROLLERS);
   SET_FLAG_FROM_TEST(v3d->flag2,
-                     (wm->xr.session_settings.draw_flags & V3D_OFSDRAW_XR_SHOW_CUSTOM_OVERLAYS) !=
+                     (win->xr.session_settings.draw_flags & V3D_OFSDRAW_XR_SHOW_CUSTOM_OVERLAYS) !=
                          0,
                      V3D_XR_SHOW_CUSTOM_OVERLAYS);
   /* Hide navigation gizmo since it gets distorted if the view matrix has a scale factor. */
-  v3d->gizmo_flag |= V3D_GIZMO_HIDE_NAVIGATE;
+  v3d->gizmo_flag |= V3D_GIZMO_HIDE_NAV;
 
   /* Reset overridden View3D data. */
   v3d->lens = lens_old;
 }
 #endif /* WITH_XR_OPENXR */
 
-void ED_view3d_draw_setup_view(const wmWindowManager *wm,
-                               wmWindow *win,
-                               Depsgraph *depsgraph,
+void ed_view3d_draw_setup_view(const WinMngr *wm,
+                               Win *win,
+                               Graph *graph,
                                Scene *scene,
-                               ARegion *region,
+                               ARgn *rgn,
                                View3D *v3d,
                                const float viewmat[4][4],
                                const float winmat[4][4],
                                const rcti *rect)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
 #ifdef WITH_XR_OPENXR
   /* Setup the view matrix. */
