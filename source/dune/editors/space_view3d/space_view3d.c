@@ -1,112 +1,109 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "DNA_defaults.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_lightprobe_types.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_view3d_types.h"
+#include "types_defaults.h"
+#include "types_pen.h"
+#include "types_lightprobe.h"
+#include "types_material.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_view3d.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_asset.h"
-#include "BKE_context.h"
-#include "BKE_curve.h"
-#include "BKE_global.h"
-#include "BKE_icons.h"
-#include "BKE_idprop.h"
-#include "BKE_lattice.h"
-#include "BKE_layer.h"
-#include "BKE_lib_remap.h"
-#include "BKE_main.h"
-#include "BKE_mball.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_workspace.h"
+#include "dune_asset.h"
+#include "dune_cxt.h"
+#include "dune_curve.h"
+#include "dune_global.h"
+#include "dune_icons.h"
+#include "dune_idprop.h"
+#include "dune_lattice.h"
+#include "dune_layer.h"
+#include "dune_lib_remap.h"
+#include "dune_main.h"
+#include "dune_mball.h"
+#include "dune_mesh.h"
+#include "dune_object.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
+#include "dune_workspace.h"
 
-#include "ED_object.h"
-#include "ED_outliner.h"
-#include "ED_render.h"
-#include "ED_screen.h"
-#include "ED_space_api.h"
-#include "ED_transform.h"
+#include "ed_object.h"
+#include "ed_outliner.h"
+#include "ed_render.h"
+#include "ed_screen.h"
+#include "ed_space_api.h"
+#include "ed_transform.h"
 
-#include "GPU_matrix.h"
+#include "gpu_matrix.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
-#include "WM_api.h"
-#include "WM_message.h"
-#include "WM_toolsystem.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_message.h"
+#include "win_toolsystem.h"
+#include "win_types.h"
 
-#include "RE_engine.h"
-#include "RE_pipeline.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h
+//include "BPY_extern.h"
 
-#ifdef WITH_PYTHON
-#  include "BPY_extern.h"
-#endif
-
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "graph.h"
+#include "graph_build.h"
 
 #include "view3d_intern.h" /* own include */
-#include "view3d_navigate.h"
+#include "view3d_nav.h"
 
-/* ******************** manage regions ********************* */
+/* manage rgns */
 
-RegionView3D *ED_view3d_context_rv3d(bContext *C)
+RgnView3D *ed_view3d_cxt_rv3d(Cxt *C)
 {
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  RgnView3D *rv3d = cxt_wm_rgn_view3d(C);
 
   if (rv3d == NULL) {
-    ScrArea *area = CTX_wm_area(C);
+    ScrArea *area = cxt_win_area(C);
     if (area && area->spacetype == SPACE_VIEW3D) {
-      ARegion *region = BKE_area_find_region_active_win(area);
-      if (region) {
-        rv3d = region->regiondata;
+      ARgn *rgn = dune_area_find_rgn_active_win(area);
+      if (rgn) {
+        rv3d = rgn->rgndata;
       }
     }
   }
   return rv3d;
 }
 
-bool ED_view3d_context_user_region(bContext *C, View3D **r_v3d, ARegion **r_region)
+bool ed_view3d_cxt_user_rgn(Cxt *C, View3D **r_v3d, ARgn **r_rgn)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_win_area(C);
 
   *r_v3d = NULL;
-  *r_region = NULL;
+  *r_rgn = NULL;
 
   if (area && area->spacetype == SPACE_VIEW3D) {
-    ARegion *region = CTX_wm_region(C);
+    ARgn *rgn = cxt_win_rgn(C);
     View3D *v3d = (View3D *)area->spacedata.first;
 
     if (region) {
-      RegionView3D *rv3d;
-      if ((region->regiontype == RGN_TYPE_WINDOW) && (rv3d = region->regiondata) &&
+      RgnView3D *rv3d;
+      if ((rgn->rgntype == RGN_TYPE_WIN) && (rv3d = rgn->rgndata) &&
           (rv3d->viewlock & RV3D_LOCK_ROTATION) == 0) {
         *r_v3d = v3d;
-        *r_region = region;
+        *r_rgn = rgn;
         return true;
       }
 
-      if (ED_view3d_area_user_region(area, v3d, r_region)) {
+      if (ed_view3d_area_user_rgn(area, v3d, r_rgn)) {
         *r_v3d = v3d;
         return true;
       }
@@ -116,169 +113,160 @@ bool ED_view3d_context_user_region(bContext *C, View3D **r_v3d, ARegion **r_regi
   return false;
 }
 
-bool ED_view3d_area_user_region(const ScrArea *area, const View3D *v3d, ARegion **r_region)
+bool ed_view3d_area_user_rgn(const ScrArea *area, const View3D *v3d, ARgn **r_rgn)
 {
-  RegionView3D *rv3d = NULL;
-  ARegion *region_unlock_user = NULL;
-  ARegion *region_unlock = NULL;
-  const ListBase *region_list = (v3d == area->spacedata.first) ? &area->regionbase :
-                                                                 &v3d->regionbase;
+  RgnView3D *rv3d = NULL;
+  ARgn *rgn_unlock_user = NULL;
+  ARgn *rgn_unlock = NULL;
+  const List *rgn_list = (v3d == area->spacedata.first) ? &area->rgnbase :
+                                                          &v3d->rgnbase;
 
-  BLI_assert(v3d->spacetype == SPACE_VIEW3D);
+  lib_assert(v3d->spacetype == SPACE_VIEW3D);
 
-  LISTBASE_FOREACH (ARegion *, region, region_list) {
+  LIST_FOREACH (ARgn *, rgn, rgn_list) {
     /* find the first unlocked rv3d */
-    if (region->regiondata && region->regiontype == RGN_TYPE_WINDOW) {
-      rv3d = region->regiondata;
+    if (rgn->rgndata && rgn->rgntype == RGN_TYPE_WIN) {
+      rv3d = rgn->rgndata;
       if ((rv3d->viewlock & RV3D_LOCK_ROTATION) == 0) {
-        region_unlock = region;
+        rgn_unlock = rgn;
         if (ELEM(rv3d->persp, RV3D_PERSP, RV3D_CAMOB)) {
-          region_unlock_user = region;
+          rgn_unlock_user = rhn;
           break;
         }
       }
     }
   }
 
-  /* camera/perspective view get priority when the active region is locked */
-  if (region_unlock_user) {
-    *r_region = region_unlock_user;
+  /* camera/perspective view get priority when the active rgn is locked */
+  if (rgn_unlock_user) {
+    *r_rgn = rgn_unlock_user;
     return true;
   }
 
-  if (region_unlock) {
-    *r_region = region_unlock;
+  if (rgn_unlock) {
+    *r_rgn = rgn_unlock;
     return true;
   }
 
   return false;
 }
 
-void ED_view3d_init_mats_rv3d(const struct Object *ob, struct RegionView3D *rv3d)
+void ed_view3d_init_mats_rv3d(const struct Obj *ob, struct RgnView3D *rv3d)
 {
   /* local viewmat and persmat, to calculate projections */
   mul_m4_m4m4(rv3d->viewmatob, rv3d->viewmat, ob->obmat);
   mul_m4_m4m4(rv3d->persmatob, rv3d->persmat, ob->obmat);
 
   /* initializes object space clipping, speeds up clip tests */
-  ED_view3d_clipping_local(rv3d, ob->obmat);
+  ed_view3d_clipping_local(rv3d, ob->obmat);
 }
 
-void ED_view3d_init_mats_rv3d_gl(const struct Object *ob, struct RegionView3D *rv3d)
+void ed_view3d_init_mats_rv3d_gl(const struct Obj *ob, struct RgnView3D *rv3d)
 {
-  ED_view3d_init_mats_rv3d(ob, rv3d);
+  ed_view3d_init_mats_rv3d(ob, rv3d);
 
   /* we have to multiply instead of loading viewmatob to make
    * it work with duplis using displists, otherwise it will
    * override the dupli-matrix */
-  GPU_matrix_mul(ob->obmat);
+  gpu_matrix_mul(ob->obmat);
 }
 
 #ifdef DEBUG
-void ED_view3d_clear_mats_rv3d(struct RegionView3D *rv3d)
+void ed_view3d_clear_mats_rv3d(struct RgnView3D *rv3d)
 {
   zero_m4(rv3d->viewmatob);
   zero_m4(rv3d->persmatob);
 }
 
-void ED_view3d_check_mats_rv3d(struct RegionView3D *rv3d)
+void ee_view3d_check_mats_rv3d(struct RgnView3D *rv3d)
 {
-  BLI_ASSERT_ZERO_M4(rv3d->viewmatob);
-  BLI_ASSERT_ZERO_M4(rv3d->persmatob);
+  LIB_ASSERT_ZERO_M4(rv3d->viewmatob);
+  LIB_ASSERT_ZERO_M4(rv3d->persmatob);
 }
 #endif
 
-void ED_view3d_stop_render_preview(wmWindowManager *wm, ARegion *region)
+void ed_view3d_stop_render_preview(WinManager *wm, ARgn *rgn)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   if (rv3d->render_engine) {
-#ifdef WITH_PYTHON
-    BPy_BEGIN_ALLOW_THREADS;
-#endif
+    win_jobs_kill_type(wm, rgn, WIN_JOB_TYPE_RENDER_PREVIEW);
 
-    WM_jobs_kill_type(wm, region, WM_JOB_TYPE_RENDER_PREVIEW);
-
-#ifdef WITH_PYTHON
-    BPy_END_ALLOW_THREADS;
-#endif
-
-    RE_engine_free(rv3d->render_engine);
+    render_engine_free(rv3d->render_engine);
     rv3d->render_engine = NULL;
   }
 
   /* A bit overkill but this make sure the viewport is reset completely. (fclem) */
-  WM_draw_region_free(region, false);
+  win_draw_rgn_free(rgn, false);
 }
 
-void ED_view3d_shade_update(Main *bmain, View3D *v3d, ScrArea *area)
+void ed_view3d_shade_update(Main *main, View3D *v3d, ScrArea *area)
 {
-  wmWindowManager *wm = bmain->wm.first;
+  WinMngr *wm = main->wm.first;
 
   if (v3d->shading.type != OB_RENDER) {
-    ARegion *region;
+    ARgn *rgn;
 
-    for (region = area->regionbase.first; region; region = region->next) {
-      if ((region->regiontype == RGN_TYPE_WINDOW) && region->regiondata) {
-        ED_view3d_stop_render_preview(wm, region);
+    for (rgn = area->rgnbase.first; rgn; rgn = rgn->next) {
+      if ((rgn->rgntype == RGN_TYPE_WIN) && rgn->rgndata) {
+        ed_view3d_stop_render_preview(wm, rgn);
       }
     }
   }
 }
 
-/* ******************** default callbacks for view3d space ***************** */
-
+/* default cbs for view3dspace* */
 static SpaceLink *view3d_create(const ScrArea *UNUSED(area), const Scene *scene)
 {
-  ARegion *region;
+  ARgn *rgn;
   View3D *v3d;
-  RegionView3D *rv3d;
+  RgnView3D *rv3d;
 
-  v3d = DNA_struct_default_alloc(View3D);
+  v3d = types_struct_default_alloc(View3D);
 
   if (scene) {
     v3d->camera = scene->camera;
   }
 
   /* header */
-  region = MEM_callocN(sizeof(ARegion), "header for view3d");
+  region = mem_calloc(sizeof(ARgn), "header for view3d");
 
-  BLI_addtail(&v3d->regionbase, region);
-  region->regiontype = RGN_TYPE_HEADER;
-  region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
+  lib_addtail(&v3d->regionbase, rgn);
+  region->rgntype = RGN_TYPE_HEADER;
+  rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
   /* tool header */
-  region = MEM_callocN(sizeof(ARegion), "tool header for view3d");
+  rgn = mem_calloc(sizeof(ARgn), "tool header for view3d");
 
-  BLI_addtail(&v3d->regionbase, region);
-  region->regiontype = RGN_TYPE_TOOL_HEADER;
-  region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
-  region->flag = RGN_FLAG_HIDDEN | RGN_FLAG_HIDDEN_BY_USER;
+  lib_addtail(&v3d->regionbase, rgn);
+  rgn->rgntype = RGN_TYPE_TOOL_HEADER;
+  rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
+  rgn->flag = RGN_FLAG_HIDDEN | RGN_FLAG_HIDDEN_BY_USER;
 
   /* tool shelf */
-  region = MEM_callocN(sizeof(ARegion), "toolshelf for view3d");
+  rgn = mem_calloc(sizeof(ARgn), "toolshelf for view3d");
 
-  BLI_addtail(&v3d->regionbase, region);
-  region->regiontype = RGN_TYPE_TOOLS;
-  region->alignment = RGN_ALIGN_LEFT;
-  region->flag = RGN_FLAG_HIDDEN;
+  lib_addtail(&v3d->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_TOOLS;
+  rgn->alignment = RGN_ALIGN_LEFT;
+  rgn->flag = RGN_FLAG_HIDDEN;
 
   /* buttons/list view */
-  region = MEM_callocN(sizeof(ARegion), "buttons for view3d");
+  rgn = mem_calloc(sizeof(ARgn), "btns for view3d");
 
-  BLI_addtail(&v3d->regionbase, region);
-  region->regiontype = RGN_TYPE_UI;
-  region->alignment = RGN_ALIGN_RIGHT;
-  region->flag = RGN_FLAG_HIDDEN;
+  lib_addtail(&v3d->rgnbase, rgn);
+  rgn->regiontype = RGN_TYPE_UI;
+  rgn->alignment = RGN_ALIGN_RIGHT;
+  rgn->flag = RGN_FLAG_HIDDEN;
 
   /* main region */
-  region = MEM_callocN(sizeof(ARegion), "main region for view3d");
+  rgn = mem_calloc(sizeof(ARgn), "main rhn for view3d");
 
-  BLI_addtail(&v3d->regionbase, region);
-  region->regiontype = RGN_TYPE_WINDOW;
+  lib_addtail(&v3d->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_WIN;
 
-  region->regiondata = MEM_callocN(sizeof(RegionView3D), "region view3d");
-  rv3d = region->regiondata;
+  rgn->rgndata = mem_calloc(sizeof(RgnView3D), "rgn view3d");
+  rv3d = rgn->rgndata;
   rv3d->viewquat[0] = 1.0f;
   rv3d->persp = RV3D_PERSP;
   rv3d->view = RV3D_VIEW_USER;
@@ -293,29 +281,29 @@ static void view3d_free(SpaceLink *sl)
   View3D *vd = (View3D *)sl;
 
   if (vd->localvd) {
-    MEM_freeN(vd->localvd);
+    mem_free(vd->localvd);
   }
 
   MEM_SAFE_FREE(vd->runtime.local_stats);
 
-  if (vd->runtime.properties_storage) {
-    MEM_freeN(vd->runtime.properties_storage);
+  if (vd->runtime.props_storage) {
+    mem_free(vd->runtime.props_storage);
   }
 
   if (vd->shading.prop) {
-    IDP_FreeProperty(vd->shading.prop);
+    IDP_FreeProp(vd->shading.prop);
     vd->shading.prop = NULL;
   }
 }
 
 /* spacetype; init callback */
-static void view3d_init(wmWindowManager *UNUSED(wm), ScrArea *UNUSED(area))
+static void view3d_init(WinMngr *UNUSED(wm), ScrArea *UNUSED(area))
 {
 }
 
-static void view3d_exit(wmWindowManager *UNUSED(wm), ScrArea *area)
+static void view3d_exit(WinMngr *UNUSED(wm), ScrArea *area)
 {
-  BLI_assert(area->spacetype == SPACE_VIEW3D);
+  lib_assert(area->spacetype == SPACE_VIEW3D);
   View3D *v3d = area->spacedata.first;
   MEM_SAFE_FREE(v3d->runtime.local_stats);
 }
@@ -323,12 +311,11 @@ static void view3d_exit(wmWindowManager *UNUSED(wm), ScrArea *area)
 static SpaceLink *view3d_duplicate(SpaceLink *sl)
 {
   View3D *v3do = (View3D *)sl;
-  View3D *v3dn = MEM_dupallocN(sl);
+  View3D *v3dn = mem_dupalloc(sl);
 
   memset(&v3dn->runtime, 0x0, sizeof(v3dn->runtime));
 
   /* clear or remove stuff from old */
-
   if (v3dn->localvd) {
     v3dn->localvd = NULL;
   }
@@ -341,43 +328,41 @@ static SpaceLink *view3d_duplicate(SpaceLink *sl)
   }
 
   if (v3dn->shading.prop) {
-    v3dn->shading.prop = IDP_CopyProperty(v3do->shading.prop);
+    v3dn->shading.prop = IDP_CopyProp(v3do->shading.prop);
   }
 
   /* copy or clear inside new stuff */
-
   return (SpaceLink *)v3dn;
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void view3d_main_region_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
 {
-  ListBase *lb;
-  wmKeyMap *keymap;
+  List *list;
+  WinKeyMap *keymap;
 
   /* object ops. */
-
   /* important to be before Pose keymap since they can both be enabled at once */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Paint Face Mask (Weight, Vertex, Texture)", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Paint Face Mask (Weight, Vertex, Texture)", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Paint Vertex Selection (Weight, Vertex)", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Paint Vertex Selection (Weight, Vertex)", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* Before 'Weight/Vertex Paint' so adding curve points is not overridden. */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Paint Curve", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Paint Curve", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* Before 'Pose' so weight paint menus aren't overridden by pose menus. */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Weight Paint", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Weight Paint", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Vertex Paint", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Vertex Paint", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* pose is not modal, operator poll checks for this */
   keymap = WM_keymap_ensure(wm->defaultconf, "Pose", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  WM_event_add_keymap_handler(&rgn->handlers, keymap);
 
   keymap = WM_keymap_ensure(wm->defaultconf, "Object Mode", 0, 0);
   WM_event_add_keymap_handler(&region->handlers, keymap);
