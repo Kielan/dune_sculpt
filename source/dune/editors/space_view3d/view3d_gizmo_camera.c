@@ -443,9 +443,9 @@ static void WIDGETGROUP_camera_view_refresh(const Cxt *C, WinGizmoGroup *gzgroup
 
   {
     WinGizmo *gz = viewgroup->border;
-    WM_gizmo_set_flag(gz, WM_GIZMO_HIDDEN, false);
+    win_gizmo_set_flag(gz, WIN_GIZMO_HIDDEN, false);
 
-    RNA_enum_set(viewgroup->border->ptr,
+    api_enum_set(viewgroup->border->ptr,
                  "transform",
                  ED_GIZMO_CAGE2D_XFORM_FLAG_TRANSLATE | ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE);
 
@@ -457,24 +457,24 @@ static void WIDGETGROUP_camera_view_refresh(const Cxt *C, WinGizmoGroup *gzgroup
       viewgroup->state.edit_border = &v3d->render_border;
       viewgroup->is_camera = false;
     }
-
-    WM_gizmo_target_property_def_func(gz,
-                                      "matrix",
-                                      &(const struct wmGizmoPropertyFnParams){
-                                          .value_get_fn = gizmo_render_border_prop_matrix_get,
-                                          .value_set_fn = gizmo_render_border_prop_matrix_set,
+    
+    win_gizmo_target_prop_def_fn(gz,
+                                "matrix",
+                                &(const struct WinGizmoPropFnParams){
+                                    .val_get_fn = gizmo_render_border_prop_matrix_get,
+                                    .val_set_fn = gizmo_render_border_prop_matrix_set,
                                           .range_get_fn = NULL,
                                           .user_data = viewgroup,
                                       });
   }
 }
 
-void VIEW3D_GGT_camera_view(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_camera_view(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Camera View Widgets";
   gzgt->idname = "VIEW3D_GGT_camera_view";
 
-  gzgt->flag = (WM_GIZMOGROUPTYPE_PERSISTENT | WM_GIZMOGROUPTYPE_SCALE);
+  gzgt->flag = (WIN_GIZMOGROUPTYPE_PERSISTENT | WIN_GIZMOGROUPTYPE_SCALE);
 
   gzgt->poll = WIDGETGROUP_camera_view_poll;
   gzgt->setup = WIDGETGROUP_camera_view_setup;
