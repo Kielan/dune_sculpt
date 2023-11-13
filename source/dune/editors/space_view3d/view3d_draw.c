@@ -339,16 +339,16 @@ void ed_view3d_draw_setup_view(const WinMngr *wm,
 
 #ifdef WITH_XR_OPENXR
   /* Setup the view matrix. */
-  if (ED_view3d_is_region_xr_mirror_active(wm, v3d, region)) {
-    view3d_xr_mirror_setup(wm, depsgraph, scene, v3d, region, rect);
+  if (ed_view3d_is_rgn_xr_mirror_active(wm, v3d, rgn)) {
+    view3d_xr_mirror_setup(wm, graph, scene, v3d, rgn, rect);
   }
   else
 #endif
       if (view3d_stereo3d_active(win, scene, v3d, rv3d)) {
-    view3d_stereo3d_setup(depsgraph, scene, v3d, region, rect);
+    view3d_stereo3d_setup(graph, scene, v3d, rgn, rect);
   }
   else {
-    view3d_main_region_setup_view(depsgraph, scene, v3d, region, viewmat, winmat, rect);
+    view3d_main_rgn_setup_view(graph, scene, v3d, rgn, viewmat, winmat, rect);
   }
 
 #ifndef WITH_XR_OPENXR
@@ -356,79 +356,77 @@ void ed_view3d_draw_setup_view(const WinMngr *wm,
 #endif
 }
 
-/* -------------------------------------------------------------------- */
-/** Draw View Border **/
 
 static void view3d_camera_border(const Scene *scene,
-                                 struct Depsgraph *depsgraph,
-                                 const ARegion *region,
+                                 struct Graph *graph,
+                                 const ARgn *rgn,
                                  const View3D *v3d,
-                                 const RegionView3D *rv3d,
+                                 const RgnView3D *rv3d,
                                  rctf *r_viewborder,
                                  const bool no_shift,
                                  const bool no_zoom)
 {
   CameraParams params;
   rctf rect_view, rect_camera;
-  Object *camera_eval = DEG_get_evaluated_object(depsgraph, v3d->camera);
+  Obj *camera_eval = graph_get_eval_obj(graph, v3d->camera);
 
   /* get viewport viewplane */
-  DUNE_camera_params_init(&params);
-  DUNE_camera_params_from_view3d(&params, depsgraph, v3d, rv3d);
+  dune_camera_params_init(&params);
+  dune_camera_params_from_view3d(&params, graph, v3d, rv3d);
   if (no_zoom) {
     params.zoom = 1.0f;
   }
-  DUNE_camera_params_compute_viewplane(&params, region->winx, region->winy, 1.0f, 1.0f);
+  dune_camera_params_compute_viewplane(&params, rgn->winx, rgn->winy, 1.0f, 1.0f);
   rect_view = params.viewplane;
 
   /* get camera viewplane */
-  DUNE_camera_params_init(&params);
-  /* fallback for non camera objects */
+  dune_camera_params_init(&params);
+  /* fallback for non camera objs */
   params.clip_start = v3d->clip_start;
   params.clip_end = v3d->clip_end;
-  DUNE_camera_params_from_object(&params, camera_eval);
+  dune_camera_params_from_object(&params, camera_eval);
   if (no_shift) {
     params.shiftx = 0.0f;
     params.shifty = 0.0f;
   }
-  DUNE_camera_params_compute_viewplane(
+  dune_camera_params_compute_viewplane(
       &params, scene->r.xsch, scene->r.ysch, scene->r.xasp, scene->r.yasp);
   rect_camera = params.viewplane;
 
   /* get camera border within viewport */
-  r_viewborder->xmin = ((rect_camera.xmin - rect_view.xmin) / BLI_rctf_size_x(&rect_view)) *
-                       region->winx;
-  r_viewborder->xmax = ((rect_camera.xmax - rect_view.xmin) / BLI_rctf_size_x(&rect_view)) *
-                       region->winx;
-  r_viewborder->ymin = ((rect_camera.ymin - rect_view.ymin) / BLI_rctf_size_y(&rect_view)) *
-                       region->winy;
-  r_viewborder->ymax = ((rect_camera.ymax - rect_view.ymin) / BLI_rctf_size_y(&rect_view)) *
-                       region->winy;
+  r_viewborder->xmin = ((rect_camera.xmin - rect_view.xmin) / lib_rctf_size_x(&rect_view)) *
+                       rgn->winx;
+  r_viewborder->xmax = ((rect_camera.xmax - rect_view.xmin) / lib_rctf_size_x(&rect_view)) *
+                       rgn->winx;
+  r_viewborder->ymin = ((rect_camera.ymin - rect_view.ymin) / lib_rctf_size_y(&rect_view)) *
+                       rgn->winy;
+  r_viewborder->ymax = ((rect_camera.ymax - rect_view.ymin) / lib_rctf_size_y(&rect_view)) *
+                       rgn->winy;
 }
 
-void ED_view3d_calc_camera_border_size(const Scene *scene,
-                                       Depsgraph *depsgraph,
-                                       const ARegion *region,
+void ed_view3d_calc_camera_border_size(const Scene *scene,
+                                       Graph *graph,
+                                       const ARgn *rgn,
                                        const View3D *v3d,
-                                       const RegionView3D *rv3d,
+                                       const RgnView3D *rv3d,
                                        float r_size[2])
 {
   rctf viewborder;
 
-  view3d_camera_border(scene, depsgraph, region, v3d, rv3d, &viewborder, true, true);
-  r_size[0] = LIB_rctf_size_x(&viewborder);
-  r_size[1] = LIB_rctf_size_y(&viewborder);
+  view3d_camera_border(scene, graph, rgn, v3d, rv3d, &viewborder, true, true);
+  r_size[0] = lib_rctf_size_x(&viewborder);
+  r_size[1] = lib_rctf_size_y(&viewborder);
 }
 
-void ED_view3d_calc_camera_border(const Scene *scene,
-                                  Depsgraph *depsgraph,
-                                  const ARegion *region,
+void ed_view3d_calc_camera_border(const Scene *scene,
+                                  Graph *graph,
+                                  const ARgn *rgn,
                                   const View3D *v3d,
-                                  const RegionView3D *rv3d,
+                                  const RgnView3D *rv3d,
                                   rctf *r_viewborder,
                                   const bool no_shift)
 {
-  view3d_camera_border(scene, depsgraph, region, v3d, rv3d, r_viewborder, no_shift, false);
+  view3d_camera_border(scene, graph, rgn, v3d, rv3d, r_viewborder, no_shift, false);
 }
 
 static void drawviewborder_grid3(uint shdr_pos, float x1, float x2, float y1, float y2, float fac)
@@ -511,14 +509,14 @@ static void drawviewborder_triangle(
   immEnd();
 }
 
-static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, View3D *v3d)
+static void drawviewborder(Scene *scene, Graph *graph, ARgn *rgn, View3D *v3d)
 {
   float x1, x2, y1, y2;
   float x1i, x2i, y1i, y2i;
 
   rctf viewborder;
   Camera *ca = NULL;
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   if (v3d->camera == NULL) {
     return;
@@ -527,43 +525,43 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
     ca = v3d->camera->data;
   }
 
-  ED_view3d_calc_camera_border(scene, depsgraph, region, v3d, rv3d, &viewborder, false);
+  ed_view3d_calc_camera_border(scene, graph, rgn, v3d, rv3d, &viewborder, false);
   /* the offsets */
   x1 = viewborder.xmin;
   y1 = viewborder.ymin;
   x2 = viewborder.xmax;
   y2 = viewborder.ymax;
 
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   /* apply offsets so the real 3D camera shows through */
 
-  /* NOTE: quite un-scientific but without this bit extra
-   * 0.0001 on the lower left the 2D border sometimes
+  /* bad code wo this extra
+   * 0.0001 on the lower left the 2D border can
    * obscures the 3D camera border */
-  /* NOTE: with VIEW3D_CAMERA_BORDER_HACK defined this error isn't noticeable
-   * but keep it here in case we need to remove the workaround */
+  /* With VIEW3D_CAMERA_BORDER_HACK defined this error isn't noticeable
+   * keep it here in case we need to remove the workaround */
   x1i = (int)(x1 - 1.0001f);
   y1i = (int)(y1 - 1.0001f);
   x2i = (int)(x2 + (1.0f - 0.0001f));
   y2i = (int)(y2 + (1.0f - 0.0001f));
 
-  uint shdr_pos = GPU_vertformat_attr_add(
+  uint shdr_pos = gpu_vertformat_attr_add(
       immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
   /* First, solid lines. */
   {
     immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
 
-    /* passepartout, specified in camera edit buttons */
+    /* passepartout, specified in camera edit btns */
     if (ca && (ca->flag & CAM_SHOWPASSEPARTOUT) && ca->passepartalpha > 0.000001f) {
-      const float winx = (region->winx + 1);
-      const float winy = (region->winy + 1);
+      const float winx = (rgn->winx + 1);
+      const float winy = (rgn->winy + 1);
 
       float alpha = 1.0f;
 
       if (ca->passepartalpha != 1.0f) {
-        GPU_blend(GPU_BLEND_ALPHA);
+        gpu_blend(GPU_BLEND_ALPHA);
         alpha = ca->passepartalpha;
       }
 
@@ -582,7 +580,7 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
         immRectf(shdr_pos, x1i, y1i, x2i, 0.0f);
       }
 
-      GPU_blend(GPU_BLEND_NONE);
+      gpu_blend(GPU_BLEND_NONE);
       immUniformThemeColor3(TH_BACK);
       imm_draw_box_wire_2d(shdr_pos, x1i, y1i, x2i, y2i);
     }
@@ -608,14 +606,14 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
 
   {
     float viewport_size[4];
-    GPU_viewport_size_get_f(viewport_size);
+    gpu_viewport_size_get_f(viewport_size);
     immUniform2f("viewport_size", viewport_size[2], viewport_size[3]);
 
     immUniform1i("colors_len", 0); /* "simple" mode */
     immUniform1f("dash_width", 6.0f);
     immUniform1f("dash_factor", 0.5f);
 
-    /* outer line not to confuse with object selection */
+    /* outer line not to confuse with obj sel */
     if (v3d->flag2 & V3D_LOCK_CAMERA) {
       immUniformThemeColor(TH_REDALERT);
       imm_draw_box_wire_2d(shdr_pos, x1i - 1, y1i - 1, x2i + 1, y2i + 1);
@@ -640,7 +638,7 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
 
   /* safety border */
   if (ca) {
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
     immUniformThemeColorAlpha(TH_VIEW_OVERLAY, 0.75f);
 
     if (ca->dtx & CAM_DTX_CENTER) {
@@ -697,7 +695,7 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
     }
 
     if (ca->flag & CAM_SHOW_SAFE_MARGINS) {
-      UI_draw_safe_areas(shdr_pos,
+      ui_draw_safe_areas(shdr_pos,
                          &(const rctf){
                              .xmin = x1,
                              .xmax = x2,
@@ -708,7 +706,7 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
                          scene->safe_areas.action);
 
       if (ca->flag & CAM_SHOW_SAFE_CENTER) {
-        UI_draw_safe_areas(shdr_pos,
+        ui_draw_safe_areas(shdr_pos,
                            &(const rctf){
                                .xmin = x1,
                                .xmax = x2,
@@ -725,7 +723,7 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
        * assume and square sensor and only use sensor_x */
       float sizex = scene->r.xsch * scene->r.xasp;
       float sizey = scene->r.ysch * scene->r.yasp;
-      int sensor_fit = DUNE_camera_sensor_fit(ca->sensor_fit, sizex, sizey);
+      int sensor_fit = dune_camera_sensor_fit(ca->sensor_fit, sizex, sizey);
       float sensor_x = ca->sensor_x;
       float sensor_y = (ca->sensor_fit == CAMERA_SENSOR_FIT_AUTO) ? ca->sensor_x : ca->sensor_y;
 
@@ -755,22 +753,22 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
       immUniformThemeColorShadeAlpha(TH_VIEW_OVERLAY, 100, 255);
 
       /* TODO: Was using:
-       * `UI_draw_roundbox_4fv(false, rect.xmin, rect.ymin, rect.xmax, rect.ymax, 2.0f, color);`
-       * We'll probably need a new imm_draw_line_roundbox_dashed or that - though in practice the
+       * `ui_draw_roundbox_4fv(false, rect.xmin, rect.ymin, rect.xmax, rect.ymax, 2.0f, color);`
+       * We'll probably need a new imm_draw_line_roundbox_dashed or that tho in practice the
        * 2.0f round corner effect was nearly not visible anyway. */
       imm_draw_box_wire_2d(shdr_pos, rect.xmin, rect.ymin, rect.xmax, rect.ymax);
     }
 
-    GPU_blend(GPU_BLEND_NONE);
+    gpu_blend(GPU_BLEND_NONE);
   }
 
   immUnbindProgram();
   /* end dashed lines */
 
-  /* camera name - draw in highlighted text color */
-  if (ca && ((v3d->overlay.flag & V3D_OVERLAY_HIDE_TEXT) == 0) && (ca->flag & CAM_SHOWNAME)) {
-    UI_FontThemeColor(BLF_default(), TH_TEXT_HI);
-    BLF_draw_default(x1i,
+  /* camera name draw in highlighted text color */
+  if (ca && ((v3d->overlay.flag & V3D_OVERLAY_HIDE_TXT) == 0) && (ca->flag & CAM_SHOWNAME)) {
+    ui_FontThemeColor(font_default(), TH_TXT_HI);
+    font_draw_default(x1i,
                      y1i - (0.7f * U.widget_unit),
                      0.0f,
                      v3d->camera->id.name + 2,
@@ -778,18 +776,18 @@ static void drawviewborder(Scene *scene, Depsgraph *depsgraph, ARegion *region, 
   }
 }
 
-static void drawrenderborder(ARegion *region, View3D *v3d)
+static void drawrenderborder(ARgn *rgn, View3D *v3d)
 {
   /* use the same program for everything */
-  uint shdr_pos = GPU_vertformat_attr_add(
+  uint shdr_pos = gpu_vertformat_attr_add(
       immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   immBindBuiltinProgram(GPU_SHADER_2D_LINE_DASHED_UNIFORM_COLOR);
 
   float viewport_size[4];
-  GPU_viewport_size_get_f(viewport_size);
+  gpu_viewport_size_get_f(viewport_size);
   immUniform2f("viewport_size", viewport_size[2], viewport_size[3]);
 
   immUniform1i("colors_len", 0); /* "simple" mode */
@@ -806,51 +804,50 @@ static void drawrenderborder(ARegion *region, View3D *v3d)
   immUnbindProgram();
 }
 
-/* -------------------------------------------------------------------- */
-/** Other Elements **/
 
-float ED_scene_grid_scale(const Scene *scene, const char **r_grid_unit)
+/* Other Elements */
+float ed_scene_grid_scale(const Scene *scene, const char **r_grid_unit)
 {
   /* apply units */
   if (scene->unit.system) {
     const void *usys;
     int len;
 
-    DUNE_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
+    dune_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
 
     if (usys) {
-      int i = DUNE_unit_base_get(usys);
+      int i = dune_unit_base_get(usys);
       if (r_grid_unit) {
-        *r_grid_unit = DUNE_unit_display_name_get(usys, i);
+        *r_grid_unit = dune_unit_display_name_get(usys, i);
       }
-      return (float)DUNE_unit_scalar_get(usys, i) / scene->unit.scale_length;
+      return (float)dune_unit_scalar_get(usys, i) / scene->unit.scale_length;
     }
   }
 
   return 1.0f;
 }
 
-float ED_view3d_grid_scale(const Scene *scene, View3D *v3d, const char **r_grid_unit)
+float ed_view3d_grid_scale(const Scene *scene, View3D *v3d, const char **r_grid_unit)
 {
-  return v3d->grid * ED_scene_grid_scale(scene, r_grid_unit);
+  return v3d->grid * ed_scene_grid_scale(scene, r_grid_unit);
 }
 
 #define STEPS_LEN 8
-void ED_view3d_grid_steps(const Scene *scene,
+void ed_view3d_grid_steps(const Scene *scene,
                           View3D *v3d,
-                          RegionView3D *rv3d,
+                          RgnView3D *rv3d,
                           float r_grid_steps[STEPS_LEN])
 {
   const void *usys;
   int len;
-  DUNE_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
+  dune_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
   float grid_scale = v3d->grid;
-  LIB_assert(STEPS_LEN >= len);
+  lib_assert(STEPS_LEN >= len);
 
   if (usys) {
     if (rv3d->view == RV3D_VIEW_USER) {
       /* Skip steps */
-      len = DUNE_unit_base_get(usys) + 1;
+      len = dune_unit_base_get(usys) + 1;
     }
 
     grid_scale /= scene->unit.scale_length;
@@ -881,18 +878,18 @@ void ED_view3d_grid_steps(const Scene *scene,
   }
 }
 
-float ED_view3d_grid_view_scale(Scene *scene,
+float ed_view3d_grid_view_scale(Scene *scene,
                                 View3D *v3d,
-                                ARegion *region,
+                                ARgn *rgn,
                                 const char **r_grid_unit)
 {
   float grid_scale;
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   if (!rv3d->is_persp && RV3D_VIEW_IS_AXIS(rv3d->view)) {
     /* Decrease the distance between grid snap points depending on zoom. */
-    float dist = 12.0f / (region->sizex * rv3d->winmat[0][0]);
+    float dist = 12.0f / (rgn->sizex * rv3d->winmat[0][0]);
     float grid_steps[STEPS_LEN];
-    ED_view3d_grid_steps(scene, v3d, rv3d, grid_steps);
+    ed_view3d_grid_steps(scene, v3d, rv3d, grid_steps);
     /* Skip last item, in case the 'mid_dist' is greater than the largest unit. */
     int i;
     for (i = 0; i < ARRAY_SIZE(grid_steps) - 1; i++) {
@@ -905,15 +902,15 @@ float ED_view3d_grid_view_scale(Scene *scene,
     if (r_grid_unit) {
       const void *usys;
       int len;
-      DUNE_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
+      dune_unit_system_get(scene->unit.system, B_UNIT_LENGTH, &usys, &len);
 
       if (usys) {
-        *r_grid_unit = DUNE_unit_display_name_get(usys, len - i - 1);
+        *r_grid_unit = dune_unit_display_name_get(usys, len - i - 1);
       }
     }
   }
   else {
-    grid_scale = ED_view3d_grid_scale(scene, v3d, r_grid_unit);
+    grid_scale = ed_view3d_grid_scale(scene, v3d, r_grid_unit);
   }
 
   return grid_scale;
@@ -921,19 +918,17 @@ float ED_view3d_grid_view_scale(Scene *scene,
 
 #undef STEPS_LEN
 
-static void draw_view_axis(RegionView3D *rv3d, const rcti *rect)
+static void draw_view_axis(RgnView3D *rv3d, const rcti *rect)
 {
   const float k = U.rvisize * U.pixelsize; /* axis size */
   /* axis alpha offset (rvibright has range 0-10) */
   const int bright = -20 * (10 - U.rvibright);
 
   /* Axis center in screen coordinates.
-   *
    * - Unit size offset so small text doesn't draw outside the screen
-   * - Extra X offset because of the panel expander.
-   */
-  const float startx = rect->xmax - (k + UI_UNIT_X * 1.5);
-  const float starty = rect->ymax - (k + UI_UNIT_Y);
+   * - Extra X offset because of the panel expander.  */
+  const float startx = rect->xmax - (k + UNIT_X * 1.5);
+  const float starty = rect->ymax - (k + UNIT_Y);
 
   float axis_pos[3][2];
   uchar axis_col[3][4];
@@ -952,18 +947,18 @@ static void draw_view_axis(RegionView3D *rv3d, const rcti *rect)
     axis_pos[i][1] = starty + vec[1] * k;
 
     /* get color of each axis */
-    UI_GetThemeColorShade3ubv(TH_AXIS_X + i, bright, axis_col[i]); /* rgb */
+    ui_GetThemeColorShade3ubv(TH_AXIS_X + i, bright, axis_col[i]); /* rgb */
     axis_col[i][3] = 255 * hypotf(vec[0], vec[1]);                 /* alpha */
   }
 
   /* draw axis lines */
-  GPU_line_width(2.0f);
-  GPU_line_smooth(true);
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_line_width(2.0f);
+  gpu_line_smooth(true);
+  gpu_blend(GPU_BLEND_ALPHA);
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-  uint col = GPU_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint col =gpu_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
 
   immBindBuiltinProgram(GPU_SHADER_2D_FLAT_COLOR);
   immBegin(GPU_PRIM_LINES, 6);
@@ -979,21 +974,21 @@ static void draw_view_axis(RegionView3D *rv3d, const rcti *rect)
 
   immEnd();
   immUnbindProgram();
-  GPU_line_smooth(false);
+  gpu_line_smooth(false);
 
   /* draw axis names */
   for (int axis_i = 0; axis_i < 3; axis_i++) {
     int i = axis_order[axis_i];
 
     const char axis_text[2] = {'x' + i, '\0'};
-    BLF_color4ubv(BLF_default(), axis_col[i]);
-    BLF_draw_default(axis_pos[i][0] + 2, axis_pos[i][1] + 2, 0.0f, axis_text, 1);
+    font_color4ubv(font_default(), axis_col[i]);
+    font_draw_default(axis_pos[i][0] + 2, axis_pos[i][1] + 2, 0.0f, axis_text, 1);
   }
 }
 
 #ifdef WITH_INPUT_NDOF
-/* draw center and axis of rotation for ongoing 3D mouse navigation */
-static void draw_rotation_guide(const RegionView3D *rv3d)
+/* draw center and axis of rotation for ongoing 3D mouse nav */
+static void draw_rotation_guide(const RgnView3D *rv3d)
 {
   float o[3];   /* center of rotation */
   float end[3]; /* endpoints for drawing */
@@ -1002,12 +997,12 @@ static void draw_rotation_guide(const RegionView3D *rv3d)
 
   negate_v3_v3(o, rv3d->ofs);
 
-  GPU_blend(GPU_BLEND_ALPHA);
-  GPU_depth_mask(false); /* Don't overwrite the Z-buffer. */
+  gpu_blend(GPU_BLEND_ALPHA);
+  gpu_depth_mask(false); /* Don't overwrite the Z-buffer. */
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint col = GPU_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = gpi_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
 
   immBindBuiltinProgram(GPU_SHADER_3D_SMOOTH_COLOR);
 
@@ -1038,7 +1033,7 @@ static void draw_rotation_guide(const RegionView3D *rv3d)
     immVertex3fv(pos, end);
     immEnd();
 
-    /* -- draw ring around rotation center -- */
+    /* draw ring around rotation center */
     {
 #  define ROT_AXIS_DETAIL 13
 
@@ -1083,26 +1078,26 @@ static void draw_rotation_guide(const RegionView3D *rv3d)
 
   immUnbindProgram();
 
-  /* -- draw rotation center -- */
+  /* draw rotation center -- */
   immBindBuiltinProgram(GPU_SHADER_3D_POINT_FIXED_SIZE_VARYING_COLOR);
-  GPU_point_size(5.0f);
+  gpu_point_size(5.0f);
   immBegin(GPU_PRIM_POINTS, 1);
   immAttr4ubv(col, color);
   immVertex3fv(pos, o);
   immEnd();
   immUnbindProgram();
 
-  GPU_blend(GPU_BLEND_NONE);
-  GPU_depth_mask(true);
+  gpu_blend(GPU_BLEND_NONE);
+  gou_depth_mask(true);
 }
 #endif /* WITH_INPUT_NDOF */
 
-/** Render and camera border */
-static void view3d_draw_border(const bContext *C, ARegion *region)
+/* Render and camera border */
+static void view3d_draw_border(const Cxt *C, ARgn *rgn)
 {
-  Scene *scene = CTX_data_scene(C);
-  Depsgraph *depsgraph = CTX_data_expect_evaluated_depsgraph(C);
-  RegionView3D *rv3d = region->regiondata;
+  Scene *scene = cxt_data_scene(C);
+  Depsgraph *graph = cxt_data_expect_eval_graph(C);
+  RegionView3D *rv3d = rgn->rgndata;
   View3D *v3d = CTX_wm_view3d(C);
 
   if (rv3d->persp == RV3D_CAMOB) {
