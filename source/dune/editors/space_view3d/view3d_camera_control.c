@@ -69,12 +69,12 @@ typedef struct View3DCameraControl {
   void *obtfm;
 } View3DCameraControl;
 
-LIB_INLINE Object *view3d_cameracontrol_object(const View3DCameraControl *vctrl)
+LIB_INLINE Object *view3d_cameracontrol_obj(const View3DCameraControl *vctrl)
 {
   return vctrl->root_parent ? vctrl->root_parent : vctrl->ctx_v3d->camera;
 }
 
-Object *ed_view3d_cameracontrol_object_get(View3DCameraControl *vctrl)
+Object *ed_view3d_cameracontrol_obj_get(View3DCameraControl *vctrl)
 {
   RgnView3D *rv3d = vctrl->cxt_rv3d;
 
