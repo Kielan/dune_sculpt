@@ -1,81 +1,77 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "DUNE_context.h"
+#include "dune_cxt.h"
 
-#include "ED_gizmo_utils.h"
-#include "ED_screen.h"
+#include "ed_gizmo_utils.h"
+#include "ed_screen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "view3d_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Mesh Pre-Select Element Gizmo **/
-
+/* Mesh Pre-Select Element Gizmo */
 struct GizmoGroupPreSelElem {
-  wmGizmo *gizmo;
+  WinGizmo *gizmo;
 };
 
-static void WIDGETGROUP_mesh_preselect_elem_setup(const bContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_mesh_preselect_elem_setup(const Cxt *UNUSED(C), WinGizmoGroup *gzgroup)
 {
-  const wmGizmoType *gzt_presel = WM_gizmotype_find("GIZMO_GT_mesh_preselect_elem_3d", true);
-  struct GizmoGroupPreSelElem *ggd = MEM_callocN(sizeof(struct GizmoGroupPreSelElem), __func__);
+  const WinGizmoType *gzt_presel = win_gizmotype_find("GIZMO_GT_mesh_preselect_elem_3d", true);
+  struct GizmoGroupPreSelElem *ggd = mem_calloc(sizeof(struct GizmoGroupPreSelElem), __func__);
   gzgroup->customdata = ggd;
 
-  wmGizmo *gz = ggd->gizmo = WM_gizmo_new_ptr(gzt_presel, gzgroup, NULL);
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
-  UI_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
+  WinGizmo *gz = ggd->gizmo = win_gizmo_new_ptr(gzt_presel, gzgroup, NULL);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
 }
 
-void VIEW3D_GGT_mesh_preselect_elem(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_mesh_preselect_elem(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Mesh Preselect Element";
   gzgt->idname = "VIEW3D_GGT_mesh_preselect_elem";
 
-  gzgt->flag = WM_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP | WM_GIZMOGROUPTYPE_3D;
+  gzgt->flag = WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP | WIN_GIZMOGROUPTYPE_3D;
 
   gzgt->gzmap_params.spaceid = SPACE_VIEW3D;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.rgnid = RGN_TYPE_WIN;
 
-  gzgt->poll = ED_gizmo_poll_or_unlink_delayed_from_tool;
+  gzgt->poll = ed_gizmo_poll_or_unlink_delayed_from_tool;
   gzgt->setup = WIDGETGROUP_mesh_preselect_elem_setup;
 }
 
-/* -------------------------------------------------------------------- */
-/** Mesh Pre-Select Edge Ring Gizmo */
-
+/* Mesh Pre-Select Edge Ring Gizmo */
 struct GizmoGroupPreSelEdgeRing {
-  wmGizmo *gizmo;
+  WinGizmo *gizmo;
 };
 
-static void WIDGETGROUP_mesh_preselect_edgering_setup(const bContext *UNUSED(C),
-                                                      wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_mesh_preselect_edgering_setup(const Cxt *UNUSED(C),
+                                                      WinGizmoGroup *gzgroup)
 {
-  const wmGizmoType *gzt_presel = WM_gizmotype_find("GIZMO_GT_mesh_preselect_edgering_3d", true);
-  struct GizmoGroupPreSelEdgeRing *ggd = MEM_callocN(sizeof(struct GizmoGroupPreSelEdgeRing),
+  const WinGizmoType *gzt_presel = win_gizmotype_find("GIZMO_GT_mesh_preselect_edgering_3d", true);
+  struct GizmoGroupPreSelEdgeRing *ggd = mem_calloc(sizeof(struct GizmoGroupPreSelEdgeRing),
                                                      __func__);
   gzgroup->customdata = ggd;
 
-  wmGizmo *gz = ggd->gizmo = WM_gizmo_new_ptr(gzt_presel, gzgroup, NULL);
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
-  UI_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
+  WinGizmo *gz = ggd->gizmo = win_gizmo_new_ptr(gzt_presel, gzgroup, NULL);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
 }
 
-void VIEW3D_GGT_mesh_preselect_edgering(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_mesh_preselect_edgering(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Mesh Preselect Edge Ring";
   gzgt->idname = "VIEW3D_GGT_mesh_preselect_edgering";
 
-  gzgt->flag = WM_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP | WM_GIZMOGROUPTYPE_3D;
+  gzgt->flag = WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP | WIN_GIZMOGROUPTYPE_3D;
 
   gzgt->gzmap_params.spaceid = SPACE_VIEW3D;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.rgnid = RGN_TYPE_WIN;
 
-  gzgt->poll = ED_gizmo_poll_or_unlink_delayed_from_tool;
+  gzgt->poll = ed_gizmo_poll_or_unlink_delayed_from_tool;
   gzgt->setup = WIDGETGROUP_mesh_preselect_edgering_setup;
 }
