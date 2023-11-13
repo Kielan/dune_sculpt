@@ -5,7 +5,7 @@
 #include "types_pen.h"
 #include "types_lightprobe.h"
 #include "types_material.h"
-#include "types_object.h"
+#include "types_obj.h"
 #include "types_scene.h"
 #include "types_view3d.h"
 
@@ -1275,12 +1275,12 @@ static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
         .user_data = area,
         .notify = win_toolsystem_do_msg_notify_tag_refresh,
     };
-    WM_msg_subscribe_rna_anon_prop(mbus, Object, mode, &msg_sub_value_rgn_tag_refresh);
-    WM_msg_subscribe_rna_anon_prop(mbus, LayerObjects, active, &msg_sub_value_rgn_tag_refresh);
+    win_msg_sub_api_anon_prop(mbus, Object, mode, &msg_sub_val_rgn_tag_refresh);
+    win_msg_sub_api_anon_prop(mbus, LayerObjs, active, &msg_sub_val_rgn_tag_refresh);
   }
 }
 
-/* concept is to retrieve cursor type context-less */
+/* concept is to retrieve cursor type cxt-less */
 static void view3d_main_rgn_cursor(Win *win, ScrArea *area, ARgn *rgn)
 {
   if (win_cursor_set_from_tool(win, area, rgn)) {
@@ -1309,7 +1309,7 @@ static void view3d_header_rgn_init(WinMngr *wm, ARgn *rgn)
 
 static void view3d_header_rgn_draw(const Cxt *C, ARgn *rgn)
 {
-  ED_region_header(C, region);
+  ed_rgn_header(C, rgn);
 }
 
 static void view3d_header_rgn_listener(const WinRgnListenerParams *params)
@@ -1353,7 +1353,7 @@ static void view3d_header_rgn_listener(const WinRgnListenerParams *params)
   }
 
     /* From topbar, which ones are needed? split per header? */
-    /* Disable for now, re-enable if needed, or remove - campbell. */
+    /* Disable for now reenable if needed or remove. */
 #if 0
   /* cxt changes */
   switch (winn->category) {
@@ -1389,7 +1389,7 @@ static void view3d_header_rgn_msg_sub(const WinRgnMsgSubParams *params)
   WinMsgParamsApi msg_key_params = {{0}};
 
   /* Only sub to types. */
-  StructAPI *type_array[] = {
+  StructApi *type_array[] = {
       &ApiView3DShading,
   };
 
@@ -1408,7 +1408,7 @@ static void view3d_header_rgn_msg_sub(const WinRgnMsgSubParams *params)
 /* add handlers, stuff you only do once or on area/rgn changes */
 static void view3d_btn_rgn_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap;
+  WinKeyMap *keymap;
 
   ed_rgn_pnls_init(wm, rgn);
 
@@ -1417,8 +1417,8 @@ static void view3d_btn_rgn_init(WinMngr *wm, ARgn *rgn)
 }
 
 void ed_view3d_btns_rgn_layout_ex(const Cxt *C,
-                                        ARgn *rgn,
-                                        const char *category_override)
+                                  ARgn *rgn,
+                                  const char *category_override)
 {
   const enum eCxtObjMode mode = cxt_data_mode_enum(C);
 
@@ -1526,7 +1526,7 @@ void ed_view3d_btns_rgn_layout_ex(const Cxt *C,
 
 static void view3d_btns_rgn_layout(const Cxt *C, ARgn *rgn)
 {
-  ed_view3d_btns_rgn_layout_ex(C, region, NULL);
+  ed_view3d_btns_rgn_layout_ex(C, rgn, NULL);
 }
 
 static void view3d_btns_rgn_listener(const WinRgnListenerParams *params)
@@ -1537,7 +1537,7 @@ static void view3d_btns_rgn_listener(const WinRgnListenerParams *params)
   /* cxt changes */
   switch (winn->category) {
     case NC_ANIM:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_KEYFRAME_PROP:
         case ND_NLA_ACTCHANGE:
           ed_rgn_tag_redraw(rgn);
@@ -1712,7 +1712,7 @@ static int view3d_cxt(const Cxt *C, const char *member, CxtDataResult *result)
    * allows duplicate and other obj ops to run outside the 3d view */
   if (cxt_data_dir(member)) {
     cxt_data_dir_set(result, view3d_cxt_dir);
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
   if (cxt_data_equals(member, "active_object")) {
     /* In most cases the active object is the `view_layer->basact->object`.
@@ -1728,13 +1728,13 @@ static int view3d_cxt(const Cxt *C, const char *member, CxtDataResult *result)
      * wo showing the object.
      *
      * See T85532 for alternatives that were considered. */
-    ViewLayer *view_layer = CTX_data_view_layer(C);
+    ViewLayer *view_layer = cxt_data_view_layer(C);
     if (view_layer->basact) {
       Obj *ob = view_layer->basact->object;
-      /* if hidden but in edit mode, we still display, can happen with animation */
+      /* if hidden but in edit mode, we still display, can happen with anima */
       if ((view_layer->basact->flag & BASE_VISIBLE_GRAPH) != 0 ||
           (ob->mode != OB_MODE_OBJ)) {
-        cxt_data_id_ptr_set(result, &ob->id);
+        cxt_data_id_ptr_set(result, &ob->id)
       }
     }
 
@@ -1836,14 +1836,14 @@ void ed_spacetype_view3d(void)
   art->init = view3d_main_rgn_init;
   art->exit = view3d_main_rgn_exit;
   art->free = view3d_main_rgn_free;
-  art->duplicate = view3d_main_region_duplicate;
-  art->listener = view3d_main_region_listener;
-  art->message_subscribe = view3d_main_region_message_subscribe;
-  art->cursor = view3d_main_region_cursor;
+  art->duplicate = view3d_main_rgn_duplicate;
+  art->listener = view3d_main_rgn_listener;
+  art->message_subscribe = view3d_main_rgn_msg_sub;
+  art->cursor = view3d_main_rgn_cursor;
   art->lock = 1; /* can become flag, see BKE_spacedata_draw_locks */
-  LIB_addhead(&st->regiontypes, art);
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: listview/buttons */
+  /* regions: listview/btns */
   art = MEM_callocN(sizeof(ARegionType), "spacetype view3d buttons region");
   art->regionid = RGN_TYPE_UI;
   art->prefsizex = UI_SIDEBAR_PANEL_WIDTH;
