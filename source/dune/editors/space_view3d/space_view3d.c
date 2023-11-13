@@ -255,7 +255,7 @@ static SpaceLink *view3d_create(const ScrArea *UNUSED(area), const Scene *scene)
   rgn = mem_calloc(sizeof(ARgn), "btns for view3d");
 
   lib_addtail(&v3d->rgnbase, rgn);
-  rgn->regiontype = RGN_TYPE_UI;
+  rgn->rgntype = RGN_TYPE_UI;
   rgn->alignment = RGN_ALIGN_RIGHT;
   rgn->flag = RGN_FLAG_HIDDEN;
 
@@ -361,92 +361,92 @@ static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* pose is not modal, operator poll checks for this */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Pose", 0, 0);
-  WM_event_add_keymap_handler(&rgn->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Pose", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Object Mode", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Object Mode", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Curve", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Curve", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Image Paint", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Image Paint", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Sculpt", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Sculpt", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Mesh", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Mesh", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Armature", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Armature", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Metaball", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Metaball", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Lattice", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Lattice", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Particle", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Particle", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Sculpt Curves", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Sculpt Curves", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* editfont keymap swallows all... */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Font", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Font", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Object Non-modal", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Object Non-modal", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Frames", 0, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Frames", 0, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* own keymap, last so modes can override it */
-  keymap = WM_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "3D View", SPACE_VIEW3D, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = won_keymap_ensure(wm->defaultconf, "3D View", SPACE_VIEW3D, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* add drop boxes */
-  lb = WM_dropboxmap_find("View3D", SPACE_VIEW3D, RGN_TYPE_WINDOW);
+  lb = win_dropboxmap_find("View3D", SPACE_VIEW3D, RGN_TYPE_WIN);
 
-  WM_event_add_dropbox_handler(&region->handlers, lb);
+  win_ev_add_dropbox_handler(&rgn->handlers, list);
 }
 
-static void view3d_main_region_exit(wmWindowManager *wm, ARegion *region)
+static void view3d_main_rgn_exit(WinMngr *wm, ARgn  *rgn)
 {
-  ED_view3d_stop_render_preview(wm, region);
+  ed_view3d_stop_render_preview(wm, rgn);
 }
 
-static bool view3d_drop_in_main_region_poll(bContext *C, const wmEvent *event)
+static bool view3d_drop_in_main_rgn_poll(Cxt *C, const WinEv *ev)
 {
-  ScrArea *area = CTX_wm_area(C);
-  return ED_region_overlap_isect_any_xy(area, event->xy) == false;
+  ScrArea *area = cxt_win_area(C);
+  return ed_rgn_overlap_isect_any_xy(area, ev->xy) == false;
 }
 
-static ID_Type view3d_drop_id_in_main_region_poll_get_id_type(bContext *C,
-                                                              wmDrag *drag,
-                                                              const wmEvent *event)
+static IdType view3d_drop_id_in_main_rgn_poll_get_id_type(Cxt *C,
+                                                              WinDrag *drag,
+                                                              const WinEv *ev)
 {
-  const ScrArea *area = CTX_wm_area(C);
+  const ScrArea *area = cxt_win_area(C);
 
-  if (ED_region_overlap_isect_any_xy(area, event->xy)) {
+  if (ed_rgn_overlap_isect_any_xy(area, ev->xy)) {
     return 0;
   }
-  if (!view3d_drop_in_main_region_poll(C, event)) {
+  if (!view3d_drop_in_main_rgn_poll(C, ev)) {
     return 0;
   }
 
-  ID *local_id = WM_drag_get_local_ID(drag, 0);
+  Id *local_id = win_drag_get_local_id(drag, 0);
   if (local_id) {
     return GS(local_id->name);
   }
 
-  wmDragAsset *asset_drag = WM_drag_get_asset_data(drag, 0);
+  WinDragAsset *asset_drag = win_drag_get_asset_data(drag, 0);
   if (asset_drag) {
     return asset_drag->id_type;
   }
@@ -454,42 +454,42 @@ static ID_Type view3d_drop_id_in_main_region_poll_get_id_type(bContext *C,
   return 0;
 }
 
-static bool view3d_drop_id_in_main_region_poll(bContext *C,
-                                               wmDrag *drag,
-                                               const wmEvent *event,
-                                               ID_Type id_type)
+static bool view3d_drop_id_in_main_rgn_poll(Cxt *C,
+                                            WinDrag *drag,
+                                            const WinEv *ev,
+                                            IdType id_type)
 {
-  if (!view3d_drop_in_main_region_poll(C, event)) {
+  if (!view3d_drop_in_main_rgn_poll(C, ev)) {
     return false;
   }
 
-  return WM_drag_is_ID_type(drag, id_type);
+  return win_drag_is_id_type(drag, id_type);
 }
 
-static void view3d_ob_drop_draw_activate(struct wmDropBox *drop, wmDrag *drag)
+static void view3d_ob_drop_draw_activate(struct WinDropBox *drop, WinDrag *drag)
 {
   V3DSnapCursorState *state = drop->draw_data;
   if (state) {
     return;
   }
 
-  /* Don't use the snap cursor when linking the object. Object transform isn't editable then and
+  /* Don't use the snap cursor when linking the obj. Obj transform isn't editable then and
    * would be reset on reload. */
-  if (WM_drag_asset_will_import_linked(drag)) {
+  if (win_drag_asset_will_import_linked(drag)) {
     return;
   }
 
-  state = drop->draw_data = ED_view3d_cursor_snap_active();
+  state = drop->draw_data = ed_view3d_cursor_snap_active();
   state->draw_plane = true;
 
   float dimensions[3] = {0.0f};
-  if (drag->type == WM_DRAG_ID) {
-    Object *ob = (Object *)WM_drag_get_local_ID(drag, ID_OB);
-    BKE_object_dimensions_get(ob, dimensions);
+  if (drag->type == WIN_DRAG_ID) {
+    Object *ob = (Object *)win_drag_get_local_id(drag, ID_OB);
+    dune_object_dimensions_get(ob, dimensions);
   }
   else {
-    struct AssetMetaData *meta_data = WM_drag_get_asset_meta_data(drag, ID_OB);
-    IDProperty *dimensions_prop = BKE_asset_metadata_idprop_find(meta_data, "dimensions");
+    struct AssetMetaData *meta_data = win_drag_get_asset_meta_data(drag, ID_OB);
+    IdProp *dimensions_prop = dune_asset_metadata_idprop_find(meta_data, "dimensions");
     if (dimensions_prop) {
       copy_v3_v3(dimensions, IDP_Array(dimensions_prop));
     }
@@ -497,109 +497,107 @@ static void view3d_ob_drop_draw_activate(struct wmDropBox *drop, wmDrag *drag)
 
   if (!is_zero_v3(dimensions)) {
     mul_v3_v3fl(state->box_dimensions, dimensions, 0.5f);
-    UI_GetThemeColor4ubv(TH_GIZMO_PRIMARY, state->color_box);
+    ui_GetThemeColor4ubv(TH_GIZMO_PRIMARY, state->color_box);
     state->draw_box = true;
   }
 }
 
-static void view3d_ob_drop_draw_deactivate(struct wmDropBox *drop, wmDrag *UNUSED(drag))
+static void view3d_ob_drop_draw_deactivate(struct WinDropBox *drop, WinDrag *UNUSED(drag))
 {
   V3DSnapCursorState *state = drop->draw_data;
   if (state) {
-    ED_view3d_cursor_snap_deactive(state);
+    ed_view3d_cursor_snap_deactive(state);
     drop->draw_data = NULL;
   }
 }
 
-static bool view3d_ob_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_ob_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  return view3d_drop_id_in_main_region_poll(C, drag, event, ID_OB);
+  return view3d_drop_id_in_main_rgn_poll(C, drag, ev, ID_OB);
 }
-static bool view3d_ob_drop_poll_external_asset(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_ob_drop_poll_external_asset(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  if (!view3d_ob_drop_poll(C, drag, event) || (drag->type != WM_DRAG_ASSET)) {
+  if (!view3d_ob_drop_poll(C, drag, ev) || (drag->type != WIN_DRAG_ASSET)) {
     return false;
   }
   return true;
 }
 
-/**
- * \note the term local here refers to not being an external asset,
- * poll will succeed for linked library objects.
- */
-static bool view3d_ob_drop_poll_local_id(bContext *C, wmDrag *drag, const wmEvent *event)
+/* the term local here refers to not being an external asset,
+ * poll will succeed for linked library objects. */
+static bool view3d_ob_drop_poll_local_id(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  if (!view3d_ob_drop_poll(C, drag, event) || (drag->type != WM_DRAG_ID)) {
+  if (!view3d_ob_drop_poll(C, drag, ev) || (drag->type != WIN_DRAG_ID)) {
     return false;
   }
   return true;
 }
 
-static bool view3d_collection_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_collection_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  return view3d_drop_id_in_main_region_poll(C, drag, event, ID_GR);
+  return view3d_drop_id_in_main_rgn_poll(C, drag, ev, ID_GR);
 }
 
-static bool view3d_mat_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_mat_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  return view3d_drop_id_in_main_region_poll(C, drag, event, ID_MA);
+  return view3d_drop_id_in_main_rgn_poll(C, drag, ev, ID_MA);
 }
 
-static char *view3d_mat_drop_tooltip(bContext *C,
-                                     wmDrag *drag,
+static char *view3d_mat_drop_tooltip(Cxt *C,
+                                     WinDrag *drag,
                                      const int xy[2],
-                                     struct wmDropBox *drop)
+                                     struct WinDropBox *drop)
 {
-  const char *name = WM_drag_get_item_name(drag);
-  ARegion *region = CTX_wm_region(C);
-  RNA_string_set(drop->ptr, "name", name);
+  const char *name = win_drag_get_item_name(drag);
+  ARgn *rgn = cxt_win_rgn(C);
+  api_string_set(drop->ptr, "name", name);
   int mval[2] = {
-      xy[0] - region->winrct.xmin,
-      xy[1] - region->winrct.ymin,
+      xy[0] - rgn->winrct.xmin,
+      xy[1] - rgn->winrct.ymin,
   };
-  return ED_object_ot_drop_named_material_tooltip(C, drop->ptr, mval);
+  return ed_obj_ot_drop_named_material_tooltip(C, drop->ptr, mval);
 }
 
-static bool view3d_world_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_world_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  return view3d_drop_id_in_main_region_poll(C, drag, event, ID_WO);
+  return view3d_drop_id_in_main_rgn_poll(C, drag, ev, ID_WO);
 }
 
-static bool view3d_object_data_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_obj_data_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  ID_Type id_type = view3d_drop_id_in_main_region_poll_get_id_type(C, drag, event);
+  IdType id_type = view3d_drop_id_in_main_rgn_poll_get_id_type(C, drag, ev);
   if (id_type && OB_DATA_SUPPORT_ID(id_type)) {
     return true;
   }
   return false;
 }
 
-static char *view3d_object_data_drop_tooltip(bContext *UNUSED(C),
-                                             wmDrag *UNUSED(drag),
-                                             const int UNUSED(xy[2]),
-                                             wmDropBox *UNUSED(drop))
+static char *view3d_obj_data_drop_tooltip(Cxt *UNUSED(C),
+                                          WinDrag *UNUSED(drag),
+                                          const int UNUSED(xy[2]),
+                                          WinDropBox *UNUSED(drop))
 {
-  return BLI_strdup(TIP_("Create object instance from object-data"));
+  return lib_strdup(TIP_("Create object instance from object-data"));
 }
 
-static bool view3d_ima_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_ima_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  if (ED_region_overlap_isect_any_xy(CTX_wm_area(C), event->xy)) {
+  if (ed_rgn_overlap_isect_any_xy(cxt_win_area(C), ev->xy)) {
     return false;
   }
-  if (drag->type == WM_DRAG_PATH) {
+  if (drag->type == WIN_DRAG_PATH) {
     /* rule might not work? */
     return (ELEM(drag->icon, 0, ICON_FILE_IMAGE, ICON_FILE_MOVIE));
   }
 
-  return WM_drag_is_ID_type(drag, ID_IM);
+  return win_drag_is_id_type(drag, ID_IM);
 }
 
-static bool view3d_ima_bg_is_camera_view(bContext *C)
+static bool view3d_ima_bg_is_camera_view(Cxt *C)
 {
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
   if ((rv3d && (rv3d->persp == RV3D_CAMOB))) {
-    View3D *v3d = CTX_wm_view3d(C);
+    View3D *v3d = cxt_win_view3d(C);
     if (v3d && v3d->camera && v3d->camera->type == OB_CAMERA) {
       return true;
     }
@@ -607,13 +605,13 @@ static bool view3d_ima_bg_is_camera_view(bContext *C)
   return false;
 }
 
-static bool view3d_ima_bg_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool view3d_ima_bg_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  if (!view3d_ima_drop_poll(C, drag, event)) {
+  if (!view3d_ima_drop_poll(C, drag, ev)) {
     return false;
   }
 
-  if (ED_view3d_is_object_under_cursor(C, event->mval)) {
+  if (ed_view3d_is_object_under_cursor(C, ev->mval)) {
     return false;
   }
 
@@ -626,7 +624,7 @@ static bool view3d_ima_empty_drop_poll(bContext *C, wmDrag *drag, const wmEvent 
     return false;
   }
 
-  Object *ob = ED_view3d_give_object_under_cursor(C, event->mval);
+  Object *ob = ed_view3d_give_obj_under_cursor(C, ev->mval);
 
   if (ob == NULL) {
     return true;
@@ -639,11 +637,11 @@ static bool view3d_ima_empty_drop_poll(bContext *C, wmDrag *drag, const wmEvent 
   return false;
 }
 
-static bool view3d_volume_drop_poll(bContext *UNUSED(C),
-                                    wmDrag *drag,
-                                    const wmEvent *UNUSED(event))
+static bool view3d_volume_drop_poll(Cxt *UNUSED(C),
+                                    WinDrag *drag,
+                                    const WinEv *UNUSED(ev))
 {
-  return (drag->type == WM_DRAG_PATH) && (drag->icon == ICON_FILE_VOLUME);
+  return (drag->type == WIN_DRAG_PATH) && (drag->icon == ICON_FILE_VOLUME);
 }
 
 static void view3d_ob_drop_matrix_from_snap(V3DSnapCursorState *snap_state,
@@ -651,8 +649,8 @@ static void view3d_ob_drop_matrix_from_snap(V3DSnapCursorState *snap_state,
                                             float obmat_final[4][4])
 {
   V3DSnapCursorData *snap_data;
-  snap_data = ED_view3d_cursor_snap_data_get(snap_state, NULL, 0, 0);
-  BLI_assert(snap_state->draw_box || snap_state->draw_plane);
+  snap_data = ed_view3d_cursor_snap_data_get(snap_state, NULL, 0, 0);
+  lib_assert(snap_state->draw_box || snap_state->draw_plane);
   copy_m4_m3(obmat_final, snap_data->plane_omat);
   copy_v3_v3(obmat_final[3], snap_data->loc);
 
@@ -660,110 +658,110 @@ static void view3d_ob_drop_matrix_from_snap(V3DSnapCursorState *snap_state,
   mat4_to_size(scale, ob->obmat);
   rescale_m4(obmat_final, scale);
 
-  BoundBox *bb = BKE_object_boundbox_get(ob);
+  BoundBox *bb = dune_object_boundbox_get(ob);
   if (bb) {
     float offset[3];
-    BKE_boundbox_calc_center_aabb(bb, offset);
+    dune_boundbox_calc_center_aabb(bb, offset);
     offset[2] = bb->vec[0][2];
     mul_mat3_m4_v3(obmat_final, offset);
     sub_v3_v3(obmat_final[3], offset);
   }
 }
 
-static void view3d_ob_drop_copy_local_id(wmDrag *drag, wmDropBox *drop)
+static void view3d_ob_drop_copy_local_id(WinDrag *drag, WinDropBox *drop)
 {
-  ID *id = WM_drag_get_local_ID(drag, ID_OB);
+  Id *id = win_drag_get_local_id(drag, ID_OB);
 
-  RNA_string_set(drop->ptr, "name", id->name + 2);
-  /* Don't duplicate ID's which were just imported. Only do that for existing, local IDs. */
-  BLI_assert(drag->type != WM_DRAG_ASSET);
+  api_string_set(drop->ptr, "name", id->name + 2);
+  /* Don't duplicate Id's which were just imported. Only do that for existing, local IDs. */
+  lib_assert(drag->type != WIN_DRAG_ASSET);
 
-  V3DSnapCursorState *snap_state = ED_view3d_cursor_snap_state_get();
+  V3DSnapCursorState *snap_state = ed_view3d_cursor_snap_state_get();
   float obmat_final[4][4];
 
   view3d_ob_drop_matrix_from_snap(snap_state, (Object *)id, obmat_final);
 
-  RNA_float_set_array(drop->ptr, "matrix", &obmat_final[0][0]);
+  api_float_set_array(drop->ptr, "matrix", &obmat_final[0][0]);
 }
 
-static void view3d_ob_drop_copy_external_asset(wmDrag *drag, wmDropBox *drop)
+static void view3d_ob_drop_copy_external_asset(WinDrag *drag, WinDropBox *drop)
 {
-  /* NOTE(@campbellbarton): Selection is handled here, de-selecting objects before append,
-   * using auto-select to ensure the new objects are selected.
-   * This is done so #OBJECT_OT_transform_to_mouse (which runs after this drop handler)
-   * can use the context setup here to place the objects. */
-  BLI_assert(drag->type == WM_DRAG_ASSET);
+  /* Sel is handled here, de-sel objs before append,
+   * using auto-select to ensure the new objs are sel'd.
+   * This is done so OBJ_OT_transform_to_mouse (which runs after this drop handler)
+   * can use the cxt setup here to place the objs. */
+  lib_assert(drag->type == WIN_DRAG_ASSET);
 
-  wmDragAsset *asset_drag = WM_drag_get_asset_data(drag, 0);
-  bContext *C = asset_drag->evil_C;
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  WinDragAsset *asset_drag = win_drag_get_asset_data(drag, 0);
+  Cxt *C = asset_drag->evil_C;
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
-  BKE_view_layer_base_deselect_all(view_layer);
+  dune_view_layer_base_desel_all(view_layer);
 
-  ID *id = WM_drag_asset_id_import(asset_drag, FILE_AUTOSELECT);
+  Id *id = win_drag_asset_id_import(asset_drag, FILE_AUTOSEL);
 
-  /* TODO(sergey): Only update relations for the current scene. */
-  DEG_relations_tag_update(CTX_data_main(C));
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  /* Only update relations for the current scene. */
+  grapg_tag_update(cxt_data_main(C));
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-  RNA_string_set(drop->ptr, "name", id->name + 2);
+  api_string_set(drop->ptr, "name", id->name + 2);
 
-  Base *base = BKE_view_layer_base_find(view_layer, (Object *)id);
+  Base *base = dune_view_layer_base_find(view_layer, (Obj *)id);
   if (base != NULL) {
-    BKE_view_layer_base_select_and_set_active(view_layer, base);
-    WM_main_add_notifier(NC_SCENE | ND_OB_ACTIVE, scene);
+    dune_view_layer_base_sel_and_set_active(view_layer, base);
+    win_main_add_notifier(NC_SCENE | ND_OB_ACTIVE, scene);
   }
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  ED_outliner_select_sync_from_object_tag(C);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+  ee_outliner_sel_sync_from_object_tag(C);
 
   V3DSnapCursorState *snap_state = drop->draw_data;
   if (snap_state) {
     float obmat_final[4][4];
 
-    view3d_ob_drop_matrix_from_snap(snap_state, (Object *)id, obmat_final);
+    view3d_ob_drop_matrix_from_snap(snap_state, (Obj *)id, obmat_final);
 
-    RNA_float_set_array(drop->ptr, "matrix", &obmat_final[0][0]);
+    api_float_set_array(drop->ptr, "matrix", &obmat_final[0][0]);
   }
 }
 
-static void view3d_collection_drop_copy(wmDrag *drag, wmDropBox *drop)
+static void view3d_collection_drop_copy(WinDrag *drag, WinDropBox *drop)
 {
-  ID *id = WM_drag_get_local_ID_or_import_from_asset(drag, ID_GR);
+  Id *id = win_drag_get_local_id_or_import_from_asset(drag, ID_GR);
 
-  RNA_int_set(drop->ptr, "session_uuid", (int)id->session_uuid);
+  api_int_set(drop->ptr, "session_uuid", (int)id->session_uuid);
 }
 
-static void view3d_id_drop_copy(wmDrag *drag, wmDropBox *drop)
+static void view3d_id_drop_copy(WinDrag *drag, WinDropBox *drop)
 {
-  ID *id = WM_drag_get_local_ID_or_import_from_asset(drag, 0);
+  Id *id = win_drag_get_local_id_or_import_from_asset(drag, 0);
 
-  RNA_string_set(drop->ptr, "name", id->name + 2);
+  api_string_set(drop->ptr, "name", id->name + 2);
 }
 
-static void view3d_id_drop_copy_with_type(wmDrag *drag, wmDropBox *drop)
+static void view3d_id_drop_copy_with_type(WinDrag *drag, WinDropBox *drop)
 {
-  ID *id = WM_drag_get_local_ID_or_import_from_asset(drag, 0);
+  Id *id = win_drag_get_local_id_or_import_from_asset(drag, 0);
 
-  RNA_string_set(drop->ptr, "name", id->name + 2);
-  RNA_enum_set(drop->ptr, "type", GS(id->name));
+  api_string_set(drop->ptr, "name", id->name + 2);
+  api_enum_set(drop->ptr, "type", GS(id->name));
 }
 
-static void view3d_id_path_drop_copy(wmDrag *drag, wmDropBox *drop)
+static void view3d_id_path_drop_copy(WinDrag *drag, WinDropBox *drop)
 {
-  ID *id = WM_drag_get_local_ID_or_import_from_asset(drag, 0);
+  Id *id = win_drag_get_local_id_or_import_from_asset(drag, 0);
 
   if (id) {
-    RNA_string_set(drop->ptr, "name", id->name + 2);
-    RNA_struct_property_unset(drop->ptr, "filepath");
+    api_string_set(drop->ptr, "name", id->name + 2);
+    api_struct_prop_unset(drop->ptr, "filepath");
   }
   else if (drag->path[0]) {
-    RNA_string_set(drop->ptr, "filepath", drag->path);
-    RNA_struct_property_unset(drop->ptr, "image");
+    api_string_set(drop->ptr, "filepath", drag->path);
+    api_struct_prop_unset(drop->ptr, "image");
   }
 }
 
-static void view3d_lightcache_update(bContext *C)
+static void view3d_lightcache_update(Cxt *C)
 {
   PointerRNA op_ptr;
 
