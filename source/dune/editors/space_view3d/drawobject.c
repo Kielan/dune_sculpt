@@ -1,27 +1,27 @@
-#include "TYPES_mesh.h"
-#include "TYPES_object.h"
-#include "TYPES_scene.h"
+#include "types_mesh.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "LIB_math.h"
+#include "lib_math.h"
 
-#include "DUNE_DerivedMesh.h"
-#include "DUNE_editmesh.h"
-#include "DUNE_global.h"
-#include "DUNE_object.h"
+#include "dune_DerivedMesh.h"
+#include "dune_editmesh.h"
+#include "dune_global.h"
+#include "dune_object.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "GPU_batch.h"
-#include "GPU_immediate.h"
-#include "GPU_shader.h"
-#include "GPU_state.h"
+#include "gpu_batch.h"
+#include "gpu_immediate.h"
+#include "gpu_shader.h"
+#include "gpu_state.h"
 
-#include "ED_mesh.h"
+#include "ed_mesh.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #include "view3d_intern.h" /* bad level include */
 
@@ -30,9 +30,8 @@ uchar view3d_camera_border_hack_col[3];
 bool view3d_camera_border_hack_test = false;
 #endif
 
-/* ***************** BACKBUF SEL (BBS) ********* */
-
-void ED_draw_object_facemap(Depsgraph *depsgraph,
+/* BACKBUF SEL (BBS) */
+void ed_draw_object_facemap(Graph *graph,
                             Object *ob,
                             const float col[4],
                             const int facemap)
@@ -44,19 +43,19 @@ void ED_draw_object_facemap(Depsgraph *depsgraph,
 
   const Mesh *me = ob->data;
   {
-    Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-    const Mesh *me_eval = DUNE_object_get_evaluated_mesh(ob_eval);
+    Object *ob_eval = graph_get_eval_object(graph, ob);
+    const Mesh *me_eval = dune_object_get_eval_mesh(ob_eval);
     if (me_eval != NULL) {
       me = me_eval;
     }
   }
 
-  GPU_front_facing(ob->transflag & OB_NEG_SCALE);
+  gpu_front_facing(ob->transflag & OB_NEG_SCALE);
 
   /* Just to create the data to pass to immediate mode! (sigh) */
   const int *facemap_data = CustomData_get_layer(&me->pdata, CD_FACEMAP);
   if (facemap_data) {
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
 
     const MVert *mvert = me->mvert;
     const MPoly *mpoly = me->mpoly;
@@ -73,14 +72,14 @@ void ED_draw_object_facemap(Depsgraph *depsgraph,
     int vbo_len_used = 0;
 
     GPUVertFormat format_pos = {0};
-    const uint pos_id = GPU_vertformat_attr_add(
+    const uint pos_id = gpu_vertformat_attr_add(
         &format_pos, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
 
-    GPUVertBuf *vbo_pos = GPU_vertbuf_create_with_format(&format_pos);
-    GPU_vertbuf_data_alloc(vbo_pos, vbo_len_capacity);
+    GPUVertBuf *vbo_pos = gpu_vertbuf_create_with_format(&format_pos);
+    gpu_vertbuf_data_alloc(vbo_pos, vbo_len_capacity);
 
     GPUVertBufRaw pos_step;
-    GPU_vertbuf_attr_get_raw_data(vbo_pos, pos_id, &pos_step);
+    gpu_vertbuf_attr_get_raw_data(vbo_pos, pos_id, &pos_step);
 
     const MPoly *mp;
     int i;
@@ -89,9 +88,9 @@ void ED_draw_object_facemap(Depsgraph *depsgraph,
       for (mp = mpoly, i = 0; i < mpoly_len; i++, mp++) {
         if (facemap_data[i] == facemap) {
           for (int j = 2; j < mp->totloop; j++) {
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[0]].v].co);
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[1]].v].co);
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[2]].v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[0]].v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[1]].v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[mloop[mlt->tri[2]].v].co);
             vbo_len_used += 3;
             mlt++;
           }
@@ -109,9 +108,9 @@ void ED_draw_object_facemap(Depsgraph *depsgraph,
           const MLoop *ml_a = ml_start + 1;
           const MLoop *ml_b = ml_start + 2;
           for (int j = 2; j < mp->totloop; j++) {
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[ml_start->v].co);
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[ml_a->v].co);
-            copy_v3_v3(GPU_vertbuf_raw_step(&pos_step), mvert[ml_b->v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[ml_start->v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[ml_a->v].co);
+            copy_v3_v3(gpu_vertbuf_raw_step(&pos_step), mvert[ml_b->v].co);
             vbo_len_used += 3;
 
             ml_a++;
@@ -122,16 +121,16 @@ void ED_draw_object_facemap(Depsgraph *depsgraph,
     }
 
     if (vbo_len_capacity != vbo_len_used) {
-      GPU_vertbuf_data_resize(vbo_pos, vbo_len_used);
+      gpu_vertbuf_data_resize(vbo_pos, vbo_len_used);
     }
 
-    GPUBatch *draw_batch = GPU_batch_create(GPU_PRIM_TRIS, vbo_pos, NULL);
-    GPU_batch_program_set_builtin(draw_batch, GPU_SHADER_3D_UNIFORM_COLOR);
-    GPU_batch_uniform_4fv(draw_batch, "color", col);
-    GPU_batch_draw(draw_batch);
-    GPU_batch_discard(draw_batch);
-    GPU_vertbuf_discard(vbo_pos);
+    GPUBatch *draw_batch = gpu_batch_create(GPU_PRIM_TRIS, vbo_pos, NULL);
+    gpu_batch_program_set_builtin(draw_batch, GPU_SHADER_3D_UNIFORM_COLOR);
+    gpu_batch_uniform_4fv(draw_batch, "color", col);
+    gpu_batch_draw(draw_batch);
+    gpu_batch_discard(draw_batch);
+    gpu_vertbuf_discard(vbo_pos);
 
-    GPU_blend(GPU_BLEND_NONE);
+    gpu_blend(GPU_BLEND_NONE);
   }
 }
