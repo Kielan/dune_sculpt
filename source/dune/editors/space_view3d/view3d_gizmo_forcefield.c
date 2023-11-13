@@ -1,45 +1,42 @@
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.h"
-#include "BKE_layer.h"
+#include "dune_cxt.h"
+#include "dune_layer.h"
 
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
+#include "types_obj_force.h"
+#include "types_obj.h"
 
-#include "ED_gizmo_library.h"
-#include "ED_screen.h"
+#include "ed_gizmo_lib.h"
+#include "ed_screen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "view3d_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Force Field Gizmos
- * \{ */
-
-static bool WIDGETGROUP_forcefield_poll(const bContext *C, wmGizmoGroupType *UNUSED(gzgt))
+/* Force Field Gizmos */
+static bool WIDGETGROUP_forcefield_poll(const Cxt *C, WinGizmoGroupType *UNUSED(gzgt))
 {
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_win_view3d(C);
 
-  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CONTEXT)) {
+  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CXT)) {
     return false;
   }
   if ((v3d->gizmo_show_empty & V3D_GIZMO_SHOW_EMPTY_FORCE_FIELD) == 0) {
     return false;
   }
 
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Base *base = BASACT(view_layer);
   if (base && BASE_SELECTABLE(v3d, base)) {
-    Object *ob = base->object;
+    Obj *ob = base->obj;
     if (ob->pd && ob->pd->forcefield) {
       return true;
     }
@@ -47,57 +44,57 @@ static bool WIDGETGROUP_forcefield_poll(const bContext *C, wmGizmoGroupType *UNU
   return false;
 }
 
-static void WIDGETGROUP_forcefield_setup(const bContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_forcefield_setup(const Cxt *UNUSED(C), WinGizmoGroup *gzgroup)
 {
   /* only wind effector for now */
-  wmGizmoWrapper *wwrapper = MEM_mallocN(sizeof(wmGizmoWrapper), __func__);
+  WinGizmoWrapper *wwrapper = mem_malloc(sizeof(WinGizmoWrapper), __func__);
   gzgroup->customdata = wwrapper;
 
-  wwrapper->gizmo = WM_gizmo_new("GIZMO_GT_arrow_3d", gzgroup, NULL);
-  wmGizmo *gz = wwrapper->gizmo;
-  RNA_enum_set(gz->ptr, "transform", ED_GIZMO_ARROW_XFORM_FLAG_CONSTRAINED);
-  ED_gizmo_arrow3d_set_ui_range(gz, -200.0f, 200.0f);
-  ED_gizmo_arrow3d_set_range_fac(gz, 6.0f);
+  wwrapper->gizmo = win_gizmo_new("GIZMO_GT_arrow_3d", gzgroup, NULL);
+  WinGizmo *gz = wwrapper->gizmo;
+  api_enum_set(gz->ptr, "transform", ED_GIZMO_ARROW_XFORM_FLAG_CONSTRAINED);
+  ed_gizmo_arrow3d_set_ui_range(gz, -200.0f, 200.0f);
+  ed_gizmo_arrow3d_set_range_fac(gz, 6.0f);
 
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
-  UI_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
 }
 
-static void WIDGETGROUP_forcefield_refresh(const bContext *C, wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_forcefield_refresh(const Cxt *C, WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = gzgroup->customdata;
-  wmGizmo *gz = wwrapper->gizmo;
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object *ob = OBACT(view_layer);
+  WinGizmoWrapper *wwrapper = gzgroup->customdata;
+  WinGizmo *gz = wwrapper->gizmo;
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Obj *ob = OBACT(view_layer);
   PartDeflect *pd = ob->pd;
 
   if (pd->forcefield == PFIELD_WIND) {
     const float size = (ob->type == OB_EMPTY) ? ob->empty_drawsize : 1.0f;
     const float ofs[3] = {0.0f, -size, 0.0f};
-    PointerRNA field_ptr;
+    ApiPtr field_ptr;
 
-    RNA_pointer_create(&ob->id, &RNA_FieldSettings, pd, &field_ptr);
-    WM_gizmo_set_matrix_location(gz, ob->obmat[3]);
-    WM_gizmo_set_matrix_rotation_from_z_axis(gz, ob->obmat[2]);
-    WM_gizmo_set_matrix_offset_location(gz, ofs);
-    WM_gizmo_set_flag(gz, WM_GIZMO_HIDDEN, false);
-    WM_gizmo_target_property_def_rna(gz, "offset", &field_ptr, "strength", -1);
+    api_ptr_create(&ob->id, &ApiFieldSettings, pd, &field_ptr);
+    win_gizmo_set_matrix_location(gz, ob->obmat[3]);
+    win_gizmo_set_matrix_rotation_from_z_axis(gz, ob->obmat[2]);
+    win_gizmo_set_matrix_offset_location(gz, ofs);
+    win_gizmo_set_flag(gz, WIN_GIZMO_HIDDEN, false);
+    win_gizmo_target_prop_def_api(gz, "offset", &field_ptr, "strength", -1);
   }
   else {
-    WM_gizmo_set_flag(gz, WM_GIZMO_HIDDEN, true);
+    win_gizmo_set_flag(gz, WIN_GIZMO_HIDDEN, true);
   }
 }
 
-void VIEW3D_GGT_force_field(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_force_field(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Force Field Widgets";
   gzgt->idname = "VIEW3D_GGT_force_field";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_PERSISTENT | WM_GIZMOGROUPTYPE_3D | WM_GIZMOGROUPTYPE_SCALE |
-                 WM_GIZMOGROUPTYPE_DEPTH_3D);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_PERSISTENT | WIN_GIZMOGROUPTYPE_3D | WIN_GIZMOGROUPTYPE_SCALE |
+                 WIN_GIZMOGROUPTYPE_DEPTH_3D);
 
   gzgt->poll = WIDGETGROUP_forcefield_poll;
   gzgt->setup = WIDGETGROUP_forcefield_setup;
-  gzgt->setup_keymap = WM_gizmogroup_setup_keymap_generic_maybe_drag;
+  gzgt->setup_keymap = win_gizmogroup_setup_keymap_generic_maybe_drag;
   gzgt->refresh = WIDGETGROUP_forcefield_refresh;
 }
