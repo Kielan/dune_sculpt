@@ -56,7 +56,7 @@
 #include "api_access.h"
 
 #include "ui.h"
-#include "ui_resources.h
+#include "ui_resources.h"
 //include "BPY_extern.h"
 
 #include "graph.h"
@@ -1838,68 +1838,68 @@ void ed_spacetype_view3d(void)
   art->free = view3d_main_rgn_free;
   art->duplicate = view3d_main_rgn_duplicate;
   art->listener = view3d_main_rgn_listener;
-  art->message_subscribe = view3d_main_rgn_msg_sub;
+  art->msg_sub = view3d_main_rgn_msg_sub;
   art->cursor = view3d_main_rgn_cursor;
-  art->lock = 1; /* can become flag, see BKE_spacedata_draw_locks */
+  art->lock = 1; /* can become flag, see dune_spacedata_draw_locks */
   lib_addhead(&st->rgntypes, art);
 
-  /* regions: listview/btns */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d buttons region");
+  /* rgns: listview/btns */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d btns rgn");
   art->regionid = RGN_TYPE_UI;
-  art->prefsizex = UI_SIDEBAR_PANEL_WIDTH;
+  art->prefsizex = UI_SIDEBAR_PNL_WIDTH;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_FRAMES;
-  art->listener = view3d_buttons_region_listener;
-  art->message_subscribe = ED_area_do_mgs_subscribe_for_tool_ui;
-  art->init = view3d_buttons_region_init;
-  art->layout = view3d_buttons_region_layout;
-  art->draw = ED_region_panels_draw;
-  LIB_addhead(&st->regiontypes, art);
+  art->listener = view3d_btns_rgn_listener;
+  art->msg_sub = ed_area_do_mgs_sub_for_tool_ui;
+  art->init = view3d_btns_rgn_init;
+  art->layout = view3d_btns_rgn_layout;
+  art->draw = ed_rgn_pnls_draw;
+  lib_addhead(&st->rhntypes, art);
 
-  view3d_buttons_register(art);
+  view3d_btns_register(art);
 
-  /* regions: tool(bar) */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d tools region");
-  art->regionid = RGN_TYPE_TOOLS;
+  /* rgns: tool(bar) */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d tools rgns");
+  art->rgnid = RGN_TYPE_TOOLS;
   art->prefsizex = 58; /* XXX */
   art->prefsizey = 50; /* XXX */
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_FRAMES;
-  art->listener = view3d_buttons_region_listener;
-  art->message_subscribe = ED_region_generic_tools_region_message_subscribe;
-  art->snap_size = ED_region_generic_tools_region_snap_size;
-  art->init = view3d_tools_region_init;
-  art->draw = view3d_tools_region_draw;
-  LIB_addhead(&st->regiontypes, art);
+  art->listener = view3d_btns_rgn_listener;
+  art->msg_sub = ed_rgn_generic_tools_rgn_msg_sub;
+  art->snap_size = ed_rgn_generic_tools_rgns_snap_size;
+  art->init = view3d_tools_rgn_init;
+  art->draw = view3d_tools_rgn_draw;
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: tool header */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d tool header region");
+  /* rgns: tool header */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d tool header rgn");
   art->regionid = RGN_TYPE_TOOL_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
-  art->listener = view3d_header_region_listener;
-  art->message_subscribe = ED_area_do_mgs_subscribe_for_tool_header;
-  art->init = view3d_header_region_init;
-  art->draw = view3d_header_region_draw;
-  LIB_addhead(&st->regiontypes, art);
+  art->listener = view3d_header_rgn_listener;
+  art->msg_sub = ed_area_do_mgs_sub_for_tool_header;
+  art->init = view3d_header_rgn_init;
+  art->draw = view3d_header_rgn_draw;
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: header */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d header region");
-  art->regionid = RGN_TYPE_HEADER;
+  /* rgns: header */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d header rgn");
+  art->rgnid = RGN_TYPE_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
-  art->listener = view3d_header_region_listener;
-  art->message_subscribe = view3d_header_region_message_subscribe;
-  art->init = view3d_header_region_init;
-  art->draw = view3d_header_region_draw;
-  LIB_addhead(&st->regiontypes, art);
+  art->listener = view3d_header_rgn_listener;
+  art->msg_sub = view3d_header_rgn_meg_sub;
+  art->init = view3d_header_rgn_init;
+  art->draw = view3d_header_rgn_draw;
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: hud */
-  art = ED_area_type_hud(st->spaceid);
-  LIB_addhead(&st->regiontypes, art);
+  /* rgns: hud */
+  art = ed_area_type_hud(st->spaceid);
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: xr */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d xr region");
-  art->regionid = RGN_TYPE_XR;
-  LIB_addhead(&st->regiontypes, art);
+  /* rgns: xr */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d xr rgn");
+  art->rgnid = RGN_TYPE_XR;
+  lib_addhead(&st->rgntypes, art);
 
-  DUNE_spacetype_register(st);
+  dune_spacetype_register(st);
 }
