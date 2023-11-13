@@ -515,7 +515,7 @@ static short v3d_cursor_snap_elements(V3DSnapCursorState *snap_state, Scene *sce
   return snap_elements;
 }
 
-static void v3d_cursor_snap_context_ensure(Scene *scene)
+static void v3d_cursor_snap_cxt_ensure(Scene *scene)
 {
   SnapCursorDataIntern *data_intern = &g_data_intern;
   if (data_intern->snap_cxt_v3d && (data_intern->scene != scene)) {
@@ -647,7 +647,7 @@ static void v3d_cursor_snap_update(V3DSnapCursorState *state,
 
     /* Non-orthogonal matrices cause the preview and final result not to match.
      * While making orthogonal doesn't always work well (especially with gimbal orientation for
-     * e.g.) it's a corner case, without better alternatives as objects don't support shear. */
+     * e.g.) it's a corner case, without better alternatives as objs don't support shear. */
     orthogonalize_m3(omat, state->plane_axis);
 
     if (orient_surface) {
@@ -936,16 +936,16 @@ V3DSnapCursorData *ed_view3d_cursor_snap_data_get(V3DSnapCursorState *state,
       if (!state) {
         state = ed_view3d_cursor_snap_state_get();
       }
-      v3d_cursor_snap_update(state, C, wm, depsgraph, scene, region, v3d, x, y);
+      v3d_cursor_snap_update(state, C, wm, graph, scene, rgn, v3d, x, y);
     }
   }
 
   return &data_intern->snap_data;
 }
 
-struct SnapObjectContext *ED_view3d_cursor_snap_cxt_ensure(Scene *scene)
+struct SnapObjCxt *ed_view3d_cursor_snap_cxt_ensure(Scene *scene)
 {
   SnapCursorDataIntern *data_intern = &g_data_intern;
-  v3d_cursor_snap_context_ensure(scene);
-  return data_intern->snap_context_v3d;
+  v3d_cursor_snap_cxt_ensure(scene);
+  return data_intern->snap_cxt_v3d;
 }
