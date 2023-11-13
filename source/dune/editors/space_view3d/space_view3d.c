@@ -763,103 +763,87 @@ static void view3d_id_path_drop_copy(WinDrag *drag, WinDropBox *drop)
 
 static void view3d_lightcache_update(Cxt *C)
 {
-  PointerRNA op_ptr;
-
-  Scene *scene = CTX_data_scene(C);
-
-  if (!BKE_scene_uses_blender_eevee(scene)) {
-    /* Only do auto bake if eevee is the active engine */
-    return;
-  }
-
-  wmOperatorType *ot = WM_operatortype_find("SCENE_OT_light_cache_bake", true);
-  WM_operator_properties_create_ptr(&op_ptr, ot);
-  RNA_int_set(&op_ptr, "delay", 200);
-  RNA_enum_set_identifier(C, &op_ptr, "subset", "DIRTY");
-
-  WM_operator_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, &op_ptr, NULL);
-
-  WM_operator_properties_free(&op_ptr);
+  return;
 }
 
-/* region dropbox definition */
+/* rgn dropbox def */
 static void view3d_dropboxes(void)
 {
-  ListBase *lb = WM_dropboxmap_find("View3D", SPACE_VIEW3D, RGN_TYPE_WINDOW);
+  List *list = win_dropboxmap_find("View3D", SPACE_VIEW3D, RGN_TYPE_WIN);
 
-  struct wmDropBox *drop;
-  drop = WM_dropbox_add(lb,
-                        "OBJECT_OT_add_named",
+  struct WinDropBox *drop;
+  drop = win_dropbox_add(list,
+                        "OBJ_OT_add_named",
                         view3d_ob_drop_poll_local_id,
                         view3d_ob_drop_copy_local_id,
-                        WM_drag_free_imported_drag_ID,
+                        win_drag_free_imported_drag_id,
                         NULL);
 
-  drop->draw = WM_drag_draw_item_name_fn;
+  drop->draw = win_drag_draw_item_name_fn;
   drop->draw_activate = view3d_ob_drop_draw_activate;
   drop->draw_deactivate = view3d_ob_drop_draw_deactivate;
 
-  drop = WM_dropbox_add(lb,
-                        "OBJECT_OT_transform_to_mouse",
+  drop = win_dropbox_add(list,
+                        "OBJ_OT_transform_to_mouse",
                         view3d_ob_drop_poll_external_asset,
                         view3d_ob_drop_copy_external_asset,
-                        WM_drag_free_imported_drag_ID,
+                        win_drag_free_imported_drag_id,
                         NULL);
 
-  drop->draw = WM_drag_draw_item_name_fn;
+  drop->draw = win_drag_draw_item_name_fn;
   drop->draw_activate = view3d_ob_drop_draw_activate;
   drop->draw_deactivate = view3d_ob_drop_draw_deactivate;
 
-  WM_dropbox_add(lb,
-                 "OBJECT_OT_drop_named_material",
+  win_dropbox_add(list,
+                 "OBJ_OT_drop_named_material",
                  view3d_mat_drop_poll,
                  view3d_id_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  view3d_mat_drop_tooltip);
-  WM_dropbox_add(lb,
+  win_dropbox_add(list,
                  "VIEW3D_OT_background_image_add",
                  view3d_ima_bg_drop_poll,
                  view3d_id_path_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  NULL);
-  WM_dropbox_add(lb,
-                 "OBJECT_OT_drop_named_image",
+  win_dropbox_add(list,
+                 "OBJ_OT_drop_named_image",
                  view3d_ima_empty_drop_poll,
                  view3d_id_path_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  NULL);
-  WM_dropbox_add(lb,
-                 "OBJECT_OT_volume_import",
+  win_dropbox_add(list,
+                 "OBJ_OT_volume_import",
                  view3d_volume_drop_poll,
                  view3d_id_path_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  NULL);
-  WM_dropbox_add(lb,
-                 "OBJECT_OT_collection_instance_add",
+  win_dropbox_add(list,
+                 "OBJ_OT_collection_instance_add",
                  view3d_collection_drop_poll,
                  view3d_collection_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  NULL);
-  WM_dropbox_add(lb,
-                 "OBJECT_OT_data_instance_add",
+  28'_dropbox_add(list,
+                 "OBJ_OT_data_instance_add",
                  view3d_object_data_drop_poll,
                  view3d_id_drop_copy_with_type,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  view3d_object_data_drop_tooltip);
-  WM_dropbox_add(lb,
+  win_dropbox_add(list,
                  "VIEW3D_OT_drop_world",
                  view3d_world_drop_poll,
                  view3d_id_drop_copy,
-                 WM_drag_free_imported_drag_ID,
+                 win_drag_free_imported_drag_id,
                  NULL);
 }
 
 static void view3d_widgets(void)
 {
-  wmGizmoMapType *gzmap_type = WM_gizmomaptype_ensure(
-      &(const struct wmGizmoMapType_Params){SPACE_VIEW3D, RGN_TYPE_WINDOW});
+  WinGizmoMapType *gzmap_type = win_gizmomaptype_ensure(
+      &(const struct WinGizmoMapType_Params){SPACE_VIEW3D, RGN_TYPE_WINDOW});
 
-  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_xform_gizmo_context);
+  win_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_xform_gizmo_cxt);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_spot);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_area);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_target);
@@ -867,7 +851,7 @@ static void view3d_widgets(void)
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_camera);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_camera_view);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_empty_image);
-  /* TODO(campbell): Not working well enough, disable for now. */
+  /* TODO: Not working well enough, disable for now. */
 #if 0
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_armature_spline);
 #endif
@@ -876,8 +860,8 @@ static void view3d_widgets(void)
   WM_gizmogrouptype_append(VIEW3D_GGT_xform_cage);
   WM_gizmogrouptype_append(VIEW3D_GGT_xform_shear);
   WM_gizmogrouptype_append(VIEW3D_GGT_xform_extrude);
-  WM_gizmogrouptype_append(VIEW3D_GGT_mesh_preselect_elem);
-  WM_gizmogrouptype_append(VIEW3D_GGT_mesh_preselect_edgering);
+  WM_gizmogrouptype_append(VIEW3D_GGT_mesh_presel_elem);
+  WM_gizmogrouptype_append(VIEW3D_GGT_mesh_presel_edgering);
   WM_gizmogrouptype_append(VIEW3D_GGT_tool_generic_handle_normal);
   WM_gizmogrouptype_append(VIEW3D_GGT_tool_generic_handle_free);
 
@@ -886,48 +870,48 @@ static void view3d_widgets(void)
 
   WM_gizmogrouptype_append(VIEW3D_GGT_placement);
 
-  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_navigate);
-  WM_gizmotype_append(VIEW3D_GT_navigate_rotate);
+  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_nav);
+  WM_gizmotype_append(VIEW3D_GT_nav_rotate);
 }
 
-/* type callback, not region itself */
-static void view3d_main_region_free(ARegion *region)
+/* type cb, not rgn itself */
+static void view3d_main_rgn_free(ARgn *rgn)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   if (rv3d) {
     if (rv3d->localvd) {
-      MEM_freeN(rv3d->localvd);
+      mem_free(rv3d->localvd);
     }
     if (rv3d->clipbb) {
-      MEM_freeN(rv3d->clipbb);
+      mem_free(rv3d->clipbb);
     }
 
     if (rv3d->render_engine) {
-      RE_engine_free(rv3d->render_engine);
+      render_engine_free(rv3d->render_engine);
     }
 
     if (rv3d->sms) {
-      MEM_freeN(rv3d->sms);
+      mem_free(rv3d->sms);
     }
 
-    MEM_freeN(rv3d);
-    region->regiondata = NULL;
+    mem_free(rv3d);
+    rgn->rgndata = NULL;
   }
 }
 
-/* copy regiondata */
-static void *view3d_main_region_duplicate(void *poin)
+/* copy rgndata */
+static void *view3d_main_rgn_duplicate(void *poin)
 {
   if (poin) {
-    RegionView3D *rv3d = poin, *new;
+    RgnView3D *rv3d = poin, *new;
 
-    new = MEM_dupallocN(rv3d);
+    new = mem_dupalloc(rv3d);
     if (rv3d->localvd) {
-      new->localvd = MEM_dupallocN(rv3d->localvd);
+      new->localvd = mem_dupalloc(rv3d->localvd);
     }
     if (rv3d->clipbb) {
-      new->clipbb = MEM_dupallocN(rv3d->clipbb);
+      new->clipbb = mem_dupalloc(rv3d->clipbb);
     }
 
     new->render_engine = NULL;
@@ -939,63 +923,63 @@ static void *view3d_main_region_duplicate(void *poin)
   return NULL;
 }
 
-static void view3d_main_region_listener(const wmRegionListenerParams *params)
+static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
 {
-  wmWindow *window = params->window;
+  Win *win = params->win;
   ScrArea *area = params->area;
-  ARegion *region = params->region;
-  wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  WinNotifier *winn = params->notifier;
   const Scene *scene = params->scene;
   View3D *v3d = area->spacedata.first;
-  RegionView3D *rv3d = region->regiondata;
-  wmGizmoMap *gzmap = region->gizmo_map;
+  RgnView3D *rv3d = rgn->rgndata;
+  WinGizmoMap *gzmap = rgn->gizmo_map;
 
-  /* context changes */
-  switch (wmn->category) {
+  /* czt changes */
+  switch (winn->category) {
     case NC_WM:
-      if (ELEM(wmn->data, ND_UNDO)) {
-        WM_gizmomap_tag_refresh(gzmap);
+      if (ELEM(winn->data, ND_UNDO)) {
+        win_gizmomap_tag_refresh(gzmap);
       }
-      else if (ELEM(wmn->data, ND_XR_DATA_CHANGED)) {
+      else if (ELEM(winn->data, ND_XR_DATA_CHANGED)) {
         /* Only cause a redraw if this a VR session mirror. Should more features be added that
-         * require redraws, we could pass something to wmn->reference, e.g. the flag value. */
+         * require redraws, we could pass something to winn->ref, e.g. the flag value. */
         if (v3d->flag & V3D_XR_SESSION_MIRROR) {
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
         }
       }
       break;
-    case NC_ANIMATION:
-      switch (wmn->data) {
+    case NC_ANIM:
+      switch (winn->data) {
         case ND_KEYFRAME_PROP:
         case ND_NLA_ACTCHANGE:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_NLA:
         case ND_KEYFRAME:
-          if (ELEM(wmn->action, NA_EDITED, NA_ADDED, NA_REMOVED)) {
-            ED_region_tag_redraw(region);
+          if (ELEM(winn->action, NA_EDITED, NA_ADDED, NA_REMOVED)) {
+            ed_rgn_tag_redraw(rgn);
           }
           break;
         case ND_ANIMCHAN:
-          if (ELEM(wmn->action, NA_EDITED, NA_ADDED, NA_REMOVED, NA_SELECTED)) {
-            ED_region_tag_redraw(region);
+          if (ELEM(winn->action, NA_EDITED, NA_ADDED, NA_REMOVED, NA_SELECTED)) {
+            ED_rhn_tag_redraw(rgn);
           }
           break;
       }
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_SCENEBROWSE:
         case ND_LAYER_CONTENT:
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_LAYER:
-          if (wmn->reference) {
-            BKE_screen_view3d_sync(v3d, wmn->reference);
+          if (winn->ref) {
+            dune_screen_view3d_sync(v3d, winn->ref);
           }
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_OB_ACTIVE:
         case ND_OB_SELECT:
@@ -1006,78 +990,78 @@ static void view3d_main_region_listener(const wmRegionListenerParams *params)
         case ND_RENDER_OPTIONS:
         case ND_MARKERS:
         case ND_MODE:
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_WORLD:
           /* handled by space_view3d_listener() for v3d access */
           break;
         case ND_DRAW_RENDER_VIEWPORT: {
-          if (v3d->camera && (scene == wmn->reference)) {
+          if (v3d->camera && (scene == winn->ref)) {
             if (rv3d->persp == RV3D_CAMOB) {
-              ED_region_tag_redraw(region);
+              ed_rgn_tag_redraw(rgn);
             }
           }
           break;
         }
       }
-      if (wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_EDITED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_OBJECT:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_BONE_ACTIVE:
         case ND_BONE_SELECT:
         case ND_TRANSFORM:
         case ND_POSE:
         case ND_DRAW:
-        case ND_MODIFIER:
+        case ND_MOD:
         case ND_SHADERFX:
         case ND_CONSTRAINT:
         case ND_KEYS:
         case ND_PARTICLE:
         case ND_POINTCACHE:
         case ND_LOD:
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_DRAW_ANIMVIZ:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
-      switch (wmn->action) {
+      switch (win->action) {
         case NA_ADDED:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_GEOM:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_SELECT: {
-          WM_gizmomap_tag_refresh(gzmap);
+          won_gizmomap_tag_refresh(gzmap);
           ATTR_FALLTHROUGH;
         }
         case ND_DATA:
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_VERTEX_GROUP:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
-      switch (wmn->action) {
+      switch (winn->action) {
         case NA_EDITED:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_CAMERA:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_DRAW_RENDER_VIEWPORT: {
-          if (v3d->camera && (v3d->camera->data == wmn->reference)) {
+          if (v3d->camera && (v3d->camera->data == winn->ref)) {
             if (rv3d->persp == RV3D_CAMOB) {
-              ED_region_tag_redraw(region);
+              ed_rgn_tag_redraw(rgn);
             }
           }
           break;
@@ -1086,131 +1070,128 @@ static void view3d_main_region_listener(const wmRegionListenerParams *params)
       break;
     case NC_GROUP:
       /* all group ops for now */
-      ED_region_tag_redraw(region);
+      ed_rgn_tag_redraw(rgn);
       break;
     case NC_BRUSH:
-      switch (wmn->action) {
+      switch (winn->action) {
         case NA_EDITED:
-          ED_region_tag_redraw_cursor(region);
+          ed_rgn_tag_redraw_cursor(rgn);
           break;
         case NA_SELECTED:
-          /* used on brush changes - needed because 3d cursor
-           * has to be drawn if clone brush is selected */
-          ED_region_tag_redraw(region);
+          /* used on brush changes needed bc 3d cursor
+           * has to be drawn if clone brush is sel */
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_MATERIAL:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_SHADING:
         case ND_NODES:
-          /* TODO(sergey): This is a bit too much updates, but needed to
+          /* TODO: This is a bit too much updates, but needed to
            * have proper material drivers update in the viewport.
-           *
-           * How to solve?
-           */
-          ED_region_tag_redraw(region);
+           * How to solve?  */
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_SHADING_DRAW:
         case ND_SHADING_LINKS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_WORLD:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_WORLD_DRAW:
           /* handled by space_view3d_listener() for v3d access */
           break;
         case ND_WORLD:
           /* Needed for updating world materials */
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_LAMP:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_LIGHTING:
-          /* TODO(sergey): This is a bit too much, but needed to
-           * handle updates from new depsgraph.
-           */
-          ED_region_tag_redraw(region);
+          /* TODO: Too much but needed to
+           * handle updates from new graph.  */
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_LIGHTING_DRAW:
-          ED_region_tag_redraw(region);
-          WM_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
+          win_gizmomap_tag_refresh(gzmap);
           break;
       }
       break;
     case NC_LIGHTPROBE:
-      ED_area_tag_refresh(area);
+      ed_area_tag_refresh(area);
       break;
     case NC_IMAGE:
       /* this could be more fine grained checks if we had
-       * more context than just the region */
-      ED_region_tag_redraw(region);
+       * more cxt than just the rgn */
+      ed_rgn_tag_redraw(rgn);
       break;
     case NC_TEXTURE:
       /* same as above */
-      ED_region_tag_redraw(region);
+      ed_rgn_tag_redraw(rgn);
       break;
     case NC_MOVIECLIP:
-      if (wmn->data == ND_DISPLAY || wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_DISPLAY || wmn->action == NA_EDITED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_SPACE:
-      if (wmn->data == ND_SPACE_VIEW3D) {
-        if (wmn->subtype == NS_VIEW3D_GPU) {
+      if (winn->data == ND_SPACE_VIEW3D) {
+        if (winn->subtype == NS_VIEW3D_GPU) {
           rv3d->rflag |= RV3D_GPULIGHT_UPDATE;
         }
-        else if (wmn->subtype == NS_VIEW3D_SHADING) {
+        else if (winn->subtype == NS_VIEW3D_SHADING) {
 #ifdef WITH_XR_OPENXR
-          ED_view3d_xr_shading_update(G_MAIN->wm.first, v3d, scene);
+          ed_view3d_xr_shading_update(G_MAIN->win.first, v3d, scene);
 #endif
 
-          ViewLayer *view_layer = WM_window_get_active_view_layer(window);
-          Depsgraph *depsgraph = BKE_scene_get_depsgraph(scene, view_layer);
-          if (depsgraph) {
-            ED_render_view3d_update(depsgraph, window, area, true);
+          ViewLayer *view_layer = win_get_active_view_layer(win);
+          Graph *graph = dune_scene_get_graph(scene, view_layer);
+          if (graph) {
+            ed_render_view3d_update(graph, win, area, true);
           }
         }
-        ED_region_tag_redraw(region);
-        WM_gizmomap_tag_refresh(gzmap);
+        ed_rgn_tag_redraw(rgn);
+        win_gizmomap_tag_refresh(gzmap);
       }
       break;
     case NC_ID:
-      if (ELEM(wmn->action, NA_RENAME, NA_EDITED, NA_ADDED, NA_REMOVED)) {
-        ED_region_tag_redraw(region);
+      if (ELEM(winn->action, NA_RENAME, NA_EDITED, NA_ADDED, NA_REMOVED)) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_SCREEN:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_ANIMPLAY:
         case ND_SKETCH:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_LAYOUTBROWSE:
         case ND_LAYOUTDELETE:
         case ND_LAYOUTSET:
-          WM_gizmomap_tag_refresh(gzmap);
-          ED_region_tag_redraw(region);
+          win_gizmomap_tag_refresh(gzmap);
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_LAYER:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
 
       break;
-    case NC_GPENCIL:
-      if (wmn->data == ND_DATA || ELEM(wmn->action, NA_EDITED, NA_SELECTED)) {
-        ED_region_tag_redraw(region);
+    case NC_PEN:
+      if (winn->data == ND_DATA || ELEM(winn->action, NA_EDITED, NA_SELECTED)) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
   }
 }
 
-static void view3d_main_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
+static void view3d_main_rgn_msg_sub(const wmRegionMessageSubscribeParams *params)
 {
   struct wmMsgBus *mbus = params->message_bus;
   const bContext *C = params->context;
