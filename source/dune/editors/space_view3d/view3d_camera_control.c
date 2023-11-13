@@ -153,7 +153,7 @@ struct View3DCameraControl *ed_view3d_cameracontrol_acquire(Graph *graph,
     /* Done with correcting for the dist */
   }
 
-  ED_view3d_to_m4(vctrl->view_mat_prev, rv3d->ofs, rv3d->viewquat, rv3d->dist);
+  ed_view3d_to_m4(vctrl->view_mat_prev, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 
   return vctrl;
 }
@@ -215,7 +215,6 @@ void ed_view3d_cameracontrol_update(View3DCameraControl *vctrl,
 {
   /* We are in camera view so apply the view offset and rotation to the view matrix
    * and set the camera to the view. */
-
   Scene *scene = vctrl->cxt_scene;
   View3D *v3d = vctrl->cxt_v3d;
   RgnView3D *rv3d = vctrl->cxt_rv3d;
