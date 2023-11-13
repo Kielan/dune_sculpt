@@ -1039,7 +1039,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
     case NC_GEOM:
       switch (winn->data) {
         case ND_SELECT: {
-          won_gizmomap_tag_refresh(gzmap);
+          win_gizmomap_tag_refresh(gzmap);
           ATTR_FALLTHROUGH;
         }
         case ND_DATA:
@@ -1191,79 +1191,78 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
   }
 }
 
-static void view3d_main_rgn_msg_sub(const wmRegionMessageSubscribeParams *params)
+static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
-  struct wmMsgBus *mbus = params->message_bus;
-  const bContext *C = params->context;
+  struct WinMsgBus *mbus = params->msg_bus;
+  const Cxt *C = params->context;
   ScrArea *area = params->area;
-  ARegion *region = params->region;
+  ARgn *rgn = params->rgn;
 
-  /* Developer NOTE: there are many properties that impact 3D view drawing,
-   * so instead of subscribing to individual properties, just subscribe to types
+  /* Are many props that impact 3Dview drawing,
+   * instead of subbing to individual props, sub to types
    * accepting some redundant redraws.
-   *
-   * For other space types we might try avoid this, keep the 3D view as an exceptional case! */
-  wmMsgParams_RNA msg_key_params = {{0}};
+   * For other space types we might try avoid this, keep the 3Dview as an exceptional case! */
+  WinMsgParamsApi msg_key_params = {{0}};
 
   /* Only subscribe to types. */
-  StructRNA *type_array[] = {
-      &RNA_Window,
+  ApiStruct *type_array[] = {
+      &ApiWin,
 
-      /* These object have properties that impact drawing. */
-      &RNA_AreaLight,
-      &RNA_Camera,
-      &RNA_Light,
-      &RNA_Speaker,
-      &RNA_SunLight,
+      /* These object have props that impact drawing */
+      &ApiAreaLight,
+      &ApiCamera,
+      &ApiLight,
+      &ApiSpeaker,
+      &ApiSunLight,
 
-      /* General types the 3D view depends on. */
-      &RNA_Object,
-      &RNA_UnitSettings, /* grid-floor */
+      /* General types the 3Dview deps on */
+      &ApiObj,
+      &ApiUnitSettings, /* grid-floor */
 
-      &RNA_View3DCursor,
-      &RNA_View3DOverlay,
-      &RNA_View3DShading,
-      &RNA_World,
+      &ApiView3DCursor,
+      &ApiView3DOverlay,
+      &ApiView3DShading,
+      &ApiWorld,
   };
 
-  wmMsgSubscribeValue msg_sub_value_region_tag_redraw = {
-      .owner = region,
-      .user_data = region,
-      .notify = ED_region_do_msg_notify_tag_redraw,
+  WinMsgSubVal msg_sub_val_rgn_tag_redraw = {
+      .owner = rgn,
+      .user_data = rgn,
+      .notify = ed_rgn_do_msg_notify_tag_redraw,
   };
 
   for (int i = 0; i < ARRAY_SIZE(type_array); i++) {
     msg_key_params.ptr.type = type_array[i];
-    WM_msg_subscribe_rna_params(mbus, &msg_key_params, &msg_sub_value_region_tag_redraw, __func__);
+    win_msg_subscribe_api_params(mbus, &msg_key_params, &msg_sub_val_rgn_tag_redraw, __func__);
   }
 
-  /* Subscribe to a handful of other properties. */
-  RegionView3D *rv3d = region->regiondata;
+  /* Sub to a handful of other props */
+  RgnView3D *rv3d = rgn->rgndata;
 
-  WM_msg_subscribe_rna_anon_prop(mbus, RenderSettings, engine, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_prop(
-      mbus, RenderSettings, resolution_x, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_prop(
-      mbus, RenderSettings, resolution_y, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_prop(
-      mbus, RenderSettings, pixel_aspect_x, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_prop(
-      mbus, RenderSettings, pixel_aspect_y, &msg_sub_value_region_tag_redraw);
+  win_msg_sub_api_anon_prop(mbus, RenderSettings, engine, &msg_sub_value_rgn_tag_redraw);
+  win_msg_sub_api_anon_prop(
+      mbus, RenderSettings, resolution_x, &msg_sub_value_rgn_tag_redraw);
+  win_msg_sub_rna_anon_prop(
+      mbus, RenderSettings, resolution_y, &msg_sub_value_rgn_tag_redraw);
+  win_msg_sub_api_anon_prop(
+      mbus, RenderSettings, pixel_aspect_x, &msg_sub_val_rgn_tag_redraw);
+  win_msg_sub_api_anon_prop(
+      mbus, RenderSettings, pixel_aspect_y, &msg_sub_val_rgn_tag_redraw);
   if (rv3d->persp == RV3D_CAMOB) {
-    WM_msg_subscribe_rna_anon_prop(
-        mbus, RenderSettings, use_border, &msg_sub_value_region_tag_redraw);
+    win_msg_sub_api_anon_prop(
+        mbus, RenderSettings, use_border, &msg_sub_val_rgn_tag_redraw);
   }
 
-  WM_msg_subscribe_rna_anon_type(mbus, SceneEEVEE, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_type(mbus, SceneDisplay, &msg_sub_value_region_tag_redraw);
-  WM_msg_subscribe_rna_anon_type(mbus, ObjectDisplay, &msg_sub_value_region_tag_redraw);
+  win_msg_sub_api_anon_type(mbus, SceneEEVEE, &msg_sub_val_rgn_tag_redraw);
+  win_msg_sub_api_anon_type(mbus, SceneDisplay, &msg_sub_val_rgn_tag_redraw);
+  win_msg_sub_api_anon_type(mbus, ObjDisplay, &msg_sub_val_rgn_tag_redraw);
 
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object *obact = OBACT(view_layer);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Obj *obact = OBACT(view_layer);
   if (obact != NULL) {
     switch (obact->mode) {
       case OB_MODE_PARTICLE_EDIT:
-        WM_msg_subscribe_rna_anon_type(mbus, ParticleEdit, &msg_sub_value_region_tag_redraw);
+        win_msg_sub_api_anon_type(mbus, ParticleEdit, &msg_sub_value_rgn_tag_redraw);
         break;
       default:
         break;
@@ -1271,422 +1270,422 @@ static void view3d_main_rgn_msg_sub(const wmRegionMessageSubscribeParams *params
   }
 
   {
-    wmMsgSubscribeValue msg_sub_value_region_tag_refresh = {
-        .owner = region,
+    WinMsgSubVal msg_sub_value_rgn_tag_refresh = {
+        .owner = rgn,
         .user_data = area,
-        .notify = WM_toolsystem_do_msg_notify_tag_refresh,
+        .notify = win_toolsystem_do_msg_notify_tag_refresh,
     };
-    WM_msg_subscribe_rna_anon_prop(mbus, Object, mode, &msg_sub_value_region_tag_refresh);
-    WM_msg_subscribe_rna_anon_prop(mbus, LayerObjects, active, &msg_sub_value_region_tag_refresh);
+    WM_msg_subscribe_rna_anon_prop(mbus, Object, mode, &msg_sub_value_rgn_tag_refresh);
+    WM_msg_subscribe_rna_anon_prop(mbus, LayerObjects, active, &msg_sub_value_rgn_tag_refresh);
   }
 }
 
 /* concept is to retrieve cursor type context-less */
-static void view3d_main_region_cursor(wmWindow *win, ScrArea *area, ARegion *region)
+static void view3d_main_rgn_cursor(Win *win, ScrArea *area, ARgn *rgn)
 {
-  if (WM_cursor_set_from_tool(win, area, region)) {
+  if (win_cursor_set_from_tool(win, area, rgn)) {
     return;
   }
 
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
+  ViewLayer *view_layer = win_get_active_view_layer(win);
   Object *obedit = OBEDIT_FROM_VIEW_LAYER(view_layer);
   if (obedit) {
-    WM_cursor_set(win, WM_CURSOR_EDIT);
+    win_cursor_set(win, WIN_CURSOR_EDIT);
   }
   else {
-    WM_cursor_set(win, WM_CURSOR_DEFAULT);
+    win_cursor_set(win, WIN_CURSOR_DEFAULT);
   }
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void view3d_header_region_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void view3d_header_rgn_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
+  WinKeyMap *keymap = win_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
 
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  ED_region_header_init(region);
+  ed_rgn_header_init(rgn);
 }
 
-static void view3d_header_region_draw(const duneContext *C, ARegion *region)
+static void view3d_header_rgn_draw(const Cxt *C, ARgn *rgn)
 {
   ED_region_header(C, region);
 }
 
-static void view3d_header_region_listener(const wmRegionListenerParams *params)
+static void view3d_header_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  WinNotifier *winn = params->notifier;
 
-  /* context changes */
-  switch (wmn->category) {
+  /* cxt changes */
+  switch (winn->category) {
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_FRAME:
         case ND_OB_ACTIVE:
-        case ND_OB_SELECT:
+        case ND_OB_SEL:
         case ND_OB_VISIBLE:
         case ND_MODE:
         case ND_LAYER:
         case ND_TOOLSETTINGS:
         case ND_LAYER_CONTENT:
         case ND_RENDER_OPTIONS:
-          ED_region_tag_redraw(region);
+          es_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_SPACE:
-      if (wmn->data == ND_SPACE_VIEW3D) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_SPACE_VIEW3D) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
-    case NC_GPENCIL:
-      if (wmn->data & ND_GPENCIL_EDITMODE) {
-        ED_region_tag_redraw(region);
+    case NC_PEN:
+      if (winn->data & ND_PEN_EDITMODE) {
+        ee_rgn_tag_redraw(rgn);
       }
-      else if (wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      else if (winn->action == NA_EDITED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_BRUSH:
-      ED_region_tag_redraw(region);
+      ed_rgn_tag_redraw(rgn);
       break;
   }
 
     /* From topbar, which ones are needed? split per header? */
     /* Disable for now, re-enable if needed, or remove - campbell. */
 #if 0
-  /* context changes */
-  switch (wmn->category) {
+  /* cxt changes */
+  switch (winn->category) {
     case NC_WM:
-      if (wmn->data == ND_HISTORY) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_HISTORY) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_SCENE:
-      if (wmn->data == ND_MODE) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_MODE) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_SPACE:
-      if (wmn->data == ND_SPACE_VIEW3D) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_SPACE_VIEW3D) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
-    case NC_GPENCIL:
-      if (wmn->data == ND_DATA) {
-        ED_region_tag_redraw(region);
+    case NC_PEN:
+      if (winn->data == ND_DATA) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
   }
 #endif
 }
 
-static void view3d_header_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
+static void view3d_header_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
-  struct wmMsgBus *mbus = params->message_bus;
-  ARegion *region = params->region;
+  struct WinMsgBus *mbus = params->msg_bus;
+  ARgn *rgn = params->rgn;
 
-  wmMsgParams_API msg_key_params = {{0}};
+  WinMsgParamsApi msg_key_params = {{0}};
 
-  /* Only subscribe to types. */
+  /* Only sub to types. */
   StructAPI *type_array[] = {
-      &API_View3DShading,
+      &ApiView3DShading,
   };
 
-  wmMsgSubscribeValue msg_sub_value_region_tag_redraw = {
-      .owner = region,
-      .user_data = region,
-      .notify = ED_region_do_msg_notify_tag_redraw,
+  WinMsgSubVal msg_sub_val_rgn_tag_redraw = {
+      .owner = rgn,
+      .user_data = rgn,
+      .notify = ed_rgn_do_msg_notify_tag_redraw,
   };
 
   for (int i = 0; i < ARRAY_SIZE(type_array); i++) {
     msg_key_params.ptr.type = type_array[i];
-    WM_msg_subscribe_rna_params(mbus, &msg_key_params, &msg_sub_value_region_tag_redraw, __func__);
+    win_msg_sub_api_params(mbus, &msg_key_params, &msg_sub_val_rgn_tag_redraw, __func__);
   }
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void view3d_buttons_region_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void view3d_btn_rgn_init(WinMngr *wm, ARgn *rgn)
 {
   wmKeyMap *keymap;
 
-  ED_region_panels_init(wm, region);
+  ed_rgn_pnls_init(wm, rgn);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-void ED_view3d_buttons_region_layout_ex(const duneContext *C,
-                                        ARegion *region,
+void ed_view3d_btns_rgn_layout_ex(const Cxt *C,
+                                        ARgn *rgn,
                                         const char *category_override)
 {
-  const enum eContextObjectMode mode = CTX_data_mode_enum(C);
+  const enum eCxtObjMode mode = cxt_data_mode_enum(C);
 
-  const char *contexts_base[4] = {NULL};
-  contexts_base[0] = CTX_data_mode_string(C);
+  const char *cxts_base[4] = {NULL};
+  cxts_base[0] = cxt_data_mode_string(C);
 
-  const char **contexts = &contexts_base[1];
+  const char **cxts = &cxts_base[1];
 
   switch (mode) {
-    case CTX_MODE_EDIT_MESH:
-      ARRAY_SET_ITEMS(contexts, ".mesh_edit");
+    case CXT_MODE_EDIT_MESH:
+      ARRAY_SET_ITEMS(cxts, ".mesh_edit");
       break;
-    case CTX_MODE_EDIT_CURVE:
-      ARRAY_SET_ITEMS(contexts, ".curve_edit");
+    case CXT_MODE_EDIT_CURVE:
+      ARRAY_SET_ITEMS(cxts, ".curve_edit");
       break;
-    case CTX_MODE_EDIT_CURVES:
-      ARRAY_SET_ITEMS(contexts, ".curves_edit");
+    case CXT_MODE_EDIT_CURVES:
+      ARRAY_SET_ITEMS(cxts, ".curves_edit");
       break;
-    case CTX_MODE_EDIT_SURFACE:
-      ARRAY_SET_ITEMS(contexts, ".curve_edit");
+    case CXT_MODE_EDIT_SURFACE:
+      ARRAY_SET_ITEMS(cxts, ".curve_edit");
       break;
-    case CTX_MODE_EDIT_TEXT:
-      ARRAY_SET_ITEMS(contexts, ".text_edit");
+    case CXT_MODE_EDIT_TXT:
+      ARRAY_SET_ITEMS(cxts, ".text_edit");
       break;
-    case CTX_MODE_EDIT_ARMATURE:
-      ARRAY_SET_ITEMS(contexts, ".armature_edit");
+    case CXT_MODE_EDIT_ARMATURE:
+      ARRAY_SET_ITEMS(cxts, ".armature_edit");
       break;
-    case CTX_MODE_EDIT_METABALL:
-      ARRAY_SET_ITEMS(contexts, ".mball_edit");
+    case CXT_MODE_EDIT_METABALL:
+      ARRAY_SET_ITEMS(cxts, ".mball_edit");
       break;
-    case CTX_MODE_EDIT_LATTICE:
-      ARRAY_SET_ITEMS(contexts, ".lattice_edit");
+    case CXT_MODE_EDIT_LATTICE:
+      ARRAY_SET_ITEMS(cxts, ".lattice_edit");
       break;
-    case CTX_MODE_POSE:
-      ARRAY_SET_ITEMS(contexts, ".posemode");
+    case CXT_MODE_POSE:
+      ARRAY_SET_ITEMS(cxts, ".posemode");
       break;
-    case CTX_MODE_SCULPT:
-      ARRAY_SET_ITEMS(contexts, ".paint_common", ".sculpt_mode");
+    case CXT_MODE_SCULPT:
+      ARRAY_SET_ITEMS(cxts, ".paint_common", ".sculpt_mode");
       break;
-    case CTX_MODE_PAINT_WEIGHT:
-      ARRAY_SET_ITEMS(contexts, ".paint_common", ".weightpaint");
+    case CXT_MODE_PAINT_WEIGHT:
+      ARRAY_SET_ITEMS(cxts, ".paint_common", ".weightpaint");
       break;
-    case CTX_MODE_PAINT_VERTEX:
-      ARRAY_SET_ITEMS(contexts, ".paint_common", ".vertexpaint");
+    case CXT_MODE_PAINT_VERTEX:
+      ARRAY_SET_ITEMS(cxts, ".paint_common", ".vertexpaint");
       break;
-    case CTX_MODE_PAINT_TEXTURE:
-      ARRAY_SET_ITEMS(contexts, ".paint_common", ".imagepaint");
+    case CXT_MODE_PAINT_TEXTURE:
+      ARRAY_SET_ITEMS(cxts, ".paint_common", ".imagepaint");
       break;
-    case CTX_MODE_PARTICLE:
-      ARRAY_SET_ITEMS(contexts, ".paint_common", ".particlemode");
+    case CXT_MODE_PARTICLE:
+      ARRAY_SET_ITEMS(cxts, ".paint_common", ".particlemode");
       break;
-    case CTX_MODE_OBJECT:
-      ARRAY_SET_ITEMS(contexts, ".objectmode");
+    case CXT_MODE_OBJ:
+      ARRAY_SET_ITEMS(cxts, ".objmode");
       break;
-    case CTX_MODE_PAINT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_paint");
+    case CXT_MODE_PAINT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_paint");
       break;
-    case CTX_MODE_SCULPT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_sculpt");
+    case CXT_MODE_SCULPT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_sculpt");
       break;
-    case CTX_MODE_WEIGHT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_weight");
+    case CXT_MODE_WEIGHT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_weight");
       break;
-    case CTX_MODE_VERTEX_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_vertex");
+    case CXT_MODE_VERTEX_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_vertex");
       break;
-    case CTX_MODE_SCULPT_CURVES:
-      ARRAY_SET_ITEMS(contexts, ".curves_sculpt");
+    case CXT_MODE_SCULPT_CURVES:
+      ARRAY_SET_ITEMS(cxts, ".curves_sculpt");
       break;
     default:
       break;
   }
 
   switch (mode) {
-    case CTX_MODE_PAINT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_paint");
+    case CXT_MODE_PAINT_PEN:
+      ARRAY_SET_ITEMS(contexts, ".pen_paint");
       break;
-    case CTX_MODE_SCULPT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_sculpt");
+    case CXT_MODE_SCULPT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_sculpt");
       break;
-    case CTX_MODE_WEIGHT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_weight");
+    case CXT_MODE_WEIGHT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_weight");
       break;
-    case CTX_MODE_EDIT_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_edit");
+    case CXT_MODE_EDIT_PEN:
+      ARRAY_SET_ITEMS(cxts, ".pen_edit");
       break;
-    case CTX_MODE_VERTEX_GPENCIL:
-      ARRAY_SET_ITEMS(contexts, ".greasepencil_vertex");
+    case CXT_MODE_VERTEX_PEN:
+      ARRAY_SET_ITEMS(cxts, "pen_vertex");
       break;
     default:
       break;
   }
 
-  ListBase *paneltypes = &region->type->paneltypes;
+  List *pnltypes = &rgn->type->pnltypes;
 
   /* Allow drawing 3D view toolbar from non 3D view space type. */
   if (category_override != NULL) {
-    SpaceType *st = DUNE_spacetype_from_id(SPACE_VIEW3D);
-    ARegionType *art = DUNE_regiontype_from_id(st, RGN_TYPE_UI);
-    paneltypes = &art->paneltypes;
+    SpaceType *st = dune_spacetype_from_id(SPACE_VIEW3D);
+    ARgnType *art = dune_rgntype_from_id(st, RGN_TYPE_UI);
+    pnltypes = &art->pnltypes;
   }
 
-  ED_region_panels_layout_ex(C, region, paneltypes, contexts_base, category_override);
+  ed_rgn_pnls_layout_ex(C, rgn, pnltypes, cxts_base, category_override);
 }
 
-static void view3d_buttons_region_layout(const duneContext *C, ARegion *region)
+static void view3d_btns_rgn_layout(const Cxt *C, ARgn *rgn)
 {
-  ED_view3d_buttons_region_layout_ex(C, region, NULL);
+  ed_view3d_btns_rgn_layout_ex(C, region, NULL);
 }
 
-static void view3d_buttons_region_listener(const wmRegionListenerParams *params)
+static void view3d_btns_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  WinNotifier *winn = params->notifier;
 
-  /* context changes */
-  switch (wmn->category) {
-    case NC_ANIMATION:
+  /* cxt changes */
+  switch (winn->category) {
+    case NC_ANIM:
       switch (wmn->data) {
         case ND_KEYFRAME_PROP:
         case ND_NLA_ACTCHANGE:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
         case ND_NLA:
         case ND_KEYFRAME:
-          if (ELEM(wmn->action, NA_EDITED, NA_ADDED, NA_REMOVED)) {
-            ED_region_tag_redraw(region);
+          if (ELEM(winn->action, NA_EDITED, NA_ADDED, NA_REMOVED)) {
+            ed_rgn_tag_redraw(rgn);
           }
           break;
       }
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (win->data) {
         case ND_FRAME:
         case ND_OB_ACTIVE:
-        case ND_OB_SELECT:
+        case ND_OB_SEL:
         case ND_OB_VISIBLE:
         case ND_MODE:
         case ND_LAYER:
         case ND_LAYER_CONTENT:
         case ND_TOOLSETTINGS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
-      switch (wmn->action) {
+      switch (winn->action) {
         case NA_EDITED:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_OBJECT:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_BONE_ACTIVE:
         case ND_BONE_SELECT:
         case ND_TRANSFORM:
         case ND_POSE:
         case ND_DRAW:
         case ND_KEYS:
-        case ND_MODIFIER:
+        case ND_MOD:
         case ND_SHADERFX:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_GEOM:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_DATA:
         case ND_VERTEX_GROUP:
-        case ND_SELECT:
-          ED_region_tag_redraw(region);
+        case ND_SEL:
+          ed_rgn_tag_redraw(rgn);
           break;
       }
-      if (wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_EDITED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_TEXTURE:
     case NC_MATERIAL:
       /* for brush textures */
-      ED_region_tag_redraw(region);
+      es_rgn_tag_redraw(rgn);
       break;
     case NC_BRUSH:
-      /* NA_SELECTED is used on brush changes */
-      if (ELEM(wmn->action, NA_EDITED, NA_SELECTED)) {
-        ED_region_tag_redraw(region);
+      /* NA_SEL is used on brush changes */
+      if (ELEM(winn->action, NA_EDITED, NA_SELECTED)) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_SPACE:
-      if (wmn->data == ND_SPACE_VIEW3D) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_SPACE_VIEW3D) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_ID:
-      if (wmn->action == NA_RENAME) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_RENAME) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
-    case NC_GPENCIL:
-      if ((wmn->data & (ND_DATA | ND_GPENCIL_EDITMODE)) || (wmn->action == NA_EDITED)) {
-        ED_region_tag_redraw(region);
+    case NC_PEN:
+      if ((winn->data & (ND_DATA | ND_PEN_EDITMODE)) || (wmn->action == NA_EDITED)) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     case NC_IMAGE:
       /* Update for the image layers in texture paint. */
-      if (wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_EDITED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
-    case NC_WM:
-      if (wmn->data == ND_XR_DATA_CHANGED) {
-        ED_region_tag_redraw(region);
+    case NC_WIN:
+      if (winn->data == ND_XR_DATA_CHANGED) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
   }
 }
 
 /* add handlers, stuff you only do once or on area/region changes */
-static void view3d_tools_region_init(wmWindowManager *wm, ARegion *region)
+static void view3d_tools_rgn_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap;
+  WinKeyMap *keymap;
 
-  ED_region_panels_init(wm, region);
+  ed_rgn_pnls_init(wm, rgn);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void view3d_tools_region_draw(const duneContext *C, ARegion *region)
+static void view3d_tools_rgn_draw(const Cxt *C, ARgn *rgn)
 {
-  ED_region_panels_ex(C, region, (const char *[]){CTX_data_mode_string(C), NULL});
+  ed_rgn_pnls_ex(C, rgn, (const char *[]){cxt_data_mode_string(C), NULL});
 }
 
-/* area (not region) level listener */
-static void space_view3d_listener(const wmSpaceTypeListenerParams *params)
+/* area (not rgn) level listener */
+static void space_view3d_listener(const WinSpaceTypeListenerParams *params)
 {
   ScrArea *area = params->area;
-  wmNotifier *wmn = params->notifier;
+  WinNotifier *winn = params->notifier;
   View3D *v3d = area->spacedata.first;
 
   /* context changes */
-  switch (wmn->category) {
+  switch (winn->category) {
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_WORLD: {
           const bool use_scene_world = V3D_USES_SCENE_WORLD(v3d);
           if (v3d->flag2 & V3D_HIDE_OVERLAYS || use_scene_world) {
-            ED_area_tag_redraw_regiontype(area, RGN_TYPE_WINDOW);
+            ed_area_tag_redraw_rgntype(area, RGN_TYPE_WIN);
           }
           break;
         }
       }
       break;
     case NC_WORLD:
-      switch (wmn->data) {
+      switch (win->data) {
         case ND_WORLD_DRAW:
         case ND_WORLD:
           if (v3d->shading.background_type == V3D_SHADING_BACKGROUND_WORLD) {
-            ED_area_tag_redraw_regiontype(area, RGN_TYPE_WINDOW);
+            ed_area_tag_redraw_rgntype(area, RGN_TYPE_WIN);
           }
           break;
       }
       break;
     case NC_MATERIAL:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_NODES:
           if (v3d->shading.type == OB_TEXTURE) {
-            ED_area_tag_redraw_regiontype(area, RGN_TYPE_WINDOW);
+            ed_area_tag_redraw_rgntype(area, RGN_TYPE_WIN);
           }
           break;
       }
@@ -1694,79 +1693,71 @@ static void space_view3d_listener(const wmSpaceTypeListenerParams *params)
   }
 }
 
-static void space_view3d_refresh(const duneContext *C, ScrArea *area)
+static void space_view3d_refresh(const Cxt *C, ScrArea *area)
 {
-  Scene *scene = CTX_data_scene(C);
-  LightCache *lcache = scene->eevee.light_cache_data;
-
-  if (lcache && (lcache->flag & LIGHTCACHE_UPDATE_AUTO) != 0) {
-    lcache->flag &= ~LIGHTCACHE_UPDATE_AUTO;
-    view3d_lightcache_update((bContext *)C);
-  }
-
+  Scene *scene = cxt_data_scene(
   View3D *v3d = (View3D *)area->spacedata.first;
   MEM_SAFE_FREE(v3d->runtime.local_stats);
 }
 
-const char *view3d_context_dir[] = {
-    "active_object",
-    "selected_ids",
+const char *view3d_cxt_dir[] = {
+    "active_obj",
+    "sel_ids",
     NULL,
 };
 
-static int view3d_context(const bContext *C, const char *member, bContextDataResult *result)
+static int view3d_cxt(const Cxt *C, const char *member, CxtDataResult *result)
 {
   /* fallback to the scene layer,
-   * allows duplicate and other object operators to run outside the 3d view */
-
-  if (CTX_data_dir(member)) {
-    CTX_data_dir_set(result, view3d_context_dir);
+   * allows duplicate and other obj ops to run outside the 3d view */
+  if (cxt_data_dir(member)) {
+    cxt_data_dir_set(result, view3d_cxt_dir);
     return CTX_RESULT_OK;
   }
-  if (CTX_data_equals(member, "active_object")) {
+  if (cxt_data_equals(member, "active_object")) {
     /* In most cases the active object is the `view_layer->basact->object`.
      * For the 3D view however it can be NULL when hidden.
      *
      * This is ignored in the case the object is in any mode (besides object-mode),
      * since the object's mode impacts the current tool, cursor, gizmos etc.
      * If we didn't have this exception, changing visibility would need to perform
-     * many of the same updates as changing the objects mode.
+     * many of the same updates as changing the objs mode.
      *
-     * Further, there are multiple ways to hide objects - by collection, by object type, etc.
-     * it's simplest if all these methods behave consistently - respecting the object-mode
-     * without showing the object.
+     * Further, there are multiple ways to hide objs: collection, objtype, etc.
+     * it's simplest if all these methods behave consistently - respecting the objmode
+     * wo showing the object.
      *
      * See T85532 for alternatives that were considered. */
     ViewLayer *view_layer = CTX_data_view_layer(C);
     if (view_layer->basact) {
-      Object *ob = view_layer->basact->object;
+      Obj *ob = view_layer->basact->object;
       /* if hidden but in edit mode, we still display, can happen with animation */
-      if ((view_layer->basact->flag & BASE_VISIBLE_DEPSGRAPH) != 0 ||
-          (ob->mode != OB_MODE_OBJECT)) {
-        CTX_data_id_pointer_set(result, &ob->id);
+      if ((view_layer->basact->flag & BASE_VISIBLE_GRAPH) != 0 ||
+          (ob->mode != OB_MODE_OBJ)) {
+        cxt_data_id_ptr_set(result, &ob->id);
       }
     }
 
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  if (CTX_data_equals(member, "selected_ids")) {
-    ListBase selected_objects;
-    CTX_data_selected_objects(C, &selected_objects);
-    LISTBASE_FOREACH (CollectionPointerLink *, object_ptr_link, &selected_objects) {
-      ID *selected_id = object_ptr_link->ptr.owner_id;
-      CTX_data_id_list_add(result, selected_id);
+  if (cxt_data_equals(member, "sel_ids")) {
+    List sel_objs;
+    cxt_data_sel_objs(C, &sel_objs);
+    LIST_FOREACH (CollectionPtrLink *, obj_ptr_link, &sel_objs) {
+      Id *sel_id = obj_ptr_link->ptr.owner_id;
+      cxt_data_id_list_add(result, sel_id);
     }
-    LIB_freelistN(&selected_objects);
-    CTX_data_type_set(result, CTX_DATA_TYPE_COLLECTION);
-    return CTX_RESULT_OK;
+    lib_freelist(&sel_objs);
+    cxt_data_type_set(result, CXT_DATA_TYPE_COLLECTION);
+    return CXT_RESULT_OK;
   }
 
-  return CTX_RESULT_MEMBER_NOT_FOUND;
+  return CXT_RESULT_MEMBER_NOT_FOUND;
 }
 
-static void view3d_id_remap_v3d_ob_centers(View3D *v3d, const struct IDRemapper *mappings)
+static void view3d_id_remap_v3d_ob_centers(View3D *v3d, const struct IdRemapper *mappings)
 {
-  if (DUNE_id_remapper_apply(mappings, (ID **)&v3d->ob_center, ID_REMAP_APPLY_DEFAULT) ==
+  if (dune_id_remapper_apply(mappings, (Id **)&v3d->ob_center, ID_REMAP_APPLY_DEFAULT) ==
       ID_REMAP_RESULT_SOURCE_UNASSIGNED) {
     /* Otherwise, bonename may remain valid...
      * We could be smart and check this, too? */
@@ -1777,19 +1768,19 @@ static void view3d_id_remap_v3d_ob_centers(View3D *v3d, const struct IDRemapper 
 static void view3d_id_remap_v3d(ScrArea *area,
                                 SpaceLink *slink,
                                 View3D *v3d,
-                                const struct IDRemapper *mappings,
+                                const struct IdRemapper *mappings,
                                 const bool is_local)
 {
-  ARegion *region;
-  if (DUNE_id_remapper_apply(mappings, (ID **)&v3d->camera, ID_REMAP_APPLY_DEFAULT) ==
+  ARgn *rgn;
+  if (dune_id_remapper_apply(mappings, (Id **)&v3d->camera, ID_REMAP_APPLY_DEFAULT) ==
       ID_REMAP_RESULT_SOURCE_UNASSIGNED) {
-    /* 3D view might be inactive, in that case needs to use slink->regionbase */
-    ListBase *regionbase = (slink == area->spacedata.first) ? &area->regionbase :
-                                                              &slink->regionbase;
-    for (region = regionbase->first; region; region = region->next) {
-      if (region->regiontype == RGN_TYPE_WINDOW) {
-        RegionView3D *rv3d = is_local ? ((RegionView3D *)region->regiondata)->localvd :
-                                        region->regiondata;
+    /* 3D view might be inactive, in that case needs to use slink->rgnbase */
+    List *rgnbase = (slink == area->spacedata.first) ? &area->rgnbase :
+                                                       &slink->rgnbase;
+    for (rgn = rgnbase->first; rgn; rgn = rgn->next) {
+      if (rgn->rgntype == RGN_TYPE_WIN) {
+        RgnView3D *rv3d = is_local ? ((RgnView3D *)rgn->rgndata)->localvd :
+                                        rgn->rgndata;
         if (rv3d && (rv3d->persp == RV3D_CAMOB)) {
           rv3d->persp = RV3D_PERSP;
         }
@@ -1798,10 +1789,10 @@ static void view3d_id_remap_v3d(ScrArea *area,
   }
 }
 
-static void view3d_id_remap(ScrArea *area, SpaceLink *slink, const struct IDRemapper *mappings)
+static void view3d_id_remap(ScrArea *area, SpaceLink *slink, const struct IdRemapper *mappings)
 {
 
-  if (!DUNE_id_remapper_has_mapping_for(
+  if (!dune_id_remapper_has_mapping_for(
           mappings, FILTER_ID_OB | FILTER_ID_MA | FILTER_ID_IM | FILTER_ID_MC)) {
     return;
   }
@@ -1810,18 +1801,18 @@ static void view3d_id_remap(ScrArea *area, SpaceLink *slink, const struct IDRema
   view3d_id_remap_v3d(area, slink, view3d, mappings, false);
   view3d_id_remap_v3d_ob_centers(view3d, mappings);
   if (view3d->localvd != NULL) {
-    /* Object centers in local-view aren't used, see: T52663 */
+    /* Obj centers in localview aren't used, see: T52663 */
     view3d_id_remap_v3d(area, slink, view3d->localvd, mappings, true);
   }
 }
 
-void ED_spacetype_view3d(void)
+void ed_spacetype_view3d(void)
 {
-  SpaceType *st = MEM_callocN(sizeof(SpaceType), "spacetype view3d");
-  ARegionType *art;
+  SpaceType *st = mem_calloc(sizeof(SpaceType), "spacetype view3d");
+  ARgnType *art;
 
   st->spaceid = SPACE_VIEW3D;
-  strncpy(st->name, "View3D", BKE_ST_MAXNAME);
+  strncpy(st->name, "View3D", DUNE_ST_MAXNAME);
 
   st->create = view3d_create;
   st->free = view3d_free;
@@ -1830,21 +1821,21 @@ void ED_spacetype_view3d(void)
   st->listener = space_view3d_listener;
   st->refresh = space_view3d_refresh;
   st->duplicate = view3d_duplicate;
-  st->operatortypes = view3d_operatortypes;
+  st->otypes = view3d_optypes;
   st->keymap = view3d_keymap;
   st->dropboxes = view3d_dropboxes;
   st->gizmos = view3d_widgets;
-  st->context = view3d_context;
+  st->cxt = view3d_cxt;
   st->id_remap = view3d_id_remap;
 
-  /* regions: main window */
-  art = MEM_callocN(sizeof(ARegionType), "spacetype view3d main region");
-  art->regionid = RGN_TYPE_WINDOW;
-  art->keymapflag = ED_KEYMAP_GIZMO | ED_KEYMAP_TOOL | ED_KEYMAP_GPENCIL;
-  art->draw = view3d_main_region_draw;
-  art->init = view3d_main_region_init;
-  art->exit = view3d_main_region_exit;
-  art->free = view3d_main_region_free;
+  /* rgns: main win */
+  art = mem_calloc(sizeof(ARgnType), "spacetype view3d main rgn");
+  art->rgnid = RGN_TYPE_WIN;
+  art->keymapflag = ED_KEYMAP_GIZMO | ED_KEYMAP_TOOL | ED_KEYMAP_PEN;
+  art->draw = view3d_main_rgn_draw;
+  art->init = view3d_main_rgn_init;
+  art->exit = view3d_main_rgn_exit;
+  art->free = view3d_main_rgn_free;
   art->duplicate = view3d_main_region_duplicate;
   art->listener = view3d_main_region_listener;
   art->message_subscribe = view3d_main_region_message_subscribe;
