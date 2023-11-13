@@ -1096,29 +1096,27 @@ static void draw_rotation_guide(const RgnView3D *rv3d)
 static void view3d_draw_border(const Cxt *C, ARgn *rgn)
 {
   Scene *scene = cxt_data_scene(C);
-  Depsgraph *graph = cxt_data_expect_eval_graph(C);
-  RegionView3D *rv3d = rgn->rgndata;
-  View3D *v3d = CTX_wm_view3d(C);
+  Graph *graph = cxt_data_expect_eval_graph(C);
+  RgnView3D *rv3d = rgn->rgndata;
+  View3D *v3d = cxt_win_view3d(C);
 
   if (rv3d->persp == RV3D_CAMOB) {
-    drawviewborder(scene, depsgraph, region, v3d);
+    drawviewborder(scene, graph, rgn, v3d);
   }
   else if (v3d->flag2 & V3D_RENDER_BORDER) {
-    drawrenderborder(region, v3d);
+    drawrenderborder(rgn, v3d);
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Draw Text & Info */
-
-/** Draw Info **/
-static void view3d_draw_grease_pencil(const bContext *UNUSED(C))
+/* Draw Txt & Info */
+/* Draw Info **/
+static void view3d_draw_pen(const Cxt *UNUSED(C))
 {
   /* TODO: viewport. */
 }
 
-/** Viewport Name **/
-static const char *view3d_get_name(View3D *v3d, RegionView3D *rv3d)
+/* Viewport Name */
+static const char *view3d_get_name(View3D *v3d, RgnView3D *rv3d)
 {
   const char *name = NULL;
 
@@ -1184,7 +1182,7 @@ static const char *view3d_get_name(View3D *v3d, RegionView3D *rv3d)
             name = IFACE_("Camera Orthographic");
           }
           else {
-            LIB_assert(cam->type == CAM_PANO);
+            lib_assert(cam->type == CAM_PANO);
             name = IFACE_("Camera Panoramic");
           }
         }
@@ -1201,21 +1199,21 @@ static const char *view3d_get_name(View3D *v3d, RegionView3D *rv3d)
   return name;
 }
 
-static void draw_viewport_name(ARegion *region, View3D *v3d, int xoffset, int *yoffset)
+static void draw_viewport_name(ARgn *rgn, View3D *v3d, int xoffset, int *yoffset)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   const char *name = view3d_get_name(v3d, rv3d);
   const char *name_array[3] = {name, NULL, NULL};
   int name_array_len = 1;
-  const int font_id = BLF_default();
+  const int font_id = font_default();
 
   /* 6 is the maximum size of the axis roll text. */
-  /* increase size for unicode languages (Chinese in utf-8...) */
+  /* increase size for unicode langs (Chinese in utf-8...) */
   char tmpstr[96 + 6];
 
-  BLF_enable(font_id, BLF_SHADOW);
-  BLF_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
-  BLF_shadow_offset(font_id, 1, -1);
+  font_enable(font_id, FONT_SHADOW);
+  font_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
+  font_shadow_offset(font_id, 1, -1);
 
   if (RV3D_VIEW_IS_AXIS(rv3d->view) && (rv3d->view_axis_roll != RV3D_VIEW_AXIS_ROLL_0)) {
     const char *axis_roll;
@@ -1237,37 +1235,35 @@ static void draw_viewport_name(ARegion *region, View3D *v3d, int xoffset, int *y
     name_array[name_array_len++] = IFACE_(" (Local)");
   }
 
-  /* Indicate that clipping region is enabled. */
+  /* Indicate that clipping rgn is enabled. */
   if (rv3d->rflag & RV3D_CLIPPING) {
     name_array[name_array_len++] = IFACE_(" (Clipped)");
   }
 
   if (name_array_len > 1) {
-    LIB_string_join_array(tmpstr, sizeof(tmpstr), name_array, name_array_len);
+    lib_string_join_array(tmpstr, sizeof(tmpstr), name_array, name_array_len);
     name = tmpstr;
   }
 
-  UI_FontThemeColor(BLF_default(), TH_TEXT_HI);
+  ui_FontThemeColor(font_default(), TH_TXT_HI);
 
   *yoffset -= VIEW3D_OVERLAY_LINEHEIGHT;
 
-  BLF_draw_default(xoffset, *yoffset, 0.0f, name, sizeof(tmpstr));
+  font_draw_default(xoffset, *yoffset, 0.0f, name, sizeof(tmpstr));
 
-  BLF_disable(font_id, BLF_SHADOW);
+  font_disable(font_id, FONT_SHADOW);
 }
 
-/**
- * Draw info beside axes in top-left corner:
- * frame-number, collection, object name, bone name (if available), marker name (if available).
- */
-static void draw_selected_name(
-    Scene *scene, ViewLayer *view_layer, Object *ob, int xoffset, int *yoffset)
+/* Draw info beside axes in top-left corner:
+ * frame-number, collection, object name, bone name (if available), marker name (if available) */
+static void draw_sel_name(
+    Scene *scene, ViewLayer *view_layer, Obj *ob, int xoffset, int *yoffset)
 {
   const int cfra = CFRA;
   const char *msg_pin = " (Pinned)";
   const char *msg_sep = " : ";
 
-  const int font_id = BLF_default();
+  const int font_id = font_default();
 
   char info[300];
   char *s = info;
@@ -1278,96 +1274,94 @@ static void draw_selected_name(
     LayerCollection *layer_collection = view_layer->active_collection;
     s += sprintf(s,
                  " %s%s",
-                 DUNE_collection_ui_name_get(layer_collection->collection),
+                 dune_collection_ui_name_get(layer_collection->collection),
                  (ob == NULL) ? "" : " |");
   }
 
   /* Info can contain:
    * - A frame `(7 + 2)`.
    * - A collection name `(MAX_NAME + 3)`.
-   * - 3 object names `(MAX_NAME)`.
+   * - 3 obj names `(MAX_NAME)`.
    * - 2 BREAD_CRUMB_SEPARATOR(s) `(6)`.
    * - A SHAPE_KEY_PINNED marker and a trailing '\0' `(9+1)` - translated, so give some room!
-   * - A marker name `(MAX_NAME + 3)`.
-   */
+   * - A marker name `(MAX_NAME + 3)`. */
 
   /* get name of marker on current frame (if available) */
-  const char *markern = DUNE_scene_find_marker_name(scene, cfra);
+  const char *markern = dune_scene_find_marker_name(scene, cfra);
 
-  /* check if there is an object */
+  /* check if there is an obj */
   if (ob) {
     *s++ = ' ';
-    s += LIB_strcpy_rlen(s, ob->id.name + 2);
+    s += lib_strcpy_rlen(s, ob->id.name + 2);
 
     /* name(s) to display depends on type of object */
     if (ob->type == OB_ARMATURE) {
-      duneArmature *arm = ob->data;
+      Armature *arm = ob->data;
 
       /* show name of active bone too (if possible) */
       if (arm->edbo) {
         if (arm->act_edbone) {
-          s += LIB_strcpy_rlen(s, msg_sep);
-          s += LIB_strcpy_rlen(s, arm->act_edbone->name);
+          s += lib_strcpy_rlen(s, msg_sep);
+          s += lib_strcpy_rlen(s, arm->act_edbone->name);
         }
       }
       else if (ob->mode & OB_MODE_POSE) {
         if (arm->act_bone) {
 
           if (arm->act_bone->layer & arm->layer) {
-            s += LIB_strcpy_rlen(s, msg_sep);
-            s += LIB_strcpy_rlen(s, arm->act_bone->name);
+            s += lib_strcpy_rlen(s, msg_sep);
+            s += lib_strcpy_rlen(s, arm->act_bone->name);
           }
         }
       }
     }
     else if (ELEM(ob->type, OB_MESH, OB_LATTICE, OB_CURVES_LEGACY)) {
       /* try to display active bone and active shapekey too (if they exist) */
-
       if (ob->type == OB_MESH && ob->mode & OB_MODE_WEIGHT_PAINT) {
-        Object *armobj = DUNE_object_pose_armature_get(ob);
+        Obj *armobj = dune_obj_pose_armature_get(ob);
         if (armobj && armobj->mode & OB_MODE_POSE) {
-          duneArmature *arm = armobj->data;
+          Armature *arm = armobj->data;
           if (arm->act_bone) {
             if (arm->act_bone->layer & arm->layer) {
-              s += LIB_strcpy_rlen(s, msg_sep);
-              s += LIB_strcpy_rlen(s, arm->act_bone->name);
+              s += lib_strcpy_rlen(s, msg_sep);
+              s += lib_strcpy_rlen(s, arm->act_bone->name);
             }
           }
         }
       }
 
-      Key *key = DUNE_key_from_object(ob);
+      Key *key = dune_key_from_object(ob);
       if (key) {
-        KeyBlock *kb = LIB_findlink(&key->block, ob->shapenr - 1);
+        KeyBlock *kb = lib_findlink(&key->block, ob->shapenr - 1);
         if (kb) {
-          s += LIB_strcpy_rlen(s, msg_sep);
-          s += LIB_strcpy_rlen(s, kb->name);
+          s += lib_strcpy_rlen(s, msg_sep);
+          s += lib_strcpy_rlen(s, kb->name);
           if (ob->shapeflag & OB_SHAPE_LOCK) {
-            s += LIB_strcpy_rlen(s, IFACE_(msg_pin));
+            s += lib_strcpy_rlen(s, IFACE_(msg_pin));
           }
         }
       }
     }
 
-    /* color depends on whether there is a keyframe */
+    /* color deps on whether there is a keyframe */
     if (id_frame_has_keyframe(
-            (ID *)ob, /* BKE_scene_ctime_get(scene) */ (float)cfra, ANIMFILTER_KEYS_LOCAL)) {
-      UI_FontThemeColor(font_id, TH_TIME_KEYFRAME);
+            (Id *)ob, /* dune_scene_ctime_get(scene) */ (float)cfra, ANIMFILTER_KEYS_LOCAL)) {
+      ui_FontThemeColor(font_id, TH_TIME_KEYFRAME);
     }
-    else if (ED_gpencil_has_keyframe_v3d(scene, ob, cfra)) {
-      UI_FontThemeColor(font_id, TH_TIME_GP_KEYFRAME);
+    else if (ed_pen_has_keyframe_v3d(scene, ob, cfra)) {
+      ui_FontThemeColor(font_id, TH_TIME_GP_KEYFRAME);
     }
     else {
-      UI_FontThemeColor(font_id, TH_TEXT_HI);
+      ui_FontThemeColor(font_id, TH_TEXT_HI);
     }
   }
   else {
-    /* no object */
-    if (ED_gpencil_has_keyframe_v3d(scene, NULL, cfra)) {
-      UI_FontThemeColor(font_id, TH_TIME_GP_KEYFRAME);
+    /* no obj */
+    if (ed_pen_has_keyframe_v3d(scene, NULL, cfra)) {
+      ui_FontThemeColor(font_id, TH_TIME_GP_KEYFRAME);
     }
     else {
-      UI_FontThemeColor(font_id, TH_TEXT_HI);
+      ui_FontThemeColor(font_id, TH_TXT_HI);
     }
   }
 
@@ -1375,71 +1369,71 @@ static void draw_selected_name(
     s += sprintf(s, " <%s>", markern);
   }
 
-  BLF_enable(font_id, BLF_SHADOW);
-  BLF_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
-  BLF_shadow_offset(font_id, 1, -1);
+  font_enable(font_id, FONT_SHADOW);
+  font_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
+  font_shadow_offset(font_id, 1, -1);
 
   *yoffset -= VIEW3D_OVERLAY_LINEHEIGHT;
-  BLF_draw_default(xoffset, *yoffset, 0.0f, info, sizeof(info));
+  font_draw_default(xoffset, *yoffset, 0.0f, info, sizeof(info));
 
-  BLF_disable(font_id, BLF_SHADOW);
+  font_disable(font_id, FONT_SHADOW);
 }
 
 static void draw_grid_unit_name(
-    Scene *scene, ARegion *region, View3D *v3d, int xoffset, int *yoffset)
+    Scene *scene, ARgn *rgn, View3D *v3d, int xoffset, int *yoffset)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   if (!rv3d->is_persp && RV3D_VIEW_IS_AXIS(rv3d->view)) {
     const char *grid_unit = NULL;
-    int font_id = BLF_default();
-    ED_view3d_grid_view_scale(scene, v3d, region, &grid_unit);
+    int font_id = font_default();
+    ed_view3d_grid_view_scale(scene, v3d, rgn, &grid_unit);
 
     if (grid_unit) {
       char numstr[32] = "";
-      UI_FontThemeColor(font_id, TH_TEXT_HI);
+      ui_FontThemeColor(font_id, TH_TEXT_HI);
       if (v3d->grid != 1.0f) {
-        LIB_snprintf(numstr, sizeof(numstr), "%s x %.4g", grid_unit, v3d->grid);
+        lib_snprintf(numstr, sizeof(numstr), "%s x %.4g", grid_unit, v3d->grid);
       }
 
       *yoffset -= VIEW3D_OVERLAY_LINEHEIGHT;
-      BLF_enable(font_id, BLF_SHADOW);
-      BLF_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
-      BLF_shadow_offset(font_id, 1, -1);
-      BLF_draw_default(xoffset, *yoffset, 0.0f, numstr[0] ? numstr : grid_unit, sizeof(numstr));
-      BLF_disable(font_id, BLF_SHADOW);
+      font_enable(font_id, FONT_SHADOW);
+      font_shadow(font_id, 5, (const float[4]){0.0f, 0.0f, 0.0f, 1.0f});
+      font_shadow_offset(font_id, 1, -1);
+      font_draw_default(xoffset, *yoffset, 0.0f, numstr[0] ? numstr : grid_unit, sizeof(numstr));
+      font_disable(font_id, FONT_SHADOW);
     }
   }
 }
 
-void view3d_draw_region_info(const duneContext *C, ARegion *region)
+void view3d_draw_rgn_info(const Cxt *C, ARgn *rgn)
 {
-  RegionView3D *rv3d = region->regiondata;
-  View3D *v3d = CTX_wm_view3d(C);
-  Scene *scene = CTX_data_scene(C);
-  wmWindowManager *wm = CTX_wm_manager(C);
-  Main *duneMain = CTX_data_main(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  RgnView3D *rv3d = rgn->rgndata;
+  View3D *v3d = cxt_win_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  WinMngr *wm = cxt_wm(C);
+  Main *Main = cxt_data_main(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
 #ifdef WITH_INPUT_NDOF
   if ((U.ndof_flag & NDOF_SHOW_GUIDE) && ((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) == 0) &&
       (rv3d->persp != RV3D_CAMOB)) {
-    /* TODO: draw something else (but not this) during fly mode */
+    /* TODO:_ draw something else (but not this) during fly mode */
     draw_rotation_guide(rv3d);
   }
 #endif
 
   /* correct projection matrix */
-  ED_region_pixelspace(region);
+  ed_rgn_pixelspace(rgn);
 
-  /* local coordinate visible rect inside region, to accommodate overlapping ui */
-  const rcti *rect = ED_region_visible_rect(region);
+  /* local coordinate visible rect inside rgn, to accommodate overlapping ui */
+  const rcti *rect = ed_rgn_visible_rect(rgn);
 
-  view3d_draw_border(C, region);
-  view3d_draw_grease_pencil(C);
+  view3d_draw_border(C, rgn);
+  view3d_draw_pen(C);
 
-  BLF_batch_draw_begin();
+  font_batch_draw_begin();
 
-  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_NAVIGATE)) {
+  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_NAV)) {
     /* pass */
   }
   else {
@@ -1458,16 +1452,16 @@ void view3d_draw_region_info(const duneContext *C, ARegion *region)
   int yoffset = rect->ymax - (0.1f * U.widget_unit);
 
   if ((v3d->flag2 & V3D_HIDE_OVERLAYS) == 0 && (v3d->overlay.flag & V3D_OVERLAY_HIDE_TEXT) == 0) {
-    if ((U.uiflag & USER_SHOW_FPS) && ED_screen_animation_no_scrub(wm)) {
-      ED_scene_draw_fps(scene, xoffset, &yoffset);
+    if ((U.uiflag & USER_SHOW_FPS) && ed_screen_anim_no_scrub(wm)) {
+      ed_scene_draw_fps(scene, xoffset, &yoffset);
     }
     else if (U.uiflag & USER_SHOW_VIEWPORTNAME) {
-      draw_viewport_name(region, v3d, xoffset, &yoffset);
+      draw_viewport_name(rgn, v3d, xoffset, &yoffset);
     }
 
     if (U.uiflag & USER_DRAWVIEWINFO) {
       Object *ob = OBACT(view_layer);
-      draw_selected_name(scene, view_layer, ob, xoffset, &yoffset);
+      draw_sel_name(scene, view_layer, ob, xoffset, &yoffset);
     }
 
     if (v3d->gridflag & (V3D_SHOW_FLOOR | V3D_SHOW_X | V3D_SHOW_Y | V3D_SHOW_Z)) {
@@ -1475,77 +1469,64 @@ void view3d_draw_region_info(const duneContext *C, ARegion *region)
       draw_grid_unit_name(scene, region, v3d, xoffset, &yoffset);
     }
 
-    DRW_draw_region_engine_info(xoffset, &yoffset, VIEW3D_OVERLAY_LINEHEIGHT);
+    draw_rgn_engine_info(xoffset, &yoffset, VIEW3D_OVERLAY_LINEHEIGHT);
   }
 
   if ((v3d->flag2 & V3D_HIDE_OVERLAYS) == 0 && (v3d->overlay.flag & V3D_OVERLAY_STATS)) {
     View3D *v3d_local = v3d->localvd ? v3d : NULL;
-    ED_info_draw_stats(
-        dunemMain, scene, view_layer, v3d_local, xoffset, &yoffset, VIEW3D_OVERLAY_LINEHEIGHT);
+    ed_info_draw_stats(
+        Main, scene, view_layer, v3d_local, xoffset, &yoffset, VIEW3D_OVERLAY_LINEHEIGHT);
   }
 
-  BLF_batch_draw_end();
+  font_batch_draw_end();
 }
 
-/* -------------------------------------------------------------------- */
-/** Draw Viewport Contents */
-
-static void view3d_draw_view(const bContext *C, ARegion *region)
+/* Draw Viewport Contents */
+static void view3d_draw_view(const Cxt *C, ARgn *rgn)
 {
-  ED_view3d_draw_setup_view(CTX_wm_manager(C),
-                            CTX_wm_window(C),
-                            CTX_data_expect_evaluated_depsgraph(C),
-                            CTX_data_scene(C),
-                            region,
-                            CTX_wm_view3d(C),
+  ed_view3d_draw_setup_view(cxt_wm(C),
+                            cxt_win(C),
+                            cxt_data_expect_eval_graph(C),
+                            cxt_data_scene(C),
+                            rgn,
+                            cxt_win_view3d(C),
                             NULL,
                             NULL,
                             NULL);
 
   /* Only 100% compliant on new spec goes below */
-  DRW_draw_view(C);
+  draw_draw_view(C);
 }
 
-RenderEngineType *ED_view3d_engine_type(const Scene *scene, int drawtype)
+RenderEngineType *ed_view3d_engine_type(const Scene *scene, int drawtype)
 {
-  /*
-   * Temporary viewport draw modes until we have a proper system.
-   * all modes are done in the draw manager, except external render
-   * engines like Cycles.
-   */
-  RenderEngineType *type = RE_engines_find(scene->r.engine);
-  if (drawtype == OB_MATERIAL && (type->flag & RE_USE_EEVEE_VIEWPORT)) {
-    return RE_engines_find(RE_engine_id_EEVEE);
-  }
   return type;
 }
 
-void view3d_main_region_draw(const duneContext *C, ARegion *region)
+void view3d_main_rgn_draw(const Cxt *C, ARgn *rgn)
 {
-  Main *duneMain = CTX_data_main(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Main *Main = cxt_data_main(C);
+  View3D *v3d = cxt_win_view3d(C);
 
-  view3d_draw_view(C, region);
+  view3d_draw_view(C, rgn);
 
-  DRW_cache_free_old_subdiv();
-  DRW_cache_free_old_batches(duneMain);
-  DUNE_image_free_old_gputextures(duneMain);
-  GPU_pass_cache_garbage_collect();
+  draw_cache_free_old_subdiv();
+  draw_cache_free_old_batches(Main);
+  dune_img_free_old_gputextures(Main);
+  gpu_pass_cache_garbage_collect();
 
   /* No depth test for drawing action zones afterwards. */
-  GPU_depth_test(GPU_DEPTH_NONE);
+  gpu_depth_test(GPU_DEPTH_NONE);
 
   v3d->runtime.flag &= ~V3D_RUNTIME_DEPTHBUF_OVERRIDDEN;
   /* TODO: Clear cache? */
 }
 
-/* -------------------------------------------------------------------- */
-/** Off-screen Drawing **/
-
-static void view3d_stereo3d_setup_offscreen(Depsgraph *depsgraph,
+/* Off-screen Drawing */
+static void view3d_stereo3d_setup_offscreen(Graph *graph,
                                             const Scene *scene,
                                             View3D *v3d,
-                                            ARegion *region,
+                                            ARgn *rgn,
                                             const float winmat[4][4],
                                             const char *viewname)
 {
@@ -1554,23 +1535,23 @@ static void view3d_stereo3d_setup_offscreen(Depsgraph *depsgraph,
     float viewmat[4][4];
     const bool is_left = STREQ(viewname, STEREO_LEFT_NAME);
 
-    DUNE_camera_multiview_view_matrix(&scene->r, v3d->camera, is_left, viewmat);
-    view3d_main_region_setup_offscreen(depsgraph, scene, v3d, region, viewmat, winmat);
+    dune_camera_multiview_view_matrix(&scene->r, v3d->camera, is_left, viewmat);
+    view3d_main_rgn_setup_offscreen(graph, scene, v3d, rgn, viewmat, winmat);
   }
   else { /* SCE_VIEWS_FORMAT_MULTIVIEW */
     float viewmat[4][4];
-    Object *camera = DUNE_camera_multiview_render(scene, v3d->camera, viewname);
+    Object *camera = dune_camera_multiview_render(scene, v3d->camera, viewname);
 
-    DUNE_camera_multiview_view_matrix(&scene->r, camera, false, viewmat);
-    view3d_main_region_setup_offscreen(depsgraph, scene, v3d, region, viewmat, winmat);
+    dune_camera_multiview_view_matrix(&scene->r, camera, false, viewmat);
+    view3d_main_rgn_setup_offscreen(graph, scene, v3d, rgn, viewmat, winmat);
   }
 }
 
-void ED_view3d_draw_offscreen(Depsgraph *depsgraph,
+void ed_view3d_draw_offscreen(Graph *graph,
                               const Scene *scene,
                               eDrawType drawtype,
                               View3D *v3d,
-                              ARegion *region,
+                              ARgn *rgn,
                               int winx,
                               int winy,
                               const float viewmat[4][4],
@@ -1583,49 +1564,47 @@ void ED_view3d_draw_offscreen(Depsgraph *depsgraph,
                               GPUOffScreen *ofs,
                               GPUViewport *viewport)
 {
-  RegionView3D *rv3d = region->regiondata;
-  RenderEngineType *engine_type = ED_view3d_engine_type(scene, drawtype);
+  RgnView3D *rv3d = rgn->rgndata;
+  RenderEngineType *engine_type = ed_view3d_engine_type(scene, drawtype);
 
   /* Store `orig` variables. */
   struct {
-    struct bThemeState theme_state;
+    struct ThemeState theme_state;
 
-    /* #View3D */
+    /* View3D */
     eDrawType v3d_shading_type;
 
-    /* #Region */
-    int region_winx, region_winy;
-    rcti region_winrct;
+    /* Rgn */
+    int rgn_winx, rgn_winy;
+    rcti rgn_winrct;
 
-    /* RegionView3D */
-    /**
-     * Needed so the value won't be left overwritten,
-     * Without this the wmPaintCursor can't use the pixel size & view matrices for drawing.
-     */
+    /* RgnView3D */
+    /* Needed so the value won't be left overwritten,
+     * Wo this the WinPaintCursor can't use the pixel size & view matrices for drawing. */
     struct RV3DMatrixStore *rv3d_mats;
   } orig = {
       .v3d_shading_type = v3d->shading.type,
 
-      .region_winx = region->winx,
-      .region_winy = region->winy,
-      .region_winrct = region->winrct,
+      .rhn_winx = rgn->winx,
+      .rgn_winy = rgnn->winy,
+      .rgn_winrct = rgnn->winrct,
 
-      .rv3d_mats = ED_view3d_mats_rv3d_backup(region->regiondata),
+      .rv3d_mats = ed_view3d_mats_rv3d_backup(rgn->rgndata),
   };
 
-  UI_Theme_Store(&orig.theme_state);
-  UI_SetTheme(SPACE_VIEW3D, RGN_TYPE_WINDOW);
+  ui_Theme_Store(&orig.theme_state);
+  ui_SetTheme(SPACE_VIEW3D, RGN_TYPE_WIN);
 
-  /* Set temporary new size. */
-  region->winx = winx;
-  region->winy = winy;
-  region->winrct.xmin = 0;
-  region->winrct.ymin = 0;
-  region->winrct.xmax = winx;
-  region->winrct.ymax = winy;
+  /* Set temp new size. */
+  rgn->winx = winx;
+  rgn->winy = winy;
+  rgn->winrct.xmin = 0;
+  rgn->winrct.ymin = 0;
+  rgn->winrct.xmax = winx;
+  rgn->winrct.ymax = winy;
 
-  /* There are too many functions inside the draw manager that check the shading type,
-   * so use a temporary override instead. */
+  /* There are too many fns inside the draw manager that check the shading type,
+   * so use a temp override instead. */
   v3d->shading.type = drawtype;
 
   /* Set flags. */
@@ -1633,56 +1612,55 @@ void ED_view3d_draw_offscreen(Depsgraph *depsgraph,
 
   {
     /* Free images which can have changed on frame-change.
-     * WARNING(@campbellbarton): can be slow so only free animated images. */
-    DUNE_image_free_anim_gputextures(G.main);
+     * WARNING: can be slow so only free anim images. */
+    dune_image_free_anim_gputextures(G.main);
   }
 
-  GPU_matrix_push_projection();
-  GPU_matrix_identity_set();
-  GPU_matrix_push();
-  GPU_matrix_identity_set();
+  gpu_matrix_push_projection();
+  gpu_matrix_id_set();
+  gpu_matrix_push();
+  gpu_matrix_identity_set();
 
   if ((viewname != NULL && viewname[0] != '\0') && (viewmat == NULL) &&
       rv3d->persp == RV3D_CAMOB && v3d->camera) {
-    view3d_stereo3d_setup_offscreen(depsgraph, scene, v3d, region, winmat, viewname);
+    view3d_stereo3d_setup_offscreen(graph, scene, v3d, rgn, winmat, viewname);
   }
   else {
-    view3d_main_region_setup_offscreen(depsgraph, scene, v3d, region, viewmat, winmat);
+    view3d_main_rgn_setup_offscreen(graph, scene, v3d, rgn, viewmat, winmat);
   }
 
   /* main drawing call */
-  DRW_draw_render_loop_offscreen(depsgraph,
-                                 engine_type,
-                                 region,
-                                 v3d,
-                                 is_image_render,
-                                 draw_background,
-                                 do_color_management,
-                                 ofs,
-                                 viewport);
-  GPU_matrix_pop_projection();
-  GPU_matrix_pop();
+  draw_render_loop_offscreen(graph,
+                             engine_type,
+                             rgn,
+                             v3d,
+                             is_img_render,
+                             draw_background,
+                             do_color_management,
+                             ofs,
+                             viewport);
+  gpu_matrix_pop_projection();
+  gpu_matrix_pop();
 
   /* Restore all `orig` members. */
-  region->winx = orig.region_winx;
-  region->winy = orig.region_winy;
-  region->winrct = orig.region_winrct;
+  rgn->winx = orig.rgn_winx;
+  rgn->winy = orig.rgn_winy;
+  rgn->winrct = orig.rgn_winrct;
 
   /* Optionally do _not_ restore rv3d matrices (e.g. they are used/stored in the ImBuff for
-   * reprojection, see texture_paint_image_from_view_exec(). */
+   * reprojection, see texture_paint_image_from_view_ex(). */
   if (restore_rv3d_mats) {
-    ED_view3d_mats_rv3d_restore(region->regiondata, orig.rv3d_mats);
+    ed_view3d_mats_rv3d_restore(rgn->rgndata, orig.rv3d_mats);
   }
-  MEM_freeN(orig.rv3d_mats);
+  mem_free(orig.rv3d_mats);
 
-  UI_Theme_Restore(&orig.theme_state);
-
+  ui_Theme_Restore(&orig.theme_state);
   v3d->shading.type = orig.v3d_shading_type;
 
   G.f &= ~G_FLAG_RENDER_VIEWPORT;
 }
 
-void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
+void ed_view3d_draw_offscreen_simple(Graph *graph,
                                      Scene *scene,
                                      View3DShading *shading_override,
                                      eDrawType drawtype,
@@ -1702,12 +1680,12 @@ void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
                                      GPUViewport *viewport)
 {
   View3D v3d = {NULL};
-  ARegion ar = {NULL};
-  RegionView3D rv3d = {{{0}}};
+  ARgn ar = {NULL};
+  RhnView3D rv3d = {{{0}}};
 
-  v3d.regionbase.first = v3d.regionbase.last = &ar;
-  ar.regiondata = &rv3d;
-  ar.regiontype = RGN_TYPE_WINDOW;
+  v3d.rgnbase.first = v3d.rgnbase.last = &ar;
+  ar.rgndata = &rv3d;
+  ar.rgntype = RGN_TYPE_WIN;
 
   View3DShading *source_shading_settings = &scene->display.shading;
   if (draw_flags & V3D_OFSDRAW_OVERRIDE_SCENE_SETTINGS && shading_override != NULL) {
@@ -1736,8 +1714,8 @@ void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
       v3d.gridlines = 16;
       v3d.gridsubdiv = 10;
     }
-    if (draw_flags & V3D_OFSDRAW_SHOW_SELECTION) {
-      v3d.flag |= V3D_SELECT_OUTLINE;
+    if (draw_flags & V3D_OFSDRAW_SHOW_SEL) {
+      v3d.flag |= V3D_SEL_OUTLINE;
     }
     if (draw_flags & V3D_OFSDRAW_XR_SHOW_CONTROLLERS) {
       v3d.flag2 |= V3D_XR_SHOW_CONTROLLERS;
@@ -1746,7 +1724,7 @@ void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
       v3d.flag2 |= V3D_XR_SHOW_CUSTOM_OVERLAYS;
     }
     /* Disable other overlays (set all available _HIDE_ flags). */
-    v3d.overlay.flag |= V3D_OVERLAY_HIDE_CURSOR | V3D_OVERLAY_HIDE_TEXT |
+    v3d.overlay.flag |= V3D_OVERLAY_HIDE_CURSOR | V3D_OVERLAY_HIDE_TXT |
                         V3D_OVERLAY_HIDE_MOTION_PATHS | V3D_OVERLAY_HIDE_BONES |
                         V3D_OVERLAY_HIDE_OBJECT_XTRAS | V3D_OVERLAY_HIDE_OBJECT_ORIGINS;
     v3d.flag |= V3D_HIDE_HELPLINES;
@@ -1762,7 +1740,7 @@ void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
   /* Actually not used since we pass in the projection matrix. */
   v3d.lens = 0;
 
-  ED_view3d_draw_offscreen(depsgraph,
+  ed_view3d_draw_offscreen(graph,
                            scene,
                            drawtype,
                            &v3d,
@@ -1780,11 +1758,11 @@ void ED_view3d_draw_offscreen_simple(Depsgraph *depsgraph,
                            viewport);
 }
 
-ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
+ImBuf *ed_view3d_draw_offscreen_imbuf(Graph *graph,
                                       Scene *scene,
                                       eDrawType drawtype,
                                       View3D *v3d,
-                                      ARegion *region,
+                                      ARgn *rgn,
                                       int sizex,
                                       int sizey,
                                       eImBufFlags imbuf_flag,
@@ -1795,55 +1773,55 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
                                       GPUOffScreen *ofs,
                                       char err_out[256])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   const bool draw_sky = (alpha_mode == R_ADDSKY);
 
   /* view state */
   bool is_ortho = false;
   float winmat[4][4];
 
-  if (ofs && ((GPU_offscreen_width(ofs) != sizex) || (GPU_offscreen_height(ofs) != sizey))) {
+  if (ofs && ((gpu_offscreen_width(ofs) != sizex) || (gpu_offscreen_height(ofs) != sizey))) {
     /* sizes differ, can't reuse */
     ofs = NULL;
   }
 
-  GPUFrameBuffer *old_fb = GPU_framebuffer_active_get();
+  GPUFrameBuffer *old_fb = gou_framebuffer_active_get();
 
   if (old_fb) {
-    GPU_framebuffer_restore();
+    gpu_framebuffer_restore();
   }
 
   const bool own_ofs = (ofs == NULL);
-  DRW_opengl_context_enable();
+  draw_opengl_cxt_enable();
 
   if (own_ofs) {
     /* bind */
-    ofs = GPU_offscreen_create(sizex, sizey, true, GPU_RGBA8, err_out);
+    ofs = gpu_offscreen_create(sizex, sizey, true, GPU_RGBA8, err_out);
     if (ofs == NULL) {
-      DRW_opengl_context_disable();
+      draw_opengl_cxt_disable();
       return NULL;
     }
   }
 
-  GPU_offscreen_bind(ofs, true);
+  gpu_offscreen_bind(ofs, true);
 
   /* read in pixels & stamp */
-  ImBuf *ibuf = IMB_allocImBuf(sizex, sizey, 32, imbuf_flag);
+  ImBuf *ibuf = imbuf_alloc(sizex, sizey, 32, imbuf_flag);
 
   /* render 3d view */
   if (rv3d->persp == RV3D_CAMOB && v3d->camera) {
     CameraParams params;
-    Object *camera = DUNE_camera_multiview_render(scene, v3d->camera, viewname);
-    const Object *camera_eval = DEG_get_evaluated_object(depsgraph, camera);
+    Obj *camera = dune_camera_multiview_render(scene, v3d->camera, viewname);
+    const Obj *camera_eval = graph_get_eval_obj(graph, camera);
 
-    DUNE_camera_params_init(&params);
+    dune_camera_params_init(&params);
     /* fallback for non camera objects */
     params.clip_start = v3d->clip_start;
     params.clip_end = v3d->clip_end;
-    DUNE_camera_params_from_object(&params, camera_eval);
-    DUNE_camera_multiview_params(&scene->r, &params, camera_eval, viewname);
-    DUNE_camera_params_compute_viewplane(&params, sizex, sizey, scene->r.xasp, scene->r.yasp);
-    DUNE_camera_params_compute_matrix(&params);
+    dune_camera_params_from_obj(&params, camera_eval);
+    dune_camera_multiview_params(&scene->r, &params, camera_eval, viewname);
+    dune_camera_params_compute_viewplane(&params, sizex, sizey, scene->r.xasp, scene->r.yasp);
+    dune_camera_params_compute_matrix(&params);
 
     is_ortho = params.is_ortho;
     copy_m4_m4(winmat, params.winmat);
@@ -1852,8 +1830,8 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
     rctf viewplane;
     float clip_start, clipend;
 
-    is_ortho = ED_view3d_viewplane_get(
-        depsgraph, v3d, rv3d, sizex, sizey, &viewplane, &clip_start, &clipend, NULL);
+    is_ortho = er_view3d_viewplane_get(
+        graph, v3d, rv3d, sizex, sizey, &viewplane, &clip_start, &clipend, NULL);
     if (is_ortho) {
       orthographic_m4(winmat,
                       viewplane.xmin,
@@ -1875,21 +1853,21 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
   }
 
   /* `do_color_management` should be controlled by the caller. Currently when doing a
-   * viewport render animation and saving to an 8bit file format, color management would be applied
-   * twice. Once here, and once when saving the saving to disk. In this case the Save As Render
+   * viewport render anim and saving to an 8bit file format, color management would be applied
+   * twice. Once here, and once when saving to disk. In this case the Save As Render
    * option cannot be controlled either. But when doing an off-screen render you want to do the
    * color management here.
    *
    * This option was added here to increase the performance for quick view-port preview renders.
-   * When using workbench the color differences haven't been reported as a bug. But users also use
+   * When using workbench the color diffs haven't been reported as a bug. But users also use
    * the viewport rendering to render Eevee scenes. In the later situation the saved colors are
    * totally wrong. */
   const bool do_color_management = (ibuf->rect_float == NULL);
-  ED_view3d_draw_offscreen(depsgraph,
+  ed_view3d_draw_offscreen(graph,
                            scene,
                            drawtype,
                            v3d,
-                           region,
+                           rgn,
                            sizex,
                            sizey,
                            NULL,
@@ -1903,37 +1881,37 @@ ImBuf *ED_view3d_draw_offscreen_imbuf(Depsgraph *depsgraph,
                            NULL);
 
   if (ibuf->rect_float) {
-    GPU_offscreen_read_pixels(ofs, GPU_DATA_FLOAT, ibuf->rect_float);
+    gpu_offscreen_read_pixels(ofs, GPU_DATA_FLOAT, ibuf->rect_float);
   }
   else if (ibuf->rect) {
-    GPU_offscreen_read_pixels(ofs, GPU_DATA_UBYTE, ibuf->rect);
+    gpu_offscreen_read_pixels(ofs, GPU_DATA_UBYTE, ibuf->rect);
   }
 
   /* unbind */
-  GPU_offscreen_unbind(ofs, true);
+  gpu_offscreen_unbind(ofs, true);
 
   if (own_ofs) {
-    GPU_offscreen_free(ofs);
+    gpi_offscreen_free(ofs);
   }
 
-  DRW_opengl_context_disable();
+  draw_opengl_cxt_disable();
 
   if (old_fb) {
-    GPU_framebuffer_bind(old_fb);
+    gpu_framebuffer_bind(old_fb);
   }
 
   if (ibuf->rect_float && ibuf->rect) {
-    IMB_rect_from_float(ibuf);
+    imbuf_rect_from_float(ibuf);
   }
 
   return ibuf;
 }
 
-ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
+ImBuf *ed_view3d_draw_offscreen_imbuf_simple(Graph *graph,
                                              Scene *scene,
                                              View3DShading *shading_override,
                                              eDrawType drawtype,
-                                             Object *camera,
+                                             Obj *camera,
                                              int width,
                                              int height,
                                              eImBufFlags imbuf_flag,
@@ -1944,13 +1922,13 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
                                              char err_out[256])
 {
   View3D v3d = {NULL};
-  ARegion region = {NULL};
-  RegionView3D rv3d = {{{0}}};
+  ARgn rgn = {NULL};
+  RgnView3D rv3d = {{{0}}};
 
   /* connect data */
-  v3d.regionbase.first = v3d.regionbase.last = &region;
-  region.regiondata = &rv3d;
-  region.regiontype = RGN_TYPE_WINDOW;
+  v3d.rgnbase.first = v3d.rgnbase.last = &rgn;
+  rgn.rgndata = &rv3d;
+  rgn.rhntype = RGN_TYPE_WIN;
 
   v3d.camera = camera;
   View3DShading *source_shading_settings = &scene->display.shading;
@@ -1963,7 +1941,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
     /* Don't use external engines for preview. Fall back to solid instead of Eevee as rendering
      * with Eevee is potentially slow due to compiling shaders and loading textures, and the
      * depsgraph may not have been updated to have all the right geometry attributes. */
-    if (!(DUNE_scene_uses_eevee(scene) || DUNE_scene_uses_workbench(scene))) {
+    if (!dune_scene_uses_workbench(scene)) {
       drawtype = OB_SOLID;
     }
   }
@@ -1984,9 +1962,9 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
   v3d.shading.type = drawtype;
 
   v3d.flag2 = V3D_HIDE_OVERLAYS;
-  /* HACK: When rendering gpencil objects this opacity is used to mix vertex colors in when not in
+  /* HACK: When rendering pen objs this opacity is used to mix vertex colors in when not in
    * render mode. */
-  v3d.overlay.gpencil_vertex_paint_opacity = 1.0f;
+  v3d.overlay.pen_vertex_paint_opacity = 1.0f;
 
   if (draw_flags & V3D_OFSDRAW_SHOW_ANNOTATION) {
     v3d.flag2 |= V3D_SHOW_ANNOTATION;
@@ -2005,14 +1983,14 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
 
   {
     CameraParams params;
-    const Object *view_camera_eval = DEG_get_evaluated_object(
-        depsgraph, DUNE_camera_multiview_render(scene, v3d.camera, viewname));
+    const Obj *view_camera_eval = graph_get_eval_obj(
+        graph, dune_camera_multiview_render(scene, v3d.camera, viewname));
 
-    DUNE_camera_params_init(&params);
-    DUNE_camera_params_from_object(&params, view_camera_eval);
-    DUNE_camera_multiview_params(&scene->r, &params, view_camera_eval, viewname);
-    DUNE_camera_params_compute_viewplane(&params, width, height, scene->r.xasp, scene->r.yasp);
-    DUNE_camera_params_compute_matrix(&params);
+    dune_camera_params_init(&params);
+    dune_camera_params_from_object(&params, view_camera_eval);
+    dune_camera_multiview_params(&scene->r, &params, view_camera_eval, viewname);
+    dune_camera_params_compute_viewplane(&params, width, height, scene->r.xasp, scene->r.yasp);
+    dune_camera_params_compute_matrix(&params);
 
     copy_m4_m4(rv3d.winmat, params.winmat);
     v3d.clip_start = params.clip_start;
@@ -2023,11 +2001,11 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Depsgraph *depsgraph,
   mul_m4_m4m4(rv3d.persmat, rv3d.winmat, rv3d.viewmat);
   invert_m4_m4(rv3d.persinv, rv3d.viewinv);
 
-  return ED_view3d_draw_offscreen_imbuf(depsgraph,
+  return ed_view3d_draw_offscreen_imbuf(graph,
                                         scene,
                                         v3d.shading.type,
                                         &v3d,
-                                        &region,
+                                        &rgn,
                                         width,
                                         height,
                                         imbuf_flag,
