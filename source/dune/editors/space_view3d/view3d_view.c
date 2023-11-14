@@ -123,7 +123,7 @@ static int view3d_camera_to_view_selected_exec(Cxt *C, WinOp *op)
     win_ev_add_notifier(C, NC_OBJ | ND_TRANSFORM, camera_ob);
     return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
 void VIEW3D_OT_camera_to_view_selected(WinOpType *ot)
@@ -250,47 +250,42 @@ static int view3d_setobjascamera_exec(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-bool ED_operator_rv3d_user_region_poll(bContext *C)
+bool ed_op_rv3d_user_rgn_poll(Cxt *C)
 {
   View3D *v3d_dummy;
-  ARegion *region_dummy;
+  ARgn *rgn_dummy;
 
-  return ED_view3d_context_user_region(C, &v3d_dummy, &region_dummy);
+  return ed_view3d_cxt_user_rgn(C, &v3d_dummy, &rgn_dummy);
 }
 
-void VIEW3D_OT_object_as_camera(wmOperatorType *ot)
+void VIEW3D_OT_obj_as_camera(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Set Active Object as Camera";
-  ot->description = "Set the active object as the active camera for this view or scene";
-  ot->idname = "VIEW3D_OT_object_as_camera";
+  /* ids */
+  ot->name = "Set Active Obj as Camera";
+  ot->description = "Set the active obj as the active camera for this view or scene";
+  ot->idname = "VIEW3D_OT_obj_as_camera";
 
-  /* api callbacks */
-  ot->exec = view3d_setobjectascamera_exec;
-  ot->poll = ED_operator_rv3d_user_region_poll;
+  /* api cbs */
+  ot->ex = view3d_setobjascamera_ex;
+  ot->poll = es_op_rv3d_user_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Window and View Matrix Calculation
- * \{ */
-
-void view3d_winmatrix_set(Depsgraph *depsgraph,
-                          ARegion *region,
+/* Win and View Matrix Calc */
+void view3d_winmatrix_set(Graph *graph,
+                          ARgn *rgn,
                           const View3D *v3d,
                           const rcti *rect)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   rctf full_viewplane;
   float clipsta, clipend;
   bool is_ortho;
 
-  is_ortho = ED_view3d_viewplane_get(
-      depsgraph, v3d, rv3d, region->winx, region->winy, &full_viewplane, &clipsta, &clipend, NULL);
+  is_ortho = ed_view3d_viewplane_get(
+      graph, v3d, rv3d, rgn->winx, rgn->winy, &full_viewplane, &clipsta, &clipend, NULL);
   rv3d->is_persp = !is_ortho;
 
 #if 0
@@ -311,32 +306,32 @@ void view3d_winmatrix_set(Depsgraph *depsgraph,
   if (rect) {
     /* Smaller viewplane subset for selection picking. */
     viewplane.xmin = full_viewplane.xmin +
-                     (BLI_rctf_size_x(&full_viewplane) * (rect->xmin / (float)region->winx));
+                     (lib_rctf_size_x(&full_viewplane) * (rect->xmin / (float)rgn->winx));
     viewplane.ymin = full_viewplane.ymin +
-                     (BLI_rctf_size_y(&full_viewplane) * (rect->ymin / (float)region->winy));
+                     (lib_rctf_size_y(&full_viewplane) * (rect->ymin / (float)rgn->winy));
     viewplane.xmax = full_viewplane.xmin +
-                     (BLI_rctf_size_x(&full_viewplane) * (rect->xmax / (float)region->winx));
+                     (lib_rctf_size_x(&full_viewplane) * (rect->xmax / (float)rgn->winx));
     viewplane.ymax = full_viewplane.ymin +
-                     (BLI_rctf_size_y(&full_viewplane) * (rect->ymax / (float)region->winy));
+                     (lib_rctf_size_y(&full_viewplane) * (rect->ymax / (float)rgn->winy));
   }
   else {
     viewplane = full_viewplane;
   }
 
   if (is_ortho) {
-    GPU_matrix_ortho_set(
+    gpu_matrix_ortho_set(
         viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
   }
   else {
-    GPU_matrix_frustum_set(
+    gpu_matrix_frustum_set(
         viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
   }
 
-  /* update matrix in 3d view region */
-  GPU_matrix_projection_get(rv3d->winmat);
+  /* update matrix in 3d view rgn */
+  gpu_matrix_projection_get(rv3d->winmat);
 }
 
-static void obmat_to_viewmat(RegionView3D *rv3d, Object *ob)
+static void obmat_to_viewmat(RgnView3D *rv3d, Obj *ob)
 {
   float bmat[4][4];
 
@@ -345,19 +340,19 @@ static void obmat_to_viewmat(RegionView3D *rv3d, Object *ob)
   normalize_m4_m4(bmat, ob->obmat);
   invert_m4_m4(rv3d->viewmat, bmat);
 
-  /* view quat calculation, needed for add object */
+  /* view quat calc, needed for add obj */
   mat4_normalized_to_quat(rv3d->viewquat, rv3d->viewmat);
 }
 
-void view3d_viewmatrix_set(Depsgraph *depsgraph,
+void view3d_viewmatrix_set(Graph *graph,
                            const Scene *scene,
                            const View3D *v3d,
-                           RegionView3D *rv3d,
+                           RgnView3D *rv3d,
                            const float rect_scale[2])
 {
   if (rv3d->persp == RV3D_CAMOB) { /* obs/camera */
     if (v3d->camera) {
-      Object *ob_camera_eval = DEG_get_evaluated_object(depsgraph, v3d->camera);
+      Obj *ob_camera_eval = graph_get_eval_obj(graph, v3d->camera);
       obmat_to_viewmat(rv3d, ob_camera_eval);
     }
     else {
@@ -370,7 +365,7 @@ void view3d_viewmatrix_set(Depsgraph *depsgraph,
 
     /* should be moved to better initialize later on XXX */
     if (RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) {
-      ED_view3d_lock(rv3d);
+      ed_view3d_lock(rv3d);
     }
 
     quat_to_mat4(rv3d->viewmat, rv3d->viewquat);
@@ -378,12 +373,12 @@ void view3d_viewmatrix_set(Depsgraph *depsgraph,
       rv3d->viewmat[3][2] -= rv3d->dist;
     }
     if (v3d->ob_center) {
-      Object *ob_eval = DEG_get_evaluated_object(depsgraph, v3d->ob_center);
+      Obj *ob_eval = graph_get_eval_obj(graph, v3d->ob_center);
       float vec[3];
 
       copy_v3_v3(vec, ob_eval->obmat[3]);
       if (ob_eval->type == OB_ARMATURE && v3d->ob_center_bone[0]) {
-        bPoseChannel *pchan = BKE_pose_channel_find_name(ob_eval->pose, v3d->ob_center_bone);
+        PoseChannel *pchan = dune_pose_channel_find_name(ob_eval->pose, v3d->ob_center_bone);
         if (pchan) {
           copy_v3_v3(vec, pchan->pose_mat[3]);
           mul_m4_v3(ob_eval->obmat, vec);
@@ -416,11 +411,10 @@ void view3d_viewmatrix_set(Depsgraph *depsgraph,
       vec[2] = 0.0f;
 
       if (rect_scale) {
-        /* Since 'RegionView3D.winmat' has been calculated and this function doesn't take the
-         * 'ARegion' we don't know about the region size.
-         * Use 'rect_scale' when drawing a sub-region to apply 2D offset,
-         * scaled by the difference between the sub-region and the region size.
-         */
+        /* Since 'RgnView3D.winmat' has been calc and this fn doesn't take the
+         * 'ARgn' we don't know about the rgn size.
+         * Use 'rect_scale' when drawing a sub-rgn to apply 2D offset,
+         * scaled by the diff between the sub-rgn and the rgn size. */
         vec[0] /= rect_scale[0];
         vec[1] /= rect_scale[1];
       }
@@ -432,60 +426,55 @@ void view3d_viewmatrix_set(Depsgraph *depsgraph,
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name OpenGL Select Utilities
- * \{ */
-
-void view3d_opengl_select_cache_begin(void)
+/* OpenGL Sel Utils */
+void view3d_opengl_sel_cache_begin(void)
 {
-  GPU_select_cache_begin();
+  gpu_sel_cache_begin();
 }
 
-void view3d_opengl_select_cache_end(void)
+void view3d_opengl_sel_cache_end(void)
 {
-  GPU_select_cache_end();
+  gpu_sel_cache_end();
 }
 
-struct DrawSelectLoopUserData {
+struct DrawSelLoopUserData {
   uint pass;
   uint hits;
-  GPUSelectResult *buffer;
+  GPUSelResult *buffer;
   uint buffer_len;
   const rcti *rect;
-  eGPUSelectMode gpu_select_mode;
+  eGPUSelMode gpu_sel_mode;
 };
 
-static bool drw_select_loop_pass(eDRWSelectStage stage, void *user_data)
+static bool drw_sel_loop_pass(eDRWSelStage stage, void *user_data)
 {
   bool continue_pass = false;
-  struct DrawSelectLoopUserData *data = user_data;
-  if (stage == DRW_SELECT_PASS_PRE) {
-    GPU_select_begin(
-        data->buffer, data->buffer_len, data->rect, data->gpu_select_mode, data->hits);
+  struct DrawSelLoopUserData *data = user_data;
+  if (stage == DRW_SEL_PASS_PRE) {
+    gpu_sel_begin(
+        data->buffer, data->buffer_len, data->rect, data->gpu_sel_mode, data->hits);
     /* always run POST after PRE. */
     continue_pass = true;
   }
-  else if (stage == DRW_SELECT_PASS_POST) {
-    int hits = GPU_select_end();
+  else if (stage == DRW_SEL_PASS_POST) {
+    int hits = gpu_sel_end();
     if (data->pass == 0) {
-      /* quirk of GPU_select_end, only take hits value from first call. */
+      /* quirk of gpu_sel_end, only take hits value from first call. */
       data->hits = hits;
     }
-    if (data->gpu_select_mode == GPU_SELECT_NEAREST_FIRST_PASS) {
-      data->gpu_select_mode = GPU_SELECT_NEAREST_SECOND_PASS;
+    if (data->gpu_sel_mode == GPU_SEL_NEAREST_FIRST_PASS) {
+      data->gpu_sel_mode = GPU_SEL_NEAREST_SECOND_PASS;
       continue_pass = (hits > 0);
     }
     data->pass += 1;
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
   return continue_pass;
 }
 
-eV3DSelectObjectFilter ED_view3d_select_filter_from_mode(const Scene *scene, const Object *obact)
+eV3DSelObjFilter ED_view3d_select_filter_from_mode(const Scene *scene, const Object *obact)
 {
   if (scene->toolsettings->object_flag & SCE_OBJECT_MODE_LOCK) {
     if (obact && (obact->mode & OB_MODE_ALL_WEIGHT_PAINT) &&
