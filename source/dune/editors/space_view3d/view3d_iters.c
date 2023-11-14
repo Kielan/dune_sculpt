@@ -476,7 +476,7 @@ void mesh_foreachScreenEdge_clip_bb_segment(ViewCxt *vc,
   }
 }
 
-/* Edit-Mesh: For Each Screen Face Center */
+/* EditMesh: For Each Screen Face Center */
 static void mesh_foreachScreenFace__mapFn(void *userData,
                                           int index,
                                           const float cent[3],
@@ -592,7 +592,7 @@ void nurbs_foreachScreenVert(ViewCxt *vc,
                                            screen_co,
                                            V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
                 V3D_PROJ_RET_OK) {
-              func(userData, nu, NULL, bezt, 2, true, screen_co);
+              fn(userData, nu, NULL, bezt, 2, true, screen_co);
             }
           }
         }
@@ -615,83 +615,73 @@ void nurbs_foreachScreenVert(ViewCxt *vc,
   }
 }
 
-/* Edit-Meta: For Each Screen Meta-Element */
+/* EditMeta: For Each Screen Meta-Element */
 void mball_foreachScreenElem(struct ViewCxt *vc,
                              void (*fn)(void *userData,
-                                          struct MetaElem *ml,
-                                          const float screen_co_b[2]),
+                                        struct MetaElem *ml,
+                                        const float screen_co_b[2]),
                              void *userData,
                              const eV3DProjTest clip_flag)
 {
   MetaBall *mb = (MetaBall *)vc->obedit->data;
   MetaElem *ml;
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   for (ml = mb->editelems->first; ml; ml = ml->next) {
     float screen_co[2];
-    if (ED_view3d_project_float_object(vc->region, &ml->x, screen_co, clip_flag) ==
+    if (ed_view3d_project_float_ob(vc->rgn, &ml->x, screen_co, clip_flag) ==
         V3D_PROJ_RET_OK) {
-      func(userData, ml, screen_co);
+      fn(userData, ml, screen_co);
     }
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Lattice: For Each Screen Vertex
- * \{ */
-
-void lattice_foreachScreenVert(ViewContext *vc,
-                               void (*func)(void *userData, BPoint *bp, const float screen_co[2]),
+/* Edit-Lattice: For Each Screen Vertex */
+void lattice_foreachScreenVert(ViewCxt *vc,
+                               void (*fn)(void *userData, Point *point, const float screen_co[2]),
                                void *userData,
                                const eV3DProjTest clip_flag)
 {
-  Object *obedit = vc->obedit;
+  Ob *obedit = vc->obedit;
   Lattice *lt = obedit->data;
-  BPoint *bp = lt->editlatt->latt->def;
+  Point *point = lt->editlatt->latt->def;
   DispList *dl = obedit->runtime.curve_cache ?
-                     BKE_displist_find(&obedit->runtime.curve_cache->disp, DL_VERTS) :
+                     dune_displist_find(&obedit->runtime.curve_cache->disp, DL_VERTS) :
                      NULL;
   const float *co = dl ? dl->verts : NULL;
   int i, N = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_BB) {
-    ED_view3d_clipping_local(vc->rv3d, obedit->obmat); /* for local clipping lookups */
+    ed_view3d_clipping_local(vc->rv3d, obedit->obmat); /* for local clipping lookups */
   }
 
-  for (i = 0; i < N; i++, bp++, co += 3) {
-    if (bp->hide == 0) {
+  for (i = 0; i < N; i++, point++, co += 3) {
+    if (point->hide == 0) {
       float screen_co[2];
-      if (ED_view3d_project_float_object(vc->region, dl ? co : bp->vec, screen_co, clip_flag) ==
+      if (ed_view3d_project_float_ob(vc->rgn, dl ? co : bp->vec, screen_co, clip_flag) ==
           V3D_PROJ_RET_OK) {
-        func(userData, bp, screen_co);
+        fn(userData, point, screen_co);
       }
     }
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Armature: For Each Screen Bone
- * \{ */
-
-void armature_foreachScreenBone(struct ViewContext *vc,
-                                void (*func)(void *userData,
-                                             struct EditBone *ebone,
-                                             const float screen_co_a[2],
-                                             const float screen_co_b[2]),
+/* Edit-Armature: For Each Screen Bone */
+void armature_foreachScreenBone(struct ViewCxt *vc,
+                                void (*fn)(void *userData,
+                                           struct EditBone *ebone,
+                                           const float screen_co_a[2],
+                                           const float screen_co_b[2]),
                                 void *userData,
                                 const eV3DProjTest clip_flag)
 {
-  bArmature *arm = vc->obedit->data;
+  Armature *arm = vc->obedit->data;
   EditBone *ebone;
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   float content_planes[6][4];
   int content_planes_len;
@@ -699,11 +689,11 @@ void armature_foreachScreenBone(struct ViewContext *vc,
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
     content_planes_len = content_planes_from_clip_flag(
-        vc->region, vc->obedit, clip_flag, content_planes);
+        vc->rgn, vc->obedit, clip_flag, content_planes);
     win_rect.xmin = 0;
     win_rect.ymin = 0;
-    win_rect.xmax = vc->region->winx;
-    win_rect.ymax = vc->region->winy;
+    win_rect.xmax = vc->rgn->winx;
+    win_rect.ymax = vc->rgn->winy;
   }
   else {
     content_planes_len = 0;
@@ -718,7 +708,7 @@ void armature_foreachScreenBone(struct ViewContext *vc,
     const float *v_a = ebone->head, *v_b = ebone->tail;
 
     if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
-      if (!view3d_project_segment_to_screen_with_content_clip_planes(vc->region,
+      if (!view3d_project_segment_to_screen_with_content_clip_planes(vc->rgn,
                                                                      v_a,
                                                                      v_b,
                                                                      clip_flag,
@@ -732,37 +722,31 @@ void armature_foreachScreenBone(struct ViewContext *vc,
     }
     else {
       if (!view3d_project_segment_to_screen_with_clip_tag(
-              vc->region, v_a, v_b, clip_flag, screen_co_a, screen_co_b)) {
+              vc->rgn, v_a, v_b, clip_flag, screen_co_a, screen_co_b)) {
         continue;
       }
     }
 
-    func(userData, ebone, screen_co_a, screen_co_b);
+    fn(userData, ebone, screen_co_a, screen_co_b);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Pose: For Each Screen Bone
- * \{ */
-
-void pose_foreachScreenBone(struct ViewContext *vc,
-                            void (*func)(void *userData,
-                                         struct bPoseChannel *pchan,
-                                         const float screen_co_a[2],
-                                         const float screen_co_b[2]),
+/* Pose: For Each Screen Bone */
+void pose_foreachScreenBone(struct ViewCxt *vc,
+                            void (*fn)(void *userData,
+                                       struct PoseChannel *pchan,
+                                       const float screen_co_a[2],
+                                       const float screen_co_b[2]),
                             void *userData,
                             const eV3DProjTest clip_flag)
 {
-  /* Almost _exact_ copy of #armature_foreachScreenBone */
+  /* Almost _exact_ copy of armature_foreachScreenBone */
+  const Ob *ob_eval = graph_get_eval_ob(vc->graph, vc->obact);
+  const Armature *arm_eval = ob_eval->data;
+  Pose *pose = vc->obact->pose;
+  PoseChannel *pchan;
 
-  const Object *ob_eval = DEG_get_evaluated_object(vc->depsgraph, vc->obact);
-  const bArmature *arm_eval = ob_eval->data;
-  bPose *pose = vc->obact->pose;
-  bPoseChannel *pchan;
-
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   float content_planes[6][4];
   int content_planes_len;
@@ -770,7 +754,7 @@ void pose_foreachScreenBone(struct ViewContext *vc,
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
     content_planes_len = content_planes_from_clip_flag(
-        vc->region, ob_eval, clip_flag, content_planes);
+        vc->rgn, ob_eval, clip_flag, content_planes);
     win_rect.xmin = 0;
     win_rect.ymin = 0;
     win_rect.xmax = vc->region->winx;
@@ -785,12 +769,12 @@ void pose_foreachScreenBone(struct ViewContext *vc,
       continue;
     }
 
-    bPoseChannel *pchan_eval = BKE_pose_channel_find_name(ob_eval->pose, pchan->name);
+    PoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
     float screen_co_a[2], screen_co_b[2];
     const float *v_a = pchan_eval->pose_head, *v_b = pchan_eval->pose_tail;
 
     if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
-      if (!view3d_project_segment_to_screen_with_content_clip_planes(vc->region,
+      if (!view3d_project_segment_to_screen_with_content_clip_planes(vc->rgn,
                                                                      v_a,
                                                                      v_b,
                                                                      clip_flag,
@@ -804,11 +788,11 @@ void pose_foreachScreenBone(struct ViewContext *vc,
     }
     else {
       if (!view3d_project_segment_to_screen_with_clip_tag(
-              vc->region, v_a, v_b, clip_flag, screen_co_a, screen_co_b)) {
+              vc->re my gn, v_a, v_b, clip_flag, screen_co_a, screen_co_b)) {
         continue;
       }
     }
 
-    func(userData, pchan, screen_co_a, screen_co_b);
+    fn(userData, pchan, screen_co_a, screen_co_b);
   }
 }
