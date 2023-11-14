@@ -477,7 +477,6 @@ void mesh_foreachScreenEdge_clip_bb_segment(ViewCxt *vc,
 }
 
 /* Edit-Mesh: For Each Screen Face Center */
-
 static void mesh_foreachScreenFace__mapFn(void *userData,
                                           int index,
                                           const float cent[3],
@@ -490,73 +489,68 @@ static void mesh_foreachScreenFace__mapFn(void *userData,
   }
 
   float screen_co[2];
-  if (ED_view3d_project_float_object(data->vc.region, cent, screen_co, data->clip_flag) !=
+  if (ed_view3d_project_float_ob(data->vc.region, cent, screen_co, data->clip_flag) !=
       V3D_PROJ_RET_OK) {
     return;
   }
 
-  data->func(data->userData, efa, screen_co, index);
+  data->fn(data->userData, efa, screen_co, index);
 }
 
 void mesh_foreachScreenFace(
-    ViewContext *vc,
-    void (*func)(void *userData, BMFace *efa, const float screen_co_b[2], int index),
+    ViewCxt *vc,
+    void (*fn)(void *userData, MFace *efa, const float screen_co_b[2], int index),
     void *userData,
     const eV3DProjTest clip_flag)
 {
-  BLI_assert((clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) == 0);
+  lib_assert((clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) == 0);
   foreachScreenFace_userData data;
 
-  Mesh *me = editbmesh_get_eval_cage_from_orig(
-      vc->depsgraph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
-  me = BKE_mesh_wrapper_ensure_subdivision(vc->obedit, me);
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  Mesh *me = editmesh_get_eval_cage_from_orig(
+      vc->graph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
+  me = dune_mesh_wrapper_ensure_subdivision(vc->obedit, me);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
-  data.func = func;
+  data.fn = fn;
   data.userData = userData;
   data.clip_flag = clip_flag;
 
-  BM_mesh_elem_table_ensure(vc->em->bm, BM_FACE);
+  mesh_elem_table_ensure(vc->em->mesh, MESH_FACE);
 
-  if (BKE_modifiers_uses_subsurf_facedots(vc->scene, vc->obedit)) {
-    BKE_mesh_foreach_mapped_subdiv_face_center(
-        me, mesh_foreachScreenFace__mapFunc, &data, MESH_FOREACH_NOP);
+  if (dune_mods_uses_subsurf_facedots(vc->scene, vc->obedit)) {
+    dune_mesh_foreach_mapped_subdiv_face_center(
+        me, mesh_foreachScreenFace__mapFn, &data, MESH_FOREACH_NOP);
   }
   else {
-    BKE_mesh_foreach_mapped_face_center(
-        me, mesh_foreachScreenFace__mapFunc, &data, MESH_FOREACH_NOP);
+    dune_mesh_foreach_mapped_face_center(
+        me, mesh_foreachScreenFace__mapFn, &data, MESH_FOREACH_NOP);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Nurbs: For Each Screen Vertex
- * \{ */
-
-void nurbs_foreachScreenVert(ViewContext *vc,
-                             void (*func)(void *userData,
-                                          Nurb *nu,
-                                          BPoint *bp,
-                                          BezTriple *bezt,
-                                          int beztindex,
-                                          bool handles_visible,
-                                          const float screen_co_b[2]),
+/* Edit-Nurbs: For Each Screen Vertex */
+void nurbs_foreachScreenVert(ViewCxt *vc,
+                             void (*fn)(void *userData,
+                                        Nurb *nu,
+                                        Point *bp,
+                                        BezTriple *bezt,
+                                        int beztindex,
+                                        bool handles_visible,
+                                        const float screen_co_b[2]),
                              void *userData,
                              const eV3DProjTest clip_flag)
 {
   Curve *cu = vc->obedit->data;
   Nurb *nu;
   int i;
-  ListBase *nurbs = BKE_curve_editNurbs_get(cu);
+  List *nurbs = dune_curve_editNurbs_get(cu);
   /* If no point in the triple is selected, the handles are invisible. */
   const bool only_selected = (vc->v3d->overlay.handle_display == CURVE_HANDLE_SELECTED);
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_BB) {
-    ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
+    ed_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
   }
 
   for (nu = nurbs->first; nu; nu = nu->next) {
@@ -570,33 +564,33 @@ void nurbs_foreachScreenVert(ViewContext *vc,
           float screen_co[2];
 
           if (!handles_visible) {
-            if (ED_view3d_project_float_object(vc->region,
+            if (ed_view3d_project_float_object(vc->rgn,
                                                bezt->vec[1],
                                                screen_co,
                                                V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
                 V3D_PROJ_RET_OK) {
-              func(userData, nu, NULL, bezt, 1, false, screen_co);
+              fn(userData, nu, NULL, bezt, 1, false, screen_co);
             }
           }
           else {
-            if (ED_view3d_project_float_object(vc->region,
-                                               bezt->vec[0],
-                                               screen_co,
-                                               V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
+            if (ed_view3d_project_float_ob(vc->rgn,
+                                           bezt->vec[0],
+                                           screen_co,
+                                           V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
                 V3D_PROJ_RET_OK) {
-              func(userData, nu, NULL, bezt, 0, true, screen_co);
+              fn(userData, nu, NULL, bezt, 0, true, screen_co);
             }
-            if (ED_view3d_project_float_object(vc->region,
-                                               bezt->vec[1],
-                                               screen_co,
-                                               V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
+            if (ed_view3d_project_float_ob(vc->rgn,
+                                           bezt->vec[1],
+                                           screen_co,
+                                           V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
                 V3D_PROJ_RET_OK) {
-              func(userData, nu, NULL, bezt, 1, true, screen_co);
+              fn(userData, nu, NULL, bezt, 1, true, screen_co);
             }
-            if (ED_view3d_project_float_object(vc->region,
-                                               bezt->vec[2],
-                                               screen_co,
-                                               V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
+            if (ed_view3d_project_float_ob(vc->rgn,
+                                           bezt->vec[2],
+                                           screen_co,
+                                           V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
                 V3D_PROJ_RET_OK) {
               func(userData, nu, NULL, bezt, 2, true, screen_co);
             }
@@ -606,14 +600,14 @@ void nurbs_foreachScreenVert(ViewContext *vc,
     }
     else {
       for (i = 0; i < nu->pntsu * nu->pntsv; i++) {
-        BPoint *bp = &nu->bp[i];
+        Point *point = &nu->point[i];
 
-        if (bp->hide == 0) {
+        if (point->hide == 0) {
           float screen_co[2];
-          if (ED_view3d_project_float_object(
-                  vc->region, bp->vec, screen_co, V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
+          if (ed_view3d_project_float_ob(
+                  vc->rgn, point->vec, screen_co, V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
               V3D_PROJ_RET_OK) {
-            func(userData, nu, bp, NULL, -1, false, screen_co);
+            fn(userData, nu, point, NULL, -1, false, screen_co);
           }
         }
       }
@@ -621,14 +615,9 @@ void nurbs_foreachScreenVert(ViewContext *vc,
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Meta: For Each Screen Meta-Element
- * \{ */
-
-void mball_foreachScreenElem(struct ViewContext *vc,
-                             void (*func)(void *userData,
+/* Edit-Meta: For Each Screen Meta-Element */
+void mball_foreachScreenElem(struct ViewCxt *vc,
+                             void (*fn)(void *userData,
                                           struct MetaElem *ml,
                                           const float screen_co_b[2]),
                              void *userData,
