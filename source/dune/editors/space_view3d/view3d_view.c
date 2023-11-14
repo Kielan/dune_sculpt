@@ -9,74 +9,72 @@
 #include "dune_cxt.h"
 #include "dune_global.h"
 #include "dune_pen_mod.h"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_mod.h"
+#include "dune_obj.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "GPU_matrix.h"
-#include "GPU_select.h"
-#include "GPU_state.h"
+#include "gpu_matrix.h"
+#include "gpu_select.h"
+#include "gpu_state.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "ED_object.h"
-#include "ED_screen.h"
+#include "ed_obj.h"
+#include "ed_screen.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
 #include "view3d_intern.h" /* own include */
-#include "view3d_navigate.h"
+#include "view3d_nav.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Camera to View Operator
- * \{ */
+/* Camera to View Op */
 
-static int view3d_camera_to_view_exec(bContext *C, wmOperator *UNUSED(op))
+static int view3d_camera_to_view_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  const Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  const Graph *graph = cxt_data_ensure_eval_graph(C);
   View3D *v3d;
-  ARegion *region;
-  RegionView3D *rv3d;
+  ARgn *rgn;
+  RgnView3D *rv3d;
 
-  ObjectTfmProtectedChannels obtfm;
+  ObjTfmProtectedChannels obtfm;
 
-  ED_view3d_context_user_region(C, &v3d, &region);
+  ed_view3d_cxt_user_rgn(C, &v3d, &rgn);
   rv3d = region->regiondata;
 
-  ED_view3d_lastview_store(rv3d);
+  ed_view3d_lastview_store(rv3d);
 
-  BKE_object_tfm_protected_backup(v3d->camera, &obtfm);
+  dune_obj_tfm_protected_backup(v3d->camera, &obtfm);
 
-  ED_view3d_to_object(depsgraph, v3d->camera, rv3d->ofs, rv3d->viewquat, rv3d->dist);
+  ed_view3d_to_obj(graph, v3d->camera, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 
-  BKE_object_tfm_protected_restore(v3d->camera, &obtfm, v3d->camera->protectflag);
+  dune_obj_tfm_protected_restore(v3d->camera, &obtfm, v3d->camera->protectflag);
 
-  DEG_id_tag_update(&v3d->camera->id, ID_RECALC_TRANSFORM);
+  graph_id_tag_update(&v3d->camera->id, ID_RECALC_TRANSFORM);
   rv3d->persp = RV3D_CAMOB;
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, v3d->camera);
+  win_ev_add_notifier(C, NC_OBJECT | ND_TRANSFORM, v3d->camera);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool view3d_camera_to_view_poll(bContext *C)
+static bool view3d_camera_to_view_poll(Cxt *C)
 {
   View3D *v3d;
-  ARegion *region;
+  ARgn *rgn;
 
-  if (ED_view3d_context_user_region(C, &v3d, &region)) {
-    RegionView3D *rv3d = region->regiondata;
+  if (ed_view3d_cxt_user_rgn(C, &v3d, &rgn)) {
+    RgnView3D *rv3d = rgn->rgndata;
     if (v3d && v3d->camera && !ID_IS_LINKED(v3d->camera)) {
       if (rv3d && (RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ANY_TRANSFORM) == 0) {
         if (rv3d->persp != RV3D_CAMOB) {
@@ -89,77 +87,68 @@ static bool view3d_camera_to_view_poll(bContext *C)
   return false;
 }
 
-void VIEW3D_OT_camera_to_view(wmOperatorType *ot)
+void VIEW3D_OT_camera_to_view(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Align Camera to View";
   ot->description = "Set camera view to active view";
   ot->idname = "VIEW3D_OT_camera_to_view";
 
-  /* api callbacks */
-  ot->exec = view3d_camera_to_view_exec;
+  /* api cbs */
+  ot->ex = view3d_camera_to_view_ex;
   ot->poll = view3d_camera_to_view_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Camera Fit Frame to Selected Operator
- * \{ */
+/* Camera Fit Frame to Selected Op */
 
 /* unlike VIEW3D_OT_view_selected this is for framing a render and not
  * meant to take into account vertex/bone selection for eg. */
-static int view3d_camera_to_view_selected_exec(bContext *C, wmOperator *op)
+static int view3d_camera_to_view_selected_exec(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
-  View3D *v3d = CTX_wm_view3d(C); /* can be NULL */
-  Object *camera_ob = v3d ? v3d->camera : scene->camera;
+  Main *main = cxt_data_main(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
+  View3D *v3d = cxt_win_view3d(C); /* can be NULL */
+  Obj *camera_ob = v3d ? v3d->camera : scene->camera;
 
   if (camera_ob == NULL) {
-    BKE_report(op->reports, RPT_ERROR, "No active camera");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No active camera");
+    return OP_CANCELLED;
   }
 
-  if (ED_view3d_camera_to_view_selected(bmain, depsgraph, scene, camera_ob)) {
-    WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, camera_ob);
-    return OPERATOR_FINISHED;
+  if (ed_view3d_camera_to_view_selected(main, graph, scene, camera_ob)) {
+    win_ev_add_notifier(C, NC_OBJ | ND_TRANSFORM, camera_ob);
+    return OP_FINISHED;
   }
   return OPERATOR_CANCELLED;
 }
 
-void VIEW3D_OT_camera_to_view_selected(wmOperatorType *ot)
+void VIEW3D_OT_camera_to_view_selected(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Camera Fit Frame to Selected";
-  ot->description = "Move the camera so selected objects are framed";
+  ot->description = "Move the camera so selected objs are framed";
   ot->idname = "VIEW3D_OT_camera_to_view_selected";
 
-  /* api callbacks */
-  ot->exec = view3d_camera_to_view_selected_exec;
-  ot->poll = ED_operator_scene_editable;
+  /* api cbs */
+  ot->ex = view3d_camera_to_view_selected_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Object as Camera Operator
- * \{ */
-
-static void sync_viewport_camera_smoothview(bContext *C,
+/* Obj as Camera Op */
+static void sync_viewport_camera_smoothview(bCxt *C,
                                             View3D *v3d,
-                                            Object *ob,
+                                            Obj *ob,
                                             const int smooth_viewtx)
 {
-  Main *bmain = CTX_data_main(C);
-  for (bScreen *screen = bmain->screens.first; screen != NULL; screen = screen->id.next) {
+  Main *main = cxt_data_main(C);
+  for (Screen *screen = main->screens.first; screen != NULL; screen = screen->id.next) {
     for (ScrArea *area = screen->areabase.first; area != NULL; area = area->next) {
       for (SpaceLink *space_link = area->spacedata.first; space_link != NULL;
            space_link = space_link->next) {
@@ -172,11 +161,11 @@ static void sync_viewport_camera_smoothview(bContext *C,
             continue;
           }
           if (v3d->scenelock) {
-            ListBase *lb = (space_link == area->spacedata.first) ? &area->regionbase :
-                                                                   &space_link->regionbase;
-            for (ARegion *other_region = lb->first; other_region != NULL;
-                 other_region = other_region->next) {
-              if (other_region->regiontype == RGN_TYPE_WINDOW) {
+            List *list = (space_link == area->spacedata.first) ? &area->rgnbase :
+                                                                   &space_link->rgnbase;
+            for (ARgn *other_rgn = list->first; other_rgn != NULL;
+                 other_rgn = other_rgn->next) {
+              if (other_rgn->regiontype == RGN_TYPE_WINDOW) {
                 if (other_region->regiondata) {
                   RegionView3D *other_rv3d = other_region->regiondata;
                   if (other_rv3d->persp == RV3D_CAMOB) {
