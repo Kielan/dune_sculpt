@@ -261,83 +261,78 @@ void meshob_foreachScreenVert(
   ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
-  data.func = func;
+  data.fn = fn;
   data.userData = userData;
   data.clip_flag = clip_flag;
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_BB) {
-    ED_view3d_clipping_local(vc->rv3d, vc->obact->obmat);
+    ed_view3d_clipping_local(vc->rv3d, vc->obact->obmat);
   }
 
-  BKE_mesh_foreach_mapped_vert(me, meshobject_foreachScreenVert__mapFunc, &data, MESH_FOREACH_NOP);
+  dune_mesh_foreach_mapped_vert(me, meshob_foreachScreenVert__mapFn, &data, MESH_FOREACH_NOP);
 }
 
-static void mesh_foreachScreenVert__mapFunc(void *userData,
+static void mesh_foreachScreenVert__mapFn(void *userData,
                                             int index,
                                             const float co[3],
                                             const float UNUSED(no[3]))
 {
   foreachScreenVert_userData *data = userData;
-  BMVert *eve = BM_vert_at_index(data->vc.em->bm, index);
-  if (UNLIKELY(BM_elem_flag_test(eve, BM_ELEM_HIDDEN))) {
+  MVert *eve = mesh_vert_at_index(data->vc.em->mesh, index);
+  if (UNLIKELY(mesh_elem_flag_test(eve, MESH_ELEM_HIDDEN))) {
     return;
   }
 
   float screen_co[2];
-  if (ED_view3d_project_float_object(data->vc.region, co, screen_co, data->clip_flag) !=
+  if (ed_view3d_project_float_ob(data->vc.rgn, co, screen_co, data->clip_flag) !=
       V3D_PROJ_RET_OK) {
     return;
   }
 
-  data->func(data->userData, eve, screen_co, index);
+  data->fn(data->userData, eve, screen_co, index);
 }
 
 void mesh_foreachScreenVert(
-    ViewContext *vc,
-    void (*func)(void *userData, BMVert *eve, const float screen_co[2], int index),
+    ViewCxt *vc,
+    void (*fn)(void *userData, MVert *eve, const float screen_co[2], int index),
     void *userData,
     eV3DProjTest clip_flag)
 {
   foreachScreenVert_userData data;
 
-  Mesh *me = editbmesh_get_eval_cage_from_orig(
-      vc->depsgraph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
-  me = BKE_mesh_wrapper_ensure_subdivision(vc->obedit, me);
+  Mesh *me = editmesh_get_eval_cage_from_orig(
+      vc->graph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
+  me = dune_mesh_wrapper_ensure_subdivision(vc->obedit, me);
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
-  data.func = func;
+  data.fn = fn;
   data.userData = userData;
   data.clip_flag = clip_flag;
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_BB) {
-    ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
+    ed_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
   }
 
-  BM_mesh_elem_table_ensure(vc->em->bm, BM_VERT);
-  BKE_mesh_foreach_mapped_vert(me, mesh_foreachScreenVert__mapFunc, &data, MESH_FOREACH_NOP);
+  mesh_elem_table_ensure(vc->em->mesh, MESH_VERT);
+  dune_mesh_foreach_mapped_vert(me, mesh_foreachScreenVert__mapFn, &data, MESH_FOREACH_NOP);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Mesh: For Each Screen Mesh Edge
- * \{ */
-
-static void mesh_foreachScreenEdge__mapFunc(void *userData,
-                                            int index,
-                                            const float v_a[3],
-                                            const float v_b[3])
+/* Edit-Mesh: For Each Screen Mesh Edge */
+static void mesh_foreachScreenEdge__mapFn(void *userData,
+                                          int index,
+                                          const float v_a[3],
+                                          const float v_b[3])
 {
   foreachScreenEdge_userData *data = userData;
-  BMEdge *eed = BM_edge_at_index(data->vc.em->bm, index);
-  if (UNLIKELY(BM_elem_flag_test(eed, BM_ELEM_HIDDEN))) {
+  MEdge *eed = mesh_edge_at_index(data->vc.em->mesh, index);
+  if (UNLIKELY(mesh_elem_flag_test(eed, MESH_ELEM_HIDDEN))) {
     return;
   }
 
   float screen_co_a[2], screen_co_b[2];
-  if (!view3d_project_segment_to_screen_with_content_clip_planes(data->vc.region,
+  if (!view3d_project_segment_to_screen_with_content_clip_planes(data->vc.rgn,
                                                                  v_a,
                                                                  v_b,
                                                                  data->clip_flag,
@@ -349,12 +344,12 @@ static void mesh_foreachScreenEdge__mapFunc(void *userData,
     return;
   }
 
-  data->func(data->userData, eed, screen_co_a, screen_co_b, index);
+  data->fn(data->userData, eed, screen_co_a, screen_co_b, index);
 }
 
-void mesh_foreachScreenEdge(ViewContext *vc,
-                            void (*func)(void *userData,
-                                         BMEdge *eed,
+void mesh_foreachScreenEdge(ViewCxt *vc,
+                            void (*fn)(void *userData,
+                                         MEdge *eed,
                                          const float screen_co_a[2],
                                          const float screen_co_b[2],
                                          int index),
@@ -363,61 +358,54 @@ void mesh_foreachScreenEdge(ViewContext *vc,
 {
   foreachScreenEdge_userData data;
 
-  Mesh *me = editbmesh_get_eval_cage_from_orig(
+  Mesh *me = editmesh_get_eval_cage_from_orig(
       vc->depsgraph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
-  me = BKE_mesh_wrapper_ensure_subdivision(vc->obedit, me);
+  me = dune_mesh_wrapper_ensure_subdivision(vc->obedit, me);
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
 
   data.win_rect.xmin = 0;
   data.win_rect.ymin = 0;
-  data.win_rect.xmax = vc->region->winx;
-  data.win_rect.ymax = vc->region->winy;
+  data.win_rect.xmax = vc->rgn->winx;
+  data.win_rect.ymax = vc->rgnn->winy;
 
-  data.func = func;
+  data.fn = fn;
   data.userData = userData;
   data.clip_flag = clip_flag;
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_BB) {
-    ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
+    ed_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
   }
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
     data.content_planes_len = content_planes_from_clip_flag(
-        vc->region, vc->obedit, clip_flag, data.content_planes);
+        vc->rgn, vc->obedit, clip_flag, data.content_planes);
   }
   else {
     data.content_planes_len = 0;
   }
 
-  BM_mesh_elem_table_ensure(vc->em->bm, BM_EDGE);
-  BKE_mesh_foreach_mapped_edge(me, vc->em->bm->totedge, mesh_foreachScreenEdge__mapFunc, &data);
+  mesh_elem_table_ensure(vc->em->mesh, MESH_EDGE);
+  dune_mesh_foreach_mapped_edge(me, vc->em->mesh->totedge, mesh_foreachScreenEdge__mapFn, &data);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Mesh: For Each Screen Edge (Bounding Box Clipped)
- * \{ */
-
-/**
- * Only call for bound-box clipping.
- * Otherwise call #mesh_foreachScreenEdge__mapFunc
- */
-static void mesh_foreachScreenEdge_clip_bb_segment__mapFunc(void *userData,
-                                                            int index,
-                                                            const float v_a[3],
-                                                            const float v_b[3])
+/* Edit-Mesh: For Each Screen Edge (Bounding Box Clipped) */
+/* Only call for bound-box clipping.
+ * Otherwise call mesh_foreachScreenEdge__mapFn */
+static void mesh_foreachScreenEdge_clip_bb_segment__mapFn(void *userData,
+                                                          int index,
+                                                          const float v_a[3],
+                                                          const float v_b[3])
 {
   foreachScreenEdge_userData *data = userData;
-  BMEdge *eed = BM_edge_at_index(data->vc.em->bm, index);
-  if (UNLIKELY(BM_elem_flag_test(eed, BM_ELEM_HIDDEN))) {
+  MEdge *eed = mesh_edge_at_index(data->vc.em->mesh, index);
+  if (UNLIKELY(mesh_elem_flag_test(eed, MESH_ELEM_HIDDEN))) {
     return;
   }
 
-  BLI_assert(data->clip_flag & V3D_PROJ_TEST_CLIP_BB);
+  lib_assert(data->clip_flag & V3D_PROJ_TEST_CLIP_BB);
 
   float v_a_clip[3], v_b_clip[3];
   if (!clip_segment_v3_plane_n(v_a, v_b, data->vc.rv3d->clip_local, 4, v_a_clip, v_b_clip)) {
@@ -425,7 +413,7 @@ static void mesh_foreachScreenEdge_clip_bb_segment__mapFunc(void *userData,
   }
 
   float screen_co_a[2], screen_co_b[2];
-  if (!view3d_project_segment_to_screen_with_content_clip_planes(data->vc.region,
+  if (!view3d_project_segment_to_screen_with_content_clip_planes(data->vc.rgn,
                                                                  v_a_clip,
                                                                  v_b_clip,
                                                                  data->clip_flag,
@@ -437,71 +425,67 @@ static void mesh_foreachScreenEdge_clip_bb_segment__mapFunc(void *userData,
     return;
   }
 
-  data->func(data->userData, eed, screen_co_a, screen_co_b, index);
+  data->fn(data->userData, eed, screen_co_a, screen_co_b, index);
 }
 
-void mesh_foreachScreenEdge_clip_bb_segment(ViewContext *vc,
-                                            void (*func)(void *userData,
-                                                         BMEdge *eed,
-                                                         const float screen_co_a[2],
-                                                         const float screen_co_b[2],
-                                                         int index),
+void mesh_foreachScreenEdge_clip_bb_segment(ViewCxt *vc,
+                                            void (*fn)(void *userData,
+                                                       MEdge *eed,
+                                                       const float screen_co_a[2],
+                                                       const float screen_co_b[2],
+                                                       int index),
                                             void *userData,
                                             eV3DProjTest clip_flag)
 {
   foreachScreenEdge_userData data;
 
-  Mesh *me = editbmesh_get_eval_cage_from_orig(
-      vc->depsgraph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
-  me = BKE_mesh_wrapper_ensure_subdivision(vc->obedit, me);
+  Mesh *me = editmesh_get_eval_cage_from_orig(
+      vc->graph, vc->scene, vc->obedit, &CD_MASK_BAREMESH);
+  me = dune_mesh_wrapper_ensure_subdivision(vc->obedit, me);
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
 
   data.win_rect.xmin = 0;
   data.win_rect.ymin = 0;
-  data.win_rect.xmax = vc->region->winx;
-  data.win_rect.ymax = vc->region->winy;
+  data.win_rect.xmax = vc->rgn->winx;
+  data.win_rect.ymax = vc->rgn->winy;
 
-  data.func = func;
+  data.fn = fn;
   data.userData = userData;
   data.clip_flag = clip_flag;
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) {
     data.content_planes_len = content_planes_from_clip_flag(
-        vc->region, vc->obedit, clip_flag, data.content_planes);
+        vc->rgn, vc->obedit, clip_flag, data.content_planes);
   }
   else {
     data.content_planes_len = 0;
   }
 
-  BM_mesh_elem_table_ensure(vc->em->bm, BM_EDGE);
+  mesh_elem_table_ensure(vc->em->mesh, MESH_EDGE);
 
   if ((clip_flag & V3D_PROJ_TEST_CLIP_BB) && (vc->rv3d->clipbb != NULL)) {
-    ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups. */
-    BKE_mesh_foreach_mapped_edge(
-        me, vc->em->bm->totedge, mesh_foreachScreenEdge_clip_bb_segment__mapFunc, &data);
+    ed_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups. */
+    dune_mesh_foreach_mapped_edge(
+        me, vc->em->mesh->totedge, mesh_foreachScreenEdge_clip_bb_segment__mapFn, &data);
   }
   else {
-    BKE_mesh_foreach_mapped_edge(me, vc->em->bm->totedge, mesh_foreachScreenEdge__mapFunc, &data);
+    dune_mesh_foreach_mapped_edge(me, vc->em->mesh->totedge, mesh_foreachScreenEdge__mapFn, &data);
   }
 }
 
-/** \} */
+/* Edit-Mesh: For Each Screen Face Center */
 
-/* -------------------------------------------------------------------- */
-/** \name Edit-Mesh: For Each Screen Face Center
- * \{ */
-
-static void mesh_foreachScreenFace__mapFunc(void *userData,
-                                            int index,
-                                            const float cent[3],
-                                            const float UNUSED(no[3]))
+static void mesh_foreachScreenFace__mapFn(void *userData,
+                                          int index,
+                                          const float cent[3],
+                                          const float UNUSED(no[3]))
 {
   foreachScreenFace_userData *data = userData;
-  BMFace *efa = BM_face_at_index(data->vc.em->bm, index);
-  if (UNLIKELY(BM_elem_flag_test(efa, BM_ELEM_HIDDEN))) {
+  MFace *efa = mesh_face_at_index(data->vc.em->mesh, index);
+  if (UNLIKELY(mesh_elem_flag_test(efa, MESH_ELEM_HIDDEN))) {
     return;
   }
 
