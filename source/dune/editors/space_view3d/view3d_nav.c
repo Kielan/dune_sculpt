@@ -1,12 +1,12 @@
-#include "TYPES_curve.h"
-#include "TYPES_gpencil.h"
+#include "types_curve.h"
+#include "types_pen.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_math.h"
-#include "LIB_rect.h"
+#include "lib_math.h"
+#include "lib_rect.h"
 
-#include "LANG_translation.h"
+#include "lang.h"
 
 #include "DUNE_armature.h"
 #include "DUNE_context.h"
