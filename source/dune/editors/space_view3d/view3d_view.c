@@ -1007,7 +1007,7 @@ static int localview_ex(Cxt *C, WinOp *op)
     graph_id_type_tag(main, ID_OB);
     ed_area_tag_redraw(area);
 
-    /* Unselected objects become selected when exiting. */
+    /* Unselected obs become selected when exiting. */
     if (v3d->localvd == NULL) {
       graph_id_tag_update(&scene->id, ID_RECALC_SEL);
       win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
@@ -1034,7 +1034,7 @@ void VIEW3D_OT_localview(WinOpType *ot)
 
   ot->poll = ed_op_view3d_active;
 
-  api_def_bool(ot->srna,
+  api_def_bool(ot->sapi,
                   "frame_selected",
                   true,
                   "Frame Selected",
@@ -1043,16 +1043,16 @@ void VIEW3D_OT_localview(WinOpType *ot)
 
 static int localview_remove_from_ex(Cxt *C, WinOp *op)
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  Main *main = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   bool changed = false;
 
   for (Base *base = FIRSTBASE(view_layer); base; base = base->next) {
     if (BASE_SELECTED(v3d, base)) {
       base->local_view_bits &= ~v3d->local_view_uuid;
-      ED_object_base_select(base, BA_DESELECT);
+      ed_ob_base_sel(base, BA_DESEL);
 
       if (base == BASACT(view_layer)) {
         view_layer->basact = NULL;
@@ -1062,56 +1062,51 @@ static int localview_remove_from_ex(Cxt *C, WinOp *op)
   }
 
   if (changed) {
-    DEG_tag_on_visible_update(bmain, false);
-    DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
-    return OPERATOR_FINISHED;
+    graph_tag_on_visible_update(main, false);
+    graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+    return OP_FINISHED;
   }
 
-  BKE_report(op->reports, RPT_ERROR, "No object selected");
-  return OPERATOR_CANCELLED;
+  dune_report(op->reports, RPT_ERROR, "No ob sel");
+  return OP_CANCELLED;
 }
 
-static bool localview_remove_from_poll(bContext *C)
+static bool localview_remove_from_poll(Cxt *C)
 {
-  if (CTX_data_edit_object(C) != NULL) {
+  if (cxt_data_edit_ob(C) != NULL) {
     return false;
   }
 
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_win_view3d(C);
   return v3d && v3d->localvd;
 }
 
-void VIEW3D_OT_localview_remove_from(wmOperatorType *ot)
+void VIEW3D_OT_localview_remove_from(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Remove from Local View";
-  ot->description = "Move selected objects out of local view";
+  ot->description = "Move sel obs out of local view";
   ot->idname = "VIEW3D_OT_localview_remove_from";
 
-  /* api callbacks */
-  ot->exec = localview_remove_from_exec;
-  ot->invoke = WM_operator_confirm;
+  /* api cbs */
+  ot->ex = localview_remove_from_ex;
+  ot->invoke = win_op_confirm;
   ot->poll = localview_remove_from_poll;
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Local Collections
- * \{ */
-
-static uint free_localcollection_bit(Main *bmain, ushort local_collections_uuid, bool *r_reset)
+/* Local Collections */
+static uint free_localcollection_bit(Main *main, ushort local_collections_uuid, bool *r_reset)
 {
   ScrArea *area;
-  bScreen *screen;
+  Screen *screen;
 
   ushort local_view_bits = 0;
 
   /* Check all areas: which local-views are in use? */
-  for (screen = bmain->screens.first; screen; screen = screen->id.next) {
+  for (screen = main->screens.first; screen; screen = screen->id.next) {
     for (area = screen->areabase.first; area; area = area->next) {
       SpaceLink *sl = area->spacedata.first;
       for (; sl; sl = sl->next) {
@@ -1151,23 +1146,23 @@ static void local_collections_reset_uuid(LayerCollection *layer_collection,
     layer_collection->local_collections_bits |= local_view_bit;
   }
 
-  LISTBASE_FOREACH (LayerCollection *, child, &layer_collection->layer_collections) {
+  LIST_FOREACH (LayerCollection *, child, &layer_collection->layer_collections) {
     local_collections_reset_uuid(child, local_view_bit);
   }
 }
 
-static void view3d_local_collections_reset(Main *bmain, const uint local_view_bit)
+static void view3d_local_collections_reset(Main *main, const uint local_view_bit)
 {
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
-    LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-      LISTBASE_FOREACH (LayerCollection *, layer_collection, &view_layer->layer_collections) {
+  LIST_FOREACH (Scene *, scene, &main->scenes) {
+    LIST_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
+      LIST_FOREACH (LayerCollection *, layer_collection, &view_layer->layer_collections) {
         local_collections_reset_uuid(layer_collection, local_view_bit);
       }
     }
   }
 }
 
-bool ED_view3d_local_collections_set(Main *bmain, struct View3D *v3d)
+bool ed_view3d_local_collections_set(Main *main, struct View3D *v3d)
 {
   if ((v3d->flag & V3D_LOCAL_COLLECTIONS) == 0) {
     return true;
@@ -1175,7 +1170,7 @@ bool ED_view3d_local_collections_set(Main *bmain, struct View3D *v3d)
 
   bool reset = false;
   v3d->flag &= ~V3D_LOCAL_COLLECTIONS;
-  uint local_view_bit = free_localcollection_bit(bmain, v3d->local_collections_uuid, &reset);
+  uint local_view_bit = free_localcollection_bit(main, v3d->local_collections_uuid, &reset);
 
   if (local_view_bit == 0) {
     return false;
@@ -1185,22 +1180,22 @@ bool ED_view3d_local_collections_set(Main *bmain, struct View3D *v3d)
   v3d->flag |= V3D_LOCAL_COLLECTIONS;
 
   if (reset) {
-    view3d_local_collections_reset(bmain, local_view_bit);
+    view3d_local_collections_reset(main, local_view_bit);
   }
 
   return true;
 }
 
-void ED_view3d_local_collections_reset(struct bContext *C, const bool reset_all)
+void ed_view3d_local_collections_reset(struct Cxt *C, const bool reset_all)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
   uint local_view_bit = ~(0);
   bool do_reset = false;
 
   /* Reset only the ones that are not in use. */
-  LISTBASE_FOREACH (bScreen *, screen, &bmain->screens) {
-    LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
-      LISTBASE_FOREACH (SpaceLink *, sl, &area->spacedata) {
+  LIST_FOREACH (Screen *, screen, &main->screens) {
+    LIST_FOREACH (ScrArea *, area, &screen->areabase) {
+      LIST_FOREACH (SpaceLink *, sl, &area->spacedata) {
         if (sl->spacetype == SPACE_VIEW3D) {
           View3D *v3d = (View3D *)sl;
           if (v3d->local_collections_uuid) {
@@ -1217,56 +1212,51 @@ void ED_view3d_local_collections_reset(struct bContext *C, const bool reset_all)
   }
 
   if (do_reset) {
-    view3d_local_collections_reset(bmain, local_view_bit);
+    view3d_local_collections_reset(main, local_view_bit);
   }
   else if (reset_all && (do_reset || (local_view_bit != ~(0)))) {
-    view3d_local_collections_reset(bmain, ~(0));
+    view3d_local_collections_reset(main, ~(0));
     View3D v3d = {.local_collections_uuid = ~(0)};
-    BKE_layer_collection_local_sync(CTX_data_view_layer(C), &v3d);
-    DEG_id_tag_update(&CTX_data_scene(C)->id, ID_RECALC_BASE_FLAGS);
+    dune_layer_collection_local_sync(cxt_data_view_layer(C), &v3d);
+    graph_id_tag_update(&cxt_data_scene(C)->id, ID_RECALC_BASE_FLAGS);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name XR Functionality
- * \{ */
-
+/* XR Functionality */
 #ifdef WITH_XR_OPENXR
 
-static void view3d_xr_mirror_begin(RegionView3D *rv3d)
+static void view3d_xr_mirror_begin(RgnView3D *rv3d)
 {
   /* If there is no session yet, changes below should not be applied! */
-  BLI_assert(WM_xr_session_exists(&((wmWindowManager *)G_MAIN->wm.first)->xr));
+  lib_assert(win_xr_session_exists(&((WinMngr *)G_MAIN->wm.first)->xr));
 
   rv3d->runtime_viewlock |= RV3D_LOCK_ANY_TRANSFORM;
   /* Force perspective view. This isn't reset but that's not really an issue. */
   rv3d->persp = RV3D_PERSP;
 }
 
-static void view3d_xr_mirror_end(RegionView3D *rv3d)
+static void view3d_xr_mirror_end(RgnView3D *rv3d)
 {
   rv3d->runtime_viewlock &= ~RV3D_LOCK_ANY_TRANSFORM;
 }
 
-void ED_view3d_xr_mirror_update(const ScrArea *area, const View3D *v3d, const bool enable)
+void ed_view3d_xr_mirror_update(const ScrArea *area, const View3D *v3d, const bool enable)
 {
-  ARegion *region_rv3d;
+  ARgn *rgn_rv3d;
 
-  BLI_assert(v3d->spacetype == SPACE_VIEW3D);
+  lib_assert(v3d->spacetype == SPACE_VIEW3D);
 
-  if (ED_view3d_area_user_region(area, v3d, &region_rv3d)) {
+  if (ed_view3d_area_user_rgn(area, v3d, &rgn_rv3d)) {
     if (enable) {
-      view3d_xr_mirror_begin(region_rv3d->regiondata);
+      view3d_xr_mirror_begin(rgn_rv3d->rgndata);
     }
     else {
-      view3d_xr_mirror_end(region_rv3d->regiondata);
+      view3d_xr_mirror_end(rgn_rv3d->rgndata);
     }
   }
 }
 
-void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const Scene *scene)
+void ed_view3d_xr_shading_update(WinMngr *wm, const View3D *v3d, const Scene *scene)
 {
   if (v3d->runtime.flag & V3D_RUNTIME_XR_SESSION_ROOT) {
     View3DShading *xr_shading = &wm->xr.session_settings.shading;
@@ -1278,10 +1268,10 @@ void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const S
       flag_copy |= V3D_SHADING_WORLD_ORIENTATION;
     }
 
-    BLI_assert(WM_xr_session_exists(&wm->xr));
+    lib_assert(win_xr_session_exists(&wm->xr));
 
     if (v3d->shading.type == OB_RENDER) {
-      if (!(BKE_scene_uses_blender_workbench(scene) || BKE_scene_uses_blender_eevee(scene))) {
+      if (!(dune_scene_uses_workbench(scene))) {
         /* Keep old shading while using Cycles or another engine, they are typically not usable in
          * VR. */
         return;
@@ -1289,7 +1279,7 @@ void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const S
     }
 
     if (xr_shading->prop) {
-      IDP_FreeProperty(xr_shading->prop);
+      IDP_FreeProp(xr_shading->prop);
       xr_shading->prop = NULL;
     }
 
@@ -1298,7 +1288,7 @@ void ED_view3d_xr_shading_update(wmWindowManager *wm, const View3D *v3d, const S
     *xr_shading = v3d->shading;
     xr_shading->flag = (xr_shading->flag & ~flag_copy) | (old_xr_shading_flag & flag_copy);
     if (v3d->shading.prop) {
-      xr_shading->prop = IDP_CopyProperty(xr_shading->prop);
+      xr_shading->prop = IDP_CopyProp(xr_shading->prop);
     }
   }
 }
