@@ -1,73 +1,69 @@
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_list.h"
+#include "lib_math.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_context.h"
-#include "BKE_gpencil.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
+#include "dune_cxt.h"
+#include "dune_pen.h"
+#include "dune_main.h"
+#include "dune_report.h"
 
-#include "BKE_material.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
-#include "BKE_unit.h"
+#include "dune_material.h"
+#include "dune_obj.h"
+#include "dune_scene.h"
+#include "dune_unit.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_view3d_types.h"
+#include "types_pen.h"
+#include "types_meshdata.h"
+#include "types_obj.h"
+#include "types_view3d.h"
 
-#include "ED_gizmo_library.h"
-#include "ED_gizmo_utils.h"
-#include "ED_gpencil.h"
-#include "ED_screen.h"
-#include "ED_transform.h"
-#include "ED_transform_snap_object_context.h"
-#include "ED_view3d.h"
+#include "ed_gizmo_lib.h"
+#include "ed_gizmo_utils.h"
+#include "ed_pen.h"
+#include "ed_screen.h"
+#include "ed_transform.h"
+#include "ed_transform_snap_obj_cxt.h"
+#include "ed_view3d.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
-#include "WM_api.h"
-#include "WM_toolsystem.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_toolsystem.h"
+#include "win_types.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
 #include "view3d_intern.h" /* own include */
 
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
-/**
- * Supporting transform features could be removed if the actual transform system is used.
- * Keep the option open since each transform feature is duplicating logic.
- */
+/* Supporting transform features could be removed if the actual transform system is used.
+ * Keep the option open since each transform feature is duplicating logic. */
 #define USE_AXIS_CONSTRAINTS
 
 static const char *view3d_gzgt_ruler_id = "VIEW3D_GGT_ruler";
 
 #define MVAL_MAX_PX_DIST 12.0f
 
-/* -------------------------------------------------------------------- */
 /* Ruler Item (we can have many) */
-
 enum {
-  /** Use protractor. */
+  /* Use protractor. */
   RULERITEM_USE_ANGLE = (1 << 0),
-  /** Protractor vertex is selected (deleting removes it). */
+  /* Protractor vertex is selected (deleting removes it). */
   RULERITEM_USE_ANGLE_ACTIVE = (1 << 1),
 };
 
@@ -78,9 +74,7 @@ enum {
 /* not clicking on a point */
 #define PART_LINE 0xff
 
-/* -------------------------------------------------------------------- */
-/* Ruler Info (wmGizmoGroup customdata) */
-
+/* Ruler Info (WinGizmoGroup customdata) */
 enum {
   RULER_STATE_NORMAL = 0,
   RULER_STATE_DRAG,
@@ -95,10 +89,8 @@ enum {
   CONSTRAIN_AXIS_Z = 2,
 };
 
-/**
- * Constraining modes.
- * Off / Scene orientation / Global (or Local if Scene orientation is Global).
- */
+/* Constraining modes.
+ * Off / Scene orientation / Global (or Local if Scene orientation is Global). */
 enum {
   CONSTRAIN_MODE_OFF = 0,
   CONSTRAIN_MODE_1 = 1,
@@ -119,10 +111,10 @@ typedef struct RulerInfo {
 #endif
 
   /* wm state */
-  wmWindowManager *wm;
-  wmWindow *win;
+  WinMngr *wm;
+  Win *win;
   ScrArea *area;
-  ARegion *region; /* re-assigned every modal update */
+  ARgn *rgn; /* re-assigned every modal update */
 
   /* Track changes in state. */
   struct {
@@ -133,19 +125,17 @@ typedef struct RulerInfo {
   } drag_state_prev;
 
   struct {
-    wmGizmo *gizmo;
-    PropertyRNA *prop_prevpoint;
+    WinGizmo *gizmo;
+    ApiProp *prop_prevpoint;
   } snap_data;
 
 } RulerInfo;
 
-/* -------------------------------------------------------------------- */
 /* Ruler Item (two or three points) */
-
 typedef struct RulerItem {
-  wmGizmo gz;
+  WinGizmo gz;
 
-  /** World-space coords, middle being optional. */
+  /* World-space coords, middle being optional. */
   float co[3][3];
 
   int flag;
@@ -158,26 +148,23 @@ typedef struct RulerInteraction {
   float drag_start_co[3];
 } RulerInteraction;
 
-/* -------------------------------------------------------------------- */
-/** \name Internal Ruler Utilities
- * \{ */
-
-static RulerItem *ruler_item_add(wmGizmoGroup *gzgroup)
+/* Internal Ruler Utils */
+static RulerItem *ruler_item_add(WinGizmoGroup *gzgroup)
 {
   /* could pass this as an arg */
-  const wmGizmoType *gzt_ruler = WM_gizmotype_find("VIEW3D_GT_ruler_item", true);
-  RulerItem *ruler_item = (RulerItem *)WM_gizmo_new_ptr(gzt_ruler, gzgroup, NULL);
-  WM_gizmo_set_flag(&ruler_item->gz, WM_GIZMO_DRAW_MODAL, true);
+  const WinGizmoType *gzt_ruler = win_gizmotype_find("VIEW3D_GT_ruler_item", true);
+  RulerItem *ruler_item = (RulerItem *)win_gizmo_new_ptr(gzt_ruler, gzgroup, NULL);
+  win_gizmo_set_flag(&ruler_item->gz, WIN_GIZMO_DRAW_MODAL, true);
   return ruler_item;
 }
 
-static void ruler_item_remove(bContext *C, wmGizmoGroup *gzgroup, RulerItem *ruler_item)
+static void ruler_item_remove(Cxt *C, WinGizmoGroup *gzgroup, RulerItem *ruler_item)
 {
   RulerInfo *ruler_info = gzgroup->customdata;
   if (ruler_info->item_active == ruler_item) {
     ruler_info->item_active = NULL;
   }
-  WM_gizmo_unlink(&gzgroup->gizmos, gzgroup->parent_gzmap, &ruler_item->gz, C);
+  win_gizmo_unlink(&gzgroup->gizmos, gzgroup->parent_gzmap, &ruler_item->gz, C);
 }
 
 static void ruler_item_as_string(
@@ -188,10 +175,10 @@ static void ruler_item_as_string(
         ruler_item->co[0], ruler_item->co[1], ruler_item->co[2]);
 
     if (unit->system == USER_UNIT_NONE) {
-      BLI_snprintf(numstr, numstr_size, "%.*f°", prec, RAD2DEGF(ruler_angle));
+      lib_snprintf(numstr, numstr_size, "%.*f°", prec, RAD2DEGF(ruler_angle));
     }
     else {
-      BKE_unit_value_as_string(
+      dune_unit_val_as_string(
           numstr, numstr_size, (double)ruler_angle, prec, B_UNIT_ROTATION, unit, false);
     }
   }
@@ -199,10 +186,10 @@ static void ruler_item_as_string(
     const float ruler_len = len_v3v3(ruler_item->co[0], ruler_item->co[2]);
 
     if (unit->system == USER_UNIT_NONE) {
-      BLI_snprintf(numstr, numstr_size, "%.*f", prec, ruler_len);
+      lib_snprintf(numstr, numstr_size, "%.*f", prec, ruler_len);
     }
     else {
-      BKE_unit_value_as_string(numstr,
+      dune_unit_val_as_string(numstr,
                                numstr_size,
                                (double)(ruler_len * unit->scale_length),
                                prec,
@@ -213,13 +200,13 @@ static void ruler_item_as_string(
   }
 }
 
-static bool view3d_ruler_pick(wmGizmoGroup *gzgroup,
+static bool view3d_ruler_pick(WinGizmoGroup *gzgroup,
                               RulerItem *ruler_item,
                               const float mval[2],
                               int *r_co_index)
 {
   RulerInfo *ruler_info = gzgroup->customdata;
-  ARegion *region = ruler_info->region;
+  ARgn *rgn = ruler_info->rgn;
   bool found = false;
 
   float dist_best = RULER_PICK_DIST_SQ;
@@ -232,7 +219,7 @@ static bool view3d_ruler_pick(wmGizmoGroup *gzgroup,
 
     /* should these be checked? - ok for now not to */
     for (j = 0; j < 3; j++) {
-      ED_view3d_project_float_global(region, ruler_item->co[j], co_ss[j], V3D_PROJ_TEST_NOP);
+      ed_view3d_project_float_global(region, ruler_item->co[j], co_ss[j], V3D_PROJ_TEST_NOP);
     }
 
     if (ruler_item->flag & RULERITEM_USE_ANGLE) {
@@ -283,10 +270,8 @@ static bool view3d_ruler_pick(wmGizmoGroup *gzgroup,
   return found;
 }
 
-/**
- * Ensure the 'snap_context' is only cached while dragging,
- * needed since the user may toggle modes between tool use.
- */
+/* Ensure the 'snap_cxt' is only cached while dragging,
+ * needed since the user may toggle modes between tool use. */
 static void ruler_state_set(RulerInfo *ruler_info, int state)
 {
   if (state == ruler_info->state) {
@@ -300,7 +285,7 @@ static void ruler_state_set(RulerInfo *ruler_info, int state)
     memset(&ruler_info->drag_state_prev, 0x0, sizeof(ruler_info->drag_state_prev));
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
 
   ruler_info->state = state;
@@ -308,14 +293,12 @@ static void ruler_state_set(RulerInfo *ruler_info, int state)
 
 static void view3d_ruler_item_project(RulerInfo *ruler_info, float r_co[3], const int xy[2])
 {
-  ED_view3d_win_to_3d_int(ruler_info->area->spacedata.first, ruler_info->region, r_co, xy, r_co);
+  ED_view3d_win_to_3d_int(ruler_info->area->spacedata.first, ruler_info->rgn, r_co, xy, r_co);
 }
 
-/**
- * Use for mouse-move events.
- */
-static bool view3d_ruler_item_mousemove(const bContext *C,
-                                        struct Depsgraph *depsgraph,
+/* Use for mouse-move events. */
+static bool view3d_ruler_item_mousemove(const Cxt *C,
+                                        struct Graph *graph,
                                         RulerInfo *ruler_info,
                                         RulerItem *ruler_item,
                                         const int mval[2],
@@ -326,7 +309,7 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
 #endif
 )
 {
-  wmGizmo *snap_gizmo = ruler_info->snap_data.gizmo;
+  WinGizmo *snap_gizmo = ruler_info->snap_data.gizmo;
   const float eps_bias = 0.0002f;
   float dist_px = MVAL_MAX_PX_DIST * U.pixelsize; /* snap dist */
 
@@ -337,9 +320,9 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
     copy_v3_v3(co, inter->drag_start_co);
     view3d_ruler_item_project(ruler_info, co, mval);
     if (do_thickness && inter->co_index != 1) {
-      Scene *scene = DEG_get_input_scene(depsgraph);
+      Scene *scene = graph_get_input_scene(graph);
       View3D *v3d = ruler_info->area->spacedata.first;
-      SnapObjectContext *snap_context = ED_gizmotypes_snap_3d_context_ensure(scene, snap_gizmo);
+      SnapObjCxt *snap_cxt = ed_gizmotypes_snap_3d_cxt_ensure(scene, snap_gizmo);
       const float mval_fl[2] = {UNPACK2(mval)};
       float ray_normal[3];
       float ray_start[3];
@@ -347,13 +330,13 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
 
       co_other = ruler_item->co[inter->co_index == 0 ? 2 : 0];
 
-      if (ED_transform_snap_object_project_view3d(snap_context,
-                                                  depsgraph,
+      if (ed_transform_snap_obj_project_view3d(snap_cxt,
+                                                  graph,
                                                   ruler_info->region,
                                                   v3d,
                                                   SCE_SNAP_MODE_FACE,
-                                                  &(const struct SnapObjectParams){
-                                                      .snap_select = SNAP_ALL,
+                                                  &(const struct SnapObjParams){
+                                                      .snap_sel = SNAP_ALL,
                                                       .edit_mode_type = SNAP_GEOM_CAGE,
                                                   },
                                                   mval_fl,
@@ -364,18 +347,18 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
         negate_v3(ray_normal);
         /* add some bias */
         madd_v3_v3v3fl(ray_start, co, ray_normal, eps_bias);
-        ED_transform_snap_object_project_ray(snap_context,
-                                             depsgraph,
-                                             v3d,
-                                             &(const struct SnapObjectParams){
-                                                 .snap_select = SNAP_ALL,
-                                                 .edit_mode_type = SNAP_GEOM_CAGE,
-                                             },
-                                             ray_start,
-                                             ray_normal,
-                                             NULL,
-                                             co_other,
-                                             NULL);
+        ed_transform_snap_obj_project_ray(snap_cxt,
+                                          graph,
+                                          v3d,
+                                          &(const struct SnapObjParams){
+                                              .snap_sel = SNAP_ALL,
+                                              .edit_mode_type = SNAP_GEOM_CAGE,
+                                         },
+                                         ray_start,
+                                         ray_normal,
+                                         NULL,
+                                         co_other,
+                                         NULL);
       }
     }
     else
@@ -398,25 +381,25 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
         }
       }
       if (prev_point != NULL) {
-        RNA_property_float_set_array(
+        api_prop_float_set_array(
             snap_gizmo->ptr, ruler_info->snap_data.prop_prevpoint, prev_point);
       }
 
-      if (ED_gizmotypes_snap_3d_is_enabled(snap_gizmo)) {
-        ED_gizmotypes_snap_3d_data_get(C, snap_gizmo, co, NULL, NULL, NULL);
+      if (ed_gizmotypes_snap_3d_is_enabled(snap_gizmo)) {
+        ed_gizmotypes_snap_3d_data_get(C, snap_gizmo, co, NULL, NULL, NULL);
       }
 
 #ifdef USE_AXIS_CONSTRAINTS
       if (!(ruler_item->flag & RULERITEM_USE_ANGLE) &&
           ruler_info->constrain_mode != CONSTRAIN_MODE_OFF) {
 
-        Scene *scene = DEG_get_input_scene(depsgraph);
-        ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
-        RegionView3D *rv3d = ruler_info->region->regiondata;
-        Object *ob = OBACT(view_layer);
-        Object *obedit = OBEDIT_FROM_OBACT(ob);
+        Scene *scene = graph_get_input_scene(graph);
+        ViewLayer *view_layer = graph_get_input_view_layer(graph);
+        RgnView3D *rv3d = ruler_info->rgn->rgndata;
+        Obj *ob = OBACT(view_layer);
+        Obj *obedit = OBEDIT_FROM_OBACT(ob);
 
-        short orient_index = BKE_scene_orientation_get_index(scene, SCE_ORIENT_DEFAULT);
+        short orient_index = dune_scene_orientation_get_index(scene, SCE_ORIENT_DEFAULT);
 
         if (ruler_info->constrain_mode == CONSTRAIN_MODE_2) {
           orient_index = (orient_index == V3D_ORIENT_GLOBAL) ? V3D_ORIENT_LOCAL :
@@ -426,14 +409,13 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
         const int pivot_point = scene->toolsettings->transform_pivot_point;
         float mat[3][3];
 
-        ED_transform_calc_orientation_from_type_ex(
+        ed_transform_calc_orientation_from_type_ex(
             scene, view_layer, v3d, rv3d, ob, obedit, orient_index, pivot_point, mat);
 
         invert_m3(mat);
         mul_m3_m3_pre(ruler_item->co, mat);
 
-        /* Loop through the axes and constrain the dragged point to the current constrained axis.
-         */
+        /* Loop through the axes and constrain the dragged point to the current constrained axis */
         for (int i = 0; i <= 2; i++) {
           if (ruler_info->constrain_axis != i) {
             ruler_item->co[inter->co_index][i] = ruler_item->co[(inter->co_index == 0) ? 2 : 0][i];
@@ -449,51 +431,44 @@ static bool view3d_ruler_item_mousemove(const bContext *C,
   return false;
 }
 
-/**
- * When the gizmo-group has been created immediately before running an operator
+/* When the gizmo-group has been created immediately before running an op
  * to manipulate rulers, it's possible the new gizmo-group has not yet been initialized.
  * in 3.0 this happened because left-click drag would both select and add a new ruler,
  * significantly increasing the likelihood of this happening.
  * Workaround this crash by checking the gizmo's custom-data has not been cleared.
- * The key-map has also been modified not to trigger this bug, see T95591.
- */
-static bool gizmo_ruler_check_for_operator(const wmGizmoGroup *gzgroup)
+ * The key-map has also been modified not to trigger this bug, see T95591. */
+static bool gizmo_ruler_check_for_op(const WinGizmoGroup *gzgroup)
 {
   return gzgroup->customdata != NULL;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Ruler/Grease Pencil Conversion
- * \{ */
-
+/* Ruler/Pen Conversion */
 /* Helper: Find the layer created as ruler. */
-static bGPDlayer *view3d_ruler_layer_get(bGPdata *gpd)
+static PenDataLayer *view3d_ruler_layer_get(PenData *pdata)
 {
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
-    if (gpl->flag & GP_LAYER_IS_RULER) {
-      return gpl;
+  LIST_FOREACH (PenDataLayer *, pdatalayer, &pdata->layers) {
+    if (pl->flag & PEN_LAYER_IS_RULER) {
+      return pdatalayer;
     }
   }
   return NULL;
 }
 
-static RulerItem *gzgroup_ruler_item_first_get(wmGizmoGroup *gzgroup)
+static RulerItem *gzgroup_ruler_item_first_get(WinGizmoGroup *gzgroup)
 {
 #ifndef NDEBUG
   RulerInfo *ruler_info = gzgroup->customdata;
-  BLI_assert(gzgroup->gizmos.first == ruler_info->snap_data.gizmo);
+  lib_assert(gzgroup->gizmos.first == ruler_info->snap_data.gizmo);
 #endif
   return (RulerItem *)((wmGizmo *)gzgroup->gizmos.first)->next;
 }
 
 #define RULER_ID "RulerData3D"
-static bool view3d_ruler_to_gpencil(bContext *C, wmGizmoGroup *gzgroup)
+static bool view3d_ruler_to_pen(Cxt *C, WinGizmoGroup *gzgroup)
 {
   // RulerInfo *ruler_info = gzgroup->customdata;
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
 
   bGPdata *gpd;
   bGPDlayer *gpl;
