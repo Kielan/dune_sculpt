@@ -81,8 +81,7 @@ static int content_planes_from_clip_flag(const ARgn *rgn,
  * or extend beyond the far limits. In the case of single points, these can be ignored.
  * However it just may still be visible on screen, so constrained the edge to planes
  * defined by the port to ensure both ends of the edge can be projected, see T32214
- * note This is unrelated to #V3D_PROJ_TEST_CLIP_BB which must be checked separately.
- */
+ * note This is unrelated to V3D_PROJ_TEST_CLIP_BB which must be checked separately. */
 static bool view3d_project_segment_to_screen_with_content_clip_planes(
     const ARgn *rgn,
     const float v_a[3],
@@ -165,7 +164,7 @@ static bool view3d_project_segment_to_screen_with_clip_tag(const ARgn *rgn,
     /* screen_co_a[1]: intentionally don't set this so we get errors on misuse */
   }
 
-  if (ED_view3d_project_float_object(region, v_b, r_screen_co_b, clip_flag) == V3D_PROJ_RET_OK) {
+  if (ed_view3d_project_float_ob(rgn, v_b, r_screen_co_b, clip_flag) == V3D_PROJ_RET_OK) {
     count++;
   }
   else {
@@ -177,103 +176,89 @@ static bool view3d_project_segment_to_screen_with_clip_tag(const ARgn *rgn,
   return count != 0;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Private User Data Structures
- * \{ */
-
-typedef struct foreachScreenObjectVert_userData {
-  void (*func)(void *userData, MVert *mv, const float screen_co[2], int index);
+/* Private User Data Structs */
+typedef struct foreachScreenObVert_userData {
+  void (*fn)(void *userData, MVert *mv, const float screen_co[2], int index);
   void *userData;
-  ViewContext vc;
+  ViewCxt vc;
   eV3DProjTest clip_flag;
-} foreachScreenObjectVert_userData;
+} foreachScreenObVert_userData;
 
 typedef struct foreachScreenVert_userData {
-  void (*func)(void *userData, BMVert *eve, const float screen_co[2], int index);
+  void (*fn)(void *userData, MVert *eve, const float screen_co[2], int index);
   void *userData;
-  ViewContext vc;
+  ViewCxt vc;
   eV3DProjTest clip_flag;
 } foreachScreenVert_userData;
 
-/* user data structures for derived mesh callbacks */
+/* user data structs for derived mesh cbs */
 typedef struct foreachScreenEdge_userData {
-  void (*func)(void *userData,
-               BMEdge *eed,
+  void (*fn)(void *userData,
+               MeshEdge *eed,
                const float screen_co_a[2],
                const float screen_co_b[2],
                int index);
   void *userData;
-  ViewContext vc;
+  ViewCxt vc;
   eV3DProjTest clip_flag;
 
-  rctf win_rect; /* copy of: vc.region->winx/winy, use for faster tests, minx/y will always be 0 */
+  rctf win_rect; /* copy of: vc.rgn->winx/winy, use for faster tests, minx/y will always be 0 */
 
-  /**
-   * Clip plans defined by the view bounds,
-   * use when #V3D_PROJ_TEST_CLIP_CONTENT is enabled.
-   */
+  /* Clip plans defined by the view bounds,
+   * use when V3D_PROJ_TEST_CLIP_CONTENT is enabled */
   float content_planes[6][4];
   int content_planes_len;
 } foreachScreenEdge_userData;
 
 typedef struct foreachScreenFace_userData {
-  void (*func)(void *userData, BMFace *efa, const float screen_co_b[2], int index);
+  void (*fn)(void *userData, MFace *efa, const float screen_co_b[2], int index);
   void *userData;
-  ViewContext vc;
+  ViewCxt vc;
   eV3DProjTest clip_flag;
 } foreachScreenFace_userData;
 
-/**
- * \note foreach funcs should be called while drawing or directly after
- * if not, #ED_view3d_init_mats_rv3d() can be used for selection tools
+/* foreach fns should be called while drawing or directly after
+ * if not, ed_view3d_init_mats_rv3d() can be used for sel tools
  * but would not give correct results with dupli's for eg. which don't
- * use the object matrix in the usual way.
- */
+ * use the ob matrix in the usual way. */
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit-Mesh: For Each Screen Vertex
- * \{ */
-
-static void meshobject_foreachScreenVert__mapFunc(void *userData,
-                                                  int index,
-                                                  const float co[3],
-                                                  const float UNUSED(no[3]))
+/* Edit-Mesh: For Each Screen Vertex */
+static void meshob_foreachScreenVert__mapFn(void *userData,
+                                            int index,
+                                            const float co[3],
+                                            const float UNUSED(no[3]))
 {
-  foreachScreenObjectVert_userData *data = userData;
+  foreachScreenObVert_userData *data = userData;
   struct MVert *mv = &((Mesh *)(data->vc.obact->data))->mvert[index];
 
   if (!(mv->flag & ME_HIDE)) {
     float screen_co[2];
 
-    if (ED_view3d_project_float_object(data->vc.region, co, screen_co, data->clip_flag) !=
+    if (ed_view3d_project_float_ob(data->vc.rgn, co, screen_co, data->clip_flag) !=
         V3D_PROJ_RET_OK) {
       return;
     }
 
-    data->func(data->userData, mv, screen_co, index);
+    data->fn(data->userData, mv, screen_co, index);
   }
 }
 
-void meshobject_foreachScreenVert(
-    ViewContext *vc,
-    void (*func)(void *userData, MVert *eve, const float screen_co[2], int index),
+void meshob_foreachScreenVert(
+    ViewCxt *vc,
+    void (*fn)(void *userData, MVert *eve, const float screen_co[2], int index),
     void *userData,
     eV3DProjTest clip_flag)
 {
-  BLI_assert((clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) == 0);
-  foreachScreenObjectVert_userData data;
+  lib_assert((clip_flag & V3D_PROJ_TEST_CLIP_CONTENT) == 0);
+  foreachScreenObVert_userData data;
   Mesh *me;
 
-  Scene *scene_eval = DEG_get_evaluated_scene(vc->depsgraph);
-  Object *ob_eval = DEG_get_evaluated_object(vc->depsgraph, vc->obact);
+  Scene *scene_eval = graph_get_eval_scene(vc->graph);
+  Ob *ob_eval = graph_get_eval_ob(vc->graph, vc->obact);
 
-  me = mesh_get_eval_final(vc->depsgraph, scene_eval, ob_eval, &CD_MASK_BAREMESH);
+  me = mesh_get_eval_final(vc->graph, scene_eval, ob_eval, &CD_MASK_BAREMESH);
 
-  ED_view3d_check_mats_rv3d(vc->rv3d);
+  ed_view3d_check_mats_rv3d(vc->rv3d);
 
   data.vc = *vc;
   data.func = func;
