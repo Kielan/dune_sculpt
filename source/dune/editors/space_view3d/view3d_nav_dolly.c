@@ -1,30 +1,27 @@
-#include "LIB_math.h"
+#include "lib_math.h"
 
-#include "DUNE_context.h"
-#include "DUNE_report.h"
+#include "dune_cxt.h"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "API_access.h"
+#include "api_access.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** View Dolly Operator
- *
+/* View Dolly Op
  * Like zoom but translates the view offset along the view direction
- * which avoids RegionView3D.dist approaching zero.
- **/
+ * which avoids RgnView3D.dist approaching zero. */
 
 /* This is an exact copy of viewzoom_modal_keymap. */
-void viewdolly_modal_keymap(wmKeyConfig *keyconf)
+void viewdolly_modal_keymap(WinKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {VIEW_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
 
       {VIEWROT_MODAL_SWITCH_ROTATE, "SWITCH_TO_ROTATE", 0, "Switch to Rotate"},
@@ -33,46 +30,46 @@ void viewdolly_modal_keymap(wmKeyConfig *keyconf)
       {0, NULL, 0, NULL, NULL},
   };
 
-  wmKeyMap *keymap = WM_modalkeymap_find(keyconf, "View3D Dolly Modal");
+  wmKeyMap *keymap = win_modalkeymap_find(keyconf, "View3D Dolly Modal");
 
-  /* this function is called for each spacetype, only needs to add map once */
+  /* this fn is called for each spacetype, only needs to add map once */
   if (keymap && keymap->modal_items) {
     return;
   }
 
-  keymap = WM_modalkeymap_ensure(keyconf, "View3D Dolly Modal", modal_items);
+  keymap = win_modalkeymap_ensure(keyconf, "View3D Dolly Modal", modal_items);
 
   /* disabled mode switching for now, can re-implement better, later on */
 #if 0
-  WM_modalkeymap_add_item(
+  win_modalkeymap_add_item(
       keymap, LEFTMOUSE, KM_RELEASE, KM_ANY, 0, KM_ANY, VIEWROT_MODAL_SWITCH_ROTATE);
-  WM_modalkeymap_add_item(
+  win_modalkeymap_add_item(
       keymap, LEFTCTRLKEY, KM_RELEASE, KM_ANY, 0, KM_ANY, VIEWROT_MODAL_SWITCH_ROTATE);
-  WM_modalkeymap_add_item(
+  win_modalkeymap_add_item(
       keymap, LEFTSHIFTKEY, KM_PRESS, KM_ANY, 0, KM_ANY, VIEWROT_MODAL_SWITCH_MOVE);
 #endif
 
-  /* assign map to operators */
-  WM_modalkeymap_assign(keymap, "VIEW3D_OT_dolly");
+  /* assign map to ops */
+  win_modalkeymap_assign(keymap, "VIEW3D_OT_dolly");
 }
 
-static bool viewdolly_offset_lock_check(bContext *C, wmOperator *op)
+static bool viewdolly_offset_lock_check(Cxt *C, WinOp *op)
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  if (ED_view3d_offset_lock_check(v3d, rv3d)) {
-    DUNE_report(op->reports, RPT_WARNING, "Cannot dolly when the view offset is locked");
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  if (ed_view3d_offset_lock_check(v3d, rv3d)) {
+    dune_report(op->reports, RPT_WARNING, "Cannot dolly when the view offset is locked");
     return true;
   }
   return false;
 }
 
-static void view_dolly_to_vector_3d(ARegion *region,
+static void view_dolly_to_vector_3d(ARgn *rgn,
                                     const float orig_ofs[3],
                                     const float dvec[3],
                                     float dfac)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   madd_v3_v3v3fl(rv3d->ofs, orig_ofs, dvec, -(1.0f - dfac));
 }
 
@@ -84,12 +81,12 @@ static void viewdolly_apply(ViewOpsData *vod, const int xy[2], const bool zoom_i
     float len1, len2;
 
     if (U.uiflag & USER_ZOOM_HORIZ) {
-      len1 = (vod->region->winrct.xmax - xy[0]) + 5;
-      len2 = (vod->region->winrct.xmax - vod->init.event_xy[0]) + 5;
+      len1 = (vod->rgn->winrct.xmax - xy[0]) + 5;
+      len2 = (vod->rgn->winrct.xmax - vod->init.ev_xy[0]) + 5;
     }
     else {
-      len1 = (vod->region->winrct.ymax - xy[1]) + 5;
-      len2 = (vod->region->winrct.ymax - vod->init.event_xy[1]) + 5;
+      len1 = (vod->rgn->winrct.ymax - xy[1]) + 5;
+      len2 = (vod->rgn->winrct.ymax - vod->init.ev_xy[1]) + 5;
     }
     if (zoom_invert) {
       SWAP(float, len1, len2);
@@ -99,64 +96,64 @@ static void viewdolly_apply(ViewOpsData *vod, const int xy[2], const bool zoom_i
   }
 
   if (zfac != 1.0f) {
-    view_dolly_to_vector_3d(vod->region, vod->init.ofs, vod->init.mousevec, zfac);
+    view_dolly_to_vector_3d(vod->rgn, vod->init.ofs, vod->init.mousevec, zfac);
   }
 
   if (RV3D_LOCK_FLAGS(vod->rv3d) & RV3D_BOXVIEW) {
-    view3d_boxview_sync(vod->area, vod->region);
+    view3d_boxview_sync(vod->area, vod->rgn);
   }
 
-  ED_view3d_camera_lock_sync(vod->depsgraph, vod->v3d, vod->rv3d);
+  ed_view3d_camera_lock_sync(vod->graph, vod->v3d, vod->rv3d);
 
-  ED_region_tag_redraw(vod->region);
+  ed_rgn_tag_redraw(vod->rgn);
 }
 
-static int viewdolly_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int viewdolly_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod = op->customdata;
-  short event_code = VIEW_PASS;
+  short ev_code = VIEW_PASS;
   bool use_autokey = false;
-  int ret = OPERATOR_RUNNING_MODAL;
+  int ret = OP_RUNNING_MODAL;
 
-  /* execute the events */
-  if (event->type == MOUSEMOVE) {
-    event_code = VIEW_APPLY;
+  /* ex the events */
+  if (ev->type == MOUSEMOVE) {
+    ev_code = VIEW_APPLY;
   }
-  else if (event->type == EVT_MODAL_MAP) {
-    switch (event->val) {
+  else if (ev->type == EV_MODAL_MAP) {
+    switch (ev->val) {
       case VIEW_MODAL_CONFIRM:
-        event_code = VIEW_CONFIRM;
+        ev_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_SWITCH_MOVE:
-        WM_operator_name_call(C, "VIEW3D_OT_move", WM_OP_INVOKE_DEFAULT, NULL, event);
+        win_op_name_call(C, "VIEW3D_OT_move", WIN_OP_INVOKE_DEFAULT, NULL, ev);
         event_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_SWITCH_ROTATE:
-        WM_operator_name_call(C, "VIEW3D_OT_rotate", WM_OP_INVOKE_DEFAULT, NULL, event);
-        event_code = VIEW_CONFIRM;
+        win_op_name_call(C, "VIEW3D_OT_rotate", WIN_OP_INVOKE_DEFAULT, NULL, ev);
+        ev_code = VIEW_CONFIRM;
         break;
     }
   }
-  else if (event->type == vod->init.event_type && event->val == KM_RELEASE) {
-    event_code = VIEW_CONFIRM;
+  else if (ev->type == vod->init.ev_type && ev->val == KM_RELEASE) {
+    ev_code = VIEW_CONFIRM;
   }
 
-  if (event_code == VIEW_APPLY) {
-    viewdolly_apply(vod, event->xy, (U.uiflag & USER_ZOOM_INVERT) != 0);
-    if (ED_screen_animation_playing(CTX_wm_manager(C))) {
+  if (ev_code == VIEW_APPLY) {
+    viewdolly_apply(vod, ev->xy, (U.uiflag & USER_ZOOM_INVERT) != 0);
+    if (ed_screen_anim_playing(cxt_wm(C))) {
       use_autokey = true;
     }
   }
-  else if (event_code == VIEW_CONFIRM) {
+  else if (ev_code == VIEW_CONFIRM) {
     use_autokey = true;
-    ret = OPERATOR_FINISHED;
+    ret = OP_FINISHED;
   }
 
   if (use_autokey) {
-    ED_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, false, true);
+    ed_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, false, true);
   }
 
-  if (ret & OPERATOR_FINISHED) {
+  if (ret & OP_FINISHED) {
     viewops_data_free(C, vod);
     op->customdata = NULL;
   }
@@ -164,12 +161,12 @@ static int viewdolly_modal(bContext *C, wmOperator *op, const wmEvent *event)
   return ret;
 }
 
-static int viewdolly_exec(duneContext *C, wmOperator *op)
+static int viewdolly_ex(Cxt *C, WinOp *op)
 {
   View3D *v3d;
-  RegionView3D *rv3d;
+  RgnView3D *rv3d;
   ScrArea *area;
-  ARegion *region;
+  ARgn *rgn;
   float mousevec[3];
 
   const int delta = API_int_get(op->ptr, "delta");
