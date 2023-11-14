@@ -1,54 +1,47 @@
-#include "DNA_armature_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_meta_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_armature.h"
+#include "types_curve.h"
+#include "types_lattice.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_meta.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BLI_math_geom.h"
-#include "BLI_rect.h"
-#include "BLI_utildefines.h"
+#include "lib_math_geom.h"
+#include "lib_rect.h"
+#include "lib_utildefines.h"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_action.h"
-#include "BKE_armature.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
-#include "BKE_editmesh.h"
-#include "BKE_mesh_iterators.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_mesh_wrapper.h"
-#include "BKE_modifier.h"
+#include "dune_DerivedMesh.h"
+#include "dune_action.h"
+#include "dune_armature.h"
+#include "dune_curve.h"
+#include "dune_displist.h"
+#include "dune_editmesh.h"
+#include "dune_mesh_iters.h"
+#include "dune_mesh_runtime.h"
+#include "dune_mesh_wrapper.h"
+#include "dune_mod.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-#include "ED_armature.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_armature.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Internal Clipping Utilities
- * \{ */
-
-/**
- * Calculate clipping planes to use when #V3D_PROJ_TEST_CLIP_CONTENT is enabled.
- *
+/* Internal Clipping Utils */
+/* Calc clipping planes to use when V3D_PROJ_TEST_CLIP_CONTENT is enabled
  * Planes are selected from the viewpoint using `clip_flag`
  * to detect which planes should be applied (maximum 6).
- *
- * \return The number of planes written into `planes`.
- */
-static int content_planes_from_clip_flag(const ARegion *region,
-                                         const Object *ob,
+ * return The number of planes written into `planes`. */
+static int content_planes_from_clip_flag(const ARgn *rgn,
+                                         const Ob *ob,
                                          const eV3DProjTest clip_flag,
                                          float planes[6][4])
 {
-  BLI_assert(clip_flag & V3D_PROJ_TEST_CLIP_CONTENT);
+  lib_assert(clip_flag & V3D_PROJ_TEST_CLIP_CONTENT);
 
   float *clip_xmin = NULL, *clip_xmax = NULL;
   float *clip_ymin = NULL, *clip_ymax = NULL;
@@ -57,9 +50,8 @@ static int content_planes_from_clip_flag(const ARegion *region,
   int planes_len = 0;
 
   /* The order of `planes` has been selected based on the likelihood of points being fully
-   * outside the plane to increase the chance of an early exit in #clip_segment_v3_plane_n.
+   * outside the plane to increase the chance of an early exit in clip_segment_v3_plane_n.
    * With "near" being most likely and "far" being unlikely.
-   *
    * Otherwise the order of axes in `planes` isn't significant. */
 
   if (clip_flag & V3D_PROJ_TEST_CLIP_NEAR) {
@@ -75,26 +67,24 @@ static int content_planes_from_clip_flag(const ARegion *region,
     clip_zmax = planes[planes_len++];
   }
 
-  BLI_assert(planes_len <= 6);
+  lib_assert(planes_len <= 6);
   if (planes_len != 0) {
-    RegionView3D *rv3d = region->regiondata;
+    RgnView3D *rv3d = rgn->rhndata;
     float projmat[4][4];
-    ED_view3d_ob_project_mat_get(rv3d, ob, projmat);
+    ed_view3d_ob_project_mat_get(rv3d, ob, projmat);
     planes_from_projmat(projmat, clip_xmin, clip_xmax, clip_ymin, clip_ymax, clip_zmin, clip_zmax);
   }
   return planes_len;
 }
 
-/**
- * Edge projection is more involved since part of the edge may be behind the view
+/* Edge projection is more involved since part of the edge may be behind the view
  * or extend beyond the far limits. In the case of single points, these can be ignored.
  * However it just may still be visible on screen, so constrained the edge to planes
- * defined by the port to ensure both ends of the edge can be projected, see T32214.
- *
- * \note This is unrelated to #V3D_PROJ_TEST_CLIP_BB which must be checked separately.
+ * defined by the port to ensure both ends of the edge can be projected, see T32214
+ * note This is unrelated to #V3D_PROJ_TEST_CLIP_BB which must be checked separately.
  */
 static bool view3d_project_segment_to_screen_with_content_clip_planes(
-    const ARegion *region,
+    const ARgn *rgn,
     const float v_a[3],
     const float v_b[3],
     const eV3DProjTest clip_flag,
@@ -108,14 +98,14 @@ static bool view3d_project_segment_to_screen_with_content_clip_planes(
   /* Clipping already handled, no need to check in projection. */
   eV3DProjTest clip_flag_nowin = clip_flag & ~V3D_PROJ_TEST_CLIP_WIN;
 
-  const eV3DProjStatus status_a = ED_view3d_project_float_object(
-      region, v_a, r_screen_co_a, clip_flag_nowin);
-  const eV3DProjStatus status_b = ED_view3d_project_float_object(
-      region, v_b, r_screen_co_b, clip_flag_nowin);
+  const eV3DProjStatus status_a = ed_view3d_project_float_ob(
+      rgn, v_a, r_screen_co_a, clip_flag_nowin);
+  const eV3DProjStatus status_b = ed_view3d_project_float_ob(
+      rgn, v_b, r_screen_co_b, clip_flag_nowin);
 
   if ((status_a == V3D_PROJ_RET_OK) && (status_b == V3D_PROJ_RET_OK)) {
     if (clip_flag & V3D_PROJ_TEST_CLIP_WIN) {
-      if (!BLI_rctf_isect_segment(win_rect, r_screen_co_a, r_screen_co_b)) {
+      if (!lib_rctf_isect_segment(win_rect, r_screen_co_a, r_screen_co_b)) {
         return false;
       }
     }
@@ -142,24 +132,22 @@ static bool view3d_project_segment_to_screen_with_content_clip_planes(
       return false;
     }
 
-    if ((ED_view3d_project_float_object(region, v_a_clip, r_screen_co_a, clip_flag_nowin) !=
+    if ((ed_view3d_project_float_ob(rgn, v_a_clip, r_screen_co_a, clip_flag_nowin) !=
          V3D_PROJ_RET_OK) ||
-        (ED_view3d_project_float_object(region, v_b_clip, r_screen_co_b, clip_flag_nowin) !=
+        (ed_view3d_project_float_ob(rgn, v_b_clip, r_screen_co_b, clip_flag_nowin) !=
          V3D_PROJ_RET_OK)) {
       return false;
     }
 
-    /* No need for #V3D_PROJ_TEST_CLIP_WIN check here,
+    /* No need for V3D_PROJ_TEST_CLIP_WIN check here,
      * clipping the segment by planes handle this. */
   }
 
   return true;
 }
 
-/**
- * Project an edge, points that fail to project are tagged with #IS_CLIPPED.
- */
-static bool view3d_project_segment_to_screen_with_clip_tag(const ARegion *region,
+/* Project an edge, points that fail to project are tagged with IS_CLIPPED. */
+static bool view3d_project_segment_to_screen_with_clip_tag(const ARgn *rgn,
                                                            const float v_a[3],
                                                            const float v_b[3],
                                                            const eV3DProjTest clip_flag,
@@ -169,7 +157,7 @@ static bool view3d_project_segment_to_screen_with_clip_tag(const ARegion *region
 {
   int count = 0;
 
-  if (ED_view3d_project_float_object(region, v_a, r_screen_co_a, clip_flag) == V3D_PROJ_RET_OK) {
+  if (ed_view3d_project_float_ob(rgn, v_a, r_screen_co_a, clip_flag) == V3D_PROJ_RET_OK) {
     count++;
   }
   else {
