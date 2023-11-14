@@ -198,37 +198,37 @@ static void sync_viewport_camera_smoothview(bCxt *C,
   }
 }
 
-static int view3d_setobjectascamera_exec(bContext *C, wmOperator *op)
+static int view3d_setobjascamera_exec(Cxt *C, WinOp *op)
 {
   View3D *v3d;
-  ARegion *region;
-  RegionView3D *rv3d;
+  ARgn *rgn;
+  RgnView3D *rv3d;
 
-  Scene *scene = CTX_data_scene(C);
-  Object *ob = CTX_data_active_object(C);
+  Scene *scene = cxt_data_scene(C);
+  Obj *ob = cxt_data_active_obj(C);
 
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   /* no NULL check is needed, poll checks */
-  ED_view3d_context_user_region(C, &v3d, &region);
-  rv3d = region->regiondata;
+  ed_view3d_cxt_user_rgn(C, &v3d, &rgn);
+  rv3d = rgn->rgndata;
 
   if (ob) {
-    Object *camera_old = (rv3d->persp == RV3D_CAMOB) ? V3D_CAMERA_SCENE(scene, v3d) : NULL;
+    Obj *camera_old = (rv3d->persp == RV3D_CAMOB) ? V3D_CAMERA_SCENE(scene, v3d) : NULL;
     rv3d->persp = RV3D_CAMOB;
     v3d->camera = ob;
     if (v3d->scenelock && scene->camera != ob) {
       scene->camera = ob;
-      DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+      graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
     }
 
     /* unlikely but looks like a glitch when set to the same */
     if (camera_old != ob) {
-      ED_view3d_lastview_store(rv3d);
+      ed_view3d_lastview_store(rv3d);
 
-      ED_view3d_smooth_view(C,
+      ed_view3d_smooth_view(C,
                             v3d,
-                            region,
+                            rgn,
                             smooth_viewtx,
                             &(const V3D_SmoothParams){
                                 .camera_old = camera_old,
@@ -242,12 +242,12 @@ static int view3d_setobjectascamera_exec(bContext *C, wmOperator *op)
 
     if (v3d->scenelock) {
       sync_viewport_camera_smoothview(C, v3d, ob, smooth_viewtx);
-      WM_event_add_notifier(C, NC_SCENE, scene);
+      win_ev_add_notifier(C, NC_SCENE, scene);
     }
-    WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, scene);
+    win_ev_add_notifier(C, NC_OBJ | ND_DRAW, scene);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 bool ED_operator_rv3d_user_region_poll(bContext *C)
