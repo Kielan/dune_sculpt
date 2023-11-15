@@ -1,81 +1,78 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_object_types.h"
+#include "types_armature.h"
+#include "types_ob.h"
 
-#include "BLI_array.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_array.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.h"
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_mball.h"
-#include "BKE_object.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_tracking.h"
+#include "dune_action.h"
+#include "dune_armature.h"
+#include "dune_context.h"
+#include "dune_editmesh.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_mball.h"
+#include "dune_ob.h"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_tracking.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "ED_keyframing.h"
-#include "ED_object.h"
-#include "ED_screen.h"
-#include "ED_transverts.h"
+#include "ed_keyframing.h"
+#include "ed_ob.h"
+#include "ed_screen.h"
+#include "ed_transverts.h"
 
 #include "view3d_intern.h"
 
-static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_cursor[3]);
-static bool snap_calc_active_center(bContext *C, const bool select_only, float r_center[3]);
+static bool snap_curs_to_sel_ex(Cxt *C, const int pivot_point, float r_cursor[3]);
+static bool snap_calc_active_center(Cxt *C, const bool select_only, float r_center[3]);
 
-/* -------------------------------------------------------------------- */
-/** \name Snap Selection to Grid Operator
- * \{ */
-
-/** Snaps every individual object center to its nearest point on the grid. */
-static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
+/* Snap Sel to Grid Op */
+/* Snaps every individual ob center to its nearest point on the grid. */
+static int snap_sel_to_grid_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
-  Object *obact = CTX_data_active_object(C);
-  Scene *scene = CTX_data_scene(C);
-  ARegion *region = CTX_wm_region(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewLayer *view_layer_eval = graph_get_eval_view_layer(graph);
+  Ob *obact = cxt_data_active_ob(C);
+  Scene *scene = cxt_data_scene(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  View3D *v3d = cxt_win_view3d(C);
   TransVertStore tvs = {NULL};
   TransVert *tv;
   float gridf, imat[3][3], bmat[3][3], vec[3];
   int a;
 
-  gridf = ED_view3d_grid_view_scale(scene, v3d, region, NULL);
+  gridf = ed_view3d_grid_view_scale(scene, v3d, rgn, NULL);
 
   if (OBEDIT_FROM_OBACT(obact)) {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    uint objects_len = 0;
-    Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-        view_layer, CTX_wm_view3d(C), &objects_len);
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      Object *obedit = objects[ob_index];
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    uint objs_len = 0;
+    Ob **objs = dune_view_layer_array_from_objs_in_edit_mode_unique_data(
+        view_layer, cxt_win_view3d(C), &objs_len);
+    for (uint ob_index = 0; ob_index < objs_len; ob_index++) {
+      Ob *obedit = objs[ob_index];
 
       if (obedit->type == OB_MESH) {
-        BMEditMesh *em = BKE_editmesh_from_object(obedit);
+        MeshEdit *em = dune_meshedit_from_ob(obedit);
 
-        if (em->bm->totvertsel == 0) {
+        if (em->mesh->totvertsel == 0) {
           continue;
         }
       }
 
-      if (ED_transverts_check_obedit(obedit)) {
-        ED_transverts_create_from_obedit(&tvs, obedit, 0);
+      if (ed_transverts_check_obedit(obedit)) {
+        ed_transverts_create_from_obedit(&tvs, obedit, 0);
       }
 
       if (tvs.transverts_tot != 0) {
@@ -95,21 +92,21 @@ static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
           mul_m3_v3(imat, vec);
           copy_v3_v3(tv->loc, vec);
         }
-        ED_transverts_update_obedit(&tvs, obedit);
+        ed_transverts_update_obedit(&tvs, obedit);
       }
-      ED_transverts_free(&tvs);
+      ed_transverts_free(&tvs);
     }
-    MEM_freeN(objects);
+    mem_free(objs);
   }
   else if (OBPOSE_FROM_OBACT(obact)) {
-    struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
-    uint objects_len = 0;
-    Object **objects_eval = BKE_object_pose_array_get(view_layer_eval, v3d, &objects_len);
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      Object *ob_eval = objects_eval[ob_index];
-      Object *ob = DEG_get_original_object(ob_eval);
-      bPoseChannel *pchan_eval;
-      bArmature *arm_eval = ob_eval->data;
+    struct KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
+    uint objs_len = 0;
+    Ob **objs_eval = dune_ob_pose_array_get(view_layer_eval, v3d, &objs_len);
+    for (uint ob_index = 0; ob_index < objs_len; ob_index++) {
+      Ob *ob_eval = objs_eval[ob_index];
+      Ob *ob = graph_get_original_ob(ob_eval);
+      PoseChannel *pchan_eval;
+      Armature *arm_eval = ob_eval->data;
 
       invert_m4_m4(ob_eval->imat, ob_eval->obmat);
 
@@ -130,10 +127,10 @@ static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
               mul_m4_v3(ob_eval->imat, vec);
 
               /* Get location of grid point in pose space. */
-              BKE_armature_loc_pose_to_bone(pchan_eval, vec, vec);
+              dune_armature_loc_pose_to_bone(pchan_eval, vec, vec);
 
               /* Adjust location on the original pchan. */
-              bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, pchan_eval->name);
+              PoseChannel *pchan = dune_pose_channel_find_name(ob->pose, pchan_eval->name);
               if ((pchan->protectflag & OB_LOCK_LOCX) == 0) {
                 pchan->loc[0] = vec[0];
               }
@@ -145,7 +142,7 @@ static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
               }
 
               /* auto-keyframing */
-              ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
+              ed_autokeyframe_pchan(C, scene, ob, pchan, ks);
             }
             /* if the bone has a parent and is connected to the parent,
              * don't do anything - will break chain unless we do auto-ik.
@@ -155,65 +152,65 @@ static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
       }
       ob->pose->flag |= (POSE_LOCKED | POSE_DO_UNLOCK);
 
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
-    MEM_freeN(objects_eval);
+    mem_free(objs_eval);
   }
   else {
-    /* Object mode. */
-    Main *bmain = CTX_data_main(C);
+    /* Ob mode */
+    Main *main = cxt_data_main(C);
 
-    struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
+    struct KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
 
     const bool use_transform_skip_children = (scene->toolsettings->transform_flag &
                                               SCE_XFORM_SKIP_CHILDREN);
     const bool use_transform_data_origin = (scene->toolsettings->transform_flag &
                                             SCE_XFORM_DATA_ORIGIN);
-    struct XFormObjectSkipChild_Container *xcs = NULL;
-    struct XFormObjectData_Container *xds = NULL;
+    struct XFormObSkipChild_Container *xcs = NULL;
+    struct XFormObData_Container *xds = NULL;
 
-    /* Build object array. */
-    Object **objects_eval = NULL;
-    uint objects_eval_len;
+    /* Build ob array. */
+    Ob **objs_eval = NULL;
+    uint objs_eval_len;
     {
-      BLI_array_declare(objects_eval);
-      FOREACH_SELECTED_EDITABLE_OBJECT_BEGIN (view_layer_eval, v3d, ob_eval) {
-        BLI_array_append(objects_eval, ob_eval);
+      lib_array_declare(objs_eval);
+      FOREACH_SELECTED_EDITABLE_OB_BEGIN (view_layer_eval, v3d, ob_eval) {
+        lib_array_append(objects_eval, ob_eval);
       }
-      FOREACH_SELECTED_EDITABLE_OBJECT_END;
+      FOREACH_SELECTED_EDITABLE_OB_END;
       objects_eval_len = BLI_array_len(objects_eval);
     }
 
     if (use_transform_skip_children) {
-      ViewLayer *view_layer = CTX_data_view_layer(C);
+      ViewLayer *view_layer = cxt_data_view_layer(C);
 
-      Object **objects = MEM_malloc_arrayN(objects_eval_len, sizeof(*objects), __func__);
+      Ob **objs = mem_malloc_array(objs_eval_len, sizeof(*objs), __func__);
 
-      for (int ob_index = 0; ob_index < objects_eval_len; ob_index++) {
-        Object *ob_eval = objects_eval[ob_index];
-        objects[ob_index] = DEG_get_original_object(ob_eval);
+      for (int ob_index = 0; ob_index < objs_eval_len; ob_index++) {
+        Ob *ob_eval = objs_eval[ob_index];
+        objs[ob_index] = grah_get_original_ob(ob_eval);
       }
-      BKE_scene_graph_evaluated_ensure(depsgraph, bmain);
-      xcs = ED_object_xform_skip_child_container_create();
-      ED_object_xform_skip_child_container_item_ensure_from_array(
-          xcs, view_layer, objects, objects_eval_len);
-      MEM_freeN(objects);
+      dune_scene_graph_eval_ensure(graph, main);
+      xcs = ed_ob_xform_skip_child_container_create();
+      ed_ob_xform_skip_child_container_item_ensure_from_array(
+          xcs, view_layer, objs, objs_eval_len);
+      mem_free(objs);
     }
     if (use_transform_data_origin) {
-      BKE_scene_graph_evaluated_ensure(depsgraph, bmain);
-      xds = ED_object_data_xform_container_create();
+      dune_scene_graph_eval_ensure(graph, main);
+      xds = ed_ob_data_xform_container_create();
     }
 
     for (int ob_index = 0; ob_index < objects_eval_len; ob_index++) {
-      Object *ob_eval = objects_eval[ob_index];
-      Object *ob = DEG_get_original_object(ob_eval);
+      Ob *ob_eval = objs_eval[ob_index];
+      Ob *ob = graph_get_original_ob(ob_eval);
       vec[0] = -ob_eval->obmat[3][0] + gridf * floorf(0.5f + ob_eval->obmat[3][0] / gridf);
       vec[1] = -ob_eval->obmat[3][1] + gridf * floorf(0.5f + ob_eval->obmat[3][1] / gridf);
       vec[2] = -ob_eval->obmat[3][2] + gridf * floorf(0.5f + ob_eval->obmat[3][2] / gridf);
 
       if (ob->parent) {
         float originmat[3][3];
-        BKE_object_where_is_calc_ex(depsgraph, scene, NULL, ob, originmat);
+        dune_ob_where_is_calc_ex(graph, scene, NULL, ob, originmat);
 
         invert_m3_m3(imat, originmat);
         mul_m3_v3(imat, vec);
@@ -229,74 +226,68 @@ static int snap_sel_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
       }
 
       /* auto-keyframing */
-      ED_autokeyframe_object(C, scene, ob, ks);
+      ed_autokeyframe_ob(C, scene, ob, ks);
 
       if (use_transform_data_origin) {
-        ED_object_data_xform_container_item_ensure(xds, ob);
+        ed_ob_data_xform_container_item_ensure(xds, ob);
       }
 
-      DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
+      graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
     }
 
     if (objects_eval) {
-      MEM_freeN(objects_eval);
+      mem_free(objs_eval);
     }
 
     if (use_transform_skip_children) {
-      ED_object_xform_skip_child_container_update_all(xcs, bmain, depsgraph);
-      ED_object_xform_skip_child_container_destroy(xcs);
+      ed_ob_xform_skip_child_container_update_all(xcs, main, graph);
+      ed_ob_xform_skip_child_container_destroy(xcs);
     }
     if (use_transform_data_origin) {
-      ED_object_data_xform_container_update_all(xds, bmain, depsgraph);
-      ED_object_data_xform_container_destroy(xds);
+      ed_ob_data_xform_container_update_all(xds, main, graph);
+      ed_ob_data_xform_container_destroy(xds);
     }
   }
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
+  win_ev_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_snap_selected_to_grid(wmOperatorType *ot)
+void VIEW3D_OT_snap_selected_to_grid(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Selection to Grid";
   ot->description = "Snap selected item(s) to their nearest grid division";
   ot->idname = "VIEW3D_OT_snap_selected_to_grid";
 
-  /* api callbacks */
-  ot->exec = snap_sel_to_grid_exec;
-  ot->poll = ED_operator_region_view3d_active;
+  /* api cbs */
+  ot->ex = snap_sel_to_grid_ex;
+  ot->poll = ed_op_rgn_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
+/* Snap Selection to Location (Util) */
 
-/* -------------------------------------------------------------------- */
-/** \name Snap Selection to Location (Utility)
- * \{ */
-
-/**
- * Snaps the selection as a whole (use_offset=true) or each selected object to the given location.
+/* Snaps the selection as a whole (use_offset=true) or each selected object to the given location.
  *
- * \param snap_target_global: a location in global space to snap to
- * (eg. 3D cursor or active object).
- * \param use_offset: if the selected objects should maintain their relative offsets
- * and be snapped by the selection pivot point (median, active),
- * or if every object origin should be snapped to the given location.
- */
-static bool snap_selected_to_location(bContext *C,
+ * param snap_target_global: a location in global space to snap to
+ * (eg. 3D cursor or active ob).
+ * param use_offset: if the selected objs should maintain their relative offsets
+ * and be snapped by the sel pivot point (median, active),
+ * or if every object origin should be snapped to the given location. */
+static bool snap_selected_to_location(Cxt *C,
                                       const float snap_target_global[3],
                                       const bool use_offset,
                                       const int pivot_point,
                                       const bool use_toolsettings)
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *obedit = CTX_data_edit_object(C);
-  Object *obact = CTX_data_active_object(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  Ob *obedit = cxt_data_edit_ob(C);
+  Ob *obact = cxt_data_active_ob(C);
+  View3D *v3d = cxt_win_view3d(C);
   TransVertStore tvs = {NULL};
   TransVert *tv;
   float imat[3][3], bmat[3][3];
@@ -316,30 +307,30 @@ static bool snap_selected_to_location(bContext *C,
 
   if (obedit) {
     float snap_target_local[3];
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    uint objects_len = 0;
-    Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-        view_layer, v3d, &objects_len);
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      obedit = objects[ob_index];
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    uint objs_len = 0;
+    Ob **objs = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+        view_layer, v3d, &objs_len);
+    for (uint ob_index = 0; ob_index < objs_len; ob_index++) {
+      obedit = objs[ob_index];
 
       if (obedit->type == OB_MESH) {
-        BMEditMesh *em = BKE_editmesh_from_object(obedit);
+        MeshEdit *medit = dune_meshedit_from_ob(obedit);
 
-        if (em->bm->totvertsel == 0) {
+        if (medit->mesh->totvertsel == 0) {
           continue;
         }
       }
 
-      if (ED_transverts_check_obedit(obedit)) {
-        ED_transverts_create_from_obedit(&tvs, obedit, 0);
+      if (ed_transverts_check_obedit(obedit)) {
+        ed_transverts_create_from_obedit(&tvs, obedit, 0);
       }
 
       if (tvs.transverts_tot != 0) {
         copy_m3_m4(bmat, obedit->obmat);
         invert_m3_m3(imat, bmat);
 
-        /* get the cursor in object space */
+        /* get the cursor in ob space */
         sub_v3_v3v3(snap_target_local, snap_target_global, obedit->obmat[3]);
         mul_m3_v3(imat, snap_target_local);
 
@@ -359,22 +350,22 @@ static bool snap_selected_to_location(bContext *C,
             copy_v3_v3(tv->loc, snap_target_local);
           }
         }
-        ED_transverts_update_obedit(&tvs, obedit);
+        ed_transverts_update_obedit(&tvs, obedit);
       }
-      ED_transverts_free(&tvs);
+      ed_transverts_free(&tvs);
     }
-    MEM_freeN(objects);
+    mem_free(objs);
   }
   else if (OBPOSE_FROM_OBACT(obact)) {
-    struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    uint objects_len = 0;
-    Object **objects = BKE_object_pose_array_get(view_layer, v3d, &objects_len);
+    struct KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    uint objs_len = 0;
+    Obj **objs = dune_ob_pose_array_get(view_layer, v3d, &objs_len);
 
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      Object *ob = objects[ob_index];
-      bPoseChannel *pchan;
-      bArmature *arm = ob->data;
+    for (uint ob_index = 0; ob_index < objs_len; ob_index++) {
+      Ob *ob = objs[ob_index];
+      PoseChannel *pchan;
+      Armature *arm = ob->data;
       float snap_target_local[3];
 
       invert_m4_m4(ob->imat, ob->obmat);
@@ -397,7 +388,7 @@ static bool snap_selected_to_location(bContext *C,
         if ((pchan->bone->flag & BONE_TRANSFORM) &&
             /* check that our parents not transformed (if we have one) */
             ((pchan->bone->parent &&
-              BKE_armature_bone_flag_test_recursive(pchan->bone->parent, BONE_TRANSFORM)) == 0)) {
+              dune_armature_bone_flag_test_recursive(pchan->bone->parent, BONE_TRANSFORM)) == 0)) {
           /* Get position in pchan (pose) space. */
           float cursor_pose[3];
 
@@ -406,10 +397,10 @@ static bool snap_selected_to_location(bContext *C,
             add_v3_v3(cursor_pose, offset_global);
 
             mul_m4_v3(ob->imat, cursor_pose);
-            BKE_armature_loc_pose_to_bone(pchan, cursor_pose, cursor_pose);
+            dune_armature_loc_pose_to_bone(pchan, cursor_pose, cursor_pose);
           }
           else {
-            BKE_armature_loc_pose_to_bone(pchan, snap_target_local, cursor_pose);
+            dune_armature_loc_pose_to_bone(pchan, snap_target_local, cursor_pose);
           }
 
           /* copy new position */
@@ -425,7 +416,7 @@ static bool snap_selected_to_location(bContext *C,
             }
 
             /* auto-keyframing */
-            ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
+            ed_autokeyframe_pchan(C, scene, ob, pchan, ks);
           }
           else {
             copy_v3_v3(pchan->loc, cursor_pose);
@@ -439,32 +430,32 @@ static bool snap_selected_to_location(bContext *C,
 
       ob->pose->flag |= (POSE_LOCKED | POSE_DO_UNLOCK);
 
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
-    MEM_freeN(objects);
+    mem_free(objs);
   }
   else {
-    struct KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
-    Main *bmain = CTX_data_main(C);
-    Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+    struct KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, ANIM_KS_LOCATION_ID);
+    Main *main = cxt_data_main(C);
+    Graph *graph = cxt_data_graph_ptr(C);
 
     /* Reset flags. */
-    for (Object *ob = bmain->objects.first; ob; ob = ob->id.next) {
+    for (Ob *ob = main->objs.first; ob; ob = ob->id.next) {
       ob->flag &= ~OB_DONE;
     }
 
-    /* Build object array, tag objects we're transforming. */
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    Object **objects = NULL;
-    uint objects_len;
+    /* Build ob array, tag objects we're transforming. */
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    Ob **objs = NULL;
+    uint objs_len;
     {
-      BLI_array_declare(objects);
+      lib_array_declare(objects);
       FOREACH_SELECTED_EDITABLE_OBJECT_BEGIN (view_layer, v3d, ob) {
-        BLI_array_append(objects, ob);
+        lib_array_append(objects, ob);
         ob->flag |= OB_DONE;
       }
-      FOREACH_SELECTED_EDITABLE_OBJECT_END;
-      objects_len = BLI_array_len(objects);
+      FOREACH_SELECTED_EDITABLE_OB_END;
+      objs_len = lib_array_len(objs);
     }
 
     const bool use_transform_skip_children = use_toolsettings &&
@@ -473,30 +464,30 @@ static bool snap_selected_to_location(bContext *C,
     const bool use_transform_data_origin = use_toolsettings &&
                                            (scene->toolsettings->transform_flag &
                                             SCE_XFORM_DATA_ORIGIN);
-    struct XFormObjectSkipChild_Container *xcs = NULL;
-    struct XFormObjectData_Container *xds = NULL;
+    struct XFormObSkipChild_Container *xcs = NULL;
+    struct XFormObData_Container *xds = NULL;
 
     if (use_transform_skip_children) {
-      BKE_scene_graph_evaluated_ensure(depsgraph, bmain);
-      xcs = ED_object_xform_skip_child_container_create();
-      ED_object_xform_skip_child_container_item_ensure_from_array(
+      dune_scene_graph_eval_ensure(depsgraph, bmain);
+      xcs = ed_ob_xform_skip_child_container_create();
+      ed_ob_xform_skip_child_container_item_ensure_from_array(
           xcs, view_layer, objects, objects_len);
     }
     if (use_transform_data_origin) {
-      BKE_scene_graph_evaluated_ensure(depsgraph, bmain);
-      xds = ED_object_data_xform_container_create();
+      dune_scene_graph_eval_ensure(graph, main);
+      xds = ed_ob_data_xform_container_create();
 
-      /* Initialize the transform data in a separate loop because the depsgraph
-       * may be evaluated while setting the locations. */
-      for (int ob_index = 0; ob_index < objects_len; ob_index++) {
-        Object *ob = objects[ob_index];
-        ED_object_data_xform_container_item_ensure(xds, ob);
+      /* Init the transform data in a separate loop because the graph
+       * may be evald while setting the locations. */
+      for (int ob_index = 0; ob_index < obs_len; ob_index++) {
+        Ob *ob = obs[ob_index];
+        ed_ob_data_xform_container_item_ensure(xds, ob);
       }
     }
 
-    for (int ob_index = 0; ob_index < objects_len; ob_index++) {
-      Object *ob = objects[ob_index];
-      if (ob->parent && BKE_object_flag_test_recursive(ob->parent, OB_DONE)) {
+    for (int ob_index = 0; ob_index < objs_len; ob_index++) {
+      Ob *ob = objs[ob_index];
+      if (ob->parent && dune_ob_flag_test_recursive(ob->parent, OB_DONE)) {
         continue;
       }
 
@@ -515,10 +506,10 @@ static bool snap_selected_to_location(bContext *C,
         float originmat[3][3], parentmat[4][4];
         /* Use the evaluated object here because sometimes
          * `ob->parent->runtime.curve_cache` is required. */
-        BKE_scene_graph_evaluated_ensure(depsgraph, bmain);
-        Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
+        dune_scene_graph_eval_ensure(graph, main);
+        Ob *ob_eval = graph_get_eval_ob(graph, ob);
 
-        BKE_object_get_parent_matrix(ob_eval, ob_eval->parent, parentmat);
+        dune_ob_get_parent_matrix(ob_eval, ob_eval->parent, parentmat);
         mul_m3_m4m4(originmat, parentmat, ob->parentinv);
         invert_m3_m3(imat, originmat);
         mul_m3_v3(imat, cursor_parent);
@@ -535,35 +526,35 @@ static bool snap_selected_to_location(bContext *C,
         }
 
         /* auto-keyframing */
-        ED_autokeyframe_object(C, scene, ob, ks);
+        ed_autokeyframe_object(C, scene, ob, ks);
       }
       else {
         add_v3_v3(ob->loc, cursor_parent);
       }
 
-      DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
+      graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
     }
 
-    if (objects) {
-      MEM_freeN(objects);
+    if (objs) {
+      mem_free(objs);
     }
 
     if (use_transform_skip_children) {
-      ED_object_xform_skip_child_container_update_all(xcs, bmain, depsgraph);
-      ED_object_xform_skip_child_container_destroy(xcs);
+      ed_ob_xform_skip_child_container_update_all(xcs, main, graph);
+      ed_ob_xform_skip_child_container_destroy(xcs);
     }
     if (use_transform_data_origin) {
-      ED_object_data_xform_container_update_all(xds, bmain, depsgraph);
-      ED_object_data_xform_container_destroy(xds);
+      ed_ob_data_xform_container_update_all(xds, main, graph);
+      ed_ob_data_xform_container_destroy(xds);
     }
   }
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
+  win_ev_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
   return true;
 }
 
-bool ED_view3d_snap_selected_to_location(bContext *C,
+bool ed_view3d_snap_selected_to_location(Cxt *C,
                                          const float snap_target_global[3],
                                          const int pivot_point)
 {
@@ -571,149 +562,127 @@ bool ED_view3d_snap_selected_to_location(bContext *C,
   /* Always use pivot point. */
   const bool use_offset = true;
   /* Disable object protected flags & auto-keyframing,
-   * so this can be used as a low level function. */
+   * so this can be used as a low level fn. */
   const bool use_toolsettings = false;
   return snap_selected_to_location(
       C, snap_target_global, use_offset, pivot_point, use_toolsettings);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Selection to Cursor Operator
- * \{ */
-
-static int snap_selected_to_cursor_exec(bContext *C, wmOperator *op)
+/* Snap Selection to Cursor Op */
+static int snap_selected_to_cursor_ex(Cxt *C, WinOp *op)
 {
-  const bool use_offset = RNA_boolean_get(op->ptr, "use_offset");
+  const bool use_offset = api_bool_get(op->ptr, "use_offset");
 
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   const float *snap_target_global = scene->cursor.location;
   const int pivot_point = scene->toolsettings->transform_pivot_point;
 
-  if (snap_selected_to_location(C, snap_target_global, use_offset, pivot_point, true)) {
-    return OPERATOR_FINISHED;
+  if (snap_sel_to_location(C, snap_target_global, use_offset, pivot_point, true)) {
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-void VIEW3D_OT_snap_selected_to_cursor(wmOperatorType *ot)
+void VIEW3D_OT_snap_sel_to_cursor(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Selection to Cursor";
   ot->description = "Snap selected item(s) to the 3D cursor";
   ot->idname = "VIEW3D_OT_snap_selected_to_cursor";
 
-  /* api callbacks */
-  ot->exec = snap_selected_to_cursor_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->ex = snap_sel_to_cursor_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* rna */
-  RNA_def_boolean(ot->srna,
+  /* api */
+  api_def_bool(ot->sapi,
                   "use_offset",
                   1,
                   "Offset",
-                  "If the selection should be snapped as a whole or by each object center");
+                  "If the sel should be snapped as a whole or by each ob center");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Selection to Active Operator
- * \{ */
-
-/** Snaps each selected object to the location of the active selected object. */
-static int snap_selected_to_active_exec(bContext *C, wmOperator *op)
+/* Snap Sel to Active Op */
+/* Snaps each sel ob to the location of the active sel ob */
+static int snap_sel_to_active_ex(Cxt *C, WinOp *op)
 {
   float snap_target_global[3];
 
   if (snap_calc_active_center(C, false, snap_target_global) == false) {
-    BKE_report(op->reports, RPT_ERROR, "No active element found!");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No active element found!");
+    return OP_CANCELLED;
   }
 
-  if (!snap_selected_to_location(C, snap_target_global, false, -1, true)) {
-    return OPERATOR_CANCELLED;
+  if (!snap_sel_to_location(C, snap_target_global, false, -1, true)) {
+    return OP_CANCELLED;
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_snap_selected_to_active(wmOperatorType *ot)
+void VIEW3D_OT_snap_sel_to_active(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Snap Selection to Active";
-  ot->description = "Snap selected item(s) to the active item";
-  ot->idname = "VIEW3D_OT_snap_selected_to_active";
+  /* ids */
+  ot->name = "Snap Sel to Active";
+  ot->description = "Snap sel item(s) to the active item";
+  ot->idname = "VIEW3D_OT_snap_sel_to_active";
 
-  /* api callbacks */
-  ot->exec = snap_selected_to_active_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->ex = snap_sel_to_active_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Cursor to Grid Operator
- * \{ */
-
-/** Snaps the 3D cursor location to its nearest point on the grid. */
-static int snap_curs_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
+/* Snap Cursor to Grid Op */
+/* Snaps the 3D cursor location to its nearest point on the grid. */
+static int snap_curs_to_grid_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  Scene *scene = CTX_data_scene(C);
-  ARegion *region = CTX_wm_region(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  View3D *v3d = cxt_win_view3d(C);
   float gridf, *curs;
 
-  gridf = ED_view3d_grid_view_scale(scene, v3d, region, NULL);
+  gridf = ed_view3d_grid_view_scale(scene, v3d, rgn, NULL);
   curs = scene->cursor.location;
 
   curs[0] = gridf * floorf(0.5f + curs[0] / gridf);
   curs[1] = gridf * floorf(0.5f + curs[1] / gridf);
   curs[2] = gridf * floorf(0.5f + curs[2] / gridf);
 
-  WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL); /* hrm */
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  win_ev_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL); /* hrm */
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_snap_cursor_to_grid(wmOperatorType *ot)
+void VIEW3D_OT_snap_cursor_to_grid(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Cursor to Grid";
   ot->description = "Snap 3D cursor to the nearest grid division";
   ot->idname = "VIEW3D_OT_snap_cursor_to_grid";
 
-  /* api callbacks */
-  ot->exec = snap_curs_to_grid_exec;
-  ot->poll = ED_operator_region_view3d_active;
+  /* api cbs */
+  ot->ex = snap_curs_to_grid_ex;
+  ot->poll = ed_op_rgn_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Cursor to Selection Operator
- * \{ */
-
-/**
- * Returns the center position of a tracking marker visible on the viewport
- * (useful to snap to).
- */
-static void bundle_midpoint(Scene *scene, Object *ob, float r_vec[3])
+/* Snap Cursor to Sel Op */
+/* Returns the center position of a tracking marker visible on the viewport
+ * (useful to snap to). */
+static void bundle_midpoint(Scene *scene, Ob *ob, float r_vec[3])
 {
-  MovieClip *clip = BKE_object_movieclip_get(scene, ob, false);
+  MovieClip *clip = dune_ob_movieclip_get(scene, ob, false);
   MovieTracking *tracking;
-  MovieTrackingObject *object;
+  MovieTrackingOb *ob;
   bool ok = false;
   float min[3], max[3], mat[4][4], pos[3], cammat[4][4];
 
@@ -725,12 +694,12 @@ static void bundle_midpoint(Scene *scene, Object *ob, float r_vec[3])
 
   copy_m4_m4(cammat, ob->obmat);
 
-  BKE_tracking_get_camera_object_matrix(ob, mat);
+  dune_tracking_get_camera_ob_matrix(ob, mat);
 
   INIT_MINMAX(min, max);
 
-  for (object = tracking->objects.first; object; object = object->next) {
-    ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, object);
+  for (object = tracking->obs.first; ob; ob = ob->next) {
+    List *tracksbase = dune_tracking_ob_get_tracks(tracking, ob);
     MovieTrackingTrack *track = tracksbase->first;
     float obmat[4][4];
 
@@ -740,7 +709,7 @@ static void bundle_midpoint(Scene *scene, Object *ob, float r_vec[3])
     else {
       float imat[4][4];
 
-      BKE_tracking_camera_get_reconstructed_interpolate(tracking, object, scene->r.cfra, imat);
+      dune_tracking_camera_get_reconstructed_interpolate(tracking, ob, scene->r.cfra, imat);
       invert_m4(imat);
 
       mul_m4_m4m4(obmat, cammat, imat);
@@ -762,14 +731,14 @@ static void bundle_midpoint(Scene *scene, Object *ob, float r_vec[3])
   }
 }
 
-/** Snaps the 3D cursor location to the median point of the selection. */
-static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_cursor[3])
+/* Snaps the 3D cursor location to the median point of the sel */
+static bool snap_curs_to_sel_ex(Cxt *C, const int pivot_point, float r_cursor[3])
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
-  Object *obedit = CTX_data_edit_object(C);
-  Scene *scene = CTX_data_scene(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewLayer *view_layer_eval = graph_get_eval_view_layer(graph);
+  Ob *obedit = cxt_data_edit_ob(C);
+  Scene *scene = cxt_data_scene(C);
+  View3D *v3d = cxt_win_view3d(C);
   TransVertStore tvs = {NULL};
   TransVert *tv;
   float bmat[3][3], vec[3], min[3], max[3], centroid[3];
@@ -779,29 +748,29 @@ static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_curs
   zero_v3(centroid);
 
   if (obedit) {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    uint objects_len = 0;
-    Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-        view_layer, CTX_wm_view3d(C), &objects_len);
-    for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-      obedit = objects[ob_index];
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    uint objs_len = 0;
+    Ob **objs = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+        view_layer, cxt_win_view3d(C), &objs_len);
+    for (uint ob_index = 0; ob_index < objs_len; ob_index++) {
+      obedit = objs[ob_index];
 
       /* We can do that quick check for meshes only... */
       if (obedit->type == OB_MESH) {
-        BMEditMesh *em = BKE_editmesh_from_object(obedit);
+        MeshEdit *medit = dune_meshedit_from_ob(obedit);
 
-        if (em->bm->totvertsel == 0) {
+        if (medit->mesh->totvertsel == 0) {
           continue;
         }
       }
 
-      if (ED_transverts_check_obedit(obedit)) {
-        ED_transverts_create_from_obedit(&tvs, obedit, TM_ALL_JOINTS | TM_SKIP_HANDLES);
+      if (ed_transverts_check_obedit(obedit)) {
+        ed_transverts_create_from_obedit(&tvs, obedit, TM_ALL_JOINTS | TM_SKIP_HANDLES);
       }
 
       count += tvs.transverts_tot;
       if (tvs.transverts_tot != 0) {
-        Object *obedit_eval = DEG_get_evaluated_object(depsgraph, obedit);
+        Ob *obedit_eval = graph_get_eval_ob(graph, obedit);
         copy_m3_m4(bmat, obedit_eval->obmat);
 
         tv = tvs.transverts;
@@ -813,17 +782,17 @@ static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_curs
           minmax_v3v3_v3(min, max, vec);
         }
       }
-      ED_transverts_free(&tvs);
+      ed_transverts_free(&tvs);
     }
-    MEM_freeN(objects);
+    mem_free(objs);
   }
   else {
-    Object *obact = CTX_data_active_object(C);
+    Ob *obact = cxt_data_active_ob(C);
 
     if (obact && (obact->mode & OB_MODE_POSE)) {
-      Object *obact_eval = DEG_get_evaluated_object(depsgraph, obact);
-      bArmature *arm = obact_eval->data;
-      bPoseChannel *pchan;
+      Ob *obact_eval = graph_get_eval_ob(graph, obact);
+      Armature *arm = obact_eval->data;
+      PoseChannel *pchan;
       for (pchan = obact_eval->pose->chanbase.first; pchan; pchan = pchan->next) {
         if (arm->layer & pchan->bone->layer) {
           if (pchan->bone->flag & BONE_SELECTED) {
@@ -837,14 +806,14 @@ static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_curs
       }
     }
     else {
-      FOREACH_SELECTED_OBJECT_BEGIN (view_layer_eval, v3d, ob_eval) {
+      FOREACH_SELECTED_OB_BEGIN (view_layer_eval, v3d, ob_eval) {
         copy_v3_v3(vec, ob_eval->obmat[3]);
 
         /* special case for camera -- snap to bundles */
         if (ob_eval->type == OB_CAMERA) {
           /* snap to bundles should happen only when bundles are visible */
           if (v3d->flag2 & V3D_SHOW_RECONSTRUCTION) {
-            bundle_midpoint(scene, DEG_get_original_object(ob_eval), vec);
+            bundle_midpoint(scene, graph_get_original_ob(ob_eval), vec);
           }
         }
 
@@ -870,127 +839,109 @@ static bool snap_curs_to_sel_ex(bContext *C, const int pivot_point, float r_curs
   return true;
 }
 
-static int snap_curs_to_sel_exec(bContext *C, wmOperator *UNUSED(op))
+static int snap_curs_to_sel_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   const int pivot_point = scene->toolsettings->transform_pivot_point;
   if (snap_curs_to_sel_ex(C, pivot_point, scene->cursor.location)) {
-    WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-    DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+    win_ev_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
+    graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-void VIEW3D_OT_snap_cursor_to_selected(wmOperatorType *ot)
+void VIEW3D_OT_snap_cursor_to_selected(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Cursor to Selected";
-  ot->description = "Snap 3D cursor to the middle of the selected item(s)";
-  ot->idname = "VIEW3D_OT_snap_cursor_to_selected";
+  ot->description = "Snap 3D cursor to the middle of the sel item(s)";
+  ot->idname = "VIEW3D_OT_snap_cursor_to_sel";
 
-  /* api callbacks */
-  ot->exec = snap_curs_to_sel_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->ex = snap_curs_to_sel_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Cursor to Active Operator
- * \{ */
-
-/**
- * Calculates the center position of the active object in global space.
- *
- * NOTE: this could be exported to be a generic function.
- * see: #calculateCenterActive
- */
-static bool snap_calc_active_center(bContext *C, const bool select_only, float r_center[3])
+/* Snap Cursor to Active Op */
+/* Calcs the center position of the active ob in global space.
+ * This could be exported to be a generic fn.
+ * see: calcCenterActive */
+static bool snap_calc_active_center(Cxt *C, const bool sel_only, float r_center[3])
 {
-  Object *ob = CTX_data_active_object(C);
+  Ob *ob = cxt_data_active_ob(C);
   if (ob == NULL) {
     return false;
   }
-  return ED_object_calc_active_center(ob, select_only, r_center);
+  return ed_ob_calc_active_center(ob, sel_only, r_center);
 }
 
-static int snap_curs_to_active_exec(bContext *C, wmOperator *UNUSED(op))
+static int snap_curs_to_active_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   if (snap_calc_active_center(C, false, scene->cursor.location)) {
-    WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-    DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+    win_ev_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
+    graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-void VIEW3D_OT_snap_cursor_to_active(wmOperatorType *ot)
+void VIEW3D_OT_snap_cursor_to_active(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Cursor to Active";
   ot->description = "Snap 3D cursor to the active item";
   ot->idname = "VIEW3D_OT_snap_cursor_to_active";
 
-  /* api callbacks */
-  ot->exec = snap_curs_to_active_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->ex = snap_curs_to_active_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Snap Cursor to Center Operator
- * \{ */
-
-/** Snaps the 3D cursor location to the origin and clears cursor rotation. */
-static int snap_curs_to_center_exec(bContext *C, wmOperator *UNUSED(op))
+/* Snap Cursor to Center Op */
+/* Snaps the 3D cursor location to the origin and clears cursor rotation. */
+static int snap_curs_to_center_ex(Cxt *C, WinOp *UNUSED(op))
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   float mat3[3][3];
   unit_m3(mat3);
 
   zero_v3(scene->cursor.location);
-  BKE_scene_cursor_mat3_to_rot(&scene->cursor, mat3, false);
+  dune_scene_cursor_mat3_to_rot(&scene->cursor, mat3, false);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 
-  WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_snap_cursor_to_center(wmOperatorType *ot)
+void VIEW3D_OT_snap_cursor_to_center(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Snap Cursor to World Origin";
   ot->description = "Snap 3D cursor to the world origin";
   ot->idname = "VIEW3D_OT_snap_cursor_to_center";
 
-  /* api callbacks */
-  ot->exec = snap_curs_to_center_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->ex = snap_curs_to_center_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Min/Max Object Vertices Utility
- * \{ */
-
-bool ED_view3d_minmax_verts(Object *obedit, float r_min[3], float r_max[3])
+/* Min/Max Ob Vertices Util */
+bool ed_view3d_minmax_verts(Ob *obedit, float r_min[3], float r_max[3])
 {
   TransVertStore tvs = {NULL};
   TransVert *tv;
@@ -1001,7 +952,7 @@ bool ED_view3d_minmax_verts(Object *obedit, float r_min[3], float r_max[3])
     float ob_min[3], ob_max[3];
     bool changed;
 
-    changed = BKE_mball_minmax_ex(obedit->data, ob_min, ob_max, obedit->obmat, SELECT);
+    changed = dune_mball_minmax_ex(obedit->data, ob_min, ob_max, obedit->obmat, SELECT);
     if (changed) {
       minmax_v3v3_v3(r_min, r_max, ob_min);
       minmax_v3v3_v3(r_min, r_max, ob_max);
@@ -1009,8 +960,8 @@ bool ED_view3d_minmax_verts(Object *obedit, float r_min[3], float r_max[3])
     return changed;
   }
 
-  if (ED_transverts_check_obedit(obedit)) {
-    ED_transverts_create_from_obedit(&tvs, obedit, TM_ALL_JOINTS | TM_CALC_MAPLOC);
+  if (ed_transverts_check_obedit(obedit)) {
+    ed_transverts_create_from_obedit(&tvs, obedit, TM_ALL_JOINTS | TM_CALC_MAPLOC);
   }
 
   if (tvs.transverts_tot == 0) {
@@ -1028,7 +979,7 @@ bool ED_view3d_minmax_verts(Object *obedit, float r_min[3], float r_max[3])
     minmax_v3v3_v3(r_min, r_max, vec);
   }
 
-  ED_transverts_free(&tvs);
+  ed_transverts_free(&tvs);
 
   return true;
 }
