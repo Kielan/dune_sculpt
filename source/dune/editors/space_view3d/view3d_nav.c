@@ -1071,7 +1071,7 @@ static int view_axis_ex(Cxt *C, WinOp *op)
 
   ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
-  viewnum = API_enum_get(op->ptr, "type");
+  viewnum = api_enum_get(op->ptr, "type");
 
   float align_quat_buf[4];
   float *align_quat = NULL;
@@ -1460,10 +1460,10 @@ static const EnumPropertyItem prop_view_pan_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static int viewpan_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+static int viewpan_invoke(Cxt *C, winOp *op, const WinEv *ev)
 {
   int x = 0, y = 0;
-  int pandir = API_enum_get(op->ptr, "type");
+  int pandir = api_enum_get(op->ptr, "type");
 
   if (pandir == V3D_VIEW_PANRIGHT) {
     x = -32;
@@ -1479,30 +1479,30 @@ static int viewpan_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
   }
 
   ViewOpsData *vod = viewops_data_create(
-      C, event, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_ORBIT_SELECT));
+      C, ev, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_ORBIT_SEL));
 
-  viewmove_apply(vod, vod->prev.event_xy[0] + x, vod->prev.event_xy[1] + y);
+  viewmove_apply(vod, vod->prev.ev_xy[0] + x, vod->prev.ev_xy[1] + y);
 
   viewops_data_free(C, vod);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_pan(wmOperatorType *ot)
+void VIEW3D_OT_view_pan(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Pan View Direction";
   ot->description = "Pan the view in a given direction";
   ot->idname = "VIEW3D_OT_view_pan";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = viewpan_invoke;
   ot->poll = view3d_location_poll;
 
   /* flags */
   ot->flag = 0;
 
-  /* Properties */
-  ot->prop = API_def_enum(
-      ot->srna, "type", prop_view_pan_items, 0, "Pan", "Direction of View Pan");
+  /* Props */
+  ot->prop = api_def_enum(
+      ot->sapi, "type", prop_view_pan_items, 0, "Pan", "Direction of View Pan");
 }
