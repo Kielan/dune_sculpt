@@ -732,8 +732,8 @@ static int flyApply(Cxt *C, FlyInfo *fly, bool is_confirm)
 
 #ifdef NDOF_FLY_DEBUG
   {
-    static uint iteration = 1;
-    printf("fly timer %d\n", iteration++);
+    static uint iter = 1;
+    printf("fly timer %d\n", iter++);
   }
 #endif
 
@@ -768,8 +768,7 @@ static int flyApply(Cxt *C, FlyInfo *fly, bool is_confirm)
     }
 
     /* Scale the mouse movement by this value - scales mouse movement to the view size
-     * `moffset[0] / (region->winx-xmargin * 2)` - window size minus margin (same for y)
-     *
+     * `moffset[0] / (rgn->winx-xmargin * 2)` - window size minus margin (same for y)
      * the mouse moves isn't linear. */
 
     if (moffset[0]) {
@@ -975,13 +974,13 @@ static int flyApply(Cxt *C, FlyInfo *fly, bool is_confirm)
     copy_v3_v3(fly->dvec_prev, dvec);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 #ifdef WITH_INPUT_NDOF
-static void flyApply_ndof(bContext *C, FlyInfo *fly, bool is_confirm)
+static void flyApply_ndof(Cxt *C, FlyInfo *fly, bool is_confirm)
 {
-  Object *lock_ob = ED_view3d_cameracontrol_object_get(fly->v3d_camera_control);
+  Object *lock_ob = ed_view3d_cameractrl_ob_get(fly->v3d_camera_ctrl);
   bool has_translate, has_rotate;
 
   view3d_ndof_fly(fly->ndof,
@@ -1002,38 +1001,34 @@ static void flyApply_ndof(bContext *C, FlyInfo *fly, bool is_confirm)
 }
 #endif /* WITH_INPUT_NDOF */
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Fly Operator
- * \{ */
-
-static int fly_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Fly Op */
+static int fly_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
   FlyInfo *fly;
 
   if (RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ANY_TRANSFORM) {
     return OPERATOR_CANCELLED;
   }
 
-  fly = MEM_callocN(sizeof(FlyInfo), "FlyOperation");
+  fly = mem_calloc(sizeof(FlyInfo), "FlyOp");
 
   op->customdata = fly;
 
-  if (initFlyInfo(C, fly, op, event) == false) {
-    MEM_freeN(op->customdata);
-    return OPERATOR_CANCELLED;
+  if (initFlyInfo(C, fly, op, ev) == false) {
+    mem_free(op->customdata);
+    return OP_CANCELLED;
   }
 
-  flyEvent(fly, event);
+  flyEv(fly, ev);
 
-  WM_event_add_modal_handler(C, op);
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void fly_cancel(bContext *C, wmOperator *op)
+static void fly_cancel(Cxt *C, WinOp *op)
 {
   FlyInfo *fly = op->customdata;
 
@@ -1042,27 +1037,27 @@ static void fly_cancel(bContext *C, wmOperator *op)
   op->customdata = NULL;
 }
 
-static int fly_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int fly_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   int exit_code;
   bool do_draw = false;
   FlyInfo *fly = op->customdata;
-  RegionView3D *rv3d = fly->rv3d;
-  Object *fly_object = ED_view3d_cameracontrol_object_get(fly->v3d_camera_control);
+  RgnView3D *rv3d = fly->rv3d;
+  Ob *fly_ob = ed_view3d_cameractrl_ob_get(fly->v3d_camera_ctrl);
 
   fly->redraw = 0;
 
-  flyEvent(fly, event);
+  flyEv(fly, event);
 
 #ifdef WITH_INPUT_NDOF
   if (fly->ndof) { /* 3D mouse overrules [2D mouse + timer] */
-    if (event->type == NDOF_MOTION) {
+    if (ev->type == NDOF_MOTION) {
       flyApply_ndof(C, fly, false);
     }
   }
   else
 #endif /* WITH_INPUT_NDOF */
-      if (event->type == TIMER && event->customdata == fly->timer) {
+      if (ev->type == TIMER && ev->customdata == fly->timer) {
     flyApply(C, fly, false);
   }
 
@@ -1070,34 +1065,34 @@ static int fly_modal(bContext *C, wmOperator *op, const wmEvent *event)
 
   exit_code = flyEnd(C, fly);
 
-  if (exit_code != OPERATOR_RUNNING_MODAL) {
+  if (exit_code != OP_RUNNING_MODAL) {
     do_draw = true;
   }
 
   if (do_draw) {
     if (rv3d->persp == RV3D_CAMOB) {
-      WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, fly_object);
+      win_ev_add_notifier(C, NC_OB | ND_TRANSFORM, fly_ob);
     }
 
     // puts("redraw!"); // too frequent, commented with NDOF_FLY_DRAW_TOOMUCH for now
-    ED_region_tag_redraw(CTX_wm_region(C));
+    ed_rgn_tag_redraw(cxt_win_rgn(C));
   }
 
   return exit_code;
 }
 
-void VIEW3D_OT_fly(wmOperatorType *ot)
+void VIEW3D_OT_fly(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Fly Navigation";
+  /* ids */
+  ot->name = "Fly Nav";
   ot->description = "Interactively fly around the scene";
   ot->idname = "VIEW3D_OT_fly";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = fly_invoke;
   ot->cancel = fly_cancel;
   ot->modal = fly_modal;
-  ot->poll = ED_operator_region_view3d_active;
+  ot->poll = ed_op_rgn_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_BLOCKING;
