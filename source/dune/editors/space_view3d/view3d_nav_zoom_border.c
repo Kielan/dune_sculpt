@@ -1,32 +1,29 @@
-#include "DNA_camera_types.h"
+#include "types_camera.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
-#include "BLI_rect.h"
+#include "lib_math.h"
+#include "lib_rect.h"
 
-#include "BKE_context.h"
-#include "BKE_report.h"
+#include "dune_cxt.h"
+#include "dune_report.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Border Zoom Operator
- * \{ */
-
-static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
+/* Border Zoom Op */
+static int view3d_zoom_border_ex(Cxt *C, WinOp *op)
 {
-  ARegion *region = CTX_wm_region(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  ARgn *rgn = cxt_win_rgn(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   /* Zooms in on a border drawn by the user */
   rcti rect;
@@ -41,25 +38,25 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
   float depth_close = FLT_MAX;
   float cent[2], p[3];
 
-  /* NOTE: otherwise opengl won't work. */
-  view3d_operator_needs_opengl(C);
+  /* Otherwise opengl won't work. */
+  view3d_op_needs_opengl(C);
 
-  /* get box select values using rna */
-  WM_operator_properties_border_to_rcti(op, &rect);
+  /* get box sel vals using api */
+  win_op_props_border_to_rcti(op, &rect);
 
   /* check if zooming in/out view */
-  const bool zoom_in = !RNA_boolean_get(op->ptr, "zoom_out");
+  const bool zoom_in = !api_bool_get(op->ptr, "zoom_out");
 
-  ED_view3d_dist_range_get(v3d, dist_range);
+  ed_view3d_dist_range_get(v3d, dist_range);
 
-  ED_view3d_depth_override(
-      CTX_data_ensure_evaluated_depsgraph(C), region, v3d, NULL, V3D_DEPTH_NO_GPENCIL, NULL);
+  es_view3d_depth_override(
+      cxt_data_ensure_eval_graph(C), rgn, v3d, NULL, V3D_DEPTH_NO_PEN, NULL);
   {
     /* avoid allocating the whole depth buffer */
     ViewDepths depth_temp = {0};
 
     /* avoid view3d_update_depths() for speed. */
-    view3d_depths_rect_create(region, &rect, &depth_temp);
+    view3d_depths_rect_create(rgn, &rect, &depth_temp);
 
     /* find the closest Z pixel */
     depth_close = view3d_depth_near(&depth_temp);
@@ -67,14 +64,14 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
     MEM_SAFE_FREE(depth_temp.depths);
   }
 
-  /* Resize border to the same ratio as the window. */
+  /* Resize border to the same ratio as the win. */
   {
-    const float region_aspect = (float)region->winx / (float)region->winy;
-    if (((float)BLI_rcti_size_x(&rect) / (float)BLI_rcti_size_y(&rect)) < region_aspect) {
-      BLI_rcti_resize_x(&rect, (int)(BLI_rcti_size_y(&rect) * region_aspect));
+    const float rgn_aspect = (float)rgn->winx / (float)rgn->winy;
+    if (((float)lib_rcti_size_x(&rect) / (float)lib_rcti_size_y(&rect)) < rgn_aspect) {
+      lib_rcti_resize_x(&rect, (int)(lib_rcti_size_y(&rect) * rgn_aspect));
     }
     else {
-      BLI_rcti_resize_y(&rect, (int)(BLI_rcti_size_x(&rect) / region_aspect));
+      lib_rcti_resize_y(&rect, (int)(lib_rcti_size_x(&rect) / rgn_aspect));
     }
   }
 
@@ -86,13 +83,13 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
 
     /* no depths to use, we can't do anything! */
     if (depth_close == FLT_MAX) {
-      BKE_report(op->reports, RPT_ERROR, "Depth too large");
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_ERROR, "Depth too large");
+      return OP_CANCELLED;
     }
     /* convert border to 3d coordinates */
-    if ((!ED_view3d_unproject_v3(region, cent[0], cent[1], depth_close, p)) ||
-        (!ED_view3d_unproject_v3(region, rect.xmin, rect.ymin, depth_close, p_corner))) {
-      return OPERATOR_CANCELLED;
+    if ((!ed_view3d_unproject_v3(rgn, cent[0], cent[1], depth_close, p)) ||
+        (!ed_view3d_unproject_v3(rgn, rect.xmin, rect.ymin, depth_close, p_corner))) {
+      return OP_CANCELLED;
     }
 
     sub_v3_v3v3(dvec, p, p_corner);
@@ -107,15 +104,15 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
     dist_range[0] = v3d->clip_start * 1.5f;
   }
   else { /* orthographic */
-    /* find the current window width and height */
-    vb[0] = region->winx;
-    vb[1] = region->winy;
+    /* find the current win width and height */
+    vb[0] = rgn->winx;
+    vb[1] = rgn->winy;
 
     new_dist = rv3d->dist;
 
     /* convert the drawn rectangle into 3d space */
     if (depth_close != FLT_MAX &&
-        ED_view3d_unproject_v3(region, cent[0], cent[1], depth_close, p)) {
+        ed_view3d_unproject_v3(rgn, cent[0], cent[1], depth_close, p)) {
       negate_v3_v3(new_ofs, p);
     }
     else {
@@ -133,14 +130,14 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
 
       xy_delta[0] = (rect.xmin + rect.xmax - vb[0]) / 2.0f;
       xy_delta[1] = (rect.ymin + rect.ymax - vb[1]) / 2.0f;
-      ED_view3d_win_to_delta(region, xy_delta, zfac, dvec);
+      ed_view3d_win_to_delta(rgn, xy_delta, zfac, dvec);
       /* center the view to the center of the rectangle */
       sub_v3_v3(new_ofs, dvec);
     }
 
     /* work out the ratios, so that everything selected fits when we zoom */
-    xscale = (BLI_rcti_size_x(&rect) / vb[0]);
-    yscale = (BLI_rcti_size_y(&rect) / vb[1]);
+    xscale = (lib_rcti_size_x(&rect) / vb[0]);
+    yscale = (lib_rcti_size_y(&rect) / vb[1]);
     new_dist *= max_ff(xscale, yscale);
   }
 
@@ -150,19 +147,19 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
     add_v3_v3v3(new_ofs, rv3d->ofs, dvec);
   }
 
-  /* clamp after because we may have been zooming out */
+  /* clamp after bc we may have been zooming out */
   CLAMP(new_dist, dist_range[0], dist_range[1]);
 
-  /* TODO(campbell): 'is_camera_lock' not currently working well. */
-  const bool is_camera_lock = ED_view3d_camera_lock_check(v3d, rv3d);
+  /* TODO: 'is_camera_lock' not currently working well. */
+  const bool is_camera_lock = ed_view3d_camera_lock_check(v3d, rv3d);
   if ((rv3d->persp == RV3D_CAMOB) && (is_camera_lock == false)) {
-    Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-    ED_view3d_persp_switch_from_camera(depsgraph, v3d, rv3d, RV3D_PERSP);
+    Graph *graph = cxt_data_ensure_eval_graph(C);
+    ed_view3d_persp_switch_from_camera(graph, v3d, rv3d, RV3D_PERSP);
   }
 
-  ED_view3d_smooth_view(C,
+  ed_view3d_smooth_view(C,
                         v3d,
-                        region,
+                        rgn,
                         smooth_viewtx,
                         &(const V3D_SmoothParams){
                             .ofs = new_ofs,
@@ -170,30 +167,30 @@ static int view3d_zoom_border_exec(bContext *C, wmOperator *op)
                         });
 
   if (RV3D_LOCK_FLAGS(rv3d) & RV3D_BOXVIEW) {
-    view3d_boxview_sync(CTX_wm_area(C), region);
+    view3d_boxview_sync(cxt_win_area(C), rgn);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_zoom_border(wmOperatorType *ot)
+void VIEW3D_OT_zoom_border(WibOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Zoom to Border";
   ot->description = "Zoom in the view to the nearest object contained in the border";
   ot->idname = "VIEW3D_OT_zoom_border";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_box_invoke;
-  ot->exec = view3d_zoom_border_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  /* api cbs */
+  ot->invoke = win_gesture_box_invoke;
+  ot->ex = view3d_zoom_border_ex;
+  ot->modal = win_gesture_box_modal;
+  ot->cancel = win_gesture_box_cancel;
 
   ot->poll = view3d_zoom_or_dolly_poll;
 
   /* flags */
   ot->flag = 0;
 
-  /* properties */
-  WM_operator_properties_gesture_box_zoom(ot);
+  /* props */
+  win_op_props_gesture_box_zoom(ot);
 }
