@@ -173,11 +173,11 @@ static int view3d_zoom_border_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void VIEW3D_OT_zoom_border(WibOpType *ot)
+void VIEW3D_OT_zoom_border(WinOpType *ot)
 {
   /* ids */
   ot->name = "Zoom to Border";
-  ot->description = "Zoom in the view to the nearest object contained in the border";
+  ot->description = "Zoom in the view to the nearest ob contained in the border";
   ot->idname = "VIEW3D_OT_zoom_border";
 
   /* api cbs */
