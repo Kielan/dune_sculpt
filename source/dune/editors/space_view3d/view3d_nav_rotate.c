@@ -1,22 +1,20 @@
-#include "LIB_math.h"
+#include "lib_math.h"
 
-#include "DUNE_context.h"
+#include "dune_cxt.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "API_access.h"
+#include "api_access.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** View Rotate Operator **/
-
-void viewrotate_modal_keymap(wmKeyConfig *keyconf)
+/* View Rotate Op */
+void viewrotate_modal_keymap(WinKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {VIEW_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
 
       {VIEWROT_MODAL_AXIS_SNAP_ENABLE, "AXIS_SNAP_ENABLE", 0, "Axis Snap", ""},
@@ -28,31 +26,30 @@ void viewrotate_modal_keymap(wmKeyConfig *keyconf)
       {0, NULL, 0, NULL, NULL},
   };
 
-  wmKeyMap *keymap = WM_modalkeymap_find(keyconf, "View3D Rotate Modal");
+  WinKeyMap *keymap = win_modalkeymap_find(keyconf, "View3D Rotate Modal");
 
-  /* this function is called for each spacetype, only needs to add map once */
+  /* this fn is called for each spacetype, only needs to add map once */
   if (keymap && keymap->modal_items) {
     return;
   }
 
-  keymap = WM_modalkeymap_ensure(keyconf, "View3D Rotate Modal", modal_items);
-
+  keymap = win_modalkeymap_ensure(keyconf, "View3D Rotate Modal", modal_items);
   /* disabled mode switching for now, can re-implement better, later on */
 #if 0
-  WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
-  WM_modalkeymap_add_item(keymap, LEFTCTRLKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
-  WM_modalkeymap_add_item(keymap, LEFTSHIFTKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_MOVE);
+  win_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
+  win_modalkeymap_add_item(keymap, LEFTCTRLKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
+  win_modalkeymap_add_item(keymap, LEFTSHIFTKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_MOVE);
 #endif
 
-  /* assign map to operators */
-  WM_modalkeymap_assign(keymap, "VIEW3D_OT_rotate");
+  /* assign map to ops */
+  win_modalkeymap_assign(keymap, "VIEW3D_OT_rotate");
 }
 
 static void viewrotate_apply_snap(ViewOpsData *vod)
 {
   const float axis_limit = DEG2RADF(45 / 3);
 
-  RegionView3D *rv3d = vod->rv3d;
+  RgnView3D *rv3d = vod->rv3d;
 
   float viewquat_inv[4];
   float zaxis[3] = {0, 0, 1};
@@ -134,9 +131,9 @@ static void viewrotate_apply_snap(ViewOpsData *vod)
 
     if (found) {
       /* lock 'quat_best' to an axis view if we can */
-      ED_view3d_quat_to_axis_view(quat_best, 0.01f, &rv3d->view, &rv3d->view_axis_roll);
+      ed_view3d_quat_to_axis_view(quat_best, 0.01f, &rv3d->view, &rv3d->view_axis_roll);
       if (rv3d->view != RV3D_VIEW_USER) {
-        ED_view3d_quat_from_axis_view(rv3d->view, rv3d->view_axis_roll, quat_best);
+        ed_view3d_quat_from_axis_view(rv3d->view, rv3d->view_axis_roll, quat_best);
       }
     }
     else {
@@ -160,9 +157,9 @@ static void viewrotate_apply_snap(ViewOpsData *vod)
   }
 }
 
-static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
+static void viewrotate_apply(ViewOpsData *vod, const int ev_xy[2])
 {
-  RegionView3D *rv3d = vod->rv3d;
+  RgnView3D *rv3d = vod->rv3d;
 
   rv3d->view = RV3D_VIEW_USER; /* need to reset every time because of view snapping */
 
@@ -171,11 +168,11 @@ static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
     float angle;
 
     {
-      const int event_xy_offset[2] = {
-          event_xy[0] + vod->init.event_xy_offset[0],
-          event_xy[1] + vod->init.event_xy_offset[1],
+      const int ev_xy_offset[2] = {
+          ev_xy[0] + vod->init.ev_xy_offset[0],
+          ev_xy[1] + vod->init.ev_xy_offset[1],
       };
-      calctrackballvec(&vod->region->winrct, event_xy_offset, newvec);
+      calctrackballvec(&vod->rgn->winrct, ev_xy_offset, newvec);
     }
 
     sub_v3_v3v3(dvec, newvec, vod->init.trackvec);
@@ -215,17 +212,13 @@ static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
     invert_m3_m3(m_inv, m);
 
     /* Avoid Gimbal Lock
-     *
      * Even though turn-table mode is in use, this can occur when the user exits the camera view
-     * or when aligning the view to a rotated object.
-     *
+     * or when aligning the view to a rotated ob.
      * We have gimbal lock when the user's view is rotated +/- 90 degrees along the view axis.
      * In this case the vertical rotation is the same as the sideways turntable motion.
      * Making it impossible to get out of the gimbal locked state without resetting the view.
-     *
      * The logic below lets the user exit out of this state without any abrupt 'fix'
      * which would be disorienting.
-     *
      * This works by blending two horizons:
      * - Rotated-horizon: `cross_v3_v3v3(xaxis, zvec_global, m_inv[2])`
      *   When only this is used, this turntable rotation works - but it's side-ways
@@ -234,7 +227,7 @@ static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
      * - Un-rotated-horizon: `m_inv[0]`
      *   When only this is used, the turntable rotation can have gimbal lock.
      *
-     * The solution used here is to blend between these two values,
+     * The solution used here is to blend between these two vals,
      * so the severity of the gimbal lock is used to blend the rotated horizon.
      * Blending isn't essential, it just makes the transition smoother.
      *
@@ -263,12 +256,12 @@ static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
     /* This can likely be computed directly from the quaternion. */
 
     /* Perform the up/down rotation */
-    axis_angle_to_quat(quat_local_x, xaxis, sensitivity * -(event_xy[1] - vod->prev.event_xy[1]));
+    axis_angle_to_quat(quat_local_x, xaxis, sensitivity * -(ev_xy[1] - vod->prev.ev_xy[1]));
     mul_qt_qtqt(quat_local_x, vod->curr.viewquat, quat_local_x);
 
     /* Perform the orbital rotation */
     axis_angle_to_quat_single(
-        quat_global_z, 'Z', sensitivity * vod->reverse * (event_xy[0] - vod->prev.event_xy[0]));
+        quat_global_z, 'Z', sensitivity * vod->reverse * (ev_xy[0] - vod->prev.ev_xy[0]));
     mul_qt_qtqt(vod->curr.viewquat, quat_local_x, quat_global_z);
 
     viewrotate_apply_dyn_ofs(vod, vod->curr.viewquat);
@@ -286,69 +279,69 @@ static void viewrotate_apply(ViewOpsData *vod, const int event_xy[2])
   if (vod->axis_snap) {
     viewrotate_apply_snap(vod);
   }
-  vod->prev.event_xy[0] = event_xy[0];
-  vod->prev.event_xy[1] = event_xy[1];
+  vod->prev.ev_xy[0] = ev_xy[0];
+  vod->prev.ev_xy[1] = ev_xy[1];
 
-  ED_view3d_camera_lock_sync(vod->depsgraph, vod->v3d, rv3d);
+  ed_view3d_camera_lock_sync(vod->graph, vod->v3d, rv3d);
 
-  ED_region_tag_redraw(vod->region);
+  ed_rgn_tag_redraw(vod->region);
 }
 
-static int viewrotate_modal(duneContext *C, wmOperator *op, const wmEvent *event)
+static int viewrotate_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod = op->customdata;
   short event_code = VIEW_PASS;
   bool use_autokey = false;
-  int ret = OPERATOR_RUNNING_MODAL;
+  int ret = OP_RUNNING_MODAL;
 
-  /* execute the events */
-  if (event->type == MOUSEMOVE) {
-    event_code = VIEW_APPLY;
+  /* ex the evs */
+  if (ev->type == MOUSEMOVE) {
+    ev_code = VIEW_APPLY;
   }
-  else if (event->type == EVT_MODAL_MAP) {
-    switch (event->val) {
+  else if (ev->type == EV_MODAL_MAP) {
+    switch (ev->val) {
       case VIEW_MODAL_CONFIRM:
-        event_code = VIEW_CONFIRM;
+        ev_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_AXIS_SNAP_ENABLE:
         vod->axis_snap = true;
-        event_code = VIEW_APPLY;
+        ev_code = VIEW_APPLY;
         break;
       case VIEWROT_MODAL_AXIS_SNAP_DISABLE:
         vod->rv3d->persp = vod->init.persp;
         vod->axis_snap = false;
-        event_code = VIEW_APPLY;
+        ev_code = VIEW_APPLY;
         break;
       case VIEWROT_MODAL_SWITCH_ZOOM:
-        WM_operator_name_call(C, "VIEW3D_OT_zoom", WM_OP_INVOKE_DEFAULT, NULL, event);
-        event_code = VIEW_CONFIRM;
+        win_op_name_call(C, "VIEW3D_OT_zoom", WIN_OP_INVOKE_DEFAULT, NULL, ev);
+        ev_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_SWITCH_MOVE:
-        WM_operator_name_call(C, "VIEW3D_OT_move", WM_OP_INVOKE_DEFAULT, NULL, event);
-        event_code = VIEW_CONFIRM;
+        win_op_name_call(C, "VIEW3D_OT_move", WIN_OP_INVOKE_DEFAULT, NULL, ev);
+        ev_code = VIEW_CONFIRM;
         break;
     }
   }
-  else if (event->type == vod->init.event_type && event->val == KM_RELEASE) {
-    event_code = VIEW_CONFIRM;
+  else if (ev->type == vod->init.ev_type && ev->val == KM_RELEASE) {
+    ev_code = VIEW_CONFIRM;
   }
 
-  if (event_code == VIEW_APPLY) {
-    viewrotate_apply(vod, event->xy);
-    if (ED_screen_animation_playing(CTX_wm_manager(C))) {
+  if (ev_code == VIEW_APPLY) {
+    viewrotate_apply(vod, ev->xy);
+    if (ed_screen_anim_playing(cxt_wm(C))) {
       use_autokey = true;
     }
   }
-  else if (event_code == VIEW_CONFIRM) {
+  else if (ev_code == VIEW_CONFIRM) {
     use_autokey = true;
-    ret = OPERATOR_FINISHED;
+    ret = OP_FINISHED;
   }
 
   if (use_autokey) {
-    ED_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, true, true);
+    ed_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, true, true);
   }
 
-  if (ret & OPERATOR_FINISHED) {
+  if (ret & OP_FINISHED) {
     viewops_data_free(C, op->customdata);
     op->customdata = NULL;
   }
@@ -356,37 +349,37 @@ static int viewrotate_modal(duneContext *C, wmOperator *op, const wmEvent *event
   return ret;
 }
 
-static int viewrotate_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+static int viewrotate_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod;
 
-  const bool use_cursor_init = RNA_boolean_get(op->ptr, "use_cursor_init");
+  const bool use_cursor_init = api_bool_get(op->ptr, "use_cursor_init");
 
   /* makes op->customdata */
   vod = op->customdata = viewops_data_create(
       C,
-      event,
+      ev,
       viewops_flag_from_prefs() | VIEWOPS_FLAG_PERSP_ENSURE |
           (use_cursor_init ? VIEWOPS_FLAG_USE_MOUSE_INIT : 0));
 
-  ED_view3d_smooth_view_force_finish(C, vod->v3d, vod->region);
+  ed_view3d_smooth_view_force_finish(C, vod->v3d, vod->rgn);
 
-  if (ELEM(event->type, MOUSEPAN, MOUSEROTATE)) {
+  if (ELEM(ev->type, MOUSEPAN, MOUSEROTATE)) {
     /* Rotate direction we keep always same */
-    int event_xy[2];
+    int ev_xy[2];
 
-    if (event->type == MOUSEPAN) {
-      if (event->flag & WM_EVENT_SCROLL_INVERT) {
-        event_xy[0] = 2 * event->xy[0] - event->prev_xy[0];
-        event_xy[1] = 2 * event->xy[1] - event->prev_xy[1];
+    if (ev->type == MOUSEPAN) {
+      if (ev->flag & WIN_EV_SCROLL_INVERT) {
+        ev_xy[0] = 2 * ev->xy[0] - ev->prev_xy[0];
+        ev_xy[1] = 2 * ev->xy[1] - ev->prev_xy[1];
       }
       else {
-        copy_v2_v2_int(event_xy, event->prev_xy);
+        copy_v2_v2_int(ev_xy, ev->prev_xy);
       }
     }
     else {
       /* MOUSEROTATE performs orbital rotation, so y axis delta is set to 0 */
-      copy_v2_v2_int(event_xy, event->prev_xy);
+      copy_v2_v2_int(ev_xy, ev->prev_xy);
     }
 
     viewrotate_apply(vod, event_xy);
@@ -394,29 +387,29 @@ static int viewrotate_invoke(duneContext *C, wmOperator *op, const wmEvent *even
     viewops_data_free(C, op->customdata);
     op->customdata = NULL;
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  /* add tmp handler */
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void viewrotate_cancel(duneContext *C, wmOperator *op)
+static void viewrotate_cancel(Cxt *C, WinOp *op)
 {
   viewops_data_free(C, op->customdata);
   op->customdata = NULL;
 }
 
-void VIEW3D_OT_rotate(wmOperatorType *ot)
+void VIEW3D_OT_rotate(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Rotate View";
   ot->description = "Rotate the view";
   ot->idname = "VIEW3D_OT_rotate";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = viewrotate_invoke;
   ot->modal = viewrotate_modal;
   ot->poll = view3d_rotation_poll;
@@ -425,5 +418,5 @@ void VIEW3D_OT_rotate(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_XY;
 
-  view3d_operator_properties_common(ot, V3D_OP_PROP_USE_MOUSE_INIT);
+  view3d_op_props_common(ot, V3D_OP_PROP_USE_MOUSE_INIT);
 }
