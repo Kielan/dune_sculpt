@@ -1,52 +1,46 @@
-/** \file
- * \ingroup spview3d
- *
- * Interactive walk navigation modal operator
+/* Interactive walk nav modal op
  * (similar to walking around in a first person game).
- *
- * \note Similar logic to `view3d_navigate_fly.c` changes here may apply there too.
- */
+ * Similar logic to `view3d_nav_fly.c` changes here may apply there too. */
 
-/* defines VIEW3D_OT_navigate - walk modal operator */
+/* defines VIEW3D_OT_nav - walk modal op */
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "mem_guardedalloc.h"
 
-#include "MEM_guardedalloc.h"
+#include "lib_dunelib.h"
+#include "lib_kdopbvh.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_kdopbvh.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "dune_cxt.h"
+#include "dune_main.h"
+#include "dune_report.h"
 
-#include "BKE_context.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
+#include "lang.h"
 
-#include "BLT_translation.h"
+#include "win_api.h"
+#include "win_types.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
-
-#include "ED_screen.h"
-#include "ED_space_api.h"
-#include "ED_transform_snap_object_context.h"
+#include "ed_screen.h"
+#include "ed_space_api.h"
+#include "ed_transform_snap_ob_cxt.h"
 
 #include "PIL_time.h" /* Smooth-view. */
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h"
 
-#include "GPU_immediate.h"
+#include "gpu_immediate.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 #include "view3d_intern.h" /* own include */
-#include "view3d_navigate.h"
+#include "view3d_nav.h"
 
 #ifdef WITH_INPUT_NDOF
 //#  define NDOF_WALK_DEBUG
-/* is this needed for ndof? - commented so redraw doesn't thrash - campbell */
+/* is this needed for ndof? - commented so redraw doesn't thrash */
 //#  define NDOF_WALK_DRAW_TOOMUCH
 #endif
 
@@ -55,10 +49,7 @@
 /* ensure the target position is one we can reach, see: T45771 */
 #define USE_PIXELSIZE_NATIVE_SUPPORT
 
-/* -------------------------------------------------------------------- */
-/** \name Modal Key-map
- * \{ */
-
+/* Modal Key-map */
 /* NOTE: these defines are saved in keymap files,
  * do not change values but just add new ones */
 enum {
@@ -127,9 +118,9 @@ typedef enum eWalkLockState {
   WALK_AXISLOCK_STATE_DONE = 3,
 } eWalkLockState;
 
-void walk_modal_keymap(wmKeyConfig *keyconf)
+void walk_modal_keymap(WinKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {WALK_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
       {WALK_MODAL_CANCEL, "CANCEL", 0, "Cancel", ""},
 
@@ -168,99 +159,91 @@ void walk_modal_keymap(wmKeyConfig *keyconf)
       {0, NULL, 0, NULL, NULL},
   };
 
-  wmKeyMap *keymap = WM_modalkeymap_find(keyconf, "View3D Walk Modal");
+  WinKeyMap *keymap = win_modalkeymap_find(keyconf, "View3D Walk Modal");
 
-  /* this function is called for each spacetype, only needs to add map once */
+  /* this fn is called for each spacetype, only needs to add map once */
   if (keymap && keymap->modal_items) {
     return;
   }
 
-  keymap = WM_modalkeymap_ensure(keyconf, "View3D Walk Modal", modal_items);
+  keymap = win_modalkeymap_ensure(keyconf, "View3D Walk Modal", modal_items);
 
-  /* assign map to operators */
-  WM_modalkeymap_assign(keymap, "VIEW3D_OT_walk");
+  /* assign map to ops */
+  win_modalkeymap_assign(keymap, "VIEW3D_OT_walk");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Walk Structs
- * \{ */
-
+/* Internal Walk Structs */
 typedef struct WalkTeleport {
   eWalkTeleportState state;
   float duration; /* from user preferences */
   float origin[3];
   float direction[3];
   double initial_time;
-  eWalkMethod navigation_mode; /* teleport always set FREE mode on */
+  eWalkMethod nav_mode; /* teleport always set FREE mode on */
 
 } WalkTeleport;
 
 typedef struct WalkInfo {
-  /* context stuff */
-  RegionView3D *rv3d;
+  /* cxt stuff */
+  RgnView3D *rv3d;
   View3D *v3d;
-  ARegion *region;
-  struct Depsgraph *depsgraph;
+  ARgn *rgn;
+  struct Graph *graph;
   Scene *scene;
 
-  /** Needed for updating that isn't triggered by input. */
-  wmTimer *timer;
+  /* Needed for updating that isn't triggered by input. */
+  WinTimer *timer;
 
   short state;
   bool redraw;
 
-  /**
-   * Needed for auto-keyframing, when animation isn't playing, only keyframe on confirmation.
-   *
+  /* Needed for auto-keyframing, when animation isn't playing, only keyframe on confirmation.
    * Currently we can't cancel this operator usefully while recording on animation playback
-   * (this would need to un-key all previous frames).
-   */
+   * (this would need to un-key all previous frames) */
   bool anim_playing;
   bool need_rotation_keyframe;
   bool need_translation_keyframe;
 
-  /** Previous 2D mouse values. */
+  /* Previous 2D mouse vals */
   int prev_mval[2];
-  /** Center mouse values. */
+  /* Center mouse vals. */
   int center_mval[2];
 
   int moffset[2];
 
 #ifdef WITH_INPUT_NDOF
-  /** Latest 3D mouse values. */
-  wmNDOFMotionData *ndof;
+  /* Latest 3D mouse values. */
+  WinNDOFMotionData *ndof;
 #endif
 
   /* Walk state. */
-  /** The base speed without run/slow down modifications. */
+  /* The base speed without run/slow down modifications. */
   float base_speed;
-  /** The speed the view is moving per redraw. */
+  /* The speed the view is moving per redraw. */
   float speed;
-  /** World scale 1.0 default. */
+  /* World scale 1.0 default. */
   float grid;
 
   /* compare between last state */
-  /** Time between draws. */
+  /* Time between draws. */
   double time_lastdraw;
 
   void *draw_handle_pixel;
 
   /* use for some lag */
-  /** Keep the previous value to smooth transitions (use lag). */
+  /* Keep the previous value to smooth transitions (use lag). */
   float dvec_prev[3];
 
-  /** Walk/free movement. */
-  eWalkMethod navigation_mode;
+  /* Walk/free movement. */
+  eWalkMethod nav_mode;
 
   /* teleport */
   WalkTeleport teleport;
 
-  /** Look speed factor - user preferences. */
+  /* Look speed factor - user prefs */
   float mouse_speed;
 
-  /** Speed adjustments. */
+  /* Speed adjustments. */
   bool is_fast;
   bool is_slow;
 
@@ -268,53 +251,49 @@ typedef struct WalkInfo {
   bool is_reversed;
 
 #ifdef USE_TABLET_SUPPORT
-  /** Check if we had a cursor event before. */
+  /* Check if we had a cursor event before. */
   bool is_cursor_first;
 
-  /** Tablet devices (we can't relocate the cursor). */
+  /* Tablet devices (we can't relocate the cursor). */
   bool is_cursor_absolute;
 #endif
 
-  /** Gravity system. */
+  /* Gravity system. */
   eWalkGravityState gravity_state;
   float gravity;
 
-  /** Height to use in walk mode. */
+  /* Height to use in walk mode. */
   float view_height;
 
-  /** Counting system to allow movement to continue if a direction (WASD) key is still pressed. */
+  /* Counting system to allow movement to continue if a direction (WASD) key is still pressed. */
   int active_directions;
 
   float speed_jump;
-  /** Maximum jump height. */
+  /* Maximum jump height. */
   float jump_height;
-  /** To use for fast/slow speeds. */
+  /* To use for fast/slow speeds. */
   float speed_factor;
 
   eWalkLockState zlock;
-  /** Nicer dynamics. */
+  /* Nicer dynamics. */
   float zlock_momentum;
 
-  struct SnapObjectContext *snap_context;
+  struct SnapObCxt *snap_cxt;
 
   struct View3DCameraControl *v3d_camera_control;
 
 } WalkInfo;
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Internal Walk Drawing
- * \{ */
-
+/* Internal Walk Drawing */
 /* prototypes */
 #ifdef WITH_INPUT_NDOF
-static void walkApply_ndof(bContext *C, WalkInfo *walk, bool is_confirm);
+static void walkApply_ndof(Cxt *C, WalkInfo *walk, bool is_confirm);
 #endif /* WITH_INPUT_NDOF */
-static int walkApply(bContext *C, struct WalkInfo *walk, bool is_confirm);
+static int walkApply(Cxt *C, struct WalkInfo *walk, bool is_confirm);
 static float getVelocityZeroTime(const float gravity, const float velocity);
 
-static void drawWalkPixel(const struct bContext *UNUSED(C), ARegion *region, void *arg)
+static void drawWalkPixel(const struct Cxt *UNUSED(C), ARgn *rgn, void *arg)
 {
   /* draws an aim/cross in the center */
   WalkInfo *walk = arg;
@@ -324,15 +303,15 @@ static void drawWalkPixel(const struct bContext *UNUSED(C), ARegion *region, voi
   int xoff, yoff;
   rctf viewborder;
 
-  if (ED_view3d_cameracontrol_object_get(walk->v3d_camera_control)) {
-    ED_view3d_calc_camera_border(
-        walk->scene, walk->depsgraph, region, walk->v3d, walk->rv3d, &viewborder, false);
-    xoff = viewborder.xmin + BLI_rctf_size_x(&viewborder) * 0.5f;
-    yoff = viewborder.ymin + BLI_rctf_size_y(&viewborder) * 0.5f;
+  if (_view3d_cameracontrol_ob_get(walk->v3d_camera_ctrl)) {
+    ed_view3d_calc_camera_border(
+        walk->scene, walk->graph, rgn, walk->v3d, walk->rv3d, &viewborder, false);
+    xoff = viewborder.xmin + lib_rctf_size_x(&viewborder) * 0.5f;
+    yoff = viewborder.ymin + lib_rctf_size_y(&viewborder) * 0.5f;
   }
   else {
-    xoff = walk->region->winx / 2;
-    yoff = walk->region->winy / 2;
+    xoff = walk->rgn->winx / 2;
+    yoff = walk->rgn->winy / 2;
   }
 
   GPUVertFormat *format = immVertexFormat();
@@ -364,28 +343,21 @@ static void drawWalkPixel(const struct bContext *UNUSED(C), ARegion *region, voi
   immUnbindProgram();
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Walk Logic
- * \{ */
-
-static void walk_navigation_mode_set(WalkInfo *walk, eWalkMethod mode)
+/* Internal Walk Logic */
+static void walk_nav_mode_set(WalkInfo *walk, eWalkMethod mode)
 {
   if (mode == WALK_MODE_FREE) {
-    walk->navigation_mode = WALK_MODE_FREE;
+    walk->nav_mode = WALK_MODE_FREE;
     walk->gravity_state = WALK_GRAVITY_STATE_OFF;
   }
   else { /* WALK_MODE_GRAVITY */
-    walk->navigation_mode = WALK_MODE_GRAVITY;
+    walk->nav_mode = WALK_MODE_GRAVITY;
     walk->gravity_state = WALK_GRAVITY_STATE_START;
   }
 }
 
-/**
- * \param r_distance: Distance to the hit point
- */
-static bool walk_floor_distance_get(RegionView3D *rv3d,
+/* param r_distance: Distance to the hit point */
+static bool walk_floor_distance_get(RgnView3D *rv3d,
                                     WalkInfo *walk,
                                     const float dvec[3],
                                     float *r_distance)
@@ -404,12 +376,12 @@ static bool walk_floor_distance_get(RegionView3D *rv3d,
   mul_v3_v3fl(dvec_tmp, dvec, walk->grid);
   add_v3_v3(ray_start, dvec_tmp);
 
-  ret = ED_transform_snap_object_project_ray(
-      walk->snap_context,
-      walk->depsgraph,
+  ret = ed_transform_snap_ob_project_ray(
+      walk->snap_cxt,
+      walk->graph,
       walk->v3d,
-      &(const struct SnapObjectParams){
-          .snap_select = SNAP_ALL,
+      &(const struct SnapObParams){
+          .snap_sel = SNAP_ALL,
           /* Avoid having to convert the edit-mesh to a regular mesh. */
           .edit_mode_type = SNAP_GEOM_EDIT,
       },
@@ -424,12 +396,10 @@ static bool walk_floor_distance_get(RegionView3D *rv3d,
   return ret;
 }
 
-/**
- * \param ray_distance: Distance to the hit point
- * \param r_location: Location of the hit point
- * \param r_normal: Normal of the hit surface, transformed to always face the camera
- */
-static bool walk_ray_cast(RegionView3D *rv3d,
+/* param ray_distance: Distance to the hit point
+ * param r_location: Location of the hit point
+ * param r_normal: Normal of the hit surface, transformed to always face the camera */
+static bool walk_ray_cast(RgnView3D *rv3d,
                           WalkInfo *walk,
                           float r_location[3],
                           float r_normal[3],
@@ -447,11 +417,11 @@ static bool walk_ray_cast(RegionView3D *rv3d,
 
   normalize_v3(ray_normal);
 
-  ret = ED_transform_snap_object_project_ray(walk->snap_context,
-                                             walk->depsgraph,
+  ret = ed_transform_snap_ob_project_ray(walk->snap_cxt,
+                                             walk->graph,
                                              walk->v3d,
-                                             &(const struct SnapObjectParams){
-                                                 .snap_select = SNAP_ALL,
+                                             &(const struct SnapObParams){
+                                                 .snap_sel = SNAP_ALL,
                                              },
                                              ray_start,
                                              ray_normal,
@@ -481,16 +451,16 @@ enum {
 static float base_speed = -1.0f;
 static float userdef_speed = -1.0f;
 
-static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
+static bool initWalkInfo(Cxt *C, WalkInfo *walk, WinOp *op)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  wmWindow *win = CTX_wm_window(C);
+  WinMngr *wm = cxt_wm(C);
+  Win *win = cxt_win(C);
 
-  walk->rv3d = CTX_wm_region_view3d(C);
-  walk->v3d = CTX_wm_view3d(C);
-  walk->region = CTX_wm_region(C);
-  walk->depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  walk->scene = CTX_data_scene(C);
+  walk->rv3d = cxt_win_rgn_view3d(C);
+  walk->v3d = cxt_win_view3d(C);
+  walk->rgn = cxt_win_rgn(C);
+  walk->graph = cxt_data_ensure_eval_graph(C);
+  walk->scene = cxt_data_scene(C);
 
 #ifdef NDOF_WALK_DEBUG
   puts("\n-- walk begin --");
@@ -502,25 +472,25 @@ static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
   }
 
   if (walk->rv3d->persp == RV3D_CAMOB && ID_IS_LINKED(walk->v3d->camera)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot navigate a camera from an external library");
+    dune_report(op->reports, RPT_ERROR, "Cannot nav a camera from an external lib");
     return false;
   }
 
-  if (ED_view3d_offset_lock_check(walk->v3d, walk->rv3d)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot navigate when the view offset is locked");
+  if (ed_view3d_offset_lock_check(walk->v3d, walk->rv3d)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot nav when the view offset is locked");
     return false;
   }
 
   if (walk->rv3d->persp == RV3D_CAMOB && walk->v3d->camera->constraints.first) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot navigate an object with constraints");
+    dune_report(op->reports, RPT_ERROR, "Cannot nav an ob with constraints");
     return false;
   }
 
   walk->state = WALK_RUNNING;
 
-  if (fabsf(U.walk_navigation.walk_speed - userdef_speed) > 0.1f) {
-    base_speed = U.walk_navigation.walk_speed;
-    userdef_speed = U.walk_navigation.walk_speed;
+  if (fabsf(U.walk_nav.walk_speed - userdef_speed) > 0.1f) {
+    base_speed = U.walk_nav.walk_speed;
+    userdef_speed = U.walk_nav.walk_speed;
   }
 
   walk->speed = 0.0f;
@@ -530,33 +500,33 @@ static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
                    1.0f :
                    1.0f / walk->scene->unit.scale_length;
 
-  /* user preference settings */
-  walk->teleport.duration = U.walk_navigation.teleport_time;
-  walk->mouse_speed = U.walk_navigation.mouse_speed;
+  /* user pref settings */
+  walk->teleport.duration = U.walk_nav.teleport_time;
+  walk->mouse_speed = U.walk_nav.mouse_speed;
 
-  if (U.walk_navigation.flag & USER_WALK_GRAVITY) {
-    walk_navigation_mode_set(walk, WALK_MODE_GRAVITY);
+  if (U.walk_nav.flag & USER_WALK_GRAVITY) {
+    walk_nav_mode_set(walk, WALK_MODE_GRAVITY);
   }
   else {
-    walk_navigation_mode_set(walk, WALK_MODE_FREE);
+    walk_nav_mode_set(walk, WALK_MODE_FREE);
   }
 
-  walk->view_height = U.walk_navigation.view_height;
-  walk->jump_height = U.walk_navigation.jump_height;
-  walk->speed = U.walk_navigation.walk_speed;
-  walk->speed_factor = U.walk_navigation.walk_speed_factor;
+  walk->view_height = U.walk_nav.view_height;
+  walk->jump_height = U.walk_nav.jump_height;
+  walk->speed = U.walk_nav.walk_speed;
+  walk->speed_factor = U.walk_nav.walk_speed_factor;
   walk->zlock = WALK_AXISLOCK_STATE_OFF;
 
   walk->gravity_state = WALK_GRAVITY_STATE_OFF;
 
   if (walk->scene->physics_settings.flag & PHYS_GLOBAL_GRAVITY) {
-    walk->gravity = fabsf(walk->scene->physics_settings.gravity[2]);
+    walk->gravity = fabsf(walk->scene->phys_settings.gravity[2]);
   }
   else {
     walk->gravity = 9.80668f; /* m/s2 */
   }
 
-  walk->is_reversed = ((U.walk_navigation.flag & USER_WALK_MOUSE_REVERSE) != 0);
+  walk->is_reversed = ((U.walk_nav.flag & USER_WALK_MOUSE_REVERSE) != 0);
 
 #ifdef USE_TABLET_SUPPORT
   walk->is_cursor_first = true;
@@ -571,27 +541,27 @@ static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
 #endif
   zero_v3(walk->dvec_prev);
 
-  walk->timer = WM_event_add_timer(CTX_wm_manager(C), win, TIMER, 0.01f);
+  walk->timer = win_ev_add_timer(cxt_wm(C), win, TIMER, 0.01f);
 
 #ifdef WITH_INPUT_NDOF
   walk->ndof = NULL;
 #endif
 
-  walk->anim_playing = ED_screen_animation_playing(wm);
+  walk->anim_playing = ed_screen_anim_playing(wm);
   walk->need_rotation_keyframe = false;
   walk->need_translation_keyframe = false;
 
   walk->time_lastdraw = PIL_check_seconds_timer();
 
-  walk->draw_handle_pixel = ED_region_draw_cb_activate(
-      walk->region->type, drawWalkPixel, walk, REGION_DRAW_POST_PIXEL);
+  walk->draw_handle_pixel = ed_rgn_draw_cb_activate(
+      walk->rgn->type, drawWalkPixel, walk, RGN_DRAW_POST_PIXEL);
 
   walk->rv3d->rflag |= RV3D_NAVIGATING;
 
-  walk->snap_context = ED_transform_snap_object_context_create(walk->scene, 0);
+  walk->snap_cxt = ed_transform_snap_obj_cxt_create(walk->scene, 0);
 
-  walk->v3d_camera_control = ED_view3d_cameracontrol_acquire(
-      walk->depsgraph, walk->scene, walk->v3d, walk->rv3d);
+  walk->v3d_camera_control = ed_view3d_cameracontrol_acquire(
+      walk->graph, walk->scene, walk->v3d, walk->rv3d);
 
   /* center the mouse */
   walk->center_mval[0] = walk->region->winx * 0.5f;
@@ -601,7 +571,7 @@ static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
   walk->center_mval[0] += walk->region->winrct.xmin;
   walk->center_mval[1] += walk->region->winrct.ymin;
 
-  WM_cursor_compatible_xy(win, &walk->center_mval[0], &walk->center_mval[1]);
+  win_cursor_compatible_xy(win, &walk->center_mval[0], &walk->center_mval[1]);
 
   walk->center_mval[0] -= walk->region->winrct.xmin;
   walk->center_mval[1] -= walk->region->winrct.ymin;
@@ -609,23 +579,23 @@ static bool initWalkInfo(bContext *C, WalkInfo *walk, wmOperator *op)
 
   copy_v2_v2_int(walk->prev_mval, walk->center_mval);
 
-  WM_cursor_warp(win,
-                 walk->region->winrct.xmin + walk->center_mval[0],
-                 walk->region->winrct.ymin + walk->center_mval[1]);
+  win_cursor_warp(win,
+                 walk->rgn->winrct.xmin + walk->center_mval[0],
+                 walk->rgn->winrct.ymin + walk->center_mval[1]);
 
   /* remove the mouse cursor temporarily */
-  WM_cursor_modal_set(win, WM_CURSOR_NONE);
+  win_cursor_modal_set(win, WIN_CURSOR_NONE);
 
   return 1;
 }
 
-static int walkEnd(bContext *C, WalkInfo *walk)
+static int walkEnd(Cxt *C, WalkInfo *walk)
 {
-  wmWindow *win;
-  RegionView3D *rv3d;
+  Win *win;
+  RgnView3D *rv3d;
 
   if (walk->state == WALK_RUNNING) {
-    return OPERATOR_RUNNING_MODAL;
+    return OP_RUNNING_MODAL;
   }
   if (walk->state == WALK_CONFIRM) {
     /* Needed for auto_keyframe. */
@@ -644,84 +614,84 @@ static int walkEnd(bContext *C, WalkInfo *walk)
   puts("\n-- walk end --");
 #endif
 
-  win = CTX_wm_window(C);
+  win = cxt_win(C);
   rv3d = walk->rv3d;
 
-  WM_event_remove_timer(CTX_wm_manager(C), win, walk->timer);
+  win_ev_remove_timer(cxt_wm(C), win, walk->timer);
 
-  ED_region_draw_cb_exit(walk->region->type, walk->draw_handle_pixel);
+  ed_rgn_draw_cb_exit(walk->rgn->type, walk->draw_handle_pixel);
 
-  ED_transform_snap_object_context_destroy(walk->snap_context);
+  ed_transform_snap_ob_cxt_destroy(walk->snap_cxt);
 
-  ED_view3d_cameracontrol_release(walk->v3d_camera_control, walk->state == WALK_CANCEL);
+  ed_view3d_cameracontrol_release(walk->v3d_camera_control, walk->state == WALK_CANCEL);
 
   rv3d->rflag &= ~RV3D_NAVIGATING;
 
 #ifdef WITH_INPUT_NDOF
   if (walk->ndof) {
-    MEM_freeN(walk->ndof);
+    mem_free(walk->ndof);
   }
 #endif
 
   /* restore the cursor */
-  WM_cursor_modal_restore(win);
+  win_cursor_modal_restore(win);
 
 #ifdef USE_TABLET_SUPPORT
   if (walk->is_cursor_absolute == false)
 #endif
   {
     /* center the mouse */
-    WM_cursor_warp(win,
-                   walk->region->winrct.xmin + walk->center_mval[0],
-                   walk->region->winrct.ymin + walk->center_mval[1]);
+    win_cursor_warp(win,
+                   walk->rgn->winrct.xmin + walk->center_mval[0],
+                   walk->rgn->winrct.ymin + walk->center_mval[1]);
   }
 
   if (walk->state == WALK_CONFIRM) {
-    MEM_freeN(walk);
-    return OPERATOR_FINISHED;
+    mem_free(walk);
+    return OP_FINISHED;
   }
 
-  MEM_freeN(walk);
-  return OPERATOR_CANCELLED;
+  mem_free(walk);
+  return OP_CANCELLED;
 }
 
-static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
+static void walkEv(Cxt *C, WalkInfo *walk, const WinEv *ev)
 {
-  if (event->type == TIMER && event->customdata == walk->timer) {
+  if (ev->type == TIMER && ev->customdata == walk->timer) {
     walk->redraw = true;
   }
-  else if (ELEM(event->type, MOUSEMOVE, INBETWEEN_MOUSEMOVE)) {
+  else if (ELEM(ev->type, MOUSEMOVE, INBETWEEN_MOUSEMOVE)) {
 
 #ifdef USE_TABLET_SUPPORT
     if (walk->is_cursor_first) {
-      /* wait until we get the 'warp' event */
-      if ((walk->center_mval[0] == event->mval[0]) && (walk->center_mval[1] == event->mval[1])) {
+      /* wait until we get the 'warp' ev */
+      if ((walk->center_mval[0] == ev->mval[0]) && (walk->center_mval[1] == ev->mval[1])) {
         walk->is_cursor_first = false;
       }
       else {
-        /* NOTE: its possible the system isn't giving us the warp event
+        /* Its possible the system isn't giving us the warp event
          * ideally we shouldn't have to worry about this, see: T45361 */
-        wmWindow *win = CTX_wm_window(C);
-        WM_cursor_warp(win,
-                       walk->region->winrct.xmin + walk->center_mval[0],
-                       walk->region->winrct.ymin + walk->center_mval[1]);
+        Win *win = cxt_wm(C);
+        win_cursor_warp(win,
+                       walk->rgn->winrct.xmin + walk->center_mval[0],
+                       walk->rgn->winrct.ymin + walk->center_mval[1]);
       }
       return;
     }
 
-    if ((walk->is_cursor_absolute == false) && event->tablet.is_motion_absolute) {
+    if ((walk->is_cursor_absolute == false) && ev->tablet.is_motion_absolute) {
       walk->is_cursor_absolute = true;
-      copy_v2_v2_int(walk->prev_mval, event->mval);
-      copy_v2_v2_int(walk->center_mval, event->mval);
+      copy_v2_v2_int(walk->prev_mval, ev->mval);
+      copy_v2_v2_int(walk->center_mval, ev->mval);
     }
 #endif /* USE_TABLET_SUPPORT */
 
-    walk->moffset[0] += event->mval[0] - walk->prev_mval[0];
-    walk->moffset[1] += event->mval[1] - walk->prev_mval[1];
+    walk->moffset[0] += ev->mval[0] - walk->prev_mval[0];
+    walk->moffset[1] += ev->mval[1] - walk->prev_mval[1];
 
-    copy_v2_v2_int(walk->prev_mval, event->mval);
+    copy_v2_v2_int(walk->prev_mval, ev->mval);
 
-    if ((walk->center_mval[0] != event->mval[0]) || (walk->center_mval[1] != event->mval[1])) {
+    if ((walk->center_mval[0] != ev->mval[0]) || (walk->center_mval[1] != ev->mval[1])) {
       walk->redraw = true;
 
 #ifdef USE_TABLET_SUPPORT
@@ -730,29 +700,29 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
       }
       else
 #endif
-          if (WM_event_is_last_mousemove(event)) {
-        wmWindow *win = CTX_wm_window(C);
+          if (win_ev_is_last_mousemove(ev)) {
+        Win *win = cxt_wm(C);
 
 #ifdef __APPLE__
         if ((abs(walk->prev_mval[0] - walk->center_mval[0]) > walk->center_mval[0] / 2) ||
             (abs(walk->prev_mval[1] - walk->center_mval[1]) > walk->center_mval[1] / 2))
 #endif
         {
-          WM_cursor_warp(win,
-                         walk->region->winrct.xmin + walk->center_mval[0],
-                         walk->region->winrct.ymin + walk->center_mval[1]);
+          win_cursor_warp(win,
+                         walk->rgn->winrct.xmin + walk->center_mval[0],
+                         walk->rgn->winrct.ymin + walk->center_mval[1]);
           copy_v2_v2_int(walk->prev_mval, walk->center_mval);
         }
       }
     }
   }
 #ifdef WITH_INPUT_NDOF
-  else if (event->type == NDOF_MOTION) {
+  else if (ev->type == NDOF_MOTION) {
     /* do these automagically get delivered? yes. */
     // puts("ndof motion detected in walk mode!");
     // static const char *tag_name = "3D mouse position";
 
-    const wmNDOFMotionData *incoming_ndof = event->customdata;
+    const WinNDOFMotionData *incoming_ndof = ev->customdata;
     switch (incoming_ndof->progress) {
       case P_STARTING:
         /* start keeping track of 3D mouse position */
@@ -767,12 +737,12 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
         fflush(stdout);
 #  endif
         if (walk->ndof == NULL) {
-          // walk->ndof = MEM_mallocN(sizeof(wmNDOFMotionData), tag_name);
-          walk->ndof = MEM_dupallocN(incoming_ndof);
-          // walk->ndof = malloc(sizeof(wmNDOFMotionData));
+          // walk->ndof = mem_malloc(sizeof(WinNDOFMotionData), tag_name);
+          walk->ndof = mem_dupalloc(incoming_ndof);
+          // walk->ndof = malloc(sizeof(WinNDOFMotionData));
         }
         else {
-          memcpy(walk->ndof, incoming_ndof, sizeof(wmNDOFMotionData));
+          memcpy(walk->ndof, incoming_ndof, sizeof(WinNDOFMotionData));
         }
         break;
       case P_FINISHING:
@@ -781,7 +751,7 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
         puts("stop keeping track of 3D mouse position");
 #  endif
         if (walk->ndof) {
-          MEM_freeN(walk->ndof);
+          mem_free(walk->ndof);
           // free(walk->ndof);
           walk->ndof = NULL;
         }
@@ -796,8 +766,8 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
   }
 #endif /* WITH_INPUT_NDOF */
   /* handle modal keymap first */
-  else if (event->type == EVT_MODAL_MAP) {
-    switch (event->val) {
+  else if (ev->type == EV_MODAL_MAP) {
+    switch (ev->val) {
       case WALK_MODAL_CANCEL:
         walk->state = WALK_CANCEL;
         break;
@@ -888,7 +858,7 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
         }
         break;
       case WALK_MODAL_JUMP:
-        if ((walk->navigation_mode == WALK_MODE_GRAVITY) &&
+        if ((walk->nav_mode == WALK_MODE_GRAVITY) &&
             (walk->gravity_state == WALK_GRAVITY_STATE_OFF) &&
             (walk->teleport.state == WALK_TELEPORT_STATE_OFF)) {
           /* no need to check for ground,
@@ -921,10 +891,10 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
           WalkTeleport *teleport = &walk->teleport;
           teleport->state = WALK_TELEPORT_STATE_ON;
           teleport->initial_time = PIL_check_seconds_timer();
-          teleport->duration = U.walk_navigation.teleport_time;
+          teleport->duration = U.walk_nav.teleport_time;
 
-          teleport->navigation_mode = walk->navigation_mode;
-          walk_navigation_mode_set(walk, WALK_MODE_FREE);
+          teleport->nav_mode = walk->nav_mode;
+          walk_nav_mode_set(walk, WALK_MODE_FREE);
 
           copy_v3_v3(teleport->origin, walk->rv3d->viewinv[3]);
 
@@ -945,11 +915,11 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
 #undef JUMP_SPEED_MIN
 
       case WALK_MODAL_GRAVITY_TOGGLE:
-        if (walk->navigation_mode == WALK_MODE_GRAVITY) {
-          walk_navigation_mode_set(walk, WALK_MODE_FREE);
+        if (walk->nav_mode == WALK_MODE_GRAVITY) {
+          walk_nav_mode_set(walk, WALK_MODE_FREE);
         }
         else { /* WALK_MODE_FREE */
-          walk_navigation_mode_set(walk, WALK_MODE_GRAVITY);
+          walk_nav_mode_set(walk, WALK_MODE_GRAVITY);
         }
         break;
 
@@ -963,7 +933,7 @@ static void walkEvent(bContext *C, WalkInfo *walk, const wmEvent *event)
   }
 }
 
-static void walkMoveCamera(bContext *C,
+static void walkMoveCamera(Cxt *C,
                            WalkInfo *walk,
                            const bool do_rotate,
                            const bool do_translate,
@@ -972,7 +942,7 @@ static void walkMoveCamera(bContext *C,
   /* we only consider autokeying on playback or if user confirmed walk on the same frame
    * otherwise we get a keyframe even if the user cancels. */
   const bool use_autokey = is_confirm || walk->anim_playing;
-  ED_view3d_cameracontrol_update(
+  ed_view3d_cameracontrol_update(
       walk->v3d_camera_control, use_autokey, C, do_rotate, do_translate);
   if (use_autokey) {
     walk->need_rotation_keyframe = false;
@@ -990,9 +960,9 @@ static float getVelocityZeroTime(const float gravity, const float velocity)
   return velocity / gravity;
 }
 
-static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
+static int walkApply(Cxt *C, WalkInfo *walk, bool is_confirm)
 {
-#define WALK_ROTATE_TABLET_FAC 8.8f             /* Higher is faster, relative to region size. */
+#define WALK_ROTATE_TABLET_FAC 8.8f             /* Higher is faster, relative to rgn size. */
 #define WALK_ROTATE_CONSTANT_FAC DEG2RAD(0.15f) /* Higher is faster, radians per-pixel. */
 #define WALK_TOP_LIMIT DEG2RADF(85.0f)
 #define WALK_BOTTOM_LIMIT DEG2RADF(-80.0f)
@@ -1001,8 +971,8 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
 #define WALK_ZUP_CORRECT_FAC 0.1f    /* Amount to correct per step. */
 #define WALK_ZUP_CORRECT_ACCEL 0.05f /* Increase upright momentum each step. */
 
-  RegionView3D *rv3d = walk->rv3d;
-  ARegion *region = walk->region;
+  RgnView3D *rv3d = walk->rv3d;
+  ARgn *rgn = walk->rgn;
 
   /* 3x3 copy of the view matrix so we can move along the view axis */
   float mat[3][3];
@@ -1014,8 +984,8 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
 
 #ifdef NDOF_WALK_DEBUG
   {
-    static uint iteration = 1;
-    printf("walk timer %d\n", iteration++);
+    static uint iter = 1;
+    printf("walk timer %d\n", iter++);
   }
 #endif
 
@@ -1080,7 +1050,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
           /* Speed factor. */
 #ifdef USE_TABLET_SUPPORT
           if (walk->is_cursor_absolute) {
-            y /= region->winy;
+            y /= rgn->winy;
             y *= WALK_ROTATE_TABLET_FAC;
           }
           else
@@ -1173,7 +1143,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
         }
       }
 
-      /* WASD - 'move' translation code */
+      /* WASD 'move' translation code */
       if ((walk->active_directions) && (walk->gravity_state == WALK_GRAVITY_STATE_OFF)) {
 
         short direction;
@@ -1195,7 +1165,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
           copy_v3_fl3(dvec_tmp, 0.0f, 0.0f, direction);
           mul_m3_v3(mat, dvec_tmp);
 
-          if (walk->navigation_mode == WALK_MODE_GRAVITY) {
+          if (walk->nav_mode == WALK_MODE_GRAVITY) {
             dvec_tmp[2] = 0.0f;
           }
 
@@ -1248,7 +1218,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
       }
 
       /* stick to the floor */
-      if (walk->navigation_mode == WALK_MODE_GRAVITY &&
+      if (walk->nav_mode == WALK_MODE_GRAVITY &&
           ELEM(walk->gravity_state, WALK_GRAVITY_STATE_OFF, WALK_GRAVITY_STATE_START)) {
 
         bool ret;
@@ -1277,7 +1247,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
         }
         else {
           /* hijack the teleport variables */
-          walk->teleport.initial_time = PIL_check_seconds_timer();
+          walk->teleport.init_time = PIL_check_seconds_timer();
           walk->gravity_state = WALK_GRAVITY_STATE_ON;
           walk->teleport.duration = 0.0f;
 
@@ -1346,7 +1316,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
         if (t >= 1.0f) {
           t = 1.0f;
           walk->teleport.state = WALK_TELEPORT_STATE_OFF;
-          walk_navigation_mode_set(walk, walk->teleport.navigation_mode);
+          walk_nav_mode_set(walk, walk->teleport.nav_mode);
         }
 
         mul_v3_v3fl(new_loc, walk->teleport.direction, t);
@@ -1356,7 +1326,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
         sub_v3_v3v3(dvec, cur_loc, new_loc);
       }
 
-      /* scale the movement to the scene size */
+      /* scale the mvmnt to the scene size */
       mul_v3_v3fl(dvec_tmp, dvec, walk->grid);
       add_v3_v3(rv3d->ofs, dvec_tmp);
 
@@ -1376,7 +1346,7 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
     copy_v3_v3(walk->dvec_prev, dvec);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 #undef WALK_ROTATE_TABLET_FAC
 #undef WALK_TOP_LIMIT
 #undef WALK_BOTTOM_LIMIT
@@ -1385,9 +1355,9 @@ static int walkApply(bContext *C, WalkInfo *walk, bool is_confirm)
 }
 
 #ifdef WITH_INPUT_NDOF
-static void walkApply_ndof(bContext *C, WalkInfo *walk, bool is_confirm)
+static void walkApply_ndof(Cxt *C, WalkInfo *walk, bool is_confirm)
 {
-  Object *lock_ob = ED_view3d_cameracontrol_object_get(walk->v3d_camera_control);
+  Ob *lock_ob = ed_view3d_cameractrl_ob_get(walk->v3d_camera_control);
   bool has_translate, has_rotate;
 
   view3d_ndof_fly(walk->ndof,
@@ -1412,35 +1382,33 @@ static void walkApply_ndof(bContext *C, WalkInfo *walk, bool is_confirm)
 #endif /* WITH_INPUT_NDOF */
 
 
-/* -------------------------------------------------------------------- */
-/** Walk Operator **/
-
-static int walk_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+/* Walk Op */
+static int walk_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
   WalkInfo *walk;
 
   if (RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ANY_TRANSFORM) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  walk = MEM_callocN(sizeof(WalkInfo), "NavigationWalkOperation");
+  walk = mem_calloc(sizeof(WalkInfo), "NavWalkOp");
 
   op->customdata = walk;
 
   if (initWalkInfo(C, walk, op) == false) {
-    MEM_freeN(op->customdata);
-    return OPERATOR_CANCELLED;
+    mem_free(op->customdata);
+    return OP_CANCELLED;
   }
 
-  walkEvent(C, walk, event);
+  walkEv(C, walk, ev);
 
-  WM_event_add_modal_handler(C, op);
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void walk_cancel(bContext *C, wmOperator *op)
+static void walk_cancel(Cxt *C, WinOp *op)
 {
   WalkInfo *walk = op->customdata;
 
@@ -1449,27 +1417,27 @@ static void walk_cancel(bContext *C, wmOperator *op)
   op->customdata = NULL;
 }
 
-static int walk_modal(duneContext *C, wmOperator *op, const wmEvent *event)
+static int walk_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   int exit_code;
   bool do_draw = false;
   WalkInfo *walk = op->customdata;
-  RegionView3D *rv3d = walk->rv3d;
-  Object *walk_object = ED_view3d_cameracontrol_object_get(walk->v3d_camera_control);
+  RgnView3D *rv3d = walk->rv3d;
+  Ob *walk_ob = ed_view3d_cameractrl_ob_get(walk->v3d_camera_ctrl);
 
   walk->redraw = false;
 
-  walkEvent(C, walk, event);
+  walkEv(C, walk, ev);
 
 #ifdef WITH_INPUT_NDOF
   if (walk->ndof) { /* 3D mouse overrules [2D mouse + timer] */
-    if (event->type == NDOF_MOTION) {
+    if (ev->type == NDOF_MOTION) {
       walkApply_ndof(C, walk, false);
     }
   }
   else
 #endif /* WITH_INPUT_NDOF */
-      if (event->type == TIMER && event->customdata == walk->timer) {
+      if (ev->type == TIMER && ev->customdata == walk->timer) {
     walkApply(C, walk, false);
   }
 
@@ -1477,34 +1445,34 @@ static int walk_modal(duneContext *C, wmOperator *op, const wmEvent *event)
 
   exit_code = walkEnd(C, walk);
 
-  if (exit_code != OPERATOR_RUNNING_MODAL) {
+  if (exit_code != OP_RUNNING_MODAL) {
     do_draw = true;
   }
 
   if (do_draw) {
     if (rv3d->persp == RV3D_CAMOB) {
-      WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, walk_object);
+      win_ev_add_notifier(C, NC_OB | ND_TRANSFORM, walk_ob);
     }
 
     /* too frequent, commented with NDOF_WALK_DRAW_TOOMUCH for now */
     // puts("redraw!");
-    ED_region_tag_redraw(CTX_wm_region(C));
+    ed_rgn_tag_redraw(cxt_win_rgn(C));
   }
   return exit_code;
 }
 
-void VIEW3D_OT_walk(wmOperatorType *ot)
+void VIEW3D_OT_walk(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Walk Navigation";
+  /* ids */
+  ot->name = "Walk Nav";
   ot->description = "Interactively walk around the scene";
   ot->idname = "VIEW3D_OT_walk";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = walk_invoke;
   ot->cancel = walk_cancel;
   ot->modal = walk_modal;
-  ot->poll = ED_operator_region_view3d_active;
+  ot->poll = ed_op_rgn_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_BLOCKING;
