@@ -335,7 +335,6 @@ ViewOpsData *viewops_data_create(Cxt *C, const WinEv *ev, enum eViewOpsFlag view
 
         /* Set the dist value to be the distance from this 3d point this means you'll
          * always be able to zoom into it and panning won't go bad when dist was zero. */
-
         /* remove dist value */
         upvec[0] = upvec[1] = 0;
         upvec[2] = rv3d->dist;
@@ -528,8 +527,8 @@ void viewmove_apply(ViewOpsData *vod, int x, int y)
     ed_view3d_camera_view_pan(vod->rgn, ev_ofs);
   }
   else if (ed_view3d_offset_lock_check(vod->v3d, vod->rv3d)) {
-    vod->rv3d->ofs_lock[0] -= (event_ofs[0] * 2.0f) / (float)vod->rgn->winx;
-    vod->rv3d->ofs_lock[1] -= (event_ofs[1] * 2.0f) / (float)vod->rgn->winy;
+    vod->rv3d->ofs_lock[0] -= (ev_ofs[0] * 2.0f) / (float)vod->rgn->winx;
+    vod->rv3d->ofs_lock[1] -= (ev_ofs[1] * 2.0f) / (float)vod->rgn->winy;
   }
   else {
     float dvec[3];
@@ -686,7 +685,7 @@ static void view3d_from_minmax_multi(Cxt *C,
                                      const int smooth_viewtx)
 {
   ScrArea *area = cxt_win_area(C);
-  ARrn *rgn;
+  ARgn *rgn;
   for (rgn = area->rgnbase.first; rgn; rgn = rgn->next) {
     if (rgn->rgntype == RGN_TYPE_WIN) {
       RgnView3D *rv3d = rgn->rgndata;
@@ -1178,51 +1177,48 @@ void VIEW3D_OT_view_axis(WinOpType *ot)
 
   /* api cbs */
   ot->ex = view_axis_ex;
-  ot->poll = ED_operator_rv3d_user_region_poll;
+  ot->poll = ed_op_rv3d_user_rgn_poll;
 
   /* flags */
   ot->flag = 0;
 
-  ot->prop = API_def_enum(ot->srna, "type", prop_view_items, 0, "View", "Preset viewpoint to use");
-  API_def_property_flag(ot->prop, PROP_SKIP_SAVE);
-  API_def_property_translation_context(ot->prop, LANG_I18NCONTEXT_EDITOR_VIEW3D);
+  ot->prop = api_def_enum(ot->srna, "type", prop_view_items, 0, "View", "Preset viewpoint to use");
+  api_def_prop_flag(ot->prop, PROP_SKIP_SAVE);
+  api_def_prop_translation_cxt(ot->prop, LANG_CXT_EDITOR_VIEW3D);
 
-  prop = API_def_boolean(
-      ot->srna, "align_active", 0, "Align Active", "Align to the active object's axis");
-  API_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = API_def_boolean(
-      ot->srna, "relative", 0, "Relative", "Rotate relative to the current orientation");
-  API_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(
+      ot->sapi, "align_active", 0, "Align Active", "Align to the active ob's axis");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(
+      ot->sapi, "relative", 0, "Relative", "Rotate relative to the current orientation");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/* -------------------------------------------------------------------- */
-/** View Camera Operator **/
-
-static int view_camera_exec(bContext *C, wmOperator *op)
+/* View Camera Op */
+static int view_camera_ex(Cxt *C, WinOp *op)
 {
   View3D *v3d;
-  ARegion *region;
-  RegionView3D *rv3d;
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  ARgn *rgn;
+  RgnView3D *rv3d;
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   /* no NULL check is needed, poll checks */
-  ED_view3d_context_user_region(C, &v3d, &region);
-  rv3d = region->regiondata;
+  ed_view3d_cxt_user_rgn(C, &v3d, &region);
+  rv3d = rgn->rgndata;
 
-  ED_view3d_smooth_view_force_finish(C, v3d, region);
+  ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
   if ((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ANY_TRANSFORM) == 0) {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    Scene *scene = CTX_data_scene(C);
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    Scene *scene = cxt_data_scene(C);
 
     if (rv3d->persp != RV3D_CAMOB) {
-      Object *ob = OBACT(view_layer);
+      Ob *ob = OBACT(view_layer);
 
       if (!rv3d->smooth_timer) {
         /* store settings of current view before allowing overwriting with camera view
          * only if we're not currently in a view transition */
-
-        ED_view3d_lastview_store(rv3d);
+        ed_view3d_lastview_store(rv3d);
       }
 
       /* first get the default camera for the view lock type */
@@ -1243,25 +1239,25 @@ static int view_camera_exec(bContext *C, wmOperator *op)
       }
 
       if (v3d->camera == NULL) {
-        v3d->camera = DUNE_view_layer_camera_find(view_layer);
+        v3d->camera = dune_view_layer_camera_find(view_layer);
       }
 
       /* couldn't find any useful camera, bail out */
       if (v3d->camera == NULL) {
-        return OPERATOR_CANCELLED;
+        return OP_CANCELLED;
       }
 
       /* important these don't get out of sync for locked scenes */
       if (v3d->scenelock && scene->camera != v3d->camera) {
         scene->camera = v3d->camera;
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
 
       /* finally do snazzy view zooming */
       rv3d->persp = RV3D_CAMOB;
-      ED_view3d_smooth_view(C,
+      ed_view3d_smooth_view(C,
                             v3d,
-                            region,
+                            rgn,
                             smooth_viewtx,
                             &(const V3D_SmoothParams){
                                 .camera = v3d->camera,
@@ -1276,7 +1272,7 @@ static int view_camera_exec(bContext *C, wmOperator *op)
       /* does view3d_smooth_view too */
       axis_set_view(C,
                     v3d,
-                    region,
+                    rgn,
                     rv3d->lviewquat,
                     rv3d->lview,
                     rv3d->lview_axis_roll,
@@ -1286,28 +1282,26 @@ static int view_camera_exec(bContext *C, wmOperator *op)
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_camera(wmOperatorType *ot)
+void VIEW3D_OT_view_camera(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "View Camera";
   ot->description = "Toggle the camera view";
   ot->idname = "VIEW3D_OT_view_camera";
 
-  /* api callbacks */
-  ot->exec = view_camera_exec;
-  ot->poll = ED_operator_rv3d_user_region_poll;
+  /* api cbs */
+  ot->ex = view_camera_ex;
+  ot->poll = ed_op_rv3d_user_rgn_poll;
 
   /* flags */
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** View Orbit Operator
- * Rotate (orbit) in incremental steps. For interactive orbit see VIEW3D_OT_rotate.
- **/
+/* View Orbit Op
+ * Rotate (orbit) in incremental steps. For interactive orbit see VIEW3D_OT_rotate. */
 
 enum {
   V3D_VIEW_STEPLEFT = 1,
@@ -1316,7 +1310,7 @@ enum {
   V3D_VIEW_STEPUP,
 };
 
-static const EnumPropertyItem prop_view_orbit_items[] = {
+static const EnumPropItem prop_view_orbit_items[] = {
     {V3D_VIEW_STEPLEFT, "ORBITLEFT", 0, "Orbit Left", "Orbit the view around to the left"},
     {V3D_VIEW_STEPRIGHT, "ORBITRIGHT", 0, "Orbit Right", "Orbit the view around to the right"},
     {V3D_VIEW_STEPUP, "ORBITUP", 0, "Orbit Up", "Orbit the view up"},
@@ -1324,32 +1318,32 @@ static const EnumPropertyItem prop_view_orbit_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static int vieworbit_exec(duneContext *C, wmOperator *op)
+static int vieworbit_ex(Cxt *C, WinOp *op)
 {
   View3D *v3d;
-  ARegion *region;
-  RegionView3D *rv3d;
+  ARgn *rgn;
+  RgnView3D *rv3d;
   int orbitdir;
   char view_opposite;
-  PropertyAPI *prop_angle = API_struct_find_property(op->ptr, "angle");
-  float angle = API_property_is_set(op->ptr, prop_angle) ?
-                    API_property_float_get(op->ptr, prop_angle) :
+  ApiProp *prop_angle = api_struct_find_prop(op->ptr, "angle");
+  float angle = api_prop_is_set(op->ptr, prop_angle) ?
+                    api_prop_float_get(op->ptr, prop_angle) :
                     DEG2RADF(U.pad_rot_angle);
 
   /* no NULL check is needed, poll checks */
-  v3d = CTX_wm_view3d(C);
-  region = CTX_wm_region(C);
-  rv3d = region->regiondata;
+  v3d = cxt_win_view3d(C);
+  rgn = cxt_win_rgn(C);
+  rv3d = rgn->rgndata;
 
   /* support for switching to the opposite view (even when in locked views) */
-  view_opposite = (fabsf(angle) == (float)M_PI) ? ED_view3d_axis_view_opposite(rv3d->view) :
+  view_opposite = (fabsf(angle) == (float)M_PI) ? ed_view3d_axis_view_opposite(rv3d->view) :
                                                   RV3D_VIEW_USER;
-  orbitdir = API_enum_get(op->ptr, "type");
+  orbitdir = api_enum_get(op->ptr, "type");
 
   if ((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) && (view_opposite == RV3D_VIEW_USER)) {
     /* no NULL check is needed, poll checks */
-    ED_view3d_context_user_region(C, &v3d, &region);
-    rv3d = region->regiondata;
+    ed_view3d_cxt_user_rgn(C, &v3d, &rgn);
+    rv3d = rgn->rgndata;
   }
 
   ED_view3d_smooth_view_force_finish(C, v3d, region);
