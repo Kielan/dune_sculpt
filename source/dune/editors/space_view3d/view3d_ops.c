@@ -34,178 +34,176 @@
 #endif
 
 /* copy paste */
-
 static int view3d_copybuffer_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
   char str[FILE_MAX];
   int num_copied = 0;
 
-  dune_copybuffer_copy_begin(bmain);
+  dune_copybuffer_copy_begin(main);
 
-  /* context, selection, could be generalized */
-  CTX_DATA_BEGIN (C, Object *, ob, selected_objects) {
+  /* cxt, sel, could be generalized */
+  CXT_DATA_BEGIN (C, Ob *, ob, sel_objs) {
     if ((ob->id.tag & LIB_TAG_DOIT) == 0) {
-      BKE_copybuffer_copy_tag_ID(&ob->id);
+      dune_copybuffer_copy_tag_ID(&ob->id);
       num_copied++;
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  BLI_join_dirfile(str, sizeof(str), BKE_tempdir_base(), "copybuffer.blend");
-  BKE_copybuffer_copy_end(bmain, str, op->reports);
+  lib_join_dirfile(str, sizeof(str), dune_tmpdir_base(), "copybuffer.blend");
+  dune_copybuffer_copy_end(main, str, op->reports);
 
-  BKE_reportf(op->reports, RPT_INFO, "Copied %d selected object(s)", num_copied);
+  dune_reportf(op->reports, RPT_INFO, "Copied %d sel obj(s)", num_copied);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void VIEW3D_OT_copybuffer(wmOperatorType *ot)
+static void VIEW3D_OT_copybuffer(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Copy Objects";
+  /* ids */
+  ot->name = "Copy Objs";
   ot->idname = "VIEW3D_OT_copybuffer";
-  ot->description = "Selected objects are copied to the clipboard";
+  ot->description = "Sel objs are copied to the clipboard";
 
-  /* api callbacks */
-  ot->exec = view3d_copybuffer_exec;
-  ot->poll = ED_operator_scene;
+  /* api cbs */
+  ot->ex = view3d_copybuffer_ex;
+  ot->poll = ed_op_scene;
 }
 
-static int view3d_pastebuffer_exec(bContext *C, wmOperator *op)
+static int view3d_pastebuffer_ex(Cxt *C, WinOp *op)
 {
   char str[FILE_MAX];
   short flag = 0;
 
-  if (RNA_boolean_get(op->ptr, "autoselect")) {
-    flag |= FILE_AUTOSELECT;
+  if (api_bool_get(op->ptr, "autosel")) {
+    flag |= FILE_AUTOSEL;
   }
-  if (RNA_boolean_get(op->ptr, "active_collection")) {
+  if (api_bool_get(op->ptr, "active_collection")) {
     flag |= FILE_ACTIVE_COLLECTION;
   }
 
-  BLI_join_dirfile(str, sizeof(str), BKE_tempdir_base(), "copybuffer.blend");
+  lib_join_dirfile(str, sizeof(str), dune_tmpdir_base(), "copybuffer.dune");
 
-  const int num_pasted = BKE_copybuffer_paste(C, str, flag, op->reports, FILTER_ID_OB);
+  const int num_pasted = dune_copybuffer_paste(C, str, flag, op->reports, FILTER_ID_OB);
   if (num_pasted == 0) {
-    BKE_report(op->reports, RPT_INFO, "No objects to paste");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_INFO, "No objs to paste");
+    return OP_CANCELLED;
   }
 
-  WM_event_add_notifier(C, NC_WINDOW, NULL);
-  ED_outliner_select_sync_from_object_tag(C);
+  win_ev_add_notifier(C, NC_WIN, NULL);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
-  BKE_reportf(op->reports, RPT_INFO, "%d object(s) pasted", num_pasted);
+  dune_reportf(op->reports, RPT_INFO, "%d obj(s) pasted", num_pasted);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void VIEW3D_OT_pastebuffer(wmOperatorType *ot)
+static void VIEW3D_OT_pastebuffer(WinOpType *ot)
 {
 
-  /* identifiers */
-  ot->name = "Paste Objects";
+  /* ids */
+  ot->name = "Paste Objs";
   ot->idname = "VIEW3D_OT_pastebuffer";
-  ot->description = "Objects from the clipboard are pasted";
+  ot->description = "Objs from the clipboard are pasted";
 
-  /* api callbacks */
-  ot->exec = view3d_pastebuffer_exec;
-  ot->poll = ED_operator_scene_editable;
+  /* api cbs */
+  ot->ex = view3d_pastebuffer_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_boolean(ot->srna, "autoselect", true, "Select", "Select pasted objects");
-  RNA_def_boolean(ot->srna,
-                  "active_collection",
-                  true,
-                  "Active Collection",
-                  "Put pasted objects in the active collection");
+  api_def_bool(ot->sapi, "autosel", true, "Select", "Select pasted objects");
+  api_def_bool(ot->sapi,
+               "active_collection",
+               true,
+               "Active Collection",
+               "Put pasted objs in the active collection");
 }
 
-/* ************************** registration **********************************/
-
-void view3d_operatortypes(void)
+/* registration */
+void view3d_optypes(void)
 {
-  WM_operatortype_append(VIEW3D_OT_rotate);
-  WM_operatortype_append(VIEW3D_OT_move);
-  WM_operatortype_append(VIEW3D_OT_zoom);
-  WM_operatortype_append(VIEW3D_OT_zoom_camera_1_to_1);
-  WM_operatortype_append(VIEW3D_OT_dolly);
+  win_optype_append(VIEW3D_OT_rotate);
+  win_optype_append(VIEW3D_OT_move);
+  win_optype_append(VIEW3D_OT_zoom);
+  win_optype_append(VIEW3D_OT_zoom_camera_1_to_1);
+  win_optype_append(VIEW3D_OT_dolly);
 #ifdef WITH_INPUT_NDOF
-  WM_operatortype_append(VIEW3D_OT_ndof_orbit_zoom);
-  WM_operatortype_append(VIEW3D_OT_ndof_orbit);
-  WM_operatortype_append(VIEW3D_OT_ndof_pan);
-  WM_operatortype_append(VIEW3D_OT_ndof_all);
+  win_optype_append(VIEW3D_OT_ndof_orbit_zoom);
+  win_optype_append(VIEW3D_OT_ndof_orbit);
+  win_optype_append(VIEW3D_OT_ndof_pan);
+  win_optype_append(VIEW3D_OT_ndof_all);
 #endif /* WITH_INPUT_NDOF */
-  WM_operatortype_append(VIEW3D_OT_view_all);
-  WM_operatortype_append(VIEW3D_OT_view_axis);
-  WM_operatortype_append(VIEW3D_OT_view_camera);
-  WM_operatortype_append(VIEW3D_OT_view_orbit);
-  WM_operatortype_append(VIEW3D_OT_view_roll);
-  WM_operatortype_append(VIEW3D_OT_view_pan);
-  WM_operatortype_append(VIEW3D_OT_view_persportho);
-  WM_operatortype_append(VIEW3D_OT_background_image_add);
-  WM_operatortype_append(VIEW3D_OT_background_image_remove);
-  WM_operatortype_append(VIEW3D_OT_drop_world);
-  WM_operatortype_append(VIEW3D_OT_view_selected);
-  WM_operatortype_append(VIEW3D_OT_view_lock_clear);
-  WM_operatortype_append(VIEW3D_OT_view_lock_to_active);
-  WM_operatortype_append(VIEW3D_OT_view_center_cursor);
-  WM_operatortype_append(VIEW3D_OT_view_center_pick);
-  WM_operatortype_append(VIEW3D_OT_view_center_camera);
-  WM_operatortype_append(VIEW3D_OT_view_center_lock);
-  WM_operatortype_append(VIEW3D_OT_select);
-  WM_operatortype_append(VIEW3D_OT_select_box);
-  WM_operatortype_append(VIEW3D_OT_clip_border);
-  WM_operatortype_append(VIEW3D_OT_select_circle);
-  WM_operatortype_append(VIEW3D_OT_smoothview);
-  WM_operatortype_append(VIEW3D_OT_render_border);
-  WM_operatortype_append(VIEW3D_OT_clear_render_border);
-  WM_operatortype_append(VIEW3D_OT_zoom_border);
-  WM_operatortype_append(VIEW3D_OT_cursor3d);
-  WM_operatortype_append(VIEW3D_OT_select_lasso);
-  WM_operatortype_append(VIEW3D_OT_select_menu);
-  WM_operatortype_append(VIEW3D_OT_bone_select_menu);
-  WM_operatortype_append(VIEW3D_OT_camera_to_view);
-  WM_operatortype_append(VIEW3D_OT_camera_to_view_selected);
-  WM_operatortype_append(VIEW3D_OT_object_as_camera);
-  WM_operatortype_append(VIEW3D_OT_localview);
-  WM_operatortype_append(VIEW3D_OT_localview_remove_from);
-  WM_operatortype_append(VIEW3D_OT_fly);
-  WM_operatortype_append(VIEW3D_OT_walk);
-  WM_operatortype_append(VIEW3D_OT_navigate);
-  WM_operatortype_append(VIEW3D_OT_copybuffer);
-  WM_operatortype_append(VIEW3D_OT_pastebuffer);
+  win_optype_append(VIEW3D_OT_view_all);
+  win_optype_append(VIEW3D_OT_view_axis);
+  win_optype_append(VIEW3D_OT_view_camera);
+  win_optype_append(VIEW3D_OT_view_orbit);
+  win_optype_append(VIEW3D_OT_view_roll);
+  win_optype_append(VIEW3D_OT_view_pan);
+  win_optype_append(VIEW3D_OT_view_persportho);
+  win_optype_append(VIEW3D_OT_background_img_add);
+  win_optype_append(VIEW3D_OT_background_img_remove);
+  win_optype_append(VIEW3D_OT_drop_world);
+  win_optype_append(VIEW3D_OT_view_sel);
+  win_optype_append(VIEW3D_OT_view_lock_clear);
+  win_optype_append(VIEW3D_OT_view_lock_to_active);
+  win_optype_append(VIEW3D_OT_view_center_cursor);
+  win_optype_append(VIEW3D_OT_view_center_pick);
+  win_optype_append(VIEW3D_OT_view_center_camera);
+  win_optype_append(VIEW3D_OT_view_center_lock);
+  win_optype_append(VIEW3D_OT_sel);
+  win_optype_append(VIEW3D_OT_sel_box);
+  win_optype_append(VIEW3D_OT_clip_border);
+  win_optype_append(VIEW3D_OT_sel_circle);
+  win_optype_append(VIEW3D_OT_smoothview);
+  win_optype_append(VIEW3D_OT_render_border);
+  win_optype_append(VIEW3D_OT_clear_render_border);
+  win_optype_append(VIEW3D_OT_zoom_border);
+  win_optype_append(VIEW3D_OT_cursor3d);
+  win_optype_append(VIEW3D_OT_sel_lasso);
+  win_optype_append(VIEW3D_OT_sel_menu);
+  win_optype_append(VIEW3D_OT_bone_sel_menu);
+  win_optype_append(VIEW3D_OT_camera_to_view);
+  win_optype_append(VIEW3D_OT_camera_to_view_sel);
+  win_optype_append(VIEW3D_OT_ob_as_camera);
+  win_optype_append(VIEW3D_OT_localview);
+  win_optype_append(VIEW3D_OT_localview_remove_from);
+  win_optype_append(VIEW3D_OT_fly);
+  win_optype_append(VIEW3D_OT_walk);
+  win_optype_append(VIEW3D_OT_nav);
+  win_optype_append(VIEW3D_OT_copybuffer);
+  win_optype_append(VIEW3D_OT_pastebuffer);
 
-  WM_operatortype_append(VIEW3D_OT_object_mode_pie_or_toggle);
+  win_optype_append(VIEW3D_OT_ob_mode_pie_or_toggle);
 
-  WM_operatortype_append(VIEW3D_OT_snap_selected_to_grid);
-  WM_operatortype_append(VIEW3D_OT_snap_selected_to_cursor);
-  WM_operatortype_append(VIEW3D_OT_snap_selected_to_active);
-  WM_operatortype_append(VIEW3D_OT_snap_cursor_to_grid);
-  WM_operatortype_append(VIEW3D_OT_snap_cursor_to_center);
-  WM_operatortype_append(VIEW3D_OT_snap_cursor_to_selected);
-  WM_operatortype_append(VIEW3D_OT_snap_cursor_to_active);
+  win_optype_append(VIEW3D_OT_snap_sel_to_grid);
+  win_optype_append(VIEW3D_OT_snap_sel_to_cursor);
+  win_optype_append(VIEW3D_OT_snap_sel_to_active);
+  win_optype_append(VIEW3D_OT_snap_cursor_to_grid);
+  win_optype_append(VIEW3D_OT_snap_cursor_to_center);
+  win_optype_append(VIEW3D_OT_snap_cursor_to_sel);
+  win_optype_append(VIEW3D_OT_snap_cursor_to_active);
 
-  WM_operatortype_append(VIEW3D_OT_interactive_add);
+  win_optype_append(VIEW3D_OT_interactive_add);
 
-  WM_operatortype_append(VIEW3D_OT_toggle_shading);
-  WM_operatortype_append(VIEW3D_OT_toggle_xray);
-  WM_operatortype_append(VIEW3D_OT_toggle_matcap_flip);
+  win_optype_append(VIEW3D_OT_toggle_shading);
+  win_optype_append(VIEW3D_OT_toggle_xray);
+  win_optype_append(VIEW3D_OT_toggle_matcap_flip);
 
-  WM_operatortype_append(VIEW3D_OT_ruler_add);
-  WM_operatortype_append(VIEW3D_OT_ruler_remove);
+  win_optype_append(VIEW3D_OT_ruler_add);
+  win_optype_append(VIEW3D_OT_ruler_remove);
 
-  transform_operatortypes();
+  transform_optypes();
 }
 
-void view3d_keymap(wmKeyConfig *keyconf)
+void view3d_keymap(WinKeyConfig *keyconf)
 {
-  WM_keymap_ensure(keyconf, "3D View Generic", SPACE_VIEW3D, 0);
+  win_keymap_ensure(keyconf, "3D View Generic", SPACE_VIEW3D, 0);
 
-  /* only for region 3D window */
-  WM_keymap_ensure(keyconf, "3D View", SPACE_VIEW3D, 0);
+  /* only for region 3D win */
+  win_keymap_ensure(keyconf, "3D View", SPACE_VIEW3D, 0);
 
   fly_modal_keymap(keyconf);
   walk_modal_keymap(keyconf);
