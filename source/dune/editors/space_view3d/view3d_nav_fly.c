@@ -270,20 +270,20 @@ enum {
   FLY_CONFIRM = 2,
 };
 
-static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent *event)
+static bool initFlyInfo(Cxt *C, FlyInfo *fly, WinOp *op, const WinEv *ev)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  wmWindow *win = CTX_wm_window(C);
+  WinMngr *wm = cxt_wm(C);
+  Win *win = cxt_win(C);
   rctf viewborder;
 
   float upvec[3]; /* tmp */
   float mat[3][3];
 
-  fly->rv3d = CTX_wm_region_view3d(C);
-  fly->v3d = CTX_wm_view3d(C);
-  fly->region = CTX_wm_region(C);
-  fly->depsgraph = CTX_data_expect_evaluated_depsgraph(C);
-  fly->scene = CTX_data_scene(C);
+  fly->rv3d = cxt_win_rgn_view3d(C);
+  fly->v3d = cxt_win_view3d(C);
+  fly->rgn = cxt_win_rgn(C);
+  fly->graph = cxt_data_expect_eval_graph(C);
+  fly->scene = cxt_data_scene(C);
 
 #ifdef NDOF_FLY_DEBUG
   puts("\n-- fly begin --");
@@ -295,17 +295,17 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
   }
 
   if (fly->rv3d->persp == RV3D_CAMOB && ID_IS_LINKED(fly->v3d->camera)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot fly a camera from an external library");
+    dune_report(op->reports, RPT_ERROR, "Cannot fly a camera from an external lib");
     return false;
   }
 
-  if (ED_view3d_offset_lock_check(fly->v3d, fly->rv3d)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot fly when the view offset is locked");
+  if (ed_view3d_offset_lock_check(fly->v3d, fly->rv3d)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot fly when the view offset is locked");
     return false;
   }
 
   if (fly->rv3d->persp == RV3D_CAMOB && fly->v3d->camera->constraints.first) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot fly an object with constraints");
+    dune_report(op->reports, RPT_ERROR, "Cannot fly an ob with constraints");
     return false;
   }
 
@@ -320,16 +320,16 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
   fly->grid = 1.0f;
   fly->use_precision = false;
   fly->use_freelook = false;
-  fly->anim_playing = ED_screen_animation_playing(wm);
+  fly->anim_playing = ed_screen_anim_playing(win);
 
 #ifdef NDOF_FLY_DRAW_TOOMUCH
   fly->redraw = 1;
 #endif
   zero_v3(fly->dvec_prev);
 
-  fly->timer = WM_event_add_timer(CTX_wm_manager(C), win, TIMER, 0.01f);
+  fly->timer = win_ev_add_timer(cxt_wm(C), win, TIMER, 0.01f);
 
-  copy_v2_v2_int(fly->mval, event->mval);
+  copy_v2_v2_int(fly->mval, ev->mval);
 
 #ifdef WITH_INPUT_NDOF
   fly->ndof = NULL;
@@ -337,8 +337,8 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
 
   fly->time_lastdraw = fly->time_lastwheel = PIL_check_seconds_timer();
 
-  fly->draw_handle_pixel = ED_region_draw_cb_activate(
-      fly->region->type, drawFlyPixel, fly, REGION_DRAW_POST_PIXEL);
+  fly->draw_handle_pixel = ed_rgn_draw_cb_activate(
+      fly->rgn->type, drawFlyPixel, fly, RGN_DRAW_POST_PIXEL);
 
   fly->rv3d->rflag |= RV3D_NAVIGATING;
 
@@ -350,43 +350,43 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
     fly->zlock = FLY_AXISLOCK_STATE_IDLE;
   }
 
-  fly->v3d_camera_control = ED_view3d_cameracontrol_acquire(
-      fly->depsgraph, fly->scene, fly->v3d, fly->rv3d);
+  fly->v3d_camera_control = ed_view3d_cameractrl_acquire(
+      fly->graph, fly->scene, fly->v3d, fly->rv3d);
 
-  /* calculate center */
-  if (ED_view3d_cameracontrol_object_get(fly->v3d_camera_control)) {
-    ED_view3d_calc_camera_border(
-        fly->scene, fly->depsgraph, fly->region, fly->v3d, fly->rv3d, &viewborder, false);
+  /* calc center */
+  if (ed_view3d_cameractrl_ob_get(fly->v3d_camera_ctrl)) {
+    ed_view3d_calc_camera_border(
+        fly->scene, fly->graph, fly->rgn, fly->v3d, fly->rv3d, &viewborder, false);
 
-    fly->width = BLI_rctf_size_x(&viewborder);
-    fly->height = BLI_rctf_size_y(&viewborder);
+    fly->width = lib_rctf_size_x(&viewborder);
+    fly->height = lib_rctf_size_y(&viewborder);
 
     fly->center_mval[0] = viewborder.xmin + fly->width / 2;
     fly->center_mval[1] = viewborder.ymin + fly->height / 2;
   }
   else {
-    fly->width = fly->region->winx;
-    fly->height = fly->region->winy;
+    fly->width = fly->rgn->winx;
+    fly->height = fly->rgn->winy;
 
     fly->center_mval[0] = fly->width / 2;
     fly->center_mval[1] = fly->height / 2;
   }
 
   /* center the mouse, probably the UI mafia are against this but without its quite annoying */
-  WM_cursor_warp(win,
-                 fly->region->winrct.xmin + fly->center_mval[0],
-                 fly->region->winrct.ymin + fly->center_mval[1]);
+  win_cursor_warp(win,
+                 fly->rgn->winrct.xmin + fly->center_mval[0],
+                 fly->rgn->winrct.ymin + fly->center_mval[1]);
 
   return 1;
 }
 
-static int flyEnd(bContext *C, FlyInfo *fly)
+static int flyEnd(Cxt *C, FlyInfo *fly)
 {
-  wmWindow *win;
-  RegionView3D *rv3d;
+  Win *win;
+  RgnView3D *rv3d;
 
   if (fly->state == FLY_RUNNING) {
-    return OPERATOR_RUNNING_MODAL;
+    return OP_RUNNING_MODAL;
   }
   if (fly->state == FLY_CONFIRM) {
     /* Needed for auto_keyframe. */
@@ -405,47 +405,47 @@ static int flyEnd(bContext *C, FlyInfo *fly)
   puts("\n-- fly end --");
 #endif
 
-  win = CTX_wm_window(C);
+  win = cxt_win(C);
   rv3d = fly->rv3d;
 
-  WM_event_remove_timer(CTX_wm_manager(C), win, fly->timer);
+  win_ev_remove_timer(cxt_wm(C), win, fly->timer);
 
-  ED_region_draw_cb_exit(fly->region->type, fly->draw_handle_pixel);
+  ed_rgn_draw_cb_exit(fly->rgn->type, fly->draw_handle_pixel);
 
-  ED_view3d_cameracontrol_release(fly->v3d_camera_control, fly->state == FLY_CANCEL);
+  ed_view3d_cameractrl_release(fly->v3d_camera_ctrl, fly->state == FLY_CANCEL);
 
   rv3d->rflag &= ~RV3D_NAVIGATING;
 
 #ifdef WITH_INPUT_NDOF
   if (fly->ndof) {
-    MEM_freeN(fly->ndof);
+    mem_free(fly->ndof);
   }
 #endif
 
   if (fly->state == FLY_CONFIRM) {
-    MEM_freeN(fly);
-    return OPERATOR_FINISHED;
+    mem_free(fly);
+    return OP_FINISHED;
   }
 
-  MEM_freeN(fly);
-  return OPERATOR_CANCELLED;
+  mem_free(fly);
+  return OP_CANCELLED;
 }
 
-static void flyEvent(FlyInfo *fly, const wmEvent *event)
+static void flyEv(FlyInfo *fly, const WinEv *ev)
 {
-  if (event->type == TIMER && event->customdata == fly->timer) {
+  if (ev->type == TIMER && ev->customdata == fly->timer) {
     fly->redraw = 1;
   }
-  else if (event->type == MOUSEMOVE) {
-    copy_v2_v2_int(fly->mval, event->mval);
+  else if (ev->type == MOUSEMOVE) {
+    copy_v2_v2_int(fly->mval, ev->mval);
   }
 #ifdef WITH_INPUT_NDOF
-  else if (event->type == NDOF_MOTION) {
+  else if (ev->type == NDOF_MOTION) {
     /* do these automagically get delivered? yes. */
     // puts("ndof motion detected in fly mode!");
     // static const char *tag_name = "3D mouse position";
 
-    const wmNDOFMotionData *incoming_ndof = event->customdata;
+    const WinNDOFMotionData *incoming_ndof = ev->customdata;
     switch (incoming_ndof->progress) {
       case P_STARTING:
         /* start keeping track of 3D mouse position */
@@ -460,9 +460,9 @@ static void flyEvent(FlyInfo *fly, const wmEvent *event)
         fflush(stdout);
 #  endif
         if (fly->ndof == NULL) {
-          // fly->ndof = MEM_mallocN(sizeof(wmNDOFMotionData), tag_name);
-          fly->ndof = MEM_dupallocN(incoming_ndof);
-          // fly->ndof = malloc(sizeof(wmNDOFMotionData));
+          // fly->ndof = mem_malloc(sizeof(WinNDOFMotionData), tag_name);
+          fly->ndof = mem_dupalloc(incoming_ndof);
+          // fly->ndof = malloc(sizeof(WinNDOFMotionData));
         }
         else {
           memcpy(fly->ndof, incoming_ndof, sizeof(wmNDOFMotionData));
@@ -474,7 +474,7 @@ static void flyEvent(FlyInfo *fly, const wmEvent *event)
         puts("stop keeping track of 3D mouse position");
 #  endif
         if (fly->ndof) {
-          MEM_freeN(fly->ndof);
+          mem_free(fly->ndof);
           // free(fly->ndof);
           fly->ndof = NULL;
         }
@@ -487,8 +487,8 @@ static void flyEvent(FlyInfo *fly, const wmEvent *event)
   }
 #endif /* WITH_INPUT_NDOF */
   /* handle modal keymap first */
-  else if (event->type == EVT_MODAL_MAP) {
-    switch (event->val) {
+  else if (ev->type == EV_MODAL_MAP) {
+    switch (ev->val) {
       case FLY_MODAL_CANCEL:
         fly->state = FLY_CANCEL;
         break;
@@ -498,7 +498,7 @@ static void flyEvent(FlyInfo *fly, const wmEvent *event)
 
       /* Speed adjusting with mouse-pan (track-pad). */
       case FLY_MODAL_SPEED: {
-        float fac = 0.02f * (event->prev_xy[1] - event->xy[1]);
+        float fac = 0.02f * (ev->prev_xy[1] - ev->xy[1]);
 
         /* allowing to brake immediate */
         if (fac > 0.0f && fly->speed < 0.0f) {
@@ -697,7 +697,7 @@ static void flyEvent(FlyInfo *fly, const wmEvent *event)
   }
 }
 
-static void flyMoveCamera(bContext *C,
+static void flyMoveCamera(Cxt *C,
                           FlyInfo *fly,
                           const bool do_rotate,
                           const bool do_translate,
@@ -706,17 +706,17 @@ static void flyMoveCamera(bContext *C,
   /* we only consider autokeying on playback or if user confirmed fly on the same frame
    * otherwise we get a keyframe even if the user cancels. */
   const bool use_autokey = is_confirm || fly->anim_playing;
-  ED_view3d_cameracontrol_update(fly->v3d_camera_control, use_autokey, C, do_rotate, do_translate);
+  ed_view3d_cameractrl_update(fly->v3d_camera_ctrl, use_autokey, C, do_rotate, do_translate);
 }
 
-static int flyApply(bContext *C, FlyInfo *fly, bool is_confirm)
+static int flyApply(Cxt *C, FlyInfo *fly, bool is_confirm)
 {
 #define FLY_ROTATE_FAC 10.0f        /* more is faster */
 #define FLY_ZUP_CORRECT_FAC 0.1f    /* amount to correct per step */
 #define FLY_ZUP_CORRECT_ACCEL 0.05f /* increase upright momentum each step */
 #define FLY_SMOOTH_FAC 20.0f        /* higher value less lag */
 
-  RegionView3D *rv3d = fly->rv3d;
+  RgnView3D *rv3d = fly->rv3d;
 
   /* 3x3 copy of the view matrix so we can move along the view axis */
   float mat[3][3];
