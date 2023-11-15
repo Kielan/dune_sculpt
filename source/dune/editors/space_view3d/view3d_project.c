@@ -1,26 +1,24 @@
-#include "DNA_camera_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_view3d_types.h"
+#include "types_camera.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_view3d.h"
 
-#include "BLI_sys_types.h" /* int64_t */
+#include "lib_sys_types.h" /* int64_t */
 
-#include "BLI_math_vector.h"
+#include "lib_math_vector.h"
 
-#include "BKE_camera.h"
-#include "BKE_screen.h"
+#include "dune_camera.h"
+#include "dune_screen.h"
 
-#include "GPU_matrix.h"
+#include "gpu_matrix.h"
 
-#include "ED_view3d.h" /* own include */
+#include "ed_view3d.h" /* own include */
 
 #define BL_ZERO_CLIP 0.001
 
-/* Non Clipping Projection Functions
- * ********************************* */
-
-void ED_view3d_project_float_v2_m4(const ARegion *region,
+/* Non Clipping Projection Fns */
+void ed_view3d_project_float_v2_m4(const ARgn *rgn,
                                    const float co[3],
                                    float r_co[2],
                                    float mat[4][4])
@@ -34,15 +32,15 @@ void ED_view3d_project_float_v2_m4(const ARegion *region,
   mul_m4_v4(mat, vec4);
 
   if (vec4[3] > FLT_EPSILON) {
-    r_co[0] = (float)(region->winx / 2.0f) + (region->winx / 2.0f) * vec4[0] / vec4[3];
-    r_co[1] = (float)(region->winy / 2.0f) + (region->winy / 2.0f) * vec4[1] / vec4[3];
+    r_co[0] = (float)(rgn->winx / 2.0f) + (rgn->winx / 2.0f) * vec4[0] / vec4[3];
+    r_co[1] = (float)(rgn->winy / 2.0f) + (rgn->winy / 2.0f) * vec4[1] / vec4[3];
   }
   else {
     zero_v2(r_co);
   }
 }
 
-void ED_view3d_project_float_v3_m4(const ARegion *region,
+void ed_view3d_project_float_v3_m4(const ARgn *rgn,
                                    const float co[3],
                                    float r_co[3],
                                    float mat[4][4])
@@ -56,8 +54,8 @@ void ED_view3d_project_float_v3_m4(const ARegion *region,
   mul_m4_v4(mat, vec4);
 
   if (vec4[3] > FLT_EPSILON) {
-    r_co[0] = (float)(region->winx / 2.0f) + (region->winx / 2.0f) * vec4[0] / vec4[3];
-    r_co[1] = (float)(region->winy / 2.0f) + (region->winy / 2.0f) * vec4[1] / vec4[3];
+    r_co[0] = (float)(rgn->winx / 2.0f) + (region->winx / 2.0f) * vec4[0] / vec4[3];
+    r_co[1] = (float)(rgn->winy / 2.0f) + (region->winy / 2.0f) * vec4[1] / vec4[3];
     r_co[2] = vec4[2] / vec4[3];
   }
   else {
@@ -65,13 +63,11 @@ void ED_view3d_project_float_v3_m4(const ARegion *region,
   }
 }
 
-/* Clipping Projection Functions
- * ***************************** */
-
-eV3DProjStatus ED_view3d_project_base(const struct ARegion *region, struct Base *base)
+/* Clipping Projection Fns */
+eV3DProjStatus ed_view3d_project_base(const struct ARgn *rgn, struct Base *base)
 {
-  eV3DProjStatus ret = ED_view3d_project_short_global(
-      region, base->object->obmat[3], &base->sx, V3D_PROJ_TEST_CLIP_DEFAULT);
+  eV3DProjStatus ret = ed_view3d_project_short_global(
+      rgn, base->ob->obmat[3], &base->sx, V3D_PROJ_TEST_CLIP_DEFAULT);
 
   if (ret != V3D_PROJ_RET_OK) {
     base->sx = IS_CLIPPED;
@@ -83,9 +79,8 @@ eV3DProjStatus ED_view3d_project_base(const struct ARegion *region, struct Base 
 
 /* perspmat is typically...
  * - 'rv3d->perspmat',   is_local == false
- * - 'rv3d->persmatob', is_local == true
- */
-static eV3DProjStatus ed_view3d_project__internal(const ARegion *region,
+ * - 'rv3d->persmatob', is_local == true */
+static eV3DProjStatus ed_view3d_project__internal(const ARgn *rgn,
                                                   const float perspmat[4][4],
                                                   const bool is_local, /* normally hidden */
                                                   const float co[3],
@@ -95,12 +90,12 @@ static eV3DProjStatus ed_view3d_project__internal(const ARegion *region,
   float vec4[4];
 
   /* check for bad flags */
-  BLI_assert((flag & V3D_PROJ_TEST_ALL) == flag);
+  lib_assert((flag & V3D_PROJ_TEST_ALL) == flag);
 
   if (flag & V3D_PROJ_TEST_CLIP_BB) {
-    RegionView3D *rv3d = region->regiondata;
+    RgnView3D *rv3d = rgn->rgndata;
     if (rv3d->rflag & RV3D_CLIPPING) {
-      if (ED_view3d_clipping_test(rv3d, co, is_local)) {
+      if (ed_view3d_clipping_test(rv3d, co, is_local)) {
         return V3D_PROJ_RET_CLIP_BB;
       }
     }
@@ -124,11 +119,11 @@ static eV3DProjStatus ed_view3d_project__internal(const ARegion *region,
   }
 
   const float scalar = (w != 0.0f) ? (1.0f / w) : 0.0f;
-  const float fx = ((float)region->winx / 2.0f) * (1.0f + (vec4[0] * scalar));
-  const float fy = ((float)region->winy / 2.0f) * (1.0f + (vec4[1] * scalar));
+  const float fx = ((float)rgn->winx / 2.0f) * (1.0f + (vec4[0] * scalar));
+  const float fy = ((float)rgn->winy / 2.0f) * (1.0f + (vec4[1] * scalar));
 
   if ((flag & V3D_PROJ_TEST_CLIP_WIN) &&
-      (fx <= 0.0f || fy <= 0.0f || fx >= (float)region->winx || fy >= (float)region->winy)) {
+      (fx <= 0.0f || fy <= 0.0f || fx >= (float)rgn->winx || fy >= (float)rgn->winy)) {
     return V3D_PROJ_RET_CLIP_WIN;
   }
 
@@ -138,7 +133,7 @@ static eV3DProjStatus ed_view3d_project__internal(const ARegion *region,
   return V3D_PROJ_RET_OK;
 }
 
-eV3DProjStatus ED_view3d_project_short_ex(const ARegion *region,
+eV3DProjStatus ed_view3d_project_short_ex(const ARgn *rgn,
                                           float perspmat[4][4],
                                           const bool is_local,
                                           const float co[3],
