@@ -107,49 +107,49 @@ static int viewmove_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod;
 
-  const bool use_cursor_init = API_boolean_get(op->ptr, "use_cursor_init");
+  const bool use_cursor_init = api_bool_get(op->ptr, "use_cursor_init");
 
   vod = op->customdata = viewops_data_create(
       C,
-      event,
-      (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_ORBIT_SELECT) |
+      ev,
+      (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_ORBIT_SEL) |
           (use_cursor_init ? VIEWOPS_FLAG_USE_MOUSE_INIT : 0));
   vod = op->customdata;
 
-  ED_view3d_smooth_view_force_finish(C, vod->v3d, vod->region);
+  ed_view3d_smooth_view_force_finish(C, vod->v3d, vod->region);
 
-  if (event->type == MOUSEPAN) {
-    /* invert it, trackpad scroll follows same principle as 2d windows this way */
+  if (ev->type == MOUSEPAN) {
+    /* invert it, trackpad scroll follows same principle as 2d wins this way */
     viewmove_apply(
-        vod, 2 * event->xy[0] - event->prev_xy[0], 2 * event->xy[1] - event->prev_xy[1]);
+        vod, 2 * ev->xy[0] - ev->prev_xy[0], 2 * ev->xy[1] - ev->prev_xy[1]);
 
     viewops_data_free(C, op->customdata);
     op->customdata = NULL;
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  /* add tmp handler */
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void viewmove_cancel(duneContext *C, wmOperator *op)
+static void viewmove_cancel(Cxt *C, WinOp *op)
 {
   viewops_data_free(C, op->customdata);
   op->customdata = NULL;
 }
 
-void VIEW3D_OT_move(wmOperatorType *ot)
+void VIEW3D_OT_move(WinOpType *ot)
 {
 
-  /* identifiers */
+  /* ids */
   ot->name = "Pan View";
   ot->description = "Move the view";
   ot->idname = "VIEW3D_OT_move";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = viewmove_invoke;
   ot->modal = viewmove_modal;
   ot->poll = view3d_location_poll;
@@ -158,6 +158,6 @@ void VIEW3D_OT_move(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_XY;
 
-  /* properties */
-  view3d_operator_properties_common(ot, V3D_OP_PROP_USE_MOUSE_INIT);
+  /* props */
+  view3d_op_props_common(ot, V3D_OP_PROP_USE_MOUSE_INIT);
 }
