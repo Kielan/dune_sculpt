@@ -4,7 +4,7 @@
 
 #ifdef WITH_INPUT_NDOF
 //#  define NDOF_FLY_DEBUG
-/* is this needed for ndof? - commented so redraw doesn't thrash - campbell */
+/* is this needed for ndof? - commented so redraw doesn't thrash */
 //#  define NDOF_FLY_DRAW_TOOMUCH
 #endif /* WITH_INPUT_NDOF */
 
