@@ -333,7 +333,7 @@ void view3d_ndof_fly(const WinNDOFMotionData *ndof,
 /* NDOF Camera View Support */
 /* 2D orthographic style NDOF navigation within the camera view.
  * Support navigating the camera view instead of leaving the camera-view and navigating in 3D. */
-static int view3d_ndof_cameraview_pan_zoom(bContext *C, const WinEv *ev)
+static int view3d_ndof_cameraview_pan_zoom(Cxt *C, const WinEv *ev)
 {
   const WinNDOFMotionData *ndof = ev->customdata;
   View3D *v3d = cxt_win_view3d(C);
@@ -388,7 +388,6 @@ static int view3d_ndof_cameraview_pan_zoom(bContext *C, const WinEv *ev)
 }
 
 /* NDOF Orbit/Translate Op */
-
 static int ndof_orbit_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   if (ev->type != NDOF_MOTION) {
@@ -434,71 +433,69 @@ static int ndof_orbit_invoke(Cxt *C, WinOp *op, const WinEv *ev)
     }
   }
 
-  ED_view3d_camera_lock_sync(depsgraph, v3d, rv3d);
+  ed_view3d_camera_lock_sync(graph, v3d, rv3d);
   if (xform_flag) {
-    ED_view3d_camera_lock_autokey(
+    ed_view3d_camera_lock_autokey(
         v3d, rv3d, C, xform_flag & HAS_ROTATE, xform_flag & HAS_TRANSLATE);
   }
 
-  ED_region_tag_redraw(vod->region);
+  ed_rgn_tag_redraw(vod->rgn);
 
   viewops_data_free(C, op->customdata);
   op->customdata = NULL;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_ndof_orbit(struct wmOperatorType *ot)
+void VIEW3D_OT_ndof_orbit(struct WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "NDOF Orbit View";
   ot->description = "Orbit the view using the 3D mouse";
   ot->idname = "VIEW3D_OT_ndof_orbit";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = ndof_orbit_invoke;
-  ot->poll = ED_operator_view3d_active;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** NDOF Orbit/Zoom Operator **/
-
-static int ndof_orbit_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* NDOF Orbit/Zoom Op */
+static int ndof_orbit_zoom_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (event->type != NDOF_MOTION) {
-    return OPERATOR_CANCELLED;
+  if (ev->type != NDOF_MOTION) {
+    return OP_CANCELLED;
   }
 
   if (U.ndof_flag & NDOF_CAMERA_PAN_ZOOM) {
-    const int camera_retval = view3d_ndof_cameraview_pan_zoom(C, event);
-    if (camera_retval != OPERATOR_PASS_THROUGH) {
+    const int camera_retval = view3d_ndof_cameraview_pan_zoom(C, ev);
+    if (camera_retval != OP_PASS_THROUGH) {
       return camera_retval;
     }
   }
 
-  const Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  const Graph *graph = cxt_data_ensure_eval_graph(C);
   ViewOpsData *vod;
   View3D *v3d;
-  RegionView3D *rv3d;
+  RgnView3D *rv3d;
   char xform_flag = 0;
 
-  const wmNDOFMotionData *ndof = event->customdata;
+  const WinNDOFMotionData *ndof = ev->customdata;
 
   vod = op->customdata = viewops_data_create(
-      C, event, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_DEPTH_NAVIGATE));
+      C, ev, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_DEPTH_NAV));
 
-  ED_view3d_smooth_view_force_finish(C, vod->v3d, vod->region);
+  ed_view3d_smooth_view_force_finish(C, vod->v3d, vod->rgn);
 
   v3d = vod->v3d;
   rv3d = vod->rv3d;
 
-  /* off by default, until changed later this function */
+  /* off by default, until changed later this fn */
   rv3d->rot_angle = 0.0f;
 
-  ED_view3d_camera_lock_init_ex(depsgraph, v3d, rv3d, false);
+  ed_view3d_camera_lock_init_ex(graph, v3d, rv3d, false);
 
   if (ndof->progress == P_FINISHING) {
     /* pass */
@@ -506,19 +503,19 @@ static int ndof_orbit_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *ev
   else if ((rv3d->persp == RV3D_ORTHO) && RV3D_VIEW_IS_AXIS(rv3d->view)) {
     /* if we can't rotate, fallback to translate (locked axis views) */
     const bool has_translate = ndof_has_translate(ndof, v3d, rv3d);
-    const bool has_zoom = (ndof->tvec[2] != 0.0f) && ED_view3d_offset_lock_check(v3d, rv3d);
+    const bool has_zoom = (ndof->tvec[2] != 0.0f) && ef_view3d_offset_lock_check(v3d, rv3d);
 
     if (has_translate || has_zoom) {
-      view3d_ndof_pan_zoom(ndof, vod->area, vod->region, has_translate, true);
+      view3d_ndof_pan_zoom(ndof, vod->area, vod->rgn, has_translate, true);
       xform_flag |= HAS_TRANSLATE;
     }
   }
   else {
     /* based on feedback from T67579, users want to have pan and orbit enabled at once.
      * It's arguable that orbit shouldn't pan (since we have a pan only operator),
-     * so if there are users who like to separate orbit/pan operations - it can be a preference. */
+     * so if there are users who like to separate orbit/pan ops - it can be a pref */
     const bool is_orbit_around_pivot = (U.ndof_flag & NDOF_MODE_ORBIT) ||
-                                       ED_view3d_offset_lock_check(v3d, rv3d);
+                                       ed_view3d_offset_lock_check(v3d, rv3d);
     const bool has_rotation = ndof_has_rotate(ndof, rv3d);
     bool has_translate, has_zoom;
 
@@ -528,7 +525,7 @@ static int ndof_orbit_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *ev
       has_zoom = (ndof->tvec[2] != 0.0f);
     }
     else {
-      /* Free preference (Z translates). */
+      /* Free pref (Z translates). */
       has_translate = ndof_has_translate(ndof, v3d, rv3d);
       has_zoom = false;
     }
@@ -537,12 +534,12 @@ static int ndof_orbit_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *ev
     if (has_rotation) {
       const float dist_backup = rv3d->dist;
       if (!is_orbit_around_pivot) {
-        ED_view3d_distance_set(rv3d, 0.0f);
+        ed_view3d_distance_set(rv3d, 0.0f);
       }
-      view3d_ndof_orbit(ndof, vod->area, vod->region, vod, is_orbit_around_pivot);
+      view3d_ndof_orbit(ndof, vod->area, vod->rgn, vod, is_orbit_around_pivot);
       xform_flag |= HAS_ROTATE;
       if (!is_orbit_around_pivot) {
-        ED_view3d_distance_set(rv3d, dist_backup);
+        ed_view3d_distance_set(rv3d, dist_backup);
       }
     }
 
@@ -552,72 +549,70 @@ static int ndof_orbit_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *ev
     }
   }
 
-  ED_view3d_camera_lock_sync(depsgraph, v3d, rv3d);
+  ed_view3d_camera_lock_sync(graph, v3d, rv3d);
   if (xform_flag) {
-    ED_view3d_camera_lock_autokey(
+    ed_view3d_camera_lock_autokey(
         v3d, rv3d, C, xform_flag & HAS_ROTATE, xform_flag & HAS_TRANSLATE);
   }
 
-  ED_region_tag_redraw(vod->region);
+  ed_rn_tag_redraw(vod->rgn);
 
   viewops_data_free(C, op->customdata);
   op->customdata = NULL;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_ndof_orbit_zoom(struct wmOperatorType *ot)
+void VIEW3D_OT_ndof_orbit_zoom(struct WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "NDOF Orbit View with Zoom";
   ot->description = "Orbit and zoom the view using the 3D mouse";
   ot->idname = "VIEW3D_OT_ndof_orbit_zoom";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = ndof_orbit_zoom_invoke;
-  ot->poll = ED_operator_view3d_active;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** NDOF Pan/Zoom Operator **/
-
-static int ndof_pan_invoke(duneContext *C, wmOperator *UNUSED(op), const wmEvent *event)
+/* NDOF Pan/Zoom Op */
+static int ndof_pan_invoke(Cxt *C, WinOp *UNUSED(op), const WinEv *ev)
 {
-  if (event->type != NDOF_MOTION) {
-    return OPERATOR_CANCELLED;
+  if (ev->type != NDOF_MOTION) {
+    return OP_CANCELLED;
   }
 
   if (U.ndof_flag & NDOF_CAMERA_PAN_ZOOM) {
-    const int camera_retval = view3d_ndof_cameraview_pan_zoom(C, event);
-    if (camera_retval != OPERATOR_PASS_THROUGH) {
+    const int camera_retval = view3d_ndof_cameraview_pan_zoom(C, ev);
+    if (camera_retval != OP_PASS_THROUGH) {
       return camera_retval;
     }
   }
 
-  const Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  const wmNDOFMotionData *ndof = event->customdata;
+  const Graph *graph = cxt_data_ensure_eval_graph(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  const WinNDOFMotionData *ndof = ev->customdata;
   char xform_flag = 0;
 
   const bool has_translate = ndof_has_translate(ndof, v3d, rv3d);
   const bool has_zoom = (ndof->tvec[2] != 0.0f) && !rv3d->is_persp;
 
-  /* we're panning here! so erase any leftover rotation from other operators */
+  /* we're panning here! so erase any leftover rotation from other ops */
   rv3d->rot_angle = 0.0f;
 
   if (!(has_translate || has_zoom)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_view3d_camera_lock_init_ex(depsgraph, v3d, rv3d, false);
+  ed_view3d_camera_lock_init_ex(graph, v3d, rv3d, false);
 
   if (ndof->progress != P_FINISHING) {
-    ScrArea *area = CTX_wm_area(C);
-    ARegion *region = CTX_wm_region(C);
+    ScrArea *area = cxt_win_area(C);
+    ARgn *rgn = cxt_win_rgn(C);
 
     if (has_translate || has_zoom) {
       view3d_ndof_pan_zoom(ndof, area, region, has_translate, has_zoom);
@@ -625,36 +620,34 @@ static int ndof_pan_invoke(duneContext *C, wmOperator *UNUSED(op), const wmEvent
     }
   }
 
-  ED_view3d_camera_lock_sync(depsgraph, v3d, rv3d);
+  ed_view3d_camera_lock_sync(graph, v3d, rv3d);
   if (xform_flag) {
-    ED_view3d_camera_lock_autokey(v3d, rv3d, C, false, xform_flag & HAS_TRANSLATE);
+    ed_view3d_camera_lock_autokey(v3d, rv3d, C, false, xform_flag & HAS_TRANSLATE);
   }
 
-  ED_region_tag_redraw(CTX_wm_region(C));
+  ed_rgn_tag_redraw(cxt_win_rgn(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_ndof_pan(struct wmOperatorType *ot)
+void VIEW3D_OT_ndof_pan(struct WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "NDOF Pan View";
   ot->description = "Pan the view with the 3D mouse";
   ot->idname = "VIEW3D_OT_ndof_pan";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = ndof_pan_invoke;
-  ot->poll = ED_operator_view3d_active;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** NDOF Transform All Operator */
-
-/** wraps ndof_orbit_zoom but never restrict to orbit. */
-static int ndof_all_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+/* NDOF Transform All Op */
+/* wraps ndof_orbit_zoom but never restrict to orbit. */
+static int ndof_all_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   /* weak!, but it works */
   const int ndof_flag = U.ndof_flag;
@@ -669,16 +662,16 @@ static int ndof_all_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
   return ret;
 }
 
-void VIEW3D_OT_ndof_all(struct wmOperatorType *ot)
+void VIEW3D_OT_ndof_all(struct WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "NDOF Transform View";
   ot->description = "Pan and rotate the view with the 3D mouse";
   ot->idname = "VIEW3D_OT_ndof_all";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = ndof_all_invoke;
-  ot->poll = ED_operator_view3d_active;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = 0;
