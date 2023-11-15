@@ -1,47 +1,47 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_view3d_types.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_view3d.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "BKE_appdir.h"
-#include "BKE_blender_copybuffer.h"
-#include "BKE_context.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
+#include "dune_appdir.h"
+#include "dune_copybuffer.h"
+#include "dune_cxt.h"
+#include "dune_main.h"
+#include "dune_report.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
-#include "ED_outliner.h"
-#include "ED_screen.h"
-#include "ED_transform.h"
+#include "ed_outliner.h"
+#include "ed_screen.h"
+#include "ed_transform.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h"
+#include "view3d_nav.h"
 
 #ifdef WIN32
-#  include "BLI_math_base.h" /* M_PI */
+#  include "lib_math_base.h" /* M_PI */
 #endif
 
-/* ************************** copy paste ***************************** */
+/* copy paste */
 
-static int view3d_copybuffer_exec(bContext *C, wmOperator *op)
+static int view3d_copybuffer_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
   char str[FILE_MAX];
   int num_copied = 0;
 
-  BKE_copybuffer_copy_begin(bmain);
+  dune_copybuffer_copy_begin(bmain);
 
   /* context, selection, could be generalized */
   CTX_DATA_BEGIN (C, Object *, ob, selected_objects) {
