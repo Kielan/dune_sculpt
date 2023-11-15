@@ -8,105 +8,99 @@
 
 #include "lang.h"
 
-#include "DUNE_armature.h"
-#include "DUNE_context.h"
-#include "DUNE_gpencil_geom.h"
-#include "DUNE_layer.h"
-#include "DUNE_object.h"
-#include "DUNE_paint.h"
-#include "DUNE_scene.h"
-#include "DUNE_screen.h"
-#include "DUNE_vfont.h"
+#include "dune_armature.h"
+#include "dune_cxt.h"
+#include "dune_pen_geom.h"
+#include "dune_layer.h"
+#include "dune_obj.h"
+#include "dune_paint.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
+#include "dune_vfont.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
-#include "ED_mesh.h"
-#include "ED_particle.h"
-#include "ED_screen.h"
-#include "ED_transform.h"
+#include "ed_mesh.h"
+#include "ed_particle.h"
+#include "ed_screen.h"
+#include "ed_transform.h"
 
-#include "WM_api.h"
-#include "WM_message.h"
+#include "win_api.h"
+#include "win_msg.h"
 
-#include "API_access.h"
-#include "API_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "view3d_intern.h"
 
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Navigation Polls **/
-
-static bool view3d_navigation_poll_impl(duneContext *C, const char viewlock)
+/* Nav Polls */
+static bool view3d_nav_poll_impl(Cxt *C, const char viewlock)
 {
-  if (!ED_operator_region_view3d_active(C)) {
+  if (!ed_op_rgn_view3d_active(C)) {
     return false;
   }
 
-  const RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  const RgnView3D *rv3d = cxt_win_rgn_view3d(C);
   return !(RV3D_LOCK_FLAGS(rv3d) & viewlock);
 }
 
-bool view3d_location_poll(duneContext *C)
+bool view3d_location_poll(Cxt *C)
 {
-  return view3d_navigation_poll_impl(C, RV3D_LOCK_LOCATION);
+  return view3d_nav_poll_impl(C, RV3D_LOCK_LOCATION);
 }
 
-bool view3d_rotation_poll(duneContext *C)
+bool view3d_rotation_poll(Cxt *C)
 {
-  return view3d_navigation_poll_impl(C, RV3D_LOCK_ROTATION);
+  return view3d_nav_poll_impl(C, RV3D_LOCK_ROTATION);
 }
 
-bool view3d_zoom_or_dolly_poll(dContext *C)
+bool view3d_zoom_or_dolly_poll(Cxt *C)
 {
-  return view3d_navigation_poll_impl(C, RV3D_LOCK_ZOOM_AND_DOLLY);
+  return view3d_nav_poll_impl(C, RV3D_LOCK_ZOOM_AND_DOLLY);
 }
 
-/* -------------------------------------------------------------------- */
-/** Generic View Operator Properties **/
-
-void view3d_operator_properties_common(wmOperatorType *ot, const enum eV3D_OpPropFlag flag)
+/* Generic View Op Props */
+void view3d_op_props_common(WinOpType *ot, const enum eV3D_OpPropFlag flag)
 {
   if (flag & V3D_OP_PROP_MOUSE_CO) {
-    PropertyRNA *prop;
-    prop = API_def_int(ot->srna, "mx", 0, 0, INT_MAX, "Region Position X", "", 0, INT_MAX);
-    API_def_property_flag(prop, PROP_HIDDEN);
-    prop = API_def_int(ot->srna, "my", 0, 0, INT_MAX, "Region Position Y", "", 0, INT_MAX);
-    API_def_property_flag(prop, PROP_HIDDEN);
+    ApiProp *prop;
+    prop = api_def_int(ot->sapi, "mx", 0, 0, INT_MAX, "Rgn Position X", "", 0, INT_MAX);
+    api_def_prop_flag(prop, PROP_HIDDEN);
+    prop = api_def_int(ot->srna, "my", 0, 0, INT_MAX, "Region Position Y", "", 0, INT_MAX);
+    api_def_prop_flag(prop, PROP_HIDDEN);
   }
   if (flag & V3D_OP_PROP_DELTA) {
-    API_def_int(ot->srna, "delta", 0, INT_MIN, INT_MAX, "Delta", "", INT_MIN, INT_MAX);
+    api_def_int(ot->sapi, "delta", 0, INT_MIN, INT_MAX, "Delta", "", INT_MIN, INT_MAX);
   }
-  if (flag & V3D_OP_PROP_USE_ALL_REGIONS) {
-    PropertyAPI *prop;
-    prop = API_def_boolean(
-        ot->srna, "use_all_regions", 0, "All Regions", "View selected for all regions");
-    API_def_property_flag(prop, PROP_SKIP_SAVE);
+  if (flag & V3D_OP_PROP_USE_ALL_RGNS) {
+    ApiProp *prop;
+    prop = api_def_bool(
+        ot->sapi, "use_all_rgns", 0, "All Rgns", "View selected for all rgns");
+    api_def_prop_flag(prop, PROP_SKIP_SAVE);
   }
   if (flag & V3D_OP_PROP_USE_MOUSE_INIT) {
-    WM_operator_properties_use_cursor_init(ot);
+    win_op_props_use_cursor_init(ot);
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** Generic View Operator Custom-Data **/
-
-void calctrackballvec(const rcti *rect, const int event_xy[2], float r_dir[3])
+/* Generic View Op Custom-Data */
+void calctrackballvec(const rcti *rect, const int ev_xy[2], float r_dir[3])
 {
   const float radius = V3D_OP_TRACKBALLSIZE;
   const float t = radius / (float)M_SQRT2;
-  const float size[2] = {LIB_rcti_size_x(rect), LIB_rcti_size_y(rect)};
+  const float size[2] = {lib_rcti_size_x(rect), lib_rcti_size_y(rect)};
   /* Aspect correct so dragging in a non-square view doesn't squash the direction.
    * So diagonal motion rotates the same direction the cursor is moving. */
   const float size_min = min_ff(size[0], size[1]);
   const float aspect[2] = {size_min / size[0], size_min / size[1]};
 
   /* Normalize x and y. */
-  r_dir[0] = (event_xy[0] - BLI_rcti_cent_x(rect)) / ((size[0] * aspect[0]) / 2.0);
-  r_dir[1] = (event_xy[1] - BLI_rcti_cent_y(rect)) / ((size[1] * aspect[1]) / 2.0);
+  r_dir[0] = (ev_xy[0] - lib_rcti_cent_x(rect)) / ((size[0] * aspect[0]) / 2.0);
+  r_dir[1] = (ev_xy[1] - lib_rcti_cent_y(rect)) / ((size[1] * aspect[1]) / 2.0);
   const float d = len_v2(r_dir);
   if (d < t) {
     /* Inside sphere. */
@@ -138,35 +132,34 @@ void view3d_orbit_apply_dyn_ofs(float r_ofs[3],
 void viewrotate_apply_dyn_ofs(ViewOpsData *vod, const float viewquat_new[4])
 {
   if (vod->use_dyn_ofs) {
-    RegionView3D *rv3d = vod->rv3d;
+    RgnView3D *rv3d = vod->rv3d;
     view3d_orbit_apply_dyn_ofs(
         rv3d->ofs, vod->init.ofs, vod->init.quat, viewquat_new, vod->dyn_ofs);
   }
 }
 
-bool view3d_orbit_calc_center(duneContext *C, float r_dyn_ofs[3])
+bool view3d_orbit_calc_center(Cxt *C, float r_dyn_ofs[3])
 {
   static float lastofs[3] = {0, 0, 0};
   bool is_set = false;
 
-  const Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
-  View3D *v3d = CTX_wm_view3d(C);
-  Object *ob_act_eval = OBACT(view_layer_eval);
-  Object *ob_act = DEG_get_original_object(ob_act_eval);
+  const Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer_eval = graph_get_eval_view_layer(graph);
+  View3D *v3d = cxt_win_view3d(C);
+  Ob *ob_act_eval = OBACT(view_layer_eval);
+  Ob *ob_act = graph_get_original_ob(ob_act_eval);
 
   if (ob_act && (ob_act->mode & OB_MODE_ALL_PAINT) &&
       /* with weight-paint + pose-mode, fall through to using calculateTransformCenter */
-      ((ob_act->mode & OB_MODE_WEIGHT_PAINT) && BKE_object_pose_armature_get(ob_act)) == 0) {
+      ((ob_act->mode & OB_MODE_WEIGHT_PAINT) && dune_ob_pose_armature_get(ob_act)) == 0) {
     /* in case of sculpting use last average stroke position as a rotation
      * center, in other cases it's not clear what rotation center shall be
-     * so just rotate around object origin
-     */
+     * so just rotate around ob origin */
     if (ob_act->mode &
         (OB_MODE_SCULPT | OB_MODE_TEXTURE_PAINT | OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT)) {
       float stroke[3];
-      DUNE_paint_stroke_get_average(scene, ob_act_eval, stroke);
+      dune_paint_stroke_get_average(scene, ob_act_eval, stroke);
       copy_v3_v3(lastofs, stroke);
     }
     else {
@@ -180,7 +173,7 @@ bool view3d_orbit_calc_center(duneContext *C, float r_dyn_ofs[3])
 
     zero_v3(lastofs);
     for (int i = 0; i < 4; i++) {
-      add_v2_v2(lastofs, ef->textcurs[i]);
+      add_v2_v2(lastofs, ef->txtcurs[i]);
     }
     mul_v2_fl(lastofs, 1.0f / 4.0f);
 
@@ -188,35 +181,35 @@ bool view3d_orbit_calc_center(duneContext *C, float r_dyn_ofs[3])
 
     is_set = true;
   }
-  else if (ob_act == NULL || ob_act->mode == OB_MODE_OBJECT) {
-    /* object mode use boundbox centers */
+  else if (ob_act == NULL || ob_act->mode == OB_MODE_OB) {
+    /* ob mode use boundbox centers */
     Base *base_eval;
     uint tot = 0;
-    float select_center[3];
+    float sel_center[3];
 
-    zero_v3(select_center);
+    zero_v3(sel_center);
     for (base_eval = FIRSTBASE(view_layer_eval); base_eval; base_eval = base_eval->next) {
       if (BASE_SELECTED(v3d, base_eval)) {
         /* use the boundbox if we can */
-        Object *ob_eval = base_eval->object;
+        Ob *ob_eval = base_eval->ob;
 
         if (ob_eval->runtime.bb && !(ob_eval->runtime.bb->flag & BOUNDBOX_DIRTY)) {
           float cent[3];
 
-          DUNE_boundbox_calc_center_aabb(ob_eval->runtime.bb, cent);
+          dune_boundbox_calc_center_aabb(ob_eval->runtime.bb, cent);
 
           mul_m4_v3(ob_eval->obmat, cent);
-          add_v3_v3(select_center, cent);
+          add_v3_v3(sel_center, cent);
         }
         else {
-          add_v3_v3(select_center, ob_eval->obmat[3]);
+          add_v3_v3(sel_center, ob_eval->obmat[3]);
         }
         tot++;
       }
     }
     if (tot) {
-      mul_v3_fl(select_center, 1.0f / (float)tot);
-      copy_v3_v3(lastofs, select_center);
+      mul_v3_fl(sel_center, 1.0f / (float)tot);
+      copy_v3_v3(lastofs, sel_center);
       is_set = true;
     }
   }
@@ -230,14 +223,14 @@ bool view3d_orbit_calc_center(duneContext *C, float r_dyn_ofs[3])
   return is_set;
 }
 
-static enum eViewOpsFlag viewops_flag_from_args(bool use_select, bool use_depth)
+static enum eViewOpsFlag viewops_flag_from_args(bool use_sel, bool use_depth)
 {
   enum eViewOpsFlag flag = 0;
-  if (use_select) {
-    flag |= VIEWOPS_FLAG_ORBIT_SELECT;
+  if (use_sel) {
+    flag |= VIEWOPS_FLAG_ORBIT_SEL;
   }
   if (use_depth) {
-    flag |= VIEWOPS_FLAG_DEPTH_NAVIGATE;
+    flag |= VIEWOPS_FLAG_DEPTH_NAV;
   }
 
   return flag;
@@ -245,80 +238,80 @@ static enum eViewOpsFlag viewops_flag_from_args(bool use_select, bool use_depth)
 
 enum eViewOpsFlag viewops_flag_from_prefs(void)
 {
-  return viewops_flag_from_args((U.uiflag & USER_ORBIT_SELECTION) != 0,
-                                (U.uiflag & USER_DEPTH_NAVIGATE) != 0);
+  return viewops_flag_from_args((U.uiflag & USER_ORBIT_SEL) != 0,
+                                (U.uiflag & USER_DEPTH_NAV) != 0);
 }
 
-ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eViewOpsFlag viewops_flag)
+ViewOpsData *viewops_data_create(Cxt *C, const WinEv *ev, enum eViewOpsFlag viewops_flag)
 {
-  ViewOpsData *vod = MEM_callocN(sizeof(ViewOpsData), __func__);
+  ViewOpsData *vod = mem_calloc(sizeof(ViewOpsData), __func__);
 
   /* Store data. */
-  vod->duneMain = CTX_data_main(C);
-  vod->depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  vod->scene = CTX_data_scene(C);
-  vod->area = CTX_wm_area(C);
-  vod->region = CTX_wm_region(C);
+  vod->main = cxt_data_main(C);
+  vod->graph = cxt_data_ensure_eval_graph(C);
+  vod->scene = cxt_data_scene(C);
+  vod->area = cxt_win_area(C);
+  vod->rgn = cxt_win_rgn(C);
   vod->v3d = vod->area->spacedata.first;
-  vod->rv3d = vod->region->regiondata;
+  vod->rv3d = vod->rgn->rhndata;
 
-  Depsgraph *depsgraph = vod->depsgraph;
-  RegionView3D *rv3d = vod->rv3d;
+  Graph *graph = vod->graph;
+  RgnView3D *rv3d = vod->rv3d;
 
   /* Could do this more nicely. */
   if ((viewops_flag & VIEWOPS_FLAG_USE_MOUSE_INIT) == 0) {
-    viewops_flag &= ~VIEWOPS_FLAG_DEPTH_NAVIGATE;
+    viewops_flag &= ~VIEWOPS_FLAG_DEPTH_NAV;
   }
 
   /* we need the depth info before changing any viewport options */
-  if (viewops_flag & VIEWOPS_FLAG_DEPTH_NAVIGATE) {
+  if (viewops_flag & VIEWOPS_FLAG_DEPTH_NAV) {
     float fallback_depth_pt[3];
 
-    view3d_operator_needs_opengl(C); /* Needed for Z-buffer drawing. */
+    view3d_op_needs_opengl(C); /* Needed for Z-buffer drawing. */
 
     negate_v3_v3(fallback_depth_pt, rv3d->ofs);
 
-    vod->use_dyn_ofs = ED_view3d_autodist(
-        depsgraph, vod->region, vod->v3d, event->mval, vod->dyn_ofs, true, fallback_depth_pt);
+    vod->use_dyn_ofs = ed_view3d_autodist(
+        graph, vod->rgn, vod->v3d, ev->mval, vod->dyn_ofs, true, fallback_depth_pt);
   }
   else {
     vod->use_dyn_ofs = false;
   }
 
   if (viewops_flag & VIEWOPS_FLAG_PERSP_ENSURE) {
-    if (ED_view3d_persp_ensure(depsgraph, vod->v3d, vod->region)) {
+    if (ed_view3d_persp_ensure(graph, vod->v3d, vod->region)) {
       /* If we're switching from camera view to the perspective one,
        * need to tag viewport update, so camera view and borders are properly updated. */
-      ED_region_tag_redraw(vod->region);
+      ed_rgn_tag_redraw(vod->region);
     }
   }
 
   /* set the view from the camera, if view locking is enabled.
    * we may want to make this optional but for now its needed always */
-  ED_view3d_camera_lock_init(depsgraph, vod->v3d, vod->rv3d);
+  ed_view3d_camera_lock_init(graph, vod->v3d, vod->rv3d);
 
   vod->init.persp = rv3d->persp;
   vod->init.dist = rv3d->dist;
   vod->init.camzoom = rv3d->camzoom;
   copy_qt_qt(vod->init.quat, rv3d->viewquat);
-  copy_v2_v2_int(vod->init.event_xy, event->xy);
-  copy_v2_v2_int(vod->prev.event_xy, event->xy);
+  copy_v2_v2_int(vod->init.event_xy, ev->xy);
+  copy_v2_v2_int(vod->prev.event_xy, ev->xy);
 
   if (viewops_flag & VIEWOPS_FLAG_USE_MOUSE_INIT) {
-    zero_v2_int(vod->init.event_xy_offset);
+    zero_v2_int(vod->init.ev_xy_offset);
   }
   else {
-    /* Simulate the event starting in the middle of the region. */
-    vod->init.event_xy_offset[0] = LIB_rcti_cent_x(&vod->region->winrct) - event->xy[0];
-    vod->init.event_xy_offset[1] = LIB_rcti_cent_y(&vod->region->winrct) - event->xy[1];
+    /* Simulate the ev starting in the middle of the rgn. */
+    vod->init.ev_xy_offset[0] = lib_rcti_cent_x(&vod->rgn->winrct) - ev->xy[0];
+    vod->init.ev_xy_offset[1] = lib_rcti_cent_y(&vod->rgn->winrct) - ev->xy[1];
   }
 
-  vod->init.event_type = event->type;
+  vod->init.ev_type = ev->type;
   copy_v3_v3(vod->init.ofs, rv3d->ofs);
 
   copy_qt_qt(vod->curr.viewquat, rv3d->viewquat);
 
-  if (viewops_flag & VIEWOPS_FLAG_ORBIT_SELECT) {
+  if (viewops_flag & VIEWOPS_FLAG_ORBIT_SEL) {
     float ofs[3];
     if (view3d_orbit_calc_center(C, ofs) || (vod->use_dyn_ofs == false)) {
       vod->use_dyn_ofs = true;
@@ -327,10 +320,10 @@ ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eVie
     }
   }
 
-  if (viewops_flag & VIEWOPS_FLAG_DEPTH_NAVIGATE) {
+  if (viewops_flag & VIEWOPS_FLAG_DEPTH_NAV) {
     if (vod->use_dyn_ofs) {
       if (rv3d->is_persp) {
-        float my_origin[3]; /* Original #RegionView3D.ofs. */
+        float my_origin[3]; /* Original RgnView3D.ofs. */
         float my_pivot[3];  /* View pivot. */
         float dvec[3];
 
@@ -360,10 +353,10 @@ ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eVie
         negate_v3_v3(rv3d->ofs, dvec);
       }
       else {
-        const float mval_region_mid[2] = {(float)vod->region->winx / 2.0f,
-                                          (float)vod->region->winy / 2.0f};
+        const float mval_rgn_mid[2] = {(float)vod->rgn->winx / 2.0f,
+                                          (float)vod->rgn->winy / 2.0f};
 
-        ED_view3d_win_to_3d(vod->v3d, vod->region, vod->dyn_ofs, mval_region_mid, rv3d->ofs);
+        ed_view3d_win_to_3d(vod->v3d, vod->rgn, vod->dyn_ofs, mval_rgn_mid, rv3d->ofs);
         negate_v3(rv3d->ofs);
       }
       negate_v3(vod->dyn_ofs);
@@ -372,20 +365,20 @@ ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eVie
   }
 
   /* For dolly */
-  ED_view3d_win_to_vector(vod->region, (const float[2]){UNPACK2(event->mval)}, vod->init.mousevec);
+  ed_view3d_win_to_vector(vod->rgn, (const float[2]){UNPACK2(ev->mval)}, vod->init.mousevec);
 
   {
-    int event_xy_offset[2];
-    add_v2_v2v2_int(event_xy_offset, event->xy, vod->init.event_xy_offset);
+    int ev_xy_offset[2];
+    add_v2_v2v2_int(ev_xy_offset, ev->xy, vod->init.ev_xy_offset);
 
     /* For rotation with trackball rotation. */
-    calctrackballvec(&vod->region->winrct, event_xy_offset, vod->init.trackvec);
+    calctrackballvec(&vod->rgn->winrct, ev_xy_offset, vod->init.trackvec);
   }
 
   {
     float tvec[3];
     negate_v3_v3(tvec, rv3d->ofs);
-    vod->init.zfac = ED_view3d_calc_zfac(rv3d, tvec);
+    vod->init.zfac = ed_view3d_calc_zfac(rv3d, tvec);
   }
 
   vod->reverse = 1.0f;
@@ -398,41 +391,37 @@ ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eVie
   return vod;
 }
 
-void viewops_data_free(duneContext *C, ViewOpsData *vod)
+void viewops_data_free(Cxt *C, ViewOpsData *vod)
 {
-  ARegion *region;
+  ARgn *rgn;
   if (vod) {
-    region = vod->region;
+    rgn = vod->rgn;
     vod->rv3d->rflag &= ~RV3D_NAVIGATING;
 
     if (vod->timer) {
-      WM_event_remove_timer(CTX_wm_manager(C), vod->timer->win, vod->timer);
+      win_ev_remove_timer(cxt_wm(C), vod->timer->win, vod->timer);
     }
 
     if (vod->init.dial) {
-      MEM_freeN(vod->init.dial);
+      mem_free(vod->init.dial);
     }
 
-    MEM_freeN(vod);
+    mem_free(vod);
   }
   else {
-    region = CTX_wm_region(C);
+    rgn = cxt_wm(C);
   }
 
-  /* Need to redraw because drawing code uses RV3D_NAVIGATING to draw
-   * faster while navigation operator runs. */
-  ED_region_tag_redraw(region);
+  /* Need to redraw bc drawing code uses RV3D_NAVIGATING to draw
+   * faster while nav op runs. */
+  ed_rgn_tag_redraw(rgn);
 }
 
-/* -------------------------------------------------------------------- */
-/** Generic View Operator Utilities **/
-
-/**
- * param align_to_quat: When not NULL, set the axis relative to this rotation.
- */
-static void axis_set_view(duneContext *C,
+/* Generic View Op Utils **/
+/* param align_to_quat: When not NULL, set the axis relative to this rotation */
+static void axis_set_view(Cxt *C,
                           View3D *v3d,
-                          ARegion *region,
+                          ARgn *rgn,
                           const float quat_[4],
                           char view,
                           char view_axis_roll,
@@ -440,7 +429,7 @@ static void axis_set_view(duneContext *C,
                           const float *align_to_quat,
                           const int smooth_viewtx)
 {
-  RegionView3D *rv3d = region->regiondata; /* no NULL check is needed, poll checks */
+  RgnView3D *rv3d = rgn->rgndata; /* no NULL check is needed, poll checks */
   float quat[4];
   const short orig_persp = rv3d->persp;
 
@@ -458,7 +447,7 @@ static void axis_set_view(duneContext *C,
   }
 
   if (RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) {
-    ED_region_tag_redraw(region);
+    ed_rgn_tag_redraw(rgn);
     return;
   }
 
@@ -471,9 +460,9 @@ static void axis_set_view(duneContext *C,
 
   if (rv3d->persp == RV3D_CAMOB && v3d->camera) {
     /* to camera */
-    ED_view3d_smooth_view(C,
+    ed_view3d_smooth_view(C,
                           v3d,
-                          region,
+                          rgn,
                           smooth_viewtx,
                           &(const V3D_SmoothParams){
                               .camera_old = v3d->camera,
@@ -488,14 +477,14 @@ static void axis_set_view(duneContext *C,
     copy_v3_v3(ofs, rv3d->ofs);
     dist = rv3d->dist;
 
-    /* so we animate _from_ the camera location */
-    Object *camera_eval = DEG_get_evaluated_object(CTX_data_ensure_evaluated_depsgraph(C),
+    /* so we anim _from_ the camera location */
+    Ob *camera_eval = graph_get_eval_ob(cxt_data_ensure_eval_graph(C),
                                                    v3d->camera);
-    ED_view3d_from_object(camera_eval, rv3d->ofs, NULL, &rv3d->dist, NULL);
+    ed_view3d_from_ob(camera_eval, rv3d->ofs, NULL, &rv3d->dist, NULL);
 
-    ED_view3d_smooth_view(C,
+    ed_view3d_smooth_view(C,
                           v3d,
-                          region,
+                          rgn,
                           smooth_viewtx,
                           &(const V3D_SmoothParams){
                               .camera_old = camera_eval,
@@ -505,11 +494,11 @@ static void axis_set_view(duneContext *C,
                           });
   }
   else {
-    /* rotate around selection */
+    /* rotate around sel */
     const float *dyn_ofs_pt = NULL;
     float dyn_ofs[3];
 
-    if (U.uiflag & USER_ORBIT_SELECTION) {
+    if (U.uiflag & USER_ORBIT_SEL) {
       if (view3d_orbit_calc_center(C, dyn_ofs)) {
         negate_v3(dyn_ofs);
         dyn_ofs_pt = dyn_ofs;
@@ -517,9 +506,9 @@ static void axis_set_view(duneContext *C,
     }
 
     /* no camera involved */
-    ED_view3d_smooth_view(C,
+    ed_view3d_smooth_view(C,
                           v3d,
-                          region,
+                          rgn,
                           smooth_viewtx,
                           &(const V3D_SmoothParams){
                               .quat = quat,
@@ -530,58 +519,55 @@ static void axis_set_view(duneContext *C,
 
 void viewmove_apply(ViewOpsData *vod, int x, int y)
 {
-  const float event_ofs[2] = {
-      vod->prev.event_xy[0] - x,
-      vod->prev.event_xy[1] - y,
+  const float ev_ofs[2] = {
+      vod->prev.ev_xy[0] - x,
+      vod->prev.ev_xy[1] - y,
   };
 
-  if ((vod->rv3d->persp == RV3D_CAMOB) && !ED_view3d_camera_lock_check(vod->v3d, vod->rv3d)) {
-    ED_view3d_camera_view_pan(vod->region, event_ofs);
+  if ((vod->rv3d->persp == RV3D_CAMOB) && !ed_view3d_camera_lock_check(vod->v3d, vod->rv3d)) {
+    ed_view3d_camera_view_pan(vod->rgn, ev_ofs);
   }
-  else if (ED_view3d_offset_lock_check(vod->v3d, vod->rv3d)) {
-    vod->rv3d->ofs_lock[0] -= (event_ofs[0] * 2.0f) / (float)vod->region->winx;
-    vod->rv3d->ofs_lock[1] -= (event_ofs[1] * 2.0f) / (float)vod->region->winy;
+  else if (ed_view3d_offset_lock_check(vod->v3d, vod->rv3d)) {
+    vod->rv3d->ofs_lock[0] -= (event_ofs[0] * 2.0f) / (float)vod->rgn->winx;
+    vod->rv3d->ofs_lock[1] -= (event_ofs[1] * 2.0f) / (float)vod->rgn->winy;
   }
   else {
     float dvec[3];
 
-    ED_view3d_win_to_delta(vod->region, event_ofs, vod->init.zfac, dvec);
+    ed_view3d_win_to_delta(vod->rgn, ev_ofs, vod->init.zfac, dvec);
 
     sub_v3_v3(vod->rv3d->ofs, dvec);
 
     if (RV3D_LOCK_FLAGS(vod->rv3d) & RV3D_BOXVIEW) {
-      view3d_boxview_sync(vod->area, vod->region);
+      view3d_boxview_sync(vod->area, vod->rgn);
     }
   }
 
-  vod->prev.event_xy[0] = x;
-  vod->prev.event_xy[1] = y;
+  vod->prev.ev_xy[0] = x;
+  vod->prev.ev_xy[1] = y;
 
-  ED_view3d_camera_lock_sync(vod->depsgraph, vod->v3d, vod->rv3d);
+  ed_view3d_camera_lock_sync(vod->graph, vod->v3d, vod->rv3d);
 
-  ED_region_tag_redraw(vod->region);
+  ed_rgn_tag_redraw(vod->rgn);
 }
 
-/* -------------------------------------------------------------------- */
-/** View All Operator
- * Move & Zoom the view to fit all of its contents.
- **/
-
-static bool view3d_object_skip_minmax(const View3D *v3d,
-                                      const RegionView3D *rv3d,
-                                      const Object *ob,
-                                      const bool skip_camera,
-                                      bool *r_only_center)
+/* View All Op
+ * Move & Zoom the view to fit all of its contents. */
+static bool view3d_ob_skip_minmax(const View3D *v3d,
+                                  const RgnView3D *rv3d,
+                                  const Ob *ob,
+                                  const bool skip_camera,
+                                  bool *r_only_center)
 {
-  LIB_assert(ob->id.orig_id == NULL);
+  lib_assert(ob->id.orig_id == NULL);
   *r_only_center = false;
 
   if (skip_camera && (ob == v3d->camera)) {
     return true;
   }
 
-  if ((ob->type == OB_EMPTY) && (ob->empty_drawtype == OB_EMPTY_IMAGE) &&
-      !DUNE_object_empty_image_frame_is_visible_in_view3d(ob, rv3d)) {
+  if ((ob->type == OB_EMPTY) && (ob->empty_drawtype == OB_EMPTY_IMG) &&
+      !dune_ob_empty_img_frame_is_visible_in_view3d(ob, rv3d)) {
     *r_only_center = true;
     return false;
   }
@@ -589,38 +575,38 @@ static bool view3d_object_skip_minmax(const View3D *v3d,
   return false;
 }
 
-static void view3d_object_calc_minmax(Depsgraph *depsgraph,
-                                      Scene *scene,
-                                      Object *ob_eval,
-                                      const bool only_center,
-                                      float min[3],
-                                      float max[3])
+static void view3d_ob_calc_minmax(Graph *graph,
+                                  Scene *scene,
+                                  Ob *ob_eval,
+                                  const bool only_center,
+                                  float min[3],
+                                  float max[3])
 {
   /* Account for duplis. */
-  if (DUNE_object_minmax_dupli(depsgraph, scene, ob_eval, min, max, false) == 0) {
+  if (dune_ob_minmax_dupli(graph, scene, ob_eval, min, max, false) == 0) {
     /* Use if duplis aren't found. */
     if (only_center) {
       minmax_v3v3_v3(min, max, ob_eval->obmat[3]);
     }
     else {
-      DUNE_object_minmax(ob_eval, min, max, false);
+      dune_ob_minmax(ob_eval, min, max, false);
     }
   }
 }
 
-static void view3d_from_minmax(duneContext *C,
+static void view3d_from_minmax(Cxt *C,
                                View3D *v3d,
-                               ARegion *region,
+                               ARgn *rgn,
                                const float min[3],
                                const float max[3],
                                bool ok_dist,
                                const int smooth_viewtx)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float afm[3];
   float size;
 
-  ED_view3d_smooth_view_force_finish(C, v3d, region);
+  ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
   /* SMOOTHVIEW */
   float new_ofs[3];
@@ -652,9 +638,9 @@ static void view3d_from_minmax(duneContext *C,
     }
 
     if (ok_dist) {
-      Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-      new_dist = ED_view3d_radius_to_dist(
-          v3d, region, depsgraph, persp, true, (size / 2) * VIEW3D_MARGIN);
+      Graph *graph = cxt_data_ensure_eval_graph(C);
+      new_dist = ed_view3d_radius_to_dist(
+          v3d, rgn, graph, persp, true, (size / 2) * VIEW3D_MARGIN);
       if (rv3d->is_persp) {
         /* don't zoom closer than the near clipping plane */
         new_dist = max_ff(new_dist, v3d->clip_start * 1.5f);
@@ -665,11 +651,11 @@ static void view3d_from_minmax(duneContext *C,
   mid_v3_v3v3(new_ofs, min, max);
   negate_v3(new_ofs);
 
-  if (rv3d->persp == RV3D_CAMOB && !ED_view3d_camera_lock_check(v3d, rv3d)) {
+  if (rv3d->persp == RV3D_CAMOB && !ed_view3d_camera_lock_check(v3d, rv3d)) {
     rv3d->persp = RV3D_PERSP;
-    ED_view3d_smooth_view(C,
+    ed_view3d_smooth_view(C,
                           v3d,
-                          region,
+                          rgn,
                           smooth_viewtx,
                           &(const V3D_SmoothParams){
                               .camera_old = v3d->camera,
@@ -678,9 +664,9 @@ static void view3d_from_minmax(duneContext *C,
                           });
   }
   else {
-    ED_view3d_smooth_view(C,
+    ed_view3d_smooth_view(C,
                           v3d,
-                          region,
+                          rgn,
                           smooth_viewtx,
                           &(const V3D_SmoothParams){
                               .ofs = new_ofs,
@@ -691,43 +677,43 @@ static void view3d_from_minmax(duneContext *C,
   /* Smooth-view does view-lock RV3D_BOXVIEW copy. */
 }
 
-/** Same as view3d_from_minmax but for all regions except cameras **/
-static void view3d_from_minmax_multi(duneContext *C,
+/* Same as view3d_from_minmax but for all rgns except cameras */
+static void view3d_from_minmax_multi(Cxt *C,
                                      View3D *v3d,
                                      const float min[3],
                                      const float max[3],
                                      const bool ok_dist,
                                      const int smooth_viewtx)
 {
-  ScrArea *area = CTX_wm_area(C);
-  ARegion *region;
-  for (region = area->regionbase.first; region; region = region->next) {
-    if (region->regiontype == RGN_TYPE_WINDOW) {
-      RegionView3D *rv3d = region->regiondata;
-      /* when using all regions, don't jump out of camera view,
+  ScrArea *area = cxt_win_area(C);
+  ARrn *rgn;
+  for (rgn = area->rgnbase.first; rgn; rgn = rgn->next) {
+    if (rgn->rgntype == RGN_TYPE_WIN) {
+      RgnView3D *rv3d = rgn->rgndata;
+      /* when using all rgns, don't jump out of camera view,
        * but _do_ allow locked cameras to be moved */
-      if ((rv3d->persp != RV3D_CAMOB) || ED_view3d_camera_lock_check(v3d, rv3d)) {
-        view3d_from_minmax(C, v3d, region, min, max, ok_dist, smooth_viewtx);
+      if ((rv3d->persp != RV3D_CAMOB) || ed_view3d_camera_lock_check(v3d, rv3d)) {
+        view3d_from_minmax(C, v3d, rgn, min, max, ok_dist, smooth_viewtx);
       }
     }
   }
 }
 
-static int view3d_all_exec(bContext *C, wmOperator *op)
+static int view3d_all_ex(Cxt *C, WinOp *op)
 {
-  ARegion *region = CTX_wm_region(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  Scene *scene = CTX_data_scene(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
+  ARgn *rgn = cxt_win_rgn(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewLayer *view_layer_eval = graph_get_eval_view_layer(graph);
   Base *base_eval;
-  const bool use_all_regions = API_boolean_get(op->ptr, "use_all_regions");
-  const bool skip_camera = (ED_view3d_camera_lock_check(v3d, region->regiondata) ||
-                            /* any one of the regions may be locked */
-                            (use_all_regions && v3d->flag2 & V3D_LOCK_CAMERA));
-  const bool center = API_boolean_get(op->ptr, "center");
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const bool use_all_rgns = api_bool_get(op->ptr, "use_all_rgns");
+  const bool skip_camera = (ed_view3d_camera_lock_check(v3d, rgn->rgndata) ||
+                            /* any one of the rgns may be locked */
+                            (use_all_rgns && v3d->flag2 & V3D_LOCK_CAMERA));
+  const bool center = api_bool_get(op->ptr, "center");
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   float min[3], max[3];
   bool changed = false;
@@ -740,103 +726,99 @@ static int view3d_all_exec(bContext *C, wmOperator *op)
     zero_v3(cursor->location);
     float mat3[3][3];
     unit_m3(mat3);
-    DUNE_scene_cursor_mat3_to_rot(cursor, mat3, false);
+    dune_scene_cursor_mat3_to_rot(cursor, mat3, false);
   }
   else {
     INIT_MINMAX(min, max);
   }
 
-  for (base_eval = view_layer_eval->object_bases.first; base_eval; base_eval = base_eval->next) {
+  for (base_eval = view_layer_eval->ob_bases.first; base_eval; base_eval = base_eval->next) {
     if (BASE_VISIBLE(v3d, base_eval)) {
       bool only_center = false;
-      Object *ob = DEG_get_original_object(base_eval->object);
-      if (view3d_object_skip_minmax(v3d, rv3d, ob, skip_camera, &only_center)) {
+      Ob *ob = graph_get_original_ob(base_eval->ob);
+      if (view3d_ob_skip_minmax(v3d, rv3d, ob, skip_camera, &only_center)) {
         continue;
       }
-      view3d_object_calc_minmax(depsgraph, scene, base_eval->object, only_center, min, max);
+      view3d_ob_calc_minmax(graph, scene, base_eval->ob, only_center, min, max);
       changed = true;
     }
   }
 
   if (center) {
-    struct wmMsgBus *mbus = CTX_wm_message_bus(C);
-    WM_msg_publish_rna_prop(mbus, &scene->id, &scene->cursor, View3DCursor, location);
+    struct WinMsgBus *mbus = cxt_win_msg_bus(C);
+    win_msg_publish_api_prop(mbus, &scene->id, &scene->cursor, View3DCursor, location);
 
-    DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
   }
 
   if (!changed) {
-    ED_region_tag_redraw(region);
+    ed_rgn_tag_redraw(rgn);
     /* TODO: should this be cancel?
      * I think no, because we always move the cursor, with or without
-     * object, but in this case there is no change in the scene,
-     * only the cursor so I choice a ED_region_tag like
+     * ob, but in this case there is no change in the scene,
+     * only the cursor so I choice a ed_rgn_tag like
      * view3d_smooth_view do for the center_cursor.
-     * See bug T22640.
-     */
-    return OPERATOR_FINISHED;
+     * See bug T22640.  */
+    return OP_FINISHED;
   }
 
   if (RV3D_CLIPPING_ENABLED(v3d, rv3d)) {
-    /* This is an approximation, see function documentation for details. */
-    ED_view3d_clipping_clamp_minmax(rv3d, min, max);
+    /* This is an approximation, see fn documentation for details */
+    ed_view3d_clipping_clamp_minmax(rv3d, min, max);
   }
 
-  if (use_all_regions) {
+  if (use_all_rgns) {
     view3d_from_minmax_multi(C, v3d, min, max, true, smooth_viewtx);
   }
   else {
-    view3d_from_minmax(C, v3d, region, min, max, true, smooth_viewtx);
+    view3d_from_minmax(C, v3d, rgn, min, max, true, smooth_viewtx);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_all(wmOperatorType *ot)
+void VIEW3D_OT_view_all(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Frame All";
-  ot->description = "View all objects in scene";
+  ot->description = "View all obs in scene";
   ot->idname = "VIEW3D_OT_view_all";
 
-  /* api callbacks */
-  ot->exec = view3d_all_exec;
-  ot->poll = ED_operator_region_view3d_active;
+  /* api cbs */
+  ot->ex = view3d_all_ex;
+  ot->poll = ed_op_rgn_view3d_active;
 
   /* flags */
   ot->flag = 0;
 
-  /* properties */
-  view3d_operator_properties_common(ot, V3D_OP_PROP_USE_ALL_REGIONS);
-  API_def_boolean(ot->srna, "center", 0, "Center", "");
+  /* props */
+  view3d_op_props_common(ot, V3D_OP_PROP_USE_ALL_RGNS);
+  api_def_bool(ot->sapi, "center", 0, "Center", "");
 }
 
-/* -------------------------------------------------------------------- */
-/** Frame Selected Operator
- *  Move & Zoom the view to fit selected contents.
- **/
-
-static int viewselected_exec(duneContext *C, wmOperator *op)
+/* Frame Selected Op
+ * Move & Zoom the view to fit selected contents */
+static int viewselected_ex(Cxt *C, WinOp *op)
 {
-  ARegion *region = CTX_wm_region(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  Scene *scene = CTX_data_scene(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
-  Object *ob_eval = OBACT(view_layer_eval);
-  Object *obedit = CTX_data_edit_object(C);
-  const bGPdata *gpd_eval = ob_eval && (ob_eval->type == OB_GPENCIL) ? ob_eval->data : NULL;
-  const bool is_gp_edit = gpd_eval ? GPENCIL_ANY_MODE(gpd_eval) : false;
-  const bool is_face_map = ((is_gp_edit == false) && region->gizmo_map &&
-                            WM_gizmomap_is_any_selected(region->gizmo_map));
+  ARgn *rgn = cxt_win_rgn(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewLayer *view_layer_eval = graph_get_eval_view_layer(graph);
+  Ob *ob_eval = OBACT(view_layer_eval);
+  Ob *obedit = cxt_data_edit_ob(C);
+  const PenData *pdata_eval = ob_eval && (ob_eval->type == OB_PEN) ? ob_eval->data : NULL;
+  const bool is_pen_edit = pdata_eval ? PEN_ANY_MODE(pdata_eval) : false;
+  const bool is_face_map = ((is_pen_edit == false) && rgn->gizmo_map &&
+                            win_gizmomap_is_any_selected(rgn->gizmo_map));
   float min[3], max[3];
   bool ok = false, ok_dist = true;
-  const bool use_all_regions = API_boolean_get(op->ptr, "use_all_regions");
-  const bool skip_camera = (ED_view3d_camera_lock_check(v3d, region->regiondata) ||
-                            /* any one of the regions may be locked */
-                            (use_all_regions && v3d->flag2 & V3D_LOCK_CAMERA));
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const bool use_all_rgns = api_bool_get(op->ptr, "use_all_regns");
+  const bool skip_camera = (ed_view3d_camera_lock_check(v3d, rgn->rgndata) ||
+                            /* any one of the rgns may be locked */
+                            (use_all_rgns && v3d->flag2 & V3D_LOCK_CAMERA));
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   INIT_MINMAX(min, max);
   if (is_face_map) {
@@ -846,47 +828,47 @@ static int viewselected_exec(duneContext *C, wmOperator *op)
   if (ob_eval && (ob_eval->mode & OB_MODE_WEIGHT_PAINT)) {
     /* hard-coded exception, we look for the one selected armature */
     /* this is weak code this way, we should make a generic
-     * active/selection callback interface once... */
+     * active/selection cb interface once... */
     Base *base_eval;
-    for (base_eval = view_layer_eval->object_bases.first; base_eval; base_eval = base_eval->next) {
+    for (base_eval = view_layer_eval->ob_bases.first; base_eval; base_eval = base_eval->next) {
       if (BASE_SELECTED_EDITABLE(v3d, base_eval)) {
-        if (base_eval->object->type == OB_ARMATURE) {
-          if (base_eval->object->mode & OB_MODE_POSE) {
+        if (base_eval->ob->type == OB_ARMATURE) {
+          if (base_eval->ob->mode & OB_MODE_POSE) {
             break;
           }
         }
       }
     }
     if (base_eval) {
-      ob_eval = base_eval->object;
+      ob_eval = base_eval->ob;
     }
   }
 
-  if (is_gp_edit) {
-    CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
+  if (is_pen_edit) {
+    CXT_DATA_BEGIN (C, PenDataStroke *, pds, editable_pen_strokes) {
       /* we're only interested in selected points here... */
-      if ((gps->flag & GP_STROKE_SELECT) && (gps->flag & GP_STROKE_3DSPACE)) {
-        ok |= DUNE_gpencil_stroke_minmax(gps, true, min, max);
+      if ((pds->flag & PEN_STROKE_SEL) && (pds->flag & PEN_STROKE_3DSPACE)) {
+        ok |= dune_pen_stroke_minmax(pds, true, min, max);
       }
-      if (gps->editcurve != NULL) {
-        for (int i = 0; i < gps->editcurve->tot_curve_points; i++) {
-          BezTriple *bezt = &gps->editcurve->curve_points[i].bezt;
-          if ((bezt->f1 & SELECT)) {
+      if (pds->editcurve != NULL) {
+        for (int i = 0; i < pds->editcurve->tot_curve_points; i++) {
+          BezTriple *bezt = &pds->editcurve->curve_points[i].bezt;
+          if ((bezt->f1 & SEL)) {
             minmax_v3v3_v3(min, max, bezt->vec[0]);
             ok = true;
           }
-          if ((bezt->f2 & SELECT)) {
+          if ((bezt->f2 & SEL)) {
             minmax_v3v3_v3(min, max, bezt->vec[1]);
             ok = true;
           }
-          if ((bezt->f3 & SELECT)) {
+          if ((bezt->f3 & SEL)) {
             minmax_v3v3_v3(min, max, bezt->vec[2]);
             ok = true;
           }
         }
       }
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
 
     if ((ob_eval) && (ok)) {
       mul_m4_v3(ob_eval->obmat, min);
@@ -894,31 +876,31 @@ static int viewselected_exec(duneContext *C, wmOperator *op)
     }
   }
   else if (is_face_map) {
-    ok = WM_gizmomap_minmax(region->gizmo_map, true, true, min, max);
+    ok = win_gizmomap_minmax(rgn->gizmo_map, true, true, min, max);
   }
   else if (obedit) {
     /* only selected */
-    FOREACH_OBJECT_IN_MODE_BEGIN (view_layer_eval, v3d, obedit->type, obedit->mode, ob_eval_iter) {
-      ok |= ED_view3d_minmax_verts(ob_eval_iter, min, max);
+    FOREACH_OB_IN_MODE_BEGIN (view_layer_eval, v3d, obedit->type, obedit->mode, ob_eval_iter) {
+      ok |= ed_view3d_minmax_verts(ob_eval_iter, min, max);
     }
-    FOREACH_OBJECT_IN_MODE_END;
+    FOREACH_OB_IN_MODE_END;
   }
   else if (ob_eval && (ob_eval->mode & OB_MODE_POSE)) {
-    FOREACH_OBJECT_IN_MODE_BEGIN (
+    FOREACH_OB_IN_MODE_BEGIN (
         view_layer_eval, v3d, ob_eval->type, ob_eval->mode, ob_eval_iter) {
-      ok |= DUNE_pose_minmax(ob_eval_iter, min, max, true, true);
+      ok |= dune_pose_minmax(ob_eval_iter, min, max, true, true);
     }
-    FOREACH_OBJECT_IN_MODE_END;
+    FOREACH_OB_IN_MODE_END;
   }
-  else if (DUNE_paint_select_face_test(ob_eval)) {
+  else if (dune_paint_sel_face_test(ob_eval)) {
     ok = paintface_minmax(ob_eval, min, max);
   }
   else if (ob_eval && (ob_eval->mode & OB_MODE_PARTICLE_EDIT)) {
-    ok = PE_minmax(depsgraph, scene, CTX_data_view_layer(C), min, max);
+    ok = PE_minmax(graph, scene, cxt_data_view_layer(C), min, max);
   }
   else if (ob_eval && (ob_eval->mode & (OB_MODE_SCULPT | OB_MODE_VERTEX_PAINT |
                                         OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))) {
-    DUNE_paint_stroke_get_average(scene, ob_eval, min);
+    dune_paint_stroke_get_average(scene, ob_eval, min);
     copy_v3_v3(max, min);
     ok = true;
     ok_dist = 0; /* don't zoom */
@@ -928,137 +910,134 @@ static int viewselected_exec(duneContext *C, wmOperator *op)
     for (base_eval = FIRSTBASE(view_layer_eval); base_eval; base_eval = base_eval->next) {
       if (BASE_SELECTED(v3d, base_eval)) {
         bool only_center = false;
-        Object *ob = DEG_get_original_object(base_eval->object);
-        if (view3d_object_skip_minmax(v3d, rv3d, ob, skip_camera, &only_center)) {
+        Ob *ob = _get_original_ob(base_eval->ob);
+        if (view3d_ob_skip_minmax(v3d, rv3d, ob, skip_camera, &only_center)) {
           continue;
         }
-        view3d_object_calc_minmax(depsgraph, scene, base_eval->object, only_center, min, max);
+        view3d_ob_calc_minmax(graph, scene, base_eval->ob, only_center, min, max);
         ok = 1;
       }
     }
   }
 
   if (ok == 0) {
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
   if (RV3D_CLIPPING_ENABLED(v3d, rv3d)) {
-    /* This is an approximation, see function documentation for details. */
-    ED_view3d_clipping_clamp_minmax(rv3d, min, max);
+    /* This is an approximation, see fn documentation for details. */
+    ed_view3d_clipping_clamp_minmax(rv3d, min, max);
   }
 
-  if (use_all_regions) {
+  if (use_all_rgns) {
     view3d_from_minmax_multi(C, v3d, min, max, ok_dist, smooth_viewtx);
   }
   else {
-    view3d_from_minmax(C, v3d, region, min, max, ok_dist, smooth_viewtx);
+    view3d_from_minmax(C, v3d, rgn, min, max, ok_dist, smooth_viewtx);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_selected(wmOperatorType *ot)
+void VIEW3D_OT_view_selected(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Frame Selected";
-  ot->description = "Move the view to the selection center";
+  ot->description = "Move the view to the sel center";
   ot->idname = "VIEW3D_OT_view_selected";
 
-  /* api callbacks */
-  ot->exec = viewselected_exec;
+  /* api cbs */
+  ot->ex = viewselected_ex;
   ot->poll = view3d_zoom_or_dolly_poll;
 
   /* flags */
   ot->flag = 0;
 
-  /* properties */
-  view3d_operator_properties_common(ot, V3D_OP_PROP_USE_ALL_REGIONS);
+  /* props */
+  view3d_op_props_common(ot, V3D_OP_PROP_USE_ALL_RGNS);
 }
 
-/* -------------------------------------------------------------------- */
-/** View Center Cursor Operator **/
-
-static int viewcenter_cursor_exec(bContext *C, wmOperator *op)
+/* View Center Cursor Op */
+static int viewcenter_cursor_ex(Cxt *C, WinOp *op)
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  Scene *scene = CTX_data_scene(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  Scene *scene = cxt_data_scene(C);
 
   if (rv3d) {
-    ARegion *region = CTX_wm_region(C);
-    const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+    ARgn *rgn = cxt_win_rgn(C);
+    const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
-    ED_view3d_smooth_view_force_finish(C, v3d, region);
+    ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
     /* non camera center */
     float new_ofs[3];
     negate_v3_v3(new_ofs, scene->cursor.location);
-    ED_view3d_smooth_view(
-        C, v3d, region, smooth_viewtx, &(const V3D_SmoothParams){.ofs = new_ofs});
+    ed_view3d_smooth_view(
+        C, v3d, rgn, smooth_viewtx, &(const V3D_SmoothParams){.ofs = new_ofs});
 
-    /* Smooth view does view-lock #RV3D_BOXVIEW copy. */
+    /* Smooth view does view-lock RV3D_BOXVIEW copy. */
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_center_cursor(wmOperatorType *ot)
+void VIEW3D_OT_view_center_cursor(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Center View to Cursor";
   ot->description = "Center the view so that the cursor is in the middle of the view";
   ot->idname = "VIEW3D_OT_view_center_cursor";
 
-  /* api callbacks */
-  ot->exec = viewcenter_cursor_exec;
+  /* api cbs */
+  ot->ex = viewcenter_cursor_ex;
   ot->poll = view3d_location_poll;
 
   /* flags */
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** View Center Pick Operator **/
 
-static int viewcenter_pick_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* View Center Pick Op */
+static int viewcenter_pick_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  ARegion *region = CTX_wm_region(C);
+  View3D *v3d = cxt_win_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
   if (rv3d) {
-    struct Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+    struct Graph *graph = cxt_data_ensure_eval_graph(C);
     float new_ofs[3];
-    const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+    const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
-    ED_view3d_smooth_view_force_finish(C, v3d, region);
+    ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
-    view3d_operator_needs_opengl(C);
+    view3d_op_needs_opengl(C);
 
-    if (ED_view3d_autodist(depsgraph, region, v3d, event->mval, new_ofs, false, NULL)) {
+    if (ed_view3d_autodist(graph, rgn, v3d, ev->mval, new_ofs, false, NULL)) {
       /* pass */
     }
     else {
       /* fallback to simple pan */
       negate_v3_v3(new_ofs, rv3d->ofs);
-      ED_view3d_win_to_3d_int(v3d, region, new_ofs, event->mval, new_ofs);
+      ed_view3d_win_to_3d_int(v3d, rgn, new_ofs, ev->mval, new_ofs);
     }
     negate_v3(new_ofs);
-    ED_view3d_smooth_view(
-        C, v3d, region, smooth_viewtx, &(const V3D_SmoothParams){.ofs = new_ofs});
+    ed_view3d_smooth_view(
+        C, v3d, rgn, smooth_viewtx, &(const V3D_SmoothParams){.ofs = new_ofs});
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_center_pick(wmOperatorType *ot)
+void VIEW3D_OT_view_center_pick(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Center View to Mouse";
   ot->description = "Center the view to the Z-depth position under the mouse cursor";
   ot->idname = "VIEW3D_OT_view_center_pick";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = viewcenter_pick_invoke;
   ot->poll = view3d_location_poll;
 
@@ -1066,10 +1045,8 @@ void VIEW3D_OT_view_center_pick(wmOperatorType *ot)
   ot->flag = 0;
 }
 
-/* -------------------------------------------------------------------- */
-/** View Axis Operator **/
-
-static const EnumPropertyItem prop_view_items[] = {
+/* View Axis Op */
+static const EnumPropItem prop_view_items[] = {
     {RV3D_VIEW_LEFT, "LEFT", ICON_TRIA_LEFT, "Left", "View from the left"},
     {RV3D_VIEW_RIGHT, "RIGHT", ICON_TRIA_RIGHT, "Right", "View from the right"},
     {RV3D_VIEW_BOTTOM, "BOTTOM", ICON_TRIA_DOWN, "Bottom", "View from the bottom"},
@@ -1079,43 +1056,43 @@ static const EnumPropertyItem prop_view_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static int view_axis_exec(duneContext *C, wmOperator *op)
+static int view_axis_ex(Cxt *C, WinOp *op)
 {
   View3D *v3d;
-  ARegion *region;
-  RegionView3D *rv3d;
+  ARgn *rgn;
+  RgnView3D *rv3d;
   static int perspo = RV3D_PERSP;
   int viewnum;
   int view_axis_roll = RV3D_VIEW_AXIS_ROLL_0;
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   /* no NULL check is needed, poll checks */
-  ED_view3d_context_user_region(C, &v3d, &region);
-  rv3d = region->regiondata;
+  ed_view3d_cxt_user_rgn(C, &v3d, &rgn);
+  rv3d = rgn->rgndata;
 
-  ED_view3d_smooth_view_force_finish(C, v3d, region);
+  ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
   viewnum = API_enum_get(op->ptr, "type");
 
   float align_quat_buf[4];
   float *align_quat = NULL;
 
-  if (API_boolean_get(op->ptr, "align_active")) {
-    /* align to active object */
-    Object *obact = CTX_data_active_object(C);
+  if (api_bool_get(op->ptr, "align_active")) {
+    /* align to active ob */
+    Ob *obact = cxt_data_active_ob(C);
     if (obact != NULL) {
       float twmat[3][3];
-      struct ViewLayer *view_layer = CTX_data_view_layer(C);
-      Object *obedit = CTX_data_edit_object(C);
+      struct ViewLayer *view_layer = cx_data_view_layer(C);
+      Ob *obedit = cxt_data_edit_ob(C);
       /* same as transform gizmo when normal is set */
-      ED_getTransformOrientationMatrix(view_layer, v3d, obact, obedit, V3D_AROUND_ACTIVE, twmat);
+      ed_getTransformOrientationMatrix(view_layer, v3d, obact, obedit, V3D_AROUND_ACTIVE, twmat);
       align_quat = align_quat_buf;
       mat3_to_quat(align_quat, twmat);
       invert_qt_normalized(align_quat);
     }
   }
 
-  if (API_boolean_get(op->ptr, "relative")) {
+  if (api_bool_get(op->ptr, "relative")) {
     float quat_rotate[4];
     float quat_test[4];
 
@@ -1138,7 +1115,7 @@ static int view_axis_exec(duneContext *C, wmOperator *op)
       axis_angle_to_quat(quat_rotate, rv3d->viewinv[0], M_PI);
     }
     else {
-      LIB_assert(0);
+      lib_assert(0);
     }
 
     mul_qt_qtqt(quat_test, rv3d->viewquat, quat_rotate);
@@ -1149,7 +1126,7 @@ static int view_axis_exec(duneContext *C, wmOperator *op)
     for (int i = RV3D_VIEW_FRONT; i <= RV3D_VIEW_BOTTOM; i++) {
       for (int j = RV3D_VIEW_AXIS_ROLL_0; j <= RV3D_VIEW_AXIS_ROLL_270; j++) {
         float quat_axis[4];
-        ED_view3d_quat_from_axis_view(i, j, quat_axis);
+        ed_view3d_quat_from_axis_view(i, j, quat_axis);
         if (align_quat) {
           mul_qt_qtqt(quat_axis, quat_axis, align_quat);
         }
@@ -1167,7 +1144,7 @@ static int view_axis_exec(duneContext *C, wmOperator *op)
     }
 
     /* Disallow non-upright views in turn-table modes,
-     * it's too difficult to navigate out of them. */
+     * it's too difficult to nav out of them. */
     if ((U.flag & USER_TRACKBALL) == 0) {
       if (!ELEM(view_best, RV3D_VIEW_TOP, RV3D_VIEW_BOTTOM)) {
         view_axis_roll_best = RV3D_VIEW_AXIS_ROLL_0;
@@ -1181,26 +1158,26 @@ static int view_axis_exec(duneContext *C, wmOperator *op)
   /* Use this to test if we started out with a camera */
   const int nextperspo = (rv3d->persp == RV3D_CAMOB) ? rv3d->lpersp : perspo;
   float quat[4];
-  ED_view3d_quat_from_axis_view(viewnum, view_axis_roll, quat);
+  ed_view3d_quat_from_axis_view(viewnum, view_axis_roll, quat);
   axis_set_view(
-      C, v3d, region, quat, viewnum, view_axis_roll, nextperspo, align_quat, smooth_viewtx);
+      C, v3d, rgn, quat, viewnum, view_axis_roll, nextperspo, align_quat, smooth_viewtx);
 
   perspo = rv3d->persp;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_view_axis(wmOperatorType *ot)
+void VIEW3D_OT_view_axis(WinOpType *ot)
 {
-  PropertyAPI *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "View Axis";
   ot->description = "Use a preset viewpoint";
   ot->idname = "VIEW3D_OT_view_axis";
 
-  /* api callbacks */
-  ot->exec = view_axis_exec;
+  /* api cbs */
+  ot->ex = view_axis_ex;
   ot->poll = ED_operator_rv3d_user_region_poll;
 
   /* flags */
