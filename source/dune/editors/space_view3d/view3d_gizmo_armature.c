@@ -1,43 +1,38 @@
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.h"
-#include "BKE_context.h"
-#include "BKE_layer.h"
-#include "BKE_object.h"
+#include "dune_action.h"
+#include "dune_armature.h"
+#include "dune_cxt.h"
+#include "dune_layer.h"
+#include "dune_ob.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_object_types.h"
+#include "types_armature.h"
+#include "types_ob.h"
 
-#include "ED_armature.h"
-#include "ED_gizmo_library.h"
-#include "ED_screen.h"
+#include "ed_armature.h"
+#include "ed_gizmo_lib.h"
+#include "ed_screen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
-
+#include "win_api.h"
+#include "win_types.h"
 #include "view3d_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Armature Spline Gizmo
- * \{ */
+/* Armature Spline Gizmo */
 
-/*
- * TODO(campbell): Current conversion is a approximation (usable not correct),
+/* TODO: Current conversion is a approximation (usable not correct),
  * we'll need to take the next/previous bones into account to get the tangent directions.
- * First last matrices from 'BKE_pchan_bbone_spline_setup' are close but also not quite accurate
+ * First last matrices from 'dune_pchan_bbone_spline_setup' are close but also not quite accurate
  * since they're not at either end-points on the curve.
  *
- * Likely we'll need a function especially to get the first/last orientations.
- */
+ * Likely we'll need a fn especially to get the first/last orientations. */
 
 #define BBONE_SCALE_Y 3.0f
 
