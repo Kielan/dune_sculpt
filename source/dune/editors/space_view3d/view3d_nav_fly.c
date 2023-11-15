@@ -1,12 +1,6 @@
-/** \file
- * \ingroup spview3d
- *
- * Interactive fly navigation modal operator (flying around in space).
- *
- * \note Similar logic to `view3d_navigate_walk.c` changes here may apply there too.
- */
-
-/* defines VIEW3D_OT_fly modal operator */
+/* Interactive fly nav modal op (flying around in space).
+ * Similar logic to `view3d_nav_walk.c` changes here may apply there too. */
+/* defines VIEW3D_OT_fly modal op */
 
 #ifdef WITH_INPUT_NDOF
 //#  define NDOF_FLY_DEBUG
@@ -14,42 +8,40 @@
 //#  define NDOF_FLY_DRAW_TOOMUCH
 #endif /* WITH_INPUT_NDOF */
 
-#include "DNA_object_types.h"
+#include "types_ob.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
+#include "lib_dunelib.h"
+#include "lib_math.h"
 
-#include "BKE_context.h"
-#include "BKE_report.h"
+#include "dune_cxt.h"
+#include "dune_report.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
-#include "ED_screen.h"
-#include "ED_space_api.h"
+#include "ed_screen.h"
+#include "ed_space_api.h"
 
 #include "PIL_time.h" /* Smooth-view. */
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h"
 
-#include "GPU_immediate.h"
+#include "gpu_immediate.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 #include "view3d_intern.h" /* own include */
-#include "view3d_navigate.h"
+#include "view3d_nav.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Modal Key-map
- * \{ */
+/* Modal Key-map */
 
 /* NOTE: these defines are saved in keymap files,
- * do not change values but just add new ones */
+ * do not change vals but just add new ones */
 enum {
   FLY_MODAL_CANCEL = 1,
   FLY_MODAL_CONFIRM,
@@ -77,18 +69,18 @@ typedef enum eFlyPanState {
   /* disabled */
   FLY_AXISLOCK_STATE_OFF = 0,
 
-  /* enabled but not checking because mouse hasn't moved outside the margin since locking was
+  /* enabled but not checking bc mouse hasn't moved outside the margin since locking was
    * checked an not needed when the mouse moves, locking is set to 2 so checks are done. */
   FLY_AXISLOCK_STATE_IDLE = 1,
 
   /* mouse moved and checking needed,
-   * if no view altering is done its changed back to #FLY_AXISLOCK_STATE_IDLE */
+   * if no view altering is done its changed back to FLY_AXISLOCK_STATE_IDLE */
   FLY_AXISLOCK_STATE_ACTIVE = 2,
 } eFlyPanState;
 
-void fly_modal_keymap(wmKeyConfig *keyconf)
+void fly_modal_keymap(WinKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {FLY_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
       {FLY_MODAL_CANCEL, "CANCEL", 0, "Cancel", ""},
 
@@ -117,114 +109,101 @@ void fly_modal_keymap(wmKeyConfig *keyconf)
       {0, NULL, 0, NULL, NULL},
   };
 
-  wmKeyMap *keymap = WM_modalkeymap_find(keyconf, "View3D Fly Modal");
+  WinKeyMap *keymap = win_modalkeymap_find(keyconf, "View3D Fly Modal");
 
-  /* this function is called for each spacetype, only needs to add map once */
+  /* this fn is called for each spacetype, only needs to add map once */
   if (keymap && keymap->modal_items) {
     return;
   }
 
-  keymap = WM_modalkeymap_ensure(keyconf, "View3D Fly Modal", modal_items);
+  keymap = win_modalkeymap_ensure(keyconf, "View3D Fly Modal", modal_items);
 
-  /* assign map to operators */
-  WM_modalkeymap_assign(keymap, "VIEW3D_OT_fly");
+  /* assign map to ops */
+  win_modalkeymap_assign(keymap, "VIEW3D_OT_fly");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Fly Structs
- * \{ */
-
+/* Internal Fly Structs */
 typedef struct FlyInfo {
-  /* context stuff */
-  RegionView3D *rv3d;
+  /* cxt stuff */
+  RgnView3D *rv3d;
   View3D *v3d;
-  ARegion *region;
-  struct Depsgraph *depsgraph;
+  ARgn *rgn;
+  struct Graph *graph;
   Scene *scene;
 
-  /** Needed for updating that isn't triggered by input. */
-  wmTimer *timer;
+  /* Needed for updating that isn't triggered by input. */
+  WinTimer *timer;
 
   short state;
   bool redraw;
   bool use_precision;
-  /** If the user presses shift they can look about without moving the direction there looking. */
+  /* If the user presses shift they can look about without moving the direction there looking. */
   bool use_freelook;
 
-  /**
-   * Needed for auto-keyframing, when animation isn't playing, only keyframe on confirmation.
-   *
-   * Currently we can't cancel this operator usefully while recording on animation playback
-   * (this would need to un-key all previous frames).
-   */
+  /* Needed for auto-keyframing, when anim isn't playing, only keyframe on confirmation.
+   * Currently we can't cancel this op usefully while recording on anim playback
+   * (this would need to un-key all previous frames). */
   bool anim_playing;
 
-  /** Latest 2D mouse values. */
+  /* Latest 2D mouse vals. */
   int mval[2];
-  /** Center mouse values. */
+  /* Center mouse vals. */
   int center_mval[2];
-  /** Camera viewport dimensions. */
+  /* Camera viewport dimensions. */
   float width, height;
 
 #ifdef WITH_INPUT_NDOF
-  /** Latest 3D mouse values. */
-  wmNDOFMotionData *ndof;
+  /* Latest 3D mouse values. */
+  WinNDOFMotionData *ndof;
 #endif
 
   /* Fly state. */
-  /** The speed the view is moving per redraw. */
+  /* The speed the view is moving per redraw. */
   float speed;
-  /** Axis index to move along by default Z to move along the view. */
+  /* Axis index to move along by default Z to move along the view. */
   short axis;
-  /** When true, pan the view instead of rotating. */
+  /* When true, pan the view instead of rotating. */
   bool pan_view;
 
   eFlyPanState xlock, zlock;
-  /** Nicer dynamics. */
+  /* Nicer dynamics. */
   float xlock_momentum, zlock_momentum;
-  /** World scale 1.0 default. */
+  /* World scale 1.0 default. */
   float grid;
 
   /* compare between last state */
-  /** Used to accelerate when using the mouse-wheel a lot. */
+  /* Used to accelerate when using the mouse-wheel a lot. */
   double time_lastwheel;
-  /** Time between draws. */
+  /* Time between draws. */
   double time_lastdraw;
 
   void *draw_handle_pixel;
 
   /* use for some lag */
-  /** Keep the previous value to smooth transitions (use lag). */
+  /* Keep the previous value to smooth transitions (use lag). */
   float dvec_prev[3];
 
   struct View3DCameraControl *v3d_camera_control;
 
 } FlyInfo;
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Fly Drawing
- * \{ */
-
+/* Internal Fly Drawing */
 /* prototypes */
 #ifdef WITH_INPUT_NDOF
-static void flyApply_ndof(bContext *C, FlyInfo *fly, bool is_confirm);
+static void flyApply_ndof(Cxt *C, FlyInfo *fly, bool is_confirm);
 #endif /* WITH_INPUT_NDOF */
-static int flyApply(bContext *C, struct FlyInfo *fly, bool is_confirm);
+static int flyApply(Cxt *C, struct FlyInfo *fly, bool is_confirm);
 
-static void drawFlyPixel(const struct bContext *UNUSED(C), ARegion *UNUSED(region), void *arg)
+static void drawFlyPixel(const struct Cxt *UNUSED(C), ARgn *UNUSED(rgn), void *arg)
 {
   FlyInfo *fly = arg;
   rctf viewborder;
   int xoff, yoff;
   float x1, x2, y1, y2;
 
-  if (ED_view3d_cameracontrol_object_get(fly->v3d_camera_control)) {
-    ED_view3d_calc_camera_border(
-        fly->scene, fly->depsgraph, fly->region, fly->v3d, fly->rv3d, &viewborder, false);
+  if (ed_view3d_cameracontrol_ob_get(fly->v3d_camera_control)) {
+    ed_view3d_calc_camera_border(
+        fly->scene, fly->graph, fly->rgn, fly->v3d, fly->rv3d, &viewborder, false);
     xoff = viewborder.xmin;
     yoff = viewborder.ymin;
   }
@@ -242,7 +221,7 @@ static void drawFlyPixel(const struct bContext *UNUSED(C), ARegion *UNUSED(regio
   y2 = yoff + 0.55f * fly->height;
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
 
@@ -282,11 +261,7 @@ static void drawFlyPixel(const struct bContext *UNUSED(C), ARegion *UNUSED(regio
   immUnbindProgram();
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Fly Logic
- * \{ */
+/* Internal Fly Logic */
 
 /* FlyInfo->state */
 enum {
