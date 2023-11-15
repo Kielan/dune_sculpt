@@ -1,22 +1,21 @@
-#include "DUNE_context.h"
+#include "dune_cxt.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "API_access.h"
-#include "API_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** View Move (Pan) Operator **/
-/** These defines are saved in keymap files, do not change values but just add new ones */
+/* View Move (Pan) Op **/
+/* These defines are saved in keymap files, do not change vals but just add new ones */
 
-void viewmove_modal_keymap(wmKeyConfig *keyconf)
+void viewmove_modal_keymap(WinKeyConfig *keyconf)
 {
-  static const EnumPropertyItem modal_items[] = {
+  static const EnumPropItem modal_items[] = {
       {VIEW_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
 
       {VIEWROT_MODAL_SWITCH_ZOOM, "SWITCH_TO_ZOOM", 0, "Switch to Zoom"},
@@ -25,24 +24,24 @@ void viewmove_modal_keymap(wmKeyConfig *keyconf)
       {0, NULL, 0, NULL, NULL},
   };
 
-  wmKeyMap *keymap = WM_modalkeymap_find(keyconf, "View3D Move Modal");
+  WinKeyMap *keymap = win_modalkeymap_find(keyconf, "View3D Move Modal");
 
   /* this function is called for each spacetype, only needs to add map once */
   if (keymap && keymap->modal_items) {
     return;
   }
 
-  keymap = WM_modalkeymap_ensure(keyconf, "View3D Move Modal", modal_items);
+  keymap = win_modalkeymap_ensure(keyconf, "View3D Move Modal", modal_items);
 
   /* items for modal map */
-  WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_RELEASE, KM_ANY, 0, KM_ANY, VIEW_MODAL_CONFIRM);
-  WM_modalkeymap_add_item(keymap, EVT_ESCKEY, KM_PRESS, KM_ANY, 0, KM_ANY, VIEW_MODAL_CONFIRM);
+  win_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_RELEASE, KM_ANY, 0, KM_ANY, VIEW_MODAL_CONFIRM);
+  win_modalkeymap_add_item(keymap, EV_ESCKEY, KM_PRESS, KM_ANY, 0, KM_ANY, VIEW_MODAL_CONFIRM);
 
   /* disabled mode switching for now, can re-implement better, later on */
 #if 0
-  WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
-  WM_modalkeymap_add_item(keymap, LEFTCTRLKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
-  WM_modalkeymap_add_item(
+  win_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
+  win_modalkeymap_add_item(keymap, LEFTCTRLKEY, KM_PRESS, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ZOOM);
+  win_modalkeymap_add_item(
       keymap, LEFTSHIFTKEY, KM_RELEASE, KM_ANY, 0, VIEWROT_MODAL_SWITCH_ROTATE);
 #endif
 
@@ -50,53 +49,53 @@ void viewmove_modal_keymap(wmKeyConfig *keyconf)
   WM_modalkeymap_assign(keymap, "VIEW3D_OT_move");
 }
 
-static int viewmove_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int viewmove_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
 
   ViewOpsData *vod = op->customdata;
-  short event_code = VIEW_PASS;
+  short ev_code = VIEW_PASS;
   bool use_autokey = false;
-  int ret = OPERATOR_RUNNING_MODAL;
+  int ret = OP_RUNNING_MODAL;
 
-  /* execute the events */
-  if (event->type == MOUSEMOVE) {
-    event_code = VIEW_APPLY;
+  /* ex the evs */
+  if (ev->type == MOUSEMOVE) {
+    ev_code = VIEW_APPLY;
   }
-  else if (event->type == EVT_MODAL_MAP) {
-    switch (event->val) {
+  else if (ev->type == EV_MODAL_MAP) {
+    switch (ev->val) {
       case VIEW_MODAL_CONFIRM:
-        event_code = VIEW_CONFIRM;
+        ev_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_SWITCH_ZOOM:
-        WM_operator_name_call(C, "VIEW3D_OT_zoom", WM_OP_INVOKE_DEFAULT, NULL, event);
-        event_code = VIEW_CONFIRM;
+        win_op_name_call(C, "VIEW3D_OT_zoom", WIN_OP_INVOKE_DEFAULT, NULL, ev);
+        ev_code = VIEW_CONFIRM;
         break;
       case VIEWROT_MODAL_SWITCH_ROTATE:
-        WM_operator_name_call(C, "VIEW3D_OT_rotate", WM_OP_INVOKE_DEFAULT, NULL, event);
-        event_code = VIEW_CONFIRM;
+        win_op_name_call(C, "VIEW3D_OT_rotate", WIN_OP_INVOKE_DEFAULT, NULL, ev);
+        ev_code = VIEW_CONFIRM;
         break;
     }
   }
-  else if (event->type == vod->init.event_type && event->val == KM_RELEASE) {
-    event_code = VIEW_CONFIRM;
+  else if (ev->type == vod->init.ev_type && ev->val == KM_RELEASE) {
+    ev_code = VIEW_CONFIRM;
   }
 
-  if (event_code == VIEW_APPLY) {
-    viewmove_apply(vod, event->xy[0], event->xy[1]);
-    if (ED_screen_animation_playing(CTX_wm_manager(C))) {
+  if (ev_code == VIEW_APPLY) {
+    viewmove_apply(vod, ev->xy[0], ev->xy[1]);
+    if (ed_screen_anim_playing(cxt_wm(C))) {
       use_autokey = true;
     }
   }
-  else if (event_code == VIEW_CONFIRM) {
+  else if (ev_code == VIEW_CONFIRM) {
     use_autokey = true;
-    ret = OPERATOR_FINISHED;
+    ret = OP_FINISHED;
   }
 
   if (use_autokey) {
-    ED_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, false, true);
+    ed_view3d_camera_lock_autokey(vod->v3d, vod->rv3d, C, false, true);
   }
 
-  if (ret & OPERATOR_FINISHED) {
+  if (ret & OP_FINISHED) {
     viewops_data_free(C, op->customdata);
     op->customdata = NULL;
   }
@@ -104,7 +103,7 @@ static int viewmove_modal(bContext *C, wmOperator *op, const wmEvent *event)
   return ret;
 }
 
-static int viewmove_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+static int viewmove_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod;
 
