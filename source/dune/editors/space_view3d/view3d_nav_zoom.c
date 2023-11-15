@@ -1,10 +1,10 @@
-#include "LIB_math.h"
-#include "LIB_rect.h"
+#include "lib_math.h"
+#include "lib_rect.h"
 
-#include "DUNE_context.h"
-#include "DUNE_screen.h"
+#include "dune_cxt.h"
+#include "dune_screen.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
 #include "WM_api.h"
 
