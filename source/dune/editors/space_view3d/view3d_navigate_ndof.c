@@ -1,18 +1,17 @@
-#include "LIB_math.h"
+#include "lib_math.h"
 
-#include "DUNE_context.h"
+#include "dune_cxt.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "WM_api.h"
+#include "win_api.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "view3d_intern.h"
-#include "view3d_navigate.h" /* own include */
+#include "view3d_nav.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** NDOF Utility Functions **/
+/* NDOF Uti Fns */
 
 #ifdef WITH_INPUT_NDOF
 
@@ -21,38 +20,36 @@ enum {
   HAS_ROTATE = (1 << 0),
 };
 
-static bool ndof_has_translate(const wmNDOFMotionData *ndof,
+static bool ndof_has_translate(const WinNDOFMotionData *ndof,
                                const View3D *v3d,
-                               const RegionView3D *rv3d)
+                               const RgnView3D *rv3d)
 {
-  return !is_zero_v3(ndof->tvec) && (!ED_view3d_offset_lock_check(v3d, rv3d));
+  return !is_zero_v3(ndof->tvec) && (!ed_view3d_offset_lock_check(v3d, rv3d));
 }
 
-static bool ndof_has_rotate(const wmNDOFMotionData *ndof, const RegionView3D *rv3d)
+static bool ndof_has_rotate(const WinNDOFMotionData *ndof, const RgnView3D *rv3d)
 {
   return !is_zero_v3(ndof->rvec) && ((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) == 0);
 }
 
-/**
- * param depth_pt: A point to calculate the depth (in perspective mode)
- */
-static float view3d_ndof_pan_speed_calc_ex(RegionView3D *rv3d, const float depth_pt[3])
+/* param depth_pt: A point to calculate the depth (in perspective mode) */
+static float view3d_ndof_pan_speed_calc_ex(RgnView3D *rv3d, const float depth_pt[3])
 {
   float speed = rv3d->pixsize * NDOF_PIXELS_PER_SECOND;
 
   if (rv3d->is_persp) {
-    speed *= ED_view3d_calc_zfac(rv3d, depth_pt);
+    speed *= ed_view3d_calc_zfac(rv3d, depth_pt);
   }
 
   return speed;
 }
 
-static float view3d_ndof_pan_speed_calc_from_dist(RegionView3D *rv3d, const float dist)
+static float view3d_ndof_pan_speed_calc_from_dist(RgnView3D *rv3d, const float dist)
 {
   float viewinv[4];
   float tvec[3];
 
-  LIB_assert(dist >= 0.0f);
+  lib_assert(dist >= 0.0f);
 
   copy_v3_fl3(tvec, 0.0f, 0.0f, dist);
   /* rv3d->viewinv isn't always valid */
@@ -66,7 +63,7 @@ static float view3d_ndof_pan_speed_calc_from_dist(RegionView3D *rv3d, const floa
   return view3d_ndof_pan_speed_calc_ex(rv3d, tvec);
 }
 
-static float view3d_ndof_pan_speed_calc(RegionView3D *rv3d)
+static float view3d_ndof_pan_speed_calc(RgnView3D *rv3d)
 {
   float tvec[3];
   negate_v3_v3(tvec, rv3d->ofs);
@@ -74,19 +71,16 @@ static float view3d_ndof_pan_speed_calc(RegionView3D *rv3d)
   return view3d_ndof_pan_speed_calc_ex(rv3d, tvec);
 }
 
-/**
- * Zoom and pan in the same function since sometimes zoom is interpreted as dolly (pan forward).
- *
+/* Zoom and pan in the same fn since sometimes zoom is interpreted as dolly (pan forward).
  * param has_zoom: zoom, otherwise dolly,
- * often `!rv3d->is_persp` since it doesn't make sense to dolly in ortho.
- */
-static void view3d_ndof_pan_zoom(const struct wmNDOFMotionData *ndof,
+ * often `!rv3d->is_persp` since it doesn't make sense to dolly in ortho. */
+static void view3d_ndof_pan_zoom(const struct WinNDOFMotionData *ndof,
                                  ScrArea *area,
-                                 ARegion *region,
+                                 ARgn *rgn,
                                  const bool has_translate,
                                  const bool has_zoom)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float view_inv[4];
   float pan_vec[3];
 
@@ -94,15 +88,14 @@ static void view3d_ndof_pan_zoom(const struct wmNDOFMotionData *ndof,
     return;
   }
 
-  WM_event_ndof_pan_get(ndof, pan_vec, false);
+  win_ev_ndof_pan_get(ndof, pan_vec, false);
 
   if (has_zoom) {
     /* zoom with Z */
 
     /* Zoom!
      * velocity should be proportional to the linear velocity attained by rotational motion
-     * of same strength [got that?] proportional to `arclength = radius * angle`.
-     */
+     * of same strength [got that?] proportional to `arclength = radius * angle`. */
 
     pan_vec[2] = 0.0f;
 
@@ -122,7 +115,7 @@ static void view3d_ndof_pan_zoom(const struct wmNDOFMotionData *ndof,
 
     /* all callers must check */
     if (has_translate) {
-      LIB_assert(ED_view3d_offset_lock_check((View3D *)area->spacedata.first, rv3d) == false);
+      lib_assert(ED_view3d_offset_lock_check((View3D *)area->spacedata.first, rv3d) == false);
     }
   }
 
@@ -139,25 +132,25 @@ static void view3d_ndof_pan_zoom(const struct wmNDOFMotionData *ndof,
     sub_v3_v3(rv3d->ofs, pan_vec);
 
     if (RV3D_LOCK_FLAGS(rv3d) & RV3D_BOXVIEW) {
-      view3d_boxview_sync(area, region);
+      view3d_boxview_sync(area, rgn);
     }
   }
 }
 
-static void view3d_ndof_orbit(const struct wmNDOFMotionData *ndof,
+static void view3d_ndof_orbit(const struct WinNDOFMotionData *ndof,
                               ScrArea *area,
-                              ARegion *region,
+                              ARgn *rgn,
                               ViewOpsData *vod,
                               const bool apply_dyn_ofs)
 {
   View3D *v3d = area->spacedata.first;
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   float view_inv[4];
 
-  LIB_assert((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) == 0);
+  lib_assert((RV3D_LOCK_FLAGS(rv3d) & RV3D_LOCK_ROTATION) == 0);
 
-  ED_view3d_persp_ensure(vod->depsgraph, v3d, region);
+  ed_view3d_persp_ensure(vod->graph, v3d, rgn);
 
   rv3d->view = RV3D_VIEW_USER;
 
@@ -171,7 +164,7 @@ static void view3d_ndof_orbit(const struct wmNDOFMotionData *ndof,
     float xvec[3] = {1, 0, 0};
 
     /* only use XY, ignore Z */
-    WM_event_ndof_rotate_get(ndof, rot);
+    win_ev_ndof_rotate_get(ndof, rot);
 
     /* Determine the direction of the x vector (for rotating up and down) */
     mul_qt_v3(view_inv, xvec);
@@ -196,7 +189,7 @@ static void view3d_ndof_orbit(const struct wmNDOFMotionData *ndof,
   else {
     float quat[4];
     float axis[3];
-    float angle = WM_event_ndof_to_axis_angle(ndof, axis);
+    float angle = win_ev_ndof_to_axis_angle(ndof, axis);
 
     /* transform rotation axis from view to world coordinates */
     mul_qt_v3(view_inv, axis);
@@ -216,9 +209,9 @@ static void view3d_ndof_orbit(const struct wmNDOFMotionData *ndof,
   }
 }
 
-void view3d_ndof_fly(const wmNDOFMotionData *ndof,
+void view3d_ndof_fly(const WinNDOFMotionData *ndof,
                      View3D *v3d,
-                     RegionView3D *rv3d,
+                     RgnView3D *rv3d,
                      const bool use_precision,
                      const short protectflag,
                      bool *r_has_translate,
@@ -242,7 +235,7 @@ void view3d_ndof_fly(const wmNDOFMotionData *ndof,
       speed *= 0.2f;
     }
 
-    WM_event_ndof_pan_get(ndof, trans, false);
+    win_ev_ndof_pan_get(ndof, trans, false);
     mul_v3_fl(trans, speed * ndof->dt);
     trans_orig_y = trans[1];
 
@@ -303,7 +296,7 @@ void view3d_ndof_fly(const wmNDOFMotionData *ndof,
       axis_angle_to_quat(rotation, axis, angle);
       mul_qt_qtqt(rv3d->viewquat, rv3d->viewquat, rotation);
 
-      if (U.ndof_flag & NDOF_LOCK_HORIZON) {
+      if (U.ndof_flag & NDOF_LOCK_HOR) {
         /* force an upright viewpoint
          * TODO: make this less... sudden */
         float view_horizon[3] = {1.0f, 0.0f, 0.0f};    /* view +x */
@@ -337,21 +330,17 @@ void view3d_ndof_fly(const wmNDOFMotionData *ndof,
   *r_has_rotate = has_rotate;
 }
 
-/* -------------------------------------------------------------------- */
-/** \name NDOF Camera View Support */
-
-/**
- * 2D orthographic style NDOF navigation within the camera view.
- * Support navigating the camera view instead of leaving the camera-view and navigating in 3D.
- */
-static int view3d_ndof_cameraview_pan_zoom(bContext *C, const wmEvent *event)
+/* NDOF Camera View Support */
+/* 2D orthographic style NDOF navigation within the camera view.
+ * Support navigating the camera view instead of leaving the camera-view and navigating in 3D. */
+static int view3d_ndof_cameraview_pan_zoom(bContext *C, const WinEv *ev)
 {
-  const wmNDOFMotionData *ndof = event->customdata;
-  View3D *v3d = CTX_wm_view3d(C);
-  ARegion *region = CTX_wm_region(C);
-  RegionView3D *rv3d = region->regiondata;
+  const WinNDOFMotionData *ndof = ev->customdata;
+  View3D *v3d = cxt_win_view3d(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  RgnView3D *rv3d = rgn->rgndata;
 
-  ED_view3d_smooth_view_force_finish(C, v3d, region);
+  ed_view3d_smooth_view_force_finish(C, v3d, rgn);
 
   if ((v3d->camera && (rv3d->persp == RV3D_CAMOB) && (v3d->flag2 & V3D_LOCK_CAMERA) == 0)) {
     /* pass */
