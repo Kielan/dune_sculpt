@@ -346,13 +346,13 @@ static int view3d_ndof_cameraview_pan_zoom(bContext *C, const WinEv *ev)
     /* pass */
   }
   else {
-    return OPERATOR_PASS_THROUGH;
+    return OP_PASS_THROUGH;
   }
 
   const bool has_translate = !is_zero_v2(ndof->tvec);
   const bool has_zoom = ndof->tvec[2] != 0.0f;
 
-  /* NOTE(@campbellbarton): In principle rotating could pass through to regular
+  /* In principle rotating could pass through to regular
    * non-camera NDOF behavior (exiting the camera-view and rotating).
    * Disabled this block since in practice it's difficult to control NDOF devices
    * to perform some rotation with absolutely no translation. Causing rotation to
@@ -360,62 +360,61 @@ static int view3d_ndof_cameraview_pan_zoom(bContext *C, const WinEv *ev)
    * the motion feeling *glitchy* although in my own tests even then it didn't work reliably.
    * Leave rotating out of camera-view disabled unless it can be made to work reliably. */
   if (!(has_translate || has_zoom)) {
-    // return OPERATOR_PASS_THROUGH;
+    // return OP_PASS_THROUGH;
   }
 
   bool changed = false;
 
   if (has_translate) {
     const float speed = ndof->dt * NDOF_PIXELS_PER_SECOND;
-    float event_ofs[2] = {ndof->tvec[0] * speed, ndof->tvec[1] * speed};
-    if (ED_view3d_camera_view_pan(region, event_ofs)) {
+    float ev_ofs[2] = {ndof->tvec[0] * speed, ndof->tvec[1] * speed};
+    if (ed_view3d_camera_view_pan(rgn, ev_ofs)) {
       changed = true;
     }
   }
 
   if (has_zoom) {
     const float scale = 1.0f + (ndof->dt * ndof->tvec[2]);
-    if (ED_view3d_camera_view_zoom_scale(rv3d, scale)) {
+    if (ed_view3d_camera_view_zoom_scale(rv3d, scale)) {
       changed = true;
     }
   }
 
   if (changed) {
-    ED_region_tag_redraw(region);
-    return OPERATOR_FINISHED;
+    ed_rgn_tag_redraw(rgn);
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-/* -------------------------------------------------------------------- */
-/** NDOF Orbit/Translate Operator **/
+/* NDOF Orbit/Translate Op */
 
-static int ndof_orbit_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+static int ndof_orbit_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (event->type != NDOF_MOTION) {
-    return OPERATOR_CANCELLED;
+  if (ev->type != NDOF_MOTION) {
+    return OP_CANCELLED;
   }
 
-  const Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  const Graph *graph = cxt_data_ensure_eval_graph(C);
   ViewOpsData *vod;
   View3D *v3d;
-  RegionView3D *rv3d;
+  RgnView3D *rv3d;
   char xform_flag = 0;
 
-  const wmNDOFMotionData *ndof = event->customdata;
+  const WinNDOFMotionData *ndof = ev->customdata;
 
   vod = op->customdata = viewops_data_create(
-      C, event, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_DEPTH_NAVIGATE));
+      C, ev, (viewops_flag_from_prefs() & ~VIEWOPS_FLAG_DEPTH_NAV));
 
-  ED_view3d_smooth_view_force_finish(C, vod->v3d, vod->region);
+  ed_view3d_smooth_view_force_finish(C, vod->v3d, vod->rgn);
 
   v3d = vod->v3d;
   rv3d = vod->rv3d;
 
-  /* off by default, until changed later this function */
+  /* off by default, until changed later this fn */
   rv3d->rot_angle = 0.0f;
 
-  ED_view3d_camera_lock_init_ex(depsgraph, v3d, rv3d, false);
+  ed_view3d_camera_lock_init_ex(graph, v3d, rv3d, false);
 
   if (ndof->progress != P_FINISHING) {
     const bool has_rotation = ndof_has_rotate(ndof, rv3d);
@@ -425,12 +424,12 @@ static int ndof_orbit_invoke(duneContext *C, wmOperator *op, const wmEvent *even
     const bool has_zoom = (ndof->tvec[2] != 0.0f) && !rv3d->is_persp;
 
     if (has_translate || has_zoom) {
-      view3d_ndof_pan_zoom(ndof, vod->area, vod->region, has_translate, has_zoom);
+      view3d_ndof_pan_zoom(ndof, vod->area, vod->rgn, has_translate, has_zoom);
       xform_flag |= HAS_TRANSLATE;
     }
 
     if (has_rotation) {
-      view3d_ndof_orbit(ndof, vod->area, vod->region, vod, true);
+      view3d_ndof_orbit(ndof, vod->area, vod->rgn, vod, true);
       xform_flag |= HAS_ROTATE;
     }
   }
