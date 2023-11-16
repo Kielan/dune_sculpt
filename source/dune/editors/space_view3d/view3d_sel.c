@@ -672,11 +672,11 @@ struct LassoSelUserDataForMeshEdge {
   struct EditSelBuf_Cache *esel;
   uint backbuf_offset;
 };
-static void do_lasso_sel_mesh__doSelEdge_pass0(void *user_data,
-                                               MEdge *eed,
-                                               const float screen_co_a[2],
-                                               const float screen_co_b[2],
-                                               int index)
+static void do_lasso_sel_mesh_doSelEdge_pass0(void *user_data,
+                                              MEdge *eed,
+                                              const float screen_co_a[2],
+                                              const float screen_co_b[2],
+                                              int index)
 {
   struct LassoStUserDataForMeshEdge *data_for_edge = user_data;
   LassoSelUserData *data = data_for_edge->data;
@@ -693,7 +693,7 @@ static void do_lasso_sel_mesh__doSelEdge_pass0(void *user_data,
            data->mcoords, data->mcoords_len, UNPACK2(screen_co_a), IS_CLIPPED) &&
        lib_lasso_is_point_inside(
            data->mcoords, data->mcoords_len, UNPACK2(screen_co_b), IS_CLIPPED));
-  const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_select, is_inside);
+  const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
     mesh_edge_sel_set(data->vc->em->bm, eed, sel_op_result);
     data->is_done = true;
@@ -738,18 +738,18 @@ static void do_lasso_sel_mesh_doSelFace(void *userData,
       (lib_rctf_isect_pt_v(data->rect_fl, screen_co) &&
        lib_lasso_is_point_inside(
            data->mcoords, data->mcoords_len, screen_co[0], screen_co[1], IS_CLIPPED));
-  const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_select, is_inside);
+  const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
     mesh_face_sel_set(data->vc->em->mesh, efa, sel_op_result);
     data->is_changed = true;
   }
 }
 
-static bool do_lasso_select_mesh(ViewCxt *vc,
-                                 WinGenericUserData *win_userdata,
-                                 const int mcoords[][2],
-                                 const int mcoords_len,
-                                 const eSelOp sel_op)
+static bool do_lasso_sel_mesh(ViewCxt *vc,
+                              WinGenericUserData *win_userdata,
+                              const int mcoords[][2],
+                              const int mcoords_len,
+                              const eSelOp sel_op)
 {
   LassoSelUserData data;
   ToolSettings *ts = vc->scene->toolsettings;
@@ -764,7 +764,7 @@ static bool do_lasso_select_mesh(ViewCxt *vc,
 
   if (SEL_OP_USE_PRE_DESEL(sel_op)) {
     if (vc->em-mesh>totvertsel) {
-      ed_flag_disable_all(vc->em, BM_ELEM_SELECT);
+      ed_flag_disable_all(vc->em, MESH_ELEM_SEL);
       data.is_changed = true;
     }
   }
@@ -793,7 +793,7 @@ static bool do_lasso_select_mesh(ViewCxt *vc,
     }
     else {
       mesh_foreachScreenVert(
-          vc, do_lasso_sel_mesh__doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+          vc, do_lasso_sel_mesh_doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
   if (ts->selmode & SCE_SEL_EDGE) {
@@ -815,7 +815,7 @@ static bool do_lasso_select_mesh(ViewCxt *vc,
       /* Fall back to partially inside.
        * Clip content to account for edges partially behind the view. */
       mesh_foreachScreenEdge_clip_bb_segment(vc,
-                                             do_lasso_sel_mesh__doSelEdge_pass1,
+                                             do_lasso_sel_mesh_doSelEdge_pass1,
                                              &data_for_edge,
                                              clip_flag | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
     }
@@ -828,7 +828,7 @@ static bool do_lasso_select_mesh(ViewCxt *vc,
     }
     else {
       mesh_foreachScreenFace(
-          vc, do_lasso_sel_mesh__doSelectFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+          vc, do_lasso_sel_mesh_doSelFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
 
@@ -838,13 +838,13 @@ static bool do_lasso_select_mesh(ViewCxt *vc,
   return data.is_changed;
 }
 
-static void do_lasso_sel_curve__doSel(void *userData,
-                                      Nurb *UNUSED(nu),
-                                      Point *point,
-                                      BezTriple *bezt,
-                                      int beztindex,
-                                      bool handles_visible,
-                                      const float screen_co[2])
+static void do_lasso_sel_curve_doSel(void *userData,
+                                    Nurb *UNUSED(nu),
+                                    Point *point,
+                                    BezTriple *bezt,
+                                    int beztindex,
+                                    bool handles_visible,
+                                    const float screen_co[2])
 {
   LassoSelUserData *data = userData;
 
@@ -874,7 +874,7 @@ static void do_lasso_sel_curve__doSel(void *userData,
       const bool is_sel = *flag_p & SEL;
       const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_select, is_inside);
       if (sel_op_result != -1) {
-        SET_FLAG_FROM_TEST(*flag_p, sel_op_result, data->select_flag);
+        SET_FLAG_FROM_TEST(*flag_p, sel_op_result, data->sel_flag);
         data->is_changed = true;
       }
     }
@@ -899,12 +899,12 @@ static bool do_lasso_sel_curve(ViewCxt *vc,
 
   /* For desel all, items to be selected are tagged with tmp flag. Clear that first. */
   if (desel_all) {
-    dune_nurbList_flag_set(nurbs, BEZT_FLAG_TEMP_TAG, false);
-    data.sel_flag = BEZT_FLAG_TEMP_TAG;
+    dune_nurbList_flag_set(nurbs, BEZT_FLAG_TMP_TAG, false);
+    data.sel_flag = BEZT_FLAG_TMP_TAG;
   }
 
   ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
-  nurbs_foreachScreenVert(vc, do_lasso_sel_curve__doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+  nurbs_foreachScreenVert(vc, do_lasso_sel_curve_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
   /* Desel items that were not added to sel (indicated by temp flag). */
   if (desel_all) {
@@ -917,7 +917,7 @@ static bool do_lasso_sel_curve(ViewCxt *vc,
   return data.is_changed;
 }
 
-static void do_lasso_sel_lattice__doSel(void *userData, Point *point, const float screen_co[2])
+static void do_lasso_sel_lattice_doSel(void *userData, Point *point, const float screen_co[2])
 {
   LassoSelUserData *data = userData;
   const bool is_sel = point->f1 & SEL;
@@ -949,14 +949,14 @@ static bool do_lasso_sel_lattice(ViewCxt *vc,
 
   ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
   lattice_foreachScreenVert(
-      vc, do_lasso_sel_lattice__doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      vc, do_lasso_sel_lattice_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
   return data.is_changed;
 }
 
-static void do_lasso_sel_armature__doSelBone(void *userData,
-                                                   EditBone *ebone,
-                                                   const float screen_co_a[2],
-                                                   const float screen_co_b[2])
+static void do_lasso_sel_armature_doSelBone(void *userData,
+                                            EditBone *ebone,
+                                            const float screen_co_a[2],
+                                            const float screen_co_b[2])
 {
   LassoSelUserData *data = userData;
   const Armature *arm = data->vc->obedit->data;
@@ -1054,13 +1054,13 @@ static bool do_lasso_sel_armature(ViewCxt *vc,
 
   /* Op on fully visible (non-clipped) points. */
   armature_foreachScreenBone(
-      vc, do_lasso_sel_armature__doSelBone, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      vc, do_lasso_sel_armature_doSelBone, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
   /* Op on bones as segments clipped to the viewport bounds
    * (needed to handle bones with both points outside the view).
    * A separate pass is needed since clipped coordinates can't be used for selecting joints. */
   armature_foreachScreenBone(vc,
-                             do_lasso_sel_armature__doSelBone_clip_content,
+                             do_lasso_sel_armature_doSelBone_clip_content,
                              &data,
                              V3D_PROJ_TEST_CLIP_DEFAULT | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
 
@@ -1103,7 +1103,7 @@ static bool do_lasso_sel_meta(ViewCxt *vc,
   view3d_userdata_lassosel_init(&data, vc, &rect, mcoords, mcoords_len, sel_op);
 
   if (SEL_OP_USE_PRE_DESEL(sel_op)) {
-    data.is_changed |= dune_mball_deselect_all(mb);
+    data.is_changed |= dune_mball_desel_all(mb);
   }
 
   ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
@@ -1216,7 +1216,7 @@ static bool do_lasso_sel_paintface(ViewCxt *vc,
 
   struct EditSelBuf_Cache *esel = win_userdata->data;
   if (esel == NULL) {
-    editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SELECT_FACE);
+    editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SEL_FACE);
     esel = win_userdata->data;
     esel->sel_bitmap = drw_sel_buffer_bitmap_from_poly(
         vc->graph, vc->rgn, vc->v3d, mcoords, mcoords_len, &rect, NULL);
@@ -1328,7 +1328,7 @@ static int view3d_lasso_sel_ex(Cxt *C, WinOp *op)
     view3d_op_needs_opengl(C);
     dune_ob_update_sel_id(cxt_data_main(C));
 
-    /* setup view context for arg to cbs */
+    /* setup view cxt for arg to cbs */
     ed_view3d_viewcxt_init(C, &vc, graph);
 
     eSelOp sel_op = api_enum_get(op->ptr, "mode");
@@ -1365,7 +1365,6 @@ void VIEW3D_OT_sel_lasso(WinOpType *ot)
 }
 
 /* Cursor Picking */
-
 /* The max num of menu items in an ob sel menu */
 typedef struct SelMenuItemF {
   char idname[MAX_ID_NAME - 2];
@@ -1636,23 +1635,23 @@ static int bone_sel_menu_ex(Cxt *C, WinOp *op)
   memset(ob_mouse_sel_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   /* We make the armature selected:
-   * Not-selected active object in pose-mode won't work well for tools. */
-  ED_object_base_select(basact, BA_SELECT);
+   * Not-sel active ob in pose-mode won't work well for tools. */
+  ed_ob_base_sel(basact, BA_SELECT);
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, basact->object);
-  WM_event_add_notifier(C, NC_OBJECT | ND_BONE_ACTIVE, basact->object);
+  win_ev_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, basact->object);
+  em_evv_add_notifier(C, NC_OBJECT | ND_BONE_ACTIVE, basact->object);
 
   /* In weight-paint, we use selected bone to select vertex-group,
    * so don't switch to new active object. */
   if (oldbasact) {
-    if (basact->object->mode & OB_MODE_EDIT) {
+    if (basact->obt->mode & OB_MODE_EDIT) {
       /* Pass. */
     }
-    else if (oldbasact->object->mode & OB_MODE_ALL_WEIGHT_PAINT) {
+    else if (oldbasact->ob->mode & OB_MODE_ALL_WEIGHT_PAINT) {
       /* Prevent activating.
-       * Selection causes this to be considered the 'active' pose in weight-paint mode.
+       * Sel causes this to be considered the 'active' pose in weight-paint mode.
        * Eventually this limitation may be removed.
-       * For now, de-select all other pose objects deforming this mesh. */
+       * For now, de-sel all other pose objs deforming this mesh. */
       ed_armature_pose_sel_in_wpaint_mode(view_layer, basact);
     }
     else {
@@ -1691,7 +1690,7 @@ void VIEW3D_OT_bone_sel_menu(WinOpType *ot)
 
   /* Ob.id.name to sel (dynamic enum). */
   prop = api_def_enum(ot->sapi, "name", DummyApi_NULL_items, 0, "Bone Name", "");
-  api_def_enum_fns(prop, obj_sel_menu_enum_itemf);
+  api_def_enum_fns(prop, ob_sel_menu_enum_itemf);
   api_def_prop_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
   ot->prop = prop;
 
@@ -1706,18 +1705,18 @@ void VIEW3D_OT_bone_sel_menu(WinOpType *ot)
 /* return True when a menu was activated. */
 static bool bone_mouse_sel_menu(Cxt *C,
                                 const GPUSelResult *buffer,
-                                   const int hits,
-                                   const bool is_editmode,
-                                   const struct SelPick_Params *params)
+                                const int hits,
+                                const bool is_editmode,
+                                const struct SelPick_Params *params)
 {
-  BLI_assert(buffer);
+  lib_assert(buffer);
 
   int bone_count = 0;
   LinkNodePair base_list = {NULL, NULL};
   LinkNodePair bone_list = {NULL, NULL};
-  GSet *added_bones = BLI_gset_ptr_new("Bone mouse select menu");
+  GSet *added_bones = lib_gset_ptr_new("Bone mouse select menu");
 
-  /* Select logic taken from ed_armature_pick_bone_from_selectbuffer_impl in armature_select.c */
+  /* Select logic taken from ed_armature_pick_bone_from_selbuffer_impl in armature_selc */
   for (int a = 0; a < hits; a++) {
     void *bone_ptr = NULL;
     Base *bone_base = NULL;
@@ -1729,16 +1728,16 @@ static bool bone_mouse_sel_menu(Cxt *C,
     }
 
     hitresult &= ~BONESEL_ANY;
-    const uint hit_object = hitresult & 0xFFFF;
+    const uint hit_ob = hitresult & 0xFFFF;
 
     /* Find the hit bone base (armature object). */
-    CTX_DATA_BEGIN (C, Base *, base, selectable_bases) {
-      if (base->object->runtime.select_id == hit_object) {
+    CXT_DATA_BEGIN (C, Base *, base, selectable_bases) {
+      if (base->ob->runtime.sel_id == hit_ob) {
         bone_base = base;
         break;
       }
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
 
     if (!bone_base) {
       continue;
@@ -1748,14 +1747,14 @@ static bool bone_mouse_sel_menu(Cxt *C,
     if (is_editmode) {
       EditBone *ebone;
       const uint hit_bone = (hitresult & ~BONESEL_ANY) >> 16;
-      bArmature *arm = bone_base->object->data;
-      ebone = BLI_findlink(arm->edbo, hit_bone);
+      Armature *arm = bone_base->object->data;
+      ebone = lib_findlink(arm->edbo, hit_bone);
       if (ebone && !(ebone->flag & BONE_UNSELECTABLE)) {
         bone_ptr = ebone;
       }
     }
     else {
-      bPoseChannel *pchan;
+      PoseChannel *pchan;
       const uint hit_bone = (hitresult & ~BONESEL_ANY) >> 16;
       pchan = BLI_findlink(&bone_base->object->pose->chanbase, hit_bone);
       if (pchan && !(pchan->bone->flag & BONE_UNSELECTABLE)) {
