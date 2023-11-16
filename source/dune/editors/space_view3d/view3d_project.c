@@ -502,25 +502,25 @@ void ed_view3d_win_to_3d(const View3D *v3d,
   madd_v3_v3v3fl(r_out, ray_origin, ray_direction, lambda);
 }
 
-void ED_view3d_win_to_3d_int(const View3D *v3d,
-                             const ARegion *region,
+void ed_view3d_win_to_3d_int(const View3D *v3d,
+                             const ARgn *rgn,
                              const float depth_pt[3],
                              const int mval[2],
                              float r_out[3])
 {
   const float mval_fl[2] = {mval[0], mval[1]};
-  ED_view3d_win_to_3d(v3d, region, depth_pt, mval_fl, r_out);
+  ed_view3d_win_to_3d(v3d, rgn, depth_pt, mval_fl, r_out);
 }
 
-bool ED_view3d_win_to_3d_on_plane(const ARegion *region,
+bool ed_view3d_win_to_3d_on_plane(const ARgn *rgn,
                                   const float plane[4],
                                   const float mval[2],
                                   const bool do_clip,
                                   float r_out[3])
 {
   float ray_co[3], ray_no[3];
-  ED_view3d_win_to_origin(region, mval, ray_co);
-  ED_view3d_win_to_vector(region, mval, ray_no);
+  ed_view3d_win_to_origin(rgn, mval, ray_co);
+  ed_view3d_win_to_vector(rgn, mval, ray_no);
   float lambda;
   if (isect_ray_plane_v3(ray_co, ray_no, plane, &lambda, do_clip)) {
     madd_v3_v3v3fl(r_out, ray_co, ray_no, lambda);
@@ -529,17 +529,17 @@ bool ED_view3d_win_to_3d_on_plane(const ARegion *region,
   return false;
 }
 
-bool ED_view3d_win_to_3d_on_plane_int(const ARegion *region,
+bool ed_view3d_win_to_3d_on_plane_int(const ARgn *rgn,
                                       const float plane[4],
                                       const int mval[2],
                                       const bool do_clip,
                                       float r_out[3])
 {
   const float mval_fl[2] = {mval[0], mval[1]};
-  return ED_view3d_win_to_3d_on_plane(region, plane, mval_fl, do_clip, r_out);
+  return ed_view3d_win_to_3d_on_plane(rgn, plane, mval_fl, do_clip, r_out);
 }
 
-bool ED_view3d_win_to_3d_on_plane_with_fallback(const ARegion *region,
+bool ed_view3d_win_to_3d_on_plane_with_fallback(const ARgn *rgn,
                                                 const float plane[4],
                                                 const float mval[2],
                                                 const bool do_clip,
@@ -562,7 +562,7 @@ bool ED_view3d_win_to_3d_on_plane_with_fallback(const ARegion *region,
   }
 
   float co[3];
-  if (!ED_view3d_win_to_3d_on_plane(region, plane_fallback, mval, do_clip, co)) {
+  if (!ed_view3d_win_to_3d_on_plane(rgn, plane_fallback, mval, do_clip, co)) {
     return false;
   }
   mul_m4_v3(mat4, co);
@@ -574,31 +574,31 @@ bool ED_view3d_win_to_3d_on_plane_with_fallback(const ARegion *region,
   return true;
 }
 
-void ED_view3d_win_to_delta(const ARegion *region,
+void ed_view3d_win_to_delta(const ARgn *rgn,
                             const float xy_delta[2],
                             const float zfac,
                             float r_out[3])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float dx, dy;
 
-  dx = 2.0f * xy_delta[0] * zfac / region->winx;
-  dy = 2.0f * xy_delta[1] * zfac / region->winy;
+  dx = 2.0f * xy_delta[0] * zfac / rgn->winx;
+  dy = 2.0f * xy_delta[1] * zfac / rgn->winy;
 
   r_out[0] = (rv3d->persinv[0][0] * dx + rv3d->persinv[1][0] * dy);
   r_out[1] = (rv3d->persinv[0][1] * dx + rv3d->persinv[1][1] * dy);
   r_out[2] = (rv3d->persinv[0][2] * dx + rv3d->persinv[1][2] * dy);
 }
 
-void ED_view3d_win_to_origin(const ARegion *region, const float mval[2], float r_out[3])
+void ed_view3d_win_to_origin(const ARgn *rgn, const float mval[2], float r_out[3])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   if (rv3d->is_persp) {
     copy_v3_v3(r_out, rv3d->viewinv[3]);
   }
   else {
-    r_out[0] = 2.0f * mval[0] / region->winx - 1.0f;
-    r_out[1] = 2.0f * mval[1] / region->winy - 1.0f;
+    r_out[0] = 2.0f * mval[0] / rgn->winx - 1.0f;
+    r_out[1] = 2.0f * mval[1] / rgn->winy - 1.0f;
 
     if (rv3d->persp == RV3D_CAMOB) {
       r_out[2] = -1.0f;
@@ -611,9 +611,9 @@ void ED_view3d_win_to_origin(const ARegion *region, const float mval[2], float r
   }
 }
 
-void ED_view3d_win_to_vector(const ARegion *region, const float mval[2], float r_out[3])
+void ed_view3d_win_to_vector(const ARgn *rgn, const float mval[2], float r_out[3])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   if (rv3d->is_persp) {
     r_out[0] = 2.0f * (mval[0] / region->winx) - 1.0f;
@@ -628,29 +628,26 @@ void ED_view3d_win_to_vector(const ARegion *region, const float mval[2], float r
   normalize_v3(r_out);
 }
 
-bool ED_view3d_win_to_segment_clipped(struct Depsgraph *depsgraph,
-                                      const ARegion *region,
+bool ed_view3d_win_to_segment_clipped(struct Graph *graph,
+                                      const ARgn *rgn,
                                       View3D *v3d,
                                       const float mval[2],
                                       float r_ray_start[3],
                                       float r_ray_end[3],
                                       const bool do_clip_planes)
 {
-  view3d_win_to_ray_segment(depsgraph, region, v3d, mval, NULL, NULL, r_ray_start, r_ray_end);
+  view3d_win_to_ray_segment(graph, rgn, v3d, mval, NULL, NULL, r_ray_start, r_ray_end);
 
   /* bounds clipping */
   if (do_clip_planes) {
-    return ED_view3d_clip_segment((RegionView3D *)region->regiondata, r_ray_start, r_ray_end);
+    return ed_view3d_clip_segment((RgnView3D *)rgn->rgndata, r_ray_start, r_ray_end);
   }
 
   return true;
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Utility functions for projection
- * \{ */
-
-void ED_view3d_ob_project_mat_get(const RegionView3D *rv3d, const Object *ob, float r_pmat[4][4])
+/* Util fns for projection */
+void ed_view3d_ob_project_mat_get(const RgnView3D *rv3d, const Ob *ob, float r_pmat[4][4])
 {
   float vmat[4][4];
 
@@ -658,7 +655,7 @@ void ED_view3d_ob_project_mat_get(const RegionView3D *rv3d, const Object *ob, fl
   mul_m4_m4m4(r_pmat, rv3d->winmat, vmat);
 }
 
-void ED_view3d_ob_project_mat_get_from_obmat(const RegionView3D *rv3d,
+void ed_view3d_ob_project_mat_get_from_obmat(const RgnView3D *rv3d,
                                              const float obmat[4][4],
                                              float r_pmat[4][4])
 {
@@ -668,28 +665,28 @@ void ED_view3d_ob_project_mat_get_from_obmat(const RegionView3D *rv3d,
   mul_m4_m4m4(r_pmat, rv3d->winmat, vmat);
 }
 
-void ED_view3d_project_v3(const struct ARegion *region, const float world[3], float r_region_co[3])
+void ed_view3d_project_v3(const struct ARgn *rgn, const float world[3], float r_rgn_co[3])
 {
-  /* Viewport is set up to make coordinates relative to the region, not window. */
-  RegionView3D *rv3d = region->regiondata;
-  const int viewport[4] = {0, 0, region->winx, region->winy};
-  GPU_matrix_project_3fv(world, rv3d->viewmat, rv3d->winmat, viewport, r_region_co);
+  /* Viewport is set up to make coords relative to the rgn, not win. */
+  RgnView3D *rv3d = rgn->rgndata;
+  const int viewport[4] = {0, 0, rgn->winx, rgn->winy};
+  gpu_matrix_project_3fv(world, rv3d->viewmat, rv3d->winmat, viewport, r_rgn_co);
 }
 
-void ED_view3d_project_v2(const struct ARegion *region, const float world[3], float r_region_co[2])
+void ed_view3d_project_v2(const struct ARgn *rgn, const float world[3], float r_rgn_co[2])
 {
-  /* Viewport is set up to make coordinates relative to the region, not window. */
-  RegionView3D *rv3d = region->regiondata;
-  const int viewport[4] = {0, 0, region->winx, region->winy};
-  GPU_matrix_project_2fv(world, rv3d->viewmat, rv3d->winmat, viewport, r_region_co);
+  /* Viewport is set up to make coords relative to the rgn, not win. */
+  RgnView3D *rv3d = rgn->rgndata;
+  const int viewport[4] = {0, 0, rgn->winx, rgn->winy};
+  gpu_matrix_project_2fv(world, rv3d->viewmat, rv3d->winmat, viewport, r_rgn_co);
 }
 
-bool ED_view3d_unproject_v3(
-    const struct ARegion *region, float regionx, float regiony, float regionz, float world[3])
+bool ed_view3d_unproject_v3(
+    const struct ARgn *rgn, float rgnx, float rgny, float rgnz, float world[3])
 {
-  RegionView3D *rv3d = region->regiondata;
-  const int viewport[4] = {0, 0, region->winx, region->winy};
-  const float region_co[3] = {regionx, regiony, regionz};
+  RgnView3D *rv3d = rgn->rgndata;
+  const int viewport[4] = {0, 0, rgn->winx, rgn->winy};
+  const float rgn_co[3] = {rgnx, rgny, rgnz};
 
-  return GPU_matrix_unproject_3fv(region_co, rv3d->viewinv, rv3d->winmat, viewport, world);
+  return gpu_matrix_unproject_3fv(rgn_co, rv3d->viewinv, rv3d->winmat, viewport, world);
 }
