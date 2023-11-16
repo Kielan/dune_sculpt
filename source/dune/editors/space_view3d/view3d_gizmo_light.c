@@ -1,47 +1,45 @@
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.h"
-#include "BKE_layer.h"
-#include "BKE_object.h"
+#include "dune_cxt.h"
+#include "dune_layer.h"
+#include "dune_ob.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "TYPES_light.h"
-#include "TYPES_object.h"
+#include "types_light.h"
+#include "types_ob.h"
 
-#include "ED_gizmo_library.h"
-#include "ED_screen.h"
+#include "ed_gizmo_lib.h"
+#include "ed_screen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "API_access.h"
-#include "API_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "win_api.h"
+#include "win_types.h"
 
 #include "view3d_intern.h" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** Spot Light Gizmos **/
-
-static bool WIDGETGROUP_light_spot_poll(const bContext *C, wmGizmoGroupType *UNUSED(gzgt))
+/* Spot Light Gizmos */
+static bool WIDGETGROUP_light_spot_poll(const Cxt *C, WinGizmoGroupType *UNUSED(gzgt))
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CONTEXT)) {
+  View3D *v3d = cxt_wm_view3d(C);
+  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CXT)) {
     return false;
   }
   if ((v3d->gizmo_show_light & V3D_GIZMO_SHOW_LIGHT_SIZE) == 0) {
     return false;
   }
 
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Base *base = BASACT(view_layer);
   if (base && BASE_SELECTABLE(v3d, base)) {
-    Object *ob = base->object;
+    Obj *ob = base->ob;
     if (ob->type == OB_LAMP) {
       Light *la = ob->data;
       return (la->type == LA_SPOT);
@@ -50,79 +48,77 @@ static bool WIDGETGROUP_light_spot_poll(const bContext *C, wmGizmoGroupType *UNU
   return false;
 }
 
-static void WIDGETGROUP_light_spot_setup(const duneContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_light_spot_setup(const Cxt *UNUSED(C), WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = MEM_mallocN(sizeof(wmGizmoWrapper), __func__);
+  WinGizmoWrapper *wwrapper = mem_malloc(sizeof(WinGizmoWrapper), __func__);
 
-  wwrapper->gizmo = WM_gizmo_new("GIZMO_GT_arrow_3d", gzgroup, NULL);
-  wmGizmo *gz = wwrapper->gizmo;
-  API_enum_set(gz->ptr, "transform", ED_GIZMO_ARROW_XFORM_FLAG_INVERTED);
+  wwrapper->gizmo = win_gizmo_new("GIZMO_GT_arrow_3d", gzgroup, NULL);
+  WinGizmo *gz = wwrapper->gizmo;
+  api_enum_set(gz->ptr, "transform", ED_GIZMO_ARROW_XFORM_FLAG_INVERTED);
 
   gzgroup->customdata = wwrapper;
 
-  ED_gizmo_arrow3d_set_range_fac(gz, 4.0f);
+  ed_gizmo_arrow3d_set_range_fac(gz, 4.0f);
 
-  UI_GetThemeColor3fv(TH_GIZMO_SECONDARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_SECONDARY, gz->color);
 }
 
 static void WIDGETGROUP_light_spot_refresh(const duneContext *C, wmGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = gzgroup->customdata;
-  wmGizmo *gz = wwrapper->gizmo;
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object *ob = OBACT(view_layer);
+  WinGizmoWrapper *wwrapper = gzgroup->customdata;
+  WinGizmo *gz = wwrapper->gizmo;
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Ob *ob = OBACT(view_layer);
   Light *la = ob->data;
   float dir[3];
 
   negate_v3_v3(dir, ob->obmat[2]);
 
-  WM_gizmo_set_matrix_rotation_from_z_axis(gz, dir);
-  WM_gizmo_set_matrix_location(gz, ob->obmat[3]);
+  win_gizmo_set_matrix_rotation_from_z_axis(gz, dir);
+  win_gizmo_set_matrix_location(gz, ob->obmat[3]);
 
-  /* need to set property here for undo. TODO: would prefer to do this in _init. */
-  PointerRNA lamp_ptr;
+  /* need to set prop here for undo. TODO: would prefer to do this in _init. */
+  ApiPtr lamp_ptr;
   const char *propname = "spot_size";
-  API_pointer_create(&la->id, &API_Light, la, &lamp_ptr);
-  WM_gizmo_target_property_def_rna(gz, "offset", &lamp_ptr, propname, -1);
+  api_ptr_create(&la->id, &ApiLight, la, &lamp_ptr);
+  win_gizmo_target_prop_def_api(gz, "offset", &lamp_ptr, propname, -1);
 }
 
-void VIEW3D_GGT_light_spot(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_light_spot(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Spot Light Widgets";
   gzgt->idname = "VIEW3D_GGT_light_spot";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_PERSISTENT | WM_GIZMOGROUPTYPE_3D | WM_GIZMOGROUPTYPE_DEPTH_3D);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_PERSISTENT | WIN_GIZMOGROUPTYPE_3D | WIN_GIZMOGROUPTYPE_DEPTH_3D);
 
   gzgt->poll = WIDGETGROUP_light_spot_poll;
   gzgt->setup = WIDGETGROUP_light_spot_setup;
-  gzgt->setup_keymap = WM_gizmogroup_setup_keymap_generic_maybe_drag;
+  gzgt->setup_keymap = win_gizmogroup_setup_keymap_generic_maybe_drag;
   gzgt->refresh = WIDGETGROUP_light_spot_refresh;
 }
 
-/* -------------------------------------------------------------------- */
-/** Area Light Gizmos **/
-
-/* scale callbacks */
-static void gizmo_area_light_prop_matrix_get(const wmGizmo *UNUSED(gz),
-                                             wmGizmoProperty *gz_prop,
+/* Area Light Gizmos */
+/* scale cbs */
+static void gizmo_area_light_prop_matrix_get(const WinGizmo *UNUSED(gz),
+                                             WinGizmoProp *gz_prop,
                                              void *value_p)
 {
-  BLI_assert(gz_prop->type->array_length == 16);
+  lib_assert(gz_prop->type->array_length == 16);
   float(*matrix)[4] = value_p;
-  const Light *la = gz_prop->custom_func.user_data;
+  const Light *la = gz_prop->custom_fn.user_data;
 
   matrix[0][0] = la->area_size;
   matrix[1][1] = ELEM(la->area_shape, LA_AREA_RECT, LA_AREA_ELLIPSE) ? la->area_sizey :
                                                                        la->area_size;
 }
 
-static void gizmo_area_light_prop_matrix_set(const wmGizmo *UNUSED(gz),
-                                             wmGizmoProperty *gz_prop,
+static void gizmo_area_light_prop_matrix_set(const WinGizmo *UNUSED(gz),
+                                             WinGizmoProp *gz_prop,
                                              const void *value_p)
 {
   const float(*matrix)[4] = value_p;
-  LIB_assert(gz_prop->type->array_length == 16);
-  Light *la = gz_prop->custom_func.user_data;
+  lib_assert(gz_prop->type->array_length == 16);
+  Light *la = gz_prop->custom_fn.user_data;
 
   if (ELEM(la->area_shape, LA_AREA_RECT, LA_AREA_ELLIPSE)) {
     la->area_size = len_v3(matrix[0]);
@@ -132,14 +128,14 @@ static void gizmo_area_light_prop_matrix_set(const wmGizmo *UNUSED(gz),
     la->area_size = len_v3(matrix[0]);
   }
 
-  DEG_id_tag_update(&la->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, la);
+  graph_id_tag_update(&la->id, ID_RECALC_COPY_ON_WRITE);
+  win_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, la);
 }
 
-static bool WIDGETGROUP_light_area_poll(const duneContext *C, wmGizmoGroupType *UNUSED(gzgt))
+static bool WIDGETGROUP_light_area_poll(const Cxt *C, WinGizmoGroupType *UNUSED(gzgt))
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CONTEXT)) {
+  View3D *v3d = cxt_win_view3d(C);
+  if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CXT)) {
     return false;
   }
   if ((v3d->gizmo_show_light & V3D_GIZMO_SHOW_LIGHT_SIZE) == 0) {
