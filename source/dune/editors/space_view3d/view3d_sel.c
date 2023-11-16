@@ -1002,10 +1002,10 @@ static void do_lasso_sel_armature__doSelBone(void *userData,
 
   ebone->tmp.i = is_inside_flag | (is_ignore_flag >> 16);
 }
-static void do_lasso_sel_armature__doSelBone_clip_content(void *userData,
-                                                          EditBone *ebone,
-                                                          const float screen_co_a[2],
-                                                          const float screen_co_b[2])
+static void do_lasso_sel_armature_doSelBone_clip_content(void *userData,
+                                                         EditBone *ebone,
+                                                         const float screen_co_a[2],
+                                                         const float screen_co_b[2])
 {
   LassoSelUserData *data = userData;
   Armature *arm = data->vc->obedit->data;
@@ -1072,7 +1072,7 @@ static bool do_lasso_sel_armature(ViewCxt *vc,
   return data.is_changed;
 }
 
-static void do_lasso_sel_mball__doSelElem(void *userData,
+static void do_lasso_sel_mball_doSelElem(void *userData,
                                           struct MetaElem *ml,
                                           const float screen_co[2])
 {
@@ -1238,7 +1238,7 @@ static bool view3d_lasso_sel(Cxt *C,
                              const int mcoords_len,
                              const eSelOp sel_op)
 {
-  Ob *ob = cxt_data_active_object(C);
+  Ob *ob = cxt_data_active_ob(C);
   bool changed_multi = false;
 
   WinGenericUserData win_userdata_buf = {0};
@@ -1259,7 +1259,7 @@ static bool view3d_lasso_sel(Cxt *C,
       changed_multi |= PE_lasso_sel(C, mcoords, mcoords_len, sel_op);
     }
     else if (ob && (ob->mode & OB_MODE_POSE)) {
-      changed_multi |= do_lasso_select_pose(vc, mcoords, mcoords_len, sel_op);
+      changed_multi |= do_lasso_sel_pose(vc, mcoords, mcoords_len, sel_op);
       if (changed_multi) {
         ed_outliner_sel_sync_from_pose_bone_tag(C);
       }
@@ -1395,7 +1395,7 @@ static const EnumPropItem *ob_sel_menu_enum_itemf(Cxt *C,
   for (; i < SEL_MENU_SIZE && ob_mouse_sel_menu_data[i].idname[0] != '\0'; i++) {
     item_tmp.name = ob_mouse_sel_menu_data[i].idname;
     item_tmp.id = ob_mouse_sel_menu_data[i].idname;
-    item_tmp.value = i;
+    item_tmp.val = i;
     item_tmp.icon = ob_mouse_sel_menu_data[i].icon;
     api_enum_item_add(&item, &totitem, &item_tmp);
   }
@@ -1653,64 +1653,62 @@ static int bone_sel_menu_ex(Cxt *C, WinOp *op)
        * Selection causes this to be considered the 'active' pose in weight-paint mode.
        * Eventually this limitation may be removed.
        * For now, de-select all other pose objects deforming this mesh. */
-      ED_armature_pose_select_in_wpaint_mode(view_layer, basact);
+      ed_armature_pose_sel_in_wpaint_mode(view_layer, basact);
     }
     else {
       if (oldbasact != basact) {
-        ED_object_base_activate(C, basact);
+        ed_ob_base_activate(C, basact);
       }
     }
   }
 
   /* Undo? */
-  Scene *scene = CTX_data_scene(C);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+  Scene *scene = cxt_data_scene(C);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
 
-  ED_outliner_select_sync_from_object_tag(C);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_bone_select_menu(wmOperatorType *ot)
+void VIEW3D_OT_bone_sel_menu(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Select Menu";
-  ot->description = "Menu bone selection";
-  ot->idname = "VIEW3D_OT_bone_select_menu";
+  /* ids */
+  ot->name = "Sel Menu";
+  ot->description = "Menu bone sel";
+  ot->idname = "VIEW3D_OT_bone_sel_menu";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = bone_select_menu_exec;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = bone_sel_menu_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* #Object.id.name to select (dynamic enum). */
-  prop = RNA_def_enum(ot->srna, "name", DummyRNA_NULL_items, 0, "Bone Name", "");
-  RNA_def_enum_funcs(prop, object_select_menu_enum_itemf);
-  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
+  /* Ob.id.name to sel (dynamic enum). */
+  prop = api_def_enum(ot->sapi, "name", DummyApi_NULL_items, 0, "Bone Name", "");
+  api_def_enum_fns(prop, obj_sel_menu_enum_itemf);
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
   ot->prop = prop;
 
-  prop = RNA_def_boolean(ot->srna, "extend", 0, "Extend", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "toggle", 0, "Toggle", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "extend", 0, "Extend", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "desel", 0, "Deselect", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "toggle", 0, "Toggle", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/**
- * \return True when a menu was activated.
- */
-static bool bone_mouse_select_menu(bContext *C,
-                                   const GPUSelectResult *buffer,
+/* return True when a menu was activated. */
+static bool bone_mouse_sel_menu(Cxt *C,
+                                const GPUSelResult *buffer,
                                    const int hits,
                                    const bool is_editmode,
-                                   const struct SelectPick_Params *params)
+                                   const struct SelPick_Params *params)
 {
   BLI_assert(buffer);
 
