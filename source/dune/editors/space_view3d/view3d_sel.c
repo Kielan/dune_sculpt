@@ -1604,7 +1604,7 @@ static int bone_sel_menu_ex(Cxt *C, WinOp *op)
 {
   const int name_index = api_enum_get(op->ptr, "name");
 
-  const struct SelPick_Params params = {
+  const struct SelPickParams params = {
       .sel_op = ed_sel_op_from_bools(api_bool_get(op->ptr, "extend"),
                                      api_bool_get(op->ptr, "desel"),
                                      api_bool_get(op->ptr, "toggle")),
@@ -1636,12 +1636,12 @@ static int bone_sel_menu_ex(Cxt *C, WinOp *op)
 
   /* We make the armature selected:
    * Not-sel active ob in pose-mode won't work well for tools. */
-  ed_ob_base_sel(basact, BA_SELECT);
+  ed_ob_base_sel(basact, BA_SEL);
 
-  win_ev_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, basact->object);
-  em_evv_add_notifier(C, NC_OBJECT | ND_BONE_ACTIVE, basact->object);
+  win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, basact->ob);
+  em_ev_add_notifier(C, NC_OB | ND_BONE_ACTIVE, basact->ob);
 
-  /* In weight-paint, we use selected bone to select vertex-group,
+  /* In weight-paint, we use selected bone to sel vertex-group,
    * so don't switch to new active object. */
   if (oldbasact) {
     if (basact->obt->mode & OB_MODE_EDIT) {
@@ -1716,21 +1716,21 @@ static bool bone_mouse_sel_menu(Cxt *C,
   LinkNodePair bone_list = {NULL, NULL};
   GSet *added_bones = lib_gset_ptr_new("Bone mouse select menu");
 
-  /* Select logic taken from ed_armature_pick_bone_from_selbuffer_impl in armature_selc */
+  /* Sel logic taken from ed_armature_pick_bone_from_selbuffer_impl in armature_selc */
   for (int a = 0; a < hits; a++) {
     void *bone_ptr = NULL;
     Base *bone_base = NULL;
     uint hitresult = buffer[a].id;
 
     if (!(hitresult & BONESEL_ANY)) {
-      /* To avoid including objects in selection. */
+      /* To avoid including objs in sel. */
       continue;
     }
 
     hitresult &= ~BONESEL_ANY;
     const uint hit_ob = hitresult & 0xFFFF;
 
-    /* Find the hit bone base (armature object). */
+    /* Find the hit bone base (armature ob). */
     CXT_DATA_BEGIN (C, Base *, base, selectable_bases) {
       if (base->ob->runtime.sel_id == hit_ob) {
         bone_base = base;
@@ -1756,7 +1756,7 @@ static bool bone_mouse_sel_menu(Cxt *C,
     else {
       PoseChannel *pchan;
       const uint hit_bone = (hitresult & ~BONESEL_ANY) >> 16;
-      pchan = BLI_findlink(&bone_base->object->pose->chanbase, hit_bone);
+      pchan = lib_findlink(&bone_base->ob->pose->chanbase, hit_bone);
       if (pchan && !(pchan->bone->flag & BONE_UNSELECTABLE)) {
         bone_ptr = pchan;
       }
@@ -1765,15 +1765,15 @@ static bool bone_mouse_sel_menu(Cxt *C,
     if (!bone_ptr) {
       continue;
     }
-    /* We can hit a bone multiple times, so make sure we are not adding an already included bone
+    /* We can hit a bone multiple times, so make sure we are not adding an alrdy included bone
      * to the list. */
-    const bool is_duplicate_bone = BLI_gset_haskey(added_bones, bone_ptr);
+    const bool is_duplicate_bone = lib_gset_haskey(added_bones, bone_ptr);
 
     if (!is_duplicate_bone) {
       bone_count++;
-      BLI_linklist_append(&base_list, bone_base);
-      BLI_linklist_append(&bone_list, bone_ptr);
-      BLI_gset_insert(added_bones, bone_ptr);
+      lib_linklist_append(&base_list, bone_base);
+      lib_linklist_append(&bone_list, bone_ptr);
+      lib_gset_insert(added_bones, bone_ptr);
 
       if (bone_count == SEL_MENU_SIZE) {
         break;
@@ -1781,60 +1781,60 @@ static bool bone_mouse_sel_menu(Cxt *C,
     }
   }
 
-  BLI_gset_free(added_bones, NULL);
+  lib_gset_free(added_bones, NULL);
 
   if (bone_count == 0) {
     return false;
   }
   if (bone_count == 1) {
-    BLI_linklist_free(base_list.list, NULL);
-    BLI_linklist_free(bone_list.list, NULL);
+    lib_linklist_free(base_list.list, NULL);
+    lib_linklist_free(bone_list.list, NULL);
     return false;
   }
 
-  /* UI, full in static array values that we later use in an enum function */
+  /* UI, full in static array vals that we later use in an enum fn */
   LinkNode *bone_node, *base_node;
   int i;
 
-  memset(object_mouse_select_menu_data, 0, sizeof(object_mouse_select_menu_data));
+  memset(object_mouse_select_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   for (base_node = base_list.list, bone_node = bone_list.list, i = 0; bone_node;
        base_node = base_node->next, bone_node = bone_node->next, i++) {
     char *name;
 
-    object_mouse_select_menu_data[i].base_ptr = base_node->link;
+    ob_mouse_sel_menu_data[i].base_ptr = base_node->link;
 
     if (is_editmode) {
       EditBone *ebone = bone_node->link;
-      object_mouse_select_menu_data[i].item_ptr = ebone;
+      ob_mouse_sel_menu_data[i].item_ptr = ebone;
       name = ebone->name;
     }
     else {
       bPoseChannel *pchan = bone_node->link;
-      object_mouse_select_menu_data[i].item_ptr = pchan;
+      object_mouse_sel_menu_data[i].item_ptr = pchan;
       name = pchan->name;
     }
 
-    BLI_strncpy(object_mouse_select_menu_data[i].idname, name, MAX_ID_NAME - 2);
-    object_mouse_select_menu_data[i].icon = ICON_BONE_DATA;
+    lib_strncpy(ob_mouse_sel_menu_data[i].idname, name, MAX_ID_NAME - 2);
+    ob_mouse_sel_menu_data[i].icon = ICON_BONE_DATA;
   }
 
-  wmOperatorType *ot = WM_operatortype_find("VIEW3D_OT_bone_select_menu", false);
-  PointerRNA ptr;
+  WinOpType *ot = win_optype_find("VIEW3D_OT_bone_sel_menu", false);
+  ApiPtr ptr;
 
-  WM_operator_properties_create_ptr(&ptr, ot);
-  RNA_boolean_set(&ptr, "extend", params->sel_op == SEL_OP_ADD);
-  RNA_boolean_set(&ptr, "deselect", params->sel_op == SEL_OP_SUB);
-  RNA_boolean_set(&ptr, "toggle", params->sel_op == SEL_OP_XOR);
-  WM_operator_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, &ptr, NULL);
-  WM_operator_properties_free(&ptr);
+  win_op_props_create_ptr(&ptr, ot);
+  api_bool_set(&ptr, "extend", params->sel_op == SEL_OP_ADD);
+  woi_bool_set(&ptr, "desel", params->sel_op == SEL_OP_SUB);
+  api_bool_set(&ptr, "toggle", params->sel_op == SEL_OP_XOR);
+  win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, &ptr, NULL);
+  win_op_props_free(&ptr);
 
-  BLI_linklist_free(base_list.list, NULL);
-  BLI_linklist_free(bone_list.list, NULL);
+  lib_linklist_free(base_list.list, NULL);
+  lib_linklist_free(bone_list.list, NULL);
   return true;
 }
 
-static bool selectbuffer_has_bones(const GPUSelectResult *buffer, const uint hits)
+static bool selbuffer_has_bones(const GPUSelResult *buffer, const uint hits)
 {
   for (uint i = 0; i < hits; i++) {
     if (buffer[i].id & 0xFFFF0000) {
@@ -1844,145 +1844,143 @@ static bool selectbuffer_has_bones(const GPUSelectResult *buffer, const uint hit
   return false;
 }
 
-/* utility function for mixed_bones_object_selectbuffer */
-static int selectbuffer_ret_hits_15(GPUSelectResult *UNUSED(buffer), const int hits15)
+/* util fn for mixed_bones_ob_selbuffer */
+static int selbuffer_ret_hits_15(GPUSelResult *UNUSED(buffer), const int hits15)
 {
   return hits15;
 }
 
-static int selectbuffer_ret_hits_9(GPUSelectResult *buffer, const int hits15, const int hits9)
+static int selbuffer_ret_hits_9(GPUSelResult *buffer, const int hits15, const int hits9)
 {
   const int ofs = hits15;
-  memcpy(buffer, buffer + ofs, hits9 * sizeof(GPUSelectResult));
+  memcpy(buffer, buffer + ofs, hits9 * sizeof(GPUSelResult));
   return hits9;
 }
 
-static int selectbuffer_ret_hits_5(GPUSelectResult *buffer,
-                                   const int hits15,
-                                   const int hits9,
-                                   const int hits5)
+static int selbuffer_ret_hits_5(GPUSelResult *buffer,
+                                const int hits15,
+                                const int hits9,
+                                const int hits5)
 {
   const int ofs = hits15 + hits9;
-  memcpy(buffer, buffer + ofs, hits5 * sizeof(GPUSelectResult));
+  memcpy(buffer, buffer + ofs, hits5 * sizeof(GPUSelResult));
   return hits5;
 }
 
-/**
- * Populate a select buffer with objects and bones, if there are any.
- * Checks three selection levels and compare.
- *
- * \param do_nearest_xray_if_supported: When set, read in hits that don't stop
+/* Populate a sel buffer with objs and bones, if there are any.
+ * Checks three sel levels and compare.
+ * param do_nearest_xray_if_supported: When set, read in hits that don't stop
  * at the nearest surface. The hits must still be ordered by depth.
- * Needed so we can step to the next, non-active object when it's already selected, see: T76445.
+ * Needed so we can step to the next, non-active ob when it's alrdy sel, see: T76445.
  */
-static int mixed_bones_object_selectbuffer(ViewContext *vc,
-                                           GPUSelectResult *buffer,
-                                           const int buffer_len,
-                                           const int mval[2],
-                                           eV3DSelectObjectFilter select_filter,
-                                           bool do_nearest,
-                                           bool do_nearest_xray_if_supported,
-                                           const bool do_material_slot_selection)
+static int mixed_bones_ob_selbuffer(ViewCxt *vc,
+                                    GPUSelResult *buffer,
+                                    const int buffer_len,
+                                    const int mval[2],
+                                    eV3DSelObFilter select_filter,
+                                    bool do_nearest,
+                                    bool do_nearest_xray_if_supported,
+                                    const bool do_material_slot_sel)
 {
   rcti rect;
   int hits15, hits9 = 0, hits5 = 0;
   bool has_bones15 = false, has_bones9 = false, has_bones5 = false;
 
-  int select_mode = (do_nearest ? VIEW3D_SELECT_PICK_NEAREST : VIEW3D_SELECT_PICK_ALL);
+  int sel_mode = (do_nearest ? VIEW3D_SEL_PICK_NEAREST : VIEW3D_SEL_PICK_ALL);
   int hits = 0;
 
   if (do_nearest_xray_if_supported) {
     if ((U.gpu_flag & USER_GPU_FLAG_NO_DEPT_PICK) == 0) {
-      select_mode = VIEW3D_SELECT_PICK_ALL;
+      sel_mode = VIEW3D_SEL_PICK_ALL;
     }
   }
 
   /* we _must_ end cache before return, use 'goto finally' */
-  view3d_opengl_select_cache_begin();
+  view3d_opengl_sel_cache_begin();
 
-  BLI_rcti_init_pt_radius(&rect, mval, 14);
-  hits15 = view3d_opengl_select_ex(
-      vc, buffer, buffer_len, &rect, select_mode, select_filter, do_material_slot_selection);
+  lib_rcti_init_pt_radius(&rect, mval, 14);
+  hits15 = view3d_opengl_sel_ex(
+      vc, buffer, buffer_len, &rect, sel_mode, sel_filter, do_material_slot_selection);
   if (hits15 == 1) {
-    hits = selectbuffer_ret_hits_15(buffer, hits15);
+    hits = selbuffer_ret_hits_15(buffer, hits15);
     goto finally;
   }
   else if (hits15 > 0) {
     int ofs;
-    has_bones15 = selectbuffer_has_bones(buffer, hits15);
+    has_bones15 = selbuffer_has_bones(buffer, hits15);
 
     ofs = hits15;
-    BLI_rcti_init_pt_radius(&rect, mval, 9);
-    hits9 = view3d_opengl_select(
-        vc, buffer + ofs, buffer_len - ofs, &rect, select_mode, select_filter);
+    lib_rcti_init_pt_radius(&rect, mval, 9);
+    hits9 = view3d_opengl_sel(
+        vc, buffer + ofs, buffer_len - ofs, &rect, sel_mode, select_filter);
     if (hits9 == 1) {
-      hits = selectbuffer_ret_hits_9(buffer, hits15, hits9);
+      hits = selbuffer_ret_hits_9(buffer, hits15, hits9);
       goto finally;
     }
     else if (hits9 > 0) {
-      has_bones9 = selectbuffer_has_bones(buffer + ofs, hits9);
+      has_bones9 = selbuffer_has_bones(buffer + ofs, hits9);
 
       ofs += hits9;
-      BLI_rcti_init_pt_radius(&rect, mval, 5);
-      hits5 = view3d_opengl_select(
-          vc, buffer + ofs, buffer_len - ofs, &rect, select_mode, select_filter);
+      lib_rcti_init_pt_radius(&rect, mval, 5);
+      hits5 = view3d_opengl_sel(
+          vc, buffer + ofs, buffer_len - ofs, &rect, sel_mode, sel_filter);
       if (hits5 == 1) {
-        hits = selectbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
+        hits = selbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
         goto finally;
       }
       else if (hits5 > 0) {
-        has_bones5 = selectbuffer_has_bones(buffer + ofs, hits5);
+        has_bones5 = selbuffer_has_bones(buffer + ofs, hits5);
       }
     }
 
     if (has_bones5) {
-      hits = selectbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
+      hits = selbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
       goto finally;
     }
     else if (has_bones9) {
-      hits = selectbuffer_ret_hits_9(buffer, hits15, hits9);
+      hits = selbuffer_ret_hits_9(buffer, hits15, hits9);
       goto finally;
     }
     else if (has_bones15) {
-      hits = selectbuffer_ret_hits_15(buffer, hits15);
+      hits = selbuffer_ret_hits_15(buffer, hits15);
       goto finally;
     }
 
     if (hits5 > 0) {
-      hits = selectbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
+      hits = selbuffer_ret_hits_5(buffer, hits15, hits9, hits5);
       goto finally;
     }
     else if (hits9 > 0) {
-      hits = selectbuffer_ret_hits_9(buffer, hits15, hits9);
+      hits = selbuffer_ret_hits_9(buffer, hits15, hits9);
       goto finally;
     }
     else {
-      hits = selectbuffer_ret_hits_15(buffer, hits15);
+      hits = selbuffer_ret_hits_15(buffer, hits15);
       goto finally;
     }
   }
 
 finally:
-  view3d_opengl_select_cache_end();
+  view3d_opengl_sel_cache_end();
   return hits;
 }
 
-static int mixed_bones_object_selectbuffer_extended(ViewContext *vc,
-                                                    GPUSelectResult *buffer,
-                                                    const int buffer_len,
-                                                    const int mval[2],
-                                                    eV3DSelectObjectFilter select_filter,
-                                                    bool use_cycle,
-                                                    bool enumerate,
-                                                    bool *r_do_nearest)
+static int mixed_bones_ob_selbuffer_extended(ViewCxt *vc,
+                                             GPUSelResult *buffer,
+                                             const int buffer_len,
+                                             const int mval[2],
+                                             eV3DSelObFilter sel_filter,
+                                             bool use_cycle,
+                                             bool enumerate,
+                                             bool *r_do_nearest)
 {
   bool do_nearest = false;
   View3D *v3d = vc->v3d;
 
-  /* define if we use solid nearest select or not */
+  /* define if we use solid nearest sel or not */
   if (use_cycle) {
-    /* Update the coordinates (even if the return value isn't used). */
-    const bool has_motion = WM_cursor_test_motion_and_update(mval);
+    /* Update the coordinates (even if the return val isn't used). */
+    const bool has_motion = win_cursor_test_motion_and_update(mval);
     if (!XRAY_ACTIVE(v3d)) {
       do_nearest = has_motion;
     }
@@ -1999,32 +1997,30 @@ static int mixed_bones_object_selectbuffer_extended(ViewContext *vc,
 
   do_nearest = do_nearest && !enumerate;
 
-  int hits = mixed_bones_object_selectbuffer(
-      vc, buffer, buffer_len, mval, select_filter, do_nearest, true, false);
+  int hits = mixed_bones_ob_selbuffer(
+      vc, buffer, buffer_len, mval, sel_filter, do_nearest, true, false);
 
   return hits;
 }
 
-/**
- * \param has_bones: When true, skip non-bone hits, also allow bases to be used
+/* param has_bones: When true, skip non-bone hits, also allow bases to be used
  * that are visible but not select-able,
- * since you may be in pose mode with an un-selectable object.
+ * since you may be in pose mode with an un-selectable ob.
  *
- * \return the active base or NULL.
- */
-static Base *mouse_select_eval_buffer(ViewContext *vc,
-                                      const GPUSelectResult *buffer,
-                                      int hits,
-                                      Base *startbase,
-                                      bool has_bones,
-                                      bool do_nearest,
-                                      int *r_sub_selection)
+ * return the active base or NULL */
+static Base *mouse_sel_eval_buffer(ViewCxt *vc,
+                                   const GPUSelResult *buffer,
+                                   int hits,
+                                   Base *startbase,
+                                   bool has_bones,
+                                   bool do_nearest,
+                                   int *r_sub_sel)
 {
   ViewLayer *view_layer = vc->view_layer;
   View3D *v3d = vc->v3d;
   Base *base, *basact = NULL;
   int a;
-  int sub_selection_id = 0;
+  int sub_sel_id = 0;
 
   if (do_nearest) {
     uint min = 0xFFFFFFFF;
@@ -2036,24 +2032,23 @@ static Base *mouse_select_eval_buffer(ViewContext *vc,
         if (min > buffer[a].depth && (buffer[a].id & 0xFFFF0000)) {
           min = buffer[a].depth;
           selcol = buffer[a].id & 0xFFFF;
-          sub_selection_id = (buffer[a].id & 0xFFFF0000) >> 16;
+          sub_sel_id = (buffer[a].id & 0xFFFF0000) >> 16;
         }
       }
     }
     else {
-      int select_id_exclude = 0;
-      /* Only exclude active object when it is selected. */
+      int sel_id_exclude = 0;
+      /* Only exclude active ob when it is selected. */
       if (BASACT(view_layer) && (BASACT(view_layer)->flag & BASE_SELECTED) && hits > 1) {
-        select_id_exclude = BASACT(view_layer)->object->runtime.select_id;
+        sel_id_exclude = BASACT(view_layer)->ob->runtime.sel_id;
       }
 
       /* Find the best active & non-active hits.
-       * NOTE(@campbellbarton): Checking if `hits > 1` isn't a reliable way to know
-       * if there are multiple objects selected since it's possible the same object
+       * NOTE: Checking if `hits > 1` isn't a reliable way to know
+       * if there are multiple objs selected since it's possible the same ob
        * generates multiple hits, either from:
        * - Multiple sub-components (bones & camera tracks).
-       * - Multiple selectable elements such as the object center and the geometry.
-       *
+       * - Multiple selectable elements such as the ob center and the geometry.
        * For this reason, keep track of the best hit as well as the best hit that
        * excludes the selected & active object, using this value when it's valid. */
 
@@ -2066,9 +2061,9 @@ static Base *mouse_select_eval_buffer(ViewContext *vc,
           min = buffer[a].depth;
           hit_index = a;
         }
-        /* Any object other than the active-selected. */
-        if (select_id_exclude != 0) {
-          if (min_not_active > buffer[a].depth && select_id_exclude != (buffer[a].id & 0xFFFF)) {
+        /* Any ob other than the active-selected. */
+        if (sel_id_exclude != 0) {
+          if (min_not_active > buffer[a].depth && sel_id_exclude != (buffer[a].id & 0xFFFF)) {
             min_not_active = buffer[a].depth;
             hit_index_not_active = a;
           }
@@ -2091,7 +2086,7 @@ static Base *mouse_select_eval_buffer(ViewContext *vc,
     base = FIRSTBASE(view_layer);
     while (base) {
       if (has_bones ? BASE_VISIBLE(v3d, base) : BASE_SELECTABLE(v3d, base)) {
-        if (base->object->runtime.select_id == selcol) {
+        if (base->ob->runtime.id == selcol) {
           break;
         }
       }
@@ -2121,15 +2116,15 @@ static Base *mouse_select_eval_buffer(ViewContext *vc,
       if (has_bones ? BASE_VISIBLE(v3d, base) : BASE_SELECTABLE(v3d, base)) {
         for (a = 0; a < hits; a++) {
           if (has_bones) {
-            /* skip non-bone objects */
+            /* skip non-bone objs */
             if (buffer[a].id & 0xFFFF0000) {
-              if (base->object->runtime.select_id == (buffer[a].id & 0xFFFF)) {
+              if (base->ob->runtime.seli_id == (buffer[a].id & 0xFFFF)) {
                 basact = base;
               }
             }
           }
           else {
-            if (base->object->runtime.select_id == (buffer[a].id & 0xFFFF)) {
+            if (base->ob->runtime.select_id == (buffer[a].id & 0xFFFF)) {
               basact = base;
             }
           }
@@ -2157,16 +2152,16 @@ static Base *mouse_select_eval_buffer(ViewContext *vc,
   return basact;
 }
 
-static Base *mouse_select_object_center(ViewContext *vc, Base *startbase, const int mval[2])
+static Base *mouse_sel_ob_center(ViewCxt *vc, Base *startbase, const int mval[2])
 {
-  ARegion *region = vc->region;
+  ARgn *rgn = vc->rgn;
   ViewLayer *view_layer = vc->view_layer;
   View3D *v3d = vc->v3d;
 
   Base *oldbasact = BASACT(view_layer);
 
   const float mval_fl[2] = {(float)mval[0], (float)mval[1]};
-  float dist = ED_view3d_select_dist_px() * 1.3333f;
+  float dist = ed_view3d_sel_dist_px() * 1.3333f;
   Base *basact = NULL;
 
   /* Put the active object at a disadvantage to cycle through other objects. */
@@ -2175,8 +2170,8 @@ static Base *mouse_select_object_center(ViewContext *vc, Base *startbase, const 
   while (base) {
     if (BASE_SELECTABLE(v3d, base)) {
       float screen_co[2];
-      if (ED_view3d_project_float_global(
-              region, base->object->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) ==
+      if (ed_view3d_project_float_global(
+              region, base->ob->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) ==
           V3D_PROJ_RET_OK) {
         float dist_test = len_manhattan_v2v2(mval_fl, screen_co);
         if (base == oldbasact) {
@@ -2204,7 +2199,7 @@ static Base *ed_view3d_give_base_under_cursor_ex(bContext *C,
                                                  const int mval[2],
                                                  int *r_material_slot)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Graph *graph = CTX_data_ensure_evaluated_depsgraph(C);
   ViewContext vc;
   Base *basact = NULL;
   GPUSelectResult buffer[MAXPICKELEMS];
