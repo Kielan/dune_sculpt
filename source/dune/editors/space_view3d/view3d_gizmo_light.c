@@ -154,28 +154,28 @@ static bool WIDGETGROUP_light_area_poll(const Cxt *C, WinGizmoGroupType *UNUSED(
   return false;
 }
 
-static void WIDGETGROUP_light_area_setup(const bContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_light_area_setup(const Cxt *UNUSED(C), WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = MEM_mallocN(sizeof(wmGizmoWrapper), __func__);
-  wwrapper->gizmo = WM_gizmo_new("GIZMO_GT_cage_2d", gzgroup, NULL);
-  wmGizmo *gz = wwrapper->gizmo;
-  API_enum_set(gz->ptr, "transform", ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE);
+  WinGizmoWrapper *wwrapper = mem_malloc(sizeof(WinGizmoWrapper), __func__);
+  wwrapper->gizmo = win_gizmo_new("GIZMO_GT_cage_2d", gzgroup, NULL);
+  WinGizmo *gz = wwrapper->gizmo;
+  api_enum_set(gz->ptr, "transform", ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE);
 
   gzgroup->customdata = wwrapper;
 
-  WM_gizmo_set_flag(gz, WM_GIZMO_DRAW_HOVER, true);
+  win_gizmo_set_flag(gz, WIN_GIZMO_DRAW_HOVER, true);
 
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
-  UI_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
 }
 
-static void WIDGETGROUP_light_area_refresh(const bContext *C, wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_light_area_refresh(const Cxt *C, WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = gzgroup->customdata;
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object *ob = OBACT(view_layer);
+  WinGizmoWrapper *wwrapper = gzgroup->customdata;
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Ob *ob = OBACT(view_layer);
   Light *la = ob->data;
-  wmGizmo *gz = wwrapper->gizmo;
+  WinGizmo *gz = wwrapper->gizmo;
 
   copy_m4_m4(gz->matrix_basis, ob->obmat);
 
@@ -183,38 +183,36 @@ static void WIDGETGROUP_light_area_refresh(const bContext *C, wmGizmoGroup *gzgr
   if (ELEM(la->area_shape, LA_AREA_SQUARE, LA_AREA_DISK)) {
     flag |= ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE_UNIFORM;
   }
-  API_enum_set(gz->ptr, "transform", flag);
+  api_enum_set(gz->ptr, "transform", flag);
 
   /* need to set property here for undo. TODO: would prefer to do this in _init. */
-  WM_gizmo_target_property_def_func(gz,
-                                    "matrix",
-                                    &(const struct wmGizmoPropertyFnParams){
-                                        .value_get_fn = gizmo_area_light_prop_matrix_get,
-                                        .value_set_fn = gizmo_area_light_prop_matrix_set,
-                                        .range_get_fn = NULL,
-                                        .user_data = la,
-                                    });
+  win_gizmo_target_prop_def_fn(gz,
+                               "matrix",
+                               &(const struct WinGizmoPropFnParams){
+                                  .val_get_fn = gizmo_area_light_prop_matrix_get,
+                                  .val_set_fn = gizmo_area_light_prop_matrix_set,
+                                  .range_get_fn = NULL,
+                                  .user_data = la,
+                               });
 }
 
-void VIEW3D_GGT_light_area(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_light_area(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Area Light Widgets";
   gzgt->idname = "VIEW3D_GGT_light_area";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_PERSISTENT | WM_GIZMOGROUPTYPE_3D | WM_GIZMOGROUPTYPE_DEPTH_3D);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_PERSISTENT | WIN_GIZMOGROUPTYPE_3D | WIN_GIZMOGROUPTYPE_DEPTH_3D);
 
   gzgt->poll = WIDGETGROUP_light_area_poll;
   gzgt->setup = WIDGETGROUP_light_area_setup;
-  gzgt->setup_keymap = WM_gizmogroup_setup_keymap_generic_maybe_drag;
+  gzgt->setup_keymap = win_gizmogroup_setup_keymap_generic_maybe_drag;
   gzgt->refresh = WIDGETGROUP_light_area_refresh;
 }
 
-/* -------------------------------------------------------------------- */
-/** Light Target Gizmo **/
-
-static bool WIDGETGROUP_light_target_poll(const bContext *C, wmGizmoGroupType *UNUSED(gzgt))
+/* Light Target Gizmo */
+static bool WIDGETGROUP_light_target_poll(const Cxt *C, WinGizmoGroupType *UNUSED(gzgt))
 {
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_win_view3d(C);
   if (v3d->gizmo_flag & (V3D_GIZMO_HIDE | V3D_GIZMO_HIDE_CONTEXT)) {
     return false;
   }
@@ -222,10 +220,10 @@ static bool WIDGETGROUP_light_target_poll(const bContext *C, wmGizmoGroupType *U
     return false;
   }
 
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   Base *base = BASACT(view_layer);
   if (base && BASE_SELECTABLE(v3d, base)) {
-    Object *ob = base->object;
+    Ob *ob = base->object;
     if (ob->type == OB_LAMP) {
       Light *la = ob->data;
       return (ELEM(la->type, LA_SUN, LA_SPOT, LA_AREA));
@@ -239,33 +237,33 @@ static bool WIDGETGROUP_light_target_poll(const bContext *C, wmGizmoGroupType *U
   return false;
 }
 
-static void WIDGETGROUP_light_target_setup(const bContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_light_target_setup(const Cxt *UNUSED(C), WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = MEM_mallocN(sizeof(wmGizmoWrapper), __func__);
-  wwrapper->gizmo = WM_gizmo_new("GIZMO_GT_move_3d", gzgroup, NULL);
-  wmGizmo *gz = wwrapper->gizmo;
+  WinGizmoWrapper *wwrapper = mem_malloc(sizeof(WinGizmoWrapper), __func__);
+  wwrapper->gizmo = win_gizmo_new("GIZMO_GT_move_3d", gzgroup, NULL);
+  WinGizmo *gz = wwrapper->gizmo;
 
   gzgroup->customdata = wwrapper;
 
-  UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
-  UI_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
+  ui_GetThemeColor3fv(TH_GIZMO_PRIMARY, gz->color);
+  ui_GetThemeColor3fv(TH_GIZMO_HI, gz->color_hi);
 
   gz->scale_basis = 0.06f;
 
-  wmOperatorType *ot = WM_operatortype_find("OBJECT_OT_transform_axis_target", true);
+  WinOpType *ot = win_optype_find("OB_OT_transform_axis_target", true);
 
-  RNA_enum_set(
+  api_enum_set(
       gz->ptr, "draw_options", ED_GIZMO_MOVE_DRAW_FLAG_FILL | ED_GIZMO_MOVE_DRAW_FLAG_ALIGN_VIEW);
 
-  WM_gizmo_operator_set(gz, 0, ot, NULL);
+  win_gizmo_op_set(gz, 0, ot, NULL);
 }
 
-static void WIDGETGROUP_light_target_draw_prepare(const bContext *C, wmGizmoGroup *gzgroup)
+static void WIDGETGROUP_light_target_draw_prepare(const Cxt *C, WinGizmoGroup *gzgroup)
 {
-  wmGizmoWrapper *wwrapper = gzgroup->customdata;
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  Object *ob = OBACT(view_layer);
-  wmGizmo *gz = wwrapper->gizmo;
+  WinGizmoWrapper *wwrapper = gzgroup->customdata;
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  Ob *ob = OBACT(view_layer);
+  WinGizmo *gz = wwrapper->gizmo;
 
   normalize_m4_m4(gz->matrix_basis, ob->obmat);
   unit_m4(gz->matrix_offset);
@@ -278,18 +276,18 @@ static void WIDGETGROUP_light_target_draw_prepare(const bContext *C, wmGizmoGrou
     }
   }
   gz->matrix_offset[3][2] -= 23.0;
-  WM_gizmo_set_flag(gz, WM_GIZMO_DRAW_OFFSET_SCALE, true);
+  win_gizmo_set_flag(gz, WIN_GIZMO_DRAW_OFFSET_SCALE, true);
 }
 
-void VIEW3D_GGT_light_target(wmGizmoGroupType *gzgt)
+void VIEW3D_GGT_light_target(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "Target Light Widgets";
   gzgt->idname = "VIEW3D_GGT_light_target";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_PERSISTENT | WM_GIZMOGROUPTYPE_3D);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_PERSISTENT | WIN_GIZMOGROUPTYPE_3D);
 
   gzgt->poll = WIDGETGROUP_light_target_poll;
   gzgt->setup = WIDGETGROUP_light_target_setup;
-  gzgt->setup_keymap = WM_gizmogroup_setup_keymap_generic_maybe_drag;
+  gzgt->setup_keymap = win_gizmogroup_setup_keymap_generic_maybe_drag;
   gzgt->draw_prepare = WIDGETGROUP_light_target_draw_prepare;
 }
