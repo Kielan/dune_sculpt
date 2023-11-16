@@ -340,7 +340,7 @@ static bool edbm_backbuf_check_and_sel_faces_obmode(Mesh *me,
   uint index;
   bool changed = false;
 
-  const BLI_bitmap *select_bitmap = esel->select_bitmap;
+  const lib_bitmap *sel_bitmap = esel->select_bitmap;
 
   if (mpoly) {
     for (index = 0; index < me->totpoly; index++, mpoly++) {
@@ -400,7 +400,7 @@ static void view3d_userdata_lassosel_init(LassoSelUserData *r_data,
   r_data->is_changed = false;
 }
 
-static bool view3d_selectable_data(Cxt *C)
+static bool view3d_sel_data(Cxt *C)
 {
   Ob *ob = cxt_data_active_ob(C);
 
@@ -1103,7 +1103,7 @@ static bool do_lasso_sel_meta(ViewCxt *vc,
   view3d_userdata_lassosel_init(&data, vc, &rect, mcoords, mcoords_len, sel_op);
 
   if (SEL_OP_USE_PRE_DESEL(sel_op)) {
-    data.is_changed |= BKE_mball_deselect_all(mb);
+    data.is_changed |= dune_mball_deselect_all(mb);
   }
 
   ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
@@ -1331,46 +1331,42 @@ static int view3d_lasso_sel_ex(Cxt *C, WinOp *op)
     /* setup view context for arg to cbs */
     ed_view3d_viewcxt_init(C, &vc, graph);
 
-    eSelectOp sel_op = RNA_enum_get(op->ptr, "mode");
-    bool changed_multi = view3d_lasso_select(C, &vc, mcoords, mcoords_len, sel_op);
+    eSelOp sel_op = api_enum_get(op->ptr, "mode");
+    bool changed_multi = view3d_lasso_sel(C, &vc, mcoords, mcoords_len, sel_op);
 
-    MEM_freeN((void *)mcoords);
+    mem_free((void *)mcoords);
 
     if (changed_multi) {
-      return OPERATOR_FINISHED;
+      return OP_FINISHED;
     }
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  return OPERATOR_PASS_THROUGH;
+  return OP_PASS_THROUGH;
 }
 
-void VIEW3D_OT_select_lasso(wmOperatorType *ot)
+void VIEW3D_OT_sel_lasso(WinOpType *ot)
 {
-  ot->name = "Lasso Select";
-  ot->description = "Select items using lasso selection";
-  ot->idname = "VIEW3D_OT_select_lasso";
+  ot->name = "Lasso Sel";
+  ot->description = "Sel items using lasso sel";
+  ot->idname = "VIEW3D_OT_sel_lasso";
 
-  ot->invoke = WM_gesture_lasso_invoke;
-  ot->modal = WM_gesture_lasso_modal;
-  ot->exec = view3d_lasso_select_exec;
-  ot->poll = view3d_selectable_data;
-  ot->cancel = WM_gesture_lasso_cancel;
+  ot->invoke = win_gesture_lasso_invoke;
+  ot->modal = win_gesture_lasso_modal;
+  ot->ex = view3d_lasso_sel_ex;
+  ot->poll = view3d_sel_data;
+  ot->cancel = win_gesture_lasso_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_DEPENDS_ON_CURSOR;
 
-  /* properties */
-  WM_operator_properties_gesture_lasso(ot);
-  WM_operator_properties_select_operation(ot);
+  /* props */
+  win_op_proos_gesture_lasso(ot);
+  win_op_props_sel_op(ot);
 }
 
-/** \} */
+/* Cursor Picking */
 
-/* -------------------------------------------------------------------- */
-/** \name Cursor Picking
- * \{ */
-
-/* The max number of menu items in an object select menu */
+/* The max num of menu items in an ob sel menu */
 typedef struct SelMenuItemF {
   char idname[MAX_ID_NAME - 2];
   int icon;
@@ -1379,167 +1375,165 @@ typedef struct SelMenuItemF {
 } SelMenuItemF;
 
 #define SEL_MENU_SIZE 22
-static SelMenuItemF object_mouse_select_menu_data[SEL_MENU_SIZE];
+static SelMenuItemF ob_mouse_sel_menu_data[SEL_MENU_SIZE];
 
-/* special (crappy) operator only for menu select */
-static const EnumPropertyItem *object_select_menu_enum_itemf(bContext *C,
-                                                             PointerRNA *UNUSED(ptr),
-                                                             PropertyRNA *UNUSED(prop),
-                                                             bool *r_free)
+/* special (crappy) op only for menu sel */
+static const EnumPropItem *ob_sel_menu_enum_itemf(Cxt *C,
+                                                  ApiPtr *UNUSED(ptr),
+                                                  ApiProp *UNUSED(prop),
+                                                  bool *r_free)
 {
-  EnumPropertyItem *item = NULL, item_tmp = {0};
+  EnumPropItem *item = NULL, item_tmp = {0};
   int totitem = 0;
   int i = 0;
 
-  /* Don't need context but avoid API doc-generation using this. */
-  if (C == NULL || object_mouse_select_menu_data[i].idname[0] == '\0') {
-    return DummyRNA_NULL_items;
+  /* Don't need cxt but avoid API doc-generation using this. */
+  if (C == NULL || ob_mouse_sel_menu_data[i].idname[0] == '\0') {
+    return ApiDummy_NULL_items;
   }
 
-  for (; i < SEL_MENU_SIZE && object_mouse_select_menu_data[i].idname[0] != '\0'; i++) {
-    item_tmp.name = object_mouse_select_menu_data[i].idname;
-    item_tmp.identifier = object_mouse_select_menu_data[i].idname;
+  for (; i < SEL_MENU_SIZE && ob_mouse_sel_menu_data[i].idname[0] != '\0'; i++) {
+    item_tmp.name = ob_mouse_sel_menu_data[i].idname;
+    item_tmp.id = ob_mouse_sel_menu_data[i].idname;
     item_tmp.value = i;
-    item_tmp.icon = object_mouse_select_menu_data[i].icon;
-    RNA_enum_item_add(&item, &totitem, &item_tmp);
+    item_tmp.icon = ob_mouse_sel_menu_data[i].icon;
+    api_enum_item_add(&item, &totitem, &item_tmp);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static int object_select_menu_exec(bContext *C, wmOperator *op)
+static int ob_sel_menu_ex(Cxt *C, WinOp *op)
 {
-  const int name_index = RNA_enum_get(op->ptr, "name");
-  const bool extend = RNA_boolean_get(op->ptr, "extend");
-  const bool deselect = RNA_boolean_get(op->ptr, "deselect");
-  const bool toggle = RNA_boolean_get(op->ptr, "toggle");
+  const int name_index = api_enum_get(op->ptr, "name");
+  const bool extend = api_bool_get(op->ptr, "extend");
+  const bool desel = api_bool_get(op->ptr, "desel");
+  const bool toggle = api_bool_get(op->ptr, "toggle");
   bool changed = false;
-  const char *name = object_mouse_select_menu_data[name_index].idname;
+  const char *name = ob_mouse_sel_menu_data[name_index].idname;
 
-  View3D *v3d = CTX_wm_view3d(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   const Base *oldbasact = BASACT(view_layer);
 
   Base *basact = NULL;
-  CTX_DATA_BEGIN (C, Base *, base, selectable_bases) {
+  CXT_DATA_BEGIN (C, Base *, base, selectable_bases) {
     /* This is a bit dodgy, there should only be ONE object with this name,
-     * but library objects can mess this up. */
-    if (STREQ(name, base->object->id.name + 2)) {
+     * but lib objs can mess this up. */
+    if (STREQ(name, base->ob->id.name + 2)) {
       basact = base;
       break;
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
   if (basact == NULL) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   UNUSED_VARS_NDEBUG(v3d);
-  BLI_assert(BASE_SELECTABLE(v3d, basact));
+  lib_assert(BASE_SELECTABLE(v3d, basact));
 
   if (extend) {
-    ED_object_base_select(basact, BA_SELECT);
+    ed_ob_base_sel(basact, BA_SEL);
     changed = true;
   }
-  else if (deselect) {
-    ED_object_base_select(basact, BA_DESELECT);
+  else if (desel) {
+    ed_ob_base_sel(basact, BA_DESEL);
     changed = true;
   }
   else if (toggle) {
     if (basact->flag & BASE_SELECTED) {
       if (basact == oldbasact) {
-        ED_object_base_select(basact, BA_DESELECT);
+        ed_ob_base_sel(basact, BA_DESEL);
         changed = true;
       }
     }
     else {
-      ED_object_base_select(basact, BA_SELECT);
+      ed_ob_base_sel(basact, BA_SEL);
       changed = true;
     }
   }
   else {
-    object_deselect_all_except(view_layer, basact);
-    ED_object_base_select(basact, BA_SELECT);
+    ob_desel_all_except(view_layer, basact);
+    ed_ob_base_sel(basact, BA_SEL);
     changed = true;
   }
 
   if ((oldbasact != basact)) {
-    ED_object_base_activate(C, basact);
+    ed_ob_base_activate(C, basact);
   }
 
   /* weak but ensures we activate menu again before using the enum */
-  memset(object_mouse_select_menu_data, 0, sizeof(object_mouse_select_menu_data));
+  memset(ob_mouse_sel_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   /* undo? */
   if (changed) {
-    Scene *scene = CTX_data_scene(C);
-    DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+    Scene *scene = cxt_data_scene(C);
+    graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
 
-    ED_outliner_select_sync_from_object_tag(C);
+    ed_outliner_sel_sync_from_ob_tag(C);
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-void VIEW3D_OT_select_menu(wmOperatorType *ot)
+void VIEW3D_OT_sel_menu(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Select Menu";
-  ot->description = "Menu object selection";
-  ot->idname = "VIEW3D_OT_select_menu";
+  /* ids */
+  ot->name = "Sel Menu";
+  ot->description = "Menu ob sel";
+  ot->idname = "VIEW3D_OT_sel_menu";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_select_menu_exec;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_sel_menu_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* #Object.id.name to select (dynamic enum). */
-  prop = RNA_def_enum(ot->srna, "name", DummyRNA_NULL_items, 0, "Object Name", "");
-  RNA_def_enum_funcs(prop, object_select_menu_enum_itemf);
-  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
+  /* Ob.id.name to sel (dynamic enum). */
+  prop = api_def_enum(ot->sapi, "name", DummyApi_NULL_items, 0, "Ob Name", "");
+  api_def_enum_fns(prop, ob_sel_menu_enum_itemf);
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
   ot->prop = prop;
 
-  prop = RNA_def_boolean(ot->srna, "extend", 0, "Extend", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "toggle", 0, "Toggle", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "extend", 0, "Extend", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "desel", 0, "Desel", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->srna, "toggle", 0, "Toggle", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/**
- * \return True when a menu was activated.
- */
-static bool object_mouse_select_menu(bContext *C,
-                                     ViewContext *vc,
-                                     const GPUSelectResult *buffer,
-                                     const int hits,
-                                     const int mval[2],
-                                     const struct SelectPick_Params *params,
-                                     Base **r_basact)
+/* return True when a menu was activate */
+static bool ob_mouse_sel_menu(Cxt *C,
+                              ViewCxt *vc,
+                              const GPUSelResult *buffer,
+                              const int hits,
+                              const int mval[2],
+                              const struct SelPick_Params *params,
+                              Base **r_basact)
 {
   int base_count = 0;
   bool ok;
   LinkNodePair linklist = {NULL, NULL};
 
-  /* handle base->object->select_id */
-  CTX_DATA_BEGIN (C, Base *, base, selectable_bases) {
+  /* handle base->ob->sel_id */
+  CXT_DATA_BEGIN (C, Base *, base, selectable_bases) {
     ok = false;
 
-    /* two selection methods, the CTRL select uses max dist of 15 */
+    /* two sel methods, the CTRL sel uses max dist of 15 */
     if (buffer) {
       for (int a = 0; a < hits; a++) {
         /* index was converted */
-        if (base->object->runtime.select_id == (buffer[a].id & ~0xFFFF0000)) {
+        if (base->ob->runtime.sel_id == (buffer[a].id & ~0xFFFF0000)) {
           ok = true;
           break;
         }
@@ -1547,7 +1541,7 @@ static bool object_mouse_select_menu(bContext *C,
     }
     else {
       const int dist = 15 * U.pixelsize;
-      if (ED_view3d_project_base(vc->region, base) == V3D_PROJ_RET_OK) {
+      if (ed_view3d_project_base(vc->rgn, base) == V3D_PROJ_RET_OK) {
         const int delta_px[2] = {base->sx - mval[0], base->sy - mval[1]};
         if (len_manhattan_v2_int(delta_px) < dist) {
           ok = true;
@@ -1557,14 +1551,14 @@ static bool object_mouse_select_menu(bContext *C,
 
     if (ok) {
       base_count++;
-      BLI_linklist_append(&linklist, base);
+      lib_linklist_append(&linklist, base);
 
       if (base_count == SEL_MENU_SIZE) {
         break;
       }
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
   *r_basact = NULL;
 
@@ -1573,73 +1567,73 @@ static bool object_mouse_select_menu(bContext *C,
   }
   if (base_count == 1) {
     Base *base = (Base *)linklist.list->link;
-    BLI_linklist_free(linklist.list, NULL);
+    lib_linklist_free(linklist.list, NULL);
     *r_basact = base;
     return false;
   }
 
-  /* UI, full in static array values that we later use in an enum function */
+  /* UI, full in static array vals that we later use in an enum fn */
   LinkNode *node;
   int i;
-
-  memset(object_mouse_select_menu_data, 0, sizeof(object_mouse_select_menu_data));
+l
+  memset(ob_mouse_sel_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   for (node = linklist.list, i = 0; node; node = node->next, i++) {
     Base *base = node->link;
-    Object *ob = base->object;
+    Ob *ob = base->object;
     const char *name = ob->id.name + 2;
 
-    BLI_strncpy(object_mouse_select_menu_data[i].idname, name, MAX_ID_NAME - 2);
-    object_mouse_select_menu_data[i].icon = UI_icon_from_id(&ob->id);
+    lib_strncpy(ob_mouse_sel_menu_data[i].idname, name, MAX_ID_NAME - 2);
+    ob_mouse_sel_menu_data[i].icon = ui_icon_from_id(&ob->id);
   }
 
-  wmOperatorType *ot = WM_operatortype_find("VIEW3D_OT_select_menu", false);
-  PointerRNA ptr;
+  WinOpType *ot = win_optype_find("VIEW3D_OT_sel_menu", false);
+  ApiPtr ptr;
 
-  WM_operator_properties_create_ptr(&ptr, ot);
-  RNA_boolean_set(&ptr, "extend", params->sel_op == SEL_OP_ADD);
-  RNA_boolean_set(&ptr, "deselect", params->sel_op == SEL_OP_SUB);
-  RNA_boolean_set(&ptr, "toggle", params->sel_op == SEL_OP_XOR);
-  WM_operator_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, &ptr, NULL);
-  WM_operator_properties_free(&ptr);
+  win_op_props_create_ptr(&ptr, ot);
+  api_bool_set(&ptr, "extend", params->sel_op == SEL_OP_ADD);
+  api_bool_set(&ptr, "desel", params->sel_op == SEL_OP_SUB);
+  api_bool_set(&ptr, "toggle", params->sel_op == SEL_OP_XOR);
+  win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, &ptr, NULL);
+  win_op_props_free(&ptr);
 
-  BLI_linklist_free(linklist.list, NULL);
+  lib_linklist_free(linklist.list, NULL);
   return true;
 }
 
-static int bone_select_menu_exec(bContext *C, wmOperator *op)
+static int bone_sel_menu_ex(Cxt *C, WinOp *op)
 {
-  const int name_index = RNA_enum_get(op->ptr, "name");
+  const int name_index = api_enum_get(op->ptr, "name");
 
-  const struct SelectPick_Params params = {
-      .sel_op = ED_select_op_from_booleans(RNA_boolean_get(op->ptr, "extend"),
-                                           RNA_boolean_get(op->ptr, "deselect"),
-                                           RNA_boolean_get(op->ptr, "toggle")),
+  const struct SelPick_Params params = {
+      .sel_op = ed_sel_op_from_bools(api_bool_get(op->ptr, "extend"),
+                                     api_bool_get(op->ptr, "desel"),
+                                     api_bool_get(op->ptr, "toggle")),
   };
 
-  View3D *v3d = CTX_wm_view3d(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   const Base *oldbasact = BASACT(view_layer);
 
-  Base *basact = object_mouse_select_menu_data[name_index].base_ptr;
+  Base *basact = ob_mouse_sel_menu_data[name_index].base_ptr;
 
   if (basact == NULL) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  BLI_assert(BASE_SELECTABLE(v3d, basact));
+  lib_assert(BASE_SELECTABLE(v3d, basact));
 
-  if (basact->object->mode & OB_MODE_EDIT) {
-    EditBone *ebone = (EditBone *)object_mouse_select_menu_data[name_index].item_ptr;
-    ED_armature_edit_select_pick_bone(C, basact, ebone, BONE_SELECTED, &params);
+  if (basact->ob->mode & OB_MODE_EDIT) {
+    EditBone *ebone = (EditBone *)ob_mouse_sel_menu_data[name_index].item_ptr;
+    ed_armature_edit_sel_pick_bone(C, basact, ebone, BONE_SELECTED, &params);
   }
   else {
-    bPoseChannel *pchan = (bPoseChannel *)object_mouse_select_menu_data[name_index].item_ptr;
-    ED_armature_pose_select_pick_bone(view_layer, v3d, basact->object, pchan->bone, &params);
+    PoseChannel *pchan = (PoseChannel *)ob_mouse_sel_menu_data[name_index].item_ptr;
+    ed_armature_pose_sel_pick_bone(view_layer, v3d, basact->ob, pchan->bone, &params);
   }
 
   /* Weak but ensures we activate the menu again before using the enum. */
-  memset(object_mouse_select_menu_data, 0, sizeof(object_mouse_select_menu_data));
+  memset(ob_mouse_sel_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   /* We make the armature selected:
    * Not-selected active object in pose-mode won't work well for tools. */
