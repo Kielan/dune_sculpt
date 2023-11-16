@@ -63,84 +63,76 @@
 #include "ed_armature.h"
 #include "ed_curve.h"
 #include "ed_pen.h"
-#include "ED_lattice.h"
-#include "ED_mball.h"
-#include "ED_mesh.h"
-#include "ED_object.h"
-#include "ED_outliner.h"
-#include "ED_particle.h"
-#include "ED_screen.h"
-#include "ED_sculpt.h"
-#include "ED_select_utils.h"
+#include "ed_lattice.h"
+#include "ed_mball.h"
+#include "ed_mesh.h"
+#include "ed_ob.h"
+#include "ed_outliner.h"
+#include "ed_particle.h"
+#include "ed_screen.h"
+#include "ed_sculpt.h"
+#include "ed_sel_utils.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui.h"
+#include "ui_resources.h"
 
-#include "GPU_matrix.h"
-#include "GPU_select.h"
+#include "gpu_matrix.h"
+#include "gpu_sel.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "DRW_engine.h"
-#include "DRW_select_buffer.h"
+#include "drw_engine.h"
+#include "drw_sel_buffer.h"
 
 #include "view3d_intern.h" /* own include */
 
 // #include "PIL_time_utildefines.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Public Utilities
- * \{ */
-
-float ED_view3d_select_dist_px(void)
+/* Pub Utils */
+float ed_view3d_sel_dist_px(void)
 {
   return 75.0f * U.pixelsize;
 }
 
-void ED_view3d_viewcontext_init(bContext *C, ViewContext *vc, Depsgraph *depsgraph)
+void ed_view3d_viewcxt_init(bCxt *C, ViewCxt *vc, Graph *graph)
 {
-  /* TODO: should return whether there is valid context to continue. */
+  /* TODO: should return whether there is valid cxt to continue. */
 
-  memset(vc, 0, sizeof(ViewContext));
+  memset(vc, 0, sizeof(ViewCxt));
   vc->C = C;
-  vc->region = CTX_wm_region(C);
-  vc->bmain = CTX_data_main(C);
-  vc->depsgraph = depsgraph;
-  vc->scene = CTX_data_scene(C);
-  vc->view_layer = CTX_data_view_layer(C);
-  vc->v3d = CTX_wm_view3d(C);
-  vc->win = CTX_wm_window(C);
-  vc->rv3d = CTX_wm_region_view3d(C);
-  vc->obact = CTX_data_active_object(C);
-  vc->obedit = CTX_data_edit_object(C);
+  vc->rgn = cxt_win_rgn(C);
+  vc->main = cxt_data_main(C);
+  vc->graph = graph;
+  vc->scene = cxt_data_scene(C);
+  vc->view_layer = cxt_data_view_layer(C);
+  vc->v3d = cxt_win_view3d(C);
+  vc->win = cxt_win(C);
+  vc->rv3d = cxt_win_rgn_view3d(C);
+  vc->obact = cxt_data_active_ob(C);
+  vc->obedit = cxt_data_edit_ob(C);
 }
 
-void ED_view3d_viewcontext_init_object(ViewContext *vc, Object *obact)
+void ed_view3d_viewcxt_init_ob(ViewCxt *vc, Ob *obact)
 {
   vc->obact = obact;
   if (vc->obedit) {
-    BLI_assert(BKE_object_is_in_editmode(obact));
+    lib_assert(dune_ob_is_in_editmode(obact));
     vc->obedit = obact;
     if (vc->em) {
-      vc->em = BKE_editmesh_from_object(vc->obedit);
+      vc->em = dune_meshedit_from_ob(vc->obedit);
     }
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Object Utilities
- * \{ */
-
-static bool object_deselect_all_visible(ViewLayer *view_layer, View3D *v3d)
+/* Internal Ob Utils */
+static bool ob_desel_all_visible(ViewLayer *view_layer, View3D *v3d)
 {
   bool changed = false;
-  LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
+  LIST_FOREACH (Base *, base, &view_layer->ob_bases) {
     if (base->flag & BASE_SELECTED) {
       if (BASE_SELECTABLE(v3d, base)) {
-        ED_object_base_select(base, BA_DESELECT);
+        ed_ob_base_sel(base, BA_DESEL);
         changed = true;
       }
     }
@@ -148,14 +140,14 @@ static bool object_deselect_all_visible(ViewLayer *view_layer, View3D *v3d)
   return changed;
 }
 
-/* deselect all except b */
-static bool object_deselect_all_except(ViewLayer *view_layer, Base *b)
+/* desel all except b */
+static bool ob_desel_all_except(ViewLayer *view_layer, Base *b)
 {
   bool changed = false;
-  LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
+  LIST_FOREACH (Base *, base, &view_layer->ob_bases) {
     if (base->flag & BASE_SELECTED) {
       if (b != base) {
-        ED_object_base_select(base, BA_DESELECT);
+        ed_ob_base_sel(base, BA_DESEL);
         changed = true;
       }
     }
@@ -163,62 +155,58 @@ static bool object_deselect_all_except(ViewLayer *view_layer, Base *b)
   return changed;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Internal Edit-Mesh Select Buffer Wrapper
+/* Internal Edit-Mesh Sel Buffer Wrapper
+ * Avoid duplicate code when using edit-mode sel,
+ * actual logic is handled outside of this fn.
  *
- * Avoid duplicate code when using edit-mode selection,
- * actual logic is handled outside of this function.
- *
- * \note Currently this #EDBMSelectID_Context which is mesh specific
+ * Currently this EDBMSelIdCxt which is mesh specific
  * however the logic could also be used for non-meshes too.
  *
  * \{ */
 
-struct EditSelectBuf_Cache {
-  BLI_bitmap *select_bitmap;
+struct EditSelBufCache {
+  lib_bitmap *sel_bitmap;
 };
 
-static void editselect_buf_cache_init(ViewContext *vc, short select_mode)
+static void editsel_buf_cache_init(ViewCzt *vc, short sel_mode)
 {
   if (vc->obedit) {
     uint bases_len = 0;
-    Base **bases = BKE_view_layer_array_from_bases_in_edit_mode(
+    Base **bases = dune_view_layer_array_from_bases_in_edit_mode(
         vc->view_layer, vc->v3d, &bases_len);
 
-    DRW_select_buffer_context_create(bases, bases_len, select_mode);
-    MEM_freeN(bases);
+    drw_sel_buffer_cxt_create(bases, bases_len, sel_mode);
+    mem_free(bases);
   }
   else {
-    /* Use for paint modes, currently only a single object at a time. */
+    /* Use for paint modes, currently only a single ob at a time. */
     if (vc->obact) {
-      Base *base = BKE_view_layer_base_find(vc->view_layer, vc->obact);
-      DRW_select_buffer_context_create(&base, 1, select_mode);
+      Base *base = dune_view_layer_base_find(vc->view_layer, vc->obact);
+      drw_sel_buffer_cxt_create(&base, 1, sel_mode);
     }
   }
 }
 
-static void editselect_buf_cache_free(struct EditSelectBuf_Cache *esel)
+static void editsel_buf_cache_free(struct EditSelBufCache *esel)
 {
-  MEM_SAFE_FREE(esel->select_bitmap);
+  MEM_SAFE_FREE(esel->sel_bitmap);
 }
 
-static void editselect_buf_cache_free_voidp(void *esel_voidp)
+static void editsel_buf_cache_free_voidp(void *esel_voidp)
 {
-  editselect_buf_cache_free(esel_voidp);
-  MEM_freeN(esel_voidp);
+  editsel_buf_cache_free(esel_voidp);
+  mem_free(esel_voidp);
 }
 
-static void editselect_buf_cache_init_with_generic_userdata(wmGenericUserData *wm_userdata,
-                                                            ViewContext *vc,
-                                                            short select_mode)
+static void editsel_buf_cache_init_with_generic_userdata(WinGenericUserData *win_userdata,
+                                                         ViewCxt *vc,
+                                                         short sel_mode)
 {
-  struct EditSelectBuf_Cache *esel = MEM_callocN(sizeof(*esel), __func__);
-  wm_userdata->data = esel;
-  wm_userdata->free_fn = editselect_buf_cache_free_voidp;
-  wm_userdata->use_free = true;
-  editselect_buf_cache_init(vc, select_mode);
+  struct EditSelBuf_Cache *esel = mem_calloc(sizeof(*esel), __func__);
+  win_userdata->data = esel;
+  win_userdata->free_fn = editsel_buf_cache_free_voidp;
+  win_userdata->use_free = true;
+  editsel_buf_cache_init(vc, sel_mode);
 }
 
 /** \} */
