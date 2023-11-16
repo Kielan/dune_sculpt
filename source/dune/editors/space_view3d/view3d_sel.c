@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "DNA_action_types.h"
+#include "DNA_action.h"
 #include "DNA_armature_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_gpencil_types.h"
