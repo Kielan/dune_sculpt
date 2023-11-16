@@ -185,7 +185,7 @@ eV3DProjStatus ED_view3d_project_float_ex(const ARegion *region,
                                           const eV3DProjTest flag)
 {
   float tvec[2];
-  eV3DProjStatus ret = ed_view3d_project__internal(region, perspmat, is_local, co, tvec, flag);
+  eV3DProjStatus ret = ed_view3d_project__internal(rgn, perspmat, is_local, co, tvec, flag);
   if (ret == V3D_PROJ_RET_OK) {
     if (isfinite(tvec[0]) && isfinite(tvec[1])) {
       copy_v2_v2(r_co, tvec);
@@ -197,74 +197,72 @@ eV3DProjStatus ED_view3d_project_float_ex(const ARegion *region,
   return ret;
 }
 
-eV3DProjStatus ED_view3d_project_short_global(const ARegion *region,
+eV3DProjStatus ed_view3d_project_short_global(const ARgn *rgn,
                                               const float co[3],
                                               short r_co[2],
                                               const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  return ED_view3d_project_short_ex(region, rv3d->persmat, false, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  return ed_view3d_project_short_ex(region, rv3d->persmat, false, co, r_co, flag);
 }
-eV3DProjStatus ED_view3d_project_short_object(const ARegion *region,
-                                              const float co[3],
-                                              short r_co[2],
-                                              const eV3DProjTest flag)
+eV3DProjStatus ed_view3d_project_short_ob(const ARgn *rgn,
+                                          const float co[3],
+                                          short r_co[2],
+                                          const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  ED_view3d_check_mats_rv3d(rv3d);
-  return ED_view3d_project_short_ex(region, rv3d->persmatob, true, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  ed_view3d_check_mats_rv3d(rv3d);
+  return ed_view3d_project_short_ex(rgn, rv3d->persmatob, true, co, r_co, flag);
 }
 
-eV3DProjStatus ED_view3d_project_int_global(const ARegion *region,
+eV3DProjStatus ed_view3d_project_int_global(const ARgn *rgn,
                                             const float co[3],
                                             int r_co[2],
                                             const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  return ED_view3d_project_int_ex(region, rv3d->persmat, false, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  return ed_view3d_project_int_ex(rgn, rv3d->persmat, false, co, r_co, flag);
 }
-eV3DProjStatus ED_view3d_project_int_object(const ARegion *region,
-                                            const float co[3],
-                                            int r_co[2],
-                                            const eV3DProjTest flag)
+eV3DProjStatus ed_view3d_project_int_ob(const ARgn *rgn,
+                                        const float co[3],
+                                        int r_co[2],
+                                        const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  ED_view3d_check_mats_rv3d(rv3d);
-  return ED_view3d_project_int_ex(region, rv3d->persmatob, true, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  ed_view3d_check_mats_rv3d(rv3d);
+  return ed_view3d_project_int_ex(rgn, rv3d->persmatob, true, co, r_co, flag);
 }
 
-eV3DProjStatus ED_view3d_project_float_global(const ARegion *region,
+eV3DProjStatus ed_view3d_project_float_global(const ARgn *rgnn,
                                               const float co[3],
                                               float r_co[2],
                                               const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  return ED_view3d_project_float_ex(region, rv3d->persmat, false, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  return ed_view3d_project_float_ex(rgn, rv3d->persmat, false, co, r_co, flag);
 }
-eV3DProjStatus ED_view3d_project_float_object(const ARegion *region,
-                                              const float co[3],
-                                              float r_co[2],
-                                              const eV3DProjTest flag)
+eV3DProjStatus ed_view3d_project_float_ob(const ARgn *rgn,
+                                          const float co[3],
+                                          float r_co[2],
+                                          const eV3DProjTest flag)
 {
-  RegionView3D *rv3d = region->regiondata;
-  ED_view3d_check_mats_rv3d(rv3d);
-  return ED_view3d_project_float_ex(region, rv3d->persmatob, true, co, r_co, flag);
+  RgnView3D *rv3d = rgn->rgndata;
+  ed_view3d_check_mats_rv3d(rv3d);
+  return ed_view3d_project_float_ex(rgn, rv3d->persmatob, true, co, r_co, flag);
 }
 
-/* More Generic Window/Ray/Vector projection functions
- * *************************************************** */
-
-float ED_view3d_pixel_size(const RegionView3D *rv3d, const float co[3])
+/* More Generic Win/Ray/Vector projection fns */
+float ed_view3d_pixel_size(const RgnView3D *rv3d, const float co[3])
 {
   return mul_project_m4_v3_zfac(rv3d->persmat, co) * rv3d->pixsize * U.pixelsize;
 }
 
-float ED_view3d_pixel_size_no_ui_scale(const RegionView3D *rv3d, const float co[3])
+float ed_view3d_pixel_size_no_ui_scale(const RgnView3D *rv3d, const float co[3])
 {
   return mul_project_m4_v3_zfac(rv3d->persmat, co) * rv3d->pixsize;
 }
 
-float ED_view3d_calc_zfac_ex(const RegionView3D *rv3d, const float co[3], bool *r_flip)
+float ed_view3d_calc_zfac_ex(const RgnView3D *rv3d, const float co[3], bool *r_flip)
 {
   float zfac = mul_project_m4_v3_zfac(rv3d->persmat, co);
 
@@ -287,21 +285,21 @@ float ED_view3d_calc_zfac_ex(const RegionView3D *rv3d, const float co[3], bool *
   return zfac;
 }
 
-float ED_view3d_calc_zfac(const RegionView3D *rv3d, const float co[3])
+float ed_view3d_calc_zfac(const RgnView3D *rv3d, const float co[3])
 {
-  return ED_view3d_calc_zfac_ex(rv3d, co, NULL);
+  return ed_view3d_calc_zfac_ex(rv3d, co, NULL);
 }
 
-float ED_view3d_calc_depth_for_comparison(const RegionView3D *rv3d, const float co[3])
+float ed_view3d_calc_depth_for_comparison(const RgnView3D *rv3d, const float co[3])
 {
   if (rv3d->is_persp) {
-    return ED_view3d_calc_zfac(rv3d, co);
+    return ed_view3d_calc_zfac(rv3d, co);
   }
   return -dot_v3v3(rv3d->viewinv[2], co);
 }
 
-static void view3d_win_to_ray_segment(struct Depsgraph *depsgraph,
-                                      const ARegion *region,
+static void view3d_win_to_ray_segment(struct Graph *graph,
+                                      const ARgn *rgn,
                                       const View3D *v3d,
                                       const float mval[2],
                                       float r_ray_co[3],
@@ -309,7 +307,7 @@ static void view3d_win_to_ray_segment(struct Depsgraph *depsgraph,
                                       float r_ray_start[3],
                                       float r_ray_end[3])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float _ray_co[3], _ray_dir[3], start_offset, end_offset;
 
   if (!r_ray_co) {
@@ -319,15 +317,15 @@ static void view3d_win_to_ray_segment(struct Depsgraph *depsgraph,
     r_ray_dir = _ray_dir;
   }
 
-  ED_view3d_win_to_origin(region, mval, r_ray_co);
-  ED_view3d_win_to_vector(region, mval, r_ray_dir);
+  ed_view3d_win_to_origin(rgn, mval, r_ray_co);
+  ed_view3d_win_to_vector(rgn, mval, r_ray_dir);
 
   if ((rv3d->is_persp == false) && (rv3d->persp != RV3D_CAMOB)) {
     end_offset = v3d->clip_end / 2.0f;
     start_offset = -end_offset;
   }
   else {
-    ED_view3d_clip_range_get(depsgraph, v3d, rv3d, &start_offset, &end_offset, false);
+    ed_view3d_clip_range_get(graph, v3d, rv3d, &start_offset, &end_offset, false);
   }
 
   if (r_ray_start) {
@@ -338,7 +336,7 @@ static void view3d_win_to_ray_segment(struct Depsgraph *depsgraph,
   }
 }
 
-bool ED_view3d_clip_segment(const RegionView3D *rv3d, float ray_start[3], float ray_end[3])
+bool ed_view3d_clip_segment(const RgnView3D *rv3d, float ray_start[3], float ray_end[3])
 {
   if ((rv3d->rflag & RV3D_CLIPPING) &&
       (clip_segment_v3_plane_n(ray_start, ray_end, rv3d->clip, 6, ray_start, ray_end) == false)) {
@@ -347,8 +345,8 @@ bool ED_view3d_clip_segment(const RegionView3D *rv3d, float ray_start[3], float 
   return true;
 }
 
-bool ED_view3d_win_to_ray_clipped_ex(struct Depsgraph *depsgraph,
-                                     const ARegion *region,
+bool ed_view3d_win_to_ray_clipped_ex(struct Graph *graph,
+                                     const ARgn *rgn,
                                      const View3D *v3d,
                                      const float mval[2],
                                      float r_ray_co[3],
@@ -359,38 +357,38 @@ bool ED_view3d_win_to_ray_clipped_ex(struct Depsgraph *depsgraph,
   float ray_end[3];
 
   view3d_win_to_ray_segment(
-      depsgraph, region, v3d, mval, r_ray_co, r_ray_normal, r_ray_start, ray_end);
+      graph, rgn, v3d, mval, r_ray_co, r_ray_normal, r_ray_start, ray_end);
 
   /* bounds clipping */
   if (do_clip_planes) {
-    return ED_view3d_clip_segment(region->regiondata, r_ray_start, ray_end);
+    return ed_view3d_clip_segment(rgn->rgndata, r_ray_start, ray_end);
   }
 
   return true;
 }
 
-bool ED_view3d_win_to_ray_clipped(struct Depsgraph *depsgraph,
-                                  const ARegion *region,
+bool ed_view3d_win_to_ray_clipped(struct Graph *graph,
+                                  const ARgn *rhn,
                                   const View3D *v3d,
                                   const float mval[2],
                                   float r_ray_start[3],
                                   float r_ray_normal[3],
                                   const bool do_clip_planes)
 {
-  return ED_view3d_win_to_ray_clipped_ex(
-      depsgraph, region, v3d, mval, NULL, r_ray_normal, r_ray_start, do_clip_planes);
+  return ed_view3d_win_to_ray_clipped_ex(
+      graph, rgn, v3d, mval, NULL, r_ray_normal, r_ray_start, do_clip_planes);
 }
 
-void ED_view3d_win_to_ray(const ARegion *region,
+void ed_view3d_win_to_ray(const ARgn *rgn,
                           const float mval[2],
                           float r_ray_start[3],
                           float r_ray_normal[3])
 {
-  ED_view3d_win_to_origin(region, mval, r_ray_start);
-  ED_view3d_win_to_vector(region, mval, r_ray_normal);
+  ed_view3d_win_to_origin(rgn, mval, r_ray_start);
+  ed_view3d_win_to_vector(rgn, mval, r_ray_normal);
 }
 
-void ED_view3d_global_to_vector(const RegionView3D *rv3d, const float coord[3], float vec[3])
+void ed_view3d_global_to_vector(const RgnView3D *rv3d, const float coord[3], float vec[3])
 {
   if (rv3d->is_persp) {
     float p1[4], p2[4];
@@ -413,24 +411,24 @@ void ED_view3d_global_to_vector(const RegionView3D *rv3d, const float coord[3], 
   normalize_v3(vec);
 }
 
-/* very similar to ED_view3d_win_to_3d() but has no advantage, de-duplicating */
+/* very similar to ed_view3d_win_to_3d() but has no advantage, de-duplicating */
 #if 0
-bool view3d_get_view_aligned_coordinate(ARegion *region,
+bool view3d_get_view_aligned_coordinate(ARgn *rgn,
                                         float fp[3],
                                         const int mval[2],
                                         const bool do_fallback)
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
   float dvec[3];
   int mval_cpy[2];
   eV3DProjStatus ret;
 
-  ret = ED_view3d_project_int_global(region, fp, mval_cpy, V3D_PROJ_TEST_NOP);
+  ret = ed_view3d_project_int_global(rgn, fp, mval_cpy, V3D_PROJ_TEST_NOP);
 
   if (ret == V3D_PROJ_RET_OK) {
     const float mval_f[2] = {(float)(mval_cpy[0] - mval[0]), (float)(mval_cpy[1] - mval[1])};
-    const float zfac = ED_view3d_calc_zfac(rv3d, fp);
-    ED_view3d_win_to_delta(region, mval_f, zfac, dvec);
+    const float zfac = ed_view3d_calc_zfac(rv3d, fp);
+    ed_view3d_win_to_delta(rgn, mval_f, zfac, dvec);
     sub_v3_v3(fp, dvec);
 
     return true;
@@ -439,7 +437,7 @@ bool view3d_get_view_aligned_coordinate(ARegion *region,
     /* fallback to the view center */
     if (do_fallback) {
       negate_v3_v3(fp, rv3d->ofs);
-      return view3d_get_view_aligned_coordinate(region, fp, mval, false);
+      return view3d_get_view_aligned_coordinate(rgn, fp, mval, false);
     }
     else {
       return false;
@@ -448,13 +446,13 @@ bool view3d_get_view_aligned_coordinate(ARegion *region,
 }
 #endif
 
-void ED_view3d_win_to_3d(const View3D *v3d,
-                         const ARegion *region,
+void ed_view3d_win_to_3d(const View3D *v3d,
+                         const ARgn *rgn,
                          const float depth_pt[3],
                          const float mval[2],
                          float r_out[3])
 {
-  RegionView3D *rv3d = region->regiondata;
+  RgnView3D *rv3d = rgn->rgndata;
 
   float ray_origin[3];
   float ray_direction[3];
@@ -464,9 +462,9 @@ void ED_view3d_win_to_3d(const View3D *v3d,
     float plane[4];
 
     copy_v3_v3(ray_origin, rv3d->viewinv[3]);
-    ED_view3d_win_to_vector(region, mval, ray_direction);
+    ed_view3d_win_to_vector(region, mval, ray_direction);
 
-    /* NOTE: we could use #isect_line_plane_v3()
+    /* We could use isect_line_plane_v3()
      * however we want the intersection to be in front of the view no matter what,
      * so apply the unsigned factor instead. */
     plane_from_point_normal_v3(plane, depth_pt, rv3d->viewinv[2]);
@@ -475,16 +473,16 @@ void ED_view3d_win_to_3d(const View3D *v3d,
     lambda = fabsf(lambda);
   }
   else {
-    float dx = (2.0f * mval[0] / (float)region->winx) - 1.0f;
-    float dy = (2.0f * mval[1] / (float)region->winy) - 1.0f;
+    float dx = (2.0f * mval[0] / (float)rgn->winx) - 1.0f;
+    float dy = (2.0f * mval[1] / (float)rgn->winy) - 1.0f;
 
     if (rv3d->persp == RV3D_CAMOB) {
       /* ortho camera needs offset applied */
       const Camera *cam = v3d->camera->data;
-      const int sensor_fit = BKE_camera_sensor_fit(cam->sensor_fit, region->winx, region->winy);
-      const float zoomfac = BKE_screen_view3d_zoom_to_fac(rv3d->camzoom) * 4.0f;
-      const float aspx = region->winx / (float)region->winy;
-      const float aspy = region->winy / (float)region->winx;
+      const int sensor_fit = dune_camera_sensor_fit(cam->sensor_fit, rgn->winx, rgn->winy);
+      const float zoomfac = dune_screen_view3d_zoom_to_fac(rv3d->camzoom) * 4.0f;
+      const float aspx = rgn->winx / (float)rgn->winy;
+      const float aspy = rgn->winy / (float)rgn->winx;
       const float shiftx = cam->shiftx * 0.5f *
                            (sensor_fit == CAMERA_SENSOR_FIT_HOR ? 1.0f : aspy);
       const float shifty = cam->shifty * 0.5f *
