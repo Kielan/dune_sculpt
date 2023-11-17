@@ -1796,7 +1796,7 @@ static bool bone_mouse_sel_menu(Cxt *C,
   LinkNode *bone_node, *base_node;
   int i;
 
-  memset(object_mouse_select_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
+  memset(ob_mouse_sel_menu_data, 0, sizeof(ob_mouse_sel_menu_data));
 
   for (base_node = base_list.list, bone_node = bone_list.list, i = 0; bone_node;
        base_node = base_node->next, bone_node = bone_node->next, i++) {
@@ -1810,8 +1810,8 @@ static bool bone_mouse_sel_menu(Cxt *C,
       name = ebone->name;
     }
     else {
-      bPoseChannel *pchan = bone_node->link;
-      object_mouse_sel_menu_data[i].item_ptr = pchan;
+      PoseChannel *pchan = bone_node->link;
+      ob_mouse_sel_menu_data[i].item_ptr = pchan;
       name = pchan->name;
     }
 
@@ -1871,8 +1871,7 @@ static int selbuffer_ret_hits_5(GPUSelResult *buffer,
  * Checks three sel levels and compare.
  * param do_nearest_xray_if_supported: When set, read in hits that don't stop
  * at the nearest surface. The hits must still be ordered by depth.
- * Needed so we can step to the next, non-active ob when it's alrdy sel, see: T76445.
- */
+ * Needed so we can step to the next, non-active ob when it's alrdy sel, see: T76445. */
 static int mixed_bones_ob_selbuffer(ViewCxt *vc,
                                     GPUSelResult *buffer,
                                     const int buffer_len,
@@ -2044,13 +2043,13 @@ static Base *mouse_sel_eval_buffer(ViewCxt *vc,
       }
 
       /* Find the best active & non-active hits.
-       * NOTE: Checking if `hits > 1` isn't a reliable way to know
+       * Checking if `hits > 1` isn't a reliable way to know
        * if there are multiple objs selected since it's possible the same ob
        * generates multiple hits, either from:
-       * - Multiple sub-components (bones & camera tracks).
-       * - Multiple selectable elements such as the ob center and the geometry.
+       * Multiple sub-components (bones & camera tracks).
+       * Multiple selectable elements such as the ob center and the geometry.
        * For this reason, keep track of the best hit as well as the best hit that
-       * excludes the selected & active object, using this value when it's valid. */
+       * excludes the selected & active ob, using this val when it's valid. */
 
       uint min_not_active = min;
       int hit_index = -1, hit_index_not_active = -1;
@@ -2171,7 +2170,7 @@ static Base *mouse_sel_ob_center(ViewCxt *vc, Base *startbase, const int mval[2]
     if (BASE_SELECTABLE(v3d, base)) {
       float screen_co[2];
       if (ed_view3d_project_float_global(
-              region, base->ob->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) ==
+              rgn, base->ob->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) ==
           V3D_PROJ_RET_OK) {
         float dist_test = len_manhattan_v2v2(mval_fl, screen_co);
         if (base == oldbasact) {
@@ -2195,139 +2194,139 @@ static Base *mouse_sel_ob_center(ViewCxt *vc, Base *startbase, const int mval[2]
   return basact;
 }
 
-static Base *ed_view3d_give_base_under_cursor_ex(bContext *C,
+static Base *ed_view3d_give_base_under_cursor_ex(Cxt *C,
                                                  const int mval[2],
                                                  int *r_material_slot)
 {
-  Graph *graph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc;
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewCxt vc;
   Base *basact = NULL;
-  GPUSelectResult buffer[MAXPICKELEMS];
+  GPUSelResult buffer[MAXPICKELEMS];
 
-  /* setup view context for argument to callbacks */
-  view3d_operator_needs_opengl(C);
-  BKE_object_update_select_id(CTX_data_main(C));
+  /* setup view cxt for arg to cbs */
+  view3d_op_needs_opengl(C);
+  dune_ob_update_sel_id(cxt_data_main(C));
 
-  ED_view3d_viewcontext_init(C, &vc, depsgraph);
+  ed_view3d_viewcxt_init(C, &vc, graph);
 
   const bool do_nearest = !XRAY_ACTIVE(vc.v3d);
-  const bool do_material_slot_selection = r_material_slot != NULL;
-  const int hits = mixed_bones_object_selectbuffer(&vc,
-                                                   buffer,
-                                                   ARRAY_SIZE(buffer),
-                                                   mval,
-                                                   VIEW3D_SELECT_FILTER_NOP,
-                                                   do_nearest,
-                                                   false,
-                                                   do_material_slot_selection);
+  const bool do_material_slot_sel = r_material_slot != NULL;
+  const int hits = mixed_bones_ob_selbuffer(&vc,
+                                            buffer,
+                                            ARRAY_SIZE(buffer),
+                                            mval,
+                                            VIEW3D_SEL_FILTER_NOP,
+                                            do_nearest,
+                                            false,
+                                            do_material_slot_selection);
 
   if (hits > 0) {
     const bool has_bones = (r_material_slot == NULL) && selectbuffer_has_bones(buffer, hits);
-    basact = mouse_select_eval_buffer(&vc,
-                                      buffer,
-                                      hits,
-                                      vc.view_layer->object_bases.first,
-                                      has_bones,
-                                      do_nearest,
-                                      r_material_slot);
+    basact = mouse_sel_eval_buffer(&vc,
+                                   buffer,
+                                   hits,
+                                   vc.view_layer->ob_bases.first,
+                                   has_bones,
+                                   do_nearest,
+                                   r_material_slot);
   }
 
   return basact;
 }
 
 
-Base *ED_view3d_give_base_under_cursor(bContext *C, const int mval[2])
+Base *ed_view3d_give_base_under_cursor(Cxt *C, const int mval[2])
 {
   return ed_view3d_give_base_under_cursor_ex(C, mval, NULL);
 }
 
-Object *ED_view3d_give_object_under_cursor(bContext *C, const int mval[2])
+Object *ed_view3d_give_object_under_cursor(Cxt *C, const int mval[2])
 {
-  Base *base = ED_view3d_give_base_under_cursor(C, mval);
+  Base *base = ed_view3d_give_base_under_cursor(C, mval);
   if (base) {
-    return base->object;
+    return base->ob;
   }
   return NULL;
 }
 
-struct Object *ED_view3d_give_material_slot_under_cursor(struct bContext *C,
-                                                         const int mval[2],
-                                                         int *r_material_slot)
+struct Obj *es_view3d_give_material_slot_under_cursor(struct Cxt *C,
+                                                      const int mval[2],
+                                                      int *r_material_slot)
 {
   Base *base = ed_view3d_give_base_under_cursor_ex(C, mval, r_material_slot);
   if (base) {
-    return base->object;
+    return base->ob;
   }
   return NULL;
 }
 
-bool ED_view3d_is_object_under_cursor(bContext *C, const int mval[2])
+bool ed_view3d_is_ob_under_cursor(Cxt *C, const int mval[2])
 {
-  return ED_view3d_give_object_under_cursor(C, mval) != NULL;
+  return ed_view3d_give_ob_under_cursor(C, mval) != NULL;
 }
 
-static void deselect_all_tracks(MovieTracking *tracking)
+static void desel_all_tracks(MovieTracking *tracking)
 {
-  MovieTrackingObject *object;
+  MovieTrackingOb *ob;
 
-  object = tracking->objects.first;
-  while (object) {
-    ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, object);
+  ob = tracking->objs.first;
+  while (ob) {
+    List *tracksbase = dune_tracking_ob_get_tracks(tracking, ob);
     MovieTrackingTrack *track = tracksbase->first;
 
     while (track) {
-      BKE_tracking_track_deselect(track, TRACK_AREA_ALL);
+      dune_tracking_track_desel(track, TRACK_AREA_ALL);
 
       track = track->next;
     }
 
-    object = object->next;
+    ob = ob->next;
   }
 }
 
-static bool ed_object_select_pick_camera_track(bContext *C,
-                                               Scene *scene,
-                                               Base *basact,
-                                               MovieClip *clip,
-                                               const struct GPUSelectResult *buffer,
-                                               const short hits,
-                                               const struct SelectPick_Params *params)
+static bool ed_ob_sel_pick_camera_track(Cxt *C,
+                                        Scene *scene,
+                                        Base *basact,
+                                        MovieClip *clip,
+                                        const struct GPUSelResult *buffer,
+                                        const short hits,
+                                        const struct SelPickParams *params)
 {
   bool changed = false;
   bool found = false;
 
   MovieTracking *tracking = &clip->tracking;
-  ListBase *tracksbase = NULL;
+  List *tracksbase = NULL;
   MovieTrackingTrack *track = NULL;
 
   for (int i = 0; i < hits; i++) {
     const int hitresult = buffer[i].id;
 
-    /* If there's bundles in buffer select bundles first,
+    /* If there's bundles in buffer sel bundles first,
      * so non-camera elements should be ignored in buffer. */
-    if (basact->object->runtime.select_id != (hitresult & 0xFFFF)) {
+    if (basact->ob->runtime.sel_id != (hitresult & 0xFFFF)) {
       continue;
     }
     /* Index of bundle is 1<<16-based. if there's no "bone" index
-     * in height word, this buffer value belongs to camera. not to bundle. */
+     * in height word, this buffer val belongs to camera. not to bundle. */
     if ((hitresult & 0xFFFF0000) == 0) {
       continue;
     }
 
-    track = BKE_tracking_track_get_indexed(&clip->tracking, hitresult >> 16, &tracksbase);
+    track = dune_tracking_track_get_indexed(&clip->tracking, hitresult >> 16, &tracksbase);
     found = true;
     break;
   }
 
-  /* Note `params->deselect_all` is ignored for tracks as in this case
-   * all objects will be de-selected (not tracks). */
+  /* Note `params->desel_all` is ignored for tracks as in this case
+   * all objs will be de-selected (not tracks). */
   if (params->sel_op == SEL_OP_SET) {
-    if ((found && params->select_passthrough) && TRACK_SELECTED(track)) {
+    if ((found && params->sel_passthrough) && TRACK_SELECTED(track)) {
       found = false;
     }
-    else if (found /* `|| params->deselect_all` */) {
-      /* Deselect everything. */
-      deselect_all_tracks(tracking);
+    else if (found /* `|| params->desel_all` */) {
+      /* Desel everything. */
+      desel_all_tracks(tracking);
       changed = true;
     }
   }
@@ -2335,36 +2334,36 @@ static bool ed_object_select_pick_camera_track(bContext *C,
   if (found) {
     switch (params->sel_op) {
       case SEL_OP_ADD: {
-        BKE_tracking_track_select(tracksbase, track, TRACK_AREA_ALL, true);
+        dune_tracking_track_sel(tracksbase, track, TRACK_AREA_ALL, true);
         break;
       }
       case SEL_OP_SUB: {
-        BKE_tracking_track_deselect(track, TRACK_AREA_ALL);
+        dune_tracking_track_desel(track, TRACK_AREA_ALL);
         break;
       }
       case SEL_OP_XOR: {
         if (TRACK_SELECTED(track)) {
-          BKE_tracking_track_deselect(track, TRACK_AREA_ALL);
+          dune_tracking_track_desel(track, TRACK_AREA_ALL);
         }
         else {
-          BKE_tracking_track_select(tracksbase, track, TRACK_AREA_ALL, true);
+          dune_tracking_track_sel(tracksbase, track, TRACK_AREA_ALL, true);
         }
         break;
       }
       case SEL_OP_SET: {
-        BKE_tracking_track_select(tracksbase, track, TRACK_AREA_ALL, false);
+        dune_tracking_track_sel(tracksbase, track, TRACK_AREA_ALL, false);
         break;
       }
       case SEL_OP_AND: {
-        BLI_assert_unreachable(); /* Doesn't make sense for picking. */
+        lib_assert_unreachable(); /* Doesn't make sense for picking. */
         break;
       }
     }
 
-    DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-    DEG_id_tag_update(&clip->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_MOVIECLIP | ND_SELECT, track);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+    graoh_id_tag_update(&scene->id, ID_RECALC_SEL);
+    graph_id_tag_update(&clip->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_MOVIECLIP | ND_SEL, track);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
 
     changed = true;
   }
@@ -2372,76 +2371,76 @@ static bool ed_object_select_pick_camera_track(bContext *C,
   return changed || found;
 }
 
-static bool ed_object_select_pick(bContext *C,
-                                  const int mval[2],
-                                  const struct SelectPick_Params *params,
-                                  bool obcenter,
-                                  bool enumerate,
-                                  bool object)
+static bool ed_ob_sel_pick(Cxt *C,
+                           const int mval[2],
+                           const struct SelPickParams *params,
+                           bool obcenter,
+                           bool enumerate,
+                           bool ob)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc;
-  /* Setup view context for argument to callbacks. */
-  ED_view3d_viewcontext_init(C, &vc, depsgraph);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewCxt vc;
+  /* Setup view cxt for arg to cbs */
+  ed_view3d_viewcxt_init(C, &vc, graph);
 
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  /* Don't set when the context has no active object (hidden), see: T60807. */
+  Scene *scene = ed_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  /* Don't set when the cxt has no active object (hidden), see: T60807. */
   const Base *oldbasact = vc.obact ? BASACT(view_layer) : NULL;
   Base *startbase = NULL, *basact = NULL, *basact_override = NULL;
-  const eObjectMode object_mode = oldbasact ? oldbasact->object->mode : OB_MODE_OBJECT;
+  const eObMode ob_mode = oldbasact ? oldbasact->ob->mode : OB_MODE_OB;
   const bool is_obedit = (vc.obedit != NULL);
 
   /* Handle setting the new base active */
   bool use_activate_selected_base = false;
 
-  /* When enabled, don't attempt any further selection. */
+  /* When enabled, don't attempt any further sel */
   bool handled = false;
   bool changed = false;
 
-  if (object) {
-    /* Signal for #view3d_opengl_select to skip edit-mode objects. */
+  if (ob) {
+    /* Signal for view3d_opengl_sel to skip edit-mode objs */
     vc.obedit = NULL;
   }
 
-  /* Always start list from `basact` when cycling the selection. */
+  /* Always start list from `basact` when cycling the sel */
   startbase = FIRSTBASE(view_layer);
   if (oldbasact && oldbasact->next) {
     startbase = oldbasact->next;
   }
 
-  GPUSelectResult buffer[MAXPICKELEMS];
+  GPUSelResult buffer[MAXPICKELEMS];
   int hits = 0;
   bool do_nearest = false;
   bool has_bones = false;
 
   if (obcenter == false) {
     /* If objects have pose-mode set, the bones are in the same selection buffer. */
-    const eV3DSelectObjectFilter select_filter = ((object == false) ?
-                                                      ED_view3d_select_filter_from_mode(scene,
-                                                                                        vc.obact) :
-                                                      VIEW3D_SELECT_FILTER_NOP);
-    hits = mixed_bones_object_selectbuffer_extended(
-        &vc, buffer, ARRAY_SIZE(buffer), mval, select_filter, true, enumerate, &do_nearest);
-    has_bones = (object && hits > 0) ? false : selectbuffer_has_bones(buffer, hits);
+    const eV3DSelObFilter sel_filter = ((ob == false) ?
+                                                      ed_view3d_sel_filter_from_mode(scene,
+                                                                                     vc.obact) :
+                                                      VIEW3D_SEL_FILTER_NOP);
+    hits = mixed_bones_ob_selbuffer_extended(
+        &vc, buffer, ARRAY_SIZE(buffer), mval, sel_filter, true, enumerate, &do_nearest);
+    has_bones = (ob && hits > 0) ? false : selbuffer_has_bones(buffer, hits);
   }
 
-  /* First handle menu selection, early exit when a menu was opened.
-   * Otherwise fall through to regular selection. */
+  /* First handle menu sel, early exit when a menu was opened.
+   * Otherwise fall through to regular sel. */
   if (enumerate) {
     bool has_menu = false;
     if (obcenter) {
-      if (object_mouse_select_menu(C, &vc, NULL, 0, mval, params, &basact_override)) {
+      if (ob_mouse_sel_menu(C, &vc, NULL, 0, mval, params, &basact_override)) {
         has_menu = true;
       }
     }
     else {
       if (hits != 0) {
-        if (has_bones && bone_mouse_select_menu(C, buffer, hits, false, params)) {
+        if (has_bones && bone_mouse_sel_menu(C, buffer, hits, false, params)) {
           has_menu = true;
         }
-        else if (object_mouse_select_menu(C, &vc, buffer, hits, mval, params, &basact_override)) {
+        else if (ob_mouse_sel_menu(C, &vc, buffer, hits, mval, params, &basact_override)) {
           has_menu = true;
         }
       }
@@ -2452,17 +2451,16 @@ static bool ed_object_select_pick(bContext *C,
       return false;
     }
   }
-
-  /* This block uses the control key to make the object selected
+  
+  /* This block uses the ctrl key to make the ob sel
    * by its center point rather than its contents */
-
   /* In edit-mode do not activate. */
   if (obcenter) {
     if (basact_override) {
       basact = basact_override;
     }
     else {
-      basact = mouse_select_object_center(&vc, startbase, mval);
+      basact = mouse_sel_ob_center(&vc, startbase, mval);
     }
   }
   else {
@@ -2470,69 +2468,69 @@ static bool ed_object_select_pick(bContext *C,
       basact = basact_override;
     }
     else {
-      basact = (hits > 0) ? mouse_select_eval_buffer(
+      basact = (hits > 0) ? mouse_sel_eval_buffer(
                                 &vc, buffer, hits, startbase, has_bones, do_nearest, NULL) :
                             NULL;
     }
 
     if (((hits > 0) && has_bones) ||
-        /* Special case, even when there are no hits, pose logic may de-select all bones. */
-        ((hits == 0) && (object_mode & OB_MODE_POSE))) {
+        /* Special case, even when there are no hits, pose logic may de-sel all bones. */
+        ((hits == 0) && (ob_mode & OB_MODE_POSE))) {
 
       if (basact && (has_bones && (basact->object->type == OB_CAMERA))) {
-        MovieClip *clip = BKE_object_movieclip_get(scene, basact->object, false);
+        MovieClip *clip = dune_ob_movieclip_get(scene, basact->ob, false);
         if (clip != NULL) {
-          if (ed_object_select_pick_camera_track(C, scene, basact, clip, buffer, hits, params)) {
-            ED_object_base_select(basact, BA_SELECT);
+          if (ed_ob_sel_pick_camera_track(C, scene, basact, clip, buffer, hits, params)) {
+            ed_ob_base_sel(basact, BA_SEL);
 
-            /* Don't set `handled` here as the object activation may be necessary. */
+            /* Don't set `handled` here as the ob activation may be necessary. */
             changed = true;
           }
           else {
-            /* Fallback to regular object selection if no new bundles were selected,
-             * allows to select object parented to reconstruction object. */
-            basact = mouse_select_eval_buffer(
+            /* Fallback to regular ob sel if no new bundles were selected,
+             * allows to select ob parented to reconstruction ob. */
+            basact = mouse_sel_eval_buffer(
                 &vc, buffer, hits, startbase, false, do_nearest, NULL);
           }
         }
       }
-      else if (ED_armature_pose_select_pick_with_buffer(view_layer,
-                                                        v3d,
-                                                        basact ? basact : (Base *)oldbasact,
-                                                        buffer,
-                                                        hits,
-                                                        params,
-                                                        do_nearest)) {
+      else if (ed_armature_pose_sel_pick_with_buffer(view_layer,
+                                                     v3d,
+                                                     basact ? basact : (Base *)oldbasact,
+                                                     buffer,
+                                                     hits,
+                                                     params,
+                                                     do_nearest)) {
         /* When there is no `baseact` this will have operated on `oldbasact`,
-         * no object operations are needed. */
+         * no ob ops are needed. */
         if (basact != NULL) {
           /* then bone is found */
           /* we make the armature selected:
-           * not-selected active object in pose-mode won't work well for tools */
-          ED_object_base_select(basact, BA_SELECT);
+           * not-selected active ob in pose-mode won't work well for tools */
+          ed_ob_base_sel(basact, BA_SEL);
 
-          WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, basact->object);
-          WM_event_add_notifier(C, NC_OBJECT | ND_BONE_ACTIVE, basact->object);
-          DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+          won_ev_add_notifier(C, NC_OB | ND_BONE_SEL, basact->ob);
+          win_ev_add_notifier(C, NC_OB | ND_BONE_ACTIVE, basact->ob);
+          graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
 
-          /* In weight-paint, we use selected bone to select vertex-group,
-           * so don't switch to new active object. */
+          /* In weight-paint, we use selected bone to sel vertex-group,
+           * so don't switch to new active ob */
           if (oldbasact) {
-            if (oldbasact->object->mode & OB_MODE_ALL_WEIGHT_PAINT) {
+            if (oldbasact->ob->mode & OB_MODE_ALL_WEIGHT_PAINT) {
               /* Prevent activating.
-               * Selection causes this to be considered the 'active' pose in weight-paint mode.
+               * Sel causes this to be considered the 'active' pose in weight-paint mode.
                * Eventually this limitation may be removed.
-               * For now, de-select all other pose objects deforming this mesh. */
-              ED_armature_pose_select_in_wpaint_mode(view_layer, basact);
+               * For now, desel all other pose objs deforming this mesh. */
+              ed_armature_pose_sel_in_wpaint_mode(view_layer, basact);
 
               handled = true;
             }
-            else if ((object_mode & OB_MODE_POSE) && (basact->object->mode & OB_MODE_POSE)) {
-              /* Within pose-mode, keep the current selection when switching pose bones,
-               * this is noticeable when in pose mode with multiple objects at once.
-               * Where selecting the bone of a different object would de-select this one.
+            else if ((ob_mode & OB_MODE_POSE) && (basact->ob->mode & OB_MODE_POSE)) {
+              /* W/in pose-mode, keep the current sel when switching pose bones,
+               * this is noticeable when in pose mode with multiple objs at once.
+               * Where sel the bone of a different ob would desel this one.
                * After that, exiting pose-mode would only have the active armature selected.
-               * This matches multi-object edit-mode behavior. */
+               * This matches multi-ob edit-mode behavior. */
               handled = true;
 
               if (oldbasact != basact) {
@@ -2540,32 +2538,32 @@ static bool ed_object_select_pick(bContext *C,
               }
             }
             else {
-              /* Don't set `handled` here as the object selection may be necessary
-               * when starting out in object-mode and moving into pose-mode,
-               * when moving from pose to object-mode using object selection also makes sense. */
+              /* Don't set `handled` here as the ob sel may be necessary
+               * when starting out in ob-mode and moving into pose-mode,
+               * when moving from pose to ob-mode using obj sel also makes sense. */
             }
           }
         }
       }
-      /* Prevent bone/track selecting to pass on to object selecting. */
+      /* Prevent bone/track se to pass on to ob sel. */
       if (basact == oldbasact) {
         handled = true;
       }
     }
   }
 
-  if ((scene->toolsettings->object_flag & SCE_OBJECT_MODE_LOCK) &&
-      /* No further selection should take place. */
+  if ((scene->toolsettings->ob_flag & SCE_OB_MODE_LOCK) &&
+      /* No further sel should take place. */
       (handled == false) &&
       /* No special logic in edit-mode. */
       (is_obedit == false)) {
 
-    if (basact && !BKE_object_is_mode_compat(basact->object, object_mode)) {
-      if (object_mode == OB_MODE_OBJECT) {
-        struct Main *bmain = CTX_data_main(C);
-        ED_object_mode_generic_exit(bmain, vc.depsgraph, scene, basact->object);
+    if (basact && !dune_ob_is_mode_compat(basact->ob, ob_mode)) {
+      if (ob_mode == OB_MODE_OB) {
+        struct Main *main = cxt_data_main(C);
+        ed_ob_mode_generic_exit(main, vc.graph, scene, basact->ob);
       }
-      if (!BKE_object_is_mode_compat(basact->object, object_mode)) {
+      if (!dune_ob_is_mode_compat(basact->ob, ob_mode)) {
         basact = NULL;
       }
     }
