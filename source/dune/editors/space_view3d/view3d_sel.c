@@ -2474,10 +2474,10 @@ static bool ed_ob_sel_pick(Cxt *C,
     }
 
     if (((hits > 0) && has_bones) ||
-        /* Special case, even when there are no hits, pose logic may de-sel all bones. */
+        /* Special case, even when there are no hits, pose logic may desel all bones. */
         ((hits == 0) && (ob_mode & OB_MODE_POSE))) {
 
-      if (basact && (has_bones && (basact->object->type == OB_CAMERA))) {
+      if (basact && (has_bones && (basact->ob->type == OB_CAMERA))) {
         MovieClip *clip = dune_ob_movieclip_get(scene, basact->ob, false);
         if (clip != NULL) {
           if (ed_ob_sel_pick_camera_track(C, scene, basact, clip, buffer, hits, params)) {
@@ -2488,7 +2488,7 @@ static bool ed_ob_sel_pick(Cxt *C,
           }
           else {
             /* Fallback to regular ob sel if no new bundles were selected,
-             * allows to select ob parented to reconstruction ob. */
+             * allows to sel ob parented to reconstruction ob. */
             basact = mouse_sel_eval_buffer(
                 &vc, buffer, hits, startbase, false, do_nearest, NULL);
           }
@@ -2505,15 +2505,15 @@ static bool ed_ob_sel_pick(Cxt *C,
          * no ob ops are needed. */
         if (basact != NULL) {
           /* then bone is found */
-          /* we make the armature selected:
-           * not-selected active ob in pose-mode won't work well for tools */
+          /* we make the armature sel:
+           * not-sel active ob in pose-mode won't work well for tools */
           ed_ob_base_sel(basact, BA_SEL);
 
-          won_ev_add_notifier(C, NC_OB | ND_BONE_SEL, basact->ob);
+          win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, basact->ob);
           win_ev_add_notifier(C, NC_OB | ND_BONE_ACTIVE, basact->ob);
           graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
 
-          /* In weight-paint, we use selected bone to sel vertex-group,
+          /* In weight-paint, we use sel bone to sel vertex-group,
            * so don't switch to new active ob */
           if (oldbasact) {
             if (oldbasact->ob->mode & OB_MODE_ALL_WEIGHT_PAINT) {
@@ -2539,8 +2539,8 @@ static bool ed_ob_sel_pick(Cxt *C,
             }
             else {
               /* Don't set `handled` here as the ob sel may be necessary
-               * when starting out in ob-mode and moving into pose-mode,
-               * when moving from pose to ob-mode using obj sel also makes sense. */
+               * when starting out in obmode and moving into pose-mode,
+               * when moving from pose to obmode using ob sel also makes sense. */
             }
           }
         }
@@ -2569,50 +2569,50 @@ static bool ed_ob_sel_pick(Cxt *C,
     }
 
     /* Disallow switching modes,
-     * special exception for edit-mode - vertex-parent operator. */
+     * special exception for edit-mode - vertex-parent op. */
     if (basact && oldbasact) {
-      if ((oldbasact->object->mode != basact->object->mode) &&
-          (oldbasact->object->mode & basact->object->mode) == 0) {
+      if ((oldbasact->ob->mode != basact->ob->mode) &&
+          (oldbasact->ob->mode & basact->ob->mode) == 0) {
         basact = NULL;
       }
     }
   }
 
   /* Ensure code above doesn't change the active base. */
-  BLI_assert(oldbasact == (vc.obact ? BASACT(view_layer) : NULL));
+  lib_assert(oldbasact == (vc.obact ? BASACT(view_layer) : NULL));
 
   bool found = (basact != NULL);
   if ((handled == false) && (vc.obedit == NULL)) {
-    /* Object-mode (pose mode will have been handled already). */
+    /* Obmode (pose mode will have been handled already). */
     if (params->sel_op == SEL_OP_SET) {
-      if ((found && params->select_passthrough) && (basact->flag & BASE_SELECTED)) {
+      if ((found && params->sel_passthrough) && (basact->flag & BASE_SELECTED)) {
         found = false;
       }
-      else if (found || params->deselect_all) {
-        /* Deselect everything. */
+      else if (found || params->desel_all) {
+        /* Desel everything. */
         /* `basact` may be NULL. */
-        changed |= object_deselect_all_except(view_layer, basact);
-        DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
+        changed |= object_desel_all_except(view_layer, basact);
+        graph_id_tag_update(&scene->id, ID_RECALC_SEL);
       }
     }
   }
 
-  /* so, do we have something selected? */
+  /* so, do we have something sel? */
   if ((handled == false) && found) {
     changed = true;
 
     if (vc.obedit) {
       /* Only do the select (use for setting vertex parents & hooks). */
-      object_deselect_all_except(view_layer, basact);
-      ED_object_base_select(basact, BA_SELECT);
+      ob_desel_all_except(view_layer, basact);
+      ed_ob_base_sel(basact, BA_SEL);
     }
-    /* Also prevent making it active on mouse selection. */
+    /* Also prevent making it active on mouse sel. */
     else if (BASE_SELECTABLE(v3d, basact)) {
       use_activate_selected_base |= (oldbasact != basact) && (is_obedit == false);
 
       switch (params->sel_op) {
         case SEL_OP_ADD: {
-          ED_object_base_select(basact, BA_SELECT);
+          ed_ob_base_sel(basact, BA_SELECT);
           break;
         }
         case SEL_OP_SUB: {
@@ -2621,80 +2621,77 @@ static bool ed_ob_sel_pick(Cxt *C,
         }
         case SEL_OP_XOR: {
           if (basact->flag & BASE_SELECTED) {
-            /* Keep selected if the base is to be activated. */
+            /* Keep sel if the base is to be activated. */
             if (use_activate_selected_base == false) {
-              ED_object_base_select(basact, BA_DESELECT);
+              ed_ob_base_sel(basact, BA_DESEL);
             }
           }
           else {
-            ED_object_base_select(basact, BA_SELECT);
+            ed_ob_base_sel(basact, BA_SEL);
           }
           break;
         }
         case SEL_OP_SET: {
-          object_deselect_all_except(view_layer, basact);
-          ED_object_base_select(basact, BA_SELECT);
+          ob_desel_all_except(view_layer, basact);
+          ed_ob_base_sel(basact, BA_SEL);
           break;
         }
         case SEL_OP_AND: {
-          BLI_assert_unreachable(); /* Doesn't make sense for picking. */
+          lib_assert_unreachable(); /* Doesn't make sense for picking. */
           break;
         }
       }
     }
 
-    DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+    graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
   }
 
   if (use_activate_selected_base && (basact != NULL)) {
     changed = true;
-    ED_object_base_activate(C, basact); /* adds notifier */
-    if ((scene->toolsettings->object_flag & SCE_OBJECT_MODE_LOCK) == 0) {
-      WM_toolsystem_update_from_context_view3d(C);
+    ed_ob_base_activate(C, basact); /* adds notifier */
+    if ((scene->toolsettings->ob_flag & SCE_OB_MODE_LOCK) == 0) {
+      win_toolsystem_update_from_cxt_view3d(C);
     }
   }
 
   if (changed) {
     if (vc.obact && vc.obact->mode & OB_MODE_POSE) {
-      ED_outliner_select_sync_from_pose_bone_tag(C);
+      ed_outliner_sel_sync_from_pose_bone_tag(C);
     }
     else {
-      ED_outliner_select_sync_from_object_tag(C);
+      ed_outliner_sel_sync_from_ob_tag(C);
     }
   }
 
   return changed;
 }
 
-/**
- * Mouse selection in weight paint.
- * Called via generic mouse select operator.
- *
- * \return True when pick finds an element or the selection changed.
- */
-static bool ed_wpaint_vertex_select_pick(bContext *C,
-                                         const int mval[2],
-                                         const struct SelectPick_Params *params,
-                                         Object *obact)
+/* Mouse sel in weight paint.
+ * Called via generic mouse sel op.
+ * return True when pick finds an element or the sel changed. */
+static bool ed_paint_vertex_sel_pick(Cxt *C,
+                                      const int mval[2],
+                                      const struct SelPickParams *params,
+                                      Ob *obact)
 {
-  View3D *v3d = CTX_wm_view3d(C);
+  View3D *v3d = cxt_win_view3d(C);
   const bool use_zbuf = !XRAY_ENABLED(v3d);
 
-  Mesh *me = obact->data; /* already checked for NULL */
+  Mesh *me = obact->data; /* alrdy checked for NULL */
   uint index = 0;
   MVert *mv;
   bool changed = false;
 
-  bool found = ED_mesh_pick_vert(C, obact, mval, ED_MESH_PICK_DEFAULT_VERT_DIST, use_zbuf, &index);
+  bool found = ed_mesh_pick_vert(C, obact, mval, ED_MESH_PICK_DEFAULT_VERT_DIST, use_zbuf, &index);
 
   if (params->sel_op == SEL_OP_SET) {
-    if ((found && params->select_passthrough) && (me->mvert[index].flag & SELECT)) {
+    if ((found && params->sel_passthrough) && (me->mvert[index].flag & SEL)) {
       found = false;
     }
-    else if (found || params->deselect_all) {
-      /* Deselect everything. */
-      changed |= paintface_deselect_all_visible(C, obact, SEL_DESELECT, false);
+    else if (found || params->desel_all) {
+      /* Desel everything. */
+      changed |= paintface_desel_all_visible(C, obact, SEL_DESELECT, false);
     }
   }
 
@@ -2702,34 +2699,34 @@ static bool ed_wpaint_vertex_select_pick(bContext *C,
     mv = &me->mvert[index];
     switch (params->sel_op) {
       case SEL_OP_ADD: {
-        mv->flag |= SELECT;
+        mv->flag |= SEL;
         break;
       }
       case SEL_OP_SUB: {
-        mv->flag &= ~SELECT;
+        mv->flag &= ~SEL;
         break;
       }
       case SEL_OP_XOR: {
-        mv->flag ^= SELECT;
+        mv->flag ^= SEL;
         break;
       }
       case SEL_OP_SET: {
-        paintvert_deselect_all_visible(obact, SEL_DESELECT, false);
-        mv->flag |= SELECT;
+        paintvert_desel_all_visible(obact, SEL_DESEL, false);
+        mv->flag |= SEL;
         break;
       }
       case SEL_OP_AND: {
-        BLI_assert_unreachable(); /* Doesn't make sense for picking. */
+        lib_assert_unreachable(); /* Doesn't make sense for picking. */
         break;
       }
     }
 
-    /* update mselect */
-    if (mv->flag & SELECT) {
-      DUNE_mesh_mselect_active_set(me, index, ME_VSEL);
+    /* update msel */
+    if (mv->flag & SEL) {
+      dune_mesh_mselect_active_set(me, index, ME_VSEL);
     }
     else {
-      DUNE_mesh_mselect_validate(me);
+      dune_mesh_mselect_validate(me);
     }
 
     paintvert_flush_flags(obact);
@@ -2738,156 +2735,155 @@ static bool ed_wpaint_vertex_select_pick(bContext *C,
   }
 
   if (changed) {
-    paintvert_tag_select_update(C, obact);
+    paintvert_tag_sel_update(C, obact);
   }
 
   return changed || found;
 }
 
-static int view3d_select_exec(duneContext *C, wmOperator *op)
+static int view3d_sel_ex(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *obedit = CTX_data_edit_object(C);
-  Object *obact = CTX_data_active_object(C);
-  const struct SelectPick_Params params = {
-      .sel_op = ED_select_op_from_booleans(API_boolean_get(op->ptr, "extend"),
-                                           API_boolean_get(op->ptr, "deselect"),
-                                           API_boolean_get(op->ptr, "toggle")),
-      .deselect_all = API_boolean_get(op->ptr, "deselect_all"),
-      .select_passthrough = API_boolean_get(op->ptr, "select_passthrough"),
+  Scene *scene = cxt_data_scene(C);
+  Ob *obedit = cxt_data_edit_ob(C);
+  Ob *obact = cxt_data_active_ob(C);
+  const struct SelPick_Params params = {
+      .sel_op = ed_sel_op_from_bools(api_bool_get(op->ptr, "extend"),
+                                     api_bool_get(op->ptr, "desel"),
+                                     api_bool_get(op->ptr, "toggle")),
+      .desel_all = api_bool_get(op->ptr, "desel_all"),
+      .sel_passthrough = api_bool_get(op->ptr, "sel_passthrough"),
 
   };
-  bool center = API_boolean_get(op->ptr, "center");
-  bool enumerate = API_boolean_get(op->ptr, "enumerate");
-  /* Only force object select for edit-mode to support vertex parenting,
-   * or paint-select to allow pose bone select with vert/face select. */
-  bool object = (API_boolean_get(op->ptr, "object") &&
-                 (obedit || DUNE_paint_select_elem_test(obact) ||
-                  /* so its possible to select bones in weight-paint mode (LMB select) */
+  bool center = api_bool_get(op->ptr, "center");
+  bool enumerate = api_bool_get(op->ptr, "enumerate");
+  /* Only force ob sel for edit-mode to support vertex parenting,
+   * or paint-sel to allow pose bone sel with vert/face sel. */
+  bool ob = (api_bool_get(op->ptr, "ob") &&
+                 (obedit || dune_paint_sel_elem_test(obact) ||
+                  /* so its possible to sel bones in weight-paint mode (LMB sel) */
                   (obact && (obact->mode & OB_MODE_ALL_WEIGHT_PAINT) &&
-                   DUNE_object_pose_armature_get(obact))));
+                   dune_ob_pose_armature_get(obact))));
 
   /* This could be called "changed_or_found" since this is true when there is an element
-   * under the cursor to select, even if it happens that the selection & active state doesn't
+   * under the cursor to sel, even if it happens that the sel & active state doesn't
    * actually change. This is important so undo pushes are predictable. */
   bool changed = false;
   int mval[2];
 
-  API_int_get_array(op->ptr, "location", mval);
+  api_int_get_array(op->ptr, "location", mval);
 
-  view3d_operator_needs_opengl(C);
-  DUNE_object_update_select_id(CTX_data_main(C));
+  view3d_op_needs_opengl(C);
+  dune_ob_update_sel_id(cxt_data_main(C));
 
-  if (object) {
+  if (ob) {
     obedit = NULL;
     obact = NULL;
 
     /* ack, this is incorrect but to do this correctly we would need an
-     * alternative edit-mode/object-mode keymap, this copies the functionality
-     * from 2.4x where Ctrl+Select in edit-mode does object select only. */
+     * alternative editmode/obmode keymap, this copies the fnality
+     * from 2.4x where Ctrl+Sel in editmode does ob sel only. */
     center = false;
   }
 
-  if (obedit && object == false) {
+  if (obedit && ob == false) {
     if (obedit->type == OB_MESH) {
-      changed = EDBM_select_pick(C, mval, &params);
+      changed = edbm_sel_pick(C, mval, &params);
     }
     else if (obedit->type == OB_ARMATURE) {
       if (enumerate) {
-        Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-        ViewContext vc;
-        ED_view3d_viewcontext_init(C, &vc, depsgraph);
+        Graph *graph = cxt_data_ensure_eval_graph(C);
+        ViewCxt vc;
+        ed_view3d_viewcxt_init(C, &vc, graph);
 
-        GPUSelectResult buffer[MAXPICKELEMS];
-        const int hits = mixed_bones_object_selectbuffer(
-            &vc, buffer, ARRAY_SIZE(buffer), mval, VIEW3D_SELECT_FILTER_NOP, false, true, false);
-        changed = bone_mouse_select_menu(C, buffer, hits, true, &params);
+        GPUSelResult buffer[MAXPICKELEMS];
+        const int hits = mixed_bones_ob_selbuffer(
+            &vc, buffer, ARRAY_SIZE(buffer), mval, VIEW3D_SEL_FILTER_NOP, false, true, false);
+        changed = bone_mouse_sel_menu(C, buffer, hits, true, &params);
       }
       if (!changed) {
-        changed = ED_armature_edit_select_pick(C, mval, &params);
+        changed = ed_armature_edit_sel_pick(C, mval, &params);
       }
     }
     else if (obedit->type == OB_LATTICE) {
-      changed = ED_lattice_select_pick(C, mval, &params);
+      changed = ed_lattice_sel_pick(C, mval, &params);
     }
     else if (ELEM(obedit->type, OB_CURVES_LEGACY, OB_SURF)) {
-      changed = ED_curve_editnurb_select_pick(C, mval, &params);
+      changed = ed_curve_editnurb_sel_pick(C, mval, &params);
     }
     else if (obedit->type == OB_MBALL) {
-      changed = ED_mball_select_pick(C, mval, &params);
+      changed = ed_mball_sel_pick(C, mval, &params);
     }
     else if (obedit->type == OB_FONT) {
-      changed = ED_curve_editfont_select_pick(C, mval, &params);
+      changed = ed_curve_editfont_sel_pick(C, mval, &params);
     }
   }
   else if (obact && obact->mode & OB_MODE_PARTICLE_EDIT) {
-    changed = PE_mouse_particles(C, mval, &params);
+    changed = pe_mouse_particles(C, mval, &params);
   }
-  else if (obact && DUNE_paint_select_face_test(obact)) {
-    changed = paintface_mouse_select(C, mval, &params, obact);
+  else if (obact && dune_paint_sel_face_test(obact)) {
+    changed = paintface_mouse_sel(C, mval, &params, obact);
   }
-  else if (DUNE_paint_select_vert_test(obact)) {
-    changed = ed_wpaint_vertex_select_pick(C, mval, &params, obact);
+  else if (dune_paint_sel_vert_test(obact)) {
+    changed = ed_wpaint_vertex_sel_pick(C, mval, &params, obact);
   }
   else {
-    changed = ed_object_select_pick(C, mval, &params, center, enumerate, object);
+    changed = ed_ob_sel_pick(C, mval, &params, center, enumerate, ob);
   }
 
-  /* Pass-through flag may be cleared, see #WM_operator_flag_only_pass_through_on_press. */
-
+  /* Pass-through flag may be cleared, see wm_op_flag_only_pass_through_on_press. */
   /* Pass-through allows tweaks
    * FINISHED to signal one operator worked */
   if (changed) {
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
-    return OPERATOR_PASS_THROUGH | OPERATOR_FINISHED;
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
+    return OP_PASS_THROUGH | OP_FINISHED;
   }
-  /* Nothing selected, just passthrough. */
-  return OPERATOR_PASS_THROUGH | OPERATOR_CANCELLED;
+  /* Nothing sel, just passthrough. */
+  return OP_PASS_THROUGH | OP_CANCELLED;
 }
 
-static int view3d_select_invoke(duneContext *C, wmOperator *op, const wmEvent *event)
+static int view3d_sel_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  API_int_set_array(op->ptr, "location", event->mval);
+  api_int_set_array(op->ptr, "location", ev->mval);
 
-  const int retval = view3d_select_exec(C, op);
+  const int retval = view3d_sel_ex(C, op);
 
-  return WM_operator_flag_only_pass_through_on_press(retval, event);
+  return win_op_flag_only_pass_through_on_press(retval, eve);
 }
 
-void VIEW3D_OT_select(wmOperatorType *ot)
+void VIEW3D_OT_sel(WinOpType *ot)
 {
-  PropertyAPI *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Select";
-  ot->description = "Select and activate item(s)";
-  ot->idname = "VIEW3D_OT_select";
+  /* ids */
+  ot->name = "Sel";
+  ot->description = "Sel and activate item(s)";
+  ot->idname = "VIEW3D_OT_sel";
 
-  /* api callbacks */
-  ot->invoke = view3d_select_invoke;
-  ot->exec = view3d_select_exec;
-  ot->poll = ED_operator_view3d_active;
+  /* api cbs */
+  ot->invoke = view3d_sel_invoke;
+  ot->ex = view3d_sel_ex;
+  ot->poll = ed_op_view3d_active;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_mouse_select(ot);
+  /* props */
+  win_op_props_mouse_sel(ot);
 
-  prop = API_def_boolean(
-      ot->srna,
+  prop = api_def_bool(
+      ot->sapi,
       "center",
       0,
       "Center",
-      "Use the object center when selecting, in edit mode used to extend object selection");
-  API_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = API_def_boolean(
-      ot->srna, "enumerate", 0, "Enumerate", "List objects under the mouse (object mode only)");
-  API_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = API_def_boolean(ot->srna, "object", 0, "Object", "Use object selection (edit mode only)");
-  API_def_property_flag(prop, PROP_SKIP_SAVE);
+      "Use the ob center when sel, in edit mode used to extend ob sel");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(
+      ot->sapi, "enumerate", 0, "Enumerate", "List objs under the mouse (ob mode only)");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "ob", 0, "Ob", "Use ob sel (edit mode only)");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = API_def_int_vector(ot->srna,
+  prop = api_def_int_vector(ot->sapi,
                             "location",
                             2,
                             NULL,
@@ -2897,39 +2893,37 @@ void VIEW3D_OT_select(wmOperatorType *ot)
                             "Mouse location",
                             INT_MIN,
                             INT_MAX);
-  API_def_property_flag(prop, PROP_HIDDEN);
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-/* -------------------------------------------------------------------- */
-/** Box Select **/
-
-typedef struct BoxSelectUserData {
-  ViewContext *vc;
+/* Box Sel */
+typedef struct BoxSelUserData {
+  ViewCxt *vc;
   const rcti *rect;
   const rctf *rect_fl;
   rctf _rect_fl;
-  eSelectOp sel_op;
-  eBezTriple_Flag select_flag;
+  eSelOp sel_op;
+  eBezTriple_Flag sel_flag;
 
   /* runtime */
   bool is_done;
   bool is_changed;
-} BoxSelectUserData;
+} BoxSelUserData;
 
-static void view3d_userdata_boxselect_init(BoxSelectUserData *r_data,
-                                           ViewContext *vc,
-                                           const rcti *rect,
-                                           const eSelectOp sel_op)
+static void view3d_userdata_boxsel_init(BoxSelUserData *r_data,
+                                        ViewCxt *vc,
+                                        const rcti *rect,
+                                        const eSelOp sel_op)
 {
   r_data->vc = vc;
 
   r_data->rect = rect;
   r_data->rect_fl = &r_data->_rect_fl;
-  LIB_rctf_rcti_copy(&r_data->_rect_fl, rect);
+  lib_rctf_rcti_copy(&r_data->_rect_fl, rect);
 
   r_data->sel_op = sel_op;
-  /* SELECT by default, but can be changed if needed (only few cases use and respect this). */
-  r_data->select_flag = SELECT;
+  /* SEL by default, but can be changed if needed (only few cases use and respect this). */
+  r_data->sel_flag = SEL;
 
   /* runtime */
   r_data->is_done = false;
@@ -2945,24 +2939,24 @@ bool edge_inside_circle(const float cent[2],
   return (dist_squared_to_line_segment_v2(cent, screen_co_a, screen_co_b) < radius_squared);
 }
 
-static void do_paintvert_box_select__doSelectVert(void *userData,
-                                                  MVert *mv,
-                                                  const float screen_co[2],
-                                                  int UNUSED(index))
+static void do_paintvert_box_sel_doSelVert(void *userData,
+                                           MVert *mv,
+                                           const float screen_co[2],
+                                           int UNUSED(index))
 {
-  BoxSelectUserData *data = userData;
-  const bool is_select = mv->flag & SELECT;
-  const bool is_inside = BLI_rctf_isect_pt_v(data->rect_fl, screen_co);
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  BoxSelUserData *data = userData;
+  const bool is_sel = mv->flag & SEL;
+  const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
+  const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    SET_FLAG_FROM_TEST(mv->flag, sel_op_result, SELECT);
+    SET_FLAG_FROM_TEST(mv->flag, sel_op_result, SEL);
     data->is_changed = true;
   }
 }
-static bool do_paintvert_box_select(ViewContext *vc,
-                                    wmGenericUserData *wm_userdata,
-                                    const rcti *rect,
-                                    const eSelectOp sel_op)
+static bool do_paintvert_box_sel(ViewCxt *vc,
+                                 WinGenericUserData *win_userdata,
+                                 const rcti *rect,
+                                 const eSelOp sel_op)
 {
   const bool use_zbuf = !XRAY_ENABLED(vc->v3d);
 
@@ -2970,75 +2964,75 @@ static bool do_paintvert_box_select(ViewContext *vc,
 
   me = vc->obact->data;
   if ((me == NULL) || (me->totvert == 0)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= paintvert_deselect_all_visible(vc->obact, SEL_DESELECT, false);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= paintvert_desel_all_visible(vc->obact, SEL_DESEL, false);
   }
 
-  if (LIB_rcti_is_empty(rect)) {
+  if (lib_rcti_is_empty(rect)) {
     /* pass */
   }
   else if (use_zbuf) {
-    struct EditSelectBuf_Cache *esel = wm_userdata->data;
-    if (wm_userdata->data == NULL) {
-      editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, SCE_SELECT_VERTEX);
-      esel = wm_userdata->data;
-      esel->select_bitmap = DRW_select_buffer_bitmap_from_rect(
-          vc->depsgraph, vc->region, vc->v3d, rect, NULL);
+    struct EditSelBuf_Cache *esel = wm_userdata->data;
+    if (win_userdata->data == NULL) {
+      editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SEL_VERTEX);
+      esel = win_userdata->data;
+      esel->sel_bitmap = drw_sel_buffer_bitmap_from_rect(
+          vc->graph, vc->rgn, vc->v3d, rect, NULL);
     }
-    if (esel->select_bitmap != NULL) {
-      changed |= edbm_backbuf_check_and_select_verts_obmode(me, esel, sel_op);
+    if (esel->sel_bitmap != NULL) {
+      changed |= edbm_backbuf_check_and_sel_verts_obmode(me, esel, sel_op);
     }
   }
   else {
-    BoxSelectUserData data;
+    BoxSelUserData data;
 
-    view3d_userdata_boxselect_init(&data, vc, rect, sel_op);
+    view3d_userdata_boxsel_init(&data, vc, rect, sel_op);
 
-    ED_view3d_init_mats_rv3d(vc->obact, vc->rv3d);
+    ed_view3d_init_mats_rv3d(vc->obact, vc->rv3d);
 
-    meshobject_foreachScreenVert(
-        vc, do_paintvert_box_select__doSelectVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+    meshob_foreachScreenVert(
+        vc, do_paintvert_box_sel_doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     changed |= data.is_changed;
   }
 
   if (changed) {
-    if (SEL_OP_CAN_DESELECT(sel_op)) {
-      DUNE_mesh_mselect_validate(me);
+    if (SEL_OP_CAN_DESEL(sel_op)) {
+      dune_mesh_msel_validate(me);
     }
     paintvert_flush_flags(vc->obact);
-    paintvert_tag_select_update(vc->C, vc->obact);
+    paintvert_tag_sel_update(vc->C, vc->obact);
   }
   return changed;
 }
 
-static bool do_paintface_box_select(ViewContext *vc,
-                                    wmGenericUserData *wm_userdata,
-                                    const rcti *rect,
-                                    int sel_op)
+static bool do_paintface_box_sel(ViewCxt *vc,
+                                 WinGenericUserData *win_userdata,
+                                 const rcti *rect,
+                                 int sel_op)
 {
-  Object *ob = vc->obact;
+  Ob *ob = vc->obact;
   Mesh *me;
 
-  me = DUNE_mesh_from_object(ob);
+  me = dune_mesh_from_ob(ob);
   if ((me == NULL) || (me->totpoly == 0)) {
     return false;
   }
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= paintface_deselect_all_visible(vc->C, vc->obact, SEL_DESELECT, false);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= paintface_desel_all_visible(vc->C, vc->obact, SEL_DESEL, false);
   }
 
-  if (LIB_rcti_is_empty(rect)) {
+  if (lib_rcti_is_empty(rect)) {
     /* pass */
   }
   else {
-    struct EditSelectBuf_Cache *esel = wm_userdata->data;
-    if (wm_userdata->data == NULL) {
+    struct EditSelBuf_Cache *esel = wm_userdata->data;
+    if (win_userdata->data == NULL) {
       editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, SCE_SELECT_FACE);
       esel = wm_userdata->data;
       esel->select_bitmap = DRW_select_buffer_bitmap_from_rect(
