@@ -2342,7 +2342,7 @@ static bool ed_ob_sel_pick_camera_track(Cxt *C,
         break;
       }
       case SEL_OP_XOR: {
-        if (TRACK_SELECTED(track)) {
+        if (TRACK_SEL(track)) {
           dune_tracking_track_desel(track, TRACK_AREA_ALL);
         }
         else {
@@ -2534,7 +2534,7 @@ static bool ed_ob_sel_pick(Cxt *C,
               handled = true;
 
               if (oldbasact != basact) {
-                use_activate_selected_base = true;
+                use_activate_sel_base = true;
               }
             }
             else {
@@ -2616,13 +2616,13 @@ static bool ed_ob_sel_pick(Cxt *C,
           break;
         }
         case SEL_OP_SUB: {
-          ED_object_base_select(basact, BA_DESELECT);
+          ed_ob_base_sel(basact, BA_DESEL);
           break;
         }
         case SEL_OP_XOR: {
-          if (basact->flag & BASE_SELECTED) {
+          if (basact->flag & BASE_SEL) {
             /* Keep sel if the base is to be activated. */
-            if (use_activate_selected_base == false) {
+            if (use_activate_sel_base == false) {
               ed_ob_base_sel(basact, BA_DESEL);
             }
           }
@@ -2647,7 +2647,7 @@ static bool ed_ob_sel_pick(Cxt *C,
     win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
   }
 
-  if (use_activate_selected_base && (basact != NULL)) {
+  if (use_activate_sel_base && (basact != NULL)) {
     changed = true;
     ed_ob_base_activate(C, basact); /* adds notifier */
     if ((scene->toolsettings->ob_flag & SCE_OB_MODE_LOCK) == 0) {
@@ -2671,9 +2671,9 @@ static bool ed_ob_sel_pick(Cxt *C,
  * Called via generic mouse sel op.
  * return True when pick finds an element or the sel changed. */
 static bool ed_paint_vertex_sel_pick(Cxt *C,
-                                      const int mval[2],
-                                      const struct SelPickParams *params,
-                                      Ob *obact)
+                                     const int mval[2],
+                                     const struct SelPickParams *params,
+                                     Ob *obact)
 {
   View3D *v3d = cxt_win_view3d(C);
   const bool use_zbuf = !XRAY_ENABLED(v3d);
@@ -2723,10 +2723,10 @@ static bool ed_paint_vertex_sel_pick(Cxt *C,
 
     /* update msel */
     if (mv->flag & SEL) {
-      dune_mesh_mselect_active_set(me, index, ME_VSEL);
+      dune_mesh_msel_active_set(me, index, ME_VSEL);
     }
     else {
-      dune_mesh_mselect_validate(me);
+      dune_mesh_msel_validate(me);
     }
 
     paintvert_flush_flags(obact);
@@ -3031,38 +3031,38 @@ static bool do_paintface_box_sel(ViewCxt *vc,
     /* pass */
   }
   else {
-    struct EditSelBuf_Cache *esel = wm_userdata->data;
+    struct EditSelBuf_Cache *esel = win_userdata->data;
     if (win_userdata->data == NULL) {
-      editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, SCE_SELECT_FACE);
-      esel = wm_userdata->data;
-      esel->select_bitmap = DRW_select_buffer_bitmap_from_rect(
-          vc->depsgraph, vc->region, vc->v3d, rect, NULL);
+      editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SEL_FACE);
+      esel = win_userdata->data;
+      esel->sel_bitmap = drw_sel_buffer_bitmap_from_rect(
+          vc->graph, vc->rgn, vc->v3d, rect, NULL);
     }
-    if (esel->select_bitmap != NULL) {
+    if (esel->sel_bitmap != NULL) {
       changed |= edbm_backbuf_check_and_select_faces_obmode(me, esel, sel_op);
     }
   }
 
   if (changed) {
-    paintface_flush_flags(vc->C, vc->obact, SELECT);
+    paintface_flush_flags(vc->C, vc->obact, SEL);
   }
   return changed;
 }
 
-static void do_nurbs_box_select__doSelect(void *userData,
-                                          Nurb *UNUSED(nu),
-                                          BPoint *bp,
-                                          BezTriple *bezt,
-                                          int beztindex,
-                                          bool handles_visible,
-                                          const float screen_co[2])
+static void do_nurbs_box_sel_doSel(void *userData,
+                                   Nurb *UNUSED(nu),
+                                   Point *point,
+                                   BezTriple *bezt,
+                                   int beztindex,
+                                   bool handles_visible,
+                                   const float screen_co[2])
 {
-  BoxSelectUserData *data = userData;
+  BoxSelUserData *data = userData;
 
-  const bool is_inside = BLI_rctf_isect_pt_v(data->rect_fl, screen_co);
+  const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
   if (bp) {
-    const bool is_select = bp->f1 & SELECT;
-    const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+    const bool is_sel = point->f1 & SEL;
+    const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_select, is_inside);
     if (sel_op_result != -1) {
       SET_FLAG_FROM_TEST(bp->f1, sel_op_result, data->select_flag);
       data->is_changed = true;
@@ -3071,164 +3071,160 @@ static void do_nurbs_box_select__doSelect(void *userData,
   else {
     if (!handles_visible) {
       /* can only be (beztindex == 1) here since handles are hidden */
-      const bool is_select = bezt->f2 & SELECT;
-      const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+      const bool is_sel = bezt->f2 & SEL;
+      const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_sel, is_inside);
       if (sel_op_result != -1) {
-        SET_FLAG_FROM_TEST(bezt->f2, sel_op_result, data->select_flag);
+        SET_FLAG_FROM_TEST(bezt->f2, sel_op_result, data->sel_flag);
         data->is_changed = true;
       }
       bezt->f1 = bezt->f3 = bezt->f2;
     }
     else {
       uint8_t *flag_p = (&bezt->f1) + beztindex;
-      const bool is_select = *flag_p & SELECT;
-      const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+      const bool is_sel = *flag_p & SEL;
+      const int sel_op_result = ed_sel_op_action_deselected(data->sel_op, is_select, is_inside);
       if (sel_op_result != -1) {
-        SET_FLAG_FROM_TEST(*flag_p, sel_op_result, data->select_flag);
+        SET_FLAG_FROM_TEST(*flag_p, sel_op_result, data->sel_flag);
         data->is_changed = true;
       }
     }
   }
 }
 
-static bool do_nurbs_box_select(ViewContext *vc, rcti *rect, const eSelectOp sel_op)
+static bool do_nurbs_box_select(ViewCxt *vc, rcti *rect, const eSelOp sel_op)
 {
-  const bool deselect_all = (sel_op == SEL_OP_SET);
-  BoxSelectUserData data;
+  const bool desel_all = (sel_op == SEL_OP_SET);
+  BoxSelUserData data;
 
-  view3d_userdata_boxselect_init(&data, vc, rect, sel_op);
+  view3d_userdata_boxsel_init(&data, vc, rect, sel_op);
 
   Curve *curve = (Curve *)vc->obedit->data;
-  ListBase *nurbs = DUNE_curve_editNurbs_get(curve);
+  List *nurbs = dune_curve_editNurbs_get(curve);
 
   /* For deselect all, items to be selected are tagged with temp flag. Clear that first. */
-  if (deselect_all) {
-    DUNE_nurbList_flag_set(nurbs, BEZT_FLAG_TEMP_TAG, false);
-    data.select_flag = BEZT_FLAG_TEMP_TAG;
+  if (desel_all) {
+    dune_nurbList_flag_set(nurbs, BEZT_FLAG_TMP_TAG, false);
+    data.sel_flag = BEZT_FLAG_TMP_TAG;
   }
 
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
-  nurbs_foreachScreenVert(vc, do_nurbs_box_select__doSelect, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
+  nurbs_foreachScreenVert(vc, do_nurbs_box_sel_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
-  /* Deselect items that were not added to selection (indicated by temp flag). */
-  if (deselect_all) {
-    data.is_changed |= DUNE_nurbList_flag_set_from_flag(nurbs, BEZT_FLAG_TEMP_TAG, SELECT);
+  /* Deselect items that were not added to selection (indicated by tmp flag). */
+  if (desel_all) {
+    data.is_changed |= dune_nurbList_flag_set_from_flag(nurbs, BEZT_FLAG_TEMP_TAG, SELECT);
   }
 
-  DUNE_curve_nurb_vert_active_validate(vc->obedit->data);
+  dune_curve_nurb_vert_active_validate(vc->obedit->data);
 
   return data.is_changed;
 }
 
-static void do_lattice_box_select__doSelect(void *userData, DunePoint *dp, const float screen_co[2])
+static void do_lattice_box_sel_doSel(void *userData, Point *point, const float screen_co[2])
 {
-  BoxSelectUserData *data = userData;
-  const bool is_select = bp->f1 & SELECT;
-  const bool is_inside = LIB_rctf_isect_pt_v(data->rect_fl, screen_co);
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  BoxSelUserData *data = userData;
+  const bool is_sel = point->f1 & SEL;
+  const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
+  const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    SET_FLAG_FROM_TEST(bp->f1, sel_op_result, SELECT);
+    SET_FLAG_FROM_TEST(bp->f1, sel_op_result, SEL);
     data->is_changed = true;
   }
 }
-static bool do_lattice_box_select(ViewContext *vc, rcti *rect, const eSelectOp sel_op)
+static bool do_lattice_box_sel(ViewCxt *vc, rcti *rect, const eSelOp sel_op)
 {
-  BoxSelectUserData data;
+  BoxSelUserData data;
 
-  view3d_userdata_boxselect_init(&data, vc, rect, sel_op);
+  view3d_userdata_boxsel_init(&data, vc, rect, sel_op);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    data.is_changed |= ED_lattice_flags_set(vc->obedit, 0);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    data.is_changed |= ed_lattice_flags_set(vc->obedit, 0);
   }
 
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
   lattice_foreachScreenVert(
-      vc, do_lattice_box_select__doSelect, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      vc, do_lattice_box_sel_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
   return data.is_changed;
 }
 
-static void do_mesh_box_select__doSelectVert(void *userData,
-                                             DuneMeshVert *eve,
-                                             const float screen_co[2],
-                                             int UNUSED(index))
+static void do_mesh_box_sel_doSelVert(void *userData,
+                                      MVert *eve,
+                                      const float screen_co[2],
+                                      int UNUSED(index))
 {
-  BoxSelectUserData *data = userData;
-  const bool is_select = duneMesh_elem_flag_test(eve, DUNEMESH_ELEM_SELECT);
-  const bool is_inside = LIB_rctf_isect_pt_v(data->rect_fl, screen_co);
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  BoxSelUserData *data = userData;
+  const bool is_sel = dune_mesh_elem_flag_test(eve, MESH_ELEM_SEL);
+  const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
+  const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    duneMesh_vert_select_set(data->vc->em->bm, eve, sel_op_result);
+    dune_mesh_vert_sel_set(data->vc->em->bm, eve, sel_op_result);
     data->is_changed = true;
   }
 }
-struct BoxSelectUserData_ForMeshEdge {
-  BoxSelectUserData *data;
-  struct EditSelectBuf_Cache *esel;
+struct BoxSelUserDataForMeshEdge {
+  BoxSelUserData *data;
+  struct EditSelBufCache *esel;
   uint backbuf_offset;
 };
-/**
- * Pass 0 operates on edges when fully inside.
- */
-static void do_mesh_box_select__doSelectEdge_pass0(
-    void *userData, DuneMeshEdge *eed, const float screen_co_a[2], const float screen_co_b[2], int index)
+/* Pass 0 operates on edges when fully inside */
+static void do_mesh_box_sel_doSelEdge_pass0(
+    void *userData, MeshEdge *eed, const float screen_co_a[2], const float screen_co_b[2], int index)
 {
-  struct BoxSelectUserData_ForMeshEdge *data_for_edge = userData;
-  BoxSelectUserData *data = data_for_edge->data;
+  struct BoxSelUserDataForMeshEdge *data_for_edge = userData;
+  BoxSelUserData *data = data_for_edge->data;
   bool is_visible = true;
   if (data_for_edge->backbuf_offset) {
     uint bitmap_inedx = data_for_edge->backbuf_offset + index - 1;
-    is_visible = LIB_BITMAP_TEST_BOOL(data_for_edge->esel->select_bitmap, bitmap_inedx);
+    is_visible = LIB_BITMAP_TEST_BOOL(data_for_edge->esel->sel_bitmap, bitmap_inedx);
   }
 
-  const bool is_select = duneMesh_elem_flag_test(eed, DUNEMESH_ELEM_SELECT);
+  const bool is_sel = dune_mesh_elem_flag_test(eed, MESH_ELEM_SEL);
   const bool is_inside = (is_visible &&
                           edge_fully_inside_rect(data->rect_fl, screen_co_a, screen_co_b));
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    duneMesh_edge_select_set(data->vc->em->bm, eed, sel_op_result);
+    dune_mesh_edge_sel_set(data->vc->em-mesh, eed, sel_op_result);
     data->is_done = true;
     data->is_changed = true;
   }
 }
-/**
- * Pass 1 operates on edges when partially inside.
- */
-static void do_mesh_box_select__doSelectEdge_pass1(
-    void *userData, DuneMeshEdge *eed, const float screen_co_a[2], const float screen_co_b[2], int index)
+/* Pass 1 operates on edges when partially inside */
+static void do_mesh_box_sel_doSelEdge_pass1(
+    void *userData, MeshEdge *eed, const float screen_co_a[2], const float screen_co_b[2], int index)
 {
-  struct BoxSelectUserData_ForMeshEdge *data_for_edge = userData;
-  BoxSelectUserData *data = data_for_edge->data;
+  struct BoxSelUserDataForMeshEdge data_for_edge = userData;
+  BoxSelUserData *data = data_for_edge->data;
   bool is_visible = true;
   if (data_for_edge->backbuf_offset) {
     uint bitmap_inedx = data_for_edge->backbuf_offset + index - 1;
-    is_visible = LIB_BITMAP_TEST_BOOL(data_for_edge->esel->select_bitmap, bitmap_inedx);
+    is_visible = LIB_BITMAP_TEST_BOOL(data_for_edge->esel->sel_bitmap, bitmap_inedx);
   }
 
-  const bool is_select = duneMesh_elem_flag_test(eed, DUNEMESH_ELEM_SELECT);
+  const bool is_sel = dune_mesh_elem_flag_test(eed, MESH_ELEM_SEL);
   const bool is_inside = (is_visible && edge_inside_rect(data->rect_fl, screen_co_a, screen_co_b));
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    DuneMesh_edge_select_set(data->vc->em->bm, eed, sel_op_result);
+    DuneMesh_edge_sel_set(data->vc->me->mesh, eed, sel_op_result);
     data->is_changed = true;
   }
 }
-static void do_mesh_box_select__doSelectFace(void *userData,
-                                             BMFace *efa,
-                                             const float screen_co[2],
-                                             int UNUSED(index))
+static void do_mesh_box_sel_doSelFace(void *userData,
+                                      MFace *efa,
+                                      const float screen_co[2],
+                                      int UNUSED(index))
 {
-  BoxSelectUserData *data = userData;
-  const bool is_select = DuneMesh_elem_flag_test(efa, DUNEMESH_ELEM_SELECT);
-  const bool is_inside = LIB_rctf_isect_pt_v(data->rect_fl, screen_co);
-  const int sel_op_result = ED_select_op_action_deselected(data->sel_op, is_select, is_inside);
+  BoxSelUserData *data = userData;
+  const bool is_sel = DuneMesh_elem_flag_test(efa, MESH_ELEM_SEL);
+  const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
+  const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
-    DuneMesh_face_select_set(data->vc->em->bm, efa, sel_op_result);
+    DuneMesh_face_sel_set(data->vc->em->bm, efa, sel_op_result);
     data->is_changed = true;
   }
 }
-static bool do_mesh_box_select(ViewContext *vc,
-                               wmGenericUserData *wm_userdata,
+static bool do_mesh_box_sel(ViewCxt *vc,
+                            WinGenericUserData *wm_userdata,
                                const rcti *rect,
                                const eSelectOp sel_op)
 {
