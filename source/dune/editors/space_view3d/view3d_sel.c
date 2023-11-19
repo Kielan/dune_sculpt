@@ -3215,7 +3215,7 @@ static void do_mesh_box_sel_doSelFace(void *userData,
                                       int UNUSED(index))
 {
   BoxSelUserData *data = userData;
-  const bool is_sel = DuneMesh_elem_flag_test(efa, MESH_ELEM_SEL);
+  const bool is_sel = mesh_elem_flag_test(efa, MESH_ELEM_SEL);
   const bool is_inside = lib_rctf_isect_pt_v(data->rect_fl, screen_co);
   const int sel_op_result = ed_sel_op_action_desel(data->sel_op, is_sel, is_inside);
   if (sel_op_result != -1) {
@@ -3224,56 +3224,56 @@ static void do_mesh_box_sel_doSelFace(void *userData,
   }
 }
 static bool do_mesh_box_sel(ViewCxt *vc,
-                            WinGenericUserData *wm_userdata,
-                               const rcti *rect,
-                               const eSelectOp sel_op)
+                            WinGenericUserData *win_userdata,
+                            const rcti *rect,
+                            const eSelOp sel_op)
 {
-  BoxSelectUserData data;
+  BoxSelUserData data;
   ToolSettings *ts = vc->scene->toolsettings;
 
-  view3d_userdata_boxselect_init(&data, vc, rect, sel_op);
+  view3d_userdata_boxsel_init(&data, vc, rect, sel_op);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    if (vc->em->bm->totvertsel) {
-      EDBM_flag_disable_all(vc->em, BM_ELEM_SELECT);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    if (vc->em->mesh->totvertsel) {
+      ed_flag_disable_all(vc->em, MESH_ELEM_SEL);
       data.is_changed = true;
     }
   }
 
   /* for non zbuf projections, don't change the GL state */
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
 
-  GPU_matrix_set(vc->rv3d->viewmat);
+  gpu_matrix_set(vc->rv3d->viewmat);
 
   const bool use_zbuf = !XRAY_FLAG_ENABLED(vc->v3d);
 
-  struct EditSelectBuf_Cache *esel = wm_userdata->data;
+  struct EditSelBufCache *esel = win_userdata->data;
   if (use_zbuf) {
-    if (wm_userdata->data == NULL) {
-      editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, ts->selectmode);
-      esel = wm_userdata->data;
-      esel->select_bitmap = DRW_select_buffer_bitmap_from_rect(
-          vc->depsgraph, vc->region, vc->v3d, rect, NULL);
+    if (win_userdata->data == NULL) {
+      editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, ts->selectmode);
+      esel = win_userdata->data;
+      esel->sel_bitmap = drw_sel_buffer_bitmap_from_rect(
+          vc->graph, vc->rgn, vc->v3d, rect, NULL);
     }
   }
 
-  if (ts->selectmode & SCE_SELECT_VERTEX) {
+  if (ts->selmode & SCE_SEL_VERTEX) {
     if (use_zbuf) {
-      data.is_changed |= edbm_backbuf_check_and_select_verts(
-          esel, vc->depsgraph, vc->obedit, vc->em, sel_op);
+      data.is_changed |= edbm_backbuf_check_and_sel_verts(
+          esel, vc->graph, vc->obedit, vc->em, sel_op);
     }
     else {
       mesh_foreachScreenVert(
-          vc, do_mesh_box_select__doSelectVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+          vc, do_mesh_box_sel_doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
-  if (ts->selectmode & SCE_SELECT_EDGE) {
+  if (ts->selmode & SCE_SEL_EDGE) {
     /* Does both use_zbuf and non-use_zbuf versions (need screen cos for both) */
-    struct BoxSelectUserData_ForMeshEdge cb_data = {
+    struct BoxSelUserData_ForMeshEdge cb_data = {
         .data = &data,
-        .esel = use_zbuf ? esel : NULL,
-        .backbuf_offset = use_zbuf ? DRW_select_buffer_context_offset_for_object_elem(
-                                         vc->depsgraph, vc->obedit, SCE_SELECT_EDGE) :
+        .esel = use_zbuf ? esel : NULL;
+        .backbuf_offset = use_zbuf ? drw_sel_buffer_cxt_offset_for_ob_elem(
+                                         vc->graph, vc->obedit, SCE_SEL_EDGE) :
                                      0,
     };
 
@@ -3281,50 +3281,50 @@ static bool do_mesh_box_sel(ViewCxt *vc,
                                    (use_zbuf ? 0 : V3D_PROJ_TEST_CLIP_BB);
     /* Fully inside. */
     mesh_foreachScreenEdge_clip_bb_segment(
-        vc, do_mesh_box_select__doSelectEdge_pass0, &cb_data, clip_flag);
+        vc, do_mesh_box_select__doSelEdge_pass0, &cb_data, clip_flag);
     if (data.is_done == false) {
       /* Fall back to partially inside.
        * Clip content to account for edges partially behind the view. */
       mesh_foreachScreenEdge_clip_bb_segment(vc,
-                                             do_mesh_box_select__doSelectEdge_pass1,
+                                             do_mesh_box_sel_doSelEdge_pass1,
                                              &cb_data,
                                              clip_flag | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
     }
   }
 
-  if (ts->selectmode & SCE_SELECT_FACE) {
+  if (ts->selmode & SCE_SEL_FACE) {
     if (use_zbuf) {
-      data.is_changed |= edbm_backbuf_check_and_select_faces(
-          esel, vc->depsgraph, vc->obedit, vc->em, sel_op);
+      data.is_changed |= edbm_backbuf_check_and_sel_faces(
+          esel, vc->graph, vc->obedit, vc->em, sel_op);
     }
     else {
       mesh_foreachScreenFace(
-          vc, do_mesh_box_select__doSelectFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+          vc, do_mesh_box_sel_doSelFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
 
   if (data.is_changed) {
-    EDBM_selectmode_flush(vc->em);
+    edbm_selmode_flush(vc->em);
   }
   return data.is_changed;
 }
 
-static bool do_meta_box_select(ViewContext *vc, const rcti *rect, const eSelectOp sel_op)
+static bool do_meta_box_sel(ViewCxt *vc, const rcti *rect, const eSelOp sel_op)
 {
-  Object *ob = vc->obedit;
+  Ob *ob = vc->obedit;
   MetaBall *mb = (MetaBall *)ob->data;
   MetaElem *ml;
   int a;
   bool changed = false;
 
-  GPUSelectResult buffer[MAXPICKELEMS];
+  GPUSelResult buffer[MAXPICKELEMS];
   int hits;
 
-  hits = view3d_opengl_select(
-      vc, buffer, MAXPICKELEMS, rect, VIEW3D_SELECT_ALL, VIEW3D_SELECT_FILTER_NOP);
+  hits = view3d_opengl_sel(
+      vc, buffer, MAXPICKELEMS, rect, VIEW3D_SEL_ALL, VIEW3D_SEL_FILTER_NOP);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= DUNE_mball_deselect_all(mb);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= dune_mball_desel_all(mb);
   }
 
   int metaelem_id = 0;
@@ -3339,8 +3339,8 @@ static bool do_meta_box_select(ViewContext *vc, const rcti *rect, const eSelectO
         continue;
       }
 
-      const uint hit_object = hitresult & 0xFFFF;
-      if (vc->obedit->runtime.select_id != hit_object) {
+      const uint hit_ob = hitresult & 0xFFFF;
+      if (vc->obedit->runtime.sel_id != hit_ob) {
         continue;
       }
 
@@ -3366,12 +3366,12 @@ static bool do_meta_box_select(ViewContext *vc, const rcti *rect, const eSelectO
       ml->flag &= ~MB_SCALE_RAD;
     }
 
-    const bool is_select = (ml->flag & SELECT);
+    const bool is_sel = (ml->flag & SEL);
     const bool is_inside = is_inside_radius || is_inside_stiff;
 
-    const int sel_op_result = ED_select_op_action_deselected(sel_op, is_select, is_inside);
+    const int sel_op_result = ed_sel_op_action_deselected(sel_op, is_sel, is_inside);
     if (sel_op_result != -1) {
-      SET_FLAG_FROM_TEST(ml->flag, sel_op_result, SELECT);
+      SET_FLAG_FROM_TEST(ml->flag, sel_op_result, SEL);
     }
     changed |= (flag_prev != ml->flag);
   }
@@ -3379,46 +3379,46 @@ static bool do_meta_box_select(ViewContext *vc, const rcti *rect, const eSelectO
   return changed;
 }
 
-static bool do_armature_box_select(ViewContext *vc, const rcti *rect, const eSelectOp sel_op)
+static bool do_armature_box_sel(ViewCxt *vc, const rcti *rect, const eSelOp sel_op)
 {
   bool changed = false;
   int a;
 
-  GPUSelectResult buffer[MAXPICKELEMS];
+  GPUSelResult buffer[MAXPICKELEMS];
   int hits;
 
-  hits = view3d_opengl_select(
-      vc, buffer, MAXPICKELEMS, rect, VIEW3D_SELECT_ALL, VIEW3D_SELECT_FILTER_NOP);
+  hits = view3d_opengl_sel(
+      vc, buffer, MAXPICKELEMS, rect, VIEW3D_SEL_ALL, VIEW3D_SEL_FILTER_NOP);
 
   uint bases_len = 0;
-  Base **bases = DUNE_view_layer_array_from_bases_in_edit_mode_unique_data(
+  Base **bases = dune_view_layer_array_from_bases_in_edit_mode_unique_data(
       vc->view_layer, vc->v3d, &bases_len);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= ED_armature_edit_deselect_all_visible_multi_ex(bases, bases_len);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= ed_armature_edit_desel_all_visible_multi_ex(bases, bases_len);
   }
 
   for (uint base_index = 0; base_index < bases_len; base_index++) {
-    Object *obedit = bases[base_index]->object;
+    Ob *obedit = bases[base_index]->ob;
     obedit->id.tag &= ~LIB_TAG_DOIT;
 
-    duneArmature *arm = obedit->data;
-    ED_armature_ebone_listbase_temp_clear(arm->edbo);
+    Armature *arm = obedit->data;
+    ed_armature_ebone_list_tmp_clear(arm->edbo);
   }
 
   /* first we only check points inside the border */
   for (a = 0; a < hits; a++) {
-    const int select_id = buffer[a].id;
-    if (select_id != -1) {
-      if ((select_id & 0xFFFF0000) == 0) {
+    const int sel_id = buffer[a].id;
+    if (sel_id != -1) {
+      if ((sel_id & 0xFFFF0000) == 0) {
         continue;
       }
 
       EditBone *ebone;
-      Base *base_edit = ED_armature_base_and_ebone_from_select_buffer(
-          bases, bases_len, select_id, &ebone);
-      ebone->temp.i |= select_id & BONESEL_ANY;
-      base_edit->object->id.tag |= LIB_TAG_DOIT;
+      Base *base_edit = ed_armature_base_and_ebone_from_sel_buffer(
+          bases, bases_len, sel_id, &ebone);
+      ebone->tmp.i |= sel_id & BONESEL_ANY;
+      base_edit->ob->id.tag |= LIB_TAG_DOIT;
     }
   }
 
