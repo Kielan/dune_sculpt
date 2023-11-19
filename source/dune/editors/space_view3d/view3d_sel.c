@@ -3110,7 +3110,7 @@ static bool do_nurbs_box_select(ViewCxt *vc, rcti *rect, const eSelOp sel_op)
   ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
   nurbs_foreachScreenVert(vc, do_nurbs_box_sel_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
-  /* Deselect items that were not added to selection (indicated by tmp flag). */
+  /* Desel items that were not added to selection (indicated by tmp flag). */
   if (desel_all) {
     data.is_changed |= dune_nurbList_flag_set_from_flag(nurbs, BEZT_FLAG_TEMP_TAG, SELECT);
   }
@@ -3423,30 +3423,28 @@ static bool do_armature_box_sel(ViewCxt *vc, const rcti *rect, const eSelOp sel_
   }
 
   for (uint base_index = 0; base_index < bases_len; base_index++) {
-    Object *obedit = bases[base_index]->object;
+    Ob *obedit = bases[base_index]->ob;
     if (obedit->id.tag & LIB_TAG_DOIT) {
       obedit->id.tag &= ~LIB_TAG_DOIT;
-      changed |= ED_armature_edit_select_op_from_tagged(obedit->data, sel_op);
+      changed |= ed_armature_edit_sel_op_from_tagged(obedit->data, sel_op);
     }
   }
 
-  MEM_freeN(bases);
+  mem_free(bases);
 
   return changed;
 }
 
-/**
- * Compare result of 'GPU_select': 'GPUSelectResult',
- * needed for when we need to align with object draw-order.
- */
-static int opengl_bone_select_buffer_cmp(const void *sel_a_p, const void *sel_b_p)
+/* Compare result of 'gpu_sel': 'GPUSelResult',
+ * needed for when we need to align with ob draw-order */
+static int opengl_bone_sel_buf_cmp(const void *sel_a_p, const void *sel_b_p)
 {
-  uint sel_a = ((GPUSelectResult *)sel_a_p)->id;
-  uint sel_b = ((GPUSelectResult *)sel_b_p)->id;
+  uint sel_a = ((GPUSelResult *)sel_a_p)->id;
+  uint sel_b = ((GPUSelResult *)sel_b_p)->id;
 
 #ifdef __BIG_ENDIAN__
-  LIB_endian_switch_uint32(&sel_a);
-  LIB_endian_switch_uint32(&sel_b);
+  lib_endian_switch_uint32(&sel_a);
+  lib_endian_switch_uint32(&sel_b);
 #endif
 
   if (sel_a < sel_b) {
@@ -3458,18 +3456,18 @@ static int opengl_bone_select_buffer_cmp(const void *sel_a_p, const void *sel_b_
   return 0;
 }
 
-static bool do_object_box_select(duneContext *C, ViewContext *vc, rcti *rect, const eSelectOp sel_op)
+static bool do_ob_box_sel(Cxt *C, ViewCxt *vc, rcti *rect, const eSelectOp sel_op)
 {
   View3D *v3d = vc->v3d;
-  int totobj = MAXPICKELEMS; /* XXX solve later */
-
-  /* Selection buffer has bones potentially too, so we add #MAXPICKELEMS. */
-  GPUSelectResult *buffer = MEM_mallocN((totobj + MAXPICKELEMS) * sizeof(GPUSelectResult),
-                                        "selection buffer");
-  const eV3DSelectObjectFilter select_filter = ED_view3d_select_filter_from_mode(vc->scene,
-                                                                                 vc->obact);
+  int totob = MAXPICKELEMS; /* XXX solve later */
+  
+  /* Sel buffer has bones potentially too, so we add MAXPICKELEMS. */
+  GPUSelResult *buffer = mem_malloc((totob + MAXPICKELEMS) * sizeof(GPUSelResult),
+                                        "sel buffer");
+  const eV3DSelObFilter select_filter = ed_view3d_sel_filter_from_mode(vc->scene,
+                                                                       vc->obact);
   const int hits = view3d_opengl_select(
-      vc, buffer, (totobj + MAXPICKELEMS), rect, VIEW3D_SELECT_ALL, select_filter);
+      vc, buf, (totob + MAXPICKELEMS), rect, VIEW3D_SEL_ALL, sel_filter);
 
   LISTBASE_FOREACH (Base *, base, &vc->view_layer->object_bases) {
     base->object->id.tag &= ~LIB_TAG_DOIT;
