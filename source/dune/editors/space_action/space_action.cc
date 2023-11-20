@@ -1,57 +1,54 @@
 #include <cstdio>
 #include <cstring>
 
-#include "DNA_action_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_collection.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.hh"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_nla.h"
-#include "BKE_screen.hh"
+#include "dune_cxt.hh"
+#include "dune_lib_query.h"
+#include "dune_lib_remap.h"
+#include "dune_nla.h"
+#include "dune_screen.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
 
-#include "WM_api.hh"
-#include "WM_message.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_msg.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_markers.hh"
-#include "ED_screen.hh"
-#include "ED_space_api.hh"
-#include "ED_time_scrub_ui.hh"
+#include "ed_anim_api.hh"
+#include "ed_markers.hh"
+#include "ed_screen.hh"
+#include "ed_space_api.hh"
+#include "ed_time_scrub_ui.hh"
 
-#include "BLO_read_write.hh"
+#include "loader_read_write.hh"
 
-#include "GPU_matrix.h"
+#include "gpu_matrix.h"
 
 #include "action_intern.hh" /* own include */
 
-/* -------------------------------------------------------------------- */
-/** \name Default Callbacks for Action Space
- * \{ */
-
+/* Default Cbs for Action Space */
 static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
 {
   SpaceAction *saction;
-  ARegion *region;
+  ARgn *rgn;
 
-  saction = MEM_cnew<SpaceAction>("initaction");
+  saction = mem_cnew<SpaceAction>("initaction");
   saction->spacetype = SPACE_ACTION;
 
   saction->mode = SACTCONT_DOPESHEET;
@@ -65,56 +62,56 @@ static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
                            TIME_CACHE_RIGIDBODY | TIME_CACHE_SIMULATION_NODES;
 
   /* header */
-  region = MEM_cnew<ARegion>("header for action");
+  rgn = mem_cnew<ARgn>("header for action");
 
-  BLI_addtail(&saction->regionbase, region);
-  region->regiontype = RGN_TYPE_HEADER;
-  region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
+  lib_addtail(&saction->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_HEADER;
+  rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
-  /* channel list region */
-  region = MEM_cnew<ARegion>("channel region for action");
-  BLI_addtail(&saction->regionbase, region);
-  region->regiontype = RGN_TYPE_CHANNELS;
-  region->alignment = RGN_ALIGN_LEFT;
+  /* channel list rgn */
+  rgn = mem_cnew<ARgn>("channel rgn for action");
+  lib_addtail(&saction->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_CHANNELS;
+  rgn->alignment = RGN_ALIGN_LEFT;
 
   /* only need to set scroll settings, as this will use 'listview' v2d configuration */
-  region->v2d.scroll = V2D_SCROLL_BOTTOM;
-  region->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
+  rgn->v2d.scroll = V2D_SCROLL_BOTTOM;
+  rgn->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
 
-  /* ui buttons */
-  region = MEM_cnew<ARegion>("buttons region for action");
+  /* ui btns */
+  rgn = mem_cnew<ARgn>("btns rgn for action");
 
-  BLI_addtail(&saction->regionbase, region);
-  region->regiontype = RGN_TYPE_UI;
-  region->alignment = RGN_ALIGN_RIGHT;
+  lib_addtail(&saction->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_UI;
+  rgn->alignment = RGN_ALIGN_RIGHT;
 
-  /* main region */
-  region = MEM_cnew<ARegion>("main region for action");
+  /* main rgn */
+  region = mem_cnew<ARgn>("main rgn for action");
 
-  BLI_addtail(&saction->regionbase, region);
-  region->regiontype = RGN_TYPE_WINDOW;
+  lib_addtail(&saction->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_WIN;
 
-  region->v2d.tot.xmin = float(scene->r.sfra - 10);
-  region->v2d.tot.ymin = float(-area->winy) / 3.0f;
-  region->v2d.tot.xmax = float(scene->r.efra + 10);
-  region->v2d.tot.ymax = 0.0f;
+  rgn->v2d.tot.xmin = float(scene->r.sfra - 10);
+  rgn->v2d.tot.ymin = float(-area->winy) / 3.0f;
+  rgn->v2d.tot.xmax = float(scene->r.efra + 10);
+  rgn->v2d.tot.ymax = 0.0f;
 
-  region->v2d.cur = region->v2d.tot;
+  rgn->v2d.cur = rgn->v2d.tot;
 
-  region->v2d.min[0] = 0.0f;
-  region->v2d.min[1] = 0.0f;
+  rgn->v2d.min[0] = 0.0f;
+  rgn->v2d.min[1] = 0.0f;
 
-  region->v2d.max[0] = MAXFRAMEF;
-  region->v2d.max[1] = FLT_MAX;
+  rgn->v2d.max[0] = MAXFRAMEF;
+  rgn->v2d.max[1] = FLT_MAX;
 
-  region->v2d.minzoom = 0.01f;
-  region->v2d.maxzoom = 50;
-  region->v2d.scroll = (V2D_SCROLL_BOTTOM | V2D_SCROLL_HORIZONTAL_HANDLES);
-  region->v2d.scroll |= V2D_SCROLL_RIGHT;
-  region->v2d.keepzoom = V2D_LOCKZOOM_Y;
-  region->v2d.keepofs = V2D_KEEPOFS_Y;
-  region->v2d.align = V2D_ALIGN_NO_POS_Y;
-  region->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
+  rgn->v2d.minzoom = 0.01f;
+  rgn->v2d.maxzoom = 50;
+  rgn->v2d.scroll = (V2D_SCROLL_BOTTOM | V2D_SCROLL_HORIZONTAL_HANDLES);
+  rgn->v2d.scroll |= V2D_SCROLL_RIGHT;
+  rgn->v2d.keepzoom = V2D_LOCKZOOM_Y;
+  rgn->v2d.keepofs = V2D_KEEPOFS_Y;
+  rgn->v2d.align = V2D_ALIGN_NO_POS_Y;
+  rgn->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
 
   return (SpaceLink *)saction;
 }
@@ -125,8 +122,8 @@ static void action_free(SpaceLink * /*sl*/)
   //  SpaceAction *saction = (SpaceAction *) sl;
 }
 
-/* spacetype; init callback */
-static void action_init(wmWindowManager * /*wm*/, ScrArea *area)
+/* spacetype; init cb */
+static void action_init(WinMngr * /*wm*/, ScrArea *area)
 {
   SpaceAction *saction = static_cast<SpaceAction *>(area->spacedata.first);
   saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
@@ -139,418 +136,415 @@ static SpaceLink *action_duplicate(SpaceLink *sl)
   memset(&sactionn->runtime, 0x0, sizeof(sactionn->runtime));
 
   /* clear or remove stuff from old */
-
   return (SpaceLink *)sactionn;
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void action_main_region_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void action_main_rgn_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap;
-
-  UI_view2d_region_reinit(&region->v2d, V2D_COMMONVIEW_CUSTOM, region->winx, region->winy);
+  WinKeyMap *keymap;
+  
+  ui_view2d_rgn_reinit(&rgn->v2d, V2D_COMMONVIEW_CUSTOM, rgn->winx, rgn->winy);
 
   /* own keymap */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Dopesheet", SPACE_ACTION, RGN_TYPE_WINDOW);
-  WM_event_add_keymap_handler_v2d_mask(&region->handlers, keymap);
-  keymap = WM_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WINDOW);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet", SPACE_ACTION, RGN_TYPE_WIN);
+  win_ev_add_keymap_handler_v2d_mask(&rgn->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WIN);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_main_region_draw(const bContext *C, ARegion *region)
+static void action_main_rgn_draw(const Cxt *C, ARgn *rgn)
 {
   /* draw entirely, view changes should be handled here */
-  SpaceAction *saction = CTX_wm_space_action(C);
-  Scene *scene = CTX_data_scene(C);
-  bAnimContext ac;
-  View2D *v2d = &region->v2d;
+  SpaceAction *saction = cxt_win_space_action(C);
+  Scene *scene = cxt_data_scene(C);
+  AnimCxt ac;
+  View2D *v2d = &rgn->v2d;
   short marker_flag = 0;
 
-  UI_view2d_view_ortho(v2d);
+  ui_view2d_view_ortho(v2d);
 
   /* clear and setup matrix */
-  UI_ThemeClearColor(TH_BACK);
+  ui_ThemeClearColor(TH_BACK);
 
-  UI_view2d_view_ortho(v2d);
+  ui_view2d_view_ortho(v2d);
 
   /* time grid */
-  UI_view2d_draw_lines_x__discrete_frames_or_seconds(
+  ui_view2d_draw_lines_x_discrete_frames_or_seconds(
       v2d, scene, saction->flag & SACTION_DRAWTIME, true);
 
-  ED_region_draw_cb_draw(C, region, REGION_DRAW_PRE_VIEW);
+  ed_rgn_draw_cb_draw(C, rgn, RGN_DRAW_PRE_VIEW);
 
   /* start and end frame */
-  ANIM_draw_framerange(scene, v2d);
+  ankm_draw_framerange(scene, v2d);
 
   /* Draw the manually set intended playback frame range highlight in the Action editor. */
   if (ELEM(saction->mode, SACTCONT_ACTION, SACTCONT_SHAPEKEY) && saction->action) {
-    AnimData *adt = ED_actedit_animdata_from_context(C, nullptr);
+    AnimData *adt = ed_actedit_animdata_from_cxt(C, nullptr);
 
-    ANIM_draw_action_framerange(adt, saction->action, v2d, -FLT_MAX, FLT_MAX);
+    anim_draw_action_framerange(adt, saction->action, v2d, -FLT_MAX, FLT_MAX);
   }
 
   /* data */
-  if (ANIM_animdata_get_context(C, &ac)) {
-    draw_channel_strips(&ac, saction, region);
+  if (anim_animdata_get_ct(C, &ac)) {
+    draw_channel_strips(&ac, saction, rgn);
   }
 
   /* markers */
-  UI_view2d_view_orthoSpecial(region, v2d, true);
+  ui_view2d_view_orthoSpecial(rgn, v2d, true);
 
   marker_flag = ((ac.markers && (ac.markers != &ac.scene->markers)) ? DRAW_MARKERS_LOCAL : 0) |
-                DRAW_MARKERS_MARGIN;
+                DRW_MARKERS_MARGIN;
 
   if (saction->flag & SACTION_SHOW_MARKERS) {
-    ED_markers_draw(C, marker_flag);
+    ed_markers_drw(C, marker_flag);
   }
 
   /* preview range */
-  UI_view2d_view_ortho(v2d);
-  ANIM_draw_previewrange(C, v2d, 0);
+  ui_view2d_view_ortho(v2d);
+  anim_drw_previewrange(C, v2d, 0);
 
-  /* callback */
-  UI_view2d_view_ortho(v2d);
-  ED_region_draw_cb_draw(C, region, REGION_DRAW_POST_VIEW);
+  /* cb */
+  ui_view2d_view_ortho(v2d);
+  ed_rgn_drw_cb_draw(C, rgn, RGN_DRW_POST_VIEW);
 
   /* reset view matrix */
-  UI_view2d_view_restore(C);
+  ui_view2d_view_restore(C);
 
   /* gizmos */
-  WM_gizmomap_draw(region->gizmo_map, C, WM_GIZMOMAP_DRAWSTEP_2D);
+  win_gizmomap_drw(rgn->gizmo_map, C, WIN_GIZMOMAP_DRAWSTEP_2D);
 
-  /* scrubbing region */
-  ED_time_scrub_draw(region, scene, saction->flag & SACTION_DRAWTIME, true);
+  /* scrubbing rgn */
+  ed_time_scrub_drw(rhn, scene, saction->flag & SACTION_DRAWTIME, true);
 }
 
-static void action_main_region_draw_overlay(const bContext *C, ARegion *region)
+static void action_main_rgn_drw_overlay(const Cxt *C, ARgn *rgn)
 {
-  /* draw entirely, view changes should be handled here */
-  const SpaceAction *saction = CTX_wm_space_action(C);
-  const Scene *scene = CTX_data_scene(C);
-  const Object *obact = CTX_data_active_object(C);
-  View2D *v2d = &region->v2d;
+  /* drw entirely, view changes should be handled here */
+  const SpaceAction *saction = cxt_win_space_action(C);
+  const Scene *scene = cxt_data_scene(C);
+  const Ob *obact = cxt_data_active_ob(C);
+  View2D *v2d = &rgn->v2d;
 
   /* caches */
   if (saction->mode == SACTCONT_TIMELINE) {
-    GPU_matrix_push_projection();
-    UI_view2d_view_orthoSpecial(region, v2d, true);
+    gpu_matrix_push_projection();
+    ui_view2d_view_orthoSpecial(rgn, v2d, true);
     timeline_draw_cache(saction, obact, scene);
-    GPU_matrix_pop_projection();
+    gpu_matrix_pop_projection();
   }
 
-  /* scrubbing region */
-  ED_time_scrub_draw_current_frame(region, scene, saction->flag & SACTION_DRAWTIME);
+  /* scrubbing rgn */
+  es_time_scrub_draw_current_frame(rgn, scene, saction->flag & SACTION_DRAWTIME);
 
   /* scrollers */
-  UI_view2d_scrollers_draw(v2d, nullptr);
+  ui_view2d_scrollers_draw(v2d, nullptr);
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void action_channel_region_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void action_channel_region_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap;
+  WinKeyMap *keymap;
 
   /* ensure the 2d view sync works - main region has bottom scroller */
-  region->v2d.scroll = V2D_SCROLL_BOTTOM;
+  rgn->v2d.scroll = V2D_SCROLL_BOTTOM;
 
-  UI_view2d_region_reinit(&region->v2d, V2D_COMMONVIEW_LIST, region->winx, region->winy);
+  ui_view2d_rgn_reinit(&rgn->v2d, V2D_COMMONVIEW_LIST, rgn->winx, rgn->winy);
 
   /* own keymap */
-  keymap = WM_keymap_ensure(wm->defaultconf, "Animation Channels", SPACE_EMPTY, RGN_TYPE_WINDOW);
-  WM_event_add_keymap_handler_v2d_mask(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Anim Channels", SPACE_EMPTY, RGN_TYPE_WIN);
+  win_ev_add_keymap_handler_v2d_mask(&rgn->handlers, keymap);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WINDOW);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WIN);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_channel_region_draw(const bContext *C, ARegion *region)
+static void action_channel_rgn_draw(const Cxt *C, ARgn *rgn)
 {
-  /* draw entirely, view changes should be handled here */
-  bAnimContext ac;
-  View2D *v2d = &region->v2d;
+  /* drw entirely, view changes should be handled here */
+  AnimCxt ac;
+  View2D *v2d = &rgn->v2d;
 
   /* clear and setup matrix */
-  UI_ThemeClearColor(TH_BACK);
+  ui_ThemeClearColor(TH_BACK);
 
-  UI_view2d_view_ortho(v2d);
+  ui_view2d_view_ortho(v2d);
 
   /* data */
-  if (ANIM_animdata_get_context(C, &ac)) {
-    draw_channel_names((bContext *)C, &ac, region);
+  if (anim_animdata_get_cxt(C, &ac)) {
+     drw_channel_names((Cxt *)C, &ac, rgn);
   }
 
   /* channel filter next to scrubbing area */
-  ED_time_scrub_channel_search_draw(C, region, ac.ads);
+  ed_time_scrub_channel_search_draw(C, rgn, ac.ads);
 
   /* reset view matrix */
-  UI_view2d_view_restore(C);
+  ui_view2d_view_restore(C);
 
   /* no scrollers here */
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void action_header_region_init(wmWindowManager * /*wm*/, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void action_header_rgn_init(WinMngr * /*wm*/, ARgn *rgn)
 {
-  ED_region_header_init(region);
+  ed_rgn_header_init(rgn);
 }
 
-static void action_header_region_draw(const bContext *C, ARegion *region)
+static void action_header_rgn_drw(const Cxt *C, ARgn *rgn)
 {
-  /* The anim context is not actually used, but this makes sure the action being displayed is up to
+  /* The anim cxt is not actually used, but this makes sure the action being displayed is up to
    * date. */
-  bAnimContext ac;
-  ANIM_animdata_get_context(C, &ac);
+  AnimCxt ac;
+  anim_animdata_get_cxt(C, &ac);
 
-  ED_region_header(C, region);
+  ed_rgn_header(C, rgn);
 }
 
-static void action_channel_region_listener(const wmRegionListenerParams *params)
+static void action_channel_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  const wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  WinNotifier *winn = params->notifier;
 
-  /* context changes */
-  switch (wmn->category) {
-    case NC_ANIMATION:
-      ED_region_tag_redraw(region);
+  /* cxt changes */
+  switch (winn->category) {
+    case NC_ANIM:
+      ed_rgn_tag_redrw(rgn);
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_OB_ACTIVE:
         case ND_FRAME:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
-    case NC_OBJECT:
-      switch (wmn->data) {
+    case NC_OB:
+      switch (winn->data) {
         case ND_BONE_ACTIVE:
-        case ND_BONE_SELECT:
+        case ND_BONE_SEL:
         case ND_KEYS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
-        case ND_MODIFIER:
-          if (wmn->action == NA_RENAME) {
-            ED_region_tag_redraw(region);
+        case ND_MOD:
+          if (winn->action == NA_RENAME) {
+            ed_rgn_tag_redraw(rgn);
           }
           break;
       }
       break;
-    case NC_GPENCIL:
-      if (ELEM(wmn->action, NA_RENAME, NA_SELECTED)) {
-        ED_region_tag_redraw(region);
+    case NC_PEN:
+      if (ELEM(winn->action, NA_RENAME, NA_SELECTED)) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
     case NC_ID:
-      if (wmn->action == NA_RENAME) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_RENAME) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
     default:
-      if (wmn->data == ND_KEYS) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_KEYS) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
   }
 }
 
-static void saction_channel_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
+static void saction_channel_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
-  wmMsgBus *mbus = params->message_bus;
-  ARegion *region = params->region;
+  WinMsgBus *mbus = params->msg_bus;
+  ARgn *rgn = params->rgm;
 
-  wmMsgSubscribeValue msg_sub_value_region_tag_redraw{};
-  msg_sub_value_region_tag_redraw.owner = region;
-  msg_sub_value_region_tag_redraw.user_data = region;
-  msg_sub_value_region_tag_redraw.notify = ED_region_do_msg_notify_tag_redraw;
+  WinMsgSubVal msg_sub_val_rgn_tag_redrw{};
+  msg_sub_val_rgn_tag_redrw.owner = rgn;
+  msg_sub_val_rgn_tag_redrw.user_data = rgn;
+  msg_sub_val_rgn_tag_redrw.notify = ed_rgn_do_msg_notify_tag_redrw;
 
   /* All dopesheet filter settings, etc. affect the drawing of this editor,
    * also same applies for all animation-related datatypes that may appear here,
-   * so just whitelist the entire structs for updates
-   */
+   * so just whitelist the entire structs for updates  */
   {
-    wmMsgParams_RNA msg_key_params = {{nullptr}};
-    StructRNA *type_array[] = {
-        &RNA_DopeSheet, /* dopesheet filters */
+    WinMsgParamsApi msg_key_params = {{nullptr}};
+    ApiStruct *type_array[] = {
+        &ApiDopeSheet, /* dopesheet filters */
 
-        &RNA_ActionGroup, /* channel groups */
+        &ApiActionGroup, /* channel groups */
 
-        &RNA_FCurve, /* F-Curve */
-        &RNA_Keyframe,
-        &RNA_FCurveSample,
+        &ApiFCurve, /* F-Curve */
+        &ApiKeyframe,
+        &ApiFCurveSample,
 
-        &RNA_GreasePencil, /* Grease Pencil */
-        &RNA_GPencilLayer,
-        &RNA_GPencilFrame,
+        &ApiPen, /* Pen */
+        &ApiPenLayer,
+        &ApiPenFrame,
     };
 
     for (int i = 0; i < ARRAY_SIZE(type_array); i++) {
       msg_key_params.ptr.type = type_array[i];
-      WM_msg_subscribe_rna_params(
-          mbus, &msg_key_params, &msg_sub_value_region_tag_redraw, __func__);
+      win_msg_sub_api_params(
+          mbus, &msg_key_params, &msg_sub_val_rgn_tag_redrw, __func__);
     }
   }
 }
 
-static void action_main_region_listener(const wmRegionListenerParams *params)
+static void action_main_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  const wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  const Notifier *winn = params->notifier;
 
   /* context changes */
-  switch (wmn->category) {
-    case NC_ANIMATION:
-      ED_region_tag_redraw(region);
+  switch (winn->category) {
+    case NC_ANIM:
+      ed_rgn_tag_redrw(rgn);
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_RENDER_OPTIONS:
         case ND_OB_ACTIVE:
         case ND_FRAME:
         case ND_FRAME_RANGE:
         case ND_MARKERS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
-    case NC_OBJECT:
-      switch (wmn->data) {
+    case NC_OB:
+      switch (winn->data) {
         case ND_TRANSFORM:
-          /* moving object shouldn't need to redraw action */
+          /* moving ob shouldn't need to redrw action */
           break;
         case ND_BONE_ACTIVE:
-        case ND_BONE_SELECT:
+        case ND_BONE_SEL:
         case ND_BONE_COLLECTION:
         case ND_KEYS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
     case NC_NODE:
-      switch (wmn->action) {
+      switch (winn->action) {
         case NA_EDITED:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redraw(rgn);
           break;
       }
       break;
     case NC_ID:
-      if (wmn->action == NA_RENAME) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_RENAME) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
     case NC_SCREEN:
-      if (ELEM(wmn->data, ND_LAYER)) {
-        ED_region_tag_redraw(region);
+      if (ELEM(winn->data, ND_LAYER)) {
+        ed_rgn_tag_redraw(rgn);
       }
       break;
     default:
-      if (wmn->data == ND_KEYS) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_KEYS) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
   }
 }
 
-static void saction_main_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
+static void saction_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
 {
-  wmMsgBus *mbus = params->message_bus;
+  WinMsgBus *mbus = params->msg_bus;
   Scene *scene = params->scene;
-  ARegion *region = params->region;
+  ARgn *rgn = params->rgn;
 
-  wmMsgSubscribeValue msg_sub_value_region_tag_redraw{};
-  msg_sub_value_region_tag_redraw.owner = region;
-  msg_sub_value_region_tag_redraw.user_data = region;
-  msg_sub_value_region_tag_redraw.notify = ED_region_do_msg_notify_tag_redraw;
+  WinMsgSubVal msg_sub_val_rgn_tag_redrw{};
+  msg_sub_val_rgn_tag_redraw.owner = rgn;
+  msg_sub_val_rgn_tag_redraw.user_data = rgn;
+  msg_sub_val_rgn_tag_redraw.notify = ed_rgn_do_msg_notify_tag_redrw;
 
-  /* Timeline depends on scene properties. */
+  /* Timeline depends on scene props. */
   {
     bool use_preview = (scene->r.flag & SCER_PRV_RANGE);
-    const PropertyRNA *props[] = {
-        use_preview ? &rna_Scene_frame_preview_start : &rna_Scene_frame_start,
-        use_preview ? &rna_Scene_frame_preview_end : &rna_Scene_frame_end,
-        &rna_Scene_use_preview_range,
-        &rna_Scene_frame_current,
+    const ApiProp *props[] = {
+        use_preview ? &api_Scene_frame_preview_start : &api_scene_frame_start,
+        use_preview ? &api_Scene_frame_preview_end : &api_scene_frame_end,
+        &api_scene_use_preview_range,
+        &api_scene_frame_current,
     };
 
-    PointerRNA idptr = RNA_id_pointer_create(&scene->id);
+    ApiPtr idptr = api_id_ptr_create(&scene->id);
 
     for (int i = 0; i < ARRAY_SIZE(props); i++) {
-      WM_msg_subscribe_rna(mbus, &idptr, props[i], &msg_sub_value_region_tag_redraw, __func__);
+      win_msg_sub_api(mbus, &idptr, props[i], &msg_sub_val_rgn_tag_redrw, __func__);
     }
   }
 
-  /* Now run the general "channels region" one - since channels and main should be in sync */
-  saction_channel_region_message_subscribe(params);
+  /* Now run the general "channels rgn" one - since channels and main should be in sync */
+  saction_channel_rgn_msg_sub(params);
 }
 
 /* editor level listener */
-static void action_listener(const wmSpaceTypeListenerParams *params)
+static void action_listener(const WinSpaceTypeListenerParams *params)
 {
   ScrArea *area = params->area;
-  const wmNotifier *wmn = params->notifier;
+  const WinNotifier *winn = params->notifier;
   SpaceAction *saction = (SpaceAction *)area->spacedata.first;
 
-  /* context changes */
-  switch (wmn->category) {
-    case NC_GPENCIL:
-      /* only handle these events for containers in which GPencil frames are displayed */
-      if (ELEM(saction->mode, SACTCONT_GPENCIL, SACTCONT_DOPESHEET, SACTCONT_TIMELINE)) {
-        if (wmn->action == NA_EDITED) {
-          ED_area_tag_redraw(area);
+  /* cxt changes */
+  switch (winn->category) {
+    case NC_PEN:
+      /* only handle these events for containers in which Pen frames are displayed */
+      if (ELEM(saction->mode, SACTCONT_PEN, SACTCONT_DOPESHEET, SACTCONT_TIMELINE)) {
+        if (winn->action == NA_EDITED) {
+          ed_area_tag_redrw(area);
         }
-        else if (wmn->action == NA_SELECTED) {
+        else if (wonn->action == NA_SELECTED) {
           saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-          ED_area_tag_refresh(area);
+          ed_area_tag_refresh(area);
         }
       }
       break;
-    case NC_ANIMATION:
+    case NC_ANIM:
       /* For NLA tweak-mode enter/exit, need complete refresh. */
-      if (wmn->data == ND_NLA_ACTCHANGE) {
+      if (winn->data == ND_NLA_ACTCHANGE) {
         saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-        ED_area_tag_refresh(area);
+        ed_area_tag_refresh(area);
       }
       /* Auto-color only really needs to change when channels are added/removed,
        * or previously hidden stuff appears
-       * (assume for now that if just adding these works, that will be fine).
-       */
-      else if (((wmn->data == ND_KEYFRAME) && ELEM(wmn->action, NA_ADDED, NA_REMOVED)) ||
-               ((wmn->data == ND_ANIMCHAN) && (wmn->action != NA_SELECTED)))
+       * (assume for now that if just adding these works, that will be fine) */
+      else if (((winn->data == ND_KEYFRAME) && ELEM(winn->action, NA_ADDED, NA_REMOVED)) ||
+               ((winn->data == ND_ANIMCHAN) && (winn->action != NA_SELECTED)))
       {
-        ED_area_tag_refresh(area);
+        ed_area_tag_refresh(area);
       }
-      /* for simple edits to the curve data though (or just plain selections),
-       * a simple redraw should work
+      /* for simple edits to the curve data though (or just plain sels),
+       * a simple redre should work
        * (see #39851 for an example of how this can go wrong)
        */
       else {
-        ED_area_tag_redraw(area);
+        ed_area_tag_redrw(area);
       }
       break;
     case NC_SCENE:
-      switch (wmn->data) {
-        case ND_SEQUENCER:
-          if (wmn->action == NA_SELECTED) {
+      switch (wonn->data) {
+        case ND_SEQ:
+          if (winn->action == NA_SELECTED) {
             saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-            ED_area_tag_refresh(area);
+            ed_area_tag_refresh(area);
           }
           break;
         case ND_OB_ACTIVE:
-        case ND_OB_SELECT:
-          /* Selection changed, so force refresh to flush
+        case ND_OB_SEL:
+          /* Sel changed, so force refresh to flush
            * (needs flag set to do syncing). */
           saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-          ED_area_tag_refresh(area);
+          ed_area_tag_refresh(area);
           break;
         case ND_RENDER_RESULT:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redrw(area);
           break;
         case ND_FRAME_RANGE:
-          LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
-            if (region->regiontype == RGN_TYPE_WINDOW) {
-              Scene *scene = static_cast<Scene *>(wmn->reference);
-              region->v2d.tot.xmin = float(scene->r.sfra - 4);
-              region->v2d.tot.xmax = float(scene->r.efra + 4);
+          LIST_FOREACH (ARgn *, rgn, &area->rgnbase) {
+            if (rgn->rgntype == RGN_TYPE_WIN) {
+              Scene *scene = static_cast<Scene *>(winn->ref);
+              rgn->v2d.tot.xmin = float(scene->r.sfra - 4);
+              rgn->v2d.tot.xmax = float(scene->r.efra + 4);
               break;
             }
           }
@@ -558,99 +552,99 @@ static void action_listener(const wmSpaceTypeListenerParams *params)
         default:
           if (saction->mode != SACTCONT_TIMELINE) {
             /* Just redrawing the view will do. */
-            ED_area_tag_redraw(area);
+            ed_area_tag_redrw(area);
           }
           break;
       }
       break;
-    case NC_OBJECT:
-      switch (wmn->data) {
-        case ND_BONE_SELECT: /* Selection changed, so force refresh to flush
+    case NC_OB:
+      switch (winn->data) {
+        case ND_BONE_SEL: /* Selection changed, so force refresh to flush
                               * (needs flag set to do syncing). */
         case ND_BONE_ACTIVE:
           saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-          ED_area_tag_refresh(area);
+          ed_area_tag_refresh(area);
           break;
         case ND_TRANSFORM:
-          /* moving object shouldn't need to redraw action */
+          /* moving object shouldn't need to redrw action */
           break;
         case ND_POINTCACHE:
-        case ND_MODIFIER:
+        case ND_MOD:
         case ND_PARTICLE:
           /* only needed in timeline mode */
           if (saction->mode == SACTCONT_TIMELINE) {
-            ED_area_tag_refresh(area);
-            ED_area_tag_redraw(area);
+            ed_area_tag_refresh(area);
+            ed_area_tag_redrw(area);
           }
           break;
         default: /* just redrawing the view will do */
-          ED_area_tag_redraw(area);
+          ed_area_tag_redrw(area);
           break;
       }
       break;
     case NC_MASK:
       if (saction->mode == SACTCONT_MASK) {
-        switch (wmn->data) {
+        switch (winn->data) {
           case ND_DATA:
-            ED_area_tag_refresh(area);
-            ED_area_tag_redraw(area);
+            ed_area_tag_refresh(area);
+            ed_area_tag_redrw(area);
             break;
           default: /* just redrawing the view will do */
-            ED_area_tag_redraw(area);
+            ed_area_tag_redrw(area);
             break;
         }
       }
       break;
     case NC_NODE:
-      if (wmn->action == NA_SELECTED) {
-        /* selection changed, so force refresh to flush (needs flag set to do syncing) */
+      if (winn->action == NA_SELECTED) {
+        /* sel changed, so force refresh to flush (needs flag set to do syncing) */
         saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-        ED_area_tag_refresh(area);
+        ed_area_tag_refresh(area);
       }
       break;
     case NC_SPACE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_SPACE_DOPESHEET:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redrw(area);
           break;
         case ND_SPACE_TIME:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redre(area);
           break;
         case ND_SPACE_CHANGED:
           saction->runtime.flag |= SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
-          ED_area_tag_refresh(area);
+          ed_area_tag_refresh(area);
           break;
       }
       break;
-    case NC_WINDOW:
+    case NC_WIN:
       if (saction->runtime.flag & SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC) {
-        /* force redraw/refresh after undo/redo, see: #28962. */
-        ED_area_tag_refresh(area);
+        /* force redrw/refresh after undo/redo, see: #28962. */
+        ed_area_tag_refresh(area);
       }
       break;
     case NC_WM:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_FILEREAD:
-          ED_area_tag_refresh(area);
+          ed_area_tag_refresh(area);
           break;
       }
       break;
   }
 }
 
-static void action_header_region_listener(const wmRegionListenerParams *params)
+static void action_header_rgn_listener(const WinRgnListenerParams *params)
 {
   ScrArea *area = params->area;
-  ARegion *region = params->region;
-  const wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  const WinNotifier *winn = params->notifier;
   SpaceAction *saction = (SpaceAction *)area->spacedata.first;
 
-  /* context changes */
-  switch (wmn->category) {
+  /* cxt changes */
+  switch (winn->category) {
     case NC_SCREEN:
       if (saction->mode == SACTCONT_TIMELINE) {
-        if (wmn->data == ND_ANIMPLAY) {
-          ED_region_tag_redraw(region);
+        if (winn->data == ND_ANIMPLAY) {
+          ed_rhn_tag_redrw(rgn);
         }
       }
       break;
@@ -658,119 +652,117 @@ static void action_header_region_listener(const wmRegionListenerParams *params)
       if (saction->mode == SACTCONT_TIMELINE) {
         switch (wmn->data) {
           case ND_RENDER_RESULT:
-          case ND_OB_SELECT:
+          case ND_OB_SEL:
           case ND_FRAME:
           case ND_FRAME_RANGE:
           case ND_KEYINGSET:
           case ND_RENDER_OPTIONS:
-            ED_region_tag_redraw(region);
+            ed_rgn_tag_redrw(rhn);
             break;
         }
       }
       else {
-        switch (wmn->data) {
+        switch (winn->data) {
           case ND_OB_ACTIVE:
-            ED_region_tag_redraw(region);
+            ed_rgn_tag_redrw(rgn);
             break;
         }
       }
       break;
     case NC_ID:
-      if (wmn->action == NA_RENAME) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_RENAME) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
-    case NC_ANIMATION:
-      switch (wmn->data) {
+    case NC_ANIM:
+      switch (winn->data) {
         case ND_ANIMCHAN: /* set of visible animchannels changed */
-          /* NOTE: for now, this should usually just mean that the filters changed
-           *       It may be better if we had a dedicated flag for that though
-           */
-          ED_region_tag_redraw(region);
+          /* For now, this should usually just mean that the filters changed
+           * It may be better if we had a dedicated flag for that though */
+          ed_rgn_tag_redrw(rgn);
           break;
 
         case ND_KEYFRAME: /* new keyframed added -> active action may have changed */
           // saction->flag |= SACTION_TEMP_NEEDCHANSYNC;
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
   }
 }
 
-/* add handlers, stuff you only do once or on area/region changes */
-static void action_buttons_area_init(wmWindowManager *wm, ARegion *region)
+/* add handlers, stuff you only do once or on area/rgn changes */
+static void action_btns_area_init(WinMngr *wm, ARgn *rgn)
 {
-  wmKeyMap *keymap;
+  WinKeyMap *keymap;
 
-  ED_region_panels_init(wm, region);
+  ed_rgn_pnls_init(wm, rgn);
 
-  keymap = WM_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WINDOW);
-  WM_event_add_keymap_handler(&region->handlers, keymap);
+  keymap = win_keymap_ensure(wm->defaultconf, "Dopesheet Generic", SPACE_ACTION, RGN_TYPE_WIN);
+  win_ev_add_keymap_handler(&rgn->handlers, keymap);
 }
 
-static void action_buttons_area_draw(const bContext *C, ARegion *region)
+static void action_btns_area_drw(const Cxt *C, ARgn *rgn)
 {
-  ED_region_panels(C, region);
+  ed_rgn_pnls(C, rgn);
 }
 
-static void action_region_listener(const wmRegionListenerParams *params)
+static void action_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  const wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  const WinNotifier *winn = params->notifier;
 
-  /* context changes */
-  switch (wmn->category) {
-    case NC_ANIMATION:
-      ED_region_tag_redraw(region);
+  /* cxt changes */
+  switch (winn->category) {
+    case NC_ANIM:
+      ed_rgn_tag_redrw(rgn);
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_OB_ACTIVE:
         case ND_FRAME:
         case ND_MARKERS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
-    case NC_OBJECT:
-      switch (wmn->data) {
+    case NC_OB:
+      switch (winn->data) {
         case ND_BONE_ACTIVE:
-        case ND_BONE_SELECT:
+        case ND_BONE_SEL:
         case ND_KEYS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
     default:
-      if (wmn->data == ND_KEYS) {
-        ED_region_tag_redraw(region);
+      if (winn->data == ND_KEYS) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
   }
 }
 
-static void action_refresh(const bContext *C, ScrArea *area)
+static void action_refresh(const Cxt *C, ScrArea *area)
 {
   SpaceAction *saction = (SpaceAction *)area->spacedata.first;
 
   /* Update the state of the animchannels in response to changes from the data they represent
-   * NOTE: the temp flag is used to indicate when this needs to be done,
+   * The tmp flag is used to indicate when this needs to be done,
    * and will be cleared once handled. */
   if (saction->runtime.flag & SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC) {
-    /* Perform syncing of channel state incl. selection
+    /* Perform syncing of channel state incl. sel
      * Active action setting also occurs here
      * (as part of anim channel filtering in `anim_filter.cc`). */
-    ANIM_sync_animchannels_to_data(C);
+    anim_sync_animchannels_to_data(C);
     saction->runtime.flag &= ~SACTION_RUNTIME_FLAG_NEED_CHAN_SYNC;
 
-    /* Tag everything for redraw
-     * - Regions (such as header) need to be manually tagged for redraw too
-     *   or else they don't update #28962.
-     */
-    ED_area_tag_redraw(area);
-    LISTBASE_FOREACH (ARegion *, region, &area->rgnbase);
-      ed_rgn_tag_redraw(rgn);
+    /* Tag everything for redre
+     * - Rgns (such as header) need to be manually tagged for redrw too
+     *   or else they don't update #28962. */
+    ed_area_tag_redrw(area);
+    LIST_FOREACH (ARgn *, rgn, &area->rgnbase);
+      ed_rgn_tag_redrw(rgn);
     }
   }
 
@@ -795,7 +787,7 @@ static void action_foreach_id(SpaceLink *space_link, LibForeachIdData *data)
 
   DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sact->action, IDWALK_CB_NOP);
 
-  /* NOTE: Could be deduplicated with the DopeSheet handling of SpaceNla and #SpaceGraph. */
+  /* Could be deduplicated with the DopeSheet handling of SpaceNla and SpaceGraph. */
   DUNE_LIB_FOREACHID_PROCESS_ID(data, sact->ads.source, IDWALK_CB_NOP);
   DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sact->ads.filter_grp, IDWALK_CB_NOP);
 
@@ -833,7 +825,7 @@ static void action_space_subtype_item_extend(Cxt * /*C*/,
                                              EnumPropItem **item,
                                              int *totitem)
 {
-  RNA_enum_items_add(item, totitem, api_enum_space_action_mode_items);
+  api_enum_items_add(item, totitem, api_enum_space_action_mode_items);
 }
 
 static void action_space_dune_read_data(DuneDataReader * /*reader*/, SpaceLink *sl)
@@ -864,7 +856,7 @@ void ed_spacetype_action()
   st->create = action_create;
   st->free = action_free;
   st->init = action_init;
-  st->duplicate = action_duplicate;
+  st->dup = action_dup;
   st->optypes = action_optypes;
   st->keymap = action_keymap;
   st->listener = action_listener;
@@ -879,7 +871,7 @@ void ed_spacetype_action()
   st->dune_write = action_space_dune_write;
 
   /* rgns: main win */
-  art = mem_cnew<ARgnType>("spacetype action region");
+  art = mem_cnew<ARgnType>("spacetype action rgn");
   art->rgnid = RGN_TYPE_WIN;
   art->init = action_main_rgn_init;
   art->drw = action_main_rgn_drw;
@@ -923,7 +915,7 @@ void ed_spacetype_action()
   art->keymapflag = ED_KEYMAP_UI;
   art->listener = action_rgn_listener;
   art->init = action_btns_area_init;
-  art->draw = action_btns_area_draw;
+  art->drw = action_btns_area_drw;
 
   lib_addhead(&st->rgntypes, art);
 
