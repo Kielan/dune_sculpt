@@ -33,74 +33,62 @@
 #include "ui_resources.hh"
 #include "ui_view2d.hh"
 
-static void graph_draw_driver_debug(bAnimContext *ac, ID *id, FCurve *fcu);
+static void graph_drw_driver_debug(AnimCxt *ac, Id *id, FCurve *fcu);
 
-/* -------------------------------------------------------------------- */
-/** \name Utility Drawing Defines
- * \{ */
-
-/* determine the alpha value that should be used when
+/* Util Drwing Defines */
+/* determine the alpha val that should be used when
  * drawing components for some F-Curve (fcu)
- * - selected F-Curves should be more visible than partially visible ones
- */
+ * - selected F-Curves should be more visible than partially visible ones */
 static float fcurve_display_alpha(FCurve *fcu)
 {
   return (fcu->flag & FCURVE_SELECTED) ? 1.0f : U.fcu_inactive_alpha;
 }
 
-/** Get the first and last index to the bezt array that are just outside min and max. */
-static blender::int2 get_bounding_bezt_indices(FCurve *fcu, const float min, const float max)
+/* Get the first and last index to the bezt array that are just outside min and max. */
+static dune::int2 get_bounding_bezt_indices(FCurve *fcu, const float min, const float max)
 {
   bool replace;
   int first, last;
-  first = BKE_fcurve_bezt_binarysearch_index(fcu->bezt, min, fcu->totvert, &replace);
+  first = dune_fcurve_bezt_binarysearch_index(fcu->bezt, min, fcu->totvert, &replace);
   first = clamp_i(first - 1, 0, fcu->totvert - 1);
 
-  last = BKE_fcurve_bezt_binarysearch_index(fcu->bezt, max, fcu->totvert, &replace);
+  last = dune_fcurve_bezt_binarysearch_index(fcu->bezt, max, fcu->totvert, &replace);
   last = replace ? last + 1 : last;
   last = clamp_i(last, 0, fcu->totvert - 1);
   return {first, last};
 }
 
-/** \} */
+/* FCurve Mod Drwing */
 
-/* -------------------------------------------------------------------- */
-/** \name FCurve Modifier Drawing
- * \{ */
-
-/* Envelope -------------- */
+/* Envelope */
 
 /* TODO: draw a shaded poly showing the region of influence too!!! */
-/**
- * \param adt_nla_remap: Send nullptr if no NLA remapping necessary.
- */
-static void draw_fcurve_modifier_controls_envelope(FModifier *fcm,
-                                                   View2D *v2d,
-                                                   AnimData *adt_nla_remap)
+/* param adt_nla_remap: Send nullptr if no NLA remapping necessary. */
+static void draw_fcurve_mod_ctrls_envelope(FMod *fcm,
+                                              View2D *v2d,
+                                              AnimData *adt_nla_remap)
 {
-  FMod_Envelope *env = (FMod_Envelope *)fcm->data;
-  FCM_EnvelopeData *fed;
-  const float fac = 0.05f * BLI_rctf_size_x(&v2d->cur);
+  FModEnvelope *env = (FModEnvelope *)fcm->data;
+  FCMEnvelopeData *fed;
+  const float fac = 0.05f * lib_rctf_size_x(&v2d->cur);
   int i;
 
-  const uint shdr_pos = GPU_vertformat_attr_add(
+  const uint shdr_pos = gpu_vertformat_attr_add(
       immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   immBindBuiltinProgram(GPU_SHADER_3D_LINE_DASHED_UNIFORM_COLOR);
 
   float viewport_size[4];
-  GPU_viewport_size_get_f(viewport_size);
+  gpu_viewport_size_get_f(viewport_size);
   immUniform2f("viewport_size", viewport_size[2] / UI_SCALE_FAC, viewport_size[3] / UI_SCALE_FAC);
-
   immUniform1i("colors_len", 0); /* Simple dashes. */
   immUniformColor3f(0.0f, 0.0f, 0.0f);
   immUniform1f("dash_width", 10.0f);
   immUniform1f("udash_factor", 0.5f);
 
   /* draw two black lines showing the standard reference levels */
-
   immBegin(GPU_PRIM_LINES, 4);
   immVertex2f(shdr_pos, v2d->cur.xmin, env->midval + env->min);
   immVertex2f(shdr_pos, v2d->cur.xmax, env->midval + env->min);
@@ -113,7 +101,7 @@ static void draw_fcurve_modifier_controls_envelope(FModifier *fcm,
 
   if (env->totvert > 0) {
     /* set size of vertices (non-adjustable for now) */
-    GPU_point_size(2.0f);
+    gpu_point_size(2.0f);
 
     immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
 
@@ -123,12 +111,11 @@ static void draw_fcurve_modifier_controls_envelope(FModifier *fcm,
     immBeginAtMost(GPU_PRIM_POINTS, env->totvert * 2);
 
     for (i = 0, fed = env->data; i < env->totvert; i++, fed++) {
-      const float env_scene_time = BKE_nla_tweakedit_remap(
+      const float env_scene_time = dune_nla_tweakedit_remap(
           adt_nla_remap, fed->time, NLATIME_CONVERT_MAP);
 
       /* only draw if visible
-       * - min/max here are fixed, not relative
-       */
+       * - min/max here are fixed, not relative */
       if (IN_RANGE(env_scene_time, (v2d->cur.xmin - fac), (v2d->cur.xmax + fac))) {
         immVertex2f(shdr_pos, env_scene_time, fed->min);
         immVertex2f(shdr_pos, env_scene_time, fed->max);
@@ -141,15 +128,10 @@ static void draw_fcurve_modifier_controls_envelope(FModifier *fcm,
   }
 }
 
-/** \} */
+/* FCurve Mod Drwing */
+/* Points */
 
-/* -------------------------------------------------------------------- */
-/** \name FCurve Modifier Drawing
- * \{ */
-
-/* Points ---------------- */
-
-/* helper func - set color to draw F-Curve data with */
+/* helper fn - set color to drw F-Curve data w */
 static void set_fcurve_vertex_color(FCurve *fcu, bool sel)
 {
   float color[4];
@@ -158,17 +140,16 @@ static void set_fcurve_vertex_color(FCurve *fcu, bool sel)
   /* Set color of curve vertex based on state of curve (i.e. 'Edit' Mode) */
   if ((fcu->flag & FCURVE_PROTECTED) == 0) {
     /* Curve's points ARE BEING edited */
-    UI_GetThemeColor3fv(sel ? TH_VERTEX_SELECT : TH_VERTEX, color);
+    ui_GetThemeColor3fv(sel ? TH_VERTEX_SEL : TH_VERTEX, color);
   }
   else {
     /* Curve's points CANNOT BE edited */
-    UI_GetThemeColorShade4fv(TH_HEADER, 50, color);
+    ui_GetThemeColorShade4fv(TH_HEADER, 50, color);
   }
 
-  /* Fade the 'intensity' of the vertices based on the selection of the curves too
+  /* Fade the 'intensity' of the vertices based on the sel of the curves too
    * - Only fade by 50% the amount the curves were faded by, so that the points
-   *   still stand out for easier selection
-   */
+   *   still stand out for easier sel */
   diff = 1.0f - fcurve_display_alpha(fcu);
   color[3] = 1.0f - (diff * 0.5f);
   CLAMP(color[3], 0.2f, 1.0f);
@@ -176,17 +157,16 @@ static void set_fcurve_vertex_color(FCurve *fcu, bool sel)
   immUniformColor4fv(color);
 }
 
-/* Draw a cross at the given position. Shader must already be bound.
+/* Drw a cross at the given position. Shader must already be bound.
  * NOTE: the caller MUST HAVE GL_LINE_SMOOTH & GL_BLEND ENABLED, otherwise the controls don't
- * have a consistent appearance (due to off-pixel alignments).
- */
+ * have a consistent appearance (due to off-pixel alignments) */
 static void draw_cross(float position[2], float scale[2], uint attr_id)
 {
-  GPU_matrix_push();
-  GPU_matrix_translate_2fv(position);
-  GPU_matrix_scale_2f(1.0f / scale[0], 1.0f / scale[1]);
+  gpu_matrix_push();
+  gpu_matrix_translate_2fv(position);
+  gpu_matrix_scale_2f(1.0f / scale[0], 1.0f / scale[1]);
 
-  /* Draw X shape. */
+  /* Drw X shape. */
   const float line_length = 0.7f;
   immBegin(GPU_PRIM_LINES, 4);
   immVertex2f(attr_id, -line_length, -line_length);
@@ -196,12 +176,12 @@ static void draw_cross(float position[2], float scale[2], uint attr_id)
   immVertex2f(attr_id, +line_length, -line_length);
   immEnd();
 
-  GPU_matrix_pop();
+  gpu_matrix_pop();
 }
 
-static void draw_fcurve_selected_keyframe_vertices(FCurve *fcu, View2D *v2d, bool sel, uint pos)
+static void draw_fcurve_sel_keyframe_vertices(FCurve *fcu, View2D *v2d, bool sel, uint pos)
 {
-  const float fac = 0.05f * BLI_rctf_size_x(&v2d->cur);
+  const float fac = 0.05f * lib_rctf_size_x(&v2d->cur);
 
   set_fcurve_vertex_color(fcu, sel);
 
@@ -210,15 +190,12 @@ static void draw_fcurve_selected_keyframe_vertices(FCurve *fcu, View2D *v2d, boo
   BezTriple *bezt = fcu->bezt;
   for (int i = 0; i < fcu->totvert; i++, bezt++) {
     /* As an optimization step, only draw those in view
-     * - We apply a correction factor to ensure that points
-     *   don't pop in/out due to slight twitches of view size.
-     */
+     * We apply a correction factor to ensure that points
+     *   don't pop in/out due to slight twitches of view size */
     if (IN_RANGE(bezt->vec[1][0], (v2d->cur.xmin - fac), (v2d->cur.xmax + fac))) {
-      /* 'Keyframe' vertex only, as handle lines and handles have already been drawn
-       * - only draw those with correct selection state for the current drawing color
-       * -
-       */
-      if ((bezt->f2 & SELECT) == sel) {
+      /* 'Keyframe' vertex only, as handle lines and handles have alrdy been drawn
+       * - only drw those with correct sel state for the current drawing colo */
+      if ((bezt->f2 & SEL) == sel) {
         immVertex2fv(pos, bezt->vec[1]);
       }
     }
@@ -227,23 +204,21 @@ static void draw_fcurve_selected_keyframe_vertices(FCurve *fcu, View2D *v2d, boo
   immEnd();
 }
 
-/**
- * Draw the extra indicator for the active point.
- */
-static void draw_fcurve_active_vertex(const FCurve *fcu, const View2D *v2d, const uint pos)
+/* Drw the extra indicator for the active point */
+static void drw_fcurve_active_vertex(const FCurve *fcu, const View2D *v2d, const uint pos)
 {
-  const int active_keyframe_index = BKE_fcurve_active_keyframe_index(fcu);
+  const int active_keyframe_index = dune_fcurve_active_keyframe_index(fcu);
   if (!(fcu->flag & FCURVE_ACTIVE) || active_keyframe_index == FCURVE_ACTIVE_KEYFRAME_NONE) {
     return;
   }
 
-  const float fac = 0.05f * BLI_rctf_size_x(&v2d->cur);
+  const float fac = 0.05f * lib_rctf_size_x(&v2d->cur);
   const BezTriple *bezt = &fcu->bezt[active_keyframe_index];
 
   if (!IN_RANGE(bezt->vec[1][0], (v2d->cur.xmin - fac), (v2d->cur.xmax + fac))) {
     return;
   }
-  if (!(bezt->f2 & SELECT)) {
+  if (!(bezt->f2 & SEL)) {
     return;
   }
 
@@ -253,56 +228,55 @@ static void draw_fcurve_active_vertex(const FCurve *fcu, const View2D *v2d, cons
   immEnd();
 }
 
-/* helper func - draw keyframe vertices only for an F-Curve */
+/* helper fn, drw keyframe vertices only for an F-Curve */
 static void draw_fcurve_keyframe_vertices(FCurve *fcu, View2D *v2d, const uint pos)
 {
   immBindBuiltinProgram(GPU_SHADER_2D_POINT_UNIFORM_SIZE_UNIFORM_COLOR_AA);
 
   if ((fcu->flag & FCURVE_PROTECTED) == 0) {
-    immUniform1f("size", UI_GetThemeValuef(TH_VERTEX_SIZE) * UI_SCALE_FAC);
+    immUniform1f("size", ui_GetThemeValuef(TH_VERTEX_SIZE) * UI_SCALE_FAC);
   }
   else {
-    /* Draw keyframes on locked curves slightly smaller to give them less visual weight. */
-    immUniform1f("size", (UI_GetThemeValuef(TH_VERTEX_SIZE) * UI_SCALE_FAC) * 0.8f);
+    /* Drw keyframes on locked curves slightly smaller to give them less visual weight. */
+    immUniform1f("size", (ui_GetThemeValuef(TH_VERTEX_SIZE) * UI_SCALE_FAC) * 0.8f);
   }
 
-  draw_fcurve_selected_keyframe_vertices(fcu, v2d, false, pos);
-  draw_fcurve_selected_keyframe_vertices(fcu, v2d, true, pos);
-  draw_fcurve_active_vertex(fcu, v2d, pos);
+  drw_fcurve_sel_keyframe_vertices(fcu, v2d, false, pos);
+  drw_fcurve_sel_keyframe_vertices(fcu, v2d, true, pos);
+  drw_fcurve_active_vertex(fcu, v2d, pos);
 
   immUnbindProgram();
 }
 
-/* helper func - draw handle vertices only for an F-Curve (if it is not protected) */
+/* helper fn, drw handle vertices only for an F-Curve (if it is not protected) */
 static void draw_fcurve_selected_handle_vertices(
     FCurve *fcu, View2D *v2d, bool sel, bool sel_handle_only, uint pos)
 {
-  const blender::int2 bounding_indices = get_bounding_bezt_indices(
+  const dune::int2 bounding_indices = get_bounding_bezt_indices(
       fcu, v2d->cur.xmin, v2d->cur.xmax);
 
   /* set handle color */
   float hcolor[3];
-  UI_GetThemeColor3fv(sel ? TH_HANDLE_VERTEX_SELECT : TH_HANDLE_VERTEX, hcolor);
+  ui_GetThemeColor3fv(sel ? TH_HANDLE_VERTEX_SEL : TH_HANDLE_VERTEX, hcolor);
   immUniform4f("outlineColor", hcolor[0], hcolor[1], hcolor[2], 1.0f);
-  immUniformColor3fvAlpha(hcolor, 0.01f); /* almost invisible - only keep for smoothness */
+  immUniformColor3fvAlpha(hcolor, 0.01f); /* almost invisible only keep for smoothness */
 
   immBeginAtMost(GPU_PRIM_POINTS, fcu->totvert * 2);
 
   BezTriple *prevbezt = nullptr;
   for (int i = bounding_indices[0]; i <= bounding_indices[1]; i++) {
     BezTriple *bezt = &fcu->bezt[i];
-    /* Draw the editmode handles for a bezier curve (others don't have handles)
-     * if their selection status matches the selection status we're drawing for
-     * - first handle only if previous beztriple was bezier-mode
-     * - second handle only if current beztriple is bezier-mode
+    /* Drw the editmode handles for a bezier curve (others don't have handles)
+     * if their sel status matches the sel status we're drwing for
+     * 1st handle only if previous beztriple was bezier-mode
+     * 2nd handle only if current beztriple is bezier-mode
      *
      * Also, need to take into account whether the keyframe was selected
-     * if a Graph Editor option to only show handles of selected keys is on.
-     */
+     * if a Graph Editor option to only show handles of sel keys is on. */
     if (!sel_handle_only || BEZT_ISSEL_ANY(bezt)) {
       if ((!prevbezt && (bezt->ipo == BEZT_IPO_BEZ)) ||
           (prevbezt && (prevbezt->ipo == BEZT_IPO_BEZ))) {
-        if ((bezt->f1 & SELECT) == sel
+        if ((bezt->f1 & SEL) == sel
             /* && v2d->cur.xmin < bezt->vec[0][0] < v2d->cur.xmax) */)
         {
           immVertex2fv(pos, bezt->vec[0]);
@@ -310,7 +284,7 @@ static void draw_fcurve_selected_handle_vertices(
       }
 
       if (bezt->ipo == BEZT_IPO_BEZ) {
-        if ((bezt->f3 & SELECT) == sel
+        if ((bezt->f3 & SEL) == sel
             /* && v2d->cur.xmin < bezt->vec[2][0] < v2d->cur.xmax) */)
         {
           immVertex2fv(pos, bezt->vec[2]);
@@ -323,14 +297,12 @@ static void draw_fcurve_selected_handle_vertices(
   immEnd();
 }
 
-/**
- * Draw the extra handles for the active point.
- */
+/* Drw the extra handles for the active point */
 static void draw_fcurve_active_handle_vertices(const FCurve *fcu,
                                                const bool sel_handle_only,
                                                const uint pos)
 {
-  const int active_keyframe_index = BKE_fcurve_active_keyframe_index(fcu);
+  const int active_keyframe_index = dune_fcurve_active_keyframe_index(fcu);
   if (!(fcu->flag & FCURVE_ACTIVE) || active_keyframe_index == FCURVE_ACTIVE_KEYFRAME_NONE) {
     return;
   }
@@ -342,9 +314,9 @@ static void draw_fcurve_active_handle_vertices(const FCurve *fcu,
   }
 
   float active_col[4];
-  UI_GetThemeColor4fv(TH_VERTEX_ACTIVE, active_col);
+  ui_GetThemeColor4fv(TH_VERTEX_ACTIVE, active_col);
   immUniform4fv("outlineColor", active_col);
-  immUniformColor3fvAlpha(active_col, 0.01f); /* Almost invisible - only keep for smoothness. */
+  immUniformColor3fvAlpha(active_col, 0.01f); /* Almost invisible only keep for smoothness. */
   immBeginAtMost(GPU_PRIM_POINTS, 2);
 
   const BezTriple *left_bezt = active_keyframe_index > 0 ? &fcu->bezt[active_keyframe_index - 1] :
@@ -352,72 +324,70 @@ static void draw_fcurve_active_handle_vertices(const FCurve *fcu,
   if (left_bezt->ipo == BEZT_IPO_BEZ && (bezt->f1 & SELECT)) {
     immVertex2fv(pos, bezt->vec[0]);
   }
-  if (bezt->ipo == BEZT_IPO_BEZ && (bezt->f3 & SELECT)) {
+  if (bezt->ipo == BEZT_IPO_BEZ && (bezt->f3 & SEL)) {
     immVertex2fv(pos, bezt->vec[2]);
   }
   immEnd();
 }
 
-/* helper func - draw handle vertices only for an F-Curve (if it is not protected) */
-static void draw_fcurve_handle_vertices(FCurve *fcu, View2D *v2d, bool sel_handle_only, uint pos)
+/* helper fn drw handle vertices only for an F-Curve (if it is not protected) */
+static void drw_fcurve_handle_vertices(FCurve *fcu, View2D *v2d, bool sel_handle_only, uint pos)
 {
   /* smooth outlines for more consistent appearance */
   immBindBuiltinProgram(GPU_SHADER_2D_POINT_UNIFORM_SIZE_UNIFORM_COLOR_OUTLINE_AA);
 
   /* set handle size */
-  immUniform1f("size", (1.4f * UI_GetThemeValuef(TH_HANDLE_VERTEX_SIZE)) * UI_SCALE_FAC);
+  immUniform1f("size", (1.4f * ui_GetThemeValuef(TH_HANDLE_VERTEX_SIZE)) * UI_SCALE_FAC);
   immUniform1f("outlineWidth", 1.5f * UI_SCALE_FAC);
 
-  draw_fcurve_selected_handle_vertices(fcu, v2d, false, sel_handle_only, pos);
-  draw_fcurve_selected_handle_vertices(fcu, v2d, true, sel_handle_only, pos);
-  draw_fcurve_active_handle_vertices(fcu, sel_handle_only, pos);
+  drw_fcurve_sel_handle_vertices(fcu, v2d, false, sel_handle_only, pos);
+  drw_fcurve_sel_handle_vertices(fcu, v2d, true, sel_handle_only, pos);
+  drw_fcurve_active_handle_vertices(fcu, sel_handle_only, pos);
 
   immUnbindProgram();
 }
 
-static void draw_fcurve_vertices(ARegion *region,
-                                 FCurve *fcu,
-                                 bool do_handles,
-                                 bool sel_handle_only)
+static void drw_fcurve_vertices(ARgn *rgn,
+                                FCurve *fcu,
+                                bool do_handles,
+                                bool sel_handle_only)
 {
-  View2D *v2d = &region->v2d;
+  View2D *v2d = &rgn->v2d;
 
-  /* only draw points if curve is visible
-   * - Draw unselected points before selected points as separate passes
-   *    to make sure in the case of overlapping points that the selected is always visible
+  /* only drw points if curve is visible
+   * - Draw unsel points before sel points as separate passes
+   *    to make sure in the case of overlapping points that the sel is always visible
    * - Draw handles before keyframes, so that keyframes will overlap handles
-   *   (keyframes are more important for users).
-   */
+   *   (keyframes are more important for users) */
 
-  uint pos = GPU_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
-  GPU_blend(GPU_BLEND_ALPHA);
-  GPU_program_point_size(true);
+  gpu_blend(GPU_BLEND_ALPHA);
+  gpu_program_point_size(true);
 
-  /* draw the two handles first (if they're shown, the curve doesn't
+  /* drw the two handles first (if they're shown, the curve doesn't
    * have just a single keyframe, and the curve is being edited) */
   if (do_handles) {
-    draw_fcurve_handle_vertices(fcu, v2d, sel_handle_only, pos);
+    drw_fcurve_handle_vertices(fcu, v2d, sel_handle_only, pos);
   }
 
   /* draw keyframes over the handles */
   draw_fcurve_keyframe_vertices(fcu, v2d, pos);
 
-  GPU_program_point_size(false);
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_program_point_size(false);
+  gpu_blend(GPU_BLEND_NONE);
 }
 
-/* Handles ---------------- */
-
-static bool draw_fcurve_handles_check(SpaceGraph *sipo, FCurve *fcu)
+/* Handles */
+static bool drw_fcurve_handles_check(SpaceGraph *sipo, FCurve *fcu)
 {
-  /* don't draw handle lines if handles are not to be shown */
+  /* don't drw handle lines if handles are not to be shown */
   if (/* handles shouldn't be shown anywhere */
       (sipo->flag & SIPO_NOHANDLES) ||
       /* keyframes aren't editable */
       (fcu->flag & FCURVE_PROTECTED) ||
 #if 0
-      /* handles can still be selected and handle types set, better draw - campbell */
+      /* handles can still be sel and handle types set, better dw */
       /* editing the handles here will cause weird/incorrect interpolation issues */
       (fcu->flag & FCURVE_INT_VALUES) ||
 #endif
@@ -429,30 +399,29 @@ static bool draw_fcurve_handles_check(SpaceGraph *sipo, FCurve *fcu)
   return true;
 }
 
-/* draw lines for F-Curve handles only (this is only done in EditMode)
- * NOTE: draw_fcurve_handles_check must be checked before running this. */
-static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
+/* drw lines for F-Curve handles only (this is only done in EditMode)
+ * drw_fcurve_handles_check must be checked before running this. */
+static void draw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
 {
   using namespace blender;
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-  uint color = GPU_vertformat_attr_add(
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint color = gpu_vertformat_attr_add(
       format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
   immBindBuiltinProgram(GPU_SHADER_3D_FLAT_COLOR);
-  if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
-    GPU_line_smooth(true);
+  if (U.anim_flag & USER_ANIM_HIGH_QUALITY_DRWING) {
+    gpu_line_smooth(true);
   }
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 
   immBeginAtMost(GPU_PRIM_LINES, 4 * 2 * fcu->totvert);
 
   const int2 bounding_indices = get_bounding_bezt_indices(
-      fcu, region->v2d.cur.xmin, region->v2d.cur.xmax);
+      fcu, region->v2d.cur.xmin, rgn->v2d.cur.xmax);
 
-  /* slightly hacky, but we want to draw unselected points before selected ones
-   * so that selected points are clearly visible
-   */
+  /* slightly hacky, but we want to drw unsel points before sel ones
+   * so that sel points are clearly visible */
   for (int sel = 0; sel < 2; sel++) {
     int basecol = (sel) ? TH_HANDLE_SEL_FREE : TH_HANDLE_FREE;
     uchar col[4];
@@ -460,9 +429,8 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
     BezTriple *prevbezt = nullptr;
     for (int i = bounding_indices[0]; i <= bounding_indices[1]; i++) {
       BezTriple *bezt = &fcu->bezt[i];
-      /* if only selected keyframes can get their handles shown,
-       * check that keyframe is selected
-       */
+      /* if only sel keyframes can get their handles shown,
+       * check that keyframe is sel */
       if (sipo->flag & SIPO_SELVHANDLESONLY) {
         if (BEZT_ISSEL_ANY(bezt) == 0) {
           prevbezt = bezt;
@@ -470,12 +438,12 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
         }
       }
 
-      /* draw handle with appropriate set of colors if selection is ok */
-      if ((bezt->f2 & SELECT) == sel) {
+      /* drw handle with appropriate set of colors if sel is ok */
+      if ((bezt->f2 & SEL) == sel) {
         /* only draw first handle if previous segment had handles */
         if ((!prevbezt && (bezt->ipo == BEZT_IPO_BEZ)) ||
             (prevbezt && (prevbezt->ipo == BEZT_IPO_BEZ))) {
-          UI_GetThemeColor3ubv(basecol + bezt->h1, col);
+          ui_GetThemeColor3ubv(basecol + bezt->h1, col);
           col[3] = fcurve_display_alpha(fcu) * 255;
           immAttr4ubv(color, col);
           immVertex2fv(pos, bezt->vec[0]);
@@ -485,7 +453,7 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
 
         /* only draw second handle if this segment is bezier */
         if (bezt->ipo == BEZT_IPO_BEZ) {
-          UI_GetThemeColor3ubv(basecol + bezt->h2, col);
+          ui_GetThemeColor3ubv(basecol + bezt->h2, col);
           col[3] = fcurve_display_alpha(fcu) * 255;
           immAttr4ubv(color, col);
           immVertex2fv(pos, bezt->vec[1]);
@@ -494,11 +462,11 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
         }
       }
       else {
-        /* only draw first handle if previous segment was had handles, and selection is ok */
-        if (((bezt->f1 & SELECT) == sel) && ((!prevbezt && (bezt->ipo == BEZT_IPO_BEZ)) ||
-                                             (prevbezt && (prevbezt->ipo == BEZT_IPO_BEZ))))
+        /* only drw first handle if previous segment was had handles, and sel is ok */
+        if (((bezt->f1 & SEL) == sel) && ((!prevbezt && (bezt->ipo == BEZT_IPO_BEZ)) ||
+                                          (prevbezt && (prevbezt->ipo == BEZT_IPO_BEZ))))
         {
-          UI_GetThemeColor3ubv(basecol + bezt->h1, col);
+          ui_GetThemeColor3ubv(basecol + bezt->h1, col);
           col[3] = fcurve_display_alpha(fcu) * 255;
           immAttr4ubv(color, col);
           immVertex2fv(pos, bezt->vec[0]);
@@ -506,9 +474,9 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
           immVertex2fv(pos, bezt->vec[1]);
         }
 
-        /* only draw second handle if this segment is bezier, and selection is ok */
-        if (((bezt->f3 & SELECT) == sel) && (bezt->ipo == BEZT_IPO_BEZ)) {
-          UI_GetThemeColor3ubv(basecol + bezt->h2, col);
+        /* only drw second handle if this segment is bezier, and sel is ok */
+        if (((bezt->f3 & SEL) == sel) && (bezt->ipo == BEZT_IPO_BEZ)) {
+          ui_GetThemeColor3ubv(basecol + bezt->h2, col);
           col[3] = fcurve_display_alpha(fcu) * 255;
           immAttr4ubv(color, col);
           immVertex2fv(pos, bezt->vec[1]);
@@ -522,23 +490,23 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARegion *region, FCurve *fcu)
 
   immEnd();
   immUnbindProgram();
-  GPU_blend(GPU_BLEND_NONE);
-  if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
-    GPU_line_smooth(false);
+  gpu_blend(GPU_BLEND_NONE);
+  if (U.anim_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
+    gpu_line_smooth(false);
   }
 }
 
-/* Samples ---------------- */
+/* Samples */
 
-/* helper func - draw keyframe vertices only for an F-Curve */
-static void draw_fcurve_samples(ARegion *region, FCurve *fcu, const float unit_scale)
+/* helper fn, drw keyframe vertices only for an F-Curve */
+static void drw_fcurve_samples(ARgn *rgn, FCurve *fcu, const float unit_scale)
 {
   FPoint *first, *last;
   float scale[2];
 
   /* get view settings */
-  const float hsize = UI_GetThemeValuef(TH_VERTEX_SIZE);
-  UI_view2d_scale_get(&region->v2d, &scale[0], &scale[1]);
+  const float hsize = ui_GetThemeValuef(TH_VERTEX_SIZE);
+  ui_view2d_scale_get(&rgn->v2d, &scale[0], &scale[1]);
 
   scale[0] /= hsize;
   scale[1] /= hsize / unit_scale;
@@ -547,15 +515,15 @@ static void draw_fcurve_samples(ARegion *region, FCurve *fcu, const float unit_s
   first = fcu->fpt;
   last = (first) ? (first + (fcu->totvert - 1)) : (nullptr);
 
-  /* draw */
+  /* drw */
   if (first && last) {
     /* anti-aliased lines for more consistent appearance */
-    if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
-      GPU_line_smooth(true);
+    if (U.anim_flag & USER_ANIM_HIGH_QUALITY_DRWING) {
+      gpu_line_smooth(true);
     }
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
 
-    uint pos = GPU_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+    uint pos = gpu_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
     immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
 
     immUniformThemeColor((fcu->flag & FCURVE_SELECTED) ? TH_TEXT_HI : TH_TEXT);
@@ -565,70 +533,67 @@ static void draw_fcurve_samples(ARegion *region, FCurve *fcu, const float unit_s
 
     immUnbindProgram();
 
-    GPU_blend(GPU_BLEND_NONE);
-    if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
-      GPU_line_smooth(false);
+    gpu_blend(GPU_BLEND_NONE);
+    if (U.anim_flag & USER_ANIM_HIGH_QUALITY_DRWING) {
+      gpu_line_smooth(false);
     }
   }
 }
 
-/* Curve ---------------- */
+/* Curve */
 
-/* Helper func - just draw the F-Curve by sampling the visible region
- * (for drawing curves with modifiers). */
-static void draw_fcurve_curve(bAnimContext *ac,
-                              ID *id,
-                              FCurve *fcu_,
-                              View2D *v2d,
-                              uint pos,
-                              const bool use_nla_remap,
-                              const bool draw_extrapolation)
+/* Helper fn, drw the F-Curve by sampling the visible rgn
+ * (for drwing curves with mods). */
+static void drw_fcurve_curve(AnimCxt *ac,
+                             Id *id,
+                             FCurve *fcu_,
+                             View2D *v2d,
+                             uint pos,
+                             const bool use_nla_remap,
+                             const bool draw_extrapolation)
 {
-  short mapping_flag = ANIM_get_normalization_flags(ac->sl);
+  short mapping_flag = anim_get_normalization_flags(ac->sl);
 
-  /* when opening a blend file on a different sized screen or while dragging the toolbar this can
+  /* when opening .dune file on a different sized screen or while dragging the toolbar this can
    * happen best just bail out in this case. */
-  if (UI_view2d_scale_get_x(v2d) <= 0.0f) {
+  if (ui_view2d_scale_get_x(v2d) <= 0.0f) {
     return;
   }
 
   /* disable any drivers */
-  FCurve fcurve_for_draw = *fcu_;
-  fcurve_for_draw.driver = nullptr;
+  FCurve fcurve_for_drw = *fcu_;
+  fcurve_for_drw.driver = nullptr;
 
   /* compute unit correction factor */
   float offset;
-  float unitFac = ANIM_unit_mapping_get_factor(
-      ac->scene, id, &fcurve_for_draw, mapping_flag, &offset);
+  float unitFac = anim_unit_mapping_get_factor(
+      ac->scene, id, &fcurve_for_drw, mapping_flag, &offset);
 
-  /* Note about sampling frequency:
-   * Ideally, this is chosen such that we have 1-2 pixels = 1 segment
+  /* About sampling frequency:
+   * Ideally, chosen that we have 1-2 pixels = 1 segment
    * which means that our curves can be as smooth as possible. However,
    * this does mean that curves may not be fully accurate (i.e. if they have
    * sudden spikes which happen at the sampling point, we may have problems).
    * Also, this may introduce lower performance on less densely detailed curves,
-   * though it is impossible to predict this from the modifiers!
+   * though it is impossible to predict this from the mods!
    *
    * If the automatically determined sampling frequency is likely to cause an infinite
    * loop (i.e. too close to 0), then clamp it to a determined "safe" value. The value
-   * chosen here is just the coarsest value which still looks reasonable.
-   */
+   * chosen here is just the coarsest value which still looks reasonable */
 
   /* TODO: perhaps we should have 1.0 frames
    * as upper limit so that curves don't get too distorted? */
   float pixels_per_sample = 1.5f;
-  float samplefreq = pixels_per_sample / UI_view2d_scale_get_x(v2d);
+  float samplefreq = pixels_per_sample / ui_view2d_scale_get_x(v2d);
 
-  if (!(U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING)) {
+  if (!(U.anim_flag & USER_ANIM_HIGH_QUALITY_DRWING)) {
     /* Low Precision = coarse lower-bound clamping
-     *
-     * Although the "Beauty Draw" flag was originally for AA'd
-     * line drawing, the sampling rate here has a much greater
+     * Though the "Beauty Drw" flag was originally for AA'd
+     * line drwing, the sampling rate here has a much greater
      * impact on performance (e.g. for #40372)!
      *
      * This one still amounts to 10 sample-frames for each 1-frame interval
-     * which should be quite a decent approximation in many situations.
-     */
+     * which should be quite a decent approximation in many situations. */
     if (samplefreq < 0.1f) {
       samplefreq = 0.1f;
     }
