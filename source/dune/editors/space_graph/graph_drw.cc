@@ -298,7 +298,7 @@ static void draw_fcurve_selected_handle_vertices(
 }
 
 /* Drw the extra handles for the active point */
-static void draw_fcurve_active_handle_vertices(const FCurve *fcu,
+static void drw_fcurve_active_handle_vertices(const FCurve *fcu,
                                                const bool sel_handle_only,
                                                const uint pos)
 {
@@ -355,9 +355,9 @@ static void drw_fcurve_vertices(ARgn *rgn,
   View2D *v2d = &rgn->v2d;
 
   /* only drw points if curve is visible
-   * - Draw unsel points before sel points as separate passes
+   * - Drw unsel points before sel points as separate passes
    *    to make sure in the case of overlapping points that the sel is always visible
-   * - Draw handles before keyframes, so that keyframes will overlap handles
+   * - Drw handles before keyframes, so that keyframes will overlap handles
    *   (keyframes are more important for users) */
 
   uint pos = gpu_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
@@ -371,8 +371,8 @@ static void drw_fcurve_vertices(ARgn *rgn,
     drw_fcurve_handle_vertices(fcu, v2d, sel_handle_only, pos);
   }
 
-  /* draw keyframes over the handles */
-  draw_fcurve_keyframe_vertices(fcu, v2d, pos);
+  /* dre keyframes over the handles */
+  drw_fcurve_keyframe_vertices(fcu, v2d, pos);
 
   gpu_program_point_size(false);
   gpu_blend(GPU_BLEND_NONE);
@@ -401,9 +401,9 @@ static bool drw_fcurve_handles_check(SpaceGraph *sipo, FCurve *fcu)
 
 /* drw lines for F-Curve handles only (this is only done in EditMode)
  * drw_fcurve_handles_check must be checked before running this. */
-static void draw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
+static void drw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
 {
-  using namespace blender;
+  using namespace dune;
 
   GPUVertFormat *format = immVertexFormat();
   uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
@@ -418,7 +418,7 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
   immBeginAtMost(GPU_PRIM_LINES, 4 * 2 * fcu->totvert);
 
   const int2 bounding_indices = get_bounding_bezt_indices(
-      fcu, region->v2d.cur.xmin, rgn->v2d.cur.xmax);
+      fcu, rgn->v2d.cur.xmin, rgn->v2d.cur.xmax);
 
   /* slightly hacky, but we want to drw unsel points before sel ones
    * so that sel points are clearly visible */
@@ -451,7 +451,7 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
           immVertex2fv(pos, bezt->vec[1]);
         }
 
-        /* only draw second handle if this segment is bezier */
+        /* only drw second handle if this segment is bezier */
         if (bezt->ipo == BEZT_IPO_BEZ) {
           ui_GetThemeColor3ubv(basecol + bezt->h2, col);
           col[3] = fcurve_display_alpha(fcu) * 255;
@@ -497,7 +497,6 @@ static void draw_fcurve_handles(SpaceGraph *sipo, ARgn *rgn, FCurve *fcu)
 }
 
 /* Samples */
-
 /* helper fn, drw keyframe vertices only for an F-Curve */
 static void drw_fcurve_samples(ARgn *rgn, FCurve *fcu, const float unit_scale)
 {
@@ -526,10 +525,10 @@ static void drw_fcurve_samples(ARgn *rgn, FCurve *fcu, const float unit_scale)
     uint pos = gpu_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
     immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
 
-    immUniformThemeColor((fcu->flag & FCURVE_SELECTED) ? TH_TEXT_HI : TH_TEXT);
+    immUniformThemeColor((fcu->flag & FCURVE_SELECTED) ? TH_TXT_HI : TH_TXT);
 
     draw_cross(first->vec, scale, pos);
-    draw_cross(last->vec, scale, pos);
+    drw_cross(last->vec, scale, pos);
 
     immUnbindProgram();
 
@@ -578,8 +577,8 @@ static void drw_fcurve_curve(AnimCxt *ac,
    * though it is impossible to predict this from the mods!
    *
    * If the automatically determined sampling frequency is likely to cause an infinite
-   * loop (i.e. too close to 0), then clamp it to a determined "safe" value. The value
-   * chosen here is just the coarsest value which still looks reasonable */
+   * loop (i.e. too close to 0), then clamp it to a determined "safe" val. The value
+   * chosen here is just the coarsest val which still looks reasonable */
 
   /* TODO: perhaps we should have 1.0 frames
    * as upper limit so that curves don't get too distorted? */
@@ -609,17 +608,17 @@ static void drw_fcurve_curve(AnimCxt *ac,
   float stime = v2d->cur.xmin;
   float etime = v2d->cur.xmax;
 
-  AnimData *adt = use_nla_remap ? BKE_animdata_from_id(id) : nullptr;
+  AnimData *adt = use_nla_remap ? dune_animdata_from_id(id) : nullptr;
 
-  /* If not drawing extrapolation, then change fcurve drawing bounds to its keyframe bounds clamped
+  /* If not drwing extrapolation, then change fcurve drwing bounds to its keyframe bounds clamped
    * by graph editor bounds. */
-  if (!draw_extrapolation) {
+  if (!drw_extrapolation) {
     float fcu_start = 0;
     float fcu_end = 0;
-    BKE_fcurve_calc_range(fcu_, &fcu_start, &fcu_end, false);
+    dune_fcurve_calc_range(fcu_, &fcu_start, &fcu_end, false);
 
-    fcu_start = BKE_nla_tweakedit_remap(adt, fcu_start, NLATIME_CONVERT_MAP);
-    fcu_end = BKE_nla_tweakedit_remap(adt, fcu_end, NLATIME_CONVERT_MAP);
+    fcu_start = dune_nla_tweakedit_remap(adt, fcu_start, NLATIME_CONVERT_MAP);
+    fcu_end = dune_nla_tweakedit_remap(adt, fcu_end, NLATIME_CONVERT_MAP);
 
     /* Account for reversed NLA strip effect. */
     if (fcu_end < fcu_start) {
@@ -636,58 +635,52 @@ static void drw_fcurve_curve(AnimCxt *ac,
     return;
   }
 
-  /* NLA remapping is linear so we don't have to remap per iteration. */
-  const float eval_start = BKE_nla_tweakedit_remap(adt, stime, NLATIME_CONVERT_UNMAP);
-  const float eval_freq = BKE_nla_tweakedit_remap(adt, stime + samplefreq, NLATIME_CONVERT_UNMAP) -
+  /* NLA remapping is linear so we don't have to remap per iter. */
+  const float eval_start = dune_nla_tweakedit_remap(adt, stime, NLATIME_CONVERT_UNMAP);
+  const float eval_freq = dune_nla_tweakedit_remap(adt, stime + samplefreq, NLATIME_CONVERT_UNMAP) -
                           eval_start;
-  const float eval_end = BKE_nla_tweakedit_remap(adt, etime, NLATIME_CONVERT_UNMAP);
+  const float eval_end = dune_nla_tweakedit_remap(adt, etime, NLATIME_CONVERT_UNMAP);
 
   immBegin(GPU_PRIM_LINE_STRIP, (total_samples + 1));
 
-  /* At each sampling interval, add a new vertex.
-   *
-   * Apply the unit correction factor to the calculated values so that the displayed values appear
-   * correctly in the viewport.
-   */
+  /* At each sampling interval add a new vertex.
+   * Apply the unit correction factor to the calc'd vals so that the displayed vals appear
+   * correctly in the viewport */
   for (int i = 0; i < total_samples; i++) {
     const float ctime = stime + i * samplefreq;
     float eval_time = eval_start + i * eval_freq;
 
-    /* Prevent drawing past bounds, due to floating point problems.
+    /* Prevent drwing past bounds, due to floating point problems.
      * User-wise, prevent visual flickering.
-     *
      * This is to cover the case where:
      * eval_start + total_samples * eval_freq > eval_end
-     * due to floating point problems.
-     */
+     * due to floating point problems. */
     if (eval_time > eval_end) {
       eval_time = eval_end;
     }
 
-    immVertex2f(pos, ctime, (evaluate_fcurve(&fcurve_for_draw, eval_time) + offset) * unitFac);
+    immVertex2f(pos, ctime, (eval_fcurve(&fcurve_for_drw, eval_time) + offset) * unitFac);
   }
 
   /* Ensure we include end boundary point.
-   * User-wise, prevent visual flickering.
-   *
-   * This is to cover the case where:
+   * Userwise, prevent visual flickering.
+   * Covers the case where:
    * eval_start + total_samples * eval_freq < eval_end
-   * due to floating point problems.
-   */
-  immVertex2f(pos, etime, (evaluate_fcurve(&fcurve_for_draw, eval_end) + offset) * unitFac);
+   * due to floating point problems */
+  immVertex2f(pos, etime, (eval_fcurve(&fcurve_for_drw, eval_end) + offset) * unitFac);
 
   immEnd();
 }
 
-/* helper func - draw a samples-based F-Curve */
-static void draw_fcurve_curve_samples(bAnimContext *ac,
-                                      ID *id,
+/* helper fn, drw a samples-based F-Curve */
+static void drw_fcurve_curve_samples(AnimCxt *ac,
+                                      Id *id,
                                       FCurve *fcu,
                                       View2D *v2d,
                                       const uint shdr_pos,
                                       const bool draw_extrapolation)
 {
-  if (!draw_extrapolation && fcu->totvert == 1) {
+  if (!drw_extrapolation && fcu->totvert == 1) {
     return;
   }
 
