@@ -27,14 +27,12 @@
 #include "win_types.hh"
 
 /* view-based ops */
-/* should these really be here? */
+/* should these rly be here? */
 
 /* Set Cursor
- *
  * The 'cursor' in the Graph Editor consists of two parts:
  * 1) Current Frame Indicator (as per ANIM_OT_change_frame)
- * 2) Value Indicator (stored per Graph Editor instance)
- */
+ * 2) Value Indicator (stored per Graph Editor instance) */
 
 static bool graphview_cursor_poll(Cxt *C)
 {
@@ -49,28 +47,26 @@ static bool graphview_cursor_poll(Cxt *C)
 /* Set the new frame number */
 static void graphview_cursor_apply(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  SpaceGraph *sipo = CTX_wm_space_graph(C);
+  Scene *scene = cxt_data_scene(C);
+  SpaceGraph *sipo = cxt_win_space_graph(C);
   /* this isn't technically "frame", but it'll do... */
-  float frame = RNA_float_get(op->ptr, "frame");
+  float frame = api_float_get(op->ptr, "frame");
 
   /* adjust the frame or the cursor x-value */
   if (sipo->mode == SIPO_MODE_DRIVERS) {
-    /* adjust cursor x-value */
+    /* adjust cursor x-val */
     sipo->cursorTime = frame;
   }
   else {
     /* adjust the frame
-     * NOTE: sync this part of the code with ANIM_OT_change_frame
-     */
+     * sync this part of code with ANIM_OT_change_frame */
     /* 1) frame is rounded to the nearest int, since frames are ints */
     scene->r.cfra = round_fl_to_int(frame);
 
-    if (scene->r.flag & SCER_LOCK_FRAME_SELECTION) {
+    if (scene->r.flag & SCER_LOCK_FRAME_SEL) {
       /* Clip to preview range
-       * NOTE: Preview range won't go into negative values,
-       *       so only clamping once should be fine.
-       */
+       * Preview range won't go into negative val,
+       * so only clamping once should be fine. */
       CLAMP(scene->r.cfra, PSFRA, PEFRA);
     }
     else {
@@ -79,118 +75,113 @@ static void graphview_cursor_apply(Cxt *C, WinOp *op)
     }
 
     scene->r.subframe = 0.0f;
-    DEG_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
+    graph_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
   }
 
-  /* set the cursor value */
-  sipo->cursorVal = RNA_float_get(op->ptr, "value");
+  /* set the cursor val */
+  sipo->cursorVal = api_float_get(op->ptr, "val");
 
   /* send notifiers - notifiers for frame should force an update for both vars ok... */
-  WM_event_add_notifier(C, NC_SCENE | ND_FRAME, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_FRAME, scene);
 }
 
-/* ... */
-
-/* Non-modal callback for running operator without user input */
-static int graphview_cursor_exec(bContext *C, wmOperator *op)
+/* Non-modal cb for running op wo user input */
+static int graphview_cursor_ex(Cxt *C, WinOp *op)
 {
   graphview_cursor_apply(C, op);
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-/* ... */
-
-/* set the operator properties from the initial event */
-static void graphview_cursor_setprops(bContext *C, wmOperator *op, const wmEvent *event)
+/* set the op props from the initial ev */
+static void graphview_cursor_setprops(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float viewx, viewy;
 
-  /* abort if not active region (should not really be possible) */
-  if (region == nullptr) {
+  /* abort if not active rgn (should not really be possible) */
+  if (rgm == nullptr) {
     return;
   }
 
-  /* convert from region coordinates to View2D 'tot' space */
-  UI_view2d_region_to_view(&region->v2d, event->mval[0], event->mval[1], &viewx, &viewy);
+  /* convert from rgn coords to View2D 'tot' space */
+  ui_view2d_rgn_to_view(&rgn->v2d, ev->mval[0], ev->mval[1], &viewx, &viewy);
 
-  /* store the values in the operator properties */
-  /* NOTE: we don't clamp frame here, as it might be used for the drivers cursor */
-  RNA_float_set(op->ptr, "frame", viewx);
-  RNA_float_set(op->ptr, "value", viewy);
+  /* store the vals in the op props */
+  /* we don't clamp frame here, as it might be used for the drivers cursor */
+  api_float_set(op->ptr, "frame", viewx);
+  api_float_set(op->ptr, "value", viewy);
 }
 
-/* Modal Operator init */
-static int graphview_cursor_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Modal Op init */
+static int graphview_cursor_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  bScreen *screen = CTX_wm_screen(C);
+  Screen *screen = cxt_win_screen(C);
 
   /* Change to frame that mouse is over before adding modal handler,
    * as user could click on a single frame (jump to frame) as well as
-   * click-dragging over a range (modal scrubbing). Apply this change.
-   */
-  graphview_cursor_setprops(C, op, event);
+   * click-dragging over a range (modal scrubbing). Apply this change. */
+  graphview_cursor_setprops(C, op, ev);
   graphview_cursor_apply(C, op);
 
-  /* Signal that a scrubbing operating is starting */
+  /* Signal that a scrubbing op is starting */
   if (screen) {
     screen->scrubbing = true;
   }
 
-  /* add temp handler */
-  WM_event_add_modal_handler(C, op);
-  return OPERATOR_RUNNING_MODAL;
+  /* add tmp handler */
+  win_ev_add_modal_handler(C, op);
+  return OP_RUNNING_MODAL;
 }
 
-/* Modal event handling of cursor changing */
-static int graphview_cursor_modal(bContext *C, wmOperator *op, const wmEvent *event)
+/* Modal ev handling of cursor changing */
+static int graphview_cursor_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  bScreen *screen = CTX_wm_screen(C);
-  Scene *scene = CTX_data_scene(C);
+  Screen *screen = cxt_win_screen(C);
+  Scene *scene = cxt_data_scene(C);
 
-  /* execute the events */
-  switch (event->type) {
-    case EVT_ESCKEY:
+  /* ex the evs */
+  switch (ev->type) {
+    case EV_ESCKEY:
       if (screen) {
         screen->scrubbing = false;
       }
 
-      WM_event_add_notifier(C, NC_SCENE | ND_FRAME, scene);
-      return OPERATOR_FINISHED;
+      win_ev_add_notifier(C, NC_SCENE | ND_FRAME, scene);
+      return OP_FINISHED;
 
     case MOUSEMOVE:
-      /* set the new values */
-      graphview_cursor_setprops(C, op, event);
+      /* set the new vals */
+      graphview_cursor_setprops(C, op, ev);
       graphview_cursor_apply(C, op);
       break;
 
     case LEFTMOUSE:
     case RIGHTMOUSE:
     case MIDDLEMOUSE:
-      /* We check for either mouse-button to end, to work with all user keymaps. */
-      if (event->val == KM_RELEASE) {
+      /* We check for either mouse-btn to end, to work with all user keymaps. */
+      if (ev->val == KM_RELEASE) {
         if (screen) {
           screen->scrubbing = false;
         }
 
-        WM_event_add_notifier(C, NC_SCENE | ND_FRAME, scene);
-        return OPERATOR_FINISHED;
+        win_ev_add_notifier(C, NC_SCENE | ND_FRAME, scene);
+        return OP_FINISHED;
       }
       break;
   }
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void GRAPH_OT_cursor_set(wmOperatorType *ot)
+static void GRAPH_OT_cursor_set(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Set Cursor";
   ot->idname = "GRAPH_OT_cursor_set";
-  ot->description = "Interactively set the current frame and value cursor";
+  ot->description = "Interactively set the current frame and va cursor";
 
-  /* api callbacks */
-  ot->exec = graphview_cursor_exec;
+  /* api cbs */
+  ot->ex = graphview_cursor_ex;
   ot->invoke = graphview_cursor_invoke;
   ot->modal = graphview_cursor_modal;
   ot->poll = graphview_cursor_poll;
@@ -198,272 +189,255 @@ static void GRAPH_OT_cursor_set(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X | OPTYPE_UNDO;
 
-  /* rna */
-  RNA_def_float(ot->srna, "frame", 0, MINAFRAMEF, MAXFRAMEF, "Frame", "", MINAFRAMEF, MAXFRAMEF);
-  RNA_def_float(ot->srna, "value", 0, -FLT_MAX, FLT_MAX, "Value", "", -100.0f, 100.0f);
-}
+  /* api */
+  api_def_float(ot->sapi, "frame", 0, MINAFRAMEF, MAXFRAMEF, "Frame", "", MINAFRAMEF, MAXFRAMEF);
+  api_def_float(ot->sapi, "val", 0, -FLT_MAX, FLT_MAX, "Val", "", -100.0f, 100.0f);
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Hide/Reveal
- * \{ */
-
-static int graphview_curves_hide_exec(bContext *C, wmOperator *op)
+/* Hide/Reveal */
+static int graphview_curves_hide_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
-  ListBase anim_data = {nullptr, nullptr};
-  ListBase all_data = {nullptr, nullptr};
+  AnimCxt ac;
+  List anim_data = {nullptr, nullptr};
+  List all_data = {nullptr, nullptr};
   int filter;
-  const bool unselected = RNA_boolean_get(op->ptr, "unselected");
+  const bool unsel = api_bool_get(op->ptr, "unsel");
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* get list of all channels that selection may need to be flushed to
-   * - hierarchy must not affect what we have access to here...
-   */
+  /* get list of all channels that sel may need to be flushed to
+   * hierarchy must not affect what we have access to here... */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FCURVESONLY | ANIMFILTER_LIST_CHANNELS |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(
-      &ac, &all_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(
+      &ac, &all_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
   /* filter data
-   * - of the remaining visible curves, we want to hide the ones that are
-   *   selected/unselected (depending on "unselected" prop)
-   */
+   * of the remaining visible curves, hide the ones that are
+   * sel/unsel (depending on "unsel" prop) */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FCURVESONLY | ANIMFILTER_CURVE_VISIBLE |
             ANIMFILTER_NODUPLIS);
-  if (unselected) {
+  if (unsel) {
     filter |= ANIMFILTER_UNSEL;
   }
   else {
     filter |= ANIMFILTER_SEL;
   }
 
-  ANIM_animdata_filter(
-      &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(
+      &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    /* hack: skip object channels for now, since flushing those will always flush everything,
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    /* hack: skip ob channels for now, since flushing those will always flush everything,
      * but they are always included */
     /* TODO: find out why this is the case, and fix that */
-    if (ale->type == ANIMTYPE_OBJECT) {
+    if (ale->type == ANIMTYPE_OB) {
       continue;
     }
 
     /* change the hide setting, and unselect it... */
-    ANIM_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_CLEAR);
-    ANIM_channel_setting_set(&ac, ale, ACHANNEL_SETTING_SELECT, ACHANNEL_SETFLAG_CLEAR);
+    anim_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_CLEAR);
+    anim_channel_setting_set(&ac, ale, ACHANNEL_SETTING_SEL, ACHANNEL_SETFLAG_CLEAR);
 
-    /* now, also flush selection status up/down as appropriate */
+    /* now, also flush sel status up/down as appropriate */
     ANIM_flush_setting_anim_channels(
         &ac, &all_data, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_CLEAR);
   }
 
   /* cleanup */
-  ANIM_animdata_freelist(&anim_data);
-  BLI_freelistN(&all_data);
+  anim_animdata_freelist(&anim_data);
+  lib_freelist(&all_data);
 
-  /* unhide selected */
-  if (unselected) {
+  /* unhide sel */
+  if (unsel) {
     /* turn off requirement for visible */
     filter = ANIMFILTER_SEL | ANIMFILTER_NODUPLIS | ANIMFILTER_LIST_CHANNELS |
              ANIMFILTER_FCURVESONLY;
 
     /* flushing has been done */
-    ANIM_animdata_filter(
-        &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+    anim_animdata_filter(
+        &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
-    LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-      /* hack: skip object channels for now, since flushing those
+    LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+      /* hack: skip ob channels for now, since flushing those
        * will always flush everything, but they are always included */
 
       /* TODO: find out why this is the case, and fix that */
-      if (ale->type == ANIMTYPE_OBJECT) {
+      if (ale->type == ANIMTYPE_OB) {
         continue;
       }
 
       /* change the hide setting, and unselect it... */
-      ANIM_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_ADD);
-      ANIM_channel_setting_set(&ac, ale, ACHANNEL_SETTING_SELECT, ACHANNEL_SETFLAG_ADD);
+      anim_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_ADD);
+      anim_channel_setting_set(&ac, ale, ACHANNEL_SETTING_SELECT, ACHANNEL_SETFLAG_ADD);
 
-      /* now, also flush selection status up/down as appropriate */
-      ANIM_flush_setting_anim_channels(
+      /* now, also flush sel status up/down as appropriate */
+      anim_flush_setting_anim_channels(
           &ac, &anim_data, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_ADD);
     }
-    ANIM_animdata_freelist(&anim_data);
+    anim_animdata_freelist(&anim_data);
   }
 
   /* send notifier that things have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, nullptr);
+  win_ev_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void GRAPH_OT_hide(wmOperatorType *ot)
+static void GRAPH_OT_hide(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Hide Curves";
   ot->idname = "GRAPH_OT_hide";
-  ot->description = "Hide selected curves from Graph Editor view";
+  ot->description = "Hide sel curves from Graph Editor view";
 
-  /* api callbacks */
-  ot->exec = graphview_curves_hide_exec;
-  ot->poll = ED_operator_graphedit_active;
+  /* api cbs */
+  ot->ex = graphview_curves_hide_ex;
+  ot->poll = ed_op_graphedit_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  RNA_def_boolean(
-      ot->srna, "unselected", false, "Unselected", "Hide unselected rather than selected curves");
+  api_def_bool(
+      ot->sapi, "unsel", false, "Unsel", "Hide unsel rather than sel curves");
 }
 
-/* ........ */
-
-static int graphview_curves_reveal_exec(bContext *C, wmOperator *op)
+static int graphview_curves_reveal_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
-  ListBase anim_data = {nullptr, nullptr};
-  ListBase all_data = {nullptr, nullptr};
+  AnimCxt ac;
+  List anim_data = {nullptr, nullptr};
+  List all_data = {nullptr, nullptr};
   int filter;
-  const bool select = RNA_boolean_get(op->ptr, "select");
+  const bool sel = api_bool_get(op->ptr, "sel");
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* get list of all channels that selection may need to be flushed to
-   * - hierarchy must not affect what we have access to here...
-   */
+  /* get list of all channels that sel may need to be flushed to
+   * - hierarchy must not affect what we have access to here.. */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_CHANNELS | ANIMFILTER_NODUPLIS |
             ANIMFILTER_FCURVESONLY);
-  ANIM_animdata_filter(
-      &ac, &all_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(
+      &ac, &all_data, eAnimFilter_Flags(filter), ac.data, eAnimContTypes(ac.datatype));
 
   /* filter data
-   * - just go through all visible channels, ensuring that everything is set to be curve-visible
-   */
+   * - Traverse all visible channels, ensuring that everything is set to be curve-visible  */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS |
             ANIMFILTER_FCURVESONLY);
-  ANIM_animdata_filter(
-      &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(
+      &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    /* hack: skip object channels for now, since flushing those will always flush everything,
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    /* hack: skip ob channels for now, since flushing those will always flush everything,
      * but they are always included. */
     /* TODO: find out why this is the case, and fix that */
-    if (ale->type == ANIMTYPE_OBJECT) {
+    if (ale->type == ANIMTYPE_OB) {
       continue;
     }
 
-    /* select if it is not visible */
-    if (ANIM_channel_setting_get(&ac, ale, ACHANNEL_SETTING_VISIBLE) == 0) {
-      ANIM_channel_setting_set(&ac,
+    /* sel if it is not visible */
+    if (anim_channel_setting_get(&ac, ale, ACHANNEL_SETTING_VISIBLE) == 0) {
+      anim_channel_setting_set(&ac,
                                ale,
-                               ACHANNEL_SETTING_SELECT,
-                               select ? ACHANNEL_SETFLAG_ADD : ACHANNEL_SETFLAG_CLEAR);
+                               ACHANNEL_SETTING_SEL,
+                               sel ? ACHANNEL_SETFLAG_ADD : ACHANNEL_SETFLAG_CLEAR);
     }
 
     /* change the visibility setting */
-    ANIM_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_ADD);
+    anim_channel_setting_set(&ac, ale, ACHANNEL_SETTING_VISIBLE, ACHANNEL_SETFLAG_ADD);
 
     /* now, also flush selection status up/down as appropriate */
-    ANIM_flush_setting_anim_channels(
-        &ac, &all_data, ale, ACHANNEL_SETTING_VISIBLE, eAnimChannels_SetFlag(true));
+    anim_flush_setting_anim_channels(
+        &ac, &all_data, ale, ACHANNEL_SETTING_VISIBLE, eAnimChannelsSetFlag(true));
   }
 
   /* cleanup */
-  ANIM_animdata_freelist(&anim_data);
-  BLI_freelistN(&all_data);
+  anim_animdata_freelist(&anim_data);
+  lib_freelist(&all_data);
 
   /* send notifier that things have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_EDITED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_EDITED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void GRAPH_OT_reveal(wmOperatorType *ot)
+static void GRAPH_OT_reveal(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Reveal Curves";
   ot->idname = "GRAPH_OT_reveal";
   ot->description = "Make previously hidden curves visible again in Graph Editor view";
 
-  /* api callbacks */
-  ot->exec = graphview_curves_reveal_exec;
-  ot->poll = ED_operator_graphedit_active;
+  /* api cbs */
+  ot->ex = graphview_curves_reveal_ex;
+  ot->poll = ed_op_graphedit_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_boolean(ot->srna, "select", true, "Select", "");
+  api_def_bool(ot->sapi, "sel", true, "Sel", "");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Registration: operator types
- * \{ */
-
-void graphedit_operatortypes()
+/* Registration: op types */
+void graphedit_optypes()
 {
   /* view */
-  WM_operatortype_append(GRAPH_OT_cursor_set);
+  win_optype_append(GRAPH_OT_cursor_set);
 
-  WM_operatortype_append(GRAPH_OT_previewrange_set);
-  WM_operatortype_append(GRAPH_OT_view_all);
-  WM_operatortype_append(GRAPH_OT_view_selected);
-  WM_operatortype_append(GRAPH_OT_view_frame);
+  win_optype_append(GRAPH_OT_previewrange_set);
+  win_optype_append(GRAPH_OT_view_all);
+  win_optype_append(GRAPH_OT_view_sel);
+  win_optype_append(GRAPH_OT_view_frame);
 
-  WM_operatortype_append(GRAPH_OT_ghost_curves_create);
-  WM_operatortype_append(GRAPH_OT_ghost_curves_clear);
+  win_optype_append(GRAPH_OT_ghost_curves_create);
+  win_optype_append(GRAPH_OT_ghost_curves_clear);
 
-  WM_operatortype_append(GRAPH_OT_hide);
-  WM_operatortype_append(GRAPH_OT_reveal);
+  win_optype_append(GRAPH_OT_hide);
+  win_optype_append(GRAPH_OT_reveal);
 
   /* keyframes */
-  /* selection */
-  WM_operatortype_append(GRAPH_OT_clickselect);
-  WM_operatortype_append(GRAPH_OT_select_all);
-  WM_operatortype_append(GRAPH_OT_select_box);
-  WM_operatortype_append(GRAPH_OT_select_lasso);
-  WM_operatortype_append(GRAPH_OT_select_circle);
-  WM_operatortype_append(GRAPH_OT_select_column);
-  WM_operatortype_append(GRAPH_OT_select_linked);
-  WM_operatortype_append(GRAPH_OT_select_more);
-  WM_operatortype_append(GRAPH_OT_select_less);
-  WM_operatortype_append(GRAPH_OT_select_leftright);
-  WM_operatortype_append(GRAPH_OT_select_key_handles);
+  /* sel */
+  win_optype_append(GRAPH_OT_clicksel);
+  win_optype_append(GRAPH_OT_sel_all);
+  win_optype_append(GRAPH_OT_sel_box);
+  win_optype_append(GRAPH_OT_sel_lasso);
+  win_optype_append(GRAPH_OT_sel_circle);
+  win_optype_append(GRAPH_OT_sel_column);
+  win_optype_append(GRAPH_OT_sel_linked);
+  win_optype_append(GRAPH_OT_sel_more);
+  win_optype_append(GRAPH_OT_sel_less);
+  win_optype_append(GRAPH_OT_sel_leftright);
+  win_optype_append(GRAPH_OT_sel_key_handles);
 
   /* editing */
-  WM_operatortype_append(GRAPH_OT_snap);
-  WM_operatortype_append(GRAPH_OT_equalize_handles);
-  WM_operatortype_append(GRAPH_OT_mirror);
-  WM_operatortype_append(GRAPH_OT_frame_jump);
-  WM_operatortype_append(GRAPH_OT_keyframe_jump);
-  WM_operatortype_append(GRAPH_OT_snap_cursor_value);
-  WM_operatortype_append(GRAPH_OT_handle_type);
-  WM_operatortype_append(GRAPH_OT_interpolation_type);
-  WM_operatortype_append(GRAPH_OT_extrapolation_type);
-  WM_operatortype_append(GRAPH_OT_easing_type);
-  WM_operatortype_append(GRAPH_OT_bake_keys);
-  WM_operatortype_append(GRAPH_OT_keys_to_samples);
-  WM_operatortype_append(GRAPH_OT_samples_to_keys);
-  WM_operatortype_append(GRAPH_OT_sound_to_samples);
-  WM_operatortype_append(GRAPH_OT_smooth);
-  WM_operatortype_append(GRAPH_OT_clean);
-  WM_operatortype_append(GRAPH_OT_decimate);
-  WM_operatortype_append(GRAPH_OT_blend_to_neighbor);
-  WM_operatortype_append(GRAPH_OT_breakdown);
-  WM_operatortype_append(GRAPH_OT_ease);
-  WM_operatortype_append(GRAPH_OT_shear);
-  WM_operatortype_append(GRAPH_OT_scale_average);
-  WM_operatortype_append(GRAPH_OT_blend_offset);
+  win_optype_append(GRAPH_OT_snap);
+  win_optype_append(GRAPH_OT_equalize_handles);
+  win_optype_append(GRAPH_OT_mirror);
+  win_optype_append(GRAPH_OT_frame_jump);
+  win_optype_append(GRAPH_OT_keyframe_jump);
+  WM_optype_append(GRAPH_OT_snap_cursor_value);
+  WM_optype_append(GRAPH_OT_handle_type);
+  WM_optype_append(GRAPH_OT_interpolation_type);
+  WM_optype_append(GRAPH_OT_extrapolation_type);
+  WM_optype_append(GRAPH_OT_easing_type);
+  WM_optype_append(GRAPH_OT_bake_keys);
+  WM_optype_append(GRAPH_OT_keys_to_samples);
+  WM_optype_append(GRAPH_OT_samples_to_keys);
+  WM_optype_append(GRAPH_OT_sound_to_samples);
+  win_optype_append(GRAPH_OT_smooth);
+  win_optype_append(GRAPH_OT_clean);
+  win_optype_append(GRAPH_OT_decimate);
+  win_optype_append(GRAPH_OT_blend_to_neighbor);
+  win_optype_append(GRAPH_OT_breakdown);
+  win_optype_append(GRAPH_OT_ease);
+  win_optype_append(GRAPH_OT_shear);
+  win_optype_append(GRAPH_OT_scale_average);
+  WM_optype_append(GRAPH_OT_blend_offset);
   WM_operatortype_append(GRAPH_OT_blend_to_ease);
   WM_operatortype_append(GRAPH_OT_match_slope);
   WM_operatortype_append(GRAPH_OT_time_offset);
