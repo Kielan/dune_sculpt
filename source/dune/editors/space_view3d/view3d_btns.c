@@ -9,7 +9,7 @@
 #include "types_mesh.h"
 #include "types_meshdata.h"
 #include "types_meta.h"
-#include "types_obj.h"
+#include "types_ob.h"
 #include "types_scene.h"
 
 #include "mem_guardedalloc.h"
@@ -29,8 +29,8 @@
 #include "dune_customdata.h"
 #include "dune_deform.h"
 #include "dune_editmesh.h"
-#include "dune_obj.h"
-#include "dune_obj_deform.h"
+#include "dune_ob.h"
+#include "dune_ob_deform.h"
 #include "dune_report.h"
 #include "dune_screen.h"
 
@@ -43,7 +43,7 @@
 #include "api_prototypes.h"
 
 #include "ed_mesh.h"
-#include "ed_obj.h"
+#include "ed_ob.h"
 #include "ed_screen.h"
 
 #include "ui.h"
@@ -99,7 +99,7 @@ static TransformProps *v3d_transform_props_ensure(View3D *v3d);
 /* Edit Mesh Partial Updates */
 
 static void *editmesh_partial_update_begin_fn(struct Cxt *UNUSED(C),
-                                              const struct uiBlockInteraction_Params *params,
+                                              const struct uiBlockInteractionParams *params,
                                               void *arg1)
 {
   const int retval_test = B_TRANSFORM_PNL_MEDIAN;
@@ -319,7 +319,7 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
     if ((cd_edge_bweight_offset != -1) || (cd_edge_crease_offset != -1)) {
       if (mesh->totedgesel) {
         MESH_ITER_MESH (eed, &iter, mesh, MESH_EDGES_OF_MESH) {
-          if (MESH_elem_flag_test(eed, MESH_ELEM_SEL)) {
+          if (mesh_elem_flag_test(eed, MESH_ELEM_SEL)) {
             if (cd_edge_bweight_offset != -1) {
               median->be_weight += M_ELEM_CD_GET_FLOAT(eed, cd_edge_bweight_offset);
             }
@@ -549,48 +549,48 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
                     0,
                     0,
                     "");
-    UI_but_number_step_size_set(but, 10);
-    UI_but_number_precision_set(but, RNA_TRANSLATION_PREC_DEFAULT);
-    UI_but_unit_type_set(but, PROP_UNIT_LENGTH);
-    but = uiDefButF(block,
+    UI_btn_number_step_size_set(but, 10);
+    UI_btn_number_precision_set(but, RNA_TRANSLATION_PREC_DEFAULT);
+    UI_btn_unit_type_set(but, PROP_UNIT_LENGTH);
+    btn = uiDefBtnF(block,
                     UI_BTYPE_NUM,
                     B_TRANSFORM_PANEL_MEDIAN,
                     IFACE_("Z:"),
                     0,
-                    yi -= buth,
-                    butw,
-                    buth,
+                    yi -= btnh,
+                    btnw,
+                    btnh,
                     &tfp->ve_median.generic.location[2],
                     -lim,
                     lim,
                     0,
                     0,
                     "");
-    UI_but_number_step_size_set(but, 10);
-    UI_but_number_precision_set(but, RNA_TRANSLATION_PREC_DEFAULT);
-    UI_but_unit_type_set(but, PROP_UNIT_LENGTH);
+    UI_btn_number_step_size_set(btn, 10);
+    UI_btn_number_precision_set(btn, API_LANG_PREC_DEFAULT);
+    UI_btn_unit_type_set(btn, PROP_UNIT_LENGTH);
 
     if (totcurvebweight == tot) {
-      but = uiDefButF(block,
+      but = uiDefBtnF(block,
                       UI_BTYPE_NUM,
                       B_TRANSFORM_PANEL_MEDIAN,
                       IFACE_("W:"),
                       0,
-                      yi -= buth,
-                      butw,
-                      buth,
+                      yi -= btnh,
+                      btnw,
+                      btnh,
                       &(tfp->ve_median.curve.b_weight),
                       0.01,
                       100.0,
                       0,
                       0,
                       "");
-      UI_but_number_step_size_set(but, 1);
-      UI_but_number_precision_set(but, 3);
+      UI_btn_number_step_size_set(btn, 1);
+      UI_btn_number_precision_set(btn, 3);
     }
 
     UI_block_align_begin(block);
-    uiDefButBitS(block,
+    uiDefBtnBitS(block,
                  UI_BTYPE_TOGGLE,
                  V3D_GLOBAL_STATS,
                  B_REDR,
@@ -598,14 +598,14 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
                  0,
                  yi -= buth + but_margin,
                  100,
-                 buth,
+                 btnh,
                  &v3d->flag,
                  0,
                  0,
                  0,
                  0,
                  TIP_("Displays global values"));
-    uiDefButBitS(block,
+    uiDefBtnBitS(block,
                  UI_BTYPE_TOGGLE_N,
                  V3D_GLOBAL_STATS,
                  B_REDR,
@@ -613,7 +613,7 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
                  100,
                  yi,
                  100,
-                 buth,
+                 btnh,
                  &v3d->flag,
                  0,
                  0,
@@ -626,14 +626,14 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
     if (has_meshdata) {
       TransformMedian_Mesh *ve_median = &tfp->ve_median.mesh;
       if (tot) {
-        uiDefBut(block,
+        uiDefBtn(block,
                  UI_BTYPE_LABEL,
                  0,
                  tot == 1 ? IFACE_("Vertex Data:") : IFACE_("Vertices Data:"),
                  0,
                  yi -= buth + but_margin,
-                 butw,
-                 buth,
+                 btnw,
+                 btnh,
                  NULL,
                  0.0,
                  0.0,
@@ -641,12 +641,12 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
                  0,
                  "");
         /* customdata layer added on demand */
-        but = uiDefButF(block,
+        btn = uiDefBtnF(block,
                         UI_BTYPE_NUM,
                         B_TRANSFORM_PANEL_MEDIAN,
                         tot == 1 ? IFACE_("Bevel Weight:") : IFACE_("Mean Bevel Weight:"),
                         0,
-                        yi -= buth + but_margin,
+                        yi -= btnh + btn_margin,
                         butw,
                         buth,
                         &ve_median->bv_weight,
@@ -655,45 +655,45 @@ static void v3d_editvert_btns(uiLayout *layout, View3D *v3d, Obj *ob, float lim)
                         0,
                         0,
                         TIP_("Vertex weight used by Bevel modifier"));
-        UI_but_number_step_size_set(but, 1);
-        UI_but_number_precision_set(but, 2);
+        UI_btn_number_step_size_set(but, 1);
+        UI_btn_number_precision_set(but, 2);
         /* customdata layer added on demand */
-        but = uiDefButF(block,
+        btn = uiDefBtnF(block,
                         UI_BTYPE_NUM,
                         B_TRANSFORM_PANEL_MEDIAN,
                         tot == 1 ? IFACE_("Vertex Crease:") : IFACE_("Mean Vertex Crease:"),
                         0,
-                        yi -= buth + but_margin,
-                        butw,
-                        buth,
+                        yi -= btnh + btn_margin,
+                        btnw,
+                        btnh,
                         &ve_median->v_crease,
                         0.0,
                         1.0,
                         0,
                         0,
                         TIP_("Weight used by the Subdivision Surface modifier"));
-        UI_but_number_step_size_set(but, 1);
-        UI_but_number_precision_set(but, 2);
+        ui_btn_number_step_size_set(but, 1);
+        ui_btn_number_precision_set(but, 2);
       }
       if (has_skinradius) {
         UI_block_align_begin(block);
-        but = uiDefButF(block,
+        btn = uiDefBtnF(block,
                         UI_BTYPE_NUM,
-                        B_TRANSFORM_PANEL_MEDIAN,
+                        B_TRANSFORM_PNL_MEDIAN,
                         tot == 1 ? IFACE_("Radius X:") : IFACE_("Mean Radius X:"),
                         0,
-                        yi -= buth + but_margin,
-                        butw,
-                        buth,
+                        yi -= btnh + btn_margin,
+                        btnw,
+                        btnh,
                         &ve_median->skin[0],
                         0.0,
                         100.0,
                         0,
                         0,
                         TIP_("X radius used by Skin modifier"));
-        UI_but_number_step_size_set(but, 1);
-        UI_but_number_precision_set(but, 3);
-        but = uiDefButF(block,
+        UI_btn_number_step_size_set(but, 1);
+        UI_btn_number_precision_set(but, 3);
+        but = uiDefBtnF(block,
                         UI_BTYPE_NUM,
                         B_TRANSFORM_PANEL_MEDIAN,
                         tot == 1 ? IFACE_("Radius Y:") : IFACE_("Mean Radius Y:"),
