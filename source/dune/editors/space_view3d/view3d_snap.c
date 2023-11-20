@@ -9,7 +9,7 @@
 
 #include "dune_action.h"
 #include "dune_armature.h"
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_editmesh.h"
 #include "dune_layer.h"
 #include "dune_main.h"
@@ -254,12 +254,12 @@ static int snap_sel_to_grid_ex(Cxt *C, WinOp *UNUSED(op))
   return OP_FINISHED;
 }
 
-void VIEW3D_OT_snap_selected_to_grid(WinOpType *ot)
+void VIEW3D_OT_snap_sel_to_grid(WinOpType *ot)
 {
   /* ids */
-  ot->name = "Snap Selection to Grid";
-  ot->description = "Snap selected item(s) to their nearest grid division";
-  ot->idname = "VIEW3D_OT_snap_selected_to_grid";
+  ot->name = "Snap Sel to Grid";
+  ot->description = "Snap sel item(s) to their nearest grid division";
+  ot->idname = "VIEW3D_OT_snap_sel_to_grid";
 
   /* api cbs */
   ot->ex = snap_sel_to_grid_ex;
@@ -277,12 +277,12 @@ void VIEW3D_OT_snap_selected_to_grid(WinOpType *ot)
  * (eg. 3D cursor or active ob).
  * param use_offset: if the selected objs should maintain their relative offsets
  * and be snapped by the sel pivot point (median, active),
- * or if every object origin should be snapped to the given location. */
-static bool snap_selected_to_location(Cxt *C,
-                                      const float snap_target_global[3],
-                                      const bool use_offset,
-                                      const int pivot_point,
-                                      const bool use_toolsettings)
+ * or if every obj origin should be snapped to the given location. */
+static bool snap_sel_to_location(Cxt *C,
+                                 const float snap_target_global[3],
+                                 const bool use_offset,
+                                 const int pivot_point,
+                                 const bool use_toolsettings)
 {
   Scene *scene = cxt_data_scene(C);
   Ob *obedit = cxt_data_edit_ob(C);
@@ -372,7 +372,7 @@ static bool snap_selected_to_location(Cxt *C,
       mul_v3_m4v3(snap_target_local, ob->imat, snap_target_global);
 
       for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
-        if ((pchan->bone->flag & BONE_SELECTED) && (PBONE_VISIBLE(arm, pchan->bone)) &&
+        if ((pchan->bone->flag & BONE_SEL) && (PBONE_VISIBLE(arm, pchan->bone)) &&
             /* if the bone has a parent and is connected to the parent,
              * don't do anything - will break chain unless we do auto-ik.
              */
@@ -449,12 +449,12 @@ static bool snap_selected_to_location(Cxt *C,
     Ob **objs = NULL;
     uint objs_len;
     {
-      lib_array_declare(objects);
-      FOREACH_SELECTED_EDITABLE_OBJECT_BEGIN (view_layer, v3d, ob) {
-        lib_array_append(objects, ob);
+      lib_array_declare(objs);
+      FOREACH_SEL_EDITABLE_OB_BEGIN (view_layer, v3d, ob) {
+        lib_array_append(objs, ob);
         ob->flag |= OB_DONE;
       }
-      FOREACH_SELECTED_EDITABLE_OB_END;
+      FOREACH_SEL_EDITABLE_OB_END;
       objs_len = lib_array_len(objs);
     }
 
@@ -504,7 +504,7 @@ static bool snap_selected_to_location(Cxt *C,
 
       if (ob->parent) {
         float originmat[3][3], parentmat[4][4];
-        /* Use the evaluated object here because sometimes
+        /* Use the eval ob here because sometimes
          * `ob->parent->runtime.curve_cache` is required. */
         dune_scene_graph_eval_ensure(graph, main);
         Ob *ob_eval = graph_get_eval_ob(graph, ob);
@@ -526,7 +526,7 @@ static bool snap_selected_to_location(Cxt *C,
         }
 
         /* auto-keyframing */
-        ed_autokeyframe_object(C, scene, ob, ks);
+        ed_autokeyframe_ob(C, scene, ob, ks);
       }
       else {
         add_v3_v3(ob->loc, cursor_parent);
@@ -554,22 +554,22 @@ static bool snap_selected_to_location(Cxt *C,
   return true;
 }
 
-bool ed_view3d_snap_selected_to_location(Cxt *C,
-                                         const float snap_target_global[3],
-                                         const int pivot_point)
+bool ed_view3d_snap_sel_to_location(Cxt *C,
+                                    const float snap_target_global[3],
+                                    const int pivot_point)
 {
-  /* These could be passed as arguments if needed. */
+  /* These could be passed as args if needed. */
   /* Always use pivot point. */
   const bool use_offset = true;
-  /* Disable object protected flags & auto-keyframing,
+  /* Disable ob protected flags & auto-keyframing,
    * so this can be used as a low level fn. */
   const bool use_toolsettings = false;
-  return snap_selected_to_location(
+  return snap_sel_to_location(
       C, snap_target_global, use_offset, pivot_point, use_toolsettings);
 }
 
-/* Snap Selection to Cursor Op */
-static int snap_selected_to_cursor_ex(Cxt *C, WinOp *op)
+/* Snap Sel to Cursor Op */
+static int snap_sel_to_cursor_ex(Cxt *C, WinOp *op)
 {
   const bool use_offset = api_bool_get(op->ptr, "use_offset");
 
@@ -587,9 +587,9 @@ static int snap_selected_to_cursor_ex(Cxt *C, WinOp *op)
 void VIEW3D_OT_snap_sel_to_cursor(WinOpType *ot)
 {
   /* ids */
-  ot->name = "Snap Selection to Cursor";
-  ot->description = "Snap selected item(s) to the 3D cursor";
-  ot->idname = "VIEW3D_OT_snap_selected_to_cursor";
+  ot->name = "Snap Sel to Cursor";
+  ot->description = "Snap sel item(s) to the 3D cursor";
+  ot->idname = "VIEW3D_OT_snap_sel_to_cursor";
 
   /* api cbs */
   ot->ex = snap_sel_to_cursor_ex;
@@ -600,10 +600,10 @@ void VIEW3D_OT_snap_sel_to_cursor(WinOpType *ot)
 
   /* api */
   api_def_bool(ot->sapi,
-                  "use_offset",
-                  1,
-                  "Offset",
-                  "If the sel should be snapped as a whole or by each ob center");
+               "use_offset",
+               1,
+               "Offset",
+               "If the sel should be snapped as a whole or by each ob center");
 }
 
 /* Snap Sel to Active Op */
@@ -806,7 +806,7 @@ static bool snap_curs_to_sel_ex(Cxt *C, const int pivot_point, float r_cursor[3]
       }
     }
     else {
-      FOREACH_SELECTED_OB_BEGIN (view_layer_eval, v3d, ob_eval) {
+      FOREACH_SEL_OB_BEGIN (view_layer_eval, v3d, ob_eval) {
         copy_v3_v3(vec, ob_eval->obmat[3]);
 
         /* special case for camera -- snap to bundles */
@@ -821,7 +821,7 @@ static bool snap_curs_to_sel_ex(Cxt *C, const int pivot_point, float r_cursor[3]
         minmax_v3v3_v3(min, max, vec);
         count++;
       }
-      FOREACH_SELECTED_OBJECT_END;
+      FOREACH_SEL_OB_END;
     }
   }
 
@@ -852,10 +852,10 @@ static int snap_curs_to_sel_ex(Cxt *C, WinOp *UNUSED(op))
   return OP_CANCELLED;
 }
 
-void VIEW3D_OT_snap_cursor_to_selected(WinOpType *ot)
+void VIEW3D_OT_snap_cursor_to_sel(WinOpType *ot)
 {
   /* ids */
-  ot->name = "Snap Cursor to Selected";
+  ot->name = "Snap Cursor to Sel";
   ot->description = "Snap 3D cursor to the middle of the sel item(s)";
   ot->idname = "VIEW3D_OT_snap_cursor_to_sel";
 
@@ -952,7 +952,7 @@ bool ed_view3d_minmax_verts(Ob *obedit, float r_min[3], float r_max[3])
     float ob_min[3], ob_max[3];
     bool changed;
 
-    changed = dune_mball_minmax_ex(obedit->data, ob_min, ob_max, obedit->obmat, SELECT);
+    changed = dune_mball_minmax_ex(obedit->data, ob_min, ob_max, obedit->obmat, SEL);
     if (changed) {
       minmax_v3v3_v3(r_min, r_max, ob_min);
       minmax_v3v3_v3(r_min, r_max, ob_max);
