@@ -3,35 +3,35 @@
 #include <cstdio>
 #include <cstring>
 
-#include "BLI_blenlib.h"
-#include "BLI_math_vector_types.hh"
-#include "BLI_utildefines.h"
-#include "BLI_vector.hh"
+#include "lib_dunelib.h"
+#include "lib_math_vector_types.hh"
+#include "lib_utildefines.h"
+#include "lib_vector.hh"
 
-#include "DNA_anim_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_anim.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_userdef.h"
+#include "types_win.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_context.hh"
-#include "BKE_curve.hh"
-#include "BKE_fcurve.h"
-#include "BKE_nla.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_cxt.hh"
+#include "dune_curve.hh"
+#include "dune_fcurve.h"
+#include "dune_nla.h"
 
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gou_state.h"
 
-#include "ED_anim_api.hh"
+#include "ed_anim_api.hh"
 
 #include "graph_intern.h"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
 static void graph_draw_driver_debug(bAnimContext *ac, ID *id, FCurve *fcu);
 
@@ -1307,3 +1307,280 @@ static void draw_fcurve(bAnimContext *ac, SpaceGraph *sipo, ARegion *region, bAn
  * is handy for helping users better understand how to interpret
  * the graphs, and also facilitates debugging.
  */
+
+static void graph_draw_driver_debug(bAnimContext *ac, ID *id, FCurve *fcu)
+{
+  ChannelDriver *driver = fcu->driver;
+  View2D *v2d = &ac->region->v2d;
+  short mapping_flag = ANIM_get_normalization_flags(ac->sl);
+  float offset;
+  float unitfac = ANIM_unit_mapping_get_factor(ac->scene, id, fcu, mapping_flag, &offset);
+
+  const uint shdr_pos = GPU_vertformat_attr_add(
+      immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  immBindBuiltinProgram(GPU_SHADER_3D_LINE_DASHED_UNIFORM_COLOR);
+
+  float viewport_size[4];
+  GPU_viewport_size_get_f(viewport_size);
+  immUniform2f("viewport_size", viewport_size[2] / UI_SCALE_FAC, viewport_size[3] / UI_SCALE_FAC);
+
+  immUniform1i("colors_len", 0); /* Simple dashes. */
+
+  /* No curve to modify/visualize the result?
+   * => We still want to show the 1-1 default...
+   */
+  if ((fcu->totvert == 0) && BLI_listbase_is_empty(&fcu->modifiers)) {
+    float t;
+
+    /* draw with thin dotted lines in style of what curve would have been */
+    immUniformColor3fv(fcu->color);
+
+    immUniform1f("dash_width", 40.0f);
+    immUniform1f("udash_factor", 0.5f);
+    GPU_line_width(2.0f);
+
+    /* draw 1-1 line, stretching just past the screen limits
+     * NOTE: we need to scale the y-values to be valid for the units
+     */
+    immBegin(GPU_PRIM_LINES, 2);
+
+    t = v2d->cur.xmin;
+    immVertex2f(shdr_pos, t, (t + offset) * unitfac);
+
+    t = v2d->cur.xmax;
+    immVertex2f(shdr_pos, t, (t + offset) * unitfac);
+
+    immEnd();
+  }
+
+  /* draw driver only if actually functional */
+  if ((driver->flag & DRIVER_FLAG_INVALID) == 0) {
+    /* grab "coordinates" for driver outputs */
+    float x = driver->curval;
+    float y = fcu->curval * unitfac;
+
+    /* Only draw indicators if the point is in range. */
+    if (x >= v2d->cur.xmin) {
+      float co[2];
+
+      /* draw dotted lines leading towards this point from both axes ....... */
+      immUniformColor3f(0.9f, 0.9f, 0.9f);
+      immUniform1f("dash_width", 10.0f);
+      immUniform1f("udash_factor", 0.5f);
+      GPU_line_width(1.0f);
+
+      immBegin(GPU_PRIM_LINES, (y <= v2d->cur.ymax) ? 4 : 2);
+
+      /* x-axis lookup */
+      co[0] = x;
+
+      if (y <= v2d->cur.ymax) {
+        co[1] = v2d->cur.ymax + 1.0f;
+        immVertex2fv(shdr_pos, co);
+
+        co[1] = y;
+        immVertex2fv(shdr_pos, co);
+      }
+
+      /* y-axis lookup */
+      co[1] = y;
+
+      co[0] = v2d->cur.xmin - 1.0f;
+      immVertex2fv(shdr_pos, co);
+
+      co[0] = x;
+      immVertex2fv(shdr_pos, co);
+
+      immEnd();
+
+      immUnbindProgram();
+
+      /* GPU_PRIM_POINTS do not survive dashed line geometry shader... */
+      immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
+
+      /* x marks the spot .................................................... */
+      /* -> outer frame */
+      immUniformColor3f(0.9f, 0.9f, 0.9f);
+      GPU_point_size(7.0);
+
+      immBegin(GPU_PRIM_POINTS, 1);
+      immVertex2f(shdr_pos, x, y);
+      immEnd();
+
+      /* inner frame */
+      immUniformColor3f(0.9f, 0.0f, 0.0f);
+      GPU_point_size(3.0);
+
+      immBegin(GPU_PRIM_POINTS, 1);
+      immVertex2f(shdr_pos, x, y);
+      immEnd();
+    }
+  }
+
+  immUnbindProgram();
+}
+
+/* Public Curve-Drawing API  ---------------- */
+
+void graph_draw_ghost_curves(bAnimContext *ac, SpaceGraph *sipo, ARegion *region)
+{
+  /* draw with thick dotted lines */
+  GPU_line_width(3.0f);
+
+  /* anti-aliased lines for less jagged appearance */
+  if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
+    GPU_line_smooth(true);
+  }
+  GPU_blend(GPU_BLEND_ALPHA);
+
+  const uint shdr_pos = GPU_vertformat_attr_add(
+      immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+
+  immBindBuiltinProgram(GPU_SHADER_3D_LINE_DASHED_UNIFORM_COLOR);
+
+  float viewport_size[4];
+  GPU_viewport_size_get_f(viewport_size);
+  immUniform2f("viewport_size", viewport_size[2] / UI_SCALE_FAC, viewport_size[3] / UI_SCALE_FAC);
+
+  immUniform1i("colors_len", 0); /* Simple dashes. */
+  immUniform1f("dash_width", 20.0f);
+  immUniform1f("udash_factor", 0.5f);
+
+  /* Don't draw extrapolation on sampled ghost curves because it doesn't
+   * match the curves they're ghosting anyway.
+   * See issue #109920 for details. */
+  const bool draw_extrapolation = false;
+  /* the ghost curves are simply sampled F-Curves stored in sipo->runtime.ghost_curves */
+  LISTBASE_FOREACH (FCurve *, fcu, &sipo->runtime.ghost_curves) {
+    /* set whatever color the curve has set
+     * - this is set by the function which creates these
+     * - draw with a fixed opacity of 2
+     */
+    immUniformColor3fvAlpha(fcu->color, 0.5f);
+
+    /* simply draw the stored samples */
+    draw_fcurve_curve_samples(ac, nullptr, fcu, &region->v2d, shdr_pos, draw_extrapolation);
+  }
+
+  immUnbindProgram();
+
+  if (U.animation_flag & USER_ANIM_HIGH_QUALITY_DRAWING) {
+    GPU_line_smooth(false);
+  }
+  GPU_blend(GPU_BLEND_NONE);
+}
+
+void graph_draw_curves(bAnimContext *ac, SpaceGraph *sipo, ARegion *region, short sel)
+{
+  ListBase anim_data = {nullptr, nullptr};
+  int filter;
+
+  /* build list of curves to draw */
+  filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_CURVE_VISIBLE | ANIMFILTER_FCURVESONLY);
+  filter |= ((sel) ? (ANIMFILTER_SEL) : (ANIMFILTER_UNSEL));
+  ANIM_animdata_filter(
+      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+
+  /* for each curve:
+   * draw curve, then handle-lines, and finally vertices in this order so that
+   * the data will be layered correctly
+   */
+  bAnimListElem *ale_active_fcurve = nullptr;
+  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+    const FCurve *fcu = (FCurve *)ale->key_data;
+    if (fcu->flag & FCURVE_ACTIVE) {
+      ale_active_fcurve = ale;
+      continue;
+    }
+    draw_fcurve(ac, sipo, region, ale);
+  }
+
+  /* Draw the active FCurve last so that it (especially the active keyframe)
+   * shows on top of the other curves. */
+  if (ale_active_fcurve != nullptr) {
+    draw_fcurve(ac, sipo, region, ale_active_fcurve);
+  }
+
+  /* free list of curves */
+  ANIM_animdata_freelist(&anim_data);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Channel List
+ * \{ */
+
+void graph_draw_channel_names(bContext *C, bAnimContext *ac, ARegion *region)
+{
+  ListBase anim_data = {nullptr, nullptr};
+  bAnimListElem *ale;
+  int filter;
+
+  View2D *v2d = &region->v2d;
+  float height;
+  size_t items;
+
+  /* build list of channels to draw */
+  filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_LIST_CHANNELS |
+            ANIMFILTER_FCURVESONLY);
+  items = ANIM_animdata_filter(
+      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+
+  /* Update max-extent of channels here (taking into account scrollers):
+   * - this is done to allow the channel list to be scrollable, but must be done here
+   *   to avoid regenerating the list again and/or also because channels list is drawn first */
+  height = ANIM_UI_get_channels_total_height(v2d, items);
+  v2d->tot.ymin = -height;
+  const float channel_step = ANIM_UI_get_channel_step();
+
+  /* Loop through channels, and set up drawing depending on their type. */
+  { /* first pass: just the standard GL-drawing for backdrop + text */
+    size_t channel_index = 0;
+    float ymax = ANIM_UI_get_first_channel_top(v2d);
+
+    for (ale = static_cast<bAnimListElem *>(anim_data.first); ale;
+         ale = ale->next, ymax -= channel_step, channel_index++)
+    {
+      const float ymin = ymax - ANIM_UI_get_channel_height();
+
+      /* check if visible */
+      if (IN_RANGE(ymin, v2d->cur.ymin, v2d->cur.ymax) ||
+          IN_RANGE(ymax, v2d->cur.ymin, v2d->cur.ymax)) {
+        /* draw all channels using standard channel-drawing API */
+        ANIM_channel_draw(ac, ale, ymin, ymax, channel_index);
+      }
+    }
+  }
+  { /* second pass: widgets */
+    uiBlock *block = UI_block_begin(C, region, __func__, UI_EMBOSS);
+    size_t channel_index = 0;
+    float ymax = ANIM_UI_get_first_channel_top(v2d);
+
+    /* set blending again, as may not be set in previous step */
+    GPU_blend(GPU_BLEND_ALPHA);
+
+    for (ale = static_cast<bAnimListElem *>(anim_data.first); ale;
+         ale = ale->next, ymax -= channel_step, channel_index++)
+    {
+      const float ymin = ymax - ANIM_UI_get_channel_height();
+
+      /* check if visible */
+      if (IN_RANGE(ymin, v2d->cur.ymin, v2d->cur.ymax) ||
+          IN_RANGE(ymax, v2d->cur.ymin, v2d->cur.ymax)) {
+        /* draw all channels using standard channel-drawing API */
+        rctf channel_rect;
+        BLI_rctf_init(&channel_rect, 0, v2d->cur.xmax - V2D_SCROLL_WIDTH, ymin, ymax);
+        ANIM_channel_draw_widgets(C, ac, ale, block, &channel_rect, channel_index);
+      }
+    }
+
+    ui_block_end(C, block);
+    ui_block_draw(C, block);
+
+    gpu_blend(GPU_BLEND_NONE);
+  }
+
+  /* Free tmp channels. */
+  anim_animdata_freelist(&anim_data);
+}
