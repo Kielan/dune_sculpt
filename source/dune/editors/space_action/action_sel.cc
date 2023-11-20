@@ -458,53 +458,53 @@ static void box_sel_elem(
       }
 
       if (ale->type == ANIMTYPE_SUMMARY) {
-        ListBase anim_data = {nullptr, nullptr};
-        ANIM_animdata_filter(
-            ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimCont_Types(ac->datatype));
+        List anim_data = {nullptr, nullptr};
+        anim_animdata_filter(
+            ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimContTypes(ac->datatype));
 
-        LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
-          box_select_elem(sel_data, ale2, xmin, xmax, true);
+        LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
+          box_sel_elem(sel_data, ale2, xmin, xmax, true);
         }
 
-        ANIM_animdata_update(ac, &anim_data);
-        ANIM_animdata_freelist(&anim_data);
+        anim_animdata_update(ac, &anim_data);
+        anim_animdata_freelist(&anim_data);
       }
 
-      if (!ELEM(ac->datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-        ANIM_animchannel_keyframes_loop(
-            &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->select_cb, nullptr);
+      if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+        anim_animchannel_keyframes_loop(
+            &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->sel_cb, nullptr);
       }
     }
   }
 }
 
-static void box_select_action(bAnimContext *ac, const rcti rect, short mode, short selectmode)
+static void box_sel_action(AnimCxt *ac, const rcti rect, short mode, short selmode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  bAnimListElem *ale;
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  AnimListElem *ale;
+  eAnimFilterFlags filter;
 
-  BoxSelectData sel_data{};
+  BoxSelData sel_data{};
   sel_data.ac = ac;
-  sel_data.selectmode = selectmode;
+  sel_data.selmode = selmode;
 
-  View2D *v2d = &ac->region->v2d;
+  View2D *v2d = &ac->rgn->v2d;
   rctf rectf;
 
-  /* Convert mouse coordinates to frame ranges and channel
+  /* Convert mouse coordis to frame ranges and channel
    * coordinates corrected for view pan/zoom. */
-  UI_view2d_region_to_view(v2d, rect.xmin, rect.ymin + 2, &rectf.xmin, &rectf.ymin);
-  UI_view2d_region_to_view(v2d, rect.xmax, rect.ymax - 2, &rectf.xmax, &rectf.ymax);
+  ui_view2d_rgn_to_view(v2d, rect.xmin, rect.ymin + 2, &rectf.xmin, &rectf.ymin);
+  ui_view2d_rgn_to_view(v2d, rect.xmax, rect.ymax - 2, &rectf.xmax, &rectf.ymax);
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_LIST_CHANNELS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  /* Get beztriple editing/validation functions. */
-  sel_data.select_cb = ANIM_editkeyframes_select(selectmode);
+  /* Get beztriple editing/validation fns. */
+  sel_data.select_cb = anim_editkeyframes_sel(selmode);
 
   if (ELEM(mode, ACTKEYS_BORDERSEL_FRAMERANGE, ACTKEYS_BORDERSEL_ALLKEYS)) {
-    sel_data.ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAMERANGE);
+    sel_data.ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAMERANGE);
   }
   else {
     sel_data.ok_cb = nullptr;
@@ -513,14 +513,14 @@ static void box_select_action(bAnimContext *ac, const rcti rect, short mode, sho
   /* init editing data */
   memset(&sel_data.ked, 0, sizeof(KeyframeEditData));
 
-  float ymax = ANIM_UI_get_first_channel_top(v2d);
-  const float channel_step = ANIM_UI_get_channel_step();
+  float ymax = anim_ui_get_first_channel_top(v2d);
+  const float channel_step = anim_ui_get_channel_step();
 
-  /* loop over data, doing box select */
-  for (ale = static_cast<bAnimListElem *>(anim_data.first); ale;
+  /* loop over data, doing box sel */
+  for (ale = static_cast<AnimListElem *>(anim_data.first); ale;
        ale = ale->next, ymax -= channel_step)
   {
-    AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+    AnimData *adt = anim_nla_mapping_get(ac, ale);
 
     /* get new vertical minimum extent of channel */
     float ymin = ymax - channel_step;
@@ -530,8 +530,8 @@ static void box_select_action(bAnimContext *ac, const rcti rect, short mode, sho
       /* if channel is mapped in NLA, apply correction */
       if (adt) {
         sel_data.ked.iterflags &= ~(KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP);
-        sel_data.ked.f1 = BKE_nla_tweakedit_remap(adt, rectf.xmin, NLATIME_CONVERT_UNMAP);
-        sel_data.ked.f2 = BKE_nla_tweakedit_remap(adt, rectf.xmax, NLATIME_CONVERT_UNMAP);
+        sel_data.ked.f1 = dune_nla_tweakedit_remap(adt, rectf.xmin, NLATIME_CONVERT_UNMAP);
+        sel_data.ked.f2 = dune_nla_tweakedit_remap(adt, rectf.xmax, NLATIME_CONVERT_UNMAP);
       }
       else {
         sel_data.ked.iterflags |= (KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP); /* for summary tracks */
@@ -542,66 +542,63 @@ static void box_select_action(bAnimContext *ac, const rcti rect, short mode, sho
 
     /* perform vertical suitability check (if applicable) */
     if ((mode == ACTKEYS_BORDERSEL_FRAMERANGE) || !((ymax < rectf.ymin) || (ymin > rectf.ymax))) {
-      box_select_elem(&sel_data, ale, rectf.xmin, rectf.xmax, false);
+      box_sel_elem(&sel_data, ale, rectf.xmin, rectf.xmax, false);
     }
   }
 
   /* cleanup */
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_box_select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int actkeys_box_select_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  bAnimContext ac;
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  bAnimCxt ac;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  bool tweak = RNA_boolean_get(op->ptr, "tweak");
+  bool tweak = api_bool_get(op->ptr, "tweak");
   if (tweak) {
     int mval[2];
-    WM_event_drag_start_mval(event, ac.region, mval);
+    win_ev_drag_start_mval(event, ac.region, mval);
     if (actkeys_is_key_at_position(&ac, mval[0], mval[1])) {
-      return OPERATOR_CANCELLED | OPERATOR_PASS_THROUGH;
+      return OP_CANCELLED | OP_PASS_THROUGH;
     }
   }
 
-  return WM_gesture_box_invoke(C, op, event);
+  return win_gesture_box_invoke(C, op, ev);
 }
 
-static int actkeys_box_select_exec(bContext *C, wmOperator *op)
+static int actkeys_box_sel_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   rcti rect;
   short mode = 0;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  const eSelectOp sel_op = eSelectOp(RNA_enum_get(op->ptr, "mode"));
-  const int selectmode = (sel_op != SEL_OP_SUB) ? SELECT_ADD : SELECT_SUBTRACT;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    deselect_action_keys(&ac, 1, SELECT_SUBTRACT);
+  const eSelOp sel_op = eSelOp(api_enum_get(op->ptr, "mode"));
+  const int selectmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEl_SUBTRACT;
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    desel_action_keys(&ac, 1, SEL_SUBTRACT);
   }
 
-  /* get settings from operator */
-  WM_operator_properties_border_to_rcti(op, &rect);
+  /* get settings from op */
+  win_op_props_border_to_rcti(op, &rect);
 
-  /* selection 'mode' depends on whether box_select region only matters on one axis */
-  if (RNA_boolean_get(op->ptr, "axis_range")) {
+  /* sel 'mode' depends on whether box_sel rgn only matters on one axis */
+  if (api_bool_get(op->ptr, "axis_range")) {
     /* Mode depends on which axis of the range is larger to determine which axis to use:
-     * - checking this in region-space is fine,
+     * - checking this in rgn-space is fine,
      *   as it's fundamentally still going to be a different rect size.
-     * - the frame-range select option is favored over the channel one (x over y),
+     * - the frame-range sel option is favored over the channel one (x over y),
      *   as frame-range one is often used for tweaking timing when "blocking",
-     *   while channels is not that useful...
-     */
-    if (BLI_rcti_size_x(&rect) >= BLI_rcti_size_y(&rect)) {
+     *   while channels is not that useful.. */
+    if (lib_rcti_size_x(&rect) >= lib_rcti_size_y(&rect)) {
       mode = ACTKEYS_BORDERSEL_FRAMERANGE;
     }
     else {
@@ -612,113 +609,108 @@ static int actkeys_box_select_exec(bContext *C, wmOperator *op)
     mode = ACTKEYS_BORDERSEL_ALLKEYS;
   }
 
-  /* apply box_select action */
-  box_select_action(&ac, rect, mode, selectmode);
+  /* apply box_sel action */
+  box_sel_action(&ac, rect, mode, selmode);
 
-  /* set notifier that keyframe selection have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sel have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  if (anim_animdata_can_have_pen(eAnimContTypes(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_box(wmOperatorType *ot)
+void ACTION_OT_sel_box(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Box Select";
-  ot->idname = "ACTION_OT_select_box";
-  ot->description = "Select all keyframes within the specified region";
+  /* ids */
+  ot->name = "Box Sel";
+  ot->idname = "ACTION_OT_sel_box";
+  ot->description = "Sel all keyframes within the specified region";
 
-  /* api callbacks */
-  ot->invoke = actkeys_box_select_invoke;
-  ot->exec = actkeys_box_select_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  /* api cbs */
+  ot->invoke = actkeys_box_sel_invoke;
+  ot->ex = actkeys_box_sel_ex;
+  ot->modal = win_gesture_box_modal;
+  ot->cancel = win_gesture_box_cancel;
 
-  ot->poll = ED_operator_action_active;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* rna */
-  ot->prop = RNA_def_boolean(ot->srna, "axis_range", false, "Axis Range", "");
+  /* api */
+  ot->prop = api_def_bool(ot->srna, "axis_range", false, "Axis Range", "");
 
-  /* properties */
-  WM_operator_properties_gesture_box(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  /* props */
+  win_op_props_gesture_box(ot);
+  win_op_props_sel_op_simple(ot);
 
-  PropertyRNA *prop = RNA_def_boolean(
-      ot->srna, "tweak", false, "Tweak", "Operator has been activated using a click-drag event");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  ApiProp *prop = api_def_bool(
+      ot->sapi, "tweak", false, "Tweak", "Op has been activated using a click-drag ev");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Region Select Operators
- *
- * "Region Select" operators include the Lasso and Circle Select operators.
+/* Rgn Sel Ops
+ * "Rgn Sel" ops include the Lasso and Circle Sel ops.
  * These two ended up being lumped together, as it was easier in the
- * original Graph Editor implementation of these to do it this way.
- * \{ */
+ * original Graph Editor implementation of these to do it this way. */
 
-struct RegionSelectData {
-  bAnimContext *ac;
+struct RegionSelData {
+  AnimCxt *ac;
   short mode;
-  short selectmode;
+  short selmode;
 
   KeyframeEditData ked;
-  KeyframeEditFunc ok_cb, select_cb;
+  KeyframeEditFn ok_cb, sel_cb;
 };
 
-static void region_select_elem(RegionSelectData *sel_data, bAnimListElem *ale, bool summary)
+static void rgn_sel_elem(RgnSelData *sel_data, AnimListElem *ale, bool summary)
 {
-  bAnimContext *ac = sel_data->ac;
+  AnimCxt *ac = sel_data->ac;
 
   switch (ale->type) {
-#if 0 /* XXX: Keyframes are not currently shown here */
-    case ANIMTYPE_GPDATABLOCK: {
-      bGPdata *gpd = ale->data;
-      bGPDlayer *gpl;
-      for (gpl = gpd->layers.first; gpl; gpl = gpl->next) {
-        ED_gpencil_layer_frames_select_region(
-            &rdata->ked, ale->data, rdata->mode, rdata->selectmode);
+#if 0 /* Keyframes are not currently shown here */
+    case ANIMTYPE_PENDATABLOCK: {
+      PenData *pdl = ale->data;
+      PenDataLayer *pdl;
+      for (pdl = pdl->layers.first; pdl; pdl = pdl->next) {
+        ed_pen_layer_frames_sel_rgn(
+            &rdata->ked, ale->data, rdata->mode, rdata->selmode);
       }
       break;
     }
 #endif
-    case ANIMTYPE_GPLAYER: {
-      ED_gpencil_layer_frames_select_region(&sel_data->ked,
-                                            static_cast<bGPDlayer *>(ale->data),
-                                            sel_data->mode,
-                                            sel_data->selectmode);
+    case ANIMTYPE_PLAYER: {
+      ed_pen_layer_frames_sel_rgn(&sel_data->ked,
+                                  static_cast<PenDataLayer *>(ale->data),
+                                  sel_data->mode,
+                                  sel_data->selectmode);
       ale->update |= ANIM_UPDATE_DEPS;
       break;
     }
-    case ANIMTYPE_GREASE_PENCIL_LAYER_GROUP:
-    case ANIMTYPE_GREASE_PENCIL_LAYER: {
-      blender::ed::greasepencil::select_frames_region(
+    case ANIMTYPE_PEN_LAYER_GROUP:
+    case ANIMTYPE_PEN_LAYER: {
+      dune::ed::pen::sel_frames_rgn(
           &sel_data->ked,
-          static_cast<GreasePencilLayerTreeNode *>(ale->data)->wrap(),
+          static_cast<PenLayerTreeNode *>(ale->data)->wrap(),
           sel_data->mode,
-          sel_data->selectmode);
+          sel_data->selmode);
       ale->update |= ANIM_UPDATE_DEPS;
       break;
     }
-    case ANIMTYPE_GREASE_PENCIL_DATABLOCK: {
-      ListBase anim_data = {nullptr, nullptr};
-      ANIM_animdata_filter(
-          ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimCont_Types(ac->datatype));
+    case ANIMTYPE_PEN_DATABLOCK: {
+      List anim_data = {nullptr, nullptr};
+      anim_animdata_filter(
+          ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimContTypes(ac->datatype));
 
-      LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
-        if ((ale2->type == ANIMTYPE_GREASE_PENCIL_LAYER) && (ale2->id == ale->data)) {
-          region_select_elem(sel_data, ale2, true);
+      LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
+        if ((ale2->type == ANIMTYPE_PEN_LAYER) && (ale2->id == ale->data)) {
+          rgn_sel_elem(sel_data, ale2, true);
         }
       }
 
-      ANIM_animdata_update(ac, &anim_data);
-      ANIM_animdata_freelist(&anim_data);
+      anim_animdata_update(ac, &anim_data);
+      anim_animdata_freelist(&anim_data);
       break;
     }
     case ANIMTYPE_MASKDATABLOCK: {
@@ -726,16 +718,16 @@ static void region_select_elem(RegionSelectData *sel_data, bAnimListElem *ale, b
       MaskLayer *masklay;
       for (masklay = static_cast<MaskLayer *>(mask->masklayers.first); masklay;
            masklay = masklay->next) {
-        ED_masklayer_frames_select_region(
-            &sel_data->ked, masklay, sel_data->mode, sel_data->selectmode);
+        ed_masklayer_frames_sel_rgn(
+            &sel_data->ked, masklay, sel_data->mode, sel_data->selmode);
       }
       break;
     }
     case ANIMTYPE_MASKLAYER: {
-      ED_masklayer_frames_select_region(&sel_data->ked,
-                                        static_cast<MaskLayer *>(ale->data),
-                                        sel_data->mode,
-                                        sel_data->selectmode);
+      ed_masklayer_frames_sel_rgn(&sel_data->ked,
+                                  static_cast<MaskLayer *>(ale->data),
+                                  sel_data->mode,
+                                  sel_data->selmode);
       break;
     }
     default: {
@@ -744,61 +736,61 @@ static void region_select_elem(RegionSelectData *sel_data, bAnimListElem *ale, b
       }
 
       if (ale->type == ANIMTYPE_SUMMARY) {
-        ListBase anim_data = {nullptr, nullptr};
-        ANIM_animdata_filter(
-            ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimCont_Types(ac->datatype));
+        List anim_data = {nullptr, nullptr};
+        anim_animdata_filter(
+            ac, &anim_data, ANIMFILTER_DATA_VISIBLE, ac->data, eAnimContTypes(ac->datatype));
 
-        LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
-          region_select_elem(sel_data, ale2, true);
+        LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
+          rgn_sel_elem(sel_data, ale2, true);
         }
 
-        ANIM_animdata_update(ac, &anim_data);
-        ANIM_animdata_freelist(&anim_data);
+        anim_animdata_update(ac, &anim_data);
+        anim_animdata_freelist(&anim_data);
       }
 
-      if (!ELEM(ac->datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-        ANIM_animchannel_keyframes_loop(
-            &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->select_cb, nullptr);
+      if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+        anim_animchannel_keyframes_loop(
+            &sel_data->ked, ac->ads, ale, sel_data->ok_cb, sel_data->sel_cb, nullptr);
       }
     }
   }
 }
 
-static void region_select_action_keys(
-    bAnimContext *ac, const rctf *rectf_view, short mode, short selectmode, void *data)
+static void rgn_sel_action_keys(
+    AnimCxt *ac, const rctf *rectf_view, short mode, short selmode, void *data)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  bAnimListElem *ale;
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  AnimListElem *ale;
+  eAnimFilterFlags filter;
 
-  RegionSelectData sel_data{};
+  RhnSelData sel_data{};
   sel_data.ac = ac;
   sel_data.mode = mode;
-  sel_data.selectmode = selectmode;
-  View2D *v2d = &ac->region->v2d;
+  sel_data.selmode = selmode;
+  View2D *v2d = &ac->rgn->v2d;
   rctf rectf, scaled_rectf;
 
-  /* Convert mouse coordinates to frame ranges and channel
+  /* Convert mouse coords to frame ranges and channel
    * coordinates corrected for view pan/zoom. */
-  UI_view2d_region_to_view_rctf(v2d, rectf_view, &rectf);
+  ui_view2d_rgn_to_view_rctf(v2d, rectf_view, &rectf);
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_LIST_CHANNELS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
   /* Get beztriple editing/validation functions. */
-  sel_data.select_cb = ANIM_editkeyframes_select(selectmode);
-  sel_data.ok_cb = ANIM_editkeyframes_ok(mode);
+  sel_data.sel_cb = anim_editkeyframes_sel(selmode);
+  sel_data.ok_cb = anim_editkeyframes_ok(mode);
 
   /* init editing data */
   memset(&sel_data.ked, 0, sizeof(KeyframeEditData));
   if (mode == BEZT_OK_CHANNEL_LASSO) {
-    KeyframeEdit_LassoData *data_lasso = static_cast<KeyframeEdit_LassoData *>(data);
+    KeyframeEditLassoData *data_lasso = static_cast<KeyframeEditLassoData *>(data);
     data_lasso->rectf_scaled = &scaled_rectf;
     sel_data.ked.data = data_lasso;
   }
   else if (mode == BEZT_OK_CHANNEL_CIRCLE) {
-    KeyframeEdit_CircleData *data_circle = static_cast<KeyframeEdit_CircleData *>(data);
+    KeyframeEditCircleData *data_circle = static_cast<KeyframeEditCircleData *>(data);
     data_circle->rectf_scaled = &scaled_rectf;
     sel_data.ked.data = data;
   }
@@ -806,14 +798,14 @@ static void region_select_action_keys(
     sel_data.ked.data = &scaled_rectf;
   }
 
-  float ymax = ANIM_UI_get_first_channel_top(v2d);
-  const float channel_step = ANIM_UI_get_channel_step();
+  float ymax = anim_ui_get_first_channel_top(v2d);
+  const float channel_step = anim_ui_get_channel_step();
 
-  /* loop over data, doing region select */
-  for (ale = static_cast<bAnimListElem *>(anim_data.first); ale;
+  /* loop over data, doing rgn sel */
+  for (ale = static_cast<AnimListElem *>(anim_data.first); ale;
        ale = ale->next, ymax -= channel_step)
   {
-    AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+    AnimData *adt = anim_nla_mapping_get(ac, ale);
 
     /* get new vertical minimum extent of channel */
     const float ymin = ymax - channel_step;
@@ -824,13 +816,12 @@ static void region_select_action_keys(
     /* if channel is mapped in NLA, apply correction
      * - Apply to the bounds being checked, not all the keyframe points,
      *   to avoid having scaling everything
-     * - Save result to the scaled_rect, which is all that these operators
-     *   will read from
-     */
+     * - Save result to the scaled_rect, which is all that these ops
+     *   will read from  */
     if (adt) {
       sel_data.ked.iterflags &= ~(KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP);
-      sel_data.ked.f1 = BKE_nla_tweakedit_remap(adt, rectf.xmin, NLATIME_CONVERT_UNMAP);
-      sel_data.ked.f2 = BKE_nla_tweakedit_remap(adt, rectf.xmax, NLATIME_CONVERT_UNMAP);
+      sel_data.ked.f1 = dune_nla_tweakedit_remap(adt, rectf.xmin, NLATIME_CONVERT_UNMAP);
+      sel_data.ked.f2 = dune_nla_tweakedit_remap(adt, rectf.xmax, NLATIME_CONVERT_UNMAP);
     }
     else {
       sel_data.ked.iterflags |= (KED_F1_NLA_UNMAP | KED_F2_NLA_UNMAP); /* for summary tracks */
@@ -838,10 +829,9 @@ static void region_select_action_keys(
       sel_data.ked.f2 = rectf.xmax;
     }
 
-    /* Update values for scaled_rectf - which is used to compute the mapping in the callbacks
-     * NOTE: Since summary tracks need late-binding remapping, the callbacks may overwrite these
-     *       with the properly remapped ked.f1/f2 values, when needed
-     */
+    /* Update vals for scaled_rectf - which is used to compute the mapping in the cbs
+     * NOTE: Since summary tracks need late-binding remapping, the cbs may overwrite these
+     * w the properly remapped ked.f1/f2 values, when needed  */
     scaled_rectf.xmin = sel_data.ked.f1;
     scaled_rectf.xmax = sel_data.ked.f2;
     scaled_rectf.ymin = ymin;
@@ -849,105 +839,101 @@ static void region_select_action_keys(
 
     /* perform vertical suitability check (if applicable) */
     if ((mode == ACTKEYS_BORDERSEL_FRAMERANGE) || !((ymax < rectf.ymin) || (ymin > rectf.ymax))) {
-      region_select_elem(&sel_data, ale, false);
+      region_sel_elem(&sel_data, ale, false);
     }
   }
 
   /* cleanup */
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ----------------------------------- */
-
-static int actkeys_lassoselect_exec(bContext *C, wmOperator *op)
+static int actkeys_lassosel_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  KeyframeEdit_LassoData data_lasso;
+  KeyframeEditLassoData data_lasso;
   rcti rect;
   rctf rect_fl;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   data_lasso.rectf_view = &rect_fl;
-  data_lasso.mcoords = WM_gesture_lasso_path_to_array(C, op, &data_lasso.mcoords_len);
+  data_lasso.mcoords = win_gesture_lasso_path_to_array(C, op, &data_lasso.mcoords_len);
   if (data_lasso.mcoords == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  const eSelectOp sel_op = eSelectOp(RNA_enum_get(op->ptr, "mode"));
-  const int selectmode = (sel_op != SEL_OP_SUB) ? SELECT_ADD : SELECT_SUBTRACT;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    deselect_action_keys(&ac, 1, SELECT_SUBTRACT);
+  const eSelOp sel_op = eSelOp(api_enum_get(op->ptr, "mode"));
+  const int selmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEL_SUBTRACT;
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    desel_action_keys(&ac, 1, SEL_SUBTRACT);
   }
 
-  /* get settings from operator */
-  BLI_lasso_boundbox(&rect, data_lasso.mcoords, data_lasso.mcoords_len);
-  BLI_rctf_rcti_copy(&rect_fl, &rect);
+  /* get settings from op */
+  lib_lasso_boundbox(&rect, data_lasso.mcoords, data_lasso.mcoords_len);
+  lib_rctf_rcti_copy(&rect_fl, &rect);
 
-  /* apply box_select action */
-  region_select_action_keys(&ac, &rect_fl, BEZT_OK_CHANNEL_LASSO, selectmode, &data_lasso);
+  /* apply box_sel action */
+  rgn_sel_action_keys(&ac, &rect_fl, BEZT_OK_CHANNEL_LASSO, selmode, &data_lasso);
 
-  MEM_freeN((void *)data_lasso.mcoords);
+  mem_free((void *)data_lasso.mcoords);
 
-  /* send notifier that keyframe selection has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* send notifier that keyframe sel has changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SEL, nullptr);
+  if (anim_animdata_can_have_pen(eAnimCont_Types(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SEL, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_lasso(wmOperatorType *ot)
+void ACTION_OT_sel_lasso(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Lasso Select";
-  ot->description = "Select keyframe points using lasso selection";
-  ot->idname = "ACTION_OT_select_lasso";
+  /* ids */
+  ot->name = "Lasso Sel";
+  ot->description = "Sel keyframe points using lasso selection";
+  ot->idname = "ACTION_OT_sel_lasso";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_lasso_invoke;
-  ot->modal = WM_gesture_lasso_modal;
-  ot->exec = actkeys_lassoselect_exec;
-  ot->poll = ED_operator_action_active;
-  ot->cancel = WM_gesture_lasso_cancel;
+  /* api cbs */
+  ot->invoke = win_gesture_lasso_invoke;
+  ot->modal = win_gesture_lasso_modal;
+  ot->ex = actkeys_lassosel_ex;
+  ot->poll = ed_op_action_active;
+  ot->cancel = win_gesture_lasso_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_DEPENDS_ON_CURSOR;
-
-  /* properties */
-  WM_operator_properties_gesture_lasso(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  
+  /* props */
+  win_op_props_gesture_lasso(ot)
+  win_op_props_sel_op_simple(ot);
 }
 
-/* ------------------- */
-
-static int action_circle_select_exec(bContext *C, wmOperator *op)
+static int action_circle_sel_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
-  KeyframeEdit_CircleData data = {nullptr};
+  KeyframeEditCircleData data = {nullptr};
   rctf rect_fl;
 
-  float x = RNA_int_get(op->ptr, "x");
-  float y = RNA_int_get(op->ptr, "y");
-  float radius = RNA_int_get(op->ptr, "radius");
+  float x = api_int_get(op->ptr, "x");
+  float y = api_int_get(op->ptr, "y");
+  float radius = api_int_get(op->ptr, "radius");
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  const eSelectOp sel_op = ED_select_op_modal(
-      eSelectOp(RNA_enum_get(op->ptr, "mode")),
-      WM_gesture_is_modal_first(static_cast<wmGesture *>(op->customdata)));
-  const short selectmode = (sel_op != SEL_OP_SUB) ? SELECT_ADD : SELECT_SUBTRACT;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    deselect_action_keys(&ac, 0, SELECT_SUBTRACT);
+  const eSelOp sel_op = ed_sel_op_modal(
+      eSelOp(api_enum_get(op->ptr, "mode")),
+      win_gesture_is_modal_first(static_cast<WinGesture *>(op->customdata)));
+  const short selectmode = (sel_op != SEL_OP_SUB) ? SEL_ADD : SEL_SUBTRACT;
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    desel_action_keys(&ac, 0, SEL_SUBTRACT);
   }
 
   data.mval[0] = x;
@@ -960,55 +946,51 @@ static int action_circle_select_exec(bContext *C, wmOperator *op)
   rect_fl.ymin = y - radius;
   rect_fl.ymax = y + radius;
 
-  /* apply region select action */
-  region_select_action_keys(&ac, &rect_fl, BEZT_OK_CHANNEL_CIRCLE, selectmode, &data);
+  /* apply rgn sel action */
+  rgn_sel_action_keys(&ac, &rect_fl, BEZT_OK_CHANNEL_CIRCLE, selmode, &data);
 
   /* send notifier that keyframe selection has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SEL, nullptr);
+  if (anim_animdata_can_have_pen(eAnimCont_Types(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SEL, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_circle(wmOperatorType *ot)
+void ACTION_OT_sel_circle(WinOpType *ot)
 {
-  ot->name = "Circle Select";
-  ot->description = "Select keyframe points using circle selection";
-  ot->idname = "ACTION_OT_select_circle";
+  ot->name = "Circle Sel";
+  ot->description = "Sel keyframe points using circle sel";
+  ot->idname = "ACTION_OT_sel_circle";
 
-  ot->invoke = WM_gesture_circle_invoke;
-  ot->modal = WM_gesture_circle_modal;
-  ot->exec = action_circle_select_exec;
-  ot->poll = ED_operator_action_active;
-  ot->cancel = WM_gesture_circle_cancel;
-  ot->get_name = ED_select_circle_get_name;
+  ot->invoke = win_gesture_circle_invoke;
+  ot->modal = win_gesture_circle_modal;
+  ot->ex = action_circle_select_ex;
+  ot->poll = win_oper_action_active;
+  ot->cancel = win_gesture_circle_cancel;
+  ot->get_name = dd_sel_circle_get_name;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_gesture_circle(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  /* props */
+  win_op_props_gesture_circle(ot);
+  win_op_props_sel_op_simple(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Column Select Operator
+/* Column Sel Op
  *
- * This operator works in one of four ways:
- * - 1) select all keyframes in the same frame as a selected one  (KKEY)
- * - 2) select all keyframes in the same frame as the current frame marker (CTRL-KKEY)
- * - 3) select all keyframes in the same frame as a selected markers (SHIFT-KKEY)
- * - 4) select all keyframes that occur between selected markers (ALT-KKEY)
- * \{ */
+ * This op works in one of four ways:
+ * - 1) sel all keyframes in the same frame as a sel one  (KKEY)
+ * - 2) sel all keyframes in the same frame as the current frame marker (CTRL-KKEY)
+ * - 3) sel all keyframes in the same frame as a sel markers (SHIFT-KKEY)
+ * - 4) sel all keyframes that occur between sel markers (ALT-KKEY) */
 
-/* defines for column-select mode */
-static const EnumPropertyItem prop_column_select_types[] = {
-    {ACTKEYS_COLUMNSEL_KEYS, "KEYS", 0, "On Selected Keyframes", ""},
+/* defines for column-sel mode */
+static const EnumPropItem prop_column_sel_types[] = {
+    {ACTKEYS_COLUMNSEL_KEYS, "KEYS", 0, "On Sel Keyframes", ""},
     {ACTKEYS_COLUMNSEL_CFRA, "CFRA", 0, "On Current Frame", ""},
-    {ACTKEYS_COLUMNSEL_MARKERS_COLUMN, "MARKERS_COLUMN", 0, "On Selected Markers", ""},
+    {ACTKEYS_COLUMNSEL_MARKERS_COLUMN, "MARKERS_COLUMN", 0, "On Sel Markers", ""},
     {ACTKEYS_COLUMNSEL_MARKERS_BETWEEN,
      "MARKERS_BETWEEN",
      0,
@@ -1017,332 +999,316 @@ static const EnumPropertyItem prop_column_select_types[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/* ------------------- */
-
-/* Selects all visible keyframes between the specified markers */
-/* TODO(@ideasman42): this is almost an _exact_ duplicate of a function of the same name in
- * `graph_select.cc` should de-duplicate. */
-static void markers_selectkeys_between(bAnimContext *ac)
+/* Sels all visible keyframes between the specified markers */
+/* TODO: this is almost an _exact_ dup of a fn of the same name in
+ * `graph_sel.cc` should de-dup. */
+static void markers_selkeys_between(AnimCxt *ac)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
-  KeyframeEditFunc ok_cb, select_cb;
+  KeyframeEditFn ok_cb, sel_cb;
   KeyframeEditData ked = {{nullptr}};
   float min, max;
 
   /* get extreme markers */
-  ED_markers_get_minmax(ac->markers, 1, &min, &max);
+  ed_markers_get_minmax(ac->markers, 1, &min, &max);
   min -= 0.5f;
   max += 0.5f;
 
-  /* Get editing functions + data. */
-  ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAMERANGE);
-  select_cb = ANIM_editkeyframes_select(SELECT_ADD);
+  /* Get editing fns + data. */
+  ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAMERANGE);
+  select_cb = anim_editkeyframes_sel(SEL_ADD);
 
   ked.f1 = min;
   ked.f2 = max;
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
-
-  /* select keys in-between */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
+  
+  /* sel keys in-between */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->type) {
-      case ANIMTYPE_GREASE_PENCIL_LAYER:
-        blender::ed::greasepencil::select_frames_range(
-            static_cast<GreasePencilLayerTreeNode *>(ale->data)->wrap(), min, max, SELECT_ADD);
+      case ANIMTYPE_PEN_LAYER:
+        dune::ed::pen::sel_frames_range(
+            static_cast<PenLayerTreeNode *>(ale->data)->wrap(), min, max, SEL_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
       case ANIMTYPE_GPLAYER:
-        ED_gpencil_layer_frames_select_box(
-            static_cast<bGPDlayer *>(ale->data), min, max, SELECT_ADD);
+        ed_pen_layer_frames_sel_box(
+            static_cast<PenDataLayer *>(ale->data), min, max, SEL_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
 
       case ANIMTYPE_MASKLAYER:
-        ED_masklayer_frames_select_box(static_cast<MaskLayer *>(ale->data), min, max, SELECT_ADD);
+        ed_masklayer_frames_sel_box(static_cast<MaskLayer *>(ale->data), min, max, SEL_ADD);
         break;
 
       case ANIMTYPE_FCURVE: {
-        AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+        AnimData *adt = anim_nla_mapping_get(ac, ale);
         FCurve *fcurve = static_cast<FCurve *>(ale->key_data);
         if (adt) {
-          ANIM_nla_mapping_apply_fcurve(adt, fcurve, false, true);
-          ANIM_fcurve_keyframes_loop(&ked, fcurve, ok_cb, select_cb, nullptr);
-          ANIM_nla_mapping_apply_fcurve(adt, fcurve, true, true);
+          anim_nla_mapping_apply_fcurve(adt, fcurve, false, true);
+          anom_fcurve_keyframes_loop(&ked, fcurve, ok_cb, sel_cb, nullptr);
+          anim_nla_mapping_apply_fcurve(adt, fcurve, true, true);
         }
         else {
-          ANIM_fcurve_keyframes_loop(&ked, fcurve, ok_cb, select_cb, nullptr);
+          anim_fcurve_keyframes_loop(&ked, fcurve, ok_cb, sel_cb, nullptr);
         }
         break;
       }
 
       default:
-        BLI_assert_msg(false, "Keys cannot be selected into this animation type.");
+        lib_assert_msg(false, "Keys cannot be sel into this anim type.");
     }
   }
 
   /* Cleanup */
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* Selects all visible keyframes in the same frames as the specified elements */
-static void columnselect_action_keys(bAnimContext *ac, short mode)
+/* Sels all visible keyframes in the same frames as the specified elements */
+static void columnsel_action_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
   eAnimFilter_Flags filter;
 
   Scene *scene = ac->scene;
   CfraElem *ce;
-  KeyframeEditFunc select_cb, ok_cb;
+  KeyframeEditFn sel_cb, ok_cb;
   KeyframeEditData ked = {{nullptr}};
 
   /* build list of columns */
   switch (mode) {
-    case ACTKEYS_COLUMNSEL_KEYS: /* list of selected keys */
-      if (ac->datatype == ANIMCONT_GPENCIL) {
+    case ACTKEYS_COLUMNSEL_KEYS: /* list of sel keys */
+      if (ac->datatype == ANIMCONT_PEN) {
         filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE);
-        ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+        anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-        LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+        LIST_FOREACH (AnimListElem *, ale, &anim_data) {
           switch (ale->type) {
-            case ANIMTYPE_GPLAYER:
-              ED_gpencil_layer_make_cfra_list(
-                  static_cast<bGPDlayer *>(ale->data), &ked.list, true);
+            case ANIMTYPE_PLAYER:
+              ed_pen_layer_make_cfra_list(
+                  static_cast<PenDataLayer *>(ale->data), &ked.list, true);
               break;
-            case ANIMTYPE_GREASE_PENCIL_LAYER:
-              blender::ed::greasepencil ::create_keyframe_edit_data_selected_frames_list(
-                  &ked, static_cast<GreasePencilLayer *>(ale->data)->wrap());
+            case ANIMTYPE_PEN_LAYER:
+              dune::ed::pen ::create_keyframe_edit_data_sel_frames_list(
+                  &ked, static_cast<PenLayer *>(ale->data)->wrap());
               break;
             default:
               /* Invalid channel type. */
-              BLI_assert_unreachable();
+              lib_assert_unreachable();
           }
         }
       }
       else {
         filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE);
-        ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+        anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
 
-        LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+        LIST_FOREACH (AnimListElem *, ale, &anim_data) {
           if (ale->datatype == ALE_GPFRAME) {
-            ED_gpencil_layer_make_cfra_list(static_cast<bGPDlayer *>(ale->data), &ked.list, true);
+            ed_pen_layer_make_cfra_list(static_cast<PenDataLayer *>(ale->data), &ked.list, true);
           }
           else {
-            ANIM_fcurve_keyframes_loop(
+            anim_fcurve_keyframes_loop(
                 &ked, static_cast<FCurve *>(ale->key_data), nullptr, bezt_to_cfraelem, nullptr);
           }
         }
       }
-      ANIM_animdata_freelist(&anim_data);
+      anim_animdata_freelist(&anim_data);
       break;
 
     case ACTKEYS_COLUMNSEL_CFRA: /* current frame */
       /* make a single CfraElem for storing this */
-      ce = MEM_cnew<CfraElem>("cfraElem");
-      BLI_addtail(&ked.list, ce);
+      ce = mem_cnew<CfraElem>("cfraElem");
+      lib_addtail(&ked.list, ce);
 
       ce->cfra = float(scene->r.cfra);
       break;
 
-    case ACTKEYS_COLUMNSEL_MARKERS_COLUMN: /* list of selected markers */
-      ED_markers_make_cfra_list(ac->markers, &ked.list, SELECT);
+    case ACTKEYS_COLUMNSEL_MARKERS_COLUMN: /* list of sel markers */
+      ed_markers_make_cfra_list(ac->markers, &ked.list, SEL);
       break;
 
     default: /* invalid option */
       return;
   }
 
-  /* set up BezTriple edit callbacks */
-  select_cb = ANIM_editkeyframes_select(SELECT_ADD);
-  ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAME);
+  /* set up BezTriple edit cbs */
+  sel_cb = anim_editkeyframes_sel(SEL_ADD);
+  ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAME);
 
-  /* loop through all of the keys and select additional keyframes
-   * based on the keys found to be selected above
-   */
+  /* loop through all of the keys and sel additional keyframes
+   * based on the keys found to be sel above */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    AnimData *adt = anim_nla_mapping_get(ac, ale);
 
     /* loop over cfraelems (stored in the KeyframeEditData->list)
-     * - we need to do this here, as we can apply fewer NLA-mapping conversions
-     */
-    LISTBASE_FOREACH (CfraElem *, ce, &ked.list) {
+     * - we need to do this here, as we can apply fewer NLA-mapping conversions */
+    LIST_FOREACH (CfraElem *, ce, &ked.list) {
       /* set frame for validation callback to refer to */
       if (adt) {
-        ked.f1 = BKE_nla_tweakedit_remap(adt, ce->cfra, NLATIME_CONVERT_UNMAP);
+        ked.f1 = dune_nla_tweakedit_remap(adt, ce->cfra, NLATIME_CONVERT_UNMAP);
       }
       else {
         ked.f1 = ce->cfra;
       }
 
-      /* select elements with frame number matching cfraelem */
+      /* sel elements with frame number matching cfraelem */
       if (ale->type == ANIMTYPE_GPLAYER) {
-        ED_gpencil_select_frame(static_cast<bGPDlayer *>(ale->data), ce->cfra, SELECT_ADD);
+        es_pen_sel_frame(static_cast<PenDataLayer *>(ale->data), ce->cfra, SEL_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
       }
-      else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-        blender::ed::greasepencil::select_frame_at(
-            static_cast<GreasePencilLayer *>(ale->data)->wrap(), ce->cfra, SELECT_ADD);
+      else if (ale->type == ANIMTYPE_PEN_LAYER) {
+        dune::ed::pen::sel_frame_at(
+            static_cast<enLayer *>(ale->data)->wrap(), ce->cfra, SELECT_ADD);
         ale->update |= ANIM_UPDATE_DEPS;
       }
       else if (ale->type == ANIMTYPE_MASKLAYER) {
-        ED_mask_select_frame(static_cast<MaskLayer *>(ale->data), ce->cfra, SELECT_ADD);
+        ed_mask_sel_frame(static_cast<MaskLayer *>(ale->data), ce->cfra, SEL_ADD);
       }
       else {
-        ANIM_fcurve_keyframes_loop(
-            &ked, static_cast<FCurve *>(ale->key_data), ok_cb, select_cb, nullptr);
+        anim_fcurve_keyframes_loop(
+            &ked, static_cast<FCurve *>(ale->key_data), ok_cb, sel_cb, nullptr);
       }
     }
   }
 
   /* free elements */
-  BLI_freelistN(&ked.list);
+  lib_freelist(&ked.list);
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int actkeys_columnselect_exec(bContext *C, wmOperator *op)
+static int actkeys_columnsel_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   short mode;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* action to take depends on the mode */
-  mode = RNA_enum_get(op->ptr, "mode");
+  mode = anim_enum_get(op->ptr, "mode");
 
   if (mode == ACTKEYS_COLUMNSEL_MARKERS_BETWEEN) {
-    markers_selectkeys_between(&ac);
+    markers_selkeys_between(&ac);
   }
   else {
-    columnselect_action_keys(&ac, mode);
+    columnsel_action_keys(&ac, mode);
   }
 
-  /* set notifier that keyframe selection have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sel have changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  if (anim_animdata_can_have_pen(eAnimContTypes(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_column(wmOperatorType *ot)
+void ACTION_OT_sel_column(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Select All";
-  ot->idname = "ACTION_OT_select_column";
-  ot->description = "Select all keyframes on the specified frame(s)";
+  /* ids */
+  ot->name = "Sel All";
+  ot->idname = "ACTION_OT_sel_column";
+  ot->description = "Sel all keyframes on the specified frame(s)";
 
-  /* api callbacks */
-  ot->exec = actkeys_columnselect_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_columnsel_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  ot->prop = RNA_def_enum(ot->srna, "mode", prop_column_select_types, 0, "Mode", "");
-  RNA_def_property_flag(ot->prop, PROP_HIDDEN);
-}
+  ot->prop = api_def_enum(ot->sapi, "mode", prop_column_sel_types, 0, "Mode", "");
+  api_def_prop_flag(ot->prop, PROP_HIDDEN);
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Select Linked Operator
- * \{ */
-
-static int actkeys_select_linked_exec(bContext *C, wmOperator * /*op*/)
+/* Sel Linked Op */
+static int actkeys_sel_linked_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
+  
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
-
-  KeyframeEditFunc ok_cb = ANIM_editkeyframes_ok(BEZT_OK_SELECTED);
-  KeyframeEditFunc sel_cb = ANIM_editkeyframes_select(SELECT_ADD);
+  KeyframeEditFn ok_cb = anim_editkeyframes_ok(BEZT_OK_SELECTED);
+  KeyframeEditFn sel_cb = anim_editkeyframes_sel(SEL_ADD);
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* loop through all of the keys and select additional keyframes based on these */
+  /* loop through all of the keys and sel additional keyframes based on these */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FCURVESONLY |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, eAnimCont_Types(ac.datatype));
+  anim_animdata_filter(&ac, &anim_data, filter, ac.data, eAnimContTypes(ac.datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     FCurve *fcu = (FCurve *)ale->key_data;
 
     /* check if anything selected? */
-    if (ANIM_fcurve_keyframes_loop(nullptr, fcu, nullptr, ok_cb, nullptr)) {
+    if (anim_fcurve_keyframes_loop(nullptr, fcu, nullptr, ok_cb, nullptr)) {
       /* select every keyframe in this curve then */
-      ANIM_fcurve_keyframes_loop(nullptr, fcu, nullptr, sel_cb, nullptr);
+      anim_fcurve_keyframes_loop(nullptr, fcu, nullptr, sel_cb, nullptr);
     }
   }
 
   /* Cleanup */
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_freelist(&anim_data);
 
-  /* set notifier that keyframe selection has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sel has changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  if (anim_animdata_can_have_pen(eAnimContTypes(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_linked(wmOperatorType *ot)
+void ACTION_OT_sel_linked(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Select Linked";
-  ot->idname = "ACTION_OT_select_linked";
-  ot->description = "Select keyframes occurring in the same F-Curves as selected ones";
+  /* ids */
+  ot->name = "Sel Linked";
+  ot->idname = "ACTION_OT_sel_linked";
+  ot->description = "Sel keyframes occurring in the same F-Curves as selected ones";
 
-  /* api callbacks */
-  ot->exec = actkeys_select_linked_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->exec = actkeys_sel_linked_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select More/Less Operators
- * \{ */
-
-/* Common code to perform selection */
-static void select_moreless_action_keys(bAnimContext *ac, short mode)
+/* Sel More/Less Ops */
+/* Common code to perform sel */
+static void sel_moreless_action_keys(AnimCxt *ac, short mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
   KeyframeEditData ked = {{nullptr}};
-  KeyframeEditFunc build_cb;
+  KeyframeEditFn build_cb;
 
   /* init selmap building data */
-  build_cb = ANIM_editkeyframes_buildselmap(mode);
+  build_cb = anim_editkeyframes_buildselmap(mode);
 
-  /* loop through all of the keys and select additional keyframes based on these */
+  /* loop through all of the keys and sel additional keyframes based on these */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FCURVESONLY |
             ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LISTB_FOREACH (AnimListElem *, ale, &anim_data) {
 
     /* TODO: other types. */
     if (ale->datatype != ALE_FCURVE) {
@@ -1355,136 +1321,124 @@ static void select_moreless_action_keys(bAnimContext *ac, short mode)
       continue;
     }
 
-    /* build up map of whether F-Curve's keyframes should be selected or not */
-    ked.data = MEM_callocN(fcu->totvert, "selmap actEdit more");
-    ANIM_fcurve_keyframes_loop(&ked, fcu, nullptr, build_cb, nullptr);
+    /* build up map of whether F-Curve's keyframes should be sel or not */
+    ked.data = mem_calloc(fcu->totvert, "selmap actEdit more");
+    anim_fcurve_keyframes_loop(&ked, fcu, nullptr, build_cb, nullptr);
 
-    /* based on this map, adjust the selection status of the keyframes */
-    ANIM_fcurve_keyframes_loop(&ked, fcu, nullptr, bezt_selmap_flush, nullptr);
+    /* based on this map, adjust the sel status of the keyframes */
+    anim_fcurve_keyframes_loop(&ked, fcu, nullptr, bezt_selmap_flush, nullptr);
 
     /* free the selmap used here */
-    MEM_freeN(ked.data);
+    mem_free(ked.data);
     ked.data = nullptr;
   }
 
   /* Cleanup */
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ----------------- */
-
-static int actkeys_select_more_exec(bContext *C, wmOperator * /*op*/)
+static int actkeys_sel_more_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* perform select changes */
-  select_moreless_action_keys(&ac, SELMAP_MORE);
+  /* perform sel changes */
+  sel_moreless_action_keys(&ac, SELMAP_MORE);
 
-  /* set notifier that keyframe selection has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sel has changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  if (anim_animdata_can_have_pen(eAnimContTypes(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_more(wmOperatorType *ot)
+void ACTION_OT_sel_more(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Select More";
-  ot->idname = "ACTION_OT_select_more";
-  ot->description = "Select keyframes beside already selected ones";
+  ot->idname = "ACTION_OT_sel_more";
+  ot->description = "Sel keyframes beside already selected ones";
 
-  /* api callbacks */
-  ot->exec = actkeys_select_more_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_sel_more_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/* ----------------- */
-
-static int actkeys_select_less_exec(bContext *C, wmOperator * /*op*/)
+static int actkeys_sel_less_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* perform select changes */
   select_moreless_action_keys(&ac, SELMAP_LESS);
 
-  /* set notifier that keyframe selection has changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  if (ANIM_animdata_can_have_greasepencil(eAnimCont_Types(ac.datatype))) {
-    WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sele has changed */
+  win_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  if (anim_animdata_can_have_pen(eAnimContTypes(ac.datatype))) {
+    win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
   }
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ACTION_OT_select_less(wmOperatorType *ot)
+void ACTION_OT_sel_less(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Select Less";
-  ot->idname = "ACTION_OT_select_less";
-  ot->description = "Deselect keyframes on ends of selection islands";
+  /* ids */
+  ot->name = "Sel Less";
+  ot->idname = "ACTION_OT_sel_less";
+  ot->description = "Desel keyframes on ends of selection islands";
 
-  /* api callbacks */
-  ot->exec = actkeys_select_less_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->ex = actkeys_sel_less_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
+  
+/* Sel Left/Right Op
+ * Sel keyframes left/right of the current frame indicators */
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Select Left/Right Operator
- *
- * Select keyframes left/right of the current frame indicator.
- * \{ */
-
-/* defines for left-right select tool */
-static const EnumPropertyItem prop_actkeys_leftright_select_types[] = {
-    {ACTKEYS_LRSEL_TEST, "CHECK", 0, "Check if Select Left or Right", ""},
+/* defines for left-right sel tool */
+static const EnumPropItem prop_actkeys_leftright_sel_types[] = {
+    {ACTKEYS_LRSEL_TEST, "CHECK", 0, "Check if Sel Left or Right", ""},
     {ACTKEYS_LRSEL_LEFT, "LEFT", 0, "Before Current Frame", ""},
     {ACTKEYS_LRSEL_RIGHT, "RIGHT", 0, "After Current Frame", ""},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/* --------------------------------- */
-
-static void actkeys_select_leftright(bAnimContext *ac, short leftright, short select_mode)
+static void actkeys_sel_leftright(AnimCxt *ac, short leftright, short sel_mode)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
-  KeyframeEditFunc ok_cb, select_cb;
+  KeyframeEditFn ok_cb, sel_cb;
   KeyframeEditData ked = {{nullptr}};
   Scene *scene = ac->scene;
 
-  /* if select mode is replace, deselect all keyframes (and channels) first */
-  if (select_mode == SELECT_REPLACE) {
-    select_mode = SELECT_ADD;
+  /* if sel mode is replace, desel all keyframes (and channels) first */
+  if (sel_mode == SEL_REPLACE) {
+    select_mode = SEL_ADD;
 
-    /* - deselect all other keyframes, so that just the newly selected remain
-     * - channels aren't deselected, since we don't re-select any as a consequence
-     */
-    deselect_action_keys(ac, 0, SELECT_SUBTRACT);
+    /* - desel all other keyframes, so that just the newly sel remain
+     * - channels aren't deselected, since we don't re-select any as a consequence */
+    desel_action_keys(ac, 0, SEL_SUBTRACT);
   }
 
-  /* set callbacks and editing data */
-  ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAMERANGE);
-  select_cb = ANIM_editkeyframes_select(select_mode);
+  /* set cbs and editing data */
+  ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAMERANGE);
+  select_cb = anim_editkeyframes_sel(sel_mode);
 
   if (leftright == ACTKEYS_LRSEL_LEFT) {
     ked.f1 = MINAFRAMEF;
@@ -1497,253 +1451,246 @@ static void actkeys_select_leftright(bAnimContext *ac, short leftright, short se
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  /* select keys */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  /* sel keys */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     switch (ale->type) {
-      case ANIMTYPE_GREASE_PENCIL_LAYER:
-        blender::ed::greasepencil::select_frames_range(
-            static_cast<GreasePencilLayerTreeNode *>(ale->data)->wrap(),
+      case ANIMTYPE_PEN_LAYER:
+        dune::ed::pen::sel_frames_range;
+            static_cast<PenLayerTreeNode *>(ale->data)->wrap(),
             ked.f1,
             ked.f2,
-            select_mode);
+            sel_mode);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
-      case ANIMTYPE_GPLAYER:
-        ED_gpencil_layer_frames_select_box(
-            static_cast<bGPDlayer *>(ale->data), ked.f1, ked.f2, select_mode);
+      case ANIMTYPE_PLAYER:
+            ed_pen_layer_frames_sel_box(
+            static_cast<PenDataLayer *>(ale->data), ked.f1, ked.f2, sel_mode);
         ale->update |= ANIM_UPDATE_DEPS;
         break;
 
       case ANIMTYPE_MASKLAYER:
-        ED_masklayer_frames_select_box(
-            static_cast<MaskLayer *>(ale->data), ked.f1, ked.f2, select_mode);
+        ed_masklayer_frames_sel_box(
+            static_cast<MaskLayer *>(ale->data), ked.f1, ked.f2, sel_mode);
         break;
 
       case ANIMTYPE_FCURVE: {
-        AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+        AnimData *adt = anim_nla_mapping_get(ac, ale);
         FCurve *fcurve = static_cast<FCurve *>(ale->key_data);
         if (adt) {
-          ANIM_nla_mapping_apply_fcurve(adt, fcurve, false, true);
-          ANIM_fcurve_keyframes_loop(&ked, fcurve, ok_cb, select_cb, nullptr);
-          ANIM_nla_mapping_apply_fcurve(adt, fcurve, true, true);
+          anim_nla_mapping_apply_fcurve(adt, fcurve, false, true);
+          anim_fcurve_keyframes_loop(&ked, fcurve, ok_cb, sel_cb, nullptr);
+          anim_nla_mapping_apply_fcurve(adt, fcurve, true, true);
         }
         else {
-          ANIM_fcurve_keyframes_loop(&ked, fcurve, ok_cb, select_cb, nullptr);
+          anim_fcurve_keyframes_loop(&ked, fcurve, ok_cb, sel_cb, nullptr);
         }
         break;
       }
 
       default:
-        BLI_assert_msg(false, "Keys cannot be selected into this animation type.");
+        lib_assert_msg(false, "Keys cannot be sel into this anim type.");
     }
   }
 
   /* Sync marker support */
-  if (select_mode == SELECT_ADD) {
+  if (sel_mode == SEL_ADD) {
     SpaceAction *saction = (SpaceAction *)ac->sl;
 
     if ((saction) && (saction->flag & SACTION_MARKERS_MOVE)) {
-      ListBase *markers = ED_animcontext_get_markers(ac);
-      LISTBASE_FOREACH (TimeMarker *, marker, markers) {
+      List *markers = ed_animcxt_get_markers(ac);
+      LIST_FOREACH (TimeMarker *, marker, markers) {
         if (((leftright == ACTKEYS_LRSEL_LEFT) && (marker->frame < scene->r.cfra)) ||
             ((leftright == ACTKEYS_LRSEL_RIGHT) && (marker->frame >= scene->r.cfra)))
         {
-          marker->flag |= SELECT;
+          marker->flag |= SEL;
         }
         else {
-          marker->flag &= ~SELECT;
+          marker->flag &= ~SEL;
         }
       }
     }
   }
 
   /* Cleanup */
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ----------------- */
-
-static int actkeys_select_leftright_exec(bContext *C, wmOperator *op)
+static int actkeys_sel_leftright_ex(Cxt *C, WinOp *op)
 {
-  bAnimContext ac;
-  short leftright = RNA_enum_get(op->ptr, "mode");
+  AnimCxt ac;
+  short leftright = api_enum_get(op->ptr, "mode");
   short selectmode;
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* select mode is either replace (deselect all, then add) or add/extend */
-  if (RNA_boolean_get(op->ptr, "extend")) {
-    selectmode = SELECT_INVERT;
+  /* select mode is either replace (desel all, then add) or add/extend */
+  if (api_bool_get(op->ptr, "extend")) {
+    selmode = SEL_INVERT;
   }
   else {
-    selectmode = SELECT_REPLACE;
+    selmode = SEL_REPLACE;
   }
 
   /* if "test" mode is set, we don't have any info to set this with */
   if (leftright == ACTKEYS_LRSEL_TEST) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* do the selecting now */
-  actkeys_select_leftright(&ac, leftright, selectmode);
+  /* do the sel now */
+  actkeys_sel_leftright(&ac, leftright, selectmode);
 
-  /* set notifier that keyframe selection (and channels too) have changed */
-  WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_SELECTED, nullptr);
-  WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_SELECTED, nullptr);
+  /* set notifier that keyframe sel (and channels too) have changed */
+  won_ev_add_notifier(C, NC_ANIM | ND_KEYFRAME | NA_SELECTED, nullptr);
+  win_ev_add_notifier(C, NC_ANIM | ND_ANIMCHAN | NA_SELECTED, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int actkeys_select_leftright_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int actkeys_sel_leftright_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  bAnimContext ac;
-  short leftright = RNA_enum_get(op->ptr, "mode");
+  AnimCxt ac;
+  short leftright = api_enum_get(op->ptr, "mode");
 
   /* get editor data */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* handle mode-based testing */
   if (leftright == ACTKEYS_LRSEL_TEST) {
     Scene *scene = ac.scene;
-    ARegion *region = ac.region;
-    View2D *v2d = &region->v2d;
+    ARgn *rgn = ac.rgn;
+    View2D *v2d = &rgn->v2d;
     float x;
 
     /* determine which side of the current frame mouse is on */
-    x = UI_view2d_region_to_view_x(v2d, event->mval[0]);
+    x = ui_view2d_rgn_to_view_x(v2d, ev->mval[0]);
     if (x < scene->r.cfra) {
-      RNA_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_LEFT);
+      api_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_LEFT);
     }
     else {
-      RNA_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_RIGHT);
+      api_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_RIGHT);
     }
   }
 
-  /* perform selection */
-  return actkeys_select_leftright_exec(C, op);
+  /* perform sel */
+  return actkeys_sel_leftright_ex(C, op);
 }
 
-void ACTION_OT_select_leftright(wmOperatorType *ot)
+void ACTION_OT_sel_leftright(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Select Left/Right";
-  ot->idname = "ACTION_OT_select_leftright";
+  /* ids */
+  ot->name = "Sel Left/Right";
+  ot->idname = "ACTION_OT_sel_leftright";
   ot->description = "Select keyframes to the left or the right of the current frame";
 
-  /* api callbacks */
-  ot->invoke = actkeys_select_leftright_invoke;
-  ot->exec = actkeys_select_leftright_exec;
-  ot->poll = ED_operator_action_active;
+  /* api cbs */
+  ot->invoke = actkeys_sel_leftright_invoke;
+  ot->ex = actkeys_sel_leftright_ex;
+  ot->poll = ed_op_action_active;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(
-      ot->srna, "mode", prop_actkeys_leftright_select_types, ACTKEYS_LRSEL_TEST, "Mode", "");
-  RNA_def_property_flag(ot->prop, PROP_SKIP_SAVE);
+  /* props */
+  ot->prop = api_def_enum(
+      ot->sapi, "mode", prop_actkeys_leftright_sel_types, ACTKEYS_LRSEL_TEST, "Mode", "");
+  api_def_prop_flag(ot->prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_boolean(ot->srna, "extend", false, "Extend Select", "");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "extend", false, "Extend Sel", "");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Mouse-Click Select Operator
- *
- * This operator works in one of three ways:
- * - 1) keyframe under mouse - no special modifiers
- * - 2) all keyframes on the same side of current frame indicator as mouse - ALT modifier
- * - 3) column select all keyframes in frame under mouse - CTRL modifier
+/* Mouse-Click Sel Op
+ * This op works in one of three ways:
+ * - 1) keyframe under mouse - no special mods
+ * - 2) all keyframes on the same side of current frame indicator as mouse - ALT mod
+ * - 3) column sel all keyframes in frame under mouse - CTRL modifier
  * - 4) all keyframes in channel under mouse - CTRL+ALT modifiers
  *
- * In addition to these basic options, the SHIFT modifier can be used to toggle the
- * selection mode between replacing the selection (without) and inverting the selection (with).
- * \{ */
+ * In addition to these basic options, the SHIFT mod can be used to toggle the
+ * sel mode between replacing the sel (without) and inverting the sel (with) */
 
-/* option 1) select keyframe directly under mouse */
-static void actkeys_mselect_single(bAnimContext *ac,
-                                   bAnimListElem *ale,
-                                   short select_mode,
-                                   float selx)
+/* option 1) sel keyframe directly under mouse */
+static void actkeys_msel_single(AnimCxt *ac,
+                                AnimListElem *ale,
+                                short sel_mode,
+                                float selx)
 {
   KeyframeEditData ked = {{nullptr}};
-  KeyframeEditFunc select_cb, ok_cb;
+  KeyframeEditFn sel_cb, ok_cb;
 
-  /* get functions for selecting keyframes */
-  select_cb = ANIM_editkeyframes_select(select_mode);
-  ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAME);
+  /* get fns for sel keyframes */
+  select_cb = anim_editkeyframes_sel(sel_mode);
+  ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAME);
   ked.f1 = selx;
   ked.iterflags |= KED_F1_NLA_UNMAP;
 
-  /* select the nominated keyframe on the given frame */
+  /* sel the nominated keyframe on the given frame */
   if (ale->type == ANIMTYPE_GPLAYER) {
-    ED_gpencil_select_frame(static_cast<bGPDlayer *>(ale->data), selx, select_mode);
+    ed_pen_sel_frame(static_cast<bGPDlayer *>(ale->data), selx, select_mode);
     ale->update |= ANIM_UPDATE_DEPS;
   }
-  else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-    blender::ed::greasepencil::select_frame_at(
-        static_cast<GreasePencilLayer *>(ale->data)->wrap(), selx, select_mode);
+  else if (ale->type == ANIMTYPE_PEN_LAYER) {
+    dune::ed::pen::sel_frame_at(
+        static_cast<PenLayer *>(ale->data)->wrap(), selx, select_mode);
     ale->update |= ANIM_UPDATE_DEPS;
   }
-  else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER_GROUP) {
-    blender::ed::greasepencil::select_frames_at(
-        static_cast<GreasePencilLayerTreeGroup *>(ale->data)->wrap(), selx, select_mode);
+  else if (ale->type == ANIMTYPE_PEN_LAYER_GROUP) {
+    dune::ed::en::sel_frames_at(
+        static_cast<PenLayerTreeGroup *>(ale->data)->wrap(), selx, select_mode);
   }
-  else if (ale->type == ANIMTYPE_GREASE_PENCIL_DATABLOCK) {
-    ListBase anim_data = {nullptr, nullptr};
-    eAnimFilter_Flags filter;
+  else if (ale->type == ANIMTYPE_PEN_DATABLOCK) {
+    List anim_data = {nullptr, nullptr};
+    eAnimFilterFlags filter;
 
     filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-    ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+    anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
     /* Loop over all keys that are represented by this data-block key. */
-    LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
-      if ((ale2->type != ANIMTYPE_GREASE_PENCIL_LAYER) || (ale2->id != ale->data)) {
+    LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
+      if ((ale2->type != ANIMTYPE_PEN_LAYER) || (ale2->id != ale->data)) {
         continue;
       }
-      blender::ed::greasepencil::select_frame_at(
-          static_cast<GreasePencilLayer *>(ale2->data)->wrap(), selx, select_mode);
+      dune::ed::pen::sel_frame_at(
+          static_cast<PenLayer *>(ale2->data)->wrap(), selx, select_mode);
       ale2->update |= ANIM_UPDATE_DEPS;
     }
   }
   else if (ale->type == ANIMTYPE_MASKLAYER) {
-    ED_mask_select_frame(static_cast<MaskLayer *>(ale->data), selx, select_mode);
+    ed_mask_sel_frame(static_cast<MaskLayer *>(ale->data), selx, select_mode);
   }
   else {
     if (ale->type == ANIMTYPE_SUMMARY && ale->datatype == ALE_ALL) {
-      ListBase anim_data = {nullptr, nullptr};
-      eAnimFilter_Flags filter;
+      List anim_data = {nullptr, nullptr};
+      eAnimFilterFlags filter;
 
       filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-      ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+      anim_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
       /* Loop over all keys that are represented by this summary key. */
-      LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
+      LIST_FOREACH (bAnimListElem *, ale2, &anim_data) {
         switch (ale2->type) {
-          case ANIMTYPE_GPLAYER:
-            ED_gpencil_select_frame(static_cast<bGPDlayer *>(ale2->data), selx, select_mode);
+          case ANIMTYPE_PLAYER:
+            ed_pen_sel_frame(static_cast<PenDataLayer *>(ale2->data), selx, sel_mode);
             ale2->update |= ANIM_UPDATE_DEPS;
             break;
 
           case ANIMTYPE_MASKLAYER:
-            ED_mask_select_frame(static_cast<MaskLayer *>(ale2->data), selx, select_mode);
+            ed_mask_sel_frame(static_cast<MaskLayer *>(ale2->data), selx, sel_mode);
             break;
 
-          case ANIMTYPE_GREASE_PENCIL_LAYER:
-            blender::ed::greasepencil::select_frame_at(
-                static_cast<GreasePencilLayer *>(ale2->data)->wrap(), selx, select_mode);
+          case ANIMTYPE_PEN_LAYER:
+            dune::ed::pen::sel_frame_at(
+                static_cast<PenLayer *>(ale2->data)->wrap(), selx, sel_mode);
             ale2->update |= ANIM_UPDATE_DEPS;
             break;
 
@@ -1752,12 +1699,12 @@ static void actkeys_mselect_single(bAnimContext *ac,
         }
       }
 
-      ANIM_animdata_update(ac, &anim_data);
-      ANIM_animdata_freelist(&anim_data);
+      anim_animdata_update(ac, &anim_data);
+      anim_animdata_freelist(&anim_data);
     }
 
-    if (!ELEM(ac->datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-      ANIM_animchannel_keyframes_loop(&ked, ac->ads, ale, ok_cb, select_cb, nullptr);
+    if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+      anim_animchannel_keyframes_loop(&ked, ac->ads, ale, ok_cb, sel_cb, nullptr);
     }
   }
 }
