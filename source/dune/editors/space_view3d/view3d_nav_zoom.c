@@ -18,13 +18,11 @@
 #include "view3d_nav.h" /* own include */
 
 /* View Zoom Op */
-
 /* viewdolly_modal_keymap has an exact copy of this, apply fixes to both. */
 void viewzoom_modal_keymap(KeyConfig *keyconf)
 {
   static const EnumPropItem modal_items[] = {
       {VIEW_MODAL_CONFIRM, "CONFIRM", 0, "Confirm", ""},
-
       {VIEWROT_MODAL_SWITCH_ROTATE, "SWITCH_TO_ROTATE", 0, "Switch to Rotate"},
       {VIEWROT_MODAL_SWITCH_MOVE, "SWITCH_TO_MOVE", 0, "Switch to Move"},
 
@@ -51,8 +49,8 @@ void viewzoom_modal_keymap(KeyConfig *keyconf)
   win_modalkeymap_assign(keymap, "VIEW3D_OT_zoom");
 }
 
-/* param zoom_xy: Optionally zoom to window location
- * (coords compatible w wmEvent.xy). Use when not NULL. */
+/* param zoom_xy: Optionally zoom to win location
+ * (coords compatible w WinEv.xy). Use when not NULL. */
 static void view_zoom_to_win_xy_camera(Scene *scene,
                                        Graph *graph,
                                        View3D *v3d,
@@ -291,16 +289,16 @@ static void viewzoom_apply_3d(ViewOpsData *vod,
 
   ed_view3d_dist_range_get(vod->v3d, dist_range);
 
-  zfac = viewzoom_scale_value_offset(&vod->rgn->winrct,
-                                     viewzoom,
-                                     zoom_invert,
-                                     false,
-                                     xy,
-                                     vod->init.ev_xy,
-                                     vod->init.ev_xy_offset,
-                                     vod->rv3d->dist,
-                                     vod->init.dist,
-                                     &vod->prev.time);
+  zfac = viewzoom_scale_val_offset(&vod->rgn->winrct,
+                                   viewzoom,
+                                   zoom_invert,
+                                   false,
+                                   xy,
+                                   vod->init.ev_xy,
+                                   vod->init.ev_xy_offset,
+                                   vod->rv3d->dist,
+                                   vod->init.dist,
+                                   &vod->prev.time);
 
   if (zfac != 1.0f) {
     const float zfac_min = dist_range[0] / vod->rv3d->dist;
@@ -340,7 +338,7 @@ static void viewzoom_apply(ViewOpsData *vod,
 static int viewzoom_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewOpsData *vod = op->customdata;
-  short event_code = VIEW_PASS;
+  short ev_code = VIEW_PASS;
   bool use_autokey = false;
   int ret = OP_RUNNING_MODAL;
 
@@ -374,11 +372,11 @@ static int viewzoom_modal(Cxt *C, WinOp *op, const WinEv *ev)
   if (ev_code == VIEW_APPLY) {
     const bool use_cursor_init = api_bool_get(op->ptr, "use_cursor_init");
     viewzoom_apply(vod,
-                   event->xy,
+                   ev->xy,
                    (eViewZoom_Style)U.viewzoom,
                    (U.uiflag & USER_ZOOM_INVERT) != 0,
                    (use_cursor_init && (U.uiflag & USER_ZOOM_TO_MOUSEPOS)));
-    if (ed_screen_anim_playing(cxt_wm(C))) {
+    if (ed_screen_anim_playing(cxt_wm(AC))) {
       use_autokey = true;
     }
   }
