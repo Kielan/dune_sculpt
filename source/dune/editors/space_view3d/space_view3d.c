@@ -29,12 +29,12 @@
 #include "dune_main.h"
 #include "dune_mball.h"
 #include "dune_mesh.h"
-#include "dune_object.h"
+#include "dune_ob.h"
 #include "dune_scene.h"
 #include "dune_screen.h"
 #include "dune_workspace.h"
 
-#include "ed_object.h"
+#include "ed_ob.h"
 #include "ed_outliner.h"
 #include "ed_render.h"
 #include "ed_screen.h"
@@ -46,7 +46,7 @@
 #include "draw_engine.h"
 
 #include "win_api.h"
-#include "win_message.h"
+#include "win_msg.h"
 #include "win_toolsystem.h"
 #include "win_types.h"
 
@@ -66,7 +66,6 @@
 #include "view3d_nav.h"
 
 /* manage rgns */
-
 RgnView3D *ed_view3d_cxt_rv3d(Cxt *C)
 {
   RgnView3D *rv3d = cxt_wm_rgn_view3d(C);
@@ -161,7 +160,7 @@ void ed_view3d_init_mats_rv3d(const struct Obj *ob, struct RgnView3D *rv3d)
   ed_view3d_clipping_local(rv3d, ob->obmat);
 }
 
-void ed_view3d_init_mats_rv3d_gl(const struct Obj *ob, struct RgnView3D *rv3d)
+void ed_view3d_init_mats_rv3d_gl(const struct Ob *ob, struct RgnView3D *rv3d)
 {
   ed_view3d_init_mats_rv3d(ob, rv3d);
 
@@ -185,7 +184,7 @@ void ee_view3d_check_mats_rv3d(struct RgnView3D *rv3d)
 }
 #endif
 
-void ed_view3d_stop_render_preview(WinManager *wm, ARgn *rgn)
+void ed_view3d_stop_render_preview(WinMngr *wm, ARgn *rgn)
 {
   RgnView3D *rv3d = rgn->rgndata;
 
@@ -231,14 +230,14 @@ static SpaceLink *view3d_create(const ScrArea *UNUSED(area), const Scene *scene)
   /* header */
   region = mem_calloc(sizeof(ARgn), "header for view3d");
 
-  lib_addtail(&v3d->regionbase, rgn);
+  lib_addtail(&v3d->rgnbase, rgn);
   region->rgntype = RGN_TYPE_HEADER;
   rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
   /* tool header */
   rgn = mem_calloc(sizeof(ARgn), "tool header for view3d");
 
-  lib_addtail(&v3d->regionbase, rgn);
+  lib_addtail(&v3d->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_TOOL_HEADER;
   rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
   rgn->flag = RGN_FLAG_HIDDEN | RGN_FLAG_HIDDEN_BY_USER;
@@ -259,8 +258,8 @@ static SpaceLink *view3d_create(const ScrArea *UNUSED(area), const Scene *scene)
   rgn->alignment = RGN_ALIGN_RIGHT;
   rgn->flag = RGN_FLAG_HIDDEN;
 
-  /* main region */
-  rgn = mem_calloc(sizeof(ARgn), "main rhn for view3d");
+  /* main rgn */
+  rgn = mem_calloc(sizeof(ARgn), "main rgn for view3d");
 
   lib_addtail(&v3d->rgnbase, rgn);
   rgn->rgntype = RGN_TYPE_WIN;
@@ -360,7 +359,7 @@ static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
   keymap = win_keymap_ensure(wm->defaultconf, "Vertex Paint", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  /* pose is not modal, operator poll checks for this */
+  /* pose is not modal, op poll checks for this */
   keymap = win_keymap_ensure(wm->defaultconf, "Pose", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
@@ -370,7 +369,7 @@ static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
   keymap = win_keymap_ensure(wm->defaultconf, "Curve", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = win_keymap_ensure(wm->defaultconf, "Image Paint", 0, 0);
+  keymap = win_keymap_ensure(wm->defaultconf, "Img Paint", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   keymap = win_keymap_ensure(wm->defaultconf, "Sculpt", 0, 0);
@@ -398,7 +397,7 @@ static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
   keymap = win_keymap_ensure(wm->defaultconf, "Font", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = win_keymap_ensure(wm->defaultconf, "Object Non-modal", 0, 0);
+  keymap = win_keymap_ensure(wm->defaultconf, "Ob Non-modal", 0, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   keymap = win_keymap_ensure(wm->defaultconf, "Frames", 0, 0);
@@ -408,7 +407,7 @@ static void view3d_main_rgn_init(WinMngr *wm, ARgn *rgn)
   keymap = win_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
-  keymap = won_keymap_ensure(wm->defaultconf, "3D View", SPACE_VIEW3D, 0);
+  keymap = win_keymap_ensure(wm->defaultconf, "3D View", SPACE_VIEW3D, 0);
   win_ev_add_keymap_handler(&rgn->handlers, keymap);
 
   /* add drop boxes */
@@ -429,8 +428,8 @@ static bool view3d_drop_in_main_rgn_poll(Cxt *C, const WinEv *ev)
 }
 
 static IdType view3d_drop_id_in_main_rgn_poll_get_id_type(Cxt *C,
-                                                              WinDrag *drag,
-                                                              const WinEv *ev)
+                                                          WinDrag *drag,
+                                                          const WinEv *ev)
 {
   const ScrArea *area = cxt_win_area(C);
 
@@ -484,8 +483,8 @@ static void view3d_ob_drop_draw_activate(struct WinDropBox *drop, WinDrag *drag)
 
   float dimensions[3] = {0.0f};
   if (drag->type == WIN_DRAG_ID) {
-    Object *ob = (Object *)win_drag_get_local_id(drag, ID_OB);
-    dune_object_dimensions_get(ob, dimensions);
+    Ob *ob = (Object *)win_drag_get_local_id(drag, ID_OB);
+    dune_ob_dimensions_get(ob, dimensions);
   }
   else {
     struct AssetMetaData *meta_data = win_drag_get_asset_meta_data(drag, ID_OB);
@@ -624,7 +623,7 @@ static bool view3d_ima_empty_drop_poll(bContext *C, wmDrag *drag, const wmEvent 
     return false;
   }
 
-  Object *ob = ed_view3d_give_obj_under_cursor(C, ev->mval);
+  Ob *ob = ed_view3d_give_ob_under_cursor(C, ev->mval);
 
   if (ob == NULL) {
     return true;
@@ -658,7 +657,7 @@ static void view3d_ob_drop_matrix_from_snap(V3DSnapCursorState *snap_state,
   mat4_to_size(scale, ob->obmat);
   rescale_m4(obmat_final, scale);
 
-  BoundBox *bb = dune_object_boundbox_get(ob);
+  BoundBox *bb = dune_ob_boundbox_get(ob);
   if (bb) {
     float offset[3];
     dune_boundbox_calc_center_aabb(bb, offset);
@@ -687,8 +686,8 @@ static void view3d_ob_drop_copy_local_id(WinDrag *drag, WinDropBox *drop)
 static void view3d_ob_drop_copy_external_asset(WinDrag *drag, WinDropBox *drop)
 {
   /* Sel is handled here, de-sel objs before append,
-   * using auto-select to ensure the new objs are sel'd.
-   * This is done so OBJ_OT_transform_to_mouse (which runs after this drop handler)
+   * using auto-sel to ensure the new objs are sel'd.
+   * This is done so OB_OT_transform_to_mouse (which runs after this drop handler)
    * can use the cxt setup here to place the objs. */
   lib_assert(drag->type == WIN_DRAG_ASSET);
 
@@ -713,7 +712,7 @@ static void view3d_ob_drop_copy_external_asset(WinDrag *drag, WinDropBox *drop)
     win_main_add_notifier(NC_SCENE | ND_OB_ACTIVE, scene);
   }
   graph_id_tag_update(&scene->id, ID_RECALC_SEL);
-  ee_outliner_sel_sync_from_object_tag(C);
+  ee_outliner_sel_sync_from_ob_tag(C);
 
   V3DSnapCursorState *snap_state = drop->draw_data;
   if (snap_state) {
@@ -773,7 +772,7 @@ static void view3d_dropboxes(void)
 
   struct WinDropBox *drop;
   drop = win_dropbox_add(list,
-                        "OBJ_OT_add_named",
+                        "OB_OT_add_named",
                         view3d_ob_drop_poll_local_id,
                         view3d_ob_drop_copy_local_id,
                         win_drag_free_imported_drag_id,
@@ -784,30 +783,30 @@ static void view3d_dropboxes(void)
   drop->draw_deactivate = view3d_ob_drop_draw_deactivate;
 
   drop = win_dropbox_add(list,
-                        "OBJ_OT_transform_to_mouse",
+                        "OB_OT_transform_to_mouse",
                         view3d_ob_drop_poll_external_asset,
                         view3d_ob_drop_copy_external_asset,
                         win_drag_free_imported_drag_id,
                         NULL);
 
-  drop->draw = win_drag_draw_item_name_fn;
-  drop->draw_activate = view3d_ob_drop_draw_activate;
-  drop->draw_deactivate = view3d_ob_drop_draw_deactivate;
+  drop->drw = win_drag_drw_item_name_fn;
+  drop->drw_activate = view3d_ob_drop_draw_activate;
+  drop->drw_deactivate = view3d_ob_drop_draw_deactivate;
 
   win_dropbox_add(list,
-                 "OBJ_OT_drop_named_material",
+                 "OB_OT_drop_named_material",
                  view3d_mat_drop_poll,
                  view3d_id_drop_copy,
                  win_drag_free_imported_drag_id,
                  view3d_mat_drop_tooltip);
   win_dropbox_add(list,
-                 "VIEW3D_OT_background_image_add",
+                 "VIEW3D_OT_background_img_add",
                  view3d_ima_bg_drop_poll,
                  view3d_id_path_drop_copy,
                  win_drag_free_imported_drag_id,
                  NULL);
   win_dropbox_add(list,
-                 "OBJ_OT_drop_named_image",
+                 "OBJ_OT_drop_named_img",
                  view3d_ima_empty_drop_poll,
                  view3d_id_path_drop_copy,
                  win_drag_free_imported_drag_id,
@@ -819,14 +818,14 @@ static void view3d_dropboxes(void)
                  win_drag_free_imported_drag_id,
                  NULL);
   win_dropbox_add(list,
-                 "OBJ_OT_collection_instance_add",
+                 "OB_OT_collection_instance_add",
                  view3d_collection_drop_poll,
                  view3d_collection_drop_copy,
                  win_drag_free_imported_drag_id,
                  NULL);
-  28'_dropbox_add(list,
-                 "OBJ_OT_data_instance_add",
-                 view3d_object_data_drop_poll,
+  win_dropbox_add(list,
+                 "OB_OT_data_instance_add",
+                 view3d_ob_data_drop_poll,
                  view3d_id_drop_copy_with_type,
                  win_drag_free_imported_drag_id,
                  view3d_object_data_drop_tooltip);
@@ -841,16 +840,16 @@ static void view3d_dropboxes(void)
 static void view3d_widgets(void)
 {
   WinGizmoMapType *gzmap_type = win_gizmomaptype_ensure(
-      &(const struct WinGizmoMapType_Params){SPACE_VIEW3D, RGN_TYPE_WINDOW});
+      &(const struct WinGizmoMapType_Params){SPACE_VIEW3D, RGN_TYPE_WIN});
 
   win_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_xform_gizmo_cxt);
-  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_spot);
+  win_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_spot);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_area);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_light_target);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_force_field);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_camera);
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_camera_view);
-  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_empty_image);
+  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_empty_img);
   /* TODO: Not working well enough, disable for now. */
 #if 0
   WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_armature_spline);
@@ -865,13 +864,13 @@ static void view3d_widgets(void)
   WM_gizmogrouptype_append(VIEW3D_GGT_tool_generic_handle_normal);
   WM_gizmogrouptype_append(VIEW3D_GGT_tool_generic_handle_free);
 
-  WM_gizmogrouptype_append(VIEW3D_GGT_ruler);
-  WM_gizmotype_append(VIEW3D_GT_ruler_item);
+  win_gizmogrouptype_append(VIEW3D_GGT_ruler);
+  win_gizmotype_append(VIEW3D_GT_ruler_item);
 
-  WM_gizmogrouptype_append(VIEW3D_GGT_placement);
+  win_gizmogrouptype_append(VIEW3D_GGT_placement);
 
-  WM_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_nav);
-  WM_gizmotype_append(VIEW3D_GT_nav_rotate);
+  win_gizmogrouptype_append_and_link(gzmap_type, VIEW3D_GGT_nav);
+  win_gizmotype_append(VIEW3D_GT_nav_rotate);
 }
 
 /* type cb, not rgn itself */
@@ -923,7 +922,7 @@ static void *view3d_main_rgn_duplicate(void *poin)
   return NULL;
 }
 
-static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
+static void view3d_main_rgn_listener(const WinRgnListenerParams *params)
 {
   Win *win = params->win;
   ScrArea *area = params->area;
@@ -961,8 +960,8 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
           }
           break;
         case ND_ANIMCHAN:
-          if (ELEM(winn->action, NA_EDITED, NA_ADDED, NA_REMOVED, NA_SELECTED)) {
-            ED_rhn_tag_redraw(rgn);
+          if (ELEM(winn->action, NA_EDITED, NA_ADDED, NA_REMOVED, NA_SEL)) {
+            ed_rgn_tag_redraw(rgn);
           }
           break;
       }
@@ -982,7 +981,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
           win_gizmomap_tag_refresh(gzmap);
           break;
         case ND_OB_ACTIVE:
-        case ND_OB_SELECT:
+        case ND_OB_SEL:
           ATTR_FALLTHROUGH;
         case ND_FRAME:
         case ND_TRANSFORM:
@@ -996,7 +995,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
         case ND_WORLD:
           /* handled by space_view3d_listener() for v3d access */
           break;
-        case ND_DRAW_RENDER_VIEWPORT: {
+        case ND_DRW_RENDER_VIEWPORT: {
           if (v3d->camera && (scene == winn->ref)) {
             if (rv3d->persp == RV3D_CAMOB) {
               ed_rgn_tag_redraw(rgn);
@@ -1009,10 +1008,10 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
         ed_rgn_tag_redraw(rgn);
       }
       break;
-    case NC_OBJECT:
+    case NC_OB:
       switch (winn->data) {
         case ND_BONE_ACTIVE:
-        case ND_BONE_SELECT:
+        case ND_BONE_SEL:
         case ND_TRANSFORM:
         case ND_POSE:
         case ND_DRAW:
@@ -1038,7 +1037,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
       break;
     case NC_GEOM:
       switch (winn->data) {
-        case ND_SELECT: {
+        case ND_SEL: {
           win_gizmomap_tag_refresh(gzmap);
           ATTR_FALLTHROUGH;
         }
@@ -1126,7 +1125,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
     case NC_LIGHTPROBE:
       ed_area_tag_refresh(area);
       break;
-    case NC_IMAGE:
+    case NC_IMG:
       /* this could be more fine grained checks if we had
        * more cxt than just the rgn */
       ed_rgn_tag_redraw(rgn);
@@ -1184,7 +1183,7 @@ static void view3d_main_rgn_listener(const wmRegionListenerParams *params)
 
       break;
     case NC_PEN:
-      if (winn->data == ND_DATA || ELEM(winn->action, NA_EDITED, NA_SELECTED)) {
+      if (winn->data == ND_DATA || ELEM(winn->action, NA_EDITED, NA_SEL)) {
         ed_rgn_tag_redraw(rgn);
       }
       break;
@@ -1216,7 +1215,7 @@ static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
       &ApiSunLight,
 
       /* General types the 3Dview deps on */
-      &ApiObj,
+      &ApiOb,
       &ApiUnitSettings, /* grid-floor */
 
       &ApiView3DCursor,
@@ -1233,7 +1232,7 @@ static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
 
   for (int i = 0; i < ARRAY_SIZE(type_array); i++) {
     msg_key_params.ptr.type = type_array[i];
-    win_msg_subscribe_api_params(mbus, &msg_key_params, &msg_sub_val_rgn_tag_redraw, __func__);
+    win_msg_sub_api_params(mbus, &msg_key_params, &msg_sub_val_rgn_tag_redraw, __func__);
   }
 
   /* Sub to a handful of other props */
@@ -1242,7 +1241,7 @@ static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
   win_msg_sub_api_anon_prop(mbus, RenderSettings, engine, &msg_sub_value_rgn_tag_redraw);
   win_msg_sub_api_anon_prop(
       mbus, RenderSettings, resolution_x, &msg_sub_value_rgn_tag_redraw);
-  win_msg_sub_rna_anon_prop(
+  win_msg_sub_api_anon_prop(
       mbus, RenderSettings, resolution_y, &msg_sub_value_rgn_tag_redraw);
   win_msg_sub_api_anon_prop(
       mbus, RenderSettings, pixel_aspect_x, &msg_sub_val_rgn_tag_redraw);
@@ -1270,7 +1269,7 @@ static void view3d_main_rgn_msg_sub(const WinRgnMsgSubParams *params)
   }
 
   {
-    WinMsgSubVal msg_sub_value_rgn_tag_refresh = {
+    WinMsgSubVal msg_sub_val_rgn_tag_refresh = {
         .owner = rgn,
         .user_data = area,
         .notify = win_toolsystem_do_msg_notify_tag_refresh,
@@ -1288,7 +1287,7 @@ static void view3d_main_rgn_cursor(Win *win, ScrArea *area, ARgn *rgn)
   }
 
   ViewLayer *view_layer = win_get_active_view_layer(win);
-  Object *obedit = OBEDIT_FROM_VIEW_LAYER(view_layer);
+  Ob *obedit = OBEDIT_FROM_VIEW_LAYER(view_layer);
   if (obedit) {
     win_cursor_set(win, WIN_CURSOR_EDIT);
   }
@@ -1494,7 +1493,7 @@ void ed_view3d_btns_rgn_layout_ex(const Cxt *C,
 
   switch (mode) {
     case CXT_MODE_PAINT_PEN:
-      ARRAY_SET_ITEMS(contexts, ".pen_paint");
+      ARRAY_SET_ITEMS(cxts, ".pen_paint");
       break;
     case CXT_MODE_SCULPT_PEN:
       ARRAY_SET_ITEMS(cxts, ".pen_sculpt");
@@ -1569,10 +1568,10 @@ static void view3d_btns_rgn_listener(const WinRgnListenerParams *params)
           break;
       }
       break;
-    case NC_OBJECT:
+    case NC_OB:
       switch (winn->data) {
         case ND_BONE_ACTIVE:
-        case ND_BONE_SELECT:
+        case ND_BONE_SEL:
         case ND_TRANSFORM:
         case ND_POSE:
         case ND_DRAW:
@@ -1658,7 +1657,7 @@ static void space_view3d_listener(const WinSpaceTypeListenerParams *params)
   WinNotifier *winn = params->notifier;
   View3D *v3d = area->spacedata.first;
 
-  /* context changes */
+  /* cxt changes */
   switch (winn->category) {
     case NC_SCENE:
       switch (winn->data) {
@@ -1872,7 +1871,7 @@ void ed_spacetype_view3d(void)
 
   /* rgns: tool header */
   art = mem_calloc(sizeof(ARgnType), "spacetype view3d tool header rgn");
-  art->regionid = RGN_TYPE_TOOL_HEADER;
+  art->rgnid = RGN_TYPE_TOOL_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
   art->listener = view3d_header_rgn_listener;
@@ -1889,7 +1888,7 @@ void ed_spacetype_view3d(void)
   art->listener = view3d_header_rgn_listener;
   art->msg_sub = view3d_header_rgn_meg_sub;
   art->init = view3d_header_rgn_init;
-  art->draw = view3d_header_rgn_draw;
+  art->drw = view3d_header_rgn_drw;
   lib_addhead(&st->rgntypes, art);
 
   /* rgns: hud */
