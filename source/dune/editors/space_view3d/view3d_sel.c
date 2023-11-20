@@ -3459,60 +3459,60 @@ static int opengl_bone_sel_buf_cmp(const void *sel_a_p, const void *sel_b_p)
 static bool do_ob_box_sel(Cxt *C, ViewCxt *vc, rcti *rect, const eSelectOp sel_op)
 {
   View3D *v3d = vc->v3d;
-  int totob = MAXPICKELEMS; /* XXX solve later */
+  int totob = MAXPICKELEMS; /* solve later */
   
   /* Sel buffer has bones potentially too, so we add MAXPICKELEMS. */
   GPUSelResult *buffer = mem_malloc((totob + MAXPICKELEMS) * sizeof(GPUSelResult),
-                                        "sel buffer");
+                                    "sel buffer");
   const eV3DSelObFilter select_filter = ed_view3d_sel_filter_from_mode(vc->scene,
                                                                        vc->obact);
-  const int hits = view3d_opengl_select(
+  const int hits = view3d_opengl_sel(
       vc, buf, (totob + MAXPICKELEMS), rect, VIEW3D_SEL_ALL, sel_filter);
 
-  LISTBASE_FOREACH (Base *, base, &vc->view_layer->object_bases) {
-    base->object->id.tag &= ~LIB_TAG_DOIT;
+  LIST_FOREACH (Base *, base, &vc->view_layer->ob_bases) {
+    base->ob->id.tag &= ~LIB_TAG_DOIT;
   }
 
   Base **bases = NULL;
-  LIB_array_declare(bases);
+  lib_array_declare(bases);
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= object_deselect_all_visible(vc->view_layer, vc->v3d);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= ob_desel_all_visible(vc->view_layer, vc->v3d);
   }
 
   if ((hits == -1) && !SEL_OP_USE_OUTSIDE(sel_op)) {
     goto finally;
   }
 
-  LISTBASE_FOREACH (Base *, base, &vc->view_layer->object_bases) {
+  LIST_FOREACH (Base *, base, &vc->view_layer->ob_bases) {
     if (BASE_SELECTABLE(v3d, base)) {
-      if ((base->object->runtime.select_id & 0x0000FFFF) != 0) {
-        LIB_array_append(bases, base);
+      if ((base->ob->runtime.sel_id & 0x0000FFFF) != 0) {
+        lib_array_append(bases, base);
       }
     }
   }
 
   /* The draw order doesn't always match the order we populate the engine, see: T51695. */
-  qsort(buffer, hits, sizeof(GPUSelectResult), opengl_bone_select_buffer_cmp);
+  qsort(buffer, hits, sizeof(GPUSelResult), opengl_bone_sel_buf_cmp);
 
-  for (const GPUSelectResult *buf_iter = buffer, *buf_end = buf_iter + hits; buf_iter < buf_end;
+  for (const GPUSelResult *buf_iter = buf, *buf_end = buf_iter + hits; buf_iter < buf_end;
        buf_iter++) {
-    dunePoseChannel *pchan_dummy;
-    Base *base = ED_armature_base_and_pchan_from_select_buffer(
-        bases, LIB_array_len(bases), buf_iter->id, &pchan_dummy);
+    PoseChannel *pchan_dummy;
+    Base *base = ed_armature_base_and_pchan_from_sel_buf(
+        bases, lib_array_len(bases), buf_iter->id, &pchan_dummy);
     if (base != NULL) {
-      base->object->id.tag |= LIB_TAG_DOIT;
+      base->ob->id.tag |= LIB_TAG_DOIT;
     }
   }
 
-  for (Base *base = vc->view_layer->object_bases.first; base && hits; base = base->next) {
+  for (Base *base = vc->view_layer->ob_bases.first; base && hits; base = base->next) {
     if (BASE_SELECTABLE(v3d, base)) {
-      const bool is_select = base->flag & BASE_SELECTED;
-      const bool is_inside = base->object->id.tag & LIB_TAG_DOIT;
-      const int sel_op_result = ED_select_op_action_deselected(sel_op, is_select, is_inside);
+      const bool is_se = base->flag & BASE_SELECTED;
+      const bool is_inside = base->ob->id.tag & LIB_TAG_DOIT;
+      const int sel_op_result = ed_sel_op_action_deselected(sel_op, is_sel, is_inside);
       if (sel_op_result != -1) {
-        ED_object_base_select(base, sel_op_result ? BA_SELECT : BA_DESELECT);
+        ed_ob_base_sel(base, sel_op_result ? BA_SEL : BA_DESEL);
         changed = true;
       }
     }
@@ -3520,51 +3520,48 @@ static bool do_ob_box_sel(Cxt *C, ViewCxt *vc, rcti *rect, const eSelectOp sel_o
 
 finally:
   if (bases != NULL) {
-    MEM_freeN(bases);
+    mem_free(bases);
   }
 
-  MEM_freeN(buffer);
+  mem_free(buffer);
 
   if (changed) {
-    DEG_id_tag_update(&vc->scene->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, vc->scene);
+    graph_id_tag_update(&vc->scene->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, vc->scene);
   }
   return changed;
 }
 
-static bool do_pose_box_select(duneContext *C, ViewContext *vc, rcti *rect, const eSelectOp sel_op)
+static bool do_pose_box_sel(Cxt *C, ViewCxt *vc, rcti *rect, const eSelOp sel_op)
 {
   uint bases_len;
-  Base **bases = do_pose_tag_select_op_prepare(vc, &bases_len);
+  Base **bases = do_pose_tag_sel_op_prepare(vc, &bases_len);
 
-  int totobj = MAXPICKELEMS; /* XXX solve later */
+  int totob = MAXPICKELEMS; /* solve later */
 
   /* Selection buffer has bones potentially too, so add MAXPICKELEMS. */
-  GPUSelectResult *buffer = MEM_mallocN((totobj + MAXPICKELEMS) * sizeof(GPUSelectResult),
-                                        "selection buffer");
-  const eV3DSelectObjectFilter select_filter = ED_view3d_select_filter_from_mode(vc->scene,
-                                                                                 vc->obact);
-  const int hits = view3d_opengl_select(
-      vc, buffer, (totobj + MAXPICKELEMS), rect, VIEW3D_SELECT_ALL, select_filter);
-  /*
-   * LOGIC NOTES:
-   * The buffer and ListBase have the same relative order, which makes the selection
+  GPUSelectResult *buffer = mem_malloc((totob + MAXPICKELEMS) * sizeof(GPUSelResult),
+                                        "sel buf");
+  const eV3DSelObFilter sel_filter = ed_view3d_sel_filter_from_mode(vc->scene,
+                                                                           vc->obact);
+  const int hits = view3d_opengl_sel(
+      vc, buf, (totobj + MAXPICKELEMS), rect, VIEW3D_SEL_ALL, sel_filter);
+  /* LOGIC NOTES:
+   * The buf and List have the same relative order, which makes the sel
    * very simple. Loop through both data sets at the same time, if the color
-   * is the same as the object, we have a hit and can move to the next color
-   * and object pair, if not, just move to the next object,
-   * keeping the same color until we have a hit.
-   */
+   * is the same as the ob, we have a hit and can move to the next color
+   * and ob pair, if not, just move to the next ob,
+   * keeping the same color until we have a hit */
 
   if (hits > 0) {
     /* no need to loop if there's no hit */
+    /* The drw order doesn't always match the order we populate the engine, see: T51695. */
+    qsort(buffer, hits, sizeof(GPUSelResult), opengl_bone_sel_buf_cmp);
 
-    /* The draw order doesn't always match the order we populate the engine, see: T51695. */
-    qsort(buffer, hits, sizeof(GPUSelectResult), opengl_bone_select_buffer_cmp);
-
-    for (const GPUSelectResult *buf_iter = buffer, *buf_end = buf_iter + hits; buf_iter < buf_end;
+    for (const GPUSelResult *buf_iter = buffer, *buf_end = buf_iter + hits; buf_iter < buf_end;
          buf_iter++) {
       Bone *bone;
-      Base *base = ED_armature_base_and_bone_from_select_buffer(
+      Base *base = ed_armature_base_and_bone_from_sel_buffer(
           bases, bases_len, buf_iter->id, &bone);
 
       if (base == NULL) {
@@ -3575,19 +3572,19 @@ static bool do_pose_box_select(duneContext *C, ViewContext *vc, rcti *rect, cons
       for (; buf_iter != buf_end; buf_iter++) {
         /* should never fail */
         if (bone != NULL) {
-          base->object->id.tag |= LIB_TAG_DOIT;
+          base->ob->id.tag |= LIB_TAG_DOIT;
           bone->flag |= BONE_DONE;
         }
 
-        /* Select the next bone if we're not switching bases. */
+        /* Sel the next bone if we're not switching bases. */
         if (buf_iter + 1 != buf_end) {
-          const GPUSelectResult *col_next = buf_iter + 1;
-          if ((base->object->runtime.select_id & 0x0000FFFF) != (col_next->id & 0x0000FFFF)) {
+          const GPUSelResult *col_next = buf_iter + 1;
+          if ((base->ob->runtime.sel_id & 0x0000FFFF) != (col_next->id & 0x0000FFFF)) {
             break;
           }
-          if (base->object->pose != NULL) {
+          if (base->ob->pose != NULL) {
             const uint hit_bone = (col_next->id & ~BONESEL_ANY) >> 16;
-            dunePoseChannel *pchan = LIB_findlink(&base->object->pose->chanbase, hit_bone);
+            PoseChannel *pchan = lib_findlink(&base->ob->pose->chanbase, hit_bone);
             bone = pchan ? pchan->bone : NULL;
           }
           else {
@@ -3600,168 +3597,166 @@ static bool do_pose_box_select(duneContext *C, ViewContext *vc, rcti *rect, cons
 
   const bool changed_multi = do_pose_tag_select_op_exec(bases, bases_len, sel_op);
   if (changed_multi) {
-    DEG_id_tag_update(&vc->scene->id, ID_RECALC_SELECT);
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, vc->scene);
+    graph_id_tag_update(&vc->scene->id, ID_RECALC_SEL);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, vc->scene);
   }
 
   if (bases != NULL) {
-    MEM_freeN(bases);
+    mem_free(bases);
   }
-  MEM_freeN(buffer);
+  mem_free(buffer);
 
   return changed_multi;
 }
 
-static int view3d_box_select_exec(duneContext *C, wmOperator *op)
+static int view3d_box_sel_ex(Cxt *C, WinOp *op)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc;
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewCxt vc;
   rcti rect;
   bool changed_multi = false;
 
-  wmGenericUserData wm_userdata_buf = {0};
-  wmGenericUserData *wm_userdata = &wm_userdata_buf;
+  WinGenericUserData win_userdata_buf = {0};
+  WinGenericUserData *win_userdata = &win_userdata_buf;
 
-  view3d_operator_needs_opengl(C);
-  DUNE_object_update_select_id(CTX_data_main(C));
+  view3d_op_needs_opengl(C);
+  dune_ob_update_sel_id(cxt_data_main(C));
 
-  /* setup view context for argument to callbacks */
-  ED_view3d_viewcontext_init(C, &vc, depsgraph);
+  /* setup view cxt for argument to cbs */
+  es_view3d_viewcxt_init(C, &vc, graph);
 
-  eSelectOp sel_op = API_enum_get(op->ptr, "mode");
-  WM_operator_properties_border_to_rcti(op, &rect);
+  eSelOp sel_op = api_enum_get(op->ptr, "mode");
+  win_op_props_border_to_rcti(op, &rect);
 
   if (vc.obedit) {
-    FOREACH_OBJECT_IN_MODE_BEGIN (
+    FOREACH_OB_IN_MODE_BEGIN (
         vc.view_layer, vc.v3d, vc.obedit->type, vc.obedit->mode, ob_iter) {
-      ED_view3d_viewcontext_init_object(&vc, ob_iter);
+      ed_view3d_viewcxt_init_ob(&vc, ob_iter);
       bool changed = false;
 
       switch (vc.obedit->type) {
         case OB_MESH:
-          vc.em = DUNE_editmesh_from_object(vc.obedit);
-          changed = do_mesh_box_select(&vc, wm_userdata, &rect, sel_op);
+          vc.em = ed_meshedit_from_ob(vc.obedit);
+          changed = do_mesh_box_sel(&vc, win_userdata, &rect, sel_op);
           if (changed) {
-            DEG_id_tag_update(vc.obedit->data, ID_RECALC_SELECT);
-            WM_event_add_notifier(C, NC_GEOM | ND_SELECT, vc.obedit->data);
+            graph_id_tag_update(vc.obedit->data, ID_RECALC_SEL);
+            win_ev_add_notifier(C, NC_GEOM | ND_SEL, vc.obedit->data);
           }
           break;
         case OB_CURVES_LEGACY:
         case OB_SURF:
           changed = do_nurbs_box_select(&vc, &rect, sel_op);
           if (changed) {
-            DEG_id_tag_update(vc.obedit->data, ID_RECALC_SELECT);
-            WM_event_add_notifier(C, NC_GEOM | ND_SELECT, vc.obedit->data);
+            graph_id_tag_update(vc.obedit->data, ID_RECALC_SEL);
+            win_ev_add_notifier(C, NC_GEOM | ND_SEL, vc.obedit->data);
           }
           break;
         case OB_MBALL:
-          changed = do_meta_box_select(&vc, &rect, sel_op);
+          changed = do_meta_box_sel(&vc, &rect, sel_op);
           if (changed) {
-            DEG_id_tag_update(vc.obedit->data, ID_RECALC_SELECT);
-            WM_event_add_notifier(C, NC_GEOM | ND_SELECT, vc.obedit->data);
+            graph_id_tag_update(vc.obedit->data, ID_RECALC_SEL);
+            win_ev_add_notifier(C, NC_GEOM | ND_SEL, vc.obedit->data);
           }
           break;
         case OB_ARMATURE:
-          changed = do_armature_box_select(&vc, &rect, sel_op);
+          changed = do_armature_box_sel(&vc, &rect, sel_op);
           if (changed) {
-            DEG_id_tag_update(&vc.obedit->id, ID_RECALC_SELECT);
-            WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, vc.obedit);
-            ED_outliner_select_sync_from_edit_bone_tag(C);
+            graph_id_tag_update(&vc.obedit->id, ID_RECALC_SEL);
+            win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, vc.obedit);
+            ed_outliner_sel_sync_from_edit_bone_tag(C);
           }
           break;
         case OB_LATTICE:
-          changed = do_lattice_box_select(&vc, &rect, sel_op);
+          changed = do_lattice_box_sel(&vc, &rect, sel_op);
           if (changed) {
-            DEG_id_tag_update(vc.obedit->data, ID_RECALC_SELECT);
-            WM_event_add_notifier(C, NC_GEOM | ND_SELECT, vc.obedit->data);
+            graph_id_tag_update(vc.obedit->data, ID_RECALC_SEL);
+            win_ev_add_notifier(C, NC_GEOM | ND_SEL, vc.obedit->data);
           }
           break;
         default:
-          LIB_assert_msg(0, "box select on incorrect object type");
+          lib_assert_msg(0, "box sel on incorrect ob type");
           break;
       }
       changed_multi |= changed;
     }
-    FOREACH_OBJECT_IN_MODE_END;
+    FOREACH_OB_IN_MODE_END;
   }
-  else { /* No edit-mode, unified for bones and objects. */
-    if (vc.obact && DUNE_paint_select_face_test(vc.obact)) {
-      changed_multi = do_paintface_box_select(&vc, wm_userdata, &rect, sel_op);
+  else { /* No edit-mode, unified for bones and objs. */
+    if (vc.obact && dune_paint_select_face_test(vc.obact)) {
+      changed_multi = do_paintface_box_sel(&vc, win_userdata, &rect, sel_op);
     }
-    else if (vc.obact && DUNE_paint_select_vert_test(vc.obact)) {
-      changed_multi = do_paintvert_box_select(&vc, wm_userdata, &rect, sel_op);
+    else if (vc.obact && dune_paint_sel_vert_test(vc.obact)) {
+      changed_multi = do_paintvert_box_sel(&vc, win_userdata, &rect, sel_op);
     }
     else if (vc.obact && vc.obact->mode & OB_MODE_PARTICLE_EDIT) {
-      changed_multi = PE_box_select(C, &rect, sel_op);
+      changed_multi = PE_box_sel(C, &rect, sel_op);
     }
     else if (vc.obact && vc.obact->mode & OB_MODE_POSE) {
-      changed_multi = do_pose_box_select(C, &vc, &rect, sel_op);
+      changed_multi = do_pose_box_sel(C, &vc, &rect, sel_op);
       if (changed_multi) {
-        ED_outliner_select_sync_from_pose_bone_tag(C);
+        ed_outliner_sel_sync_from_pose_bone_tag(C);
       }
     }
-    else { /* object mode with none active */
-      changed_multi = do_object_box_select(C, &vc, &rect, sel_op);
+    else { /* ob mode with none active */
+      changed_multi = do_ob_box_sel(C, &vc, &rect, sel_op);
       if (changed_multi) {
-        ED_outliner_select_sync_from_object_tag(C);
+        ed_outliner_sel_sync_from_ob_tag(C);
       }
     }
   }
 
-  WM_generic_user_data_free(wm_userdata);
+  win_generic_user_data_free(win_userdata);
 
   if (changed_multi) {
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-void VIEW3D_OT_select_box(wmOperatorType *ot)
+void VIEW3D_OT_sel_box(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Box Select";
-  ot->description = "Select items using box selection";
-  ot->idname = "VIEW3D_OT_select_box";
+  /* ids */
+  ot->name = "Box Sel";
+  ot->description = "Sel items using box selection";
+  ot->idname = "VIEW3D_OT_sel_box";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_box_invoke;
-  ot->exec = view3d_box_select_exec;
-  ot->modal = WM_gesture_box_modal;
+  /* api cbs */
+  ot->invoke = win_gesture_box_invoke;
+  ot->ex = view3d_box_sel_ex;
+  ot->modal = win_gesture_box_modal;
   ot->poll = view3d_selectable_data;
-  ot->cancel = WM_gesture_box_cancel;
+  ot->cancel = win_gesture_box_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
   /* api */
-  WM_operator_properties_gesture_box(ot);
-  WM_operator_properties_select_operation(ot);
+  win_op_props_gesture_box(ot);
+  win_op_props_sel_op(ot);
 }
 
-/* -------------------------------------------------------------------- */
-/** Circle Select **/
-
-typedef struct CircleSelectUserData {
-  ViewContext *vc;
-  bool select;
+/* Circle Sel */
+typedef struct CircleSelUserData {
+  ViewCxt *vc;
+  bool sel;
   int mval[2];
   float mval_fl[2];
   float radius;
   float radius_squared;
-  eBezTriple_Flag select_flag;
+  eBezTriple_Flag sel_flag;
 
   /* runtime */
   bool is_changed;
-} CircleSelectUserData;
+} CircleSelUserData;
 
-static void view3d_userdata_circleselect_init(CircleSelectUserData *r_data,
-                                              ViewContext *vc,
-                                              const bool select,
-                                              const int mval[2],
-                                              const float rad)
+static void view3d_userdata_circlesel_init(CircleSelUserData *r_data,
+                                           ViewCxt *vc,
+                                           const bool sel,
+                                           const int mval[2],
+                                           const float rad)
 {
   r_data->vc = vc;
-  r_data->select = select;
+  r_data->sel = sel;
   copy_v2_v2_int(r_data->mval, mval);
   r_data->mval_fl[0] = mval[0];
   r_data->mval_fl[1] = mval[1];
@@ -3769,102 +3764,102 @@ static void view3d_userdata_circleselect_init(CircleSelectUserData *r_data,
   r_data->radius = rad;
   r_data->radius_squared = rad * rad;
 
-  /* SELECT by default, but can be changed if needed (only few cases use and respect this). */
-  r_data->select_flag = SELECT;
+  /* SEL by default, but can be changed if needed (only few cases use and respect this). */
+  r_data->sel_flag = SEL;
 
   /* runtime */
   r_data->is_changed = false;
 }
 
-static void mesh_circle_doSelectVert(void *userData,
-                                     BMVert *eve,
+static void mesh_circle_doSelVert(void *userData,
+                                  MVert *eve,
                                      const float screen_co[2],
                                      int UNUSED(index))
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    DuneMesh_vert_select_set(data->vc->em->bm, eve, data->select);
+    mesh_vert_sel_set(data->vc->em->mesh, eve, data->sel);
     data->is_changed = true;
   }
 }
-static void mesh_circle_doSelectEdge(void *userData,
-                                     BMEdge *eed,
-                                     const float screen_co_a[2],
-                                     const float screen_co_b[2],
-                                     int UNUSED(index))
+static void mesh_circle_doSelEdge(void *userData,
+                                  MEdge *eed,
+                                  const float screen_co_a[2],
+                                  const float screen_co_b[2],
+                                  int UNUSED(index))
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (edge_inside_circle(data->mval_fl, data->radius, screen_co_a, screen_co_b)) {
-    BM_edge_select_set(data->vc->em->bm, eed, data->select);
+    mewh_edge_sel_set(data->vc->em->mesh, eed, data->sel);
     data->is_changed = true;
   }
 }
-static void mesh_circle_doSelectFace(void *userData,
-                                     BMFace *efa,
-                                     const float screen_co[2],
-                                     int UNUSED(index))
+static void mesh_circle_doSelFace(void *userData,
+                                  MFace *efa,
+                                  const float screen_co[2],
+                                  int UNUSED(index))
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    DUNEMESH_face_select_set(data->vc->em->bm, efa, data->select);
+    mesh_face_sel_set(data->vc->em->mesh, efa, data->sel);
     data->is_changed = true;
   }
 }
 
-static bool mesh_circle_select(ViewContext *vc,
-                               wmGenericUserData *wm_userdata,
-                               eSelectOp sel_op,
-                               const int mval[2],
-                               float rad)
+static bool mesh_circle_sel(ViewCxt *vc,
+                            WinGenericUserData *win_userdata,
+                            eSelOp sel_op,
+                            const int mval[2],
+                            float rad)
 {
   ToolSettings *ts = vc->scene->toolsettings;
-  CircleSelectUserData data;
-  vc->em = DUNE_editmesh_from_object(vc->obedit);
+  CircleSelUserData data;
+  vc->em = dune_meshedit_from_ob(vc->obedit);
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    if (vc->em->bm->totvertsel) {
-      EDBM_flag_disable_all(vc->em, BM_ELEM_SELECT);
-      vc->em->bm->totvertsel = 0;
-      vc->em->bm->totedgesel = 0;
-      vc->em->bm->totfacesel = 0;
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    if (vc->em->mesh->totvertsel) {
+      edbm_flag_disable_all(vc->em, MESH_ELEM_SEL);
+      vc->em->mesh->totvertsel = 0;
+      vc->em->mesh->totedgesel = 0;
+      vc->em->mesh->totfacesel = 0;
       changed = true;
     }
   }
-  const bool select = (sel_op != SEL_OP_SUB);
+  const bool sel = (sel_op != SEL_OP_SUB);
 
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
 
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
+  view3d_userdata_circlesel_init(&data, vc, sel, mval, rad);
 
   const bool use_zbuf = !XRAY_FLAG_ENABLED(vc->v3d);
 
   if (use_zbuf) {
-    if (wm_userdata->data == NULL) {
-      editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, ts->selectmode);
+    if (win_userdata->data == NULL) {
+      editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, ts->selectmode);
     }
   }
-  struct EditSelectBuf_Cache *esel = wm_userdata->data;
+  struct EditSelBufCache *esel = win_userdata->data;
 
   if (use_zbuf) {
-    if (esel->select_bitmap == NULL) {
-      esel->select_bitmap = DRW_select_buffer_bitmap_from_circle(
-          vc->depsgraph, vc->region, vc->v3d, mval, (int)(rad + 1.0f), NULL);
+    if (esel->sel_bitmap == NULL) {
+      esel->sel_bitmap = drw_sel_buf_bitmap_from_circle(
+          vc->graph, vc->rgn, vc->v3d, mval, (int)(rad + 1.0f), NULL);
     }
   }
 
-  if (ts->selectmode & SCE_SELECT_VERTEX) {
+  if (ts->selmode & SCE_SEL_VERTEX) {
     if (use_zbuf) {
-      if (esel->select_bitmap != NULL) {
-        changed |= edbm_backbuf_check_and_select_verts(
-            esel, vc->depsgraph, vc->obedit, vc->em, select ? SEL_OP_ADD : SEL_OP_SUB);
+      if (esel->sel_bitmap != NULL) {
+        changed |= edbm_backbuf_check_and_sel_verts(
+            esel, vc->graph, vc->obedit, vc->em, sel ? SEL_OP_ADD : SEL_OP_SUB);
       }
     }
     else {
-      mesh_foreachScreenVert(vc, mesh_circle_doSelectVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      mesh_foreachScreenVert(vc, mesh_circle_doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
 
@@ -3872,262 +3867,260 @@ static bool mesh_circle_select(ViewContext *vc,
     if (use_zbuf) {
       if (esel->select_bitmap != NULL) {
         changed |= edbm_backbuf_check_and_select_edges(
-            esel, vc->depsgraph, vc->obedit, vc->em, select ? SEL_OP_ADD : SEL_OP_SUB);
+            esel, vc->graph, vc->obedit, vc->em, sel ? SEL_OP_ADD : SEL_OP_SUB);
       }
     }
     else {
       mesh_foreachScreenEdge_clip_bb_segment(
           vc,
-          mesh_circle_doSelectEdge,
+          mesh_circle_doSelEdge,
           &data,
           (V3D_PROJ_TEST_CLIP_NEAR | V3D_PROJ_TEST_CLIP_BB | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT));
     }
   }
 
-  if (ts->selectmode & SCE_SELECT_FACE) {
+  if (ts->selectmode & SCE_SEL_FACE) {
     if (use_zbuf) {
-      if (esel->select_bitmap != NULL) {
-        changed |= edbm_backbuf_check_and_select_faces(
-            esel, vc->depsgraph, vc->obedit, vc->em, select ? SEL_OP_ADD : SEL_OP_SUB);
+      if (esel->sel_bitmap != NULL) {
+        changed |= edbm_backbuf_check_and_sel_faces(
+            esel, vc->graph, vc->obedit, vc->em, select ? SEL_OP_ADD : SEL_OP_SUB);
       }
     }
     else {
-      mesh_foreachScreenFace(vc, mesh_circle_doSelectFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      mesh_foreachScreenFace(vc, mesh_circle_doSelFace, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     }
   }
 
   changed |= data.is_changed;
 
   if (changed) {
-    DUNEMESH_mesh_select_mode_flush_ex(
-        vc->em->bm, vc->em->selectmode, DUNEMESH_SELECT_LEN_FLUSH_RECALC_NOTHING);
+    dune_mesh_sel_mode_flush_ex(
+        vc->em->mesh, vc->em->selmode, MESH_SEL_LEN_FLUSH_RECALC_NOTHING);
   }
   return changed;
 }
 
-static bool paint_facesel_circle_select(ViewContext *vc,
-                                        wmGenericUserData *wm_userdata,
-                                        const eSelectOp sel_op,
-                                        const int mval[2],
-                                        float rad)
+static bool paint_facesel_circle_sel(ViewCxt *vc,
+                                     WinGenericUserData *win_userdata,
+                                     const eSelOp sel_op,
+                                     const int mval[2],
+                                     float rad)
 {
-  LIB_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
-  Object *ob = vc->obact;
+  lib_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  Ob *ob = vc->obact;
   Mesh *me = ob->data;
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    /* flush selection at the end */
-    changed |= paintface_deselect_all_visible(vc->C, ob, SEL_DESELECT, false);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    /* flush sel at the end */
+    changed |= paintface_desel_all_visible(vc->C, ob, SEL_DESEL, false);
   }
 
-  if (wm_userdata->data == NULL) {
-    editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, SCE_SELECT_FACE);
+  if (win_userdata->data == NULL) {
+    editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SEL_FACE);
   }
 
   {
-    struct EditSelectBuf_Cache *esel = wm_userdata->data;
-    esel->select_bitmap = DRW_select_buffer_bitmap_from_circle(
-        vc->depsgraph, vc->region, vc->v3d, mval, (int)(rad + 1.0f), NULL);
-    if (esel->select_bitmap != NULL) {
-      changed |= edbm_backbuf_check_and_select_faces_obmode(me, esel, sel_op);
-      MEM_freeN(esel->select_bitmap);
-      esel->select_bitmap = NULL;
+    struct EditSelBufCache *esel = win_userdata->data;
+    esel->sel_bitmap = drw_sel_buf_bitmap_from_circle(
+        vc->graph, vc->rgn, vc->v3d, mval, (int)(rad + 1.0f), NULL);
+    if (esel->sel_bitmap != NULL) {
+      changed |= edbm_backbuf_check_and_sel_faces_obmode(me, esel, sel_op);
+      mem_free(esel->sel_bitmap);
+      esel->sel_bitmap = NULL;
     }
   }
 
   if (changed) {
-    paintface_flush_flags(vc->C, ob, SELECT);
+    paintface_flush_flags(vc->C, ob, SEL);
   }
   return changed;
 }
 
-static void paint_vertsel_circle_select_doSelectVert(void *userData,
-                                                     MVert *mv,
-                                                     const float screen_co[2],
-                                                     int UNUSED(index))
+static void paint_vertsel_circle_sel_doSelVert(void *userData,
+                                               MVert *mv,
+                                               const float screen_co[2],
+                                               int UNUSED(index))
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    SET_FLAG_FROM_TEST(mv->flag, data->select, SELECT);
+    SET_FLAG_FROM_TEST(mv->flag, data->sel, SEL);
     data->is_changed = true;
   }
 }
-static bool paint_vertsel_circle_select(ViewContext *vc,
-                                        wmGenericUserData *wm_userdata,
-                                        const eSelectOp sel_op,
-                                        const int mval[2],
-                                        float rad)
+static bool paint_vertsel_circle_sel(ViewCxt *vc,
+                                     WinGenericUserData *win_userdata,
+                                     const eSeltOp sel_op,
+                                     const int mval[2],
+                                     float rad)
 {
-  LIB_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  lib_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
   const bool use_zbuf = !XRAY_ENABLED(vc->v3d);
-  Object *ob = vc->obact;
+  Ob *ob = vc->obact;
   Mesh *me = ob->data;
-  /* CircleSelectUserData data = {NULL}; */ /* UNUSED */
+  /* CircleSelUserData data = {NULL}; */ /* UNUSED */
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    /* Flush selection at the end. */
-    changed |= paintvert_deselect_all_visible(ob, SEL_DESELECT, false);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    /* Flush sel at the end. */
+    changed |= paintvert_desel_all_visible(ob, SEL_DESEL, false);
   }
 
-  const bool select = (sel_op != SEL_OP_SUB);
+  const bool sel = (sel_op != SEL_OP_SUB);
 
   if (use_zbuf) {
-    if (wm_userdata->data == NULL) {
-      editselect_buf_cache_init_with_generic_userdata(wm_userdata, vc, SCE_SELECT_VERTEX);
+    if (win_userdata->data == NULL) {
+      editsel_buf_cache_init_with_generic_userdata(win_userdata, vc, SCE_SEL_VERTEX);
     }
   }
 
   if (use_zbuf) {
-    struct EditSelectBuf_Cache *esel = wm_userdata->data;
-    esel->select_bitmap = DRW_select_buffer_bitmap_from_circle(
-        vc->depsgraph, vc->region, vc->v3d, mval, (int)(rad + 1.0f), NULL);
-    if (esel->select_bitmap != NULL) {
-      changed |= edbm_backbuf_check_and_select_verts_obmode(me, esel, sel_op);
-      MEM_freeN(esel->select_bitmap);
-      esel->select_bitmap = NULL;
+    struct EditSelBufCache *esel = win_userdata->data;
+    esel->sel_bitmap = drw_sel_buf_bitmap_from_circle;
+        vc->graph, vc->hn, vc->v3d, mval, (int)(rad + 1.0f), NULL);
+    if (esel->sel_bitmap != NULL) {
+      changed |= edbm_backbuf_check_and_sel_verts_obmode(me, esel, sel_op);
+      mem_free(esel->sel_bitmap);
+      esel->sel_bitmap = NULL;
     }
   }
   else {
-    CircleSelectUserData data;
+    CircleSelUserData data;
 
-    ED_view3d_init_mats_rv3d(vc->obact, vc->rv3d); /* for foreach's screen/vert projection */
+    ed_view3d_init_mats_rv3d(vc->obact, vc->rv3d); /* for foreach's screen/vert projection */
 
-    view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
-    meshobject_foreachScreenVert(
-        vc, paint_vertsel_circle_select_doSelectVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+    view3d_userdata_circleselect_init(&data, vc, sel, mval, rad);
+    meshob_foreachScreenVert(
+        vc, paint_vertsel_circle_sel_doSelVert, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
     changed |= data.is_changed;
   }
 
   if (changed) {
     if (sel_op == SEL_OP_SUB) {
-      DUNE_mesh_mselect_validate(me);
+      dune_mesh_msel_validate(me);
     }
     paintvert_flush_flags(ob);
-    paintvert_tag_select_update(vc->C, ob);
+    paintvert_tag_sel_update(vc->C, ob);
   }
   return changed;
 }
 
-static void nurbscurve_circle_doSelect(void *userData,
-                                       Nurb *UNUSED(nu),
-                                       DunePoint *dp,
-                                       BezTriple *bezt,
-                                       int beztindex,
-                                       bool UNUSED(handles_visible),
-                                       const float screen_co[2])
+static void nurbscurve_circle_doSel(void *userData,
+                                    Nurb *UNUSED(nu),
+                                    Point *point,
+                                    BezTriple *bezt,
+                                    int beztindex,
+                                    bool UNUSED(handles_visible),
+                                    const float screen_co[2])
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    if (bp) {
-      SET_FLAG_FROM_TEST(bp->f1, data->select, data->select_flag);
+    if (point) {
+      SET_FLAG_FROM_TEST(point->f1, data->sel, data->sel_flag);
     }
     else {
       if (beztindex == 0) {
-        SET_FLAG_FROM_TEST(bezt->f1, data->select, data->select_flag);
+        SET_FLAG_FROM_TEST(bezt->f1, data->sel, data->sel_flag);
       }
       else if (beztindex == 1) {
-        SET_FLAG_FROM_TEST(bezt->f2, data->select, data->select_flag);
+        SET_FLAG_FROM_TEST(bezt->f2, data->sel, data->sel_flag);
       }
       else {
-        SET_FLAG_FROM_TEST(bezt->f3, data->select, data->select_flag);
+        SET_FLAG_FROM_TEST(bezt->f3, data->sel, data->sel_flag);
       }
     }
     data->is_changed = true;
   }
 }
-static bool nurbscurve_circle_select(ViewContext *vc,
-                                     const eSelectOp sel_op,
-                                     const int mval[2],
-                                     float rad)
-{
-  const bool select = (sel_op != SEL_OP_SUB);
-  const bool deselect_all = (sel_op == SEL_OP_SET);
-  CircleSelectUserData data;
-
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
-
-  Curve *curve = (Curve *)vc->obedit->data;
-  ListBase *nurbs = DUNE_curve_editNurbs_get(curve);
-
-  /* For deselect all, items to be selected are tagged with temp flag. Clear that first. */
-  if (deselect_all) {
-    DUNE_nurbList_flag_set(nurbs, BEZT_FLAG_TEMP_TAG, false);
-    data.select_flag = BEZT_FLAG_TEMP_TAG;
-  }
-
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
-  nurbs_foreachScreenVert(vc, nurbscurve_circle_doSelect, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
-
-  /* Deselect items that were not added to selection (indicated by temp flag). */
-  if (deselect_all) {
-    data.is_changed |= DUNE_nurbList_flag_set_from_flag(nurbs, BEZT_FLAG_TEMP_TAG, SELECT);
-  }
-
-  DUNE_curve_nurb_vert_active_validate(vc->obedit->data);
-
-  return data.is_changed;
-}
-
-static void latticecurve_circle_doSelect(void *userData, BPoint *bp, const float screen_co[2])
-{
-  CircleSelectUserData *data = userData;
-
-  if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    bp->f1 = data->select ? (bp->f1 | SELECT) : (bp->f1 & ~SELECT);
-    data->is_changed = true;
-  }
-}
-static bool lattice_circle_select(ViewContext *vc,
-                                  const eSelectOp sel_op,
+static bool nurbscurve_circle_sel(ViewCxt *vc,
+                                  const eSelOp sel_op,
                                   const int mval[2],
                                   float rad)
 {
-  CircleSelectUserData data;
-  const bool select = (sel_op != SEL_OP_SUB);
+  const bool sel = (sel_op != SEL_OP_SUB);
+  const bool desel_all = (sel_op == SEL_OP_SET);
+  CircleSelUserData data;
 
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
+  view3d_userdata_circlesel_init(&data, vc, sel, mval, rad);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    data.is_changed |= ED_lattice_flags_set(vc->obedit, 0);
+  Curve *curve = (Curve *)vc->obedit->data;
+  List *nurbs = dune_curve_editNurbs_get(curve);
+
+  /* For desel all, items to be selected are tagged with tmp flag. Clear that first. */
+  if (desel_all) {
+    dune_nurbList_flag_set(nurbs, BEZT_FLAG_TMP_TAG, false);
+    data.sel_flag = BEZT_FLAG_TMP_TAG;
   }
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
 
-  lattice_foreachScreenVert(vc, latticecurve_circle_doSelect, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
+  nurbs_foreachScreenVert(vc, nurbscurve_circle_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+
+  /* Desel items that were not added to sel (indicated by tmp flag). */
+  if (desel_all) {
+    data.is_changed |= dune_nurbList_flag_set_from_flag(nurbs, BEZT_FLAG_TMP_TAG, SELECT);
+  }
+
+  dune_curve_nurb_vert_active_validate(vc->obedit->data);
 
   return data.is_changed;
 }
 
-/**
- * logic is shared with the edit-bone case, see #armature_circle_doSelectJoint.
- */
-static bool pchan_circle_doSelectJoint(void *userData,
-                                       bPoseChannel *pchan,
-                                       const float screen_co[2])
+static void latticecurve_circle_doSel(void *userData, Point point, const float screen_co[2])
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
-    if (data->select) {
-      pchan->bone->flag |= BONE_SELECTED;
+    point->f1 = data->sel ? (bp->f1 | SEL) : (bp->f1 & ~SEL);
+    data->is_changed = true;
+  }
+}
+static bool lattice_circle_seleViewCxt *vc,
+                                  const eSelOp sel_op,
+                                  const int mval[2],
+                                  float rad)
+{
+  CircleSelUserData data;
+  const bool sel = (sel_op != SEL_OP_SUB);
+
+  view3d_userdata_circlesel_init(&data, vc, sel, mval, rad);
+
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    data.is_changed |= ed_lattice_flags_set(vc->obedit, 0);
+  }
+  ee_view3d_init_mats_rv3d(vc->obedit, vc->rv3d); /* for foreach's screen/vert projection */
+
+  lattice_foreachScreenVert(vc, latticecurve_circle_doSel, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+
+  return data.is_changed;
+}
+
+/* logic is shared with the edit-bone case, see armature_circle_doSelJoint */
+static bool pchan_circle_doSelJoint(void *userData,
+                                    PoseChannel *pchan,
+                                    const float screen_co[2])
+{
+  CircleSelUserData *data = userData;
+
+  if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
+    if (data->sel) {
+      pchan->bone->flag |= BONE_SEL;
     }
     else {
-      pchan->bone->flag &= ~BONE_SELECTED;
+      pchan->bone->flag &= ~BONE_SEL;
     }
     return 1;
   }
   return 0;
 }
-static void do_circle_select_pose__doSelectBone(void *userData,
-                                                struct dunePoseChannel *pchan,
-                                                const float screen_co_a[2],
-                                                const float screen_co_b[2])
+static void do_circle_sel_pose_doSelBone(void *userData,
+                                         struct PoseChannel *pchan,
+                                         const float screen_co_a[2],
+                                         const float screen_co_b[2])
 {
-  CircleSelectUserData *data = userData;
-  duneArmature *arm = data->vc->obact->data;
+  CircleSelUserData *data = userData;
+  Armature *arm = data->vc->obact->data;
   if (!PBONE_SELECTABLE(arm, pchan->bone)) {
     return;
   }
@@ -4138,7 +4131,7 @@ static void do_circle_select_pose__doSelectBone(void *userData,
   /* project head location to screenspace */
   if (screen_co_a[0] != IS_CLIPPED) {
     points_proj_tot++;
-    if (pchan_circle_doSelectJoint(data, pchan, screen_co_a)) {
+    if (pchan_circle_doSelJoint(data, pchan, screen_co_a)) {
       is_point_done = true;
     }
   }
@@ -4146,73 +4139,69 @@ static void do_circle_select_pose__doSelectBone(void *userData,
   /* project tail location to screenspace */
   if (screen_co_b[0] != IS_CLIPPED) {
     points_proj_tot++;
-    if (pchan_circle_doSelectJoint(data, pchan, screen_co_b)) {
+    if (pchan_circle_doSelJoint(data, pchan, screen_co_b)) {
       is_point_done = true;
     }
   }
 
   /* check if the head and/or tail is in the circle
-   * - the call to check also does the selection already
-   */
-
-  /* only if the endpoints didn't get selected, deal with the middle of the bone too
+   * - the call to check also does the sel already  */
+  /* only if the endpoints didn't get sel, deal with the middle of the bone too
    * It works nicer to only do this if the head or tail are not in the circle,
-   * otherwise there is no way to circle select joints alone */
+   * otherwise there is no way to circle sel joints alone */
   if ((is_point_done == false) && (points_proj_tot == 2) &&
       edge_inside_circle(data->mval_fl, data->radius, screen_co_a, screen_co_b)) {
     if (data->select) {
-      pchan->bone->flag |= BONE_SELECTED;
+      pchan->bone->flag |= BONE_SEL;
     }
     else {
-      pchan->bone->flag &= ~BONE_SELECTED;
+      pchan->bone->flag &= ~BONE_SEL;
     }
     data->is_changed = true;
   }
 
   data->is_changed |= is_point_done;
 }
-static bool pose_circle_select(ViewContext *vc,
-                               const eSelectOp sel_op,
+static bool pose_circle_sel(ViewCxt *vc,
+                               const eSelOp sel_op,
                                const int mval[2],
                                float rad)
 {
-  LIB_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
-  CircleSelectUserData data;
-  const bool select = (sel_op != SEL_OP_SUB);
+  lib_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  CircleSelUserData data;
+  const bool sel = (sel_op != SEL_OP_SUB);
 
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
+  view3d_userdata_circlesel_init(&data, vc, sel, mval, rad);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    data.is_changed |= ED_pose_deselect_all(vc->obact, SEL_DESELECT, false);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    data.is_changed |= ed_pose_desel_all(vc->obact, SEL_DESEL, false);
   }
 
-  ED_view3d_init_mats_rv3d(vc->obact, vc->rv3d); /* for foreach's screen/vert projection */
+  ed_view3d_init_mats_rv3d(vc->obact, vc->rv3d); /* for foreach's screen/vert projection */
 
   /* Treat bones as clipped segments (no joints). */
   pose_foreachScreenBone(vc,
-                         do_circle_select_pose__doSelectBone,
+                         do_circle_sel_pose_doSelBone,
                          &data,
                          V3D_PROJ_TEST_CLIP_DEFAULT | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
 
   if (data.is_changed) {
-    ED_pose_bone_select_tag_update(vc->obact);
+    ed_pose_bone_sel_tag_update(vc->obact);
   }
   return data.is_changed;
 }
 
-/**
- * logic is shared with the pose-bone case, see pchan_circle_doSelectJoint.
- */
-static bool armature_circle_doSelectJoint(void *userData,
+/* logic is shared with the pose-bone case, see pchan_circle_doSelJoint */
+static bool armature_circle_doSelJoint(void *userData,
                                           EditBone *ebone,
                                           const float screen_co[2],
                                           bool head)
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
     if (head) {
-      if (data->select) {
+      if (data->sel) {
         ebone->flag |= BONE_ROOTSEL;
       }
       else {
@@ -4220,7 +4209,7 @@ static bool armature_circle_doSelectJoint(void *userData,
       }
     }
     else {
-      if (data->select) {
+      if (data->sel) {
         ebone->flag |= BONE_TIPSEL;
       }
       else {
@@ -4231,19 +4220,19 @@ static bool armature_circle_doSelectJoint(void *userData,
   }
   return 0;
 }
-static void do_circle_select_armature__doSelectBone(void *userData,
-                                                    struct EditBone *ebone,
-                                                    const float screen_co_a[2],
-                                                    const float screen_co_b[2])
+static void do_circle_sel_armature_doSelBone(void *userData,
+                                             struct EditBone *ebone,
+                                             const float screen_co_a[2],
+                                             const float screen_co_b[2])
 {
-  CircleSelectUserData *data = userData;
-  const duneArmature *arm = data->vc->obedit->data;
-  if (!(data->select ? EBONE_SELECTABLE(arm, ebone) : EBONE_VISIBLE(arm, ebone))) {
+  CircleSelUserData *data = userData;
+  const Armature *arm = data->vc->obedit->data;
+  if (!(data->sel ? EBONE_SELECTABLE(arm, ebone) : EBONE_VISIBLE(arm, ebone))) {
     return;
   }
 
   /* When true, ignore in the next pass. */
-  ebone->temp.i = false;
+  ebone->tmp.i = false;
 
   bool is_point_done = false;
   bool is_edge_done = false;
@@ -4252,7 +4241,7 @@ static void do_circle_select_armature__doSelectBone(void *userData,
   /* project head location to screenspace */
   if (screen_co_a[0] != IS_CLIPPED) {
     points_proj_tot++;
-    if (armature_circle_doSelectJoint(data, ebone, screen_co_a, true)) {
+    if (armature_circle_doSelJoint(data, ebone, screen_co_a, true)) {
       is_point_done = true;
     }
   }
@@ -4260,21 +4249,20 @@ static void do_circle_select_armature__doSelectBone(void *userData,
   /* project tail location to screenspace */
   if (screen_co_b[0] != IS_CLIPPED) {
     points_proj_tot++;
-    if (armature_circle_doSelectJoint(data, ebone, screen_co_b, false)) {
+    if (armature_circle_doSelJoint(data, ebone, screen_co_b, false)) {
       is_point_done = true;
     }
   }
 
   /* check if the head and/or tail is in the circle
-   * - the call to check also does the selection already
-   */
+   * - the call to check also does the sel already */
 
-  /* only if the endpoints didn't get selected, deal with the middle of the bone too
+  /* only if the endpoints didn't get sel, deal with the middle of the bone too
    * It works nicer to only do this if the head or tail are not in the circle,
    * otherwise there is no way to circle select joints alone */
   if ((is_point_done == false) && (points_proj_tot == 2) &&
       edge_inside_circle(data->mval_fl, data->radius, screen_co_a, screen_co_b)) {
-    SET_FLAG_FROM_TEST(ebone->flag, data->select, BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+    SET_FLAG_FROM_TEST(ebone->flag, data->select, BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
     is_edge_done = true;
     data->is_changed = true;
   }
@@ -4285,152 +4273,152 @@ static void do_circle_select_armature__doSelectBone(void *userData,
 
   data->is_changed |= is_point_done;
 }
-static void do_circle_select_armature__doSelectBone_clip_content(void *userData,
-                                                                 struct EditBone *ebone,
-                                                                 const float screen_co_a[2],
-                                                                 const float screen_co_b[2])
+static void do_circle_sel_armature_doSelBone_clip_content(void *userData,
+                                                          struct EditBone *ebone,
+                                                          const float screen_co_a[2],
+                                                          const float screen_co_b[2])
 {
-  CircleSelectUserData *data = userData;
-  duneArmature *arm = data->vc->obedit->data;
+  CircleSelUserData *data = userData;
+  Armature *arm = data->vc->obedit->data;
 
-  if (!(data->select ? EBONE_SELECTABLE(arm, ebone) : EBONE_VISIBLE(arm, ebone))) {
+  if (!(data->sel ? EBONE_SELECTABLE(arm, ebone) : EBONE_VISIBLE(arm, ebone))) {
     return;
   }
 
-  /* Set in the first pass, needed so circle select prioritizes joints. */
+  /* Set in the first pass, needed so circle sel prioritizes joints. */
   if (ebone->temp.i == true) {
     return;
   }
 
   if (edge_inside_circle(data->mval_fl, data->radius, screen_co_a, screen_co_b)) {
-    SET_FLAG_FROM_TEST(ebone->flag, data->select, BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+    SET_FLAG_FROM_TEST(ebone->flag, data->sel, BONE_SE | BONE_TIPSEL | BONE_ROOTSEL);
     data->is_changed = true;
   }
 }
-static bool armature_circle_select(ViewContext *vc,
-                                   const eSelectOp sel_op,
-                                   const int mval[2],
-                                   float rad)
+static bool armature_circle_sel(ViewCxt *vc,
+                                const eSelOp sel_op,
+                                const int mval[2],
+                                float rad)
 {
-  CircleSelectUserData data;
-  duneArmature *arm = vc->obedit->data;
+  CircleSelUserData data;
+  Armature *arm = vc->obedit->data;
 
   const bool select = (sel_op != SEL_OP_SUB);
 
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
+  view3d_userdata_circlesel_init(&data, vc, select, mval, rad);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    data.is_changed |= ED_armature_edit_deselect_all_visible(vc->obedit);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    data.is_changed |= ed_armature_edit_desel_all_visible(vc->obedit);
   }
 
   ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
 
-  /* Operate on fully visible (non-clipped) points. */
+  /* Op on fully visible (non-clipped) points. */
   armature_foreachScreenBone(
-      vc, do_circle_select_armature__doSelectBone, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      vc, do_circle_sel_armature_doSelBone, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
 
-  /* Operate on bones as segments clipped to the viewport bounds
+  /* Op on bones as segments clipped to the viewport bounds
    * (needed to handle bones with both points outside the view).
-   * A separate pass is needed since clipped coordinates can't be used for selecting joints. */
+   * A separate pass is needed since clipped coordinates can't be used for sel joints. */
   armature_foreachScreenBone(vc,
-                             do_circle_select_armature__doSelectBone_clip_content,
+                             do_circle_sel_armature_doSelBone_clip_content,
                              &data,
                              V3D_PROJ_TEST_CLIP_DEFAULT | V3D_PROJ_TEST_CLIP_CONTENT_DEFAULT);
 
   if (data.is_changed) {
-    ED_armature_edit_sync_selection(arm->edbo);
-    ED_armature_edit_validate_active(arm);
-    WM_main_add_notifier(NC_OBJECT | ND_BONE_SELECT, vc->obedit);
+    ed_armature_edit_sync_sel(arm->edbo);
+    ed_armature_edit_validate_active(arm);
+    win_main_add_notifier(NC_OB | ND_BONE_SEL, vc->obedit);
   }
   return data.is_changed;
 }
 
-static void do_circle_select_mball__doSelectElem(void *userData,
-                                                 struct MetaElem *ml,
-                                                 const float screen_co[2])
+static void do_circle_sel_mball_doSelElem(void *userData,
+                                             struct MetaElem *ml,
+                                             const float screen_co[2])
 {
-  CircleSelectUserData *data = userData;
+  CircleSelUserData *data = userData;
 
   if (len_squared_v2v2(data->mval_fl, screen_co) <= data->radius_squared) {
     if (data->select) {
-      ml->flag |= SELECT;
+      ml->flag |= SEL;
     }
     else {
-      ml->flag &= ~SELECT;
+      ml->flag &= ~SEL;
     }
     data->is_changed = true;
   }
 }
-static bool mball_circle_select(ViewContext *vc,
-                                const eSelectOp sel_op,
-                                const int mval[2],
-                                float rad)
+static bool mball_circle_sel(ViewCxt *vc,
+                             const eSelOp sel_op,
+                             const int mval[2],
+                             float rad)
 {
-  CircleSelectUserData data;
+  CircleSelUserData data;
 
-  const bool select = (sel_op != SEL_OP_SUB);
+  const bool sel = (sel_op != SEL_OP_SUB);
 
-  view3d_userdata_circleselect_init(&data, vc, select, mval, rad);
+  view3d_userdata_circlesel_init(&data, vc, sel, mval, rad);
 
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    data.is_changed |= BKE_mball_deselect_all(vc->obedit->data);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    data.is_changed |= dune_mball_desel_all(vc->obedit->data);
   }
 
-  ED_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
+  ed_view3d_init_mats_rv3d(vc->obedit, vc->rv3d);
 
   mball_foreachScreenElem(
-      vc, do_circle_select_mball__doSelectElem, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
+      vc, do_circle_select_mball_doSelElem, &data, V3D_PROJ_TEST_CLIP_DEFAULT);
   return data.is_changed;
 }
 
-/** Callbacks for circle selection in Editmode **/
-static bool obedit_circle_select(duneContext *C,
-                                 ViewContext *vc,
-                                 wmGenericUserData *wm_userdata,
-                                 const eSelectOp sel_op,
-                                 const int mval[2],
-                                 float rad)
+/* Cbs for circle sel in Editmode */
+static bool obedit_circle_sel(Cxt *C,
+                              ViewCxt *vc,
+                              WinGenericUserData *win_userdata,
+                              const eSelOp sel_op,
+                              const int mval[2],
+                              float rad)
 {
   bool changed = false;
-  LIB_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  lib_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
   switch (vc->obedit->type) {
     case OB_MESH:
-      changed = mesh_circle_select(vc, wm_userdata, sel_op, mval, rad);
+      changed = mesh_circle_sel(vc, win_userdata, sel_op, mval, rad);
       break;
     case OB_CURVES_LEGACY:
     case OB_SURF:
-      changed = nurbscurve_circle_select(vc, sel_op, mval, rad);
+      changed = nurbscurve_circle_sel(vc, sel_op, mval, rad);
       break;
     case OB_LATTICE:
-      changed = lattice_circle_select(vc, sel_op, mval, rad);
+      changed = lattice_circle_sel(vc, sel_op, mval, rad);
       break;
     case OB_ARMATURE:
-      changed = armature_circle_select(vc, sel_op, mval, rad);
+      changed = armature_circle_sel(vc, sel_op, mval, rad);
       if (changed) {
-        ED_outliner_select_sync_from_edit_bone_tag(C);
+        ed_outliner_sel_sync_from_edit_bone_tag(C);
       }
       break;
     case OB_MBALL:
-      changed = mball_circle_select(vc, sel_op, mval, rad);
+      changed = mball_circle_sel(vc, sel_op, mval, rad);
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
   if (changed) {
-    DEG_id_tag_update(vc->obact->data, ID_RECALC_SELECT);
-    WM_main_add_notifier(NC_GEOM | ND_SELECT, vc->obact->data);
+    graph_id_tag_update(vc->obact->data, ID_RECALC_SEL);
+    win_main_add_notifier(NC_GEOM | ND_SEL, vc->obact->data);
   }
   return changed;
 }
 
-static bool object_circle_select(ViewContext *vc,
-                                 const eSelectOp sel_op,
-                                 const int mval[2],
-                                 float rad)
+static bool ob_circle_sel(ViewCxt *vc,
+                          const eSelOp sel_op,
+                          const int mval[2],
+                          float rad)
 {
-  LIB_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  lib_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
   ViewLayer *view_layer = vc->view_layer;
   View3D *v3d = vc->v3d;
 
@@ -4438,21 +4426,21 @@ static bool object_circle_select(ViewContext *vc,
   const float mval_fl[2] = {mval[0], mval[1]};
 
   bool changed = false;
-  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
-    changed |= object_deselect_all_visible(vc->view_layer, vc->v3d);
+  if (SEL_OP_USE_PRE_DESEL(sel_op)) {
+    changed |= object_desel_all_visible(vc->view_layer, vc->v3d);
   }
-  const bool select = (sel_op != SEL_OP_SUB);
-  const int select_flag = select ? BASE_SELECTED : 0;
+  const bool sel = (sel_op != SEL_OP_SUB);
+  const int sel_flag = sel ? BASE_SEL : 0;
 
   Base *base;
   for (base = FIRSTBASE(view_layer); base; base = base->next) {
     if (BASE_SELECTABLE(v3d, base) && ((base->flag & BASE_SELECTED) != select_flag)) {
       float screen_co[2];
-      if (ED_view3d_project_float_global(
-              vc->region, base->object->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) ==
+      if (ed_view3d_project_float_global(
+              vc->region, base->ob->obmat[3], screen_co, V3D_PROJ_TEST_CLIP_DEFAULT) =
           V3D_PROJ_RET_OK) {
         if (len_squared_v2v2(mval_fl, screen_co) <= radius_squared) {
-          ED_object_base_select(base, select ? BA_SELECT : BA_DESELECT);
+          ed_ob_base_sel(base, sel ? BA_SEL : BA_DESEL);
           changed = true;
         }
       }
@@ -4462,107 +4450,107 @@ static bool object_circle_select(ViewContext *vc,
   return changed;
 }
 
-/* not a real operator, only for circle test */
-static int view3d_circle_select_exec(bContext *C, wmOperator *op)
+/* not a real op, only for circle test */
+static int view3d_circle_sel_ex(Cxt *C, WinOp *op)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc;
-  const int radius = API_int_get(op->ptr, "radius");
-  const int mval[2] = {API_int_get(op->ptr, "x"), API_int_get(op->ptr, "y")};
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewCxt vc;
+  const int radius = api_int_get(op->ptr, "radius");
+  const int mval[2] = {api_int_get(op->ptr, "x"), api_int_get(op->ptr, "y")};
 
-  /* Allow each selection type to allocate their own data that's used between executions. */
-  wmGesture *gesture = op->customdata; /* NULL when non-modal. */
-  wmGenericUserData wm_userdata_buf = {0};
-  wmGenericUserData *wm_userdata = gesture ? &gesture->user_data : &wm_userdata_buf;
+  /* Allow each sel type to allocate their own data that's used between executions. */
+  WinGesture *gesture = op->customdata; /* NULL when non-modal. */
+  WinGenericUserData win_userdata_buf = {0};
+  WinGenericUserData *win_userdata = gesture ? &gesture->user_data : &win_userdata_buf;
 
-  const eSelectOp sel_op = ED_select_op_modal(RNA_enum_get(op->ptr, "mode"),
-                                              WM_gesture_is_modal_first(gesture));
+  const eSelOp sel_op = ed_sel_op_modal(api_enum_get(op->ptr, "mode"),
+                                           win_gesture_is_modal_first(gesture));
 
-  ED_view3d_viewcontext_init(C, &vc, depsgraph);
+  ee_view3d_viewcxt_init(C, &vc, graph);
 
-  Object *obact = vc.obact;
-  Object *obedit = vc.obedit;
+  Ob *obact = vc.obact;
+  Ob *obedit = vc.obedit;
 
-  if (obedit || DUNE_paint_select_elem_test(obact) || (obact && (obact->mode & OB_MODE_POSE))) {
-    view3d_operator_needs_opengl(C);
+  if (obedit || dune_paint_sel_elem_test(obact) || (obact && (obact->mode & OB_MODE_POSE))) {
+    view3d_op_needs_opengl(C);
     if (obedit == NULL) {
-      DUNE_object_update_select_id(CTX_data_main(C));
+      dune_ob_update_sel_id(cxt_data_main(C));
     }
 
-    FOREACH_OBJECT_IN_MODE_BEGIN (vc.view_layer, vc.v3d, obact->type, obact->mode, ob_iter) {
-      ED_view3d_viewcontext_init_object(&vc, ob_iter);
+    FOREACH_OB_IN_MODE_BEGIN (vc.view_layer, vc.v3d, obact->type, obact->mode, ob_iter) {
+      ed_view3d_viewcxt_init_ob(&vc, ob_iter);
 
       obact = vc.obact;
       obedit = vc.obedit;
 
       if (obedit) {
-        obedit_circle_select(C, &vc, wm_userdata, sel_op, mval, (float)radius);
+        obedit_circle_sel(C, &vc, win_userdata, sel_op, mval, (float)radius);
       }
-      else if (DUNE_paint_select_face_test(obact)) {
-        paint_facesel_circle_select(&vc, wm_userdata, sel_op, mval, (float)radius);
+      else if (dune_paint_sel_face_test(obact)) {
+        paint_facesel_circle_sel(&vc, win_userdata, sel_op, mval, (float)radius);
       }
-      else if (DUNE_paint_select_vert_test(obact)) {
-        paint_vertsel_circle_select(&vc, wm_userdata, sel_op, mval, (float)radius);
+      else if (dune_paint_sel_vert_test(obact)) {
+        paint_vertsel_circle_sel(&vc, win_userdata, sel_op, mval, (float)radius);
       }
       else if (obact->mode & OB_MODE_POSE) {
-        pose_circle_select(&vc, sel_op, mval, (float)radius);
-        ED_outliner_select_sync_from_pose_bone_tag(C);
+        pose_circle_sel(&vc, sel_op, mval, (float)radius);
+        ed_outliner_sel_sync_from_pose_bone_tag(C);
       }
       else {
-        LIB_assert(0);
+        lib_assert(0);
       }
     }
-    FOREACH_OBJECT_IN_MODE_END;
+    FOREACH_OB_IN_MODE_END;
   }
   else if (obact && (obact->mode & OB_MODE_PARTICLE_EDIT)) {
-    if (PE_circle_select(C, wm_userdata, sel_op, mval, (float)radius)) {
-      return OPERATOR_FINISHED;
+    if (pe_circle_sel(C, win_userdata, sel_op, mval, (float)radius)) {
+      return OP_FINISHED;
     }
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   else if (obact && obact->mode & OB_MODE_SCULPT) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   else {
-    if (object_circle_select(&vc, sel_op, mval, (float)radius)) {
-      DEG_id_tag_update(&vc.scene->id, ID_RECALC_SELECT);
-      WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, vc.scene);
+    if (ob_circle_sel(&vc, sel_op, mval, (float)radius)) {
+      graoh_id_tag_update(&vc.scene->id, ID_RECALC_SEL);
+      win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, vc.scene);
 
-      ED_outliner_select_sync_from_object_tag(C);
+      ed_outliner_sel_sync_from_ob_tag(C);
     }
   }
 
   /* Otherwise this is freed by the gesture. */
-  if (wm_userdata == &wm_userdata_buf) {
-    WM_generic_user_data_free(wm_userdata);
+  if (win_userdata == &win_userdata_buf) {
+    win_generic_user_data_free(win_userdata);
   }
   else {
-    struct EditSelectBuf_Cache *esel = wm_userdata->data;
-    if (esel && esel->select_bitmap) {
-      MEM_freeN(esel->select_bitmap);
-      esel->select_bitmap = NULL;
+    struct EditSelBufCache *esel = win_userdata->data;
+    if (esel && esel->sel_bitmap) {
+      mem_free(esel->sel_bitmap);
+      esel->sel_bitmap = NULL;
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void VIEW3D_OT_select_circle(wmOperatorType *ot)
+void VIEW3D_OT_sel_circle(WinOpType *ot)
 {
-  ot->name = "Circle Select";
-  ot->description = "Select items using circle selection";
-  ot->idname = "VIEW3D_OT_select_circle";
+  ot->name = "Circle Sel";
+  ot->description = "Select items using circle sel";
+  ot->idname = "VIEW3D_OT_sel_circle";
 
-  ot->invoke = WM_gesture_circle_invoke;
-  ot->modal = WM_gesture_circle_modal;
-  ot->exec = view3d_circle_select_exec;
+  ot->invoke = win_gesture_circle_invoke;
+  ot->modal = win_gesture_circle_modal;
+  ot->ex = view3d_circle_sel_ex;
   ot->poll = view3d_selectable_data;
-  ot->cancel = WM_gesture_circle_cancel;
+  ot->cancel = win_gesture_circle_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_gesture_circle(ot);
-  WM_operator_properties_select_operation_simple(ot);
+  /* props */
+  win_op_props_gesture_circle(ot);
+  win_op_props_sel_op_simple(ot);
 }
