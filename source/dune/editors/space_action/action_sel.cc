@@ -979,7 +979,6 @@ void ACTION_OT_sel_circle(WinOpType *ot)
 }
 
 /* Column Sel Op
- *
  * This op works in one of four ways:
  * - 1) sel all keyframes in the same frame as a sel one  (KKEY)
  * - 2) sel all keyframes in the same frame as the current frame marker (CTRL-KKEY)
@@ -1360,7 +1359,7 @@ static int actkeys_sel_more_ex(Cxt *C, WinOp * /*op*/)
 void ACTION_OT_sel_more(WinOpType *ot)
 {
   /* ids */
-  ot->name = "Select More";
+  ot->name = "Sel More";
   ot->idname = "ACTION_OT_sel_more";
   ot->description = "Sel keyframes beside already selected ones";
 
@@ -1429,7 +1428,7 @@ static void actkeys_sel_leftright(AnimCxt *ac, short leftright, short sel_mode)
 
   /* if sel mode is replace, desel all keyframes (and channels) first */
   if (sel_mode == SEL_REPLACE) {
-    select_mode = SEL_ADD;
+    sel_mode = SEL_ADD;
 
     /* - desel all other keyframes, so that just the newly sel remain
      * - channels aren't deselected, since we don't re-select any as a consequence */
@@ -1629,13 +1628,13 @@ static void actkeys_msel_single(AnimCxt *ac,
   KeyframeEditFn sel_cb, ok_cb;
 
   /* get fns for sel keyframes */
-  select_cb = anim_editkeyframes_sel(sel_mode);
+  sel_cb = anim_editkeyframes_sel(sel_mode);
   ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAME);
   ked.f1 = selx;
   ked.iterflags |= KED_F1_NLA_UNMAP;
 
   /* sel the nominated keyframe on the given frame */
-  if (ale->type == ANIMTYPE_GPLAYER) {
+  if (ale->type == ANIMTYPE_PLAYER) {
     ed_pen_sel_frame(static_cast<bGPDlayer *>(ale->data), selx, select_mode);
     ale->update |= ANIM_UPDATE_DEPS;
   }
@@ -1709,240 +1708,236 @@ static void actkeys_msel_single(AnimCxt *ac,
   }
 }
 
-/* Option 2) Selects all the keyframes on either side of the current frame
+/* Option 2) Sel all the keyframes on either side of the current frame
  * (depends on which side the mouse is on) */
-/* (see actkeys_select_leftright) */
+/* (see actkeys_sel_leftright) */
 
-/* Option 3) Selects all visible keyframes in the same frame as the mouse click */
-static void actkeys_mselect_column(bAnimContext *ac, short select_mode, float selx)
+/* Option 3) Seld all visible keyframes in the same frame as the mouse click */
+static void actkeys_msel_column(AnimCxt *ac, short select_mode, float selx)
 {
-  ListBase anim_data = {nullptr, nullptr};
-  eAnimFilter_Flags filter;
+  List anim_data = {nullptr, nullptr};
+  eAnimFilterFlags filter;
 
-  KeyframeEditFunc select_cb, ok_cb;
+  KeyframeEditFn sel_cb, ok_cb;
   KeyframeEditData ked = {{nullptr}};
 
   /* set up BezTriple edit callbacks */
-  select_cb = ANIM_editkeyframes_select(select_mode);
-  ok_cb = ANIM_editkeyframes_ok(BEZT_OK_FRAME);
+  sel_cb = anim_editkeyframes_sel(sel_mode);
+  ok_cb = anim_editkeyframes_ok(BEZT_OK_FRAME);
 
   /* loop through all of the keys and select additional keyframes
-   * based on the keys found to be selected above
-   */
+   * based on the keys found to be selected above */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+  anom_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     /* select elements with frame number matching cfra */
-    if (ale->type == ANIMTYPE_GPLAYER) {
-      ED_gpencil_select_frame(static_cast<bGPDlayer *>(ale->data), selx, select_mode);
+    if (ale->type == ANIMTYPE_PLAYER) {
+      ed_pen_sel_frame(static_cast<PenDataLayer *>(ale->data), selx, sel_mode);
       ale->update |= ANIM_UPDATE_DEPS;
     }
     else if (ale->type == ANIMTYPE_MASKLAYER) {
-      ED_mask_select_frame(static_cast<MaskLayer *>(ale->data), selx, select_mode);
+      ee_mask_select_frame(static_cast<MaskLayer *>(ale->data), selx, sel_mode);
     }
-    else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-      blender::ed::greasepencil::select_frame_at(
-          static_cast<GreasePencilLayer *>(ale->data)->wrap(), selx, select_mode);
+    else if (ale->type == ANIMTYPE_PEN_LAYER) {
+      dune::ed::pen::sel_frame_at(
+          static_cast<PenLayer *>(ale->data)->wrap(), selx, sel_mode);
       ale->update |= ANIM_UPDATE_DEPS;
     }
     else {
-      AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+      AnimData *adt = anim_nla_mapping_get(ac, ale);
 
-      /* set frame for validation callback to refer to */
+      /* set frame for validation cb to refer to */
       if (adt) {
-        ked.f1 = BKE_nla_tweakedit_remap(adt, selx, NLATIME_CONVERT_UNMAP);
+        ked.f1 = dune_nla_tweakedit_remap(adt, selx, NLATIME_CONVERT_UNMAP);
       }
       else {
         ked.f1 = selx;
       }
-
-      ANIM_fcurve_keyframes_loop(
-          &ked, static_cast<FCurve *>(ale->key_data), ok_cb, select_cb, nullptr);
+      
+      anim_fcurve_keyframes_loop(
+          &ked, static_cast<FCurve *>(ale->key_data), ok_cb, sel_cb, nullptr);
     }
   }
 
   /* free elements */
-  BLI_freelistN(&ked.list);
+  lib_freelist(&ked.list);
 
-  ANIM_animdata_update(ac, &anim_data);
-  ANIM_animdata_freelist(&anim_data);
+  anim_animdata_update(ac, &anim_data);
+  anim_animdata_freelist(&anim_data);
 }
 
-/* option 4) select all keyframes in same channel */
-static void actkeys_mselect_channel_only(bAnimContext *ac, bAnimListElem *ale, short select_mode)
+/* option 4) sel all keyframes in same channel */
+static void actkeys_msel_channel_only(AnimCxt *ac, AnimListElem *ale, short sel_mode)
 {
-  KeyframeEditFunc select_cb;
+  KeyframeEditFn sel_cb;
 
-  /* get functions for selecting keyframes */
-  select_cb = ANIM_editkeyframes_select(select_mode);
+  /* get fns for sel keyframes */
+  sel_cb = anim_editkeyframes_sel(sel_mode);
 
   /* select all keyframes in this channel */
-  if (ale->type == ANIMTYPE_GPLAYER) {
-    ED_gpencil_select_frames(static_cast<bGPDlayer *>(ale->data), select_mode);
+  if (ale->type == ANIMTYPE_PLAYER) {
+    ed_pen_sel_frames(static_cast<PenDataLayer *>(ale->data), sel_mode);
     ale->update = ANIM_UPDATE_DEPS;
   }
   else if (ale->type == ANIMTYPE_MASKLAYER) {
-    ED_mask_select_frames(static_cast<MaskLayer *>(ale->data), select_mode);
+    ed_mask_sel_frames(static_cast<MaskLayer *>(ale->data), sel_mode);
   }
-  else if (ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-    blender::ed::greasepencil::select_all_frames(
-        static_cast<GreasePencilLayer *>(ale->data)->wrap(), select_mode);
+  else if (ale->type == ANIMTYPE_PEN_LAYER) {
+    dune::ed::pen::sel_all_frames(
+        static_cast<PenLayer *>(ale->data)->wrap(), sel_mode);
     ale->update |= ANIM_UPDATE_DEPS;
   }
   else {
     if (ale->type == ANIMTYPE_SUMMARY && ale->datatype == ALE_ALL) {
-      ListBase anim_data = {nullptr, nullptr};
-      eAnimFilter_Flags filter;
+      List anim_data = {nullptr, nullptr};
+      eAnimFilterFlags filter;
 
       filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_NODUPLIS);
-      ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimCont_Types(ac->datatype));
+      ANIM_animdata_filter(ac, &anim_data, filter, ac->data, eAnimContTypes(ac->datatype));
 
-      LISTBASE_FOREACH (bAnimListElem *, ale2, &anim_data) {
-        if (ale2->type == ANIMTYPE_GPLAYER) {
-          ED_gpencil_select_frames(static_cast<bGPDlayer *>(ale2->data), select_mode);
+      LIST_FOREACH (AnimListElem *, ale2, &anim_data) {
+        if (ale2->type == ANIMTYPE_PLAYER) {
+         ed_pen_sel_frames(static_cast<PenLayer *>(ale2->data), select_mode);
           ale2->update |= ANIM_UPDATE_DEPS;
         }
         else if (ale2->type == ANIMTYPE_MASKLAYER) {
-          ED_mask_select_frames(static_cast<MaskLayer *>(ale2->data), select_mode);
+          ed_mask_sel_frames(static_cast<MaskLayer *>(ale2->data), select_mode);
         }
       }
 
-      ANIM_animdata_update(ac, &anim_data);
-      ANIM_animdata_freelist(&anim_data);
+      anim_animdata_update(ac, &anim_data);
+      anim_animdata_freelist(&anim_data);
     }
 
-    if (!ELEM(ac->datatype, ANIMCONT_GPENCIL, ANIMCONT_MASK)) {
-      ANIM_animchannel_keyframes_loop(nullptr, ac->ads, ale, nullptr, select_cb, nullptr);
+    if (!ELEM(ac->datatype, ANIMCONT_PEN, ANIMCONT_MASK)) {
+      anim_animchannel_keyframes_loop(nullptr, ac->ads, ale, nullptr, sel_cb, nullptr);
     }
   }
 }
 
-/* ------------------- */
-
-static int mouse_action_keys(bAnimContext *ac,
+static int mouse_action_keys(AnimCxt *ac,
                              const int mval[2],
-                             short select_mode,
-                             const bool deselect_all,
+                             short sel_mode,
+                             const bool desel_all,
                              const bool column,
                              const bool same_channel,
-                             bool wait_to_deselect_others)
+                             bool wait_to_desel_others)
 {
-  eAnimFilter_Flags filter = ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
+  eAnimFilterFlags filter = ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE |
                              ANIMFILTER_LIST_CHANNELS;
 
-  bAnimListElem *ale = nullptr;
+  AnimListElem *ale = nullptr;
   bool found = false;
-  bool is_selected = false;
+  bool is_sel = false;
   float frame = 0.0f; /* frame of keyframe under mouse - NLA corrections not applied/included */
   float selx = 0.0f;  /* frame of keyframe under mouse */
-  int ret_value = OPERATOR_FINISHED;
+  int ret_value = OP_FINISHED;
 
   actkeys_find_key_at_position(
       ac, filter, mval[0], mval[1], &ale, &selx, &frame, &found, &is_selected);
 
-  if (select_mode != SELECT_REPLACE) {
-    wait_to_deselect_others = false;
+  if (select_mode != SEL_REPLACE) {
+    wait_to_desel_others = false;
   }
 
-  /* For replacing selection, if we have something to select, we have to clear existing selection.
-   * The same goes if we found nothing to select, and deselect_all is true
-   * (deselect on nothing behavior). */
-  if ((select_mode == SELECT_REPLACE && found) || (!found && deselect_all)) {
-    /* reset selection mode for next steps */
-    select_mode = SELECT_ADD;
+  /* For replacing sel, if we have something to sel, we have to clear existing selection.
+   * The same goes if we found nothing to select, and desel_all is true
+   * (desel on nothing behavior). */
+  if ((select_mode == SEL_REPLACE && found) || (!found && desel_all)) {
+    /* reset sel  mode for next steps */
+    select_mode = SEL_ADD;
 
-    /* Rather than deselecting others, users may want to drag to box-select (drag from empty space)
-     * or tweak-translate an already selected item. If these cases may apply, delay deselection. */
-    if (wait_to_deselect_others && (!found || is_selected)) {
-      ret_value = OPERATOR_RUNNING_MODAL;
+    /* Rather than desel others, users may want to drag to box-sel (drag from empty space)
+     * or tweak-translate an alrdy sel item. If these cases may apply, delay dese. */
+    if (wait_to_desel_others && (!found || is_sel)) {
+      ret_value = OP_RUNNING_MODAL;
     }
     else {
-      /* deselect all keyframes */
-      deselect_action_keys(ac, 0, SELECT_SUBTRACT);
+      /* desel all keyframes */
+      desel_action_keys(ac, 0, SEL_SUBTRACT);
 
       /* highlight channel clicked on */
       if (ELEM(ac->datatype, ANIMCONT_ACTION, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE)) {
         /* deselect all other channels first */
-        ANIM_anim_channels_select_set(ac, ACHANNEL_SETFLAG_CLEAR);
+        anim_anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
 
         /* Highlight Action-Group or F-Curve? */
         if (ale != nullptr && ale->data) {
           if (ale->type == ANIMTYPE_GROUP) {
-            bActionGroup *agrp = static_cast<bActionGroup *>(ale->data);
+            ActionGroup *agrp = static_cast<ActionGroup *>(ale->data);
 
             agrp->flag |= AGRP_SELECTED;
-            ANIM_set_active_channel(
-                ac, ac->data, eAnimCont_Types(ac->datatype), filter, agrp, ANIMTYPE_GROUP);
+            anim_set_active_channel(
+                ac, ac->data, eAnimContTypes(ac->datatype), filter, agrp, ANIMTYPE_GROUP);
           }
           else if (ELEM(ale->type, ANIMTYPE_FCURVE, ANIMTYPE_NLACURVE)) {
             FCurve *fcu = static_cast<FCurve *>(ale->data);
 
             fcu->flag |= FCURVE_SELECTED;
-            ANIM_set_active_channel(ac,
+            anim_set_active_channel(ac,
                                     ac->data,
-                                    eAnimCont_Types(ac->datatype),
+                                    eAnimContTypes(ac->datatype),
                                     filter,
                                     fcu,
-                                    eAnim_ChannelType(ale->type));
+                                    eAnimChannelType(ale->type));
           }
-          else if (ale->type == ANIMTYPE_GPLAYER) {
-            bGPdata *gpd = (bGPdata *)ale->id;
-            bGPDlayer *gpl = static_cast<bGPDlayer *>(ale->data);
+          else if (ale->type == ANIMTYPE_PLAYER) {
+            PenData *pd = (PenData *)ale->id;
+            PenDataLayer *pdl = static_cast<PenDataLayer *>(ale->data);
 
-            ED_gpencil_set_active_channel(gpd, gpl);
+            ed_pen_set_active_channel(pd, pdl);
           }
         }
       }
-      else if (ac->datatype == ANIMCONT_GPENCIL) {
-        /* Deselect all other channels first. */
-        ANIM_anim_channels_select_set(ac, ACHANNEL_SETFLAG_CLEAR);
+      else if (ac->datatype == ANIMCONT_PEN) {
+        /* Desel all other channels first. */
+        anim_anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
 
-        /* Highlight the grease pencil channel, and set the corresponding layer as active. */
-        if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_GREASE_PENCIL_LAYER) {
-          blender::ed::greasepencil::select_layer_channel(
-              *reinterpret_cast<GreasePencil *>(ale->id),
-              static_cast<blender::bke::greasepencil::Layer *>(ale->data));
+        /* Highlight the pen channel, and set the corresponding layer as active. */
+        if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_PEN_LAYER) {
+          dune::ed::pen::sel_layer_channel(
+              *reinterpret_cast<Pen *>(ale->id),
+              static_cast<dune::pen::Layer *>(ale->data));
         }
 
-        /* Highlight GPencil Layer (Legacy). */
-        if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_GPLAYER) {
-          bGPdata *gpd = (bGPdata *)ale->id;
-          bGPDlayer *gpl = static_cast<bGPDlayer *>(ale->data);
+        /* Highlight Pen Layer (Legacy). */
+        if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_PLAYER) {
+          Pendata *pd = (PenData *)ale->id;
+          PenDataLayer *pdl = static_cast<PenDataLayer *>(ale->data);
 
-          ED_gpencil_set_active_channel(gpd, gpl);
+          ed_pen_set_active_channel(pd, pdl);
         }
       }
       else if (ac->datatype == ANIMCONT_MASK) {
-        /* deselect all other channels first */
-        ANIM_anim_channels_select_set(ac, ACHANNEL_SETFLAG_CLEAR);
+        /* desel all other channels first */
+        anim_anim_channels_sel_set(ac, ACHANNEL_SETFLAG_CLEAR);
 
         if (ale != nullptr && ale->data != nullptr && ale->type == ANIMTYPE_MASKLAYER) {
           MaskLayer *masklay = static_cast<MaskLayer *>(ale->data);
 
-          masklay->flag |= MASK_LAYERFLAG_SELECT;
+          masklay->flag |= MASK_LAYERFLAG_SEL;
         }
       }
     }
   }
 
-  /* only select keyframes if we clicked on a valid channel and hit something */
+  /* only sel keyframes if we clicked on a valid channel and hit something */
   if (ale != nullptr) {
     if (found) {
-      /* apply selection to keyframes */
+      /* apply sel to keyframes */
       if (column) {
-        /* select all keyframes in the same frame as the one we hit on the active channel
+        /* sel all keyframes in the same frame as the one we hit on the active channel
          * [#41077]: "frame" not "selx" here (i.e. no NLA corrections yet) as the code here
-         *            does that itself again as it needs to work on multiple data-blocks.
-         */
-        actkeys_mselect_column(ac, select_mode, frame);
+         * does that itself again as it needs to work on multiple data-blocks. */
+        actkeys_msel_column(ac, sel_mode, frame);
       }
       else if (same_channel) {
         /* select all keyframes in the active channel */
-        actkeys_mselect_channel_only(ac, ale, select_mode);
+        actkeys_msel_channel_only(ac, ale, sel_mode);
       }
       else {
-        /* select the nominated keyframe on the given frame */
+        /* sel the nominated keyframe on the given frame */
         actkeys_msel_single(ac, ale, sel_mode, selx);
       }
     }
@@ -2004,7 +1999,7 @@ void ACTION_OT_clicksel(WinOpType *ot)
   /* ids */
   ot->name = "Sel Keyframes";
   ot->idname = "ACTION_OT_clicksel";
-  ot->description = "Select keyframes by clicking on them";
+  ot->description = "Sel keyframes by clicking on them";
 
   /* cbs */
   ot->poll = ed_op_action_active;
@@ -2026,7 +2021,7 @@ void ACTION_OT_clicksel(WinOpType *ot)
       "Toggle keyframe sel instead of leaving newly sel keyframes only");
   api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = api_def_bool(ot->sali,
+  prop = api_def_bool(ot->sapi,
                          "desel_all",
                          false,
                          "Desel On Nothing",
@@ -2039,14 +2034,14 @@ void ACTION_OT_clicksel(WinOpType *ot)
       "column",
       false,
       "Column Sel",
-      "Select all keyframes that occur on the same frame as the one under the mouse");
-  RNA_def_prop_flag(prop, PROP_SKIP_SAVE);
+      "Sel all keyframes that occur on the same frame as the one under the mouse");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
   /* Key-map: Enable with `Ctrl-Alt`. */
-  prop = RNA_def_boolean(ot->srna,
+  prop = api_def_bool(ot->sapi,
                          "channel",
                          false,
                          "Only Channel",
-                         "Select all the keyframes in the channel under the mouse");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+                         "Sel all the keyframes in the channel under the mouse");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
