@@ -1,4 +1,4 @@
-#include "types_obj.h"
+#include "types_ob.h"
 #include "types_scene.h"
 
 #include "lib_list.h"
@@ -7,10 +7,10 @@
 
 #include "mem_guardedalloc.h"
 
-#include "dune_context.h"
+#include "dune_cxt.h"
 #include "dune_global.h"
 #include "dune_main.h"
-#include "dune_obj.h"
+#include "dune_ob.h"
 #include "dune_scene.h"
 #include "dune_screen.h"
 
@@ -19,7 +19,7 @@
 
 #include "ed_screen.h"
 #include "ed_transform.h"
-#include "ed_transform_snap_obj_cxt.h"
+#include "ed_transform_snap_ob_cxt.h"
 #include "ed_view3d.h"
 
 #include "ui_resources.h"
@@ -43,7 +43,7 @@ typedef struct SnapCursorDataIntern {
   List state_intern;
   V3DSnapCursorData snap_data;
 
-  struct SnapObjCxt *snap_cxt_v3d;
+  struct SnapObCxt *snap_cxt_v3d;
   const Scene *scene;
   short snap_elem_hidden;
 
@@ -363,7 +363,7 @@ void ed_view3d_cursor_snap_draw_util(RgnView3D *rv3d,
 
   /* The size of the circle is larger than the vertex size.
    * This prevents a drawing overlaps the other. */
-  float radius = 2.5f * ui_GetThemeValuef(TH_VERTEX_SIZE);
+  float radius = 2.5f * ui_GetThemeValf(TH_VERTEX_SIZE);
   uint pos = gpu_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
@@ -603,10 +603,10 @@ static void v3d_cursor_snap_update(V3DSnapCursorState *state,
     snap_elem = ed_transform_snap_obj_project_view3d_ex(
         data_intern->snap_cxt_v3d,
         graph,
-        regn,
+        rgn,
         v3d,
         snap_elements,
-        &(const struct SnapObjParams){
+        &(const struct SnapObParams){
             .snap_sel = snap_sel,
             .edit_mode_type = edit_mode_type,
             .use_occlusion_test = use_occlusion_test,
@@ -647,7 +647,7 @@ static void v3d_cursor_snap_update(V3DSnapCursorState *state,
 
     /* Non-orthogonal matrices cause the preview and final result not to match.
      * While making orthogonal doesn't always work well (especially with gimbal orientation for
-     * e.g.) it's a corner case, without better alternatives as objs don't support shear. */
+     * e.g.) it's a corner case, wo better alternatives as objs don't support shear. */
     orthogonalize_m3(omat, state->plane_axis);
 
     if (orient_surface) {
