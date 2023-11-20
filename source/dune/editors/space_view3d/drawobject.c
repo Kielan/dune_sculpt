@@ -1,5 +1,5 @@
 #include "types_mesh.h"
-#include "types_object.h"
+#include "types_ob.h"
 #include "types_scene.h"
 
 #include "lib_math.h"
@@ -7,7 +7,7 @@
 #include "dune_DerivedMesh.h"
 #include "dune_editmesh.h"
 #include "dune_global.h"
-#include "dune_object.h"
+#include "dune_ob.h"
 
 #include "graph.h"
 #include "graph_query.h"
@@ -21,7 +21,7 @@
 
 #include "ui_resources.h"
 
-#include "draw_engine.h"
+#include "drw_engine.h"
 
 #include "view3d_intern.h" /* bad level include */
 
@@ -31,10 +31,10 @@ bool view3d_camera_border_hack_test = false;
 #endif
 
 /* BACKBUF SEL (BBS) */
-void ed_draw_object_facemap(Graph *graph,
-                            Object *ob,
-                            const float col[4],
-                            const int facemap)
+void ed_draw_ob_facemap(Graph *graph,
+                        Ob *ob,
+                        const float col[4],
+                        const int facemap)
 {
   /* happens on undo */
   if (ob->type != OB_MESH || !ob->data) {
@@ -43,8 +43,8 @@ void ed_draw_object_facemap(Graph *graph,
 
   const Mesh *me = ob->data;
   {
-    Object *ob_eval = graph_get_eval_object(graph, ob);
-    const Mesh *me_eval = dune_object_get_eval_mesh(ob_eval);
+    Object *ob_eval = graph_get_eval_ob(graph, ob);
+    const Mesh *me_eval = dune_ob_get_eval_mesh(ob_eval);
     if (me_eval != NULL) {
       me = me_eval;
     }
