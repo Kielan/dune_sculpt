@@ -51,7 +51,6 @@
 #include "img_intern.h"
 
 /* common state */
-
 static void img_scopes_tag_refresh(ScrArea *area)
 {
   SpaceImg *simg = (SpaceImg *)area->spacedata.first;
@@ -84,7 +83,6 @@ static void img_user_refresh_scene(const Cxt *C, SpaceImg *simg)
 }
 
 /* default cbs for img space */
-
 static SpaceLink *img_create(const ScrArea * /*area*/, const Scene * /*scene*/)
 {
   ARgn *rgn;
@@ -145,267 +143,265 @@ static SpaceLink *img_create(const ScrArea * /*area*/, const Scene * /*scene*/)
   /* main area */
   rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "main area for img"));
 
-  BLI_addtail(&simg->rgnbase, rgn);
-  region->regiontype = RGN_TYPE_WINDOW;
+  lib_addtail(&simg->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_WIN;
 
-  return (SpaceLink *)simage;
+  return (SpaceLink *)simg;
 }
 
 /* Doesn't free the space-link itself. */
-static void image_free(SpaceLink *sl)
+static void img_free(SpaceLink *sl)
 {
-  SpaceImage *simage = (SpaceImage *)sl;
+  SpaceImg *simg = (SpaceImg *)sl;
 
-  BKE_scopes_free(&simage->scopes);
+  dune_scopes_free(&sime->scopes);
 }
 
-/* spacetype; init callback, add handlers */
-static void image_init(wmWindowManager * /*wm*/, ScrArea *area)
+/* spacetype; init cb, add handlers */
+static void img_init(WinMngr * /*wm*/, ScrArea *area)
 {
-  ListBase *lb = WM_dropboxmap_find("Image", SPACE_IMAGE, RGN_TYPE_WINDOW);
+  List *list = win_dropboxmap_find("Imag", SPACE_IMG, RGN_TYPE_WIN);
 
   /* add drop boxes */
-  WM_event_add_dropbox_handler(&area->handlers, lb);
+  win_ev_add_dropbox_handler(&area->handlers, list);
 }
 
-static SpaceLink *image_duplicate(SpaceLink *sl)
+static SpaceLink *img_dup(SpaceLink *sl)
 {
-  SpaceImage *simagen = static_cast<SpaceImage *>(MEM_dupallocN(sl));
+  SpaceImg *simg = static_cast<SpaceImg *>(mem_dupalloc(sl));
 
   /* clear or remove stuff from old */
+  dune_scopes_new(&simg->scopes);
 
-  BKE_scopes_new(&simagen->scopes);
-
-  return (SpaceLink *)simagen;
+  return (SpaceLink *)simg;
 }
 
-static void image_operatortypes()
+static void img_optypes()
 {
-  WM_operatortype_append(IMAGE_OT_view_all);
-  WM_operatortype_append(IMAGE_OT_view_pan);
-  WM_operatortype_append(IMAGE_OT_view_selected);
-  WM_operatortype_append(IMAGE_OT_view_center_cursor);
-  WM_operatortype_append(IMAGE_OT_view_cursor_center);
-  WM_operatortype_append(IMAGE_OT_view_zoom);
-  WM_operatortype_append(IMAGE_OT_view_zoom_in);
-  WM_operatortype_append(IMAGE_OT_view_zoom_out);
-  WM_operatortype_append(IMAGE_OT_view_zoom_ratio);
-  WM_operatortype_append(IMAGE_OT_view_zoom_border);
+  win_optype_append(IMG_OT_view_all);
+  win_optype_append(IMG_OT_view_pan);
+  win_optype_append(IMG_OT_view_selected);
+  win_optype_append(IMG_OT_view_center_cursor);
+  win_optype_append(IMG_OT_view_cursor_center);
+  win_optype_append(IMG_OT_view_zoom);
+  win_optype_append(IMG_OT_view_zoom_in);
+  win_optype_append(IMG_OT_view_zoom_out);
+  win_optype_append(IMG_OT_view_zoom_ratio);
+  win_optype_append(IMG_OT_view_zoom_border);
 #ifdef WITH_INPUT_NDOF
-  WM_operatortype_append(IMAGE_OT_view_ndof);
+  win_optype_append(IMG_OT_view_ndof);
 #endif
 
-  WM_operatortype_append(IMAGE_OT_new);
-  WM_operatortype_append(IMAGE_OT_open);
-  WM_operatortype_append(IMAGE_OT_file_browse);
-  WM_operatortype_append(IMAGE_OT_match_movie_length);
-  WM_operatortype_append(IMAGE_OT_replace);
-  WM_operatortype_append(IMAGE_OT_reload);
-  WM_operatortype_append(IMAGE_OT_save);
-  WM_operatortype_append(IMAGE_OT_save_as);
-  WM_operatortype_append(IMAGE_OT_save_sequence);
-  WM_operatortype_append(IMAGE_OT_save_all_modified);
-  WM_operatortype_append(IMAGE_OT_pack);
-  WM_operatortype_append(IMAGE_OT_unpack);
-  WM_operatortype_append(IMAGE_OT_clipboard_copy);
-  WM_operatortype_append(IMAGE_OT_clipboard_paste);
+  win_optype_append(IMG_OT_new);
+  win_optype_append(IMG_OT_open);
+  win_optype_append(IMG_OT_file_browse);
+  win_optype_append(IMG_OT_match_movie_length);
+  win_optype_append(IMG_OT_replace);
+  win_optype_append(IMG_OT_reload);
+  win_optype_append(IMG_OT_save);
+  win_optype_append(IMG_OT_save_as);
+  win_optype_append(IMG_OT_save_sequence);
+  win_optype_append(IMG_OT_save_all_modified);
+  win_optype_append(IMG_OT_pack);
+  win_optype_append(IMG_OT_unpack);
+  win_optype_append(IMG_OT_clipboard_copy);
+  win_optype_append(IMG_OT_clipboard_paste);
 
-  WM_operatortype_append(IMAGE_OT_flip);
-  WM_operatortype_append(IMAGE_OT_invert);
-  WM_operatortype_append(IMAGE_OT_resize);
+  win_optype_append(IMG_OT_flip);
+  win_optype_append(IMG_OT_invert);
+  win_optype_append(IMG_OT_resize);
 
-  WM_operatortype_append(IMAGE_OT_cycle_render_slot);
-  WM_operatortype_append(IMAGE_OT_clear_render_slot);
-  WM_operatortype_append(IMAGE_OT_add_render_slot);
-  WM_operatortype_append(IMAGE_OT_remove_render_slot);
+  win_optype_append(IMG_OT_cycle_render_slot);
+  win_optype_append(IMG_OT_clear_render_slot);
+  win_optype_append(IMG_OT_add_render_slot);
+  win_optype_append(IMG_OT_remove_render_slot);
 
-  WM_operatortype_append(IMAGE_OT_sample);
-  WM_operatortype_append(IMAGE_OT_sample_line);
-  WM_operatortype_append(IMAGE_OT_curves_point_set);
+  win_optype_append(IMG_OT_sample);
+  win_optype_append(IMG_OT_sample_line);
+  win_optype_append(IMG_OT_curves_point_set);
 
-  WM_operatortype_append(IMAGE_OT_change_frame);
+  win_optype_append(IMG_OT_change_frame);
 
-  WM_operatortype_append(IMAGE_OT_read_viewlayers);
-  WM_operatortype_append(IMAGE_OT_render_border);
-  WM_operatortype_append(IMAGE_OT_clear_render_border);
+  win_optype_append(IMG_OT_read_viewlayers);
+  win_optype_append(IMG_OT_render_border);
+  win_optype_append(IMG_OT_clear_render_border);
 
-  WM_operatortype_append(IMAGE_OT_tile_add);
-  WM_operatortype_append(IMAGE_OT_tile_remove);
-  WM_operatortype_append(IMAGE_OT_tile_fill);
+  win_optype_append(IMG_OT_tile_add);
+  win_optype_append(IMG_OT_tile_remove);
+  win_optype_append(IMG_OT_tile_fill);
 }
 
-static void image_keymap(wmKeyConfig *keyconf)
+static void img_keymap(WinKeyConfig *keyconf)
 {
-  WM_keymap_ensure(keyconf, "Image Generic", SPACE_IMAGE, RGN_TYPE_WINDOW);
-  WM_keymap_ensure(keyconf, "Image", SPACE_IMAGE, RGN_TYPE_WINDOW);
+  win_keymap_ensure(keyconf, "Img Generic", SPACE_IMG, RGN_TYPE_WIN);
+  win_keymap_ensure(keyconf, "Img", SPACE_IMG, RGN_TYPE_WIN);
 }
 
 /* dropboxes */
-static bool image_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
+static bool img_drop_poll(Cxt *C, WinDrag *drag, const WinEv *ev)
 {
-  ScrArea *area = CTX_wm_area(C);
-  if (ED_region_overlap_isect_any_xy(area, event->xy)) {
+  ScrArea *area = ed_win_area(C);
+  if (ed_rgn_overlap_isect_any_xy(area, ev->xy)) {
     return false;
   }
-  if (drag->type == WM_DRAG_PATH) {
-    const eFileSel_File_Types file_type = eFileSel_File_Types(WM_drag_get_path_file_type(drag));
-    if (ELEM(file_type, 0, FILE_TYPE_IMAGE, FILE_TYPE_MOVIE)) {
+  if (drag->type == WIN_DRAG_PATH) {
+    const eFileSelFileTypes file_type = eFileSelFileTypes(win_drag_get_path_file_type(drag));
+    if (ELEM(file_type, 0, FILE_TYPE_IMG, FILE_TYPE_MOVIE)) {
       return true;
     }
   }
   return false;
 }
 
-static void image_drop_copy(bContext * /*C*/, wmDrag *drag, wmDropBox *drop)
+static void img_drop_copy(Cxt * /*C*/, WinDrag *drag, WinDropBox *drop)
 {
-  /* copy drag path to properties */
-  RNA_string_set(drop->ptr, "filepath", WM_drag_get_path(drag));
+  /* copy drag path to props */
+  api_string_set(drop->ptr, "filepath", win_drag_get_path(drag));
 }
 
-/* area+region dropbox definition */
-static void image_dropboxes()
+/* area+rgn dropbox definition */
+static void img_dropboxes()
 {
-  ListBase *lb = WM_dropboxmap_find("Image", SPACE_IMAGE, RGN_TYPE_WINDOW);
+  List *list = win_dropboxmap_find("Img", SPACE_IMG, RGN_TYPE_WIN);
 
-  WM_dropbox_add(lb, "IMAGE_OT_open", image_drop_poll, image_drop_copy, nullptr, nullptr);
+  win_dropbox_add(lb, "IMG_OT_open", img_drop_poll, img_drop_copy, nullptr, nullptr);
 }
 
-/**
- * \note take care not to get into feedback loop here,
- *       calling composite job causes viewer to refresh.
- */
-static void image_refresh(const bContext *C, ScrArea *area)
+/* take care not to get into feedback loop here,
+ * calling composite job causes viewer to refresh. */
+static void img_refresh(const Cxt *C, ScrArea *area)
 {
-  Scene *scene = CTX_data_scene(C);
-  SpaceImage *sima = static_cast<SpaceImage *>(area->spacedata.first);
-  Image *ima;
+  Scene *scene = cxt_data_scene(C);
+  SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
+  Img *img;
 
-  ima = ED_space_image(sima);
-  BKE_image_user_frame_calc(ima, &sima->iuser, scene->r.cfra);
+  img = ed_space_img(simg);
+  dune_img_user_frame_calc(img, &simg->iuser, scene->r.cfra);
 
-  /* Check if we have to set the image from the edit-mesh. */
-  if (ima && (ima->source == IMA_SRC_VIEWER && sima->mode == SI_MODE_MASK)) {
+  /* Check if we have to set the img from the edit-mesh. */
+  if (img && (img->src == IMG_SRC_VIEWER && simg->mode == SI_MODE_MASK)) {
     if (scene->nodetree) {
-      Mask *mask = ED_space_image_get_mask(sima);
+      Mask *mask = ed_space_img_get_mask(simg);
       if (mask) {
-        ED_node_composite_job(C, scene->nodetree, scene);
+        ed_node_composite_job(C, scene->nodetree, scene);
       }
     }
   }
 }
 
-static void image_listener(const wmSpaceTypeListenerParams *params)
+static void img_listener(const WinSpaceTypeListenerParams *params)
 {
-  wmWindow *win = params->window;
+  Win *win = params->win;
   ScrArea *area = params->area;
-  const wmNotifier *wmn = params->notifier;
-  SpaceImage *sima = (SpaceImage *)area->spacedata.first;
+  const WinNotifier *winn = params->notifier;
+  SpaceImg *sim = (SpaceImg *)area->spacedata.first;
 
-  /* context changes */
-  switch (wmn->category) {
-    case NC_WINDOW:
+  /* cxt changes */
+  switch (winn->category) {
+    case NC_WIN:
       /* notifier comes from editing color space */
-      image_scopes_tag_refresh(area);
-      ED_area_tag_redraw(area);
+      img_scopes_tag_refresh(area);
+      ed_area_tag_redrw(area);
       break;
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_FRAME:
-          image_scopes_tag_refresh(area);
-          ED_area_tag_refresh(area);
-          ED_area_tag_redraw(area);
+          img_scopes_tag_refresh(area);
+          ed_area_tag_refresh(area);
+          ed_area_tag_redrw(area);
           break;
         case ND_MODE:
-          ED_paint_cursor_start(&params->scene->toolsettings->imapaint.paint,
-                                ED_image_tools_paint_poll);
+          ed_paint_cursor_start(&params->scene->toolsettings->imapaint.paint,
+                                ed_img_tools_paint_poll);
 
-          if (wmn->subtype == NS_EDITMODE_MESH) {
-            ED_area_tag_refresh(area);
+          if (winn->subtype == NS_EDITMODE_MESH) {
+            ed_area_tag_refresh(area);
           }
-          ED_area_tag_redraw(area);
+          ed_area_tag_redrw(area);
           break;
         case ND_RENDER_RESULT:
         case ND_RENDER_OPTIONS:
         case ND_COMPO_RESULT:
-          if (ED_space_image_show_render(sima)) {
-            image_scopes_tag_refresh(area);
-            BKE_image_partial_update_mark_full_update(sima->image);
+          if (ed_space_img_show_render(simg)) {
+            img_scopes_tag_refresh(area);
+            dune_img_partial_update_mark_full_update(simg->img);
           }
-          ED_area_tag_redraw(area);
+          ed_area_tag_redrw(area);
           break;
       }
       break;
-    case NC_IMAGE:
-      if (wmn->reference == sima->image || !wmn->reference) {
-        if (wmn->action != NA_PAINTING) {
-          image_scopes_tag_refresh(area);
-          ED_area_tag_refresh(area);
-          ED_area_tag_redraw(area);
+    case NC_IMG:
+      if (winn->ref == simg->img || !winn->ref) {
+        if (winn->action != NA_PAINTING) {
+          img_scopes_tag_refresh(area);
+          ed_area_tag_refresh(area);
+          ed_area_tag_redrw(area);
         }
       }
       break;
     case NC_SPACE:
-      if (wmn->data == ND_SPACE_IMAGE) {
-        image_scopes_tag_refresh(area);
-        ED_area_tag_redraw(area);
+      if (winn->data == ND_SPACE_IMG) {
+        img_scopes_tag_refresh(area);
+        ed_area_tag_redrw(area);
       }
       break;
     case NC_MASK: {
-      Scene *scene = WM_window_get_active_scene(win);
-      ViewLayer *view_layer = WM_window_get_active_view_layer(win);
-      BKE_view_layer_synced_ensure(scene, view_layer);
-      Object *obedit = BKE_view_layer_edit_object_get(view_layer);
-      if (ED_space_image_check_show_maskedit(sima, obedit)) {
-        switch (wmn->data) {
-          case ND_SELECT:
-            ED_area_tag_redraw(area);
+      Scene *scene = win_get_active_scene(win);
+      ViewLayer *view_layer = win_get_active_view_layer(win);
+      dune_view_layer_synced_ensure(scene, view_layer);
+      Ob *obedit = dune_view_layer_edit_ob_get(view_layer);
+      if (ed_space_img_check_show_maskedit(simg, obedit)) {
+        switch (winn->data) {
+          case ND_SEL:
+            ed_area_tag_redrw(area);
             break;
           case ND_DATA:
-          case ND_DRAW:
+          case ND_DRW:
             /* causes node-recalc */
-            ED_area_tag_redraw(area);
-            ED_area_tag_refresh(area);
+            ed_area_tag_redrw(area);
+            ed_area_tag_refresh(area);
             break;
         }
-        switch (wmn->action) {
-          case NA_SELECTED:
-            ED_area_tag_redraw(area);
+        switch (winn->action) {
+          case NA_SEL:
+            ed_area_tag_redrw(area);
             break;
           case NA_EDITED:
             /* causes node-recalc */
-            ED_area_tag_redraw(area);
-            ED_area_tag_refresh(area);
+            ed_area_tag_redrw(area);
+            ed_area_tag_refresh(area);
             break;
         }
       }
       break;
     }
     case NC_GEOM: {
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_DATA:
-        case ND_SELECT:
-          image_scopes_tag_refresh(area);
-          ED_area_tag_refresh(area);
-          ED_area_tag_redraw(area);
+        case ND_SEL:
+          img_scopes_tag_refresh(area);
+          ed_area_tag_refresh(area);
+          ed_area_tag_redrw(area);
           break;
       }
       break;
     }
-    case NC_OBJECT: {
-      switch (wmn->data) {
+    case NC_OB: {
+      switch (win->data) {
         case ND_TRANSFORM:
-        case ND_MODIFIER: {
-          const Scene *scene = WM_window_get_active_scene(win);
-          ViewLayer *view_layer = WM_window_get_active_view_layer(win);
-          BKE_view_layer_synced_ensure(scene, view_layer);
-          Object *ob = BKE_view_layer_active_object_get(view_layer);
-          /* \note With a geometry nodes modifier, the UVs on `ob` can change in response to
-           * any change on `wmn->reference`. If we could track the upstream dependencies,
-           * unnecessary redraws could be reduced. Until then, just redraw. See #98594. */
+        case ND_MOD: {
+          const Scene *scene = win_get_active_scene(win);
+          ViewLayer *view_layer = win_get_active_view_layer(win);
+          
+          dune_view_layer_synced_ensure(scene, view_layer);
+          Ob *ob = dun_view_layer_active_ob_get(view_layer);
+          /* W a geometry nodes mod, the UVs on `ob` can change in response to
+           * any change on `winn->ref`. If we could track the upstream dependencies,
+           * unnecessary redrws could be reduced. Until then, just redrw. See #98594. */
           if (ob && (ob->mode & OB_MODE_EDIT)) {
-            if (sima->lock && (sima->flag & SI_DRAWSHADOW)) {
-              ED_area_tag_refresh(area);
-              ED_area_tag_redraw(area);
+            if (sim->lock && (sim->flag & SI_DRAWSHADOW)) {
+              ed_area_tag_refresh(area);
+              ed_area_tag_redrw(area);
             }
           }
           break;
@@ -415,86 +411,86 @@ static void image_listener(const wmSpaceTypeListenerParams *params)
       break;
     }
     case NC_ID: {
-      if (wmn->action == NA_RENAME) {
-        ED_area_tag_redraw(area);
+      if (winn->action == NA_RENAME) {
+        ed_area_tag_redrw(area);
       }
       break;
     }
-    case NC_WM:
-      if (wmn->data == ND_UNDO) {
-        ED_area_tag_redraw(area);
-        ED_area_tag_refresh(area);
+    case NC_WIN:
+      if (winn->data == ND_UNDO) {
+        ed_area_tag_redrw(area);
+        ed_area_tag_refresh(area);
       }
       break;
   }
 }
 
-const char *image_context_dir[] = {"edit_image", "edit_mask", nullptr};
+const char *img_cxt_dir[] = {"edit_img", "edit_mask", nullptr};
 
-static int /*eContextResult*/ image_context(const bContext *C,
-                                            const char *member,
-                                            bContextDataResult *result)
+static int /*eCxtResult*/ img_cxt(const Cxt *C,
+                                  const char *member,
+                                  CxtDataResult *result)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
 
-  if (CTX_data_dir(member)) {
-    CTX_data_dir_set(result, image_context_dir);
-    // return CTX_RESULT_OK; /* TODO(@sybren). */
+  if (_data_dir(member)) {
+    cxt_data_dir_set(result, img_cxt_dir);
+    // return CXT_RESULT_OK; /* TODO(@sybren). */
   }
-  else if (CTX_data_equals(member, "edit_image")) {
-    CTX_data_id_pointer_set(result, (ID *)ED_space_image(sima));
-    return CTX_RESULT_OK;
+  else if (cxy_data_equals(member, "edit_img")) {
+    cxt_data_id_ptr_set(result, (Id *)ed_space_img(simg));
+    return CXT_RESULT_OK;
   }
-  else if (CTX_data_equals(member, "edit_mask")) {
-    Mask *mask = ED_space_image_get_mask(sima);
+  else if (cxt_data_equals(member, "edit_mask")) {
+    Mask *mask = ed_space_img_get_mask(simg);
     if (mask) {
-      CTX_data_id_pointer_set(result, &mask->id);
+      cxt_data_id_ptr_set(result, &mask->id);
     }
-    return CTX_RESULT_OK;
+    return CXT_RESULT_OK;
   }
-  return CTX_RESULT_MEMBER_NOT_FOUND;
+  return CXT_RESULT_MEMBER_NOT_FOUND;
 }
 
-static void IMAGE_GGT_gizmo2d(wmGizmoGroupType *gzgt)
+static void IMG_GGT_gizmo2d(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "UV Transform Gizmo";
-  gzgt->idname = "IMAGE_GGT_gizmo2d";
+  gzgt->idname = "IMG_GGT_gizmo2d";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_DRAW_MODAL_EXCLUDE | WM_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
-                 WM_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRW_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
+                 WIN_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
 
-  gzgt->gzmap_params.spaceid = SPACE_IMAGE;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.spaceid = SPACE_IMG;
+  gzgt->gzmap_params.rgnid = RGN_TYPE_WIN;
 
-  ED_widgetgroup_gizmo2d_xform_callbacks_set(gzgt);
+  ed_widgetgroup_gizmo2d_xform_cbs_set(gzgt);
 }
 
-static void IMAGE_GGT_gizmo2d_translate(wmGizmoGroupType *gzgt)
+static void IMG_GGT_gizmo2d_translate(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "UV Translate Gizmo";
-  gzgt->idname = "IMAGE_GGT_gizmo2d_translate";
+  gzgt->idname = "IMG_GGT_gizmo2d_translate";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_DRAW_MODAL_EXCLUDE | WM_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
-                 WM_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRAW_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
+                 WIN_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
 
-  gzgt->gzmap_params.spaceid = SPACE_IMAGE;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.spaceid = SPACE_IMG;
+  gzgt->gzmap_params.rgnid = RGN_TYPE_WI;
 
-  ED_widgetgroup_gizmo2d_xform_no_cage_callbacks_set(gzgt);
+  ed_widgetgroup_gizmo2d_xform_no_cage_cbs_set(gzgt);
 }
 
-static void IMAGE_GGT_gizmo2d_resize(wmGizmoGroupType *gzgt)
+static void IMG_GGT_gizmo2d_resize(WinGizmoGroupType *gzgt)
 {
   gzgt->name = "UV Transform Gizmo Resize";
-  gzgt->idname = "IMAGE_GGT_gizmo2d_resize";
+  gzgt->idname = "IMG_GGT_gizmo2d_resize";
 
-  gzgt->flag |= (WM_GIZMOGROUPTYPE_DRAW_MODAL_EXCLUDE | WM_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
-                 WM_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRW_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
+                 WIN_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
 
-  gzgt->gzmap_params.spaceid = SPACE_IMAGE;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.spaceid = SPACE_IMG;
+  gzgt->gzmap_params.regionid = RGN_TYPE_WIN;
 
-  ED_widgetgroup_gizmo2d_resize_callbacks_set(gzgt);
+  ed_widgetgroup_gizmo2d_resize_cbs_set(gzgt);
 }
 
 static void IMAGE_GGT_gizmo2d_rotate(wmGizmoGroupType *gzgt)
