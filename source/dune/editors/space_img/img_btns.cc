@@ -792,9 +792,9 @@ void uiTemplateImg(uiLayout *layout,
       const int menus_width = 230 * dpi_fac;
 
       /* Use dune_img_acquire_renderresult so we get the correct slot in the menu. */
-      rr = dune_img_acquire_renderresult(scene, ima);
-      uiblock_layer_pass_btns(layout, ima, rr, iuser, menus_width, &ima->render_slot);
-      dune_img_release_renderresult(scene, ima);
+      rr = dune_img_acquire_renderresult(scene, img);
+      uiblock_layer_pass_btns(layout, img, rr, iuser, menus_width, &ima->render_slot);
+      dune_img_release_renderresult(scene, img);
     }
 
     return;
@@ -1042,18 +1042,18 @@ void uiTemplateImgSettings(uiLayout *layout, PointerRNA *imfptr, bool color_mana
     uiItemR(col, imfptr, "tiff_codec", UI_ITEM_NONE, nullptr, ICON_NONE);
   }
 
-  /* Override color management */
+  /* Override color mgmt */
   if (color_management) {
     uiItemS(col);
     uiItemR(col, imfptr, "color_management", UI_ITEM_NONE, nullptr, ICON_NONE);
 
     if (imf->color_management == R_IMF_COLOR_MANAGEMENT_OVERRIDE) {
       if (dune_imtype_requires_linear_float(imf->imtype)) {
-        ApiPtr linear_settings_ptr = RNA_pointer_get(imfptr, "linear_colorspace_settings");
+        ApiPtr linear_settings_ptr = api_ptr_get(imfptr, "linear_colorspace_settings");
         uiItemR(col, &linear_settings_ptr, "name", UI_ITEM_NONE, IFACE_("Color Space"), ICON_NONE);
       }
       else {
-        PointerRNA display_settings_ptr = RNA_pointer_get(imfptr, "display_settings");
+        ApiPtr display_settings_ptr = api_ptr_get(imfptr, "display_settings");
         uiItemR(col, &display_settings_ptr, "display_device", UI_ITEM_NONE, nullptr, ICON_NONE);
         uiTemplateColormanagedViewSettings(col, nullptr, imfptr, "view_settings");
       }
@@ -1061,7 +1061,7 @@ void uiTemplateImgSettings(uiLayout *layout, PointerRNA *imfptr, bool color_mana
   }
 }
 
-void uiTemplateImageStereo3d(uiLayout *layout, PointerRNA *stereo3d_format_ptr)
+void uiTemplateImgStereo3d(uiLayout *layout, ApiPtr *stereo3d_format_ptr)
 {
   Stereo3dFormat *stereo3d_format = static_cast<Stereo3dFormat *>(stereo3d_format_ptr->data);
   uiLayout *col;
@@ -1092,8 +1092,8 @@ void uiTemplateImageStereo3d(uiLayout *layout, PointerRNA *stereo3d_format_ptr)
 }
 
 static void uiTemplateViewsFormat(uiLayout *layout,
-                                  PointerRNA *ptr,
-                                  PointerRNA *stereo3d_format_ptr)
+                                  ApiPtr *ptr,
+                                  ApiPtr *stereo3d_format_ptr)
 {
   uiLayout *col;
 
@@ -1104,21 +1104,21 @@ static void uiTemplateViewsFormat(uiLayout *layout,
 
   uiItemR(col, ptr, "views_format", UI_ITEM_R_EXPAND, nullptr, ICON_NONE);
 
-  if (stereo3d_format_ptr && RNA_enum_get(ptr, "views_format") == R_IMF_VIEWS_STEREO_3D) {
-    uiTemplateImageStereo3d(col, stereo3d_format_ptr);
+  if (stereo3d_format_ptr && api_enum_get(ptr, "views_format") == R_IMF_VIEWS_STEREO_3D) {
+    uiTemplateImgStereo3d(col, stereo3d_format_ptr);
   }
 }
 
-void uiTemplateImageViews(uiLayout *layout, PointerRNA *imaptr)
+void uiTemplateImgViews(uiLayout *layout, ApiPtr *imaptr)
 {
-  Image *ima = static_cast<Image *>(imaptr->data);
+  Img *ima = static_cast<Img *>(imaptr->data);
 
   if (ima->type != IMA_TYPE_MULTILAYER) {
-    PropertyRNA *prop;
-    PointerRNA stereo3d_format_ptr;
+    ApiProp *prop;
+    ApiPtr stereo3d_format_ptr;
 
-    prop = RNA_struct_find_property(imaptr, "stereo_3d_format");
-    stereo3d_format_ptr = RNA_property_pointer_get(imaptr, prop);
+    prop = api_struct_find_prop(imaptr, "stereo_3d_format");
+    stereo3d_format_ptr = api_prop_ptr_get(imaptr, prop);
 
     uiTemplateViewsFormat(layout, imaptr, &stereo3d_format_ptr);
   }
@@ -1127,23 +1127,23 @@ void uiTemplateImageViews(uiLayout *layout, PointerRNA *imaptr)
   }
 }
 
-void uiTemplateImageFormatViews(uiLayout *layout, PointerRNA *imfptr, PointerRNA *ptr)
+void uiTemplateImgFormatViews(uiLayout *layout, ApiPtr *imfptr, ApiPtr *ptr)
 {
-  ImageFormatData *imf = static_cast<ImageFormatData *>(imfptr->data);
+  ImgFormatData *imf = static_cast<ImgFormatData *>(imfptr->data);
 
   if (ptr != nullptr) {
     uiItemR(layout, ptr, "use_multiview", UI_ITEM_NONE, nullptr, ICON_NONE);
-    if (!RNA_boolean_get(ptr, "use_multiview")) {
+    if (!api_bool_get(ptr, "use_multiview")) {
       return;
     }
   }
 
   if (imf->imtype != R_IMF_IMTYPE_MULTILAYER) {
-    PropertyRNA *prop;
-    PointerRNA stereo3d_format_ptr;
+    ApiProp *prop;
+    ApiPtr stereo3d_format_ptr;
 
-    prop = RNA_struct_find_property(imfptr, "stereo_3d_format");
-    stereo3d_format_ptr = RNA_property_pointer_get(imfptr, prop);
+    prop = api_struct_find_prop(imfptr, "stereo_3d_format");
+    stereo3d_format_ptr = api_prop_ptr_get(imfptr, prop);
 
     uiTemplateViewsFormat(layout, imfptr, &stereo3d_format_ptr);
   }
@@ -1152,9 +1152,9 @@ void uiTemplateImageFormatViews(uiLayout *layout, PointerRNA *imfptr, PointerRNA
   }
 }
 
-void uiTemplateImageLayers(uiLayout *layout, bContext *C, Image *ima, ImageUser *iuser)
+void uiTemplateImgLayers(uiLayout *layout, Cxt *C, Img *ima, ImgUser *iuser)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* render layers and passes */
   if (ima && iuser) {
@@ -1163,78 +1163,78 @@ void uiTemplateImageLayers(uiLayout *layout, bContext *C, Image *ima, ImageUser 
     const int menus_width = 160 * dpi_fac;
     const bool is_render_result = (ima->type == IMA_TYPE_R_RESULT);
 
-    /* Use BKE_image_acquire_renderresult so we get the correct slot in the menu. */
-    rr = BKE_image_acquire_renderresult(scene, ima);
-    uiblock_layer_pass_buttons(
-        layout, ima, rr, iuser, menus_width, is_render_result ? &ima->render_slot : nullptr);
-    BKE_image_release_renderresult(scene, ima);
+    /* Use dune_im_acquire_renderresult so we get the correct slot in the menu. */
+    rr = dune_img_acquire_renderresult(scene, ima);
+    uiblock_layer_pass_btns(
+        layout, img, rr, iuser, menus_width, is_render_result ? &ima->render_slot : nullptr);
+    dune_img_release_renderresult(scene, ima);
   }
 }
 
-void uiTemplateImageInfo(uiLayout *layout, bContext *C, Image *ima, ImageUser *iuser)
+void uiTemplateImgInfo(uiLayout *layout, Cxt *C, Img *img, ImgUser *iuser)
 {
-  if (ima == nullptr || iuser == nullptr) {
+  if (img == nullptr || iuser == nullptr) {
     return;
   }
 
   /* Acquire image buffer. */
   void *lock;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, &lock);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, iuser, &lock);
 
   uiLayout *col = uiLayoutColumn(layout, true);
   uiLayoutSetAlignment(col, UI_LAYOUT_ALIGN_RIGHT);
 
   if (ibuf == nullptr) {
-    uiItemL(col, TIP_("Can't Load Image"), ICON_NONE);
+    uiItemL(col, TIP_("Can't Load Img"), ICON_NONE);
   }
   else {
     char str[MAX_IMAGE_INFO_LEN] = {0};
     const int len = MAX_IMAGE_INFO_LEN;
     int ofs = 0;
 
-    ofs += BLI_snprintf_rlen(str + ofs, len - ofs, TIP_("%d \u00D7 %d, "), ibuf->x, ibuf->y);
+    ofs += lib_snprintf_rlen(str + ofs, len - ofs, TIP_("%d \u00D7 %d, "), ibuf->x, ibuf->y);
 
     if (ibuf->float_buffer.data) {
       if (ibuf->channels != 4) {
-        ofs += BLI_snprintf_rlen(
+        ofs += lib_snprintf_rlen(
             str + ofs, len - ofs, TIP_("%d float channel(s)"), ibuf->channels);
       }
       else if (ibuf->planes == R_IMF_PLANES_RGBA) {
-        ofs += BLI_strncpy_rlen(str + ofs, TIP_(" RGBA float"), len - ofs);
+        ofs += lib_strncpy_rlen(str + ofs, TIP_(" RGBA float"), len - ofs);
       }
       else {
-        ofs += BLI_strncpy_rlen(str + ofs, TIP_(" RGB float"), len - ofs);
+        ofs += lib_strncpy_rlen(str + ofs, TIP_(" RGB float"), len - ofs);
       }
     }
     else {
       if (ibuf->planes == R_IMF_PLANES_RGBA) {
-        ofs += BLI_strncpy_rlen(str + ofs, TIP_(" RGBA byte"), len - ofs);
+        ofs += lib_strncpy_rlen(str + ofs, TIP_(" RGBA byte"), len - ofs);
       }
       else {
-        ofs += BLI_strncpy_rlen(str + ofs, TIP_(" RGB byte"), len - ofs);
+        ofs += lib_strncpy_rlen(str + ofs, TIP_(" RGB byte"), len - ofs);
       }
     }
 
-    eGPUTextureFormat texture_format = IMB_gpu_get_texture_format(
-        ibuf, ima->flag & IMA_HIGH_BITDEPTH, ibuf->planes >= 8);
-    const char *texture_format_description = GPU_texture_format_name(texture_format);
-    ofs += BLI_snprintf_rlen(str + ofs, len - ofs, TIP_(",  %s"), texture_format_description);
+    eGPUTextureFormat texture_format = imbuf_gpu_get_texture_format(
+        ibuf, img->flag & IMA_HIGH_BITDEPTH, ibuf->planes >= 8);
+    const char *texture_format_description = gpu_texture_format_name(texture_format);
+    ofs += lib_snprintf_rlen(str + ofs, len - ofs, TIP_(",  %s"), texture_format_description);
 
     uiItemL(col, str, ICON_NONE);
   }
 
-  /* Frame number, even if we can't load the image. */
-  if (ELEM(ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
+  /* Frame number, even if we can't load the img. */
+  if (ELEM(ima->source, IMA_SRC_SEQ, IMG_SRC_MOVIE)) {
     /* don't use iuser->framenr directly because it may not be updated if auto-refresh is off */
-    Scene *scene = CTX_data_scene(C);
-    const int framenr = BKE_image_user_frame_get(iuser, scene->r.cfra, nullptr);
+    Scene *scene = cxt_data_scene(C);
+    const int framenr = dune_img_user_frame_get(iuser, scene->r.cfra, nullptr);
     char str[MAX_IMAGE_INFO_LEN];
     int duration = 0;
 
-    if (ima->source == IMA_SRC_MOVIE && BKE_image_has_anim(ima)) {
-      anim *anim = ((ImageAnim *)ima->anims.first)->anim;
+    if (img->src == IMA_SRC_MOVIE && dune_img_has_anim(img)) {
+      anim *anim = ((ImgAnim *)ima->anims.first)->anim;
       if (anim) {
-        duration = IMB_anim_get_duration(anim, IMB_TC_RECORD_RUN);
+        duration = imbuf_anim_get_duration(anim, IMB_TC_RECORD_RUN);
       }
     }
 
@@ -1242,9 +1242,9 @@ void uiTemplateImageInfo(uiLayout *layout, bContext *C, Image *ima, ImageUser *i
       /* Movie duration */
       SNPRINTF(str, TIP_("Frame %d / %d"), framenr, duration);
     }
-    else if (ima->source == IMA_SRC_SEQUENCE && ibuf) {
-      /* Image sequence frame number + filename */
-      const char *filename = BLI_path_basename(ibuf->filepath);
+    else if (img->src == IMG_SRC_SEQ && ibuf) {
+      /* Img seq frame number + filename */
+      const char *filename = lib_path_basename(ibuf->filepath);
       SNPRINTF(str, TIP_("Frame %d: %s"), framenr, filename);
     }
     else {
@@ -1255,12 +1255,12 @@ void uiTemplateImageInfo(uiLayout *layout, bContext *C, Image *ima, ImageUser *i
     uiItemL(col, str, ICON_NONE);
   }
 
-  BKE_image_release_ibuf(ima, ibuf, lock);
+  dune_img_release_ibuf(ima, ibuf, lock);
 }
 
-#undef MAX_IMAGE_INFO_LEN
+#undef MAX_IMG_INFO_LEN
 
-static bool metadata_panel_context_poll(const bContext *C, PanelType * /*pt*/)
+static bool metadata_pnl_cxt_poll(const Cxt *C, PnlType * /*pt*/)
 {
   SpaceImg *space_image = CTX_wm_space_image(C);
   return space_img != nullptr && space_image->image != nullptr;
