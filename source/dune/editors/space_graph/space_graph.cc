@@ -661,13 +661,13 @@ static void graph_refresh_fcurve_colors(const Cxt *C)
 
         switch (fcu->array_index) {
           case 0:
-            UI_GetThemeColor3fv(TH_AXIS_X, col);
+            ui_GetThemeColor3fv(TH_AXIS_X, col);
             break;
           case 1:
-            UI_GetThemeColor3fv(TH_AXIS_Y, col);
+            ui_GetThemeColor3fv(TH_AXIS_Y, col);
             break;
           case 2:
-            UI_GetThemeColor3fv(TH_AXIS_Z, col);
+            ui_GetThemeColor3fv(TH_AXIS_Z, col);
             break;
           default:
             /* 'unknown' color - bluish so as to not conflict with handles */
@@ -684,13 +684,13 @@ static void graph_refresh_fcurve_colors(const Cxt *C)
 
         switch (fcu->array_index) {
           case 1:
-            UI_GetThemeColor3fv(TH_AXIS_X, col);
+            ui_GetThemeColor3fv(TH_AXIS_X, col);
             break;
           case 2:
-            UI_GetThemeColor3fv(TH_AXIS_Y, col);
+            ui_GetThemeColor3fv(TH_AXIS_Y, col);
             break;
           case 3:
-            UI_GetThemeColor3fv(TH_AXIS_Z, col);
+            ui_GetThemeColor3fv(TH_AXIS_Z, col);
             break;
 
           case 0: {
@@ -699,23 +699,23 @@ static void graph_refresh_fcurve_colors(const Cxt *C)
             float h1[3], h2[3];
             float hresult[3];
 
-            /* - get colors (rgb) */
-            UI_GetThemeColor3fv(TH_AXIS_X, c1);
-            UI_GetThemeColor3fv(TH_AXIS_Y, c2);
+            /* get colors (rgb) */
+            ui_GetThemeColor3fv(TH_AXIS_X, c1);
+            ui_GetThemeColor3fv(TH_AXIS_Y, c2);
 
-            /* - perform blending in HSV space (to keep brightness similar) */
+            /* perform blending in HSV space (to keep brightness similar) */
             rgb_to_hsv_v(c1, h1);
             rgb_to_hsv_v(c2, h2);
 
             interp_v3_v3v3(hresult, h1, h2, 0.5f);
 
-            /* - convert back to RGB for display */
+            /* convert back to RGB for display */
             hsv_to_rgb_v(hresult, col);
             break;
           }
 
           default:
-            /* 'unknown' color - bluish so as to not conflict with handles */
+            /* 'unknown' color: bluish to not conflict w handles */
             col[0] = 0.3f;
             col[1] = 0.8f;
             col[2] = 1.0f;
@@ -725,26 +725,25 @@ static void graph_refresh_fcurve_colors(const Cxt *C)
       }
       case FCURVE_COLOR_AUTO_RAINBOW:
       default: {
-        /* determine color 'automatically' using 'magic function' which uses the given args
-         * of current item index + total items to determine some RGB color
-         */
+        /* determine color 'automatically' using 'magic fn' which uses the given args
+         * of current item index + total items to determine some RGB color */
         getcolor_fcurve_rainbow(i, items, fcu->color);
         break;
       }
     }
   }
 
-  /* free temp list */
-  ANIM_animdata_freelist(&anim_data);
+  /* free tmp list */
+  anim_animdata_freelist(&anim_data);
 }
 
-static void graph_refresh(const bContext *C, ScrArea *area)
+static void graph_refresh(const Cxt *C, ScrArea *area)
 {
   SpaceGraph *sipo = (SpaceGraph *)area->spacedata.first;
 
   /* updates to data needed depends on Graph Editor mode... */
   switch (sipo->mode) {
-    case SIPO_MODE_ANIMATION: /* all animation */
+    case SIPO_MODE_ANIM: /* all animation */
     {
       break;
     }
@@ -755,16 +754,15 @@ static void graph_refresh(const bContext *C, ScrArea *area)
     }
   }
 
-  /* region updates? */
-  /* XXX re-sizing y-extents of tot should go here? */
-
+  /* rgn updates? */
+  /* re-sizing y-extents of tot should go here? */
   /* Update the state of the animchannels in response to changes from the data they represent
-   * NOTE: the temp flag is used to indicate when this needs to be done,
+   * The tmp flag is used to indicate when this needs to be done,
    * and will be cleared once handled. */
   if (sipo->runtime.flag & SIPO_RUNTIME_FLAG_NEED_CHAN_SYNC) {
-    ANIM_sync_animchannels_to_data(C);
+    anim_sync_animchannels_to_data(C);
     sipo->runtime.flag &= ~SIPO_RUNTIME_FLAG_NEED_CHAN_SYNC;
-    ED_area_tag_redraw(area);
+    ed_area_tag_redrw(area);
   }
 
   /* We could check 'SIPO_RUNTIME_FLAG_NEED_CHAN_SYNC_COLOR', but color is recalculated anyway. */
@@ -773,7 +771,7 @@ static void graph_refresh(const bContext *C, ScrArea *area)
 #if 0 /* Done below. */
     graph_refresh_fcurve_colors(C);
 #endif
-    ED_area_tag_redraw(area);
+    ed_area_tag_redrw(area);
   }
 
   sipo->runtime.flag &= ~(SIPO_RUNTIME_FLAG_TWEAK_HANDLES_LEFT |
@@ -783,30 +781,30 @@ static void graph_refresh(const bContext *C, ScrArea *area)
   graph_refresh_fcurve_colors(C);
 }
 
-static void graph_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IDRemapper *mappings)
+static void graph_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IdRemapper *mappings)
 {
   SpaceGraph *sgraph = (SpaceGraph *)slink;
   if (!sgraph->ads) {
     return;
   }
 
-  BKE_id_remapper_apply(mappings, (ID **)&sgraph->ads->filter_grp, ID_REMAP_APPLY_DEFAULT);
-  BKE_id_remapper_apply(mappings, (ID **)&sgraph->ads->source, ID_REMAP_APPLY_DEFAULT);
+  dune_id_remapper_apply(mappings, (Id **)&sgraph->ads->filter_grp, ID_REMAP_APPLY_DEFAULT);
+  dune_id_remapper_apply(mappings, (Id **)&sgraph->ads->source, ID_REMAP_APPLY_DEFAULT);
 }
 
 static void graph_foreach_id(SpaceLink *space_link, LibraryForeachIDData *data)
 {
   SpaceGraph *sgraph = reinterpret_cast<SpaceGraph *>(space_link);
-  const int data_flags = BKE_lib_query_foreachid_process_flags_get(data);
+  const int data_flags = dune_lib_query_foreachid_process_flags_get(data);
   const bool is_readonly = (data_flags & IDWALK_READONLY) != 0;
 
-  /* NOTE: Could be deduplicated with the #bDopeSheet handling of #SpaceAction and #SpaceNla. */
+  /* Could be dedup'd w the DopeSheet handling of SpaceAction and SpaceNla. */
   if (sgraph->ads == nullptr) {
     return;
   }
 
-  BKE_LIB_FOREACHID_PROCESS_ID(data, sgraph->ads->source, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sgraph->ads->filter_grp, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_ID(data, sgraph->ads->source, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, sgraph->ads->filter_grp, IDWALK_CB_NOP);
 
   if (!is_readonly) {
     /* Force recalc of list of channels (i.e. including calculating F-Curve colors) to
@@ -821,48 +819,48 @@ static int graph_space_subtype_get(ScrArea *area)
   return sgraph->mode;
 }
 
-static void graph_space_subtype_set(ScrArea *area, int value)
+static void graph_space_subtype_set(ScrArea *area, int val)
 {
   SpaceGraph *sgraph = static_cast<SpaceGraph *>(area->spacedata.first);
-  sgraph->mode = value;
+  sgraph->mode = val;
 }
 
-static void graph_space_subtype_item_extend(bContext * /*C*/,
-                                            EnumPropertyItem **item,
+static void graph_space_subtype_item_extend(Cxt * /*C*/,
+                                            EnumPropItem **item,
                                             int *totitem)
 {
-  RNA_enum_items_add(item, totitem, rna_enum_space_graph_mode_items);
+  api_enum_items_add(item, totitem, api_enum_space_graph_mode_items);
 }
 
-static void graph_space_blend_read_data(BlendDataReader *reader, SpaceLink *sl)
+static void graph_space_blend_read_data(DataReader *reader, SpaceLink *sl)
 {
   SpaceGraph *sipo = (SpaceGraph *)sl;
 
-  BLO_read_data_address(reader, &sipo->ads);
+  loader_read_data_address(reader, &sipo->ads);
   memset(&sipo->runtime, 0x0, sizeof(sipo->runtime));
 }
 
-static void graph_space_blend_write(BlendWriter *writer, SpaceLink *sl)
+static void graph_space_dune_write(Writer *writer, SpaceLink *sl)
 {
   SpaceGraph *sipo = (SpaceGraph *)sl;
-  ListBase tmpGhosts = sipo->runtime.ghost_curves;
+  List tmpGhosts = sipo->runtime.ghost_curves;
 
-  /* temporarily disable ghost curves when saving */
-  BLI_listbase_clear(&sipo->runtime.ghost_curves);
+  /* tmp disable ghost curves when saving */
+  lib_list_clear(&sipo->runtime.ghost_curves);
 
-  BLO_write_struct(writer, SpaceGraph, sl);
+  loader_write_struct(writer, SpaceGraph, sl);
   if (sipo->ads) {
-    BLO_write_struct(writer, bDopeSheet, sipo->ads);
+    loader_write_struct(writer, DopeSheet, sipo->ads);
   }
 
   /* Re-enable ghost curves. */
   sipo->runtime.ghost_curves = tmpGhosts;
 }
 
-void ED_spacetype_ipo()
+void ed_spacetype_ipo()
 {
-  SpaceType *st = static_cast<SpaceType *>(MEM_callocN(sizeof(SpaceType), "spacetype ipo"));
-  ARegionType *art;
+  SpaceType *st = static_cast<SpaceType *>(mem_calloc(sizeof(SpaceType), "spacetype ipo"));
+  ARgnType *art;
 
   st->spaceid = SPACE_GRAPH;
   STRNCPY(st->name, "Graph");
@@ -870,8 +868,8 @@ void ED_spacetype_ipo()
   st->create = graph_create;
   st->free = graph_free;
   st->init = graph_init;
-  st->duplicate = graph_duplicate;
-  st->operatortypes = graphedit_operatortypes;
+  st->dup = graph_dup;
+  st->optypes = graphedit_optypes;
   st->keymap = graphedit_keymap;
   st->listener = graph_listener;
   st->refresh = graph_refresh;
@@ -880,61 +878,61 @@ void ED_spacetype_ipo()
   st->space_subtype_item_extend = graph_space_subtype_item_extend;
   st->space_subtype_get = graph_space_subtype_get;
   st->space_subtype_set = graph_space_subtype_set;
-  st->blend_read_data = graph_space_blend_read_data;
-  st->blend_read_after_liblink = nullptr;
-  st->blend_write = graph_space_blend_write;
+  st->dune_read_data = graph_space_dune_read_data;
+  st->dune_read_after_liblink = nullptr;
+  st->dune_write = graph_space_dune_write;
 
-  /* regions: main window */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype graphedit region"));
-  art->regionid = RGN_TYPE_WINDOW;
-  art->init = graph_main_region_init;
-  art->draw = graph_main_region_draw;
-  art->draw_overlay = graph_main_region_draw_overlay;
-  art->listener = graph_region_listener;
-  art->message_subscribe = graph_region_message_subscribe;
-  art->keymapflag = ED_KEYMAP_VIEW2D | ED_KEYMAP_ANIMATION | ED_KEYMAP_FRAMES;
+  /* rgns: main win */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype graphedit rgn"));
+  art->rgnid = RGN_TYPE_WIN;
+  art->init = graph_main_rgn_init;
+  art->drw = graph_main_rgn_drw;
+  art->drw_overlay = graph_main_rgn_drw_overlay;
+  art->listener = graph_rgn_listener;
+  art->msg_sub = graph_rgn_msg_sub;
+  art->keymapflag = ED_KEYMAP_VIEW2D | ED_KEYMAP_ANIM | ED_KEYMAP_FRAMES;
 
-  BLI_addhead(&st->regiontypes, art);
+  lib_addhead(&st->rgntypes, art);
 
   /* regions: header */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype graphedit region"));
-  art->regionid = RGN_TYPE_HEADER;
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype graphedit rgn"));
+  art->rgnid = RGN_TYPE_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
-  art->listener = graph_region_listener;
-  art->init = graph_header_region_init;
-  art->draw = graph_header_region_draw;
+  art->listener = graph_rgn_listener;
+  art->init = graph_header_rgn_init;
+  art->drw = graph_header_rgn_drw;
 
-  BLI_addhead(&st->regiontypes, art);
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: channels */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype graphedit region"));
-  art->regionid = RGN_TYPE_CHANNELS;
+  /* rgns: channels */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype graphedit rgn"));
+  art->rgnid = RGN_TYPE_CHANNELS;
   /* 200 is the 'standard', but due to scrollers, we want a bit more to fit the lock icons in */
   art->prefsizex = 200 + V2D_SCROLL_WIDTH;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES;
-  art->listener = graph_region_listener;
-  art->message_subscribe = graph_region_message_subscribe;
-  art->init = graph_channel_region_init;
-  art->draw = graph_channel_region_draw;
+  art->listener = graph_rgn_listener;
+  art->msg_sub = graph_rgn_msg_sub;
+  art->init = graph_channel_rgn_init;
+  art->drw = graph_channel_rgn_drw;
 
-  BLI_addhead(&st->regiontypes, art);
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: UI buttons */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype graphedit region"));
-  art->regionid = RGN_TYPE_UI;
-  art->prefsizex = UI_SIDEBAR_PANEL_WIDTH;
+  /* rgns: UI btns */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype graphedit rgn"));
+  art->rgnid = RGN_TYPE_UI;
+  art->prefsizex = UI_SIDEBAR_PNL_WIDTH;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_FRAMES;
-  art->listener = graph_region_listener;
-  art->init = graph_buttons_region_init;
-  art->draw = graph_buttons_region_draw;
+  art->listener = graph_rgn_listener;
+  art->init = graph_btns_rgn_init;
+  art->drw = graph_btns_rgn_drw;
 
-  BLI_addhead(&st->regiontypes, art);
+  lib_addhead(&st->rgntypes, art);
 
-  graph_buttons_register(art);
+  graph_btns_register(art);
 
-  art = ED_area_type_hud(st->spaceid);
-  BLI_addhead(&st->regiontypes, art);
+  art = ed_area_type_hud(st->spaceid);
+  lib_addhead(&st->rgntypes, art);
 
-  BKE_spacetype_register(st);
+  dune_spacetype_register(st);
 }
