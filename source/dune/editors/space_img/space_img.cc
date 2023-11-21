@@ -1,152 +1,151 @@
-#include "DNA_defaults.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_image_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_defaults.h"
+#include "types_pen_legacy.h"
+#include "types_img.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_threads.h"
+#include "lib_dunelib.h"
+#include "lib_threads.h"
 
-#include "BKE_colortools.h"
-#include "BKE_context.hh"
-#include "BKE_image.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_screen.hh"
+#include "dune_colortools.h"
+#include "dune_cxt.hh"
+#include "dune_img.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_query.h"
+#include "dune_lib_remap.h"
+#include "dune_screen.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "IMB_imbuf_types.h"
+#include "imbuf_types.h"
 
-#include "ED_image.hh"
-#include "ED_mask.hh"
-#include "ED_node.hh"
-#include "ED_render.hh"
-#include "ED_screen.hh"
-#include "ED_space_api.hh"
-#include "ED_transform.hh"
-#include "ED_util.hh"
-#include "ED_uvedit.hh"
+#include "ed_img.hh"
+#include "ed_mask.hh"
+#include "ed_node.hh"
+#include "ed_render.hh"
+#include "ed_screen.hh"
+#include "ed_space_api.hh"
+#include "ed_transform.hh"
+#include "ed_util.hh"
+#include "ed_uvedit.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "BLO_read_write.hh"
+#include "loader_read_write.hh"
 
-#include "DRW_engine.h"
+#include "drw_engine.h"
 
-#include "image_intern.h"
+#include "img_intern.h"
 
-/**************************** common state *****************************/
+/* common state */
 
-static void image_scopes_tag_refresh(ScrArea *area)
+static void img_scopes_tag_refresh(ScrArea *area)
 {
-  SpaceImage *sima = (SpaceImage *)area->spacedata.first;
+  SpaceImg *simg = (SpaceImg *)area->spacedata.first;
 
   /* only while histogram is visible */
-  LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
-    if (region->regiontype == RGN_TYPE_TOOL_PROPS && region->flag & RGN_FLAG_HIDDEN) {
+  LIST_FOREACH (ARgn *, rgn, &area->rgnbase) {
+    if (rgn->rgntype == RGN_TYPE_TOOL_PROPS && region->flag & RGN_FLAG_HIDDEN) {
       return;
     }
   }
 
-  sima->scopes.ok = 0;
+  simg->scopes.ok = 0;
 }
 
-static void image_user_refresh_scene(const bContext *C, SpaceImage *sima)
+static void img_user_refresh_scene(const Cxt *C, SpaceImg *simg)
 {
-  /* Update scene image user for acquiring render results. */
-  sima->iuser.scene = CTX_data_scene(C);
+  /* Update scene img user for acquiring render results. */
+  simg->iuser.scene = cxt_data_scene(C);
 
-  if (sima->image && sima->image->type == IMA_TYPE_R_RESULT) {
+  if (simg->img && simg->img->type == IMG_TYPE_R_RESULT) {
     /* While rendering, prefer scene that is being rendered. */
-    Scene *render_scene = ED_render_job_get_current_scene(C);
+    Scene *render_scene = ed_render_job_get_current_scene(C);
     if (render_scene) {
-      sima->iuser.scene = render_scene;
+      simg->iuser.scene = render_scene;
     }
   }
 
-  /* Auto switch image to show in UV editor when selection changes. */
-  ED_space_image_auto_set(C, sima);
+  /* Auto switch img to show in UV editor when sel changes. */
+  ed_space_img_auto_set(C, simg);
 }
 
-/* ******************** default callbacks for image space ***************** */
+/* default cbs for img space */
 
-static SpaceLink *image_create(const ScrArea * /*area*/, const Scene * /*scene*/)
+static SpaceLink *img_create(const ScrArea * /*area*/, const Scene * /*scene*/)
 {
-  ARegion *region;
-  SpaceImage *simage;
+  ARgn *rgn;
+  SpaceImg *simg;
 
-  simage = static_cast<SpaceImage *>(MEM_callocN(sizeof(SpaceImage), "initimage"));
-  simage->spacetype = SPACE_IMAGE;
-  simage->zoom = 1.0f;
-  simage->lock = true;
-  simage->flag = SI_SHOW_GPENCIL | SI_USE_ALPHA | SI_COORDFLOATS;
-  simage->uv_opacity = 1.0f;
-  simage->overlay.flag = SI_OVERLAY_SHOW_OVERLAYS | SI_OVERLAY_SHOW_GRID_BACKGROUND;
+  simg = static_cast<SpaceImg *>(mem_calloc(sizeof(SpaceImg), "initimg"));
+  simg->spacetype = SPACE_IMG;
+  simg->zoom = 1.0f;
+  simg->lock = true;
+  simg->flag = SI_SHOW_PEN | SI_USE_ALPHA | SI_COORDFLOATS;
+  simg->uv_opacity = 1.0f;
+  simg->overlay.flag = SI_OVERLAY_SHOW_OVERLAYS | SI_OVERLAY_SHOW_GRID_BACKGROUND;
 
-  BKE_imageuser_default(&simage->iuser);
-  simage->iuser.flag = IMA_SHOW_STEREO | IMA_ANIM_ALWAYS;
+  dune_imguser_default(&simg->iuser);
+  simg->iuser.flag = IMA_SHOW_STEREO | IMA_ANIM_ALWAYS;
 
-  BKE_scopes_new(&simage->scopes);
-  simage->sample_line_hist.height = 100;
+  dune_scopes_new(&simg->scopes);
+  simg->sample_line_hist.height = 100;
 
-  simage->tile_grid_shape[0] = 1;
-  simage->tile_grid_shape[1] = 1;
+  simg->tile_grid_shape[0] = 0;
+  simg->tile_grid_shape[1] = 1;
 
-  simage->custom_grid_subdiv[0] = 10;
-  simage->custom_grid_subdiv[1] = 10;
+  simg->custom_grid_subdiv[0] = 10;
+  simg->custom_grid_subdiv[1] = 10;
 
-  simage->mask_info = *DNA_struct_default_get(MaskSpaceInfo);
+  simg->mask_info = *types_struct_default_get(MaskSpaceInfo);
 
   /* header */
-  region = static_cast<ARegion *>(MEM_callocN(sizeof(ARegion), "header for image"));
+  rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "header for img"));
 
-  BLI_addtail(&simage->regionbase, region);
-  region->regiontype = RGN_TYPE_HEADER;
-  region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
+  lib_addtail(&simg->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_HEADER;
+  rgn->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
   /* tool header */
-  region = static_cast<ARegion *>(MEM_callocN(sizeof(ARegion), "tool header for image"));
+  rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "tool header for img"));
 
-  BLI_addtail(&simage->regionbase, region);
-  region->regiontype = RGN_TYPE_TOOL_HEADER;
-  region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
-  region->flag = RGN_FLAG_HIDDEN | RGN_FLAG_HIDDEN_BY_USER;
+  lib_addtail(&simg->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_TOOL_HEADER;
+  rgn->flag = RGN_FLAG_HIDDEN | RGN_FLAG_HIDDEN_BY_USER;
 
-  /* buttons/list view */
-  region = static_cast<ARegion *>(MEM_callocN(sizeof(ARegion), "buttons for image"));
+  /* btns/list view */
+  rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "btns for img"));
 
-  BLI_addtail(&simage->regionbase, region);
-  region->regiontype = RGN_TYPE_UI;
-  region->alignment = RGN_ALIGN_RIGHT;
-  region->flag = RGN_FLAG_HIDDEN;
+  lib_addtail(&simg->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_UI;
+  rgn->alignment = RGN_ALIGN_RIGHT;
+  rgn->flag = RGN_FLAG_HIDDEN;
 
   /* scopes/uv sculpt/paint */
-  region = static_cast<ARegion *>(MEM_callocN(sizeof(ARegion), "buttons for image"));
+  rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "btn for img"));
 
-  BLI_addtail(&simage->regionbase, region);
-  region->regiontype = RGN_TYPE_TOOLS;
-  region->alignment = RGN_ALIGN_LEFT;
-  region->flag = RGN_FLAG_HIDDEN;
+  lib_addtail(&simg->rgnbase, rgn);
+  rgn->rgntype = RGN_TYPE_TOOLS;
+  rgn->alignment = RGN_ALIGN_LEFT;
+  rgn->flag = RGN_FLAG_HIDDEN;
 
   /* main area */
-  region = static_cast<ARegion *>(MEM_callocN(sizeof(ARegion), "main area for image"));
+  rgn = static_cast<ARgn *>(mem_calloc(sizeof(ARgn), "main area for img"));
 
-  BLI_addtail(&simage->regionbase, region);
+  BLI_addtail(&simg->rgnbase, rgn);
   region->regiontype = RGN_TYPE_WINDOW;
 
   return (SpaceLink *)simage;
