@@ -1,38 +1,36 @@
 #include <cmath>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_rect.h"
+#include "lib_list.h"
+#include "lib_rect.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_space_types.h"
+#include "types_anim.h"
+#include "types_scene.h"
+#include "types_space.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_nla.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_nla.h"
 
-#include "UI_interface.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_view2d.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_markers.hh"
-#include "ED_screen.hh"
+#include "ed_anim_api.hh"
+#include "ed_markers.hh"
+#include "ed_screen.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
 #include "graph_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Calculate Range
- * \{ */
+/* Calc Range */
 
-void get_graph_keyframe_extents(bAnimContext *ac,
+void get_graph_keyframe_extents(AnimCxt *ac,
                                 float *xmin,
                                 float *xmax,
                                 float *ymin,
@@ -42,20 +40,20 @@ void get_graph_keyframe_extents(bAnimContext *ac,
 {
   Scene *scene = ac->scene;
 
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
   int filter;
 
   /* Get data to filter, from Dopesheet. */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_CURVE_VISIBLE | ANIMFILTER_FCURVESONLY |
             ANIMFILTER_NODUPLIS);
-  if (U.animation_flag & USER_ANIM_ONLY_SHOW_SELECTED_CURVE_KEYS) {
+  if (U.anim_flag & USER_ANIM_ONLY_SHOW_SEL_CURVE_KEYS) {
     filter |= ANIMFILTER_SEL;
   }
 
-  ANIM_animdata_filter(
-      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(
+      ac, &anim_data, eAnimFilterFlags(filter), ac->data, eAnimContTypes(ac->datatype));
 
-  /* Set large values initial values that will be easy to override. */
+  /* Set large vals to init vals that will be easy to override. */
   if (xmin) {
     *xmin = 999999999.0f;
   }
@@ -74,31 +72,30 @@ void get_graph_keyframe_extents(bAnimContext *ac,
     bool foundBounds = false;
 
     /* Go through channels, finding max extents. */
-    LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-      AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+    LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+      AnimData *adt = anim_nla_mapping_get(ac, ale);
       FCurve *fcu = (FCurve *)ale->key_data;
       rctf bounds;
       float unitFac, offset;
 
       /* Get range. */
-      if (BKE_fcurve_calc_bounds(fcu, do_sel_only, include_handles, nullptr, &bounds)) {
-        short mapping_flag = ANIM_get_normalization_flags(ac->sl);
+      if (dune_fcurve_calc_bounds(fcu, do_sel_only, include_handles, nullptr, &bounds)) {
+        short mapping_flag = anim_get_normalization_flags(ac->sl);
 
         /* Apply NLA scaling. */
         if (adt) {
-          bounds.xmin = BKE_nla_tweakedit_remap(adt, bounds.xmin, NLATIME_CONVERT_MAP);
-          bounds.xmax = BKE_nla_tweakedit_remap(adt, bounds.xmax, NLATIME_CONVERT_MAP);
+          bounds.xmin = dune_nla_tweakedit_remap(adt, bounds.xmin, NLATIME_CONVERT_MAP);
+          bounds.xmax = dune_nla_tweakedit_remap(adt, bounds.xmax, NLATIME_CONVERT_MAP);
         }
 
         /* Apply unit corrections. */
-        unitFac = ANIM_unit_mapping_get_factor(ac->scene, ale->id, fcu, mapping_flag, &offset);
+        unitFac = anim_unit_mapping_get_factor(ac->scene, ale->id, fcu, mapping_flag, &offset);
         bounds.ymin += offset;
         bounds.ymax += offset;
         bounds.ymin *= unitFac;
         bounds.ymax *= unitFac;
 
-        /* Try to set cur using these values, if they're more extreme than previously set values.
-         */
+        /* Try set cur using these vals if they're more extreme than prev set vals. */
         if ((xmin) && (bounds.xmin < *xmin)) {
           *xmin = bounds.xmin;
         }
@@ -143,7 +140,7 @@ void get_graph_keyframe_extents(bAnimContext *ac,
     }
 
     /* Free memory. */
-    ANIM_animdata_freelist(&anim_data);
+    anim_animdata_freelist(&anim_data);
   }
   else {
     /* Set default range. */
@@ -173,24 +170,19 @@ void get_graph_keyframe_extents(bAnimContext *ac,
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Automatic Preview-Range Operator
- * \{ */
-
-static int graphkeys_previewrange_exec(bContext *C, wmOperator * /*op*/)
+/* Automatic Preview-Range Op */
+static int graphkeys_previewrange_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   Scene *scene;
   float min, max;
 
-  /* Get editor data. */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  /* Get ed data. */
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
   if (ac.scene == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   scene = ac.scene;
@@ -202,48 +194,44 @@ static int graphkeys_previewrange_exec(bContext *C, wmOperator * /*op*/)
   scene->r.pefra = round_fl_to_int(max);
 
   /* Set notifier that things have changed. */
-  /* XXX: Err... there's nothing for frame ranges yet, but this should do fine too. */
-  WM_event_add_notifier(C, NC_SCENE | ND_FRAME, ac.scene);
+  /* Err... there's nothing for frame ranges yet, but this should do fine too. */
+  win_ev_add_notifier(C, NC_SCENE | ND_FRAME, ac.scene);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GRAPH_OT_previewrange_set(wmOperatorType *ot)
+void GRAPH_OT_previewrange_set(WinOpType *ot)
 {
-  /* Identifiers */
-  ot->name = "Set Preview Range to Selected";
+  /* Ids */
+  ot->name = "Set Preview Range to Sel";
   ot->idname = "GRAPH_OT_previewrange_set";
-  ot->description = "Set Preview Range based on range of selected keyframes";
+  ot->description = "Set Preview Range based on range of sel keyframes";
 
-  /* API callbacks */
-  ot->exec = graphkeys_previewrange_exec;
-  /* XXX: unchecked poll to get F-samples working too, but makes modifier damage trickier. */
-  ot->poll = ED_operator_graphedit_active;
+  /* api cbs */
+  ot->ex = graphkeys_previewrange_ex;
+  /* unchecked poll to get F-samples working too, but makes mod dmg trickier. */
+  ot->poll = ed_op_graphedit_active;
 
   /* Flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name View-All Operator
- * \{ */
-
-static int graphkeys_viewall(bContext *C,
+/* View-All Op */
+static int graphkeys_viewall(Cxt *C,
                              const bool do_sel_only,
                              const bool include_handles,
                              const int smooth_viewtx)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   rctf cur_new;
 
   /* Get editor data. */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
-  /* Set the horizontal range, with an extra offset so that the extreme keys will be in view. */
+  /* Set horizontal range w an extra offset so that the extreme keys will be in view. */
   get_graph_keyframe_extents(&ac,
                              &cur_new.xmin,
                              &cur_new.xmax,
@@ -253,133 +241,119 @@ static int graphkeys_viewall(bContext *C,
                              include_handles);
 
   /* Give some more space at the borders. */
-  BLI_rctf_scale(&cur_new, 1.1f);
+  lib_rctf_scale(&cur_new, 1.1f);
 
-  /* Take regions into account, that could block the view.
-   * Marker region is supposed to be larger than the scroll-bar, so prioritize it. */
+  /* Take rgns into account, that could block the view.
+   * Marker rgn is supposed to be larger than the scroll-bar, so prioritize it. */
   float pad_top = UI_TIME_SCRUB_MARGIN_Y;
-  float pad_bottom = BLI_listbase_is_empty(ED_context_get_markers(C)) ? V2D_SCROLL_HANDLE_HEIGHT :
-                                                                        UI_MARKER_MARGIN_Y;
-  BLI_rctf_pad_y(&cur_new, ac.region->winy, pad_bottom, pad_top);
+  float pad_bottom = lib_list_is_empty(ed_cxt_get_markers(C)) ? V2D_SCROLL_HANDLE_HEIGHT :
+                                                                UI_MARKER_MARGIN_Y;
+  lib_rctf_pad_y(&cur_new, ac.rgn->winy, pad_bottom, pad_top);
 
-  UI_view2d_smooth_view(C, ac.region, &cur_new, smooth_viewtx);
-  return OPERATOR_FINISHED;
+  ui_view2d_smooth_view(C, ac.rgn, &cur_new, smooth_viewtx);
+  return OP_FINISHED;
 }
 
-/* ......... */
-
-static int graphkeys_viewall_exec(bContext *C, wmOperator *op)
+static int graphkeys_viewall_ex(Cxt *C, WinOp *op)
 {
-  const bool include_handles = RNA_boolean_get(op->ptr, "include_handles");
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const bool include_handles = api_bool_get(op->ptr, "include_handles");
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
   /* Whole range */
   return graphkeys_viewall(C, false, include_handles, smooth_viewtx);
 }
 
-static int graphkeys_view_selected_exec(bContext *C, wmOperator *op)
+static int graphkeys_view_sel_ex(Cxt *C, WinOp *op)
 {
-  const bool include_handles = RNA_boolean_get(op->ptr, "include_handles");
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
+  const bool include_handles = api_bool_get(op->ptr, "include_handles");
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
 
-  /* Only selected. */
+  /* Only sel */
   return graphkeys_viewall(C, true, include_handles, smooth_viewtx);
 }
 
-/* ......... */
-
-void GRAPH_OT_view_all(wmOperatorType *ot)
+void GRAPH_OT_view_all(WinOpType *ot)
 {
-  /* Identifiers */
+  /* Ids */
   ot->name = "Frame All";
   ot->idname = "GRAPH_OT_view_all";
   ot->description = "Reset viewable area to show full keyframe range";
 
-  /* API callbacks */
-  ot->exec = graphkeys_viewall_exec;
-  /* XXX: Unchecked poll to get F-samples working too, but makes modifier damage trickier. */
-  ot->poll = ED_operator_graphedit_active;
+  /* API cbs */
+  ot->ex = graphkeys_viewall_ex;
+  /* Unchecked poll to get F-samples working too but makes mod dmg trickier */
+  ot->poll = ed_op_graphedit_active;
 
   /* Flags */
   ot->flag = 0;
 
   /* Props */
-  ot->prop = RNA_def_boolean(ot->srna,
-                             "include_handles",
-                             true,
-                             "Include Handles",
-                             "Include handles of keyframes when calculating extents");
+  ot->prop = api_def_bool(ot->sapi,
+                          "include_handles",
+                          true,
+                          "Include Handles",
+                          "Include handles of keyframes when calc extents");
 }
 
-void GRAPH_OT_view_selected(wmOperatorType *ot)
+void GRAPH_OT_view_sel(WinOpType *ot)
 {
-  /* Identifiers */
-  ot->name = "Frame Selected";
-  ot->idname = "GRAPH_OT_view_selected";
-  ot->description = "Reset viewable area to show selected keyframe range";
+  /* Ids */
+  ot->name = "Frame Sel";
+  ot->idname = "GRAPH_OT_view_sel";
+  ot->description = "Reset viewable area to show sel keyframe range";
 
-  /* API callbacks */
-  ot->exec = graphkeys_view_selected_exec;
-  /* XXX: Unchecked poll to get F-samples working too, but makes modifier damage trickier. */
-  ot->poll = ED_operator_graphedit_active;
+  /* api cbs */
+  ot->ex = graphkeys_view_sel_ex;
+  /* Unchecked poll to get F-samples working too, but makes mod dmg trickier. */
+  ot->poll = ed_op_graphedit_active;
 
   /* Flags */
   ot->flag = 0;
 
   /* Props */
-  ot->prop = RNA_def_boolean(ot->srna,
-                             "include_handles",
-                             true,
-                             "Include Handles",
-                             "Include handles of keyframes when calculating extents");
+  ot->prop = api_def_bool(ot->sapi,
+                          "include_handles",
+                          true,
+                          "Include Handles",
+                          "Include handles of keyframes when calc extents");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Frame Operator
- * \{ */
-
-static int graphkeys_view_frame_exec(bContext *C, wmOperator *op)
+/* View Frame Op */
+static int graphkeys_view_frame_ex(Cxt *C, WinOp *op)
 {
-  const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
-  ANIM_center_frame(C, smooth_viewtx);
-  return OPERATOR_FINISHED;
+  const int smooth_viewtx = win_op_smooth_viewtx_get(op);
+  anim_center_frame(C, smooth_viewtx);
+  return OP_FINISHED;
 }
 
-void GRAPH_OT_view_frame(wmOperatorType *ot)
+void GRAPH_OT_view_frame(WinOpType *ot)
 {
-  /* Identifiers */
+  /* Ids */
   ot->name = "Go to Current Frame";
   ot->idname = "GRAPH_OT_view_frame";
   ot->description = "Move the view to the current frame";
 
-  /* API callbacks */
-  ot->exec = graphkeys_view_frame_exec;
-  ot->poll = ED_operator_graphedit_active;
+  /* API cbs */
+  ot->ex = graphkeys_view_frame_ex;
+  ot->poll = ed_op_graphedit_active;
 
   /* Flags */
   ot->flag = 0;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Create Ghost-Curves Operator
- *
- * This operator samples the data of the selected F-Curves to F-Points, storing them
- * as 'ghost curves' in the active Graph Editor.
- * \{ */
+/* Create Ghost-Curves Op
+ * This op samples the data of the selected F-Curves to F-Points, storing them
+ * as 'ghost curves' in the active Graph Editor */
 
 /* Bake each F-Curve into a set of samples, and store as a ghost curve. */
-static void create_ghost_curves(bAnimContext *ac, int start, int end)
+static void create_ghost_curves(AnimCxt *ac, int start, int end)
 {
   SpaceGraph *sipo = (SpaceGraph *)ac->sl;
-  ListBase anim_data = {nullptr, nullptr};
+  List anim_data = {nullptr, nullptr};
   int filter;
 
   /* Free existing ghost curves. */
-  BKE_fcurves_free(&sipo->runtime.ghost_curves);
+  dune_fcurves_free(&sipo->runtime.ghost_curves);
 
   /* Sanity check. */
   if (start >= end) {
@@ -390,97 +364,94 @@ static void create_ghost_curves(bAnimContext *ac, int start, int end)
   /* Filter data. */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_CURVE_VISIBLE | ANIMFILTER_FCURVESONLY |
             ANIMFILTER_SEL | ANIMFILTER_NODUPLIS);
-  ANIM_animdata_filter(
-      ac, &anim_data, eAnimFilter_Flags(filter), ac->data, eAnimCont_Types(ac->datatype));
+  anim_animdata_filter(
+      ac, &anim_data, eAnimFilterFlags(filter), ac->data, eAnimContTypes(ac->datatype));
 
-  /* Loop through filtered data and add keys between selected keyframes on every frame. */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
+  /* Loop through filtered data and add keys between sel keyframes on every frame. */
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
     FCurve *fcu = (FCurve *)ale->key_data;
-    FCurve *gcu = BKE_fcurve_create();
-    AnimData *adt = ANIM_nla_mapping_get(ac, ale);
+    FCurve *gcu = dune_fcurve_create();
+    AnimData *adt = anim_nla_mapping_get(ac, ale);
     ChannelDriver *driver = fcu->driver;
     FPoint *fpt;
     float unitFac, offset;
     int cfra;
-    short mapping_flag = ANIM_get_normalization_flags(ac->sl);
+    short mapping_flag = anim_get_normalization_flags(ac->sl);
 
     /* Disable driver so that it don't muck up the sampling process. */
     fcu->driver = nullptr;
 
     /* Calculate unit-mapping factor. */
-    unitFac = ANIM_unit_mapping_get_factor(ac->scene, ale->id, fcu, mapping_flag, &offset);
+    unitFac = anim_unit_mapping_get_factor(ac->scene, ale->id, fcu, mapping_flag, &offset);
 
-    /* Create samples, but store them in a new curve
-     * - we cannot use fcurve_store_samples() as that will only overwrite the original curve.
-     */
+    /* Create samples but store them in a new curve.
+     * We cannot use fcurve_store_samples().
+     * That will only overwrite the original curve. */
     gcu->fpt = fpt = static_cast<FPoint *>(
-        MEM_callocN(sizeof(FPoint) * (end - start + 1), "Ghost FPoint Samples"));
+        mem_calloc(sizeof(FPoint) * (end - start + 1), "Ghost FPoint Samples"));
     gcu->totvert = end - start + 1;
 
-    /* Use the sampling callback at 1-frame intervals from start to end frames. */
+    /* Use the sampling cb at 1-frame intervals from start to end frames. */
     for (cfra = start; cfra <= end; cfra++, fpt++) {
-      float cfrae = BKE_nla_tweakedit_remap(adt, cfra, NLATIME_CONVERT_UNMAP);
+      float cfrae = dune_nla_tweakedit_remap(adt, cfra, NLATIME_CONVERT_UNMAP);
 
       fpt->vec[0] = cfrae;
       fpt->vec[1] = (fcurve_samplingcb_evalcurve(fcu, nullptr, cfrae) + offset) * unitFac;
     }
 
     /* Set color of ghost curve
-     * - make the color slightly darker.
-     */
+     * make the color slightly darker. */
     gcu->color[0] = fcu->color[0] - 0.07f;
     gcu->color[1] = fcu->color[1] - 0.07f;
     gcu->color[2] = fcu->color[2] - 0.07f;
 
     /* Store new ghost curve. */
-    BLI_addtail(&sipo->runtime.ghost_curves, gcu);
+    lib_addtail(&sipo->runtime.ghost_curves, gcu);
 
     /* Restore driver. */
     fcu->driver = driver;
   }
 
-  /* Admin and redraws. */
-  ANIM_animdata_freelist(&anim_data);
+  /* Admin and redrws. */
+  anim_animdata_freelist(&anim_data);
 }
 
-/* ------------------- */
-
-static int graphkeys_create_ghostcurves_exec(bContext *C, wmOperator * /*op*/)
+static int graphkeys_create_ghostcurves_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   View2D *v2d;
   int start, end;
 
   /* Get editor data. */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
 
   /* Ghost curves are snapshots of the visible portions of the curves,
    * so set range to be the visible range. */
-  v2d = &ac.region->v2d;
+  v2d = &ac.rgn->v2d;
   start = int(v2d->cur.xmin);
   end = int(v2d->cur.xmax);
 
-  /* Bake selected curves into a ghost curve. */
+  /* Bake sel curves into a ghost curve. */
   create_ghost_curves(&ac, start, end);
 
   /* Update this editor only. */
-  ED_area_tag_redraw(CTX_wm_area(C));
+  ed_area_tag_redrw(cxt_win_area(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GRAPH_OT_ghost_curves_create(wmOperatorType *ot)
+void GRAPH_OT_ghost_curves_create(WinOpType *ot)
 {
-  /* Identifiers */
+  /* Ids */
   ot->name = "Create Ghost Curves";
   ot->idname = "GRAPH_OT_ghost_curves_create";
   ot->description =
       "Create snapshot (Ghosts) of selected F-Curves as background aid for active Graph Editor";
 
-  /* API callbacks */
-  ot->exec = graphkeys_create_ghostcurves_exec;
+  /* API cbs */
+  ot->ex = graphkeys_create_ghostcurves_ex;
   ot->poll = graphop_visible_keyframes_poll;
 
   /* Flags */
@@ -489,48 +460,42 @@ void GRAPH_OT_ghost_curves_create(wmOperatorType *ot)
   /* TODO: add props for start/end frames */
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Ghost-Curves Operator
- *
- * This operator clears the 'ghost curves' for the active Graph Editor.
- * \{ */
-
-static int graphkeys_clear_ghostcurves_exec(bContext *C, wmOperator * /*op*/)
+/* Clear Ghost-Curves Op
+ * Clears the 'ghost curves' for the active Graph Editor */
+static int graphkeys_clear_ghostcurves_ex(Cxt *C, WinOp * /*op*/)
 {
-  bAnimContext ac;
+  AnimCxt ac;
   SpaceGraph *sipo;
 
   /* Get editor data. */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
-    return OPERATOR_CANCELLED;
+  if (anim_animdata_get_cxt(C, &ac) == 0) {
+    return OP_CANCELLED;
   }
   sipo = (SpaceGraph *)ac.sl;
 
   /* If no ghost curves, don't do anything. */
-  if (BLI_listbase_is_empty(&sipo->runtime.ghost_curves)) {
-    return OPERATOR_CANCELLED;
+  if (lib_list_is_empty(&sipo->runtime.ghost_curves)) {
+    return OP_CANCELLED;
   }
   /* Free ghost curves. */
-  BKE_fcurves_free(&sipo->runtime.ghost_curves);
+  dune_fcurves_free(&sipo->runtime.ghost_curves);
 
   /* Update this editor only. */
-  ED_area_tag_redraw(CTX_wm_area(C));
+  ed_area_tag_redrw(cxt_win_area(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GRAPH_OT_ghost_curves_clear(wmOperatorType *ot)
+void GRAPH_OT_ghost_curves_clear(WinOpType *ot)
 {
-  /* Identifiers */
+  /* Ids */
   ot->name = "Clear Ghost Curves";
   ot->idname = "GRAPH_OT_ghost_curves_clear";
   ot->description = "Clear F-Curve snapshots (Ghosts) for active Graph Editor";
 
-  /* API callbacks */
-  ot->exec = graphkeys_clear_ghostcurves_exec;
-  ot->poll = ED_operator_graphedit_active;
+  /* api cbs */
+  ot->ex = graphkeys_clear_ghostcurves_ex;
+  ot->poll = ed_op_graphedit_active;
 
   /* Flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
