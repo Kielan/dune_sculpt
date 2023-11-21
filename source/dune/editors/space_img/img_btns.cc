@@ -408,23 +408,22 @@ static void ui_imguser_view_menu_multiview(Cxt * /*C*/, uiLayout *layout, void *
 /* 5 layer btn cbs... */
 static void img_multi_cb(Cxt *C, void *rnd_pt, void *rr_v)
 {
-  ImgUIData *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
-  ImageUser *iuser = rnd_data->iuser;
-
-  BKE_image_multilayer_index(static_cast<RenderResult *>(rr_v), iuser);
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
+  ImgUser *iuser = rnd_data->iuser;
+  dune_img_multilayer_index(static_cast<RenderResult *>(rr_v), iuser);
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 }
 
-static bool ui_imageuser_layer_menu_step(bContext *C, int direction, void *rnd_pt)
+static bool ui_imguser_layer_menu_step(Cxt *C, int direction, void *rnd_pt)
 {
-  Scene *scene = CTX_data_scene(C);
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Scene *scene = cxt_data_scene(C);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
+  Img *img = rnd_data->image;
+  ImgUser *iuser = rnd_data->iuser;
   RenderResult *rr;
   bool changed = false;
 
-  rr = BKE_image_acquire_renderresult(scene, image);
+  rr = dune_img_acquire_renderresult(scene, img);
   if (UNLIKELY(rr == nullptr)) {
     return false;
   }
@@ -436,10 +435,10 @@ static bool ui_imageuser_layer_menu_step(bContext *C, int direction, void *rnd_p
     }
   }
   else if (direction == 1) {
-    int tot = BLI_listbase_count(&rr->layers);
+    int tot = lib_list_count(&rr->layers);
 
-    if (RE_HasCombinedLayer(rr)) {
-      tot++; /* fake compo/sequencer layer */
+    if (render_HasCombinedLayer(rr)) {
+      tot++; /* fake compo/seq layer */
     }
 
     if (iuser->layer < tot - 1) {
@@ -448,50 +447,50 @@ static bool ui_imageuser_layer_menu_step(bContext *C, int direction, void *rnd_p
     }
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
 
-  BKE_image_release_renderresult(scene, image);
+  dune_img_release_renderresult(scene, img);
 
   if (changed) {
-    BKE_image_multilayer_index(rr, iuser);
-    WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+    dune_img_multilayer_index(rr, iuser);
+    win_ev_add_notifier(C, NC_IMG| ND_DRW, nullptr);
   }
 
   return changed;
 }
 
-static bool ui_imageuser_pass_menu_step(bContext *C, int direction, void *rnd_pt)
+static bool ui_imguser_pass_menu_step(Cxt *C, int direction, void *rnd_pt)
 {
-  Scene *scene = CTX_data_scene(C);
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Scene *scene = cxt_data_scene(C);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
+  Img *img = rnd_data->img;
+  ImgUser *iuser = rnd_data->iuser;
   RenderResult *rr;
   bool changed = false;
   int layer = iuser->layer;
   RenderLayer *rl;
   RenderPass *rpass;
 
-  rr = BKE_image_acquire_renderresult(scene, image);
+  rr = dune_img_acquire_renderresult(scene, img);
   if (UNLIKELY(rr == nullptr)) {
-    BKE_image_release_renderresult(scene, image);
+    dune_img_release_renderresult(scene, img);
     return false;
   }
 
-  if (RE_HasCombinedLayer(rr)) {
+  if (render_HasCombinedLayer(rr)) {
     layer -= 1;
   }
 
-  rl = static_cast<RenderLayer *>(BLI_findlink(&rr->layers, layer));
+  rl = static_cast<RenderLayer *>(lib_findlink(&rr->layers, layer));
   if (rl == nullptr) {
-    BKE_image_release_renderresult(scene, image);
+    dune_img_release_renderresult(scene, img);
     return false;
   }
 
-  rpass = static_cast<RenderPass *>(BLI_findlink(&rl->passes, iuser->pass));
+  rpass = static_cast<RenderPass *>(lib_findlink(&rl->passes, iuser->pass));
   if (rpass == nullptr) {
-    BKE_image_release_renderresult(scene, image);
+    dune_img_release_renderresult(scene, img);
     return false;
   }
 
@@ -513,7 +512,7 @@ static bool ui_imageuser_pass_menu_step(bContext *C, int direction, void *rnd_pt
     int rp_index = 0;
 
     if (iuser->pass == 0) {
-      BKE_image_release_renderresult(scene, image);
+      dune_img_release_renderresult(scene, img);
       return false;
     }
 
