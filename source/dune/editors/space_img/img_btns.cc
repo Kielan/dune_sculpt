@@ -1,53 +1,53 @@
 #include <cstdio>
 #include <cstring>
 
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
+#include "types_node.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_context.hh"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_node.h"
-#include "BKE_scene.h"
-#include "BKE_screen.hh"
+#include "dune_cxt.hh"
+#include "dune_img.h"
+#include "dune_img_format.h"
+#include "dune_node.h"
+#include "dune_scene.h"
+#include "dune_screen.hh"
 
-#include "RE_pipeline.h"
+#include "render_pipeline.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "ED_gpencil_legacy.hh"
-#include "ED_image.hh"
-#include "ED_screen.hh"
+#include "ed_pen_legacy.hh"
+#include "ed_img.hh"
+#include "ed_screen.hh"
 
-#include "RNA_access.hh"
+#include "api_access.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "image_intern.h"
+#include "img_intern.h"
 
 #define B_NOP -1
-#define MAX_IMAGE_INFO_LEN 128
+#define MAX_IMG_INFO_LEN 128
 
-ImageUser *ntree_get_active_iuser(bNodeTree *ntree)
+ImageUser *ntree_get_active_iuser(NodeTree *ntree)
 {
   if (ntree) {
-    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    LIST_FOREACH (Node *, node, &ntree->nodes) {
       if (ELEM(node->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER)) {
         if (node->flag & NODE_DO_OUTPUT) {
-          return static_cast<ImageUser *>(node->storage);
+          return static_cast<ImgUser *>(node->storage);
         }
       }
     }
@@ -55,15 +55,15 @@ ImageUser *ntree_get_active_iuser(bNodeTree *ntree)
   return nullptr;
 }
 
-/* ********************* callbacks for standard image buttons *************** */
+/* cbs for standard img btns */
 
-static void ui_imageuser_slot_menu(bContext * /*C*/, uiLayout *layout, void *image_p)
+static void ui_imguser_slot_menu(Cxt * /*C*/, uiLayout *layout, void *image_p)
 {
   uiBlock *block = uiLayoutGetBlock(layout);
-  Image *image = static_cast<Image *>(image_p);
+  Image *image = static_cast<Img *>(image_p);
 
   int slot_id;
-  LISTBASE_FOREACH_INDEX (RenderSlot *, slot, &image->renderslots, slot_id) {
+  LIST_FOREACH_INDEX (RenderSlot *, slot, &image->renderslots, slot_id) {
     char str[64];
     if (slot->name[0] != '\0') {
       STRNCPY(str, slot->name);
@@ -72,14 +72,14 @@ static void ui_imageuser_slot_menu(bContext * /*C*/, uiLayout *layout, void *ima
       SNPRINTF(str, IFACE_("Slot %d"), slot_id + 1);
     }
     uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
+              BTYPE_BTN_MENU,
               B_NOP,
               str,
               0,
               0,
               UI_UNIT_X * 5,
               UI_UNIT_X,
-              &image->render_slot,
+              &img->render_slot,
               float(slot_id),
               0.0,
               0,
@@ -88,8 +88,8 @@ static void ui_imageuser_slot_menu(bContext * /*C*/, uiLayout *layout, void *ima
   }
 
   uiItemS(layout);
-  uiDefBut(block,
-           UI_BTYPE_LABEL,
+  uiDefBtn(block,
+           BTYPE_LABEL,
            0,
            IFACE_("Slot"),
            0,
@@ -104,20 +104,20 @@ static void ui_imageuser_slot_menu(bContext * /*C*/, uiLayout *layout, void *ima
            "");
 }
 
-static bool ui_imageuser_slot_menu_step(bContext *C, int direction, void *image_p)
+static bool ui_imguser_slot_menu_step(Cxt *C, int direction, void *img_p)
 {
-  Image *image = static_cast<Image *>(image_p);
+  Img *img = static_cast<Img *>(img_p);
 
-  if (ED_image_slot_cycle(image, direction)) {
-    WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  if (ed_img_slot_cycle(img, direction)) {
+    win_ev_add_notifier(C, NC_IMAGE | ND_DRW, nullptr);
     return true;
   }
   return true;
 }
 
-static const char *ui_imageuser_layer_fake_name(RenderResult *rr)
+static const char *ui_imguser_layer_fake_name(RenderResult *rr)
 {
-  RenderView *rv = RE_RenderViewGetById(rr, 0);
+  RenderView *rv = rener_RenderViewGetById(rr, 0);
   ImBuf *ibuf = rv->ibuf;
   if (!ibuf) {
     return nullptr;
@@ -126,82 +126,82 @@ static const char *ui_imageuser_layer_fake_name(RenderResult *rr)
     return IFACE_("Composite");
   }
   if (ibuf->byte_buffer.data) {
-    return IFACE_("Sequence");
+    return IFACE_("Seq");
   }
   return nullptr;
 }
 
 /* workaround for passing many args */
-struct ImageUI_Data {
-  Image *image;
-  ImageUser *iuser;
+struct ImgUIData {
+  Img *img;
+  ImgUser *iuser;
   int rpass_index;
 };
 
-static ImageUI_Data *ui_imageuser_data_copy(const ImageUI_Data *rnd_pt_src)
+static ImgUIData *ui_imguser_data_copy(const ImgUIData *rnd_pt_src)
 {
-  ImageUI_Data *rnd_pt_dst = static_cast<ImageUI_Data *>(
-      MEM_mallocN(sizeof(*rnd_pt_src), __func__));
+  ImageUIData *rnd_pt_dst = static_cast<ImgUIData *>(
+      mem_malloc(sizeof(*rnd_pt_src), __func__));
   memcpy(rnd_pt_dst, rnd_pt_src, sizeof(*rnd_pt_src));
   return rnd_pt_dst;
 }
 
-static void ui_imageuser_layer_menu(bContext * /*C*/, uiLayout *layout, void *rnd_pt)
+static void ui_imguser_layer_menu(Cxt * /*C*/, uiLayout *layout, void *rnd_pt)
 {
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
   uiBlock *block = uiLayoutGetBlock(layout);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Img *image = rnd_data->image;
+  ImgUser *iuser = rnd_data->iuser;
   Scene *scene = iuser->scene;
 
-  /* May have been freed since drawing. */
-  RenderResult *rr = BKE_image_acquire_renderresult(scene, image);
+  /* May have been freed since drwing. */
+  RenderResult *rr = dune_img_acquire_renderresult(scene, img);
   if (UNLIKELY(rr == nullptr)) {
     return;
   }
 
-  UI_block_layout_set_current(block, layout);
+  ui_block_layout_set_current(block, layout);
   uiLayoutColumn(layout, false);
 
-  const char *fake_name = ui_imageuser_layer_fake_name(rr);
+  const char *fake_name = ui_imguser_layer_fake_name(rr);
   if (fake_name) {
-    uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
-              B_NOP,
-              fake_name,
-              0,
-              0,
-              UI_UNIT_X * 5,
-              UI_UNIT_X,
-              &iuser->layer,
-              0.0,
-              0.0,
-              0,
-              -1,
-              "");
+    BtnS(block,
+         BTYPE_BTN_MENU,
+         B_NOP,
+         fake_name,
+         0,
+         0,
+         UI_UNIT_X * 5,
+         UI_UNIT_X,
+         &iuser->layer,
+         0.0,
+         0.0,
+         0,
+         -1,
+         "");
   }
 
   int nr = fake_name ? 1 : 0;
   for (RenderLayer *rl = static_cast<RenderLayer *>(rr->layers.first); rl; rl = rl->next, nr++) {
-    uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
-              B_NOP,
-              rl->name,
-              0,
-              0,
-              UI_UNIT_X * 5,
-              UI_UNIT_X,
-              &iuser->layer,
-              float(nr),
-              0.0,
-              0,
-              -1,
-              "");
+    BtnS(block,
+         BTYPE_BTN_MENU,
+         B_NOP,
+        rl->name,
+        0,
+        0,
+        UI_UNIT_X * 5,
+        UI_UNIT_X,
+        &iuser->layer,
+        float(nr),
+        0.0,
+        0,
+        -1,
+        "");
   }
 
   uiItemS(layout);
-  uiDefBut(block,
-           UI_BTYPE_LABEL,
+  Btn(block,
+           BTYPE_LABEL,
            0,
            IFACE_("Layer"),
            0,
@@ -215,15 +215,15 @@ static void ui_imageuser_layer_menu(bContext * /*C*/, uiLayout *layout, void *rn
            0,
            "");
 
-  BKE_image_release_renderresult(scene, image);
+  dune_img_release_renderresult(scene, img);
 }
 
-static void ui_imageuser_pass_menu(bContext * /*C*/, uiLayout *layout, void *rnd_pt)
+static void ui_imguser_pass_menu(Cxt * /*C*/, uiLayout *layout, void *rnd_pt)
 {
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
   uiBlock *block = uiLayoutGetBlock(layout);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Img *img = rnd_data->image;
+  ImgUser *iuser = rnd_data->iuser;
   /* (rpass_index == -1) means composite result */
   const int rpass_index = rnd_data->rpass_index;
   Scene *scene = iuser->scene;
@@ -232,21 +232,21 @@ static void ui_imageuser_pass_menu(bContext * /*C*/, uiLayout *layout, void *rnd
   RenderPass *rpass;
   int nr;
 
-  /* may have been freed since drawing */
-  rr = BKE_image_acquire_renderresult(scene, image);
+  /* may have been freed since drwing */
+  rr = dune_img_acquire_renderresult(scene, img);
   if (UNLIKELY(rr == nullptr)) {
     return;
   }
 
-  rl = static_cast<RenderLayer *>(BLI_findlink(&rr->layers, rpass_index));
+  rl = static_cast<RenderLayer *>(lib_findlink(&rr->layers, rpass_index));
 
-  UI_block_layout_set_current(block, layout);
+  ui_block_layout_set_current(block, layout);
   uiLayoutColumn(layout, false);
 
   nr = (rl == nullptr) ? 1 : 0;
 
-  ListBase added_passes;
-  BLI_listbase_clear(&added_passes);
+  List added_passes;
+  lib_list_clear(&added_passes);
 
   /* rendered results don't have a Combined pass */
   /* multiview: the ordering must be ascending, so the left-most pass is always the one picked */
@@ -254,152 +254,152 @@ static void ui_imageuser_pass_menu(bContext * /*C*/, uiLayout *layout, void *rnd
        rpass = rpass->next, nr++)
   {
     /* just show one pass of each kind */
-    if (BLI_findstring_ptr(&added_passes, rpass->name, offsetof(LinkData, data))) {
+    if (lib_findstring_ptr(&added_passes, rpass->name, offsetof(LinkData, data))) {
       continue;
     }
-    BLI_addtail(&added_passes, BLI_genericNodeN(rpass->name));
+    lib_addtail(&added_passes, lib_genericNode(rpass->name));
 
-    uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
-              B_NOP,
-              IFACE_(rpass->name),
-              0,
-              0,
-              UI_UNIT_X * 5,
-              UI_UNIT_X,
-              &iuser->pass,
-              float(nr),
-              0.0,
-              0,
-              -1,
-              "");
+    BtnS(block,
+         UI_BTYPE_BTN_MENU,
+         B_NOP,
+         IFACE_(rpass->name),
+         0,
+         0,
+         UI_UNIT_X * 5,
+         UI_UNIT_X,
+         &iuser->pass,
+         float(nr),
+         0.0,
+         0,
+         -1,
+         "");
   }
 
   uiItemS(layout);
-  uiDefBut(block,
-           UI_BTYPE_LABEL,
-           0,
-           IFACE_("Pass"),
-           0,
-           0,
-           UI_UNIT_X * 5,
-           UI_UNIT_Y,
-           nullptr,
-           0.0,
-           0.0,
-           0,
-           0,
-           "");
+  Btn(block,
+      BTYPE_LABEL,
+      0,
+      IFACE_("Pass"),
+      0,
+      0,
+      UNIT_X * 5,
+      UNIT_Y,
+      nullptr,
+      0.0,
+      0.0,
+      0,
+      0,
+      "");
 
-  BLI_freelistN(&added_passes);
+  lib_freelist(&added_passes);
 
-  BKE_image_release_renderresult(scene, image);
+  dune_img_release_renderresult(scene, img);
 }
 
-/**************************** view menus *****************************/
-static void ui_imageuser_view_menu_rr(bContext * /*C*/, uiLayout *layout, void *rnd_pt)
+/* view menus */
+static void ui_imguser_view_menu_rr(Cxt * /*C*/, uiLayout *layout, void *rnd_pt)
 {
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
   uiBlock *block = uiLayoutGetBlock(layout);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Img *img = rnd_data->image;
+  ImgUser *iuser = rnd_data->iuser;
   RenderResult *rr;
   RenderView *rview;
   int nr;
   Scene *scene = iuser->scene;
 
-  /* may have been freed since drawing */
-  rr = BKE_image_acquire_renderresult(scene, image);
+  /* may have been freed since drwing */
+  rr = dune_img_acquire_renderresult(scene, img);
   if (UNLIKELY(rr == nullptr)) {
     return;
   }
 
-  UI_block_layout_set_current(block, layout);
+  ui_block_layout_set_current(block, layout);
   uiLayoutColumn(layout, false);
 
-  uiDefBut(block,
-           UI_BTYPE_LABEL,
-           0,
-           IFACE_("View"),
-           0,
-           0,
-           UI_UNIT_X * 5,
-           UI_UNIT_Y,
-           nullptr,
-           0.0,
-           0.0,
-           0,
-           0,
-           "");
+  Btn(block,
+      BTYPE_LABEL,
+      0,
+      IFACE_("View"),
+      0,
+      0,
+      UNIT_X * 5,
+      UNIT_Y,
+      nullptr,
+      0.0,
+      0.0,
+      0,
+      0,
+      "");
 
   uiItemS(layout);
 
-  nr = (rr ? BLI_listbase_count(&rr->views) : 0) - 1;
+  nr = (rr ? lib_list_count(&rr->views) : 0) - 1;
   for (rview = static_cast<RenderView *>(rr ? rr->views.last : nullptr); rview;
        rview = rview->prev, nr--)
   {
-    uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
-              B_NOP,
-              IFACE_(rview->name),
-              0,
-              0,
-              UI_UNIT_X * 5,
-              UI_UNIT_X,
-              &iuser->view,
-              float(nr),
-              0.0,
-              0,
-              -1,
-              "");
+    BtnS(block,
+         BTYPE_BTN_MENU,
+         B_NOP,
+         IFACE_(rview->name),
+         0,
+         0,
+         UNIT_X * 5,
+         UNIT_X,
+         &iuser->view,
+         float(nr),
+         0.0,
+         0,
+         -1,
+         "");
   }
 
-  BKE_image_release_renderresult(scene, image);
+  dune_img_release_renderresult(scene, img);
 }
 
-static void ui_imageuser_view_menu_multiview(bContext * /*C*/, uiLayout *layout, void *rnd_pt)
+static void ui_imguser_view_menu_multiview(Cxt * /*C*/, uiLayout *layout, void *rnd_pt)
 {
-  ImageUI_Data *rnd_data = static_cast<ImageUI_Data *>(rnd_pt);
+  ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
   uiBlock *block = uiLayoutGetBlock(layout);
-  Image *image = rnd_data->image;
-  ImageUser *iuser = rnd_data->iuser;
+  Img *img = rnd_data->img;
+  ImgUser *iuser = rnd_data->iuser;
   int nr;
-  ImageView *iv;
-
-  UI_block_layout_set_current(block, layout);
+  ImgView *iv;
+  
+  ui_block_layout_set_current(block, layout);
   uiLayoutColumn(layout, false);
 
-  uiDefBut(block,
-           UI_BTYPE_LABEL,
-           0,
-           IFACE_("View"),
-           0,
-           0,
-           UI_UNIT_X * 5,
-           UI_UNIT_Y,
-           nullptr,
-           0.0,
-           0.0,
-           0,
-           0,
-           "");
+  Btn(block,
+      BTYPE_LABEL,
+      0,
+      IFACE_("View"),
+      0,
+      0,
+      UNIT_X * 5,
+      UNIT_Y,
+      nullptr,
+      0.0,
+      0.0,
+      0,
+      0,
+      "");
 
   uiItemS(layout);
 
-  nr = BLI_listbase_count(&image->views) - 1;
-  for (iv = static_cast<ImageView *>(image->views.last); iv; iv = iv->prev, nr--) {
-    uiDefButS(block,
-              UI_BTYPE_BUT_MENU,
-              B_NOP,
-              IFACE_(iv->name),
-              0,
-              0,
-              UI_UNIT_X * 5,
-              UI_UNIT_X,
-              &iuser->view,
-              float(nr),
-              0.0,
-              0,
+  nr = lib_list_count(&img->views) - 1;
+  for (iv = static_cast<ImgView *>(img->views.last); iv; iv = iv->prev, nr--) {
+    BtnS(block,
+         BTYPE_BTN_MENU,
+         B_NOP,
+         IFACE_(iv->name),
+         0,
+         0,
+         UNIT_X * 5,
+         UNIT_X,
+         &iuser->view,
+         float(nr),
+         0.0,
+         0,
               -1,
               "");
   }
