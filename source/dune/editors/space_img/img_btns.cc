@@ -493,7 +493,7 @@ static bool ui_imguser_pass_menu_step(Cxt *C, int direction, void *rnd_pt)
     return false;
   }
 
-  /* NOTE: this looks reversed, but matches menu direction. */
+  /* This looks reversed, but matches menu direction. */
   if (direction == -1) {
     RenderPass *rp;
     int rp_index = iuser->pass + 1;
@@ -541,15 +541,15 @@ static bool ui_imguser_pass_menu_step(Cxt *C, int direction, void *rnd_pt)
 static void im_multiview_cb(Cxt *C, void *rnd_pt, void * /*arg_v*/)
 {
   ImgUIData *rnd_data = static_cast<ImgUIData *>(rnd_pt);
-  Img *ima = rnd_data->img;
+  Img *img = rnd_data->img;
   ImgUser *iuser = rnd_data->iuser;
 
-  dune_img_multiview_index(ima, iuser);
+  dune_img_multiview_index(img, iuser);
   win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 }
 
 static void uiblock_layer_pass_btns(uiLayout *layout,
-                                    Img *imh,
+                                    Img *img,
                                     RenderResult *rr,
                                     ImgUser *iuser,
                                     int w,
@@ -576,11 +576,11 @@ static void uiblock_layer_pass_btns(uiLayout *layout,
   wmenu3 = (3 * w) / 6;
   wmenu4 = (3 * w) / 6;
 
-  rnd_pt_local.image = img;
+  rnd_pt_local.img = img;
   rnd_pt_local.iuser = iuser;
   rnd_pt_local.rpass_index = 0;
 
-  /* menu buts */
+  /* menu btns */
   if (render_slot) {
     char str[64];
     RenderSlot *slot = dune_img_get_renderslot(img, *render_slot);
@@ -679,7 +679,7 @@ static void uiblock_layer_pass_btns(uiLayout *layout,
   {
     int nr = 0;
 
-    LIST_FOREACH (ImageView *, iv, &image->views) {
+    LIST_FOREACH (ImgView *, iv, &img->views) {
       if (nr++ == iuser->view) {
         display_name = iv->name;
         break;
@@ -752,7 +752,7 @@ void uiTemplateImg(uiLayout *layout,
   ImgUser *iuser = static_cast<ImgUser *>(userptr->data);
 
   Scene *scene = cxt_data_scene(C);
-  dune_img_user_frame_calc(ima, iuser, int(scene->r.cfra));
+  dune_img_user_frame_calc(img, iuser, int(scene->r.cfra));
 
   uiLayoutSetCxtPtr(layout, "edit_img", &imaptr);
   uiLayoutSetCxtPtr(layout, "edit_img_user", userptr);
@@ -779,13 +779,13 @@ void uiTemplateImg(uiLayout *layout,
     return;
   }
 
-  if (ima->source == IMA_SRC_VIEWER) {
+  if (img->source == IMA_SRC_VIEWER) {
     /* Viewer imgs. */
     uiTemplateImgInfo(layout, C, img, iuser);
 
-    if (ima->type == IMG_TYPE_COMPOSITE) {
+    if (img->type == IMG_TYPE_COMPOSITE) {
     }
-    else if (ima->type == IMG_TYPE_R_RESULT) {
+    else if (img->type == IMG_TYPE_R_RESULT) {
       /* browse layer/passes */
       RenderResult *rr;
       const float dpi_fac = UI_SCALE_FAC;
@@ -845,14 +845,14 @@ void uiTemplateImg(uiLayout *layout,
     row = uiLayoutRow(row, true);
     uiLayoutSetEnabled(row, is_packed == false);
 
-    prop = api_struct_find_prop(&imaptr, "filepath");
-    uiDefAutoBtnR(block, &imaptr, prop, -1, "", ICON_NONE, 0, 0, 200, UI_UNIT_Y);
+    prop = api_struct_find_prop(&imgptr, "filepath");
+    uiDefAutoBtnR(block, &imgptr, prop, -1, "", ICON_NONE, 0, 0, 200, UI_UNIT_Y);
     uiItemO(row, "", ICON_FILEBROWSER, "img.file_browse");
     uiItemO(row, "", ICON_FILE_REFRESH, "img.reload");
   }
 
   /* Img layers and Info */
-  if (img->source == IMG_SRC_GENERATED) {
+  if (img->src == IMG_SRC_GENERATED) {
     uiItemS(layout);
 
     /* Generated */
@@ -860,16 +860,16 @@ void uiTemplateImg(uiLayout *layout,
     uiLayoutSetPropSep(col, true);
 
     uiLayout *sub = uiLayoutColumn(col, true);
-    uiItemR(sub, &imaptr, "generated_width", UI_ITEM_NONE, "X", ICON_NONE);
-    uiItemR(sub, &imaptr, "generated_height", UI_ITEM_NONE, "Y", ICON_NONE);
+    uiItemR(sub, &imgptr, "generated_width", UI_ITEM_NONE, "X", ICON_NONE);
+    uiItemR(sub, &imgptr, "generated_height", UI_ITEM_NONE, "Y", ICON_NONE);
 
-    uiItemR(col, &imaptr, "use_generated_float", UI_ITEM_NONE, nullptr, ICON_NONE);
+    uiItemR(col, &imgptr, "use_generated_float", UI_ITEM_NONE, nullptr, ICON_NONE);
 
     uiItemS(col);
 
     uiItemR(col, &imaptr, "generated_type", UI_ITEM_R_EXPAND, IFACE_("Type"), ICON_NONE);
-    ImageTile *base_tile = dune_img_get_tile(img, 0);
-    if (base_tile->gen_type == IMA_GENTYPE_BLANK) {
+    ImgTile *base_tile = dune_img_get_tile(img, 0);
+    if (base_tile->gen_type == IMG_GENTYPE_BLANK) {
       uiItemR(col, &imaptr, "generated_color", UI_ITEM_NONE, nullptr, ICON_NONE);
     }
   }
@@ -901,8 +901,8 @@ void uiTemplateImg(uiLayout *layout,
     uiItemR(col, userptr, "use_cyclic", UI_ITEM_NONE, nullptr, ICON_NONE);
     uiItemR(col, userptr, "use_auto_refresh", UI_ITEM_NONE, nullptr, ICON_NONE);
 
-    if (ima->source == IMG_SRC_MOVIE && compact == 0) {
-      uiItemR(col, &imaptr, "use_deinterlace", UI_ITEM_NONE, IFACE_("Deinterlace"), ICON_NONE);
+    if (img->src == IMG_SRC_MOVIE && compact == 0) {
+      uiItemR(col, &imgptr, "use_deinterlace", UI_ITEM_NONE, IFACE_("Deinterlace"), ICON_NONE);
     }
   }
 
@@ -916,7 +916,7 @@ void uiTemplateImg(uiLayout *layout,
       uiItemR(col, &imhptr, "use_multiview", UI_ITEM_NONE, nullptr, ICON_NONE);
 
       if (api_bool_get(&imgptr, "use_multiview")) {
-        uiTemplateImageViews(layout, &imaptr);
+        uiTemplateImgViews(layout, &imaptr);
       }
     }
   }
@@ -935,30 +935,30 @@ void uiTemplateImg(uiLayout *layout,
           uiLayout *sub = Ra(col, false);
           uiItemR(sub, &imaptr, "alpha_mode", UI_ITEM_NONE, IFACE_("Alpha"), ICON_NONE);
 
-          bool is_data = imbuf_colormanagement_space_name_is_data(ima->colorspace_settings.name);
+          bool is_data = imbuf_colormanagement_space_name_is_data(img->colorspace_settings.name);
           uiLayoutSetActive(sub, !is_data);
         }
 
         if (ima && iuser) {
           void *lock;
-          ImBuf *ibuf = dune_img_acquire_ibuf(ima, iuser, &lock);
+          ImBuf *ibuf = dune_img_acquire_ibuf(img, iuser, &lock);
 
           if (ibuf && ibuf->float_buffer.data && (ibuf->flags & IB_halffloat) == 0) {
             uiItemR(col, &imaptr, "use_half_precision", UI_ITEM_NONE, nullptr, ICON_NONE);
           }
-          dune_img_release_ibuf(ima, ibuf, lock);
+          dune_img_release_ibuf(img, ibuf, lock);
         }
       }
 
-      uiItemR(col, &imaptr, "use_view_as_render", UI_ITEM_NONE, nullptr, ICON_NONE);
-      uiItemR(col, &imaptr, "seam_margin", UI_ITEM_NONE, nullptr, ICON_NONE);
+      uiItemR(col, &imgptr, "use_view_as_render", UI_ITEM_NONE, nullptr, ICON_NONE);
+      uiItemR(col, &imgptr, "seam_margin", UI_ITEM_NONE, nullptr, ICON_NONE);
     }
   }
 
   ui_block_fn_set(block, nullptr, nullptr, nullptr);
 }
 
-void uiTemplateImgSettings(uiLayout *layout, PointerRNA *imfptr, bool color_management)
+void uiTemplateImgSettings(uiLayout *layout, ApiPtr *imfptr, bool color_management)
 {
   ImgFormatData *imf = static_cast<ImgFormatData *>(imfptr->data);
   Id *id = imfptr->owner_id;
@@ -1109,21 +1109,21 @@ static void uiTemplateViewsFormat(uiLayout *layout,
   }
 }
 
-void uiTemplateImgViews(uiLayout *layout, ApiPtr *imaptr)
+void uiTemplateImgViews(uiLayout *layout, ApiPtr *imgptr)
 {
-  Img *ima = static_cast<Img *>(imaptr->data);
+  Img *img = static_cast<Img *>(imgptr->data);
 
-  if (ima->type != IMA_TYPE_MULTILAYER) {
+  if (ima->type != IMG_TYPE_MULTILAYER) {
     ApiProp *prop;
     ApiPtr stereo3d_format_ptr;
 
-    prop = api_struct_find_prop(imaptr, "stereo_3d_format");
-    stereo3d_format_ptr = api_prop_ptr_get(imaptr, prop);
+    prop = api_struct_find_prop(imgptr, "stereo_3d_format");
+    stereo3d_format_ptr = api_prop_ptr_get(imgptr, prop);
 
-    uiTemplateViewsFormat(layout, imaptr, &stereo3d_format_ptr);
+    uiTemplateViewsFormat(layout, imgptr, &stereo3d_format_ptr);
   }
   else {
-    uiTemplateViewsFormat(layout, imaptr, nullptr);
+    uiTemplateViewsFormat(layout, imgptr, nullptr);
   }
 }
 
@@ -1161,12 +1161,12 @@ void uiTemplateImgLayers(uiLayout *layout, Cxt *C, Img *ima, ImgUser *iuser)
     RenderResult *rr;
     const float dpi_fac = UI_SCALE_FAC;
     const int menus_width = 160 * dpi_fac;
-    const bool is_render_result = (ima->type == IMA_TYPE_R_RESULT);
+    const bool is_render_result = (ima->type == IMG_TYPE_R_RESULT);
 
     /* Use dune_im_acquire_renderresult so we get the correct slot in the menu. */
     rr = dune_img_acquire_renderresult(scene, ima);
     uiblock_layer_pass_btns(
-        layout, img, rr, iuser, menus_width, is_render_result ? &ima->render_slot : nullptr);
+        layout, img, rr, iuser, menus_width, is_render_result ? &img->render_slot : nullptr);
     dune_img_release_renderresult(scene, ima);
   }
 }
@@ -1189,7 +1189,7 @@ void uiTemplateImgInfo(uiLayout *layout, Cxt *C, Img *img, ImgUser *iuser)
   }
   else {
     char str[MAX_IMAGE_INFO_LEN] = {0};
-    const int len = MAX_IMAGE_INFO_LEN;
+    const int len = MAX_IMG_INFO_LEN;
     int ofs = 0;
 
     ofs += lib_snprintf_rlen(str + ofs, len - ofs, TIP_("%d \u00D7 %d, "), ibuf->x, ibuf->y);
@@ -1216,7 +1216,7 @@ void uiTemplateImgInfo(uiLayout *layout, Cxt *C, Img *img, ImgUser *iuser)
     }
 
     eGPUTextureFormat texture_format = imbuf_gpu_get_texture_format(
-        ibuf, img->flag & IMA_HIGH_BITDEPTH, ibuf->planes >= 8);
+        ibuf, img->flag & IMG_HIGH_BITDEPTH, ibuf->planes >= 8);
     const char *texture_format_description = gpu_texture_format_name(texture_format);
     ofs += lib_snprintf_rlen(str + ofs, len - ofs, TIP_(",  %s"), texture_format_description);
 
@@ -1224,11 +1224,11 @@ void uiTemplateImgInfo(uiLayout *layout, Cxt *C, Img *img, ImgUser *iuser)
   }
 
   /* Frame number, even if we can't load the img. */
-  if (ELEM(ima->source, IMA_SRC_SEQ, IMG_SRC_MOVIE)) {
+  if (ELEM(ima->source, IMG_SRC_SEQ, IMG_SRC_MOVIE)) {
     /* don't use iuser->framenr directly because it may not be updated if auto-refresh is off */
     Scene *scene = cxt_data_scene(C);
     const int framenr = dune_img_user_frame_get(iuser, scene->r.cfra, nullptr);
-    char str[MAX_IMAGE_INFO_LEN];
+    char str[MAX_IMG_INFO_LEN];
     int duration = 0;
 
     if (img->src == IMA_SRC_MOVIE && dune_img_has_anim(img)) {
@@ -1262,15 +1262,15 @@ void uiTemplateImgInfo(uiLayout *layout, Cxt *C, Img *img, ImgUser *iuser)
 
 static bool metadata_pnl_cxt_poll(const Cxt *C, PnlType * /*pt*/)
 {
-  SpaceImg *space_image = CTX_wm_space_image(C);
-  return space_img != nullptr && space_image->image != nullptr;
+  SpaceImg *space_img = cxt_win_space_img(C);
+  return space_img != nullptr && space_img->img != nullptr;
 }
 
 static void metadata_pnl_cxt_drw(const Cxt *C, Pnl *pnl)
 {
   void *lock;
   SpaceImg *space_img = cxt_win_space_img(C);
-  Img *img = space_img->image;
+  Img *img = space_img->img;
   ImBuf *ibuf = dune_img_acquire_ibuf(img, &space_img->iuser, &lock);
   if (ibuf != nullptr) {
     ed_rgn_img_metadata_pnl_drw(ibuf, pnl->layout);
@@ -1278,7 +1278,7 @@ static void metadata_pnl_cxt_drw(const Cxt *C, Pnl *pnl)
   dune_img_release_ibuf(img, ibuf, lock);
 }
 
-void img_btns_register(ARegionType *art)
+void img_btns_register(ARgnType *art)
 {
   PnlType *pt;
 
@@ -1288,8 +1288,8 @@ void img_btns_register(ARegionType *art)
   STRNCPY(pt->category, "Img");
   STRNCPY(pt->lang_cxt, LANG_CXT_DEFAULT);
   pt->order = 10;
-  pt->poll = metadata_panel_context_poll;
-  pt->draw = metadata_panel_context_draw;
-  pt->flag |= PANEL_TYPE_DEFAULT_CLOSED;
-  BLI_addtail(&art->paneltypes, pt);
+  pt->poll = metadata_pnl_cxt_poll;
+  pt->drw = metadata_pnl_cxt_drw;
+  pt->flag |= PNL_TYPE_DEFAULT_CLOSED;
+  lib_addtail(&art->pnltypes, pt);
 }
