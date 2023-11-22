@@ -378,7 +378,7 @@ static void utile_init_from_imbuf(
     utile->rect.fp = img_undo_steal_and_assign_float_buf(tmpibuf, utile->rect.fp);
   }
   else {
-    utile->rect.byte_ptr = image_undo_steal_and_assign_byte_buf(tmpibuf, utile->rect.byte_ptr);
+    utile->rect.byte_ptr = img_undo_steal_and_assign_byte_buf(tmpibuf, utile->rect.byte_ptr);
   }
 
   /* TODO: Look into implementing API which does not require such tmp buf
@@ -440,7 +440,7 @@ struct UndoImgBuf {
   uint32_t tiles_len;
   uint32_t tiles_dims[2];
 
-  uint32_t image_dims[2];
+  uint32_t img_dims[2];
 
   /* Store vars from the img. */
   struct {
@@ -451,7 +451,7 @@ struct UndoImgBuf {
 
 static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
 {
-  UndoImageBuf *ubuf = static_cast<UndoImgBuf *>(mem_calloc(sizeof(*ubuf), __func__));
+  UndoImgBuf *ubuf = static_cast<UndoImgBuf *>(mem_calloc(sizeof(*ubuf), __func__));
 
   ubuf->image_dims[0] = ibuf->x;
   ubuf->image_dims[1] = ibuf->y;
@@ -464,7 +464,7 @@ static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
       mem_calloc(sizeof(*ubuf->tiles) * ubuf->tiles_len, __func__));
 
   STRNCPY(ubuf->ibuf_filepath, ibuf->filepath);
-  ubuf->img_state.source = img->source;
+  ubuf->img_state.src = img->sr ;
   ubuf->img_state.use_float = ibuf->float_buffer.data != nullptr;
 
   return ubuf;
@@ -531,22 +531,17 @@ static void ubuf_free(UndoImgBuf *ubuf)
     utile_decref(utile);
   }
   mem_free(ubuf->tiles);
-  MEM_freeN(ubuf);
+  mem_free(ubuf);
   if (ubuf_post) {
     ubuf_free(ubuf_post);
   }
 }
 
-/** \} */
+/* Img Undo Handle */
+struct UndoImgHandle {
+  UndoImgHandle *next, *prev;
 
-/* -------------------------------------------------------------------- */
-/** \name Image Undo Handle
- * \{ */
-
-struct UndoImageHandle {
-  UndoImageHandle *next, *prev;
-
-  /** Each undo handle refers to a single image which may have multiple buffers. */
+  /* Each undo handle refers to a single image which may have multiple buffers. */
   UndoRefID_Image image_ref;
 
   /**
