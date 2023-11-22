@@ -453,8 +453,8 @@ static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
 {
   UndoImgBuf *ubuf = static_cast<UndoImgBuf *>(mem_calloc(sizeof(*ubuf), __func__));
 
-  ubuf->image_dims[0] = ibuf->x;
-  ubuf->image_dims[1] = ibuf->y;
+  ubuf->img_dims[0] = ibuf->x;
+  ubuf->img_dims[1] = ibuf->y;
 
   ubuf->tiles_dims[0] = ED_IMG_UNDO_TILE_NUMBER(ubuf->img_dims[0]);
   ubuf->tiles_dims[1] = ED_IMG_UNDO_TILE_NUMBER(ubuf->img_dims[1]);
@@ -465,16 +465,16 @@ static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
 
   STRNCPY(ubuf->ibuf_filepath, ibuf->filepath);
   ubuf->img_state.src = img->sr ;
-  ubuf->img_state.use_float = ibuf->float_buffer.data != nullptr;
+  ubuf->img_state.use_float = ibuf->float_buf.data != nullptr;
 
   return ubuf;
 }
 
 static void ubuf_from_img_all_tiles(UndoImgBuf *ubuf, const ImBuf *ibuf)
 {
-  ImBuf *tmpibuf = imbuf_alloc_temp_tile();
+  ImBuf *tmpibuf = imbuf_alloc_tmp_tile();
 
-  const bool has_float = ibuf->float_buffer.data;
+  const bool has_float = ibuf->float_buf.data;
   int i = 0;
   for (uint y_tile = 0; y_tile < ubuf->tiles_dims[1]; y_tile += 1) {
     uint y = y_tile << ED_IMG_UNDO_TILE_BITS;
@@ -604,7 +604,7 @@ static void uhandle_restore_list(List *undo_handles, bool use_init)
     dune_img_release_ibuf(img, ibuf, nullptr);
   }
 
-  IMB_freeImBuf(tmpibuf);
+  imbuf_free(tmpibuf);
 }
 
 static void uhandle_free_list(List *undo_handles)
@@ -678,54 +678,45 @@ static UndoImgHandle *uhandle_lookup(List *undo_handles, const Img *img, int til
 
 static UndoImgHandle *uhandle_add(List *undo_handles, Img *img, ImgUser *iuser)
 {
-  BLI_assert(uhandle_lookup(undo_handles, image, iuser->tile) == nullptr);
-  UndoImageHandle *uh = static_cast<UndoImageHandle *>(MEM_callocN(sizeof(*uh), __func__));
-  uh->image_ref.ptr = image;
+  lib_assert(uhandle_lookup(undo_handles, image, iuser->tile) == nullptr);
+  UndoImgHandle *uh = static_cast<UndoImgHandle *>(mem_calloc(sizeof(*uh), __func__));
+  uh->img_ref.ptr = img;
   uh->iuser = *iuser;
   uh->iuser.scene = nullptr;
-  BLI_addtail(undo_handles, uh);
+  lib_addtail(undo_handles, uh);
   return uh;
 }
 
-static UndoImageHandle *uhandle_ensure(ListBase *undo_handles, Image *image, ImageUser *iuser)
+static UndoImgHandle *uhandle_ensure(List *undo_handles, Imb *img, ImgUser *iuser)
 {
-  UndoImageHandle *uh = uhandle_lookup(undo_handles, image, iuser->tile);
+  UndoImgHandle *uh = uhandle_lookup(undo_handles, img, iuser->tile);
   if (uh == nullptr) {
-    uh = uhandle_add(undo_handles, image, iuser);
+    uh = uhandle_add(undo_handles, img, iuser);
   }
   return uh;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Implements ED Undo System
- * \{ */
-
-struct ImageUndoStep {
+/* Implements ed Undo System */
+struct ImgUndoStep {
   UndoStep step;
 
-  /** #UndoImageHandle */
-  ListBase handles;
+  /* UndoImgHandle */
+  List handles;
 
-  /**
-   * #PaintTile
-   * Run-time only data (active during a paint stroke).
-   */
+  /* PaintTile
+   * Run-time only data (active during a paint stroke).   */
   PaintTileMap *paint_tile_map;
 
   bool is_encode_init;
   ePaintMode paint_mode;
 };
 
-/**
- * Find the previous undo buffer from this one.
- * \note We could look into undo steps even further back.
- */
-static UndoImageBuf *ubuf_lookup_from_reference(ImageUndoStep *us_prev,
-                                                const Image *image,
-                                                int tile_number,
-                                                const UndoImageBuf *ubuf)
+/* Find the previous undo buffer from this one.
+ * We could look into undo steps even further back. */
+static UndoImageBuf *ubuf_lookup_from_ref(ImgUndoStep *us_prev,
+                                          const Img *img,
+                                          int tile_number,
+                                          const UndoImgBuf *ubuf)
 {
   /* Use name lookup because the pointer is cleared for previous steps. */
   UndoImageHandle *uh_prev = uhandle_lookup_by_name(&us_prev->handles, image, tile_number);
