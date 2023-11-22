@@ -1,66 +1,57 @@
-/** \file
- * \ingroup spimage
+/* Overview
+ * - Each undo step is a ImgUndoStep
+ * - Each ImgUndoStep stores a list of UndoImgHandle
+ *   - Each UndoImgHandle stores a list of UndoImgBuf
+ *     (this is the undo systems equivalent of an ImBuf).
+ *     - Each UndoImgBuf stores an array of UndoImgTile
+ *       The tiles are shared between UndoImgBuf's to avoid dup.
  *
- * Overview
- * ========
- *
- * - Each undo step is a #ImageUndoStep
- * - Each #ImageUndoStep stores a list of #UndoImageHandle
- *   - Each #UndoImageHandle stores a list of #UndoImageBuf
- *     (this is the undo systems equivalent of an #ImBuf).
- *     - Each #UndoImageBuf stores an array of #UndoImageTile
- *       The tiles are shared between #UndoImageBuf's to avoid duplication.
- *
- * When the undo system manages an image, there will always be a full copy (as a #UndoImageBuf)
- * each new undo step only stores modified tiles.
- */
+ * When the undo system manages an img, there will always be a full copy (as a UndoImgBuf)
+ * each new undo step only stores mod tiles. */
 
 #include "CLG_log.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_map.hh"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_map.hh"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
-#include "DNA_image_types.h"
-#include "DNA_object_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_img.h"
+#include "types_ob.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_winmngr.h"
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "BKE_context.hh"
-#include "BKE_image.h"
-#include "BKE_paint.hh"
-#include "BKE_undo_system.h"
+#include "dune_cxt.hh"
+#include "dune_img.h"
+#include "dune_paint.hh"
+#include "dune_undo_system.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "ED_object.hh"
-#include "ED_paint.hh"
-#include "ED_undo.hh"
-#include "ED_util.hh"
+#include "ed_ob.hh"
+#include "ed_paint.hh"
+#include "ed_undo.hh"
+#include "ed_util.hh"
 
-#include "WM_api.hh"
+#include "win_api.hh"
 
-static CLG_LogRef LOG = {"ed.image.undo"};
+static CLG_LogRef LOG = {"ed.img.undo"};
 
-/* -------------------------------------------------------------------- */
-/** \name Thread Locking
- * \{ */
-
+/* Thread Locking */
 /* This is a non-global static resource,
  * Maybe it should be exposed as part of the
- * paint operation, but for now just give a public interface */
+ * paint op, but for now just give a public interface */
 static SpinLock paint_tiles_lock;
 
-void ED_image_paint_tile_lock_init()
+void ed_img_paint_tile_lock_init()
 {
-  BLI_spin_init(&paint_tiles_lock);
+  lib_spin_init(&paint_tiles_lock);
 }
 
 void ED_image_paint_tile_lock_end()
