@@ -375,13 +375,13 @@ static void utile_init_from_imbuf(
   const bool has_float = ibuf->float_buf.data;
 
   if (has_float) {
-    utile->rect.fp = img_undo_steal_and_assign_float_buffer(tmpibuf, utile->rect.fp);
+    utile->rect.fp = img_undo_steal_and_assign_float_buf(tmpibuf, utile->rect.fp);
   }
   else {
-    utile->rect.byte_ptr = image_undo_steal_and_assign_byte_buffer(tmpibuf, utile->rect.byte_ptr);
+    utile->rect.byte_ptr = image_undo_steal_and_assign_byte_buf(tmpibuf, utile->rect.byte_ptr);
   }
 
-  /* TODO: Look into implementing API which does not require such temp buf
+  /* TODO: Look into implementing API which does not require such tmp buf
    * assignment. */
   imbuf_rectcpy(tmpibuf, ibuf, 0, 0, x, y, ED_IMG_UNDO_TILE_SIZE, ED_IMG_UNDO_TILE_SIZE);
 
@@ -497,25 +497,25 @@ static void ubuf_from_img_all_tiles(UndoImgBuf *ubuf, const ImBuf *ibuf)
 }
 
 /* Ensure we can copy the ubuf into the ibuf. */
-static void ubuf_ensure_compat_ibuf(const UndoImageBuf *ubuf, ImBuf *ibuf)
+static void ubuf_ensure_compat_ibuf(const UndoImgBuf *ubuf, ImBuf *ibuf)
 {
   /* We could have both float and rect buffers,
-   * in this case free the float buffer if it's unused. */
-  if ((ibuf->float_buffer.data != nullptr) && (ubuf->image_state.use_float == false)) {
+   * in this case free the float buff if it's unused. */
+  if ((ibuf->float_buf.data != nullptr) && (ubuf->img_state.use_float == false)) {
     imb_freerectfloatImBuf(ibuf);
   }
 
-  if (ibuf->x == ubuf->image_dims[0] && ibuf->y == ubuf->image_dims[1] &&
-      (ubuf->image_state.use_float ? (void *)ibuf->float_buffer.data :
-                                     (void *)ibuf->byte_buffer.data))
+  if (ibuf->x == ubuf->img_dims[0] && ibuf->y == ubuf->img_dims[1] &&
+      (ubuf->img_state.use_float ? (void *)ibuf->float_buf.data :
+                                   (void *)ibuf->byte_buf.data))
   {
     return;
   }
 
-  imb_freerectImbuf_all(ibuf);
-  IMB_rect_size_set(ibuf, ubuf->image_dims);
+  imbuf_freerect_all(ibuf);
+  imbuf_rect_size_set(ibuf, ubuf->img_dims);
 
-  if (ubuf->image_state.use_float) {
+  if (ubuf->img_state.use_float) {
     imb_addrectfloatImBuf(ibuf, 4);
   }
   else {
@@ -523,14 +523,14 @@ static void ubuf_ensure_compat_ibuf(const UndoImageBuf *ubuf, ImBuf *ibuf)
   }
 }
 
-static void ubuf_free(UndoImageBuf *ubuf)
+static void ubuf_free(UndoImgBuf *ubuf)
 {
-  UndoImageBuf *ubuf_post = ubuf->post;
+  UndoImgBuf *ubuf_post = ubuf->post;
   for (uint i = 0; i < ubuf->tiles_len; i++) {
-    UndoImageTile *utile = ubuf->tiles[i];
+    UndoImgTile *utile = ubuf->tiles[i];
     utile_decref(utile);
   }
-  MEM_freeN(ubuf->tiles);
+  mem_free(ubuf->tiles);
   MEM_freeN(ubuf);
   if (ubuf_post) {
     ubuf_free(ubuf_post);
