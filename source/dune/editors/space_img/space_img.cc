@@ -470,7 +470,7 @@ static void IMG_GGT_gizmo2d_translate(WinGizmoGroupType *gzgt)
   gzgt->name = "UV Translate Gizmo";
   gzgt->idname = "IMG_GGT_gizmo2d_translate";
 
-  gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRAW_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
+  gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRW_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
                  WIN_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
 
   gzgt->gzmap_params.spaceid = SPACE_IMG;
@@ -501,15 +501,15 @@ static void IMG_GGT_gizmo2d_rotate(WinGizmoGroupType *gzgt)
   gzgt->flag |= (WIN_GIZMOGROUPTYPE_DRA_MODAL_EXCLUDE | WIN_GIZMOGROUPTYPE_TOOL_FALLBACK_KEYMAP |
                  WIN_GIZMOGROUPTYPE_DELAY_REFRESH_FOR_TWEAK);
 
-  gzgt->gzmap_params.spaceid = SPACE_IMAGE;
-  gzgt->gzmap_params.regionid = RGN_TYPE_WINDOW;
+  gzgt->gzmap_params.spaceid = SPACE_IMG;
+  gzgt->gzmap_params.regionid = RGN_TYPE_WIN;
 
-  ED_widgetgroup_gizmo2d_rotate_callbacks_set(gzgt);
+  ed_widgetgroup_gizmo2d_rotate_cbs_set(gzgt);
 }
 
-static void IMAGE_GGT_navigate(wmGizmoGroupType *gzgt)
+static void IMG_GGT_nav(WinGizmoGroupType *gzgt)
 {
-  VIEW2D_GGT_navigate_impl(gzgt, "IMAGE_GGT_navigate");
+  VIEW2D_GGT_nav_impl(gzgt, "IMG_GGT_nav");
 }
 
 static void img_widgets()
@@ -929,7 +929,7 @@ static void img_tools_header_rgn_drw(const Cxt *C, ARgn *rgm)
   ScrArea *area = cxt_win_area(C);
   SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
 
-  img_user_refresh_scene(C, sima);
+  img_user_refresh_scene(C, simg);
 
   ed_rgn_header_with_btn_sections(
       C,
@@ -946,184 +946,181 @@ static void img_header_rgn_init(WinMngr * /*wm*/, ARgn *rgn)
   ed_rg_header_init(rgn);
 }
 
-static void img_header_rgn_drw(const bContext *C, ARegion *region)
+static void img_header_rgn_drw(const Cxt *C, ARgn *rgn)
 {
-  ScrArea *area = CTX_wm_area(C);
-  SpaceImg *sima = static_cast<SpaceImage *>(area->spacedata.first);
+  ScrArea *area = cxt_win_area(C);
+  SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
 
-  image_user_refresh_scene(C, sima);
+  img_user_refresh_scene(C, simg);
 
-  ED_region_header(C, region);
+  ed_rgn_header(C, rgn);
 }
 
-static void image_header_region_listener(const wmRegionListenerParams *params)
+static void img_header_rgn_listener(const WinRgnListenerParams *params)
 {
-  ARegion *region = params->region;
-  const wmNotifier *wmn = params->notifier;
+  ARgn *rgn = params->rgn;
+  const WinNotifier *winn = params->notifier;
 
-  /* context changes */
-  switch (wmn->category) {
+  /* cxt changes */
+  switch (winn->category) {
     case NC_SCENE:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_MODE:
         case ND_TOOLSETTINGS:
-          ED_region_tag_redraw(region);
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
     case NC_GEOM:
-      switch (wmn->data) {
+      switch (winn->data) {
         case ND_DATA:
-        case ND_SELECT:
-          ED_region_tag_redraw(region);
+        case ND_SEL:
+          ed_rgn_tag_redrw(rgn);
           break;
       }
       break;
     case NC_BRUSH:
-      if (wmn->action == NA_EDITED) {
-        ED_region_tag_redraw(region);
+      if (winn->action == NA_EDITED) {
+        ed_rgn_tag_redrw(rgn);
       }
       break;
   }
 }
 
-static void image_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IDRemapper *mappings)
+static void img_id_remap(ScrArea * /*area*/, SpaceLink *slink, const IdRemapper *mappings)
 {
-  SpaceImage *simg = (SpaceImage *)slink;
+  SpaceImg *simg = (SpaceImg *)slink;
 
-  if (!BKE_id_remapper_has_mapping_for(mappings,
-                                       FILTER_ID_IM | FILTER_ID_GD_LEGACY | FILTER_ID_MSK)) {
+  if (!dune_id_remapper_has_mapping_for(mappings,
+                                        FILTER_ID_IM | FILTER_ID_GD_LEGACY | FILTER_ID_MSK)) {
     return;
   }
 
-  BKE_id_remapper_apply(mappings, (ID **)&simg->image, ID_REMAP_APPLY_ENSURE_REAL);
-  BKE_id_remapper_apply(mappings, (ID **)&simg->gpd, ID_REMAP_APPLY_UPDATE_REFCOUNT);
-  BKE_id_remapper_apply(mappings, (ID **)&simg->mask_info.mask, ID_REMAP_APPLY_ENSURE_REAL);
+  dune_id_remapper_apply(mappings, (Id **)&simg->img, ID_REMAP_APPLY_ENSURE_REAL);
+  dune_id_remapper_apply(mappings, (Id **)&simg->gpd, ID_REMAP_APPLY_UPDATE_REFCOUNT);
+  dune_id_remapper_apply(mappings, (Id **)&simg->mask_info.mask, ID_REMAP_APPLY_ENSURE_REAL);
 }
 
-static void image_foreach_id(SpaceLink *space_link, LibraryForeachIDData *data)
+static void img_foreach_id(SpaceLink *space_link, LibForeachIdData *data)
 {
-  SpaceImage *simg = reinterpret_cast<SpaceImage *>(space_link);
-  const int data_flags = BKE_lib_query_foreachid_process_flags_get(data);
+  SpaceImg *simg = reinterpret_cast<SpaceImg *>(space_link);
+  const int data_flags = dune_lib_query_foreachid_process_flags_get(data);
   const bool is_readonly = (data_flags & IDWALK_READONLY) != 0;
 
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->image, IDWALK_CB_USER_ONE);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->iuser.scene, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->mask_info.mask, IDWALK_CB_USER_ONE);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->gpd, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->img, IDWALK_CB_USER_ONE);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->iuser.scene, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->mask_info.mask, IDWALK_CB_USER_ONE);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, simg->pendata, IDWALK_CB_USER);
   if (!is_readonly) {
     simg->scopes.ok = 0;
   }
 }
 
-/**
- * \note Used for splitting out a subset of modes is more involved,
+/* Used for splitting out a subset of modes is more involved,
  * The previous non-uv-edit mode is stored so switching back to the
- * image doesn't always reset the sub-mode.
- */
-static int image_space_subtype_get(ScrArea *area)
+ * img doesn't always reset the sub-mode */
+static int img_space_subtype_get(ScrArea *area)
 {
-  SpaceImage *sima = static_cast<SpaceImage *>(area->spacedata.first);
-  return sima->mode == SI_MODE_UV ? SI_MODE_UV : SI_MODE_VIEW;
+  SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
+  return simg->mode == SI_MODE_UV ? SI_MODE_UV : SI_MODE_VIEW;
 }
 
-static void image_space_subtype_set(ScrArea *area, int value)
+static void img_space_subtype_set(ScrArea *area, int val)
 {
-  SpaceImage *sima = static_cast<SpaceImage *>(area->spacedata.first);
-  if (value == SI_MODE_UV) {
-    if (sima->mode != SI_MODE_UV) {
-      sima->mode_prev = sima->mode;
+  SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
+  if (val == SI_MODE_UV) {
+    if (simg->mode != SI_MODE_UV) {
+      simg->mode_prev = simg->mode;
     }
-    sima->mode = value;
+    simg->mode = val;
   }
   else {
-    sima->mode = sima->mode_prev;
+    simg->mode = simg->mode_prev;
   }
 }
 
-static void image_space_subtype_item_extend(bContext * /*C*/,
-                                            EnumPropertyItem **item,
-                                            int *totitem)
+static void img_space_subtype_item_extend(Cxt * /*C*/,
+                                          EnumPropItem **item,
+                                          int *totitem)
 {
-  RNA_enum_items_add(item, totitem, rna_enum_space_image_mode_items);
+  api_enum_items_add(item, totitem, api_enum_space_img_mode_items);
 }
 
-static void image_space_blend_read_data(BlendDataReader * /*reader*/, SpaceLink *sl)
+static void img_space_dune_read_data(DataReader * /*reader*/, SpaceLink *sl)
 {
-  SpaceImage *sima = (SpaceImage *)sl;
+  SpaceImg *simg = (SpaceImg *)sl;
 
-  sima->iuser.scene = nullptr;
-  sima->scopes.waveform_1 = nullptr;
-  sima->scopes.waveform_2 = nullptr;
-  sima->scopes.waveform_3 = nullptr;
-  sima->scopes.vecscope = nullptr;
-  sima->scopes.ok = 0;
+  simg->iuser.scene = nullptr;
+  simg->scopes.waveform_1 = nullptr;
+  simg->scopes.waveform_2 = nullptr;
+  simg->scopes.waveform_3 = nullptr;
+  simg->scopes.vecscope = nullptr;
+  simg->scopes.ok = 0;
 
-/* WARNING: gpencil data is no longer stored directly in sima after 2.5
+/* WARNING: pendata is no longer stored directly in sima after 2.5
  * so sacrifice a few old files for now to avoid crashes with new files!
  * committed: r28002 */
 #if 0
-  sima->gpd = newdataadr(fd, sima->gpd);
-  if (sima->gpd) {
-    BKE_gpencil_blend_read_data(fd, sima->gpd);
+  simg->pdata = newdataadr(fd, simg->pdata);
+  if (simg->pdata) {
+    dune_pen_dune_read_data(fd, simg->pdata);
   }
 #endif
 }
 
-static void image_space_blend_write(BlendWriter *writer, SpaceLink *sl)
+static void img_space_dune_write(Writer *writer, SpaceLink *sl)
 {
-  BLO_write_struct(writer, SpaceImage, sl);
+  loader_write_struct(writer, SpaceImg, sl);
 }
 
-/**************************** spacetype *****************************/
-
-void ED_spacetype_image()
+/* spacetype */
+void ed_spacetype_img()
 {
-  SpaceType *st = static_cast<SpaceType *>(MEM_callocN(sizeof(SpaceType), "spacetype image"));
-  ARegionType *art;
+  SpaceType *st = static_cast<SpaceType *>(mem_calloc(sizeof(SpaceType), "spacetype img"));
+  ARgnType *art;
 
-  st->spaceid = SPACE_IMAGE;
-  STRNCPY(st->name, "Image");
+  st->spaceid = SPACE_IMG;
+  STRNCPY(st->name, "Img");
 
-  st->create = image_create;
-  st->free = image_free;
-  st->init = image_init;
-  st->duplicate = image_duplicate;
-  st->operatortypes = image_operatortypes;
-  st->keymap = image_keymap;
-  st->dropboxes = image_dropboxes;
-  st->refresh = image_refresh;
-  st->listener = image_listener;
-  st->context = image_context;
-  st->gizmos = image_widgets;
-  st->id_remap = image_id_remap;
-  st->foreach_id = image_foreach_id;
-  st->space_subtype_item_extend = image_space_subtype_item_extend;
-  st->space_subtype_get = image_space_subtype_get;
-  st->space_subtype_set = image_space_subtype_set;
-  st->blend_read_data = image_space_blend_read_data;
-  st->blend_read_after_liblink = nullptr;
-  st->blend_write = image_space_blend_write;
+  st->create = img_create;
+  st->free = img_free;
+  st->init = img_init;
+  st->dup = img_dup;
+  st->optypes = img_optypes;
+  st->keymap = img_keymap;
+  st->dropboxes = img_dropboxes;
+  st->refresh = img_refresh;
+  st->listener = img_listener;
+  st->cxt = img_cxt;
+  st->gizmos = img_widgets;
+  st->id_remap = img_id_remap;
+  st->foreach_id = img_foreach_id;
+  st->space_subtype_item_extend = img_space_subtype_item_extend;
+  st->space_subtype_get = img_space_subtype_get;
+  st->space_subtype_set = img_space_subtype_set;
+  st->dune_read_data = img_space_dune_read_data;
+  st->dune_read_after_liblink = nullptr;
+  st->dune_write = img_space_dune_write;
 
-  /* regions: main window */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype image region"));
-  art->regionid = RGN_TYPE_WINDOW;
-  art->keymapflag = ED_KEYMAP_GIZMO | ED_KEYMAP_TOOL | ED_KEYMAP_FRAMES | ED_KEYMAP_GPENCIL;
-  art->init = image_main_region_init;
-  art->draw = image_main_region_draw;
-  art->listener = image_main_region_listener;
-  BLI_addhead(&st->regiontypes, art);
+  /* rgns: main win */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype img rgn"));
+  art->rgnid = RGN_TYPE_WIN;
+  art->keymapflag = ED_KEYMAP_GIZMO | ED_KEYMAP_TOOL | ED_KEYMAP_FRAMES | ED_KEYMAP_PEN;
+  art->init = img_main_rgn_init;
+  art->drw = img_main_rgn_drw;
+  art->listener = img_main_rgn_listener;
+  lib_addhead(&st->rgntypes, art);
 
-  /* regions: list-view/buttons/scopes */
-  art = static_cast<ARegionType *>(MEM_callocN(sizeof(ARegionType), "spacetype image region"));
-  art->regionid = RGN_TYPE_UI;
-  art->prefsizex = UI_SIDEBAR_PANEL_WIDTH;
+  /* rgns: list-view/btns/scopes */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype iag rgn");
+  art->rgnid = RGN_TYPE_UI;
+  art->prefsizex = UI_SIDEBAR_PNL_WIDTH;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_FRAMES;
-  art->listener = image_buttons_region_listener;
-  art->message_subscribe = ED_area_do_mgs_subscribe_for_tool_ui;
-  art->init = image_buttons_region_init;
-  art->layout = image_buttons_region_layout;
-  art->draw = image_btns_region_draw;
+  art->listener = img_btns_rgn_listener;
+  art->msg_sub = ed_area_do_msg_sub_for_tool_ui;
+  art->init = img_btns_rgn_init;
+  art->layout = img_btns_rgn_layout;
+  art->drw = imf_btns_rgn_drw;
   lib_addhead(&st->rgntypes, art);
 
   ed_uvedit_btns_register(art);
@@ -1154,8 +1151,8 @@ void ED_spacetype_image()
   art->msg_sub = ed_area_do_msg_sub_for_tool_header;
   lib_addhead(&st->rgntypes, art);
 
-  /* rgs: header */
-  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype image rgn"));
+  /* rgns: header */
+  art = static_cast<ARgnType *>(mem_calloc(sizeof(ARgnType), "spacetype img rgn"));
   art->rgnid = RGN_TYPE_HEADER;
   art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
@@ -1169,5 +1166,5 @@ void ED_spacetype_image()
   art = ed_area_type_hud(st->spaceid);
   lib_addhead(&st->rgntypes, art);
 
-  BKE_spacetype_register(st);
+  dune_spacetype_register(st);
 }
