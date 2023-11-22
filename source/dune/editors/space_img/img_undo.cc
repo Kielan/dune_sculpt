@@ -456,33 +456,33 @@ static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
   ubuf->image_dims[0] = ibuf->x;
   ubuf->image_dims[1] = ibuf->y;
 
-  ubuf->tiles_dims[0] = ED_IMAGE_UNDO_TILE_NUMBER(ubuf->image_dims[0]);
-  ubuf->tiles_dims[1] = ED_IMAGE_UNDO_TILE_NUMBER(ubuf->image_dims[1]);
+  ubuf->tiles_dims[0] = ED_IMG_UNDO_TILE_NUMBER(ubuf->img_dims[0]);
+  ubuf->tiles_dims[1] = ED_IMG_UNDO_TILE_NUMBER(ubuf->img_dims[1]);
 
   ubuf->tiles_len = ubuf->tiles_dims[0] * ubuf->tiles_dims[1];
-  ubuf->tiles = static_cast<UndoImageTile **>(
-      MEM_callocN(sizeof(*ubuf->tiles) * ubuf->tiles_len, __func__));
+  ubuf->tiles = static_cast<UndoImgTile **>(
+      mem_calloc(sizeof(*ubuf->tiles) * ubuf->tiles_len, __func__));
 
   STRNCPY(ubuf->ibuf_filepath, ibuf->filepath);
-  ubuf->image_state.source = image->source;
-  ubuf->image_state.use_float = ibuf->float_buffer.data != nullptr;
+  ubuf->img_state.source = img->source;
+  ubuf->img_state.use_float = ibuf->float_buffer.data != nullptr;
 
   return ubuf;
 }
 
-static void ubuf_from_image_all_tiles(UndoImageBuf *ubuf, const ImBuf *ibuf)
+static void ubuf_from_img_all_tiles(UndoImgBuf *ubuf, const ImBuf *ibuf)
 {
   ImBuf *tmpibuf = imbuf_alloc_temp_tile();
 
   const bool has_float = ibuf->float_buffer.data;
   int i = 0;
   for (uint y_tile = 0; y_tile < ubuf->tiles_dims[1]; y_tile += 1) {
-    uint y = y_tile << ED_IMAGE_UNDO_TILE_BITS;
+    uint y = y_tile << ED_IMG_UNDO_TILE_BITS;
     for (uint x_tile = 0; x_tile < ubuf->tiles_dims[0]; x_tile += 1) {
-      uint x = x_tile << ED_IMAGE_UNDO_TILE_BITS;
+      uint x = x_tile << ED_IMG_UNDO_TILE_BITS;
 
-      BLI_assert(ubuf->tiles[i] == nullptr);
-      UndoImageTile *utile = utile_alloc(has_float);
+      lib_assert(ubuf->tiles[i] == nullptr);
+      UndoImgTile *utile = utile_alloc(has_float);
       utile->users = 1;
       utile_init_from_imbuf(utile, x, y, ibuf, tmpibuf);
       ubuf->tiles[i] = utile;
@@ -491,12 +491,12 @@ static void ubuf_from_image_all_tiles(UndoImageBuf *ubuf, const ImBuf *ibuf)
     }
   }
 
-  BLI_assert(i == ubuf->tiles_len);
+  lib_assert(i == ubuf->tiles_len);
 
-  IMB_freeImBuf(tmpibuf);
+  imbuf_free(tmpibuf);
 }
 
-/** Ensure we can copy the ubuf into the ibuf. */
+/* Ensure we can copy the ubuf into the ibuf. */
 static void ubuf_ensure_compat_ibuf(const UndoImageBuf *ubuf, ImBuf *ibuf)
 {
   /* We could have both float and rect buffers,
