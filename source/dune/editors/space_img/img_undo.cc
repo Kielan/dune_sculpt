@@ -556,29 +556,29 @@ struct UndoImgHandle {
   ListBase buffers;
 };
 
-static void uhandle_restore_list(ListBase *undo_handles, bool use_init)
+static void uhandle_restore_list(List *undo_handles, bool use_init)
 {
-  ImBuf *tmpibuf = imbuf_alloc_temp_tile();
+  ImBuf *tmpibuf = imbuf_alloc_tmp_tile();
 
-  LISTBASE_FOREACH (UndoImageHandle *, uh, undo_handles) {
+  LIST_FOREACH (UndoImgHandle *, uh, undo_handles) {
     /* Tiles only added to second set of tiles. */
-    Image *image = uh->image_ref.ptr;
+    Img *img = uh->img_ref.ptr;
 
-    ImBuf *ibuf = BKE_image_acquire_ibuf(image, &uh->iuser, nullptr);
+    ImBuf *ibuf = dune_img_acquire_ibuf(img, &uh->iuser, nullptr);
     if (UNLIKELY(ibuf == nullptr)) {
-      CLOG_ERROR(&LOG, "Unable to get buffer for image '%s'", image->id.name + 2);
+      CLOG_ERROR(&LOG, "Unable to get buf for img '%s'", img->id.name + 2);
       continue;
     }
     bool changed = false;
-    LISTBASE_FOREACH (UndoImageBuf *, ubuf_iter, &uh->buffers) {
-      UndoImageBuf *ubuf = use_init ? ubuf_iter : ubuf_iter->post;
+    LIST_FOREACH (UndoImgBuf *, ubuf_iter, &uh->buffers) {
+      UndoImgBuf *ubuf = use_init ? ubuf_iter : ubuf_iter->post;
       ubuf_ensure_compat_ibuf(ubuf, ibuf);
 
       int i = 0;
       for (uint y_tile = 0; y_tile < ubuf->tiles_dims[1]; y_tile += 1) {
-        uint y = y_tile << ED_IMAGE_UNDO_TILE_BITS;
+        uint y = y_tile << ED_IMG_UNDO_TILE_BITS;
         for (uint x_tile = 0; x_tile < ubuf->tiles_dims[0]; x_tile += 1) {
-          uint x = x_tile << ED_IMAGE_UNDO_TILE_BITS;
+          uint x = x_tile << ED_IMG_UNDO_TILE_BITS;
           utile_restore(ubuf->tiles[i], x, y, ibuf, tmpibuf);
           changed = true;
           i += 1;
@@ -587,11 +587,11 @@ static void uhandle_restore_list(ListBase *undo_handles, bool use_init)
     }
 
     if (changed) {
-      BKE_image_mark_dirty(image, ibuf);
-      /* TODO(@jbakker): only mark areas that are actually updated to improve performance. */
-      BKE_image_partial_update_mark_full_update(image);
+      dune_img_mark_dirty(img, ibuf);
+      /* TODO: only mark areas that are actually updated to improve performance. */
+      dune_img_partial_update_mark_full_update(img);
 
-      if (ibuf->float_buffer.data) {
+      if (ibuf->float_buf.data) {
         ibuf->userflags |= IB_RECT_INVALID; /* Force recreate of char `rect` */
       }
       if (ibuf->mipmap[0]) {
@@ -599,9 +599,9 @@ static void uhandle_restore_list(ListBase *undo_handles, bool use_init)
       }
       ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
 
-      DEG_id_tag_update(&image->id, 0);
+      graph_id_tag_update(&img->id, 0);
     }
-    BKE_image_release_ibuf(image, ibuf, nullptr);
+    dune_img_release_ibuf(img, ibuf, nullptr);
   }
 
   IMB_freeImBuf(tmpibuf);
