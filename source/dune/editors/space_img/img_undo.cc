@@ -406,59 +406,52 @@ static void utile_restore(
   else {
     tmpibuf->byte_buf.data = utile->rect.byte_ptr;
   }
-
-  /* TODO: Look into implementing API which does not require such temporary buffer
+  
+  /* TODO: Look into implementing API which does not require such tmp buf
    * assignment. */
-  imbuf_rectcpy(ibuf, tmpibuf, x, y, 0, 0, ED_IMAGE_UNDO_TILE_SIZE, ED_IMAGE_UNDO_TILE_SIZE);
+  imbuf_rectcpy(ibuf, tmpibuf, x, y, 0, 0, ED_IMG_UNDO_TILE_SIZE, ED_IMG_UNDO_TILE_SIZE);
 
-  tmpibuf->float_buffer.data = prev_rect_float;
-  tmpibuf->byte_buffer.data = prev_rect;
+  tmpibuf->float_buf.data = prev_rect_float;
+  tmpibuf->byte_buf.data = prev_rect;
 }
 
-static void utile_decref(UndoImageTile *utile)
+static void utile_decref(UndoImgTile *utile)
 {
   utile->users -= 1;
-  BLI_assert(utile->users >= 0);
+  lib_assert(utile->users >= 0);
   if (utile->users == 0) {
-    MEM_freeN(utile->rect.pt);
-    MEM_delete(utile);
+    mem_free(utile->rect.pt);
+    mem_delete(utile);
   }
 }
 
-/** \} */
+/* Img Undo Buf */
+struct UndoImgBuf {
+  UndoImgBuf *next, *prev;
 
-/* -------------------------------------------------------------------- */
-/** \name Image Undo Buffer
- * \{ */
-
-struct UndoImageBuf {
-  UndoImageBuf *next, *prev;
-
-  /**
-   * The buffer after the undo step has executed.
-   */
-  UndoImageBuf *post;
+  /* The buf after the undo step has ex */
+  UndoImgBuf *post;
 
   char ibuf_filepath[IMB_FILEPATH_SIZE];
 
-  UndoImageTile **tiles;
+  UndoImgTile **tiles;
 
-  /** Can calculate these from dims, just for convenience. */
+  /* Can calc these from dims, just for convenience. */
   uint32_t tiles_len;
   uint32_t tiles_dims[2];
 
   uint32_t image_dims[2];
 
-  /** Store variables from the image. */
+  /* Store vars from the img. */
   struct {
     short source;
     bool use_float;
-  } image_state;
+  } img_state;
 };
 
-static UndoImageBuf *ubuf_from_image_no_tiles(Image *image, const ImBuf *ibuf)
+static UndoImgBuf *ubuf_from_img_no_tiles(Img *img, const ImBuf *ibuf)
 {
-  UndoImageBuf *ubuf = static_cast<UndoImageBuf *>(MEM_callocN(sizeof(*ubuf), __func__));
+  UndoImageBuf *ubuf = static_cast<UndoImgBuf *>(mem_calloc(sizeof(*ubuf), __func__));
 
   ubuf->image_dims[0] = ibuf->x;
   ubuf->image_dims[1] = ibuf->y;
