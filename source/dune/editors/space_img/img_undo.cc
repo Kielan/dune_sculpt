@@ -607,30 +607,26 @@ static void uhandle_restore_list(List *undo_handles, bool use_init)
   IMB_freeImBuf(tmpibuf);
 }
 
-static void uhandle_free_list(ListBase *undo_handles)
+static void uhandle_free_list(List *undo_handles)
 {
-  LISTBASE_FOREACH_MUTABLE (UndoImageHandle *, uh, undo_handles) {
-    LISTBASE_FOREACH_MUTABLE (UndoImageBuf *, ubuf, &uh->buffers) {
+  LIST_FOREACH_MUTABLE (UndoImgHandle *, uh, undo_handles) {
+    LIST_FOREACH_MUTABLE (UndoImgBuf *, ubuf, &uh->buffers) {
       ubuf_free(ubuf);
     }
-    MEM_freeN(uh);
+    mem_free(uh);
   }
-  BLI_listbase_clear(undo_handles);
+  lib_list_clear(undo_handles);
 }
 
-/** \} */
+/* Img Undo Internal Utils */
+/* UndoImgHandle utils */
+static UndoImgBuf *uhandle_lookup_ubuf(UndoImgHandle *uh,
+                                       const Img * /*img*/,
+                                       
 
-/* -------------------------------------------------------------------- */
-/** \name Image Undo Internal Utilities
- * \{ */
-
-/** #UndoImageHandle utilities */
-
-static UndoImageBuf *uhandle_lookup_ubuf(UndoImageHandle *uh,
-                                         const Image * /*image*/,
-                                         const char *ibuf_filepath)
+const char *ibuf_filepath)
 {
-  LISTBASE_FOREACH (UndoImageBuf *, ubuf, &uh->buffers) {
+  LIST_FOREACH (UndoImgBuf *, ubuf, &uh->bufs) {
     if (STREQ(ubuf->ibuf_filepath, ibuf_filepath)) {
       return ubuf;
     }
@@ -638,49 +634,49 @@ static UndoImageBuf *uhandle_lookup_ubuf(UndoImageHandle *uh,
   return nullptr;
 }
 
-static UndoImageBuf *uhandle_add_ubuf(UndoImageHandle *uh, Image *image, ImBuf *ibuf)
+static UndoImgBuf *uhandle_add_ubuf(UndoImgHandle *uh, Img *img, ImBuf *ibuf)
 {
-  BLI_assert(uhandle_lookup_ubuf(uh, image, ibuf->filepath) == nullptr);
-  UndoImageBuf *ubuf = ubuf_from_image_no_tiles(image, ibuf);
-  BLI_addtail(&uh->buffers, ubuf);
+  lib_assert(uhandle_lookup_ubuf(uh, img, ibuf->filepath) == nullptr);
+  UndoImgBuf *ubuf = ubuf_from_img_no_tiles(img, ibuf);
+  lib_addtail(&uh->buffers, ubuf);
 
   ubuf->post = nullptr;
 
   return ubuf;
 }
 
-static UndoImageBuf *uhandle_ensure_ubuf(UndoImageHandle *uh, Image *image, ImBuf *ibuf)
+static UndoImgBuf *uhandle_ensure_ubuf(UndoImgHandle *uh, Img *img, ImBuf *ibuf)
 {
-  UndoImageBuf *ubuf = uhandle_lookup_ubuf(uh, image, ibuf->filepath);
+  UndoImgBuf *ubuf = uhandle_lookup_ubuf(uh, img, ibuf->filepath);
   if (ubuf == nullptr) {
-    ubuf = uhandle_add_ubuf(uh, image, ibuf);
+    ubuf = uhandle_add_ubuf(uh, img, ibuf);
   }
   return ubuf;
 }
 
-static UndoImageHandle *uhandle_lookup_by_name(ListBase *undo_handles,
-                                               const Image *image,
-                                               int tile_number)
+static UndoImgHandle *uhandle_lookup_by_name(List *undo_handles,
+                                             const Img *img,
+                                             int tile_number)
 {
-  LISTBASE_FOREACH (UndoImageHandle *, uh, undo_handles) {
-    if (STREQ(image->id.name + 2, uh->image_ref.name + 2) && uh->iuser.tile == tile_number) {
+  LIST_FOREACH (UndoImgHandle *, uh, undo_handles) {
+    if (STREQ(img->id.name + 2, uh->img_ref.name + 2) && uh->iuser.tile == tile_number) {
       return uh;
     }
   }
   return nullptr;
 }
 
-static UndoImageHandle *uhandle_lookup(ListBase *undo_handles, const Image *image, int tile_number)
+static UndoImgHandle *uhandle_lookup(List *undo_handles, const Img *img, int tile_number)
 {
-  LISTBASE_FOREACH (UndoImageHandle *, uh, undo_handles) {
-    if (image == uh->image_ref.ptr && uh->iuser.tile == tile_number) {
+  LIST_FOREACH (UndoImgHandle *, uh, undo_handles) {
+    if (img == uh->img_ref.ptr && uh->iuser.tile == tile_number) {
       return uh;
     }
   }
   return nullptr;
 }
 
-static UndoImageHandle *uhandle_add(ListBase *undo_handles, Image *image, ImageUser *iuser)
+static UndoImgHandle *uhandle_add(List *undo_handles, Img *img, ImgUser *iuser)
 {
   BLI_assert(uhandle_lookup(undo_handles, image, iuser->tile) == nullptr);
   UndoImageHandle *uh = static_cast<UndoImageHandle *>(MEM_callocN(sizeof(*uh), __func__));
