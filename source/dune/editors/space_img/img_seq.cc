@@ -1,33 +1,32 @@
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_fileops.h"
-#include "BLI_fileops_types.h"
-#include "BLI_listbase.h"
-#include "BLI_math_base.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_fileops.h"
+#include "lib_fileops_types.h"
+#include "lib_list.h"
+#include "lib_math_base.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DNA_image_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_img.h"
+#include "types_wm.h"
 
-#include "RNA_access.hh"
+#include "api_access.hh"
 
-#include "BKE_image.h"
-#include "BKE_main.h"
+#include "dune_img.h"
+#include "dune_main.h"
 
-#include "ED_image.hh"
+#include "ed_img.hh"
 
-struct ImageFrame {
-  ImageFrame *next, *prev;
+struct ImgFrame {
+  ImgFrame *next, *prev;
   int framenr;
 };
 
-/**
- * Get a list of frames from the list of image files matching the first file name sequence pattern.
- * The files and directory are read from standard file-select operator properties.
+/* Get a list of frames from the list of img files matching the first file name sequence pattern.
+ * The files and directory are read from standard file-sel op props.
  *
  * The output is a list of frame ranges, each containing a list of frames with matching names.
  */
