@@ -344,129 +344,129 @@ struct ViewPanData {
   bool own_cursor;
 };
 
-static void image_view_pan_init(bContext *C, wmOperator *op, const wmEvent *event)
+static void img_view_pan_init(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  wmWindow *win = CTX_wm_window(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
+  Win *win = cxt_win(C);
+  SpaceImg *simg = cxt_win_space_img(C);
   ViewPanData *vpd;
 
   op->customdata = vpd = static_cast<ViewPanData *>(
-      MEM_callocN(sizeof(ViewPanData), "ImageViewPanData"));
+      mem_calloc(sizeof(ViewPanData), "ImgViewPanData"));
 
   /* Grab will be set when running from gizmo. */
   vpd->own_cursor = (win->grabcursor == 0);
   if (vpd->own_cursor) {
-    WM_cursor_modal_set(win, WM_CURSOR_NSEW_SCROLL);
+    win_cursor_modal_set(win, WIN_CURSOR_NSEW_SCROLL);
   }
 
-  vpd->x = event->xy[0];
-  vpd->y = event->xy[1];
-  vpd->xof = sima->xof;
-  vpd->yof = sima->yof;
-  vpd->launch_event = WM_userdef_event_type_from_keymap_type(event->type);
+  vpd->x = ev->xy[0];
+  vpd->y = ev->xy[1];
+  vpd->xof = simg->xof;
+  vpd->yof = simg->yof;
+  vpd->launch_ev = win_userdef_ev_type_from_keymap_type(ev->type);
 
-  WM_event_add_modal_handler(C, op);
+  win_ev_add_modal_handler(C, op);
 }
 
-static void image_view_pan_exit(bContext *C, wmOperator *op, bool cancel)
+static void img_view_pan_exit(Cxt *C, WinOp *op, bool cancel)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
   ViewPanData *vpd = static_cast<ViewPanData *>(op->customdata);
 
   if (cancel) {
-    sima->xof = vpd->xof;
-    sima->yof = vpd->yof;
-    ED_region_tag_redraw(CTX_wm_region(C));
+    simg->xof = vpd->xof;
+    simg->yof = vpd->yof;
+    ed_rgn_tag_redrw(cxt_win_rgn(C));
   }
 
   if (vpd->own_cursor) {
-    WM_cursor_modal_restore(CTX_wm_window(C));
+    win_cursor_modal_restore(cxt_win(C));
   }
-  MEM_freeN(op->customdata);
+  mem_free(op->customdata);
 }
 
-static int image_view_pan_exec(bContext *C, wmOperator *op)
+static int img_view_pan_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_im(C);
   float offset[2];
 
-  RNA_float_get_array(op->ptr, "offset", offset);
-  sima->xof += offset[0];
-  sima->yof += offset[1];
+  api_float_get_array(op->ptr, "offset", offset);
+  simg->xof += offset[0];
+  simg->yof += offset[1];
 
-  ED_region_tag_redraw(CTX_wm_region(C));
+  ed_rgn_tag_redrw(cxt_win_rgn(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_view_pan_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_pan_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (event->type == MOUSEPAN) {
-    SpaceImage *sima = CTX_wm_space_image(C);
+  if (ev->type == MOUSEPAN) {
+    SpaceImg *simg = cxt_win_space_img(C);
     float offset[2];
 
-    offset[0] = (event->prev_xy[0] - event->xy[0]) / sima->zoom;
-    offset[1] = (event->prev_xy[1] - event->xy[1]) / sima->zoom;
-    RNA_float_set_array(op->ptr, "offset", offset);
+    offset[0] = (ev->prev_xy[0] - ev->xy[0]) / simg->zoom;
+    offset[1] = (ev->prev_xy[1] - ev->xy[1]) / simg->zoom;
+    api_float_set_array(op->ptr, "offset", offset);
 
-    image_view_pan_exec(C, op);
-    return OPERATOR_FINISHED;
+    img_view_pan_ex(C, op);
+    return OP_FINISHED;
   }
 
-  image_view_pan_init(C, op, event);
-  return OPERATOR_RUNNING_MODAL;
+  img_view_pan_init(C, op, ev);
+  return OP_RUNNING_MODAL;
 }
 
-static int image_view_pan_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_pan_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxy_win_space_img(C);
   ViewPanData *vpd = static_cast<ViewPanData *>(op->customdata);
   float offset[2];
 
-  switch (event->type) {
+  switch (ev->type) {
     case MOUSEMOVE:
-      sima->xof = vpd->xof;
-      sima->yof = vpd->yof;
-      offset[0] = (vpd->x - event->xy[0]) / sima->zoom;
-      offset[1] = (vpd->y - event->xy[1]) / sima->zoom;
-      RNA_float_set_array(op->ptr, "offset", offset);
-      image_view_pan_exec(C, op);
+      simg->xof = vpd->xof;
+      simg->yof = vpd->yof;
+      offset[0] = (vpd->x - eve->xy[0]) / simg->zoom;
+      offset[1] = (vpd->y - ev->xy[1]) / simg->zoom;
+      api_float_set_array(op->ptr, "offset", offset);
+      img_view_pan_ex(C, op);
       break;
     default:
-      if (event->type == vpd->launch_event && event->val == KM_RELEASE) {
-        image_view_pan_exit(C, op, false);
-        return OPERATOR_FINISHED;
+      if (ev->type == vpd->launch_eve && ev->val == KM_RELEASE) {
+        img_view_pan_exit(C, op, false);
+        return OP_FINISHED;
       }
       break;
   }
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void image_view_pan_cancel(bContext *C, wmOperator *op)
+static void img_view_pan_cancel(Cxt *C, WinOp *op)
 {
-  image_view_pan_exit(C, op, true);
+  img_view_pan_exit(C, op, true);
 }
 
-void IMAGE_OT_view_pan(wmOperatorType *ot)
+void IMG_OT_view_pan(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Pan View";
-  ot->idname = "IMAGE_OT_view_pan";
+  ot->idname = "IMG_OT_view_pan";
   ot->description = "Pan the view";
 
-  /* api callbacks */
-  ot->exec = image_view_pan_exec;
-  ot->invoke = image_view_pan_invoke;
-  ot->modal = image_view_pan_modal;
+  /* api cb */
+  ot->ex = img_view_pan_exec;
+  ot->invoke = img_view_pan_invoke;
+  ot->modal = img_view_pan_modal;
   ot->cancel = image_view_pan_cancel;
-  ot->poll = space_image_main_region_poll;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_XY | OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  RNA_def_float_vector(ot->srna,
+  /* prope */
+  api_def_float_vector(ot->sapi,
                        "offset",
                        2,
                        nullptr,
