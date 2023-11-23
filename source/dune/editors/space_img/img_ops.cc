@@ -11,168 +11,163 @@
 
 #include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_fileops.h"
-#include "BLI_ghash.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_fileops.h"
+#include "lib_ghash.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
+#include "types_camera.h"
+#include "types_node.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_screen.h"
 
-#include "BKE_colortools.h"
-#include "BKE_context.hh"
-#include "BKE_global.h"
-#include "BKE_icons.h"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_image_save.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_packedFile.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_colortools.h"
+#include "dune_cxt.hh"
+#include "dune_global.h"
+#include "dune_icons.h"
+#include "dune_img.h"
+#include "dune_img_format.h"
+#include "dune_img_save.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_packedFile.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "GPU_state.h"
+#include "gpu_state.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
-#include "IMB_moviecache.h"
-#include "IMB_openexr.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
+#include "imbuf_moviecache.h"
+#include "imbuf_openexr.h"
 
-#include "RE_pipeline.h"
+#include "render_pipeline.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
+#include "api_prototypes.h"
 
-#include "ED_image.hh"
-#include "ED_mask.hh"
-#include "ED_paint.hh"
-#include "ED_render.hh"
-#include "ED_screen.hh"
-#include "ED_space_api.hh"
-#include "ED_undo.hh"
-#include "ED_util.hh"
-#include "ED_util_imbuf.hh"
-#include "ED_uvedit.hh"
+#include "ed_img.hh"
+#include "ed_mask.hh"
+#include "ed_paint.hh"
+#include "ed_render.hh"
+#include "ed_screen.hh"
+#include "ed_space_api.hh"
+#include "ed_undo.hh"
+#include "ed_util.hh"
+#include "ed_util_imbuf.hh"
+#include "ed_uvedit.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
 #include "PIL_time.h"
 
-#include "RE_engine.h"
+#include "render_engine.h"
 
-#include "image_intern.h"
+#include "img_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name View Navigation Utilities
- * \{ */
-
-static void sima_zoom_set(
-    SpaceImage *sima, ARegion *region, float zoom, const float location[2], const bool zoom_to_pos)
+/* View Nav Utils */
+static void simg_zoom_set(
+    SpaceImg *simh, ARgn *rgn, float zoom, const float location[2], const bool zoom_to_pos)
 {
-  float oldzoom = sima->zoom;
+  float oldzoom = simg->zoom;
   int width, height;
 
-  sima->zoom = zoom;
+  simg->zoom = zoom;
 
-  if (sima->zoom < 0.1f || sima->zoom > 4.0f) {
+  if (simg->zoom < 0.1f || simg->zoom > 4.0f) {
     /* check zoom limits */
-    ED_space_image_get_size(sima, &width, &height);
+    ed_space_img_get_size(simg, &width, &height);
 
-    width *= sima->zoom;
-    height *= sima->zoom;
+    width *= simg->zoom;
+    height *= simg->zoom;
 
-    if ((width < 4) && (height < 4) && sima->zoom < oldzoom) {
-      sima->zoom = oldzoom;
+    if ((width < 4) && (height < 4) && simg->zoom < oldzoom) {
+      simg->zoom = oldzoom;
     }
-    else if (BLI_rcti_size_x(&region->winrct) <= sima->zoom) {
-      sima->zoom = oldzoom;
+    else if (lib_rcti_size_x(&rgn->winrct) <= simg->zoom) {
+      simg->zoom = oldzoom;
     }
-    else if (BLI_rcti_size_y(&region->winrct) <= sima->zoom) {
-      sima->zoom = oldzoom;
+    else if (lib_rcti_size_y(&rgn->winrct) <= sima->zoom) {
+      simg->zoom = oldzoom;
     }
   }
 
   if (zoom_to_pos && location) {
     float aspx, aspy, w, h;
 
-    ED_space_image_get_size(sima, &width, &height);
-    ED_space_image_get_aspect(sima, &aspx, &aspy);
+    ed_space_img_get_size(simg, &width, &height);
+    ed_space_img_get_aspect(simg, &aspx, &aspy);
 
     w = width * aspx;
     h = height * aspy;
 
-    sima->xof += ((location[0] - 0.5f) * w - sima->xof) * (sima->zoom - oldzoom) / sima->zoom;
-    sima->yof += ((location[1] - 0.5f) * h - sima->yof) * (sima->zoom - oldzoom) / sima->zoom;
+    simg->xof += ((location[0] - 0.5f) * w - simg->xof) * (simg->zoom - oldzoom) / sima->zoom;
+    simg->yof += ((location[1] - 0.5f) * h - simg->yof) * (simg->zoom - oldzoom) / sima->zoom;
   }
 }
 
-static void sima_zoom_set_factor(SpaceImage *sima,
-                                 ARegion *region,
+static void simg_zoom_set_factor(SpaceImg *simg,
+                                 ARgn *rgn,
                                  float zoomfac,
                                  const float location[2],
                                  const bool zoom_to_pos)
 {
-  sima_zoom_set(sima, region, sima->zoom * zoomfac, location, zoom_to_pos);
+  simg_zoom_set(simg, rgn, simg->zoom * zoomfac, location, zoom_to_pos);
 }
 
-/**
- * Fits the view to the bounds exactly, caller should add margin if needed.
- */
-static void sima_zoom_set_from_bounds(SpaceImage *sima, ARegion *region, const rctf *bounds)
+/* Fits the view to the bounds exactly, caller should add margin if needed. */
+static void simg_zoom_set_from_bounds(SpaceImg *simg, ARgn *rgn, const rctf *bounds)
 {
-  int image_size[2];
+  int img_size[2];
   float aspx, aspy;
 
-  ED_space_image_get_size(sima, &image_size[0], &image_size[1]);
-  ED_space_image_get_aspect(sima, &aspx, &aspy);
+  ed_space_img_get_size(simg, &img_size[0], &img_size[1]);
+  ed_space_img_get_aspect(simg, &aspx, &aspy);
 
-  image_size[0] = image_size[0] * aspx;
-  image_size[1] = image_size[1] * aspy;
+  img_size[0] = img_size[0] * aspx;
+  img_size[1] = img_size[1] * aspy;
 
   /* adjust offset and zoom */
-  sima->xof = roundf((BLI_rctf_cent_x(bounds) - 0.5f) * image_size[0]);
-  sima->yof = roundf((BLI_rctf_cent_y(bounds) - 0.5f) * image_size[1]);
+  simg->xof = roundf((lib_rctf_cent_x(bounds) - 0.5f) * img_size[0]);
+  simg->yof = roundf((lib_rctf_cent_y(bounds) - 0.5f) * img_size[1]);
 
   float size_xy[2], size;
-  size_xy[0] = BLI_rcti_size_x(&region->winrct) / (BLI_rctf_size_x(bounds) * image_size[0]);
-  size_xy[1] = BLI_rcti_size_y(&region->winrct) / (BLI_rctf_size_y(bounds) * image_size[1]);
+  size_xy[0] = lib_rcti_size_x(&rgn->winrct) / lib_rctf_size_x(bounds) * image_size[0]);
+  size_xy[1] = lib_rcti_size_y(&rgn->winrct) / (lib_rctf_size_y(bounds) * image_size[1]);
 
   size = min_ff(size_xy[0], size_xy[1]);
   CLAMP_MAX(size, 100.0f);
 
-  sima_zoom_set(sima, region, size, nullptr, false);
+  simg_zoom_set(simg, rgn, size, nullptr, false);
 }
 
-static Image *image_from_context(const bContext *C)
+static Img *img_from_cxt(const Cxt *C)
 {
-  /* Edit image is set by templates used throughout the interface, so image
-   * operations work outside the image editor. */
-  Image *ima = static_cast<Image *>(CTX_data_pointer_get_type(C, "edit_image", &RNA_Image).data);
-
-  if (ima) {
-    return ima;
+  /* Edit img is set by templates used throughout the interface, so img
+   * ops work outside the img editor. */
+  Img *img = static_cast<Img *>(cxt_data_ptr_get_type(C, "edit_img", &ApiImg).data);
+    
+  if (img) {
+    return img;
   }
 
   /* Image editor. */
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = CTX_wm_space_image(C);
   return (sima) ? sima->image : nullptr;
 }
 
