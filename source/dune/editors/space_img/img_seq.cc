@@ -11,7 +11,7 @@
 #include "lib_utildefines.h"
 
 #include "types_img.h"
-#include "types_wm.h"
+#include "types_win.h"
 
 #include "api_access.hh"
 
@@ -25,46 +25,44 @@ struct ImgFrame {
   int framenr;
 };
 
-/* Get a list of frames from the list of img files matching the first file name sequence pattern.
+/* Get a list of frames from the list of img files matching the first file name seq pattern.
  * The files and directory are read from standard file-sel op props.
- *
- * The output is a list of frame ranges, each containing a list of frames with matching names.
- */
-static void image_sequence_get_frame_ranges(wmOperator *op, ListBase *ranges)
+ * The output is a list of frame ranges, each containing a list of frames with matching names. */
+static void img_seq_get_frame_ranges(WinOp *op, List *ranges)
 {
   char dir[FILE_MAXDIR];
-  const bool do_frame_range = RNA_boolean_get(op->ptr, "use_sequence_detection");
-  ImageFrameRange *range = nullptr;
+  const bool do_frame_range = api_bool_get(op->ptr, "use_seq_detection");
+  ImgFrameRange *range = nullptr;
   int range_first_frame = 0;
   /* Track when a new series of files are found that aren't compatible with the previous file. */
   char base_head[FILE_MAX], base_tail[FILE_MAX];
 
-  RNA_string_get(op->ptr, "directory", dir);
-  RNA_BEGIN (op->ptr, itemptr, "files") {
+  api_string_get(op->ptr, "directory", dir);
+  API_BEGIN (op->ptr, itemptr, "files") {
     char head[FILE_MAX], tail[FILE_MAX];
     ushort digits;
-    char *filename = RNA_string_get_alloc(&itemptr, "name", nullptr, 0, nullptr);
-    ImageFrame *frame = static_cast<ImageFrame *>(MEM_callocN(sizeof(ImageFrame), "image_frame"));
+    char *filename = api_string_get_alloc(&itemptr, "name", nullptr, 0, nullptr);
+    ImgFrame *frame = static_cast<ImgFrame *>(mem_calloc(sizeof(ImgFrame), "img_frame"));
 
     /* use the first file in the list as base filename */
-    frame->framenr = BLI_path_sequence_decode(
+    frame->framenr = lib_path_seq_decode(
         filename, head, sizeof(head), tail, sizeof(tail), &digits);
 
-    /* still in the same sequence */
+    /* still in the same seq */
     if (do_frame_range && (range != nullptr) && STREQLEN(base_head, head, FILE_MAX) &&
         STREQLEN(base_tail, tail, FILE_MAX))
     {
       /* Set filepath to first frame in the range. */
       if (frame->framenr < range_first_frame) {
-        BLI_path_join(range->filepath, sizeof(range->filepath), dir, filename);
+        lib_path_join(range->filepath, sizeof(range->filepath), dir, filename);
         range_first_frame = frame->framenr;
       }
     }
     else {
       /* start a new frame range */
-      range = static_cast<ImageFrameRange *>(MEM_callocN(sizeof(*range), __func__));
-      BLI_path_join(range->filepath, sizeof(range->filepath), dir, filename);
-      BLI_addtail(ranges, range);
+      range = static_cast<ImgFrameRange *>(mem_calloc(sizeof(*range), __func__));
+      lib_path_join(range->filepath, sizeof(range->filepath), dir, filename);
+      lib_addtail(ranges, range);
 
       STRNCPY(base_head, head);
       STRNCPY(base_tail, tail);
@@ -72,16 +70,16 @@ static void image_sequence_get_frame_ranges(wmOperator *op, ListBase *ranges)
       range_first_frame = frame->framenr;
     }
 
-    BLI_addtail(&range->frames, frame);
-    MEM_freeN(filename);
+    lib_addtail(&range->frames, frame);
+    mem_free(filename);
   }
-  RNA_END;
+  API_END;
 }
 
-static int image_cmp_frame(const void *a, const void *b)
+static int img_cmp_frame(const void *a, const void *b)
 {
-  const ImageFrame *frame_a = static_cast<const ImageFrame *>(a);
-  const ImageFrame *frame_b = static_cast<const ImageFrame *>(b);
+  const ImgFrame *frame_a = static_cast<const ImgFrame *>(a);
+  const ImgFrame *frame_b = static_cast<const ImgFrame *>(b);
 
   if (frame_a->framenr < frame_b->framenr) {
     return -1;
@@ -92,16 +90,14 @@ static int image_cmp_frame(const void *a, const void *b)
   return 0;
 }
 
-/**
- * From a list of frames, compute the start (offset) and length of the sequence
- * of contiguous frames. If `detect_udim` is set, it will return UDIM tiles as well.
- */
-static void image_detect_frame_range(ImageFrameRange *range, const bool detect_udim)
+/* From a list of frames, compute the start (offset) and length of the sequence
+ * of contiguous frames. If `detect_udim` is set, it will return UDIM tiles as well. */
+static void img_detect_frame_range(ImgFrameRange *range, const bool detect_udim)
 {
   /* UDIM */
   if (detect_udim) {
     int udim_start, udim_range;
-    range->udims_detected = BKE_image_get_tile_info(
+    range->udims_detected = dune_img_get_tile_info(
         range->filepath, &range->udim_tiles, &udim_start, &udim_range);
 
     if (range->udims_detected) {
@@ -111,10 +107,10 @@ static void image_detect_frame_range(ImageFrameRange *range, const bool detect_u
     }
   }
 
-  /* Image Sequence */
-  BLI_listbase_sort(&range->frames, image_cmp_frame);
+  /* Img Seq */
+  lib_list_sort(&range->frames, img_cmp_frame);
 
-  ImageFrame *frame = static_cast<ImageFrame *>(range->frames.first);
+  ImgFrame *frame = static_cast<ImgFrame *>(range->frames.first);
   if (frame != nullptr) {
     int frame_curr = frame->framenr;
     range->offset = frame_curr;
@@ -132,34 +128,34 @@ static void image_detect_frame_range(ImageFrameRange *range, const bool detect_u
   }
 }
 
-ListBase ED_image_filesel_detect_sequences(Main *bmain, wmOperator *op, const bool detect_udim)
+List ed_img_filesel_detect_seqs(Main *main, WinOp *op, const bool detect_udim)
 {
-  ListBase ranges;
-  BLI_listbase_clear(&ranges);
+  List ranges;
+  lib_list_clear(&ranges);
 
   char filepath[FILE_MAX];
-  RNA_string_get(op->ptr, "filepath", filepath);
+  api_string_get(op->ptr, "filepath", filepath);
 
   /* File browser. */
-  if (RNA_struct_property_is_set(op->ptr, "directory") &&
-      RNA_struct_property_is_set(op->ptr, "files"))
+  if (api_struct_prop_is_set(op->ptr, "directory") &&
+      api_struct_prop_is_set(op->ptr, "files"))
   {
-    const bool was_relative = BLI_path_is_rel(filepath);
+    const bool was_relative = lib_path_is_rel(filepath);
 
-    image_sequence_get_frame_ranges(op, &ranges);
-    LISTBASE_FOREACH (ImageFrameRange *, range, &ranges) {
-      image_detect_frame_range(range, detect_udim);
-      BLI_freelistN(&range->frames);
+    img_seq_get_frame_ranges(op, &ranges);
+    LIST_FOREACH (ImgFrameRange *, range, &ranges) {
+      img_detect_frame_range(range, detect_udim);
+      lib_freelist(&range->frames);
 
       if (was_relative) {
-        BLI_path_rel(range->filepath, BKE_main_blendfile_path(bmain));
+        lib_path_rel(range->filepath, dune_main_file_path(main));
       }
     }
   }
-  /* Filepath property for drag & drop etc. */
+  /* Filepath prop for drag & drop etc. */
   else {
-    ImageFrameRange *range = static_cast<ImageFrameRange *>(MEM_callocN(sizeof(*range), __func__));
-    BLI_addtail(&ranges, range);
+    ImgFrameRange *range = static_cast<ImgFrameRange *>(mem_calloc(sizeof(*range), __func__));
+    lib_addtail(&ranges, range);
 
     STRNCPY(range->filepath, filepath);
     image_detect_frame_range(range, detect_udim);
