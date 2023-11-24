@@ -473,7 +473,6 @@ void IMG_OT_view_pan(WinOpType *ot)
 }
 
 /* View Zoom Op */
-
 struct ViewZoomData {
   float origx, origy;
   float zoom;
@@ -514,8 +513,8 @@ static void img_view_zoom_init(Cxt *C, WinOp *op, const WinEv *ev)
       &rgn->v2d, ev->mval[0], ev->mval[1], &vpd->location[0], &vpd->location[1]);
 
   if (U.viewzoom == USER_ZOOM_CONTINUE) {
-    /* needs a timer to continue redrawing */
-    vpd->timer = win_ev_timer_add(cxt_win_manager(C), cxt_win(C), TIMER, 0.01f);
+    /* needs a timer to continue redrwing */
+    vpd->timer = win_ev_timer_add(cxt_wm(C), cxt_win(C), TIMER, 0.01f);
     vpd->timer_lastdrw = PIL_check_seconds_timer();
   }
 
@@ -525,36 +524,36 @@ static void img_view_zoom_init(Cxt *C, WinOp *op, const WinEv *ev)
   win_ev_add_modal_handler(C, op);
 }
 
-static void img_view_zoom_exit(bContext *C, wmOperator *op, bool cancel)
+static void img_view_zoom_exit(Cxt *C, WinOp *op, bool cancel)
 {
-  SpaceImg *simg = cxt_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
   ViewZoomData *vpd = static_cast<ViewZoomData *>(op->customdata);
 
   if (cancel) {
-    sima->zoom = vpd->zoom;
-    ED_region_tag_redraw(CTX_wm_region(C));
+    simg->zoom = vpd->zoom;
+    ed_rgn_tag_redrw(cxt_win_rgn(C));
   }
 
   if (vpd->timer) {
-    WM_event_timer_remove(CTX_wm_manager(C), vpd->timer->win, vpd->timer);
+    win_ev_timer_remove(cxt_win(C), vpd->timer->win, vpd->timer);
   }
 
   if (vpd->own_cursor) {
-    WM_cursor_modal_restore(CTX_wm_window(C));
+    win_cursor_modal_restore(cxt_win(C));
   }
-  MEM_freeN(op->customdata);
+  mem_free(op->customdata);
 }
 
-static int image_view_zoom_exec(bContext *C, wmOperator *op)
+static int img_view_zoom_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
-  sima_zoom_set_factor(sima, region, RNA_float_get(op->ptr, "factor"), nullptr, false);
+  simg_zoom_set_factor(simg, rgn, api_float_get(op->ptr, "factor"), nullptr, false);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 enum {
@@ -563,41 +562,41 @@ enum {
   VIEW_CONFIRM,
 };
 
-static int image_view_zoom_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_zoom_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (ELEM(event->type, MOUSEZOOM, MOUSEPAN)) {
-    SpaceImage *sima = CTX_wm_space_image(C);
-    ARegion *region = CTX_wm_region(C);
+  if (ELEM(ev->type, MOUSEZOOM, MOUSEPAN)) {
+    SpaceImg *simg = cxt_win_space_img(C);
+    ARgn *rgn = cxt_win_rgn(C);
     float delta, factor, location[2];
 
-    UI_view2d_region_to_view(
-        &region->v2d, event->mval[0], event->mval[1], &location[0], &location[1]);
+    ui_view2d_rgn_to_view(
+        &rgn->v2d, ev->mval[0], ev->mval[1], &location[0], &location[1]);
 
-    delta = event->prev_xy[0] - event->xy[0] + event->prev_xy[1] - event->xy[1];
+    delta = ev->prev_xy[0] - ev->xy[0] + ev->prev_xy[1] - ev->xy[1];
 
     if (U.uiflag & USER_ZOOM_INVERT) {
       delta *= -1;
     }
 
     factor = 1.0f + delta / 300.0f;
-    RNA_float_set(op->ptr, "factor", factor);
-    const bool use_cursor_init = RNA_boolean_get(op->ptr, "use_cursor_init");
-    sima_zoom_set(sima,
-                  region,
-                  sima->zoom * factor,
+    api_float_set(op->ptr, "factor", factor);
+    const bool use_cursor_init = api_bool_get(op->ptr, "use_cursor_init");
+    simg_zoom_set(simg,
+                  rgn,
+                  simg->zoom * factor,
                   location,
                   (use_cursor_init && (U.uiflag & USER_ZOOM_TO_MOUSEPOS)));
-    ED_region_tag_redraw(region);
+    ed_rgn_tag_redrw(rgn);
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  image_view_zoom_init(C, op, event);
-  return OPERATOR_RUNNING_MODAL;
+  img_view_zoom_init(C, op, ev);
+  return OP_RUNNING_MODAL;
 }
 
-static void image_zoom_apply(ViewZoomData *vpd,
-                             wmOperator *op,
+static void img_zoom_apply(ViewZoomData *vpd,
+                             WinOp *op,
                              const int x,
                              const int y,
                              const short viewzoom,
@@ -627,77 +626,77 @@ static void image_zoom_apply(ViewZoomData *vpd,
 
   if (viewzoom == USER_ZOOM_CONTINUE) {
     double time = PIL_check_seconds_timer();
-    float time_step = float(time - vpd->timer_lastdraw);
+    float time_step = float(time - vpd->timer_lastdrw);
     float zfac;
     zfac = 1.0f + ((delta / 20.0f) * time_step);
-    vpd->timer_lastdraw = time;
+    vpd->timer_lastdrw = time;
     /* this is the final zoom, but instead make it into a factor */
-    factor = (vpd->sima->zoom * zfac) / vpd->zoom;
+    factor = (vpd->simg->zoom * zfac) / vpd->zoom;
   }
   else {
     factor = 1.0f + delta / 300.0f;
   }
 
-  RNA_float_set(op->ptr, "factor", factor);
-  sima_zoom_set(vpd->sima, vpd->region, vpd->zoom * factor, vpd->location, zoom_to_pos);
-  ED_region_tag_redraw(vpd->region);
+  api_float_set(op->ptr, "factor", factor);
+  simg_zoom_set(vpd->simg, vpd->rgn, vpd->zoom * factor, vpd->location, zoom_to_pos);
+  ed_rgn_tag_redrw(vpd->rgn);
 }
 
-static int image_view_zoom_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_zoom_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
   ViewZoomData *vpd = static_cast<ViewZoomData *>(op->customdata);
-  short event_code = VIEW_PASS;
-  int ret = OPERATOR_RUNNING_MODAL;
+  short ev_code = VIEW_PASS;
+  int ret = OP_RUNNING_MODAL;
 
-  /* Execute the events. */
-  if (event->type == MOUSEMOVE) {
-    event_code = VIEW_APPLY;
+  /* Execute the ev. */
+  if (ev->type == MOUSEMOVE) {
+    ev_code = VIEW_APPLY;
   }
-  else if (event->type == TIMER) {
+  else if (ev->type == TIMER) {
     /* Continuous zoom. */
-    if (event->customdata == vpd->timer) {
-      event_code = VIEW_APPLY;
+    if (ev->customdata == vpd->timer) {
+      ev_code = VIEW_APPLY;
     }
   }
-  else if (event->type == vpd->launch_event) {
-    if (event->val == KM_RELEASE) {
-      event_code = VIEW_CONFIRM;
+  else if (ev->type == vpd->launch_ev) {
+    if (ev->val == KM_RELEASE) {
+      ev_code = VIEW_CONFIRM;
     }
   }
 
-  switch (event_code) {
+  switch (ev_code) {
     case VIEW_APPLY: {
-      const bool use_cursor_init = RNA_boolean_get(op->ptr, "use_cursor_init");
-      image_zoom_apply(vpd,
+      const bool use_cursor_init = api_bool_get(op->ptr, "use_cursor_init");
+      img_zoom_apply(vpd,
                        op,
-                       event->xy[0],
-                       event->xy[1],
+                       ev->xy[0],
+                       ev->xy[1],
                        U.viewzoom,
                        (U.uiflag & USER_ZOOM_INVERT) != 0,
                        (use_cursor_init && (U.uiflag & USER_ZOOM_TO_MOUSEPOS)));
       break;
     }
     case VIEW_CONFIRM: {
-      ret = OPERATOR_FINISHED;
+      ret = OP_FINISHED;
       break;
     }
   }
 
-  if ((ret & OPERATOR_RUNNING_MODAL) == 0) {
-    image_view_zoom_exit(C, op, false);
+  if ((ret & OP_RUNNING_MODAL) == 0) {
+    img_view_zoom_exit(C, op, false);
   }
 
   return ret;
 }
 
-static void image_view_zoom_cancel(bContext *C, wmOperator *op)
+static void img_view_zoom_cancel(Cxt *C, WinOp *op)
 {
-  image_view_zoom_exit(C, op, true);
+  img_view_zoom_exit(C, op, true);
 }
 
-void IMAGE_OT_view_zoom(wmOperatorType *ot)
+void IMG_OT_view_zoom(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* identifiers */
   ot->name = "Zoom View";
