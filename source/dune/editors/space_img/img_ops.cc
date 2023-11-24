@@ -225,46 +225,45 @@ static bool image_from_context_has_data_poll(bContext *C)
 }
 
 /**
- * Use this when the image buffer is accessing the active tile without the image user.
- */
-static bool image_from_context_has_data_poll_active_tile(bContext *C)
+ * Use this when the image buffer is accessing the active tile wo the img user. */
+static bool img_from_cxt_has_data_poll_active_tile(bContext *C)
 {
-  Image *ima = image_from_context(C);
-  ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
+  Img *img = img_from_cxt(C);
+  ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
 
-  return BKE_image_has_ibuf(ima, &iuser);
+  return dune_img_has_ibuf(img, &iuser);
 }
 
-static bool image_not_packed_poll(bContext *C)
+static bool img_not_packed_poll(Cxt *C)
 {
-  /* Do not run 'replace' on packed images, it does not give user expected results at all. */
-  Image *ima = image_from_context(C);
-  return (ima && BLI_listbase_is_empty(&ima->packedfiles));
+  /* Do not run 'replace' on packed imgs, it does not give user expected results at all. */
+  Img *img = img_from_cxt(C);
+  return (img && lib_list_is_empty(&img->packedfiles));
 }
 
-static void image_view_all(SpaceImage *sima, ARegion *region, wmOperator *op)
+static void img_view_all(SpaceImg *simg, ARgn *rgn, WinOp *op)
 {
   float aspx, aspy, zoomx, zoomy, w, h;
   int width, height;
-  const bool fit_view = RNA_boolean_get(op->ptr, "fit_view");
+  const bool fit_view = api_bool_get(op->ptr, "fit_view");
 
-  ED_space_image_get_size(sima, &width, &height);
-  ED_space_image_get_aspect(sima, &aspx, &aspy);
+  ed_space_img_get_size(simg, &width, &height);
+  ed_space_img_get_aspect(simg, &aspx, &aspy);
 
   w = width * aspx;
   h = height * aspy;
 
   float xof = 0.0f, yof = 0.0f;
-  if ((sima->image == nullptr) || (sima->image->source == IMA_SRC_TILED)) {
+  if ((simg->img == nullptr) || (simg->img->src == IMG_SRC_TILED)) {
     /* Extend the shown area to cover all UDIM tiles. */
     int x_tiles, y_tiles;
-    if (sima->image == nullptr) {
-      x_tiles = sima->tile_grid_shape[0];
-      y_tiles = sima->tile_grid_shape[1];
+    if (simg->img == nullptr) {
+      x_tiles = simg->tile_grid_shape[0];
+      y_tiles = simg->tile_grid_shape[1];
     }
     else {
       x_tiles = y_tiles = 1;
-      LISTBASE_FOREACH (ImageTile *, tile, &sima->image->tiles) {
+      LIST_FOREACH (ImgTile *, tile, &simg->img->tiles) {
         int tile_x = (tile->tile_number - 1001) % 10;
         int tile_y = (tile->tile_number - 1001) / 10;
         x_tiles = max_ii(x_tiles, tile_x + 1);
@@ -277,9 +276,9 @@ static void image_view_all(SpaceImage *sima, ARegion *region, wmOperator *op)
     h *= y_tiles;
   }
 
-  /* check if the image will fit in the image with (zoom == 1) */
-  width = BLI_rcti_size_x(&region->winrct) + 1;
-  height = BLI_rcti_size_y(&region->winrct) + 1;
+  /* check if the img will fit in the img with (zoom == 1) */
+  width = lib_rcti_size_x(&rgn->winrct) + 1;
+  height = lib_rcti_size_y(&rgn->winrct) + 1;
 
   if (fit_view) {
     const int margin = 5; /* margin from border */
@@ -287,60 +286,55 @@ static void image_view_all(SpaceImage *sima, ARegion *region, wmOperator *op)
     zoomx = float(width) / (w + 2 * margin);
     zoomy = float(height) / (h + 2 * margin);
 
-    sima_zoom_set(sima, region, min_ff(zoomx, zoomy), nullptr, false);
+    simg_zoom_set(simg, rgn, min_ff(zoomx, zoomy), nullptr, false);
   }
   else {
     if ((w >= width || h >= height) && (width > 0 && height > 0)) {
       zoomx = float(width) / w;
       zoomy = float(height) / h;
 
-      /* find the zoom value that will fit the image in the image space */
-      sima_zoom_set(sima, region, 1.0f / power_of_2(1.0f / min_ff(zoomx, zoomy)), nullptr, false);
+      /* find the zoom val that will fit the img in the img space */
+      simg_zoom_set(simg, rgn, 1.0f / power_of_2(1.0f / min_ff(zoomx, zoomy)), nullptr, false);
     }
     else {
-      sima_zoom_set(sima, region, 1.0f, nullptr, false);
+      simg_zoom_set(simg, rgn, 1.0f, nullptr, false);
     }
   }
 
-  sima->xof = xof;
-  sima->yof = yof;
+  simg->xof = xof;
+  simg->yof = yof;
 }
 
-bool space_image_main_region_poll(bContext *C)
+bool space_img_main_rgn_poll(Cxt *C)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  // ARegion *region = CTX_wm_region(C); /* XXX. */
+  SpaceImg *simg = cxt_win_space_img(C);
+  // ARgn *rgn = cxt_win_rgn(C); /* XXX. */
 
-  if (sima) {
-    return true; /* XXX (region && region->type->regionid == RGN_TYPE_WINDOW); */
+  if (simg) {
+    return true; /* XXX (rgn && rgn->type->rgnid == RGN_TYPE_WIN); */
   }
   return false;
 }
 
-/* For IMAGE_OT_curves_point_set to avoid sampling when in uv smooth mode or editmode */
-static bool space_image_main_area_not_uv_brush_poll(bContext *C)
+/* For IMG_OT_curves_point_set to avoid sampling when in uv smooth mode or editmode */
+static bool space_img_main_area_not_uv_brush_poll(Cxt *C)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  Scene *scene = CTX_data_scene(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  Scene *scene = cxt_data_scene(C);
   ToolSettings *toolsettings = scene->toolsettings;
 
-  if (sima && !toolsettings->uvsculpt && (CTX_data_edit_object(C) == nullptr)) {
+  if (simg && !toolsettings->uvsculpt && (cxt_data_edit_ob(C) == nullptr)) {
     return true;
   }
 
   return false;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Pan Operator
- * \{ */
-
+/* View Pan Op */
 struct ViewPanData {
   float x, y;
   float xof, yof;
-  int launch_event;
+  int launch_ev;
   bool own_cursor;
 };
 
@@ -478,67 +472,62 @@ void IMG_OT_view_pan(WinOpType *ot)
                        FLT_MAX);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Zoom Operator
- * \{ */
+/* View Zoom Op */
 
 struct ViewZoomData {
   float origx, origy;
   float zoom;
-  int launch_event;
+  int launch_ev;
   float location[2];
 
   /* needed for continuous zoom */
-  wmTimer *timer;
-  double timer_lastdraw;
+  WinTimer *timer;
+  double timer_lastdrw;
   bool own_cursor;
 
-  /* */
-  SpaceImage *sima;
-  ARegion *region;
+  SpaceImg *simg;
+  ARgn *rgn;
 };
 
-static void image_view_zoom_init(bContext *C, wmOperator *op, const wmEvent *event)
+static void img_view_zoom_init(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  wmWindow *win = CTX_wm_window(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  Win *win = cxt_win(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
   ViewZoomData *vpd;
 
   op->customdata = vpd = static_cast<ViewZoomData *>(
-      MEM_callocN(sizeof(ViewZoomData), "ImageViewZoomData"));
+      mem_calloc(sizeof(ViewZoomData), "ImgViewZoomData"));
 
   /* Grab will be set when running from gizmo. */
   vpd->own_cursor = (win->grabcursor == 0);
   if (vpd->own_cursor) {
-    WM_cursor_modal_set(win, WM_CURSOR_NSEW_SCROLL);
+    win_cursor_modal_set(win, WIN_CURSOR_NSEW_SCROLL);
   }
 
-  vpd->origx = event->xy[0];
-  vpd->origy = event->xy[1];
-  vpd->zoom = sima->zoom;
-  vpd->launch_event = WM_userdef_event_type_from_keymap_type(event->type);
+  vpd->origx = ev->xy[0];
+  vpd->origy = ev->xy[1];
+  vpd->zoom = simh->zoom;
+  vpd->launch_ev = win_userdef_ev_type_from_keymap_type(ev->type);
 
-  UI_view2d_region_to_view(
-      &region->v2d, event->mval[0], event->mval[1], &vpd->location[0], &vpd->location[1]);
+  ui_view2d_rgn_to_view(
+      &rgn->v2d, ev->mval[0], ev->mval[1], &vpd->location[0], &vpd->location[1]);
 
   if (U.viewzoom == USER_ZOOM_CONTINUE) {
     /* needs a timer to continue redrawing */
-    vpd->timer = WM_event_timer_add(CTX_wm_manager(C), CTX_wm_window(C), TIMER, 0.01f);
-    vpd->timer_lastdraw = PIL_check_seconds_timer();
+    vpd->timer = win_ev_timer_add(cxt_win_manager(C), cxt_win(C), TIMER, 0.01f);
+    vpd->timer_lastdrw = PIL_check_seconds_timer();
   }
 
-  vpd->sima = sima;
-  vpd->region = region;
+  vpd->simg = simg;
+  vpd->rgn = rgn;
 
-  WM_event_add_modal_handler(C, op);
+  win_ev_add_modal_handler(C, op);
 }
 
-static void image_view_zoom_exit(bContext *C, wmOperator *op, bool cancel)
+static void img_view_zoom_exit(bContext *C, wmOperator *op, bool cancel)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_wm_space_image(C);
   ViewZoomData *vpd = static_cast<ViewZoomData *>(op->customdata);
 
   if (cancel) {
