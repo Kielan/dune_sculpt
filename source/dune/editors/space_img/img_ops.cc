@@ -1238,7 +1238,7 @@ static Img *img_open_single(Main *bmain,
     *img->stereo3d_format = imf->stereo3d_format;
   }
   else {
-    img->flag &= ~IMA_USE_VIEWS;
+    img->flag &= ~IMG_USE_VIEWS;
     dune_img_free_views(img);
   }
 
@@ -1248,7 +1248,7 @@ static Img *img_open_single(Main *bmain,
       ImgTile *first_tile = static_cast<ImgTile *>(img->tiles.first);
       first_tile->tile_number = range->offset;
       LIST_FOREACH (LinkData *, node, &range->udim_tiles) {
-        dune_img_add_tile(ima, PTR_AS_INT(node->data), nullptr);
+        dune_img_add_tile(img, PTR_AS_INT(node->data), nullptr);
       }
     }
     else if (range->length > 1) {
@@ -1317,7 +1317,7 @@ static int img_open_ex(Cxt *C, WinOp *op)
     iuser = &simg->iuser;
   }
   else {
-    Tex *tex = static_cast<Tex *>(cxt_data_ptr_get_type(C, "texture", &RNA_Texture).data);
+    Tex *tex = static_cast<Tex *>(cxt_data_ptr_get_type(C, "texture", &ApiTexture).data);
     if (tex && tex->type == TEX_IMG) {
       iuser = &tex->iuser;
     }
@@ -1339,7 +1339,7 @@ static int img_open_ex(Cxt *C, WinOp *op)
   /* init bc of new img */
   if (iuser) {
     /* If the seq was a tiled img, we only have one frame. */
-    iuser->frames = (img->stc == IMA_SRC_SEQ) ? frame_seq_len : 1;
+    iuser->frames = (img->stc == IMG_SRC_SEQ) ? frame_seq_len : 1;
     iuser->sfra = 1;
     iuser->framenr = 1;
     if (img->src == IMG_SRC_MOVIE) {
@@ -1381,38 +1381,38 @@ static int img_open_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
     }
   }
 
-  if (ima == nullptr) {
-    PointerRNA ptr;
-    PropertyRNA *prop;
+  if (img == nullptr) {
+    ApiPtr ptr;
+    ApiProp *prop;
 
     /* hook into UI */
-    UI_context_active_but_prop_get_templateID(C, &ptr, &prop);
+    ui_cxt_active_btn_prop_get_templateId(C, &ptr, &prop);
 
     if (prop) {
-      PointerRNA oldptr;
-      Image *oldima;
+      ApiPtr oldptr;
+      Img *oldimg;
 
-      oldptr = RNA_property_pointer_get(&ptr, prop);
-      oldima = (Image *)oldptr.owner_id;
+      oldptr = api_prop_ptr_get(&ptr, prop);
+      oldimg = (Img *)oldptr.owner_id;
       /* unlikely to fail but better avoid strange crash */
-      if (oldima && GS(oldima->id.name) == ID_IM) {
-        ima = oldima;
+      if (oldimg && GS(oldimg->id.name) == ID_IM) {
+        img = oldimg;
       }
     }
   }
 
-  if (ima) {
-    path = ima->filepath;
+  if (img) {
+    path = img->filepath;
   }
 
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    return image_open_exec(C, op);
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
+    return img_open_ex(C, op);
   }
 
-  image_open_init(C, op);
+  img_open_init(C, op);
 
   /* Show multi-view save options only if scene has multi-views. */
-  PropertyRNA *prop;
+  ApiProp *prop;
   prop = RNA_struct_find_property(op->ptr, "show_multiview");
   RNA_property_boolean_set(op->ptr, prop, (scene->r.scemode & R_MULTIVIEW) != 0);
 
