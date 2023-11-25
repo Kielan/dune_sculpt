@@ -703,245 +703,221 @@ void IMG_OT_view_zoom(WinOpType *ot)
   ot->idname = "IMAGE_OT_view_zoom";
   ot->description = "Zoom in/out the image";
 
-  /* api callbacks */
-  ot->exec = image_view_zoom_exec;
-  ot->invoke = image_view_zoom_invoke;
-  ot->modal = image_view_zoom_modal;
-  ot->cancel = image_view_zoom_cancel;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs */
+  ot->ex = img_view_zoom_ex;
+  ot->invoke = img_view_zoom_invoke;
+  ot->modal = img_view_zoom_modal;
+  ot->cancel = img_view_zoom_cancel;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_XY | OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  prop = RNA_def_float(ot->srna,
+  /* props */
+  prop = api_def_float(ot->sapi,
                        "factor",
                        0.0f,
                        -FLT_MAX,
                        FLT_MAX,
                        "Factor",
-                       "Zoom factor, values higher than 1.0 zoom in, lower values zoom out",
+                       "Zoom factor, vals higher than 1.0 zoom in, lower values zoom out",
                        -FLT_MAX,
                        FLT_MAX);
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  api_def_prop_flag(prop, PROP_HIDDEN);
 
-  WM_operator_properties_use_cursor_init(ot);
+  win_op_props_use_cursor_init(ot);
 }
-
-/** \} */
 
 #ifdef WITH_INPUT_NDOF
 
-/* -------------------------------------------------------------------- */
-/** \name NDOF Operator
- * \{ */
+/* NDOF Op */
 
 /* Combined pan/zoom from a 3D mouse device.
  * Z zooms, XY pans
- * "view" (not "paper") control -- user moves the viewpoint, not the image being viewed
- * that explains the negative signs in the code below
- */
+ * "view" (not "paper") ctrl - user moves the viewpoint, not the image being viewed
+ * that explains the negative signs in the code below */
 
-static int image_view_ndof_invoke(bContext *C, wmOperator * /*op*/, const wmEvent *event)
+static int img_view_ndof_invoke(Cxt *C, WinOp * /*op*/, const WinEv *ev)
 {
-  if (event->type != NDOF_MOTION) {
-    return OPERATOR_CANCELLED;
+  if (ev->type != NDOF_MOTION) {
+    return OP_CANCELLED;
   }
 
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float pan_vec[3];
 
-  const wmNDOFMotionData *ndof = static_cast<const wmNDOFMotionData *>(event->customdata);
+  const WinNDOFMotionData *ndof = static_cast<const WinNDOFMotionData *>(ev->customdata);
   const float pan_speed = NDOF_PIXELS_PER_SECOND;
 
-  WM_event_ndof_pan_get(ndof, pan_vec, true);
+  win_ev_ndof_pan_get(ndof, pan_vec, true);
 
   mul_v3_fl(pan_vec, ndof->dt);
-  mul_v2_fl(pan_vec, pan_speed / sima->zoom);
+  mul_v2_fl(pan_vec, pan_speed / simg->zoom);
 
-  sima_zoom_set_factor(sima, region, max_ff(0.0f, 1.0f - pan_vec[2]), nullptr, false);
-  sima->xof += pan_vec[0];
-  sima->yof += pan_vec[1];
+  simg_zoom_set_factor(simg, rgn, max_ff(0.0f, 1.0f - pan_vec[2]), nullptr, false);
+  simg->xof += pan_vec[0];
+  simg->yof += pan_vec[1];
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_ndof(wmOperatorType *ot)
+void IMG_OT_view_ndof(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "NDOF Pan/Zoom";
-  ot->idname = "IMAGE_OT_view_ndof";
+  ot->idname = "IMG_OT_view_ndof";
   ot->description = "Use a 3D mouse device to pan/zoom the view";
 
-  /* api callbacks */
-  ot->invoke = image_view_ndof_invoke;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs */
+  ot->invoke = img_view_ndof_invoke;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_LOCK_BYPASS;
 }
-
-/** \} */
 
 #endif /* WITH_INPUT_NDOF */
 
-/* -------------------------------------------------------------------- */
-/** \name View All Operator
- * \{ */
+/* View All Op */
 
-/* Updates the fields of the View2D member of the SpaceImage struct.
- * Default behavior is to reset the position of the image and set the zoom to 1
- * If the image will not fit within the window rectangle, the zoom is adjusted */
+/* Updates the fields of the View2D member of the SpaceImg struct.
+ * Default behavior is to reset the position of the img and set the zoom to 1
+ * If the img will not fit within the win rectangle, the zoom is adjusted */
 
-static int image_view_all_exec(bContext *C, wmOperator *op)
+static int img_view_all_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima;
-  ARegion *region;
+  SpaceImg *simg;
+  ARgn *rgn;
 
   /* retrieve state */
-  sima = CTX_wm_space_image(C);
-  region = CTX_wm_region(C);
+  simg = cxt_win_space_img(C);
+  rgn = cxt_win_rgn(C);
 
-  image_view_all(sima, region, op);
+  img_view_all(simg, rgn, op);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_all(wmOperatorType *ot)
+void IMG_OT_view_all(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Frame All";
-  ot->idname = "IMAGE_OT_view_all";
-  ot->description = "View the entire image";
+  ot->idname = "IMG_OT_view_all";
+  ot->description = "View the entire img";
 
-  /* api callbacks */
-  ot->exec = image_view_all_exec;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs  */
+  ot->ex = img_view_all_ex;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  prop = RNA_def_boolean(ot->srna, "fit_view", false, "Fit View", "Fit frame to the viewport");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  /* props */
+  prop = api_def_bool(ot->sapi, "fit_view", false, "Fit View", "Fit frame to the viewport");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Cursor To Center View Operator
- * \{ */
-
-static int view_cursor_center_exec(bContext *C, wmOperator *op)
+/* Cursor To Center View Op */
+static int view_cursor_center_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima;
-  ARegion *region;
+  SpaceImg *simg;
+  ARgn *rgn;
 
-  sima = CTX_wm_space_image(C);
-  region = CTX_wm_region(C);
+  simg = cxt_win_space_img(C);
+  rgn = cxt_win_region(C);
 
-  image_view_all(sima, region, op);
+  img_view_all(simg, rgn, op);
 
-  sima->cursor[0] = 0.5f;
-  sima->cursor[1] = 0.5f;
+  simg->cursor[0] = 0.5f;
+  simg->cursor[1] = 0.5f;
 
   /* Needed for updating the cursor. */
-  WM_event_add_notifier(C, NC_SPACE | ND_SPACE_IMAGE, nullptr);
+  wib_ev_add_notifier(C, NC_SPACE | ND_SPACE_IMG, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_cursor_center(wmOperatorType *ot)
+void IMG_OT_view_cursor_center(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Cursor To Center View";
   ot->description = "Set 2D Cursor To Center View location";
-  ot->idname = "IMAGE_OT_view_cursor_center";
+  ot->idname = "IMG_OT_view_cursor_center";
 
-  /* api callbacks */
-  ot->exec = view_cursor_center_exec;
-  ot->poll = ED_space_image_cursor_poll;
+  /* api cbs */
+  ot->ex = view_cursor_center_exec;
+  ot->poll = ed_space_img_cursor_poll;
 
-  /* properties */
-  prop = RNA_def_boolean(ot->srna, "fit_view", false, "Fit View", "Fit frame to the viewport");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  /* props */
+  prop = api_def_bool(ot->sapi, "fit_view", false, "Fit View", "Fit frame to the viewport");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Center View To Cursor Operator
- * \{ */
-
-static int view_center_cursor_exec(bContext *C, wmOperator * /*op*/)
+/* Center View To Cursor Op */
+static int view_center_cursor_ex(Cxt *C, WinOp * /*op*/)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
+    
+  ed_img_view_center_to_point(simg, simg->cursor[0], simg->cursor[1]);
 
-  ED_image_view_center_to_point(sima, sima->cursor[0], sima->cursor[1]);
+  ed_rgn_tag_redrw(rgn);
 
-  ED_region_tag_redraw(region);
-
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_center_cursor(wmOperatorType *ot)
+void IMG_OT_view_center_cursor(wWinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Center View to Cursor";
   ot->description = "Center the view so that the cursor is in the middle of the view";
-  ot->idname = "IMAGE_OT_view_center_cursor";
+  ot->idname = "IMG_OT_view_center_cursor";
 
-  /* api callbacks */
-  ot->exec = view_center_cursor_exec;
-  ot->poll = ED_space_image_cursor_poll;
+  /* api cbs */
+  ot->ex = view_center_cursor_ex;
+  ot->poll = ed_space_img_cursor_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Frame Selected Operator
- * \{ */
-
-static int image_view_selected_exec(bContext *C, wmOperator * /*op*/)
+/* Frame Sel Op */
+static int img_view_sel_ex(Cxt *C, WinOp * /*op*/)
 {
-  SpaceImage *sima;
-  ARegion *region;
+  SpaceImg *simg;
+  ARgn *rgn;
   Scene *scene;
   ViewLayer *view_layer;
-  Object *obedit;
+  Ob *obedit;
 
   /* retrieve state */
-  sima = CTX_wm_space_image(C);
-  region = CTX_wm_region(C);
-  scene = CTX_data_scene(C);
-  view_layer = CTX_data_view_layer(C);
-  obedit = CTX_data_edit_object(C);
+  simg = cxt_win_space_img(C);
+  rgn = cxt_win_region(C);
+  scene = cxt_data_scene(C);
+  view_layer = cxt_data_view_layer(C);
+  obedit = cxt_data_edit_ob(C);
 
   /* get bounds */
   float min[2], max[2];
-  if (ED_space_image_show_uvedit(sima, obedit)) {
-    uint objects_len = 0;
-    Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data_with_uvs(
-        scene, view_layer, ((View3D *)nullptr), &objects_len);
-    bool success = ED_uvedit_minmax_multi(scene, objects, objects_len, min, max);
-    MEM_freeN(objects);
+  if (ed_space_img_show_uvedit(simg, obedit)) {
+    uint objs_len = 0;
+    Ob **objs = dune_view_layer_array_from_objs_in_edit_mode_unique_data_with_uvs(
+        scene, view_layer, ((View3D *)nullptr), &objs_len);
+    bool success = ed_uvedit_minmax_multi(scene, objs, objs_len, min, max);
+    mem_free(objs);
     if (!success) {
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
   }
-  else if (ED_space_image_check_show_maskedit(sima, obedit)) {
-    if (!ED_mask_selected_minmax(C, min, max, false)) {
-      return OPERATOR_CANCELLED;
+  else if (ed_space_img_check_show_maskedit(simg, obedit)) {
+    if (!ed_mask_sel_minmax(C, min, max, false)) {
+      return OP_CANCELLED;
     }
   }
   rctf bounds{};
@@ -951,85 +927,80 @@ static int image_view_selected_exec(bContext *C, wmOperator * /*op*/)
   bounds.ymax = max[1];
 
   /* add some margin */
-  BLI_rctf_scale(&bounds, 1.4f);
+  lib_rctf_scale(&bounds, 1.4f);
 
-  sima_zoom_set_from_bounds(sima, region, &bounds);
+  simg_zoom_set_from_bounds(simg, rgn, &bounds);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool image_view_selected_poll(bContext *C)
+static bool img_view_sel_poll(Cxt *C)
 {
-  return (space_image_main_region_poll(C) && (ED_operator_uvedit(C) || ED_maskedit_poll(C)));
+  return (space_img_main_rgn_poll(C) && (ed_op_uvedit(C) || ed_maskedit_poll(C)));
 }
 
-void IMAGE_OT_view_selected(wmOperatorType *ot)
+void IMG_OT_view_sel(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "View Center";
-  ot->idname = "IMAGE_OT_view_selected";
-  ot->description = "View all selected UVs";
+  ot->idname = "IMG_OT_view_sel";
+  ot->description = "View all sel UVs";
 
-  /* api callbacks */
-  ot->exec = image_view_selected_exec;
-  ot->poll = image_view_selected_poll;
+  /* api cbs */
+  ot->ex = img_view_sel_ex;
+  ot->poll = img_view_sel_poll;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Zoom In/Out Operator
- * \{ */
-
-static int image_view_zoom_in_exec(bContext *C, wmOperator *op)
+/* View Zoom In/Out Op */
+static int img_view_zoom_in_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float location[2];
 
-  RNA_float_get_array(op->ptr, "location", location);
+  api_float_get_array(op->ptr, "location", location);
 
-  sima_zoom_set_factor(
-      sima, region, powf(2.0f, 1.0f / 3.0f), location, U.uiflag & USER_ZOOM_TO_MOUSEPOS);
+  simg_zoom_set_factor(
+      simg, rgn, powf(2.0f, 1.0f / 3.0f), location, U.uiflag & USER_ZOOM_TO_MOUSEPOS);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_view_zoom_in_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_zoom_in_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float location[2];
 
-  UI_view2d_region_to_view(
-      &region->v2d, event->mval[0], event->mval[1], &location[0], &location[1]);
-  RNA_float_set_array(op->ptr, "location", location);
+  ui_view2d_rgn_to_view(
+      &rgn->v2d, ev->mval[0], ev->mval[1], &location[0], &location[1]);
+  api_float_set_array(op->ptr, "location", location);
 
-  return image_view_zoom_in_exec(C, op);
+  return img_view_zoom_in_ex(C, op);
 }
 
-void IMAGE_OT_view_zoom_in(wmOperatorType *ot)
+void IMG_OT_view_zoom_in(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Zoom In";
-  ot->idname = "IMAGE_OT_view_zoom_in";
-  ot->description = "Zoom in the image (centered around 2D cursor)";
+  ot->idname = "IMG_OT_view_zoom_in";
+  ot->description = "Zoom in the img (centered around 2D cursor)";
 
-  /* api callbacks */
-  ot->invoke = image_view_zoom_in_invoke;
-  ot->exec = image_view_zoom_in_exec;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs */
+  ot->invoke = img_view_zoom_in_invoke;
+  ot->ex = img_view_zoom_in_ex;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  prop = RNA_def_float_vector(ot->srna,
+  /* props */
+  prop = api_def_float_vector(ot->sapi,
                               "location",
                               2,
                               nullptr,
@@ -1039,40 +1010,40 @@ void IMAGE_OT_view_zoom_in(wmOperatorType *ot)
                               "Cursor location in screen coordinates",
                               -10.0f,
                               10.0f);
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-static int image_view_zoom_out_exec(bContext *C, wmOperator *op)
+static int img_view_zoom_out_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float location[2];
 
-  RNA_float_get_array(op->ptr, "location", location);
+  api_float_get_array(op->ptr, "location", location);
 
-  sima_zoom_set_factor(
-      sima, region, powf(0.5f, 1.0f / 3.0f), location, U.uiflag & USER_ZOOM_TO_MOUSEPOS);
+  simg_zoom_set_factor(
+      simg, rgn, powf(0.5f, 1.0f / 3.0f), location, U.uiflag & USER_ZOOM_TO_MOUSEPOS);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_view_zoom_out_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_view_zoom_out_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
   float location[2];
 
-  UI_view2d_region_to_view(
-      &region->v2d, event->mval[0], event->mval[1], &location[0], &location[1]);
-  RNA_float_set_array(op->ptr, "location", location);
+  ui_view2d_rgn_to_view(
+      &rgn->v2d, ev->mval[0], ev->mval[1], &location[0], &location[1]);
+  api_float_set_array(op->ptr, "location", location);
 
-  return image_view_zoom_out_exec(C, op);
+  return img_view_zoom_out_ex(C, op);
 }
 
-void IMAGE_OT_view_zoom_out(wmOperatorType *ot)
+void IMG_OT_view_zoom_out(wmOperatorType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* identifiers */
   ot->name = "Zoom Out";
