@@ -854,7 +854,7 @@ void IMG_OT_view_cursor_center(WinOpType *ot)
   ot->idname = "IMG_OT_view_cursor_center";
 
   /* api cbs */
-  ot->ex = view_cursor_center_exec;
+  ot->ex = view_cursor_center_ex;
   ot->poll = ed_space_img_cursor_poll;
 
   /* props */
@@ -875,7 +875,7 @@ static int view_center_cursor_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void IMG_OT_view_center_cursor(wWinOpType *ot)
+void IMG_OT_view_center_cursor(WinOpType *ot)
 {
   /* ids */
   ot->name = "Center View to Cursor";
@@ -898,7 +898,7 @@ static int img_view_sel_ex(Cxt *C, WinOp * /*op*/)
 
   /* retrieve state */
   simg = cxt_win_space_img(C);
-  rgn = cxt_win_region(C);
+  rgn = cxt_win_rgn(C);
   scene = cxt_data_scene(C);
   view_layer = cxt_data_view_layer(C);
   obedit = cxt_data_edit_ob(C);
@@ -1041,25 +1041,25 @@ static int img_view_zoom_out_invoke(Cxt *C, WinOp *op, const WinEv *ev)
   return img_view_zoom_out_ex(C, op);
 }
 
-void IMG_OT_view_zoom_out(wmOperatorType *ot)
+void IMG_OT_view_zoom_out(WinOpType *ot)
 {
   ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Zoom Out";
-  ot->idname = "IMAGE_OT_view_zoom_out";
-  ot->description = "Zoom out the image (centered around 2D cursor)";
+  ot->idname = "IMG_OT_view_zoom_out";
+  ot->description = "Zoom out the img (centered around 2D cursor)";
 
-  /* api callbacks */
-  ot->invoke = image_view_zoom_out_invoke;
-  ot->exec = image_view_zoom_out_exec;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs */
+  ot->invoke = img_view_zoom_out_invoke;
+  ot->ex = img_view_zoom_out_ex;
+  ot->poll = space_img_main_region_poll;
 
   /* flags */
   ot->flag = OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  prop = RNA_def_float_vector(ot->srna,
+  /* props*/
+  prop = api_def_float_vector(ot->sapi,
                               "location",
                               2,
                               nullptr,
@@ -1069,47 +1069,42 @@ void IMG_OT_view_zoom_out(wmOperatorType *ot)
                               "Cursor location in screen coordinates",
                               -10.0f,
                               10.0f);
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Zoom Ratio Operator
- * \{ */
-
-static int image_view_zoom_ratio_exec(bContext *C, wmOperator *op)
+/* View Zoom Ratio Op */
+static int img_view_zoom_ratio_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
-  sima_zoom_set(sima, region, RNA_float_get(op->ptr, "ratio"), nullptr, false);
+  simg_zoom_set(simg, rgn, api_float_get(op->ptr, "ratio"), nullptr, false);
 
   /* ensure pixel exact locations for draw */
-  sima->xof = int(sima->xof);
-  sima->yof = int(sima->yof);
+  simg->xof = int(simg->xof);
+  simg->yof = int(simg->yof);
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_zoom_ratio(wmOperatorType *ot)
+void IMG_OT_view_zoom_ratio(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "View Zoom Ratio";
-  ot->idname = "IMAGE_OT_view_zoom_ratio";
+  ot->idname = "IMG_OT_view_zoom_ratio";
   ot->description = "Set zoom ratio of the view";
 
-  /* api callbacks */
-  ot->exec = image_view_zoom_ratio_exec;
-  ot->poll = space_image_main_region_poll;
+  /* api cbs */
+  ot->ex = img_view_zoom_ratio_exe;
+  ot->poll = space_img_main_rgn_poll;
 
   /* flags */
   ot->flag = OPTYPE_LOCK_BYPASS;
 
-  /* properties */
-  RNA_def_float(ot->srna,
+  /* props */
+  api_def_float(ot->sapi,
                 "ratio",
                 0.0f,
                 -FLT_MAX,
@@ -1120,230 +1115,219 @@ void IMAGE_OT_view_zoom_ratio(wmOperatorType *ot)
                 FLT_MAX);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name View Border-Zoom Operator
- * \{ */
-
-static int image_view_zoom_border_exec(bContext *C, wmOperator *op)
+/* View Border-Zoom Op */
+static int img_view_zoom_border_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
   rctf bounds;
-  const bool zoom_in = !RNA_boolean_get(op->ptr, "zoom_out");
+  const bool zoom_in = !api_bool_get(op->ptr, "zoom_out");
 
-  WM_operator_properties_border_to_rctf(op, &bounds);
+  win_op_props_border_to_rctf(op, &bounds);
 
-  UI_view2d_region_to_view_rctf(&region->v2d, &bounds, &bounds);
+  ui_view2d_rgn_to_view_rctf(&rgn->v2d, &bounds, &bounds);
 
   struct {
     float xof;
     float yof;
     float zoom;
-  } sima_view_prev{};
-  sima_view_prev.xof = sima->xof;
-  sima_view_prev.yof = sima->yof;
-  sima_view_prev.zoom = sima->zoom;
+  } simg_view_prev{};
+  simg_view_prev.xof = simg->xof;
+  simg_view_prev.yof = simg->yof;
+  simg_view_prev.zoom = simg->zoom;
 
-  sima_zoom_set_from_bounds(sima, region, &bounds);
+  simg_zoom_set_from_bounds(simg, rgn, &bounds);
 
   /* zoom out */
   if (!zoom_in) {
-    sima->xof = sima_view_prev.xof + (sima->xof - sima_view_prev.xof);
-    sima->yof = sima_view_prev.yof + (sima->yof - sima_view_prev.yof);
-    sima->zoom = sima_view_prev.zoom * (sima_view_prev.zoom / sima->zoom);
+    simg->xof = simg_view_prev.xof + (simg->xof - simg_view_prev.xof);
+    simg->yof = simg_view_prev.yof + (simg->yof - simg_view_prev.yof);
+    simg->zoom = simg_view_prev.zoom * (simg_view_prev.zoom / simg->zoom);
   }
 
-  ED_region_tag_redraw(region);
+  ed_rgn_tag_redrw(rgn);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_view_zoom_border(wmOperatorType *ot)
+void IMG_OT_view_zoom_border(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Zoom to Border";
   ot->description = "Zoom in the view to the nearest item contained in the border";
-  ot->idname = "IMAGE_OT_view_zoom_border";
+  ot->idname = "IMG_OT_view_zoom_border";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_box_invoke;
-  ot->exec = image_view_zoom_border_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
+  /* api cbs */
+  ot->invoke = win_gesture_box_invoke;
+  ot->ex = img_view_zoom_border_ex;
+  ot->modal = win_gesture_box_modal;
+  ot->cancel = win_gesture_box_cancel;
 
-  ot->poll = space_image_main_region_poll;
+  ot->poll = space_img_main_rgn_poll;
 
-  /* rna */
-  WM_operator_properties_gesture_box_zoom(ot);
+  /* api */
+  win_op_props_gesture_box_zoom(ot);
 }
 
-/* load/replace/save callbacks */
-static void image_filesel(bContext *C, wmOperator *op, const char *path)
+/* load/replace/save cbs */
+static void img_filesel(Cxt *C, WinOp *op, const char *path)
 {
-  RNA_string_set(op->ptr, "filepath", path);
-  WM_event_add_fileselect(C, op);
-}
+  api_string_set(op->ptr, "filepath", path);
+  win_ev_add_filesel(C, op);
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Open Image Operator
- * \{ */
-
-struct ImageOpenData {
-  PropertyPointerRNA pprop;
-  ImageUser *iuser;
-  ImageFormatData im_format;
+/* Open Img Op */
+struct ImgOpenData {
+  ApiPropPtr pprop;
+  ImgUser *iuser;
+  ImgFormatData im_format;
 };
 
-static void image_open_init(bContext *C, wmOperator *op)
+static void img_open_init(Cxt *C, WinOp *op)
 {
-  ImageOpenData *iod;
-  op->customdata = iod = static_cast<ImageOpenData *>(
-      MEM_callocN(sizeof(ImageOpenData), __func__));
-  iod->iuser = static_cast<ImageUser *>(
-      CTX_data_pointer_get_type(C, "image_user", &RNA_ImageUser).data);
-  UI_context_active_but_prop_get_templateID(C, &iod->pprop.ptr, &iod->pprop.prop);
+  ImgOpenData *iod;
+  op->customdata = iod = static_cast<ImgOpenData *>(
+      mem_calloc(sizeof(ImgOpenData), __func__));
+  iod->iuser = static_cast<ImgUser *>(
+      cxt_data_ptr_get_type(C, "img_user", &ApiImgUser).data);
+  ui_cxt_active_btn_prop_get_templateId(C, &iod->pprop.ptr, &iod->pprop.prop);
 }
 
-static void image_open_cancel(bContext * /*C*/, wmOperator *op)
+static void img_open_cancel(Cxt * /*C*/, WinOp *op)
 {
-  MEM_freeN(op->customdata);
+  mem_free(op->customdata);
   op->customdata = nullptr;
 }
 
-static Image *image_open_single(Main *bmain,
-                                wmOperator *op,
-                                ImageFrameRange *range,
-                                bool use_multiview)
+static Img *img_open_single(Main *bmain,
+                            WinOp *op,
+                            ImgFrameRange *range,
+                            bool use_multiview)
 {
   bool exists = false;
-  Image *ima = nullptr;
+  Img *img = nullptr;
 
   errno = 0;
-  ima = BKE_image_load_exists_ex(bmain, range->filepath, &exists);
+  img = dune_img_load_exists_ex(main, range->filepath, &exists);
 
-  if (!ima) {
+  if (!img) {
     if (op->customdata) {
-      MEM_freeN(op->customdata);
+      mem_free(op->customdata);
     }
-    BKE_reportf(op->reports,
+    dune_reportf(op->reports,
                 RPT_ERROR,
                 "Cannot read '%s': %s",
                 range->filepath,
-                errno ? strerror(errno) : TIP_("unsupported image format"));
+                errno ? strerror(errno) : TIP_("unsupported img format"));
     return nullptr;
   }
 
-  /* If image already exists, update its file path based on relative path property, see: #109561.
-   */
+  /* If img alrdy exists, update its file path based on relative path prop, see: #109561. */
   if (exists) {
-    STRNCPY(ima->filepath, range->filepath);
-    return ima;
+    STRNCPY(img->filepath, range->filepath);
+    return img;
   }
 
-  /* handle multiview images */
+  /* handle multiview imgs */
   if (use_multiview) {
-    ImageOpenData *iod = static_cast<ImageOpenData *>(op->customdata);
-    ImageFormatData *imf = &iod->im_format;
+    ImgOpenData *iod = static_cast<ImgOpenData *>(op->customdata);
+    ImgFormatData *imf = &iod->im_format;
 
-    ima->flag |= IMA_USE_VIEWS;
-    ima->views_format = imf->views_format;
-    *ima->stereo3d_format = imf->stereo3d_format;
+    img->flag |= IMG_USE_VIEWS;
+    img->views_format = imf->views_format;
+    *img->stereo3d_format = imf->stereo3d_format;
   }
   else {
-    ima->flag &= ~IMA_USE_VIEWS;
-    BKE_image_free_views(ima);
+    img->flag &= ~IMA_USE_VIEWS;
+    dune_img_free_views(img);
   }
 
-  if (ima->source == IMA_SRC_FILE) {
+  if (img->src == IMG_SRC_FILE) {
     if (range->udims_detected && range->udim_tiles.first) {
-      ima->source = IMA_SRC_TILED;
-      ImageTile *first_tile = static_cast<ImageTile *>(ima->tiles.first);
+      img->src = IMG_SRC_TILED;
+      ImgTile *first_tile = static_cast<ImgTile *>(img->tiles.first);
       first_tile->tile_number = range->offset;
-      LISTBASE_FOREACH (LinkData *, node, &range->udim_tiles) {
-        BKE_image_add_tile(ima, POINTER_AS_INT(node->data), nullptr);
+      LIST_FOREACH (LinkData *, node, &range->udim_tiles) {
+        dune_img_add_tile(ima, PTR_AS_INT(node->data), nullptr);
       }
     }
     else if (range->length > 1) {
-      ima->source = IMA_SRC_SEQUENCE;
+      img->src = IMG_SRC_SEQ;
     }
   }
 
-  return ima;
+  return img;
 }
 
-static int image_open_exec(bContext *C, wmOperator *op)
+static int img_open_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  ScrArea *area = CTX_wm_area(C);
-  Scene *scene = CTX_data_scene(C);
-  ImageUser *iuser = nullptr;
-  Image *ima = nullptr;
+  Main *main = cxt_data_main(C);
+  ScrArea *area = cxt_wm_area(C);
+  Scene *scene = cxt_data_scene(C);
+  ImgUser *iuser = nullptr;
+  Img *img = nullptr;
   int frame_seq_len = 0;
   int frame_ofs = 1;
 
-  const bool use_multiview = RNA_boolean_get(op->ptr, "use_multiview");
-  const bool use_udim = RNA_boolean_get(op->ptr, "use_udim_detecting");
+  const bool use_multiview = api_bool_get(op->ptr, "use_multiview");
+  const bool use_udim = api_bool_get(op->ptr, "use_udim_detecting");
 
   if (!op->customdata) {
-    image_open_init(C, op);
+    img_open_init(C, op);
   }
 
-  ListBase ranges = ED_image_filesel_detect_sequences(bmain, op, use_udim);
-  LISTBASE_FOREACH (ImageFrameRange *, range, &ranges) {
-    Image *ima_range = image_open_single(bmain, op, range, use_multiview);
+  List ranges = ed_img_filesel_detect_seqs(main, op, use_udim);
+  LIST_FOREACH (ImgFrameRange *, range, &ranges) {
+    Img *img_range = img_open_single(main, op, range, use_multiview);
 
     /* take the first image */
-    if ((ima == nullptr) && ima_range) {
-      ima = ima_range;
+    if ((img == nullptr) && img_range) {
+      img = img_range;
       frame_seq_len = range->length;
       frame_ofs = range->offset;
     }
 
-    BLI_freelistN(&range->udim_tiles);
+    lib_freelist(&range->udim_tiles);
   }
-  BLI_freelistN(&ranges);
+  lib_freelist(&ranges);
 
-  if (ima == nullptr) {
-    return OPERATOR_CANCELLED;
+  if (img == nullptr) {
+    return OP_CANCELLED;
   }
 
   /* hook into UI */
-  ImageOpenData *iod = static_cast<ImageOpenData *>(op->customdata);
+  ImgOpenData *iod = static_cast<ImgOpenData *>(op->customdata);
 
   if (iod->pprop.prop) {
-    /* when creating new ID blocks, use is already 1, but RNA
-     * pointer use also increases user, so this compensates it */
-    id_us_min(&ima->id);
+    /* when creating new Id blocks, use is already 1, but API
+     * ptr use also increases user, so this compensates it */
+    id_us_min(&img->id);
 
-    PointerRNA imaptr = RNA_id_pointer_create(&ima->id);
-    RNA_property_pointer_set(&iod->pprop.ptr, iod->pprop.prop, imaptr, nullptr);
-    RNA_property_update(C, &iod->pprop.ptr, iod->pprop.prop);
+    ApiPtr imgptr = api_id_ptr_create(&img->id);
+    api_prop_ptr_set(&iod->pprop.ptr, iod->pprop.prop, imgptr, nullptr);
+    api_prop_update(C, &iod->pprop.ptr, iod->pprop.prop);
   }
 
   if (iod->iuser) {
     iuser = iod->iuser;
   }
-  else if (area && area->spacetype == SPACE_IMAGE) {
-    SpaceImage *sima = static_cast<SpaceImage *>(area->spacedata.first);
-    ED_space_image_set(bmain, sima, ima, false);
-    iuser = &sima->iuser;
+  else if (area && area->spacetype == SPACE_IMG) {
+    SpaceImg *simg = static_cast<SpaceImg *>(area->spacedata.first);
+    ed_space_img_set(main, simg, img, false);
+    iuser = &simg->iuser;
   }
   else {
-    Tex *tex = static_cast<Tex *>(CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data);
-    if (tex && tex->type == TEX_IMAGE) {
+    Tex *tex = static_cast<Tex *>(cxt_data_ptr_get_type(C, "texture", &RNA_Texture).data);
+    if (tex && tex->type == TEX_IMG) {
       iuser = &tex->iuser;
     }
 
     if (iuser == nullptr) {
       Camera *cam = static_cast<Camera *>(
-          CTX_data_pointer_get_type(C, "camera", &RNA_Camera).data);
+          cxt_data_ptr_get_type(C, "camera", ApiCamera).data);
       if (cam) {
-        LISTBASE_FOREACH (CameraBGImage *, bgpic, &cam->bg_images) {
-          if (bgpic->ima == ima) {
+        LIST_FOREACH (CameraBGImg *, bgpic, &cam->bg_imgs) {
+          if (bgpic->img == img) {
             iuser = &bgpic->iuser;
             break;
           }
@@ -1352,48 +1336,48 @@ static int image_open_exec(bContext *C, wmOperator *op)
     }
   }
 
-  /* initialize because of new image */
+  /* init bc of new img */
   if (iuser) {
-    /* If the sequence was a tiled image, we only have one frame. */
-    iuser->frames = (ima->source == IMA_SRC_SEQUENCE) ? frame_seq_len : 1;
+    /* If the seq was a tiled img, we only have one frame. */
+    iuser->frames = (img->stc == IMA_SRC_SEQ) ? frame_seq_len : 1;
     iuser->sfra = 1;
     iuser->framenr = 1;
-    if (ima->source == IMA_SRC_MOVIE) {
+    if (img->src == IMG_SRC_MOVIE) {
       iuser->offset = 0;
     }
     else {
       iuser->offset = frame_ofs - 1;
     }
     iuser->scene = scene;
-    BKE_image_init_imageuser(ima, iuser);
+    dune_img_init_imgeuser(img, iuser);
   }
 
-  /* XXX BKE_packedfile_unpack_image frees image buffers */
-  ED_preview_kill_jobs(CTX_wm_manager(C), bmain);
+  /* dune_packedfile_unpack_img frees img bufs */
+  ed_preview_kill_jobs(cxt_wm(C), main);
 
-  BKE_image_signal(bmain, ima, iuser, IMA_SIGNAL_RELOAD);
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  dune_img_signal(main, img, iuser, IMG_SIGNAL_RELOAD);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  MEM_freeN(op->customdata);
+  mem_free(op->customdata);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_open_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int img_open_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  SpaceImage *sima = CTX_wm_space_image(C); /* XXX other space types can call */
+  SpaceImg *simg = cxt_win_space_img(C); /* XXX other space types can call */
   const char *path = U.textudir;
-  Image *ima = nullptr;
-  Scene *scene = CTX_data_scene(C);
+  Img *img = nullptr;
+  Scene *scene = cxt_data_scene(C);
 
-  if (sima) {
-    ima = sima->image;
+  if (simg) {
+    img = simg->img;
   }
 
-  if (ima == nullptr) {
-    Tex *tex = static_cast<Tex *>(CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data);
-    if (tex && tex->type == TEX_IMAGE) {
-      ima = tex->ima;
+  if (img == nullptr) {
+    Tex *tex = static_cast<Tex *>(cxt_data_ptr_get_type(C, "texture", &ApiTexture).data);
+    if (tex && tex->type == TEX_IMG) {
+      img = tex->img;
     }
   }
 
