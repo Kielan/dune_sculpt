@@ -1413,292 +1413,278 @@ static int img_open_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 
   /* Show multi-view save options only if scene has multi-views. */
   ApiProp *prop;
-  prop = RNA_struct_find_property(op->ptr, "show_multiview");
-  RNA_property_boolean_set(op->ptr, prop, (scene->r.scemode & R_MULTIVIEW) != 0);
+  prop = api_struct_find_prop(op->ptr, "show_multiview");
+  api_prop_bool_set(op->ptr, prop, (scene->r.scemode & R_MULTIVIEW) != 0);
 
-  image_filesel(C, op, path);
+  img_filesel(C, op, path);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static bool image_open_draw_check_prop(PointerRNA * /*ptr*/,
-                                       PropertyRNA *prop,
-                                       void * /*user_data*/)
+static bool img_open_drw_check_prop(ApiPtr * /*ptr*/,
+                                    ApiProp *prop,
+                                    void * /*user_data*/)
 {
-  const char *prop_id = RNA_property_identifier(prop);
+  const char *prop_id = api_prop_id(prop);
 
   return !STR_ELEM(prop_id, "filepath", "directory", "filename");
 }
 
-static void image_open_draw(bContext * /*C*/, wmOperator *op)
+static void img_open_drw(Cxt * /*C*/, WinOp *op)
 {
   uiLayout *layout = op->layout;
-  ImageOpenData *iod = static_cast<ImageOpenData *>(op->customdata);
-  ImageFormatData *imf = &iod->im_format;
+  ImgOpenData *iod = static_cast<ImgOpenData *>(op->customdata);
+  ImgFormatData *imf = &iod->im_format;
 
   /* main draw call */
-  uiDefAutoButsRNA(layout,
+  uiDefAutoBtnsApi(layout,
                    op->ptr,
-                   image_open_draw_check_prop,
+                   img_open_drw_check_prop,
                    nullptr,
                    nullptr,
-                   UI_BUT_LABEL_ALIGN_NONE,
+                   UI_BTN_LABEL_ALIGN_NONE,
                    false);
 
   /* image template */
-  PointerRNA imf_ptr = RNA_pointer_create(nullptr, &RNA_ImageFormatSettings, imf);
+  PointerRNA imf_ptr = api_ptr_create(nullptr, &ApiImgFormatSettings, imf);
 
   /* multiview template */
-  if (RNA_boolean_get(op->ptr, "show_multiview")) {
-    uiTemplateImageFormatViews(layout, &imf_ptr, op->ptr);
+  if (api_bool_get(op->ptr, "show_multiview")) {
+    uiTemplateImgFormatViews(layout, &imf_ptr, op->ptr);
   }
 }
 
-static void image_operator_prop_allow_tokens(wmOperatorType *ot)
+static void img_op_prop_allow_tokens(WinOpType *ot)
 {
-  PropertyRNA *prop = RNA_def_boolean(
-      ot->srna, "allow_path_tokens", true, "", "Allow the path to contain substitution tokens");
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  ApiProp *prop = api_def_bool(
+      ot->sapi, "allow_path_tokens", true, "", "Allow the path to contain substitution tokens");
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-void IMAGE_OT_open(wmOperatorType *ot)
+void IMG_OT_open(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Open Image";
-  ot->description = "Open image";
-  ot->idname = "IMAGE_OT_open";
+  /* ids */
+  ot->name = "Open Img";
+  ot->description = "Open img";
+  ot->idname = "IMG_OT_open";
 
-  /* api callbacks */
-  ot->exec = image_open_exec;
-  ot->invoke = image_open_invoke;
-  ot->cancel = image_open_cancel;
-  ot->ui = image_open_draw;
+  /* api cbs */
+  ot->ex = img_open_ex;
+  ot->invoke = img_open_invoke;
+  ot->cancel = img_open_cancel;
+  ot->ui = img_open_drw;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  image_operator_prop_allow_tokens(ot);
-  WM_operator_properties_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_IMAGE | FILE_TYPE_MOVIE,
+  /* props */
+  img_op_prop_allow_tokens(ot);
+  win_op_props_filesel(ot,
+                                 FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
                                  FILE_SPECIAL,
                                  FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_DIRECTORY | WM_FILESEL_FILES |
-                                     WM_FILESEL_RELPATH,
+                                 WIN_FILESEL_FILEPATH | WIN_FILESEL_DIRECTORY | WM_FILESEL_FILES |
+                                     WIN_FILESEL_RELPATH,
                                  FILE_DEFAULTDISPLAY,
                                  FILE_SORT_DEFAULT);
 
-  RNA_def_boolean(
-      ot->srna,
-      "use_sequence_detection",
+  api_def_bool(
+      ot->sapi,
+      "use_seq_detection",
       true,
-      "Detect Sequences",
-      "Automatically detect animated sequences in selected images (based on file names)");
-  RNA_def_boolean(ot->srna,
+      "Detect Seqs",
+      "Automatically detect animd seqs in seld imgs (based on file names)");
+  api_def_bool(ot->sapi,
                   "use_udim_detecting",
                   true,
                   "Detect UDIMs",
-                  "Detect selected UDIM files and load all matching tiles");
+                  "Detect seld UDIM files and load all matching tiles");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Browse Image Operator
- * \{ */
-
-static int image_file_browse_exec(bContext *C, wmOperator *op)
+/* Browse Img Op */
+static int img_file_browse_exec(Cxt *C, WinOp *op)
 {
-  Image *ima = static_cast<Image *>(op->customdata);
-  if (ima == nullptr) {
-    return OPERATOR_CANCELLED;
+  Img *img = static_cast<Img *>(op->customdata);
+  if (img == nullptr) {
+    return OP_CANCELLED;
   }
 
   char filepath[FILE_MAX];
-  RNA_string_get(op->ptr, "filepath", filepath);
+  api_string_get(op->ptr, "filepath", filepath);
 
   /* If loading into a tiled texture, ensure that the filename is tokenized. */
-  if (ima->source == IMA_SRC_TILED) {
-    BKE_image_ensure_tile_token(filepath, sizeof(filepath));
+  if (img->src == IMG_SRC_TILED) {
+    dune_img_ensure_tile_token(filepath, sizeof(filepath));
   }
 
-  PropertyRNA *imaprop;
-  PointerRNA imaptr = RNA_id_pointer_create(&ima->id);
-  imaprop = RNA_struct_find_property(&imaptr, "filepath");
+  ApiProp *imgprop;
+  ApiPtr imgptr = api_id_ptr_create(&img->id);
+  imgprop = api_struct_find_prop(&imgptr, "filepath");
 
-  RNA_property_string_set(&imaptr, imaprop, filepath);
-  RNA_property_update(C, &imaptr, imaprop);
+  api_prop_string_set(&imgptr, imgprop, filepath);
+  api_prop_update(C, &imgptr, imgprop);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int image_file_browse_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  Image *ima = image_from_context(C);
-  if (!ima) {
-    return OPERATOR_CANCELLED;
+  Img *img = img_from_cxt(C);
+  if (!img) {
+    return OP_CANCELLED;
   }
 
   char filepath[FILE_MAX];
-  STRNCPY(filepath, ima->filepath);
+  STRNCPY(filepath, img->filepath);
 
   /* Shift+Click to open the file, Alt+Click to browse a folder in the OS's browser. */
-  if (event->modifier & (KM_SHIFT | KM_ALT)) {
-    wmOperatorType *ot = WM_operatortype_find("WM_OT_path_open", true);
-    PointerRNA props_ptr;
+  if (ev->mod & (KM_SHIFT | KM_ALT)) {
+    WinOpType *ot = win_optype_find("WIN_OT_path_open", true);
+    ApiPtr props_ptr;
 
-    if (event->modifier & KM_ALT) {
-      char *lslash = (char *)BLI_path_slash_rfind(filepath);
+    if (ev->mod & KM_ALT) {
+      char *lslash = (char *)lib_path_slash_rfind(filepath);
       if (lslash) {
         *lslash = '\0';
       }
     }
-    else if (ima->source == IMA_SRC_TILED) {
-      ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
-      BKE_image_user_file_path(&iuser, ima, filepath);
+    else if (img->src == IMG_SRC_TILED) {
+      ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
+      dune_img_user_file_path(&iuser, img, filepath);
     }
 
-    WM_operator_properties_create_ptr(&props_ptr, ot);
-    RNA_string_set(&props_ptr, "filepath", filepath);
-    WM_operator_name_call_ptr(C, ot, WM_OP_EXEC_DEFAULT, &props_ptr, nullptr);
-    WM_operator_properties_free(&props_ptr);
+    win_op_props_create_ptr(&props_ptr, ot);
+    api_string_set(&props_ptr, "filepath", filepath);
+    win_op_name_call_ptr(C, ot, WIN_OP_EXEC_DEFAULT, &props_ptr, nullptr);
+    win_op_props_free(&props_ptr);
 
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* The image is typically passed to the operator via layout/button context (e.g.
-   * #uiLayoutSetContextPointer()). The File Browser doesn't support restoring this context
-   * when calling `exec()` though, so we have to pass it the image via custom data. */
-  op->customdata = ima;
+  /* The img is typically passed to the op via layout/btn cxt (e.g.
+   * uiLayoutSetCxtPtr()). The File Browser doesn't support restoring this cxt
+   * when calling `ex()` though, so we have to pass it the img via custom data. */
+  op->customdata = img;
 
-  image_filesel(C, op, filepath);
+  img_filesel(C, op, filepath);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static bool image_file_browse_poll(bContext *C)
+static bool img_file_browse_poll(Cxt *C)
 {
-  return image_from_context(C) != nullptr;
+  return img_from_cxt(C) != nullptr;
 }
 
-void IMAGE_OT_file_browse(wmOperatorType *ot)
+void IMG_OT_file_browse(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Browse Image";
+  /* ids */
+  ot->name = "Browse Img";
   ot->description =
-      "Open an image file browser, hold Shift to open the file, Alt to browse containing "
+      "Open an img file browser, hold Shift to open the file, Alt to browse containing "
       "directory";
-  ot->idname = "IMAGE_OT_file_browse";
+  ot->idname = "IMG_OT_file_browse";
 
-  /* api callbacks */
-  ot->exec = image_file_browse_exec;
-  ot->invoke = image_file_browse_invoke;
-  ot->poll = image_file_browse_poll;
+  /* api cbs */
+  ot->ex = img_file_browse_ex;
+  ot->invoke = img_file_browse_invoke;
+  ot->poll = img_file_browse_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_IMAGE | FILE_TYPE_MOVIE,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+  /* props */
+  win_op_props_filesel(ot,
+                       FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
+                       FILE_SPECIAL,
+                       FILE_OPENFILE,
+                       WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH,
+                       FILE_DEFAULTDISPLAY,
+                       FILE_SORT_DEFAULT);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Match Movie Length Operator
- * \{ */
-
-static int image_match_len_exec(bContext *C, wmOperator * /*op*/)
+/* Match Movie Length Op */
+static int img_match_len_ex(Cxt *C, WinOp * /*op*/)
 {
-  Scene *scene = CTX_data_scene(C);
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Scene *scene = cxt_data_scene(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  if (!ima || !iuser) {
-    /* Try to get a Texture, or a SpaceImage from context... */
-    Tex *tex = static_cast<Tex *>(CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data);
-    if (tex && tex->type == TEX_IMAGE) {
-      ima = tex->ima;
+  if (!img || !iuser) {
+    /* Try to get a Texture, or a SpaceImg from cxt... */
+    Tex *tex = static_cast<Tex *>(cxt_data_ptr_get_type(C, "texture", &ApiTexture).data);
+    if (tex && tex->type == TEX_IMG) {
+      img = tex->img;
       iuser = &tex->iuser;
     }
   }
 
-  if (!ima || !iuser || !BKE_image_has_anim(ima)) {
-    return OPERATOR_CANCELLED;
+  if (!img || !iuser || !dune_img_has_anim(img)) {
+    return OP_CANCELLED;
   }
 
-  anim *anim = ((ImageAnim *)ima->anims.first)->anim;
+  anim *anim = ((ImgAnim *)img->anims.first)->anim;
   if (!anim) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  iuser->frames = IMB_anim_get_duration(anim, IMB_TC_RECORD_RUN);
-  BKE_image_user_frame_calc(ima, iuser, scene->r.cfra);
+  iuser->frames = imb_anim_get_duration(anim, IMB_TC_RECORD_RUN);
+  dune_img_user_frame_calc(img, iuser, scene->r.cfra);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_match_movie_length(wmOperatorType *ot)
+void IMG_OT_match_movie_length(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Match Movie Length";
   ot->description = "Set image's user's length to the one of this video";
-  ot->idname = "IMAGE_OT_match_movie_length";
+  ot->idname = "IMG_OT_match_movie_length";
 
-  /* api callbacks */
-  ot->exec = image_match_len_exec;
+  /* api bs */
+  ot->ex = img_match_len_ex;
 
   /* flags */
   /* Don't think we need undo for that. */
   ot->flag = OPTYPE_REGISTER | OPTYPE_INTERNAL /* | OPTYPE_UNDO */;
 }
 
-/** \} */
+/* Replace Img Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Replace Image Operator
- * \{ */
-
-static int image_replace_exec(bContext *C, wmOperator *op)
+static int img_replace_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
+  Main *main = cxt_data_main(C);
+  SpaceImg *simg = cxt_win_space_img(C);
   char filepath[FILE_MAX];
 
-  if (!sima->image) {
-    return OPERATOR_CANCELLED;
+  if (!simg->img) {
+    return OP_CANCELLED;
   }
 
-  RNA_string_get(op->ptr, "filepath", filepath);
+  api_string_get(op->ptr, "filepath", filepath);
 
   /* we can't do much if the filepath is longer than FILE_MAX :/ */
-  STRNCPY(sima->image->filepath, filepath);
+  STRNCPY(simg->img->filepath, filepath);
 
-  if (sima->image->source == IMA_SRC_GENERATED) {
-    sima->image->source = IMA_SRC_FILE;
-    BKE_image_signal(bmain, sima->image, &sima->iuser, IMA_SIGNAL_SRC_CHANGE);
+  if (simg->img->src == IMG_SRC_GENERATED) {
+    simg->img->src = IMG_SRC_FILE;
+    dune_img_signal(main, simg->img, &simg->iuser, IMG_SIGNAL_SRC_CHANGE);
   }
 
-  if (BLI_path_extension_check_array(filepath, imb_ext_movie)) {
-    sima->image->source = IMA_SRC_MOVIE;
+  if (lib_path_extension_check_array(filepath, imb_ext_movie)) {
+    simg->img->src = IMG_SRC_MOVIE;
   }
   else {
-    sima->image->source = IMA_SRC_FILE;
+    simg->img->src = IMG_SRC_FILE;
   }
 
-  /* XXX BKE_packedfile_unpack_image frees image buffers */
-  ED_preview_kill_jobs(CTX_wm_manager(C), CTX_data_main(C));
+  /* dune_packedfile_unpack_img frees img bufs */
+  ed_preview_kill_jobs(cxt_wm(C), cxt_data_main(C));
 
-  BKE_icon_changed(BKE_icon_id_ensure(&sima->image->id));
-  BKE_image_signal(bmain, sima->image, &sima->iuser, IMA_SIGNAL_RELOAD);
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, sima->image);
+  dune_icon_changed(dune_icon_id_ensure(&simg->img->id));
+  dune_img_signal(main, simg->img, &simg->iuser, IMG_SIGNAL_RELOAD);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, simg->img);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 static int image_replace_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
