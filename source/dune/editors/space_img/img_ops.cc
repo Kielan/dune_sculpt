@@ -1480,13 +1480,13 @@ void IMG_OT_open(WinOpType *ot)
   /* props */
   img_op_prop_allow_tokens(ot);
   win_op_props_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WIN_FILESEL_FILEPATH | WIN_FILESEL_DIRECTORY | WM_FILESEL_FILES |
-                                     WIN_FILESEL_RELPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+                       FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
+                       FILE_SPECIAL,
+                       FILE_OPENFILE,
+                       WIN_FILESEL_FILEPATH | WIN_FILESEL_DIRECTORY | WM_FILESEL_FILES |
+                       WIN_FILESEL_RELPATH,
+                       FILE_DEFAULTDISPLAY,
+                       FILE_SORT_DEFAULT);
 
   api_def_bool(
       ot->sapi,
@@ -1502,7 +1502,7 @@ void IMG_OT_open(WinOpType *ot)
 }
 
 /* Browse Img Op */
-static int img_file_browse_exec(Cxt *C, WinOp *op)
+static int img_file_browse_ex(Cxt *C, WinOp *op)
 {
   Img *img = static_cast<Img *>(op->customdata);
   if (img == nullptr) {
@@ -1687,50 +1687,50 @@ static int img_replace_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-static int image_replace_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int img_replace_invoke(Cxt *C, WinOp *op, const WinEv * /*event*/)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
 
-  if (!sima->image) {
-    return OPERATOR_CANCELLED;
+  if (!simg->img) {
+    return OP_CANCELLED;
   }
 
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    return image_replace_exec(C, op);
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
+    return img_replace_ex(C, op);
+  }
+    
+  if (!api_struct_prop_is_set(op->ptr, "relative_path")) {
+    api_bool_set(op->ptr, "relative_path", lib_path_is_rel(simg->img->filepath));
   }
 
-  if (!RNA_struct_property_is_set(op->ptr, "relative_path")) {
-    RNA_boolean_set(op->ptr, "relative_path", BLI_path_is_rel(sima->image->filepath));
-  }
+  img_filesel(C, op, sima->img->filepath);
 
-  image_filesel(C, op, sima->image->filepath);
-
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-void IMAGE_OT_replace(wmOperatorType *ot)
+void IMG_OT_replace(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Replace Image";
-  ot->idname = "IMAGE_OT_replace";
+  /* ids */
+  ot->name = "Replace Img";
+  ot->idname = "IMG_OT_replace";
   ot->description = "Replace current image by another one from disk";
 
-  /* api callbacks */
-  ot->exec = image_replace_exec;
-  ot->invoke = image_replace_invoke;
-  ot->poll = image_not_packed_poll;
+  /* api cbs */
+  ot->ex = img_replace_ex;
+  ot->invoke = img_replace_invoke;
+  ot->poll = img_not_packed_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_IMAGE | FILE_TYPE_MOVIE,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+  /* props */
+  win_op_props_filesel(ot,
+                       FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
+                       FILE_SPECIAL,
+                       FILE_OPENFILE,
+                       WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH,
+                       FILE_DEFAULTDISPLAY,
+                       FILE_SORT_DEFAULT);
 }
 
 /* Save Img As Op */
@@ -1740,52 +1740,52 @@ struct ImgSaveData {
   ImgSaveOptions opts;
 };
 
-static void image_save_options_from_op(Main *bmain, ImageSaveOptions *opts, wmOperator *op)
+static void img_save_options_from_op(Main *main, ImgSaveOptions *opts, WinOp *op)
 {
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    RNA_string_get(op->ptr, "filepath", opts->filepath);
-    BLI_path_abs(opts->filepath, BKE_main_blendfile_path(bmain));
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
+    api_string_get(op->ptr, "filepath", opts->filepath);
+    lib_path_abs(opts->filepath, dune_main_dunefile_path(main));
   }
 
-  opts->relative = (RNA_struct_find_property(op->ptr, "relative_path") &&
-                    RNA_boolean_get(op->ptr, "relative_path"));
-  opts->save_copy = (RNA_struct_find_property(op->ptr, "copy") &&
-                     RNA_boolean_get(op->ptr, "copy"));
-  opts->save_as_render = (RNA_struct_find_property(op->ptr, "save_as_render") &&
-                          RNA_boolean_get(op->ptr, "save_as_render"));
+  opts->relative = (api_struct_find_prop(op->ptr, "relative_path") &&
+                    api_bool_get(op->ptr, "relative_path"));
+  opts->save_copy = api_struct_find_prop(op->ptr, "copy") &&
+                     api_bool_get(op->ptr, "copy"));
+  opts->save_as_render = (api_struct_find_prop(op->ptr, "save_as_render") &&
+                          api_bool_get(op->ptr, "save_as_render"));
 }
 
-static bool save_image_op(
-    Main *bmain, Image *ima, ImageUser *iuser, wmOperator *op, const ImageSaveOptions *opts)
+static bool save_img_op(
+    Main *main, Img *img, ImgUser *iuser, WinOp *op, const ImgSaveOptions *opts)
 {
-  WM_cursor_wait(true);
+  win_cursor_wait(true);
 
-  bool ok = BKE_image_save(op->reports, bmain, ima, iuser, opts);
+  bool ok = dune_img_save(op->reports, main, img, iuser, opts);
 
   WM_cursor_wait(false);
 
   /* Remember file path for next save. */
-  STRNCPY(G.filepath_last_image, opts->filepath);
+  STRNCPY(G.filepath_last_img, opts->filepath);
 
-  WM_main_add_notifier(NC_IMAGE | NA_EDITED, ima);
+  win_main_add_notifier(NC_IMG | NA_EDITED, img);
 
   return ok;
 }
 
-static ImageSaveData *image_save_as_init(bContext *C, wmOperator *op)
+static ImgSaveData *img_save_as_init(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Image *image = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
-  Scene *scene = CTX_data_scene(C);
+  Main *main = cxt_data_main(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
+  Scene *scene = cxt_data_scene(C);
 
-  ImageSaveData *isd = static_cast<ImageSaveData *>(MEM_callocN(sizeof(*isd), __func__));
-  isd->image = image;
+  ImgSaveData *isd = static_cast<ImgSaveData *>(mem_calloc(sizeof(*isd), __func__));
+  isd->img = img;
   isd->iuser = iuser;
 
-  if (!BKE_image_save_options_init(&isd->opts, bmain, scene, image, iuser, true, false)) {
-    BKE_image_save_options_free(&isd->opts);
-    MEM_freeN(isd);
+  if (!dune_img_save_options_init(&isd->opts, main, scene, img, iuser, true, false)) {
+    dune_img_save_options_free(&isd->opts);
+    mem_free(isd);
     return nullptr;
   }
 
