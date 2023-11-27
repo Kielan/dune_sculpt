@@ -123,11 +123,9 @@ using dune::float4x4;
 using dune::Vector;
 
 /* Local Enum Declarations */
-
 /* This is an exact copy of the define in `rna_light.cc`
  * kept here because of linking order.
  * Icons are only defined here. */
-
 const EnumPropItem api_enum_light_type_items[] = {
     {LA_LOCAL, "POINT", ICON_LIGHT_POINT, "Point", "Omnidirectional point light source"},
     {LA_SUN, "SUN", ICON_LIGHT_SUN, "Sun", "Constant direction parallel ray light source"},
@@ -187,25 +185,23 @@ static const EnumPropItem align_options[] = {
 };
 
 /* Local Helpers */
-
 /* Op props for creating an object under a screen space (2D) coordinate.
- * Used for object dropping like behavior (drag object and drop into 3D View).
- */
-static void object_add_drop_xy_props(wmOperatorType *ot)
+ * Used for ob dropping like behavior (drag object and drop into 3D View). */
+static void ob_add_drop_xy_props(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_int(ot->srna,
+  prop = api_def_int(ot->sapi,
                      "drop_x",
                      0,
                      INT_MIN,
                      INT_MAX,
                      "Drop X",
-                     "X-coordinate (screen space) to place the new object under",
+                     "X-coordinate (screen space) to place the new ob under",
                      INT_MIN,
                      INT_MAX);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
-  prop = RNA_def_int(ot->srna,
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  prop = api_def_int(ot->sapi,
                      "drop_y",
                      0,
                      INT_MIN,
@@ -214,56 +210,47 @@ static void object_add_drop_xy_props(wmOperatorType *ot)
                      "Y-coordinate (screen space) to place the new object under",
                      INT_MIN,
                      INT_MAX);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 }
 
-static bool object_add_drop_xy_is_set(const wmOperator *op)
+static bool ob_add_drop_xy_is_set(const WinOp *op)
 {
-  return RNA_struct_property_is_set(op->ptr, "drop_x") &&
-         RNA_struct_property_is_set(op->ptr, "drop_y");
+  return api_struct_prop_is_set(op->ptr, "drop_x") &&
+         api_struct_prop_is_set(op->ptr, "drop_y");
 }
 
-/**
- * Query the currently set X- and Y-coordinate to position the new object under.
- * \param r_mval: Returned pointer to the coordinate in region-space.
- */
-static bool object_add_drop_xy_get(bContext *C, wmOperator *op, int (*r_mval)[2])
+/* Query the currently set X- and Y-coordinate to position the new object under.
+ * param r_mval: Returned pointer to the coordinate in rgn-space. */
+static bool ob_add_drop_xy_get(Cxt *C, WinOp *op, int (*r_mval)[2])
 {
-  if (!object_add_drop_xy_is_set(op)) {
+  if (!ob_add_drop_xy_is_set(op)) {
     (*r_mval)[0] = 0.0f;
     (*r_mval)[1] = 0.0f;
     return false;
   }
 
-  const ARegion *region = CTX_wm_region(C);
-  (*r_mval)[0] = RNA_int_get(op->ptr, "drop_x") - region->winrct.xmin;
-  (*r_mval)[1] = RNA_int_get(op->ptr, "drop_y") - region->winrct.ymin;
+  const ARgn *rgnn = cxt_win_rgn(C);
+  (*r_mval)[0] = api_int_get(op->ptr, "drop_x") - rgn->winrct.xmin;
+  (*r_mval)[1] = api_int_get(op->ptr, "drop_y") - rgn->winrct.ymin;
 
   return true;
 }
 
-/**
- * Set the drop coordinate to the mouse position (if not already set) and call the operator's
- * `exec()` callback.
- */
-static int object_add_drop_xy_generic_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Set the drop coordinate to the mouse position (if not alrdy set) and call the op's
+ * `exec()` cb. */
+static int ob_add_drop_xy_generic_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (!object_add_drop_xy_is_set(op)) {
-    RNA_int_set(op->ptr, "drop_x", event->xy[0]);
-    RNA_int_set(op->ptr, "drop_y", event->xy[1]);
+  if (!ob_add_drop_xy_is_set(op)) {
+    api_int_set(op->ptr, "drop_x", ev->xy[0]);
+    api_int_set(op->ptr, "drop_y", ev->xy[1]);
   }
-  return op->type->exec(C, op);
+  return op->type->ex(C, op);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Public Add Object API
- * \{ */
-
-void ED_object_location_from_view(bContext *C, float loc[3])
+/* Public Add Ob AP */
+void ed_ob_location_from_view(Cxt *C, float loc[3])
 {
-  const Scene *scene = CTX_data_scene(C);
+  const Scene *scene = cxt_data_scene(C);
   copy_v3_v3(loc, scene->cursor.location);
 }
 
