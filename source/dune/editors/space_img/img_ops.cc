@@ -2547,93 +2547,88 @@ static void img_new_drw(Cxt * /*C*/, WinOp *op)
 #endif
 }
 
-static void image_new_cancel(bContext * /*C*/, wmOperator *op)
+static void img_new_cancel(Cxt * /*C*/, WinOp *op)
 {
-  image_new_free(op);
+  img_new_free(op);
 }
 
-void IMAGE_OT_new(wmOperatorType *ot)
+void IMG_OT_new(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
   static float default_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-  /* identifiers */
-  ot->name = "New Image";
-  ot->description = "Create a new image";
-  ot->idname = "IMAGE_OT_new";
+  /* ids */
+  ot->name = "New Img";
+  ot->description = "Create a new img";
+  ot->idname = "IMG_OT_new";
 
-  /* api callbacks */
-  ot->exec = image_new_exec;
-  ot->invoke = image_new_invoke;
-  ot->ui = image_new_draw;
-  ot->cancel = image_new_cancel;
+  /* api cbs */
+  ot->ex = img_new_ex;
+  ot->invoke = img_new_invoke;
+  ot->ui = img_new_drw;
+  ot->cancel = img_new_cancel;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_string(ot->srna, "name", IMA_DEF_NAME, MAX_ID_NAME - 2, "Name", "Image data-block name");
-  prop = RNA_def_int(ot->srna, "width", 1024, 1, INT_MAX, "Width", "Image width", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  prop = RNA_def_int(ot->srna, "height", 1024, 1, INT_MAX, "Height", "Image height", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  prop = RNA_def_float_color(
-      ot->srna, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
-  RNA_def_property_subtype(prop, PROP_COLOR_GAMMA);
-  RNA_def_property_float_array_default(prop, default_color);
-  RNA_def_boolean(ot->srna, "alpha", true, "Alpha", "Create an image with an alpha channel");
-  RNA_def_enum(ot->srna,
+  /* props */
+  api_def_string(ot->sapi, "name", IMG_DEF_NAME, MAX_ID_NAME - 2, "Name", "Img data-block name");
+  prop = api_def_int(ot->sapi, "width", 1024, 1, INT_MAX, "Width", "Img width", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  prop = api_def_int(ot->sapi, "height", 1024, 1, INT_MAX, "Height", "Img height", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  prop = api_def_float_color(
+      ot->sapi, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
+  api_def_prop_subtype(prop, PROP_COLOR_GAMMA);
+  api_def_prop_float_array_default(prop, default_color);
+  api_def_bool(ot->sapi, "alpha", true, "Alpha", "Create an img with an alpha channel");
+  api_def_enum(ot->sapi,
                "generated_type",
-               rna_enum_image_generated_type_items,
-               IMA_GENTYPE_BLANK,
+               api_enum_image_generated_type_items,
+               IMG_GENTYPE_BLANK,
                "Generated Type",
-               "Fill the image with a grid for UV map testing");
-  RNA_def_boolean(ot->srna,
+               "Fill the img with a grid for UV map testing");
+  api_def_bool(ot->sapi,
                   "float",
                   false,
                   "32-bit Float",
-                  "Create image with 32-bit floating-point bit depth");
-  RNA_def_property_flag(prop, PROP_HIDDEN);
-  prop = RNA_def_boolean(
-      ot->srna, "use_stereo_3d", false, "Stereo 3D", "Create an image with left and right views");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN);
-  prop = RNA_def_boolean(ot->srna, "tiled", false, "Tiled", "Create a tiled image");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+                  "Create img with 32-bit floating-point bit depth");
+  api_def_prop_flag(prop, PROP_HIDDEN);
+  prop = api_def_bool(
+      ot->sapi, "use_stereo_3d", false, "Stereo 3D", "Create an img with left and right views");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN);
+  prop = api_def_bool(ot->sapi, "tiled", false, "Tiled", "Create a tiled img");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-#undef IMA_DEF_NAME
+#undef IMG_DEF_NAME
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Flip Operator
- * \{ */
-
-static int image_flip_exec(bContext *C, wmOperator *op)
+/* Flip Op */
+static int img_flip_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
-  ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  const bool is_paint = ((sima != nullptr) && (sima->mode == SI_MODE_PAINT));
+  Img *img = img_from_cxt(C);
+  ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
+  ImBuf *ibuf = dune_image_acquire_ibuf(img, &iuser, nullptr);
+  SpaceImg *sim = cxt_win_space_img(C);
+  const bool is_paint = ((simg != nullptr) && (simg->mode == SI_MODE_PAINT));
 
   if (ibuf == nullptr) {
     /* TODO: this should actually never happen, but does for render-results -> cleanup. */
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  const bool use_flip_x = RNA_boolean_get(op->ptr, "use_flip_x");
-  const bool use_flip_y = RNA_boolean_get(op->ptr, "use_flip_y");
+  const bool use_flip_x = api_bool_get(op->ptr, "use_flip_x");
+  const bool use_flip_y = api_bool_get(op->ptr, "use_flip_y");
 
   if (!use_flip_x && !use_flip_y) {
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
-    return OPERATOR_FINISHED;
+    dune_img_release_ibuf(img, ibuf, nullptr);
+    return OP_FINISHED;
   }
 
-  ED_image_undo_push_begin_with_image(op->type->name, ima, ibuf, &iuser);
+  ed_img_undo_push_begin_with_img(op->type->name, img, ibuf, &iuser);
 
   if (is_paint) {
-    ED_imapaint_clear_partial_redraw();
+    ed_imgpaint_clear_partial_redrw();
   }
 
   const int size_x = ibuf->x;
@@ -2644,242 +2639,226 @@ static int image_flip_exec(bContext *C, wmOperator *op)
 
     float *orig_float_pixels = static_cast<float *>(MEM_dupallocN(float_pixels));
     for (int x = 0; x < size_x; x++) {
-      const int source_pixel_x = use_flip_x ? size_x - x - 1 : x;
+      const int src_pixel_x = use_flip_x ? size_x - x - 1 : x;
       for (int y = 0; y < size_y; y++) {
-        const int source_pixel_y = use_flip_y ? size_y - y - 1 : y;
+        const int src_pixel_y = use_flip_y ? size_y - y - 1 : y;
 
-        const float *source_pixel =
-            &orig_float_pixels[4 * (source_pixel_x + source_pixel_y * size_x)];
+        const float *src_pixel =
+            &orig_float_pixels[4 * (src_pixel_x + src_pixel_y * size_x)];
         float *target_pixel = &float_pixels[4 * (x + y * size_x)];
 
-        copy_v4_v4(target_pixel, source_pixel);
+        copy_v4_v4(target_pixel, src_pixel);
       }
     }
-    MEM_freeN(orig_float_pixels);
+    mem_free(orig_float_pixels);
 
     if (ibuf->byte_buffer.data) {
-      IMB_rect_from_float(ibuf);
+      imbuf_rect_from_float(ibuf);
     }
   }
   else if (ibuf->byte_buffer.data) {
     uchar *char_pixels = ibuf->byte_buffer.data;
-    uchar *orig_char_pixels = static_cast<uchar *>(MEM_dupallocN(char_pixels));
+    uchar *orig_char_pixels = static_cast<uchar *>(mem_dupalloc(char_pixels));
     for (int x = 0; x < size_x; x++) {
-      const int source_pixel_x = use_flip_x ? size_x - x - 1 : x;
+      const int src_pixel_x = use_flip_x ? size_x - x - 1 : x;
       for (int y = 0; y < size_y; y++) {
-        const int source_pixel_y = use_flip_y ? size_y - y - 1 : y;
+        const int src_pixel_y = use_flip_y ? size_y - y - 1 : y;
 
-        const uchar *source_pixel =
-            &orig_char_pixels[4 * (source_pixel_x + source_pixel_y * size_x)];
+        const uchar *src_pixel =
+            &orig_char_pixels[4 * (src_pixel_x + src_pixel_y * size_x)];
         uchar *target_pixel = &char_pixels[4 * (x + y * size_x)];
 
-        copy_v4_v4_uchar(target_pixel, source_pixel);
+        copy_v4_v4_uchar(target_pixel, src_pixel);
       }
     }
-    MEM_freeN(orig_char_pixels);
+    mem_free(orig_char_pixels);
   }
   else {
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
-    return OPERATOR_CANCELLED;
+    dune_img_release_ibuf(img, ibuf, nullptr);
+    return OP_CANCELLED;
   }
 
-  ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
-  BKE_image_mark_dirty(ima, ibuf);
+  ibuf->userflags |= IB_DISPLAY_BUF_INVALID;
+  dune_img_mark_dirty(img, ibuf);
 
   if (ibuf->mipmap[0]) {
     ibuf->userflags |= IB_MIPMAP_INVALID;
   }
 
-  ED_image_undo_push_end();
+  ed_img_undo_push_end();
 
-  BKE_image_partial_update_mark_full_update(ima);
+  dune_img_partial_update_mark_full_update(img);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  BKE_image_release_ibuf(ima, ibuf, nullptr);
+  dune_img_release_ibuf(img, ibuf, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_flip(wmOperatorType *ot)
+void IMG_OT_flip(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Flip Image";
-  ot->idname = "IMAGE_OT_flip";
-  ot->description = "Flip the image";
+  /* ids */
+  ot->name = "Flip Img";
+  ot->idname = "IMG_OT_flip";
+  ot->description = "Flip the img";
 
-  /* api callbacks */
-  ot->exec = image_flip_exec;
-  ot->poll = image_from_context_has_data_poll_active_tile;
+  /* api cbs */
+  ot->ex = img_flip_ex;
+  ot->poll = img_from_cxt_has_data_poll_active_tile;
 
-  /* properties */
-  PropertyRNA *prop;
-  prop = RNA_def_boolean(
-      ot->srna, "use_flip_x", false, "Horizontal", "Flip the image horizontally");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "use_flip_y", false, "Vertical", "Flip the image vertically");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  /* props */
+  ApiProp *prop;
+  prop = api_def_bool(
+      ot->sapi, "use_flip_x", false, "Horizontal", "Flip the img horizontally");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "use_flip_y", false, "Vertical", "Flip the img vertically");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clipboard Copy Operator
- * \{ */
-
-static int image_clipboard_copy_exec(bContext *C, wmOperator *op)
+/* Clipboard Copy Op */
+static int img_clipboard_copy_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
-  if (ima == nullptr) {
+  Img *img = img_from_cxt(C);
+  if (img == nullptr) {
     return false;
   }
 
-  if (G.is_rendering && ima->source == IMA_SRC_VIEWER) {
-    BKE_report(op->reports, RPT_ERROR, "Images cannot be copied while rendering");
+  if (G.is_rendering && ima->source == IMG_SRC_VIEWER) {
+    dune_report(op->reports, RPT_ERROR, "Imgs cannot be copied while rendering");
     return false;
   }
 
-  ImageUser *iuser = image_user_from_context(C);
-  WM_cursor_set(CTX_wm_window(C), WM_CURSOR_WAIT);
+  ImgUser *iuser = img_user_from_cxt(C);
+  win_cursor_set(cxt_win(C), WIN_CURSOR_WAIT);
 
   void *lock;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, &lock);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, iuser, &lock);
   if (ibuf == nullptr) {
-    BKE_image_release_ibuf(ima, ibuf, lock);
-    WM_cursor_set(CTX_wm_window(C), WM_CURSOR_DEFAULT);
-    return OPERATOR_CANCELLED;
+    dune_img_release_ibuf(img, ibuf, lock);
+    win_cursor_set(cxt_win(C), WIN_CURSOR_DEFAULT);
+    return OP_CANCELLED;
   }
 
-  WM_clipboard_image_set(ibuf);
-  BKE_image_release_ibuf(ima, ibuf, lock);
-  WM_cursor_set(CTX_wm_window(C), WM_CURSOR_DEFAULT);
+  win_clipboard_img_set(ibuf);
+  dune_img_release_ibuf(img, ibuf, lock);
+  win_cursor_set(cxt_win(C), WIN_CURSOR_DEFAULT);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool image_clipboard_copy_poll(bContext *C)
+static bool img_clipboard_copy_poll(Cxt *C)
 {
-  if (!image_from_context_has_data_poll(C)) {
-    CTX_wm_operator_poll_msg_set(C, "No images available");
+  if (!img_from_cxt_has_data_poll(C)) {
+    cxt_win_op_poll_msg_set(C, "No imgs available");
     return false;
   }
 
   return true;
 }
 
-void IMAGE_OT_clipboard_copy(wmOperatorType *ot)
+void IMG_OT_clipboard_copy(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Copy Image";
-  ot->idname = "IMAGE_OT_clipboard_copy";
-  ot->description = "Copy the image to the clipboard";
+  /* ids */
+  ot->name = "Copy Img";
+  ot->idname = "IMG_OT_clipboard_copy";
+  ot->description = "Copy the img to the clipboard";
 
-  /* api callbacks */
-  ot->exec = image_clipboard_copy_exec;
-  ot->poll = image_clipboard_copy_poll;
+  /* api cbs */
+  ot->ex = img_clipboard_copy_ex;
+  ot->poll = img_clipboard_copy_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clipboard Paste Operator
- * \{ */
-
-static int image_clipboard_paste_exec(bContext *C, wmOperator *op)
+/* Clipboard Paste Op */
+static int img_clipboard_paste_ex(Cxt *C, WinOp *op)
 {
+  win_cursor_set(cxt_win(C), WIN_CURSOR_WAIT);
 
-  WM_cursor_set(CTX_wm_window(C), WM_CURSOR_WAIT);
-
-  ImBuf *ibuf = WM_clipboard_image_get();
+  ImBuf *ibuf = win_clipboard_img_get();
   if (!ibuf) {
-    WM_cursor_set(CTX_wm_window(C), WM_CURSOR_DEFAULT);
-    return OPERATOR_CANCELLED;
+    win_cursor_set(cxt_win(C), WIN_CURSOR_DEFAULT);
+    return OP_CANCELLED;
   }
 
-  ED_undo_push_op(C, op);
+  ed_undo_push_op(C, op);
 
-  Main *bmain = CTX_data_main(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  Image *ima = BKE_image_add_from_imbuf(bmain, ibuf, "Clipboard");
-  IMB_freeImBuf(ibuf);
+  Main *main = cxt_data_main(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  Img *img = dune_img_add_from_imbuf(main, ibuf, "Clipboard");
+  imbuf_free(ibuf);
 
-  ED_space_image_set(bmain, sima, ima, false);
-  BKE_image_signal(bmain, ima, (sima) ? &sima->iuser : nullptr, IMA_SIGNAL_USER_NEW_IMAGE);
-  WM_event_add_notifier(C, NC_IMAGE | NA_ADDED, ima);
+  ed_space_img_set(main, simg, img, false);
+  dune_img_signal(main, img, (simg) ? &simg->iuser : nullptr, IMG_SIGNAL_USER_NEW_IMG);
+  win_ev_add_notifier(C, NC_IMG | NA_ADDED, img);
 
-  WM_cursor_set(CTX_wm_window(C), WM_CURSOR_DEFAULT);
+  win_cursor_set(cxt_win(C), WIN_CURSOR_DEFAULT);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool image_clipboard_paste_poll(bContext *C)
+static bool img_clipboard_paste_poll(Cxt *C)
 {
-  if (!WM_clipboard_image_available()) {
-    CTX_wm_operator_poll_msg_set(C, "No compatible images are on the clipboard");
+  if (!win_clipboard_img_available()) {
+    cxt_win_op_poll_msg_set(C, "No compatible imgs are on the clipboard");
     return false;
   }
 
   return true;
 }
 
-void IMAGE_OT_clipboard_paste(wmOperatorType *ot)
+void IMG_OT_clipboard_paste(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Paste Image";
-  ot->idname = "IMAGE_OT_clipboard_paste";
-  ot->description = "Paste new image from the clipboard";
+  /* ids */
+  ot->name = "Paste Img";
+  ot->idname = "IMG_OT_clipboard_paste";
+  ot->description = "Paste new img from the clipboard";
 
-  /* api callbacks */
-  ot->exec = image_clipboard_paste_exec;
-  ot->poll = image_clipboard_paste_poll;
+  /* api cbs */
+  ot->ex = img_clipboard_paste_ex;
+  ot->poll = img_clipboard_paste_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Invert Operators
- * \{ */
-
-static int image_invert_exec(bContext *C, wmOperator *op)
+/* Invert Ops */
+static int img_invert_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
-  ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  const bool is_paint = ((sima != nullptr) && (sima->mode == SI_MODE_PAINT));
+  Img *img = img_from_cxt(C);
+  ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, &iuser, nullptr);
+  SpaceImg *simg = cxt_win_space_img(C);
+  const bool is_paint = ((simg != nullptr) && (simg->mode == SI_MODE_PAINT));
 
   /* flags indicate if this channel should be inverted */
-  const bool r = RNA_boolean_get(op->ptr, "invert_r");
-  const bool g = RNA_boolean_get(op->ptr, "invert_g");
-  const bool b = RNA_boolean_get(op->ptr, "invert_b");
-  const bool a = RNA_boolean_get(op->ptr, "invert_a");
+  const bool r = api_bool_get(op->ptr, "invert_r");
+  const bool g = api_bool_get(op->ptr, "invert_g");
+  const bool b = api_bool_get(op->ptr, "invert_b");
+  const bool a = api_bool_get(op->ptr, "invert_a");
 
   size_t i;
 
   if (ibuf == nullptr) {
     /* TODO: this should actually never happen, but does for render-results -> cleanup */
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_image_undo_push_begin_with_image(op->type->name, ima, ibuf, &iuser);
+  ed_img_undo_push_begin_with_img(op->type->name, img, ibuf, &iuser);
 
   if (is_paint) {
-    ED_imapaint_clear_partial_redraw();
+    ed_imgpaint_clear_partial_redrw();
   }
 
-  /* TODO: make this into an IMB_invert_channels(ibuf,r,g,b,a) method!? */
-  if (ibuf->float_buffer.data) {
+  /* TODO: make this into an imbuf_invert_channels(ibuf,r,g,b,a) method!? */
+  if (ibuf->float_buf.data) {
 
-    float *fp = ibuf->float_buffer.data;
+    float *fp = ibuf->float_buf.data;
     for (i = size_t(ibuf->x) * ibuf->y; i > 0; i--, fp += 4) {
       if (r) {
         fp[0] = 1.0f - fp[0];
@@ -2895,13 +2874,13 @@ static int image_invert_exec(bContext *C, wmOperator *op)
       }
     }
 
-    if (ibuf->byte_buffer.data) {
-      IMB_rect_from_float(ibuf);
+    if (ibuf->byte_buf.data) {
+      imbuf_rect_from_float(ibuf);
     }
   }
-  else if (ibuf->byte_buffer.data) {
+  else if (ibuf->byte_buf.data) {
 
-    uchar *cp = ibuf->byte_buffer.data;
+    uchar *cp = ibuf->byte_buf.data;
     for (i = size_t(ibuf->x) * ibuf->y; i > 0; i--, cp += 4) {
       if (r) {
         cp[0] = 255 - cp[0];
@@ -2918,31 +2897,31 @@ static int image_invert_exec(bContext *C, wmOperator *op)
     }
   }
   else {
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
-    return OPERATOR_CANCELLED;
+    dune_img_release_ibuf(img, ibuf, nullptr);
+    return OP_CANCELLED;
   }
 
-  ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
-  BKE_image_mark_dirty(ima, ibuf);
+  ibuf->userflags |= IB_DISPLAY_BUF_INVALID;
+  dune_img_mark_dirty(ima, ibuf);
 
   if (ibuf->mipmap[0]) {
     ibuf->userflags |= IB_MIPMAP_INVALID;
   }
 
-  ED_image_undo_push_end();
+  ed_img_undo_push_end();
 
-  BKE_image_partial_update_mark_full_update(ima);
+  dune_img_partial_update_mark_full_update(img);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  ed_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  BKE_image_release_ibuf(ima, ibuf, nullptr);
+  dune_img_release_ibuf(img, ibuf, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_invert(wmOperatorType *ot)
+void IMG_OT_invert(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* identifiers */
   ot->name = "Invert Channels";
@@ -3528,8 +3507,7 @@ void IMAGE_OT_clear_render_slot(wmOperatorType *ot)
 /** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Add Render Slot Operator
- * \{ */
+/** \name Add Render Slot Operator */
 
 static int image_add_render_slot_exec(bContext *C, wmOperator * /*op*/)
 {
