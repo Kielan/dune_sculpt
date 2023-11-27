@@ -3437,147 +3437,138 @@ void IMG_OT_cycle_render_slot(WinOpType *ot)
 /* Clear Render Slot Op */
 static int img_clear_render_slot_ex(Cxt *C, WinOp * /*op*/)
 {
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  if (!BKE_image_clear_renderslot(ima, iuser, ima->render_slot)) {
-    return OPERATOR_CANCELLED;
+  if (!dune_img_clear_renderslot(img, iuser, img->render_slot)) {
+    return OP_CANCELLED;
   }
 
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_clear_render_slot(wmOperatorType *ot)
+void IMG_OT_clear_render_slot(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Render Slot";
-  ot->idname = "IMAGE_OT_clear_render_slot";
+  ot->idname = "IMG_OT_clear_render_slot";
   ot->description = "Clear the currently selected render slot";
 
-  /* api callbacks */
-  ot->exec = image_clear_render_slot_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = img_clear_render_slot_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Render Slot Operator */
-
-static int image_add_render_slot_exec(bContext *C, wmOperator * /*op*/)
+/* Add Render Slot Op */
+static int img_add_render_slot_ex(Cxt *C, WinOp * /*op*/)
 {
-  Image *ima = image_from_context(C);
+  Img *img = img_from_cxt(C);
 
-  RenderSlot *slot = BKE_image_add_renderslot(ima, nullptr);
-  ima->render_slot = BLI_findindex(&ima->renderslots, slot);
+  RenderSlot *slot = dune_img_add_renderslot(img, nullptr);
+  img->render_slot = lib_findindex(&img->renderslots, slot);
 
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_add_render_slot(wmOperatorType *ot)
+void IMG_OT_add_render_slot(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Render Slot";
-  ot->idname = "IMAGE_OT_add_render_slot";
+  ot->idname = "IMG_OT_add_render_slot";
   ot->description = "Add a new render slot";
 
-  /* api callbacks */
-  ot->exec = image_add_render_slot_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = img_add_render_slot_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Remove Render Slot Operator
- * \{ */
-
-static int image_remove_render_slot_exec(bContext *C, wmOperator * /*op*/)
+/* Remove Render Slot Op */
+static int img_remove_render_slot_ex(Cxt *C, WinOp * /*op*/)
 {
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  if (!BKE_image_remove_renderslot(ima, iuser, ima->render_slot)) {
-    return OPERATOR_CANCELLED;
+  if (!dune_img_remove_renderslot(img, iuser, img->render_slot)) {
+    return OP_CANCELLED;
   }
 
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_remove_render_slot(wmOperatorType *ot)
+void IMG_OT_remove_render_slot(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Remove Render Slot";
-  ot->idname = "IMAGE_OT_remove_render_slot";
+  ot->idname = "IMG_OT_remove_render_slot";
   ot->description = "Remove the current render slot";
 
-  /* api callbacks */
-  ot->exec = image_remove_render_slot_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = img_remove_render_slot_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
 /* Change Frame Op */
-static bool change_frame_poll(bContext *C)
+static bool change_frame_poll(Cxt *C)
 {
   /* prevent changes during render */
   if (G.is_rendering) {
     return false;
   }
 
-  return space_image_main_region_poll(C);
+  return space_img_main_rgn_poll(C);
 }
 
-static void change_frame_apply(bContext *C, wmOperator *op)
+static void change_frame_apply(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* set the new frame number */
-  scene->r.cfra = RNA_int_get(op->ptr, "frame");
+  scene->r.cfra = api_int_get(op->ptr, "frame");
   FRAMENUMBER_MIN_CLAMP(scene->r.cfra);
   scene->r.subframe = 0.0f;
 
   /* do updates */
-  DEG_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
-  WM_event_add_notifier(C, NC_SCENE | ND_FRAME, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
+  win_ev_add_notifier(C, NC_SCENE | ND_FRAME, scene);
 }
 
-static int change_frame_exec(bContext *C, wmOperator *op)
+static int change_frame_ex(Cxt *C, WinOp *op)
 {
   change_frame_apply(C, op);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int frame_from_event(bContext *C, const wmEvent *event)
+static int frame_from_ev(Cxt *C, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
   int framenr = 0;
 
-  if (region->regiontype == RGN_TYPE_WINDOW) {
-    float sfra = scene->r.sfra, efra = scene->r.efra, framelen = region->winx / (efra - sfra + 1);
+  if (rgn->rgntype == RGN_TYPE_WIN) {
+    float sfra = scene->r.sfra, efra = scene->r.efra, framelen = rgn->winx / (efra - sfra + 1);
 
-    framenr = sfra + event->mval[0] / framelen;
+    framenr = sfra + ev->mval[0] / framelen;
   }
   else {
     float viewx, viewy;
 
-    UI_view2d_region_to_view(&region->v2d, event->mval[0], event->mval[1], &viewx, &viewy);
+    ui_view2d_rgn_to_view(&rgn->v2d, ev->mval[0], ev->mval[1], &viewx, &viewy);
 
     framenr = round_fl_to_int(viewx);
   }
@@ -3585,58 +3576,58 @@ static int frame_from_event(bContext *C, const wmEvent *event)
   return framenr;
 }
 
-static int change_frame_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int change_frame_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
-  if (region->regiontype == RGN_TYPE_WINDOW) {
-    const SpaceImage *sima = CTX_wm_space_image(C);
-    if (!ED_space_image_show_cache_and_mval_over(sima, region, event->mval)) {
-      return OPERATOR_PASS_THROUGH;
+  if (rgn->rgntype == RGN_TYPE_WIN) {
+    const SpaceImg *simg = cxt_win_space_img(C);
+    if (!ed_space_img_show_cache_and_mval_over(simg, rgn, ev->mval)) {
+      return OP_PASS_THROUGH;
     }
   }
 
-  RNA_int_set(op->ptr, "frame", frame_from_event(C, event));
+  api_int_set(op->ptr, "frame", frame_from_ev(C, ev));
 
   change_frame_apply(C, op);
 
-  /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  /* add tmp handler */
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static int change_frame_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int change_frame_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  switch (event->type) {
-    case EVT_ESCKEY:
-      return OPERATOR_FINISHED;
+  switch (ev->type) {
+    case EV_ESCKEY:
+      return OP_FINISHED;
 
     case MOUSEMOVE:
-      RNA_int_set(op->ptr, "frame", frame_from_event(C, event));
+      api_int_set(op->ptr, "frame", frame_from_ev(C, ev));
       change_frame_apply(C, op);
       break;
 
     case LEFTMOUSE:
     case RIGHTMOUSE:
-      if (event->val == KM_RELEASE) {
-        return OPERATOR_FINISHED;
+      if (ev->val == KM_RELEASE) {
+        return OP_FINISHED;
       }
       break;
   }
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-void IMAGE_OT_change_frame(wmOperatorType *ot)
+void IMG_OT_change_frame(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Change Frame";
   ot->idname = "IMAGE_OT_change_frame";
   ot->description = "Interactively change the current frame number";
 
-  /* api callbacks */
-  ot->exec = change_frame_exec;
+  /* api cbs */
+  ot->ex = change_frame_ex;
   ot->invoke = change_frame_invoke;
   ot->modal = change_frame_modal;
   ot->poll = change_frame_poll;
@@ -3644,28 +3635,28 @@ void IMAGE_OT_change_frame(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_UNDO;
 
-  /* rna */
-  RNA_def_int(ot->srna, "frame", 0, MINAFRAME, MAXFRAME, "Frame", "", MINAFRAME, MAXFRAME);
+  /* api */
+  api_def_int(ot->sapi, "frame", 0, MINAFRAME, MAXFRAME, "Frame", "", MINAFRAME, MAXFRAME);
 }
 
 /* Reload cached render results... */
 /* goes over all scenes, reads render layers */
-static int image_read_viewlayers_exec(bContext *C, wmOperator * /*op*/)
+static int img_read_viewlayers_ex(Cxt *C, WinOp * /*op*/)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  Image *ima;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  SpaceImg *simg = cxt_win_space_image(C);
+  Img *img;
 
-  ima = BKE_image_ensure_viewer(bmain, IMA_TYPE_R_RESULT, "Render Result");
-  if (sima->image == nullptr) {
-    ED_space_image_set(bmain, sima, ima, false);
+  img = dune_img_ensure_viewer(main, IMG_TYPE_R_RESULT, "Render Result");
+  if (simg->img == nullptr) {
+    ed_space_img_set(main, simg, img, false);
   }
 
-  RE_ReadRenderResult(scene, scene);
+  render_ReadRenderResult(scene, scene);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
+  return OP_FINISHED;
 }
 
 void IMAGE_OT_read_viewlayers(wmOperatorType *ot)
@@ -3674,20 +3665,15 @@ void IMAGE_OT_read_viewlayers(wmOperatorType *ot)
   ot->idname = "IMAGE_OT_read_viewlayers";
   ot->description = "Read all the current scene's view layers from cache, as needed";
 
-  ot->poll = space_image_main_region_poll;
-  ot->exec = image_read_viewlayers_exec;
+  ot->poll = space_image_main_rgn_poll;
+  ot->ex = image_read_viewlayers_ex;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Render Border Operator
- * \{ */
-
-static int render_border_exec(bContext *C, wmOperator *op)
+/** \name Render Border Op */
+static int render_border_ex(Cxt *C, WinOp *op)
 {
   ARegion *region = CTX_wm_region(C);
   Scene *scene = CTX_data_scene(C);
