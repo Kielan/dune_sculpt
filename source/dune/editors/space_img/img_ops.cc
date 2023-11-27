@@ -2037,298 +2037,288 @@ static bool img_save_poll(Cxt *C)
 
 static int img_save_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Image *image = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
-  Scene *scene = CTX_data_scene(C);
-  ImageSaveOptions opts;
+  Main *main = cxt_data_main(C);
+  Img *image = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
+  Scene *scene = cxt_data_scene(C);
+  ImgSaveOptions opts;
   bool ok = false;
 
-  if (BKE_image_has_packedfile(image)) {
+  if (dune_img_has_packedfile(img)) {
     /* Save packed files to memory. */
-    BKE_image_memorypack(image);
+    dune_img_memorypack(img);
     /* Report since this can be called from key shortcuts. */
-    BKE_reportf(op->reports, RPT_INFO, "Packed to memory image \"%s\"", image->filepath);
-    return OPERATOR_FINISHED;
+    dune_reportf(op->reports, RPT_INFO, "Packed to mem img \"%s\"", img->filepath);
+    return OP_FINISHED;
   }
 
-  if (!BKE_image_save_options_init(&opts, bmain, scene, image, iuser, false, false)) {
-    BKE_image_save_options_free(&opts);
-    return OPERATOR_CANCELLED;
+  if (!dune_img_save_options_init(&opts, main, scene, img, iuser, false, false)) {
+    dune_img_save_options_free(&opts);
+    return OP_CANCELLED;
   }
-  image_save_options_from_op(bmain, &opts, op);
+  img_save_options_from_op(main, &opts, op);
 
   /* Check if file write permission is ok. */
-  if (BLI_exists(opts.filepath) && !BLI_file_is_writable(opts.filepath)) {
-    BKE_reportf(
-        op->reports, RPT_ERROR, "Cannot save image, path \"%s\" is not writable", opts.filepath);
+  if (lib_exists(opts.filepath) && !lib_file_is_writable(opts.filepath)) {
+    dune_reportf(
+        op->reports, RPT_ERROR, "Cannot save img, path \"%s\" is not writable", opts.filepath);
   }
-  else if (save_image_op(bmain, image, iuser, op, &opts)) {
+  else if (save_img_op(main, img, iuser, op, &opts)) {
     /* Report since this can be called from key shortcuts. */
-    BKE_reportf(op->reports, RPT_INFO, "Saved image \"%s\"", opts.filepath);
+    dune_reportf(op->reports, RPT_INFO, "Saved img \"%s\"", opts.filepath);
     ok = true;
   }
 
-  BKE_image_save_options_free(&opts);
+  dune_img_save_options_free(&opts);
 
   if (ok) {
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
 
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static int image_save_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_save_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  /* Not writable formats or images without a file-path will go to "Save As". */
-  if (!BKE_image_has_packedfile(ima) &&
-      (!BKE_image_has_filepath(ima) || !image_file_format_writable(ima, iuser)))
+  /* Not writable formats or imgs without a file-path will go to "Save As". */
+  if (!dune_img_has_packedfile(img) &&
+      (!dune_img_has_filepath(img) || !img_file_format_writable(img, iuser)))
   {
-    WM_operator_name_call(C, "IMAGE_OT_save_as", WM_OP_INVOKE_DEFAULT, nullptr, event);
-    return OPERATOR_CANCELLED;
+    win_op_name_call(C, "IMG_OT_save_as", WIN_OP_INVOKE_DEFAULT, nullptr, ev);
+    return OP_CANCELLED;
   }
-  return image_save_exec(C, op);
+  return img_save_ex(C, op);
 }
 
-void IMAGE_OT_save(wmOperatorType *ot)
+void IMG_OT_save(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Save Image";
-  ot->idname = "IMAGE_OT_save";
+  /* ids */
+  ot->name = "Save Img";
+  ot->idname = "IMG_OT_save";
   ot->description = "Save the image with current name and settings";
 
-  /* api callbacks */
-  ot->exec = image_save_exec;
-  ot->invoke = image_save_invoke;
-  ot->poll = image_save_poll;
+  /* api cbs */
+  ot->ex = img_save_ex;
+  ot->invoke = img_save_invoke;
+  ot->poll = img_save_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Save Sequence Operator
- * \{ */
-
-static int image_save_sequence_exec(bContext *C, wmOperator *op)
+/* Save Seq Op */
+static int img_save_seq_ex(Cxt *C, WinOp *op)
 {
-  Image *image = image_from_context(C);
+  Img *img = img_from_cxt(C);
   ImBuf *ibuf, *first_ibuf = nullptr;
   int tot = 0;
   char di[FILE_MAX];
   MovieCacheIter *iter;
 
   if (image == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  if (image->source != IMA_SRC_SEQUENCE) {
-    BKE_report(op->reports, RPT_ERROR, "Can only save sequence on image sequences");
-    return OPERATOR_CANCELLED;
+  if (img->src != IMG_SRC_SEQ) {
+    dune_report(op->reports, RPT_ERROR, "Can only save seq on img seqs");
+    return OP_CANCELLED;
   }
 
-  if (image->type == IMA_TYPE_MULTILAYER) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot save multilayer sequences");
-    return OPERATOR_CANCELLED;
+  if (img->type == IMG_TYPE_MULTILAYER) {
+    dune_report(op->reports, RPT_ERROR, "Cannot save multilayer seqs");
+    return OP_CANCELLED;
   }
 
-  /* get total dirty buffers and first dirty buffer which is used for menu */
+  /* get total dirty bufs and first dirty buf which is used for menu */
   ibuf = nullptr;
-  if (image->cache != nullptr) {
-    iter = IMB_moviecacheIter_new(image->cache);
-    while (!IMB_moviecacheIter_done(iter)) {
-      ibuf = IMB_moviecacheIter_getImBuf(iter);
+  if (img->cache != nullptr) {
+    iter = imbuf_moviecacheIter_new(img->cache);
+    while (!imbuf_moviecacheIter_done(iter)) {
+      ibuf = imbuf_moviecacheIter_getImBuf(iter);
       if (ibuf != nullptr && ibuf->userflags & IB_BITMAPDIRTY) {
         if (first_ibuf == nullptr) {
           first_ibuf = ibuf;
         }
         tot++;
       }
-      IMB_moviecacheIter_step(iter);
+      imbuf_moviecacheIter_step(iter);
     }
-    IMB_moviecacheIter_free(iter);
+    imbuf_moviecacheIter_free(iter);
   }
 
   if (tot == 0) {
-    BKE_report(op->reports, RPT_WARNING, "No images have been changed");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_WARNING, "No images have been changed");
+    return OP_CANCELLED;
   }
 
   /* get a filename for menu */
-  BLI_path_split_dir_part(first_ibuf->filepath, di, sizeof(di));
-  BKE_reportf(op->reports, RPT_INFO, "%d image(s) will be saved in %s", tot, di);
+  lib_path_split_dir_part(first_ibuf->filepath, di, sizeof(di));
+  dune_reportf(op->reports, RPT_INFO, "%d img(s) will be saved in %s", tot, di);
 
-  iter = IMB_moviecacheIter_new(image->cache);
-  while (!IMB_moviecacheIter_done(iter)) {
-    ibuf = IMB_moviecacheIter_getImBuf(iter);
+  iter = imbuf_moviecacheIter_new(img->cache);
+  while (!imbuf_moviecacheIter_done(iter)) {
+    ibuf = imbuf_moviecacheIter_getImBuf(iter);
 
     if (ibuf != nullptr && ibuf->userflags & IB_BITMAPDIRTY) {
-      if (0 == IMB_saveiff(ibuf, ibuf->filepath, IB_rect)) {
-        BKE_reportf(op->reports, RPT_ERROR, "Could not write image: %s", strerror(errno));
+      if (0 == imbuf_saveiff(ibuf, ibuf->filepath, IB_rect)) {
+        imbuf_reportf(op->reports, RPT_ERROR, "Could not write img: %s", strerror(errno));
         break;
       }
 
-      BKE_reportf(op->reports, RPT_INFO, "Saved %s", ibuf->filepath);
+      dune_reportf(op->reports, RPT_INFO, "Saved %s", ibuf->filepath);
       ibuf->userflags &= ~IB_BITMAPDIRTY;
     }
 
-    IMB_moviecacheIter_step(iter);
+    imbuf_moviecacheIter_step(iter);
   }
-  IMB_moviecacheIter_free(iter);
+  imbuf_moviecacheIter_free(iter);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_save_sequence(wmOperatorType *ot)
+void IMG_OT_save_seq(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Save Sequence";
-  ot->idname = "IMAGE_OT_save_sequence";
-  ot->description = "Save a sequence of images";
+  /* ids */
+  ot->name = "Save Seq";
+  ot->idname = "IMG_OT_save_seq";
+  ot->description = "Save a seq of imgs";
 
-  /* api callbacks */
-  ot->exec = image_save_sequence_exec;
-  ot->poll = image_from_context_has_data_poll;
+  /* api cbs */
+  ot->ex = img_save_seq_ex;
+  ot->poll = img_from_cxt_has_data_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Save All Operator
- * \{ */
-
-static bool image_should_be_saved_when_modified(Image *ima)
+/* Save All Op */
+static bool img_should_be_saved_when_modified(Img *img)
 {
-  return !ELEM(ima->type, IMA_TYPE_R_RESULT, IMA_TYPE_COMPOSITE);
+  return !ELEM(img->type, IMG_TYPE_R_RESULT, IMG_TYPE_COMPOSITE);
 }
 
-static bool image_should_be_saved(Image *ima, bool *is_format_writable)
+static bool img_should_be_saved(Img *img, bool *is_format_writable)
 {
-  if (BKE_image_is_dirty_writable(ima, is_format_writable) &&
-      ELEM(ima->source, IMA_SRC_FILE, IMA_SRC_GENERATED, IMA_SRC_TILED))
+  if (dune_img_is_dirty_writable(img, is_format_writable) &&
+      ELEM(img->src, IMG_SRC_FILE, IMG_SRC_GENERATED, IMG_SRC_TILED))
   {
-    return image_should_be_saved_when_modified(ima);
+    return img_should_be_saved_when_modified(img);
   }
   return false;
 }
 
-static bool image_has_valid_path(Image *ima)
+static bool img_has_valid_path(Img *img)
 {
-  return strchr(ima->filepath, '\\') || strchr(ima->filepath, '/');
+  return strchr(img->filepath, '\\') || strchr(img->filepath, '/');
 }
 
-static bool image_should_pack_during_save_all(const Image *ima)
+static bool img_should_pack_during_save_all(const Img *img)
 {
-  /* Images without a filepath (implied with IMA_SRC_GENERATED) should
-   * be packed during a save_all operation. */
-  return (ima->source == IMA_SRC_GENERATED) ||
-         (ima->source == IMA_SRC_TILED && !BKE_image_has_filepath(ima));
+  /* Imgs without a filepath (implied with IMG_SRC_GENERATED) should
+   * be packed during a save_all op. */
+  return (img->src == IMG_SRC_GENERATED) ||
+         (img->src == IMA_SRC_TILED && !dune_img_has_filepath(img));
 }
 
-bool ED_image_should_save_modified(const Main *bmain)
+bool ed_img_should_save_modified(const Main *main)
 {
   ReportList reports;
-  BKE_reports_init(&reports, RPT_STORE);
+  dune_reports_init(&reports, RPT_STORE);
 
-  uint modified_images_count = ED_image_save_all_modified_info(bmain, &reports);
-  bool should_save = modified_images_count || !BLI_listbase_is_empty(&reports.list);
+  uint modified_imgs_count = ed_img_save_all_modified_info(main, &reports);
+  bool should_save = modified_imgs_count || !lib_list_is_empty(&reports.list);
 
-  BKE_reports_free(&reports);
+  dune_reports_free(&reports);
 
   return should_save;
 }
 
-int ED_image_save_all_modified_info(const Main *bmain, ReportList *reports)
+int ed_img_save_all_modified_info(const Main *main, ReportList *reports)
 {
-  GSet *unique_paths = BLI_gset_str_new(__func__);
+  GSet *unique_paths = lib_gset_str_new(__func__);
 
-  int num_saveable_images = 0;
+  int num_saveable_imgs = 0;
 
-  for (Image *ima = static_cast<Image *>(bmain->images.first); ima;
-       ima = static_cast<Image *>(ima->id.next))
+  for (Img *img = static_cast<Img *>(main->imgs.first); img;
+       img = static_cast<Img *>(img->id.next))
   {
     bool is_format_writable;
 
-    if (image_should_be_saved(ima, &is_format_writable)) {
-      if (BKE_image_has_packedfile(ima) || image_should_pack_during_save_all(ima)) {
-        if (!ID_IS_LINKED(ima)) {
-          num_saveable_images++;
+    if (img_should_be_saved(img, &is_format_writable)) {
+      if (dune_img_has_packedfile(img) || img_should_pack_during_save_all(img)) {
+        if (!ID_IS_LINKED(img)) {
+          num_saveable_imgs++;
         }
         else {
-          BKE_reportf(reports,
+          dune_reportf(reports,
                       RPT_WARNING,
-                      "Packed library image can't be saved: \"%s\" from \"%s\"",
-                      ima->id.name + 2,
-                      ima->id.lib->filepath);
+                      "Packed lib img can't be saved: \"%s\" from \"%s\"",
+                      img->id.name + 2,
+                      img->id.lib->filepath);
         }
       }
       else if (!is_format_writable) {
-        BKE_reportf(reports,
+        dune_reportf(reports,
                     RPT_WARNING,
-                    "Image can't be saved, use a different file format: \"%s\"",
-                    ima->id.name + 2);
+                    "Img can't be saved, use a different file format: \"%s\"",
+                    img->id.name + 2);
       }
       else {
-        if (image_has_valid_path(ima)) {
-          num_saveable_images++;
-          if (BLI_gset_haskey(unique_paths, ima->filepath)) {
-            BKE_reportf(reports,
+        if (img_has_valid_path(img)) {
+          num_saveable_imgs++;
+          if (lib_gset_haskey(unique_paths, img->filepath)) {
+            dune_reportf(reports,
                         RPT_WARNING,
-                        "Multiple images can't be saved to an identical path: \"%s\"",
-                        ima->filepath);
+                        "Multiple imgs can't be saved to an identical path: \"%s\"",
+                        img->filepath);
           }
           else {
-            BLI_gset_insert(unique_paths, BLI_strdup(ima->filepath));
+            lib_gset_insert(unique_paths, lib_strdup(img->filepath));
           }
         }
         else {
-          BKE_reportf(reports,
+          dune_reportf(reports,
                       RPT_WARNING,
-                      "Image can't be saved, no valid file path: \"%s\"",
-                      ima->filepath);
+                      "Img can't be saved, no valid file path: \"%s\"",
+                      img->filepath);
         }
       }
     }
   }
 
-  BLI_gset_free(unique_paths, MEM_freeN);
-  return num_saveable_images;
+  lib_gset_free(unique_paths, mem_free);
+  return num_saveable_imgs;
 }
 
-bool ED_image_save_all_modified(const bContext *C, ReportList *reports)
+bool ed_img_save_all_modified(const Cxt *C, ReportList *reports)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
 
-  ED_image_save_all_modified_info(bmain, reports);
+  ed_img_save_all_modified_info(main, reports);
 
   bool ok = true;
 
-  for (Image *ima = static_cast<Image *>(bmain->images.first); ima;
-       ima = static_cast<Image *>(ima->id.next))
+  for (Img *img = static_cast<Img *>(main->imgs.first); imgs;
+       im = static_cast<Img *>(img->id.next))
   {
     bool is_format_writable;
 
-    if (image_should_be_saved(ima, &is_format_writable)) {
-      if (BKE_image_has_packedfile(ima) || image_should_pack_during_save_all(ima)) {
-        BKE_image_memorypack(ima);
+    if (img_should_be_saved(img, &is_format_writable)) {
+      if (dune_img_has_packedfile(img) || img_should_pack_during_save_all(img)) {
+        dune_img_memorypack(img);
       }
       else if (is_format_writable) {
-        if (image_has_valid_path(ima)) {
-          ImageSaveOptions opts;
-          Scene *scene = CTX_data_scene(C);
-          if (BKE_image_save_options_init(&opts, bmain, scene, ima, nullptr, false, false)) {
-            bool saved_successfully = BKE_image_save(reports, bmain, ima, nullptr, &opts);
+        if (img_has_valid_path(img)) {
+          ImgSaveOptions opts;
+          Scene *scene = cxt_data_scene(C);
+          if (dune_img_save_options_init(&opts, main, scene, img, nullptr, false, false)) {
+            bool saved_successfully = dune_img_save(reports, main, img, nullptr, &opts);
             ok = ok && saved_successfully;
           }
-          BKE_image_save_options_free(&opts);
+          dune_img_save_options_free(&opts);
         }
       }
     }
@@ -2336,115 +2326,105 @@ bool ED_image_save_all_modified(const bContext *C, ReportList *reports)
   return ok;
 }
 
-static bool image_save_all_modified_poll(bContext *C)
+static bool img_save_all_modified_poll(Cxt *C)
 {
-  int num_files = ED_image_save_all_modified_info(CTX_data_main(C), nullptr);
+  int num_files = ed_img_save_all_modified_info(cxt_data_main(C), nullptr);
   return num_files > 0;
 }
 
-static int image_save_all_modified_exec(bContext *C, wmOperator *op)
+static int img_save_all_modified_ex(Cxt *C, WinOp *op)
 {
-  ED_image_save_all_modified(C, op->reports);
-  return OPERATOR_FINISHED;
+  ed_img_save_all_modified(C, op->reports);
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_save_all_modified(wmOperatorType *ot)
+void IMG_OT_save_all_modified(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Save All Modified";
-  ot->idname = "IMAGE_OT_save_all_modified";
-  ot->description = "Save all modified images";
+  ot->idname = "IMG_OT_save_all_modified";
+  ot->description = "Save all modified imgs";
 
-  /* api callbacks */
-  ot->exec = image_save_all_modified_exec;
-  ot->poll = image_save_all_modified_poll;
+  /* api cbs */
+  ot->ex = img_save_all_modified_ex;
+  ot->poll = img_save_all_modified_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Reload Image Operator
- * \{ */
-
-static int image_reload_exec(bContext *C, wmOperator * /*op*/)
+/* Reload Img Op */
+static int img_reload_ex(Cxt *C, WinOp * /*op*/)
 {
-  Main *bmain = CTX_data_main(C);
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Main *main = cxt_data_main(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  if (!ima) {
-    return OPERATOR_CANCELLED;
+  if (!img) {
+    return OP_CANCELLED;
   }
 
-  /* XXX BKE_packedfile_unpack_image frees image buffers */
-  ED_preview_kill_jobs(CTX_wm_manager(C), CTX_data_main(C));
+  /* dune_packedfile_unpack_img frees img bufs */
+  ed_preview_kill_jobs(cxt_wm(C), cxt_data_main(C));
 
-  BKE_image_signal(bmain, ima, iuser, IMA_SIGNAL_RELOAD);
-  DEG_id_tag_update(&ima->id, 0);
+  dune_img_signal(main, img, iuser, IMG_SIGNAL_RELOAD);
+  graph_id_tag_update(&img->id, 0);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_reload(wmOperatorType *ot)
+void IMG_OT_reload(WinOpType *ot)
 {
   /* identifiers */
-  ot->name = "Reload Image";
-  ot->idname = "IMAGE_OT_reload";
-  ot->description = "Reload current image from disk";
+  ot->name = "Reload Img";
+  ot->idname = "IMG_OT_reload";
+  ot->description = "Reload current img from disk";
 
-  /* api callbacks */
-  ot->exec = image_reload_exec;
+  /* api cbs */
+  ot->ex = img_reload_ex;
 
   /* flags */
-  ot->flag = OPTYPE_REGISTER; /* no undo, image buffer is not handled by undo */
+  ot->flag = OPTYPE_REGISTER; /* no undo, img buf is not handled by undo */
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name New Image Operator
- * \{ */
-
-#define IMA_DEF_NAME N_("Untitled")
+/* New Img Op */
+#define IMG_DEF_NAME N_("Untitled")
 
 enum {
-  GEN_CONTEXT_NONE = 0,
-  GEN_CONTEXT_PAINT_CANVAS = 1,
-  GEN_CONTEXT_PAINT_STENCIL = 2,
+  GEN_CXT_NONE = 0,
+  GEN_CXT_PAINT_CANVAS = 1,
+  GEN_CXT_PAINT_STENCIL = 2,
 };
 
-struct ImageNewData {
-  PropertyPointerRNA pprop;
+struct ImgNewData {
+  ApiPropPtr pprop;
 };
 
-static ImageNewData *image_new_init(bContext *C, wmOperator *op)
+static ImgNewData *img_new_init(Cxt *C, WinOp *op)
 {
   if (op->customdata) {
-    return static_cast<ImageNewData *>(op->customdata);
+    return static_cast<ImgNewData *>(op->customdata);
   }
 
-  ImageNewData *data = static_cast<ImageNewData *>(MEM_callocN(sizeof(ImageNewData), __func__));
-  UI_context_active_but_prop_get_templateID(C, &data->pprop.ptr, &data->pprop.prop);
+  ImgNewData *data = static_cast<ImgNewData *>(mem_calloc(sizeof(ImgNewData), __func__));
+  ui_cxt_active_btn_prop_get_templateId(C, &data->pprop.ptr, &data->pprop.prop);
   op->customdata = data;
   return data;
 }
 
-static void image_new_free(wmOperator *op)
+static void img_new_free(WinOp *op)
 {
   MEM_SAFE_FREE(op->customdata);
 }
 
-static int image_new_exec(bContext *C, wmOperator *op)
+static int img_new_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima;
-  Image *ima;
-  Main *bmain;
-  PropertyRNA *prop;
+  SpaceImg *simg;
+  Img *img;
+  Main *main;
+  ApiProp *prop;
   char name_buffer[MAX_ID_NAME - 2];
   const char *name;
   float color[4];
@@ -2452,32 +2432,32 @@ static int image_new_exec(bContext *C, wmOperator *op)
   int stereo3d;
 
   /* retrieve state */
-  sima = CTX_wm_space_image(C);
-  bmain = CTX_data_main(C);
+  simg = cxt_win_space_img(C);
+  main = cxt_data_main(C);
 
-  prop = RNA_struct_find_property(op->ptr, "name");
-  RNA_property_string_get(op->ptr, prop, name_buffer);
-  if (!RNA_property_is_set(op->ptr, prop)) {
+  prop = api_struct_find_prop(op->ptr, "name");
+  api_prop_string_get(op->ptr, prop, name_buf);
+  if (!api_prop_is_set(op->ptr, prop)) {
     /* Default value, we can translate! */
-    name = DATA_(name_buffer);
+    name = DATA_(name_buf);
   }
   else {
-    name = name_buffer;
+    name = name_buf;
   }
-  width = RNA_int_get(op->ptr, "width");
-  height = RNA_int_get(op->ptr, "height");
-  floatbuf = RNA_boolean_get(op->ptr, "float");
-  gen_type = RNA_enum_get(op->ptr, "generated_type");
-  RNA_float_get_array(op->ptr, "color", color);
-  alpha = RNA_boolean_get(op->ptr, "alpha");
-  stereo3d = RNA_boolean_get(op->ptr, "use_stereo_3d");
-  bool tiled = RNA_boolean_get(op->ptr, "tiled");
+  width = api_int_get(op->ptr, "width");
+  height = api_int_get(op->ptr, "height");
+  floatbuf = api_bool_get(op->ptr, "float");
+  gen_type = api_enum_get(op->ptr, "generated_type");
+  api_float_get_array(op->ptr, "color", color);
+  alpha = api_bool_get(op->ptr, "alpha");
+  stereo3d = api_bool_get(op->ptr, "use_stereo_3d");
+  bool tiled = api_bool_get(op->ptr, "tiled");
 
   if (!alpha) {
     color[3] = 1.0f;
   }
 
-  ima = BKE_image_add_generated(bmain,
+  img = dune_img_add_generated(main,
                                 width,
                                 height,
                                 name,
@@ -2489,64 +2469,63 @@ static int image_new_exec(bContext *C, wmOperator *op)
                                 false,
                                 tiled);
 
-  if (!ima) {
-    image_new_free(op);
-    return OPERATOR_CANCELLED;
+  if (!img) {
+    img_new_free(op);
+    return OP_CANCELLED;
   }
 
   /* hook into UI */
-  ImageNewData *data = image_new_init(C, op);
+  ImgNewData *data = img_new_init(C, op);
 
   if (data->pprop.prop) {
     /* when creating new ID blocks, use is already 1, but RNA
      * pointer use also increases user, so this compensates it */
-    id_us_min(&ima->id);
+    id_us_min(&img->id);
 
-    PointerRNA imaptr = RNA_id_pointer_create(&ima->id);
-    RNA_property_pointer_set(&data->pprop.ptr, data->pprop.prop, imaptr, nullptr);
-    RNA_property_update(C, &data->pprop.ptr, data->pprop.prop);
+    ApiPtr imgptr = api_id_ptr_create(&img->id);
+    api_prop_ptr_set(&data->pprop.ptr, data->pprop.prop, imaptr, nullptr);
+    api_prop_update(C, &data->pprop.ptr, data->pprop.prop);
   }
-  else if (sima) {
-    ED_space_image_set(bmain, sima, ima, false);
+  else if (simg) {
+    ed_space_img_set(main, simg, img, false);
   }
   else {
-    /* #BKE_image_add_generated creates one user by default, remove it if image is not linked to
+    /* dune_img_add_generated creates one user by default, remove it if image is not linked to
      * anything. ref. #94599. */
-    id_us_min(&ima->id);
+    id_us_min(&img->id);
   }
 
-  BKE_image_signal(bmain, ima, (sima) ? &sima->iuser : nullptr, IMA_SIGNAL_USER_NEW_IMAGE);
+  dune_img_signal(main, img, (simg) ? &simg->iuser : nullptr, IMG_SIGNAL_USER_NEW_IMG);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_ADDED, ima);
+  win_ev_add_notifier(C, NC_IMG | NA_ADDED, img);
 
-  image_new_free(op);
+  img_new_free(op);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_new_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int img_new_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  /* Get property in advance, it doesn't work after WM_operator_props_dialog_popup. */
-  ImageNewData *data;
-  op->customdata = data = static_cast<ImageNewData *>(MEM_callocN(sizeof(ImageNewData), __func__));
-  UI_context_active_but_prop_get_templateID(C, &data->pprop.ptr, &data->pprop.prop);
+  /* Get prop in advance, it doesn't work after win_op_props_dialog_popup. */
+  ImgNewData *data;
+  op->customdata = data = static_cast<ImgNewData *>(mem_calloc(sizeof(ImgNewData), __func__));
+  ui_cxt_active_btn_prop_get_templateId(C, &data->pprop.ptr, &data->pprop.prop);
 
   /* Better for user feedback. */
-  RNA_string_set(op->ptr, "name", DATA_(IMA_DEF_NAME));
-  return WM_operator_props_dialog_popup(C, op, 300);
+  api_string_set(op->ptr, "name", DATA_(IMG_DEF_NAME));
+  return win_op_props_dialog_popup(C, op, 300);
 }
 
-static void image_new_draw(bContext * /*C*/, wmOperator *op)
+static void img_new_drw(Cxt * /*C*/, WinOp *op)
 {
   uiLayout *col;
   uiLayout *layout = op->layout;
 #if 0
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   const bool is_multiview = (scene->r.scemode & R_MULTIVIEW) != 0;
 #endif
 
-  /* copy of WM_operator_props_dialog_popup() layout */
-
+  /* copy of win_op_props_dialog_popup() layout */
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
 
