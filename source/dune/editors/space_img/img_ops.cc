@@ -2923,301 +2923,281 @@ void IMG_OT_invert(WinOpType *ot)
 {
   ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Invert Channels";
-  ot->idname = "IMAGE_OT_invert";
-  ot->description = "Invert image's channels";
+  ot->idname = "IMG_OT_invert";
+  ot->description = "Invert img's channels";
 
-  /* api callbacks */
-  ot->exec = image_invert_exec;
-  ot->poll = image_from_context_has_data_poll_active_tile;
+  /* api cbs */
+  ot->ex = img_invert_ex;
+  ot->poll = img_from_cxt_has_data_poll_active_tile;
 
-  /* properties */
-  prop = RNA_def_boolean(ot->srna, "invert_r", false, "Red", "Invert red channel");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "invert_g", false, "Green", "Invert green channel");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "invert_b", false, "Blue", "Invert blue channel");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna, "invert_a", false, "Alpha", "Invert alpha channel");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  /* props */
+  prop = api_def_bool(ot->sapi, "invert_r", false, "Red", "Invert red channel");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "invert_g", false, "Green", "Invert green channel");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "invert_b", false, "Blue", "Invert blue channel");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi, "invert_a", false, "Alpha", "Invert alpha channel");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Scale Operator
- * \{ */
-
-static int image_scale_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+/* Scale Op */
+static int img_scale_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  Image *ima = image_from_context(C);
-  ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
-  PropertyRNA *prop = RNA_struct_find_property(op->ptr, "size");
-  if (!RNA_property_is_set(op->ptr, prop)) {
-    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
+  Img *img = img_from_cxt(C);
+  ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
+  ApiProp *prop = api_struct_find_prop(op->ptr, "size");
+  if (!api_prop_is_set(op->ptr, prop)) {
+    ImBuf *ibuf = dune_img_acquire_ibuf(img, &iuser, nullptr);
     const int size[2] = {ibuf->x, ibuf->y};
-    RNA_property_int_set_array(op->ptr, prop, size);
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
+    api_prop_int_set_array(op->ptr, prop, size);
+    dune_img_release_ibuf(img, ibuf, nullptr);
   }
-  return WM_operator_props_dialog_popup(C, op, 200);
+  return win_op_props_dialog_popup(C, op, 200);
 }
 
-static int image_scale_exec(bContext *C, wmOperator *op)
+static int img_scale_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
-  ImageUser iuser = image_user_from_context_and_active_tile(C, ima);
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  const bool is_paint = ((sima != nullptr) && (sima->mode == SI_MODE_PAINT));
+  Img *img = img_from_cxt(C);
+  ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
+  ImBuf *ibuf = fd_img_acquire_ibuf(img, &iuser, nullptr);
+  SpaceImg *simg = cxt_win_space_img(C);
+  const bool is_paint = ((simg != nullptr) && (simg->mode == SI_MODE_PAINT));
 
   if (ibuf == nullptr) {
     /* TODO: this should actually never happen, but does for render-results -> cleanup */
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   if (is_paint) {
-    ED_imapaint_clear_partial_redraw();
+    ed_imgpaint_clear_partial_redrw();
   }
 
-  PropertyRNA *prop = RNA_struct_find_property(op->ptr, "size");
+  ApiProp *prop = api_struct_find_prop(op->ptr, "size");
   int size[2];
-  if (RNA_property_is_set(op->ptr, prop)) {
-    RNA_property_int_get_array(op->ptr, prop, size);
+  if (api_prop_is_set(op->ptr, prop)) {
+    api_prop_int_get_array(op->ptr, prop, size);
   }
   else {
     size[0] = ibuf->x;
     size[1] = ibuf->y;
-    RNA_property_int_set_array(op->ptr, prop, size);
+    api_prop_int_set_array(op->ptr, prop, size);
   }
 
-  ED_image_undo_push_begin_with_image(op->type->name, ima, ibuf, &iuser);
+  ed_img_undo_push_begin_with_img(op->type->name, img, ibuf, &iuser);
 
-  ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
-  IMB_scaleImBuf(ibuf, size[0], size[1]);
-  BKE_image_mark_dirty(ima, ibuf);
-  BKE_image_release_ibuf(ima, ibuf, nullptr);
+  ibuf->userflags |= IB_DISPLAY_BUF_INVALID;
+  imbuf_scale(ibuf, size[0], size[1]);
+  dune_img_mark_dirty(img, ibuf);
+  dune_img_release_ibuf(img, ibuf, nullptr);
 
-  ED_image_undo_push_end();
+  ed_img_undo_push_end();
 
-  BKE_image_partial_update_mark_full_update(ima);
+  dune_img_partial_update_mark_full_update(img);
 
-  DEG_id_tag_update(&ima->id, 0);
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  graph_id_tag_update(&img->id, 0);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_resize(wmOperatorType *ot)
+void IMG_OT_resize(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Resize Image";
-  ot->idname = "IMAGE_OT_resize";
-  ot->description = "Resize the image";
+  /* ids */
+  ot->name = "Resize Img";
+  ot->idname = "IMG_OT_resize";
+  ot->description = "Resize the img";
 
-  /* api callbacks */
-  ot->invoke = image_scale_invoke;
-  ot->exec = image_scale_exec;
-  ot->poll = image_from_context_has_data_poll_active_tile;
+  /* api cbss */
+  ot->invoke = img_scale_invoke;
+  ot->ex = img_scale_ex;
+  ot->poll = img_from_cxt_has_data_poll_active_tile;
 
-  /* properties */
-  RNA_def_int_vector(ot->srna, "size", 2, nullptr, 1, INT_MAX, "Size", "", 1, SHRT_MAX);
+  /* props */
+  api_def_int_vector(ot->sapi, "size", 2, nullptr, 1, INT_MAX, "Size", "", 1, SHRT_MAX);
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Pack Operator
- * \{ */
-
-static bool image_pack_test(bContext *C, wmOperator *op)
+/* Pack Op */
+static bool img_pack_test(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
+  Img *img = img_from_cxt(C);
 
-  if (!ima) {
+  if (!img) {
     return false;
   }
 
-  if (ELEM(ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
-    BKE_report(op->reports, RPT_ERROR, "Packing movies or image sequences not supported");
+  if (ELEM(img->src, IMG_SRC_SEQ, IMG_SRC_MOVIE)) {
+    dune_report(op->reports, RPT_ERROR, "Packing movies or img seqs not supported");
     return false;
   }
 
   return true;
 }
 
-static int image_pack_exec(bContext *C, wmOperator *op)
+static int img_pack_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Image *ima = image_from_context(C);
+  Main *main = cxt_data_main(C);
+  Img *img = img_from_cxt(C);
 
-  if (!image_pack_test(C, op)) {
-    return OPERATOR_CANCELLED;
+  if (!img_pack_test(C, op)) {
+    return OP_CANCELLED;
   }
 
-  if (BKE_image_is_dirty(ima)) {
-    BKE_image_memorypack(ima);
+  if (dune_img_is_dirty(img)) {
+    dune_img_memorypack(img);
   }
   else {
-    BKE_image_packfiles(op->reports, ima, ID_BLEND_PATH(bmain, &ima->id));
+    dune_img_packfiles(op->reports, img, ID_BLEND_PATH(main, &img->id));
   }
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_pack(wmOperatorType *ot)
+void IMG_OT_pack(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Pack Image";
-  ot->description = "Pack an image as embedded data into the .blend file";
-  ot->idname = "IMAGE_OT_pack";
+  /* ids */
+  ot->name = "Pack Img";
+  ot->description = "Pack an img as embedded data into the .dune file";
+  ot->idname = "IMG_OT_pack";
 
-  /* api callbacks */
-  ot->exec = image_pack_exec;
+  /* api cbs */
+  ot->ex = image_pack_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Unpack Operator
- * \{ */
-
-static int image_unpack_exec(bContext *C, wmOperator *op)
+/* Unpack Op */
+static int img_unpack_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Image *ima = image_from_context(C);
-  int method = RNA_enum_get(op->ptr, "method");
+  Main *main = cxt_data_main(C);
+  Img *img = img_from_cxt(C);
+  int method = api_enum_get(op->ptr, "method");
 
-  /* find the supplied image by name */
-  if (RNA_struct_property_is_set(op->ptr, "id")) {
-    char imaname[MAX_ID_NAME - 2];
-    RNA_string_get(op->ptr, "id", imaname);
-    ima = static_cast<Image *>(BLI_findstring(&bmain->images, imaname, offsetof(ID, name) + 2));
-    if (!ima) {
-      ima = image_from_context(C);
+  /* find the supplied img by name */
+  if (api_struct_prop_is_set(op->ptr, "id")) {
+    char imgname[MAX_ID_NAME - 2];
+    api_string_get(op->ptr, "id", imgname);
+    img = static_cast<Img *>(lib_findstring(&main->imgs, imgname, offsetof(Id, name) + 2));
+    if (!img) {
+      img = img_from_cxt(C);
     }
   }
 
-  if (!ima || !BKE_image_has_packedfile(ima)) {
-    return OPERATOR_CANCELLED;
+  if (!img || !dune_img_has_packedfile(img)) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
-    BKE_report(op->reports, RPT_ERROR, "Unpacking movies or image sequences not supported");
-    return OPERATOR_CANCELLED;
+  if (ELEM(img->src, IMG_SRC_SEQ, IMG_SRC_MOVIE)) {
+    dune_report(op->reports, RPT_ERROR, "Unpacking movies or img seqs not supported");
+    return OP_CANCELLED;
   }
 
   if (G.fileflags & G_FILE_AUTOPACK) {
-    BKE_report(op->reports,
+    dune_report(op->reports,
                RPT_WARNING,
-               "AutoPack is enabled, so image will be packed again on file save");
+               "AutoPack is enabled, so img will be packed again on file save");
   }
 
-  /* XXX BKE_packedfile_unpack_image frees image buffers */
-  ED_preview_kill_jobs(CTX_wm_manager(C), CTX_data_main(C));
+  /* dune_packedfile_unpack_img frees img bufs */
+  ed_preview_kill_jobs(cxt_wm(C), cxt_data_main(C));
 
-  BKE_packedfile_unpack_image(CTX_data_main(C), op->reports, ima, ePF_FileStatus(method));
+  dune_packedfile_unpack_img(cxt_data_main(C), op->reports, img, ePF_FileStatus(method));
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_unpack_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int img_unpack_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  Image *ima = image_from_context(C);
+  Img *img = img_from_cxt(C);
 
-  if (RNA_struct_property_is_set(op->ptr, "id")) {
-    return image_unpack_exec(C, op);
+  if (api_struct_prop_is_set(op->ptr, "id")) {
+    return img_unpack_ex(C, op);
   }
 
-  if (!ima || !BKE_image_has_packedfile(ima)) {
-    return OPERATOR_CANCELLED;
+  if (!img || !dune_img_has_packedfile(img)) {
+    return OP_CANCELLED;
   }
 
-  if (ELEM(ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE)) {
-    BKE_report(op->reports, RPT_ERROR, "Unpacking movies or image sequences not supported");
-    return OPERATOR_CANCELLED;
+  if (ELEM(img->src, IMG_SRC_SEQ, IMG_SRC_MOVIE)) {
+    dune_report(op->reports, RPT_ERROR, "Unpacking movies or img seqs not supported");
+    return OP_CANCELLED;
   }
 
   if (G.fileflags & G_FILE_AUTOPACK) {
-    BKE_report(op->reports,
+    dune_report(op->reports,
                RPT_WARNING,
                "AutoPack is enabled, so image will be packed again on file save");
   }
 
   unpack_menu(C,
-              "IMAGE_OT_unpack",
-              ima->id.name + 2,
-              ima->filepath,
+              "IMG_OT_unpack",
+              img->id.name + 2,
+              img->filepath,
               "textures",
-              BKE_image_has_packedfile(ima) ?
-                  ((ImagePackedFile *)ima->packedfiles.first)->packedfile :
+              dune_img_has_packedfile(img) ?
+                  ((ImgPackedFile *)img->packedfiles.first)->packedfile :
                   nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_unpack(wmOperatorType *ot)
+void IMG_OT_unpack(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Unpack Image";
-  ot->description = "Save an image packed in the .blend file to disk";
-  ot->idname = "IMAGE_OT_unpack";
+  /* ids */
+  ot->name = "Unpack Img";
+  ot->description = "Save an img packed in the .dune file to disk";
+  ot->idname = "IMG_OT_unpack";
 
-  /* api callbacks */
-  ot->exec = image_unpack_exec;
+  /* api cbs */
+  ot->ex = img_unpack_ex;
   ot->invoke = image_unpack_invoke;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_enum(
-      ot->srna, "method", rna_enum_unpack_method_items, PF_USE_LOCAL, "Method", "How to unpack");
-  /* XXX, weak!, will fail with library, name collisions */
-  RNA_def_string(
-      ot->srna, "id", nullptr, MAX_ID_NAME - 2, "Image Name", "Image data-block name to unpack");
+  /* props */
+  api_def_enum(
+      ot->sapi, "method", api_enum_unpack_method_items, PF_USE_LOCAL, "Method", "How to unpack");
+  /* weak!, will fail with library, name collisions */
+  api_def_string(
+      ot->sapi, "id", nullptr, MAX_ID_NAME - 2, "Img Name", "Img data-block name to unpack");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Sample Image Operator
- * \{ */
-
-bool ED_space_image_get_position(SpaceImage *sima,
-                                 ARegion *region,
-                                 const int mval[2],
-                                 float r_fpos[2])
+/* Sample Img Op */
+bool ed_space_img_get_position(SpaceImg *simg,
+                               ARgn *rgn,
+                               const int mval[2],
+                               float r_fpos[2])
 {
   void *lock;
-  ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock, 0);
+  ImBuf *ibuf = ed_space_img_acquire_buffer(simg, &lock, 0);
 
   if (ibuf == nullptr) {
-    ED_space_image_release_buffer(sima, ibuf, lock);
+    ed_space_img_release_buf(simg, ibuf, lock);
     return false;
   }
 
-  UI_view2d_region_to_view(&region->v2d, mval[0], mval[1], &r_fpos[0], &r_fpos[1]);
+  ui_view2d_rgn_to_view(&rgn->v2d, mval[0], mval[1], &r_fpos[0], &r_fpos[1]);
 
-  ED_space_image_release_buffer(sima, ibuf, lock);
+  ed_space_img_release_buf(simg, ibuf, lock);
   return true;
 }
 
-bool ED_space_image_color_sample(
-    SpaceImage *sima, ARegion *region, const int mval[2], float r_col[3], bool *r_is_data)
+bool ed_space_img_color_sample(
+    SpaceImg *simg, ARgn *rgn, const int mval[2], float r_col[3], bool *r_is_data)
 {
   if (r_is_data) {
     *r_is_data = false;
@@ -3226,15 +3206,15 @@ bool ED_space_image_color_sample(
     return false;
   }
   float uv[2];
-  UI_view2d_region_to_view(&region->v2d, mval[0], mval[1], &uv[0], &uv[1]);
-  int tile = BKE_image_get_tile_from_pos(sima->image, uv, uv, nullptr);
+  ui_view2d_rgn_to_view(&rgn->v2d, mval[0], mval[1], &uv[0], &uv[1]);
+  int tile = dune_img_get_tile_from_pos(simg->img, uv, uv, nullptr);
 
   void *lock;
-  ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock, tile);
+  ImBuf *ibuf = ed_space_img_acquire_buf(simg, &lock, tile);
   bool ret = false;
 
   if (ibuf == nullptr) {
-    ED_space_image_release_buffer(sima, ibuf, lock);
+    ed_space_img_release_buf(simg, ibuf, lock);
     return false;
   }
 
@@ -3246,15 +3226,15 @@ bool ED_space_image_color_sample(
     CLAMP(x, 0, ibuf->x - 1);
     CLAMP(y, 0, ibuf->y - 1);
 
-    if (ibuf->float_buffer.data) {
-      fp = (ibuf->float_buffer.data + (ibuf->channels) * (y * ibuf->x + x));
+    if (ibuf->float_buf.data) {
+      fp = (ibuf->float_buf.data + (ibuf->channels) * (y * ibuf->x + x));
       copy_v3_v3(r_col, fp);
       ret = true;
     }
-    else if (ibuf->byte_buffer.data) {
-      cp = ibuf->byte_buffer.data + 4 * (y * ibuf->x + x);
+    else if (ibuf->byte_buf.data) {
+      cp = ibuf->byte_buf.data + 4 * (y * ibuf->x + x);
       rgb_uchar_to_float(r_col, cp);
-      IMB_colormanagement_colorspace_to_scene_linear_v3(r_col, ibuf->byte_buffer.colorspace);
+      imbuf_colormanagement_colorspace_to_scene_linear_v3(r_col, ibuf->byte_buf.colorspace);
       ret = true;
     }
   }
@@ -3263,70 +3243,65 @@ bool ED_space_image_color_sample(
     *r_is_data = (ibuf->colormanage_flag & IMB_COLORMANAGE_IS_DATA) != 0;
   }
 
-  ED_space_image_release_buffer(sima, ibuf, lock);
+  ed_space_img_release_buf(simg, ibuf, lock);
   return ret;
 }
 
-void IMAGE_OT_sample(wmOperatorType *ot)
+void IMG_OT_sample(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Sample Color";
-  ot->idname = "IMAGE_OT_sample";
-  ot->description = "Use mouse to sample a color in current image";
+  ot->idname = "IMG_OT_sample";
+  ot->description = "Use mouse to sample a color in current img";
 
-  /* api callbacks */
-  ot->invoke = ED_imbuf_sample_invoke;
-  ot->modal = ED_imbuf_sample_modal;
-  ot->cancel = ED_imbuf_sample_cancel;
-  ot->poll = ED_imbuf_sample_poll;
+  /* api cbs */
+  ot->invoke = ed_imbuf_sample_invoke;
+  ot->modal = ed_imbuf_sample_modal;
+  ot->cancel = ed_imbuf_sample_cancel;
+  ot->poll = ed_imbuf_sample_poll;
 
   /* flags */
   ot->flag = OPTYPE_BLOCKING;
 
-  PropertyRNA *prop;
-  prop = RNA_def_int(ot->srna, "size", 1, 1, 128, "Sample Size", "", 1, 64);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  ApiProp *prop;
+  prop = api_def_int(ot->sapi, "size", 1, 1, 128, "Sample Size", "", 1, 64);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Sample Line Operator
- * \{ */
-
-static int image_sample_line_exec(bContext *C, wmOperator *op)
+/* Sample Line Op */
+static int img_sample_line_ex(Cxt *C, WinOp *op)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
-  Image *ima = ED_space_image(sima);
+  SpaceImg *simg = cxt_win_space_img(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
+  Img *img = ed_space_img(simg);
 
-  int x_start = RNA_int_get(op->ptr, "xstart");
-  int y_start = RNA_int_get(op->ptr, "ystart");
-  int x_end = RNA_int_get(op->ptr, "xend");
-  int y_end = RNA_int_get(op->ptr, "yend");
+  int x_start = api_int_get(op->ptr, "xstart");
+  int y_start = api_int_get(op->ptr, "ystart");
+  int x_end = api_int_get(op->ptr, "xend");
+  int y_end = api_int_get(op->ptr, "yend");
 
   float uv1[2], uv2[2], ofs[2];
-  UI_view2d_region_to_view(&region->v2d, x_start, y_start, &uv1[0], &uv1[1]);
-  UI_view2d_region_to_view(&region->v2d, x_end, y_end, &uv2[0], &uv2[1]);
+  ui_view2d_rgn_to_view(&rgn->v2d, x_start, y_start, &uv1[0], &uv1[1]);
+  ui_view2d_rgn_to_view(&rgn->v2d, x_end, y_end, &uv2[0], &uv2[1]);
 
   /* If the image has tiles, shift the positions accordingly. */
-  int tile = BKE_image_get_tile_from_pos(ima, uv1, uv1, ofs);
+  int tile = dune_img_get_tile_from_pos(img, uv1, uv1, ofs);
   sub_v2_v2(uv2, ofs);
 
   void *lock;
-  ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock, tile);
-  Histogram *hist = &sima->sample_line_hist;
+  ImBuf *ibuf = ed_space_img_acquire_buf(simg, &lock, tile);
+  Histogram *hist = &simg->sample_line_hist;
 
   if (ibuf == nullptr) {
-    ED_space_image_release_buffer(sima, ibuf, lock);
-    return OPERATOR_CANCELLED;
+    ed_space_img_release_buf(simg, ibuf, lock);
+    return OP_CANCELLED;
   }
   /* hmmmm */
   if (ibuf->channels < 3) {
-    ED_space_image_release_buffer(sima, ibuf, lock);
-    return OPERATOR_CANCELLED;
+    ed_space_img_release_buf(simg, ibuf, lock);
+    return OP_CANCELLED;
   }
 
   copy_v2_v2(hist->co[0], uv1);
@@ -3335,147 +3310,132 @@ static int image_sample_line_exec(bContext *C, wmOperator *op)
   /* enable line drawing */
   hist->flag |= HISTO_FLAG_SAMPLELINE;
 
-  BKE_histogram_update_sample_line(hist, ibuf, &scene->view_settings, &scene->display_settings);
+  dune_histogram_update_sample_line(hist, ibuf, &scene->view_settings, &scene->display_settings);
 
   /* reset y zoom */
   hist->ymax = 1.0f;
 
-  ED_space_image_release_buffer(sima, ibuf, lock);
+  ed_space_img_release_buf(simg, ibuf, lock);
 
-  ED_area_tag_redraw(CTX_wm_area(C));
+  ed_area_tag_redrw(cxt_win_area(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int image_sample_line_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int img_sample_line_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  SpaceImage *sima = CTX_wm_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
 
-  Histogram *hist = &sima->sample_line_hist;
+  Histogram *hist = &simg->sample_line_hist;
   hist->flag &= ~HISTO_FLAG_SAMPLELINE;
 
-  if (!ED_space_image_has_buffer(sima)) {
-    return OPERATOR_CANCELLED;
+  if (!ed_space_img_has_buf(simg)) {
+    return OP_CANCELLED;
   }
 
-  return WM_gesture_straightline_invoke(C, op, event);
+  return win_gesture_straightline_invoke(C, op, ev);
 }
 
-void IMAGE_OT_sample_line(wmOperatorType *ot)
+void IMG_OT_sample_line(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Sample Line";
-  ot->idname = "IMAGE_OT_sample_line";
+  ot->idname = "IMG_OT_sample_line";
   ot->description = "Sample a line and show it in Scope panels";
 
-  /* api callbacks */
-  ot->invoke = image_sample_line_invoke;
-  ot->modal = WM_gesture_straightline_modal;
-  ot->exec = image_sample_line_exec;
-  ot->poll = space_image_main_region_poll;
-  ot->cancel = WM_gesture_straightline_cancel;
+  /* api cbs */
+  ot->invoke = img_sample_line_invoke;
+  ot->modal = win_gesture_straightline_modal;
+  ot->ex = img_sample_line_ex;
+  ot->poll = space_img_main_rgn_poll;
+  ot->cancel = win_gesture_straightline_cancel;
 
   /* flags */
   ot->flag = 0; /* no undo/register since this operates on the space */
 
-  WM_operator_properties_gesture_straightline(ot, WM_CURSOR_EDIT);
+  win_op_props_gesture_straightline(ot, WIN_CURSOR_EDIT);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Set Curve Point Operator
- * \{ */
-
-void IMAGE_OT_curves_point_set(wmOperatorType *ot)
+/* Set Curve Point Op */
+void IMG_OT_curves_point_set(WinOpType *ot)
 {
-  static const EnumPropertyItem point_items[] = {
+  static const EnumPropItem point_items[] = {
       {0, "BLACK_POINT", 0, "Black Point", ""},
       {1, "WHITE_POINT", 0, "White Point", ""},
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  /* identifiers */
+  /* ids */
   ot->name = "Set Curves Point";
-  ot->idname = "IMAGE_OT_curves_point_set";
+  ot->idname = "IMG_OT_curves_point_set";
   ot->description = "Set black point or white point for curves";
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* api callbacks */
-  ot->invoke = ED_imbuf_sample_invoke;
-  ot->modal = ED_imbuf_sample_modal;
-  ot->cancel = ED_imbuf_sample_cancel;
-  ot->poll = space_image_main_area_not_uv_brush_poll;
+  /* api cbs */
+  ot->invoke = ed_imbuf_sample_invoke;
+  ot->modal = ed_imbuf_sample_modal;
+  ot->cancel = ed_imbuf_sample_cancel;
+  ot->poll = space_img_main_area_not_uv_brush_poll;
 
-  /* properties */
-  RNA_def_enum(
+  /* props */
+  api_def_enum(
       ot->srna, "point", point_items, 0, "Point", "Set black point or white point for curves");
 
-  PropertyRNA *prop;
-  prop = RNA_def_int(ot->srna, "size", 1, 1, 128, "Sample Size", "", 1, 64);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  ApiProp *prop;
+  prop = api_def_int(ot->sapi, "size", 1, 1, 128, "Sample Size", "", 1, 64);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Cycle Render Slot Operator
- * \{ */
-
-static bool image_cycle_render_slot_poll(bContext *C)
+/* Cycle Render Slot Op */
+static bool img_cycle_render_slot_poll(Cxt *C)
 {
-  Image *ima = image_from_context(C);
+  Img *img = img_from_cxt(C);
 
-  return (ima && ima->type == IMA_TYPE_R_RESULT);
+  return (img && img->type == IMG_TYPE_R_RESULT);
 }
 
-static int image_cycle_render_slot_exec(bContext *C, wmOperator *op)
+static int img_cycle_render_slot_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = image_from_context(C);
-  const int direction = RNA_boolean_get(op->ptr, "reverse") ? -1 : 1;
+  Img *img = img_from_cxt(C);
+  const int direction = api_bool_get(op->ptr, "reverse") ? -1 : 1;
 
-  if (!ED_image_slot_cycle(ima, direction)) {
-    return OPERATOR_CANCELLED;
+  if (!ed_img_slot_cycle(img, direction)) {
+    return OP_CANCELLED;
   }
 
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 
   /* no undo push for browsing existing */
-  RenderSlot *slot = BKE_image_get_renderslot(ima, ima->render_slot);
-  if ((slot && slot->render) || ima->render_slot == ima->last_render_slot) {
-    return OPERATOR_CANCELLED;
+  RenderSlot *slot = dune_img_get_renderslot(img, img->render_slot);
+  if ((slot && slot->render) || img->render_slot == img->last_render_slot) {
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_cycle_render_slot(wmOperatorType *ot)
+void IMG_OT_cycle_render_slot(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Cycle Render Slot";
-  ot->idname = "IMAGE_OT_cycle_render_slot";
+  ot->idname = "IMG_OT_cycle_render_slot";
   ot->description = "Cycle through all non-void render slots";
 
-  /* api callbacks */
-  ot->exec = image_cycle_render_slot_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = img_cycle_render_slot_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 
-  RNA_def_boolean(ot->srna, "reverse", false, "Cycle in Reverse", "");
+  api_def_bool(ot->sapi, "reverse", false, "Cycle in Reverse", "");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Render Slot Operator
- * \{ */
-
-static int image_clear_render_slot_exec(bContext *C, wmOperator * /*op*/)
+/* Clear Render Slot Op */
+static int img_clear_render_slot_ex(Cxt *C, WinOp * /*op*/)
 {
   Image *ima = image_from_context(C);
   ImageUser *iuser = image_user_from_context(C);
