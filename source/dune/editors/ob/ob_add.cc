@@ -452,23 +452,23 @@ bool ED_object_add_generic_get_opts(bContext *C,
       r_enter_editmode = &_enter_editmode;
     }
     /* Only to ensure the value is _always_ set.
-     * Typically the property will exist when the argument is non-nullptr. */
+     * Typically the prop will exist when the argument is non-nullptr. */
     *r_enter_editmode = false;
 
-    PropertyRNA *prop = RNA_struct_find_property(op->ptr, "enter_editmode");
+    ApiProp *prop = api_struct_find_property(op->ptr, "enter_editmode");
     if (prop != nullptr) {
-      if (RNA_property_is_set(op->ptr, prop) && r_enter_editmode) {
-        *r_enter_editmode = RNA_property_boolean_get(op->ptr, prop);
+      if (api_prop_is_set(op->ptr, prop) && r_enter_editmode) {
+        *r_enter_editmode = api_prop_bool_get(op->ptr, prop);
       }
       else {
         *r_enter_editmode = (U.flag & USER_ADD_EDITMODE) != 0;
-        RNA_property_boolean_set(op->ptr, prop, *r_enter_editmode);
+        api_prop_bool_set(op->ptr, prop, *r_enter_editmode);
       }
     }
   }
 
   if (r_local_view_bits) {
-    View3D *v3d = CTX_wm_view3d(C);
+    View3D *v3d = cxt_win_view3d(C);
     *r_local_view_bits = (v3d && v3d->localvd) ? v3d->local_view_uuid : 0;
   }
 
@@ -479,12 +479,12 @@ bool ED_object_add_generic_get_opts(bContext *C,
       r_loc = _loc;
     }
 
-    if (RNA_struct_property_is_set(op->ptr, "location")) {
-      RNA_float_get_array(op->ptr, "location", r_loc);
+    if (api_struct_prop_is_set(op->ptr, "location")) {
+      api_float_get_array(op->ptr, "location", r_loc);
     }
     else {
-      ED_object_location_from_view(C, r_loc);
-      RNA_float_set_array(op->ptr, "location", r_loc);
+      ed_ob_location_from_view(C, r_loc);
+      api_float_set_array(op->ptr, "location", r_loc);
     }
   }
 
@@ -499,52 +499,52 @@ bool ED_object_add_generic_get_opts(bContext *C,
       r_rot = _rot;
     }
 
-    if (RNA_struct_property_is_set(op->ptr, "rotation")) {
-      /* If rotation is set, always use it. Alignment (and corresponding user preference)
+    if (api_struct_prop_is_set(op->ptr, "rotation")) {
+      /* If rotation is set, always use it. Alignment (and corresponding user pref)
        * can be ignored since this is in world space anyways.
-       * To not confuse (e.g. on redo), don't set it to #ALIGN_WORLD in the op UI though. */
+       * To not confuse (e.g. on redo), don't set it to ALIGN_WORLD in the op UI though. */
       *r_is_view_aligned = false;
-      RNA_float_get_array(op->ptr, "rotation", r_rot);
+      api_float_get_array(op->ptr, "rotation", r_rot);
     }
     else {
       int alignment = ALIGN_WORLD;
-      PropertyRNA *prop = RNA_struct_find_property(op->ptr, "align");
+      ApiProp *prop = api_struct_find_prop(op->ptr, "align");
 
-      if (RNA_property_is_set(op->ptr, prop)) {
+      if (api_prop_is_set(op->ptr, prop)) {
         /* If alignment is set, always use it. */
         *r_is_view_aligned = alignment == ALIGN_VIEW;
-        alignment = RNA_property_enum_get(op->ptr, prop);
+        alignment = api_prop_enum_get(op->ptr, prop);
       }
       else {
         /* If alignment is not set, use User Preferences. */
         *r_is_view_aligned = (U.flag & USER_ADD_VIEWALIGNED) != 0;
         if (*r_is_view_aligned) {
-          RNA_property_enum_set(op->ptr, prop, ALIGN_VIEW);
+          api_prop_enum_set(op->ptr, prop, ALIGN_VIEW);
           alignment = ALIGN_VIEW;
         }
         else if ((U.flag & USER_ADD_CURSORALIGNED) != 0) {
-          RNA_property_enum_set(op->ptr, prop, ALIGN_CURSOR);
+          api_prop_enum_set(op->ptr, prop, ALIGN_CURSOR);
           alignment = ALIGN_CURSOR;
         }
         else {
-          RNA_property_enum_set(op->ptr, prop, ALIGN_WORLD);
+          api_prop_enum_set(op->ptr, prop, ALIGN_WORLD);
           alignment = ALIGN_WORLD;
         }
       }
       switch (alignment) {
         case ALIGN_WORLD:
-          RNA_float_get_array(op->ptr, "rotation", r_rot);
+          api_float_get_array(op->ptr, "rotation", r_rot);
           break;
         case ALIGN_VIEW:
-          ED_object_rotation_from_view(C, r_rot, view_align_axis);
-          RNA_float_set_array(op->ptr, "rotation", r_rot);
+          ed_ob_rotation_from_view(C, r_rot, view_align_axis);
+          qpi_float_set_array(op->ptr, "rotation", r_rot);
           break;
         case ALIGN_CURSOR: {
-          const Scene *scene = CTX_data_scene(C);
+          const Scene *scene = cxt_data_scene(C);
           float tmat[3][3];
-          BKE_scene_cursor_rot_to_mat3(&scene->cursor, tmat);
+          dune_scene_cursor_rot_to_mat3(&scene->cursor, tmat);
           mat3_normalized_to_eul(r_rot, tmat);
-          RNA_float_set_array(op->ptr, "rotation", r_rot);
+          api_float_set_array(op->ptr, "rotation", r_rot);
           break;
         }
       }
@@ -561,14 +561,14 @@ bool ED_object_add_generic_get_opts(bContext *C,
     /* For now this is optional, we can make it always use. */
     copy_v3_fl(r_scale, 1.0f);
 
-    PropertyRNA *prop = RNA_struct_find_property(op->ptr, "scale");
+    ApiProp *prop = api_struct_find_prop(op->ptr, "scale");
     if (prop != nullptr) {
-      if (RNA_property_is_set(op->ptr, prop)) {
-        RNA_property_float_get_array(op->ptr, prop, r_scale);
+      if (api_prop_is_set(op->ptr, prop)) {
+        api_prop_float_get_array(op->ptr, prop, r_scale);
       }
       else {
         copy_v3_fl(r_scale, 1.0f);
-        RNA_property_float_set_array(op->ptr, prop, r_scale);
+        api_prop_float_set_array(op->ptr, prop, r_scale);
       }
     }
   }
@@ -576,78 +576,77 @@ bool ED_object_add_generic_get_opts(bContext *C,
   return true;
 }
 
-Object *ED_object_add_type_with_obdata(bContext *C,
+Ob *ed_ob_add_type_with_obdata(Cxt *C,
                                        const int type,
                                        const char *name,
                                        const float loc[3],
                                        const float rot[3],
                                        const bool enter_editmode,
                                        const ushort local_view_bits,
-                                       ID *obdata)
+                                       Id *obdata)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
   {
-    BKE_view_layer_synced_ensure(scene, view_layer);
-    Object *obedit = BKE_view_layer_edit_object_get(view_layer);
+    dune_view_layer_synced_ensure(scene, view_layer);
+    Ob *obedit = dune_view_layer_edit_ob_get(view_layer);
     if (obedit != nullptr) {
-      ED_object_editmode_exit_ex(bmain, scene, obedit, EM_FREEDATA);
+      ed_ob_editmode_exit_ex(main, scene, obedit, EM_FREEDATA);
     }
   }
 
-  /* deselects all, sets active object */
-  Object *ob;
+  /* desel all, sets active ob */
+  Ob *ob;
   if (obdata != nullptr) {
-    BLI_assert(type == BKE_object_obdata_to_type(obdata));
-    ob = BKE_object_add_for_data(bmain, scene, view_layer, type, name, obdata, true);
-    const short *materials_len_p = BKE_id_material_len_p(obdata);
+    lib_assert(type == dune_ob_obdata_to_type(obdata));
+    ob = dune_ob_add_for_data(main, scene, view_layer, type, name, obdata, true);
+    const short *materials_len_p = dune_id_material_len_p(obdata);
     if (materials_len_p && *materials_len_p > 0) {
-      BKE_object_materials_test(bmain, ob, static_cast<ID *>(ob->data));
+      dune_ob_materials_test(main, ob, static_cast<Id *>(ob->data));
     }
   }
   else {
-    ob = BKE_object_add(bmain, scene, view_layer, type, name);
+    ob = dune_ob_add(main, scene, view_layer, type, name);
   }
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Base *ob_base_act = BKE_view_layer_active_base_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Base *ob_base_act = dune_view_layer_active_base_get(view_layer);
   /* While not getting a valid base is not a good thing, it can happen in convoluted corner cases,
    * better not crash on it in releases. */
-  BLI_assert(ob_base_act != nullptr);
+  lib_assert(ob_base_act != nullptr);
   if (ob_base_act != nullptr) {
     ob_base_act->local_view_bits = local_view_bits;
     /* editor level activate, notifiers */
-    ED_object_base_activate(C, ob_base_act);
+    ed_ob_base_activate(C, ob_base_act);
   }
 
   /* more editor stuff */
-  ED_object_base_init_transform_on_add(ob, loc, rot);
+  ed_ob_base_init_transform_on_add(ob, loc, rot);
 
-  /* TODO(sergey): This is weird to manually tag objects for update, better to
-   * use DEG_id_tag_update here perhaps.
-   */
-  DEG_id_type_tag(bmain, ID_OB);
-  DEG_relations_tag_update(bmain);
+  /* TODO: Strange to manually tag obs for update, better to
+   * use graph_id_tag_update here perhaps. */
+  graph_id_type_tag(main, ID_OB);
+  graph_relations_tag_update(main);
   if (ob->data != nullptr) {
-    DEG_id_tag_update_ex(bmain, (ID *)ob->data, ID_RECALC_EDITORS);
+    graph_id_tag_update_ex(main, (Id *)ob->data, ID_RECALC_EDITORS);
   }
 
   if (enter_editmode) {
-    ED_object_editmode_enter_ex(bmain, scene, ob, 0);
+    ed_ob_editmode_enter_ex(bmain, scene, ob, 0);
   }
 
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
+  graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
 
-  ED_outliner_select_sync_from_object_tag(C);
+  ed_outliner_sel_sync_from_object_tag(C);
 
   return ob;
 }
 
-Object *ED_object_add_type(bContext *C,
+Ob *ed_ob_add_type(Cxt *C,
                            const int type,
                            const char *name,
                            const float loc[3],
@@ -655,7 +654,7 @@ Object *ED_object_add_type(bContext *C,
                            const bool enter_editmode,
                            const ushort local_view_bits)
 {
-  return ED_object_add_type_with_obdata(
+  return ed_ob_add_type_with_obdata(
       C, type, name, loc, rot, enter_editmode, local_view_bits, nullptr);
 }
 
