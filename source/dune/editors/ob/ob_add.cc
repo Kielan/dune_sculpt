@@ -280,22 +280,22 @@ void ED_object_rotation_from_quat(float rot[3], const float viewquat[4], const c
   }
 }
 
-void ED_object_rotation_from_view(bContext *C, float rot[3], const char align_axis)
+void ed_ob_rotation_from_view(Cxt *C, float rot[3], const char align_axis)
 {
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
-  BLI_assert(align_axis >= 'X' && align_axis <= 'Z');
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
+  lib_assert(align_axis >= 'X' && align_axis <= 'Z');
   if (rv3d) {
     float viewquat[4];
     copy_qt_qt(viewquat, rv3d->viewquat);
     viewquat[0] *= -1.0f;
-    ED_object_rotation_from_quat(rot, viewquat, align_axis);
+    ed_ob_rotation_from_quat(rot, viewquat, align_axis);
   }
   else {
     zero_v3(rot);
   }
 }
 
-void ED_object_base_init_transform_on_add(Object *object, const float loc[3], const float rot[3])
+void ed_ob_base_init_transform_on_add(Ob *ob, const float loc[3], const float rot[3])
 {
   if (loc) {
     copy_v3_v3(object->loc, loc);
