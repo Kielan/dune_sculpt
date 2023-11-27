@@ -974,134 +974,130 @@ static void img_undosys_step_decode(
 
 static void img_undosys_step_free(UndoStep *us_p)
 {
-  ImageUndoStep *us = (ImgUndoStep *)us_p;
+  ImgUndoStep *us = (ImgUndoStep *)us_p;
   uhandle_free_list(&us->handles);
 
   /* Typically this map will have been cleared. */
-  MEM_delete(us->paint_tile_map);
+  mem_delete(us->paint_tile_map);
   us->paint_tile_map = nullptr;
 }
 
-static void image_undosys_foreach_ID_ref(UndoStep *us_p,
-                                         UndoTypeForEachIDRefFn foreach_ID_ref_fn,
+static void img_undosys_foreach_id_ref(UndoStep *us_p,
+                                         UndoTypeForEachIdRefFn foreach_id_ref_fn,
                                          void *user_data)
 {
-  ImageUndoStep *us = reinterpret_cast<ImageUndoStep *>(us_p);
-  LISTBASE_FOREACH (UndoImageHandle *, uh, &us->handles) {
-    foreach_ID_ref_fn(user_data, ((UndoRefID *)&uh->image_ref));
+  ImgUndoStep *us = reinterpret_cast<ImgUndoStep *>(us_p);
+  LIST_FOREACH (UndoImgHandle *, uh, &us->handles) {
+    foreach_id_ref_fn(user_data, ((UndoRefId *)&uh->img_ref));
   }
 }
 
-void ED_image_undosys_type(UndoType *ut)
+void ed_img_undosys_type(UndoType *ut)
 {
   ut->name = "Image";
-  ut->poll = image_undosys_poll;
-  ut->step_encode_init = image_undosys_step_encode_init;
-  ut->step_encode = image_undosys_step_encode;
-  ut->step_decode = image_undosys_step_decode;
-  ut->step_free = image_undosys_step_free;
+  ut->poll = img_undosys_poll;
+  ut->step_encode_init = img_undosys_step_encode_init;
+  ut->step_encode = img_undosys_step_encode;
+  ut->step_decode = img_undosys_step_decode;
+  ut->step_free = img_undosys_step_free;
 
-  ut->step_foreach_ID_ref = image_undosys_foreach_ID_ref;
+  ut->step_foreach_id_ref = img_undosys_foreach_id_ref;
 
-  /* NOTE: this is actually a confusing case, since it expects a valid context, but only in a
-   * specific case, see `image_undosys_step_encode` code. We cannot specify
-   * `UNDOTYPE_FLAG_NEED_CONTEXT_FOR_ENCODE` though, as it can be called with a null context by
+  /* This is a confusing case, expects a valid cxt, but only in a
+   * specific case, see `img_undosys_step_encode` code. We cannot specify
+   * `UNDOTYPE_FLAG_NEED_CXT_FOR_ENCODE` though, as it can be called with a null cxt by
    * current code. */
   ut->flags = UNDOTYPE_FLAG_DECODE_ACTIVE_STEP;
 
-  ut->step_size = sizeof(ImageUndoStep);
+  ut->step_size = sizeof(ImgUndoStep);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Utilities
+/* Utils
  *
- * \note image undo exposes #ED_image_undo_push_begin, #ED_image_undo_push_end
- * which must be called by the operator directly.
+ * img undo exposes ed_img_undo_push_begin, ed_img_undo_push_end
+ * which must be called by the op directly.
  *
  * Unlike most other undo stacks this is needed:
- * - So we can always access the state before the image was painted onto,
- *   which is needed if previous undo states aren't image-type.
- * - So operators can access the pixel-data before the stroke was applied, at run-time.
- * \{ */
+ * - Can always access the state before the img was painted onto,
+ *   which is needed if previous undo states aren't img-type.
+ * - Ops can access the pixel-data before the stroke was applied, at run-time. */
 
-PaintTileMap *ED_image_paint_tile_map_get()
+PaintTileMap *ed_img_paint_tile_map_get()
 {
-  UndoStack *ustack = ED_undo_stack_get();
+  UndoStack *ustack = ed_undo_stack_get();
   UndoStep *us_prev = ustack->step_init;
-  UndoStep *us_p = BKE_undosys_stack_init_or_active_with_type(ustack, BKE_UNDOSYS_TYPE_IMAGE);
-  ImageUndoStep *us = reinterpret_cast<ImageUndoStep *>(us_p);
+  UndoStep *us_p = dune_undosys_stack_init_or_active_with_type(ustack, DUNE_UNDOSYS_TYPE_IMG);
+  ImgUndoStep *us = reinterpret_cast<ImgUndoStep *>(us_p);
   /* We should always have an undo push started when accessing tiles,
    * not doing this means we won't have paint_mode correctly set. */
-  BLI_assert(us_p == us_prev);
+  lib_assert(us_p == us_prev);
   if (us_p != us_prev) {
-    /* Fallback value until we can be sure this never happens. */
+    /* Fallback val until we can be sure this never happens. */
     us->paint_mode = PAINT_MODE_TEXTURE_2D;
   }
   return us->paint_tile_map;
 }
 
-void ED_image_undo_restore(UndoStep *us)
+void ed_img_undo_restore(UndoStep *us)
 {
   PaintTileMap *paint_tile_map = reinterpret_cast<ImageUndoStep *>(us)->paint_tile_map;
   ptile_restore_runtime_map(paint_tile_map);
   ptile_invalidate_map(paint_tile_map);
 }
 
-static ImageUndoStep *image_undo_push_begin(const char *name, int paint_mode)
+static ImgUndoStep *img_undo_push_begin(const char *name, int paint_mode)
 {
-  UndoStack *ustack = ED_undo_stack_get();
-  bContext *C = nullptr; /* special case, we never read from this. */
-  UndoStep *us_p = BKE_undosys_step_push_init_with_type(ustack, C, name, BKE_UNDOSYS_TYPE_IMAGE);
-  ImageUndoStep *us = reinterpret_cast<ImageUndoStep *>(us_p);
-  BLI_assert(ELEM(paint_mode, PAINT_MODE_TEXTURE_2D, PAINT_MODE_TEXTURE_3D, PAINT_MODE_SCULPT));
+  UndoStack *ustack = ed_undo_stack_get();
+  Cxt *C = nullptr; /* special case, we never read from this. */
+  UndoStep *us_p = dune_undosys_step_push_init_with_type(ustack, C, name, DUNE_UNDOSYS_TYPE_IMAGE);
+  ImgUndoStep *us = reinterpret_cast<ImgUndoStep *>(us_p);
+  lib_assert(ELEM(paint_mode, PAINT_MODE_TEXTURE_2D, PAINT_MODE_TEXTURE_3D, PAINT_MODE_SCULPT));
   us->paint_mode = (ePaintMode)paint_mode;
   return us;
 }
 
-void ED_image_undo_push_begin(const char *name, int paint_mode)
+void ed_img_undo_push_begin(const char *name, int paint_mode)
 {
-  image_undo_push_begin(name, paint_mode);
+  img_undo_push_begin(name, paint_mode);
 }
 
-void ED_image_undo_push_begin_with_image(const char *name,
-                                         Image *image,
-                                         ImBuf *ibuf,
-                                         ImageUser *iuser)
+void ed_img_undo_push_begin_with_img(const char *name,
+                                     Img *img,
+                                     ImBuf *ibuf,
+                                     ImgUser *iuser)
 {
-  ImageUndoStep *us = image_undo_push_begin(name, PAINT_MODE_TEXTURE_2D);
+  ImgUndoStep *us = img_undo_push_begin(name, PAINT_MODE_TEXTURE_2D);
 
-  BLI_assert(BKE_image_get_tile(image, iuser->tile));
-  UndoImageHandle *uh = uhandle_ensure(&us->handles, image, iuser);
-  UndoImageBuf *ubuf_pre = uhandle_ensure_ubuf(uh, image, ibuf);
-  BLI_assert(ubuf_pre->post == nullptr);
+  lib_assert(dune_img_get_tile(img, iuser->tile));
+  UndoImgHandle *uh = uhandle_ensure(&us->handles, img, iuser);
+  UndoImgBuf *ubuf_pre = uhandle_ensure_ubuf(uh, img, ibuf);
+  lib_assert(ubuf_pre->post == nullptr);
 
-  ImageUndoStep *us_reference = reinterpret_cast<ImageUndoStep *>(
-      ED_undo_stack_get()->step_active);
-  while (us_reference && us_reference->step.type != BKE_UNDOSYS_TYPE_IMAGE) {
-    us_reference = reinterpret_cast<ImageUndoStep *>(us_reference->step.prev);
+  ImgUndoStep *us_ref = reinterpret_cast<ImgUndoStep *>(
+      ed_undo_stack_get()->step_active);
+  while (us_ref && us_ref->step.type != DUNE_UNDOSYS_TYPE_IMG) {
+    us_ref = reinterpret_cast<ImgUndoStep *>(us_ref->step.prev);
   }
-  UndoImageBuf *ubuf_reference = (us_reference ? ubuf_lookup_from_reference(
-                                                     us_reference, image, iuser->tile, ubuf_pre) :
+  UndoImgBuf *ubuf_ref = (us_ref ? ubuf_lookup_from_ref(
+                                                     us_ref, img, iuser->tile, ubuf_pre) :
                                                  nullptr);
 
-  if (ubuf_reference) {
-    memcpy(ubuf_pre->tiles, ubuf_reference->tiles, sizeof(*ubuf_pre->tiles) * ubuf_pre->tiles_len);
+  if (ubuf_ref) {
+    memcpy(ubuf_pre->tiles, ubuf_ref->tiles, sizeof(*ubuf_pre->tiles) * ubuf_pre->tiles_len);
     for (uint32_t i = 0; i < ubuf_pre->tiles_len; i++) {
-      UndoImageTile *utile = ubuf_pre->tiles[i];
+      UndoImgTile *utile = ubuf_pre->tiles[i];
       utile->users += 1;
     }
   }
   else {
-    ubuf_from_image_all_tiles(ubuf_pre, ibuf);
+    ubuf_from_img_all_tiles(ubuf_pre, ibuf);
   }
 }
 
-void ED_image_undo_push_end()
+void ed_img_undo_push_end()
 {
-  UndoStack *ustack = ED_undo_stack_get();
-  BKE_undosys_step_push(ustack, nullptr, nullptr);
-  BKE_undosys_stack_limit_steps_and_memory_defaults(ustack);
-  WM_file_tag_modified();
+  UndoStack *ustack = ed_undo_stack_get();
+  dune_undosys_step_push(ustack, nullptr, nullptr);
+  dune_undosys_stack_limit_steps_and_memory_defaults(ustack);
+  win_file_tag_modified();
 }
