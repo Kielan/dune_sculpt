@@ -1762,7 +1762,7 @@ static bool save_img_op(
 
   bool ok = dune_img_save(op->reports, main, img, iuser, opts);
 
-  WM_cursor_wait(false);
+  win_cursor_wait(false);
 
   /* Remember file path for next save. */
   STRNCPY(G.filepath_last_img, opts->filepath);
@@ -1791,142 +1791,142 @@ static ImgSaveData *img_save_as_init(Cxt *C, WinOp *op)
 
   isd->opts.do_newpath = true;
 
-  if (!RNA_struct_property_is_set(op->ptr, "filepath")) {
-    RNA_string_set(op->ptr, "filepath", isd->opts.filepath);
+  if (!api_struct_prop_is_set(op->ptr, "filepath")) {
+    api_string_set(op->ptr, "filepath", isd->opts.filepath);
   }
 
   /* Enable save_copy by default for render results. */
-  if (image->source == IMA_SRC_VIEWER && !RNA_struct_property_is_set(op->ptr, "copy")) {
-    RNA_boolean_set(op->ptr, "copy", true);
+  if (img->src == IMG_SRC_VIEWER && !api_struct_prop_is_set(op->ptr, "copy")) {
+    api_bool_set(op->ptr, "copy", true);
   }
 
-  if (!RNA_struct_property_is_set(op->ptr, "save_as_render")) {
-    RNA_boolean_set(op->ptr, "save_as_render", isd->opts.save_as_render);
+  if (!api_struct_prop_is_set(op->ptr, "save_as_render")) {
+    api_bool_set(op->ptr, "save_as_render", isd->opts.save_as_render);
   }
 
   /* Show multi-view save options only if image has multi-views. */
-  PropertyRNA *prop;
-  prop = RNA_struct_find_property(op->ptr, "show_multiview");
-  RNA_property_boolean_set(op->ptr, prop, BKE_image_is_multiview(image));
-  prop = RNA_struct_find_property(op->ptr, "use_multiview");
-  RNA_property_boolean_set(op->ptr, prop, BKE_image_is_multiview(image));
+  ApiProp *prop;
+  prop = api_struct_find_prop(op->ptr, "show_multiview");
+  api_prop_bool_set(op->ptr, prop, dune_img_is_multiview(img));
+  prop = api_struct_find_prop(op->ptr, "use_multiview");
+  api_prop_bool_set(op->ptr, prop, dune_img_is_multiview(img));
 
   op->customdata = isd;
 
   return isd;
 }
 
-static void image_save_as_free(wmOperator *op)
+static void img_save_as_free(WinOp *op)
 {
   if (op->customdata) {
-    ImageSaveData *isd = static_cast<ImageSaveData *>(op->customdata);
-    BKE_image_save_options_free(&isd->opts);
+    ImgSaveData *isd = static_cast<ImgSaveData *>(op->customdata);
+    dune_img_save_options_free(&isd->opts);
 
-    MEM_freeN(op->customdata);
+    mem_free le(op->customdata);
     op->customdata = nullptr;
   }
 }
 
-static int image_save_as_exec(bContext *C, wmOperator *op)
+static int img_save_as_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  ImageSaveData *isd;
+  Main *main = cxt_data_main(C);
+  ImgSaveData *isd;
 
   if (op->customdata) {
-    isd = static_cast<ImageSaveData *>(op->customdata);
+    isd = static_cast<ImgSaveData *>(op->customdata);
   }
   else {
-    isd = image_save_as_init(C, op);
+    isd = img_save_as_init(C, op);
     if (isd == nullptr) {
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
   }
 
-  image_save_options_from_op(bmain, &isd->opts, op);
-  BKE_image_save_options_update(&isd->opts, isd->image);
+  img_save_options_from_op(main, &isd->opts, op);
+  dune_img_save_options_update(&isd->opts, isd->img);
 
-  save_image_op(bmain, isd->image, isd->iuser, op, &isd->opts);
+  save_img_op(main, isd->img, isd->iuser, op, &isd->opts);
 
   if (isd->opts.save_copy == false) {
-    BKE_image_free_packedfiles(isd->image);
+    dune_img_free_packedfiles(isd->img);
   }
 
-  image_save_as_free(op);
+  img_save_as_free(op);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool image_save_as_check(bContext *C, wmOperator *op)
+static bool img_save_as_check(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  ImageSaveData *isd = static_cast<ImageSaveData *>(op->customdata);
+  Main *main = cxt_data_main(C);
+  ImgSaveData *isd = static_cast<ImgSaveData *>(op->customdata);
 
-  image_save_options_from_op(bmain, &isd->opts, op);
-  BKE_image_save_options_update(&isd->opts, isd->image);
+  img_save_options_from_op(main, &isd->opts, op);
+  dune_img_save_options_update(&isd->opts, isd->img);
 
-  return WM_operator_filesel_ensure_ext_imtype(op, &isd->opts.im_format);
+  return win_op_filesel_ensure_ext_imtype(op, &isd->opts.im_format);
 }
 
-static int image_save_as_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int img_save_as_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  if (RNA_struct_property_is_set(op->ptr, "filepath")) {
-    return image_save_as_exec(C, op);
+  if (api_struct_prop_is_set(op->ptr, "filepath")) {
+    return img_save_as_ex(C, op);
   }
 
-  ImageSaveData *isd = image_save_as_init(C, op);
+  ImgSaveData *isd = img_save_as_init(C, op);
   if (isd == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  image_filesel(C, op, isd->opts.filepath);
+  img_filesel(C, op, isd->opts.filepath);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static void image_save_as_cancel(bContext * /*C*/, wmOperator *op)
+static void img_save_as_cancel(Cxt * /*C*/, WinOp *op)
 {
-  image_save_as_free(op);
+  img_save_as_free(op);
 }
 
-static bool image_save_as_draw_check_prop(PointerRNA *ptr, PropertyRNA *prop, void *user_data)
+static bool img_save_as_drw_check_prop(ApiPtr *ptr, ApiProp *prop, void *user_data)
 {
-  ImageSaveData *isd = static_cast<ImageSaveData *>(user_data);
-  const char *prop_id = RNA_property_identifier(prop);
+  ImgSaveData *isd = static_cast<ImgSaveData *>(user_data);
+  const char *prop_id = api_prop_id(prop);
 
   return !(STREQ(prop_id, "filepath") || STREQ(prop_id, "directory") ||
            STREQ(prop_id, "filename") ||
            /* when saving a copy, relative path has no effect */
-           (STREQ(prop_id, "relative_path") && RNA_boolean_get(ptr, "copy")) ||
-           (STREQ(prop_id, "save_as_render") && isd->image->source == IMA_SRC_VIEWER));
+           (STREQ(prop_id, "relative_path") && api_bool_get(ptr, "copy")) ||
+           (STREQ(prop_id, "save_as_render") && isd->img->source == IMG_SRC_VIEWER));
 }
 
-static void image_save_as_draw(bContext * /*C*/, wmOperator *op)
+static void img_save_as_drw(Cxt * /*C*/, WinOp *op)
 {
   uiLayout *layout = op->layout;
-  ImageSaveData *isd = static_cast<ImageSaveData *>(op->customdata);
-  const bool is_multiview = RNA_boolean_get(op->ptr, "show_multiview");
-  const bool save_as_render = RNA_boolean_get(op->ptr, "save_as_render");
+  ImgSaveData *isd = static_cast<ImgSaveData *>(op->customdata);
+  const bool is_multiview = api_bool_get(op->ptr, "show_multiview");
+  const bool save_as_render = api_bool_get(op->ptr, "save_as_render");
 
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
 
   /* Operator settings. */
-  uiDefAutoButsRNA(layout,
+  uiDefAutoBtnsApi(layout,
                    op->ptr,
-                   image_save_as_draw_check_prop,
+                   img_save_as_drw_check_prop,
                    isd,
                    nullptr,
-                   UI_BUT_LABEL_ALIGN_NONE,
+                   BTN_LABEL_ALIGN_NONE,
                    false);
 
   uiItemS(layout);
 
-  /* Image format settings. */
-  PointerRNA imf_ptr = RNA_pointer_create(nullptr, &RNA_ImageFormatSettings, &isd->opts.im_format);
-  uiTemplateImageSettings(layout, &imf_ptr, save_as_render);
+  /* Img format settings. */
+  ApiPtr imf_ptr = api_ptr_create(nullptr, &ApiImgFormatSettings, &isd->opts.im_format);
+  uiTemplateImgSettings(layout, &imf_ptr, save_as_render);
 
   if (!save_as_render) {
-    PointerRNA linear_settings_ptr = RNA_pointer_get(&imf_ptr, "linear_colorspace_settings");
+    ApiPtr linear_settings_ptr = api_pt_get(&imf_ptr, "linear_colorspace_settings");
     uiLayout *col = uiLayoutColumn(layout, true);
     uiItemS(col);
     uiItemR(col, &linear_settings_ptr, "name", UI_ITEM_NONE, IFACE_("Color Space"), ICON_NONE);
@@ -1934,22 +1934,22 @@ static void image_save_as_draw(bContext * /*C*/, wmOperator *op)
 
   /* Multiview settings. */
   if (is_multiview) {
-    uiTemplateImageFormatViews(layout, &imf_ptr, op->ptr);
+    uiTemplateImgFormatViews(layout, &imf_ptr, op->ptr);
   }
 }
 
-static bool image_save_as_poll(bContext *C)
+static bool img_save_as_poll(Cxt *C)
 {
-  if (!image_from_context_has_data_poll(C)) {
+  if (!img_from_cxt_has_data_poll(C)) {
     return false;
   }
 
   if (G.is_rendering) {
     /* no need to nullptr check here */
-    Image *ima = image_from_context(C);
+    Img *img = img_from_cxt(C);
 
-    if (ima->source == IMA_SRC_VIEWER) {
-      CTX_wm_operator_poll_msg_set(C, "can't save image while rendering");
+    if (img->src == IMG_SRC_VIEWER) {
+      cxt_win_op_poll_msg_set(C, "can't save image while rendering");
       return false;
     }
   }
@@ -1957,91 +1957,85 @@ static bool image_save_as_poll(bContext *C)
   return true;
 }
 
-void IMAGE_OT_save_as(wmOperatorType *ot)
+void IMG_OT_save_as(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Save As Image";
-  ot->idname = "IMAGE_OT_save_as";
+  /* ids */
+  ot->name = "Save As Img";
+  ot->idname = "IMG_OT_save_as";
   ot->description = "Save the image with another name and/or settings";
 
-  /* api callbacks */
-  ot->exec = image_save_as_exec;
-  ot->check = image_save_as_check;
-  ot->invoke = image_save_as_invoke;
-  ot->cancel = image_save_as_cancel;
-  ot->ui = image_save_as_draw;
-  ot->poll = image_save_as_poll;
+  /* api cbs */
+  ot->ex = img_save_as_ex;
+  ot->check = img_save_as_check;
+  ot->invoke = img_save_as_invoke;
+  ot->cancel = img_save_as_cancel;
+  ot->ui = img_save_as_drw;
+  ot->poll = img_save_as_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  PropertyRNA *prop;
-  prop = RNA_def_boolean(
-      ot->srna,
+  /* props */
+  ApiProp *prop;
+  prop = api_def_bool(
+      ot->sapi,
       "save_as_render",
       false,
       "Save As Render",
-      "Save image with render color management.\n"
-      "For display image formats like PNG, apply view and display transform.\n"
+      "Save img with render color management.\n"
+      "For display img formats like PNG, apply view and display transform.\n"
       "For intermediate image formats like OpenEXR, use the default render output color space");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_boolean(ot->srna,
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi,
                          "copy",
                          false,
                          "Copy",
                          "Create a new image file without modifying the current image in Blender");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  image_operator_prop_allow_tokens(ot);
-  WM_operator_properties_filesel(ot,
-                                 FILE_TYPE_FOLDER | FILE_TYPE_IMAGE | FILE_TYPE_MOVIE,
-                                 FILE_SPECIAL,
-                                 FILE_SAVE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH | WM_FILESEL_SHOW_PROPS,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+  img_op_prop_allow_tokens(ot);
+  win_operator_prop_filesel(ot,
+                            FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
+                            FILE_SPECIAL,
+                            FILE_SAVE,
+                            WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH | WIN_FILESEL_SHOW_PROPS,
+                            FILE_DEFAULTDISPLAY,
+                            FILE_SORT_DEFAULT);
 }
 
-/** \} */
+/* Save ImG Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Save Image Operator
- * \{ */
-
-/**
- * \param iuser: Image user or nullptr when called outside the image space.
- */
-static bool image_file_format_writable(Image *ima, ImageUser *iuser)
+/* param iuser: Img user or nullptr when called outside the image space. */
+static bool img_file_format_writable(Img *img, ImgUser *iuser)
 {
   void *lock;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, &lock);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, iuser, &lock);
   bool ret = false;
 
-  if (ibuf && BKE_image_buffer_format_writable(ibuf)) {
+  if (ibuf && dune_img_buf_format_writable(ibuf)) {
     ret = true;
   }
 
-  BKE_image_release_ibuf(ima, ibuf, lock);
+  dune_img_release_ibuf(img, ibuf, lock);
   return ret;
 }
 
-static bool image_save_poll(bContext *C)
+static bool img_save_poll(Cxt *C)
 {
   /* Can't save if there are no pixels. */
-  if (image_from_context_has_data_poll(C) == false) {
+  if (img_from_cxt_has_data_poll(C) == false) {
     return false;
   }
 
   /* Check if there is a valid file path and image format we can write
    * outside of the 'poll' so we can show a report with a pop-up. */
 
-  /* Can always repack images.
+  /* Can always repack imgs.
    * Images without a filepath will go to "Save As". */
   return true;
 }
 
-static int image_save_exec(bContext *C, wmOperator *op)
+static int img_save_ex(Cxt *C, WinOp *op)
 {
   Main *bmain = CTX_data_main(C);
   Image *image = image_from_context(C);
