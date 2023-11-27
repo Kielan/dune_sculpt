@@ -3715,3 +3715,723 @@ static void object_convert_ui(bContext * /*C*/, wmOperator *op)
     uiItemR(layout, op->ptr, "faces", UI_ITEM_NONE, nullptr, ICON_NONE);
   }
 }
+
+void OBJECT_OT_convert(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Convert To";
+  ot->description = "Convert selected objects to another type";
+  ot->idname = "OBJECT_OT_convert";
+
+  /* api callbacks */
+  ot->invoke = WM_menu_invoke;
+  ot->exec = object_convert_exec;
+  ot->poll = object_convert_poll;
+  ot->ui = object_convert_ui;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  ot->prop = RNA_def_enum(
+      ot->srna, "target", convert_target_items, OB_MESH, "Target", "Type of object to convert to");
+  prop = RNA_def_boolean(ot->srna,
+                         "keep_original",
+                         false,
+                         "Keep Original",
+                         "Keep original objects instead of replacing them");
+  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_OBJECT);
+
+  RNA_def_boolean(
+      ot->srna,
+      "merge_customdata",
+      true,
+      "Merge UVs",
+      "Merge UV coordinates that share a vertex to account for imprecision in some modifiers");
+
+  prop = RNA_def_float_rotation(ot->srna,
+                                "angle",
+                                0,
+                                nullptr,
+                                DEG2RADF(0.0f),
+                                DEG2RADF(180.0f),
+                                "Threshold Angle",
+                                "Threshold to determine ends of the strokes",
+                                DEG2RADF(0.0f),
+                                DEG2RADF(180.0f));
+  RNA_def_property_float_default(prop, DEG2RADF(70.0f));
+
+  RNA_def_int(ot->srna, "thickness", 5, 1, 100, "Thickness", "", 1, 100);
+  RNA_def_boolean(ot->srna, "seams", false, "Only Seam Edges", "Convert only seam edges");
+  RNA_def_boolean(ot->srna, "faces", true, "Export Faces", "Export faces as filled strokes");
+  RNA_def_float_distance(ot->srna,
+                         "offset",
+                         0.01f,
+                         0.0,
+                         OBJECT_ADD_SIZE_MAXF,
+                         "Stroke Offset",
+                         "Offset strokes from fill",
+                         0.0,
+                         100.00);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Duplicate Object Operator
+ * \{ */
+
+static void object_add_sync_base_collection(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_src, Object *object_new)
+{
+  if ((base_src != nullptr) && (base_src->flag & BASE_ENABLED_AND_MAYBE_VISIBLE_IN_VIEWPORT)) {
+    BKE_collection_object_add_from(bmain, scene, base_src->object, object_new);
+  }
+  else {
+    LayerCollection *layer_collection = BKE_layer_collection_get_active(view_layer);
+    BKE_collection_object_add(bmain, layer_collection->collection, object_new);
+  }
+}
+
+static void object_add_sync_local_view(Base *base_src, Base *base_new)
+{
+  base_new->local_view_bits = base_src->local_view_bits;
+}
+
+static void object_add_sync_rigid_body(Main *bmain, Object *object_src, Object *object_new)
+{
+  /* 1) duplis should end up in same collection as the original
+   * 2) Rigid Body sim participants MUST always be part of a collection...
+   */
+  /* XXX: is 2) really a good measure here? */
+  if (object_src->rigidbody_object || object_src->rigidbody_constraint) {
+    LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
+      if (BKE_collection_has_object(collection, object_src)) {
+        BKE_collection_object_add(bmain, collection, object_new);
+      }
+    }
+  }
+}
+
+/**
+ * - Assumes `id.new` is correct.
+ * - Leaves selection of base/object unaltered.
+ * - Sets #ID.newid pointers.
+ */
+static void object_add_duplicate_internal(Main *bmain,
+                                          Object *ob,
+                                          const eDupli_ID_Flags dupflag,
+                                          const eLibIDDuplicateFlags duplicate_options,
+                                          Object **r_ob_new)
+{
+  if (ob->mode & OB_MODE_POSE) {
+    return;
+  }
+
+  Object *obn = static_cast<Object *>(
+      ID_NEW_SET(ob, BKE_object_duplicate(bmain, ob, dupflag, duplicate_options)));
+  if (r_ob_new) {
+    *r_ob_new = obn;
+  }
+  DEG_id_tag_update(&obn->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  return;
+}
+
+static Base *object_add_duplicate_internal(Main *bmain,
+                                           Scene *scene,
+                                           ViewLayer *view_layer,
+                                           Object *ob,
+                                           const eDupli_ID_Flags dupflag,
+                                           const eLibIDDuplicateFlags duplicate_options,
+                                           Object **r_ob_new)
+{
+  Object *object_new = nullptr;
+  object_add_duplicate_internal(bmain, ob, dupflag, duplicate_options, &object_new);
+  if (r_ob_new) {
+    *r_ob_new = object_new;
+  }
+  if (object_new == nullptr) {
+    return nullptr;
+  }
+
+  BKE_view_layer_synced_ensure(scene, view_layer);
+  Base *base_src = BKE_view_layer_base_find(view_layer, ob);
+  object_add_sync_base_collection(bmain, scene, view_layer, base_src, object_new);
+  BKE_view_layer_synced_ensure(scene, view_layer);
+  Base *base_new = BKE_view_layer_base_find(view_layer, object_new);
+  if (base_src && base_new) {
+    object_add_sync_local_view(base_src, base_new);
+  }
+  object_add_sync_rigid_body(bmain, ob, object_new);
+  return base_new;
+}
+
+Base *ED_object_add_duplicate(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base, const eDupli_ID_Flags dupflag)
+{
+  Base *basen;
+  Object *ob;
+
+  basen = object_add_duplicate_internal(bmain,
+                                        scene,
+                                        view_layer,
+                                        base->object,
+                                        dupflag,
+                                        LIB_ID_DUPLICATE_IS_SUBPROCESS |
+                                            LIB_ID_DUPLICATE_IS_ROOT_ID,
+                                        nullptr);
+  if (basen == nullptr) {
+    return nullptr;
+  }
+
+  ob = basen->object;
+
+  /* Link own references to the newly duplicated data #26816.
+   * Note that this function can be called from edit-mode code, in which case we may have to
+   * enforce remapping obdata (by default this is forbidden in edit mode). */
+  const int remap_flag = BKE_object_is_in_editmode(ob) ? ID_REMAP_FORCE_OBDATA_IN_EDITMODE : 0;
+  BKE_libblock_relink_to_newid(bmain, &ob->id, remap_flag);
+
+  /* Correct but the caller must do this. */
+  // DAG_relations_tag_update(bmain);
+
+  if (ob->data != nullptr) {
+    DEG_id_tag_update_ex(bmain, (ID *)ob->data, ID_RECALC_EDITORS);
+  }
+
+  BKE_main_id_newptr_and_tag_clear(bmain);
+
+  return basen;
+}
+
+/* contextual operator dupli */
+static int duplicate_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const bool linked = RNA_boolean_get(op->ptr, "linked");
+  const eDupli_ID_Flags dupflag = (linked) ? (eDupli_ID_Flags)0 : (eDupli_ID_Flags)U.dupflag;
+
+  /* We need to handle that here ourselves, because we may duplicate several objects, in which case
+   * we also want to remap pointers between those... */
+  BKE_main_id_newptr_and_tag_clear(bmain);
+
+  /* Duplicate the selected objects, remember data needed to process
+   * after the sync. */
+  struct DuplicateObjectLink {
+    Base *base_src = nullptr;
+    Object *object_new = nullptr;
+
+    DuplicateObjectLink(Base *base_src) : base_src(base_src) {}
+  };
+
+  blender::Vector<DuplicateObjectLink> object_base_links;
+  CTX_DATA_BEGIN (C, Base *, base, selected_bases) {
+    object_base_links.append(DuplicateObjectLink(base));
+  }
+  CTX_DATA_END;
+
+  bool new_objects_created = false;
+  for (DuplicateObjectLink &link : object_base_links) {
+    object_add_duplicate_internal(bmain,
+                                  link.base_src->object,
+                                  dupflag,
+                                  LIB_ID_DUPLICATE_IS_SUBPROCESS | LIB_ID_DUPLICATE_IS_ROOT_ID,
+                                  &link.object_new);
+    if (link.object_new) {
+      new_objects_created = true;
+    }
+  }
+
+  if (!new_objects_created) {
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Sync that could tag the view_layer out of sync. */
+  for (DuplicateObjectLink &link : object_base_links) {
+    /* note that this is safe to do with this context iterator,
+     * the list is made in advance */
+    ED_object_base_select(link.base_src, BA_DESELECT);
+    if (link.object_new) {
+      object_add_sync_base_collection(bmain, scene, view_layer, link.base_src, link.object_new);
+      object_add_sync_rigid_body(bmain, link.base_src->object, link.object_new);
+    }
+  }
+
+  /* Sync the view layer. Everything else should not tag the view_layer out of sync. */
+  BKE_view_layer_synced_ensure(scene, view_layer);
+  const Base *active_base = BKE_view_layer_active_base_get(view_layer);
+  for (DuplicateObjectLink &link : object_base_links) {
+    if (!link.object_new) {
+      continue;
+    }
+
+    Base *base_new = BKE_view_layer_base_find(view_layer, link.object_new);
+    BLI_assert(base_new);
+    ED_object_base_select(base_new, BA_SELECT);
+    if (active_base == link.base_src) {
+      ED_object_base_activate(C, base_new);
+    }
+
+    if (link.object_new->data) {
+      DEG_id_tag_update(static_cast<ID *>(link.object_new->data), 0);
+    }
+
+    object_add_sync_local_view(link.base_src, base_new);
+  }
+
+  /* Note that this will also clear newid pointers and tags. */
+  copy_object_set_idnew(C);
+
+  ED_outliner_select_sync_from_object_tag(C);
+
+  DEG_relations_tag_update(bmain);
+  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE | ID_RECALC_SELECT);
+
+  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+
+  return OPERATOR_FINISHED;
+}
+
+void OBJECT_OT_duplicate(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Duplicate Objects";
+  ot->description = "Duplicate selected objects";
+  ot->idname = "OBJECT_OT_duplicate";
+
+  /* api callbacks */
+  ot->exec = duplicate_exec;
+  ot->poll = ED_operator_objectmode;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* to give to transform */
+  prop = RNA_def_boolean(ot->srna,
+                         "linked",
+                         false,
+                         "Linked",
+                         "Duplicate object but not object data, linking to the original data");
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+
+  prop = RNA_def_enum(
+      ot->srna, "mode", rna_enum_transform_mode_type_items, TFM_TRANSLATION, "Mode", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Add Named Object Operator
+ *
+ * Use for drag & drop.
+ * \{ */
+
+static int object_add_named_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const bool linked = RNA_boolean_get(op->ptr, "linked");
+  const eDupli_ID_Flags dupflag = (linked) ? (eDupli_ID_Flags)0 : (eDupli_ID_Flags)U.dupflag;
+
+  /* Find object, create fake base. */
+
+  Object *ob = reinterpret_cast<Object *>(
+      WM_operator_properties_id_lookup_from_name_or_session_uuid(bmain, op->ptr, ID_OB));
+
+  if (ob == nullptr) {
+    BKE_report(op->reports, RPT_ERROR, "Object not found");
+    return OPERATOR_CANCELLED;
+  }
+
+  /* prepare dupli */
+  Base *basen = object_add_duplicate_internal(
+      bmain,
+      scene,
+      view_layer,
+      ob,
+      dupflag,
+      /* Sub-process flag because the new-ID remapping (#BKE_libblock_relink_to_newid()) in this
+       * function will only work if the object is already linked in the view layer, which is not
+       * the case here. So we have to do the new-ID relinking ourselves
+       * (#copy_object_set_idnew()).
+       */
+      LIB_ID_DUPLICATE_IS_SUBPROCESS | LIB_ID_DUPLICATE_IS_ROOT_ID,
+      nullptr);
+
+  if (basen == nullptr) {
+    BKE_report(op->reports, RPT_ERROR, "Object could not be duplicated");
+    return OPERATOR_CANCELLED;
+  }
+
+  basen->object->visibility_flag &= ~OB_HIDE_VIEWPORT;
+  /* Do immediately, as #copy_object_set_idnew() below operates on visible objects. */
+  BKE_base_eval_flags(basen);
+
+  /* object_add_duplicate_internal() doesn't deselect other objects, unlike object_add_common() or
+   * BKE_view_layer_base_deselect_all(). */
+  ED_object_base_deselect_all(scene, view_layer, nullptr, SEL_DESELECT);
+  ED_object_base_select(basen, BA_SELECT);
+  ED_object_base_activate(C, basen);
+
+  copy_object_set_idnew(C);
+
+  /* TODO(sergey): Only update relations for the current scene. */
+  DEG_relations_tag_update(bmain);
+
+  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
+  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
+  WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  ED_outliner_select_sync_from_object_tag(C);
+
+  PropertyRNA *prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
+  if (RNA_property_is_set(op->ptr, prop_matrix)) {
+    Object *ob_add = basen->object;
+    RNA_property_float_get_array(op->ptr, prop_matrix, &ob_add->object_to_world[0][0]);
+    BKE_object_apply_mat4(ob_add, ob_add->object_to_world, true, true);
+
+    DEG_id_tag_update(&ob_add->id, ID_RECALC_TRANSFORM);
+  }
+  else if (CTX_wm_region_view3d(C)) {
+    int mval[2];
+    if (object_add_drop_xy_get(C, op, &mval)) {
+      ED_object_location_from_view(C, basen->object->loc);
+      ED_view3d_cursor3d_position(C, mval, false, basen->object->loc);
+    }
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void OBJECT_OT_add_named(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Add Object";
+  ot->description = "Add named object";
+  ot->idname = "OBJECT_OT_add_named";
+
+  /* api callbacks */
+  ot->invoke = object_add_drop_xy_generic_invoke;
+  ot->exec = object_add_named_exec;
+  ot->poll = ED_operator_objectmode_poll_msg;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  PropertyRNA *prop;
+  RNA_def_boolean(ot->srna,
+                  "linked",
+                  false,
+                  "Linked",
+                  "Duplicate object but not object data, linking to the original data");
+
+  WM_operator_properties_id_lookup(ot, true);
+
+  prop = RNA_def_float_matrix(
+      ot->srna, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
+  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+
+  object_add_drop_xy_props(ot);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Transform Object to Mouse Operator
+ * \{ */
+
+/**
+ * Alternate behavior for dropping an asset that positions the appended object(s).
+ */
+static int object_transform_to_mouse_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  const Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  Object *ob = reinterpret_cast<Object *>(
+      WM_operator_properties_id_lookup_from_name_or_session_uuid(bmain, op->ptr, ID_OB));
+
+  if (!ob) {
+    BKE_view_layer_synced_ensure(scene, view_layer);
+    ob = BKE_view_layer_active_object_get(view_layer);
+  }
+
+  if (ob == nullptr) {
+    BKE_report(op->reports, RPT_ERROR, "Object not found");
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Don't transform a linked object. There's just nothing to do here in this case, so return
+   * #OPERATOR_FINISHED. */
+  if (!BKE_id_is_editable(bmain, &ob->id)) {
+    return OPERATOR_FINISHED;
+  }
+
+  /* Ensure the locations are updated so snap reads the evaluated active location. */
+  CTX_data_ensure_evaluated_depsgraph(C);
+
+  PropertyRNA *prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
+  if (RNA_property_is_set(op->ptr, prop_matrix)) {
+    ObjectsInViewLayerParams params = {0};
+    uint objects_len;
+    Object **objects = BKE_view_layer_array_selected_objects_params(
+        view_layer, nullptr, &objects_len, &params);
+
+    float matrix[4][4];
+    RNA_property_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
+
+    float mat_src_unit[4][4];
+    float mat_dst_unit[4][4];
+    float final_delta[4][4];
+
+    normalize_m4_m4(mat_src_unit, ob->object_to_world);
+    normalize_m4_m4(mat_dst_unit, matrix);
+    invert_m4(mat_src_unit);
+    mul_m4_m4m4(final_delta, mat_dst_unit, mat_src_unit);
+
+    ED_object_xform_array_m4(objects, objects_len, final_delta);
+
+    MEM_freeN(objects);
+  }
+  else if (CTX_wm_region_view3d(C)) {
+    int mval[2];
+    if (object_add_drop_xy_get(C, op, &mval)) {
+      float cursor[3];
+      ED_object_location_from_view(C, cursor);
+      ED_view3d_cursor3d_position(C, mval, false, cursor);
+
+      /* Use the active objects location since this is the ID which the user selected to drop.
+       *
+       * This transforms all selected objects, so that dropping a single object which links in
+       * other objects will have their relative transformation preserved.
+       * For example a child/parent relationship or other objects used with a boolean modifier.
+       *
+       * The caller is responsible for ensuring the selection state gives useful results.
+       * Link/append does this using #FILE_AUTOSELECT. */
+      ED_view3d_snap_selected_to_location(C, cursor, V3D_AROUND_ACTIVE);
+    }
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void OBJECT_OT_transform_to_mouse(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Place Object Under Mouse";
+  ot->description = "Snap selected item(s) to the mouse location";
+  ot->idname = "OBJECT_OT_transform_to_mouse";
+
+  /* api callbacks */
+  ot->invoke = object_add_drop_xy_generic_invoke;
+  ot->exec = object_transform_to_mouse_exec;
+  ot->poll = ED_operator_objectmode_poll_msg;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  PropertyRNA *prop;
+  prop = RNA_def_string(
+      ot->srna,
+      "name",
+      nullptr,
+      MAX_ID_NAME - 2,
+      "Name",
+      "Object name to place (uses the active object when this and 'session_uuid' are unset)");
+  RNA_def_property_flag(prop, (PropertyFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
+  prop = RNA_def_int(ot->srna,
+                     "session_uuid",
+                     0,
+                     INT32_MIN,
+                     INT32_MAX,
+                     "Session UUID",
+                     "Session UUID of the object to place (uses the active object when this and "
+                     "'name' are unset)",
+                     INT32_MIN,
+                     INT32_MAX);
+  RNA_def_property_flag(prop, (PropertyFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
+
+  prop = RNA_def_float_matrix(
+      ot->srna, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
+  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+
+  object_add_drop_xy_props(ot);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Join Object Operator
+ * \{ */
+
+static bool object_join_poll(bContext *C)
+{
+  Object *ob = CTX_data_active_object(C);
+
+  if (ob == nullptr || ob->data == nullptr || ID_IS_LINKED(ob) || ID_IS_OVERRIDE_LIBRARY(ob) ||
+      ID_IS_OVERRIDE_LIBRARY(ob->data))
+  {
+    return false;
+  }
+
+  if (ELEM(ob->type, OB_MESH, OB_CURVES_LEGACY, OB_SURF, OB_ARMATURE, OB_GPENCIL_LEGACY)) {
+    return true;
+  }
+  return false;
+}
+
+static int object_join_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  Object *ob = CTX_data_active_object(C);
+
+  if (ob->mode & OB_MODE_EDIT) {
+    BKE_report(op->reports, RPT_ERROR, "This data does not support joining in edit mode");
+    return OPERATOR_CANCELLED;
+  }
+  if (BKE_object_obdata_is_libdata(ob)) {
+    BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
+    return OPERATOR_CANCELLED;
+  }
+  if (!BKE_lib_override_library_id_is_user_deletable(bmain, &ob->id)) {
+    dune_reportf(op->reports,
+                RPT_WARNING,
+                "Cannot edit object '%s' as it is used by override collections",
+                ob->id.name + 2);
+    return OP_CANCELLED;
+  }
+
+  if (ob->type == OB_PEN_LEGACY) {
+    PenData *pd = (PenData *)ob->data;
+    if ((!pd) || PEN_ANY_MODE(gpd)) {
+      dune_report(op->reports, RPT_ERROR, "This data does not support joining in this mode");
+      return OP_CANCELLED;
+    }
+  }
+
+  int ret = OP_CANCELLED;
+  if (ob->type == OB_MESH) {
+    ret = ed_mesh_join_obs_ex(C, op);
+  }
+  else if (ELEM(ob->type, OB_CURVES_LEGACY, OB_SURF)) {
+    ret = ed_curve_join_obs_ex(C, op);
+  }
+  else if (ob->type == OB_ARMATURE) {
+    ret = ed_armature_join_obs_ex(C, op);
+  }
+  else if (ob->type == OB_PEN_LEGACY) {
+    ret = ed_pen_join_obs_ex(C, op);
+  }
+
+  if (ret & OP_FINISHED) {
+    /* Even though internally failure to invert is accounted for with a fallback,
+     * show a warning since the result may not be what the user expects. See #80077.
+     *
+     * Failure to invert the matrix is typically caused by zero scaled axes
+     * (which can be caused by constraints, even if the input scale isn't zero).
+     *
+     * Internally the join functions use #invert_m4_m4_safe_ortho which creates
+     * an inevitable matrix from one that has one or more degenerate axes.
+     *
+     * In most cases we don't worry about special handling for non-inevitable matrices however for
+     * joining objs there may be flat 2D objects where it's not obvious the scale is zero.
+     * In this case, using #invert_m4_m4_safe_ortho works as well as we can expect,
+     * joining the contents, flattening on the axis that's zero scaled.
+     * If the zero scale is removed, the data on this axis remains un-scaled
+     * (something that wouldn't work for #minvert_m4_m4_safe). */
+    float imat_test[4][4];
+    if (!invert_m4_m4(imat_test, ob->ob_to_world)) {
+      dune_report(op->reports,
+                 RPT_WARNING,
+                 "Active ob final transform has one or more zero scaled axes");
+    }
+  }
+
+  return ret;
+}
+
+void OB_OT_join(WinOpType *ot)
+{
+  /* ids */
+  ot->name = "Join";
+  ot->description = "Join sel obs into active ob";
+  ot->idname = "OB_OT_join";
+
+  /* api cbs */
+  ot->ex = ob_join_ex;
+  ot->poll = ob_join_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/* Join as Shape Key Op */
+static bool join_shapes_poll(Cxt *C)
+{
+  Ob *ob = cxt_data_active_ob(C);
+
+  if (ob == nullptr || ob->data == nullptr || ID_IS_LINKED(ob) || ID_IS_OVERRIDE_LIBRARY(ob) ||
+      ID_IS_OVERRIDE_LIB(ob->data))
+  {
+    return false;
+  }
+
+  /* only meshes supported at the moment */
+  if (ob->type == OB_MESH) {
+    return ed_op_screenactive(C);
+  }
+  return false;
+}
+
+static int join_shapes_ex(Cxt *C, WinOp *op)
+{
+  Main *main = cxt_data_main(C);
+  Ob *ob = cxt_data_active_ob(C);
+
+  if (ob->mode & OB_MODE_EDIT) {
+    dune_report(op->reports, RPT_ERROR, "This data does not support joining in edit mode");
+    return OP_CANCELLED;
+  }
+  if (dune_ob_obdata_is_libdata(ob)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot edit external lib data");
+    return OP_CANCELLED;
+  }
+  if (!dune_lib_override_lib_id_is_user_deletable(main, &ob->id)) {
+    dune_reportf(op->reports,
+                RPT_WARNING,
+                "Cannot edit object '%s' as it is used by override collections",
+                ob->id.name + 2);
+    return OP_CANCELLED;
+  }
+
+  if (ob->type == OB_MESH) {
+    return ed_mesh_shapes_join_obs_ex(C, op);
+  }
+
+  return OP_CANCELLED;
+}
+
+void OB_OT_join_shapes(WinOpType *ot)
+{
+  /* ids */
+  ot->name = "Join as Shapes";
+  ot->description = "Copy the current resulting shape of another selected object to this one";
+  ot->idname = "OBJECT_OT_join_shapes";
+
+  /* api callbacks */
+  ot->exec = join_shapes_exec;
+  ot->poll = join_shapes_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
