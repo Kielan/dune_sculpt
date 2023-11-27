@@ -298,25 +298,25 @@ void ed_ob_rotation_from_view(Cxt *C, float rot[3], const char align_axis)
 void ed_ob_base_init_transform_on_add(Ob *ob, const float loc[3], const float rot[3])
 {
   if (loc) {
-    copy_v3_v3(object->loc, loc);
+    copy_v3_v3(ob->loc, loc);
   }
 
   if (rot) {
-    copy_v3_v3(object->rot, rot);
+    copy_v3_v3(ob->rot, rot);
   }
 
-  BKE_object_to_mat4(object, object->object_to_world);
+  dune_ob_to_mat4(ob, ob->ob_to_world);
 }
 
-float ED_object_new_primitive_matrix(bContext *C,
-                                     Object *obedit,
-                                     const float loc[3],
-                                     const float rot[3],
-                                     const float scale[3],
-                                     float r_primmat[4][4])
+float ed_ob_new_primitive_matrix(Cxt *C,
+                                 Ob *obedit,
+                                 const float loc[3],
+                                 const float rot[3],
+                                 const float scale[3],
+                                 float r_primmat[4][4])
 {
-  Scene *scene = CTX_data_scene(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  View3D *v3d = cxt_win_view3d(C);
   float mat[3][3], rmat[3][3], cmat[3][3], imat[3][3];
 
   unit_m4(r_primmat);
@@ -325,14 +325,14 @@ float ED_object_new_primitive_matrix(bContext *C,
   invert_m3(rmat);
 
   /* inverse transform for initial rotation and object */
-  copy_m3_m4(mat, obedit->object_to_world);
+  copy_m3_m4(mat, obedit->ob_to_world);
   mul_m3_m3m3(cmat, rmat, mat);
   invert_m3_m3(imat, cmat);
   copy_m4_m3(r_primmat, imat);
 
   /* center */
   copy_v3_v3(r_primmat[3], loc);
-  sub_v3_v3v3(r_primmat[3], r_primmat[3], obedit->object_to_world[3]);
+  sub_v3_v3v3(r_primmat[3], r_primmat[3], obedit->ob_to_world[3]);
   invert_m3_m3(imat, mat);
   mul_m3_v3(imat, r_primmat[3]);
 
@@ -341,88 +341,83 @@ float ED_object_new_primitive_matrix(bContext *C,
   }
 
   {
-    const float dia = v3d ? ED_view3d_grid_scale(scene, v3d, nullptr) :
-                            ED_scene_grid_scale(scene, nullptr);
+    const float dia = v3d ? ed_view3d_grid_scale(scene, v3d, nullptr) :
+                            ed_scene_grid_scale(scene, nullptr);
     return dia;
   }
 
   // return 1.0f;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Object Operator
- * \{ */
-
-static void view_align_update(Main * /*main*/, Scene * /*scene*/, PointerRNA *ptr)
+/* Add Ob Op */
+static void view_align_update(Main * /*main*/, Scene * /*scene*/, ApiPtr *ptr)
 {
-  RNA_struct_idprops_unset(ptr, "rotation");
+  api_struct_idprops_unset(ptr, "rotation");
 }
 
-void ED_object_add_unit_props_size(wmOperatorType *ot)
+void ed_ob_add_unit_props_size(WinOpType *ot)
 {
-  RNA_def_float_distance(
-      ot->srna, "size", 2.0f, 0.0, OBJECT_ADD_SIZE_MAXF, "Size", "", 0.001, 100.00);
+  api_def_float_distance(
+      ot->sapi, "size", 2.0f, 0.0, OB_ADD_SIZE_MAXF, "Size", "", 0.001, 100.00);
 }
 
-void ED_object_add_unit_props_radius_ex(wmOperatorType *ot, float default_value)
+void ed_ob_add_unit_props_radius_ex(WinOpType *ot, float default_val)
 {
-  RNA_def_float_distance(
-      ot->srna, "radius", default_value, 0.0, OBJECT_ADD_SIZE_MAXF, "Radius", "", 0.001, 100.00);
+  api_def_float_distance(
+      ot->sapi, "radius", default_val, 0.0, OB_ADD_SIZE_MAXF, "Radius", "", 0.001, 100.00);
 }
 
-void ED_object_add_unit_props_radius(wmOperatorType *ot)
+void ed_ob_add_unit_props_radius(WinOpType *ot)
 {
-  ED_object_add_unit_props_radius_ex(ot, 1.0f);
+  ed_ob_add_unit_props_radius_ex(ot, 1.0f);
 }
 
-void ED_object_add_generic_props(wmOperatorType *ot, bool do_editmode)
+void ed_ob_add_generic_props(WinOpType *ot, bool do_editmode)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   if (do_editmode) {
-    prop = RNA_def_boolean(ot->srna,
-                           "enter_editmode",
-                           false,
-                           "Enter Edit Mode",
-                           "Enter edit mode when adding this object");
-    RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+    prop = api_def_bool(ot->sapi,
+                        "enter_editmode",
+                        false,
+                        "Enter Edit Mode",
+                        "Enter edit mode when adding this ob");
+    api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
   }
-  /* NOTE: this property gets hidden for add-camera operator. */
-  prop = RNA_def_enum(
-      ot->srna, "align", align_options, ALIGN_WORLD, "Align", "The alignment of the new object");
-  RNA_def_property_update_runtime(prop, view_align_update);
+  /* NOTE: this prop gets hidden for add-camera ob. */
+  prop = api_def_enum(
+      ot->sapi, "align", align_options, ALIGN_WORLD, "Align", "The alignment of the new object");
+  api_def_prop_update_runtime(prop, view_align_update);
 
-  prop = RNA_def_float_vector_xyz(ot->srna,
+  prop = api_def_float_vector_xyz(ot->sapi,
                                   "location",
                                   3,
                                   nullptr,
-                                  -OBJECT_ADD_SIZE_MAXF,
-                                  OBJECT_ADD_SIZE_MAXF,
+                                  -OB_ADD_SIZE_MAXF,
+                                  OB_ADD_SIZE_MAXF,
                                   "Location",
                                   "Location for the newly added object",
                                   -1000.0f,
                                   1000.0f);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_float_rotation(ot->srna,
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_float_rotation(ot->sapi,
                                 "rotation",
                                 3,
                                 nullptr,
-                                -OBJECT_ADD_SIZE_MAXF,
-                                OBJECT_ADD_SIZE_MAXF,
+                                -OB_ADD_SIZE_MAXF,
+                                OB_ADD_SIZE_MAXF,
                                 "Rotation",
                                 "Rotation for the newly added object",
                                 DEG2RADF(-360.0f),
                                 DEG2RADF(360.0f));
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_float_vector_xyz(ot->srna,
+  prop = api_def_float_vector_xyz(ot->sapi,
                                   "scale",
                                   3,
                                   nullptr,
-                                  -OBJECT_ADD_SIZE_MAXF,
-                                  OBJECT_ADD_SIZE_MAXF,
+                                  -OB_ADD_SIZE_MAXF,
+                                  OB_ADD_SIZE_MAXF,
                                   "Scale",
                                   "Scale for the newly added object",
                                   -1000.0f,
