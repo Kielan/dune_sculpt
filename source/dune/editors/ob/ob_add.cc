@@ -9,7 +9,7 @@
 #include "types_camera.h"
 #include "types_collection.h"
 #include "types_curve.h"
-#include "types_gpen_legacy.h"
+#include "types_pen_legacy.h"
 #include "types_pen_mod.h"
 #include "types_key.h"
 #include "types_light.h"
@@ -18,119 +18,117 @@
 #include "types_mesh.h"
 #include "types_meta.h"
 #include "types_mod.h"
-#include "DNA_object_fluidsim_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_pointcloud_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_vfont_types.h"
+#include "types_ob_fluidsim.h"
+#include "types_ob_force.h"
+#include "types_ob.h"
+#include "types_pointcloud.h"
+#include "types_scene.h"
+#include "types_vfont.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
-#include "BLI_vector.hh"
+#include "lib_ghash.h"
+#include "lib_list.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_string.h"
+#include "lib_string_utf8.h"
+#include "lib_utildefines.h"
+#include "lib_vector.hh"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_armature.hh"
-#include "BKE_camera.h"
-#include "BKE_collection.h"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_curve.hh"
-#include "BKE_curve_to_mesh.hh"
-#include "BKE_curves.h"
-#include "BKE_displist.h"
-#include "BKE_duplilist.h"
-#include "BKE_effect.h"
-#include "BKE_geometry_set.hh"
-#include "BKE_geometry_set_instances.hh"
-#include "BKE_gpencil_curve_legacy.h"
-#include "BKE_gpencil_geom_legacy.h"
-#include "BKE_gpencil_legacy.h"
-#include "BKE_gpencil_modifier_legacy.h"
-#include "BKE_grease_pencil.hh"
-#include "BKE_key.h"
-#include "BKE_lattice.hh"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_override.hh"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_light.h"
-#include "BKE_lightprobe.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_mball.h"
-#include "BKE_mesh.hh"
-#include "BKE_mesh_runtime.hh"
-#include "BKE_nla.h"
-#include "BKE_node.hh"
-#include "BKE_object.hh"
-#include "BKE_object_types.hh"
-#include "BKE_particle.h"
-#include "BKE_pointcloud.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_speaker.h"
-#include "BKE_vfont.h"
-#include "BKE_volume.hh"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_armature.hh"
+#include "dune_camera.h"
+#include "dune_collection.h"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_curve.hh"
+#include "dune_curve_to_mesh.hh"
+#include "dune_curves.h"
+#include "dune_displist.h"
+#include "dune_duplilist.h"
+#include "dune_effect.h"
+#include "dune_geometry_set.hh"
+#include "dune_geometry_set_instances.hh"
+#include "dune_pen_curve_legacy.h"
+#include "dune_pen_geom_legacy.h"
+#include "dune_pen_legacy.h"
+#include "dune_pen_mod_legacy.h"
+#include "dune_pen.hh"
+#include "dune_key.h"
+#include "dune_lattice.hh"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_override.hh"
+#include "dune_lib_query.h"
+#include "dune_lib_remap.h"
+#include "dune_light.h"
+#include "dune_lightprobe.h"
+#include "dune_main.h"
+#include "dune_material.h"
+#include "dune_mball.h"
+#include "dune_mesh.hh"
+#include "dune_mesh_runtime.hh"
+#include "dune_nla.h"
+#include "dune_node.hh"
+#include "dune_ob.hh"
+#include "dune_ob_types.hh"
+#include "dune_particle.h"
+#include "dune_pointcloud.h"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_speaker.h"
+#include "dune_vfont.h"
+#include "dune_volume.hh"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_build.hh"
-#include "DEG_depsgraph_query.hh"
+#include "graph.hh"
+#include "graph_build.hh"
+#include "graph_query.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
 
-#include "UI_interface.hh"
+#include "ui.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_curve.hh"
-#include "ED_curves.hh"
-#include "ED_gpencil_legacy.hh"
-#include "ED_grease_pencil.hh"
+#include "ed_armature.hh"
+#include "ed_curve.hh"
+#include "ed_curves.hh"
+#include "ed_pen_legacy.hh"
+#include "ed_pen.hh"
 #include "ED_mball.hh"
-#include "ED_mesh.hh"
-#include "ED_node.hh"
-#include "ED_object.hh"
-#include "ED_outliner.hh"
-#include "ED_physics.hh"
-#include "ED_render.hh"
-#include "ED_screen.hh"
-#include "ED_select_utils.hh"
-#include "ED_transform.hh"
-#include "ED_view3d.hh"
+#include "ed_mesh.hh"
+#include "ed_node.hh"
+#include "ed_ob.hh"
+#include "ed_outliner.hh"
+#include "ed_physics.hh"
+#include "ed_render.hh"
+#include "ed_screen.hh"
+#include "ed_sel_utils.hh"
+#include "ed_transform.hh"
+#include "ed_view3d.hh"
 
-#include "ANIM_bone_collections.h"
+#include "anim_bone_collections.h"
 
-#include "UI_resources.hh"
+#include "ui_resources.hh"
 
-#include "object_intern.h"
+#include "ob_intern.h"
 
-using blender::float3;
-using blender::float4x4;
-using blender::Vector;
+using dune::float3;
+using dune::float4x4;
+using dune::Vector;
 
-/* -------------------------------------------------------------------- */
-/** \name Local Enum Declarations
- * \{ */
+/* Local Enum Declarations */
 
 /* This is an exact copy of the define in `rna_light.cc`
  * kept here because of linking order.
  * Icons are only defined here. */
 
-const EnumPropertyItem rna_enum_light_type_items[] = {
+const EnumPropItem api_enum_light_type_items[] = {
     {LA_LOCAL, "POINT", ICON_LIGHT_POINT, "Point", "Omnidirectional point light source"},
     {LA_SUN, "SUN", ICON_LIGHT_SUN, "Sun", "Constant direction parallel ray light source"},
     {LA_SPOT, "SPOT", ICON_LIGHT_SPOT, "Spot", "Directional cone light source"},
@@ -138,8 +136,8 @@ const EnumPropertyItem rna_enum_light_type_items[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/* copy from rna_object_force.cc */
-static const EnumPropertyItem field_type_items[] = {
+/* copy from api_ob_force.cc */
+static const EnumPropItem field_type_items[] = {
     {PFIELD_FORCE, "FORCE", ICON_FORCE_FORCE, "Force", ""},
     {PFIELD_WIND, "WIND", ICON_FORCE_WIND, "Wind", ""},
     {PFIELD_VORTEX, "VORTEX", ICON_FORCE_VORTEX, "Vortex", ""},
@@ -156,7 +154,7 @@ static const EnumPropertyItem field_type_items[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-static EnumPropertyItem lightprobe_type_items[] = {
+static EnumPropeItem lightprobe_type_items[] = {
     {LIGHTPROBE_TYPE_SPHERE,
      "SPHERE",
      ICON_LIGHTPROBE_SPHERE,
@@ -181,21 +179,16 @@ enum {
   ALIGN_CURSOR,
 };
 
-static const EnumPropertyItem align_options[] = {
-    {ALIGN_WORLD, "WORLD", 0, "World", "Align the new object to the world"},
-    {ALIGN_VIEW, "VIEW", 0, "View", "Align the new object to the view"},
+static const EnumPropItem align_options[] = {
+    {ALIGN_WORLD, "WORLD", 0, "World", "Align the new ob to the world"},
+    {ALIGN_VIEW, "VIEW", 0, "View", "Align the new ob to the view"},
     {ALIGN_CURSOR, "CURSOR", 0, "3D Cursor", "Use the 3D cursor orientation for the new object"},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/** \} */
+/* Local Helpers */
 
-/* -------------------------------------------------------------------- */
-/** \name Local Helpers
- * \{ */
-
-/**
- * Operator properties for creating an object under a screen space (2D) coordinate.
+/* Op props for creating an object under a screen space (2D) coordinate.
  * Used for object dropping like behavior (drag object and drop into 3D View).
  */
 static void object_add_drop_xy_props(wmOperatorType *ot)
