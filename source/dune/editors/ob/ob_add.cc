@@ -422,16 +422,16 @@ void ed_ob_add_generic_props(WinOpType *ot, bool do_editmode)
                                   "Scale for the newly added object",
                                   -1000.0f,
                                   1000.0f);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 }
 
-void ED_object_add_mesh_props(wmOperatorType *ot)
+void ed_ob_add_mesh_props(WinOpType *ot)
 {
-  RNA_def_boolean(ot->srna, "calc_uvs", true, "Generate UVs", "Generate a default UV map");
+  api_def_bool(ot->sapi, "calc_uvs", true, "Generate UVs", "Generate a default UV map");
 }
 
-bool ED_object_add_generic_get_opts(bContext *C,
-                                    wmOperator *op,
+bool ed_ob_add_generic_get_opts(Cxt *C,
+                                    WinOp *op,
                                     const char view_align_axis,
                                     float r_loc[3],
                                     float r_rot[3],
@@ -450,7 +450,7 @@ bool ED_object_add_generic_get_opts(bContext *C,
      * Typically the prop will exist when the argument is non-nullptr. */
     *r_enter_editmode = false;
 
-    ApiProp *prop = api_struct_find_property(op->ptr, "enter_editmode");
+    ApiProp *prop = api_struct_find_prop(op->ptr, "enter_editmode");
     if (prop != nullptr) {
       if (api_prop_is_set(op->ptr, prop) && r_enter_editmode) {
         *r_enter_editmode = api_prop_bool_get(op->ptr, prop);
@@ -572,13 +572,13 @@ bool ED_object_add_generic_get_opts(bContext *C,
 }
 
 Ob *ed_ob_add_type_with_obdata(Cxt *C,
-                                       const int type,
-                                       const char *name,
-                                       const float loc[3],
-                                       const float rot[3],
-                                       const bool enter_editmode,
-                                       const ushort local_view_bits,
-                                       Id *obdata)
+                               const int type,
+                               const char *name,
+                               const float loc[3],
+                               const float rot[3],
+                               const bool enter_editmode,
+                               const ushort local_view_bits,
+                               Id *obdata)
 {
   Main *main = cxt_data_main(C);
   Scene *scene = cxt_data_scene(C);
@@ -629,45 +629,45 @@ Ob *ed_ob_add_type_with_obdata(Cxt *C,
   }
 
   if (enter_editmode) {
-    ed_ob_editmode_enter_ex(bmain, scene, ob, 0);
+    ed_ob_editmode_enter_ex(main, scene, ob, 0);
   }
 
   win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
   graph_id_tag_update(&scene->id, ID_RECALC_BASE_FLAGS);
 
-  ed_outliner_sel_sync_from_object_tag(C);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
   return ob;
 }
 
 Ob *ed_ob_add_type(Cxt *C,
-                           const int type,
-                           const char *name,
-                           const float loc[3],
-                           const float rot[3],
-                           const bool enter_editmode,
-                           const ushort local_view_bits)
+                   const int type,
+                   const char *name,
+                   const float loc[3],
+                   const float rot[3],
+                   const bool enter_editmode,
+                   const ushort local_view_bits)
 {
   return ed_ob_add_type_with_obdata(
       C, type, name, loc, rot, enter_editmode, local_view_bits, nullptr);
 }
 
-/* for object add operator */
-static int object_add_exec(bContext *C, wmOperator *op)
+/* for ob add op */
+static int ob_add_ex(Cxt *C, WinOp *op)
 {
   ushort local_view_bits;
   bool enter_editmode;
   float loc[3], rot[3], radius;
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  radius = RNA_float_get(op->ptr, "radius");
-  Object *ob = ED_object_add_type(
-      C, RNA_enum_get(op->ptr, "type"), nullptr, loc, rot, enter_editmode, local_view_bits);
+  radius = api_float_get(op->ptr, "radius");
+  Ob *ob = ed_ob_add_type(
+      C, api_enum_get(op->ptr, "type"), nullptr, loc, rot, enter_editmode, local_view_bits);
 
   if (ob->type == OB_LATTICE) {
     /* lattice is a special case!
@@ -675,30 +675,30 @@ static int object_add_exec(bContext *C, wmOperator *op)
     copy_v3_fl(ob->scale, radius);
   }
   else {
-    BKE_object_obdata_size_init(ob, radius);
+    dune_ob_obdata_size_init(ob, radius);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_add(wmOperatorType *ot)
+void OBJECT_OT_add(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Object";
-  ot->description = "Add an object to the scene";
-  ot->idname = "OBJECT_OT_add";
+  /* ids */
+  ot->name = "Add Ob";
+  ot->description = "Add an ob to the scene";
+  ot->idname = "OB_OT_add";
 
-  /* api callbacks */
-  ot->exec = object_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cb */
+  ot->ex = ob_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ED_object_add_unit_props_radius(ot);
+  /* props */
+  ed_ob_add_unit_props_radius(ot);
   PropertyRNA *prop = RNA_def_enum(ot->srna, "type", rna_enum_object_type_items, 0, "Type", "");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
+  RNA_def_prop_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
 
   ED_object_add_generic_props(ot, true);
 }
