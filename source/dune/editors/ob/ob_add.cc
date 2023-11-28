@@ -2087,148 +2087,139 @@ static int ob_curves_random_add_ex(Cxt *C, WinOp *op)
 
 void OB_OT_curves_random_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Random Curves";
-  ot->description = "Add a curves object with random curves to the scene";
-  ot->idname = "OBJECT_OT_curves_random_add";
+  ot->description = "Add a curves obj with random curves to the scene";
+  ot->idname = "OB_OT_curves_random_add";
 
-  /* api callbacks */
-  ot->exec = object_curves_random_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = ob_curves_random_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 }
 
-static int object_curves_empty_hair_add_exec(bContext *C, wmOperator *op)
+static int ob_curves_empty_hair_add_ex(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   ushort local_view_bits;
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', nullptr, nullptr, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  Object *surface_ob = CTX_data_active_object(C);
-  BLI_assert(surface_ob != nullptr);
+  Ob *surface_ob = cxt_data_active_ob(C);
+  lib_assert(surface_ob != nullptr);
 
-  Object *curves_ob = ED_object_add_type(
+  Ob *curves_ob = ed_ob_add_type(
       C, OB_CURVES, nullptr, nullptr, nullptr, false, local_view_bits);
-  BKE_object_apply_mat4(curves_ob, surface_ob->object_to_world, false, false);
+  dune_ob_apply_mat4(curves_ob, surface_ob->ob_to_world, false, false);
 
   /* Set surface object. */
   Curves *curves_id = static_cast<Curves *>(curves_ob->data);
   curves_id->surface = surface_ob;
 
-  /* Parent to surface object. */
-  ED_object_parent_set(
-      op->reports, C, scene, curves_ob, surface_ob, PAR_OBJECT, false, true, nullptr);
+  /* Parent to surface ob. */
+  ed_ob_parent_set(
+      op->reports, C, scene, curves_ob, surface_ob, PAR_OB, false, true, nullptr);
 
   /* Decide which UV map to use for attachment. */
   Mesh *surface_mesh = static_cast<Mesh *>(surface_ob->data);
   const char *uv_name = CustomData_get_active_layer_name(&surface_mesh->loop_data, CD_PROP_FLOAT2);
   if (uv_name != nullptr) {
-    curves_id->surface_uv_map = BLI_strdup(uv_name);
+    curves_id->surface_uv_map = lib_strdup(uv_name);
   }
 
-  /* Add deformation modifier. */
-  blender::ed::curves::ensure_surface_deformation_node_exists(*C, *curves_ob);
+  /* Add deformation mod */
+  dune::ed::curves::ensure_surface_deformation_node_exists(*C, *curves_ob);
 
   /* Make sure the surface object has a rest position attribute which is necessary for
    * deformations. */
-  surface_ob->modifier_flag |= OB_MODIFIER_FLAG_ADD_REST_POSITION;
+  surface_ob->mod_flag |= OB_MOD_FLAG_ADD_REST_POSITION;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool object_curves_empty_hair_add_poll(bContext *C)
+static bool ob_curves_empty_hair_add_poll(Cxt *C)
 {
-  if (!ED_operator_objectmode(C)) {
+  if (!ed_op_ob_mode(C)) {
     return false;
   }
-  Object *ob = CTX_data_active_object(C);
+  Ob *ob = cxt_data_active_ob(C);
   if (ob == nullptr || ob->type != OB_MESH) {
-    CTX_wm_operator_poll_msg_set(C, "No active mesh object");
+    cxt_win_op_poll_msg_set(C, "No active mesh ob");
     return false;
   }
   return true;
 }
 
-void OBJECT_OT_curves_empty_hair_add(wmOperatorType *ot)
+void OB_OT_curves_empty_hair_add(WinOpType *ot)
 {
   ot->name = "Add Empty Curves";
-  ot->description = "Add an empty curve object to the scene with the selected mesh as surface";
-  ot->idname = "OBJECT_OT_curves_empty_hair_add";
+  ot->description = "Add an empty curve ob to the scene with the selected mesh as surface";
+  ot->idname = "OB_OT_curves_empty_hair_add";
 
-  ot->exec = object_curves_empty_hair_add_exec;
-  ot->poll = object_curves_empty_hair_add_poll;
+  ot->ex = ob_curves_empty_hair_add_ex;
+  ot->poll = ob_curves_empty_hair_add_poll;
 
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Point Cloud Operator
- * \{ */
-
-static bool object_pointcloud_add_poll(bContext *C)
+/* Add Point Cloud Op */
+static bool ob_pointcloud_add_poll(Cxt *C)
 {
   if (!U.experimental.use_new_point_cloud_type) {
     return false;
   }
-  return ED_operator_objectmode(C);
+  return ed_op_obmode(C);
 }
 
-static int object_pointcloud_add_exec(bContext *C, wmOperator *op)
+static int ob_pointcloud_add_ex(Cxt *C, WinOp *op)
 {
   ushort local_view_bits;
   float loc[3], rot[3];
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
     return OPERATOR_CANCELLED;
   }
 
-  Object *object = ED_object_add_type(C, OB_POINTCLOUD, nullptr, loc, rot, false, local_view_bits);
+  Object *object = ED_ob_add_type(C, OB_POINTCLOUD, nullptr, loc, rot, false, local_view_bits);
   object->dtx |= OB_DRAWBOUNDOX; /* TODO: remove once there is actual drawing. */
 
   return OPERATOR_FINISHED;
 }
 
-void OBJECT_OT_pointcloud_add(wmOperatorType *ot)
+void OB_OT_pointcloud_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Point Cloud";
   ot->description = "Add a point cloud object to the scene";
-  ot->idname = "OBJECT_OT_pointcloud_add";
+  ot->idname = "OB_OT_pointcloud_add";
 
   /* api callbacks */
-  ot->exec = object_pointcloud_add_exec;
-  ot->poll = object_pointcloud_add_poll;
+  ot->exec = ob_pointcloud_add_exec;
+  ot->poll = ob_pointcloud_add_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 }
 
-/** \} */
+/* Del Ob Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Delete Object Operator
- * \{ */
-
-void ED_object_base_free_and_unlink(Main *bmain, Scene *scene, Object *ob)
+void ed_ob_base_free_and_unlink(Main *main, Scene *scene, Ob *ob)
 {
   if (ID_REAL_USERS(ob) <= 1 && ID_EXTRA_USERS(ob) == 0 &&
-      BKE_library_ID_is_indirectly_used(bmain, ob))
+      dune_lib_ed_is_indirectly_used(main, ob))
   {
     /* We cannot delete indirectly used object... */
     printf(
@@ -2237,24 +2228,24 @@ void ED_object_base_free_and_unlink(Main *bmain, Scene *scene, Object *ob)
         ob->id.name + 2);
     return;
   }
-  if (!BKE_lib_override_library_id_is_user_deletable(bmain, &ob->id)) {
-    /* Do not delete objects used by overrides of collections. */
+  if (!dune_lib_override_lib_id_is_user_deletable(bain, &ob->id)) {
+    /* Do not del obs used by overrides of collections. */
     return;
   }
 
-  DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_BASE_FLAGS);
+  graph_id_tag_update_ex(main, &ob->id, ID_RECALC_BASE_FLAGS);
 
-  BKE_scene_collections_object_remove(bmain, scene, ob, true);
+  dune_scene_collections_ob_remove(main, scene, ob, true);
 }
 
-void ED_object_base_free_and_unlink_no_indirect_check(Main *bmain, Scene *scene, Object *ob)
+void ed_ob_base_free_and_unlink_no_indirect_check(Main *main, Scene *scene, Ob *ob)
 {
-  BLI_assert(!BKE_library_ID_is_indirectly_used(bmain, ob));
-  DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_BASE_FLAGS);
-  BKE_scene_collections_object_remove(bmain, scene, ob, true);
+  lib_assert(!dune_lib_id_is_indirectly_used(main, ob));
+  graph_id_tag_update_ex(main, &ob->id, ID_RECALC_BASE_FLAGS);
+  dune_scene_collections_ob_remove(main, scene, ob, true);
 }
 
-static int object_delete_exec(bContext *C, wmOperator *op)
+static int ob_del_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
   Scene *scene = cxt_data_scene(C);
