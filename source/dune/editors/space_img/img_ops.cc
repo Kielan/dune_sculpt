@@ -82,7 +82,7 @@
 
 /* View Nav Utils */
 static void simg_zoom_set(
-    SpaceImg *simh, ARgn *rgn, float zoom, const float location[2], const bool zoom_to_pos)
+    SpaceImg *simg, ARgn *rgn, float zoom, const float location[2], const bool zoom_to_pos)
 {
   float oldzoom = simg->zoom;
   int width, height;
@@ -102,7 +102,7 @@ static void simg_zoom_set(
     else if (lib_rcti_size_x(&rgn->winrct) <= simg->zoom) {
       simg->zoom = oldzoom;
     }
-    else if (lib_rcti_size_y(&rgn->winrct) <= sima->zoom) {
+    else if (lib_rcti_size_y(&rgn->winrct) <= simg->zoom) {
       simg->zoom = oldzoom;
     }
   }
@@ -147,8 +147,8 @@ static void simg_zoom_set_from_bounds(SpaceImg *simg, ARgn *rgn, const rctf *bou
   simg->yof = roundf((lib_rctf_cent_y(bounds) - 0.5f) * img_size[1]);
 
   float size_xy[2], size;
-  size_xy[0] = lib_rcti_size_x(&rgn->winrct) / lib_rctf_size_x(bounds) * image_size[0]);
-  size_xy[1] = lib_rcti_size_y(&rgn->winrct) / (lib_rctf_size_y(bounds) * image_size[1]);
+  size_xy[0] = lib_rcti_size_x(&rgn->winrct) / lib_rctf_size_x(bounds) * img_size[0]);
+  size_xy[1] = lib_rcti_size_y(&rgn->winrct) / (lib_rctf_size_y(bounds) * img_size[1]);
 
   size = min_ff(size_xy[0], size_xy[1]);
   CLAMP_MAX(size, 100.0f);
@@ -166,67 +166,66 @@ static Img *img_from_cxt(const Cxt *C)
     return img;
   }
 
-  /* Image editor. */
-  SpaceImg *simg = CTX_wm_space_image(C);
-  return (sima) ? sima->image : nullptr;
+  /* Img editor. */
+  SpaceImg *simg = cxt_win_space_img(C);
+  return (simg) ? simg->img : nullptr;
 }
 
-static ImageUser *image_user_from_context(const bContext *C)
+static ImgUser *img_user_from_cxt(const Cxt *C)
 {
-  /* Edit image user is set by templates used throughout the interface, so
-   * image operations work outside the image editor. */
-  ImageUser *iuser = static_cast<ImageUser *>(
-      CTX_data_pointer_get_type(C, "edit_image_user", &RNA_ImageUser).data);
+  /* Edit img user is set by templates used throughout the ui, so
+   * img ops work outside the img editor. */
+  ImgUser *iuser = static_cast<ImgUser *>(
+      cxt_data_ptr_get_type(C, "edit_img_user", &ApiImgUser).data);
 
   if (iuser) {
     return iuser;
   }
 
-  /* Image editor. */
-  SpaceImage *sima = CTX_wm_space_image(C);
-  return (sima) ? &sima->iuser : nullptr;
+  /* Img editor. */
+  SpaceImg *simg = cxt_win_space_img(C);
+  return (simg) ? &simg->iuser : nullptr;
 }
 
-static ImageUser image_user_from_context_and_active_tile(const bContext *C, Image *ima)
+static ImgUser img_user_from_cxt_and_active_tile(const Cxt *C, Img *img)
 {
-  /* Try to get image user from context if available, otherwise use default. */
-  ImageUser *iuser_context = image_user_from_context(C);
-  ImageUser iuser;
-  if (iuser_context) {
-    iuser = *iuser_context;
+  /* Try to get img user from cxt if available, otherwise use default. */
+  ImgUser *iuser_cxt = img_user_from_cxt(C);
+  ImgUser iuser;
+  if (iuser_cxt) {
+    iuser = *iuser_cxt;
   }
   else {
-    BKE_imageuser_default(&iuser);
+    dune_imguser_default(&iuser);
   }
 
   /* Use the file associated with the active tile. Otherwise use the first tile. */
-  if (ima && ima->source == IMA_SRC_TILED) {
-    const ImageTile *active = (ImageTile *)BLI_findlink(&ima->tiles, ima->active_tile_index);
-    iuser.tile = active ? active->tile_number : ((ImageTile *)ima->tiles.first)->tile_number;
+  if (img && img->src == IMG_SRC_TILED) {
+    const ImgTile *active = (ImgTile *)lib_findlink(&img->tiles, img->active_tile_index);
+    iuser.tile = active ? active->tile_number : ((ImgTile *)img->tiles.first)->tile_number;
   }
 
   return iuser;
 }
 
-static bool image_from_context_has_data_poll(bContext *C)
+static bool img_from_cxt_has_data_poll(Cxt *C)
 {
-  Image *ima = image_from_context(C);
-  ImageUser *iuser = image_user_from_context(C);
+  Img *img = img_from_cxt(C);
+  ImgUser *iuser = img_user_from_cxt(C);
 
-  if (ima == nullptr) {
+  if (img == nullptr) {
     return false;
   }
 
   void *lock;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, &lock);
-  const bool has_buffer = (ibuf && (ibuf->byte_buffer.data || ibuf->float_buffer.data));
-  BKE_image_release_ibuf(ima, ibuf, lock);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, iuser, &lock);
+  const bool has_buf = (ibuf && (ibuf->byte_buf.data || ibuf->float_bu.data));
+  dune_img_release_ibuf(img, ibuf, lock);
   return has_buffer;
 }
 
-/**
- * Use this when the image buffer is accessing the active tile wo the img user. */
-static bool img_from_cxt_has_data_poll_active_tile(bContext *C)
+/* Use this when the img buf is accessing the active tile wo the img user. */
+static bool img_from_cxt_has_data_poll_active_tile(Cxt *C)
 {
   Img *img = img_from_cxt(C);
   ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
@@ -450,7 +449,7 @@ void IMG_OT_view_pan(WinOpType *ot)
   ot->description = "Pan the view";
 
   /* api cb */
-  ot->ex = img_view_pan_exec;
+  ot->ex = img_view_pan_ex;
   ot->invoke = img_view_pan_invoke;
   ot->modal = img_view_pan_modal;
   ot->cancel = image_view_pan_cancel;
@@ -506,7 +505,7 @@ static void img_view_zoom_init(Cxt *C, WinOp *op, const WinEv *ev)
 
   vpd->origx = ev->xy[0];
   vpd->origy = ev->xy[1];
-  vpd->zoom = simh->zoom;
+  vpd->zoom = simg->zoom;
   vpd->launch_ev = win_userdef_ev_type_from_keymap_type(ev->type);
 
   ui_view2d_rgn_to_view(
@@ -736,7 +735,6 @@ void IMG_OT_view_zoom(WinOpType *ot)
  * Z zooms, XY pans
  * "view" (not "paper") ctrl - user moves the viewpoint, not the image being viewed
  * that explains the negative signs in the code below */
-
 static int img_view_ndof_invoke(Cxt *C, WinOp * /*op*/, const WinEv *ev)
 {
   if (ev->type != NDOF_MOTION) {
@@ -782,11 +780,9 @@ void IMG_OT_view_ndof(WinOpType *ot)
 #endif /* WITH_INPUT_NDOF */
 
 /* View All Op */
-
 /* Updates the fields of the View2D member of the SpaceImg struct.
  * Default behavior is to reset the position of the img and set the zoom to 1
  * If the img will not fit within the win rectangle, the zoom is adjusted */
-
 static int img_view_all_ex(Cxt *C, WinOp *op)
 {
   SpaceImg *simg;
@@ -831,7 +827,7 @@ static int view_cursor_center_ex(Cxt *C, WinOp *op)
   ARgn *rgn;
 
   simg = cxt_win_space_img(C);
-  rgn = cxt_win_region(C);
+  rgn = cxt_win_rgn(C);
 
   img_view_all(simg, rgn, op);
 
@@ -1097,7 +1093,7 @@ void IMG_OT_view_zoom_ratio(WinOpType *ot)
   ot->description = "Set zoom ratio of the view";
 
   /* api cbs */
-  ot->ex = img_view_zoom_ratio_exe;
+  ot->ex = img_view_zoom_ratio_ex;
   ot->poll = space_img_main_rgn_poll;
 
   /* flags */
@@ -1349,7 +1345,7 @@ static int img_open_ex(Cxt *C, WinOp *op)
       iuser->offset = frame_ofs - 1;
     }
     iuser->scene = scene;
-    dune_img_init_imgeuser(img, iuser);
+    dune_img_init_imguser(img, iuser);
   }
 
   /* dune_packedfile_unpack_img frees img bufs */
@@ -1445,8 +1441,8 @@ static void img_open_drw(Cxt * /*C*/, WinOp *op)
                    UI_BTN_LABEL_ALIGN_NONE,
                    false);
 
-  /* image template */
-  PointerRNA imf_ptr = api_ptr_create(nullptr, &ApiImgFormatSettings, imf);
+  /* img template */
+  ApiPPtr imf_ptr = api_ptr_create(nullptr, &ApiImgFormatSettings, imf);
 
   /* multiview template */
   if (api_bool_get(op->ptr, "show_multiview")) {
@@ -1483,7 +1479,7 @@ void IMG_OT_open(WinOpType *ot)
                        FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
                        FILE_SPECIAL,
                        FILE_OPENFILE,
-                       WIN_FILESEL_FILEPATH | WIN_FILESEL_DIRECTORY | WM_FILESEL_FILES |
+                       WIN_FILESEL_FILEPATH | WIN_FILESEL_DIRECTORY | WIN_FILESEL_FILES |
                        WIN_FILESEL_RELPATH,
                        FILE_DEFAULTDISPLAY,
                        FILE_SORT_DEFAULT);
@@ -1527,7 +1523,7 @@ static int img_file_browse_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-static int image_file_browse_invoke(Cxt *C, WinOp *op, const WinEv *ev)
+static int img_file_browse_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   Img *img = img_from_cxt(C);
   if (!img) {
@@ -1555,7 +1551,7 @@ static int image_file_browse_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 
     win_op_props_create_ptr(&props_ptr, ot);
     api_string_set(&props_ptr, "filepath", filepath);
-    win_op_name_call_ptr(C, ot, WIN_OP_EXEC_DEFAULT, &props_ptr, nullptr);
+    win_op_name_call_ptr(C, ot, WIN_OP_EX_DEFAULT, &props_ptr, nullptr);
     win_op_props_free(&props_ptr);
 
     return OP_CANCELLED;
@@ -1637,7 +1633,7 @@ void IMG_OT_match_movie_length(WinOpType *ot)
 {
   /* ids */
   ot->name = "Match Movie Length";
-  ot->description = "Set image's user's length to the one of this video";
+  ot->description = "Set img's user's length to the one of this video";
   ot->idname = "IMG_OT_match_movie_length";
 
   /* api bs */
@@ -1649,7 +1645,6 @@ void IMG_OT_match_movie_length(WinOpType *ot)
 }
 
 /* Replace Img Op */
-
 static int img_replace_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
@@ -1703,7 +1698,7 @@ static int img_replace_invoke(Cxt *C, WinOp *op, const WinEv * /*event*/)
     api_bool_set(op->ptr, "relative_path", lib_path_is_rel(simg->img->filepath));
   }
 
-  img_filesel(C, op, sima->img->filepath);
+  img_filesel(C, op, simg->img->filepath);
 
   return OP_RUNNING_MODAL;
 }
@@ -1713,7 +1708,7 @@ void IMG_OT_replace(WinOpType *ot)
   /* ids */
   ot->name = "Replace Img";
   ot->idname = "IMG_OT_replace";
-  ot->description = "Replace current image by another one from disk";
+  ot->description = "Replace current img by another one from disk";
 
   /* api cbs */
   ot->ex = img_replace_ex;
@@ -1822,7 +1817,7 @@ static void img_save_as_free(WinOp *op)
     ImgSaveData *isd = static_cast<ImgSaveData *>(op->customdata);
     dune_img_save_options_free(&isd->opts);
 
-    mem_free le(op->customdata);
+    mem_free(op->customdata);
     op->customdata = nullptr;
   }
 }
@@ -1897,7 +1892,7 @@ static bool img_save_as_drw_check_prop(ApiPtr *ptr, ApiProp *prop, void *user_da
            STREQ(prop_id, "filename") ||
            /* when saving a copy, relative path has no effect */
            (STREQ(prop_id, "relative_path") && api_bool_get(ptr, "copy")) ||
-           (STREQ(prop_id, "save_as_render") && isd->img->source == IMG_SRC_VIEWER));
+           (STREQ(prop_id, "save_as_render") && isd->img->src == IMG_SRC_VIEWER));
 }
 
 static void img_save_as_drw(Cxt * /*C*/, WinOp *op)
@@ -1910,7 +1905,7 @@ static void img_save_as_drw(Cxt * /*C*/, WinOp *op)
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
 
-  /* Operator settings. */
+  /* Op settings. */
   uiDefAutoBtnsApi(layout,
                    op->ptr,
                    img_save_as_drw_check_prop,
@@ -1949,7 +1944,7 @@ static bool img_save_as_poll(Cxt *C)
     Img *img = img_from_cxt(C);
 
     if (img->src == IMG_SRC_VIEWER) {
-      cxt_win_op_poll_msg_set(C, "can't save image while rendering");
+      cxt_win_op_poll_msg_set(C, "can't save img while rendering");
       return false;
     }
   }
@@ -1962,7 +1957,7 @@ void IMG_OT_save_as(WinOpType *ot)
   /* ids */
   ot->name = "Save As Img";
   ot->idname = "IMG_OT_save_as";
-  ot->description = "Save the image with another name and/or settings";
+  ot->description = "Save the img with another name and/or settings";
 
   /* api cbs */
   ot->ex = img_save_as_ex;
@@ -1984,28 +1979,28 @@ void IMG_OT_save_as(WinOpType *ot)
       "Save As Render",
       "Save img with render color management.\n"
       "For display img formats like PNG, apply view and display transform.\n"
-      "For intermediate image formats like OpenEXR, use the default render output color space");
+      "For intermediate img formats like OpenEXR, use the default render output color space");
   api_def_prop_flag(prop, PROP_SKIP_SAVE);
   prop = api_def_bool(ot->sapi,
                          "copy",
                          false,
                          "Copy",
-                         "Create a new image file without modifying the current image in Blender");
+                         "Create a new img file without modifying the current img in Dune");
   api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
   img_op_prop_allow_tokens(ot);
-  win_operator_prop_filesel(ot,
-                            FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
-                            FILE_SPECIAL,
-                            FILE_SAVE,
-                            WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH | WIN_FILESEL_SHOW_PROPS,
-                            FILE_DEFAULTDISPLAY,
-                            FILE_SORT_DEFAULT);
+  win_op_prop_filesel(ot,
+                      FILE_TYPE_FOLDER | FILE_TYPE_IMG | FILE_TYPE_MOVIE,
+                      FILE_SPECIAL,
+                      FILE_SAVE,
+                      WIN_FILESEL_FILEPATH | WIN_FILESEL_RELPATH | WIN_FILESEL_SHOW_PROPS,
+                      FILE_DEFAULTDISPLAY,
+                      FILE_SORT_DEFAULT);
 }
 
-/* Save ImG Op */
+/* Save Img Op */
 
-/* param iuser: Img user or nullptr when called outside the image space. */
+/* param iuser: Img user or nullptr when called outside the img space. */
 static bool img_file_format_writable(Img *img, ImgUser *iuser)
 {
   void *lock;
@@ -2031,14 +2026,14 @@ static bool img_save_poll(Cxt *C)
    * outside of the 'poll' so we can show a report with a pop-up. */
 
   /* Can always repack imgs.
-   * Images without a filepath will go to "Save As". */
+   * Imgs without a filepath will go to "Save As". */
   return true;
 }
 
 static int img_save_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
-  Img *image = img_from_cxt(C);
+  Img *img = img_from_cxt(C);
   ImgUser *iuser = img_user_from_cxt(C);
   Scene *scene = cxt_data_scene(C);
   ImgSaveOptions opts;
@@ -2098,7 +2093,7 @@ void IMG_OT_save(WinOpType *ot)
   /* ids */
   ot->name = "Save Img";
   ot->idname = "IMG_OT_save";
-  ot->description = "Save the image with current name and settings";
+  ot->description = "Save the img with current name and settings";
 
   /* api cbs */
   ot->ex = img_save_ex;
@@ -2118,7 +2113,7 @@ static int img_save_seq_ex(Cxt *C, WinOp *op)
   char di[FILE_MAX];
   MovieCacheIter *iter;
 
-  if (image == nullptr) {
+  if (img == nullptr) {
     return OP_CANCELLED;
   }
 
@@ -2365,7 +2360,7 @@ static int img_reload_ex(Cxt *C, WinOp * /*op*/)
   }
 
   /* dune_packedfile_unpack_img frees img bufs */
-  ed_preview_kill_jobs(cxt_wm(C), cxt_data_main(C));
+  ed_preview_kill_jobs(cxt_win(C), cxt_data_main(C));
 
   dune_img_signal(main, img, iuser, IMG_SIGNAL_RELOAD);
   graph_id_tag_update(&img->id, 0);
@@ -2377,7 +2372,7 @@ static int img_reload_ex(Cxt *C, WinOp * /*op*/)
 
 void IMG_OT_reload(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Reload Img";
   ot->idname = "IMG_OT_reload";
   ot->description = "Reload current img from disk";
@@ -2425,7 +2420,7 @@ static int img_new_ex(Cxt *C, WinOp *op)
   Img *img;
   Main *main;
   ApiProp *prop;
-  char name_buffer[MAX_ID_NAME - 2];
+  char name_buf[MAX_ID_NAME - 2];
   const char *name;
   float color[4];
   int width, height, floatbuf, gen_type, alpha;
@@ -2608,7 +2603,7 @@ static int img_flip_ex(Cxt *C, WinOp *op)
 {
   Img *img = img_from_cxt(C);
   ImgUser iuser = img_user_from_cxt_and_active_tile(C, img);
-  ImBuf *ibuf = dune_image_acquire_ibuf(img, &iuser, nullptr);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, &iuser, nullptr);
   SpaceImg *sim = cxt_win_space_img(C);
   const bool is_paint = ((simg != nullptr) && (simg->mode == SI_MODE_PAINT));
 
@@ -2634,10 +2629,10 @@ static int img_flip_ex(Cxt *C, WinOp *op)
   const int size_x = ibuf->x;
   const int size_y = ibuf->y;
 
-  if (ibuf->float_buffer.data) {
-    float *float_pixels = ibuf->float_buffer.data;
+  if (ibuf->float_buf.data) {
+    float *float_pixels = ibuf->float_buf.data;
 
-    float *orig_float_pixels = static_cast<float *>(MEM_dupallocN(float_pixels));
+    float *orig_float_pixels = static_cast<float *>(mem_dupalloc(float_pixels));
     for (int x = 0; x < size_x; x++) {
       const int src_pixel_x = use_flip_x ? size_x - x - 1 : x;
       for (int y = 0; y < size_y; y++) {
@@ -2652,12 +2647,12 @@ static int img_flip_ex(Cxt *C, WinOp *op)
     }
     mem_free(orig_float_pixels);
 
-    if (ibuf->byte_buffer.data) {
+    if (ibuf->byte_buf.data) {
       imbuf_rect_from_float(ibuf);
     }
   }
-  else if (ibuf->byte_buffer.data) {
-    uchar *char_pixels = ibuf->byte_buffer.data;
+  else if (ibuf->byte_buf.data) {
+    uchar *char_pixels = ibuf->byte_buf.data;
     uchar *orig_char_pixels = static_cast<uchar *>(mem_dupalloc(char_pixels));
     for (int x = 0; x < size_x; x++) {
       const int src_pixel_x = use_flip_x ? size_x - x - 1 : x;
@@ -3013,7 +3008,7 @@ void IMG_OT_resize(WinOpType *ot)
   ot->idname = "IMG_OT_resize";
   ot->description = "Resize the img";
 
-  /* api cbss */
+  /* api cbs */
   ot->invoke = img_scale_invoke;
   ot->ex = img_scale_ex;
   ot->poll = img_from_cxt_has_data_poll_active_tile;
@@ -3055,7 +3050,7 @@ static int img_pack_ex(Cxt *C, WinOp *op)
     dune_img_memorypack(img);
   }
   else {
-    dune_img_packfiles(op->reports, img, ID_BLEND_PATH(main, &img->id));
+    dune_img_packfiles(op->reports, img, ID_DUNE_PATH(main, &img->id));
   }
 
   win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
@@ -3071,7 +3066,7 @@ void IMG_OT_pack(WinOpType *ot)
   ot->idname = "IMG_OT_pack";
 
   /* api cbs */
-  ot->ex = image_pack_ex;
+  ot->ex = img_pack_ex;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -3110,7 +3105,7 @@ static int img_unpack_ex(Cxt *C, WinOp *op)
   }
 
   /* dune_packedfile_unpack_img frees img bufs */
-  ed_preview_kill_jobs(cxt_wm(C), cxt_data_main(C));
+  ed_preview_kill_jobs(cxt_win(C), cxt_data_main(C));
 
   dune_packedfile_unpack_img(cxt_data_main(C), op->reports, img, ePF_FileStatus(method));
 
@@ -3183,7 +3178,7 @@ bool ed_space_img_get_position(SpaceImg *simg,
                                float r_fpos[2])
 {
   void *lock;
-  ImBuf *ibuf = ed_space_img_acquire_buffer(simg, &lock, 0);
+  ImBuf *ibuf = ed_space_img_acquire_buf(simg, &lock, 0);
 
   if (ibuf == nullptr) {
     ed_space_img_release_buf(simg, ibuf, lock);
@@ -3202,7 +3197,7 @@ bool ed_space_img_color_sample(
   if (r_is_data) {
     *r_is_data = false;
   }
-  if (sima->image == nullptr) {
+  if (simg->img == nullptr) {
     return false;
   }
   float uv[2];
@@ -3645,7 +3640,7 @@ static int img_read_viewlayers_ex(Cxt *C, WinOp * /*op*/)
 {
   Main *main = cxt_data_main(C);
   Scene *scene = cxt_data_scene(C);
-  SpaceImg *simg = cxt_win_space_image(C);
+  SpaceImg *simg = cxt_win_space_img(C);
   Img *img;
 
   img = dune_img_ensure_viewer(main, IMG_TYPE_R_RESULT, "Render Result");
@@ -3659,42 +3654,42 @@ static int img_read_viewlayers_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void IMAGE_OT_read_viewlayers(wmOperatorType *ot)
+void IMG_OT_read_viewlayers(WinOpType *ot)
 {
   ot->name = "Open Cached Render";
-  ot->idname = "IMAGE_OT_read_viewlayers";
+  ot->idname = "IMG_OT_read_viewlayers";
   ot->description = "Read all the current scene's view layers from cache, as needed";
 
-  ot->poll = space_image_main_rgn_poll;
-  ot->ex = image_read_viewlayers_ex;
+  ot->poll = space_img_main_rgn_poll;
+  ot->ex = img_read_viewlayers_ex;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \name Render Border Op */
+/* Render Border Op */
 static int render_border_ex(Cxt *C, WinOp *op)
 {
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
-  Render *re = RE_GetSceneRender(scene);
-  SpaceImage *sima = CTX_wm_space_image(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
+  Render *re = render_GetSceneRender(scene);
+  SpaceImg *simg = cxt_win_space_img(C);
 
   if (re == nullptr) {
     /* Shouldn't happen, but better be safe close to the release. */
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* Get information about the previous render, or current scene if no render yet. */
+  /* Get info about the previous render, or current scene if no render yet. */
   int width, height;
-  BKE_render_resolution(&scene->r, false, &width, &height);
-  const RenderData *rd = ED_space_image_has_buffer(sima) ? RE_engine_get_render_data(re) :
-                                                           &scene->r;
+  dune_render_resolution(&scene->r, false, &width, &height);
+  const RenderData *rd = ed_space_img_has_buf(simg) ? render_engine_get_render_data(re) :
+                                                    &scene->r;
 
-  /* Get rectangle from the operator. */
+  /* Get rectangle from the op. */
   rctf border;
-  WM_operator_properties_border_to_rctf(op, &border);
-  UI_view2d_region_to_view_rctf(&region->v2d, &border, &border);
+  win_op_props_border_to_rctf(op, &border);
+  ui_view2d_rgn_to_view_rctf(&rgn->v2d, &border, &border);
 
   /* Adjust for cropping. */
   if ((rd->mode & (R_BORDER | R_CROP)) == (R_BORDER | R_CROP)) {
@@ -3717,7 +3712,7 @@ static int render_border_ex(Cxt *C, WinOp *op)
     scene->r.mode &= ~R_BORDER;
   }
   else {
-    /* Snap border to pixel boundaries, so drawing a border within a pixel selects that pixel. */
+    /* Snap border to pixel boundaries, so drwing a border within a pixel sels that pixel. */
     border.xmin = floorf(border.xmin * width) / width;
     border.xmax = ceilf(border.xmax * width) / width;
     border.ymin = floorf(border.ymin * height) / height;
@@ -3728,13 +3723,13 @@ static int render_border_ex(Cxt *C, WinOp *op)
     scene->r.mode |= R_BORDER;
   }
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  win_ev_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_render_border(wmOperatorType *ot)
+void IMG_OT_render_border(WinOpType *ot)
 {
   /* identifiers */
   ot->name = "Render Region";
