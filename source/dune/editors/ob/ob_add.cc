@@ -753,7 +753,7 @@ void OB_OT_lightprobe_add(WinOpType *ot)
 
   /* api cbs */
   ot->ex = lightprobe_add_ex;
-  ot->poll = ed_op_objectmode;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -772,33 +772,33 @@ static const char *get_effector_defname(ePFieldType type)
 {
   switch (type) {
     case PFIELD_FORCE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Force");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Force");
     case PFIELD_VORTEX:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Vortex");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Vortex");
     case PFIELD_MAGNET:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Magnet");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Magnet");
     case PFIELD_WIND:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Wind");
+      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Wind");
     case PFIELD_GUIDE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "CurveGuide");
+      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "CurveGuide");
     case PFIELD_TEXTURE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "TextureField");
+      return CXT_DATA_(LANG_CXT_ID_OB, "TextureField");
     case PFIELD_HARMONIC:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Harmonic");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Harmonic");
     case PFIELD_CHARGE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Charge");
+      return CTX_DATA_(LANG_CXT_ID_OB, "Charge");
     case PFIELD_LENNARDJ:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Lennard-Jones");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Lennard-Jones");
     case PFIELD_BOID:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Boid");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Boid");
     case PFIELD_TURBULENCE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Turbulence");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Turbulence");
     case PFIELD_DRAG:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Drag");
+      return CTX_DATA_(LANG_CXT_ID_OB, "Drag");
     case PFIELD_FLUIDFLOW:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "FluidField");
+      return CXT_DATA_(LANG_CXT_ID_OB, "FluidField");
     case PFIELD_NULL:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Field");
+      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Field");
     case NUM_PFIELD_TYPES:
       break;
   }
