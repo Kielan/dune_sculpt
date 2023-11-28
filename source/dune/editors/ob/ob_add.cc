@@ -254,7 +254,7 @@ void ed_ob_location_from_view(Cxt *C, float loc[3])
   copy_v3_v3(loc, scene->cursor.location);
 }
 
-void ED_object_rotation_from_quat(float rot[3], const float viewquat[4], const char align_axis)
+void ed_ob_rotation_from_quat(float rot[3], const float viewquat[4], const char align_axis)
 {
   BLI_assert(align_axis >= 'X' && align_axis <= 'Z');
 
