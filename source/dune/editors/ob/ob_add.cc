@@ -786,7 +786,7 @@ static const char *get_effector_defname(ePFieldType type)
     case PFIELD_HARMONIC:
       return CXT_DATA_(LANG_CXT_ID_OB, "Harmonic");
     case PFIELD_CHARGE:
-      return CTX_DATA_(LANG_CXT_ID_OB, "Charge");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Charge");
     case PFIELD_LENNARDJ:
       return CXT_DATA_(LANG_CXT_ID_OB, "Lennard-Jones");
     case PFIELD_BOID:
@@ -794,7 +794,7 @@ static const char *get_effector_defname(ePFieldType type)
     case PFIELD_TURBULENCE:
       return CXT_DATA_(LANG_CXT_ID_OB, "Turbulence");
     case PFIELD_DRAG:
-      return CTX_DATA_(LANG_CXT_ID_OB, "Drag");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Drag");
     case PFIELD_FLUIDFLOW:
       return CXT_DATA_(LANG_CXT_ID_OB, "FluidField");
     case PFIELD_NULL:
@@ -803,74 +803,74 @@ static const char *get_effector_defname(ePFieldType type)
       break;
   }
 
-  BLI_assert(false);
-  return CTX_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Field");
+  lib_assert(false);
+  return CXT_DATA_(LANG_CXT_ID_OBJECT, "Field");
 }
 
-static int effector_add_exec(bContext *C, wmOperator *op)
+static int effector_add_ex(Cxt *C, WinOp *op)
 {
   bool enter_editmode;
   ushort local_view_bits;
   float loc[3], rot[3];
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  const ePFieldType type = static_cast<ePFieldType>(RNA_enum_get(op->ptr, "type"));
-  float dia = RNA_float_get(op->ptr, "radius");
+  const ePFieldType type = static_cast<ePFieldType>(api_enum_get(op->ptr, "type"));
+  float dia = api_float_get(op->ptr, "radius");
 
   Object *ob;
   if (type == PFIELD_GUIDE) {
-    Main *bmain = CTX_data_main(C);
-    Scene *scene = CTX_data_scene(C);
-    ob = ED_object_add_type(
+    Main *main = cxt_data_main(C);
+    Scene *scene = cxt_data_scene(C);
+    ob = ed_ob_add_type(
         C, OB_CURVES_LEGACY, get_effector_defname(type), loc, rot, false, local_view_bits);
 
     Curve *cu = static_cast<Curve *>(ob->data);
     cu->flag |= CU_PATH | CU_3D;
-    ED_object_editmode_enter_ex(bmain, scene, ob, 0);
+    ed_ob_editmode_enter_ex(bmain, scene, ob, 0);
 
     float mat[4][4];
-    ED_object_new_primitive_matrix(C, ob, loc, rot, nullptr, mat);
+    ed_ob_new_primitive_matrix(C, ob, loc, rot, nullptr, mat);
     mul_mat3_m4_fl(mat, dia);
-    BLI_addtail(&cu->editnurb->nurbs,
-                ED_curve_add_nurbs_primitive(C, ob, mat, CU_NURBS | CU_PRIM_PATH, 1));
+    lib_addtail(&cu->editnurb->nurbs,
+                ed_curve_add_nurbs_primitive(C, ob, mat, CU_NURBS | CU_PRIM_PATH, 1));
     if (!enter_editmode) {
-      ED_object_editmode_exit_ex(bmain, scene, ob, EM_FREEDATA);
+      ed_ob_editmode_exit_ex(main, scene, ob, EM_FREEDATA);
     }
   }
   else {
-    ob = ED_object_add_type(
+    ob = ed_ob_add_type(
         C, OB_EMPTY, get_effector_defname(type), loc, rot, false, local_view_bits);
-    BKE_object_obdata_size_init(ob, dia);
+    dune_ob_obdata_size_init(ob, dia);
     if (ELEM(type, PFIELD_WIND, PFIELD_VORTEX)) {
-      ob->empty_drawtype = OB_SINGLE_ARROW;
+      ob->empty_drwtype = OB_SINGLE_ARROW;
     }
   }
 
-  ob->pd = BKE_partdeflect_new(type);
+  ob->pd = dune_partdeflect_new(type);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_effector_add(wmOperatorType *ot)
+void OB_OT_effector_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Effector";
   ot->description = "Add an empty object with a physics effector to the scene";
-  ot->idname = "OBJECT_OT_effector_add";
+  ot->idname = "OB_OT_effector_add";
 
-  /* api callbacks */
-  ot->exec = effector_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = effector_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  ot->prop = api_def_enum(ot->srna, "type", field_type_items, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", field_type_items, 0, "Type", "");
 
   ed_ob_add_unit_props_radius(ot);
   ed_ob_add_generic_props(ot, true);
@@ -935,7 +935,6 @@ void OB_OT_camera_add(WinOpType *ot)
 }
 
 /* Add Metaball Op */
-
 static int ob_metaball_add_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
@@ -1034,16 +1033,16 @@ void OB_OT_txt_add(WinOpType *ot)
   /* ids */
   ot->name = "Add Txt";
   ot->description = "Add a txt ob to the scene";
-  ot->idname = "OB_OT_text_add";
+  ot->idname = "OB_OT_txt_add";
 
   /* api cbs */
-  ot->ex = ob_add_text_ex;
+  ot->ex = ob_add_txt_ex;
   ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
+  /* props */
   ed_ob_add_unit_props_radius(ot);
   ed_ob_add_generic_props(ot, true);
 }
@@ -1076,7 +1075,7 @@ static int ob_armature_add_ex(Cxt *C, WinOp *op)
     newob = true;
   }
   else {
-    grapg_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
   }
 
   if (obedit == nullptr) {
@@ -1264,7 +1263,7 @@ static bool ob_pen_add_poll(Cxt *C)
 
 static int ob_pen_add_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = cxt_data_active_ob(C), *ob_orig = ob;
+  Ob *ob = cxt_data_active_ob(C), *ob_orig = ob;
   PenData *pd = (ob && (ob->type == OB_PEN_LEGACY)) ? static_cast<PenData *>(ob->data) :
                                                     nullptr;
 
@@ -1376,7 +1375,7 @@ static int ob_pen_add_ex(Cxt *C, WinOp *op)
         md->src_type = LRT_SRC_COLLECTION;
         md->src_collection = cxt_data_collection(C);
       }
-      else if (type == OEN_LRT_OB) {
+      else if (type == PEN_LRT_OB) {
         md->src_type = LRT_SRC_OB;
         md->src_ob = ob_orig;
       }
@@ -1689,7 +1688,7 @@ void OB_OT_light_add(WinOpType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
+  /* props */
   ot->prop = api_def_enum(ot->sapi, "type", rna_enum_light_type_items, 0, "Type", "");
   api_def_prop_translation_cxt(ot->prop, BLT_I18NCONTEXT_ID_LIGHT);
 
@@ -1847,38 +1846,36 @@ void OB_OT_collection_instance_add(WinOpType *ot)
  * - Instancing enabled: Unlink the collection again, and instead add a collection instance empty
  *   at the drop position.
  * - Instancing disabled: Transform the objects to the drop position, keeping all relative
- *   transforms of the objects to each other as is.
- *
- * \{ */
+ *   transforms of the objects to each other as is */
 
-static int collection_drop_exec(bContext *C, wmOperator *op)
+static int collection_drop_exec(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  LayerCollection *active_collection = CTX_data_layer_collection(C);
+  Main *main = cxt_data_main(C);
+  LayerCollection *active_collection = cxt_data_layer_collection(C);
   std::optional<CollectionAddInfo> add_info = collection_add_info_get_from_op(C, op);
   if (!add_info) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  if (RNA_boolean_get(op->ptr, "use_instance")) {
-    BKE_collection_child_remove(bmain, active_collection->collection, add_info->collection);
-    DEG_id_tag_update(&active_collection->collection->id, ID_RECALC_COPY_ON_WRITE);
-    DEG_relations_tag_update(bmain);
+  if (api_bool_get(op->ptr, "use_instance")) {
+    dune_collection_child_remove(main, active_collection->collection, add_info->collection);
+    graph_id_tag_update(&active_collection->collection->id, ID_RECALC_COPY_ON_WRITE);
+    graph_relations_tag_update(main);
 
-    Object *ob = ED_object_add_type(C,
-                                    OB_EMPTY,
-                                    add_info->collection->id.name + 2,
-                                    add_info->loc,
-                                    add_info->rot,
-                                    false,
-                                    add_info->local_view_bits);
+    Ob *ob = ed_ob_add_type(C,
+                            OB_EMPTY,
+                            add_info->collection->id.name + 2,
+                            add_info->loc,
+                            add_info->rot,
+                            false,
+                            add_info->local_view_bits);
     ob->instance_collection = add_info->collection;
-    ob->empty_drawsize = U.collection_instance_empty_size;
+    ob->empty_drwsize = U.collection_instance_empty_size;
     ob->transflag |= OB_DUPLICOLLECTION;
     id_us_plus(&add_info->collection->id);
   }
   else {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
+    ViewLayer *view_layer = cxt_data_view_layer(C);
     float delta_mat[4][4];
     unit_m4(delta_mat);
 
@@ -1891,67 +1888,62 @@ static int collection_drop_exec(bContext *C, wmOperator *op)
     negate_v3_v3(offset, add_info->collection->instance_offset);
     translate_m4(delta_mat, UNPACK3(offset));
 
-    ObjectsInViewLayerParams params = {0};
-    uint objects_len;
-    Object **objects = BKE_view_layer_array_selected_objects_params(
-        view_layer, nullptr, &objects_len, &params);
-    ED_object_xform_array_m4(objects, objects_len, delta_mat);
+    ObInViewLayerParams params = {0};
+    uint obs_len;
+    Ob **obs = dune_view_layer_array_sel_ob_params(
+        view_layer, nullptr, &ob_len, &params);
+    ed_ob_xform_array_m4(obs, obs_len, delta_mat);
 
-    MEM_freeN(objects);
+    mem_free(obs);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_collection_external_asset_drop(wmOperatorType *ot)
+void OB_OT_collection_external_asset_drop(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   /* Name should only be displayed in the drag tooltip. */
   ot->name = "Add Collection";
   ot->description = "Add the dragged collection to the scene";
-  ot->idname = "OBJECT_OT_collection_external_asset_drop";
+  ot->idname = "OB_OT_collection_external_asset_drop";
 
-  /* api callbacks */
-  ot->invoke = object_instance_add_invoke;
-  ot->exec = collection_drop_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = ob_instance_add_invoke;
+  ot->ex = collection_drop_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 
-  /* properties */
-  WM_operator_properties_id_lookup(ot, false);
+  /* props */
+  win_op_props_id_lookup(ot, false);
 
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 
-  /* IMPORTANT: Instancing option. Intentionally remembered across executions (no #PROP_SKIP_SAVE).
-   */
-  RNA_def_boolean(ot->srna,
+  /* IMPORTANT: Instancing option. Intentionally remembered across executions (no PROP_SKIP_SAVE). */
+  api_def_bool(ot->sapi,
                   "use_instance",
                   true,
                   "Instance",
                   "Add the dropped collection as collection instance");
 
-  object_add_drop_xy_props(ot);
+  ob_add_drop_xy_props(ot);
 
-  prop = RNA_def_enum(ot->srna, "collection", rna_enum_dummy_NULL_items, 0, "Collection", "");
-  RNA_def_enum_funcs(prop, RNA_collection_itemf);
-  RNA_def_property_flag(prop,
-                        (PropertyFlag)(PROP_SKIP_SAVE | PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE));
+  prop = ap_def_enum(ot->sapi, "collection", api_enum_dummy_NULL_items, 0, "Collection", "");
+  api_def_enum_fns(prop, api_collection_itemf);
+  api_def_prop_flag(prop,
+                   (PropeFlag)(PROP_SKIP_SAVE | PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE));
   ot->prop = prop;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Data Instance Operator
+/* Add Data Instance Operator
  *
- * Use for dropping ID's from the outliner.
- * \{ */
+ * Use for dropping ID's from the outliner. */
 
-static int object_data_instance_add_exec(bContext *C, wmOperator *op)
+static int object_data_instance_add_ex(bContext *C, wmOperator *op)
 {
   Main *bmain = CTX_data_main(C);
   ID *id = nullptr;
