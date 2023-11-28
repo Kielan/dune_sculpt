@@ -511,7 +511,7 @@ bool ed_ob_add_generic_get_opts(Cxt *C,
         alignment = api_prop_enum_get(op->ptr, prop);
       }
       else {
-        /* If alignment is not set, use User Preferences. */
+        /* If alignment is not set, use User Prefs. */
         *r_is_view_aligned = (U.flag & USER_ADD_VIEWALIGNED) != 0;
         if (*r_is_view_aligned) {
           api_prop_enum_set(op->ptr, prop, ALIGN_VIEW);
@@ -739,39 +739,34 @@ static int lightprobe_add_exec(bContext *C, wmOperator *op)
 
   LightProbe *probe = (LightProbe *)ob->data;
 
-  BKE_lightprobe_type_set(probe, type);
+  dune_lightprobe_type_set(probe, type);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_lightprobe_add(wmOperatorType *ot)
+void OB_OT_lightprobe_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Light Probe";
-  ot->description = "Add a light probe object";
-  ot->idname = "OBJECT_OT_lightprobe_add";
+  ot->description = "Add a light probe ob";
+  ot->idname = "OB_OT_lightprobe_add";
 
-  /* api callbacks */
-  ot->exec = lightprobe_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = lightprobe_add_ex;
+  ot->poll = ed_op_objectmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(ot->srna, "type", lightprobe_type_items, 0, "Type", "");
+  /* props */
+  ot->prop = api_def_enum(ot->sapi, "type", lightprobe_type_items, 0, "Type", "");
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Effector Operator
- * \{ */
-
-/* for object add operator */
+/* Add Effector Op */
+/* for ob add op */
 
 static const char *get_effector_defname(ePFieldType type)
 {
