@@ -2256,196 +2256,189 @@ void ED_object_base_free_and_unlink_no_indirect_check(Main *bmain, Scene *scene,
 
 static int object_delete_exec(bContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  wmWindowManager *wm = CTX_wm_manager(C);
-  const bool use_global = RNA_boolean_get(op->ptr, "use_global");
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  WinMngr *wm = cxt_wm(C);
+  const bool use_global = api_bool_get(op->ptr, "use_global");
   const bool confirm = op->flag & OP_IS_INVOKE;
   uint changed_count = 0;
   uint tagged_count = 0;
 
-  if (CTX_data_edit_object(C)) {
-    return OPERATOR_CANCELLED;
+  if (cxt_data_edit_ob(C)) {
+    return OP_CANCELLED;
   }
 
-  BKE_main_id_tag_all(bmain, LIB_TAG_DOIT, false);
+  dune_main_id_tag_all(main, LIB_TAG_DOIT, false);
 
-  CTX_DATA_BEGIN (C, Object *, ob, selected_objects) {
+    //CXT_DATA_BEGIN migrated to CXT_DATA_ITER
+  CXT_DATA_ITER (C, Ob *, ob, sel_obs) {
     if (ob->id.tag & LIB_TAG_INDIRECT) {
       /* Can this case ever happen? */
-      BKE_reportf(op->reports,
+      dune_reportf(op->reports,
                   RPT_WARNING,
-                  "Cannot delete indirectly linked object '%s'",
+                  "Cannot del indirectly linked ob '%s'",
                   ob->id.name + 2);
       continue;
     }
-
-    if (!BKE_lib_override_library_id_is_user_deletable(bmain, &ob->id)) {
-      BKE_reportf(op->reports,
+    /* dune_lib_override_lib_id_is_user_deletable
+     * migrated to
+     * dune_override_lib_id_user_can_be_del */
+     
+    if (!dune_lib_override_lib_id_is_user_deletable(main, &ob->id)) {
+      dune_reportf(op->reports,
                   RPT_WARNING,
-                  "Cannot delete object '%s' as it is used by override collections",
+                  "Cannot del ob '%s' as it is used by override collections",
                   ob->id.name + 2);
       continue;
     }
 
     if (ID_REAL_USERS(ob) <= 1 && ID_EXTRA_USERS(ob) == 0 &&
-        BKE_library_ID_is_indirectly_used(bmain, ob))
+        dune_lib_id_is_indirectly_used(main, ob);
     {
-      BKE_reportf(op->reports,
+      dune_reportf(op->reports,
                   RPT_WARNING,
-                  "Cannot delete object '%s' from scene '%s', indirectly used objects need at "
+                  "Cannot del ob '%s' from scene '%s', indirectly used objects need at "
                   "least one user",
                   ob->id.name + 2,
                   scene->id.name + 2);
       continue;
     }
 
-    /* if grease pencil object, set cache as dirty */
-    if (ob->type == OB_GPENCIL_LEGACY) {
-      bGPdata *gpd = (bGPdata *)ob->data;
-      DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    /* if pen ob, set cache as dirty */
+    if (ob->type == OB_PEN_LEGACY) {
+      PenData *pd = (PenData *)ob->data;
+      graph_id_tag_update(&pd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
     }
 
-    /* Use multi tagged delete if `use_global=True`, or the object is used only in one scene. */
+    /* Use multi tagged del if `use_global=True`, or the ob is used only in one scene. */
     if (use_global || ID_REAL_USERS(ob) <= 1) {
       ob->id.tag |= LIB_TAG_DOIT;
       tagged_count += 1;
     }
     else {
-      /* Object is used in multiple scenes. Delete the object from the current scene only. */
-      ED_object_base_free_and_unlink_no_indirect_check(bmain, scene, ob);
+      /* Ob is used in multiple scenes. Del the ob from the current scene only. */
+      ed_ob_base_free_and_unlink_no_indirect_check(main, scene, ob);
       changed_count += 1;
 
       /* FIXME: this will also remove parent from grease pencil from other scenes. */
-      /* Remove from Grease Pencil parent */
-      LISTBASE_FOREACH (bGPdata *, gpd, &bmain->gpencils) {
-        LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
-          if (gpl->parent != nullptr) {
-            if (gpl->parent == ob) {
-              gpl->parent = nullptr;
+      /* Remove from Pen parent */
+      LIST_FOREACH (PenData *, pd, &main->pens) {
+        LIST_FOREACH (PenDataLayer *, pl, &pd->layers) {
+          if (pl->parent != nullptr) {
+            if (pl->parent == ob) {
+              pl->parent = nullptr;
             }
           }
         }
       }
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
   if ((changed_count + tagged_count) == 0) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   if (tagged_count > 0) {
-    BKE_id_multi_tagged_delete(bmain);
+    dune_id_multi_tagged_delete(main);
   }
 
   if (confirm) {
-    BKE_reportf(op->reports, RPT_INFO, "Deleted %u object(s)", (changed_count + tagged_count));
+    dune_reportf(op->reports, RPT_INFO, "Del %u ob(s)", (changed_count + tagged_count));
   }
 
   /* delete has to handle all open scenes */
-  BKE_main_id_tag_listbase(&bmain->scenes, LIB_TAG_DOIT, true);
-  LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
-    scene = WM_window_get_active_scene(win);
+  dune_main_id_tag_list(&main->scenes, LIB_TAG_DOIT, true);
+  LIST_FOREACH (Win *, win, &wm->wins) {
+    scene = win_get_active_scene(win);
 
     if (scene->id.tag & LIB_TAG_DOIT) {
       scene->id.tag &= ~LIB_TAG_DOIT;
 
-      DEG_relations_tag_update(bmain);
+      graph_relations_tag_update(main);
 
-      DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-      WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
-      WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+      graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+      win_ev_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+      win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_delete(wmOperatorType *ot)
+void OB_OT_del(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Delete";
-  ot->description = "Delete selected objects";
-  ot->idname = "OBJECT_OT_delete";
+  /* id */
+  ot->name = "Del";
+  ot->description = "Del sel obs";
+  ot->idname = "OB_OT_del";
 
-  /* api callbacks */
-  ot->invoke = WM_operator_confirm_or_exec;
-  ot->exec = object_delete_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = win_op_confirm_or_ex;
+  ot->ex = object_del_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  PropertyRNA *prop;
-  prop = RNA_def_boolean(
-      ot->srna, "use_global", false, "Delete Globally", "Remove object from all scenes");
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
-  WM_operator_properties_confirm_or_exec(ot);
+  ApiProp *prop;
+  prop = api_def_bool(
+      ot->sapi, "use_global", false, "Del Globally", "Remove ob from all scenes");
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  win_op_props_confirm_or_ex(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Copy Object Utilities
- * \{ */
-
-/* after copying objects, copied data should get new pointers */
-static void copy_object_set_idnew(bContext *C)
+/* Copy Ob Utils */
+/* after copying obs, copied data should get new ptrs */
+static void copy_ob_set_idnew(Cxt *C)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
 
-  CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects) {
-    BKE_libblock_relink_to_newid(bmain, &ob->id, 0);
+  CXT_DATA_BEGIN (C, Ob *, ob, sel_editable_obs) {
+    dune_libblock_relink_to_newid(main, &ob->id, 0);
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
 #ifndef NDEBUG
-  /* Call to `BKE_libblock_relink_to_newid` above is supposed to have cleared all those flags. */
-  ID *id_iter;
-  FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
+  /* Call to `dune_libblock_relink_to_newid` above is supposed to have cleared all those flags. */
+  Id *id_iter;
+  FOREACH_MAIN_ID_BEGIN (main, id_iter) {
     if (GS(id_iter->name) == ID_OB) {
-      /* Not all duplicated objects would be used by other newly duplicated data, so their flag
+      /* Not all dup obs would be used by other newly dup data, so their flag
        * will not always be cleared. */
       continue;
     }
-    BLI_assert((id_iter->tag & LIB_TAG_NEW) == 0);
+    lib_assert((id_iter->tag & LIB_TAG_NEW) == 0);
   }
   FOREACH_MAIN_ID_END;
 #endif
 
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  dune_main_id_newptr_and_tag_clear(main);
 }
 
-/** \} */
+/* Make Instanced Obs Real Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Make Instanced Objects Real Operator
- * \{ */
-
-/* XXX TODO: That whole hierarchy handling based on persistent_id tricks is
+/* TODO: That whole hierarchy handling based on persistent_id tricks is
  * very confusing and convoluted, and it will fail in many cases besides basic ones.
  * Think this should be replaced by a proper tree-like representation of the instantiations,
- * should help a lot in both readability, and precise consistent rebuilding of hierarchy.
- */
+ * should help a lot in both readability, and precise consistent rebuilding of hierarchy. */
 
-/**
- * \note regarding hashing dupli-objects which come from OB_DUPLICOLLECTION,
- * skip the first member of #DupliObject.persistent_id
- * since its a unique index and we only want to know if the group objects are from the same
- * dupli-group instance.
+/* regarding hashing dup-obs which come from OB_DUPCOLLECTION,
+ * skip the first member of DupOb.persistent_id
+ * since its a unique id and we only want to know if the group ob are from the same
+ * dup-group instance.
  *
- * \note regarding hashing dupli-objects which come from non-OB_DUPLICOLLECTION,
- * include the first member of #DupliObject.persistent_id
- * since its the index of the vertex/face the object is instantiated on and we want to identify
- * objects on the same vertex/face.
- * In other words, we consider each group of objects from a same item as being
+ * regarding hashing dup-obs which come from non-OB_DUPCOLLECTION,
+ * include the first member of DupOb.persistent_id
+ * since its the index of the vertex/face the ob is instantiated on and we want to identify
+ * obs on the same vertex/face.
+ * In other words, we consider each group of obs from a same item as being
  * the 'local group' where to check for parents.
  */
-static uint dupliobject_hash(const void *ptr)
+static uint dupob_hash(const void *ptr)
 {
-  const DupliObject *dob = static_cast<const DupliObject *>(ptr);
-  uint hash = BLI_ghashutil_ptrhash(dob->ob);
+  const DupOb *dob = static_cast<const DupOb *>(ptr);
+  uint hash = lib_ghashutil_ptrhash(dob->ob);
 
   if (dob->type == OB_DUPLICOLLECTION) {
     for (int i = 1; (i < MAX_DUPLI_RECUR) && dob->persistent_id[i] != INT_MAX; i++) {
@@ -2458,29 +2451,25 @@ static uint dupliobject_hash(const void *ptr)
   return hash;
 }
 
-/**
- * \note regarding hashing dupli-objects when using OB_DUPLICOLLECTION,
- * skip the first member of #DupliObject.persistent_id
- * since its a unique index and we only want to know if the group objects are from the same
- * dupli-group instance.
- */
-static uint dupliobject_instancer_hash(const void *ptr)
+/* regarding hashing dup-obs when using OB_DUPCOLLECTION,
+ * skip the first member of DupOb.persistent_id
+ * since its a unique index and we only want to know if the group obs are from the same
+ * dup-group instance */
+static uint dupob_instancer_hash(const void *ptr)
 {
-  const DupliObject *dob = static_cast<const DupliObject *>(ptr);
-  uint hash = BLI_ghashutil_inthash(dob->persistent_id[0]);
-  for (int i = 1; (i < MAX_DUPLI_RECUR) && dob->persistent_id[i] != INT_MAX; i++) {
+  const DupOb *dob = static_cast<const DupOp *>(ptr);
+  uint hash = lib_ghashutil_inthash(dob->persistent_id[0]);
+  for (int i = 1; (i < MAX_DUP_RECUR) && dob->persistent_id[i] != INT_MAX; i++) {
     hash ^= (dob->persistent_id[i] ^ i);
   }
   return hash;
 }
 
-/**
- * Compare function that matches #dupliobject_hash.
- */
-static bool dupliobject_cmp(const void *a_, const void *b_)
+/* Compare fn that matches dupob_hash. */
+static bool dupob_cmp(const void *a_, const void *b_)
 {
-  const DupliObject *a = static_cast<const DupliObject *>(a_);
-  const DupliObject *b = static_cast<const DupliObject *>(b_);
+  const DupOb *a = static_cast<const DupOb *>(a_);
+  const DupOb *b = static_cast<const DupOb *>(b_);
 
   if (a->ob != b->ob) {
     return true;
@@ -2490,7 +2479,7 @@ static bool dupliobject_cmp(const void *a_, const void *b_)
     return true;
   }
 
-  if (a->type == OB_DUPLICOLLECTION) {
+  if (a->type == OB_DUPCOLLECTION) {
     for (int i = 1; (i < MAX_DUPLI_RECUR); i++) {
       if (a->persistent_id[i] != b->persistent_id[i]) {
         return true;
@@ -2510,11 +2499,11 @@ static bool dupliobject_cmp(const void *a_, const void *b_)
   return false;
 }
 
-/* Compare function that matches dupliobject_instancer_hash. */
-static bool dupliobject_instancer_cmp(const void *a_, const void *b_)
+/* Cmp fn that matches dupob_instancer_hash. */
+static bool dupob_instancer_cmp(const void *a_, const void *b_)
 {
-  const DupliObject *a = static_cast<const DupliObject *>(a_);
-  const DupliObject *b = static_cast<const DupliObject *>(b_);
+  const DupOb *a = static_cast<const DupOb *>(a_);
+  const DupOb *b = static_cast<const DupOb *>(b_);
 
   for (int i = 0; (i < MAX_DUPLI_RECUR); i++) {
     if (a->persistent_id[i] != b->persistent_id[i]) {
@@ -2529,119 +2518,118 @@ static bool dupliobject_instancer_cmp(const void *a_, const void *b_)
   return false;
 }
 
-static void make_object_duplilist_real(bContext *C,
-                                       Depsgraph *depsgraph,
-                                       Scene *scene,
-                                       Base *base,
-                                       const bool use_base_parent,
-                                       const bool use_hierarchy)
+static void make_ob_duplist_real(Cxt *C,
+                                 Graph *graph,
+                                 Scene *scene,
+                                 Base *base,
+                                 const bool use_base_parent,
+                                 const bool use_hierarchy)
 {
-  Main *bmain = CTX_data_main(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   GHash *parent_gh = nullptr, *instancer_gh = nullptr;
 
-  Object *object_eval = DEG_get_evaluated_object(depsgraph, base->object);
+  Ob *ob_eval = graph_get_eval_ob(graph, base->ob);
 
-  if (!(base->object->transflag & OB_DUPLI) &&
-      !blender::bke::object_has_geometry_set_instances(*object_eval))
+  if (!(base->ob->transflag & OB_DUP) &&
+      !dune::dune::ob_has_geometry_set_instances(*ob_eval))
   {
     return;
   }
 
-  ListBase *lb_duplis = object_duplilist(depsgraph, scene, object_eval);
+  List *list_dup = ob_list_dup(graph, scene, ob_eval);
 
-  if (BLI_listbase_is_empty(lb_duplis)) {
-    free_object_duplilist(lb_duplis);
+  if (lib_list_is_empty(list_dup)) {
+    free_ob_duplilist(list_dup);
     return;
   }
 
-  GHash *dupli_gh = BLI_ghash_ptr_new(__func__);
+  GHash *dup_gh = lib_ghash_ptr_new(__func__);
   if (use_hierarchy) {
-    parent_gh = BLI_ghash_new(dupliobject_hash, dupliobject_cmp, __func__);
+    parent_gh = lib_ghash_new(dupob_hash, dupob_cmp, __func__);
 
     if (use_base_parent) {
-      instancer_gh = BLI_ghash_new(
-          dupliobject_instancer_hash, dupliobject_instancer_cmp, __func__);
+      instancer_gh = lib_ghash_new(
+          dupob_instancer_hash, dupob_instancer_cmp, __func__);
     }
   }
 
-  LISTBASE_FOREACH (DupliObject *, dob, lb_duplis) {
-    Object *ob_src = DEG_get_original_object(dob->ob);
-    Object *ob_dst = static_cast<Object *>(ID_NEW_SET(ob_src, BKE_id_copy(bmain, &ob_src->id)));
+  LIST_FOREACH (DupOb *, dob, lb_duplis) {
+    Ob *ob_src = graph_get_original_ob(dob->ob);
+    Ob *ob_dst = static_cast<Ob *>(ID_NEW_SET(ob_src, dune_id_copy(main, &ob_src->id)));
     id_us_min(&ob_dst->id);
 
-    /* font duplis can have a totcol without material, we get them from parent
-     * should be implemented better...
-     */
+    /* font listdup can have a totcol wo material, we get them from parent
+     * should be impl better... */
     if (ob_dst->mat == nullptr) {
       ob_dst->totcol = 0;
     }
 
-    BKE_collection_object_add_from(bmain, scene, base->object, ob_dst);
-    BKE_view_layer_synced_ensure(scene, view_layer);
-    Base *base_dst = BKE_view_layer_base_find(view_layer, ob_dst);
-    BLI_assert(base_dst != nullptr);
+    dune_collection_ob_add_from(main, scene, base->ob, ob_dst);
+    dune_view_layer_synced_ensure(scene, view_layer);
+    Base *base_dst = dune_view_layer_base_find(view_layer, ob_dst);
+    lib_assert(base_dst != nullptr);
 
-    ED_object_base_select(base_dst, BA_SELECT);
-    DEG_id_tag_update(&ob_dst->id, ID_RECALC_SELECT);
+    ed_ob_base_sel(base_dst, BA_SEL);
+    graph_id_tag_update(&ob_dst->id, ID_RECALC_SEL);
 
-    BKE_scene_object_base_flag_sync_from_base(base_dst);
+    dune_scene_ob_base_flag_sync_from_base(base_dst);
 
     /* make sure apply works */
-    BKE_animdata_free(&ob_dst->id, true);
+    dune_animdata_free(&ob_dst->id, true);
     ob_dst->adt = nullptr;
 
     ob_dst->parent = nullptr;
-    BKE_constraints_free(&ob_dst->constraints);
+    dune_constraints_free(&ob_dst->constraints);
     ob_dst->runtime->curve_cache = nullptr;
-    const bool is_dupli_instancer = (ob_dst->transflag & OB_DUPLI) != 0;
-    ob_dst->transflag &= ~OB_DUPLI;
+    const bool is_dup_instancer = (ob_dst->transflag & OB_DUP) != 0;
+    ob_dst->transflag &= ~OB_DUP;
     /* Remove instantiated collection, it's annoying to keep it here
      * (and get potentially a lot of usages of it then...). */
-    id_us_min((ID *)ob_dst->instance_collection);
+    id_us_min((Id *)ob_dst->instance_collection);
     ob_dst->instance_collection = nullptr;
 
-    copy_m4_m4(ob_dst->object_to_world, dob->mat);
-    BKE_object_apply_mat4(ob_dst, ob_dst->object_to_world, false, false);
+    copy_m4_m4(ob_dst->ob_to_world, dob->mat);
+    dune_ob_apply_mat4(ob_dst, ob_dst->ob_to_world, false, false);
 
-    BLI_ghash_insert(dupli_gh, dob, ob_dst);
+    lib_ghash_insert(dupli_gh, dob, ob_dst);
     if (parent_gh) {
       void **val;
       /* Due to nature of hash/comparison of this ghash, a lot of duplis may be considered as
        * 'the same', this avoids trying to insert same key several time and
        * raise asserts in debug builds... */
-      if (!BLI_ghash_ensure_p(parent_gh, dob, &val)) {
+      if (!lib_ghash_ensure_p(parent_gh, dob, &val)) {
         *val = ob_dst;
       }
 
-      if (is_dupli_instancer && instancer_gh) {
+      if (is_dup_instancer && instancer_gh) {
         /* Same as above, we may have several 'hits'. */
-        if (!BLI_ghash_ensure_p(instancer_gh, dob, &val)) {
+        if (!lib_ghash_ensure_p(instancer_gh, dob, &val)) {
           *val = ob_dst;
         }
       }
     }
   }
 
-  LISTBASE_FOREACH (DupliObject *, dob, lb_duplis) {
-    Object *ob_src = dob->ob;
-    Object *ob_dst = static_cast<Object *>(BLI_ghash_lookup(dupli_gh, dob));
+  LIST_FOREACH (DupOb *, dob, list_dup) {
+    Ob *ob_src = dob->ob;
+    Ob *ob_dst = static_cast<Ob *>(lib_ghash_lookup(dup_gh, dob));
+      
+    /* Remap new ob to itself, and clear again newid ptr of orig ob */
+    dune_libblock_relink_to_newid(main, &ob_dst->id, 0);
 
-    /* Remap new object to itself, and clear again newid pointer of orig object. */
-    BKE_libblock_relink_to_newid(bmain, &ob_dst->id, 0);
-
-    DEG_id_tag_update(&ob_dst->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&ob_dst->id, ID_RECALC_GEOMETRY);
 
     if (use_hierarchy) {
       /* original parents */
-      Object *ob_src_par = ob_src->parent;
-      Object *ob_dst_par = nullptr;
+      Ob *ob_src_par = ob_src->parent;
+      Ob *ob_dst_par = nullptr;
 
       /* find parent that was also made real */
       if (ob_src_par) {
         /* OK to keep most of the members uninitialized,
          * they won't be read, this is simply for a hash lookup. */
-        DupliObject dob_key;
+        DupOb dob_key;
         dob_key.ob = ob_src_par;
         dob_key.type = dob->type;
         if (dob->type == OB_DUPLICOLLECTION) {
@@ -2652,7 +2640,7 @@ static void make_object_duplilist_real(bContext *C,
         else {
           dob_key.persistent_id[0] = dob->persistent_id[0];
         }
-        ob_dst_par = static_cast<Object *>(BLI_ghash_lookup(parent_gh, &dob_key));
+        ob_dst_par = static_cast<Ob *>(lib_ghash_lookup(parent_gh, &dob_key));
       }
 
       if (ob_dst_par) {
@@ -2669,127 +2657,122 @@ static void make_object_duplilist_real(bContext *C,
       }
     }
     if (use_base_parent && ob_dst->parent == nullptr) {
-      Object *ob_dst_par = nullptr;
+      Ob *ob_dst_par = nullptr;
 
       if (instancer_gh != nullptr) {
         /* OK to keep most of the members uninitialized,
          * they won't be read, this is simply for a hash lookup. */
-        DupliObject dob_key;
-        /* We are looking one step upper in hierarchy, so we need to 'shift' the `persistent_id`,
+        DupOb dob_key;
+        /* We are looking one step upper in hierarchy so must 'shift' the `persistent_id`,
          * ignoring the first item.
-         * We only check on persistent_id here, since we have no idea what object it might be. */
+         * We only check on persistent_id here bc we have no idea what ob it might be. */
         memcpy(&dob_key.persistent_id[0],
                &dob->persistent_id[1],
-               sizeof(dob_key.persistent_id[0]) * (MAX_DUPLI_RECUR - 1));
-        ob_dst_par = static_cast<Object *>(BLI_ghash_lookup(instancer_gh, &dob_key));
+               sizeof(dob_key.persistent_id[0]) * (MAX_DUP_RECUR - 1));
+        ob_dst_par = static_cast<Ob *>(lib_ghash_lookup(instancer_gh, &dob_key));
       }
 
       if (ob_dst_par == nullptr) {
         /* Default to parenting to root object...
          * Always the case when use_hierarchy is false. */
-        ob_dst_par = base->object;
+        ob_dst_par = base->ob;
       }
 
       ob_dst->parent = ob_dst_par;
-      ob_dst->partype = PAROBJECT;
+      ob_dst->partype = PAROB;
     }
 
     if (ob_dst->parent) {
-      /* NOTE: this may be the parent of other objects, but it should
+      /* This may be the parent of other obs, but it should
        * still work out ok */
-      BKE_object_apply_mat4(ob_dst, dob->mat, false, true);
+      dune_ob_apply_mat4(ob_dst, dob->mat, false, true);
 
       /* to set ob_dst->orig and in case there's any other discrepancies */
-      DEG_id_tag_update(&ob_dst->id, ID_RECALC_TRANSFORM);
+      graph_id_tag_update(&ob_dst->id, ID_RECALC_TRANSFORM);
     }
   }
 
-  if (base->object->transflag & OB_DUPLICOLLECTION && base->object->instance_collection) {
-    base->object->instance_collection = nullptr;
+  if (base->ob->transflag & OB_DUPCOLLECTION && base->ob->instance_collection) {
+    base->ob->instance_collection = nullptr;
   }
 
-  ED_object_base_select(base, BA_DESELECT);
-  DEG_id_tag_update(&base->object->id, ID_RECALC_SELECT);
+  ed_ob_base_sel(base, BA_DESEL);
+  graph_id_tag_update(&base->ob->id, ID_RECALC_SEL);
 
-  BLI_ghash_free(dupli_gh, nullptr, nullptr);
+  lib_ghash_free(dupli_gh, nullptr, nullptr);
   if (parent_gh) {
-    BLI_ghash_free(parent_gh, nullptr, nullptr);
+    lib_ghash_free(parent_gh, nullptr, nullptr);
   }
   if (instancer_gh) {
-    BLI_ghash_free(instancer_gh, nullptr, nullptr);
+    lib_ghash_free(instancer_gh, nullptr, nullptr);
   }
 
-  free_object_duplilist(lb_duplis);
+  free_ob_listdup(list_dup);
 
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  dune_main_id_newptr_and_tag_clear(main);
 
-  base->object->transflag &= ~OB_DUPLI;
-  DEG_id_tag_update(&base->object->id, ID_RECALC_COPY_ON_WRITE);
+  base->ob->transflag &= ~OB_DUP;
+  graph_id_tag_update(&base->ob->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-static int object_duplicates_make_real_exec(bContext *C, wmOperator *op)
+static int ob_dups_make_real_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
+  Main *main = cxt_data_main(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
 
-  const bool use_base_parent = RNA_boolean_get(op->ptr, "use_base_parent");
-  const bool use_hierarchy = RNA_boolean_get(op->ptr, "use_hierarchy");
+  const bool use_base_parent = api_bool_get(op->ptr, "use_base_parent");
+  const bool use_hierarchy = api_bool_get(op->ptr, "use_hierarchy");
 
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  dune_main_id_newptr_and_tag_clear(main);
 
-  CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases) {
-    make_object_duplilist_real(C, depsgraph, scene, base, use_base_parent, use_hierarchy);
+  CXT_DATA_BEGIN (C, Base *, base, sel_editable_bases) {
+    make_ob_listdup_real(C, graph, scene, base, use_base_parent, use_hierarchy);
 
     /* dependencies were changed */
-    WM_event_add_notifier(C, NC_OBJECT | ND_PARENT, base->object);
+    win_ev_add_notifier(C, NC_OB | ND_PARENT, base->ob);
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  DEG_relations_tag_update(bmain);
-  WM_event_add_notifier(C, NC_SCENE, scene);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, nullptr);
-  ED_outliner_select_sync_from_object_tag(C);
+  graph_tag_update(main);
+  win_ev_add_notifier(C, NC_SCENE, scene);
+  win_main_add_notifier(NC_OB | ND_DRW, nullptr);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_duplicates_make_real(wmOperatorType *ot)
+void OB_OT_dups_make_real(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Make Instances Real";
-  ot->description = "Make instanced objects attached to this object real";
-  ot->idname = "OBJECT_OT_duplicates_make_real";
+  ot->description = "Make instanced obs attached to this object real";
+  ot->idname = "OB_OT_dups_make_real";
 
-  /* api callbacks */
-  ot->exec = object_duplicates_make_real_exec;
+  /* api cbs */
+  ot->ex = ob_dups_make_real_ex;
 
-  ot->poll = ED_operator_objectmode;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_boolean(ot->srna,
+  api_def_bool(ot->sapi,
                   "use_base_parent",
                   false,
                   "Parent",
                   "Parent newly created objects to the original instancer");
-  RNA_def_boolean(
-      ot->srna, "use_hierarchy", false, "Keep Hierarchy", "Maintain parent child relationships");
+  api_def_bool(
+      ot->sapi, "use_hierarchy", false, "Keep Hierarchy", "Maintain parent child relationships");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Data Convert Operator
- * \{ */
-
-static const EnumPropertyItem convert_target_items[] = {
+/* Data Convert Op */
+static const EnumPropItem convert_target_items[] = {
     {OB_CURVES_LEGACY,
      "CURVE",
      ICON_OUTLINER_OB_CURVE,
      "Curve",
-     "Curve from Mesh or Text objects"},
+     "Curve from Mesh or Txt obs"},
     {OB_MESH,
      "MESH",
      ICON_OUTLINER_OB_MESH,
@@ -2799,100 +2782,100 @@ static const EnumPropertyItem convert_target_items[] = {
 #else
      "Mesh from Curve, Surface, Metaball, or Text objects"},
 #endif
-    {OB_GPENCIL_LEGACY,
-     "GPENCIL",
-     ICON_OUTLINER_OB_GREASEPENCIL,
-     "Grease Pencil",
-     "Grease Pencil from Curve or Mesh objects"},
+    {OB_PEN_LEGACY,
+     "PEN",
+     ICON_OUTLINER_OB_PEN,
+     "Pen",
+     "Pen from Curve or Mesh obs"},
 #ifdef WITH_POINT_CLOUD
     {OB_POINTCLOUD,
      "POINTCLOUD",
      ICON_OUTLINER_OB_POINTCLOUD,
      "Point Cloud",
-     "Point Cloud from Mesh objects"},
+     "Point Cloud from Mesh obs"},
 #endif
-    {OB_CURVES, "CURVES", ICON_OUTLINER_OB_CURVES, "Curves", "Curves from evaluated curve data"},
-#ifdef WITH_GREASE_PENCIL_V3
-    {OB_GREASE_PENCIL,
-     "GREASEPENCIL",
-     ICON_OUTLINER_OB_GREASEPENCIL,
-     "Grease Pencil v3",
-     "Grease Pencil v3 from Grease Pencil"},
+    {OB_CURVES, "CURVES", ICON_OUTLINER_OB_CURVES, "Curves", "Curves from evald curve data"},
+#ifdef WITH_PEN_V3
+    {OB_PEN,
+     "PEN",
+     ICON_OUTLINER_OB_PEN,
+     "Pen v3",
+     "Pen v3 from Pen"},
 #endif
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-static void object_data_convert_curve_to_mesh(Main *bmain, Depsgraph *depsgraph, Object *ob)
+static void ob_data_convert_curve_to_mesh(Main *main, Graph *graph, Ob *ob)
 {
-  Object *object_eval = DEG_get_evaluated_object(depsgraph, ob);
+  Ob *ob_eval = graph_get_eval_ob(graph, ob);
   Curve *curve = static_cast<Curve *>(ob->data);
 
-  Mesh *mesh = BKE_mesh_new_from_object_to_bmain(bmain, depsgraph, object_eval, true);
+  Mesh *mesh = dune_mesh_new_from_ob_to_main(main, graph, ob_eval, true);
   if (mesh == nullptr) {
     /* Unable to convert the curve to a mesh. */
     return;
   }
 
-  BKE_object_free_modifiers(ob, 0);
-  /* Replace curve used by the object itself. */
+  dune_ob_free_mods(ob, 0);
+  /* Replace curve used by the ob itself. */
   ob->data = mesh;
   ob->type = OB_MESH;
   id_us_min(&curve->id);
   id_us_plus(&mesh->id);
-  /* Change objects which are using same curve.
+  /* Change obs which are using same curve.
    * A bit annoying, but:
-   * - It's possible to have multiple curve objects selected which are sharing the same curve
-   *   data-block. We don't want mesh to be created for every of those objects.
-   * - This is how conversion worked for a long time. */
-  LISTBASE_FOREACH (Object *, other_object, &bmain->objects) {
-    if (other_object->data == curve) {
-      other_object->type = OB_MESH;
+   * It's possible to have multiple curve obs sel which are sharing the same curve
+   *   data-block. We don't want mesh to be created for every of those obs.
+   * This is how conversion worked for a long time. */
+  LIST_FOREACH (Object *, other_ob, &main->obs) {
+    if (other_ob->data == curve) {
+      other_ob->type = OB_MESH;
 
-      id_us_min((ID *)other_object->data);
-      other_object->data = ob->data;
-      id_us_plus((ID *)other_object->data);
+      id_us_min((Id *)other_ob->data);
+      other_ob->data = ob->data;
+      id_us_plus((Id *)other_ob->data);
     }
   }
 }
 
-static bool object_convert_poll(bContext *C)
+static bool ob_convert_poll(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
-  Base *base_act = CTX_data_active_base(C);
-  Object *obact = base_act ? base_act->object : nullptr;
+  Scene *scene = cxt_data_scene(C);
+  Base *base_act = cxt_data_active_base(C);
+  Ob *obact = base_act ? base_act->ob : nullptr;
 
   if (obact == nullptr || obact->data == nullptr || ID_IS_LINKED(obact) ||
-      ID_IS_OVERRIDE_LIBRARY(obact) || ID_IS_OVERRIDE_LIBRARY(obact->data))
+      ID_IS_OVERRIDE_LIB(obact) || ID_IS_OVERRIDE_LIB(obact->data))
   {
     return false;
   }
 
-  return (!ID_IS_LINKED(scene) && (BKE_object_is_in_editmode(obact) == false) &&
-          (base_act->flag & BASE_SELECTED));
+  return (!ID_IS_LINKED(scene) && (dune_ob_is_in_editmode(obact) == false) &&
+          (base_act->flag & BASE_SEL));
 }
 
-/* Helper for object_convert_exec */
-static Base *duplibase_for_convert(
-    Main *bmain, Depsgraph *depsgraph, Scene *scene, ViewLayer *view_layer, Base *base, Object *ob)
+/* Helper for ob_convert_ex */
+static Base *basedup_for_convert(
+    Main *main, Graph *graph, Scene *scene, ViewLayer *view_layer, Base *base, Ob *ob)
 {
   if (ob == nullptr) {
-    ob = base->object;
+    ob = base->ob;
   }
 
-  Object *obn = (Object *)BKE_id_copy(bmain, &ob->id);
+  Ob *obn = (Ob *)dune_id_copy(main, &ob->id);
   id_us_min(&obn->id);
-  DEG_id_tag_update(&obn->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
-  BKE_collection_object_add_from(bmain, scene, ob, obn);
+  graph_id_tag_update(&obn->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIM);
+  dune_collection_ob_add_from(main, scene, ob, obn);
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Base *basen = BKE_view_layer_base_find(view_layer, obn);
-  ED_object_base_select(basen, BA_SELECT);
-  ED_object_base_select(base, BA_DESELECT);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Base *basen = dune_view_layer_base_find(view_layer, obn);
+  ed_ob_base_sel(basen, BA_SEL);
+  ed_ob_base_sel(base, BA_DESEL);
 
-  /* XXX: An ugly hack needed because if we re-run depsgraph with some new meta-ball objects
-   * having same 'family name' as orig ones, they will affect end result of meta-ball computation.
-   * For until we get rid of that name-based thingy in meta-balls, that should do the trick
-   * (this is weak, but other solution (to change name of `obn`) is even worse IMHO).
+  /* Ugly hack needed bc if we re-run graph with some new meta-ball objs
+   * having same 'family name' as orig ones they will affect end result of meta-ball computation.
+   * Until we get rid of that name-based thingy in meta-balls, that should do the trick
+   * (weak but other solution (to change name of `obn`) is even worse IMHO).
    * See #65996. */
   const bool is_meta_ball = (obn->type == OB_MBALL);
   void *obdata = obn->data;
@@ -2901,18 +2884,18 @@ static Base *duplibase_for_convert(
     obn->data = nullptr;
   }
 
-  /* XXX Doing that here is stupid, it means we update and re-evaluate the whole depsgraph every
-   * time we need to duplicate an object to convert it. Even worse, this is not 100% correct, since
+  /* Doing that here is stupid, it means we update and re-eval the whole graph every
+   * time we need to dup an ob to convert it. Even worse, this is not 100% correct, since
    * we do not yet have duplicated obdata.
    * However, that is a safe solution for now. Proper, longer-term solution is to refactor
-   * object_convert_exec to:
-   *  - duplicate all data it needs to in a first loop.
+   * ob_convert_ex to:
+   *  - dup all data it needs to in a first loop.
    *  - do a single update.
    *  - convert data in a second loop. */
-  DEG_graph_tag_relations_update(depsgraph);
+  graph_tag_relations_update(graph);
   CustomData_MeshMasks customdata_mask_prev = scene->customdata_mask;
   CustomData_MeshMasks_update(&scene->customdata_mask, &CD_MASK_MESH);
-  BKE_scene_graph_update_tagged(depsgraph, bmain);
+  dune_scene_graph_update_tagged(graph, main);
   scene->customdata_mask = customdata_mask_prev;
 
   if (is_meta_ball) {
@@ -2923,16 +2906,16 @@ static Base *duplibase_for_convert(
   return basen;
 }
 
-static int object_convert_exec(bContext *C, wmOperator *op)
+static int ob_convert_ex(Cxt *C, WinOp *op)
 {
-  using namespace blender;
-  Main *bmain = CTX_data_main(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  using namespace dune;
+  Main *main = cxt_data_main(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_wm_view3d(C);
   Base *basen = nullptr, *basact = nullptr;
-  Object *ob1, *obact = CTX_data_active_object(C);
+  Ob *ob1, *obact = cxt_data_active_object(C);
   const short target = RNA_enum_get(op->ptr, "target");
   bool keep_original = RNA_boolean_get(op->ptr, "keep_original");
   const bool do_merge_customdata = RNA_boolean_get(op->ptr, "merge_customdata");
