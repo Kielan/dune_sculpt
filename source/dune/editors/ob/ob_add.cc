@@ -778,9 +778,9 @@ static const char *get_effector_defname(ePFieldType type)
     case PFIELD_MAGNET:
       return CXT_DATA_(LANG_CXT_ID_OB, "Magnet");
     case PFIELD_WIND:
-      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Wind");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Wind");
     case PFIELD_GUIDE:
-      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "CurveGuide");
+      return CXT_DATA_(LANG_CXT_ID_OB, "CurveGuide");
     case PFIELD_TEXTURE:
       return CXT_DATA_(LANG_CXT_ID_OB, "TextureField");
     case PFIELD_HARMONIC:
@@ -798,13 +798,13 @@ static const char *get_effector_defname(ePFieldType type)
     case PFIELD_FLUIDFLOW:
       return CXT_DATA_(LANG_CXT_ID_OB, "FluidField");
     case PFIELD_NULL:
-      return CXT_DATA_(BLT_I18NCONTEXT_ID_OBJECT, "Field");
+      return CXT_DATA_(LANG_CXT_ID_OB, "Field");
     case NUM_PFIELD_TYPES:
       break;
   }
 
   lib_assert(false);
-  return CXT_DATA_(LANG_CXT_ID_OBJECT, "Field");
+  return CXT_DATA_(LANG_CXT_ID_OB, "Field");
 }
 
 static int effector_add_ex(Cxt *C, WinOp *op)
@@ -821,7 +821,7 @@ static int effector_add_ex(Cxt *C, WinOp *op)
   const ePFieldType type = static_cast<ePFieldType>(api_enum_get(op->ptr, "type"));
   float dia = api_float_get(op->ptr, "radius");
 
-  Object *ob;
+  Ob *ob;
   if (type == PFIELD_GUIDE) {
     Main *main = cxt_data_main(C);
     Scene *scene = cxt_data_scene(C);
@@ -830,7 +830,7 @@ static int effector_add_ex(Cxt *C, WinOp *op)
 
     Curve *cu = static_cast<Curve *>(ob->data);
     cu->flag |= CU_PATH | CU_3D;
-    ed_ob_editmode_enter_ex(bmain, scene, ob, 0);
+    ed_ob_editmode_enter_ex(main, scene, ob, 0);
 
     float mat[4][4];
     ed_ob_new_primitive_matrix(C, ob, loc, rot, nullptr, mat);
@@ -963,7 +963,7 @@ static int ob_metaball_add_ex(Cxt *C, WinOp *op)
   }
 
   float mat[4][4];
-  ed_obj_new_primitive_matrix(C, obedit, loc, rot, nullptr, mat);
+  ed_ob_new_primitive_matrix(C, obedit, loc, rot, nullptr, mat);
   /* Halving here is done to account for constant values from #BKE_mball_element_add.
    * While the default radius of the resulting meta element is 2,
    * we want to pass in 1 so other values such as resolution are scaled by 1.0. */
@@ -1415,7 +1415,7 @@ static int ob_pen_add_ex(Cxt *C, WinOp *op)
       break;
   }
 
-  /* If this is a new object, initialize default stuff (colors, etc.) */
+  /* If this is a new object, init default stuff (colors, etc.) */
   if (newob) {
     /* set default viewport color to black */
     copy_v3_fl(ob->color, 0.0f);
@@ -1451,7 +1451,7 @@ static void ob_add_ui(Cxt * /*C*/, WinOp *op)
 }
 
 static EnumPropItem api_enum_pen_add_stroke_depth_order_items[] = {
-    {PEN_DRAWMODE_2D,
+    {PEN_DRWMODE_2D,
      "2D",
      0,
      "2D Layers",
@@ -1602,7 +1602,7 @@ void OB_OT_pen_add(WinOpType *ot)
   ot->description = "Add a Pen ob to the scene";
   ot->idname = "OB_OT_pen_add";
 
-  /* api callbacks */
+  /* api cbs */
   ot->ex = ob_pen_add_ex;
   ot->poll = ed_op_obmode;
 
@@ -1939,165 +1939,153 @@ void OB_OT_collection_external_asset_drop(WinOpType *ot)
   ot->prop = prop;
 }
 
-/* Add Data Instance Operator
- *
- * Use for dropping ID's from the outliner. */
-
-static int object_data_instance_add_ex(bContext *C, wmOperator *op)
+/* Add Data Instance Op
+ * Use for dropping Id's from the outliner. */
+static int ob_data_instance_add_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  ID *id = nullptr;
+  Main *main = cxt_data_main(C);
+  Id *id = nullptr;
   ushort local_view_bits;
   float loc[3], rot[3];
 
-  PropertyRNA *prop_type = RNA_struct_find_property(op->ptr, "type");
-  PropertyRNA *prop_location = RNA_struct_find_property(op->ptr, "location");
+  ApiProp *prop_type = api_struct_find_prop(op->ptr, "type");
+  ApiProp *prop_location = api_struct_find_prop(op->ptr, "location");
 
-  const short id_type = RNA_property_enum_get(op->ptr, prop_type);
-  id = WM_operator_properties_id_lookup_from_name_or_session_uuid(
-      bmain, op->ptr, (ID_Type)id_type);
+  const short id_type = api_prop_enum_get(op->ptr, prop_type);
+  id = win_op_props_id_lookup_from_name_or_session_uuid(
+      main, op->ptr, (IdType)id_type);
   if (id == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  const int object_type = BKE_object_obdata_to_type(id);
-  if (object_type == -1) {
-    return OPERATOR_CANCELLED;
+  const int ob_type = dune_ob_obdata_to_type(id);
+  if (ob_type == -1) {
+    return OP_CANCELLED;
   }
 
-  if (CTX_wm_region_view3d(C)) {
+  if (cxt_win_rgn_view3d(C)) {
     int mval[2];
-    if (!RNA_property_is_set(op->ptr, prop_location) && object_add_drop_xy_get(C, op, &mval)) {
-      ED_object_location_from_view(C, loc);
-      ED_view3d_cursor3d_position(C, mval, false, loc);
-      RNA_property_float_set_array(op->ptr, prop_location, loc);
+    if (!api_prop_is_set(op->ptr, prop_location) && ob_add_drop_xy_get(C, op, &mval)) {
+      ed_ob_location_from_view(C, loc);
+      ed_view3d_cursor3d_position(C, mval, false, loc);
+      api_prop_float_set_array(op->ptr, prop_location, loc);
     }
   }
 
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_object_add_type_with_obdata(
-      C, object_type, id->name + 2, loc, rot, false, local_view_bits, id);
+  ed_ob_add_type_with_obdata(
+      C, ob_type, id->name + 2, loc, rot, false, local_view_bits, id);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_data_instance_add(wmOperatorType *ot)
+void OB_OT_data_instance_add(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Object Data Instance";
-  ot->description = "Add an object data instance";
-  ot->idname = "OBJECT_OT_data_instance_add";
+  /* ids */
+  ot->name = "Add Ob Data Instance";
+  ot->description = "Add an ob data instance";
+  ot->idname = "OB_OT_data_instance_add";
 
-  /* api callbacks */
-  ot->invoke = object_add_drop_xy_generic_invoke;
-  ot->exec = object_data_instance_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = ob_add_drop_xy_generic_invoke;
+  ot->ex = ob_data_instance_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  WM_operator_properties_id_lookup(ot, true);
-  PropertyRNA *prop = RNA_def_enum(ot->srna, "type", rna_enum_id_type_items, 0, "Type", "");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
-  ED_object_add_generic_props(ot, false);
+  /* props */
+  win_op_props_id_lookup(ot, true);
+  ApiProp *prop = api_def_enum(ot->sapi, "type", api_enum_id_type_items, 0, "Type", "");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_ID);
+  ed_ob_add_generic_props(ot, false);
 
-  object_add_drop_xy_props(ot);
+  ob_add_drop_xy_props(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Speaker Operator
- * \{ */
-
-static int object_speaker_add_exec(bContext *C, wmOperator *op)
+/* Add Speaker Op */
+static int ob_speaker_add_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
 
   ushort local_view_bits;
   float loc[3], rot[3];
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  Object *ob = ED_object_add_type(C, OB_SPEAKER, nullptr, loc, rot, false, local_view_bits);
-  const bool is_liboverride = ID_IS_OVERRIDE_LIBRARY(ob);
+  Ob *ob = ed_ob_add_type(C, OB_SPEAKER, nullptr, loc, rot, false, local_view_bits);
+  const bool is_liboverride = ID_IS_OVERRIDE_LIB(ob);
 
   /* To make it easier to start using this immediately in NLA, a default sound clip is created
    * ready to be moved around to re-time the sound and/or make new sound clips. */
   {
     /* create new data for NLA hierarchy */
-    AnimData *adt = BKE_animdata_ensure_id(&ob->id);
-    NlaTrack *nlt = BKE_nlatrack_new_tail(&adt->nla_tracks, is_liboverride);
-    BKE_nlatrack_set_active(&adt->nla_tracks, nlt);
-    NlaStrip *strip = BKE_nla_add_soundstrip(bmain, scene, static_cast<Speaker *>(ob->data));
+    AnimData *adt = dune_animdata_ensure_id(&ob->id);
+    NlaTrack *nlt = dune_nlatrack_new_tail(&adt->nla_tracks, is_liboverride);
+    dune_nlatrack_set_active(&adt->nla_tracks, nlt);
+    NlaStrip *strip = dune_nla_add_soundstrip(main, scene, static_cast<Speaker *>(ob->data));
     strip->start = scene->r.cfra;
     strip->end += strip->start;
 
     /* hook them up */
-    BKE_nlatrack_add_strip(nlt, strip, is_liboverride);
+    dune_nlatrack_add_strip(nlt, strip, is_liboverride);
 
     /* Auto-name the strip, and give the track an interesting name. */
     STRNCPY_UTF8(nlt->name, DATA_("SoundTrack"));
-    BKE_nlastrip_validate_name(adt, strip);
+    dune_nlastrip_validate_name(adt, strip);
 
-    WM_event_add_notifier(C, NC_ANIMATION | ND_NLA | NA_ADDED, nullptr);
+    win_ev_add_notifier(C, NC_ANIM | ND_NLA | NA_ADDED, nullptr);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_speaker_add(wmOperatorType *ot)
+void OB_OT_speaker_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Speaker";
-  ot->description = "Add a speaker object to the scene";
-  ot->idname = "OBJECT_OT_speaker_add";
+  ot->description = "Add a speaker ob to the scene";
+  ot->idname = "OB_OT_speaker_add";
 
-  /* api callbacks */
-  ot->exec = object_speaker_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = ob_speaker_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Curves Operator
- * \{ */
-
-static int object_curves_random_add_exec(bContext *C, wmOperator *op)
+/* Add Curves Op */
+static int ob_curves_random_add_ex(Cxt *C, WinOp *op)
 {
-  using namespace blender;
+  using namespace dune;
 
   ushort local_view_bits;
   float loc[3], rot[3];
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  Object *object = ED_object_add_type(C, OB_CURVES, nullptr, loc, rot, false, local_view_bits);
+  Ob *ob = ed_ob_add_type(C, OB_CURVES, nullptr, loc, rot, false, local_view_bits);
 
-  Curves *curves_id = static_cast<Curves *>(object->data);
+  Curves *curves_id = static_cast<Curves *>(ob->data);
   curves_id->geometry.wrap() = ed::curves::primitive_random_sphere(500, 8);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_curves_random_add(wmOperatorType *ot)
+void OB_OT_curves_random_add(WinOpType *ot)
 {
   /* identifiers */
   ot->name = "Add Random Curves";
