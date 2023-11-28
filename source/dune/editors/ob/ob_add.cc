@@ -869,36 +869,31 @@ void OBJECT_OT_effector_add(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(ot->srna, "type", field_type_items, 0, "Type", "");
+  /* props */
+  ot->prop = api_def_enum(ot->srna, "type", field_type_items, 0, "Type", "");
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Camera Operator
- * \{ */
-
-static int object_camera_add_exec(bContext *C, wmOperator *op)
+/* Add Camera Op */
+static int ob_camera_add_ex(Cxt *C, WinOp *op)
 {
-  View3D *v3d = CTX_wm_view3d(C);
-  Scene *scene = CTX_data_scene(C);
+  View3D *v3d = cxt_win_view3d(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* force view align for cameras */
-  RNA_enum_set(op->ptr, "align", ALIGN_VIEW);
+  aou_enum_set(op->ptr, "align", ALIGN_VIEW);
 
   ushort local_view_bits;
   bool enter_editmode;
   float loc[3], rot[3];
-  if (!ED_object_add_generic_get_opts(
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  Object *ob = ED_object_add_type(C, OB_CAMERA, nullptr, loc, rot, false, local_view_bits);
+  Ob *ob = ed_ob_add_type(C, OB_CAMERA, nullptr, loc, rot, false, local_view_bits);
 
   if (v3d) {
     if (v3d->camera == nullptr) {
@@ -910,303 +905,284 @@ static int object_camera_add_exec(bContext *C, wmOperator *op)
   }
 
   Camera *cam = static_cast<Camera *>(ob->data);
-  cam->drawsize = v3d ? ED_view3d_grid_scale(scene, v3d, nullptr) :
-                        ED_scene_grid_scale(scene, nullptr);
+  cam->drwsize = v3d ? ed_view3d_grid_scale(scene, v3d, nullptr) :
+                        ed_scene_grid_scale(scene, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_camera_add(wmOperatorType *ot)
+void OB_OT_camera_add(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Add Camera";
-  ot->description = "Add a camera object to the scene";
-  ot->idname = "OBJECT_OT_camera_add";
+  ot->description = "Add a camera ob to the scene";
+  ot->idname = "OB_OT_camera_add";
 
-  /* api callbacks */
-  ot->exec = object_camera_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = ob_camera_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_generic_props(ot, true);
 
   /* hide this for cameras, default */
-  prop = RNA_struct_type_find_property(ot->srna, "align");
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  prop = api_struct_type_find_prop(ot->sapi, "align");
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-/** \} */
+/* Add Metaball Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Add Metaball Operator
- * \{ */
-
-static int object_metaball_add_exec(bContext *C, wmOperator *op)
+static int ob_metaball_add_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
   ushort local_view_bits;
   bool enter_editmode;
   float loc[3], rot[3];
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   bool newob = false;
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *obedit = BKE_view_layer_edit_object_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Ob *obedit = dune_view_layer_edit_ob_get(view_layer);
   if (obedit == nullptr || obedit->type != OB_MBALL) {
-    obedit = ED_object_add_type(C, OB_MBALL, nullptr, loc, rot, true, local_view_bits);
+    obedit = ed_ob_add_type(C, OB_MBALL, nullptr, loc, rot, true, local_view_bits);
     newob = true;
   }
   else {
-    DEG_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
   }
 
   float mat[4][4];
-  ED_object_new_primitive_matrix(C, obedit, loc, rot, nullptr, mat);
+  ed_obj_new_primitive_matrix(C, obedit, loc, rot, nullptr, mat);
   /* Halving here is done to account for constant values from #BKE_mball_element_add.
    * While the default radius of the resulting meta element is 2,
    * we want to pass in 1 so other values such as resolution are scaled by 1.0. */
-  float dia = RNA_float_get(op->ptr, "radius") / 2;
+  float dia = api_float_get(op->ptr, "radius") / 2;
 
-  ED_mball_add_primitive(C, obedit, newob, mat, dia, RNA_enum_get(op->ptr, "type"));
+  ed_mball_add_primitive(C, obedit, newob, mat, dia, api_enum_get(op->ptr, "type"));
 
   /* userdef */
   if (newob && !enter_editmode) {
-    ED_object_editmode_exit_ex(bmain, scene, obedit, EM_FREEDATA);
+    ed_ob_editmode_exit_ex(main, scene, obedit, EM_FREEDATA);
   }
   else {
-    /* Only needed in edit-mode (#ED_object_add_type normally handles this). */
-    WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, obedit);
+    /* Only needed in edit-mode (ed_ob_add_type normally handles this). */
+    win_ev_add_notifier(C, NC_OB | ND_DRW, obedit);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_metaball_add(wmOperatorType *ot)
+void OB_OT_metaball_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Metaball";
   ot->description = "Add an metaball object to the scene";
-  ot->idname = "OBJECT_OT_metaball_add";
+  ot->idname = "OB_OT_metaball_add";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_metaball_add_exec;
-  ot->poll = ED_operator_scene_editable;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_metaball_add_ex;
+  ot->poll = ed_op_scene_editable;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_metaelem_type_items, 0, "Primitive", "");
+  ot->prop = api_def_enum(ot->sapi, "type", api_enum_metaelem_type_items, 0, "Primitive", "");
 
-  ED_object_add_unit_props_radius_ex(ot, 2.0f);
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_unit_props_radius_ex(ot, 2.0f);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Text Operator
- * \{ */
-
-static int object_add_text_exec(bContext *C, wmOperator *op)
+/* Add Txt Op */
+static int ob_add_txt_ex(Cxt *C, WinOp *op)
 {
-  Object *obedit = CTX_data_edit_object(C);
+  Ob *obedit = cxt_data_edit_ob(C);
   bool enter_editmode;
   ushort local_view_bits;
   float loc[3], rot[3];
 
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   if (obedit && obedit->type == OB_FONT) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  obedit = ED_object_add_type(C, OB_FONT, nullptr, loc, rot, enter_editmode, local_view_bits);
-  BKE_object_obdata_size_init(obedit, RNA_float_get(op->ptr, "radius"));
+  obedit = ed_ob_add_type(C, OB_FONT, nullptr, loc, rot, enter_editmode, local_view_bits);
+  dune_ob_obdata_size_init(obedit, api_float_get(op->ptr, "radius"));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_text_add(wmOperatorType *ot)
+void OB_OT_txt_add(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Text";
-  ot->description = "Add a text object to the scene";
-  ot->idname = "OBJECT_OT_text_add";
+  /* ids */
+  ot->name = "Add Txt";
+  ot->description = "Add a txt ob to the scene";
+  ot->idname = "OB_OT_text_add";
 
-  /* api callbacks */
-  ot->exec = object_add_text_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = ob_add_text_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Armature Operator
- * \{ */
-
-static int object_armature_add_exec(bContext *C, wmOperator *op)
+/* Add Armature Op */
+static int ob_armature_add_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *obedit = BKE_view_layer_edit_object_get(view_layer);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Ob *obedit = dune_view_layer_edit_ob_get(view_layer);
 
-  RegionView3D *rv3d = CTX_wm_region_view3d(C);
+  RgnView3D *rv3d = cxt_win_rgn_view3d(C);
   bool newob = false;
   bool enter_editmode;
   ushort local_view_bits;
   float loc[3], rot[3], dia;
   bool view_aligned = rv3d && (U.flag & USER_ADD_VIEWALIGNED);
 
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   if ((obedit == nullptr) || (obedit->type != OB_ARMATURE)) {
-    obedit = ED_object_add_type(C, OB_ARMATURE, nullptr, loc, rot, true, local_view_bits);
-    ED_object_editmode_enter_ex(bmain, scene, obedit, 0);
+    obedit = ed_ob_add_type(C, OB_ARMATURE, nullptr, loc, rot, true, local_view_bits);
+    ed_ob_editmode_enter_ex(main, scene, obedit, 0);
     newob = true;
   }
   else {
-    DEG_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
+    grapg_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
   }
 
   if (obedit == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot create editmode armature");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Cannot create editmode armature");
+    return OP_CANCELLED;
   }
 
   /* Give the Armature its default bone collection. */
-  bArmature *armature = static_cast<bArmature *>(obedit->data);
-  BoneCollection *default_bonecoll = ANIM_armature_bonecoll_new(armature, "");
-  ANIM_armature_bonecoll_active_set(armature, default_bonecoll);
+  Armature *armature = static_cast<Armature *>(obedit->data);
+  BoneCollection *default_bonecoll = anim_armature_bonecoll_new(armature, "");
+  anim_armature_bonecoll_active_set(armature, default_bonecoll);
 
-  dia = RNA_float_get(op->ptr, "radius");
-  ED_armature_ebone_add_primitive(obedit, dia, view_aligned);
+  dia = api_float_get(op->ptr, "radius");
+  ed_armature_ebone_add_primitive(obedit, dia, view_aligned);
 
   /* userdef */
   if (newob && !enter_editmode) {
-    ED_object_editmode_exit_ex(bmain, scene, obedit, EM_FREEDATA);
+    ed_ob_editmode_exit_ex(main, scene, obedit, EM_FREEDATA);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_armature_add(wmOperatorType *ot)
+void OB_OT_armature_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Armature";
-  ot->description = "Add an armature object to the scene";
-  ot->idname = "OBJECT_OT_armature_add";
+  ot->description = "Add an armature ob to the scene";
+  ot->idname = "OB_OT_armature_add";
 
-  /* api callbacks */
-  ot->exec = object_armature_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = ob_armature_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, true);
+  /* prop */
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Empty Operator
- * \{ */
-
-static int object_empty_add_exec(bContext *C, wmOperator *op)
+/* Add Empty Op */
+static int ob_empty_add_ex(Cxt *C, WinOp *op)
 {
-  Object *ob;
-  int type = RNA_enum_get(op->ptr, "type");
+  Ob *ob;
+  int type = api_enum_get(op->ptr, "type");
   ushort local_view_bits;
   float loc[3], rot[3];
 
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  ob = ED_object_add_type(C, OB_EMPTY, nullptr, loc, rot, false, local_view_bits);
+  ob = ed_ob_add_type(C, OB_EMPTY, nullptr, loc, rot, false, local_view_bits);
 
-  BKE_object_empty_draw_type_set(ob, type);
-  BKE_object_obdata_size_init(ob, RNA_float_get(op->ptr, "radius"));
+  dune_ob_empty_drw_type_set(ob, type);
+  dune_ob_obdata_size_init(ob, api_float_get(op->ptr, "radius"));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_empty_add(wmOperatorType *ot)
+void OB_OT_empty_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Empty";
   ot->description = "Add an empty object to the scene";
-  ot->idname = "OBJECT_OT_empty_add";
+  ot->idname = "OB_OT_empty_add";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_empty_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_empty_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_object_empty_drawtype_items, 0, "Type", "");
+  /* props */
+  ot->prop = api_def_enum(ot->srna, "type", api_enum_ob_empty_drwtype_items, 0, "Type", "");
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, false);
 }
 
-static int empty_drop_named_image_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int empty_drop_named_img_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
-  Image *ima = nullptr;
+  Img *img = nullptr;
 
-  ima = (Image *)WM_operator_drop_load_path(C, op, ID_IM);
-  if (!ima) {
-    return OPERATOR_CANCELLED;
+  img = (Img *)win_op_drop_load_path(C, op, ID_IM);
+  if (!img) {
+    return OP_CANCELLED;
   }
   /* handled below */
-  id_us_min(&ima->id);
+  id_us_min(&img->id);
 
-  Object *ob = nullptr;
-  Object *ob_cursor = ED_view3d_give_object_under_cursor(C, event->mval);
+  Ob *ob = nullptr;
+  Ob *ob_cursor = ed_view3d_give_ob_under_cursor(C, ev->mval);
 
   /* either change empty under cursor or create a new empty */
   if (ob_cursor && ob_cursor->type == OB_EMPTY) {
-    WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
-    DEG_id_tag_update((ID *)ob_cursor, ID_RECALC_TRANSFORM);
+    win_ev_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+    graph_id_tag_update((ID *)ob_cursor, ID_RECALC_TRANSFORM);
     ob = ob_cursor;
   }
   else {
@@ -1214,76 +1190,71 @@ static int empty_drop_named_image_invoke(bContext *C, wmOperator *op, const wmEv
     ushort local_view_bits;
     float rot[3];
 
-    if (!ED_object_add_generic_get_opts(
+    if (!ed_ob_add_generic_get_opts(
             C, op, 'Z', nullptr, rot, nullptr, nullptr, &local_view_bits, nullptr))
     {
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
-    ob = ED_object_add_type(C, OB_EMPTY, nullptr, nullptr, rot, false, local_view_bits);
+    ob = ed_ob_add_type(C, OB_EMPTY, nullptr, nullptr, rot, false, local_view_bits);
 
-    ED_object_location_from_view(C, ob->loc);
-    ED_view3d_cursor3d_position(C, event->mval, false, ob->loc);
-    ED_object_rotation_from_view(C, ob->rot, 'Z');
-    ob->empty_drawsize = 5.0f;
+    ed_ob_location_from_view(C, ob->loc);
+    ed_view3d_cursor3d_position(C, ev->mval, false, ob->loc);
+    ed_ob_rotation_from_view(C, ob->rot, 'Z');
+    ob->empty_drwsize = 5.0f;
   }
 
-  BKE_object_empty_draw_type_set(ob, OB_EMPTY_IMAGE);
+  dune_ob_empty_drw_type_set(ob, OB_EMPTY_IMG);
 
-  id_us_min(static_cast<ID *>(ob->data));
-  ob->data = ima;
-  id_us_plus(static_cast<ID *>(ob->data));
+  id_us_min(static_cast<Id *>(ob->data));
+  ob->data = img;
+  id_us_plus(static_cast<Id *>(ob->data));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_drop_named_image(wmOperatorType *ot)
+void OB_OT_drop_named_img(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Add Empty Image/Drop Image to Empty";
-  ot->description = "Add an empty image type to scene with data";
-  ot->idname = "OBJECT_OT_drop_named_image";
+  /* ids */
+  ot->name = "Add Empty Img/Drop Img to Empty";
+  ot->description = "Add an empty img type to scene with data";
+  ot->idname = "OB_OT_drop_named_img";
 
-  /* api callbacks */
-  ot->invoke = empty_drop_named_image_invoke;
-  ot->poll = ED_operator_objectmode;
+  /* api cb */
+  ot->invoke = empty_drop_named_img_invoke;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  prop = RNA_def_string(ot->srna, "filepath", nullptr, FILE_MAX, "Filepath", "Path to image file");
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
-  RNA_def_boolean(ot->srna,
-                  "relative_path",
-                  true,
-                  "Relative Path",
-                  "Select the file relative to the blend file");
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  /* props */
+  prop = api_def_string(ot->sapi, "filepath", nullptr, FILE_MAX, "Filepath", "Path to image file");
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  api_def_bool(ot->sapi,
+               "relative_path",
+               true,
+               "Relative Path",
+               "Sel the file relative to the blend file");
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 
-  WM_operator_properties_id_lookup(ot, true);
+  win_op_props_id_lookup(ot, true);
 
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Gpencil (legacy) Operator
- * \{ */
-
-static bool object_gpencil_add_poll(bContext *C)
+/* Add Pen (legacy) Op */
+static bool ob_pen_add_poll(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *obact = CTX_data_active_object(C);
+  Scene *scene = cxt_data_scene(C);
+  Ob *obact = cxt_data_active_object(C);
 
   if ((scene == nullptr) || ID_IS_LINKED(scene) || ID_IS_OVERRIDE_LIBRARY(scene)) {
     return false;
   }
 
-  if (obact && obact->type == OB_GPENCIL_LEGACY) {
-    if (obact->mode != OB_MODE_OBJECT) {
+  if (obact && obact->type == OB_PEN_LEGACY) {
+    if (obact->mode != OB_MODE_OB) {
       return false;
     }
   }
@@ -1291,49 +1262,49 @@ static bool object_gpencil_add_poll(bContext *C)
   return true;
 }
 
-static int object_gpencil_add_exec(bContext *C, wmOperator *op)
+static int ob_pen_add_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = CTX_data_active_object(C), *ob_orig = ob;
-  bGPdata *gpd = (ob && (ob->type == OB_GPENCIL_LEGACY)) ? static_cast<bGPdata *>(ob->data) :
-                                                           nullptr;
+  Object *ob = cxt_data_active_ob(C), *ob_orig = ob;
+  PenData *pd = (ob && (ob->type == OB_PEN_LEGACY)) ? static_cast<PenData *>(ob->data) :
+                                                    nullptr;
 
-  const int type = RNA_enum_get(op->ptr, "type");
-  const bool use_in_front = RNA_boolean_get(op->ptr, "use_in_front");
-  const bool use_lights = RNA_boolean_get(op->ptr, "use_lights");
-  const int stroke_depth_order = RNA_enum_get(op->ptr, "stroke_depth_order");
-  const float stroke_depth_offset = RNA_float_get(op->ptr, "stroke_depth_offset");
+  const int type = api_enum_get(op->ptr, "type");
+  const bool use_in_front = api_bool_get(op->ptr, "use_in_front");
+  const bool use_lights = api_bool_get(op->ptr, "use_lights");
+  const int stroke_depth_order = api_enum_get(op->ptr, "stroke_depth_order");
+  const float stroke_depth_offset = api_float_get(op->ptr, "stroke_depth_offset");
 
   ushort local_view_bits;
   float loc[3], rot[3];
   bool newob = false;
 
   /* NOTE: We use 'Y' here (not 'Z'), as. */
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Y', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  /* Add new object if not currently editing a GP object. */
-  if ((gpd == nullptr) || (GPENCIL_ANY_MODE(gpd) == false)) {
+  /* Add new ob if not currently editing a Pen ob. */
+  if ((pd == nullptr) || (PEN_ANY_MODE(pd) == false)) {
     const char *ob_name = nullptr;
     switch (type) {
-      case GP_EMPTY: {
-        ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "GPencil");
+      case PEN_EMPTY: {
+        ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Pen");
         break;
       }
-      case GP_MONKEY: {
-        ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "Suzanne");
+      case PEN_MONKEY: {
+        ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Suzanne");
         break;
       }
-      case GP_STROKE: {
-        ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "Stroke");
+      case PEN_STROKE: {
+        ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Stroke");
         break;
       }
-      case GP_LRT_OBJECT:
-      case GP_LRT_SCENE:
-      case GP_LRT_COLLECTION: {
-        ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "LineArt");
+      case PEN_LRT_OB:
+      case PEN_LRT_SCENE:
+      case PEN_LRT_COLLECTION: {
+        ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "LineArt");
         break;
       }
       default: {
@@ -1341,99 +1312,99 @@ static int object_gpencil_add_exec(bContext *C, wmOperator *op)
       }
     }
 
-    ob = ED_object_add_type(C, OB_GPENCIL_LEGACY, ob_name, loc, rot, true, local_view_bits);
-    gpd = static_cast<bGPdata *>(ob->data);
+    ob = ed_ob_add_type(C, OB_PEN_LEGACY, ob_name, loc, rot, true, local_view_bits);
+    pd = static_cast<PenData *>(ob->data);
     newob = true;
   }
   else {
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_ADDED, nullptr);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    win_ev_add_notifier(C, NC_PEN | ND_DATA | NA_ADDED, nullptr);
   }
 
   /* create relevant geometry */
   switch (type) {
-    case GP_EMPTY: {
+    case PEN_EMPTY: {
       float mat[4][4];
 
-      ED_object_new_primitive_matrix(C, ob, loc, rot, nullptr, mat);
-      ED_gpencil_create_blank(C, ob, mat);
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, nullptr, mat);
+      ed_pen_create_blank(C, ob, mat);
       break;
     }
-    case GP_STROKE: {
-      float radius = RNA_float_get(op->ptr, "radius");
+    case PEN_STROKE: {
+      float radius = api_float_get(op->ptr, "radius");
       float scale[3];
       copy_v3_fl(scale, radius);
       float mat[4][4];
 
-      ED_object_new_primitive_matrix(C, ob, loc, rot, scale, mat);
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, scale, mat);
 
-      ED_gpencil_create_stroke(C, ob, mat);
+      ed_pen_create_stroke(C, ob, mat);
       break;
     }
-    case GP_MONKEY: {
-      float radius = RNA_float_get(op->ptr, "radius");
+    case PEN_MONKEY: {
+      float radius = api_float_get(op->ptr, "radius");
       float scale[3];
       copy_v3_fl(scale, radius);
       float mat[4][4];
 
-      ED_object_new_primitive_matrix(C, ob, loc, rot, scale, mat);
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, scale, mat);
 
-      ED_gpencil_create_monkey(C, ob, mat);
+      ed_pen_create_monkey(C, ob, mat);
       break;
     }
-    case GP_LRT_SCENE:
-    case GP_LRT_COLLECTION:
-    case GP_LRT_OBJECT: {
-      float radius = RNA_float_get(op->ptr, "radius");
+    case PEN_LRT_SCENE:
+    case PEN_LRT_COLLECTION:
+    case PEN_LRT_OB: {
+      float radius = api_float_get(op->ptr, "radius");
       float scale[3];
       copy_v3_fl(scale, radius);
       float mat[4][4];
 
-      ED_object_new_primitive_matrix(C, ob, loc, rot, scale, mat);
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, scale, mat);
 
-      ED_gpencil_create_lineart(C, ob);
+      ed_pen_create_lineart(C, ob);
 
-      gpd = static_cast<bGPdata *>(ob->data);
+      pd = static_cast<PenData *>(ob->data);
 
-      /* Add Line Art modifier */
-      LineartGpencilModifierData *md = (LineartGpencilModifierData *)BKE_gpencil_modifier_new(
-          eGpencilModifierType_Lineart);
-      BLI_addtail(&ob->greasepencil_modifiers, md);
-      BKE_gpencil_modifier_unique_name(&ob->greasepencil_modifiers, (GpencilModifierData *)md);
+      /* Add Line Art mod */
+      LineartPenModData *md = (LineartPenModData *)dune_pen_mod_new(
+          ePenModTypeLineart);
+      lib_addtail(&ob->pen_mods, md);
+      dune_pen_mod_unique_name(&ob->pen_mods, (PenModData *)md);
 
-      if (type == GP_LRT_COLLECTION) {
-        md->source_type = LRT_SOURCE_COLLECTION;
-        md->source_collection = CTX_data_collection(C);
+      if (type == PEN_LRT_COLLECTION) {
+        md->src_type = LRT_SRC_COLLECTION;
+        md->src_collection = cxt_data_collection(C);
       }
-      else if (type == GP_LRT_OBJECT) {
-        md->source_type = LRT_SOURCE_OBJECT;
-        md->source_object = ob_orig;
+      else if (type == OEN_LRT_OB) {
+        md->src_type = LRT_SRC_OB;
+        md->src_ob = ob_orig;
       }
       else {
         /* Whole scene. */
-        md->source_type = LRT_SOURCE_SCENE;
+        md->src_type = LRT_SRC_SCENE;
       }
       /* Only created one layer and one material. */
-      STRNCPY(md->target_layer, ((bGPDlayer *)gpd->layers.first)->info);
-      md->target_material = BKE_gpencil_material(ob, 1);
+      STRNCPY(md->target_layer, ((PenDataLayer *)pd->layers.first)->info);
+      md->target_material = dune_pen_material(ob, 1);
       if (md->target_material) {
         id_us_plus(&md->target_material->id);
       }
 
       if (use_lights) {
-        ob->dtx |= OB_USE_GPENCIL_LIGHTS;
+        ob->dtx |= OB_USE_PEN_LIGHTS;
       }
       else {
-        ob->dtx &= ~OB_USE_GPENCIL_LIGHTS;
+        ob->dtx &= ~OB_USE_PEN_LIGHTS;
       }
 
       /* Stroke object is drawn in front of meshes by default. */
       if (use_in_front) {
-        ob->dtx |= OB_DRAW_IN_FRONT;
+        ob->dtx |= OB_DRW_IN_FRONT;
       }
       else {
-        if (stroke_depth_order == GP_DRAWMODE_3D) {
-          gpd->draw_mode = GP_DRAWMODE_3D;
+        if (stroke_depth_order == PEN_DRWMODE_3D) {
+          pd->drw_mode = PEN_DRWMODE_3D;
         }
         md->stroke_depth_offset = stroke_depth_offset;
       }
@@ -1441,7 +1412,7 @@ static int object_gpencil_add_exec(bContext *C, wmOperator *op)
       break;
     }
     default:
-      BKE_report(op->reports, RPT_WARNING, "Not implemented");
+      dune_report(op->reports, RPT_WARNING, "Not implemented");
       break;
   }
 
@@ -1449,14 +1420,14 @@ static int object_gpencil_add_exec(bContext *C, wmOperator *op)
   if (newob) {
     /* set default viewport color to black */
     copy_v3_fl(ob->color, 0.0f);
-
-    ED_gpencil_add_defaults(C, ob);
+      
+ed_pen_add_defaults(C, ob);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void object_add_ui(bContext * /*C*/, wmOperator *op)
+static void ob_add_ui(Cxt * /*C*/, WinOp *op)
 {
   uiLayout *layout = op->layout;
 
@@ -1468,11 +1439,11 @@ static void object_add_ui(bContext * /*C*/, wmOperator *op)
   uiItemR(layout, op->ptr, "rotation", UI_ITEM_NONE, nullptr, ICON_NONE);
   uiItemR(layout, op->ptr, "type", UI_ITEM_NONE, nullptr, ICON_NONE);
 
-  int type = RNA_enum_get(op->ptr, "type");
-  if (ELEM(type, GP_LRT_COLLECTION, GP_LRT_OBJECT, GP_LRT_SCENE)) {
+  int type = api_enum_get(op->ptr, "type");
+  if (ELEM(type, PEN_LRT_COLLECTION, PEN_LRT_OB, PEN_LRT_SCENE)) {
     uiItemR(layout, op->ptr, "use_lights", UI_ITEM_NONE, nullptr, ICON_NONE);
     uiItemR(layout, op->ptr, "use_in_front", UI_ITEM_NONE, nullptr, ICON_NONE);
-    bool in_front = RNA_boolean_get(op->ptr, "use_in_front");
+    bool in_front = api_bool_get(op->ptr, "use_in_front");
     uiLayout *col = uiLayoutColumn(layout, false);
     uiLayoutSetActive(col, !in_front);
     uiItemR(col, op->ptr, "stroke_depth_offset", UI_ITEM_NONE, nullptr, ICON_NONE);
@@ -1480,107 +1451,102 @@ static void object_add_ui(bContext * /*C*/, wmOperator *op)
   }
 }
 
-static EnumPropertyItem rna_enum_gpencil_add_stroke_depth_order_items[] = {
-    {GP_DRAWMODE_2D,
+static EnumPropItem api_enum_pen_add_stroke_depth_order_items[] = {
+    {PEN_DRAWMODE_2D,
      "2D",
      0,
      "2D Layers",
-     "Display strokes using grease pencil layers to define order"},
-    {GP_DRAWMODE_3D, "3D", 0, "3D Location", "Display strokes using real 3D position in 3D space"},
+     "Display strokes using pen layers to define order"},
+    {PEN_DRWMODE_3D, "3D", 0, "3D Location", "Display strokes using real 3D position in 3D space"},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-void OBJECT_OT_gpencil_add(wmOperatorType *ot)
+void OB_OT_pen_add(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Grease Pencil";
-  ot->description = "Add a Grease Pencil object to the scene";
-  ot->idname = "OBJECT_OT_gpencil_add";
+  /* ids */
+  ot->name = "Add Pen";
+  ot->description = "Add a Pen ob to the scene";
+  ot->idname = "OB_OT_pen_add";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_gpencil_add_exec;
-  ot->poll = object_gpencil_add_poll;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_pen_add_ex;
+  ot->poll = ob_pen_add_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* ui */
-  ot->ui = object_add_ui;
+  ot->ui = ob_add_ui;
 
-  /* properties */
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, false);
+  /* props */
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, false);
 
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_object_gpencil_type_items, 0, "Type", "");
-  RNA_def_boolean(ot->srna,
+  ot->prop = api_def_enum(ot->sapi, "type", api_enum_object_gpencil_type_items, 0, "Type", "");
+  api_def_bool(ot->sapi,
                   "use_in_front",
                   true,
                   "Show In Front",
-                  "Show line art grease pencil in front of everything");
-  RNA_def_float(ot->srna,
+                  "Show line art pen in front of everything");
+  api_def_float(ot->sapi,
                 "stroke_depth_offset",
                 0.05f,
                 0.0f,
                 FLT_MAX,
                 "Stroke Offset",
-                "Stroke offset for the line art modifier",
+                "Stroke offset for the line art mod",
                 0.0f,
                 0.5f);
-  RNA_def_boolean(
-      ot->srna, "use_lights", false, "Use Lights", "Use lights for this grease pencil object");
-  RNA_def_enum(
-      ot->srna,
+  api_def_bool(
+      ot->sapi, "use_lights", false, "Use Lights", "Use lights for this grease pencil object");
+  api_def_enum(
+      ot->sapi,
       "stroke_depth_order",
-      rna_enum_gpencil_add_stroke_depth_order_items,
-      GP_DRAWMODE_3D,
+      api_enum_pen_add_stroke_depth_order_items,
+      PEN_DRWMODE_3D,
       "Stroke Depth Order",
       "Defines how the strokes are ordered in 3D space (for objects not displayed 'In Front')");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Grease Pencil Operator
- * \{ */
-
-static int object_grease_pencil_add_exec(bContext *C, wmOperator *op)
+/* Add Pen Op */
+static int ob_pen_add_ex(Cxt *C, WinOp *op)
 {
-  using namespace blender::ed;
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
+  using namespace dune::ed;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
   /* TODO: For now, only support adding the 'Stroke' type. */
-  const int type = RNA_enum_get(op->ptr, "type");
+  const int type = api_enum_get(op->ptr, "type");
 
   ushort local_view_bits;
   float loc[3], rot[3];
 
   /* NOTE: We use 'Y' here (not 'Z'), as. */
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Y', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   const char *ob_name = nullptr;
   switch (type) {
-    case GP_EMPTY: {
-      ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "GPencil");
+    case PEN_EMPTY: {
+      ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Pen");
       break;
     }
-    case GP_STROKE: {
-      ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "Stroke");
+    case PEN_STROKE: {
+      ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Stroke");
       break;
     }
-    case GP_MONKEY: {
-      ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "Suzanne");
+    case PEN_MONKEY: {
+      ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "Suzanne");
       break;
     }
-    case GP_LRT_OBJECT:
-    case GP_LRT_SCENE:
-    case GP_LRT_COLLECTION: {
-      ob_name = CTX_DATA_(BLT_I18NCONTEXT_ID_GPENCIL, "LineArt");
+    case PEN_LRT_OB:
+    case PEN_LRT_SCENE:
+    case PEN_LRT_COLLECTION: {
+      ob_name = CXT_DATA_(LANG_CXT_ID_PEN, "LineArt");
       break;
     }
     default: {
@@ -1588,107 +1554,102 @@ static int object_grease_pencil_add_exec(bContext *C, wmOperator *op)
     }
   }
 
-  Object *object = ED_object_add_type(
-      C, OB_GREASE_PENCIL, ob_name, loc, rot, false, local_view_bits);
-  GreasePencil &grease_pencil_id = *static_cast<GreasePencil *>(object->data);
+  Ob *ob = ed_ob_add_type(
+      C, OB_PEN, ob_name, loc, rot, false, local_view_bits);
+  Pen &pen_id = *static_cast<Pen *>(ob->data);
   switch (type) {
-    case GP_EMPTY: {
-      greasepencil::create_blank(*bmain, *object, scene->r.cfra);
+    case PEN_EMPTY: {
+      pen::create_blank(*main, *ob, scene->r.cfra);
       break;
     }
-    case GP_STROKE: {
-      const float radius = RNA_float_get(op->ptr, "radius");
+    case PEN_STROKE: {
+      const float radius = api_float_get(op->ptr, "radius");
       const float3 scale(radius);
 
       float4x4 mat;
-      ED_object_new_primitive_matrix(C, object, loc, rot, scale, mat.ptr());
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, scale, mat.ptr());
 
-      greasepencil::create_stroke(*bmain, *object, mat, scene->r.cfra);
+      pen::create_stroke(*main, *ob, mat, scene->r.cfra);
       break;
     }
-    case GP_MONKEY: {
-      const float radius = RNA_float_get(op->ptr, "radius");
+    case PEN_MONKEY: {
+      const float radius = api_float_get(op->ptr, "radius");
       const float3 scale(radius);
 
       float4x4 mat;
-      ED_object_new_primitive_matrix(C, object, loc, rot, scale, mat.ptr());
+      ed_ob_new_primitive_matrix(C, ob, loc, rot, scale, mat.ptr());
 
-      greasepencil::create_suzanne(*bmain, *object, mat, scene->r.cfra);
+      pen::create_suzanne(*main, *ob, mat, scene->r.cfra);
       break;
     }
-    case GP_LRT_OBJECT:
-    case GP_LRT_SCENE:
-    case GP_LRT_COLLECTION: {
+    case PEN_LRT_OB:
+    case PEN_LRT_SCENE:
+    case PEN_LRT_COLLECTION: {
       /* TODO. */
       break;
     }
   }
 
-  DEG_id_tag_update(&grease_pencil_id.id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, &grease_pencil_id.id);
+  graph_id_tag_update(&pen_id.id, ID_RECALC_GEOMETRY);
+  win_main_add_notifier(NC_GEOM | ND_DATA, &pen_id id);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_grease_pencil_add(wmOperatorType *ot)
+void OB_OT_pen_add(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Grease Pencil";
-  ot->description = "Add a Grease Pencil object to the scene";
-  ot->idname = "OBJECT_OT_grease_pencil_add";
+  /* ids */
+  ot->name = "Add Pen";
+  ot->description = "Add a Pen ob to the scene";
+  ot->idname = "OB_OT_pen_add";
 
   /* api callbacks */
-  ot->exec = object_grease_pencil_add_exec;
-  ot->poll = ED_operator_objectmode;
+  ot->ex = ob_pen_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_object_gpencil_type_items, 0, "Type", "");
+  ot->prop = api_def_enum(ot->sapi, "type", api_enum_ob_pen_type_items, 0, "Type", "");
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, false);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Light Operator
- * \{ */
-
+/* Add Light Op */
 static const char *get_light_defname(int type)
 {
   switch (type) {
     case LA_LOCAL:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Point");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Point");
     case LA_SUN:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Sun");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Sun");
     case LA_SPOT:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Spot");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Spot");
     case LA_AREA:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Area");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Area");
     default:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Light");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Light");
   }
 }
 
-static int object_light_add_exec(bContext *C, wmOperator *op)
+static int ob_light_add_ex(Cxt *C, WinOp *op)
 {
-  Object *ob;
+  Ob *ob;
   Light *la;
-  int type = RNA_enum_get(op->ptr, "type");
+  int type = api_enum_get(op->ptr, "type");
   ushort local_view_bits;
   float loc[3], rot[3];
 
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  ob = ED_object_add_type(C, OB_LAMP, get_light_defname(type), loc, rot, false, local_view_bits);
+  ob = ed_ob_add_type(C, OB_LAMP, get_light_defname(type), loc, rot, false, local_view_bits);
 
-  float size = RNA_float_get(op->ptr, "radius");
+  float size = api_float_get(op->ptr, "radius");
   /* Better defaults for light size. */
   switch (type) {
     case LA_LOCAL:
@@ -1701,7 +1662,7 @@ static int object_light_add_exec(bContext *C, wmOperator *op)
       size *= 0.5f;
       break;
   }
-  BKE_object_obdata_size_init(ob, size);
+  dune_ob_obdata_size_init(ob, size);
 
   la = (Light *)ob->data;
   la->type = type;
@@ -1710,61 +1671,55 @@ static int object_light_add_exec(bContext *C, wmOperator *op)
     la->energy = 1.0f;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_light_add(wmOperatorType *ot)
+void OB_OT_light_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Light";
   ot->description = "Add a light object to the scene";
-  ot->idname = "OBJECT_OT_light_add";
+  ot->idname = "OB_OT_light_add";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_light_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_light_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  ot->prop = RNA_def_enum(ot->srna, "type", rna_enum_light_type_items, 0, "Type", "");
-  RNA_def_property_translation_context(ot->prop, BLT_I18NCONTEXT_ID_LIGHT);
+  ot->prop = api_def_enum(ot->sapi, "type", rna_enum_light_type_items, 0, "Type", "");
+  api_def_prop_translation_cxt(ot->prop, BLT_I18NCONTEXT_ID_LIGHT);
 
-  ED_object_add_unit_props_radius(ot);
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_unit_props_radius(ot);
+  ed_ob_add_generic_props(ot, false);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Collection Instance Operator
- * \{ */
-
+/* Add Collection Instance Op */
 struct CollectionAddInfo {
   /* The collection that is supposed to be added, determined through operator properties. */
   Collection *collection;
-  /* The local-view bits (if any) the object should have set to become visible in current context.
-   */
+  /* The local-view bits (if any) the object should have set to become visible in current coxt */
   ushort local_view_bits;
-  /* The transform that should be applied to the collection, determined through operator properties
+  /* The transform that should be applied to the collection, determined through op props
    * if set (e.g. to place the collection under the cursor), otherwise through context (e.g. 3D
    * cursor location). */
   float loc[3], rot[3];
 };
 
-static std::optional<CollectionAddInfo> collection_add_info_get_from_op(bContext *C,
-                                                                        wmOperator *op)
+static std::optional<CollectionAddInfo> collection_add_info_get_from_op(Cxt *C,
+                                                                        WinOp *op)
 {
   CollectionAddInfo add_info{};
 
-  Main *bmain = CTX_data_main(C);
+  Main *main = cxt_data_main(C);
 
-  PropertyRNA *prop_location = RNA_struct_find_property(op->ptr, "location");
+  ApiProp *prop_location = api_struct_find_prop(op->ptr, "location");
 
   add_info.collection = reinterpret_cast<Collection *>(
-      WM_operator_properties_id_lookup_from_name_or_session_uuid(bmain, op->ptr, ID_GR));
+      win_op_props_id_lookup_from_name_or_session_uuid(main, op->ptr, ID_GR));
 
   bool update_location_if_necessary = false;
   if (add_info.collection) {
@@ -1772,15 +1727,15 @@ static std::optional<CollectionAddInfo> collection_add_info_get_from_op(bContext
   }
   else {
     add_info.collection = static_cast<Collection *>(
-        BLI_findlink(&bmain->collections, RNA_enum_get(op->ptr, "collection")));
+        lib_findlink(&main->collections, api_enum_get(op->ptr, "collection")));
   }
 
-  if (update_location_if_necessary && CTX_wm_region_view3d(C)) {
+  if (update_location_if_necessary && cxt_win_rgn_view3d(C)) {
     int mval[2];
-    if (!RNA_property_is_set(op->ptr, prop_location) && object_add_drop_xy_get(C, op, &mval)) {
-      ED_object_location_from_view(C, add_info.loc);
-      ED_view3d_cursor3d_position(C, mval, false, add_info.loc);
-      RNA_property_float_set_array(op->ptr, prop_location, add_info.loc);
+    if (!api_prop_is_set(op->ptr, prop_location) && ob_add_drop_xy_get(C, op, &mval)) {
+      ed_ob_location_from_view(C, add_info.loc);
+      ed_view3d_cursor3d_position(C, mval, false, add_info.loc);
+      api_prop_float_set_array(op->ptr, prop_location, add_info.loc);
     }
   }
 
@@ -1788,108 +1743,105 @@ static std::optional<CollectionAddInfo> collection_add_info_get_from_op(bContext
     return std::nullopt;
   }
 
-  if (!ED_object_add_generic_get_opts(C,
-                                      op,
-                                      'Z',
-                                      add_info.loc,
-                                      add_info.rot,
-                                      nullptr,
-                                      nullptr,
-                                      &add_info.local_view_bits,
-                                      nullptr))
+  if (!ed_ob_add_generic_get_opts(C,
+                                  op,
+                                  'Z',
+                                  add_info.loc,
+                                  add_info.rot,
+                                  nullptr,
+                                  nullptr,
+                                  &add_info.local_view_bits,
+                                  nullptr))
   {
     return std::nullopt;
   }
 
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
   /* Avoid dependency cycles. */
-  LayerCollection *active_lc = BKE_layer_collection_get_active(view_layer);
-  while (BKE_collection_cycle_find(active_lc->collection, add_info.collection)) {
-    active_lc = BKE_layer_collection_activate_parent(view_layer, active_lc);
+  LayerCollection *active_lc = dune_layer_collection_get_active(view_layer);
+  while (dune_collection_cycle_find(active_lc->collection, add_info.collection)) {
+    active_lc = dune_layer_collection_activate_parent(view_layer, active_lc);
   }
 
   return add_info;
 }
 
-static int collection_instance_add_exec(bContext *C, wmOperator *op)
+static int collection_instance_add_ex(Cxt *C, WinOp *op)
 {
   std::optional<CollectionAddInfo> add_info = collection_add_info_get_from_op(C, op);
   if (!add_info) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  Object *ob = ED_object_add_type(C,
-                                  OB_EMPTY,
-                                  add_info->collection->id.name + 2,
-                                  add_info->loc,
-                                  add_info->rot,
-                                  false,
-                                  add_info->local_view_bits);
+  Ob *ob = ed_ob_add_type(C,
+                          OB_EMPTY,
+                          add_info->collection->id.name + 2,
+                          add_info->loc,
+                          add_info->rot,
+                          false,
+                          add_info->local_view_bits);
   ob->instance_collection = add_info->collection;
-  ob->empty_drawsize = U.collection_instance_empty_size;
+  ob->empty_drwsize = U.collection_instance_empty_size;
   ob->transflag |= OB_DUPLICOLLECTION;
   id_us_plus(&add_info->collection->id);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int object_instance_add_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int ob_instance_add_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  if (!object_add_drop_xy_is_set(op)) {
-    RNA_int_set(op->ptr, "drop_x", event->xy[0]);
-    RNA_int_set(op->ptr, "drop_y", event->xy[1]);
+  if (!ob_add_drop_xy_is_set(op)) {
+    api_int_set(op->ptr, "drop_x", ev->xy[0]);
+    api_int_set(op->ptr, "drop_y", ev->xy[1]);
   }
 
-  if (!WM_operator_properties_id_lookup_is_set(op->ptr)) {
-    return WM_enum_search_invoke(C, op, event);
+  if (!win_op_props_id_lookup_is_set(op->ptr)) {
+    return win_enum_search_invoke(C, op, ev);
   }
-  return op->type->exec(C, op);
+  return op->type->ex(C, op);
 }
 
-void OBJECT_OT_collection_instance_add(wmOperatorType *ot)
+void OB_OT_collection_instance_add(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Add Collection Instance";
   ot->description = "Add a collection instance";
-  ot->idname = "OBJECT_OT_collection_instance_add";
+  ot->idname = "OB_OT_collection_instance_add";
 
-  /* api callbacks */
-  ot->invoke = object_instance_add_invoke;
-  ot->exec = collection_instance_add_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->invoke = ob_instance_add_invoke;
+  ot->ex = collection_instance_add_ex;
+  ot->poll = ed_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_string(
-      ot->srna, "name", "Collection", MAX_ID_NAME - 2, "Name", "Collection name to add");
-  prop = RNA_def_enum(ot->srna, "collection", rna_enum_dummy_NULL_items, 0, "Collection", "");
-  RNA_def_enum_funcs(prop, RNA_collection_itemf);
-  RNA_def_property_flag(prop, PROP_ENUM_NO_TRANSLATE);
+  /* props */
+  api_def_string(
+      ot->sapi, "name", "Collection", MAX_ID_NAME - 2, "Name", "Collection name to add");
+  prop = api_def_enum(ot->sapi, "collection", api_enum_dummy_NULL_items, 0, "Collection", "");
+  api_def_enum_fns(prop, api_collection_itemf);
+  api_def_prop_flag(prop, PROP_ENUM_NO_TRANSLATE);
   ot->prop = prop;
-  ED_object_add_generic_props(ot, false);
+  ed_ob_add_generic_props(ot, false);
 
-  WM_operator_properties_id_lookup(ot, false);
+  win_op_props_id_lookup(ot, false);
 
-  object_add_drop_xy_props(ot);
+  ob_add_drop_xy_props(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Collection Drop Operator
+/* Collection Drop Op
  *
- * Internal operator for collection dropping.
+ * Internal op for collection dropping.
  *
- * \warning This is tied closely together to the drop-box callbacks, so it shouldn't be used on its
+ * This is tied closely together to the drop-box cbs, so it shouldn't be used on its
  *          own.
  *
  * The drop-box callback imports the collection, links it into the view-layer, selects all imported
- * objects (which may include peripheral objects like parents or boolean-objects of an object in
+ * obs (which may include peripheral objects like parents or boolean-objects of an object in
  * the collection) and activates one. Only the callback has enough info to do this reliably. Based
  * on the instancing operator option, this operator then does one of two things:
  * - Instancing enabled: Unlink the collection again, and instead add a collection instance empty
