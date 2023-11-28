@@ -3731,76 +3731,67 @@ static int render_border_ex(Cxt *C, WinOp *op)
 
 void IMG_OT_render_border(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Render Region";
-  ot->description = "Set the boundaries of the render region and enable render region";
-  ot->idname = "IMAGE_OT_render_border";
+  /* ids */
+  ot->name = "Render Rgn";
+  ot->description = "Set the boundaries of the render rgn and enable render rgn";
+  ot->idname = "IMG_OT_render_border";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_box_invoke;
-  ot->exec = render_border_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->invoke = win_gesture_box_invoke;
+  ot->ex = render_border_ex;
+  ot->modal = win_gesture_box_modal;
+  ot->cancel = win_gesture_box_cancel;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* rna */
-  WM_operator_properties_border(ot);
+  /* api */
+  win_op_props_border(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Render Border Operator
- * \{ */
-
-static int clear_render_border_exec(bContext *C, wmOperator * /*op*/)
+/* Clear Render Border Op */
+static int clear_render_border_ex(Cxt *C, WinOp * /*op*/)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   scene->r.mode &= ~R_BORDER;
-  WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
-  BLI_rctf_init(&scene->r.border, 0.0f, 1.0f, 0.0f, 1.0f);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+  lib_rctf_init(&scene->r.border, 0.0f, 1.0f, 0.0f, 1.0f);
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_clear_render_border(wmOperatorType *ot)
+void IMG_OT_clear_render_border(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Clear Render Region";
-  ot->description = "Clear the boundaries of the render region and disable render region";
-  ot->idname = "IMAGE_OT_clear_render_border";
+  /* ids */
+  ot->name = "Clear Render Rgn";
+  ot->description = "Clear the boundaries of the render rgn and disable render rgn";
+  ot->idname = "IMG_OT_clear_render_border";
 
-  /* api callbacks */
-  ot->exec = clear_render_border_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = clear_render_border_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Add Tile Operator
- * \{ */
-
-static bool do_fill_tile(PointerRNA *ptr, Image *ima, ImageTile *tile)
+/* Add Tile Op */
+static bool do_fill_tile(ApiPtr *ptr, Img *img, ImgTile *tile)
 {
-  RNA_float_get_array(ptr, "color", tile->gen_color);
-  tile->gen_type = RNA_enum_get(ptr, "generated_type");
-  tile->gen_x = RNA_int_get(ptr, "width");
-  tile->gen_y = RNA_int_get(ptr, "height");
-  bool is_float = RNA_boolean_get(ptr, "float");
+  api_float_get_array(ptr, "color", tile->gen_color);
+  tile->gen_type = api_enum_get(ptr, "generated_type");
+  tile->gen_x = api_int_get(ptr, "width");
+  tile->gen_y = api_int_get(ptr, "height");
+  bool is_float = api_bool_get(ptr, "float");
 
-  tile->gen_flag = is_float ? IMA_GEN_FLOAT : 0;
-  tile->gen_depth = RNA_boolean_get(ptr, "alpha") ? 32 : 24;
+  tile->gen_flag = is_float ? IMG_GEN_FLOAT : 0;
+  tile->gen_depth = api_bool_get(ptr, "alpha") ? 32 : 24;
 
-  return BKE_image_fill_tile(ima, tile);
+  return dune_img_fill_tile(img, tile);
 }
 
-static void draw_fill_tile(PointerRNA *ptr, uiLayout *layout)
+static void drw_fill_tile(ApiPtr *ptr, uiLayout *layout)
 {
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -3814,10 +3805,10 @@ static void draw_fill_tile(PointerRNA *ptr, uiLayout *layout)
   uiItemR(col, ptr, "float", UI_ITEM_NONE, nullptr, ICON_NONE);
 }
 
-static void tile_fill_init(PointerRNA *ptr, Image *ima, ImageTile *tile)
+static void tile_fill_init(ApiPtr *ptr, Img *img, ImgTile *tile)
 {
-  ImageUser iuser;
-  BKE_imageuser_default(&iuser);
+  ImgUser iuser;
+  dune_imguser_default(&iuser);
   if (tile != nullptr) {
     iuser.tile = tile->tile_number;
   }
@@ -3825,169 +3816,169 @@ static void tile_fill_init(PointerRNA *ptr, Image *ima, ImageTile *tile)
   /* Acquire ibuf to get the default values.
    * If the specified tile has no ibuf, try acquiring the main tile instead
    * (unless the specified tile already was the first tile). */
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
-  if (ibuf == nullptr && (tile != nullptr) && (tile != ima->tiles.first)) {
-    ibuf = BKE_image_acquire_ibuf(ima, nullptr, nullptr);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, &iuser, nullptr);
+  if (ibuf == nullptr && (tile != nullptr) && (tile != img->tiles.first)) {
+    ibuf = dune_img_acquire_ibuf(img, nullptr, nullptr);
   }
 
   if (ibuf != nullptr) {
-    /* Initialize properties from reference tile. */
-    RNA_int_set(ptr, "width", ibuf->x);
-    RNA_int_set(ptr, "height", ibuf->y);
-    RNA_boolean_set(ptr, "float", ibuf->float_buffer.data != nullptr);
-    RNA_boolean_set(ptr, "alpha", ibuf->planes > 24);
+    /* Init props from ref tile. */
+    api_int_set(ptr, "width", ibuf->x);
+    api_int_set(ptr, "height", ibuf->y);
+    api_bool_set(ptr, "float", ibuf->float_buf.data != nullptr);
+    api_bool_set(ptr, "alpha", ibuf->planes > 24);
 
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
+    dune_img_release_ibuf(img, ibuf, nullptr);
   }
 }
 
-static void def_fill_tile(StructOrFunctionRNA *srna)
+static void def_fill_tile(StructOrFnApi *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
   static float default_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-  prop = RNA_def_float_color(
-      srna, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
-  RNA_def_property_subtype(prop, PROP_COLOR_GAMMA);
-  RNA_def_property_float_array_default(prop, default_color);
-  RNA_def_enum(srna,
+  prop = api_def_float_color(
+      sapi, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
+  api_def_prop_subtype(prop, PROP_COLOR_GAMMA);
+  api_def_prop_float_array_default(prop, default_color);
+  api_def_enum(sapi,
                "generated_type",
-               rna_enum_image_generated_type_items,
-               IMA_GENTYPE_BLANK,
+               api_enum_img_generated_type_items,
+               IMG_GENTYPE_BLANK,
                "Generated Type",
-               "Fill the image with a grid for UV map testing");
-  prop = RNA_def_int(srna, "width", 1024, 1, INT_MAX, "Width", "Image width", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  prop = RNA_def_int(srna, "height", 1024, 1, INT_MAX, "Height", "Image height", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
+               "Fill the img with a grid for UV map testing");
+  prop = api_def_int(sapi, "width", 1024, 1, INT_MAX, "Width", "Img width", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  prop = api_def_int(sapi, "height", 1024, 1, INT_MAX, "Height", "Img height", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
 
   /* Only needed when filling the first tile. */
-  RNA_def_boolean(
-      srna, "float", false, "32-bit Float", "Create image with 32-bit floating-point bit depth");
-  RNA_def_boolean(srna, "alpha", true, "Alpha", "Create an image with an alpha channel");
+  api_def_bool(
+      sapi, "float", false, "32-bit Float", "Create img with 32-bit floating-point bit depth");
+  api_def_bool(sapi, "alpha", true, "Alpha", "Create an img with an alpha channel");
 }
 
-static bool tile_add_poll(bContext *C)
+static bool tile_add_poll(Cxt *C)
 {
-  Image *ima = CTX_data_edit_image(C);
+  Img *img = cxt_data_edit_img(C);
 
-  return (ima != nullptr && ima->source == IMA_SRC_TILED && BKE_image_has_ibuf(ima, nullptr));
+  return (img != nullptr && img->src == IMG_SRC_TILED && dune_img_has_ibuf(img, nullptr));
 }
 
-static int tile_add_exec(bContext *C, wmOperator *op)
+static int tile_add_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = CTX_data_edit_image(C);
+  Img *img = cxt_data_edit_img(C);
 
-  int start_tile = RNA_int_get(op->ptr, "number");
-  int end_tile = start_tile + RNA_int_get(op->ptr, "count") - 1;
+  int start_tile = api_int_get(op->ptr, "number");
+  int end_tile = start_tile + api_int_get(op->ptr, "count") - 1;
 
   if (start_tile < 1001 || end_tile > IMA_UDIM_MAX) {
-    BKE_report(op->reports, RPT_ERROR, "Invalid UDIM index range was specified");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Invalid UDIM index range was specified");
+    return OP_CANCELLED;
   }
 
-  bool fill_tile = RNA_boolean_get(op->ptr, "fill");
-  char *label = RNA_string_get_alloc(op->ptr, "label", nullptr, 0, nullptr);
+  bool fill_tile = api_bool_get(op->ptr, "fill");
+  char *label = api_string_get_alloc(op->ptr, "label", nullptr, 0, nullptr);
 
-  /* BKE_image_add_tile assumes a pre-sorted list of tiles. */
-  BKE_image_sort_tiles(ima);
+  /* dune_img_add_tile assumes a pre-sorted list of tiles. */
+  dune_img_sort_tiles(img);
 
-  ImageTile *last_tile_created = nullptr;
+  ImgTile *last_tile_created = nullptr;
   for (int tile_number = start_tile; tile_number <= end_tile; tile_number++) {
-    ImageTile *tile = BKE_image_add_tile(ima, tile_number, label);
+    ImgTile *tile = dune_img_add_tile(ima, tile_number, label);
 
     if (tile != nullptr) {
       if (fill_tile) {
-        do_fill_tile(op->ptr, ima, tile);
+        do_fill_tile(op->ptr, img, tile);
       }
 
       last_tile_created = tile;
     }
   }
-  MEM_freeN(label);
+  mem_free(label);
 
   if (!last_tile_created) {
-    BKE_report(op->reports, RPT_WARNING, "No UDIM tiles were created");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_WARNING, "No UDIM tiles were created");
+    return OP_CANCELLED;
   }
 
-  ima->active_tile_index = BLI_findindex(&ima->tiles, last_tile_created);
+  img->active_tile_index = lib_findindex(&img->tiles, last_tile_created);
 
-  WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, nullptr);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
+  return OP_FINISHED;
 }
 
-static int tile_add_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int tile_add_invoke(Cxt *C, WinOp *op, const WinEv * /*event*/)
 {
-  Image *ima = CTX_data_edit_image(C);
+  Img *img = cxt_data_edit_img(C);
 
   /* Find the first gap in tile numbers or the number after the last if
    * no gap exists. */
   int next_number = 0;
-  LISTBASE_FOREACH (ImageTile *, tile, &ima->tiles) {
+  LIST_FOREACH (ImgTile *, tile, &img->tiles) {
     next_number = tile->tile_number + 1;
     if (tile->next == nullptr || tile->next->tile_number > next_number) {
       break;
     }
   }
 
-  ImageTile *tile = static_cast<ImageTile *>(BLI_findlink(&ima->tiles, ima->active_tile_index));
-  tile_fill_init(op->ptr, ima, tile);
+  ImgTile *tile = static_cast<ImgTile *>(lib_findlink(&img->tiles, img->active_tile_index));
+  tile_fill_init(op->ptr, img, tile);
 
-  RNA_int_set(op->ptr, "number", next_number);
-  RNA_int_set(op->ptr, "count", 1);
-  RNA_string_set(op->ptr, "label", "");
+  api_int_set(op->ptr, "number", next_number);
+  api_int_set(op->ptr, "count", 1);
+  api_string_set(op->ptr, "label", "");
 
-  return WM_operator_props_dialog_popup(C, op, 300);
+  return win_op_props_dialog_popup(C, op, 300);
 }
 
-static void tile_add_drw(bContext * /*C*/, wmOperator *op)
+static void tile_add_drw(Cxt * /*C*/, WinOp *op)
 {
-  uiLayout *static bool change_frame_poll(bContext *C)
+  uiLayout *static bool change_frame_poll(CCxt *C)
 {
   /* prevent changes during render */
   if (G.is_rendering) {
     return false;
   }
 
-  return space_image_main_region_poll(C);
+  return space_img_main_rgn_poll(C);
 }
 
-static void change_frame_apply(bContext *C, wmOperator *op)
+static void change_frame_apply(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   /* set the new frame number */
-  scene->r.cfra = RNA_int_get(op->ptr, "frame");
+  scene->r.cfra = api_int_get(op->ptr, "frame");
   FRAMENUMBER_MIN_CLAMP(scene->r.cfra);
   scene->r.subframe = 0.0f;
 
   /* do updates */
-  DEG_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
-  WM_event_add_notifier(C, NC_SCENE | ND_FRAME, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
+  win_ev_add_notifier(C, NC_SCENE | ND_FRAME, scene);
 }
 
-static int change_frame_exec(bContext *C, wmOperator *op)
+static int change_frame_ex(Cxt *C, WinOp *op)
 {
   change_frame_apply(C, op);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int frame_from_event(bContext *C, const wmEvent *event)
+static int frame_from_ev(Cxt *C, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
   int framenr = 0;
 
-  if (region->regiontype == RGN_TYPE_WINDOW) {
-    float sfra = scene->r.sfra, efra = scene->r.efra, framelen = region->winx / (efra - sfra + 1);
+  if (rgn->rgntype == RGN_TYPE_WIN) {
+    float sfra = scene->r.sfra, efra = scene->r.efra, framelen = rgn->winx / (efra - sfra + 1);
 
-    framenr = sfra + event->mval[0] / framelen;
+    framenr = sfra + ev->mval[0] / framelen;
   }
   else {
     float viewx, viewy;
 
-    UI_view2d_region_to_view(&region->v2d, event->mval[0], event->mval[1], &viewx, &viewy);
+    ui_view2d_rgn_to_view(&rgn->v2d, ev->mval[0], ev->mval[1], &viewx, &viewy);
 
     framenr = round_fl_to_int(viewx);
   }
@@ -3995,58 +3986,58 @@ static int frame_from_event(bContext *C, const wmEvent *event)
   return framenr;
 }
 
-static int change_frame_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int change_frame_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  ARegion *region = CTX_wm_region(C);
+  ARgn *rgn = cxt_win_rgn(C);
 
-  if (region->regiontype == RGN_TYPE_WINDOW) {
-    const SpaceImage *sima = CTX_wm_space_image(C);
-    if (!ED_space_image_show_cache_and_mval_over(sima, region, event->mval)) {
-      return OPERATOR_PASS_THROUGH;
+  if (rgn->rgntype == RGN_TYPE_WIN) {
+    const SpaceImg *sima = cxt_win_space_img(C);
+    if (!ed_space_img_show_cache_and_mval_over(sima, rgn, ev->mval)) {
+      return OP_PASS_THROUGH;
     }
   }
 
-  RNA_int_set(op->ptr, "frame", frame_from_event(C, event));
+  api_int_set(op->ptr, "frame", frame_from_ev(C, ev));
 
   change_frame_apply(C, op);
 
-  /* add temp handler */
-  WM_event_add_modal_handler(C, op);
+  /* add tmp handler */
+  win_ev_add_modal_handler(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-static int change_frame_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int change_frame_modal(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  switch (event->type) {
-    case EVT_ESCKEY:
-      return OPERATOR_FINISHED;
+  switch (ev->type) {
+    case EV_ESCKEY:
+      return OP_FINISHED;
 
     case MOUSEMOVE:
-      RNA_int_set(op->ptr, "frame", frame_from_event(C, event));
+      api_int_set(op->ptr, "frame", frame_from_ev(C, ev));
       change_frame_apply(C, op);
       break;
 
     case LEFTMOUSE:
     case RIGHTMOUSE:
-      if (event->val == KM_RELEASE) {
-        return OPERATOR_FINISHED;
+      if (ev->val == KM_RELEASE) {
+        return OP_FINISHED;
       }
       break;
   }
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-void IMAGE_OT_change_frame(wmOperatorType *ot)
+void IMG_OT_change_frame(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Change Frame";
-  ot->idname = "IMAGE_OT_change_frame";
+  ot->idname = "IMG_OT_change_frame";
   ot->description = "Interactively change the current frame number";
 
-  /* api callbacks */
-  ot->exec = change_frame_exec;
+  /* api cbs */
+  ot->ex = change_frame_ex;
   ot->invoke = change_frame_invoke;
   ot->modal = change_frame_modal;
   ot->poll = change_frame_poll;
@@ -4054,71 +4045,66 @@ void IMAGE_OT_change_frame(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_BLOCKING | OPTYPE_UNDO;
 
-  /* rna */
-  RNA_def_int(ot->srna, "frame", 0, MINAFRAME, MAXFRAME, "Frame", "", MINAFRAME, MAXFRAME);
+  /* api */
+  api_def_int(ot->sapi, "frame", 0, MINAFRAME, MAXFRAME, "Frame", "", MINAFRAME, MAXFRAME);
 }
 
 /* Reload cached render results... */
 /* goes over all scenes, reads render layers */
-static int image_read_viewlayers_exec(bContext *C, wmOperator * /*op*/)
+static int img_read_viewlayers_ex(Cxt *C, WinOp * /*op*/)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
-  Image *ima;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  SpaceImg *simg = cxt_win_space_img(C);
+  Img *img;
 
-  ima = BKE_image_ensure_viewer(bmain, IMA_TYPE_R_RESULT, "Render Result");
-  if (sima->image == nullptr) {
-    ED_space_image_set(bmain, sima, ima, false);
+  img = dune_img_ensure_viewer(main, IMG_TYPE_R_RESULT, "Render Result");
+  if (simg->img == nullptr) {
+    ed_space_img_set(main, simg, img, false);
   }
 
-  RE_ReadRenderResult(scene, scene);
+  render_ReadRenderResult(scene, scene);
 
-  WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, ima);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_IMG | NA_EDITED, img);
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_read_viewlayers(wmOperatorType *ot)
+void IMG_OT_read_viewlayers(WinOpType *ot)
 {
   ot->name = "Open Cached Render";
-  ot->idname = "IMAGE_OT_read_viewlayers";
+  ot->idname = "IMG_OT_read_viewlayers";
   ot->description = "Read all the current scene's view layers from cache, as needed";
 
-  ot->poll = space_image_main_region_poll;
-  ot->exec = image_read_viewlayers_exec;
+  ot->poll = space_img_main_rgn_poll;
+  ot->ex = img_read_viewlayers_ex;
 
   /* flags */
   ot->flag = 0;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Render Border Operator
- * \{ */
-
-static int render_border_exec(bContext *C, wmOperator *op)
+/* Render Border Op */
+static int render_border_ex(Cxt *C, WinOp *op)
 {
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
-  Render *re = RE_GetSceneRender(scene);
-  SpaceImage *sima = CTX_wm_space_image(C);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
+  Render *re = render_GetSceneRender(scene);
+  SpaceImg *simg = cxt_win_space_img(C);
 
   if (re == nullptr) {
     /* Shouldn't happen, but better be safe close to the release. */
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* Get information about the previous render, or current scene if no render yet. */
   int width, height;
-  BKE_render_resolution(&scene->r, false, &width, &height);
-  const RenderData *rd = ED_space_image_has_buffer(sima) ? RE_engine_get_render_data(re) :
-                                                           &scene->r;
+  dune_render_resolution(&scene->r, false, &width, &height);
+  const RenderData *rd = ed_space_img_has_buf(simg) ? render_engine_get_render_data(re) :
+                                                      &scene->r;
 
-  /* Get rectangle from the operator. */
+  /* Get rectangle from the op */
   rctf border;
-  WM_operator_properties_border_to_rctf(op, &border);
-  UI_view2d_region_to_view_rctf(&region->v2d, &border, &border);
+  win_op_props_border_to_rctf(op, &border);
+  ui_view2d_rgn_to_view_rctf(&rgn->v2d, &border, &border);
 
   /* Adjust for cropping. */
   if ((rd->mode & (R_BORDER | R_CROP)) == (R_BORDER | R_CROP)) {
@@ -4152,84 +4138,74 @@ static int render_border_exec(bContext *C, wmOperator *op)
     scene->r.mode |= R_BORDER;
   }
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  win_ev_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_render_border(wmOperatorType *ot)
+void IMG_OT_render_border(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Render Region";
-  ot->description = "Set the boundaries of the render region and enable render region";
-  ot->idname = "IMAGE_OT_render_border";
+  /* ids */
+  ot->name = "Render Rgn";
+  ot->description = "Set the boundaries of the render rgn and enable render rgn";
+  ot->idname = "IMG_OT_render_border";
 
-  /* api callbacks */
-  ot->invoke = WM_gesture_box_invoke;
-  ot->exec = render_border_exec;
-  ot->modal = WM_gesture_box_modal;
-  ot->cancel = WM_gesture_box_cancel;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->invoke = win_gesture_box_invoke;
+  ot->ex = render_border_ex;
+  ot->modal = win_gesture_box_modal;
+  ot->cancel = win_gesture_box_cancel;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* rna */
-  WM_operator_properties_border(ot);
+  /* api */
+  win_op_props_border(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Render Border Operator
- * \{ */
-
-static int clear_render_border_exec(bContext *C, wmOperator * /*op*/)
+/* Clear Render Border Op * \{ */
+static int clear_render_border_ex(Cxt *C, WinOp * /*op*/)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   scene->r.mode &= ~R_BORDER;
-  WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
-  BLI_rctf_init(&scene->r.border, 0.0f, 1.0f, 0.0f, 1.0f);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, nullptr);
+  lib_rctf_init(&scene->r.border, 0.0f, 1.0f, 0.0f, 1.0f);
+  return OP_FINISHED;
 }
 
-void IMAGE_OT_clear_render_border(wmOperatorType *ot)
+void IMG_OT_clear_render_border(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Clear Render Region";
-  ot->description = "Clear the boundaries of the render region and disable render region";
-  ot->idname = "IMAGE_OT_clear_render_border";
+  /* ids */
+  ot->name = "Clear Render Rgn";
+  ot->description = "Clear the boundaries of the render rgn and disable render rgn";
+  ot->idname = "IMG_OT_clear_render_border";
 
-  /* api callbacks */
-  ot->exec = clear_render_border_exec;
-  ot->poll = image_cycle_render_slot_poll;
+  /* api cbs */
+  ot->ex = clear_render_border_ex;
+  ot->poll = img_cycle_render_slot_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Tile Operator
- * \{ */
-
-static bool do_fill_tile(PointerRNA *ptr, Image *ima, ImageTile *tile)
+/* Add Tile Op */
+static bool do_fill_tile(ApiPtr *ptr, Img *img, ImgTile *tile)
 {
-  RNA_float_get_array(ptr, "color", tile->gen_color);
-  tile->gen_type = RNA_enum_get(ptr, "generated_type");
-  tile->gen_x = RNA_int_get(ptr, "width");
-  tile->gen_y = RNA_int_get(ptr, "height");
-  bool is_float = RNA_boolean_get(ptr, "float");
+  api_float_get_array(ptr, "color", tile->gen_color);
+  tile->gen_type = api_enum_get(ptr, "generated_type");
+  tile->gen_x = api_int_get(ptr, "width");
+  tile->gen_y = api_int_get(ptr, "height");
+  bool is_float = api_bool_get(ptr, "float");
 
-  tile->gen_flag = is_float ? IMA_GEN_FLOAT : 0;
-  tile->gen_depth = RNA_boolean_get(ptr, "alpha") ? 32 : 24;
+  tile->gen_flag = is_float ? IMG_GEN_FLOAT : 0;
+  tile->gen_depth = api_bool_get(ptr, "alpha") ? 32 : 24;
 
-  return BKE_image_fill_tile(ima, tile);
+  return dune_img_fill_tile(img, tile);
 }
 
-static void draw_fill_tile(PointerRNA *ptr, uiLayout *layout)
+static void drw_fill_tile(ApiPtr *ptr, uiLayout *layout)
 {
   uiLayoutSetPropSep(layout, true);
   uiLayoutSetPropDecorate(layout, false);
@@ -4243,86 +4219,86 @@ static void draw_fill_tile(PointerRNA *ptr, uiLayout *layout)
   uiItemR(col, ptr, "float", UI_ITEM_NONE, nullptr, ICON_NONE);
 }
 
-static void tile_fill_init(PointerRNA *ptr, Image *ima, ImageTile *tile)
+static void tile_fill_init(ApiPtr *ptr, Img *img, ImgTile *tile)
 {
-  ImageUser iuser;
-  BKE_imageuser_default(&iuser);
+  ImgUser iuser;
+  dune_imguser_default(&iuser);
   if (tile != nullptr) {
     iuser.tile = tile->tile_number;
   }
 
-  /* Acquire ibuf to get the default values.
+  /* Acquire ibuf to get the default vals.
    * If the specified tile has no ibuf, try acquiring the main tile instead
    * (unless the specified tile already was the first tile). */
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, &iuser, nullptr);
-  if (ibuf == nullptr && (tile != nullptr) && (tile != ima->tiles.first)) {
-    ibuf = BKE_image_acquire_ibuf(ima, nullptr, nullptr);
+  ImBuf *ibuf = dune_img_acquire_ibuf(img, &iuser, nullptr);
+  if (ibuf == nullptr && (tile != nullptr) && (tile != img->tiles.first)) {
+    ibuf = dune_img_acquire_ibuf(img, nullptr, nullptr);
   }
 
   if (ibuf != nullptr) {
-    /* Initialize properties from reference tile. */
-    RNA_int_set(ptr, "width", ibuf->x);
-    RNA_int_set(ptr, "height", ibuf->y);
-    RNA_boolean_set(ptr, "float", ibuf->float_buffer.data != nullptr);
-    RNA_boolean_set(ptr, "alpha", ibuf->planes > 24);
+    /* Init props from ref tile. */
+    api_int_set(ptr, "width", ibuf->x);
+    api_int_set(ptr, "height", ibuf->y);
+    api_bool_set(ptr, "float", ibuf->float_buf.data != nullptr);
+    api_bool_set(ptr, "alpha", ibuf->planes > 24);
 
-    BKE_image_release_ibuf(ima, ibuf, nullptr);
+    dune_img_release_ibuf(img, ibuf, nullptr);
   }
 }
 
-static void def_fill_tile(StructOrFunctionRNA *srna)
+static void def_fill_tile(StructOrFnApi *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
   static float default_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-  prop = RNA_def_float_color(
-      srna, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
-  RNA_def_property_subtype(prop, PROP_COLOR_GAMMA);
-  RNA_def_property_float_array_default(prop, default_color);
-  RNA_def_enum(srna,
+  prop = api_def_float_color(
+      sapi, "color", 4, nullptr, 0.0f, FLT_MAX, "Color", "Default fill color", 0.0f, 1.0f);
+  api_def_prop_subtype(prop, PROP_COLOR_GAMMA);
+  api_def_prop_float_array_default(prop, default_color);
+  api_def_enum(sapi,
                "generated_type",
-               rna_enum_image_generated_type_items,
-               IMA_GENTYPE_BLANK,
+               api_enum_img_generated_type_items,
+               IMG_GENTYPE_BLANK,
                "Generated Type",
-               "Fill the image with a grid for UV map testing");
-  prop = RNA_def_int(srna, "width", 1024, 1, INT_MAX, "Width", "Image width", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
-  prop = RNA_def_int(srna, "height", 1024, 1, INT_MAX, "Height", "Image height", 1, 16384);
-  RNA_def_property_subtype(prop, PROP_PIXEL);
+               "Fill the img with a grid for UV map testing");
+  prop = api_def_int(sapi, "width", 1024, 1, INT_MAX, "Width", "Img width", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+  prop = api_def_int(sapi, "height", 1024, 1, INT_MAX, "Height", "Img height", 1, 16384);
+  api_def_prop_subtype(prop, PROP_PIXEL);
 
   /* Only needed when filling the first tile. */
-  RNA_def_boolean(
-      srna, "float", false, "32-bit Float", "Create image with 32-bit floating-point bit depth");
-  RNA_def_boolean(srna, "alpha", true, "Alpha", "Create an image with an alpha channel");
+  api_def_bool(
+      srna, "float", false, "32-bit Float", "Create img with 32-bit floating-point bit depth");
+  api_def_bool(sapi, "alpha", true, "Alpha", "Create an img with an alpha channel");
 }
 
-static bool tile_add_poll(bContext *C)
+static bool tile_add_poll(Cxt *C)
 {
-  Image *ima = CTX_data_edit_image(C);
+  Img *img = cxt_data_edit_img(C);
 
-  return (ima != nullptr && ima->source == IMA_SRC_TILED && BKE_image_has_ibuf(ima, nullptr));
+  return (img != nullptr && img->src == IMG_SRC_TILED && dune_img_has_ibuf(img, nullptr));
 }
 
-static int tile_add_exec(bContext *C, wmOperator *op)
+static int tile_add_ex(Cxt *C, WinOp *op)
 {
-  Image *ima = CTX_data_edit_image(C);
+  Img *img = cxt_data_edit_img(C);
 
-  int start_tile = RNA_int_get(op->ptr, "number");
-  int end_tile = start_tile + RNA_int_get(op->ptr, "count") - 1;
+  int start_tile = api_int_get(op->ptr, "number");
+  int end_tile = start_tile + api_int_get(op->ptr, "count") - 1;
 
-  if (start_tile < 1001 || end_tile > IMA_UDIM_MAX) {
-    BKE_report(op->reports, RPT_ERROR, "Invalid UDIM index range was specified");
-    return OPERATOR_CANCELLED;
+  if (start_tile < 1001 || end_tile > IMG_UDIM_MAX) {
+    dune_report(op->reports, RPT_ERROR, "Invalid UDIM index range was specified");
+    return OP_CANCELLED;
   }
 
-  bool fill_tile = RNA_boolean_get(op->ptr, "fill");
-  char *label = RNA_string_get_alloc(op->ptr, "label", nullptr, 0, nullptr);
+  bool fill_tile = api_bool_get(op->ptr, "fill");
+  char *label = api_string_get_alloc(op->ptr, "label", nullptr, 0, nullptr);
 
-  /* BKE_image_add_tile assumes a pre-sorted list of tiles. */
-  BKE_image_sort_tiles(ima);
+  /* dune_img_add_tile assumes a pre-sorted list of tiles. */
+  dune_img_sort_tiles(ima);
 
-  ImageTile *last_tile_created = nullptr;
+  ImgTile *last_tile_created = nullptr;
   for (int tile_number = start_tile; tile_number <= end_tile; tile_number++) {
-    ImageTile *tile = BKE_image_add_tile(ima, tile_number, label);
+    ImgTile *tile = dune_img_add_tile(img, tile_number, label);
 
     if (tile != nullptr) {
       if (fill_tile) {
@@ -4332,11 +4308,11 @@ static int tile_add_exec(bContext *C, wmOperator *op)
       last_tile_created = tile;
     }
   }
-  MEM_freeN(label);
+  mem_free(label);
 
   if (!last_tile_created) {
-    BKE_report(op->reports, RPT_WARNING, "No UDIM tiles were created");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_WARNING, "No UDIM tiles were created");
+    return OP_CANCELLED;
   }
 
   img->active_tile_index = lib_findindex(&img->tiles, last_tile_created);
@@ -4580,7 +4556,7 @@ static int tile_remove_ex(Cxt *C, WinOp * /*op*/)
   }
 
   /* Ensure that the active index is valid. */
-  ima->active_tile_index = min_ii(img->active_tile_index, lib_list_count(&ima->tiles) - 1);
+  img->active_tile_index = min_ii(img->active_tile_index, lib_list_count(&ima->tiles) - 1);
 
   win_ev_add_notifier(C, NC_IMG | ND_DRW, nullptr);
 
@@ -4618,7 +4594,7 @@ static int tile_fill_ex(Cxt *C, WinOp *op)
 {
   Img *img = cxt_data_edit_img(C);
 
-  ImgTile *tile = static_cast<ImgTile *>(lib_findlink(&ima->tiles, ima->active_tile_index));
+  ImgTile *tile = static_cast<ImgTile *>(lib_findlink(&img->tiles, img->active_tile_index));
   if (!do_fill_tile(op->ptr, ima, tile)) {
     return OP_CANCELLED;
   }
