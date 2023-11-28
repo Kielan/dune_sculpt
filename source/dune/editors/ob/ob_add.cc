@@ -256,7 +256,7 @@ void ed_ob_location_from_view(Cxt *C, float loc[3])
 
 void ed_ob_rotation_from_quat(float rot[3], const float viewquat[4], const char align_axis)
 {
-  BLI_assert(align_axis >= 'X' && align_axis <= 'Z');
+  lib_assert(align_axis >= 'X' && align_axis <= 'Z');
 
   switch (align_axis) {
     case 'X': {
@@ -859,7 +859,7 @@ void OB_OT_effector_add(WinOpType *ot)
 {
   /* ids */
   ot->name = "Add Effector";
-  ot->description = "Add an empty object with a physics effector to the scene";
+  ot->description = "Add an empty ob with a physics effector to the scene";
   ot->idname = "OB_OT_effector_add";
 
   /* api cbs */
@@ -1871,7 +1871,7 @@ static int collection_drop_exec(Cxt *C, WinOp *op)
                             add_info->local_view_bits);
     ob->instance_collection = add_info->collection;
     ob->empty_drwsize = U.collection_instance_empty_size;
-    ob->transflag |= OB_DUPLICOLLECTION;
+    ob->transflag |= OB_DUPCOLLECTION;
     id_us_plus(&add_info->collection->id);
   }
   else {
@@ -2120,7 +2120,7 @@ static int ob_curves_empty_hair_add_ex(Cxt *C, WinOp *op)
       C, OB_CURVES, nullptr, nullptr, nullptr, false, local_view_bits);
   dune_ob_apply_mat4(curves_ob, surface_ob->ob_to_world, false, false);
 
-  /* Set surface object. */
+  /* Set surface ob */
   Curves *curves_id = static_cast<Curves *>(curves_ob->data);
   curves_id->surface = surface_ob;
 
@@ -2188,13 +2188,13 @@ static int ob_pointcloud_add_ex(Cxt *C, WinOp *op)
   if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  Object *object = ED_ob_add_type(C, OB_POINTCLOUD, nullptr, loc, rot, false, local_view_bits);
-  object->dtx |= OB_DRAWBOUNDOX; /* TODO: remove once there is actual drawing. */
+  Ob *ob = ed_ob_add_type(C, OB_POINTCLOUD, nullptr, loc, rot, false, local_view_bits);
+  ob->dtx |= OB_DRAWBOUNDOX; /* TODO: remove once there is actual drawing. */
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void OB_OT_pointcloud_add(WinOpType *ot)
@@ -2204,8 +2204,8 @@ void OB_OT_pointcloud_add(WinOpType *ot)
   ot->description = "Add a point cloud object to the scene";
   ot->idname = "OB_OT_pointcloud_add";
 
-  /* api callbacks */
-  ot->exec = ob_pointcloud_add_exec;
+  /* api cbs */
+  ot->ex = ob_pointcloud_add_ex;
   ot->poll = ob_pointcloud_add_poll;
 
   /* flags */
@@ -2215,13 +2215,12 @@ void OB_OT_pointcloud_add(WinOpType *ot)
 }
 
 /* Del Ob Op */
-
 void ed_ob_base_free_and_unlink(Main *main, Scene *scene, Ob *ob)
 {
   if (ID_REAL_USERS(ob) <= 1 && ID_EXTRA_USERS(ob) == 0 &&
       dune_lib_ed_is_indirectly_used(main, ob))
   {
-    /* We cannot delete indirectly used object... */
+    /* We cannot delete indirectly used ob... */
     printf(
         "WARNING, undeletable object '%s', should have been caught before reaching this "
         "function!",
@@ -2366,7 +2365,7 @@ void OB_OT_del(WinOpType *ot)
 
   /* api cbs */
   ot->invoke = win_op_confirm_or_ex;
-  ot->ex = object_del_ex;
+  ot->ex = ob_del_ex;
   ot->poll = ed_op_obmode;
 
   /* flags */
@@ -2409,7 +2408,7 @@ static void copy_ob_set_idnew(Cxt *C)
 
 /* Make Instanced Obs Real Op */
 
-/* TODO: That whole hierarchy handling based on persistent_id tricks is
+/* That whole hierarchy handling based on persistent_id tricks is
  * very confusing and convoluted, and it will fail in many cases besides basic ones.
  * Think this should be replaced by a proper tree-like representation of the instantiations,
  * should help a lot in both readability, and precise consistent rebuilding of hierarchy. */
@@ -2431,7 +2430,7 @@ static uint dupob_hash(const void *ptr)
   const DupOb *dob = static_cast<const DupOb *>(ptr);
   uint hash = lib_ghashutil_ptrhash(dob->ob);
 
-  if (dob->type == OB_DUPLICOLLECTION) {
+  if (dob->type == OB_DUPCOLLECTION) {
     for (int i = 1; (i < MAX_DUPLI_RECUR) && dob->persistent_id[i] != INT_MAX; i++) {
       hash ^= (dob->persistent_id[i] ^ i);
     }
@@ -2471,7 +2470,7 @@ static bool dupob_cmp(const void *a_, const void *b_)
   }
 
   if (a->type == OB_DUPCOLLECTION) {
-    for (int i = 1; (i < MAX_DUPLI_RECUR); i++) {
+    for (int i = 1; (i < MAX_DUP_RECUR); i++) {
       if (a->persistent_id[i] != b->persistent_id[i]) {
         return true;
       }
@@ -2496,7 +2495,7 @@ static bool dupob_instancer_cmp(const void *a_, const void *b_)
   const DupOb *a = static_cast<const DupOb *>(a_);
   const DupOb *b = static_cast<const DupOb *>(b_);
 
-  for (int i = 0; (i < MAX_DUPLI_RECUR); i++) {
+  for (int i = 0; (i < MAX_DUP_RECUR); i++) {
     if (a->persistent_id[i] != b->persistent_id[i]) {
       return true;
     }
@@ -2586,7 +2585,7 @@ static void make_ob_duplist_real(Cxt *C,
     lib_ghash_insert(dupli_gh, dob, ob_dst);
     if (parent_gh) {
       void **val;
-      /* Due to nature of hash/comparison of this ghash, a lot of duplis may be considered as
+      /* Due to nature of hash/comparison of this ghash, a lot of dups may be considered as
        * 'the same', this avoids trying to insert same key several time and
        * raise asserts in debug builds... */
       if (!lib_ghash_ensure_p(parent_gh, dob, &val)) {
@@ -2623,10 +2622,10 @@ static void make_ob_duplist_real(Cxt *C,
         DupOb dob_key;
         dob_key.ob = ob_src_par;
         dob_key.type = dob->type;
-        if (dob->type == OB_DUPLICOLLECTION) {
+        if (dob->type == OB_DUPCOLLECTION) {
           memcpy(&dob_key.persistent_id[1],
                  &dob->persistent_id[1],
-                 sizeof(dob->persistent_id[1]) * (MAX_DUPLI_RECUR - 1));
+                 sizeof(dob->persistent_id[1]) * (MAX_DUP_RECUR - 1));
         }
         else {
           dob_key.persistent_id[0] = dob->persistent_id[0];
@@ -2690,7 +2689,7 @@ static void make_ob_duplist_real(Cxt *C,
   ed_ob_base_sel(base, BA_DESEL);
   graph_id_tag_update(&base->ob->id, ID_RECALC_SEL);
 
-  lib_ghash_free(dupli_gh, nullptr, nullptr);
+  lib_ghash_free(dup_gh, nullptr, nullptr);
   if (parent_gh) {
     lib_ghash_free(parent_gh, nullptr, nullptr);
   }
@@ -2737,7 +2736,7 @@ void OB_OT_dups_make_real(WinOpType *ot)
 {
   /* ids */
   ot->name = "Make Instances Real";
-  ot->description = "Make instanced obs attached to this object real";
+  ot->description = "Make instanced obs attached to this ob real";
   ot->idname = "OB_OT_dups_make_real";
 
   /* api cbs */
@@ -2818,7 +2817,7 @@ static void ob_data_convert_curve_to_mesh(Main *main, Graph *graph, Ob *ob)
    * It's possible to have multiple curve obs sel which are sharing the same curve
    *   data-block. We don't want mesh to be created for every of those obs.
    * This is how conversion worked for a long time. */
-  LIST_FOREACH (Object *, other_ob, &main->obs) {
+  LIST_FOREACH (Ob *, other_ob, &main->obs) {
     if (other_ob->data == curve) {
       other_ob->type = OB_MESH;
 
@@ -2904,27 +2903,27 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
   Graph *graph = cxt_data_ensure_eval_graph(C);
   Scene *scene = cxt_data_scene(C);
   ViewLayer *view_layer = cxt_data_view_layer(C);
-  View3D *v3d = cxt_wm_view3d(C);
+  View3D *v3d = cxt_win_view3d(C);
   Base *basen = nullptr, *basact = nullptr;
   Ob *ob1, *obact = cxt_data_active_object(C);
-  const short target = RNA_enum_get(op->ptr, "target");
-  bool keep_original = RNA_boolean_get(op->ptr, "keep_original");
-  const bool do_merge_customdata = RNA_boolean_get(op->ptr, "merge_customdata");
+  const short target = api_enum_get(op->ptr, "target");
+  bool keep_original = api_bool_get(op->ptr, "keep_original");
+  const bool do_merge_customdata = api_bool_get(op->ptr, "merge_customdata");
 
-  const float angle = RNA_float_get(op->ptr, "angle");
-  const int thickness = RNA_int_get(op->ptr, "thickness");
-  const bool use_seams = RNA_boolean_get(op->ptr, "seams");
-  const bool use_faces = RNA_boolean_get(op->ptr, "faces");
-  const float offset = RNA_float_get(op->ptr, "offset");
+  const float angle = api_float_get(op->ptr, "angle");
+  const int thickness = api_int_get(op->ptr, "thickness");
+  const bool use_seams = api_bool_get(op->ptr, "seams");
+  const bool use_faces = api_bool_get(op->ptr, "faces");
+  const float offset = api_float_get(op->ptr, "offset");
 
   int mballConverted = 0;
-  bool gpencilConverted = false;
-  bool gpencilCurveConverted = false;
+  bool penConverted = false;
+  bool penCurveConverted = false;
 
   /* don't forget multiple users! */
 
   {
-    FOREACH_SCENE_OBJECT_BEGIN (scene, ob) {
+    FOREACH_SCENE_OB_BEGIN (scene, ob) {
       ob->flag &= ~OB_DONE;
 
       /* flag data that's not been edited (only needed for !keep_original) */
