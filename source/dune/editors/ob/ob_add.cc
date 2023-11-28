@@ -681,7 +681,7 @@ static int ob_add_ex(Cxt *C, WinOp *op)
   return OP_FINISHED;
 }
 
-void OBJECT_OT_add(WinOpType *ot)
+void OB_OT_add(WinOpType *ot)
 {
   /* ids */
   ot->name = "Add Ob";
@@ -697,28 +697,23 @@ void OBJECT_OT_add(WinOpType *ot)
 
   /* props */
   ed_ob_add_unit_props_radius(ot);
-  PropertyRNA *prop = RNA_def_enum(ot->srna, "type", rna_enum_object_type_items, 0, "Type", "");
-  RNA_def_prop_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
+  ApiProp *prop = api_def_enum(ot->sapi, "type", api_enum_ob_type_items, 0, "Type", "");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_ID);
 
-  ED_object_add_generic_props(ot, true);
+  ed_ob_add_generic_props(ot, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Probe Operator
- * \{ */
-
-/* for object add operator */
+/* Add Probe Op */
+/* for ob add op */
 static const char *get_lightprobe_defname(int type)
 {
   switch (type) {
     case LIGHTPROBE_TYPE_VOLUME:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Volume");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Volume");
     case LIGHTPROBE_TYPE_PLANE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Plane");
+      return CXT_DATA_(LANG_CXT_ID_LIGHT, "Plane");
     case LIGHTPROBE_TYPE_SPHERE:
-      return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "Sphere");
+      return CTX_DATA_(LANG_CXT_ID_LIGHT, "Sphere");
     default:
       return CTX_DATA_(BLT_I18NCONTEXT_ID_LIGHT, "LightProbe");
   }
@@ -729,16 +724,16 @@ static int lightprobe_add_exec(bContext *C, wmOperator *op)
   bool enter_editmode;
   ushort local_view_bits;
   float loc[3], rot[3];
-  WM_operator_view3d_unit_defaults(C, op);
-  if (!ED_object_add_generic_get_opts(
+  win_op_view3d_unit_defaults(C, op);
+  if (!ed_ob_add_generic_get_opts(
           C, op, 'Z', loc, rot, nullptr, &enter_editmode, &local_view_bits, nullptr))
   {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  int type = RNA_enum_get(op->ptr, "type");
-  float radius = RNA_float_get(op->ptr, "radius");
+  int type = api_enum_get(op->ptr, "type");
+  float radius = api_float_get(op->ptr, "radius");
 
-  Object *ob = ED_object_add_type(
+  Ob *ob = ed_ob_add_type(
       C, OB_LIGHTPROBE, get_lightprobe_defname(type), loc, rot, false, local_view_bits);
   copy_v3_fl(ob->scale, radius);
 
