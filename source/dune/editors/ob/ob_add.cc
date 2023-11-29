@@ -431,14 +431,14 @@ void ed_ob_add_mesh_props(WinOpType *ot)
 }
 
 bool ed_ob_add_generic_get_opts(Cxt *C,
-                                    WinOp *op,
-                                    const char view_align_axis,
-                                    float r_loc[3],
-                                    float r_rot[3],
-                                    float r_scale[3],
-                                    bool *r_enter_editmode,
-                                    ushort *r_local_view_bits,
-                                    bool *r_is_view_aligned)
+                                WinOp *op,
+                                const char view_align_axis,
+                                float r_loc[3],
+                                float r_rot[3],
+                                float r_scale[3],
+                                bool *r_enter_editmode,
+                                ushort *r_local_view_bits,
+                                bool *r_is_view_aligned)
 {
   /* Edit Mode! (optional) */
   {
@@ -767,7 +767,6 @@ void OB_OT_lightprobe_add(WinOpType *ot)
 
 /* Add Effector Op */
 /* for ob add op */
-
 static const char *get_effector_defname(ePFieldType type)
 {
   switch (type) {
@@ -1520,7 +1519,7 @@ static int ob_pen_add_ex(Cxt *C, WinOp *op)
   ushort local_view_bits;
   float loc[3], rot[3];
 
-  /* NOTE: We use 'Y' here (not 'Z'), as. */
+  /* We use 'Y' here (not 'Z'), as. */
   win_op_view3d_unit_defaults(C, op);
   if (!ed_ob_add_generic_get_opts(
           C, op, 'Y', loc, rot, nullptr, nullptr, &local_view_bits, nullptr))
@@ -2423,8 +2422,7 @@ static void copy_ob_set_idnew(Cxt *C)
  * since its the index of the vertex/face the ob is instantiated on and we want to identify
  * obs on the same vertex/face.
  * In other words, we consider each group of obs from a same item as being
- * the 'local group' where to check for parents.
- */
+ * the 'local group' where to check for parents. */
 static uint dupob_hash(const void *ptr)
 {
   const DupOb *dob = static_cast<const DupOb *>(ptr);
@@ -2876,7 +2874,7 @@ static Base *basedup_for_convert(
 
   /* Doing that here is stupid, it means we update and re-eval the whole graph every
    * time we need to dup an ob to convert it. Even worse, this is not 100% correct, since
-   * we do not yet have duplicated obdata.
+   * we do not yet have dup'd obdata.
    * However, that is a safe solution for now. Proper, longer-term solution is to refactor
    * ob_convert_ex to:
    *  - dup all data it needs to in a first loop.
@@ -2945,16 +2943,16 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
     FOREACH_SCENE_OBJECT_END;
   }
 
-  ListBase selected_editable_bases;
-  CTX_data_selected_editable_bases(C, &selected_editable_bases);
+  List sel_editable_bases;
+  cxt_data_sel_editable_bases(C, &sel_editable_bases);
 
-  /* Ensure we get all meshes calculated with a sufficient data-mask,
-   * needed since re-evaluating single modifiers causes bugs if they depend
-   * on other objects data masks too, see: #50950. */
+  /* Ensure we get all meshes calc'd w a sufficient data-mask,
+   * needed since re-evaling single moda causes bugs if they depend
+   * on other obs data masks too, see: #50950. */
   {
-    LIST_FOREACH (CollectionPointerLink *, link, &selected_editable_bases) {
+    LIST_FOREACH (CollectionPointerLink *, link, &sel_editable_bases) {
       Base *base = static_cast<Base *>(link->ptr.data);
-      Object *ob = base->object;
+      Ob *ob = base->object;
 
       /* The way object type conversion works currently (enforcing conversion of *all* objects
        * using converted object-data, even some un-selected/hidden/another scene ones,
