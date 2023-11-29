@@ -2931,9 +2931,9 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
 
       /* possible metaball basis is not in this scene */
       if (ob->type == OB_MBALL && target == OB_MESH) {
-        if (BKE_mball_is_basis(ob) == false) {
+        if (dune_mball_is_basis(ob) == false) {
           Object *ob_basis;
-          ob_basis = BKE_mball_basis_find(scene, ob);
+          ob_basis = dune_mball_basis_find(scene, ob);
           if (ob_basis) {
             ob_basis->flag &= ~OB_DONE;
           }
@@ -3034,49 +3034,49 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
     else if (ob->type == OB_MESH && target == OB_GPENCIL_LEGACY) {
       ob->flag |= OB_DONE;
 
-      /* Create a new grease pencil object and copy transformations. */
+      /* Create a new pen ob and copy transformations. */
       ushort local_view_bits = (v3d && v3d->localvd) ? v3d->local_view_uuid : 0;
       float loc[3], size[3], rot[3][3], eul[3];
       float matrix[4][4];
       mat4_to_loc_rot_size(loc, rot, size, ob->object_to_world);
       mat3_to_eul(eul, rot);
 
-      Object *ob_gpencil = ED_gpencil_add_object(C, loc, local_view_bits);
+      Object *ob_gpencil = ED_gpencil_add_ob(C, loc, local_view_bits);
       copy_v3_v3(ob_gpencil->loc, loc);
       copy_v3_v3(ob_gpencil->rot, eul);
       copy_v3_v3(ob_gpencil->scale, size);
       unit_m4(matrix);
       /* Set object in 3D mode. */
-      bGPdata *gpd = (bGPdata *)ob_gpencil->data;
-      gpd->draw_mode = GP_DRAWMODE_3D;
+      PenData *pd = (PenData *)ob_pen->data;
+      pd->drw_mode = PEN_DRWMODE_3D;
 
-      gpencilConverted |= BKE_gpencil_convert_mesh(bmain,
-                                                   depsgraph,
-                                                   scene,
-                                                   ob_gpencil,
-                                                   ob,
-                                                   angle,
-                                                   thickness,
-                                                   offset,
-                                                   matrix,
-                                                   0,
-                                                   use_seams,
-                                                   use_faces,
-                                                   true);
+      penConverted |= dune_pen_convert_mesh(main,
+                                                graph,
+                                                scene,
+                                                ob_pen,
+                                                ob,
+                                                angle,
+                                                thickness,
+                                                offset,
+                                                matrix,
+                                                0,
+                                                use_seams,
+                                                use_faces,
+                                                true);
 
       /* Remove unused materials. */
-      int actcol = ob_gpencil->actcol;
-      for (int slot = 1; slot <= ob_gpencil->totcol; slot++) {
-        while (slot <= ob_gpencil->totcol && !BKE_object_material_slot_used(ob_gpencil, slot)) {
-          ob_gpencil->actcol = slot;
-          BKE_object_material_slot_remove(CTX_data_main(C), ob_gpencil);
+      int actcol = ob_pen->actcol;
+      for (int slot = 1; slot <= ob_pen->totcol; slot++) {
+        while (slot <= ob_pen->totcol && !dune_ob_material_slot_used(ob_pen, slot)) {
+          ob_pen->actcol = slot;
+          dune_ob_material_slot_remove(cxt_data_main(C), ob_pen);
 
           if (actcol >= slot) {
             actcol--;
           }
         }
       }
-      ob_gpencil->actcol = actcol;
+      ob_pen->actcol = actcol;
     }
     else if (U.experimental.use_grease_pencil_version3 && ob->type == OB_GPENCIL_LEGACY &&
              target == OB_GREASE_PENCIL)
