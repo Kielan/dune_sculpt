@@ -2952,7 +2952,7 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
    * needed since re-evaluating single modifiers causes bugs if they depend
    * on other objects data masks too, see: #50950. */
   {
-    LISTBASE_FOREACH (CollectionPointerLink *, link, &selected_editable_bases) {
+    LIST_FOREACH (CollectionPointerLink *, link, &selected_editable_bases) {
       Base *base = static_cast<Base *>(link->ptr.data);
       Object *ob = base->object;
 
@@ -2962,35 +2962,35 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
        * However, changing this is more design than bug-fix, not to mention convoluted code below,
        * so that will be for later.
        * But at the very least, do not do that with linked IDs! */
-      if ((!BKE_id_is_editable(bmain, &ob->id) ||
-           (ob->data && !BKE_id_is_editable(bmain, static_cast<ID *>(ob->data)))) &&
+      if ((!dune_id_is_editable(bmain, &ob->id) ||
+           (ob->data && !dune_id_is_editable(bmain, static_cast<ID *>(ob->data)))) &&
           !keep_original)
       {
         keep_original = true;
-        BKE_report(op->reports,
+        dune_report(op->reports,
                    RPT_INFO,
                    "Converting some non-editable object/object data, enforcing 'Keep Original' "
                    "option to True");
       }
 
-      DEG_id_tag_update(&base->object->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&base->ob->id, ID_RECALC_GEOMETRY);
     }
 
-    CustomData_MeshMasks customdata_mask_prev = scene->customdata_mask;
-    CustomData_MeshMasks_update(&scene->customdata_mask, &CD_MASK_MESH);
-    BKE_scene_graph_update_tagged(depsgraph, bmain);
+    CustomDataMeshMasks customdata_mask_prev = scene->customdata_mask;
+    CustomDataMeshMasks_update(&scene->customdata_mask, &CD_MASK_MESH);
+    dune_scene_graph_update_tagged(graph, main);
     scene->customdata_mask = customdata_mask_prev;
   }
 
-  LISTBASE_FOREACH (CollectionPointerLink *, link, &selected_editable_bases) {
-    Object *newob = nullptr;
+  LIST_FOREACH (CollectionPtrLink *, link, &selected_editable_bases) {
+    Ob *newob = nullptr;
     Base *base = static_cast<Base *>(link->ptr.data);
-    Object *ob = base->object;
+    Ob *ob = base->ob;
 
     if (ob->flag & OB_DONE || !IS_TAGGED(ob->data)) {
       if (ob->type != target) {
-        base->flag &= ~SELECT;
-        ob->flag &= ~SELECT;
+        base->flag &= ~SEL;
+        ob->flag &= ~SEL;
       }
 
       /* obdata already modified */
@@ -2998,11 +2998,11 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
         /* When 2 objects with linked data are selected, converting both
          * would keep modifiers on all but the converted object #26003. */
         if (ob->type == OB_MESH) {
-          BKE_object_free_modifiers(ob, 0); /* after derivedmesh calls! */
+          dune_ob_free_mods(ob, 0); /* after derivedmesh calls! */
         }
-        if (ob->type == OB_GPENCIL_LEGACY) {
-          BKE_object_free_modifiers(ob, 0); /* after derivedmesh calls! */
-          BKE_object_free_shaderfx(ob, 0);
+        if (ob->type == OB_PEN_LEGACY) {
+          dune_ob_free_mods(ob, 0); /* after derivedmesh calls! */
+          dune_ob_free_shaderfx(ob, 0);
         }
       }
     }
@@ -3010,26 +3010,26 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         /* Decrement original mesh's usage count. */
         Mesh *me = static_cast<Mesh *>(newob->data);
         id_us_min(&me->id);
 
         /* Make a new copy of the mesh. */
-        newob->data = BKE_id_copy(bmain, &me->id);
+        newob->data = dune_id_copy(main, &me->id);
       }
       else {
         newob = ob;
       }
 
-      BKE_mesh_to_curve(bmain, depsgraph, scene, newob);
+      dune_mesh_to_curve(main, graph, scene, newob);
 
       if (newob->type == OB_CURVES_LEGACY) {
-        BKE_object_free_modifiers(newob, 0); /* after derivedmesh calls! */
-        if (newob->rigidbody_object != nullptr) {
-          ED_rigidbody_object_remove(bmain, scene, newob);
+        dune_ob_free_mods(newob, 0); /* after derivedmesh calls! */
+        if (newob->rigidbody_ob != nullptr) {
+          ed_rigidbody_ob_remove(main, scene, newob);
         }
       }
     }
