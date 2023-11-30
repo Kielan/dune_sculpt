@@ -3212,7 +3212,7 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = du_for_convert(main, graph, scene, view_layer, base, nullptr);
+        basen = dup_for_convert(main, graph, scene, view_layer, base, nullptr);
         newob = basen->ob;
 
         /* Decrement original curve's usage count. */
@@ -3315,7 +3315,7 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
           newob = ob;
         }
 
-        /* No assumption should be made that the resulting objs is a mesh, as conversion can
+        /* No assumption should be made that the resulting obs is a mesh, as conversion can
          * fail. */
         ob_data_convert_curve_to_mesh(main, graph, newob);
         /* Meshes don't use the "curve cache". */
@@ -3648,8 +3648,8 @@ static void ob_add_sync_base_collection(
     dune_collection_ob_add_from(main, scene, base_src->ob, ob_new);
   }
   else {
-    LayerCollection *layer_collection = BKE_layer_collection_get_active(view_layer);
-    dune_collection_ob_add(bmain, layer_collection->collection, object_new);
+    LayerCollection *layer_collection = dune_layer_collection_get_active(view_layer);
+    dune_collection_ob_add(main, layer_collection->collection, ob_new);
   }
 }
 
@@ -3792,7 +3792,7 @@ static int dup_ex(Cxt *C, WinOp *op)
   bool new_obs_created = false;
   for (DupObLink &link : ob_base_links) {
     ob_add_dup_internal(main,
-                        link.base_src->object,
+                        link.base_src->ob,
                         dupflag,
                         LIB_ID_DUP_IS_SUBPROCESS | LIB_ID_DUP_IS_ROOT_ID,
                         &link.ob_new);
@@ -3807,10 +3807,10 @@ static int dup_ex(Cxt *C, WinOp *op)
 
   /* Sync that could tag the view_layer out of sync. */
   for (DupObLink &link : ob_base_links) {
-    /* note that this is safe to do with this context iterator,
+    /* note that this is safe to do with this cxt iter,
      * the list is made in advance */
     ed_ob_base_sel(link.base_src, BA_DESEL);
-    if (link.object_new) {
+    if (link.ob_new) {
       ob_add_sync_base_collection(main, scene, view_layer, link.base_src, link.ob_new);
       ob_add_sync_rigid_body(main, link.base_src->ob, link.ob_new);
     }
@@ -3832,13 +3832,13 @@ static int dup_ex(Cxt *C, WinOp *op)
     }
 
     if (link.ob_new->data) {
-      graph_id_tag_update(static_cast<Id *>(link.object_new->data), 0);
+      graph_id_tag_update(static_cast<Id *>(link.ob_new->data), 0);
     }
 
     ob_add_sync_local_view(link.base_src, base_new);
   }
 
-  /* Note that this will also clear newid pointers and tags. */
+  /* Note that this will also clear newid ptrs and tags. */
   copy_ob_set_idnew(C);
 
   ed_outliner_sel_sync_from_ob_tag(C);
@@ -3883,7 +3883,6 @@ void OB_OT_dup(WinOpType *ot)
 
 /* Add Named Ob Op
  * Use for drag & drop */
-
 static int ob_add_named_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
@@ -3909,7 +3908,7 @@ static int ob_add_named_ex(Cxt *C, WinOp *op)
       ob,
       dupflag,
       /* Sub-process flag bc the new-Id remapping (dune_libblock_relink_to_newid()) in this
-       * fn will only work if the object is already linked in the view layer, which is not
+       * fn will only work if the ob is alrdy linked in the view layer, which is not
        * the case here. So we have to do the new-Id relinking ourselves
        * (copy_ob_set_idnew()). */
       LIB_ID_DUP_IS_SUBPROCESS | LIB_ID_DUP_IS_ROOT_ID,
@@ -3992,7 +3991,7 @@ void OB_OT_add_named(WinOpType *ot)
 }
 
 /* Transform Ob to Mouse Op */
-/* Alternate behavior for dropping an asset that positions the appended object(s). */
+/* Alternate behavior for dropping an asset that positions the appended ob(s). */
 static int ob_transform_to_mouse_ex(Cxt *C, WinOp *op)
 {
   Main *main = cxt_data_main(C);
@@ -4051,18 +4050,18 @@ static int ob_transform_to_mouse_ex(Cxt *C, WinOp *op)
       ed_ob_location_from_view(C, cursor);
       ed_view3d_cursor3d_position(C, mval, false, cursor);
 
-      /* Use the active objects location since this is the ID which the user selected to drop.
-       * This transforms all selected objects, so that dropping a single object which links in
+      /* Use the active objects location since this is the Id which the user sel to drop.
+       * This transforms all sel obs, so that dropping a single ob which links in
        * other objects will have their relative transformation preserved.
-       * For example a child/parent relationship or other objects used with a bool mod.
+       * For example a child/parent relationship or other obs used with a bool mod.
        *
-       * The caller is responsible for ensuring the selection state gives useful results.
-       * Link/append does this using #FILE_AUTOSELECT. */
-      ED_view3d_snap_selected_to_location(C, cursor, V3D_AROUND_ACTIVE);
+       * The caller is responsible for ensuring the sel state gives useful results.
+       * Link/append does this using FILE_AUTOSEL. */
+      ed_view3d_snap_sel_to_location(C, cursor, V3D_AROUND_ACTIVE);
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void OB_OT_transform_to_mouse(WinOpType *ot)
@@ -4103,23 +4102,18 @@ void OB_OT_transform_to_mouse(WinOpType *ot)
 
   prop = api_def_float_matrix(
       ot->sapi, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
-  RNA_def_pro_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  api_def_pro_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 
-  object_add_drop_xy_props(ot);
+  ob_add_drop_xy_props(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Join Object Operator
- * \{ */
-
-static bool object_join_poll(bContext *C)
+/* Join Ob Op */
+static bool ob_join_poll(Cxt *C)
 {
-  Object *ob = CTX_data_active_object(C);
+  Object *ob = cxt_data_active_ob(C);
 
-  if (ob == nullptr || ob->data == nullptr || ID_IS_LINKED(ob) || ID_IS_OVERRIDE_LIBRARY(ob) ||
-      ID_IS_OVERRIDE_LIBRARY(ob->data))
+  if (ob == nullptr || ob->data == nullptr || ID_IS_LINKED(ob) || ID_IS_OVERRIDE_LIB(ob) ||
+      ID_IS_OVERRIDE_LIB(ob->data))
   {
     return false;
   }
@@ -4130,23 +4124,23 @@ static bool object_join_poll(bContext *C)
   return false;
 }
 
-static int object_join_exec(bContext *C, wmOperator *op)
+static int ob_join_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Object *ob = CTX_data_active_object(C);
+  Main *main = cxt_data_main(C);
+  Ob *ob = cxt_data_active_ob(C);
 
   if (ob->mode & OB_MODE_EDIT) {
-    BKE_report(op->reports, RPT_ERROR, "This data does not support joining in edit mode");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "This data does not support joining in edit mode");
+    return OP_CANCELLED;
   }
-  if (BKE_object_obdata_is_libdata(ob)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot edit external library data");
-    return OPERATOR_CANCELLED;
+  if (dune_ob_obdata_is_libdata(ob)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot edit external lib data");
+    return OP_CANCELLED;
   }
-  if (!BKE_lib_override_library_id_is_user_deletable(bmain, &ob->id)) {
+  if (!dune_lib_override_lib_id_is_user_deletable(main, &ob->id)) {
     dune_reportf(op->reports,
                 RPT_WARNING,
-                "Cannot edit object '%s' as it is used by override collections",
+                "Cannot edit ob '%s' as it is used by override collections",
                 ob->id.name + 2);
     return OP_CANCELLED;
   }
@@ -4174,21 +4168,21 @@ static int object_join_exec(bContext *C, wmOperator *op)
   }
 
   if (ret & OP_FINISHED) {
-    /* Even though internally failure to invert is accounted for with a fallback,
+    /* Tho internally failure to invert is accounted for with a fallback,
      * show a warning since the result may not be what the user expects. See #80077.
      *
      * Failure to invert the matrix is typically caused by zero scaled axes
      * (which can be caused by constraints, even if the input scale isn't zero).
      *
-     * Internally the join functions use #invert_m4_m4_safe_ortho which creates
+     * Internally the join fns use invert_m4_m4_safe_ortho which creates
      * an inevitable matrix from one that has one or more degenerate axes.
      *
      * In most cases we don't worry about special handling for non-inevitable matrices however for
      * joining objs there may be flat 2D objects where it's not obvious the scale is zero.
-     * In this case, using #invert_m4_m4_safe_ortho works as well as we can expect,
+     * In this case, using invert_m4_m4_safe_ortho works as well as we can expect,
      * joining the contents, flattening on the axis that's zero scaled.
      * If the zero scale is removed, the data on this axis remains un-scaled
-     * (something that wouldn't work for #minvert_m4_m4_safe). */
+     * (something that wouldn't work for minvert_m4_m4_safe). */
     float imat_test[4][4];
     if (!invert_m4_m4(imat_test, ob->ob_to_world)) {
       dune_report(op->reports,
@@ -4266,10 +4260,10 @@ void OB_OT_join_shapes(WinOpType *ot)
   /* ids */
   ot->name = "Join as Shapes";
   ot->description = "Copy the current resulting shape of another selected object to this one";
-  ot->idname = "OBJECT_OT_join_shapes";
+  ot->idname = "OB_OT_join_shapes";
 
-  /* api callbacks */
-  ot->exec = join_shapes_exec;
+  /* api cbs */
+  ot->ex = join_shapes_ex;
   ot->poll = join_shapes_poll;
 
   /* flags */
