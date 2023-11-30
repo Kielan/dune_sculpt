@@ -69,14 +69,14 @@ static Img **bake_ob_img_get_array(Obg *ob)
  * needed to make job totally thread-safe */
 struct MultiresBakerJobData {
   MultiresBakerJobData *next, *prev;
-  /* material aligned image array (for per-face bake img) */
+  /* material aligned img array (for per-face bake img) */
   struct {
-    Image **array;
+    Img **array;
     int len;
   } ob_image;
   DerivedMesh *lores_dm, *hires_dm;
   int lvl, tot_lvl;
-  ListBase images;
+  List imgs;
 };
 
 /* data passing to multires-baker job */
@@ -97,7 +97,7 @@ struct MultiresBakeJob {
   int number_of_rays;
   /* Bias between ob and start ray point when doing AO baking */
   float bias;
-  /* Number of threads to be used for baking */
+  /* Num of threads to be used for baking */
   int threads;
   /* User scale used to scale displacement when baking derivative map. */
   float user_scale;
@@ -106,9 +106,9 @@ struct MultiresBakeJob {
 static bool multiresbake_check(Cxt *C, WinOp *op)
 {
   Scene *scene = cxt_data_scene(C);
-  Object *ob;
+  Ob *ob;
   Mesh *me;
-  MultiresModifierData *mmd;
+  MultiresModData *mmd;
   bool ok = true;
   int a;
 
