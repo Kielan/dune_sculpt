@@ -3480,85 +3480,85 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       ((Id *)ob->data)->tag &= ~LIB_TAG_DOIT; /* flag not to convert this datablock again */
     }
   }
-  BLI_freelistN(&selected_editable_bases);
+  lib_freelist(&sel_editable_bases);
 
   if (!keep_original) {
     if (mballConverted) {
       /* We need to remove non-basis MBalls first, otherwise we won't be able to detect them if
        * their basis happens to be removed first. */
-      FOREACH_SCENE_OBJECT_BEGIN (scene, ob_mball) {
+      FOREACH_SCENE_OB_BEGIN (scene, ob_mball) {
         if (ob_mball->type == OB_MBALL) {
-          Object *ob_basis = nullptr;
-          if (!BKE_mball_is_basis(ob_mball) &&
-              ((ob_basis = BKE_mball_basis_find(scene, ob_mball)) && (ob_basis->flag & OB_DONE)))
+          Ob *ob_basis = nullptr;
+          if (!dune_mball_is_basis(ob_mball) &&
+              ((ob_basis = dune_mball_basis_find(scene, ob_mball)) && (ob_basis->flag & OB_DONE)))
           {
-            ED_object_base_free_and_unlink(bmain, scene, ob_mball);
+            ed_ob_base_free_and_unlink(main, scene, ob_mball);
           }
         }
       }
-      FOREACH_SCENE_OBJECT_END;
-      FOREACH_SCENE_OBJECT_BEGIN (scene, ob_mball) {
+      FOREACH_SCENE_OB_END;
+      FOREACH_SCENE_OB_BEGIN (scene, ob_mball) {
         if (ob_mball->type == OB_MBALL) {
           if (ob_mball->flag & OB_DONE) {
-            if (BKE_mball_is_basis(ob_mball)) {
-              ED_object_base_free_and_unlink(bmain, scene, ob_mball);
+            if (dune_mball_is_basis(ob_mball)) {
+              ed_ob_base_free_and_unlink(main, scene, ob_mball);
             }
           }
         }
       }
-      FOREACH_SCENE_OBJECT_END;
+      FOREACH_SCENE_OB_END;
     }
-    /* Remove curves and meshes converted to Grease Pencil object. */
-    if (gpencilConverted) {
-      FOREACH_SCENE_OBJECT_BEGIN (scene, ob_delete) {
+    /* Remove curves and meshes converted to Pen ob. */
+    if (penConverted) {
+      FOREACH_SCENE_OB_BEGIN (scene, ob_delete) {
         if (ELEM(ob_delete->type, OB_CURVES_LEGACY, OB_MESH)) {
           if (ob_delete->flag & OB_DONE) {
-            ED_object_base_free_and_unlink(bmain, scene, ob_delete);
+            ed_ob_base_free_and_unlink(main, scene, ob_delete);
           }
         }
       }
-      FOREACH_SCENE_OBJECT_END;
+      FOREACH_SCENE_OB_END;
     }
   }
   else {
-    /* Remove Text curves converted to Grease Pencil object to avoid duplicated curves. */
-    if (gpencilCurveConverted) {
-      FOREACH_SCENE_OBJECT_BEGIN (scene, ob_delete) {
+    /* Remove Txt curves converted to Pen ob to avoid dup'd curves. */
+    if (penCurveConverted) {
+      FOREACH_SCENE_OB_BEGIN (scene, ob_delete) {
         if (ELEM(ob_delete->type, OB_CURVES_LEGACY) && (ob_delete->flag & OB_DONE)) {
-          ED_object_base_free_and_unlink(bmain, scene, ob_delete);
+          ed_ob_base_free_and_unlink(main, scene, ob_delete);
         }
       }
-      FOREACH_SCENE_OBJECT_END;
+      FOREACH_SCENE_OB_END;
     }
   }
 
-  // XXX: ED_object_editmode_enter(C, 0);
-  // XXX: exit_editmode(C, EM_FREEDATA|); /* free data, but no undo. */
+  // ed_ob_editmode_enter(C, 0);
+  // exit_editmode(C, EM_FREEDATA|); /* free data, but no undo. */
 
   if (basact) {
     /* active base was changed */
-    ED_object_base_activate(C, basact);
+    ed_ob_base_activate(C, basact);
     view_layer->basact = basact;
   }
   else {
-    BKE_view_layer_synced_ensure(scene, view_layer);
-    Object *object = BKE_view_layer_active_object_get(view_layer);
-    if (object->flag & OB_DONE) {
-      WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, object);
-      WM_event_add_notifier(C, NC_OBJECT | ND_DATA, object);
+    dune_view_layer_synced_ensure(scene, view_layer);
+    Ob *ob = dune_view_layer_active_ob_get(view_layer);
+    if (ob->flag & OB_DONE) {
+      win_ev_add_notifier(C, NC_OB | ND_MOD, ob);
+      win_ev_add_notifier(C, NC_OB | ND_DATA, ob);
     }
   }
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  graph_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+  win_ev_add_notifier(C, NC_OB | ND_DRW, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void object_convert_ui(bContext * /*C*/, wmOperator *op)
+static void ob_convert_ui(Cxt * /*C*/, WinOp *op)
 {
   uiLayout *layout = op->layout;
 
@@ -3567,11 +3567,11 @@ static void object_convert_ui(bContext * /*C*/, wmOperator *op)
   uiItemR(layout, op->ptr, "target", UI_ITEM_NONE, nullptr, ICON_NONE);
   uiItemR(layout, op->ptr, "keep_original", UI_ITEM_NONE, nullptr, ICON_NONE);
 
-  const int target = RNA_enum_get(op->ptr, "target");
+  const int target = api_enum_get(op->ptr, "target");
   if (target == OB_MESH) {
     uiItemR(layout, op->ptr, "merge_customdata", UI_ITEM_NONE, nullptr, ICON_NONE);
   }
-  else if (target == OB_GPENCIL_LEGACY) {
+  else if (target == OB_PEN_LEGACY) {
     uiItemR(layout, op->ptr, "thickness", UI_ITEM_NONE, nullptr, ICON_NONE);
     uiItemR(layout, op->ptr, "angle", UI_ITEM_NONE, nullptr, ICON_NONE);
     uiItemR(layout, op->ptr, "offset", UI_ITEM_NONE, nullptr, ICON_NONE);
@@ -3580,42 +3580,42 @@ static void object_convert_ui(bContext * /*C*/, wmOperator *op)
   }
 }
 
-void OBJECT_OT_convert(wmOperatorType *ot)
+void OB_OT_convert(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Convert To";
-  ot->description = "Convert selected objects to another type";
-  ot->idname = "OBJECT_OT_convert";
+  ot->description = "Convert sel obs to another type";
+  ot->idname = "OB_OT_convert";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = object_convert_exec;
-  ot->poll = object_convert_poll;
-  ot->ui = object_convert_ui;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = ob_convert_ex;
+  ot->poll = ob_convert_poll;
+  ot->ui = ob_convert_ui;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(
-      ot->srna, "target", convert_target_items, OB_MESH, "Target", "Type of object to convert to");
-  prop = RNA_def_boolean(ot->srna,
+  /* props */
+  ot->prop = api_def_enum(
+      ot->sapi, "target", convert_target_items, OB_MESH, "Target", "Type of ob to convert to");
+  prop = api_def_bool(ot->sapi,
                          "keep_original",
                          false,
                          "Keep Original",
-                         "Keep original objects instead of replacing them");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_OBJECT);
+                         "Keep original obs instead of replacing them");
+  api_def_prop_lang_cxt(prop, LANG_CXT_ID_OB);
 
-  RNA_def_boolean(
-      ot->srna,
+  api_def_bool(
+      ot->sapi,
       "merge_customdata",
       true,
       "Merge UVs",
       "Merge UV coordinates that share a vertex to account for imprecision in some modifiers");
 
-  prop = RNA_def_float_rotation(ot->srna,
+  prop = api_def_float_rotation(ot->sapi,
                                 "angle",
                                 0,
                                 nullptr,
@@ -3625,115 +3625,107 @@ void OBJECT_OT_convert(wmOperatorType *ot)
                                 "Threshold to determine ends of the strokes",
                                 DEG2RADF(0.0f),
                                 DEG2RADF(180.0f));
-  RNA_def_property_float_default(prop, DEG2RADF(70.0f));
+  api_def_prop_float_default(prop, DEG2RADF(70.0f));
 
-  RNA_def_int(ot->srna, "thickness", 5, 1, 100, "Thickness", "", 1, 100);
-  RNA_def_boolean(ot->srna, "seams", false, "Only Seam Edges", "Convert only seam edges");
-  RNA_def_boolean(ot->srna, "faces", true, "Export Faces", "Export faces as filled strokes");
-  RNA_def_float_distance(ot->srna,
+  api_def_int(ot->sapi, "thickness", 5, 1, 100, "Thickness", "", 1, 100);
+  api_def_bool(ot->sapi, "seams", false, "Only Seam Edges", "Convert only seam edges");
+  api_def_bool(ot->sapi, "faces", true, "Export Faces", "Export faces as filled strokes");
+  api_def_float_distance(ot->sapi,
                          "offset",
                          0.01f,
                          0.0,
-                         OBJECT_ADD_SIZE_MAXF,
+                         OB_ADD_SIZE_MAXF,
                          "Stroke Offset",
                          "Offset strokes from fill",
                          0.0,
                          100.00);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Duplicate Object Operator
- * \{ */
-
-static void object_add_sync_base_collection(
-    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_src, Object *object_new)
+/* Dup Ob Op */
+static void ob_add_sync_base_collection(
+    Main *main, Scene *scene, ViewLayer *view_layer, Base *base_src, Ob *ob_new)
 {
   if ((base_src != nullptr) && (base_src->flag & BASE_ENABLED_AND_MAYBE_VISIBLE_IN_VIEWPORT)) {
-    BKE_collection_object_add_from(bmain, scene, base_src->object, object_new);
+    dune_collection_ob_add_from(main, scene, base_src->ob, ob_new);
   }
   else {
     LayerCollection *layer_collection = BKE_layer_collection_get_active(view_layer);
-    BKE_collection_object_add(bmain, layer_collection->collection, object_new);
+    dune_collection_ob_add(bmain, layer_collection->collection, object_new);
   }
 }
 
-static void object_add_sync_local_view(Base *base_src, Base *base_new)
+static void ob_add_sync_local_view(Base *base_src, Base *base_new)
 {
   base_new->local_view_bits = base_src->local_view_bits;
 }
 
-static void object_add_sync_rigid_body(Main *bmain, Object *object_src, Object *object_new)
+static void ob_add_sync_rigid_body(Main *main, Ob *ob_src, Ob *ob_new)
 {
-  /* 1) duplis should end up in same collection as the original
-   * 2) Rigid Body sim participants MUST always be part of a collection...
-   */
-  /* XXX: is 2) really a good measure here? */
-  if (object_src->rigidbody_object || object_src->rigidbody_constraint) {
-    LISTBASE_FOREACH (Collection *, collection, &bmain->collections) {
-      if (BKE_collection_has_object(collection, object_src)) {
-        BKE_collection_object_add(bmain, collection, object_new);
+  /* 1) dups should end up in same collection as the original
+   * 2) Rigid Body sim participants MUST always be part of a collection...  */
+  /* is 2) a good measure here? */
+  if (ob_src->rigidbody_ob || ob_src->rigidbody_constraint) {
+    LIST_FOREACH (Collection *, collection, &main->collections) {
+      if (dune_collection_has_ob(collection, ob_src)) {
+        dune_collection_ob_add(main, collection, ob_new);
       }
     }
   }
 }
 
-/**
- * - Assumes `id.new` is correct.
- * - Leaves selection of base/object unaltered.
- * - Sets #ID.newid pointers.
- */
-static void object_add_duplicate_internal(Main *bmain,
-                                          Object *ob,
-                                          const eDupli_ID_Flags dupflag,
-                                          const eLibIDDuplicateFlags duplicate_options,
-                                          Object **r_ob_new)
+/* - Assumes `id.new` is correct.
+ * - Leaves sel of base/ob unaltered.
+ * - Sets Id.newid ptrs */
+static void ob_add_dup_internal(Main *main,
+                                Ob *ob,
+                                const eDupIdFlags dupflag,
+                                const eLibIdDupFlags dup_options,
+                                Ob **r_ob_new)
 {
   if (ob->mode & OB_MODE_POSE) {
     return;
   }
 
-  Object *obn = static_cast<Object *>(
-      ID_NEW_SET(ob, BKE_object_duplicate(bmain, ob, dupflag, duplicate_options)));
+  Ob *obn = static_cast<Ob *>(
+      ID_NEW_SET(ob, dune_ob_dup(main, ob, dupflag, dup_options)));
   if (r_ob_new) {
     *r_ob_new = obn;
   }
-  DEG_id_tag_update(&obn->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  graph_id_tag_update(&obn->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
   return;
 }
 
-static Base *object_add_duplicate_internal(Main *bmain,
-                                           Scene *scene,
-                                           ViewLayer *view_layer,
-                                           Object *ob,
-                                           const eDupli_ID_Flags dupflag,
-                                           const eLibIDDuplicateFlags duplicate_options,
-                                           Object **r_ob_new)
+static Base *ob_add_dup_internal(Main *main,
+                                 Scene *scene,
+                                 ViewLayer *view_layer,
+                                 Ob *ob,
+                                 const eDupIdFlags dupflag,
+                                 const eLibIdDupFlags dup_options,
+                                 Ob **r_ob_new)
 {
-  Object *object_new = nullptr;
-  object_add_duplicate_internal(bmain, ob, dupflag, duplicate_options, &object_new);
+  Ob *ob_new = nullptr;
+  ob_add_dup_internal(main, ob, dupflag, dup_options, &ob_new);
   if (r_ob_new) {
-    *r_ob_new = object_new;
+    *r_ob_new = ob_new;
   }
-  if (object_new == nullptr) {
+  if (ob_new == nullptr) {
     return nullptr;
   }
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Base *base_src = BKE_view_layer_base_find(view_layer, ob);
-  object_add_sync_base_collection(bmain, scene, view_layer, base_src, object_new);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Base *base_new = BKE_view_layer_base_find(view_layer, object_new);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Base *base_src = dune_view_layer_base_find(view_layer, ob);
+  ob_add_sync_base_collection(main, scene, view_layer, base_src, ob_new);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Base *base_new = dune_view_layer_base_find(view_layer, ob_new);
   if (base_src && base_new) {
-    object_add_sync_local_view(base_src, base_new);
+    ob_add_sync_local_view(base_src, base_new);
   }
-  object_add_sync_rigid_body(bmain, ob, object_new);
+  ob_add_sync_rigid_body(main, ob, ob_new);
   return base_new;
 }
 
-Base *ED_object_add_duplicate(
-    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base, const eDupli_ID_Flags dupflag)
+Base *ed_ob_add_dup(
+    Main *main, Scene *scene, ViewLayer *view_layer, Base *base, const eDupIdFlags dupflag)
 {
   Base *basen;
   Object *ob;
