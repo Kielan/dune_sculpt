@@ -3932,137 +3932,129 @@ static int ob_add_named_ex(Cxt *C, WinOp *op)
 
   copy_ob_set_idnew(C);
 
-  /* TODO(sergey): Only update relations for the current scene. */
-  DEG_relations_tag_update(bmain);
+  /* TODO: Only update relations for the current scene. */
+  graph_tag_update(main);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
-  ED_outliner_select_sync_from_object_tag(C);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
-  PropertyRNA *prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
-  if (RNA_property_is_set(op->ptr, prop_matrix)) {
-    Object *ob_add = basen->object;
-    RNA_property_float_get_array(op->ptr, prop_matrix, &ob_add->object_to_world[0][0]);
-    BKE_object_apply_mat4(ob_add, ob_add->object_to_world, true, true);
+  ApiProp *prop_matrix = api_struct_find_prop(op->ptr, "matrix");
+  if (api_prop_is_set(op->ptr, prop_matrix)) {
+    Ob *ob_add = basen->ob;
+    api_prop_float_get_array(op->ptr, prop_matrix, &ob_add->ob_to_world[0][0]);
+    dune_ob_apply_mat4(ob_add, ob_add->ob_to_world, true, true);
 
-    DEG_id_tag_update(&ob_add->id, ID_RECALC_TRANSFORM);
+    graph_id_tag_update(&ob_add->id, ID_RECALC_TRANSFORM);
   }
-  else if (CTX_wm_region_view3d(C)) {
+  else if (cxt_win_rgn_view3d(C)) {
     int mval[2];
-    if (object_add_drop_xy_get(C, op, &mval)) {
-      ED_object_location_from_view(C, basen->object->loc);
-      ED_view3d_cursor3d_position(C, mval, false, basen->object->loc);
+    if (ob_add_drop_xy_get(C, op, &mval)) {
+      ed_ob_location_from_view(C, basen->ob->loc);
+      ed_view3d_cursor3d_position(C, mval, false, basen->ob->loc);
     }
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_add_named(wmOperatorType *ot)
+void OB_OT_add_named(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Add Object";
-  ot->description = "Add named object";
-  ot->idname = "OBJECT_OT_add_named";
+  /* ids */
+  ot->name = "Add Ob";
+  ot->description = "Add named ob";
+  ot->idname = "OB_OT_add_named";
 
-  /* api callbacks */
-  ot->invoke = object_add_drop_xy_generic_invoke;
-  ot->exec = object_add_named_exec;
-  ot->poll = ED_operator_objectmode_poll_msg;
+  /* api cbs */
+  ot->invoke = ob_add_drop_xy_generic_invoke;
+  ot->ex = ob_add_named_ex;
+  ot->poll = ed_op_obmode_poll_msg;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  PropertyRNA *prop;
-  RNA_def_boolean(ot->srna,
+  ApiProp *prop;
+  api_def_bool(ot->sapi,
                   "linked",
                   false,
                   "Linked",
-                  "Duplicate object but not object data, linking to the original data");
+                  "Dup ob but not ob data, linking to the original data");
 
-  WM_operator_properties_id_lookup(ot, true);
+  win_op_props_id_lookup(ot, true);
 
-  prop = RNA_def_float_matrix(
-      ot->srna, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  prop = api_def_float_matrix(
+      ot->sapi, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
+  api_def_prop_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 
-  object_add_drop_xy_props(ot);
+  ob_add_drop_xy_props(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Transform Object to Mouse Operator
- * \{ */
-
-/**
- * Alternate behavior for dropping an asset that positions the appended object(s).
- */
-static int object_transform_to_mouse_exec(bContext *C, wmOperator *op)
+/* Transform Ob to Mouse Op */
+/* Alternate behavior for dropping an asset that positions the appended object(s). */
+static int ob_transform_to_mouse_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
-  Object *ob = reinterpret_cast<Object *>(
-      WM_operator_properties_id_lookup_from_name_or_session_uuid(bmain, op->ptr, ID_OB));
+  Ob *ob = reinterpret_cast<Ob *>(
+      win_op_props_id_lookup_from_name_or_session_uuid(main, op->ptr, ID_OB));
 
   if (!ob) {
-    BKE_view_layer_synced_ensure(scene, view_layer);
-    ob = BKE_view_layer_active_object_get(view_layer);
+    dune_view_layer_synced_ensure(scene, view_layer);
+    ob = dune_view_layer_active_ob_get(view_layer);
   }
 
   if (ob == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Object not found");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Ob not found");
+    return OP_CANCELLED;
   }
 
-  /* Don't transform a linked object. There's just nothing to do here in this case, so return
-   * #OPERATOR_FINISHED. */
-  if (!BKE_id_is_editable(bmain, &ob->id)) {
-    return OPERATOR_FINISHED;
+  /* Don't transform a linked ob. There's just nothing to do here in this case, so return
+   * OP_FINISHED. */
+  if (!dune_id_is_editable(main, &ob->id)) {
+    return OP_FINISHED;
   }
 
-  /* Ensure the locations are updated so snap reads the evaluated active location. */
-  CTX_data_ensure_evaluated_depsgraph(C);
+  /* Ensure the locations are updated so snap reads the eval active location. */
+  cxt_data_ensure_eval_graph(C);
 
-  PropertyRNA *prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
-  if (RNA_property_is_set(op->ptr, prop_matrix)) {
-    ObjectsInViewLayerParams params = {0};
-    uint objects_len;
-    Object **objects = BKE_view_layer_array_selected_objects_params(
-        view_layer, nullptr, &objects_len, &params);
+  ApiProp *prop_matrix = api_struct_find_prop(op->ptr, "matrix");
+  if (api_prop_is_set(op->ptr, prop_matrix)) {
+    ObInViewLayerParams params = {0};
+    uint obs_len;
+    Ob **obs = dune_view_layer_array_sel_obs_params(
+        view_layer, nullptr, &obs_len, &params);
 
     float matrix[4][4];
-    RNA_property_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
+    api_prop_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
 
     float mat_src_unit[4][4];
     float mat_dst_unit[4][4];
     float final_delta[4][4];
 
-    normalize_m4_m4(mat_src_unit, ob->object_to_world);
+    normalize_m4_m4(mat_src_unit, ob->ob_to_world);
     normalize_m4_m4(mat_dst_unit, matrix);
     invert_m4(mat_src_unit);
     mul_m4_m4m4(final_delta, mat_dst_unit, mat_src_unit);
 
-    ED_object_xform_array_m4(objects, objects_len, final_delta);
+    ed_ob_xform_array_m4(obs, obs_len, final_delta);
 
-    MEM_freeN(objects);
+    mem_free(obs);
   }
-  else if (CTX_wm_region_view3d(C)) {
+  else if (cxt_win_rgn_view3d(C)) {
     int mval[2];
-    if (object_add_drop_xy_get(C, op, &mval)) {
+    if (ob_add_drop_xy_get(C, op, &mval)) {
       float cursor[3];
-      ED_object_location_from_view(C, cursor);
-      ED_view3d_cursor3d_position(C, mval, false, cursor);
+      ed_ob_location_from_view(C, cursor);
+      ed_view3d_cursor3d_position(C, mval, false, cursor);
 
       /* Use the active objects location since this is the ID which the user selected to drop.
-       *
        * This transforms all selected objects, so that dropping a single object which links in
        * other objects will have their relative transformation preserved.
-       * For example a child/parent relationship or other objects used with a boolean modifier.
+       * For example a child/parent relationship or other objects used with a bool mod.
        *
        * The caller is responsible for ensuring the selection state gives useful results.
        * Link/append does this using #FILE_AUTOSELECT. */
@@ -4073,31 +4065,31 @@ static int object_transform_to_mouse_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void OBJECT_OT_transform_to_mouse(wmOperatorType *ot)
+void OB_OT_transform_to_mouse(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Place Object Under Mouse";
-  ot->description = "Snap selected item(s) to the mouse location";
-  ot->idname = "OBJECT_OT_transform_to_mouse";
+  /* ids */
+  ot->name = "Place Ob Under Mouse";
+  ot->description = "Snap sel item(s) to the mouse location";
+  ot->idname = "OB_OT_transform_to_mouse";
 
-  /* api callbacks */
-  ot->invoke = object_add_drop_xy_generic_invoke;
-  ot->exec = object_transform_to_mouse_exec;
-  ot->poll = ED_operator_objectmode_poll_msg;
+  /* api cbs */
+  ot->invoke = ob_add_drop_xy_generic_invoke;
+  ot->ex = ob_transform_to_mouse_ex;
+  ot->poll = ed_op_obmode_poll_msg;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  PropertyRNA *prop;
-  prop = RNA_def_string(
-      ot->srna,
+  ApiProp *prop;
+  prop = api_def_string(
+      ot->sapi,
       "name",
       nullptr,
       MAX_ID_NAME - 2,
       "Name",
-      "Object name to place (uses the active object when this and 'session_uuid' are unset)");
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
-  prop = RNA_def_int(ot->srna,
+      "Ob name to place (uses the active ob when this and 'session_uuid' are unset)");
+  api_def_prop_flag(prop, (PropFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
+  prop = api_def_int(ot->sapi,
                      "session_uuid",
                      0,
                      INT32_MIN,
@@ -4107,11 +4099,11 @@ void OBJECT_OT_transform_to_mouse(wmOperatorType *ot)
                      "'name' are unset)",
                      INT32_MIN,
                      INT32_MAX);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
+  api_def_prop_flag(prop, (PropFlag)(PROP_SKIP_SAVE | PROP_HIDDEN));
 
-  prop = RNA_def_float_matrix(
-      ot->srna, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
-  RNA_def_property_flag(prop, (PropertyFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
+  prop = api_def_float_matrix(
+      ot->sapi, "matrix", 4, 4, nullptr, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
+  RNA_def_pro_flag(prop, (PropFlag)(PROP_HIDDEN | PROP_SKIP_SAVE));
 
   object_add_drop_xy_props(ot);
 }
