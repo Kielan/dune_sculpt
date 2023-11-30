@@ -3031,20 +3031,20 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
         }
       }
     }
-    else if (ob->type == OB_MESH && target == OB_GPENCIL_LEGACY) {
+    else if (ob->type == OB_MESH && target == OB_PEN_LEGACY) {
       ob->flag |= OB_DONE;
 
       /* Create a new pen ob and copy transformations. */
       ushort local_view_bits = (v3d && v3d->localvd) ? v3d->local_view_uuid : 0;
       float loc[3], size[3], rot[3][3], eul[3];
       float matrix[4][4];
-      mat4_to_loc_rot_size(loc, rot, size, ob->object_to_world);
+      mat4_to_loc_rot_size(loc, rot, size, ob->ob_to_world);
       mat3_to_eul(eul, rot);
 
-      Object *ob_gpencil = ED_gpencil_add_ob(C, loc, local_view_bits);
-      copy_v3_v3(ob_gpencil->loc, loc);
-      copy_v3_v3(ob_gpencil->rot, eul);
-      copy_v3_v3(ob_gpencil->scale, size);
+      Object *ob_pen = ed_pen_add_ob(C, loc, local_view_bits);
+      copy_v3_v3(ob_pen->loc, loc);
+      copy_v3_v3(ob_pen->rot, eul);
+      copy_v3_v3(ob_pen->scale, size);
       unit_m4(matrix);
       /* Set object in 3D mode. */
       PenData *pd = (PenData *)ob_pen->data;
@@ -3078,149 +3078,148 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       }
       ob_pen->actcol = actcol;
     }
-    else if (U.experimental.use_grease_pencil_version3 && ob->type == OB_GPENCIL_LEGACY &&
-             target == OB_GREASE_PENCIL)
+    else if (U.experimental.use_pen_version3 && ob->type == OB_GPENCIL_LEGACY &&
+             target == OB_PEN)
     {
       ob->flag |= OB_DONE;
 
-      bGPdata *gpd = static_cast<bGPdata *>(ob->data);
+      PenData *pd = static_cast<PenData *>(ob->data);
 
       if (keep_original) {
-        BLI_assert_unreachable();
+        lib_assert_unreachable();
       }
       else {
         newob = ob;
       }
 
-      GreasePencil *new_grease_pencil = static_cast<GreasePencil *>(
-          BKE_id_new(bmain, ID_GP, newob->id.name + 2));
-      newob->data = new_grease_pencil;
-      newob->type = OB_GREASE_PENCIL;
+      Pen *new_pen = static_cast<Pen *>(
+          dune_id_new(main, ID_PEN, newob->id.name + 2));
+      newob->data = new_pen;
+      newob->type = OB_PEN;
 
-      bke::greasepencil::convert::legacy_gpencil_to_grease_pencil(
-          *bmain, *new_grease_pencil, *gpd);
+      dune::pen::convert::legacy_pen_to_penc(
+          *main, *new_pen, *pd);
 
-      BKE_object_free_derived_caches(newob);
-      BKE_object_free_modifiers(newob, 0);
+      dune_ob_free_derived_caches(newob);
+      dune_ob_free_mods(newob, 0);
     }
     else if (target == OB_CURVES) {
       ob->flag |= OB_DONE;
 
-      Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-      bke::GeometrySet geometry;
+      Ob *ob_eval = graph_get_eval_ob(graph, ob);
+      dune::GeometrySet geometry;
       if (ob_eval->runtime->geometry_set_eval != nullptr) {
         geometry = *ob_eval->runtime->geometry_set_eval;
       }
 
       if (geometry.has_curves()) {
         if (keep_original) {
-          basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-          newob = basen->object;
+          basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+          newob = basen->ob;
 
           /* Decrement original curve's usage count. */
           Curve *legacy_curve = static_cast<Curve *>(newob->data);
           id_us_min(&legacy_curve->id);
 
           /* Make a copy of the curve. */
-          newob->data = BKE_id_copy(bmain, &legacy_curve->id);
+          newob->data = dune_id_copy(bmain, &legacy_curve->id);
         }
         else {
           newob = ob;
         }
 
         const Curves *curves_eval = geometry.get_curves();
-        Curves *new_curves = static_cast<Curves *>(BKE_id_new(bmain, ID_CV, newob->id.name + 2));
+        Curves *new_curves = static_cast<Curves *>(dune_id_new(main, ID_CV, newob->id.name + 2));
 
         newob->data = new_curves;
         newob->type = OB_CURVES;
 
         new_curves->geometry.wrap() = curves_eval->geometry.wrap();
-        BKE_object_material_from_eval_data(bmain, newob, &curves_eval->id);
+        dune_ob_material_from_eval_data(main, newob, &curves_eval->id);
 
-        BKE_object_free_derived_caches(newob);
-        BKE_object_free_modifiers(newob, 0);
+        dune_ob_free_derived_caches(newob);
+        dune_ob_free_mods(newob, 0);
       }
       else {
-        BKE_reportf(
-            op->reports, RPT_WARNING, "Object '%s' has no evaluated curves data", ob->id.name + 2);
+        dune_reportf(
+            op->reports, RPT_WARNING, "Ob '%s' has no eval'd curves data", ob->id.name + 2);
       }
     }
     else if (ob->type == OB_MESH && target == OB_POINTCLOUD) {
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         /* Decrement original mesh's usage count. */
         Mesh *me = static_cast<Mesh *>(newob->data);
         id_us_min(&me->id);
 
         /* Make a new copy of the mesh. */
-        newob->data = BKE_id_copy(bmain, &me->id);
+        newob->data = dune_id_copy(main, &me->id);
       }
       else {
         newob = ob;
       }
 
-      BKE_mesh_to_pointcloud(bmain, depsgraph, scene, newob);
+      dune_mesh_to_pointcloud(main, graph, scene, newob);
 
       if (newob->type == OB_POINTCLOUD) {
-        BKE_object_free_modifiers(newob, 0); /* after derivedmesh calls! */
-        ED_rigidbody_object_remove(bmain, scene, newob);
+        dune_ob_free_mods(newob, 0); /* after derivedmesh calls! */
+        ed_rigidbody_ob_remove(main, scene, newob);
       }
     }
     else if (ob->type == OB_MESH) {
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         /* Decrement original mesh's usage count. */
         Mesh *me = static_cast<Mesh *>(newob->data);
         id_us_min(&me->id);
 
         /* Make a new copy of the mesh. */
-        newob->data = BKE_id_copy(bmain, &me->id);
+        newob->data = dune_id_copy(main, &me->id);
       }
       else {
         newob = ob;
-        DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
+        graph_id_tag_update(&ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIM);
       }
 
       /* make new mesh data from the original copy */
-      /* NOTE: get the mesh from the original, not from the copy in some
-       * cases this doesn't give correct results (when MDEF is used for eg)
-       */
-      const Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-      const Mesh *mesh_eval = BKE_object_get_evaluated_mesh(ob_eval);
-      Mesh *new_mesh = mesh_eval ? BKE_mesh_copy_for_eval(mesh_eval) :
-                                   BKE_mesh_new_nomain(0, 0, 0, 0);
-      BKE_object_material_from_eval_data(bmain, newob, &new_mesh->id);
+      /* Get the mesh from the original, not from the copy in some
+       * cases this doesn't give correct results (when MDEF is used for eg) */
+      const Ob *ob_eval = dune_get_eval_ob(graph, ob);
+      const Mesh *mesh_eval = dune_ob_get_eval_mesh(ob_eval);
+      Mesh *new_mesh = mesh_eval ? dune_mesh_copy_for_eval(mesh_eval) :
+                                   dune_mesh_new_nomain(0, 0, 0, 0);
+      dune_ob_material_from_eval_data(main, newob, &new_mesh->id);
       /* Anonymous attributes shouldn't be available on the applied geometry. */
       new_mesh->attributes_for_write().remove_anonymous();
       if (do_merge_customdata) {
-        BKE_mesh_merge_customdata_for_apply_modifier(new_mesh);
+        dune_mesh_merge_customdata_for_apply_mod(new_mesh);
       }
 
       Mesh *ob_data_mesh = (Mesh *)newob->data;
-      BKE_mesh_nomain_to_mesh(new_mesh, ob_data_mesh, newob);
+      dune_mesh_nomain_to_mesh(new_mesh, ob_data_mesh, newob);
 
-      BKE_object_free_modifiers(newob, 0); /* after derivedmesh calls! */
+      dune_ob_free_mods(newob, 0); /* after derivedmesh calls! */
     }
     else if (ob->type == OB_FONT) {
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = du_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         /* Decrement original curve's usage count. */
         id_us_min(&((Curve *)newob->data)->id);
 
         /* Make a new copy of the curve. */
-        newob->data = BKE_id_copy(bmain, static_cast<ID *>(ob->data));
+        newob->data = dune_id_copy(main, static_cast<Id *>(ob->data));
       }
       else {
         newob = ob;
@@ -3228,8 +3227,8 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
 
       Curve *cu = static_cast<Curve *>(newob->data);
 
-      Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-      BKE_vfont_to_curve_ex(ob_eval,
+      Ob *ob_eval = graph_get_eval_ob(graph, ob);
+      dune_vfont_to_curve_ex(ob_eval,
                             static_cast<Curve *>(ob_eval->data),
                             FO_EDIT,
                             &cu->nurb,
@@ -3261,40 +3260,40 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       if (!keep_original) {
         /* other users */
         if (ID_REAL_USERS(&cu->id) > 1) {
-          for (ob1 = static_cast<Object *>(bmain->objects.first); ob1;
-               ob1 = static_cast<Object *>(ob1->id.next))
+          for (ob1 = static_cast<Ob *>(main->obs.first); ob1;
+               ob1 = static_cast<Ob *>(ob1->id.next))
           {
             if (ob1->data == ob->data) {
               ob1->type = OB_CURVES_LEGACY;
-              DEG_id_tag_update(&ob1->id,
-                                ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
+              graph_id_tag_update(&ob1->id,
+                                ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIM);
             }
           }
         }
       }
 
-      LISTBASE_FOREACH (Nurb *, nu, &cu->nurb) {
+      LIST_FOREACH (Nurb *, nu, &cu->nurb) {
         nu->charidx = 0;
       }
 
       cu->flag &= ~CU_3D;
-      BKE_curve_dimension_update(cu);
+      dune_curve_dimension_update(cu);
 
       if (target == OB_MESH) {
-        /* No assumption should be made that the resulting objects is a mesh, as conversion can
+        /* No assumption should be made that the resulting obs is a mesh, as conversion can
          * fail. */
-        object_data_convert_curve_to_mesh(bmain, depsgraph, newob);
+        ob_data_convert_curve_to_mesh(main, graph, newob);
         /* Meshes doesn't use the "curve cache". */
-        BKE_object_free_curve_cache(newob);
+        dune_ob_free_curve_cache(newob);
       }
-      else if (target == OB_GPENCIL_LEGACY) {
+      else if (target == OB_PEN_LEGACY) {
         ushort local_view_bits = (v3d && v3d->localvd) ? v3d->local_view_uuid : 0;
-        Object *ob_gpencil = ED_gpencil_add_object(C, newob->loc, local_view_bits);
-        copy_v3_v3(ob_gpencil->rot, newob->rot);
-        copy_v3_v3(ob_gpencil->scale, newob->scale);
-        BKE_gpencil_convert_curve(bmain, scene, ob_gpencil, newob, false, 1.0f, 0.0f);
-        gpencilConverted = true;
-        gpencilCurveConverted = true;
+        Ob *ob_pen = ed_pen_add_ob(C, newob->loc, local_view_bits);
+        copy_v3_v3(ob_pen->rot, newob->rot);
+        copy_v3_v3(ob_pen->scale, newob->scale);
+        dune_pen_convert_curve(main, scene, ob_pen, newob, false, 1.0f, 0.0f);
+        penConverted = true;
+        penCurveConverted = true;
         basen = nullptr;
       }
     }
@@ -3303,50 +3302,49 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
 
       if (target == OB_MESH) {
         if (keep_original) {
-          basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-          newob = basen->object;
+          basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+          newob = basen->ob;
 
           /* Decrement original curve's usage count. */
           id_us_min(&((Curve *)newob->data)->id);
 
           /* make a new copy of the curve */
-          newob->data = BKE_id_copy(bmain, static_cast<ID *>(ob->data));
+          newob->data = dune_id_copy(main, static_cast<Id *>(ob->data));
         }
         else {
           newob = ob;
         }
 
-        /* No assumption should be made that the resulting objects is a mesh, as conversion can
+        /* No assumption should be made that the resulting objs is a mesh, as conversion can
          * fail. */
-        object_data_convert_curve_to_mesh(bmain, depsgraph, newob);
+        ob_data_convert_curve_to_mesh(main, graph, newob);
         /* Meshes don't use the "curve cache". */
-        BKE_object_free_curve_cache(newob);
+        dune_ob_free_curve_cache(newob);
       }
-      else if (target == OB_GPENCIL_LEGACY) {
+      else if (target == OB_PEN_LEGACY) {
         if (ob->type != OB_CURVES_LEGACY) {
           ob->flag &= ~OB_DONE;
-          BKE_report(op->reports, RPT_ERROR, "Convert Surfaces to Grease Pencil is not supported");
+          dune_report(op->reports, RPT_ERROR, "Convert Surfaces to Pen is not supported");
         }
         else {
-          /* Create a new grease pencil object and copy transformations.
-           * Nurbs Surface are not supported.
-           */
+          /* Create a new pen obj and copy transformations.
+           * Nurbs Surface are not supported.  */
           ushort local_view_bits = (v3d && v3d->localvd) ? v3d->local_view_uuid : 0;
-          Object *ob_gpencil = ED_gpencil_add_object(C, ob->loc, local_view_bits);
-          copy_v3_v3(ob_gpencil->rot, ob->rot);
-          copy_v3_v3(ob_gpencil->scale, ob->scale);
-          BKE_gpencil_convert_curve(bmain, scene, ob_gpencil, ob, false, 1.0f, 0.0f);
-          gpencilConverted = true;
+          Ob *ob_pen = ed_pen_add_ob(C, ob->loc, local_view_bits);
+          copy_v3_v3(ob_pen->rot, ob->rot);
+          copy_v3_v3(ob_pen->scale, ob->scale);
+          dune_pen_convert_curve(main, scene, ob_pen, ob, false, 1.0f, 0.0f);
+          penConverted = true;
         }
       }
     }
     else if (ob->type == OB_MBALL && target == OB_MESH) {
-      Object *baseob;
+      Ob *baseob;
 
-      base->flag &= ~BASE_SELECTED;
-      ob->base_flag &= ~BASE_SELECTED;
+      base->flag &= ~BASE_SEL;
+      ob->base_flag &= ~BASE_SEL;
 
-      baseob = BKE_mball_basis_find(scene, ob);
+      baseob = dune_mball_basis_find(scene, ob);
 
       if (ob != baseob) {
         /* If mother-ball is converting it would be marked as done later. */
@@ -3354,15 +3352,15 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       }
 
       if (!(baseob->flag & OB_DONE)) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, baseob);
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, baseob);
         newob = basen->object;
 
         MetaBall *mb = static_cast<MetaBall *>(newob->data);
         id_us_min(&mb->id);
 
-        /* Find the evaluated mesh of the basis metaball object. */
-        Object *object_eval = DEG_get_evaluated_object(depsgraph, baseob);
-        Mesh *mesh = BKE_mesh_new_from_object_to_bmain(bmain, depsgraph, object_eval, true);
+        /* Find the eval'd mesh of the basis metaball object. */
+        Ob *ob_eval = graph_get_eval_ob(graph, baseob);
+        Mesh *mesh = dune_mesh_new_from_ob_to_main(main, graph, ob_eval, true);
 
         id_us_plus(&mesh->id);
         newob->data = mesh;
@@ -3380,90 +3378,89 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
       ob->flag |= OB_DONE;
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         /* Decrement original point cloud's usage count. */
         PointCloud *pointcloud = static_cast<PointCloud *>(newob->data);
         id_us_min(&pointcloud->id);
 
         /* Make a new copy of the point cloud. */
-        newob->data = BKE_id_copy(bmain, &pointcloud->id);
+        newob->data = dune_id_copy(main, &pointcloud->id);
       }
       else {
         newob = ob;
       }
 
-      BKE_pointcloud_to_mesh(bmain, depsgraph, scene, newob);
+      dune_pointcloud_to_mesh(main, graph, scene, newob);
 
       if (newob->type == OB_MESH) {
-        BKE_object_free_modifiers(newob, 0); /* after derivedmesh calls! */
-        ED_rigidbody_object_remove(bmain, scene, newob);
+        dune_ob_free_mods(newob, 0); /* after derivedmesh calls! */
+        ed_rigidbody_ob_remove(main, scene, newob);
       }
     }
     else if (ob->type == OB_CURVES && target == OB_MESH) {
       ob->flag |= OB_DONE;
 
-      Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-      bke::GeometrySet geometry;
+      Ob *ob_eval = graph_get_eval_ob(graph, ob);
+      dune::GeometrySet geometry;
       if (ob_eval->runtime->geometry_set_eval != nullptr) {
         geometry = *ob_eval->runtime->geometry_set_eval;
       }
 
       if (keep_original) {
-        basen = duplibase_for_convert(bmain, depsgraph, scene, view_layer, base, nullptr);
-        newob = basen->object;
+        basen = dupbase_for_convert(main, graph, scene, view_layer, base, nullptr);
+        newob = basen->ob;
 
         Curves *curves = static_cast<Curves *>(newob->data);
         id_us_min(&curves->id);
 
-        newob->data = BKE_id_copy(bmain, &curves->id);
+        newob->data = dune_id_copy(main, &curves->id);
       }
       else {
         newob = ob;
       }
 
-      Mesh *new_mesh = static_cast<Mesh *>(BKE_id_new(bmain, ID_ME, newob->id.name + 2));
+      Mesh *new_mesh = static_cast<Mesh *>(dune_id_new(main, ID_ME, newob->id.name + 2));
       newob->data = new_mesh;
       newob->type = OB_MESH;
 
       if (const Mesh *mesh_eval = geometry.get_mesh()) {
-        BKE_mesh_nomain_to_mesh(BKE_mesh_copy_for_eval(mesh_eval), new_mesh, newob);
-        BKE_object_material_from_eval_data(bmain, newob, &mesh_eval->id);
+        dune_mesh_nomain_to_mesh(dune_mesh_copy_for_eval(mesh_eval), new_mesh, newob);
+        dune_ob_material_from_eval_data(main, newob, &mesh_eval->id);
         new_mesh->attributes_for_write().remove_anonymous();
       }
       else if (const Curves *curves_eval = geometry.get_curves()) {
-        bke::AnonymousAttributePropagationInfo propagation_info;
+        dune::AnonymousAttributePropagationInfo propagation_info;
         propagation_info.propagate_all = false;
-        Mesh *mesh = bke::curve_to_wire_mesh(curves_eval->geometry.wrap(), propagation_info);
+        Mesh *mesh = dune::curve_to_wire_mesh(curves_eval->geometry.wrap(), propagation_info);
         if (!mesh) {
-          mesh = BKE_mesh_new_nomain(0, 0, 0, 0);
+          mesh = dune_mesh_new_nomain(0, 0, 0, 0);
         }
-        BKE_mesh_nomain_to_mesh(mesh, new_mesh, newob);
-        BKE_object_material_from_eval_data(bmain, newob, &curves_eval->id);
+        dune_mesh_nomain_to_mesh(mesh, new_mesh, newob);
+        dune_ob_material_from_eval_data(main, newob, &curves_eval->id);
       }
       else {
-        BKE_reportf(op->reports,
+        dune_reportf(op->reports,
                     RPT_WARNING,
-                    "Object '%s' has no evaluated mesh or curves data",
+                    "Ob '%s' has no eval'd mesh or curves data",
                     ob->id.name + 2);
       }
 
-      BKE_object_free_derived_caches(newob);
-      BKE_object_free_modifiers(newob, 0);
+      dune_ob_free_derived_caches(newob);
+      dune_ob_free_mods(newob, 0);
     }
     else {
       continue;
     }
 
-    /* Ensure new object has consistent material data with its new obdata. */
+    /* Ensure new ob has consistent material data with its new obdata. */
     if (newob) {
-      BKE_object_materials_test(bmain, newob, static_cast<ID *>(newob->data));
+      dune_ob_materials_test(main, newob, static_cast<Id *>(newob->data));
     }
 
     /* tag obdata if it was been changed */
-
-    /* If the original object is active then make this object active */
+    /* If the original ob is active then make this ob active */
     if (basen) {
       if (ob == obact) {
         /* Store new active base to update view layer. */
@@ -3474,13 +3471,13 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
     }
 
     if (!keep_original && (ob->flag & OB_DONE)) {
-      /* NOTE: Tag transform for update because object parenting to curve with path is handled
+      /* Tag transform for update bc ob parenting to curve with path is handled
        * differently from all other cases. Converting curve to mesh and mesh to curve will likely
        * affect the way children are evaluated.
        * It is not enough to tag only geometry and rely on the curve parenting relations because
        * this relation is lost when curve is converted to mesh. */
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM);
-      ((ID *)ob->data)->tag &= ~LIB_TAG_DOIT; /* flag not to convert this datablock again */
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_TRANSFORM);
+      ((Id *)ob->data)->tag &= ~LIB_TAG_DOIT; /* flag not to convert this datablock again */
     }
   }
   BLI_freelistN(&selected_editable_bases);
