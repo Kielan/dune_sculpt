@@ -3881,60 +3881,56 @@ void OB_OT_dup(WinOpType *ot)
   api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-/* Add Named Object Operator
- *
- * Use for drag & drop.
- * \{ */
+/* Add Named Ob Op
+ * Use for drag & drop */
 
-static int object_add_named_exec(bContext *C, wmOperator *op)
+static int ob_add_named_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const bool linked = RNA_boolean_get(op->ptr, "linked");
-  const eDupli_ID_Flags dupflag = (linked) ? (eDupli_ID_Flags)0 : (eDupli_ID_Flags)U.dupflag;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const bool linked = api_bool_get(op->ptr, "linked");
+  const eDupIdFlags dupflag = (linked) ? (eDupIdFlags)0 : (eDupIdFlags)U.dupflag;
 
-  /* Find object, create fake base. */
-
-  Object *ob = reinterpret_cast<Object *>(
-      WM_operator_properties_id_lookup_from_name_or_session_uuid(bmain, op->ptr, ID_OB));
+  /* Find ob create fake base */
+  Ob *ob = reinterpret_cast<Ob *>(
+      win_op_props_id_lookup_from_name_or_session_uuid(main, op->ptr, ID_OB));
 
   if (ob == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Object not found");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Ob not found");
+    return OP_CANCELLED;
   }
 
-  /* prepare dupli */
-  Base *basen = object_add_duplicate_internal(
-      bmain,
+  /* prepare dup */
+  Base *basen = ob_add_dup_internal(
+      main,
       scene,
       view_layer,
       ob,
       dupflag,
-      /* Sub-process flag because the new-ID remapping (#BKE_libblock_relink_to_newid()) in this
-       * function will only work if the object is already linked in the view layer, which is not
-       * the case here. So we have to do the new-ID relinking ourselves
-       * (#copy_object_set_idnew()).
-       */
-      LIB_ID_DUPLICATE_IS_SUBPROCESS | LIB_ID_DUPLICATE_IS_ROOT_ID,
+      /* Sub-process flag bc the new-Id remapping (dune_libblock_relink_to_newid()) in this
+       * fn will only work if the object is already linked in the view layer, which is not
+       * the case here. So we have to do the new-Id relinking ourselves
+       * (copy_ob_set_idnew()). */
+      LIB_ID_DUP_IS_SUBPROCESS | LIB_ID_DUP_IS_ROOT_ID,
       nullptr);
 
   if (basen == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Object could not be duplicated");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Ob could not be dup'd");
+    return OP_CANCELLED;
   }
 
-  basen->object->visibility_flag &= ~OB_HIDE_VIEWPORT;
-  /* Do immediately, as #copy_object_set_idnew() below operates on visible objects. */
-  BKE_base_eval_flags(basen);
+  basen->ob->visibility_flag &= ~OB_HIDE_VIEWPORT;
+  /* Do immediate bc copy_ob_set_idnew() below ops on visible obs. */
+  dune_base_eval_flags(basen);
 
-  /* object_add_duplicate_internal() doesn't deselect other objects, unlike object_add_common() or
-   * BKE_view_layer_base_deselect_all(). */
-  ED_object_base_deselect_all(scene, view_layer, nullptr, SEL_DESELECT);
-  ED_object_base_select(basen, BA_SELECT);
-  ED_object_base_activate(C, basen);
+  /* object_add_duplicate_internal() doesn't desel other obs, unlike ob_add_common() or
+   * dune_view_layer_base_desel_all(). */
+  ed_ob_base_desel_all(scene, view_layer, nullptr, SEL_DESEL);
+  ed_ob_base_sel(basen, BA_SEL);
+  ed_ob_base_activate(C, basen);
 
-  copy_object_set_idnew(C);
+  copy_ob_set_idnew(C);
 
   /* TODO(sergey): Only update relations for the current scene. */
   DEG_relations_tag_update(bmain);
