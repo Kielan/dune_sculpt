@@ -3534,7 +3534,6 @@ static int ob_convert_ex(Cxt *C, WinOp *op)
 
   // ed_ob_editmode_enter(C, 0);
   // exit_editmode(C, EM_FREEDATA|); /* free data, but no undo. */
-
   if (basact) {
     /* active base was changed */
     ed_ob_base_activate(C, basact);
@@ -3728,164 +3727,161 @@ Base *ed_ob_add_dup(
     Main *main, Scene *scene, ViewLayer *view_layer, Base *base, const eDupIdFlags dupflag)
 {
   Base *basen;
-  Object *ob;
+  Ob *ob;
 
-  basen = object_add_duplicate_internal(bmain,
-                                        scene,
-                                        view_layer,
-                                        base->object,
-                                        dupflag,
-                                        LIB_ID_DUPLICATE_IS_SUBPROCESS |
-                                            LIB_ID_DUPLICATE_IS_ROOT_ID,
-                                        nullptr);
+  basen = ob_add_dup_internal(main,
+                              scene,
+                              view_layer,
+                              base->ob,
+                              dupflag,
+                              LIB_ID_DUP_IS_SUBPROCESS |
+                              LIB_ID_DUPLICATE_IS_ROOT_ID,
+                              nullptr);
   if (basen == nullptr) {
     return nullptr;
   }
 
-  ob = basen->object;
+  ob = basen->ob;
 
-  /* Link own references to the newly duplicated data #26816.
-   * Note that this function can be called from edit-mode code, in which case we may have to
+  /* Link own refs to the newly dup data #26816
+   * Note that this fn can be called from edit-mode code, in which case we may have to
    * enforce remapping obdata (by default this is forbidden in edit mode). */
-  const int remap_flag = BKE_object_is_in_editmode(ob) ? ID_REMAP_FORCE_OBDATA_IN_EDITMODE : 0;
-  BKE_libblock_relink_to_newid(bmain, &ob->id, remap_flag);
+  const int remap_flag = dune_ob_is_in_editmode(ob) ? ID_REMAP_FORCE_OBDATA_IN_EDITMODE : 0;
+  dune_libblock_relink_to_newid(main, &ob->id, remap_flag);
 
   /* Correct but the caller must do this. */
-  // DAG_relations_tag_update(bmain);
+  // graph_tag_update(main);
 
   if (ob->data != nullptr) {
-    DEG_id_tag_update_ex(bmain, (ID *)ob->data, ID_RECALC_EDITORS);
+    graph_id_tag_update_ex(main, (Id *)ob->data, ID_RECALC_EDITORS);
   }
 
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  dune_main_id_newptr_and_tag_clear(main);
 
   return basen;
 }
 
-/* contextual operator dupli */
-static int duplicate_exec(bContext *C, wmOperator *op)
+/* contextual op dup */
+static int dup_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const bool linked = RNA_boolean_get(op->ptr, "linked");
-  const eDupli_ID_Flags dupflag = (linked) ? (eDupli_ID_Flags)0 : (eDupli_ID_Flags)U.dupflag;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const bool linked = api_bool_get(op->ptr, "linked");
+  const eDupIdFlags dupflag = (linked) ? (eDupIdFlags)0 : (eDupIdFlags)U.dupflag;
 
-  /* We need to handle that here ourselves, because we may duplicate several objects, in which case
-   * we also want to remap pointers between those... */
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  /* Must handle here ourselves bc we may dup several obs, in which case
+   * we also want to remap ptrs between those... */
+  dune_main_id_newptr_and_tag_clear(main);
 
-  /* Duplicate the selected objects, remember data needed to process
+  /* Dup the sel obs, remember data needed to process
    * after the sync. */
-  struct DuplicateObjectLink {
+  struct DupObLink {
     Base *base_src = nullptr;
-    Object *object_new = nullptr;
+    Ob *ob_new = nullptr;
 
-    DuplicateObjectLink(Base *base_src) : base_src(base_src) {}
+    DupObLink(Base *base_src) : base_src(base_src) {}
   };
 
-  blender::Vector<DuplicateObjectLink> object_base_links;
-  CTX_DATA_BEGIN (C, Base *, base, selected_bases) {
-    object_base_links.append(DuplicateObjectLink(base));
+  dune::Vector<DupObLink> ob_base_links;
+  CXT_DATA_BEGIN (C, Base *, base, se_bases) {
+    ob_base_links.append(DupObLink(base));
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  bool new_objects_created = false;
-  for (DuplicateObjectLink &link : object_base_links) {
-    object_add_duplicate_internal(bmain,
-                                  link.base_src->object,
-                                  dupflag,
-                                  LIB_ID_DUPLICATE_IS_SUBPROCESS | LIB_ID_DUPLICATE_IS_ROOT_ID,
-                                  &link.object_new);
-    if (link.object_new) {
-      new_objects_created = true;
+  bool new_obs_created = false;
+  for (DupObLink &link : ob_base_links) {
+    ob_add_dup_internal(main,
+                        link.base_src->object,
+                        dupflag,
+                        LIB_ID_DUP_IS_SUBPROCESS | LIB_ID_DUP_IS_ROOT_ID,
+                        &link.ob_new);
+    if (link.ob_new) {
+      new_obs_created = true;
     }
   }
 
-  if (!new_objects_created) {
-    return OPERATOR_CANCELLED;
+  if (!new_obs_created) {
+    return OP_CANCELLED;
   }
 
   /* Sync that could tag the view_layer out of sync. */
-  for (DuplicateObjectLink &link : object_base_links) {
+  for (DupObLink &link : ob_base_links) {
     /* note that this is safe to do with this context iterator,
      * the list is made in advance */
-    ED_object_base_select(link.base_src, BA_DESELECT);
+    ed_ob_base_sel(link.base_src, BA_DESEL);
     if (link.object_new) {
-      object_add_sync_base_collection(bmain, scene, view_layer, link.base_src, link.object_new);
-      object_add_sync_rigid_body(bmain, link.base_src->object, link.object_new);
+      ob_add_sync_base_collection(main, scene, view_layer, link.base_src, link.ob_new);
+      ob_add_sync_rigid_body(main, link.base_src->ob, link.ob_new);
     }
   }
 
   /* Sync the view layer. Everything else should not tag the view_layer out of sync. */
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  const Base *active_base = BKE_view_layer_active_base_get(view_layer);
-  for (DuplicateObjectLink &link : object_base_links) {
-    if (!link.object_new) {
+  dune_view_layer_synced_ensure(scene, view_layer);
+  const Base *active_base = dune_view_layer_active_base_get(view_layer);
+  for (DupObLink &link : ob_base_links) {
+    if (!link.ob_new) {
       continue;
     }
 
-    Base *base_new = BKE_view_layer_base_find(view_layer, link.object_new);
-    BLI_assert(base_new);
-    ED_object_base_select(base_new, BA_SELECT);
+    Base *base_new = dune_view_layer_base_find(view_layer, link.ob_new);
+    lib_assert(base_new);
+    ed_ob_base_sel(base_new, BA_SEL);
     if (active_base == link.base_src) {
-      ED_object_base_activate(C, base_new);
+      ed_ob_base_activate(C, base_new);
     }
 
-    if (link.object_new->data) {
-      DEG_id_tag_update(static_cast<ID *>(link.object_new->data), 0);
+    if (link.ob_new->data) {
+      graph_id_tag_update(static_cast<Id *>(link.object_new->data), 0);
     }
 
-    object_add_sync_local_view(link.base_src, base_new);
+    ob_add_sync_local_view(link.base_src, base_new);
   }
 
   /* Note that this will also clear newid pointers and tags. */
-  copy_object_set_idnew(C);
+  copy_ob_set_idnew(C);
 
-  ED_outliner_select_sync_from_object_tag(C);
+  ed_outliner_sel_sync_from_ob_tag(C);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE | ID_RECALC_SELECT);
+  graph_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE | ID_RECALC_SEL);
 
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_SEL, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void OBJECT_OT_duplicate(wmOperatorType *ot)
+void OB_OT_dup(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
-  ot->name = "Duplicate Objects";
-  ot->description = "Duplicate selected objects";
-  ot->idname = "OBJECT_OT_duplicate";
+  /* ids */
+  ot->name = "Dup Obs";
+  ot->description = "Dup sel objects";
+  ot->idname = "OB_OT_dup";
 
-  /* api callbacks */
-  ot->exec = duplicate_exec;
-  ot->poll = ED_operator_objectmode;
+  /* api cbs */
+  ot->ex = dup_ex;
+  ot->poll = ED_op_obmode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* to give to transform */
-  prop = RNA_def_boolean(ot->srna,
-                         "linked",
-                         false,
-                         "Linked",
-                         "Duplicate object but not object data, linking to the original data");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->sapi,
+                      "linked",
+                      false,
+                      "Linked",
+                      "Dup ob but not ob data, linking to the original data");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_enum(
-      ot->srna, "mode", rna_enum_transform_mode_type_items, TFM_TRANSLATION, "Mode", "");
-  RNA_def_property_flag(prop, PROP_HIDDEN);
+  prop = api_def_enum(
+      ot->sapi, "mode", api_enum_transform_mode_type_items, TFM_LANG, "Mode", "");
+  api_def_prop_flag(prop, PROP_HIDDEN);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Add Named Object Operator
+/* Add Named Object Operator
  *
  * Use for drag & drop.
  * \{ */
