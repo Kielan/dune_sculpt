@@ -4,27 +4,25 @@
 extern "C" {
 #endif
 
-struct Object;
-struct StructRNA;
-struct bContext;
-struct wmOperator;
-struct wmOperatorType;
+struct Ob;
+struct ApiStruct;
+struct Cxt;
+struct WinOp;
+struct WinOpType;
 
-struct ModifierData;
+struct ModData;
 
 /* add hook menu */
-enum eObject_Hook_Add_Mode {
-  OBJECT_ADDHOOK_NEWOB = 1,
-  OBJECT_ADDHOOK_SELOB,
-  OBJECT_ADDHOOK_SELOB_BONE,
+enum eObjHookAddMode {
+  OB_ADDHOOK_NEWOB = 1,
+  OB_ADDHOOK_SELOB,
+  OB_ADDHOOK_SELOB_BONE,
 };
 
 /* internal exports only */
-
-/* object_transform.cc */
-
-void OBJECT_OT_location_clear(struct wmOperatorType *ot);
-void OBJECT_OT_rotation_clear(struct wmOperatorType *ot);
+/* ob_transform.cc */
+void OB_OT_location_clear(struct wmOperatorType *ot);
+void OB_OT_rotation_clear(struct wmOperatorType *ot);
 void OBJECT_OT_scale_clear(struct wmOperatorType *ot);
 void OBJECT_OT_origin_clear(struct wmOperatorType *ot);
 void OBJECT_OT_visual_transform_apply(struct wmOperatorType *ot);
