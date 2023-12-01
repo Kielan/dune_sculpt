@@ -13,7 +13,7 @@ struct WinOpType;
 struct ModData;
 
 /* add hook menu */
-enum eObjHookAddMode {
+enum eObHookAddMode {
   OB_ADDHOOK_NEWOB = 1,
   OB_ADDHOOK_SELOB,
   OB_ADDHOOK_SELOB_BONE,
@@ -21,68 +21,62 @@ enum eObjHookAddMode {
 
 /* internal exports only */
 /* ob_transform.cc */
-void OB_OT_location_clear(struct wmOperatorType *ot);
-void OB_OT_rotation_clear(struct wmOperatorType *ot);
-void OBJECT_OT_scale_clear(struct wmOperatorType *ot);
-void OBJECT_OT_origin_clear(struct wmOperatorType *ot);
-void OBJECT_OT_visual_transform_apply(struct wmOperatorType *ot);
-void OBJECT_OT_transform_apply(struct wmOperatorType *ot);
-void OBJECT_OT_parent_inverse_apply(wmOperatorType *ot);
-void OBJECT_OT_transform_axis_target(struct wmOperatorType *ot);
-void OBJECT_OT_origin_set(struct wmOperatorType *ot);
+void OB_OT_location_clear(struct WinOpType *ot);
+void OB_OT_rotation_clear(struct WinOpType *ot);
+void OB_OT_scale_clear(struct WinOpType *ot);
+void OB_OT_origin_clear(struct WinOpType *ot);
+void OB_OT_visual_transform_apply(struct WinOpType *ot);
+void OB_OT_transform_apply(struct WinOpType *ot);
+void OB_OT_parent_inverse_apply(WinOpType *ot);
+void OB_OT_transform_axis_target(struct WinOpType *ot);
+void OB_OT_origin_set(struct WinOpType *ot);
 
-/* `object_relations.cc` */
+/* `ob_relations.cc` */
+void OB_OT_parent_set(struct WinOpType *ot);
+void OB_OT_parent_no_inverse_set(struct WinOpType *ot);
+void OB_OT_parent_clear(struct WinOpType *ot);
+void OB_OT_vertex_parent_set(struct WinOpType *ot);
+void OB_OT_track_set(struct WinOpType *ot);
+void OB_OT_track_clear(struct WinOpType *ot);
+void OB_OT_make_local(struct WinOpType *ot);
+void OB_OT_make_single_user(struct WinOpType *ot);
+void OB_OT_make_links_scene(struct WinOpType *ot);
+void OBJ_OT_make_links_data(struct WinOpType *ot);
 
-void OBJECT_OT_parent_set(struct wmOperatorType *ot);
-void OBJECT_OT_parent_no_inverse_set(struct wmOperatorType *ot);
-void OBJECT_OT_parent_clear(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_parent_set(struct wmOperatorType *ot);
-void OBJECT_OT_track_set(struct wmOperatorType *ot);
-void OBJECT_OT_track_clear(struct wmOperatorType *ot);
-void OBJECT_OT_make_local(struct wmOperatorType *ot);
-void OBJECT_OT_make_single_user(struct wmOperatorType *ot);
-void OBJECT_OT_make_links_scene(struct wmOperatorType *ot);
-void OBJECT_OT_make_links_data(struct wmOperatorType *ot);
-
-void OBJECT_OT_make_override_library(struct wmOperatorType *ot);
-void OBJECT_OT_reset_override_library(struct wmOperatorType *ot);
-void OBJECT_OT_clear_override_library(struct wmOperatorType *ot);
+void OB_OT_make_override_lib(struct WinOpType *ot);
+void OB_OT_reset_override_lib(struct WinOpType *ot);
+void OB_OT_clear_override_lib(struct WinOpType *ot);
 
 /**
  * Used for drop-box.
- * Assigns to object under cursor, only first material slot.
- */
-void OBJECT_OT_drop_named_material(struct wmOperatorType *ot);
-/**
- * Used for drop-box.
- * Assigns to object under cursor, creates a new geometry nodes modifier.
- */
-void OBJECT_OT_drop_geometry_nodes(struct wmOperatorType *ot);
-/**
- * \note Only for empty-image objects, this operator is needed
- */
-void OBJECT_OT_unlink_data(struct wmOperatorType *ot);
+ * Assigns to ob under cursor, only first material slot. */
+void O_OT_drop_named_material(struct WinOpType *ot);
+/* Used for drop-box.
+ * Assigns to ob under cursor, creates a new geometry nodes mod */
+void OB_OT_drop_geometry_nodes(struct WinOpType *ot);
+/* Op is only for empty img obs */
+void OB_OT_unlink_data(struct WinOpType *ot);
 
 /* object_edit.cc */
 
-void OBJECT_OT_hide_view_set(struct wmOperatorType *ot);
-void OBJECT_OT_hide_view_clear(struct wmOperatorType *ot);
-void OBJECT_OT_hide_collection(struct wmOperatorType *ot);
-void OBJECT_OT_mode_set(struct wmOperatorType *ot);
-void OBJECT_OT_mode_set_with_submode(struct wmOperatorType *ot);
-void OBJECT_OT_editmode_toggle(struct wmOperatorType *ot);
-void OBJECT_OT_posemode_toggle(struct wmOperatorType *ot);
-void OBJECT_OT_shade_smooth(struct wmOperatorType *ot);
-void OBJECT_OT_shade_smooth_by_angle(struct wmOperatorType *ot);
-void OBJECT_OT_shade_flat(struct wmOperatorType *ot);
-void OBJECT_OT_paths_calculate(struct wmOperatorType *ot);
-void OBJECT_OT_paths_update(struct wmOperatorType *ot);
-void OBJECT_OT_paths_clear(struct wmOperatorType *ot);
-void OBJECT_OT_paths_update_visible(struct wmOperatorType *ot);
-void OBJECT_OT_forcefield_toggle(struct wmOperatorType *ot);
+void OBJECT_OT_hide_view_set(struct WinOpType *ot);
+void OBJECT_OT_hide_view_clear(struct WinOpType *ot);
+void OBJECT_OT_hide_collection(struct WinOpType *ot);
+void OBJECT_OT_mode_set(struct WinOpType *ot);
+void OBJECT_OT_mode_set_with_submode(struct WinOpType *ot);
+void OBJECT_OT_editmode_toggle(struct WinOpType *ot);
+void OBJECT_OT_posemode_toggle(struct WinOpType *ot);
+void OBJECT_OT_shade_smooth(struct WinOpType *ot);
+void OBJECT_OT_shade_smooth_by_angle(struct WinOpType *ot);
+void OBJECT_OT_shade_flat(struct WinOpType *ot);
+void OBJECT_OT_paths_calculate(struct WinOpType *ot);
+void OBJECT_OT_paths_update(struct WinOpType *ot);
+void OBJECT_OT_paths_clear(struct WinOpType *ot);
+void OBJECT_OT_paths_update_visible(struct WinOpType *ot);
+void OBJECT_OT_forcefield_toggle(struct WinOpType *ot);
 
-void OBJECT_OT_move_to_collection(struct wmOperatorType *ot);
-void OBJECT_OT_link_to_collection(struct wmOperatorType *ot);
+void OBJECT_OT_move_to_collection(struct WinOpType *ot);
+void OBJECT_OT_link_to_collection(struct WinOpType *ot);
 
 void OBJECT_OT_transfer_mode(struct wmOperatorType *ot);
 
