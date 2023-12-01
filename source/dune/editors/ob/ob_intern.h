@@ -41,14 +41,13 @@ void OB_OT_track_clear(struct WinOpType *ot);
 void OB_OT_make_local(struct WinOpType *ot);
 void OB_OT_make_single_user(struct WinOpType *ot);
 void OB_OT_make_links_scene(struct WinOpType *ot);
-void OBJ_OT_make_links_data(struct WinOpType *ot);
+void OB_OT_make_links_data(struct WinOpType *ot);
 
 void OB_OT_make_override_lib(struct WinOpType *ot);
 void OB_OT_reset_override_lib(struct WinOpType *ot);
 void OB_OT_clear_override_lib(struct WinOpType *ot);
 
-/**
- * Used for drop-box.
+/* Used for drop-box.
  * Assigns to ob under cursor, only first material slot. */
 void O_OT_drop_named_material(struct WinOpType *ot);
 /* Used for drop-box.
@@ -256,55 +255,52 @@ void CONSTRAINT_OT_obsolver_set_inverse(struct WinOpType *ot);
 void CONSTRAINT_OT_obsolver_clear_inverse(struct WinOpType *ot);
 void CONSTRAINT_OT_followpath_path_anim(struct WinOpType *ot);
 
-/* object_vgroup.cc */
-void OBJECT_OT_vertex_group_add(struct WinOpType *ot);
-void OBJECT_OT_vertex_group_remove(struct WinOpType *ot);
-void OBJECT_OT_vertex_group_assign(struct WinOpType *ot);
-void OBJECT_OT_vertex_group_assign_new(struct WinOpType *ot);
-void OBJECT_OT_vertex_group_remove_from(struct WinOpType *ot);
-void OBJECT_OT_vertex_group_select(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_deselect(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_copy_to_selected(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_copy(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_normalize(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_normalize_all(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_levels(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_lock(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_invert(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_smooth(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_clean(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_quantize(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_limit_total(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_mirror(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_set_active(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_sort(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_move(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_weight_paste(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_weight_delete(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_weight_set_active(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_weight_normalize_active_vertex(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_weight_copy(struct wmOperatorType *ot);
+/* ob_vgroup.cc */
+void OB_OT_vertex_group_add(struct WinOpType *ot);
+void OB_OT_vertex_group_remove(struct WinOpType *ot);
+void OB_OT_vertex_group_assign(struct WinOpType *ot);
+void OB_OT_vertex_group_assign_new(struct WinOpType *ot);
+void OB_OT_vertex_group_remove_from(struct WinOpType *ot);
+void OB_OT_vertex_group_sel(struct WinOpType *ot);
+void OB_OT_vertex_group_desel(struct WinOpType *ot);
+void OB_OT_vertex_group_copy_to_sel(struct WinOpType *ot);
+void OB_OT_vertex_group_copy(struct WinOpType *ot);
+void OB_OT_vertex_group_normalize(struct WinOpType *ot);
+void OB_OT_vertex_group_normalize_all(struct WinOpType *ot);
+void OB_OT_vertex_group_levels(struct WinOpType *ot);
+void OB_OT_vertex_group_lock(struct WinOpType *ot);
+void OB_OT_vertex_group_invert(struct WinOpType *ot);
+void OB_OT_vertex_group_smooth(struct WinOpType *ot);
+void OB_OT_vertex_group_clean(struct WinOpType *ot);
+void OB_OT_vertex_group_quantize(struct WinOpType *ot);
+void OB_OT_vertex_group_limit_total(struct WinOpType *ot);
+void OB_OT_vertex_group_mirror(struct WinOpType *ot);
+void OB_OT_vertex_group_set_active(struct WinOpType *ot);
+void OB_OT_vertex_group_sort(struct WinOpType *ot);
+void OB_OT_vertex_group_move(struct WinOpType *ot);
+void OB_OT_vertex_weight_paste(struct WinOpType *ot);
+void OB_OT_vertex_weight_delete(struct WinOpType *ot);
+void OB_OT_vertex_weight_set_active(struct WinOpType *ot);
+void OB_OT_vertex_weight_normalize_active_vertex(struct WinOpType *ot);
+void OB_OT_vertex_weight_copy(struct WinOpType *ot);
 
-/* `object_warp.cc` */
+/* `ob_warp.cc` */
+void TRANSFORM_OT_vertex_warp(struct WinOpType *ot);
 
-void TRANSFORM_OT_vertex_warp(struct wmOperatorType *ot);
+/* `ob_shapekey.cc` */
+void OB_OT_shape_key_add(struct WinOpType *ot);
+void OB_OT_shape_key_remove(struct WinOpType *ot);
+void OB_OT_shape_key_clear(struct WinOpType *ot);
+void OB_OT_shape_key_retime(struct WinOpType *ot);
+void OB_OT_shape_key_mirror(struct WinOpType *ot);
+void OB_OT_shape_key_move(struct WinOpType *ot);
 
-/* `object_shapekey.cc` */
-
-void OBJECT_OT_shape_key_add(struct wmOperatorType *ot);
-void OBJECT_OT_shape_key_remove(struct wmOperatorType *ot);
-void OBJECT_OT_shape_key_clear(struct wmOperatorType *ot);
-void OBJECT_OT_shape_key_retime(struct wmOperatorType *ot);
-void OBJECT_OT_shape_key_mirror(struct wmOperatorType *ot);
-void OBJECT_OT_shape_key_move(struct wmOperatorType *ot);
-
-/* `object_collection.cc` */
-
-void OBJECT_OT_collection_add(struct wmOperatorType *ot);
-void OBJECT_OT_collection_link(struct wmOperatorType *ot);
-void OBJECT_OT_collection_remove(struct wmOperatorType *ot);
-void OBJECT_OT_collection_unlink(struct wmOperatorType *ot);
-void OB_OT_collection_objects_select(struct wmOperatorType *ot);
+/* `ob_collection.cc` */
+void OB_OT_collection_add(struct WjnOpType *ot);
+void OB_OT_collection_link(struct WinOpType *ot);
+void OB_OT_collection_remove(struct WinOpType *ot);
+void OB_OT_collection_unlink(struct WinOpType *ot);
+void OB_OT_collection_obs_sel(struct WinOpType *ot);
 
 /* `ob_bake.cc` */
 void OB_OT_bake_img(WinOpType *ot);
