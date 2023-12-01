@@ -57,227 +57,211 @@ void OB_OT_drop_geometry_nodes(struct WinOpType *ot);
 /* Op is only for empty img obs */
 void OB_OT_unlink_data(struct WinOpType *ot);
 
-/* object_edit.cc */
+/* ob_edit.cc */
+void OB_OT_hide_view_set(struct WinOpType *ot);
+void OB_OT_hide_view_clear(struct WinOpType *ot);
+void OB_OT_hide_collection(struct WinOpType *ot);
+void OB_OT_mode_set(struct WinOpType *ot);
+void OB_OT_mode_set_with_submode(struct WinOpType *ot);
+void OB_OT_editmode_toggle(struct WinOpType *ot);
+void OB_OT_posemode_toggle(struct WinOpType *ot);
+void OB_OT_shade_smooth(struct WinOpType *ot);
+void OB_OT_shade_smooth_by_angle(struct WinOpType *ot);
+void OB_OT_shade_flat(struct WinOpType *ot);
+void OB_OT_paths_calc(struct WinOpType *ot);
+void OB_OT_paths_update(struct WinOpType *ot);
+void OB_OT_paths_clear(struct WinOpType *ot);
+void OB_OT_paths_update_visible(struct WinOpType *ot);
+void OB_OT_forcefield_toggle(struct WinOpType *ot);
 
-void OBJECT_OT_hide_view_set(struct WinOpType *ot);
-void OBJECT_OT_hide_view_clear(struct WinOpType *ot);
-void OBJECT_OT_hide_collection(struct WinOpType *ot);
-void OBJECT_OT_mode_set(struct WinOpType *ot);
-void OBJECT_OT_mode_set_with_submode(struct WinOpType *ot);
-void OBJECT_OT_editmode_toggle(struct WinOpType *ot);
-void OBJECT_OT_posemode_toggle(struct WinOpType *ot);
-void OBJECT_OT_shade_smooth(struct WinOpType *ot);
-void OBJECT_OT_shade_smooth_by_angle(struct WinOpType *ot);
-void OBJECT_OT_shade_flat(struct WinOpType *ot);
-void OBJECT_OT_paths_calculate(struct WinOpType *ot);
-void OBJECT_OT_paths_update(struct WinOpType *ot);
-void OBJECT_OT_paths_clear(struct WinOpType *ot);
-void OBJECT_OT_paths_update_visible(struct WinOpType *ot);
-void OBJECT_OT_forcefield_toggle(struct WinOpType *ot);
+void OB_OT_move_to_collection(struct WinOpType *ot);
+void OB_OT_link_to_collection(struct WinOpType *ot);
 
-void OBJECT_OT_move_to_collection(struct WinOpType *ot);
-void OBJECT_OT_link_to_collection(struct WinOpType *ot);
+void OB_OT_transfer_mode(struct WinOpType *ot);
 
-void OBJECT_OT_transfer_mode(struct wmOperatorType *ot);
+/* `ob_sel.cc` */
+void OB_OT_sel_all(struct WinOpType *ot);
+void OB_OT_sel_random(struct WinOpType *ot);
+void OB_OT_sel_by_type(struct WinOpType *ot);
+void OB_OT_sel_linked(struct WinOpType *ot);
+void OB_OT_sel_grouped(struct WinOpType *ot);
+void OB_OT_sel_mirror(struct WinOpType *ot);
+void OB_OT_sel_more(struct WinOpType *ot);
+void OB_OT_sel_less(struct WinOpType *ot);
+void OB_OT_sel_same_collection(struct WinOpType *ot);
 
-/* `object_select.cc` */
+/* ob_add.cc */
+void OB_OT_add(struct WinOpType *ot);
+void OB_OT_add_named(struct WinOpType *ot);
+void OB_OT_transform_to_mouse(struct WinOpType *ot);
+void OB_OT_metaball_add(struct WinOpType *ot);
+void OB_OT_txt_add(struct WinOpType *ot);
+void OB_OT_armature_add(struct WinOpType *ot);
+void OB_OT_empty_add(struct WinOpType *ot);
+void OB_OT_lightprobe_add(struct WinOpType *ot);
+void OB_OT_drop_named_img(struct WinOpType *ot);
+void OB_OT_pen_add(struct WinOpType *ot);
+void OB_OT_pen_add(struct WinOpType *ot);
+void OB_OT_light_add(struct WinOpType *ot);
+void OB_OT_effector_add(struct WinOpType *ot);
+void OB_OT_camera_add(struct WinOpType *ot);
+void OB_OT_speaker_add(struct WinOpType *ot);
+void OB_OT_curves_random_add(struct WinOpType *ot);
+void OB_OT_curves_empty_hair_add(struct WinOpType *ot);
+void OB_OT_pointcloud_add(struct WinOpType *ot);
+/* Only used as menu. */
+void OB_OT_collection_instance_add(struct WinOpType *ot);
+void OB_OT_collection_external_asset_drop(struct WinOpType *ot);
+void OB_OT_data_instance_add(struct WinOpType *ot);
 
-void OBJECT_OT_select_all(struct wmOperatorType *ot);
-void OBJECT_OT_select_random(struct wmOperatorType *ot);
-void OBJECT_OT_select_by_type(struct wmOperatorType *ot);
-void OBJECT_OT_select_linked(struct wmOperatorType *ot);
-void OBJECT_OT_select_grouped(struct wmOperatorType *ot);
-void OBJECT_OT_select_mirror(struct wmOperatorType *ot);
-void OBJECT_OT_select_more(struct wmOperatorType *ot);
-void OBJECT_OT_select_less(struct wmOperatorType *ot);
-void OBJECT_OT_select_same_collection(struct wmOperatorType *ot);
+void OB_OT_dups_make_real(struct WinOpType *ot);
+void OB_OT_dup(struct WinOpType *ot);
+void OB_OT_delete(struct WinOpType *ot);
+void OB_OT_join(struct WinOpType *ot);
+void OB_OT_join_shapes(struct WinOpType *ot);
+void OB_OT_convert(struct WinOpType *ot);
 
-/* object_add.cc */
+/* `ob_volume.cc` */
+void OB_OT_volume_add(struct WinOpType *ot);
+/* Called by other space types too */
+void OB_OT_volume_import(struct WinOpType *ot);
 
-void OBJECT_OT_add(struct wmOperatorType *ot);
-void OBJECT_OT_add_named(struct wmOperatorType *ot);
-void OBJECT_OT_transform_to_mouse(struct wmOperatorType *ot);
-void OBJECT_OT_metaball_add(struct wmOperatorType *ot);
-void OBJECT_OT_text_add(struct wmOperatorType *ot);
-void OBJECT_OT_armature_add(struct wmOperatorType *ot);
-void OBJECT_OT_empty_add(struct wmOperatorType *ot);
-void OBJECT_OT_lightprobe_add(struct wmOperatorType *ot);
-void OBJECT_OT_drop_named_image(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_add(struct wmOperatorType *ot);
-void OBJECT_OT_grease_pencil_add(struct wmOperatorType *ot);
-void OBJECT_OT_light_add(struct wmOperatorType *ot);
-void OBJECT_OT_effector_add(struct wmOperatorType *ot);
-void OBJECT_OT_camera_add(struct wmOperatorType *ot);
-void OBJECT_OT_speaker_add(struct wmOperatorType *ot);
-void OBJECT_OT_curves_random_add(struct wmOperatorType *ot);
-void OBJECT_OT_curves_empty_hair_add(struct wmOperatorType *ot);
-void OBJECT_OT_pointcloud_add(struct wmOperatorType *ot);
-/**
- * Only used as menu.
- */
-void OBJECT_OT_collection_instance_add(struct wmOperatorType *ot);
-void OBJECT_OT_collection_external_asset_drop(struct wmOperatorType *ot);
-void OBJECT_OT_data_instance_add(struct wmOperatorType *ot);
+/* `ob_hook.cc` */
+void OB_OT_hook_add_selob(struct WinOpType *ot);
+void OB_OT_hook_add_newob(struct WinOpType *ot);
+void OB_OT_hook_remove(struct WinOpType *ot);
+void OB_OT_hook_sel(struct WinOpType *ot);
+void OB_OT_hook_assign(struct WinOpType *ot);
+void OB_OT_hook_reset(struct WinOpType *ot);
+void OB_OT_hook_recenter(struct WinOpType *ot);
 
-void OBJECT_OT_duplicates_make_real(struct wmOperatorType *ot);
-void OBJECT_OT_duplicate(struct wmOperatorType *ot);
-void OBJECT_OT_delete(struct wmOperatorType *ot);
-void OBJECT_OT_join(struct wmOperatorType *ot);
-void OBJECT_OT_join_shapes(struct wmOperatorType *ot);
-void OBJECT_OT_convert(struct wmOperatorType *ot);
+/* `ob_collection.cc` */
+void COLLECTION_OT_create(struct WinOpType *ot);
+void COLLECTION_OT_obs_remove_all(struct WinOpType *ot);
+void COLLECTION_OT_obs_remove(struct WinOpType *ot);
+void COLLECTION_OT_obs_add_active(struct WinOpType *ot);
+void COLLECTION_OT_obs_remove_active(struct WinOpType *ot);
 
-/* `object_volume.cc` */
+/* ob_light_linking_ops.cc */
+void OB_OT_light_linking_receiver_collection_new(struct WinOpType *ot);
+void OB_OT_light_linking_receivers_sel(struct WinOpType *ot);
+void OB_OT_light_linking_receivers_link(struct WinOpType *ot);
 
-void OBJECT_OT_volume_add(struct wmOperatorType *ot);
-/**
- * Called by other space types too.
- */
-void OBJECT_OT_volume_import(struct wmOperatorType *ot);
+void OB_OT_light_linking_blocker_collection_new(struct WinOpType *ot);
+void OB_OT_light_linking_blockers_sel(struct WinOpType *ot);
+void OB_OT_light_linking_blockers_link(struct WinOpType *ot);
 
-/* `object_hook.cc` */
+void OB_OT_light_linking_unlink_from_collection(struct WinOpType *ot);
 
-void OBJECT_OT_hook_add_selob(struct wmOperatorType *ot);
-void OBJECT_OT_hook_add_newob(struct wmOperatorType *ot);
-void OBJECT_OT_hook_remove(struct wmOperatorType *ot);
-void OBJECT_OT_hook_select(struct wmOperatorType *ot);
-void OBJECT_OT_hook_assign(struct wmOperatorType *ot);
-void OBJECT_OT_hook_reset(struct wmOperatorType *ot);
-void OBJECT_OT_hook_recenter(struct wmOperatorType *ot);
+/* `ob_mod.cc` */
+bool edit_mod_poll_generic(struct Cxt *C,
+                           struct ApiStruct *api_type,
+                           int obtype_flag,
+                           bool is_editmode_allowed,
+                           bool is_liboverride_allowed);
+void edit_mod_props(struct WinOpType *ot);
+bool edit_mod_invoke_props(struct Cxt *C, struct WinOp *op);
 
-/* `object_collection.cc` */
+struct ModData *edit_mod_prop_get(struct WinOp *op,
+                                  struct Ob *ob,
+                                  int type);
 
-void COLLECTION_OT_create(struct wmOperatorType *ot);
-void COLLECTION_OT_objects_remove_all(struct wmOperatorType *ot);
-void COLLECTION_OT_objects_remove(struct wmOperatorType *ot);
-void COLLECTION_OT_objects_add_active(struct wmOperatorType *ot);
-void COLLECTION_OT_objects_remove_active(struct wmOperatorType *ot);
+void OB_OT_mod_add(struct WinOpType *ot);
+void OB_OT_mod_remove(struct WinOpType *ot);
+void OB_OT_mod_move_up(struct WinOpType *ot);
+void OB_OT_mod_move_down(struct WinOpType *ot);
+void OB_OT_mod_move_to_index(struct WinOpType *ot);
+void OB_OT_mod_apply(struct WinOpType *ot);
+void OB_OT_mod_apply_as_shapekey(WinOpType *ot);
+void OB_OT_mod_convert(struct WinOpType *ot);
+void OB_OT_mod_copy(struct WinOpType *ot);
+void OB_OT_mod_copy_to_sel(struct WinOpType *ot);
+void OB_OT_mod_set_active(struct WinOpType *ot);
+void OB_OT_multires_subdivide(struct WinOpType *ot);
+void OB_OT_multires_reshape(struct WinOpType *ot);
+void OB_OT_multires_higher_levels_delete(struct WinOpType *ot);
+void OB_OT_multires_base_apply(struct WinOpType *ot);
+void OB_OT_multires_unsubdivide(struct WinOpType *ot);
+void OB_OT_multires_rebuild_subdiv(struct WinOpType *ot);
+void OB_OT_multires_external_save(struct WinOpType *ot);
+void OB_OT_multires_external_pack(struct WinOpType *ot);
+void OB_OT_correctivesmooth_bind(struct WinOpType *ot);
+void OB_OT_meshdeform_bind(struct WinOpType *ot);
+void OB_OT_explode_refresh(struct WinOpType *ot);
+void OB_OT_ocean_bake(struct WinOpType *ot);
+void OB_OT_skin_root_mark(struct WinOpType *ot);
+void OB_OT_skin_loose_mark_clear(struct WinOpType *ot);
+void OB_OT_skin_radii_equalize(struct WinOpType *ot);
+void OB_OT_skin_armature_create(struct WinOpType *ot);
+void OB_OT_laplaciandeform_bind(struct WinOpType *ot);
+void OB_OT_surfacedeform_bind(struct WinOpType *ot);
+void OB_OT_geometry_nodes_input_attribute_toggle(struct WinOpType *ot);
+void OB_OT_geometry_node_tree_copy_assign(struct WinOpType *ot);
 
-/* object_light_linking_ops.cc */
+/* ob_pen_mods.c */
+void OB_OT_pen_mod_add(struct WinOpType *ot);
+void OB_OT_pen_mod_remove(struct WinOpType *ot);
+void OB_OT_pen_mod_move_up(struct WinOpType *ot);
+void OB_OT_pen_mod_move_down(struct WinOpType *ot);
+void OB_OT_pen_mod_move_to_index(struct WinOpType *ot);
+void OB_OT_pen_mod_apply(struct WinOpType *ot);
+void OB_OT_pen_mod_copy(struct WinOpType *ot);
+void OB_OT_pen_mod_copy_to_sel(struct WinOpType *ot);
 
-void OBJECT_OT_light_linking_receiver_collection_new(struct wmOperatorType *ot);
-void OBJECT_OT_light_linking_receivers_select(struct wmOperatorType *ot);
-void OBJECT_OT_light_linking_receivers_link(struct wmOperatorType *ot);
+void PEN_OT_segment_add(struct WinOpType *ot);
+void PEN_OT_segment_remove(struct WinOpType *ot);
+void PEN_OT_segment_move(struct WinOpType *ot);
 
-void OBJECT_OT_light_linking_blocker_collection_new(struct wmOperatorType *ot);
-void OBJECT_OT_light_linking_blockers_select(struct wmOperatorType *ot);
-void OBJECT_OT_light_linking_blockers_link(struct wmOperatorType *ot);
+void PEN_OT_time_segment_add(struct WinOpType *ot);
+void PEN_OT_time_segment_remove(struct WinOpType *ot);
+void PEN_OT_time_segment_move(struct WinOpType *ot);
 
-void OBJECT_OT_light_linking_unlink_from_collection(struct wmOperatorType *ot);
+/* `ob_shader_fx.cc` */
+void OB_OT_shaderfx_add(struct WinOpType *ot);
+void OB_OT_shaderfx_copy(struct WinOpType *ot);
+void OB_OT_shaderfx_remove(struct WinOpType *ot);
+void OB_OT_shaderfx_move_up(struct WinOpType *ot);
+void OB_OT_shaderfx_move_down(struct WinOpType *ot);
+void OB_OT_shaderfx_move_to_index(struct WinOpType *ot);
 
-/* `object_modifier.cc` */
+/* `ob_constraint.cc` */
+void OB_OT_constraint_add(struct WinOpType *ot);
+void OB_OT_constraint_add_with_targets(struct WinOpType *ot);
+void POSE_OT_constraint_add(struct WinOpType *ot);
+void POSE_OT_constraint_add_with_targets(struct WinOpType *ot);
 
-bool edit_modifier_poll_generic(struct bContext *C,
-                                struct StructRNA *rna_type,
-                                int obtype_flag,
-                                bool is_editmode_allowed,
-                                bool is_liboverride_allowed);
-void edit_modifier_properties(struct wmOperatorType *ot);
-bool edit_modifier_invoke_properties(struct bContext *C, struct wmOperator *op);
+void OB_OT_constraints_copy(struct WinOpType *ot);
+void POSE_OT_constraints_copy(struct WinOpType *ot);
 
-struct ModifierData *edit_modifier_property_get(struct wmOperator *op,
-                                                struct Object *ob,
-                                                int type);
+void OB_OT_constraints_clear(struct WinOpType *ot);
+void POSE_OT_constraints_clear(struct WinOpType *ot);
 
-void OBJECT_OT_modifier_add(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_remove(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_move_up(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_move_down(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_move_to_index(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_apply(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_apply_as_shapekey(wmOperatorType *ot);
-void OBJECT_OT_modifier_convert(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_copy(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_copy_to_selected(struct wmOperatorType *ot);
-void OBJECT_OT_modifier_set_active(struct wmOperatorType *ot);
-void OBJECT_OT_multires_subdivide(struct wmOperatorType *ot);
-void OBJECT_OT_multires_reshape(struct wmOperatorType *ot);
-void OBJECT_OT_multires_higher_levels_delete(struct wmOperatorType *ot);
-void OBJECT_OT_multires_base_apply(struct wmOperatorType *ot);
-void OBJECT_OT_multires_unsubdivide(struct wmOperatorType *ot);
-void OBJECT_OT_multires_rebuild_subdiv(struct wmOperatorType *ot);
-void OBJECT_OT_multires_external_save(struct wmOperatorType *ot);
-void OBJECT_OT_multires_external_pack(struct wmOperatorType *ot);
-void OBJECT_OT_correctivesmooth_bind(struct wmOperatorType *ot);
-void OBJECT_OT_meshdeform_bind(struct wmOperatorType *ot);
-void OBJECT_OT_explode_refresh(struct wmOperatorType *ot);
-void OBJECT_OT_ocean_bake(struct wmOperatorType *ot);
-void OBJECT_OT_skin_root_mark(struct wmOperatorType *ot);
-void OBJECT_OT_skin_loose_mark_clear(struct wmOperatorType *ot);
-void OBJECT_OT_skin_radii_equalize(struct wmOperatorType *ot);
-void OBJECT_OT_skin_armature_create(struct wmOperatorType *ot);
-void OBJECT_OT_laplaciandeform_bind(struct wmOperatorType *ot);
-void OBJECT_OT_surfacedeform_bind(struct wmOperatorType *ot);
-void OBJECT_OT_geometry_nodes_input_attribute_toggle(struct wmOperatorType *ot);
-void OBJECT_OT_geometry_node_tree_copy_assign(struct wmOperatorType *ot);
+void POSE_OT_ik_add(struct WinOpType *ot);
+void POSE_OT_ik_clear(struct WinOpType *ot);
 
-/* object_gpencil_modifiers.c */
+void CONSTRAINT_OT_delete(struct WinOpType *ot);
+void CONSTRAINT_OT_apply(struct WinOpType *ot);
+void CONSTRAINT_OT_copy(struct WinOpType *ot);
+void CONSTRAINT_OT_copy_to_sel(struct WinOpType *ot);
 
-void OBJECT_OT_gpencil_modifier_add(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_remove(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_move_up(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_move_down(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_move_to_index(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_apply(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_copy(struct wmOperatorType *ot);
-void OBJECT_OT_gpencil_modifier_copy_to_selected(struct wmOperatorType *ot);
+void CONSTRAINT_OT_move_up(struct WinOpType *ot);
+void CONSTRAINT_OT_move_to_index(struct WinOpType *ot);
+void CONSTRAINT_OT_move_down(struct WinOpType *ot);
 
-void GPENCIL_OT_segment_add(struct wmOperatorType *ot);
-void GPENCIL_OT_segment_remove(struct wmOperatorType *ot);
-void GPENCIL_OT_segment_move(struct wmOperatorType *ot);
-
-void GPENCIL_OT_time_segment_add(struct wmOperatorType *ot);
-void GPENCIL_OT_time_segment_remove(struct wmOperatorType *ot);
-void GPENCIL_OT_time_segment_move(struct wmOperatorType *ot);
-
-/* `object_shader_fx.cc` */
-
-void OBJECT_OT_shaderfx_add(struct wmOperatorType *ot);
-void OBJECT_OT_shaderfx_copy(struct wmOperatorType *ot);
-void OBJECT_OT_shaderfx_remove(struct wmOperatorType *ot);
-void OBJECT_OT_shaderfx_move_up(struct wmOperatorType *ot);
-void OBJECT_OT_shaderfx_move_down(struct wmOperatorType *ot);
-void OBJECT_OT_shaderfx_move_to_index(struct wmOperatorType *ot);
-
-/* `object_constraint.cc` */
-
-void OBJECT_OT_constraint_add(struct wmOperatorType *ot);
-void OBJECT_OT_constraint_add_with_targets(struct wmOperatorType *ot);
-void POSE_OT_constraint_add(struct wmOperatorType *ot);
-void POSE_OT_constraint_add_with_targets(struct wmOperatorType *ot);
-
-void OBJECT_OT_constraints_copy(struct wmOperatorType *ot);
-void POSE_OT_constraints_copy(struct wmOperatorType *ot);
-
-void OBJECT_OT_constraints_clear(struct wmOperatorType *ot);
-void POSE_OT_constraints_clear(struct wmOperatorType *ot);
-
-void POSE_OT_ik_add(struct wmOperatorType *ot);
-void POSE_OT_ik_clear(struct wmOperatorType *ot);
-
-void CONSTRAINT_OT_delete(struct wmOperatorType *ot);
-void CONSTRAINT_OT_apply(struct wmOperatorType *ot);
-void CONSTRAINT_OT_copy(struct wmOperatorType *ot);
-void CONSTRAINT_OT_copy_to_selected(struct wmOperatorType *ot);
-
-void CONSTRAINT_OT_move_up(struct wmOperatorType *ot);
-void CONSTRAINT_OT_move_to_index(struct wmOperatorType *ot);
-void CONSTRAINT_OT_move_down(struct wmOperatorType *ot);
-
-void CONSTRAINT_OT_stretchto_reset(struct wmOperatorType *ot);
-void CONSTRAINT_OT_limitdistance_reset(struct wmOperatorType *ot);
-void CONSTRAINT_OT_childof_set_inverse(struct wmOperatorType *ot);
-void CONSTRAINT_OT_childof_clear_inverse(struct wmOperatorType *ot);
-void CONSTRAINT_OT_objectsolver_set_inverse(struct wmOperatorType *ot);
-void CONSTRAINT_OT_objectsolver_clear_inverse(struct wmOperatorType *ot);
-void CONSTRAINT_OT_followpath_path_animate(struct wmOperatorType *ot);
+void CONSTRAINT_OT_stretchto_reset(struct WinOpType *ot);
+void CONSTRAINT_OT_limitdistance_reset(struct WinOpType *ot);
+void CONSTRAINT_OT_childof_set_inverse(struct WinOpType *ot);
+void CONSTRAINT_OT_childof_clear_inverse(struct WinOpType *ot);
+void CONSTRAINT_OT_obsolver_set_inverse(struct WinOpType *ot);
+void CONSTRAINT_OT_obsolver_clear_inverse(struct WinOpType *ot);
+void CONSTRAINT_OT_followpath_path_anim(struct WinOpType *ot);
 
 /* object_vgroup.cc */
-
-void OBJECT_OT_vertex_group_add(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_remove(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_assign(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_assign_new(struct wmOperatorType *ot);
-void OBJECT_OT_vertex_group_remove_from(struct wmOperatorType *ot);
+void OBJECT_OT_vertex_group_add(struct WinOpType *ot);
+void OBJECT_OT_vertex_group_remove(struct WinOpType *ot);
+void OBJECT_OT_vertex_group_assign(struct WinOpType *ot);
+void OBJECT_OT_vertex_group_assign_new(struct WinOpType *ot);
+void OBJECT_OT_vertex_group_remove_from(struct WinOpType *ot);
 void OBJECT_OT_vertex_group_select(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_deselect(struct wmOperatorType *ot);
 void OBJECT_OT_vertex_group_copy_to_selected(struct wmOperatorType *ot);
