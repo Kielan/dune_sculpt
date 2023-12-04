@@ -994,11 +994,11 @@ static void special_aftertrans_update_graph(Cxt *C, TransInfo *t)
    * If the refresh is rly needed after cancel then some way
    * has to be added to not update handle types (see bug 22289) */
   if (!canceled) {
-    ANIM_editkeyframes_refresh(&ac);
+    anim_editkeyframes_refresh(&ac);
   }
 }
 
-/** \} */
+
 
 TransConvertTypeInfo TransConvertType_Graph = {
     /*flags*/ (T_POINTS | T_2D_EDIT),
