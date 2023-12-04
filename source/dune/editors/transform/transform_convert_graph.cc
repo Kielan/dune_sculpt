@@ -1,22 +1,22 @@
-#include "DNA_anim_types.h"
-#include "DNA_space_types.h"
+#include "types_anim.h"
+#include "types_space.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math_matrix.h"
-#include "BLI_math_vector.h"
+#include "lib_math_matrix.h"
+#include "lib_math_vector.h"
 
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_layer.h"
-#include "BKE_nla.h"
-#include "BKE_report.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_layer.h"
+#include "dune_nla.h"
+#include "dune_report.h"
 
-#include "ED_anim_api.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_markers.hh"
+#include "ee_anim_api.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_markers.hh"
 
-#include "UI_view2d.hh"
+#include "ui_view2d.hh"
 
 #include "transform.hh"
 #include "transform_convert.hh"
@@ -28,13 +28,10 @@ struct TransDataGraph {
   float offset;
 };
 
-/* -------------------------------------------------------------------- */
-/** \name Graph Editor Transform Creation
- * \{ */
+/* Graph Editor Transform Creation */
 
-/* Helper function for createTransGraphEditData, which is responsible for associating
- * source data with transform data
- */
+/* Helper fn for createTransGraphEditData, which is responsible for associating
+ * source data with transform data */
 static void bezt_to_transdata(TransData *td,
                               TransData2D *td2d,
                               TransDataGraph *tdg,
@@ -54,19 +51,17 @@ static void bezt_to_transdata(TransData *td,
 
   /* New location from td gets dumped onto the old-location of td2d, which then
    * gets copied to the actual data at td2d->loc2d (bezt->vec[n])
-   *
    * Due to NLA mapping, we apply NLA mapping to some of the verts here,
-   * and then that mapping will be undone after transform is done.
-   */
+   * and then that mapping will be undone after transform is done. */
 
   if (adt) {
-    td2d->loc[0] = BKE_nla_tweakedit_remap(adt, loc[0], NLATIME_CONVERT_MAP);
+    td2d->loc[0] = dune_nla_tweakedit_remap(adt, loc[0], NLATIME_CONVERT_MAP);
     td2d->loc[1] = (loc[1] + offset) * unit_scale;
     td2d->loc[2] = 0.0f;
     td2d->loc2d = loc;
 
     td->loc = td2d->loc;
-    td->center[0] = BKE_nla_tweakedit_remap(adt, cent[0], NLATIME_CONVERT_MAP);
+    td->center[0] = dune_nla_tweakedit_remap(adt, cent[0], NLATIME_CONVERT_MAP);
     td->center[1] = (cent[1] + offset) * unit_scale;
     td->center[2] = 0.0f;
 
@@ -137,10 +132,8 @@ static bool graph_edit_use_local_center(TransInfo *t)
   return ((t->around == V3D_AROUND_LOCAL_ORIGINS) && (graph_edit_is_translation_mode(t) == false));
 }
 
-/**
- * Get the effective selection of a triple for transform, i.e. return if the left handle, right
- * handle and/or the center point should be affected by transform.
- */
+/* Get the effective selection of a triple for transform, i.e. return if the left handle, right
+ * handle and/or the center point should be affected by transform */
 static void graph_bezt_get_transform_selection(const TransInfo *t,
                                                const BezTriple *bezt,
                                                const bool use_handle,
@@ -194,28 +187,26 @@ static void graph_key_shortest_dist(
   }
 }
 
-/**
- * It is important to note that this doesn't always act on the selection (like it's usually done),
- * it acts on a subset of it. E.g. the selection code may leave a hint that we just dragged on a
+/* It is important to note that this doesn't always act on the sel (like it's usually done),
+ * it acts on a subset of it. E.g. the sel code may leave a hint that we just dragged on a
  * left or right handle (SIPO_RUNTIME_FLAG_TWEAK_HANDLES_LEFT/RIGHT) and then we only transform the
- * selected left or right handles accordingly.
- * The points to be transformed are tagged with BEZT_FLAG_TEMP_TAG; some lower level curve
- * functions may need to be made aware of this. It's ugly that these act based on selection state
- * anyway.
- */
-static void createTransGraphEditData(bContext *C, TransInfo *t)
+ * sel left or right handles accordingly.
+ * The points to be transformed are tagged with BEZT_FLAG_TMP_TAG; some lower level curve
+ * fns may need to be made aware of this. It's ugly that these act based on sel state
+ * anyway */
+static void createTransGraphEditData(Cxt *C, TransInfo *t)
 {
   SpaceGraph *sipo = (SpaceGraph *)t->area->spacedata.first;
   Scene *scene = t->scene;
-  ARegion *region = t->region;
-  View2D *v2d = &region->v2d;
+  ARgn *rgnn = t->rgn;
+  View2D *v2d = &rgn->v2d;
 
   TransData *td = nullptr;
   TransData2D *td2d = nullptr;
   TransDataGraph *tdg = nullptr;
 
-  bAnimContext ac;
-  ListBase anim_data = {nullptr, nullptr};
+  AnimCxt ac;
+  List anim_data = {nullptr, nullptr};
   int filter;
 
   BezTriple *bezt;
@@ -227,21 +218,21 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
   short anim_map_flag = ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS;
   bool sel_key, sel_left, sel_right;
 
-  /* determine what type of data we are operating on */
-  if (ANIM_animdata_get_context(C, &ac) == 0) {
+  /* determine what type of data is op on */
+  if (animdata_get_cxt(C, &ac) == 0) {
     return;
   }
 
-  anim_map_flag |= ANIM_get_normalization_flags(ac.sl);
+  anim_map_flag |= anim_get_normalization_flags(ac.sl);
 
   /* filter data */
   filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FOREDIT | ANIMFILTER_CURVE_VISIBLE |
             ANIMFILTER_FCURVESONLY);
-  ANIM_animdata_filter(
-      &ac, &anim_data, eAnimFilter_Flags(filter), ac.data, eAnimCont_Types(ac.datatype));
+  animdata_filter(
+      &ac, &anim_data, eAnimFilterFlags(filter), ac.data, eAnimContTypes(ac.datatype));
 
   /* which side of the current frame should be allowed */
-  /* XXX we still want this mode, but how to get this using standard transform too? */
+  /* want this mode but how to get this using standard transform too? */
   if (t->mode == TFM_TIME_EXTEND) {
     t->frame_side = transform_convert_frame_side_dir_get(t, float(scene->r.cfra));
   }
@@ -252,12 +243,12 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 
   /* Loop 1: count how many BezTriples (specifically their verts)
    * are selected (or should be edited). */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    AnimData *adt = ANIM_nla_mapping_get(&ac, ale);
+  LIST_FOREACH (bAnimListElem *, ale, &anim_data) {
+    AnimData *adt = anim_nla_mapping_get(&ac, ale);
     FCurve *fcu = (FCurve *)ale->key_data;
     float cfra;
     int curvecount = 0;
-    bool selected = false;
+    bool issel = false;
 
     /* F-Curve may not have any keyframes */
     if (fcu->bezt == nullptr) {
@@ -265,10 +256,9 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
     }
 
     /* convert current-frame to action-time (slightly less accurate, especially under
-     * higher scaling ratios, but is faster than converting all points)
-     */
+     * higher scaling ratios, but is faster than converting all points) */
     if (adt) {
-      cfra = BKE_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
+      cfra = dune_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
     }
     else {
       cfra = float(scene->r.cfra);
@@ -278,12 +268,12 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
       /* Only include BezTriples whose 'keyframe'
        * occurs on the same side of the current frame as mouse. */
       if (FrameOnMouseSide(t->frame_side, bezt->vec[1][0], cfra)) {
-        graph_bezt_get_transform_selection(t, bezt, use_handle, &sel_left, &sel_key, &sel_right);
+        graph_bezt_get_transform_sel(t, bezt, use_handle, &sel_left, &sel_key, &sel_right);
 
         if (is_prop_edit) {
           curvecount += 3;
           if (sel_key || sel_left || sel_right) {
-            selected = true;
+            issel = true;
           }
         }
         else {
@@ -295,7 +285,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
             count++;
           }
 
-          /* only include main vert if selected */
+          /* only include main vert if sel */
           if (sel_key && !use_local_center) {
             count++;
           }
@@ -304,17 +294,17 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
     }
 
     if (is_prop_edit) {
-      if (selected) {
+      if (sel) {
         count += curvecount;
         ale->tag = true;
       }
     }
   }
 
-  /* stop if trying to build list if nothing selected */
+  /* stop if trying to build list if nothing sel */
   if (count == 0) {
     /* cleanup temp list */
-    ANIM_animdata_freelist(&anim_data);
+    animdata_freelist(&anim_data);
     return;
   }
 
@@ -324,12 +314,12 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
   tc->data_len = count;
 
   tc->data = static_cast<TransData *>(
-      MEM_callocN(tc->data_len * sizeof(TransData), "TransData (Graph Editor)"));
+      mem_calloc(tc->data_len * sizeof(TransData), "TransData (Graph Editor)"));
   /* For each 2d vert a 3d vector is allocated,
    * so that they can be treated just as if they were 3d verts. */
   tc->data_2d = static_cast<TransData2D *>(
-      MEM_callocN(tc->data_len * sizeof(TransData2D), "TransData2D (Graph Editor)"));
-  tc->custom.type.data = MEM_callocN(tc->data_len * sizeof(TransDataGraph), "TransDataGraph");
+      mem_calloc(tc->data_len * sizeof(TransData2D), "TransData2D (Graph Editor)"));
+  tc->custom.type.data = mem_calloc(tc->data_len * sizeof(TransDataGraph), "TransDataGraph");
   tc->custom.type.use_free = true;
 
   td = tc->data;
@@ -344,7 +334,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
     float xscale, yscale;
 
     /* apply scale factors to x and y axes of space-conversion matrices */
-    UI_view2d_scale_get(v2d, &xscale, &yscale);
+    ui_view2d_scale_get(v2d, &xscale, &yscale);
 
     /* mtx is data to global (i.e. view) conversion */
     mul_v3_fl(mtx[0], xscale);
@@ -360,10 +350,10 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
   }
 
   /* loop 2: build transdata arrays */
-  LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-    AnimData *adt = ANIM_nla_mapping_get(&ac, ale);
+  LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+    AnimData *adt = anim_nla_mapping_get(&ac, ale);
     FCurve *fcu = (FCurve *)ale->key_data;
-    bool intvals = (fcu->flag & FCURVE_INT_VALUES) != 0;
+    bool intvals = (fcu->flag & FCURVE_INT_VALS) != 0;
     float unit_scale, offset;
     float cfra;
 
@@ -373,30 +363,29 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
     }
 
     /* convert current-frame to action-time (slightly less accurate, especially under
-     * higher scaling ratios, but is faster than converting all points)
-     */
+     * higher scaling ratios, but is faster than converting all points)  */
     if (adt) {
-      cfra = BKE_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
+      cfra = dune_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
     }
     else {
       cfra = float(scene->r.cfra);
     }
 
-    unit_scale = ANIM_unit_mapping_get_factor(
+    unit_scale = anim_unit_mapping_get_factor(
         ac.scene, ale->id, static_cast<FCurve *>(ale->key_data), anim_map_flag, &offset);
 
     for (i = 0, bezt = fcu->bezt; i < fcu->totvert; i++, bezt++) {
-      /* Ensure temp flag is cleared for all triples, we use it. */
+      /* Ensure tmp flag is cleared for all triples, we use it. */
       bezt->f1 &= ~BEZT_FLAG_TEMP_TAG;
       bezt->f2 &= ~BEZT_FLAG_TEMP_TAG;
       bezt->f3 &= ~BEZT_FLAG_TEMP_TAG;
 
-      /* only include BezTriples whose 'keyframe' occurs on the same side
+      /* only incl BezTriples whose 'keyframe' occurs on the same side
        * of the current frame as mouse (if applicable) */
       if (FrameOnMouseSide(t->frame_side, bezt->vec[1][0], cfra)) {
         TransDataCurveHandleFlags *hdata = nullptr;
 
-        graph_bezt_get_transform_selection(t, bezt, use_handle, &sel_left, &sel_key, &sel_right);
+        graph_bezt_get_transform_sel(t, bezt, use_handle, &sel_left, &sel_key, &sel_right);
 
         if (is_prop_edit) {
           bool is_sel = (sel_key || sel_left || sel_right);
@@ -445,15 +434,14 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
                             offset);
 
           if (is_sel) {
-            bezt->f1 |= BEZT_FLAG_TEMP_TAG;
-            bezt->f2 |= BEZT_FLAG_TEMP_TAG;
-            bezt->f3 |= BEZT_FLAG_TEMP_TAG;
+            bezt->f1 |= BEZT_FLAG_TMP_TAG;
+            bezt->f2 |= BEZT_FLAG_TMP_TAG;
+            bezt->f3 |= BEZT_FLAG_TMP_TAG;
           }
         }
         else {
-          /* only include handles if selected, irrespective of the interpolation modes.
-           * also, only treat handles specially if the center point isn't selected.
-           */
+          /* only incl handles if sel, irrespective of the interpolation modes.
+           * also, only treat handles specially if the center point isn't sel. */
           if (sel_left) {
             hdata = initTransDataCurveHandles(td, bezt);
             bezt_to_transdata(td++,
@@ -492,7 +480,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
             bezt->f3 |= BEZT_FLAG_TEMP_TAG;
           }
 
-          /* only include main vert if selected */
+          /* only incl main vert if sel */
           if (sel_key && !use_local_center) {
             /* move handles relative to center */
             if (graph_edit_is_translation_mode(t)) {
@@ -504,7 +492,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
               }
             }
 
-            /* if handles were not selected, store their selection status */
+            /* if handles were not sel, store their sel status */
             if (!(sel_left) || !(sel_right)) {
               if (hdata == nullptr) {
                 hdata = initTransDataCurveHandles(td, bezt);
@@ -528,11 +516,9 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
           }
           /* Special hack (must be done after #initTransDataCurveHandles(),
            * as that stores handle settings to restore...):
-           *
-           * - Check if we've got entire BezTriple selected and we're scaling/rotating that point,
+           * - Check if we've got entire BezTriple sel and we're scaling/rotating that point,
            *   then check if we're using auto-handles.
-           * - If so, change them auto-handles to aligned handles so that handles get affected too
-           */
+           * - If so, change them auto-handles to aligned handles so that handles get affected too */
           if (ELEM(bezt->h1, HD_AUTO, HD_AUTO_ANIM) && ELEM(bezt->h2, HD_AUTO, HD_AUTO_ANIM) &&
               ELEM(t->mode, TFM_ROTATION, TFM_RESIZE))
           {
@@ -545,16 +531,16 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
       }
     }
 
-    /* Sets handles based on the selection */
-    testhandles_fcurve(fcu, BEZT_FLAG_TEMP_TAG, use_handle);
+    /* Sets handles based on the sel */
+    testhandles_fcurve(fcu, BEZT_FLAG_TMP_TAG, use_handle);
   }
 
   if (is_prop_edit) {
     /* loop 2: build transdata arrays */
     td = tc->data;
 
-    LISTBASE_FOREACH (bAnimListElem *, ale, &anim_data) {
-      AnimData *adt = ANIM_nla_mapping_get(&ac, ale);
+    LIST_FOREACH (AnimListElem *, ale, &anim_data) {
+      AnimData *adt = anim_nla_mapping_get(&ac, ale);
       FCurve *fcu = (FCurve *)ale->key_data;
       TransData *td_start = td;
       float cfra;
@@ -565,10 +551,9 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
       }
 
       /* convert current-frame to action-time (slightly less accurate, especially under
-       * higher scaling ratios, but is faster than converting all points)
-       */
+       * higher scaling ratios, but is faster than converting all points) */
       if (adt) {
-        cfra = BKE_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
+        cfra = dune_nla_tweakedit_remap(adt, float(scene->r.cfra), NLATIME_CONVERT_UNMAP);
       }
       else {
         cfra = float(scene->r.cfra);
@@ -608,17 +593,12 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
     }
   }
 
-  /* cleanup temp list */
-  ANIM_animdata_freelist(&anim_data);
+  /* cleanup tmp list */
+  animdata_freelist(&anim_data);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Graph Editor Transform Flush
- * \{ */
-
-static bool fcu_test_selected(FCurve *fcu)
+/* Graph Editor Transform Flush */
+static bool fcu_test_sel(FCurve *fcu)
 {
   BezTriple *bezt = fcu->bezt;
   uint i;
@@ -636,9 +616,8 @@ static bool fcu_test_selected(FCurve *fcu)
   return false;
 }
 
-/* This function is called on recalc_data to apply the transforms applied
- * to the transdata on to the actual keyframe data
- */
+/* This fn is called on recalc_data to apply the transforms applied
+ * to the transdata on to the actual keyframe data */
 static void flushTransGraphData(TransInfo *t)
 {
   TransData *td;
@@ -657,30 +636,29 @@ static void flushTransGraphData(TransInfo *t)
        a < tc->data_len;
        a++, td++, td2d++, tdg++)
   {
-    /* pointers to relevant AnimData blocks are stored in the td->extra pointers */
+    /* ptrs to relevant AnimData blocks are stored in the td->extra ptrs */
     AnimData *adt = (AnimData *)td->extra;
 
     float inv_unit_scale = 1.0f / tdg->unit_scale;
 
-    /* Handle snapping for time values:
-     * - We should still be in NLA-mapping time-space.
-     * - Only apply to keyframes (but never to handles).
-     * - Don't do this when canceling, or else these changes won't go away.
-     */
+    /* Handle snapping for time vals:
+     * We should still be in NLA-mapping time-space.
+     * Only apply to keyframes (but never to handles).
+     * Don't do this when canceling, or else these changes won't go away. */
     if ((t->tsnap.flag & SCE_SNAP) && (t->state != TRANS_CANCEL) && !(td->flag & TD_NOTIMESNAP)) {
       transform_snap_anim_flush_data(t, td, snap_mode, td->loc);
     }
 
     /* we need to unapply the nla-mapping from the time in some situations */
     if (adt) {
-      td2d->loc2d[0] = BKE_nla_tweakedit_remap(adt, td2d->loc[0], NLATIME_CONVERT_UNMAP);
+      td2d->loc2d[0] = dune_nla_tweakedit_remap(adt, td2d->loc[0], NLATIME_CONVERT_UNMAP);
     }
     else {
       td2d->loc2d[0] = td2d->loc[0];
     }
 
-    /* if int-values only, truncate to integers */
-    if (td->flag & TD_INTVALUES) {
+    /* if int-vals only, truncate to ints */
+    if (td->flag & TD_INTVALS) {
       td2d->loc2d[1] = floorf(td2d->loc[1] * inv_unit_scale - tdg->offset + 0.5f);
     }
     else {
@@ -700,9 +678,8 @@ struct BeztMap {
   char pipo, cipo; /* interpolation of current and next segments */
 };
 
-/* This function converts an FCurve's BezTriple array to a BeztMap array
- * NOTE: this allocates memory that will need to get freed later
- */
+/* This fn converts FCurve's BezTriple array to a BeztMap array
+ * Allocs mem that will need to get freed later */
 static BeztMap *bezt_to_beztmaps(BezTriple *bezts, int totvert)
 {
   BezTriple *bezt = bezts;
@@ -710,11 +687,11 @@ static BeztMap *bezt_to_beztmaps(BezTriple *bezts, int totvert)
   BeztMap *bezm, *bezms;
   int i;
 
-  /* allocate memory for this array */
+  /* alloc mem for this array */
   if (totvert == 0 || bezts == nullptr) {
     return nullptr;
   }
-  bezm = bezms = static_cast<BeztMap *>(MEM_callocN(sizeof(BeztMap) * totvert, "BeztMaps"));
+  bezm = bezms = static_cast<BeztMap *>(mem_calloc(sizeof(BeztMap) * totvert, "BeztMaps"));
 
   /* assign beztriples to beztmaps */
   for (i = 0; i < totvert; i++, bezm++, prevbezt = bezt, bezt++) {
@@ -730,7 +707,7 @@ static BeztMap *bezt_to_beztmaps(BezTriple *bezts, int totvert)
   return bezms;
 }
 
-/* This function copies the code of sort_time_ipocurve, but acts on BeztMap structs instead */
+/* This fn copies the code of sort_time_ipocurve, but acts on BeztMap structs instead */
 static void sort_time_beztmaps(BeztMap *bezms, int totvert)
 {
   BeztMap *bezm;
@@ -755,9 +732,8 @@ static void sort_time_beztmaps(BeztMap *bezms, int totvert)
         }
       }
 
-      /* do we need to check if the handles need to be swapped?
-       * optimization: this only needs to be performed in the first loop
-       */
+      /* req. to check if the handles need to be swapped?
+       * optimization: only needs to be performed in 1st loop */
       if (bezm->swapHs == 0) {
         if ((bezm->bezt->vec[0][0] > bezm->bezt->vec[1][0]) &&
             (bezm->bezt->vec[2][0] < bezm->bezt->vec[1][0]))
@@ -776,7 +752,7 @@ static void sort_time_beztmaps(BeztMap *bezms, int totvert)
   }
 }
 
-/* This function firstly adjusts the pointers that the transdata has to each BezTriple */
+/* Fn firstly adjusts the ptrs that the transdata has to each BezTriple */
 static void beztmap_to_data(TransInfo *t, FCurve *fcu, BeztMap *bezms, int totvert)
 {
   BezTriple *bezts = fcu->bezt;
@@ -788,29 +764,26 @@ static void beztmap_to_data(TransInfo *t, FCurve *fcu, BeztMap *bezms, int totve
 
   TransDataContainer *tc = TRANS_DATA_CONTAINER_FIRST_SINGLE(t);
 
-  /* dynamically allocate an array of chars to mark whether an TransData's
-   * pointers have been fixed already, so that we don't override ones that are
-   * already done
-   */
-  adjusted = static_cast<char *>(MEM_callocN(tc->data_len, "beztmap_adjusted_map"));
+  /* dynamically alloc an arr of chars to mark whether an TransData's
+   * ptrs have been fixed alrdy, so that we don't override ones that are
+   * alrdy dont */
+  adjusted = static_cast<char *>(mem_calloc(tc->data_len, "beztmap_adjusted_map"));
 
-  /* for each beztmap item, find if it is used anywhere */
+  /* foreach beztmap item find if it is used anywhere */
   bezm = bezms;
   for (i = 0; i < totvert; i++, bezm++) {
-    /* loop through transdata, testing if we have a hit
-     * for the handles (vec[0]/vec[2]), we must also check if they need to be swapped...
-     */
+    /* loop thru transdata, testing if we have a hit
+     * for the handles (vec[0]/vec[2]), we must also check if they need to be swapped...  */
     td2d = tc->data_2d;
     td = tc->data;
     for (j = 0; j < tc->data_len; j++, td2d++, td++) {
-      /* skip item if already marked */
+      /* skip item if alrdy marked */
       if (adjusted[j] != 0) {
         continue;
       }
 
-      /* update all transdata pointers, no need to check for selections etc,
-       * since only points that are really needed were created as transdata
-       */
+      /* update all transdata ptrs, no need to check for sels etc,
+       * since only points that are really needed were created as transdata  */
       if (td2d->loc2d == bezm->bezt->vec[0]) {
         if (bezm->swapHs == 1) {
           td2d->loc2d = (bezts + bezm->newIndex)->vec[2];
