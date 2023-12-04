@@ -1,26 +1,26 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
+#include "lib_list.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
 
-#include "BKE_animsys.h"
-#include "BKE_context.hh"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.hh"
-#include "BKE_object.hh"
-#include "BKE_pointcache.h"
-#include "BKE_report.h"
-#include "BKE_rigidbody.h"
-#include "BKE_scene.h"
+#include "dune_animsys.h"
+#include "dune_cxt.hh"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_main.hh"
+#include "dune_ob.hh"
+#include "dune_pointcache.h"
+#include "dune_report.h"
+#include "dune_rigidbody.h"
+#include "dune_scene.h"
 
-#include "ANIM_keyframing.hh"
-#include "ED_keyframing.hh"
-#include "ED_object.hh"
+#include "anim_keyframing.hh"
+#include "ed_keyframing.hh"
+#include "ed_ob.hh"
 
-#include "DEG_depsgraph_query.hh"
+#include "graph_query.hh"
 
 #include "transform.hh"
 #include "transform_orientations.hh"
@@ -29,117 +29,91 @@
 /* Own include. */
 #include "transform_convert.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Object Mode Custom Data
- * \{ */
+/* Ob Mode Custom Data */
+struct TransDataOb {
 
-struct TransDataObject {
+  /* Ob to ob data transform table.
+   * Don't add these to transform data bc we may want to include 
+   * child obs which aren't being transformed  */
+  XFormObDataContainer *xds;
 
-  /**
-   * Object to object data transform table.
-   * Don't add these to transform data because we may want to include child objects
-   * which aren't being transformed.
-   */
-  XFormObjectData_Container *xds;
-
-  /**
-   * Transform
-   * - The key is object data #Object.
-   * - The value is #XFormObjectSkipChild.
-   */
-  XFormObjectSkipChild_Container *xcs;
+  /* Transform
+   * Key is Ob data Ob struct.
+   * Val is XFormObSkipChild */
+  XFormObSkipChildContainer *xcs;
 };
 
-static void freeTransObjectCustomData(TransInfo *t,
-                                      TransDataContainer * /*tc*/,
-                                      TransCustomData *custom_data)
+static void freeTransObCustomData(TransInfo *t,
+                                  TransDataContainer * /*tc*/,
+                                  TransCustomData *custom_data)
 {
-  TransDataObject *tdo = static_cast<TransDataObject *>(custom_data->data);
+  TransDataOb *tdo = static_cast<TransDataOb *>(custom_data->data);
   custom_data->data = nullptr;
 
-  if (t->options & CTX_OBMODE_XFORM_OBDATA) {
-    ED_object_data_xform_container_destroy(tdo->xds);
+  if (t->options & CXT_OBMODE_XFORM_OBDATA) {
+    ed_ob_data_xform_container_destroy(tdo->xds);
   }
 
-  if (t->options & CTX_OBMODE_XFORM_SKIP_CHILDREN) {
-    ED_object_xform_skip_child_container_destroy(tdo->xcs);
+  if (t->options & CXT_OBMODE_XFORM_SKIP_CHILDREN) {
+    ed_ob_xform_skip_child_container_destroy(tdo->xcs);
   }
-  MEM_freeN(tdo);
+  mem_free(tdo);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Object Data in Object Mode
- *
+/* Ob Data in Ob Mode
  * Use to implement 'Affect Only Origins' feature.
- * We need this to be detached from transform data because,
- * unlike transforming regular objects, we need to transform the children.
- *
- * Nearly all of the logic here is in the 'ED_object_data_xform_container_*' API.
- * \{ */
+ * Needs to be detached from transform data bc,
+ * unlike transforming regular obs, neess to transform the children
+ * Nearly all of the logic here is in the 'ed_ob_data_xform_container_*' API. */
 
 static void trans_obdata_in_obmode_update_all(TransInfo *t)
 {
-  TransDataObject *tdo = static_cast<TransDataObject *>(t->custom.type.data);
+  TransDataOb *tdo = static_cast<TransDataOb *>(t->custom.type.data);
   if (tdo->xds == nullptr) {
     return;
   }
 
-  Main *bmain = CTX_data_main(t->context);
-  ED_object_data_xform_container_update_all(tdo->xds, bmain, t->depsgraph);
+  Main *main = cxt_data_main(t->cxt);
+  ed_ob_data_xform_container_update_all(tdo->xds, main, t->graph);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Object Child Skip
- *
- * Don't transform unselected children, this is done using the parent inverse matrix.
- *
- * \note The complex logic here is caused by mixed selection within a single selection chain,
- * otherwise we only need #XFORM_OB_SKIP_CHILD_PARENT_IS_XFORM for single objects.
- *
- * \{ */
+/* Ob Child Skip *
+ * Don't transform unsel children, this is done using the parent inverse matrix
+ * The complex logic here is caused by mixed sel w/in a single sel chain,
+ * otherwise we only need XFORM_OB_SKIP_CHILD_PARENT_IS_XFORM for single obs. */
 
 static void trans_obchild_in_obmode_update_all(TransInfo *t)
 {
-  TransDataObject *tdo = static_cast<TransDataObject *>(t->custom.type.data);
+  TransDataOb *tdo = static_cast<TransDataOb *>(t->custom.type.data);
   if (tdo->xcs == nullptr) {
     return;
   }
 
-  Main *bmain = CTX_data_main(t->context);
-  ED_object_xform_skip_child_container_update_all(tdo->xcs, bmain, t->depsgraph);
+  Main *main = cxt_data_main(t->cxt);
+  ed_ob_xform_skip_child_container_update_all(tdo->xcs, main, t->graph);
 }
 
-/** \} */
+/* Ob Transform Creation
+ * Instead of transforming the selection, move the 2D/3D cursor. */
 
-/* -------------------------------------------------------------------- */
-/** \name Object Transform Creation
- *
- * Instead of transforming the selection, move the 2D/3D cursor.
- *
- * \{ */
+/* Ob Transform data */
 
-/* *********************** Object Transform data ******************* */
-
-/* transcribe given object into TransData for Transforming */
-static void ObjectToTransData(TransInfo *t, TransData *td, Object *ob)
+/* transcribe given ob into TransData for Transforming */
+static void ObToTransData(TransInfo *t, TransData *td, Ob *ob)
 {
   Scene *scene = t->scene;
   bool constinv;
   bool skip_invert = false;
 
-  if (t->mode != TFM_DUMMY && ob->rigidbody_object) {
+  if (t->mode != TFM_DUMMY && ob->rigidbody_ob) {
     float rot[3][3], scale[3];
-    float ctime = BKE_scene_ctime_get(scene);
+    float ctime = dune_scene_ctime_get(scene);
 
-    /* only use rigid body transform if simulation is running,
-     * avoids problems with initial setup of rigid bodies */
-    if (BKE_rigidbody_check_sim_running(scene->rigidbody_world, ctime)) {
+    /* only use rigid body transform if sim is running,
+     * avoids problems with init setup of rigid bodies */
+    if (dune_rigidbody_check_sim_running(scene->rigidbody_world, ctime)) {
 
-      /* save original object transform */
+      /* save original ob transform */
       copy_v3_v3(td->ext->oloc, ob->loc);
 
       if (ob->rotmode > 0) {
@@ -152,10 +126,10 @@ static void ObjectToTransData(TransInfo *t, TransData *td, Object *ob)
       else {
         copy_qt_qt(td->ext->oquat, ob->quat);
       }
-      /* update object's loc/rot to get current rigid body transform */
-      mat4_to_loc_rot_size(ob->loc, rot, scale, ob->object_to_world);
+      /* update ob's loc/rot to get current rigid body transform */
+      mat4_to_loc_rot_size(ob->loc, rot, scale, ob->ob_to_world);
       sub_v3_v3(ob->loc, ob->dloc);
-      BKE_object_mat3_to_rot(ob, rot, false); /* drot is already corrected here */
+      dune_ob_mat3_to_rot(ob, rot, false); /* drot is alrdy corrected here */
     }
   }
 
