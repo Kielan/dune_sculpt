@@ -1,74 +1,69 @@
-include "BLI_math_matrix.hh"
-#include "BLI_math_vector.h"
+#include "lib_math_matrix.hh"
+#include "lib_math_vector.h"
 
-#include "BKE_bvhutils.hh"
-#include "BKE_editmesh.hh"
-#include "BKE_global.h"
-#include "BKE_mesh.hh"
-#include "BKE_object.hh"
+#include "dune_bvhutils.hh"
+#include "dune_meshedit.hh"
+#include "dune_global.h"
+#include "dune_mesh.hh"
+#include "dune_ob.hh"
 
-#include "DEG_depsgraph_query.hh"
+#include "graph_query.hh"
 
-#include "ED_transform_snap_object_context.hh"
-#include "ED_view3d.hh"
+#include "ed_transform_snap_ob_cxt.hh"
+#include "ed_view3d.hh"
 
-#include "transform_snap_object.hh"
+#include "transform_snap_ob.hh"
 
-using namespace blender;
+using namespace dune;
 
-/* -------------------------------------------------------------------- */
-/** \name Snap Object Data
- * \{ */
-
-struct SnapCache_EditMesh : public SnapObjectContext::SnapCache {
+/* Snap Ob Data */
+struct SnapCacheMeshEdit : public SnapObCxt::SnapCache {
   /* Loose Verts, Edges, Triangles. */
   BVHTree *bvhtree[3];
   bool cached[3];
 
-  BMEditMesh *em;
+  MeshEdit *me;
 
-  /** Default callbacks to BVH nearest and ray-cast used only for triangles. */
-  BVHTree_NearestPointCallback nearest_callback;
-  BVHTree_RayCastCallback raycast_callback;
+  /* Default cbs to BVH nearest and ray-cast used only for triangles. */
+  BVHTreeNearestPointCb nearest_cb;
+  BVHTreeRayCastCb raycast_cb;
 
-  bke::MeshRuntime *mesh_runtime;
+  dune::MeshRuntime *mesh_runtime;
   float min[3], max[3];
 
   void clear()
   {
     for (int i = 0; i < ARRAY_SIZE(this->bvhtree); i++) {
       if (!this->cached[i]) {
-        BLI_bvhtree_free(this->bvhtree[i]);
+        lib_bvhtree_free(this->bvhtree[i]);
       }
       this->bvhtree[i] = nullptr;
     }
   }
 
-  ~SnapCache_EditMesh()
+  ~SnapCacheMeshEdit()
   {
     this->clear();
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("SnapData_EditMesh")
+  MEM_CXX_CLASS_ALLOC_FNS("SnapDataMeshEdit")
 #endif
 };
 
-/**
- * Calculate the minimum and maximum coordinates of the box that encompasses this mesh.
- */
-static void snap_editmesh_minmax(SnapObjectContext *sctx,
-                                 BMesh *bm,
+/* Calc min and max coords of the box that encompasses this mesh. */
+static void snap_meshedit_minmax(SnapObCxt *sctx,
+                                 Mesh *mesh,
                                  float r_min[3],
                                  float r_max[3])
 {
   INIT_MINMAX(r_min, r_max);
-  BMIter iter;
-  BMVert *v;
+  MeshIter iter;
+  MeshVert *v;
 
-  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-    if (sctx->callbacks.edit_mesh.test_vert_fn &&
-        !sctx->callbacks.edit_mesh.test_vert_fn(v, sctx->callbacks.edit_mesh.user_data))
+  MESH_ITER (v, &iter, mesh, MESH_VERTS) {
+    if (sctx->cbs.mesh_edit.test_vert_fn &&
+        !sctx->cbs.mesh_edit.test_vert_fn(v, sctx->cbs.mesh_edit.user_data))
     {
       continue;
     }
@@ -76,55 +71,55 @@ static void snap_editmesh_minmax(SnapObjectContext *sctx,
   }
 }
 
-/* Searches for the #Mesh_Runtime associated with the object that is most likely to be updated due
- * to changes in the `edit_mesh`. */
-static blender::bke::MeshRuntime *snap_object_data_editmesh_runtime_get(Object *ob_eval)
+/* Searches for the MeshRuntime assoc w the ob most likely to be updated due
+ * to changes in the `mesh_edit`. */
+static dune::MeshRuntime *snap_ob_data_meshedit_runtime_get(Ob *ob_eval)
 {
-  Mesh *editmesh_eval_final = BKE_object_get_editmesh_eval_final(ob_eval);
-  if (editmesh_eval_final) {
-    return editmesh_eval_final->runtime;
+  Mesh *meshedit_eval_final = dune_ob_get_meshedit_eval_final(ob_eval);
+  if (meshedit_eval_final) {
+    return meshedit_eval_final->runtime;
   }
 
-  Mesh *editmesh_eval_cage = BKE_object_get_editmesh_eval_cage(ob_eval);
-  if (editmesh_eval_cage) {
-    return editmesh_eval_cage->runtime;
+  Mesh *meshedit_eval_cage = dune_ob_get_meshedit_eval_cage(ob_eval);
+  if (meshedit_eval_cage) {
+    return meshedit_eval_cage->runtime;
   }
 
   return ((Mesh *)ob_eval->data)->runtime;
 }
 
-static SnapCache_EditMesh *snap_object_data_editmesh_get(SnapObjectContext *sctx,
-                                                         Object *ob_eval,
-                                                         BMEditMesh *em,
-                                                         const bool create)
+static SnapCacheMeshEdit *snap_ob_data_meshedit_get(SnapObCxt *scxt,
+                                                    Ob *ob_eval,
+                                                    MeshEdit *me,
+                                                    const bool create)
 {
-  SnapCache_EditMesh *em_cache = nullptr;
+  SnapCacheMeshEdit *me_cache = nullptr;
   bool init = false;
 
-  if (std::unique_ptr<SnapObjectContext::SnapCache> *em_cache_p = sctx->editmesh_caches.lookup_ptr(
+  if (std::unique_ptr<SnapObCxt::SnapCache> *me_cache_p = scxt->meshedit_caches.lookup_ptr(
           em))
   {
-    em_cache = static_cast<SnapCache_EditMesh *>(em_cache_p->get());
+    me_cache = static_cast<SnapCacheMeshEdit *>(mesh_cache_p->get());
     bool is_dirty = false;
     /* Check if the geometry has changed. */
-    if (em_cache->em != em) {
+    if (me_cache->me != me) {
       is_dirty = true;
     }
-    else if (em_cache->mesh_runtime) {
-      if (em_cache->mesh_runtime != snap_object_data_editmesh_runtime_get(ob_eval)) {
+    else if (me_cache->mesh_runtime) {
+      if (me_cache->mesh_runtime != snap_object_data_meshedit_runtime_get(ob_eval)) {
         if (G.moving) {
-          /* WORKAROUND: avoid updating while transforming. */
-          BLI_assert(!em_cache->cached[0] && !em_cache->cached[1] && !em_cache->cached[2]);
-          em_cache->mesh_runtime = snap_object_data_editmesh_runtime_get(ob_eval);
+          /* Avoid updating while transforming. */
+          lib_assert(!me_cache->cached[0] && !me_cache->cached[1] && !me_cache->cached[2]);
+          me_cache->mesh_runtime = snap_ob_data_meshedit_runtime_get(ob_eval);
         }
         else {
           is_dirty = true;
         }
       }
-      else if (em_cache->bvhtree[0] && em_cache->cached[0] &&
-               !bvhcache_has_tree(em_cache->mesh_runtime->bvh_cache, em_cache->bvhtree[0]))
+      else if (me_cache->bvhtree[0] && me_cache->cached[0] &&
+               !bvhcache_has_tree(me_cache->mesh_runtime->bvh_cache, me_cache->bvhtree[0]))
       {
-        /* The tree is owned by the EditMesh and may have been freed since we last used! */
+        /* The tree is owned by the MeshEdit and may have been freed since we last used! */
         is_dirty = true;
       }
       else if (em_cache->bvhtree[1] && em_cache->cached[1] &&
