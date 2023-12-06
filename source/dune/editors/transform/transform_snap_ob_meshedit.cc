@@ -228,33 +228,28 @@ static SnapCache_EditMesh *editmesh_snapdata_init(SnapObjectContext *sctx,
     return nullptr;
   }
 
-  SnapCache_EditMesh *em_cache = snap_object_data_editmesh_get(sctx, ob_eval, em, false);
+  SnapCache_EditMesh *em_cache = snap_object_data_meshedit_get(sctx, ob_eval, em, false);
   if (em_cache != nullptr) {
     return em_cache;
   }
 
-  eSnapMode snap_mode_used = snap_to_flag & editmesh_snap_mode_supported(em->bm);
+  eSnapMode snap_mode_used = snap_to_flag & meshedit_snap_mode_supported(em->bm);
   if (snap_mode_used == SCE_SNAP_TO_NONE) {
     return nullptr;
   }
 
-  return snap_object_data_editmesh_get(sctx, ob_eval, em, true);
+  return snap_ob_data_meshedit_get(sctx, ob_eval, em, true);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Ray Cast Functions
- * \{ */
-
-/* Callback to ray-cast with back-face culling (#EditMesh). */
-static void editmesh_looptri_raycast_backface_culling_cb(void *userdata,
+/* Ray Cast Fns */
+/* Cb to ray-cast with back-face culling (MeshEdit). */
+static void meshedit_looptri_raycast_backface_culling_cb(void *userdata,
                                                          int index,
                                                          const BVHTreeRay *ray,
                                                          BVHTreeRayHit *hit)
 {
-  BMEditMesh *em = static_cast<BMEditMesh *>(userdata);
-  const BMLoop **ltri = (const BMLoop **)em->looptris[index];
+  MeshEdit *me = static_cast<MeshEdit *>(userdata);
+  const MeshLoop **ltri = (const MeshLoop **)me->looptris[index];
 
   const float *t0, *t1, *t2;
   t0 = ltri[0]->v->co;
@@ -276,10 +271,10 @@ static void editmesh_looptri_raycast_backface_culling_cb(void *userdata,
   }
 }
 
-static bool raycastEditMesh(SnapCache_EditMesh *em_cache,
-                            SnapObjectContext *sctx,
-                            Object *ob_eval,
-                            BMEditMesh *em,
+static bool raycastMeshEdit(SnapCacheMeditEdit *me_cache,
+                            SnapObCxt *sctx,
+                            Ob *ob_eval,
+                            MeshEdit *em,
                             const float4x4 &obmat,
                             const uint ob_index)
 {
@@ -294,18 +289,17 @@ static bool raycastEditMesh(SnapCache_EditMesh *em_cache,
   ray_normal_local = math::normalize_and_get_length(ray_normal_local, local_scale);
 
   const bool is_in_front = sctx->runtime.params.use_occlusion_test &&
-                           (ob_eval->dtx & OB_DRAW_IN_FRONT) != 0;
-  const float depth_max = is_in_front ? sctx->ret.ray_depth_max_in_front : sctx->ret.ray_depth_max;
+                           (ob_eval->dtx & OB_DRW_IN_FRONT) != 0;
+  const float depth_max = is_in_front ? sctx->ret.ray_depth_max_in_front : scxt->ret.ray_depth_max;
   local_depth = depth_max;
   if (local_depth != BVH_RAYCAST_DIST_MAX) {
     local_depth *= local_scale;
   }
 
   /* Test bounding box */
-
-  /* was BKE_boundbox_ray_hit_check, see: cf6ca226fa58 */
+  /* was dune_boundbox_ray_hit_check, see: cf6ca226fa58 */
   if (!isect_ray_aabb_v3_simple(
-          ray_start_local, ray_normal_local, em_cache->min, em_cache->max, &len_diff, nullptr))
+          ray_start_local, ray_normal_local, me_cache->min, me_cache->max, &len_diff, nullptr))
   {
     return retval;
   }
