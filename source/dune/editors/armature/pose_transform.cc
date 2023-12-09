@@ -51,43 +51,41 @@
 /* Local Utils */
 static void pose_copybuf_filepath_get(char filepath[FILE_MAX], size_t filepath_maxncpy)
 {
-  lib_path_join(filepath, filepath_maxncpy, dune_tmpdir_base(), "copybuffer_pose.blend");
+  lib_path_join(filepath, filepath_maxncpy, dune_tmpdir_base(), "copybuf_pose.dune");
 }
 
 /* Apply Pose as Rest Pose */
 /* helper for apply_armature_pose2bones - fixes parenting of obs
  * that are bone-parented to armature */
-static void applyarmature_fix_boneparents(const Cxt *C, Scene *scene, Object *armob)
+static void applyarmature_fix_boneparents(const Cxt *C, Scene *scene, Ob *armob)
 {
-  /* Depsgraph has been ensured to be evaluated at the beginning of the operator.
+  /* Graph is ensured to be eval at beginning of the op.
+   * Must not eval graph here yet, this will ruin ob matrix which we want to
+   * preserve after other changes has been done in the op.
    *
-   * Must not evaluate depsgraph here yet, since this will ruin object matrix which we want to
-   * preserve after other changes has been done in the operator.
-   *
-   * TODO(sergey): This seems very similar to `ignore_parent_tx()`, which was now ensured to work
-   * quite reliably. Can we de-duplicate the code? Or at least verify we don't need an extra logic
-   * in this function. */
-  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
-  Main *bmain = CTX_data_main(C);
-  Object workob, *ob;
+   * TODO: Is very similar to `ignore_parent_tx()`, which was now ensured to work
+   * quite reliably. Can we dedup the code? Or at least verify we don't need an extra logic
+   * in this fn. */
+  Graph *graph = cxt_data_graph_ptr(C);
+  Main *main = cxt_data_main(C);
+  Ob workob, *ob;
 
   /* go through all objects in database */
-  for (ob = static_cast<Object *>(bmain->objects.first); ob;
-       ob = static_cast<Object *>(ob->id.next)) {
+  for (ob = static_cast<Ob *>(main->obs.first); ob;
+       ob = static_cast<Ob *>(ob->id.next)) {
     /* if parent is bone in this armature, apply corrections */
     if ((ob->parent == armob) && (ob->partype == PARBONE)) {
       /* apply current transform from parent (not yet destroyed),
-       * then calculate new parent inverse matrix
-       */
-      BKE_object_apply_mat4(ob, ob->object_to_world, false, false);
+       * then calc new parent inverse matrix  */
+      dune_ob_apply_mat4(ob, ob->ob_to_world, false, false);
 
-      BKE_object_workob_calc_parent(depsgraph, scene, ob, &workob);
-      invert_m4_m4(ob->parentinv, workob.object_to_world);
+      dune_ob_workob_calc_parent(graph, scene, ob, &workob);
+      invert_m4_m4(ob->parentinv, workob.ob_to_world);
     }
   }
 }
 
-/* Sets the bone head, tail and roll to match the supplied parameters. */
+/* Sets the bone head, tail and roll to match the supplied params. */
 static void applyarmature_set_edit_position(EditBone *curbone,
                                             const float pose_mat[4][4],
                                             const float new_tail[3],
@@ -98,9 +96,8 @@ static void applyarmature_set_edit_position(EditBone *curbone,
   copy_v3_v3(curbone->tail, new_tail);
 
   /* Fix roll:
-   * 1. find auto-calculated roll value for this bone now
-   * 2. remove this from the 'visual' y-rotation
-   */
+   * 1. find auto-calcd roll val for this bone now
+   * 2. remove this from the 'visual' y-rotation */
   {
     float premat[3][3], pmat[3][3];
     float delta[3];
@@ -120,16 +117,15 @@ static void applyarmature_set_edit_position(EditBone *curbone,
   }
 }
 
-/* Copy properties over from pchan to curbone and reset channels. */
-static void applyarmature_transfer_properties(EditBone *curbone,
-                                              bPoseChannel *pchan,
-                                              const bPoseChannel *pchan_eval)
+/* Copy props over from pchan to curbone and reset channels. */
+static void applyarmature_transfer_props(EditBone *curbone,
+                                         PoseChannel *pchan,
+                                         const PoseChannel *pchan_eval)
 {
-  /* Combine pose and rest values for bendy bone settings,
-   * then clear the pchan values (so we don't get a double-up).
-   */
+  /* Combine pose and rest vals for bendy bone settings,
+   * then clear the pchan vals (so we don't get a double-up). */
   if (pchan->bone->segments > 1) {
-    /* Combine rest/pose values. */
+    /* Combine rest/pose vals. */
     curbone->curve_in_x += pchan_eval->curve_in_x;
     curbone->curve_in_z += pchan_eval->curve_in_z;
     curbone->curve_out_x += pchan_eval->curve_out_x;
@@ -142,7 +138,7 @@ static void applyarmature_transfer_properties(EditBone *curbone,
     mul_v3_v3(curbone->scale_in, pchan_eval->scale_in);
     mul_v3_v3(curbone->scale_out, pchan_eval->scale_out);
 
-    /* Reset pose values. */
+    /* Reset pose vals. */
     pchan->curve_in_x = pchan->curve_out_x = 0.0f;
     pchan->curve_in_z = pchan->curve_out_z = 0.0f;
     pchan->roll1 = pchan->roll2 = 0.0f;
@@ -152,7 +148,7 @@ static void applyarmature_transfer_properties(EditBone *curbone,
     copy_v3_fl(pchan->scale_out, 1.0f);
   }
 
-  /* Clear transform values for pchan. */
+  /* Clear transform vals for pchan. */
   zero_v3(pchan->loc);
   zero_v3(pchan->eul);
   unit_qt(pchan->quat);
@@ -161,12 +157,12 @@ static void applyarmature_transfer_properties(EditBone *curbone,
 }
 
 /* Adjust the current edit position of the bone using the pose space matrix. */
-static void applyarmature_adjust_edit_position(bArmature *arm,
-                                               bPoseChannel *pchan,
+static void applyarmature_adjust_edit_position(Armature *arm,
+                                               PoseChannel *pchan,
                                                const float delta_mat[4][4],
                                                float r_new_arm_mat[4][4])
 {
-  EditBone *curbone = ED_armature_ebone_find_name(arm->edbo, pchan->name);
+  EditBone *curbone = ed_armature_ebone_find_name(arm->edbo, pchan->name);
   float delta[3], new_tail[3], premat[3][3], new_pose[4][4];
 
   /* Current orientation matrix. */
@@ -181,43 +177,42 @@ static void applyarmature_adjust_edit_position(bArmature *arm,
   applyarmature_set_edit_position(curbone, new_pose, new_tail, r_new_arm_mat);
 }
 
-/* Data about parent position for Apply To Selected mode. */
-struct ApplyArmature_ParentState {
+/* Data about parent position for Apply To Sel mode. */
+struct ApplyArmatureParentState {
   Bone *bone;
 
   /* New rest position of the bone with scale included. */
   float new_rest_mat[4][4];
-  /* New arm_mat of the bone == new_rest_mat without scale. */
+  /* New arm_mat of the bone == new_rest_mat wo scale. */
   float new_arm_mat[4][4];
 };
 
-/* Recursive walk for Apply To Selected mode; pstate nullptr unless child of an applied bone. */
-static void applyarmature_process_selected_recursive(bArmature *arm,
-                                                     bPose *pose,
-                                                     bPose *pose_eval,
-                                                     Bone *bone,
-                                                     ListBase *selected,
-                                                     ApplyArmature_ParentState *pstate)
+/* Recursive walk for Apply To Sel mode; pstate nullptr unless child of an applied bone. */
+static void applyarmature_process_sel_recursive(Armature *arm,
+                                                Pose *pose,
+                                                Pose *pose_eval,
+                                                Bone *bone,
+                                                List *sel,
+                                                ApplyArmatureParentState *pstate)
 {
-  bPoseChannel *pchan = BKE_pose_channel_find_name(pose, bone->name);
-  const bPoseChannel *pchan_eval = BKE_pose_channel_find_name(pose_eval, bone->name);
+  PoseChannel *pchan = dune_pose_channel_find_name(pose, bone->name);
+  const PoseChannel *pchan_eval = dune_pose_channel_find_name(pose_eval, bone->name);
 
   if (!pchan || !pchan_eval) {
     return;
   }
 
-  ApplyArmature_ParentState new_pstate{};
+  ApplyArmatureParentState new_pstate{};
   new_pstate.bone = bone;
 
-  if (BLI_findptr(selected, pchan, offsetof(CollectionPointerLink, ptr.data))) {
-    /* SELECTED BONE: Snap to final pose transform minus un-applied parent effects.
+  if (lib_findptr(sel, pchan, offsetof(CollectionPtrLink, ptr.data))) {
+    /* SEL BONE: Snap to final pose transform minus un-applied parent effects.
      *
      * I.e. bone position with accumulated parent effects but no local
      * transformation will match the original final pose_mat.
      *
-     * Pose channels are reset as expected.
-     */
-    EditBone *curbone = ED_armature_ebone_find_name(arm->edbo, pchan->name);
+     * Pose channels are reset as expected. */
+    EditBone *curbone = ed_armature_ebone_find_name(arm->edbo, pchan->name);
     BoneParentTransform invparent;
     float new_tail[3];
 
@@ -226,8 +221,8 @@ static void applyarmature_process_selected_recursive(bArmature *arm,
       float offs_bone[4][4];
 
       /* Parent effects on the bone transform that have to be removed. */
-      BKE_bone_offset_matrix_get(bone, offs_bone);
-      BKE_bone_parent_transform_calc_from_matrices(bone->flag,
+      dune_bone_offset_matrix_get(bone, offs_bone);
+      dune_bone_parent_transform_calc_from_matrices(bone->flag,
                                                    bone->inherit_scale_mode,
                                                    offs_bone,
                                                    bone->parent->arm_mat,
@@ -236,48 +231,47 @@ static void applyarmature_process_selected_recursive(bArmature *arm,
 
       /* Applied parent effects that have to be kept, if any. */
       float(*new_parent_pose)[4] = pstate ? pstate->new_rest_mat : bone->parent->arm_mat;
-      BKE_bone_parent_transform_calc_from_matrices(bone->flag,
+      dune_bone_parent_transform_calc_from_matrices(bone->flag,
                                                    bone->inherit_scale_mode,
                                                    offs_bone,
                                                    bone->parent->arm_mat,
                                                    new_parent_pose,
                                                    &new_bpt);
 
-      BKE_bone_parent_transform_invert(&old_bpt);
-      BKE_bone_parent_transform_combine(&new_bpt, &old_bpt, &invparent);
+      dune_bone_parent_transform_invert(&old_bpt);
+      dune_bone_parent_transform_combine(&new_bpt, &old_bpt, &invparent);
     }
     else {
-      BKE_bone_parent_transform_clear(&invparent);
+      dune_bone_parent_transform_clear(&invparent);
     }
 
-    /* Apply change without inherited unapplied parent transformations. */
-    BKE_bone_parent_transform_apply(&invparent, pchan_eval->pose_mat, new_pstate.new_rest_mat);
+    /* Apply change wo inherited unapplied parent transformations. */
+    dune_bone_parent_transform_apply(&invparent, pchan_eval->pose_mat, new_pstate.new_rest_mat);
 
     copy_v3_fl3(new_tail, 0.0, bone->length, 0.0);
     mul_m4_v3(new_pstate.new_rest_mat, new_tail);
 
     applyarmature_set_edit_position(
         curbone, new_pstate.new_rest_mat, new_tail, new_pstate.new_arm_mat);
-    applyarmature_transfer_properties(curbone, pchan, pchan_eval);
+    applyarmature_transfer_props(curbone, pchan, pchan_eval);
 
     pstate = &new_pstate;
   }
   else if (pstate) {
-    /* UNSELECTED CHILD OF SELECTED: Include applied parent effects.
+    /* UNSEL CHILD OF SEL: Include applied parent effects.
      *
-     * The inherited transform of applied (selected) bones is baked
+     * The inherited transform of applied (sel) bones is baked
      * into the rest pose so that the final bone position doesn't
      * change.
      *
      * Pose channels are not changed, with the exception of the inherited
-     * applied parent scale being baked into the location pose channel.
-     */
+     * applied parent scale being baked into the location pose channel. */
     BoneParentTransform bpt;
     float offs_bone[4][4], delta[4][4], old_chan_loc[3];
 
     /* Include applied parent effects. */
-    BKE_bone_offset_matrix_get(bone, offs_bone);
-    BKE_bone_parent_transform_calc_from_matrices(bone->flag,
+    dune_bone_offset_matrix_get(bone, offs_bone);
+    dune_bone_parent_transform_calc_from_matrices(bone->flag,
                                                  bone->inherit_scale_mode,
                                                  offs_bone,
                                                  pstate->bone->arm_mat,
@@ -285,7 +279,7 @@ static void applyarmature_process_selected_recursive(bArmature *arm,
                                                  &bpt);
 
     unit_m4(new_pstate.new_rest_mat);
-    BKE_bone_parent_transform_apply(&bpt, new_pstate.new_rest_mat, new_pstate.new_rest_mat);
+    dune_bone_parent_transform_apply(&bpt, new_pstate.new_rest_mat, new_pstate.new_rest_mat);
 
     /* Bone location channel in pose space relative to bone head. */
     mul_v3_mat3_m4v3(old_chan_loc, bpt.loc_mat, pchan_eval->loc);
@@ -304,7 +298,7 @@ static void applyarmature_process_selected_recursive(bArmature *arm,
       /* Compute the channel coordinate space matrices for the new rest state. */
       invert_m4_m4(inv_parent_arm, pstate->new_arm_mat);
       mul_m4_m4m4(offs_bone, inv_parent_arm, new_pstate.new_arm_mat);
-      BKE_bone_parent_transform_calc_from_matrices(bone->flag,
+      dune_bone_parent_transform_calc_from_matrices(bone->flag,
                                                    bone->inherit_scale_mode,
                                                    offs_bone,
                                                    pstate->new_arm_mat,
@@ -319,21 +313,21 @@ static void applyarmature_process_selected_recursive(bArmature *arm,
     pstate = &new_pstate;
   }
 
-  LISTBASE_FOREACH (Bone *, child, &bone->childbase) {
-    applyarmature_process_selected_recursive(arm, pose, pose_eval, child, selected, pstate);
+  LIST_FOREACH (Bone *, child, &bone->childbase) {
+    applyarmature_process_sel_recursive(arm, pose, pose_eval, child, sel, pstate);
   }
 }
 
 /* Reset bone constraint so that it is correct after the pose has been applied. */
-static void applyarmature_reset_bone_constraint(const bConstraint *constraint)
+static void applyarmature_reset_bone_constraint(const Constraint *constraint)
 {
-  /* TODO(Sybren): This function needs too much knowledge of the internals of specific constraints.
-   * When it is extended with one or two more constraints, move the functionality into a
-   * bConstraintTypeInfo callback function. */
+  /* TODO: This fn needs too much knowledge of the internals of specific constraints.
+   * When it is extended w 1 or 2 more constraints, move the functionality into a
+   * ConstraintTypeInfo cb fn. */
   switch (constraint->type) {
     case CONSTRAINT_TYPE_STRETCHTO: {
-      bStretchToConstraint *stretch_to = (bStretchToConstraint *)constraint->data;
-      stretch_to->orglength = 0.0f; /* Force recalculation on next evaluation. */
+      StretchToConstraint *stretch_to = (StretchToConstraint *)constraint->data;
+      stretch_to->orglength = 0.0f; /* Force recalc on next eval. */
       break;
     }
     default:
@@ -344,20 +338,20 @@ static void applyarmature_reset_bone_constraint(const bConstraint *constraint)
 
 /* Reset bone constraints of the given pose channel so that they are correct after the pose has
  * been applied. */
-static void applyarmature_reset_bone_constraints(const bPoseChannel *pchan)
+static void applyarmature_reset_bone_constraints(const PoseChannel *pchan)
 {
-  LISTBASE_FOREACH (bConstraint *, constraint, &pchan->constraints) {
+  LIST_FOREACH (Constraint *, constraint, &pchan->constraints) {
     applyarmature_reset_bone_constraint(constraint);
   }
 }
 
 /* Reset all (or only selected) bone constraints so that they are correct after the pose has been
  * applied. */
-static void applyarmature_reset_constraints(bPose *pose, const bool use_selected)
+static void applyarmature_reset_constraints(Pose *pose, const bool use_sel)
 {
-  LISTBASE_FOREACH (bPoseChannel *, pchan, &pose->chanbase) {
-    BLI_assert(pchan->bone != nullptr);
-    if (use_selected && (pchan->bone->flag & BONE_SELECTED) == 0) {
+  LIST_FOREACH (PoseChannel *, pchan, &pose->chanbase) {
+    lib_assert(pchan->bone != nullptr);
+    if (use_sel && (pchan->bone->flag & BONE_SEL) == 0) {
       continue;
     }
     applyarmature_reset_bone_constraints(pchan);
@@ -365,66 +359,66 @@ static void applyarmature_reset_constraints(bPose *pose, const bool use_selected
 }
 
 /* Set the current pose as the rest-pose. */
-static int apply_armature_pose2bones_exec(bContext *C, wmOperator *op)
+static int apply_armature_pose2bones_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
-  /* must be active object, not edit-object */
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-  const Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
-  bArmature *arm = BKE_armature_from_object(ob);
-  bPose *pose;
-  ListBase selected_bones;
+  Main *main = cxt_data_main(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
+  /* must be active ob, not edit-ob */
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
+  const Ob *ob_eval = graph_get_eval_ob(graph, ob);
+  Armature *arm = dune_armature_from_ob(ob);
+  Pose *pose;
+  List sel_bones;
 
-  const bool use_selected = RNA_boolean_get(op->ptr, "selected");
+  const bool use_sel = api_bool_get(op->ptr, "sel");
 
   /* don't check if editmode (should be done by caller) */
   if (ob->type != OB_ARMATURE) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  if (BKE_object_obdata_is_libdata(ob)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot apply pose to lib-linked armature");
-    return OPERATOR_CANCELLED;
+  if (dune_ob_obdata_is_libdata(ob)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot apply pose to lib-linked armature");
+    return OP_CANCELLED;
   }
 
   /* helpful warnings... */
   /* TODO: add warnings to be careful about actions, applying deforms first, etc. */
   if (ob->adt && ob->adt->action) {
-    BKE_report(op->reports,
+    dune_report(op->reports,
                RPT_WARNING,
                "Actions on this armature will be destroyed by this new rest pose as the "
                "transforms stored are relative to the old rest pose");
   }
 
-  /* Find selected bones before switching to edit mode. */
-  if (use_selected) {
-    CTX_data_selected_pose_bones(C, &selected_bones);
+  /* Find sel bones before switching to edit mode. */
+  if (use_sel) {
+    cxt_data_sel_pose_bones(C, &sel_bones);
 
-    if (!selected_bones.first) {
-      return OPERATOR_CANCELLED;
+    if (!sel_bones.first) {
+      return OP_CANCELLED;
     }
   }
 
   /* Get edit-bones of active armature to alter. */
-  ED_armature_to_edit(arm);
+  ed_armature_to_edit(arm);
 
-  /* Get pose of active object and move it out of pose-mode. */
+  /* Get pose of active ob and move it out of pose-mode. */
   pose = ob->pose;
 
-  if (use_selected) {
-    /* The selected only mode requires a recursive walk to handle parent-child relations. */
-    LISTBASE_FOREACH (Bone *, bone, &arm->bonebase) {
-      applyarmature_process_selected_recursive(
-          arm, pose, ob_eval->pose, bone, &selected_bones, nullptr);
+  if (use_sel) {
+    /* The sel only mode requires a recursive walk to handle parent-child relations. */
+    LIST_FOREACH (Bone *, bone, &arm->bonebase) {
+      applyarmature_process_sel_recursive(
+          arm, pose, ob_eval->pose, bone, &sel_bones, nullptr);
     }
 
-    BLI_freelistN(&selected_bones);
+    lib_freelist(&sel_bones);
   }
   else {
-    LISTBASE_FOREACH (bPoseChannel *, pchan, &pose->chanbase) {
-      const bPoseChannel *pchan_eval = BKE_pose_channel_find_name(ob_eval->pose, pchan->name);
-      EditBone *curbone = ED_armature_ebone_find_name(arm->edbo, pchan->name);
+    LIST_FOREACH (PoseChannel *, pchan, &pose->chanbase) {
+      const PoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
+      EditBone *curbone = dune_armature_ebone_find_name(arm->edbo, pchan->name);
 
       applyarmature_set_edit_position(
           curbone, pchan_eval->pose_mat, pchan_eval->pose_tail, nullptr);
@@ -433,132 +427,127 @@ static int apply_armature_pose2bones_exec(bContext *C, wmOperator *op)
   }
 
   /* Convert edit-bones back to bones, and then free the edit-data. */
-  ED_armature_from_edit(bmain, arm);
-  ED_armature_edit_free(arm);
+  ed_armature_from_edit(main, arm);
+  ed_armature_edit_free(arm);
 
   /* Flush positions of pose-bones. */
-  BKE_pose_where_is(depsgraph, scene, ob);
+  dune_pose_where_is(graph, scene, ob);
 
-  /* fix parenting of objects which are bone-parented */
+  /* fix parenting of obs which are bone-parented */
   applyarmature_fix_boneparents(C, scene, ob);
 
   /* For the affected bones, reset specific constraints that are now known to be invalid. */
-  applyarmature_reset_constraints(pose, use_selected);
+  applyarmature_reset_constraints(pose, use_sel);
 
   /* NOTE: notifier might evolve. */
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
-  DEG_id_tag_update(&ob->id, ID_RECALC_COPY_ON_WRITE);
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_COPY_ON_WRITE);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void apply_armature_pose2bones_ui(bContext *C, wmOperator *op)
+static void apply_armature_pose2bones_ui(Cxt *C, WinOp *op)
 {
   uiLayout *layout = op->layout;
-  wmWindowManager *wm = CTX_wm_manager(C);
+  Win *win = cxt_win(C);
 
-  PointerRNA ptr = RNA_pointer_create(&wm->id, op->type->srna, op->properties);
+  ApiPtr ptr = api_ptr_create(&win->id, op->type->sapi, op->props);
 
-  uiItemR(layout, &ptr, "selected", UI_ITEM_NONE, nullptr, ICON_NONE);
+  uiItemR(layout, &ptr, "sel", UI_ITEM_NONE, nullptr, ICON_NONE);
 }
 
-void POSE_OT_armature_apply(wmOperatorType *ot)
+void POSE_OT_armature_apply(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Apply Pose as Rest Pose";
   ot->idname = "POSE_OT_armature_apply";
   ot->description = "Apply the current pose as the new rest pose";
 
-  /* callbacks */
-  ot->exec = apply_armature_pose2bones_exec;
-  ot->poll = ED_operator_posemode;
+  /* cbs */
+  ot->ex = apply_armature_pose2bones_ex;
+  ot->poll = ed_op_posemode;
   ot->ui = apply_armature_pose2bones_ui;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_boolean(ot->srna,
-                  "selected",
-                  false,
-                  "Selected Only",
-                  "Only apply the selected bones (with propagation to children)");
+  api_def_bool(ot->sapi,
+               "sel",
+               false,
+               "Sel Only",
+               "Only apply the sel bones (with propagation to children)");
 }
 
-/** \} */
+/* Apply Visual Transform Op
+ * Set the current pose as the rest-pose. */
 
-/* -------------------------------------------------------------------- */
-/** \name Apply Visual Transform Operator
- *
- * Set the current pose as the rest-pose.
- * \{ */
-
-static int pose_visual_transform_apply_exec(bContext *C, wmOperator * /*op*/)
+static int pose_visual_transform_apply_ex(Cxt *C, WinOp * /*op*/)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
 
-  /* Needed to ensure #bPoseChannel.pose_mat are up to date. */
-  CTX_data_ensure_evaluated_depsgraph(C);
+  /* Needed to ensure PoseChannel.pose_mat are up to date. */
+  cxt_data_ensure_eval_graph(C);
 
-  FOREACH_OBJECT_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob) {
-    const bArmature *arm = static_cast<const bArmature *>(ob->data);
+  FOREACH_OB_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob) {
+    const Armature *arm = static_cast<const Armature *>(ob->data);
 
-    int chanbase_len = BLI_listbase_count(&ob->pose->chanbase);
-    /* Storage for the calculated matrices to prevent reading from modified values.
-     * NOTE: this could be avoided if children were always calculated before parents
+    int chanbase_len = lib_list_count(&ob->pose->chanbase);
+    /* Storage for the calcd matrices to prevent reading from modded vals.
+     * This could be avoided if children were always calc before parents
      * however ensuring this is involved and doesn't give any significant advantage. */
     struct XFormArray {
       float matrix[4][4];
       bool is_set;
     } *pchan_xform_array = static_cast<XFormArray *>(
-        MEM_mallocN(sizeof(*pchan_xform_array) * chanbase_len, __func__));
+        mem_malloc(sizeof(*pchan_xform_array) * chanbase_len, __func__));
     bool changed = false;
 
     int i;
-    LISTBASE_FOREACH_INDEX (bPoseChannel *, pchan, &ob->pose->chanbase, i) {
-      if (!((pchan->bone->flag & BONE_SELECTED) && PBONE_VISIBLE(arm, pchan->bone))) {
+    LIST_FOREACH_INDEX (PoseChannel *, pchan, &ob->pose->chanbase, i) {
+      if (!((pchan->bone->flag & BONE_SEL) && PBONE_VISIBLE(arm, pchan->bone))) {
         pchan_xform_array[i].is_set = false;
         continue;
       }
 
-      /* `chan_mat` already contains the delta transform from rest pose to pose-mode pose
+      /* `chan_mat` alrdy contains the delta transform from rest pose to pose-mode pose
        * as that is baked into there so that B-Bones will work. Once we've set this as the
-       * new raw-transform components, don't recalculate the poses yet, otherwise IK result will
+       * new raw-transform components, don't recalc the poses yet, otherwise IK result will
        * change, thus changing the result we may be trying to record. */
 
-      /* NOTE: For some reason `pchan->chan_mat` can't be used here as it gives odd
+      /* For some reason `pchan->chan_mat` can't be used here as it gives odd
        * rotation/offset, see #38251.
        * Using `pchan->pose_mat` and bringing it back in bone space seems to work as expected!
        * This matches how visual key-framing works. */
-      BKE_armature_mat_pose_to_bone(pchan, pchan->pose_mat, pchan_xform_array[i].matrix);
+      dune_armature_mat_pose_to_bone(pchan, pchan->pose_mat, pchan_xform_array[i].matrix);
       pchan_xform_array[i].is_set = true;
       changed = true;
     }
 
     if (changed) {
       /* Perform separately to prevent feedback loop. */
-      LISTBASE_FOREACH_INDEX (bPoseChannel *, pchan, &ob->pose->chanbase, i) {
+      LIST_FOREACH_INDEX (PoseChannel *, pchan, &ob->pose->chanbase, i) {
         if (!pchan_xform_array[i].is_set) {
           continue;
         }
-        BKE_pchan_apply_mat4(pchan, pchan_xform_array[i].matrix, true);
+        dune_pchan_apply_mat4(pchan, pchan_xform_array[i].matrix, true);
       }
 
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
 
-      /* NOTE: notifier might evolve. */
-      WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
+      /* Notifier might evolve. */
+      win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
     }
 
-    MEM_freeN(pchan_xform_array);
+    mem_free(pchan_xform_array);
   }
-  FOREACH_OBJECT_IN_MODE_END;
+  FOREACH_OB_IN_MODE_END;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_visual_transform_apply(wmOperatorType *ot)
+void POSE_OT_visual_transform_apply(WinOpType *ot)
 {
   /* identifiers */
   ot->name = "Apply Visual Transform to Pose";
