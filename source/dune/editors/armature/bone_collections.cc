@@ -1,201 +1,196 @@
-/** \file
- * \ingroup edarmature
- * Implementation of Bone Collection operators and editing API's.
- */
+/* Implementation of Bone Collection ops and editing API's. */
 
 #include <cstring>
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
-#include "DNA_ID.h"
-#include "DNA_object_types.h"
+#include "types_id.h"
+#include "types_ob.h"
 
-#include "BKE_action.h"
-#include "BKE_context.hh"
-#include "BKE_layer.h"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_cxt.hh"
+#include "dune_layer.h"
+#include "dune_report.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_object.hh"
-#include "ED_outliner.hh"
-#include "ED_screen.hh"
+#include "ed_armature.hh"
+#include "ed_ob.hh"
+#include "ed_outliner.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
 #include "armature_intern.h"
 
-struct wmOperator;
+struct WinOp;
 
-/* ********************************************** */
 /* Bone collections */
-
-static bool bone_collection_add_poll(bContext *C)
+static bool bone_collection_add_poll(Cxt *C)
 {
-  Object *ob = ED_object_context(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob == nullptr) {
     return false;
   }
 
   if (ob->type != OB_ARMATURE) {
-    CTX_wm_operator_poll_msg_set(C, "Bone collections can only be added to an Armature");
+    cxt_win_op_poll_msg_set(C, "Bone collections can only be added to an Armature");
     return false;
   }
 
   if (ID_IS_LINKED(ob->data)) {
-    CTX_wm_operator_poll_msg_set(
-        C, "Cannot add bone collections to a linked Armature without an override");
+    cxt_win_op_poll_msg_set(
+        C, "Cannot add bone collections to a linked Armature wo an override");
     return false;
   }
 
   return true;
 }
 
-/** Allow edits of local bone collection only (full local or local override). */
-static bool active_bone_collection_poll(bContext *C)
+/* Allow edits of local bone collection only (full local or local override). */
+static bool active_bone_collection_poll(Cxt *C)
 {
-  Object *ob = ED_object_context(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob == nullptr) {
     return false;
   }
 
   if (ob->type != OB_ARMATURE) {
-    CTX_wm_operator_poll_msg_set(C, "Bone collections can only be edited on an Armature");
+    cxt_win_op_poll_msg_set(C, "Bone collections can only be edited on an Armature");
     return false;
   }
 
-  bArmature *armature = static_cast<bArmature *>(ob->data);
+  Armature *armature = static_cast<Armature *>(ob->data);
   BoneCollection *bcoll = armature->runtime.active_collection;
 
   if (bcoll == nullptr) {
-    CTX_wm_operator_poll_msg_set(C, "Armature has no active bone collection, select one first");
+    cxt_win_op_poll_msg_set(C, "Armature has no active bone collection, sel one first");
     return false;
   }
 
-  if (!ANIM_armature_bonecoll_is_editable(armature, bcoll)) {
-    CTX_wm_operator_poll_msg_set(
-        C, "Cannot edit bone collections that are linked from another blend file");
+  if (!anim_armature_bonecoll_is_editable(armature, bcoll)) {
+    cxt_win_op_poll_msg_set(
+        C, "Cannot edit bone collections that are linked from another dune file");
     return false;
   }
   return true;
 }
 
-static int bone_collection_add_exec(bContext *C, wmOperator * /*op*/)
+static int bone_collection_add_ex(Cxt *C, WinOp * /*op*/)
 {
-  Object *ob = ED_object_context(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  bArmature *armature = static_cast<bArmature *>(ob->data);
-  BoneCollection *bcoll = ANIM_armature_bonecoll_new(armature, nullptr);
-  ANIM_armature_bonecoll_active_set(armature, bcoll);
+  Armature *armature = static_cast<Armature *>(ob->data);
+  BoneCollection *bcoll = anim_armature_bonecoll_new(armature, nullptr);
+  anim_armature_bonecoll_active_set(armature, bcoll);
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_collection_add(wmOperatorType *ot)
+void ARMATURE_OT_collection_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Bone Collection";
   ot->idname = "ARMATURE_OT_collection_add";
   ot->description = "Add a new bone collection";
 
-  /* api callbacks */
-  ot->exec = bone_collection_add_exec;
+  /* api cbs */
+  ot->ex = bone_collection_add_ex;
   ot->poll = bone_collection_add_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int bone_collection_remove_exec(bContext *C, wmOperator * /*op*/)
+static int bone_collection_remove_ex(Cxt *C, WinOp * /*op*/)
 {
-  Object *ob = ED_object_context(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* The poll function ensures armature->active_collection is not NULL. */
-  bArmature *armature = static_cast<bArmature *>(ob->data);
-  ANIM_armature_bonecoll_remove(armature, armature->runtime.active_collection);
+  /* The poll fn ensures armature->active_collection is not NULL. */
+  Armature *armature = static_cast<Armature *>(ob->data);
+  anim_armature_bonecoll_remove(armature, armature->runtime.active_collection);
 
   /* notifiers for updates */
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
-  DEG_id_tag_update(&armature->id, ID_RECALC_SELECT);
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
+  graph_id_tag_update(&armature->id, ID_RECALC_SEL);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_collection_remove(wmOperatorType *ot)
+void ARMATURE_OT_collection_remove(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Remove Bone Collection";
   ot->idname = "ARMATURE_OT_collection_remove";
   ot->description = "Remove the active bone collection";
 
-  /* api callbacks */
-  ot->exec = bone_collection_remove_exec;
+  /* api cbs */
+  ot->ex = bone_collection_remove_ex;
   ot->poll = active_bone_collection_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int bone_collection_move_exec(bContext *C, wmOperator *op)
+static int bone_collection_move_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = ED_object_context(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
-  const int direction = RNA_enum_get(op->ptr, "direction");
+  const int direction = api_enum_get(op->ptr, "direction");
 
-  /* Poll function makes sure this is valid. */
-  bArmature *armature = static_cast<bArmature *>(ob->data);
+  /* Poll fn makes sure this is valid. */
+  Armature *armature = static_cast<Armature *>(ob->data);
 
-  const bool ok = ANIM_armature_bonecoll_move(
+  const bool ok = anim_armature_bonecoll_move(
       armature, armature->runtime.active_collection, direction);
   if (!ok) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
-  return OPERATOR_FINISHED;
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_collection_move(wmOperatorType *ot)
+void ARMATURE_OT_collection_move(WinOpType *ot)
 {
-  static const EnumPropertyItem bcoll_slot_move[] = {
+  static const EnumPropItem bcoll_slot_move[] = {
       {-1, "UP", 0, "Up", ""},
       {1, "DOWN", 0, "Down", ""},
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  /* identifiers */
+  /* ids */
   ot->name = "Move Bone Collection";
   ot->idname = "ARMATURE_OT_collection_move";
   ot->description = "Change position of active Bone Collection in list of Bone collections";
 
-  /* api callbacks */
-  ot->exec = bone_collection_move_exec;
+  /* api cbs */
+  ot->ex = bone_collection_move_ex;
   ot->poll = active_bone_collection_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_enum(ot->srna,
+  api_def_enum(ot->srna,
                "direction",
                bcoll_slot_move,
                0,
