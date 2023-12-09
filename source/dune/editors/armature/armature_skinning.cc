@@ -1,68 +1,64 @@
-/** \file
- * \ingroup edarmature
- * API's for creating vertex groups from bones
- * - Interfaces with heat weighting in meshlaplacian.
- */
+/* API's for creating vertex groups from bones
+ * - Interfaces with heat weighting in meshlaplacian. */
+#include "types_armature.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "mem_guardedalloc.h"
 
-#include "MEM_guardedalloc.h"
+#include "lib_math_matrix.h"
+#include "lib_math_vector.h"
+#include "lib_string_utils.hh"
 
-#include "BLI_math_matrix.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.hh"
+#include "dune_action.h"
+#include "dune_armature.hh"
+#include "dune_deform.h"
+#include "dune_mesh.hh"
+#include "dune_mesh_iters.hh"
+#include "dune_mesh_runtime.hh"
+#include "dune_mod.hh"
+#include "dune_ob.hh"
+#include "dune_ob_deform.h"
+#include "dune_report.h"
+#include "dune_subsurf.hh"
 
-#include "BKE_action.h"
-#include "BKE_armature.hh"
-#include "BKE_deform.h"
-#include "BKE_mesh.hh"
-#include "BKE_mesh_iterators.hh"
-#include "BKE_mesh_runtime.hh"
-#include "BKE_modifier.hh"
-#include "BKE_object.hh"
-#include "BKE_object_deform.h"
-#include "BKE_report.h"
-#include "BKE_subsurf.hh"
+#include "graph.hh"
+#include "graph_query.hh"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_query.hh"
+#include "ed_armature.hh"
+#include "ed_mesh.hh"
 
-#include "ED_armature.hh"
-#include "ED_mesh.hh"
-
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
 #include "armature_intern.h"
 #include "meshlaplacian.h"
 
-/* ******************************* Bone Skinning *********************************************** */
+/* Bone Skinning */
 
-static int bone_skinnable_cb(Object * /*ob*/, Bone *bone, void *datap)
+static int bone_skinnable_cb(Ob * /*ob*/, Bone *bone, void *datap)
 {
   /* Bones that are deforming
    * are regarded to be "skinnable" and are eligible for
    * auto-skinning.
    *
-   * This function performs 2 functions:
+   * This fn performs 2 fns:
    *
    *   a) It returns 1 if the bone is skinnable.
    *      If we loop over all bones with this
-   *      function, we can count the number of
+   *      fns, we can count the number of
    *      skinnable bones.
-   *   b) If the pointer data is non null,
+   *   b) If the ptr data is non null,
    *      it is treated like a handle to a
-   *      bone pointer -- the bone pointer
+   *      bone ptr the bone ptr
    *      is set to point at this bone, and
-   *      the pointer the handle points to
+   *      the ptr the handle points to
    *      is incremented to point to the
-   *      next member of an array of pointers
+   *      next member of an array of ptrs
    *      to bones. This way we can loop using
-   *      this function to construct an array of
-   *      pointers to bones that point to all
+   *      this fn to construct an array of
+   *      ptrs to bones that point to all
    *      skinnable bones.
    */
   Bone ***hbone;
