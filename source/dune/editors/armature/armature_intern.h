@@ -5,78 +5,73 @@ extern "C" {
 #endif
 
 /* internal exports only */
-struct wmOperatorType;
+struct WinOpType;
 
 struct Base;
-struct GPUSelectResult;
-struct Object;
+struct GPUSelResult;
+struct Ob;
 struct Scene;
-struct bContext;
-struct bPoseChannel;
+struct Cxt;
+struct PoseChannel;
 
 struct Bone;
 struct EditBone;
-struct bArmature;
+struct Armature;
 
 struct LinkData;
-struct ListBase;
+struct List;
 
-/* -------------------------------------------------------------------- */
-/** \name Armature EditMode Operators
- * \{ */
+/* Armature EditMode Ops */
 
-void ARMATURE_OT_bone_primitive_add(struct wmOperatorType *ot);
+void ARMATURE_OT_bone_primitive_add(struct WinOpType *ot);
 
-void ARMATURE_OT_align(struct wmOperatorType *ot);
-void ARMATURE_OT_calculate_roll(struct wmOperatorType *ot);
-void ARMATURE_OT_roll_clear(struct wmOperatorType *ot);
-void ARMATURE_OT_switch_direction(struct wmOperatorType *ot);
+void ARMATURE_OT_align(struct WinOpType *ot);
+void ARMATURE_OT_calculate_roll(struct WinOpType *ot);
+void ARMATURE_OT_roll_clear(struct WinOpType *ot);
+void ARMATURE_OT_switch_direction(struct WinOpType *ot);
 
-void ARMATURE_OT_subdivide(struct wmOperatorType *ot);
+void ARMATURE_OT_subdivide(struct WinOpType *ot);
 
-void ARMATURE_OT_parent_set(struct wmOperatorType *ot);
-void ARMATURE_OT_parent_clear(struct wmOperatorType *ot);
+void ARMATURE_OT_parent_set(struct WinOpType *ot);
+void ARMATURE_OT_parent_clear(struct WinOpType *ot);
 
-void ARMATURE_OT_select_all(struct wmOperatorType *ot);
-void ARMATURE_OT_select_mirror(struct wmOperatorType *ot);
-void ARMATURE_OT_select_more(struct wmOperatorType *ot);
-void ARMATURE_OT_select_less(struct wmOperatorType *ot);
-void ARMATURE_OT_select_hierarchy(struct wmOperatorType *ot);
-void ARMATURE_OT_select_linked_pick(struct wmOperatorType *ot);
-void ARMATURE_OT_select_linked(struct wmOperatorType *ot);
-void ARMATURE_OT_select_similar(struct wmOperatorType *ot);
-void ARMATURE_OT_shortest_path_pick(struct wmOperatorType *ot);
+void ARMATURE_OT_sel_all(struct WinOpType *ot);
+void ARMATURE_OT_sel_mirror(struct WinOpType *ot);
+void ARMATURE_OT_sel_more(struct WinOpType *ot);
+void ARMATURE_OT_sel_less(struct WinOpType *ot);
+void ARMATURE_OT_sel_hierarchy(struct WinOpType *ot);
+void ARMATURE_OT_sel_linked_pick(struct WinOpType *ot);
+void ARMATURE_OT_sel_linked(struct WinOpType *ot);
+void ARMATURE_OT_sel_similar(struct WinOpType *ot);
+void ARMATURE_OT_shortest_path_pick(struct WinOpType *ot);
 
-void ARMATURE_OT_delete(struct wmOperatorType *ot);
-void ARMATURE_OT_dissolve(struct wmOperatorType *ot);
-void ARMATURE_OT_duplicate(struct wmOperatorType *ot);
-void ARMATURE_OT_symmetrize(struct wmOperatorType *ot);
-void ARMATURE_OT_extrude(struct wmOperatorType *ot);
-void ARMATURE_OT_hide(struct wmOperatorType *ot);
-void ARMATURE_OT_reveal(struct wmOperatorType *ot);
-void ARMATURE_OT_click_extrude(struct wmOperatorType *ot);
-void ARMATURE_OT_fill(struct wmOperatorType *ot);
-void ARMATURE_OT_separate(struct wmOperatorType *ot);
-void ARMATURE_OT_split(struct wmOperatorType *ot);
+void ARMATURE_OT_delete(struct WinOpType *ot);
+void ARMATURE_OT_dissolve(struct WinOpType *ot);
+void ARMATURE_OT_duplicate(struct WinOpType *ot);
+void ARMATURE_OT_symmetrize(struct WinOpType *ot);
+void ARMATURE_OT_extrude(struct WinOpType *ot);
+void ARMATURE_OT_hide(struct WinOpType *ot);
+void ARMATURE_OT_reveal(struct WinOpType *ot);
+void ARMATURE_OT_click_extrude(struct WinOpType *ot);
+void ARMATURE_OT_fill(struct WinOpType *ot);
+void ARMATURE_OT_separate(struct WinOpType *ot);
+void ARMATURE_OT_split(struct WinOpType *ot);
 
-void ARMATURE_OT_autoside_names(struct wmOperatorType *ot);
-void ARMATURE_OT_flip_names(struct wmOperatorType *ot);
+void ARMATURE_OT_autoside_names(struct WinOpType *ot);
+void ARMATURE_OT_flip_names(struct WinOpType *ot);
 
-void ARMATURE_OT_collection_add(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_remove(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_move(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_assign(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_unassign(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_unassign_named(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_select(struct wmOperatorType *ot);
-void ARMATURE_OT_collection_deselect(struct wmOperatorType *ot);
+void ARMATURE_OT_collection_add(struct WinOpType *ot);
+void ARMATURE_OT_collection_remove(struct WinOpType *ot);
+void ARMATURE_OT_collection_move(struct WinOpType *ot);
+void ARMATURE_OT_collection_assign(struct WinOpType *ot);
+void ARMATURE_OT_collection_unassign(struct WinOpType *ot);
+void ARMATURE_OT_collection_unassign_named(struct WinOpType *ot);
+void ARMATURE_OT_collection_sel(struct WinOpType *ot);
+void ARMATURE_OT_collection_desel(struct WinOpType *ot);
 
-void ARMATURE_OT_move_to_collection(struct wmOperatorType *ot);
-void ARMATURE_OT_assign_to_collection(struct wmOperatorType *ot);
+void ARMATURE_OT_move_to_collection(struct WinOpType *ot);
+void ARMATURE_OT_assign_to_collection(struct WinOpType *ot);
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /** \name Pose-Mode Operators
  * \{ */
 
