@@ -672,7 +672,7 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
   }
   CXT_DATA_END;
 
-  /* the number of joints determines how we fill:
+  /* the num of joints determines how we fill:
    *  1) between joint and cursor (joint=head, cursor=tail)
    *  2) between the two joints (order is dependent on active-bone/hierarchy)
    *  3+) error (a smarter method involving finding chains needs to be worked out */
@@ -765,7 +765,7 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
       headtail = 2;
     }
 
-    /* assign head/tail combinations */
+    /* assign head/tail combos */
     if (headtail == 2) {
       copy_v3_v3(head, ebp_a->vec);
       copy_v3_v3(tail, ebp_b->vec);
@@ -1035,24 +1035,22 @@ static int armature_align_bones_ex(Cxt *C, WinOp *op)
   if (arm->flag & ARM_MIRROR_EDIT) {
     /* For X-Axis Mirror Editing option, we may need a mirror copy of actbone
      * - if there's a mirrored copy of selbone, try to find a mirrored copy of actbone
-     *   (i.e.  selbone="child.L" and actbone="parent.L", find "child.R" and "parent.R").
-     *   This is useful for arm-chains, for example parenting lower arm to upper arm
+     * (i.e.  selbone="child.L" and actbone="parent.L", find "child.R" and "parent.R").
+     * This is useful for arm-chains, for example parenting lower arm to upper arm
      * - if there's no mirrored copy of actbone (i.e. actbone = "parent.C" or "parent")
-     *   then just use actbone. Useful when doing upper arm to spine.
-     */
+     * then just use actbone. Useful when doing upper arm to spine. */
     actmirb = ed_armature_ebone_get_mirrored(arm->edbo, actbone);
     if (actmirb == nullptr) {
       actmirb = actbone;
     }
   }
 
-  /* if there is only 1 selected bone, we assume that it is the active bone,
+  /* if there is only 1 sel bone, we assume that it is the active bone,
    * since a user will need to have clicked on a bone (thus selecting it) to make it active */
   num_sel_bones = CXT_DATA_COUNT(C, selected_editable_bones);
   if (num_sel_bones <= 1) {
     /* When only the active bone is sel, and it has a parent,
-     * align it to the parent, as that is the only possible outcome.
-     */
+     * align it to the parent, as that is the only possible outcome. */
     if (actbone->parent) {
       bone_align_to_bone(arm->edbo, actbone, actbone->parent);
 
@@ -1158,13 +1156,12 @@ void ARMATURE_OT_split(WinOpType *ot)
 }
 
 /* Del Op */
-
 static bool armature_delete_ebone_cb(const char *bone_name, void *arm_p)
 {
   Armature *arm = static_cast<Armature *>(arm_p);
   EditBone *ebone;
 
-  ebone = ED_armature_ebone_find_name(arm->edbo, bone_name);
+  ebone = ed_armature_ebone_find_name(arm->edbo, bone_name);
   return (ebone && (ebone->flag & BONE_SEL) && anim_bonecoll_is_visible_editbone(arm, ebone));
 }
 
@@ -1320,21 +1317,21 @@ static int armature_dissolve_sel_ex(Cxt *C, WinOp * /*op*/)
 
     /* cleanup multiple used bones */
     LIST_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (ebone->temp.ebone == ebone) {
-        ebone->temp.ebone = nullptr;
+      if (ebone->tmp.ebone == ebone) {
+        ebone->tmp.ebone = nullptr;
       }
     }
 
     LISTo_FOREACH (EditBone *, ebone, arm->edbo) {
       /* break connections for unseen bones */
-      if ((ANIM_bonecoll_is_visible_editbone(arm, ebone) &&
-           (ED_armature_ebone_selectflag_get(ebone) & (BONE_TIPSEL | BONE_SELECTED))) == 0)
+      if ((anim_bonecoll_is_visible_editbone(arm, ebone) &&
+           (ed_armature_ebone_selectflag_get(ebone) & (BONE_TIPSEL | BONE_SEL))) == 0)
       {
-        ebone->temp.ebone = nullptr;
+        ebone->tmp.ebone = nullptr;
       }
 
-      if ((ANIM_bonecoll_is_visible_editbone(arm, ebone) &&
-           (ED_armature_ebone_selectflag_get(ebone) & (BONE_ROOTSEL | BONE_SELECTED))) == 0)
+      if ((anim_bonecoll_is_visible_editbone(arm, ebone) &&
+           (ed_armature_ebone_selectflag_get(ebone) & (BONE_ROOTSEL | BONE_SELECTED))) == 0)
       {
         if (ebone->parent && (ebone->flag & BONE_CONNECTED)) {
           ebone->parent->temp.ebone = nullptr;
@@ -1342,14 +1339,14 @@ static int armature_dissolve_sel_ex(Cxt *C, WinOp * /*op*/)
       }
     }
 
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
 
-      if (ebone->parent && (ebone->parent->temp.ebone == ebone)) {
+      if (ebone->parent && (ebone->parent->tmp.ebone == ebone)) {
         ebone->flag |= BONE_DONE;
       }
     }
 
-    BKE_pose_channels_remove(obedit, armature_dissolve_ebone_cb, arm);
+    dune_pose_channels_remove(obedit, armature_dissolve_ebone_cb, arm);
 
     for (ebone = static_cast<EditBone *>(arm->edbo->first); ebone; ebone = ebone_next) {
       ebone_next = ebone->next;
@@ -1359,24 +1356,24 @@ static int armature_dissolve_sel_ex(Cxt *C, WinOp * /*op*/)
         ebone->parent->rad_tail = ebone->rad_tail;
         SET_FLAG_FROM_TEST(ebone->parent->flag, ebone->flag & BONE_TIPSEL, BONE_TIPSEL);
 
-        ED_armature_ebone_remove_ex(arm, ebone, false);
+        ed_armature_ebone_remove_ex(arm, ebone, false);
         changed = true;
       }
     }
 
     if (changed) {
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-        if (ebone->parent && ebone->parent->temp.ebone && (ebone->flag & BONE_CONNECTED)) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+        if (ebone->parent && ebone->parent->tmp.ebone && (ebone->flag & BONE_CONNECTED)) {
           ebone->rad_head = ebone->parent->rad_tail;
         }
       }
 
       if (arm->flag & ARM_MIRROR_EDIT) {
-        LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-          union Value {
+        LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+          union Val {
             int flag;
             void *p;
-          } *val_p = (Value *)BLI_ghash_lookup_p(ebone_flag_orig, ebone);
+          } *val_p = (Val )*lib_ghash_lookup_p(ebone_flag_orig, ebone);
           if (val_p && val_p->flag) {
             ebone->flag &= ~val_p->flag;
           }
@@ -1385,70 +1382,65 @@ static int armature_dissolve_sel_ex(Cxt *C, WinOp * /*op*/)
     }
 
     if (arm->flag & ARM_MIRROR_EDIT) {
-      BLI_ghash_free(ebone_flag_orig, nullptr, nullptr);
+      libq_ghash_free(ebone_flag_orig, nullptr, nullptr);
     }
 
     if (changed) {
       changed_multi = true;
-      ED_armature_edit_sync_selection(arm->edbo);
-      WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, obedit);
-      DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
-      ED_outliner_select_sync_from_edit_bone_tag(C);
+      ed_armature_edit_sync_sel(arm->edbo);
+      win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, obedit);
+      graph_id_tag_update(&arm->id, ID_RECALC_SEL);
+      ed_outliner_sel_sync_from_edit_bone_tag(C);
     }
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
   if (!changed_multi) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_dissolve(wmOperatorType *ot)
+void ARMATURE_OT_dissolve(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Dissolve Selected Bone(s)";
+  /* ids */
+  ot->name = "Dissolve Sel Bone(s)";
   ot->idname = "ARMATURE_OT_dissolve";
-  ot->description = "Dissolve selected bones from the armature";
+  ot->description = "Dissolve sel bones from the armature";
 
-  /* api callbacks */
-  ot->exec = armature_dissolve_selected_exec;
-  ot->poll = ED_operator_editarmature;
+  /* api cbs */
+  ot->ex = armature_dissolve_sel_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Hide Operator
- * \{ */
-
-static int armature_hide_exec(bContext *C, wmOperator *op)
+/* Hide Op */
+static int armature_hide_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const int invert = RNA_boolean_get(op->ptr, "unselected") ? BONE_SELECTED : 0;
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const int invert = api_bool_get(op->ptr, "unsel") ? BONE_SEL : 0;
 
-  /* cancel if nothing selected */
-  if (CTX_DATA_COUNT(C, selected_bones) == 0) {
-    return OPERATOR_CANCELLED;
+  /* cancel if nothing sel */
+  if (CXT_DATA_COUNT(C, sel_bones) == 0) {
+    return OP_CANCELLED;
   }
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(obedit->data);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(obedit->data);
     bool changed = false;
 
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
       if (EBONE_VISIBLE(arm, ebone)) {
-        if ((ebone->flag & BONE_SELECTED) != invert) {
-          ebone->flag &= ~(BONE_TIPSEL | BONE_SELECTED | BONE_ROOTSEL);
+        if ((ebone->flag & BONE_SEL) != invert) {
+          ebone->flag &= ~(BONE_TIPSEL | BONE_SEL | BONE_ROOTSEL);
           ebone->flag |= BONE_HIDDEN_A;
           changed = true;
         }
@@ -1458,59 +1450,54 @@ static int armature_hide_exec(bContext *C, wmOperator *op)
     if (!changed) {
       continue;
     }
-    ED_armature_edit_validate_active(arm);
-    ED_armature_edit_sync_selection(arm->edbo);
+    ed_armature_edit_validate_active(arm);
+    ed_armature_edit_sync_sel(arm->edbo);
 
-    WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, obedit);
-    DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
+    win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, obedit);
+    grapph_id_tag_update(&arm->id, ID_RECALC_SEL);
   }
-  MEM_freeN(objects);
-  return OPERATOR_FINISHED;
+  mem_free(obs);
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_hide(wmOperatorType *ot)
+void ARMATURE_OT_hide(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Hide Selected";
+  /* ids */
+  ot->name = "Hide Sel";
   ot->idname = "ARMATURE_OT_hide";
-  ot->description = "Tag selected bones to not be visible in Edit Mode";
+  ot->description = "Tag sel bones to not be visible in Edit Mode";
 
-  /* api callbacks */
-  ot->exec = armature_hide_exec;
-  ot->poll = ED_operator_editarmature;
+  /* api cbs */
+  ot->ex = armature_hide_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  RNA_def_boolean(
-      ot->srna, "unselected", false, "Unselected", "Hide unselected rather than selected");
+  api_def_bool(
+      ot->sapi, "unsel", false, "Unsel", "Hide unsel rather than sel");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Reveal Operator
- * \{ */
-
-static int armature_reveal_exec(bContext *C, wmOperator *op)
+/* Reveal Op */
+static int armature_reveal_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const bool select = RNA_boolean_get(op->ptr, "select");
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *obedit = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(obedit->data);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const bool sel = api_bool_get(op->ptr, "sel");
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *obedit = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(obedit->data);
     bool changed = false;
 
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (ANIM_bonecoll_is_visible_editbone(arm, ebone)) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+      if (anim_bonecoll_is_visible_editbone(arm, ebone)) {
         if (ebone->flag & BONE_HIDDEN_A) {
           if (!(ebone->flag & BONE_UNSELECTABLE)) {
-            SET_FLAG_FROM_TEST(ebone->flag, select, (BONE_TIPSEL | BONE_SELECTED | BONE_ROOTSEL));
+            SET_FLAG_FROM_TEST(ebone->flag, sel, (BONE_TIPSEL | BONE_SELECTED | BONE_ROOTSEL));
           }
           ebone->flag &= ~BONE_HIDDEN_A;
           changed = true;
@@ -1519,32 +1506,30 @@ static int armature_reveal_exec(bContext *C, wmOperator *op)
     }
 
     if (changed) {
-      ED_armature_edit_validate_active(arm);
-      ED_armature_edit_sync_selection(arm->edbo);
+      ed_armature_edit_validate_active(arm);
+      ed_armature_edit_sync_sel(arm->edbo);
 
-      WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, obedit);
-      DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
+      win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, obedit);
+      graph_id_tag_update(&arm->id, ID_RECALC_SEL);
     }
   }
-  MEM_freeN(objects);
-  return OPERATOR_FINISHED;
+  mem_free(obs);
+  return OPS_FINISHED;
 }
 
-void ARMATURE_OT_reveal(wmOperatorType *ot)
+void ARMATURE_OT_reveal(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Reveal Hidden";
   ot->idname = "ARMATURE_OT_reveal";
   ot->description = "Reveal all bones hidden in Edit Mode";
 
-  /* api callbacks */
-  ot->exec = armature_reveal_exec;
-  ot->poll = ED_operator_editarmature;
+  /* api cbs */
+  ot->ex = armature_reveal_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_boolean(ot->srna, "select", true, "Select", "");
+  api_def_bool(ot->sapi, "sel", true, "Sel", "");
 }
-
-/** \} */
