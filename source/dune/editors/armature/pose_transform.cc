@@ -207,10 +207,8 @@ static void applyarmature_process_sel_recursive(Armature *arm,
 
   if (lib_findptr(sel, pchan, offsetof(CollectionPtrLink, ptr.data))) {
     /* SEL BONE: Snap to final pose transform minus un-applied parent effects.
-     *
      * I.e. bone position with accumulated parent effects but no local
-     * transformation will match the original final pose_mat.
-     *
+     * transform will match the original final pose_mat.
      * Pose channels are reset as expected. */
     EditBone *curbone = ed_armature_ebone_find_name(arm->edbo, pchan->name);
     BoneParentTransform invparent;
@@ -259,11 +257,9 @@ static void applyarmature_process_sel_recursive(Armature *arm,
   }
   else if (pstate) {
     /* UNSEL CHILD OF SEL: Include applied parent effects.
-     *
      * The inherited transform of applied (sel) bones is baked
      * into the rest pose so that the final bone position doesn't
      * change.
-     *
      * Pose channels are not changed, with the exception of the inherited
      * applied parent scale being baked into the location pose channel. */
     BoneParentTransform bpt;
@@ -345,7 +341,7 @@ static void applyarmature_reset_bone_constraints(const PoseChannel *pchan)
   }
 }
 
-/* Reset all (or only selected) bone constraints so that they are correct after the pose has been
+/* Reset all (or only se) bone constraints so that they are correct after the pose has been
  * applied. */
 static void applyarmature_reset_constraints(Pose *pose, const bool use_sel)
 {
@@ -480,7 +476,6 @@ void POSE_OT_armature_apply(WinOpType *ot)
 
 /* Apply Visual Transform Op
  * Set the current pose as the rest-pose. */
-
 static int pose_visual_transform_apply_ex(Cxt *C, WinOp * /*op*/)
 {
   const Scene *scene = cxt_data_scene(C);
@@ -549,36 +544,31 @@ static int pose_visual_transform_apply_ex(Cxt *C, WinOp * /*op*/)
 
 void POSE_OT_visual_transform_apply(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Apply Visual Transform to Pose";
   ot->idname = "POSE_OT_visual_transform_apply";
   ot->description = "Apply final constrained position of pose bones to their transform";
 
-  /* callbacks */
-  ot->exec = pose_visual_transform_apply_exec;
-  ot->poll = ED_operator_posemode;
+  /* cbs */
+  ot->ex = pose_visual_transform_apply_exec;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
+/* Copy/Paste Utils */
 
-/* -------------------------------------------------------------------- */
-/** \name Copy/Paste Utilities
- * \{ */
-
-/* This function is used to indicate that a bone is selected
- * and needs to be included in copy buffer (used to be for inserting keys)
- */
-static void set_pose_keys(Object *ob)
+/* This fn is used to indicate that a bone is sel
+ * and needs to be included in copy buf (used to be for inserting keys) */
+static void set_pose_keys(Ob *ob)
 {
-  bArmature *arm = static_cast<bArmature *>(ob->data);
+  Armature *arm = static_cast<Armature *>(ob->data);
 
   if (ob->pose) {
-    LISTBASE_FOREACH (bPoseChannel *, chan, &ob->pose->chanbase) {
+    LIST_FOREACH (PoseChannel *, chan, &ob->pose->chanbase) {
       Bone *bone = chan->bone;
-      if ((bone) && (bone->flag & BONE_SELECTED) && ANIM_bonecoll_is_visible(arm, bone)) {
+      if ((bone) && (bone->flag & BONE_SEL) && anim_bonecoll_is_visible(arm, bone)) {
         chan->flag |= POSE_KEY;
       }
       else {
@@ -588,25 +578,23 @@ static void set_pose_keys(Object *ob)
   }
 }
 
-/**
- * Perform paste pose, for a single bone.
+/* Perform paste pose, for a single bone.
  *
- * \param ob: Object where bone to paste to lives
- * \param chan: Bone that pose to paste comes from
- * \param selOnly: Only paste on selected bones
- * \param flip: Flip on x-axis
- * \return The channel of the bone that was pasted to, or nullptr if no paste was performed.
- */
-static bPoseChannel *pose_bone_do_paste(Object *ob,
-                                        bPoseChannel *chan,
-                                        const bool selOnly,
-                                        const bool flip)
+ * param ob: Ob where bone to paste to lives
+ * param chan: Bone that pose to paste comes from
+ * param selOnly: Only paste on sel bones
+ * param flip: Flip on x-axis
+ * return The channel of the bone that was pasted to, or nullptr if no paste was performed. */
+static PoseChannel *pose_bone_do_paste(Ob *ob,
+                                       PoseChannel *chan,
+                                       const bool selOnly,
+                                       const bool flip)
 {
   char name[MAXBONENAME];
 
   /* get the name - if flipping, we must flip this first */
   if (flip) {
-    BLI_string_flip_side_name(name, chan->name, false, sizeof(name));
+    lib_string_flip_side_name(name, chan->name, false, sizeof(name));
   }
   else {
     STRNCPY(name, chan->name);
@@ -614,20 +602,18 @@ static bPoseChannel *pose_bone_do_paste(Object *ob,
 
   /* only copy when:
    *  1) channel exists - poses are not meant to add random channels to anymore
-   *  2) if selection-masking is on, channel is selected -
-   *     only selected bones get pasted on, allowing making both sides symmetrical.
-   */
-  bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, name);
+   *  2) if sel-masking is on, channel is sel -
+   *     only sel bones get pasted on, allowing making both sides symmetrical. */
+  PoseChannel *pchan = dune_pose_channel_find_name(ob->pose, name);
   if (pchan == nullptr) {
     return nullptr;
   }
-  if (selOnly && (pchan->bone->flag & BONE_SELECTED) == 0) {
+  if (selOnly && (pchan->bone->flag & BONE_SEL) == 0) {
     return nullptr;
   }
 
   /* only loc rot size
-   * - only copies transform info for the pose
-   */
+   * - only copies transform info for the pose */
   copy_v3_v3(pchan->loc, chan->loc);
   copy_v3_v3(pchan->size, chan->size);
   pchan->flag = chan->flag;
@@ -721,80 +707,70 @@ static bPoseChannel *pose_bone_do_paste(Object *ob,
     }
   }
 
-  /* ID properties */
+  /* Id props */
   if (chan->prop) {
     if (pchan->prop) {
-      /* if we have existing properties on a bone, just copy over the values of
-       * matching properties (i.e. ones which will have some impact) on to the
-       * target instead of just blinding replacing all [
-       */
-      IDP_SyncGroupValues(pchan->prop, chan->prop);
+      /* if we have existing props on a bone, just copy over the vals of
+       * matching props (i.e. ones which will have some impact) on to the
+       * target instead of just blinding replacing all [ */
+      IDP_SyncGroupVals(pchan->prop, chan->prop);
     }
     else {
-      /* no existing properties, so assume that we want copies too? */
-      pchan->prop = IDP_CopyProperty(chan->prop);
+      /* no existing props, so assume that we want copies too? */
+      pchan->prop = IDP_CopyProp(chan->prop);
     }
   }
 
   return pchan;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Copy Pose Operator
- * \{ */
-
-static int pose_copy_exec(bContext *C, wmOperator *op)
+/* Copy Pose Op */
+static int pose_copy_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
   char filepath[FILE_MAX];
   /* Sanity checking. */
   if (ELEM(nullptr, ob, ob->pose)) {
-    BKE_report(op->reports, RPT_ERROR, "No pose to copy");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No pose to copy");
+    return OP_CANCELLED;
   }
-  /* Sets chan->flag to POSE_KEY if bone selected. */
+  /* Sets chan->flag to POSE_KEY if bone sel. */
   set_pose_keys(ob);
-  /* Construct a local bmain and only put object and its data into it,
-   * o this way we don't expand any other objects into the copy buffer
+  /* Construct a local main and only put ob and its data into it,
+   * o this way we don't expand any other obs into the copy buf
    * file.
    *
-   * TODO(sergey): Find an easier way to tell copy buffer to only store
+   * TODO: Find an easier way to tell copy buf to only store
    * data we are actually interested in. Maybe pass it a flag to skip
-   * any datablock expansion?
-   */
-  Main *temp_bmain = BKE_main_new();
-  STRNCPY(temp_bmain->filepath, BKE_main_blendfile_path_from_global());
+   * any datablock expansion? */
+  Main *tmp_main = dune_main_new();
+  STRNCPY(tmp_main->filepath, dune_main_dunefile_path_from_global());
 
-  Object ob_copy = blender::dna::shallow_copy(*ob);
+  Ob ob_copy = dune::types::shallow_copy(*ob);
   ob_copy.adt = nullptr;
 
-  /* Copy the armature without using the default copy constructor. This prevents
+  /* Copy the armature wo using the default copy constructor. This prevents
    * the compiler from complaining that the `layer`, `layer_used`, and
-   * `layer_protected` fields are DNA_DEPRECATED.
-   */
-  bArmature arm_copy;
+   * `layer_protected` fields are TYPES_DEPRECATED. */
+  Armature arm_copy;
   memcpy(&arm_copy, ob->data, sizeof(arm_copy));
 
   arm_copy.adt = nullptr;
   ob_copy.data = &arm_copy;
-  BLI_addtail(&temp_bmain->objects, &ob_copy);
-  BLI_addtail(&temp_bmain->armatures, &arm_copy);
-  /* begin copy buffer on a temp bmain. */
-  BKE_copybuffer_copy_begin(temp_bmain);
-  /* Store the whole object to the copy buffer because pose can't be
-   * existing on its own.
-   */
-  BKE_copybuffer_copy_tag_ID(&ob_copy.id);
+  lib_addtail(&tmp_main->obs, &ob_copy);
+  lib_addtail(&tmp_main->armatures, &arm_copy);
+  /* begin copy buf on a tmp main. */
+  dune_copybuf_copy_begin(tmp_main);
+  /* Store the whole ob to the copy buf bc pose can't be
+   * existing on its own */
+  dune_copybuf_copy_tag_id(&ob_copy.id);
 
-  pose_copybuffer_filepath_get(filepath, sizeof(filepath));
-  BKE_copybuffer_copy_end(temp_bmain, filepath, op->reports);
+  pose_copybuf_filepath_get(filepath, sizeof(filepath));
+  dune_copybuf_copy_end(tmp_main, filepath, op->reports);
   /* We clear the lists so no datablocks gets freed,
-   * This is required because objects in temp bmain shares same pointers
-   * as the real ones.
-   */
-  BLI_listbase_clear(&temp_bmain->objects);
+   * This is required bc objects in tmp main shares same ptr
+   * as the real ones */
+  BLI_list_clear(&temp_bmain->objects);
   BLI_listbase_clear(&temp_bmain->armatures);
   BKE_main_free(temp_bmain);
   /* We are all done! */
