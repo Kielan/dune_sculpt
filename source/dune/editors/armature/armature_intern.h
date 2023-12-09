@@ -47,7 +47,7 @@ void ARMATURE_OT_shortest_path_pick(struct WinOpType *ot);
 
 void ARMATURE_OT_delete(struct WinOpType *ot);
 void ARMATURE_OT_dissolve(struct WinOpType *ot);
-void ARMATURE_OT_duplicate(struct WinOpType *ot);
+void ARMATURE_OT_dup(struct WinOpType *ot);
 void ARMATURE_OT_symmetrize(struct WinOpType *ot);
 void ARMATURE_OT_extrude(struct WinOpType *ot);
 void ARMATURE_OT_hide(struct WinOpType *ot);
@@ -136,57 +136,43 @@ typedef struct tPChanFCurveLink {
   float oldangle;
   float oldaxis[3];
 
-  /** old bbone values (to be restored along with the transform properties) */
+  /* old bbone vals (to be restored along with the transform props) */
   float roll1, roll2;
-  /** (NOTE: we haven't renamed these this time, as their names are already long enough) */
+  /* (We haven't renamed these this time, as their names are alrdy long enough) */
   float curve_in_x, curve_in_z;
   float curve_out_x, curve_out_z;
   float ease1, ease2;
   float scale_in[3];
   float scale_out[3];
 
-  /** copy of custom properties at start of operator (to be restored before each modal step) */
-  struct IDProperty *oldprops;
+  /* copy of custom props at start of op (to be restored before each modal step) */
+  struct IdProp *oldprops;
 } tPChanFCurveLink;
 
-/* ----------- */
+/* Returns a valid pose armature for this ob, else returns NULL. */
+struct Ob *poseAnim_ob_get(struct Ob *ob_);
+/* Get sets of F-Curves providing transforms for the bones in the Pose. */
+void poseAnim_mapping_get(struct Cxt *C, List *pfLinks);
+/* Free F-Curve <-> PoseChannel links. */
+void poseAnim_mapping_free(List *pfLinks);
 
-/** Returns a valid pose armature for this object, else returns NULL. */
-struct Object *poseAnim_object_get(struct Object *ob_);
-/** Get sets of F-Curves providing transforms for the bones in the Pose. */
-void poseAnim_mapping_get(struct bContext *C, ListBase *pfLinks);
-/** Free F-Curve <-> PoseChannel links. */
-void poseAnim_mapping_free(ListBase *pfLinks);
-
-/**
- * Helper for apply() / reset() - refresh the data.
- */
-void poseAnim_mapping_refresh(struct bContext *C, struct Scene *scene, struct Object *ob);
-/**
- * Reset changes made to current pose.
- */
+/* Helper for apply() / reset() - refresh the data. */
+void poseAnim_mapping_refresh(struct Cxt *C, struct Scene *scene, struct Ob *ob);
+/* Reset changes made to current pose */
 void poseAnim_mapping_reset(ListBase *pfLinks);
-/** Perform auto-key-framing after changes were made + confirmed. */
-void poseAnim_mapping_autoKeyframe(struct bContext *C,
+/* Perform auto-key-framing after changes were made + confirmed. */
+void poseAnim_mapping_autoKeyframe(struct Cxt *C,
                                    struct Scene *scene,
-                                   ListBase *pfLinks,
+                                   List *pfLinks,
                                    float cframe);
 
-/**
- * Find the next F-Curve for a PoseChannel with matching path.
- * - `path` is not just the #tPChanFCurveLink (`pfl`) rna_path,
- *   since that path doesn't have property info yet.
- */
-LinkData *poseAnim_mapping_getNextFCurve(ListBase *fcuLinks, LinkData *prev, const char *path);
+/* Find the next F-Curve for a PoseChannel with matching path.
+ * - `path` is not just the tPChanFCurveLink (`pfl`) api_path,
+ *   since that path doesn't have prop info yet. */
+LinkData *poseAnim_mapping_getNextFCurve(List *fcuLinks, LinkData *prev, const char *);
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name PoseLib
- * \{ */
-
+/* PoseLib */
 /* `pose_lib_2.cc` */
-
 void POSELIB_OT_apply_pose_asset(struct WinOpType *ot);
 void POSELIB_OT_blend_pose_asset(struct WinOpType *ot);
 /* Pose Sliding Tool */
@@ -198,7 +184,6 @@ void POSE_OT_breakdown(struct WinOpType *ot);
 void POSE_OT_blend_to_neighbors(struct WinOpType *ot);
 
 void POSE_OT_propagate(struct WinOpType *ot);
-
 /* Various Armature Edit/Pose Editing API' */
 /* Ideally, many of these defines would not be needed as everything would be strictly
  * self-contained within each file,
@@ -213,9 +198,9 @@ struct EditBone *make_boneList(struct List *edbo,
 void preEditBoneDup(struct List *editbones);
 void postEditBoneDup(struct List *editbones, struct Ob *ob);
 struct EditBone *dupEditBone(struct EditBone *cur_bone,
-                                   const char *name,
-                                   struct List *editbones,
-                                   struct Ob *ob);
+                             const char *name,
+                             struct List *editbones,
+                             struct Ob *ob);
 
 /* Dup method (cross obs). */
 /* param editbones: The target list. */
@@ -243,9 +228,9 @@ struct EditBone *ed_armature_pick_ebone(struct Cxt *C,
                                         bool findunsel,
                                         struct Base **r_base);
 struct PoseChannel *ed_armature_pick_pchan(struct Cxt *C,
-                                            const int xy[2],
-                                            bool findunsel,
-                                            struct Base **r_base);
+                                           const int xy[2],
+                                           bool findunsel,
+                                           struct Base **r_base);
 struct Bone *ed_armature_pick_bone(struct Cxt *C,
                                    const int xy[2],
                                    bool findunsel,
@@ -268,27 +253,20 @@ struct PoseChannel *ed_armature_pick_pchan_from_selbuf(
     bool do_nearest,
     struct Base **r_base);
 struct Bone *ed_armature_pick_bone_from_selbuf(struct Base **bases,
-                                                     uint bases_len,
-                                                     const struct GPUSelResult *hit_results,
-                                                     int hits,
-                                                     bool findunsel,
-                                                     bool do_nearest,
-                                                     struct Base **r_base);
+                                               uint bases_len,
+                                               const struct GPUSelResult *hit_results,
+                                               int hits,
+                                               bool findunsel,
+                                               bool do_nearest,
+                                               struct Base **r_base);
 
-/* -------------------------------------------------------------------- */
-/** \name Iteration
- * \{ */
-
-/**
- * XXX: bone_looper is only to be used when we want to access settings
- * (i.e. editability/visibility/selected) that context doesn't offer.
- */
-int bone_looper(struct Object *ob,
+/* Iter */
+/* bone_looper is only to be used when we want to access settings
+ * (i.e. editability/visibility/sel) that cxt doesn't offer */
+int bone_looper(struct Ob *ob,
                 struct Bone *bone,
                 void *data,
-                int (*bone_func)(struct Object *, struct Bone *, void *));
-
-/** \} */
+                int (*bone_fn)(struct Object *, struct Bone *, void *));
 
 #ifdef __cplusplus
 }
