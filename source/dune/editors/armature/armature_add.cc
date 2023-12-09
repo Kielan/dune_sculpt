@@ -111,7 +111,7 @@ EditBone *ed_armature_ebone_add_primitive(Ob *obedit_arm, float length, bool vie
   return bone;
 }
 
-/* Note this is alrdy ported to multi-obs as it is.
+/* This is alrdy ported to multi-obs as it is.
  * Since only the active bone is extruded even for single obs,
  * it makes sense to stick to the active ob here.
  *
@@ -237,7 +237,7 @@ static int armature_click_extrude_invoke(Cxt *C, WinOp *op, const WinEv *ev)
   /* extrude to the where new cursor is and store the op result */
   int retval = armature_click_extrude_ex(C, op);
 
-  /* restore previous 3d cursor position */
+  /* restore prev 3d cursor position */
   copy_v3_v3(cursor->location, oldcurs);
 
   /* Support dragging to move after extrude, see: #114282. */
@@ -499,39 +499,39 @@ static void updateDupActionConstraintSettings(
   if ((act != nullptr) &&
       dube_fcurves_filter(&ani_curves, &act->curves, "pose.bones[", orig_bone->name))
   {
-    /* Create a copy and mirror the animation */
-    LISTBASE_FOREACH (LinkData *, ld, &ani_curves) {
+    /* Create a copy and mirror the anim */
+    LIST_FOREACH (LinkData *, ld, &ani_curves) {
       FCurve *old_curve = static_cast<FCurve *>(ld->data);
-      FCurve *new_curve = BKE_fcurve_copy(old_curve);
-      bActionGroup *agrp;
+      FCurve *new_curve = dune_fcurve_copy(old_curve);
+      ActionGroup *agrp;
 
       char *old_path = new_curve->rna_path;
 
-      new_curve->rna_path = BLI_string_replaceN(old_path, orig_bone->name, dup_bone->name);
-      MEM_freeN(old_path);
+      new_curve->api_path = Blib_string_replaceN(old_path, orig_bone->name, dup_bone->name);
+      mem_free(old_path);
 
-      /* Flip the animation */
+      /* Flip the anim */
       int i;
       BezTriple *bezt;
       for (i = 0, bezt = new_curve->bezt; i < new_curve->totvert; i++, bezt++) {
-        const size_t slength = strlen(new_curve->rna_path);
+        const size_t slength = strlen(new_curve->api_path);
         bool flip = false;
-        if (BLI_strn_endswith(new_curve->rna_path, "location", slength) &&
+        if (lib_strn_endswith(new_curve->api_path, "location", slength) &&
             new_curve->array_index == 0) {
           flip = true;
         }
-        else if (BLI_strn_endswith(new_curve->rna_path, "rotation_quaternion", slength) &&
+        else if (lib_strn_endswith(new_curve->rna_path, "rotation_quaternion", slength) &&
                  ELEM(new_curve->array_index, 2, 3))
         {
           flip = true;
         }
-        else if (BLI_strn_endswith(new_curve->rna_path, "rotation_euler", slength) &&
+        else if (lib_strn_endswith(new_curve->rna_path, "rotation_euler", slength) &&
                  ELEM(new_curve->array_index, 1, 2))
         {
           flip = true;
         }
-        else if (BLI_strn_endswith(new_curve->rna_path, "rotation_axis_angle", slength) &&
-                 ELEM(new_curve->array_index, 2, 3))
+        else if (lib_strn_endswith(new_curve->api_path, "rotation_axis_angle", slength) &&
+                 ELEM(new_curve->arr_index, 2, 3))
         {
           flip = true;
         }
@@ -544,37 +544,37 @@ static void updateDupActionConstraintSettings(
       }
 
       /* Make sure that a action group name for the new bone exists */
-      agrp = BKE_action_group_find_name(act, dup_bone->name);
+      agrp = dune_action_group_find_name(act, dup_bone->name);
 
       if (agrp == nullptr) {
         agrp = action_groups_add_new(act, dup_bone->name);
       }
-      BLI_assert(agrp != nullptr);
+      lib_assert(agrp != nullptr);
       action_groups_add_channel(act, agrp, new_curve);
     }
   }
-  BLI_freelistN(&ani_curves);
+  lib_freelist(&ani_curves);
 
-  /* Make depsgraph aware of our changes. */
-  DEG_id_tag_update(&act->id, ID_RECALC_ANIMATION_NO_FLUSH);
+  /* Make graph aware of our changes. */
+  graph_id_tag_update(&act->id, ID_RECALC_ANIM_NO_FLUSH);
 }
 
-static void updateDuplicateKinematicConstraintSettings(bConstraint *curcon)
+static void updateDupKinematicConstraintSettings(Constraint *curcon)
 {
   /* IK constraint */
-  bKinematicConstraint *ik = (bKinematicConstraint *)curcon->data;
+  KinematicConstraint *ik = (KinematicConstraint *)curcon->data;
   ik->poleangle = -M_PI - ik->poleangle;
   /* Wrap the angle to the +/-180.0f range (default soft limit of the input boxes). */
   ik->poleangle = angle_wrap_rad(ik->poleangle);
 }
 
-static void updateDuplicateLocRotConstraintSettings(Object *ob,
-                                                    bPoseChannel *pchan,
-                                                    bConstraint *curcon)
+static void updateDupLocRotConstraintSettings(Ob *ob,
+                                              PoseChannel *pchan,
+                                              Constraint *curcon)
 {
-  /* This code assumes that bRotLimitConstraint and bLocLimitConstraint have the same fields in
-   * the same memory locations. */
-  bRotLimitConstraint *limit = (bRotLimitConstraint *)curcon->data;
+  /* This code assumes that RotLimitConstraint and LocLimitConstraint have the same fields in
+   * the same mem locations. */
+  RotLimitConstraint *limit = (RotLimitConstraint *)curcon->data;
   float local_mat[4][4], imat[4][4];
 
   float min_vec[3], max_vec[3];
@@ -589,14 +589,14 @@ static void updateDuplicateLocRotConstraintSettings(Object *ob,
 
   unit_m4(local_mat);
 
-  bConstraintOb cob{};
-  cob.depsgraph = nullptr;
+  ConstraintOb cob{};
+  cob.graph = nullptr;
   cob.scene = nullptr;
   cob.ob = ob;
   cob.pchan = pchan;
-  BKE_constraint_custom_object_space_init(&cob, curcon);
+  dune_constraint_custom_ob_space_init(&cob, curcon);
 
-  BKE_constraint_mat_convertspace(
+  dune_constraint_mat_convertspace(
       ob, pchan, &cob, local_mat, curcon->ownspace, CONSTRAINT_SPACE_LOCAL, false);
 
   if (curcon->type == CONSTRAINT_TYPE_ROTLIMIT) {
@@ -640,32 +640,32 @@ static void updateDuplicateLocRotConstraintSettings(Object *ob,
   limit->zmax = max_vec[2];
 }
 
-static void updateDuplicateTransformConstraintSettings(Object *ob,
-                                                       bPoseChannel *pchan,
-                                                       bConstraint *curcon)
+static void updateDupTransformConstraintSettings(Ob *ob,
+                                                 PoseChannel *pchan,
+                                                 Constraint *curcon)
 {
-  bTransformConstraint *trans = (bTransformConstraint *)curcon->data;
+  TransformConstraint *trans = (TransformConstraint *)curcon->data;
 
   float target_mat[4][4], own_mat[4][4], imat[4][4];
 
-  bConstraintOb cob{};
-  cob.depsgraph = nullptr;
+  ConstraintOb cob{};
+  cob.graph = nullptr;
   cob.scene = nullptr;
   cob.ob = ob;
   cob.pchan = pchan;
-  BKE_constraint_custom_object_space_init(&cob, curcon);
+  dune_constraint_custom_ob_space_init(&cob, curcon);
 
   unit_m4(own_mat);
-  BKE_constraint_mat_convertspace(
+  dune_constraint_mat_convertspace(
       ob, pchan, &cob, own_mat, curcon->ownspace, CONSTRAINT_SPACE_LOCAL, false);
 
-  /* ###Source map mirroring### */
+  /* Source map mirroring */
   float old_min, old_max;
 
   /* Source location */
   invert_m4_m4(imat, own_mat);
 
-  /* convert values into local object space */
+  /* convert vals into local ob space */
   mul_m4_v3(own_mat, trans->from_min);
   mul_m4_v3(own_mat, trans->from_max);
 
@@ -680,13 +680,12 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
   mul_m4_v3(imat, trans->from_max);
 
   /* Source rotation */
-
   /* Zero out any location translation */
   own_mat[3][0] = own_mat[3][1] = own_mat[3][2] = 0;
 
   invert_m4_m4(imat, own_mat);
 
-  /* convert values into local object space */
+  /* convert vals into local ob space */
   mul_m4_v3(own_mat, trans->from_min_rot);
   mul_m4_v3(own_mat, trans->from_max_rot);
 
@@ -708,17 +707,17 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
 
   /* Source scale does not require any mirroring */
 
-  /* ###Destination map mirroring### */
-  float temp_vec[3];
+  /* Destination map mirroring */
+  float tmp_vec[3];
   float imat_rot[4][4];
 
-  bPoseChannel *target_pchan = BKE_pose_channel_find_name(ob->pose, trans->subtarget);
+  PoseChannel *target_pchan = dune_pose_channel_find_name(ob->pose, trans->subtarget);
   unit_m4(target_mat);
-  BKE_constraint_mat_convertspace(
+  dune_constraint_mat_convertspace(
       ob, target_pchan, &cob, target_mat, curcon->tarspace, CONSTRAINT_SPACE_LOCAL, false);
 
   invert_m4_m4(imat, target_mat);
-  /* convert values into local object space */
+  /* convert vals into local ob space */
   mul_m4_v3(target_mat, trans->to_min);
   mul_m4_v3(target_mat, trans->to_max);
   mul_m4_v3(target_mat, trans->to_min_scale);
@@ -731,17 +730,17 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
   mul_m4_v3(target_mat, trans->to_min_rot);
   mul_m4_v3(target_mat, trans->to_max_rot);
 
-  /* TODO(sebpa): This does not support euler order, but doing so will make this way more complex.
+  /* TODO: This does not support euler order, but doing so will make this way more complex.
    * For now we have decided to not support all corner cases and advanced setups. */
 
-  /* Helper variables to denote the axis in trans->map */
+  /* Helper vars to denote the axis in trans->map */
   const char X = 0;
   const char Y = 1;
   const char Z = 2;
 
   switch (trans->to) {
     case TRANS_SCALE:
-      copy_v3_v3(temp_vec, trans->to_max_scale);
+      copy_v3_v3(tmp_vec, trans->to_max_scale);
 
       for (int i = 0; i < 3; i++) {
         if ((trans->from == TRANS_LOCATION && trans->map[i] == X) ||
@@ -751,7 +750,7 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
           /* Y Rot to X/Y/Z Scale: Min/Max Flipped */
           /* Z Rot to X/Y/Z Scale: Min/Max Flipped */
           trans->to_max_scale[i] = trans->to_min_scale[i];
-          trans->to_min_scale[i] = temp_vec[i];
+          trans->to_min_scale[i] = tmp_vec[i];
         }
       }
       break;
@@ -760,7 +759,7 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
       trans->to_min[0] *= -1;
       trans->to_max[0] *= -1;
 
-      copy_v3_v3(temp_vec, trans->to_max);
+      copy_v3_v3(tmp_vec, trans->to_max);
 
       for (int i = 0; i < 3; i++) {
         if ((trans->from == TRANS_LOCATION && trans->map[i] == X) ||
@@ -787,7 +786,7 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
         trans->to_max_rot[1] *= -1;
       }
 
-      copy_v3_v3(temp_vec, trans->to_max_rot);
+      copy_v3_v3(tmp_vec, trans->to_max_rot);
 
       for (int i = 0; i < 3; i++) {
         if ((trans->from == TRANS_LOCATION && trans->map[i] == X && i != 1) ||
@@ -798,7 +797,7 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
            * Y Rot to X/Z Rot: Flipped
            * Z Rot to X/Y/Z rot: Flipped */
           trans->to_max_rot[i] = trans->to_min_rot[i];
-          trans->to_min_rot[i] = temp_vec[i];
+          trans->to_min_rot[i] = tmp_vec[i];
         }
       }
 
@@ -819,49 +818,48 @@ static void updateDuplicateTransformConstraintSettings(Object *ob,
   mul_m4_v3(imat, trans->to_max_scale);
 }
 
-static void updateDuplicateConstraintSettings(EditBone *dup_bone, EditBone *orig_bone, Object *ob)
+static void updateDupConstraintSettings(EditBone *dup_bone, EditBone *orig_bone, Ob *ob)
 {
-  /* If an edit bone has been duplicated, lets update its constraints if the
-   * subtarget they point to has also been duplicated.
-   */
-  bPoseChannel *pchan;
-  ListBase *conlist;
+  /* If an edit bone has been dup, lets update its constraints if the
+   * subtarget they point to has also been dup. */
+  PoseChannel *pchan;
+  List *conlist;
 
-  if ((pchan = BKE_pose_channel_ensure(ob->pose, dup_bone->name)) == nullptr ||
+  if ((pchan = dune_pose_channel_ensure(ob->pose, dup_bone->name)) == nullptr ||
       (conlist = &pchan->constraints) == nullptr)
   {
     return;
   }
 
-  LISTBASE_FOREACH (bConstraint *, curcon, conlist) {
+  LIST_FOREACH (Constraint *, curcon, conlist) {
     switch (curcon->type) {
       case CONSTRAINT_TYPE_ACTION:
-        updateDuplicateActionConstraintSettings(dup_bone, orig_bone, ob, pchan, curcon);
+        updateDupActionConstraintSettings(dup_bone, orig_bone, ob, pchan, curcon);
         break;
       case CONSTRAINT_TYPE_KINEMATIC:
-        updateDuplicateKinematicConstraintSettings(curcon);
+        updateDupKinematicConstraintSettings(curcon);
         break;
       case CONSTRAINT_TYPE_LOCLIMIT:
       case CONSTRAINT_TYPE_ROTLIMIT:
-        updateDuplicateLocRotConstraintSettings(ob, pchan, curcon);
+        updateDupLocRotConstraintSettings(ob, pchan, curcon);
         break;
       case CONSTRAINT_TYPE_TRANSFORM:
-        updateDuplicateTransformConstraintSettings(ob, pchan, curcon);
+        updateDupTransformConstraintSettings(ob, pchan, curcon);
         break;
     }
   }
 }
 
-static void updateDuplicateCustomBoneShapes(bContext *C, EditBone *dup_bone, Object *ob)
+static void updateDupCustomBoneShapes(Cxt *C, EditBone *dup_bone, Ob *ob)
 {
   if (ob->pose == nullptr) {
     return;
   }
-  bPoseChannel *pchan;
-  pchan = BKE_pose_channel_ensure(ob->pose, dup_bone->name);
+  PoseChannel *pchan;
+  pchan = dune_pose_channel_ensure(ob->pose, dup_bone->name);
 
   if (pchan->custom != nullptr) {
-    Main *bmain = CTX_data_main(C);
+    Main *main = cxt_data_main(C);
     char name_flip[MAX_ID_NAME - 2];
 
     /* Invert the X location */
@@ -871,15 +869,15 @@ static void updateDuplicateCustomBoneShapes(bContext *C, EditBone *dup_bone, Obj
     /* Invert the Z rotation */
     pchan->custom_rotation_euler[2] *= -1;
 
-    /* Skip the first two chars in the object name as those are used to store object type */
-    BLI_string_flip_side_name(name_flip, pchan->custom->id.name + 2, false, sizeof(name_flip));
-    Object *shape_ob = (Object *)BKE_libblock_find_name(bmain, ID_OB, name_flip);
+    /* Skip the first two chars in the ob name as those are used to store ob type */
+    lib_string_flip_side_name(name_flip, pchan->custom->id.name + 2, false, sizeof(name_flip));
+    Ob *shape_ob = (Ob *)dune_libblock_find_name(main, ID_OB, name_flip);
 
-    /* If name_flip doesn't exist, BKE_libblock_find_name() returns pchan->custom (best match) */
+    /* If name_flip doesn't exist, dune_libblock_find_name() returns pchan->custom (best match) */
     shape_ob = shape_ob == pchan->custom ? nullptr : shape_ob;
 
     if (shape_ob != nullptr) {
-      /* A flipped shape object exists, use it! */
+      /* A flipped shape ob exists, use it! */
       pchan->custom = shape_ob;
     }
     else {
@@ -889,56 +887,54 @@ static void updateDuplicateCustomBoneShapes(bContext *C, EditBone *dup_bone, Obj
   }
 }
 
-static void copy_pchan(EditBone *src_bone, EditBone *dst_bone, Object *src_ob, Object *dst_ob)
+static void copy_pchan(EditBone *src_bone, EditBone *dst_bone, Ob *src_ob, Ob *dst_ob)
 {
-  /* copy the ID property */
+  /* copy the id prop */
   if (src_bone->prop) {
-    dst_bone->prop = IDP_CopyProperty(src_bone->prop);
+    dst_bone->prop = IDP_CopyProp(src_bone->prop);
   }
 
-  /* Lets duplicate the list of constraints that the
-   * current bone has.
-   */
+  /* Lets dup the list of constraints that the
+   * current bone has */
   if (src_ob->pose) {
-    bPoseChannel *chanold, *channew;
+    PoseChannel *chanold, *channew;
 
-    chanold = BKE_pose_channel_ensure(src_ob->pose, src_bone->name);
+    chanold = dune_pose_channel_ensure(src_ob->pose, src_bone->name);
     if (chanold) {
       /* WARNING: this creates a new posechannel, but there will not be an attached bone
-       * yet as the new bones created here are still 'EditBones' not 'Bones'.
-       */
-      channew = BKE_pose_channel_ensure(dst_ob->pose, dst_bone->name);
+       * yet as the new bones created here are still 'EditBones' not 'Bones'. */
+      channew = dune_pose_channel_ensure(dst_ob->pose, dst_bone->name);
 
       if (channew) {
-        BKE_pose_channel_copy_data(channew, chanold);
+        dune_pose_channel_copy_data(channew, chanold);
       }
     }
   }
 }
 
-void ED_armature_ebone_copy(EditBone *dest, const EditBone *source)
+void ed_armature_ebone_copy(EditBone *dest, const EditBone *source)
 {
   memcpy(dest, source, sizeof(*dest));
-  BLI_duplicatelist(&dest->bone_collections, &dest->bone_collections);
+  lib_duplist(&dest->bone_collections, &dest->bone_collections);
 }
 
-EditBone *duplicateEditBoneObjects(
-    EditBone *cur_bone, const char *name, ListBase *editbones, Object *src_ob, Object *dst_ob)
+EditBone *dupEditBoneObs(
+    EditBone *cur_bone, const char *name, List *editbones, Ob *src_ob, Ob *dst_ob)
 {
-  EditBone *e_bone = static_cast<EditBone *>(MEM_mallocN(sizeof(EditBone), "addup_editbone"));
+  EditBone *e_bone = static_cast<EditBone *>(mem_malloc(sizeof(EditBone), "addup_editbone"));
 
   /* Copy data from old bone to new bone */
-  ED_armature_ebone_copy(e_bone, cur_bone);
+  ed_armature_ebone_copy(e_bone, cur_bone);
 
-  cur_bone->temp.ebone = e_bone;
-  e_bone->temp.ebone = cur_bone;
+  cur_bone->tmp.ebone = e_bone;
+  e_bone->tmp.ebone = cur_bone;
 
   if (name != nullptr) {
     STRNCPY(e_bone->name, name);
   }
 
-  ED_armature_ebone_unique_name(editbones, e_bone->name, nullptr);
-  BLI_addtail(editbones, e_bone);
+  ed_armature_ebone_unique_name(editbones, e_bone->name, nullptr);
+  lib_addtail(editbones, e_bone);
 
   copy_pchan(cur_bone, e_bone, src_ob, dst_ob);
 
