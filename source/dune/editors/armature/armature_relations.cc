@@ -1,73 +1,70 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_map.hh"
-#include "BLI_math_matrix.h"
-#include "BLI_math_vector.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_map.hh"
+#include "lib_math_matrix.h"
+#include "lib_math_vector.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h"
-#include "BKE_armature.hh"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve_driver.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_animsys.h"
+#include "dune_armature.hh"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve_driver.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_build.hh"
+#include "graph.hh"
+#include "graph_build.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_object.hh"
-#include "ED_outliner.hh"
-#include "ED_screen.hh"
+#include "ed_armature.hh"
+#include "ed_ob.hh"
+#include "ed_outliner.hh"
+#include "ed_screen.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
 #include "armature_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Edit Armature Join
- *
- * \note No operator define here as this is exported to the Object-level operator.
- * \{ */
+/* Edit Armature Join
+ * No op define here as this is exported to the Ob-level op. */
 
-static void joined_armature_fix_links_constraints(Main *bmain,
-                                                  Object *ob,
-                                                  Object *tarArm,
-                                                  Object *srcArm,
-                                                  bPoseChannel *pchan,
+static void joined_armature_fix_links_constraints(Main *main,
+                                                  Ob *ob,
+                                                  Ob *tarArm,
+                                                  Ob *srcArm,
+                                                  PoseChannel *pchan,
                                                   EditBone *curbone,
-                                                  ListBase *lb)
+                                                  List *list)
 {
   bool changed = false;
 
-  LISTBASE_FOREACH (bConstraint *, con, lb) {
-    ListBase targets = {nullptr, nullptr};
+  LIST_FOREACH (Constraint *, con, list) {
+    List targets = {nullptr, nullptr};
 
     /* constraint targets */
-    if (BKE_constraint_targets_get(con, &targets)) {
-      LISTBASE_FOREACH (bConstraintTarget *, ct, &targets) {
+    if (dune_constraint_targets_get(con, &targets)) {
+      LIST_FOREACH (ConstraintTarget *, ct, &targets) {
         if (ct->tar == srcArm) {
           if (ct->subtarget[0] == '\0') {
             ct->tar = tarArm;
@@ -81,68 +78,66 @@ static void joined_armature_fix_links_constraints(Main *bmain,
         }
       }
 
-      BKE_constraint_targets_flush(con, &targets, false);
+      dune_constraint_targets_flush(con, &targets, false);
     }
 
     /* action constraint? (pose constraints only) */
     if (con->type == CONSTRAINT_TYPE_ACTION) {
-      bActionConstraint *data = static_cast<bActionConstraint *>(con->data);
+      ActionConstraint *data = static_cast<ActionConstraint *>(con->data);
 
       if (data->act) {
-        BKE_action_fix_paths_rename(
+        dune_action_fix_paths_rename(
             &tarArm->id, data->act, "pose.bones[", pchan->name, curbone->name, 0, 0, false);
 
-        DEG_id_tag_update_ex(bmain, &data->act->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update_ex(main, &data->act->id, ID_RECALC_COPY_ON_WRITE);
       }
     }
   }
 
   if (changed) {
-    DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update_ex(main, &ob->id, ID_RECALC_COPY_ON_WRITE);
   }
 }
 
-/** User-data for #joined_armature_fix_animdata_cb(). */
-struct tJoinArmature_AdtFixData {
-  Main *bmain;
+/* User-data for joined_armature_fix_animdata_cb(). */
+struct tJoinArmatureAdtFixData {
+  Main *main;
 
-  Object *srcArm;
-  Object *tarArm;
+  Ob *srcArm;
+  Ob *tarArm;
 
   GHash *names_map;
 };
 
-/* Callback to pass to BKE_animdata_main_cb() for fixing driver ID's to point to the new ID. */
+/* Cb to pass to dune_animdata_main_cb() for fixing driver Id's to point to the new Id */
 /* FIXME: For now, we only care about drivers here.
- *        When editing rigs, it's very rare to have animation on the rigs being edited already,
- *        so it should be safe to skip these.
- */
-static void joined_armature_fix_animdata_cb(ID *id, FCurve *fcu, void *user_data)
+ * When editing rigs, it's very rare to have anim on the rigs being edited alrdy,
+ * so it should be safe to skip these. */
+static void joined_armature_fix_animdata_cb(Id *id, FCurve *fcu, void *user_data)
 {
-  tJoinArmature_AdtFixData *afd = (tJoinArmature_AdtFixData *)user_data;
-  ID *src_id = &afd->srcArm->id;
-  ID *dst_id = &afd->tarArm->id;
+  tJoinArmatureAdtFixData *afd = (tJoinArmatureAdtFixData *)user_data;
+  Id *src_id = &afd->srcArm->id;
+  Id *dst_id = &afd->tarArm->id;
 
   GHashIterator gh_iter;
   bool changed = false;
 
-  /* Fix paths - If this is the target object, it will have some "dirty" paths */
-  if ((id == src_id) && strstr(fcu->rna_path, "pose.bones[")) {
+  /* Fix paths - If this is the target ob, it will have some "dirty" paths */
+  if ((id == src_id) && strstr(fcu->apu_path, "pose.bones[")) {
     GHASH_ITER (gh_iter, afd->names_map) {
-      const char *old_name = static_cast<const char *>(BLI_ghashIterator_getKey(&gh_iter));
-      const char *new_name = static_cast<const char *>(BLI_ghashIterator_getValue(&gh_iter));
+      const char *old_name = static_cast<const char *>(lib_ghashIter_getKey(&gh_iter));
+      const char *new_name = static_cast<const char *>(lib_ghashIter_getVal(&gh_iter));
 
       /* only remap if changed; this still means there will be some
        * waste if there aren't many drivers/keys */
-      if (!STREQ(old_name, new_name) && strstr(fcu->rna_path, old_name)) {
-        fcu->rna_path = BKE_animsys_fix_rna_path_rename(
-            id, fcu->rna_path, "pose.bones", old_name, new_name, 0, 0, false);
+      if (!STREQ(old_name, new_name) && strstr(fcu->api_path, old_name)) {
+        fcu->api_path = dune_animsys_fix_api_path_rename(
+            id, fcu->api_path, "pose.bones", old_name, new_name, 0, 0, false);
 
         changed = true;
 
         /* we don't want to apply a second remapping on this driver now,
-         * so stop trying names, but keep fixing drivers
-         */
+         * so stop trying names, but keep fixing drivers */
         break;
       }
     }
@@ -152,37 +147,36 @@ static void joined_armature_fix_animdata_cb(ID *id, FCurve *fcu, void *user_data
   if (fcu->driver) {
     ChannelDriver *driver = fcu->driver;
 
-    /* Ensure that invalid drivers gets re-evaluated in case they become valid once the join
-     * operation is finished. */
+    /* Ensure that invalid drivers gets re-eval in case they become valid once the join
+     * op is finished. */
     fcu->flag &= ~FCURVE_DISABLED;
     driver->flag &= ~DRIVER_FLAG_INVALID;
 
-    /* Fix driver references to invalid ID's */
-    LISTBASE_FOREACH (DriverVar *, dvar, &driver->variables) {
+    /* Fix driver refs to invalid ID's */
+    LIST_FOREACH (DriverVar *, dvar, &driver->vars) {
       /* only change the used targets, since the others will need fixing manually anyway */
       DRIVER_TARGETS_USED_LOOPER_BEGIN (dvar) {
-        /* change the ID's used... */
+        /* change the Id's used... */
         if (dtar->id == src_id) {
           dtar->id = dst_id;
 
           changed = true;
 
           /* also check on the subtarget...
-           * XXX: We duplicate the logic from drivers_path_rename_fix() here, with our own
-           *      little twists so that we know that it isn't going to clobber the wrong data
-           */
-          if ((dtar->rna_path && strstr(dtar->rna_path, "pose.bones[")) || (dtar->pchan_name[0])) {
+           * We dup the logic from drivers_path_rename_fix() here, with our own
+           * little twists so that we know that it isn't going to clobber the wrong data */
+          if ((dtar->api_path && strstr(dtar->rna_path, "pose.bones[")) || (dtar->pchan_name[0])) {
             GHASH_ITER (gh_iter, afd->names_map) {
-              const char *old_name = static_cast<const char *>(BLI_ghashIterator_getKey(&gh_iter));
+              const char *old_name = static_cast<const char *>(lib_ghashIter_getKey(&gh_iter));
               const char *new_name = static_cast<const char *>(
-                  BLI_ghashIterator_getValue(&gh_iter));
+                  lib_ghashIter_getVal(&gh_iter));
 
               /* only remap if changed */
               if (!STREQ(old_name, new_name)) {
-                if ((dtar->rna_path) && strstr(dtar->rna_path, old_name)) {
+                if ((dtar->api_path) && strstr(dtar->rna_path, old_name)) {
                   /* Fix up path */
-                  dtar->rna_path = BKE_animsys_fix_rna_path_rename(
-                      id, dtar->rna_path, "pose.bones", old_name, new_name, 0, 0, false);
+                  dtar->api_path = dune_animsys_fix_api_path_rename(
+                      id, dtar->api_path, "pose.bones", old_name, new_name, 0, 0, false);
                   break; /* no need to try any more names for bone path */
                 }
                 if (STREQ(dtar->pchan_name, old_name)) {
@@ -200,40 +194,40 @@ static void joined_armature_fix_animdata_cb(ID *id, FCurve *fcu, void *user_data
   }
 
   if (changed) {
-    DEG_id_tag_update_ex(afd->bmain, id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update_ex(afd->main, id, ID_RECALC_COPY_ON_WRITE);
   }
 }
 
-/* Helper function for armature joining - link fixing */
+/* Helper fn for armature joining - link fixing */
 static void joined_armature_fix_links(
-    Main *bmain, Object *tarArm, Object *srcArm, bPoseChannel *pchan, EditBone *curbone)
+    Main *main, Ob *tarArm, Ob *srcArm, PoseChannel *pchan, EditBone *curbone)
 {
-  Object *ob;
-  bPose *pose;
+  Ob *ob;
+  Pose *pose;
 
-  /* let's go through all objects in database */
-  for (ob = static_cast<Object *>(bmain->objects.first); ob;
-       ob = static_cast<Object *>(ob->id.next)) {
-    /* do some object-type specific things */
+  /* let's go thru all obs in database */
+  for (ob = static_cast<Ob *>(main->obs.first); ob;
+       ob = static_cast<Ob *>(ob->id.next)) {
+    /* do some ob-type specific things */
     if (ob->type == OB_ARMATURE) {
       pose = ob->pose;
-      LISTBASE_FOREACH (bPoseChannel *, pchant, &pose->chanbase) {
+      LIST_FOREACH (PoseChannel *, pchant, &pose->chanbase) {
         joined_armature_fix_links_constraints(
-            bmain, ob, tarArm, srcArm, pchan, curbone, &pchant->constraints);
+            main, ob, tarArm, srcArm, pchan, curbone, &pchant->constraints);
       }
     }
 
-    /* fix object-level constraints */
+    /* fix ob-level constraints */
     if (ob != srcArm) {
       joined_armature_fix_links_constraints(
-          bmain, ob, tarArm, srcArm, pchan, curbone, &ob->constraints);
+          main, ob, tarArm, srcArm, pchan, curbone, &ob->constraints);
     }
 
-    /* See if an object is parented to this armature */
+    /* See if an ob is parented to this armature */
     if (ob->parent && (ob->parent == srcArm)) {
-      /* Is object parented to a bone of this src armature? */
+      /* Is ob parented to a bone of this src armature? */
       if (ob->partype == PARBONE) {
-        /* bone name in object */
+        /* bone name in ob */
         if (STREQ(ob->parsubstr, pchan->name)) {
           STRNCPY(ob->parsubstr, curbone->name);
         }
@@ -242,94 +236,94 @@ static void joined_armature_fix_links(
       /* make tar armature be new parent */
       ob->parent = tarArm;
 
-      DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_COPY_ON_WRITE);
+      graph_id_tag_update_ex(main, &ob->id, ID_RECALC_COPY_ON_WRITE);
     }
   }
 }
 
-int ED_armature_join_objects_exec(bContext *C, wmOperator *op)
+int ed_armature_join_obs_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  Object *ob_active = CTX_data_active_object(C);
-  bArmature *arm = static_cast<bArmature *>((ob_active) ? ob_active->data : nullptr);
-  bPose *pose, *opose;
-  bPoseChannel *pchan, *pchann;
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  Ob *ob_active = cxt_data_active_ob(C);
+  Armature *arm = static_cast<Armature *>((ob_active) ? ob_active->data : nullptr);
+  Pose *pose, *opose;
+  PoseChannel *pchan, *pchann;
   EditBone *curbone;
   float mat[4][4], oimat[4][4];
   bool ok = false;
 
   /* Ensure we're not in edit-mode and that the active object is an armature. */
   if (!ob_active || ob_active->type != OB_ARMATURE) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
   if (!arm || arm->edbo) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  CTX_DATA_BEGIN (C, Object *, ob_iter, selected_editable_objects) {
+  CXT_DATA_BEGIN (C, Ob *, ob_iter, sel_editable_obs) {
     if (ob_iter == ob_active) {
       ok = true;
       break;
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  /* that way the active object is always selected */
+  /* that way the active ob is always sel */
   if (ok == false) {
-    BKE_report(op->reports, RPT_WARNING, "Active object is not a selected armature");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_WARNING, "Active ob is not a sel armature");
+    return OP_CANCELLED;
   }
 
-  /* Inverse transform for all selected armatures in this object,
-   * See #object_join_exec for detailed comment on why the safe version is used. */
-  invert_m4_m4_safe_ortho(oimat, ob_active->object_to_world);
+  /* Inverse transform for all sel armatures in this ob,
+   * See ob_join_ex for detailed comment on why the safe version is used. */
+  invert_m4_m4_safe_ortho(oimat, ob_active->ob_to_world);
 
   /* Index bone collections by name.  This is also used later to keep track
    * of collections added from other armatures. */
-  blender::Map<std::string, BoneCollection *> bone_collection_by_name;
+  dune::Map<std::string, BoneCollection *> bone_collection_by_name;
   for (BoneCollection *bcoll : arm->collections_span()) {
     bone_collection_by_name.add(bcoll->name, bcoll);
   }
 
   /* Used to track how bone collections should be remapped after merging
    * other armatures. */
-  blender::Map<BoneCollection *, BoneCollection *> bone_collection_remap;
+  dune::Map<BoneCollection *, BoneCollection *> bone_collection_remap;
 
   /* Get edit-bones of active armature to add edit-bones to */
-  ED_armature_to_edit(arm);
+  ed_armature_to_edit(arm);
 
-  /* Get pose of active object and move it out of pose-mode */
+  /* Get pose of active ob and move it out of pose-mode */
   pose = ob_active->pose;
   ob_active->mode &= ~OB_MODE_POSE;
 
-  CTX_DATA_BEGIN (C, Object *, ob_iter, selected_editable_objects) {
+  CXT_DATA_BEGIN (C, Ob *, ob_iter, sel_editable_obs) {
     if ((ob_iter->type == OB_ARMATURE) && (ob_iter != ob_active)) {
       tJoinArmature_AdtFixData afd = {nullptr};
-      bArmature *curarm = static_cast<bArmature *>(ob_iter->data);
+      Armature *curarm = static_cast<Armature *>(ob_iter->data);
 
       /* we assume that each armature datablock is only used in a single place */
-      BLI_assert(ob_active->data != ob_iter->data);
+      lib_assert(ob_active->data != ob_iter->data);
 
-      /* init callback data for fixing up AnimData links later */
-      afd.bmain = bmain;
+      /* init cb data for fixing up AnimData links later */
+      afd.main = main;
       afd.srcArm = ob_iter;
       afd.tarArm = ob_active;
-      afd.names_map = BLI_ghash_str_new("join_armature_adt_fix");
+      afd.names_map = lib_ghash_str_new("join_armature_adt_fix");
 
       /* Make a list of edit-bones in current armature */
       ED_armature_to_edit(curarm);
 
       /* Move new bone collections, and store their remapping info.
-       * TODO: armatures can potentially have multiple users, so these should
+       * TODO armatures can potentially have multiple users, so these should
        * actually be copied, not moved.  However, the armature join code is
        * already broken in that situation.  When that gets fixed, this should
        * also get fixed.  Note that copying the collections should include
-       * copying their custom properties. (Nathan Vegdahl) */
-      for (BoneCollection *bcoll : curarm->collections_span()) {
+       * copying their custom props. */
+       for (BoneCollection *bcoll : curarm->collections_span()) {
         BoneCollection *mapped = bone_collection_by_name.lookup_default(bcoll->name, nullptr);
         if (!mapped) {
-          BoneCollection *new_bcoll = ANIM_armature_bonecoll_new(arm, bcoll->name);
+          BoneCollection *new_bcoll =anim_armature_bonecoll_new(arm, bcoll->name);
           bone_collection_by_name.add(bcoll->name, new_bcoll);
           mapped = new_bcoll;
         }
@@ -342,17 +336,17 @@ int ED_armature_join_objects_exec(bContext *C, wmOperator *op)
       ob_iter->mode &= ~OB_MODE_POSE;
       // BASACT->flag &= ~OB_MODE_POSE;
 
-      /* Find the difference matrix */
-      mul_m4_m4m4(mat, oimat, ob_iter->object_to_world);
+      /* Find the diff matrix */
+      mul_m4_m4m4(mat, oimat, ob_iter->ob_to_world);
 
-      /* Copy bones and posechannels from the object to the edit armature */
-      for (pchan = static_cast<bPoseChannel *>(opose->chanbase.first); pchan; pchan = pchann) {
+      /* Copy bones and posechannels from the ob to the edit armature */
+      for (pchan = static_cast<PoseChannel *>(opose->chanbase.first); pchan; pchan = pchann) {
         pchann = pchan->next;
-        curbone = ED_armature_ebone_find_name(curarm->edbo, pchan->name);
+        curbone = ed_armature_ebone_find_name(curarm->edbo, pchan->name);
 
         /* Get new name */
-        ED_armature_ebone_unique_name(arm->edbo, curbone->name, nullptr);
-        BLI_ghash_insert(afd.names_map, BLI_strdup(pchan->name), curbone->name);
+        ed_armature_ebone_unique_name(arm->edbo, curbone->name, nullptr);
+        lib_ghash_insert(afd.names_map, lib_strdup(pchan->name), curbone->name);
 
         /* Transform the bone */
         {
@@ -363,16 +357,16 @@ int ED_armature_join_objects_exec(bContext *C, wmOperator *op)
           float temp[3][3];
 
           /* Get the premat */
-          ED_armature_ebone_to_mat3(curbone, temp);
+          ed_armature_ebone_to_mat3(curbone, tmp);
 
           unit_m4(premat); /* mul_m4_m3m4 only sets 3x3 part */
-          mul_m4_m3m4(premat, temp, mat);
+          mul_m4_m3m4(premat, tmp, mat);
 
           mul_m4_v3(mat, curbone->head);
           mul_m4_v3(mat, curbone->tail);
 
           /* Get the postmat */
-          ED_armature_ebone_to_mat3(curbone, temp);
+          ed_armature_ebone_to_mat3(curbone, tmp);
           copy_m4_m3(postmat, temp);
 
           /* Find the roll */
@@ -383,113 +377,107 @@ int ED_armature_join_objects_exec(bContext *C, wmOperator *op)
         }
 
         /* Fix Constraints and Other Links to this Bone and Armature */
-        joined_armature_fix_links(bmain, ob_active, ob_iter, pchan, curbone);
+        joined_armature_fix_links(main, ob_active, ob_iter, pchan, curbone);
 
         /* Rename pchan */
         STRNCPY(pchan->name, curbone->name);
 
         /* Jump Ship! */
-        BLI_remlink(curarm->edbo, curbone);
-        BLI_addtail(arm->edbo, curbone);
+        lib_remlink(curarm->edbo, curbone);
+        lib_addtail(arm->edbo, curbone);
 
         /* Pose channel is moved from one storage to another, its UUID is still unique. */
-        BLI_remlink(&opose->chanbase, pchan);
-        BLI_addtail(&pose->chanbase, pchan);
-        BKE_pose_channels_hash_free(opose);
-        BKE_pose_channels_hash_free(pose);
+        lib_remlink(&opose->chanbase, pchan);
+        lib_addtail(&pose->chanbase, pchan);
+        dune_pose_channels_hash_free(opose);
+        dune_pose_channels_hash_free(pose);
 
         /* Remap collections. */
-        LISTBASE_FOREACH (BoneCollectionReference *, bcoll_ref, &curbone->bone_collections) {
+        LIST_FOREACH (BoneCollectionReference *, bcoll_ref, &curbone->bone_collections) {
           bcoll_ref->bcoll = bone_collection_remap.lookup(bcoll_ref->bcoll);
         }
       }
 
-      /* Armature ID itself is not freed below, however it has been modified (and is now completely
-       * empty). This needs to be told to the depsgraph, it will also ensure that the global
-       * memfile undo system properly detects the change.
+      /* Armature Id itself is not freed below, however it has been modded (and is now completely
+       * empty). This needs to be told to the graph, it will also ensure that the global
+       * memfile undo sys properly detects the change.
        *
-       * FIXME: Modifying an existing obdata because we are joining an object using it into another
-       * object is a very questionable behavior, which also does not match with other object types
+       * FIXME: Modding an existing obdata bc we are joining an ob using it into another
+       * ob is a very questionable behavior, which also does not match w other ob types
        * joining. */
-      DEG_id_tag_update_ex(bmain, &curarm->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update_ex(main, &curarm->id, ID_RECALC_GEOMETRY);
 
       /* Fix all the drivers (and animation data) */
-      BKE_fcurves_main_cb(bmain, joined_armature_fix_animdata_cb, &afd);
-      BLI_ghash_free(afd.names_map, MEM_freeN, nullptr);
+      dune_fcurves_main_cb(main, joined_armature_fix_animdata_cb, &afd);
+      lib_ghash_free(afd.names_map, mem_free, nullptr);
 
       /* Only copy over animdata now, after all the remapping has been done,
        * so that we don't have to worry about ambiguities re which armature
-       * a bone came from!
-       */
+       * a bone came from! */
       if (ob_iter->adt) {
         if (ob_active->adt == nullptr) {
           /* no animdata, so just use a copy of the whole thing */
-          ob_active->adt = BKE_animdata_copy(bmain, ob_iter->adt, 0);
+          ob_active->adt = dune_animdata_copy(main, ob_iter->adt, 0);
         }
         else {
-          /* merge in data - we'll fix the drivers manually */
-          BKE_animdata_merge_copy(
-              bmain, &ob_active->id, &ob_iter->id, ADT_MERGECOPY_KEEP_DST, false);
+          /* merge in data: we fix the drivers manually */
+          dune_animdata_merge_copy(
+              main, &ob_active->id, &ob_iter->id, ADT_MERGECOPY_KEEP_DST, false);
         }
       }
 
       if (curarm->adt) {
         if (arm->adt == nullptr) {
           /* no animdata, so just use a copy of the whole thing */
-          arm->adt = BKE_animdata_copy(bmain, curarm->adt, 0);
+          arm->adt = dune_animdata_copy(main, curarm->adt, 0);
         }
         else {
-          /* merge in data - we'll fix the drivers manually */
-          BKE_animdata_merge_copy(bmain, &arm->id, &curarm->id, ADT_MERGECOPY_KEEP_DST, false);
+          /* merge in data we'll fix the drivers manually */
+          dune_animdata_merge_copy(main, &arm->id, &curarm->id, ADT_MERGECOPY_KEEP_DST, false);
         }
       }
 
-      /* Free the old object data */
-      ED_object_base_free_and_unlink(bmain, scene, ob_iter);
+      /* Free the old ob data */
+      ed_ob_base_free_and_unlink(main, scene, ob_iter);
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  DEG_relations_tag_update(bmain); /* because we removed object(s) */
+  graph_tag_update(main); /* bc we removed ob(s) */
 
-  ED_armature_from_edit(bmain, arm);
-  ED_armature_edit_free(arm);
+  ed_armature_from_edit(main, arm);
+  ed_armature_edit_free(arm);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_SELECT);
-  WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
-  WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEL);
+  win_ev_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
+  win_ev_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit Armature Separate
- * \{ */
-
-/* Helper function for armature separating - link fixing */
-static void separated_armature_fix_links(Main *bmain, Object *origArm, Object *newArm)
+/* Edit Armature Separate */
+/* Helper fn for armature separating link fixing */
+static void separated_armature_fix_links(Main *main, Ob *origArm, Ob *newArm)
 {
-  Object *ob;
-  ListBase *opchans, *npchans;
+  Ob *ob;
+  List *opchans, *npchans;
 
-  /* Get reference to list of bones in original and new armatures. */
+  /* Get ref to list of bones in original and new armatures. */
   opchans = &origArm->pose->chanbase;
   npchans = &newArm->pose->chanbase;
 
-  /* let's go through all objects in database */
-  for (ob = static_cast<Object *>(bmain->objects.first); ob;
-       ob = static_cast<Object *>(ob->id.next)) {
-    /* do some object-type specific things */
+  /* let's go thru all obs in database */
+  for (ob = static_cast<Ob *>(main->obs.first); ob;
+       ob = static_cast<Ob *>(ob->id.next)) {
+    /* do some ob-type specific things */
     if (ob->type == OB_ARMATURE) {
-      LISTBASE_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
-        LISTBASE_FOREACH (bConstraint *, con, &pchan->constraints) {
-          ListBase targets = {nullptr, nullptr};
+      LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
+        LIST_FOREACH (Constraint *, con, &pchan->constraints) {
+          List targets = {nullptr, nullptr};
 
           /* constraint targets */
-          if (BKE_constraint_targets_get(con, &targets)) {
-            LISTBASE_FOREACH (bConstraintTarget *, ct, &targets) {
+          if (dune_constraint_targets_get(con, &targets)) {
+            LIST_FOREACH (ConstraintTarget *, ct, &targets) {
               /* Any targets which point to original armature
                * are redirected to the new one only if:
                * - The target isn't origArm/newArm itself.
@@ -497,60 +485,59 @@ static void separated_armature_fix_links(Main *bmain, Object *origArm, Object *n
                */
               if (ct->subtarget[0] != 0) {
                 if (ct->tar == origArm) {
-                  if (BLI_findstring(npchans, ct->subtarget, offsetof(bPoseChannel, name))) {
+                  if (lib_findstring(npchans, ct->subtarget, offsetof(PoseChannel, name))) {
                     ct->tar = newArm;
                   }
                 }
                 else if (ct->tar == newArm) {
-                  if (BLI_findstring(opchans, ct->subtarget, offsetof(bPoseChannel, name))) {
+                  if (lib_findstring(opchans, ct->subtarget, offsetof(PoseChannel, name))) {
                     ct->tar = origArm;
                   }
                 }
               }
             }
 
-            BKE_constraint_targets_flush(con, &targets, false);
+            dune_constraint_targets_flush(con, &targets, false);
           }
         }
       }
     }
 
-    /* fix object-level constraints */
+    /* fix ob-level constraints */
     if (ob != origArm) {
-      LISTBASE_FOREACH (bConstraint *, con, &ob->constraints) {
-        ListBase targets = {nullptr, nullptr};
+      LIST_FOREACH (bConstraint *, con, &ob->constraints) {
+        List targets = {nullptr, nullptr};
 
         /* constraint targets */
-        if (BKE_constraint_targets_get(con, &targets)) {
-          LISTBASE_FOREACH (bConstraintTarget *, ct, &targets) {
+        if (dune_constraint_targets_get(con, &targets)) {
+          LIST_FOREACH (ConstraintTarget *, ct, &targets) {
             /* any targets which point to original armature are redirected to the new one only if:
              * - the target isn't origArm/newArm itself
-             * - the target is one that can be found in newArm/origArm
-             */
+             * - the target is one that can be found in newArm/origArm */
             if (ct->subtarget[0] != '\0') {
               if (ct->tar == origArm) {
-                if (BLI_findstring(npchans, ct->subtarget, offsetof(bPoseChannel, name))) {
+                if (lib_findstring(npchans, ct->subtarget, offsetof(PoseChannel, name))) {
                   ct->tar = newArm;
                 }
               }
               else if (ct->tar == newArm) {
-                if (BLI_findstring(opchans, ct->subtarget, offsetof(bPoseChannel, name))) {
+                if (lib_findstring(opchans, ct->subtarget, offsetof(PoseChannel, name))) {
                   ct->tar = origArm;
                 }
               }
             }
           }
 
-          BKE_constraint_targets_flush(con, &targets, false);
+          dune_constraint_targets_flush(con, &targets, false);
         }
       }
     }
 
-    /* See if an object is parented to this armature */
+    /* See if an ob is parented to this armature */
     if (ob->parent && (ob->parent == origArm)) {
-      /* Is object parented to a bone of this src armature? */
+      /* Is ob parented to a bone of this src armature? */
       if ((ob->partype == PARBONE) && (ob->parsubstr[0] != '\0')) {
-        if (BLI_findstring(npchans, ob->parsubstr, offsetof(bPoseChannel, name))) {
+        if (lib_findstring(npchans, ob->parsubstr, offsetof(PoseChannel, name))) {
           ob->parent = newArm;
         }
       }
@@ -558,42 +545,40 @@ static void separated_armature_fix_links(Main *bmain, Object *origArm, Object *n
   }
 }
 
-/**
- * Helper function for armature separating - remove certain bones from the given armature.
+/* Helper fn for armature separating - remove certain bones from the given armature.
  *
- * \param ob: Armature object (must not be is not in edit-mode).
- * \param is_select: remove selected bones from the armature,
- * otherwise the unselected bones are removed.
- */
-static void separate_armature_bones(Main *bmain, Object *ob, const bool is_select)
+ * param ob: Armature ob (must not be is not in edit-mode).
+ * param is_sel: remove sel bones from the armature,
+ * otherwise the unsel bones are removed. */
+static void separate_armature_bones(Main *main, Ob *ob, const bool is_sel)
 {
-  bArmature *arm = (bArmature *)ob->data;
-  bPoseChannel *pchan, *pchann;
+  Armature *arm = (Armature *)ob->data;
+  PoseChannel *pchan, *pchann;
   EditBone *curbone;
 
   /* make local set of edit-bones to manipulate here */
-  ED_armature_to_edit(arm);
+  ed_armature_to_edit(arm);
 
   /* go through pose-channels, checking if a bone should be removed */
-  for (pchan = static_cast<bPoseChannel *>(ob->pose->chanbase.first); pchan; pchan = pchann) {
+  for (pchan = static_cast<PoseChannel *>(ob->pose->chanbase.first); pchan; pchan = pchann) {
     pchann = pchan->next;
-    curbone = ED_armature_ebone_find_name(arm->edbo, pchan->name);
+    curbone = ed_armature_ebone_find_name(arm->edbo, pchan->name);
 
     /* check if bone needs to be removed */
-    if (is_select == (EBONE_VISIBLE(arm, curbone) && (curbone->flag & BONE_SELECTED))) {
+    if (is_sel == (EBONE_VISIBLE(arm, curbone) && (curbone->flag & BONE_SEL))) {
 
       /* Clear the bone->parent var of any bone that had this as its parent. */
-      LISTBASE_FOREACH (EditBone *, ebo, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebo, arm->edbo) {
         if (ebo->parent == curbone) {
           ebo->parent = nullptr;
-          /* this is needed to prevent random crashes with in ED_armature_from_edit */
-          ebo->temp.p = nullptr;
+          /* this is needed to prevent random crashes with in ed_armature_from_edit */
+          ebo->tmp.p = nullptr;
           ebo->flag &= ~BONE_CONNECTED;
         }
       }
 
       /* clear the pchan->parent var of any pchan that had this as its parent */
-      LISTBASE_FOREACH (bPoseChannel *, pchn, &ob->pose->chanbase) {
+      LIST_FOREACH (PoseChannel *, pchn, &ob->pose->chanbase) {
         if (pchn->parent == pchan) {
           pchn->parent = nullptr;
         }
@@ -606,60 +591,60 @@ static void separate_armature_bones(Main *bmain, Object *ob, const bool is_selec
       }
 
       /* Free any of the extra-data this pchan might have. */
-      BKE_pose_channel_free(pchan);
-      BKE_pose_channels_hash_free(ob->pose);
+      dune_pose_channel_free(pchan);
+      dune_pose_channels_hash_free(ob->pose);
 
       /* get rid of unneeded bone */
       bone_free(arm, curbone);
-      BLI_freelinkN(&ob->pose->chanbase, pchan);
+      lib_freelink(&ob->pose->chanbase, pchan);
     }
   }
 
-  /* Exit edit-mode (recalculates pose-channels too). */
-  ED_armature_edit_deselect_all(ob);
-  ED_armature_from_edit(bmain, static_cast<bArmature *>(ob->data));
-  ED_armature_edit_free(static_cast<bArmature *>(ob->data));
+  /* Exit edit-mode (recalcs pose-channels too). */
+  ed_armature_edit_desel_all(ob);
+  ed_armature_from_edit(main, static_cast<Armature *>(ob->data));
+  ed_armature_edit_free(static_cast<Armature *>(ob->data));
 }
 
-/* separate selected bones into their armature */
-static int separate_armature_exec(bContext *C, wmOperator *op)
+/* separate sel bones into their armature */
+static int separate_armature_ex(Cxt *C, WinOp *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   bool ok = false;
 
   /* set wait cursor in case this takes a while */
-  WM_cursor_wait(true);
+  win_cursor_wait(true);
 
   uint bases_len = 0;
-  Base **bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &bases_len);
+  Base **bases = dune_view_layer_array_from_bases_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &bases_len);
 
   for (uint base_index = 0; base_index < bases_len; base_index++) {
     Base *base_old = bases[base_index];
-    Object *ob_old = base_old->object;
+    Ob *ob_old = base_old->ob;
 
     {
-      bArmature *arm_old = static_cast<bArmature *>(ob_old->data);
-      bool has_selected_bone = false;
-      bool has_selected_any = false;
-      LISTBASE_FOREACH (EditBone *, ebone, arm_old->edbo) {
+      Armature *arm_old = static_cast<bArmature *>(ob_old->data);
+      bool has_sel_bone = false;
+      bool has_sel_any = false;
+      LIST_FOREACH (EditBone *, ebone, arm_old->edbo) {
         if (EBONE_VISIBLE(arm_old, ebone)) {
-          if (ebone->flag & BONE_SELECTED) {
-            has_selected_bone = true;
+          if (ebone->flag & BONE_SEL) {
+            has_sel_bone = true;
             break;
           }
           if (ebone->flag & (BONE_TIPSEL | BONE_ROOTSEL)) {
-            has_selected_any = true;
+            has_sel_any = true;
           }
         }
       }
-      if (has_selected_bone == false) {
-        if (has_selected_any) {
-          /* Without this, we may leave head/tail selected
+      if (has_sel_bone == false) {
+        if (has_sel_any) {
+          /* Wo this, we may leave head/tail set
            * which isn't expected after separating. */
-          ED_armature_edit_deselect_all(ob_old);
+          ed_armature_edit_desel_all(ob_old);
         }
         continue;
       }
@@ -667,70 +652,68 @@ static int separate_armature_exec(bContext *C, wmOperator *op)
 
     /* We are going to do this as follows (unlike every other instance of separate):
      * 1. Exit edit-mode & pose-mode for active armature/base. Take note of what this is.
-     * 2. Duplicate base - BASACT is the new one now
+     * 2. Dup base - BASACT is the new one now
      * 3. For each of the two armatures,
-     *    enter edit-mode -> remove appropriate bones -> exit edit-mode + recalculate.
+     *    enter edit-mode -> remove appropriate bones -> exit edit-mode + recalc.
      * 4. Fix constraint links
-     * 5. Make original armature active and enter edit-mode
-     */
+     * 5. Make original armature active and enter edit-mode */
 
     /* 1) store starting settings and exit edit-mode */
     ob_old->mode &= ~OB_MODE_POSE;
 
-    ED_armature_from_edit(bmain, static_cast<bArmature *>(ob_old->data));
-    ED_armature_edit_free(static_cast<bArmature *>(ob_old->data));
+    ed_armature_from_edit(main, static_cast<Armature *>(ob_old->data));
+    ed_armature_edit_free(static_cast<Armature *>(ob_old->data));
 
-    /* 2) duplicate base */
-
-    /* Only duplicate linked armature but take into account
-     * user preferences for duplicating actions. */
+    /* 2) dup base */
+    /* Only dup linked armature but take into account
+     * user prefs for dup'ing actions. */
     short dupflag = USER_DUP_ARM | (U.dupflag & USER_DUP_ACT);
-    Base *base_new = ED_object_add_duplicate(
-        bmain, scene, view_layer, base_old, eDupli_ID_Flags(dupflag));
-    Object *ob_new = base_new->object;
+    Base *base_new = ed_ob_add_dup(
+        main, scene, view_layer, base_old, eDupDFlags(dupflag));
+    Ob *ob_new = base_new->ob;
 
-    DEG_relations_tag_update(bmain);
+    graph_tag_update(main);
 
     /* 3) remove bones that shouldn't still be around on both armatures */
-    separate_armature_bones(bmain, ob_old, true);
-    separate_armature_bones(bmain, ob_new, false);
+    separate_armature_bones(main, ob_old, true);
+    separate_armature_bones(main, ob_new, false);
 
-    /* 4) fix links before depsgraph flushes, err... or after? */
-    separated_armature_fix_links(bmain, ob_old, ob_new);
+    /* 4) fix links before graph flushes, err... or after? */
+    separated_armature_fix_links(main, ob_old, ob_new);
 
-    DEG_id_tag_update(&ob_old->id, ID_RECALC_GEOMETRY); /* this is the original one */
-    DEG_id_tag_update(&ob_new->id, ID_RECALC_GEOMETRY); /* this is the separated one */
+    graph_id_tag_update(&ob_old->id, ID_RECALC_GEOMETRY); /* this is the original one */
+    graph_id_tag_update(&ob_new->id, ID_RECALC_GEOMETRY); /* this is the separated one */
 
     /* 5) restore original conditions */
-    ED_armature_to_edit(static_cast<bArmature *>(ob_old->data));
+    ed_armature_to_edit(static_cast<Armature *>(ob_old->data));
 
-    /* parents tips remain selected when connected children are removed. */
-    ED_armature_edit_deselect_all(ob_old);
+    /* parents tips remain sel when connected children are removed. */
+    ed_armature_edit_desel_all(ob_old);
 
     ok = true;
 
     /* NOTE: notifier might evolve. */
-    WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob_old);
+    win_ev_add_notifier(C, NC_OBJECT | ND_POSE, ob_old);
   }
-  MEM_freeN(bases);
+  mem_free(bases);
 
-  /* Recalculate/redraw + cleanup */
-  WM_cursor_wait(false);
+  /* Recalc/redrw + cleanup */
+  win_cursor_wait(false);
 
   if (ok) {
-    BKE_report(op->reports, RPT_INFO, "Separated bones");
-    ED_outliner_select_sync_from_object_tag(C);
+    dune_report(op->reports, RPT_INFO, "Separated bones");
+    ed_outliner_sel_sync_from_ob_tag(C);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_separate(wmOperatorType *ot)
+void ARMATURE_OT_separate(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Separate Bones";
   ot->idname = "ARMATURE_OT_separate";
-  ot->description = "Isolate selected bones into a separate armature";
+  ot->description = "Isolate sel bones into a separate armature";
 
   /* callbacks */
   ot->invoke = WM_operator_confirm_or_exec;
