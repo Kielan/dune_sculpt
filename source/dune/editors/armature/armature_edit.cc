@@ -1,5 +1,4 @@
 /* Armature EditMode tools transforms, chain based editing, and other settings. */
-
 #include "types_armature.h"
 #include "types_constraint.h"
 #include "types_ob.h"
@@ -590,7 +589,6 @@ static void chains_find_tips(List *edbo, List *list)
 }
 
 /* Fill Op */
-
 static void fill_add_joint(EditBone *ebo, short eb_tail, List *points)
 {
   EditBonePoint *ebp;
@@ -667,40 +665,39 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
 
     if (check) {
       if (arm && (arm != arm_iter)) {
-        mixed_object_error = true;
+        mixed_ob_error = true;
       }
       arm = arm_iter;
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
   /* the number of joints determines how we fill:
    *  1) between joint and cursor (joint=head, cursor=tail)
    *  2) between the two joints (order is dependent on active-bone/hierarchy)
-   *  3+) error (a smarter method involving finding chains needs to be worked out
-   */
-  count = BLI_listbase_count(&points);
+   *  3+) error (a smarter method involving finding chains needs to be worked out */
+  count = lib_list_count(&points);
 
   if (count == 0) {
-    BKE_report(op->reports, RPT_ERROR, "No joints selected");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No joints selected");
+    return OP_CANCELLED;
   }
 
-  if (mixed_object_error) {
-    BKE_report(op->reports, RPT_ERROR, "Bones for different objects selected");
-    BLI_freelistN(&points);
-    return OPERATOR_CANCELLED;
+  if (mixed_ob_error) {
+    dune_report(op->reports, RPT_ERROR, "Bones for different objects selected");
+    lib_freelist(&points);
+    return OP_CANCELLED;
   }
 
-  Object *obedit = nullptr;
+  Ob *obedit = nullptr;
   {
-    ViewLayer *view_layer = CTX_data_view_layer(C);
-    FOREACH_OBJECT_IN_EDIT_MODE_BEGIN (scene, view_layer, v3d, ob_iter) {
+    ViewLayer *view_layer = cxt_data_view_layer(C);
+    FOREACH_OB_IN_EDIT_MODE_BEGIN (scene, view_layer, v3d, ob_iter) {
       if (ob_iter->data == arm) {
         obedit = ob_iter;
       }
     }
-    FOREACH_OBJECT_IN_MODE_END;
+    FOREACH_OB_IN_MODE_END;
   }
   BLI_assert(obedit != nullptr);
 
@@ -708,12 +705,12 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
     EditBonePoint *ebp;
     float curs[3];
 
-    /* Get Points - selected joint */
+    /* Get Points sel joint */
     ebp = static_cast<EditBonePoint *>(points.first);
 
     /* Get points - cursor (tail) */
-    invert_m4_m4(obedit->world_to_object, obedit->object_to_world);
-    mul_v3_m4v3(curs, obedit->world_to_object, scene->cursor.location);
+    invert_m4_m4(obedit->world_to_ob, obedit->ob_to_world);
+    mul_v3_m4v3(curs, obedit->world_to_ob, scene->cursor.location);
 
     /* Create a bone */
     newbone = add_points_bone(obedit, ebp->vec, curs);
@@ -730,9 +727,9 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
     if (((ebp_a->head_owner == ebp_b->tail_owner) && (ebp_a->head_owner != nullptr)) ||
         ((ebp_a->tail_owner == ebp_b->head_owner) && (ebp_a->tail_owner != nullptr)))
     {
-      BKE_report(op->reports, RPT_ERROR, "Same bone selected...");
-      BLI_freelistN(&points);
-      return OPERATOR_CANCELLED;
+      dune_report(op->reports, RPT_ERROR, "Same bone selected...");
+      lib_freelist(&points);
+      return OP_CANCELLED;
     }
 
     /* find which one should be the 'head' */
@@ -750,8 +747,8 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
         float dist_sq_a, dist_sq_b;
 
         /* get cursor location */
-        invert_m4_m4(obedit->world_to_object, obedit->object_to_world);
-        mul_v3_m4v3(curs, obedit->world_to_object, scene->cursor.location);
+        invert_m4_m4(obedit->world_to_ob, obedit->ob_to_world);
+        mul_v3_m4v3(curs, obedit->world_to_ob, scene->cursor.location);
 
         /* get distances */
         dist_sq_a = len_squared_v3v3(ebp_a->vec, curs);
@@ -809,77 +806,72 @@ static int armature_fill_bones_ex(Cxt *C, WinOp *op)
     }
   }
   else {
-    BKE_reportf(op->reports, RPT_ERROR, "Too many points selected: %d", count);
-    BLI_freelistN(&points);
-    return OPERATOR_CANCELLED;
+    dune_reportf(op->reports, RPT_ERROR, "Too many points sel: %d", count);
+    lib_freelist(&points);
+    return OP_CANCELLED;
   }
 
   if (newbone) {
-    ED_armature_edit_deselect_all(obedit);
+    ed_armature_edit_desel_all(obedit);
     arm->act_edbone = newbone;
     newbone->flag |= BONE_TIPSEL;
   }
 
   /* updates */
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, obedit);
-  DEG_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
+  win_ev_add_notifier(C, NC_OB | ND_POSE, obedit);
+  graph_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
 
   /* free points */
-  BLI_freelistN(&points);
+  lib_freelist(&points);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_fill(wmOperatorType *ot)
+void ARMATURE_OT_fill(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Fill Between Joints";
   ot->idname = "ARMATURE_OT_fill";
-  ot->description = "Add bone between selected joint(s) and/or 3D cursor";
-
-  /* callbacks */
-  ot->exec = armature_fill_bones_exec;
-  ot->poll = ED_operator_editarmature;
+  ot->description = "Add bone between sel joint(s) and/or 3D cursor";
+  
+  /* cbs */
+  ot->ex = armature_fill_bones_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-}
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Switch Direction Operator
- *
- * Currently, this does not use context loops, as context loops do not make it
- * easy to retrieve any hierarchical/chain relationships which are necessary for
- * this to be done easily.
- * \{ */
+/* Switch Direction Op
+ * Currently this doesnt use cxt loops as cxt loops are not
+ * easy to retrieve for hierarchical/chain relationships which are necessary for
+ * this to be done easily. */
 
 /* helper to clear BONE_TRANSFORM flags */
-static void armature_clear_swap_done_flags(bArmature *arm)
+static void armature_clear_swap_done_flags(Armature *arm)
 {
-  LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+  LIST_FOREACH (EditBone *, ebone, arm->edbo) {
     ebone->flag &= ~BONE_TRANSFORM;
   }
 }
 
-static int armature_switch_direction_exec(bContext *C, wmOperator * /*op*/)
+static int armature_switch_direction_exec(Cxt *C, WinOp * /*op*/)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *ob = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *ob = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(ob->data);
 
-    ListBase chains = {nullptr, nullptr};
+    List chains = {nullptr, nullptr};
 
     /* get chains of bones (ends on chains) */
     chains_find_tips(arm->edbo, &chains);
-    if (BLI_listbase_is_empty(&chains)) {
+    if (lib_list_is_empty(&chains)) {
       continue;
     }
 
