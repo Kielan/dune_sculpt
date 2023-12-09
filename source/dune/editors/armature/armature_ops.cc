@@ -1,52 +1,49 @@
-#include "RNA_access.hh"
+#include "api_access.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_screen.hh"
+#include "ed_armature.hh"
+#include "ed_screen.hh"
 
 #include "armature_intern.h"
 
-/* ************************** registration **********************************/
-
-void ED_operatortypes_armature()
+void ed_optypes_armature()
 {
-  /* Both operators `ARMATURE_OT_*` and `POSE_OT_*` are registered here. */
-
+  /* Both ops `ARMATURE_OT_*` and `POSE_OT_*` are registered here. */
   /* EDIT ARMATURE */
-  WM_operatortype_append(ARMATURE_OT_bone_primitive_add);
+  win_optype_append(ARMATURE_OT_bone_primitive_add);
 
-  WM_operatortype_append(ARMATURE_OT_align);
-  WM_operatortype_append(ARMATURE_OT_calculate_roll);
-  WM_operatortype_append(ARMATURE_OT_roll_clear);
-  WM_operatortype_append(ARMATURE_OT_switch_direction);
-  WM_operatortype_append(ARMATURE_OT_subdivide);
+  win_optype_append(ARMATURE_OT_align);
+  win_optype_append(ARMATURE_OT_calc_roll);
+  win_optype_append(ARMATURE_OT_roll_clear);
+  win_optype_append(ARMATURE_OT_switch_direction);
+  win_optype_append(ARMATURE_OT_subdivide);
 
-  WM_operatortype_append(ARMATURE_OT_parent_set);
-  WM_operatortype_append(ARMATURE_OT_parent_clear);
+  win_optype_append(ARMATURE_OT_parent_set);
+  win_optype_append(ARMATURE_OT_parent_clear);
 
-  WM_operatortype_append(ARMATURE_OT_select_all);
-  WM_operatortype_append(ARMATURE_OT_select_mirror);
-  WM_operatortype_append(ARMATURE_OT_select_more);
-  WM_operatortype_append(ARMATURE_OT_select_less);
-  WM_operatortype_append(ARMATURE_OT_select_hierarchy);
-  WM_operatortype_append(ARMATURE_OT_select_linked);
-  WM_operatortype_append(ARMATURE_OT_select_linked_pick);
-  WM_operatortype_append(ARMATURE_OT_select_similar);
-  WM_operatortype_append(ARMATURE_OT_shortest_path_pick);
+  win_optype_append(ARMATURE_OT_sel_all);
+  win_optype_append(ARMATURE_OT_sel_mirror);
+  win_optype_append(ARMATURE_OT_sel_more);
+  win_optype_append(ARMATURE_OT_sel_less);
+  win_optype_append(ARMATURE_OT_sel_hierarchy);
+  win_optype_append(ARMATURE_OT_sel_linked);
+  win_optype_append(ARMATURE_OT_sel_linked_pick);
+  win_optype_append(ARMATURE_OT_sel_similar);
+  win_optype_append(ARMATURE_OT_shortest_path_pick);
 
-  WM_operatortype_append(ARMATURE_OT_delete);
-  WM_operatortype_append(ARMATURE_OT_dissolve);
-  WM_operatortype_append(ARMATURE_OT_duplicate);
-  WM_operatortype_append(ARMATURE_OT_symmetrize);
-  WM_operatortype_append(ARMATURE_OT_extrude);
-  WM_operatortype_append(ARMATURE_OT_hide);
-  WM_operatortype_append(ARMATURE_OT_reveal);
+  win_optype_append(ARMATURE_OT_del);
+  win_optype_append(ARMATURE_OT_dissolve);
+  win_optype_append(ARMATURE_OT_dup);
+  win_optype_append(ARMATURE_OT_symmetrize);
+  win_optype_append(ARMATURE_OT_extrude);
+  win_optype_append(ARMATURE_OT_hide);
+  win_optype_append(ARMATURE_OT_reveal);
   WM_operatortype_append(ARMATURE_OT_click_extrude);
   WM_operatortype_append(ARMATURE_OT_fill);
-  WM_operatortype_append(ARMATURE_OT_separate);
-  WM_operatortype_append(ARMATURE_OT_split);
+  WM_optype_append(ARMATURE_OT_separate);
+  WM_optype_append(ARMATURE_OT_split);
 
   WM_operatortype_append(ARMATURE_OT_autoside_names);
   WM_operatortype_append(ARMATURE_OT_flip_names);
