@@ -1,71 +1,63 @@
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.hh"
+#include "lib_dunelib.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
+#include "lib_string_utils.hh"
 
-#include "BKE_action.h"
-#include "BKE_animsys.h"
-#include "BKE_appdir.h"
-#include "BKE_armature.hh"
-#include "BKE_blender_copybuffer.h"
-#include "BKE_context.hh"
-#include "BKE_deform.h"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_object.hh"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_animsys.h"
+#include "dune_appdir.h"
+#include "dune_armature.hh"
+#include "dune_copybuf.h"
+#include "dune_cxt.hh"
+#include "dune_deform.h"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_ob.hh"
+#include "dune_report.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_query.hh"
+#include "graph.hh"
+#include "graph_query.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_prototypes.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_keyframing.hh"
-#include "ED_screen.hh"
-#include "ED_util.hh"
+#include "ed_armature.hh"
+#include "ed_keyframing.hh"
+#include "ed_screen.hh"
+#include "ed_util.hh"
 
-#include "ANIM_bone_collections.hh"
-#include "ANIM_keyframing.hh"
+#include "anim_bone_collections.hh"
+#include "anim_keyframing.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
 #include "armature_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Local Utilities
- * \{ */
-
-static void pose_copybuffer_filepath_get(char filepath[FILE_MAX], size_t filepath_maxncpy)
+/* Local Utils */
+static void pose_copybuf_filepath_get(char filepath[FILE_MAX], size_t filepath_maxncpy)
 {
-  BLI_path_join(filepath, filepath_maxncpy, BKE_tempdir_base(), "copybuffer_pose.blend");
+  lib_path_join(filepath, filepath_maxncpy, dune_tmpdir_base(), "copybuffer_pose.blend");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Apply Pose as Rest Pose
- * \{ */
-
-/* helper for apply_armature_pose2bones - fixes parenting of objects
+/* Apply Pose as Rest Pose */
+/* helper for apply_armature_pose2bones - fixes parenting of obs
  * that are bone-parented to armature */
-static void applyarmature_fix_boneparents(const bContext *C, Scene *scene, Object *armob)
+static void applyarmature_fix_boneparents(const Cxt *C, Scene *scene, Object *armob)
 {
   /* Depsgraph has been ensured to be evaluated at the beginning of the operator.
    *
