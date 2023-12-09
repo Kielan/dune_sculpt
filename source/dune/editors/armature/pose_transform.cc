@@ -793,120 +793,115 @@ void POSE_OT_copy(WinOpType *ot)
 }
 
 /* Paste Pose Op */
-static int pose_paste_ex(Cxt *C, wmOperator *op)
+static int pose_paste_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = dune_ob_pose_armature_get(CTX_data_active_object(C));
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
   Scene *scene = cxt_data_scene(C);
-  const bool flip = RNA_boolean_get(op->ptr, "flipped");
-  bool selOnly = RNA_boolean_get(op->ptr, "selected_mask");
+  const bool flip = api_bool_get(op->ptr, "flipped");
+  bool selOnly = api_bool_get(op->ptr, "sel_mask");
 
   /* Get KeyingSet to use. */
-  KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_WHOLE_CHARACTER_ID);
+  KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, ANIM_KS_WHOLE_CHARACTER_ID);
 
   /* Sanity checks. */
   if (ELEM(nullptr, ob, ob->pose)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* Read copy buffer .blend file. */
+  /* Read copy buf .dune file. */
   char filepath[FILE_MAX];
-  Main *temp_bmain = BKE_main_new();
-  STRNCPY(temp_bmain->filepath, BKE_main_blendfile_path_from_global());
+  Main *tmp_main = dune_main_new();
+  STRNCPY(tmp_bmain->filepath, dune_main_dunefile_path_from_global());
 
-  pose_copybuffer_filepath_get(filepath, sizeof(filepath));
-  if (!BKE_copybuffer_read(temp_bmain, filepath, op->reports, FILTER_ID_OB)) {
-    BKE_report(op->reports, RPT_ERROR, "Internal clipboard is empty");
-    BKE_main_free(temp_bmain);
-    return OPERATOR_CANCELLED;
+  pose_copybuf_filepath_get(filepath, sizeof(filepath));
+  if (!dune_copybuf_read(tmp_main, filepath, op->reports, FILTER_ID_OB)) {
+    dune_report(op->reports, RPT_ERROR, "Internal clipboard is empty");
+    dune_main_free(tmp_bmain);
+    return OP_CANCELLED;
   }
   /* Make sure data from this file is usable for pose paste. */
-  if (!BLI_listbase_is_single(&temp_bmain->objects)) {
-    BKE_report(op->reports, RPT_ERROR, "Internal clipboard is not from pose mode");
-    BKE_main_free(temp_bmain);
-    return OPERATOR_CANCELLED;
+  if (!lib_list_is_single(&tmp_main->obs)) {
+    dune_report(op->reports, RPT_ERROR, "Internal clipboard is not from pose mode");
+    dune_main_free(tmp_main);
+    return OP_CANCELLED;
   }
 
-  Object *object_from = static_cast<Object *>(temp_bmain->objects.first);
-  bPose *pose_from = object_from->pose;
+  Ob *ob_from = static_cast<Ob *>(tmp_main->obs.first);
+  Pose *pose_from = ob_from->pose;
   if (pose_from == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Internal clipboard has no pose");
-    BKE_main_free(temp_bmain);
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Internal clipboard has no pose");
+    dune_main_free(tmp_bmain);
+    return OP_CANCELLED;
   }
 
-  /* If selOnly option is enabled, if user hasn't selected any bones,
-   * just go back to default behavior to be more in line with other
-   * pose tools.
-   */
+  /* If selOnly option is enabled, if user hasn't sel any bones,
+   * return to default behavior to be more in line w other
+   * pose tools. */
   if (selOnly) {
-    if (CTX_DATA_COUNT(C, selected_pose_bones) == 0) {
+    if (CXT_DATA_COUNT(C, sel_pose_bones) == 0) {
       selOnly = false;
     }
   }
 
-  /* Safely merge all of the channels in the buffer pose into any
-   * existing pose.
-   */
-  LISTBASE_FOREACH (bPoseChannel *, chan, &pose_from->chanbase) {
+  /* Safely merge all of the channels in the buf pose into any
+   * existing pose. */
+  LIST_FOREACH (PoseChannel *, chan, &pose_from->chanbase) {
     if (chan->flag & POSE_KEY) {
       /* Try to perform paste on this bone. */
-      bPoseChannel *pchan = pose_bone_do_paste(ob, chan, selOnly, flip);
+      PoseChannel *pchan = pose_bone_do_paste(ob, chan, selOnly, flip);
       if (pchan != nullptr) {
         /* Keyframing tagging for successful paste, */
-        blender::animrig::autokeyframe_pchan(C, scene, ob, pchan, ks);
+        dune::animrig::autokeyframe_pchan(C, scene, ob, pchan, ks);
       }
     }
   }
-  BKE_main_free(temp_bmain);
+  dune_main_free(tmp_main);
 
-  /* Update event for pose and deformation children. */
-  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  /* Update ev for pose and deformation children. */
+  graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
 
-  /* Recalculate paths if any of the bones have paths... */
+  /* Recalc paths if any of the bones have paths... */
   if (ob->pose->avs.path_bakeflag & MOTIONPATH_BAKE_HAS_PATHS) {
-    ED_pose_recalculate_paths(C, scene, ob, POSE_PATH_CALC_RANGE_FULL);
+    ed_pose_recalc_paths(C, scene, ob, POSE_PATH_CALC_RANGE_FULL);
   }
 
   /* Notifiers for updates, */
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_paste(wmOperatorType *ot)
+void POSE_OT_paste(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Paste Pose";
   ot->idname = "POSE_OT_paste";
   ot->description = "Paste the stored pose on to the current pose";
 
-  /* api callbacks */
-  ot->exec = pose_paste_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_paste_ex;
+  ot->poll = ED_op_posemode;
 
   /* flag */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  prop = RNA_def_boolean(ot->srna,
-                         "flipped",
-                         false,
-                         "Flipped on X-Axis",
-                         "Paste the stored pose flipped on to current pose");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  /* props */
+  prop = api_def_bool(ot->sapi,
+                      "flipped",
+                      false,
+                      "Flipped on X-Axis",
+                      "Paste the stored pose flipped on to current pose");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  RNA_def_boolean(ot->srna,
-                  "selected_mask",
+  api_def_bool(ot->sapi,
+                  "sel_mask",
                   false,
-                  "On Selected Only",
-                  "Only paste the stored pose on to selected bones in the current pose");
+                  "On Sel Only",
+                  "Only paste the stored pose on to sel bones in the current pose");
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
 /** \name Clear Pose Transforms Utilities
  * \{ */
 
