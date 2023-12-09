@@ -941,73 +941,73 @@ EditBone *dupEditBoneObs(
   return e_bone;
 }
 
-EditBone *duplicateEditBone(EditBone *cur_bone, const char *name, ListBase *editbones, Object *ob)
+EditBone *dupEditBone(EditBone *cur_bone, const char *name, List *editbones, Ob *ob)
 {
-  return duplicateEditBoneObjects(cur_bone, name, editbones, ob, ob);
+  return dupEditBoneObs(cur_bone, name, editbones, ob, ob);
 }
 
-static int armature_duplicate_selected_exec(bContext *C, wmOperator *op)
+static int armature_dup_sel_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const bool do_flip_names = RNA_boolean_get(op->ptr, "do_flip_names");
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const bool do_flip_names = api_bool_get(op->ptr, "do_flip_names");
 
-  /* cancel if nothing selected */
-  if (CTX_DATA_COUNT(C, selected_bones) == 0) {
-    return OPERATOR_CANCELLED;
+  /* cancel if nothing sel */
+  if (CXT_DATA_COUNT(C, sel_bones) == 0) {
+    return OP_CANCELLED;
   }
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     EditBone *ebone_iter;
-    /* The beginning of the duplicated bones in the edbo list */
+    /* The beginning of the dupd bones in the edbo list */
     EditBone *ebone_first_dupe = nullptr;
 
-    Object *ob = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+    Ob *ob = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(ob->data);
 
-    ED_armature_edit_sync_selection(arm->edbo); /* XXX why is this needed? */
+    ed_armature_edit_sync_sel(arm->edbo); /* why is this needed? */
 
-    preEditBoneDuplicate(arm->edbo);
+    preEditBoneDup(arm->edbo);
 
-    /* Select mirrored bones */
+    /* Sel mirrored bones */
     if (arm->flag & ARM_MIRROR_EDIT) {
-      LISTBASE_FOREACH (EditBone *, ebone_iter, arm->edbo) {
-        if (EBONE_VISIBLE(arm, ebone_iter) && (ebone_iter->flag & BONE_SELECTED)) {
+      LIST_FOREACH (EditBone *, ebone_iter, arm->edbo) {
+        if (EBONE_VISIBLE(arm, ebone_iter) && (ebone_iter->flag & BONE_SEL)) {
           EditBone *ebone;
 
-          ebone = ED_armature_ebone_get_mirrored(arm->edbo, ebone_iter);
+          ebone = ed_armature_ebone_get_mirrored(arm->edbo, ebone_iter);
           if (ebone) {
-            ebone->flag |= BONE_SELECTED;
+            ebone->flag |= BONE_SEL;
           }
         }
       }
     }
 
-    /* Find the selected bones and duplicate them as needed */
+    /* Find the sel bones and dup them as needed */
     for (ebone_iter = static_cast<EditBone *>(arm->edbo->first);
-         ebone_iter && ebone_iter != ebone_first_dupe;
+         ebone_iter && ebone_iter != ebone_first_dup;
          ebone_iter = ebone_iter->next)
     {
-      if (EBONE_VISIBLE(arm, ebone_iter) && (ebone_iter->flag & BONE_SELECTED)) {
+      if (EBONE_VISIBLE(arm, ebone_iter) && (ebone_iter->flag & BONE_SEL)) {
         EditBone *ebone;
         char new_bone_name_buff[MAXBONENAME];
         char *new_bone_name = ebone_iter->name;
 
         if (do_flip_names) {
-          BLI_string_flip_side_name(
+          lib_string_flip_side_name(
               new_bone_name_buff, ebone_iter->name, false, sizeof(new_bone_name_buff));
 
           /* Only use flipped name if not yet in use. Otherwise we'd get again inconsistent
            * namings (different numbers), better keep default behavior in this case. */
-          if (ED_armature_ebone_find_name(arm->edbo, new_bone_name_buff) == nullptr) {
+          if (ed_armature_ebone_find_name(arm->edbo, new_bone_name_buff) == nullptr) {
             new_bone_name = new_bone_name_buff;
           }
         }
 
-        ebone = duplicateEditBone(ebone_iter, new_bone_name, arm->edbo, ob);
+        ebone = dupEditBone(ebone_iter, new_bone_name, arm->edbo, ob);
 
         if (!ebone_first_dupe) {
           ebone_first_dupe = ebone;
@@ -1015,7 +1015,7 @@ static int armature_duplicate_selected_exec(bContext *C, wmOperator *op)
       }
     }
 
-    /* Run though the list and fix the pointers */
+    /* Run thu the list and fix the ptrs */
     for (ebone_iter = static_cast<EditBone *>(arm->edbo->first);
          ebone_iter && ebone_iter != ebone_first_dupe;
          ebone_iter = ebone_iter->next)
@@ -1025,67 +1025,64 @@ static int armature_duplicate_selected_exec(bContext *C, wmOperator *op)
 
         if (!ebone_iter->parent) {
           /* If this bone has no parent,
-           * Set the duplicate->parent to nullptr
-           */
+           * Set the dup->parent to nullptr */
           ebone->parent = nullptr;
         }
-        else if (ebone_iter->parent->temp.ebone) {
-          /* If this bone has a parent that was duplicated,
-           * Set the duplicate->parent to the cur_bone->parent->temp
-           */
+        else if (ebone_iter->parent->tmp.ebone) {
+          /* If this bone has a parent that was dupd,
+           * Set the dup->parent to the cur_bone->parent->tmp  */
           ebone->parent = ebone_iter->parent->temp.ebone;
         }
         else {
-          /* If this bone has a parent that IS not selected,
-           * Set the duplicate->parent to the cur_bone->parent
-           */
+          /* If this bone has a parent that IS not sel,
+           * Set the dup->parent to the cur_bone->parent */
           ebone->parent = (EditBone *)ebone_iter->parent;
           ebone->flag &= ~BONE_CONNECTED;
         }
 
         /* Update custom handle links. */
-        if (ebone_iter->bbone_prev && ebone_iter->bbone_prev->temp.ebone) {
-          ebone->bbone_prev = ebone_iter->bbone_prev->temp.ebone;
+        if (ebone_iter->bbone_prev && ebone_iter->bbone_prev->tmp.ebone) {
+          ebone->bbone_prev = ebone_iter->bbone_prev->tmp.ebone;
         }
-        if (ebone_iter->bbone_next && ebone_iter->bbone_next->temp.ebone) {
-          ebone->bbone_next = ebone_iter->bbone_next->temp.ebone;
+        if (ebone_iter->bbone_next && ebone_iter->bbone_next->p.ebone) {
+          ebone->bbone_next = ebone_iter->bbone_next->tmp.ebone;
         }
 
-        /* Lets try to fix any constraint sub-targets that might have been duplicated. */
-        updateDuplicateSubtarget(ebone, arm->edbo, ob, false);
+        /* Lets try to fix any constraint sub-targets that might have been dupd. */
+        updateDupSubtarget(ebone, arm->edbo, ob, false);
       }
     }
 
     /* correct the active bone */
-    if (arm->act_edbone && arm->act_edbone->temp.ebone) {
-      arm->act_edbone = arm->act_edbone->temp.ebone;
+    if (arm->act_edbone && arm->act_edbone->tmp.ebone) {
+      arm->act_edbone = arm->act_edbone->tmp.ebone;
     }
 
-    /* Deselect the old bones and select the new ones */
+    /* Desel the old bones and sel the new ones */
     for (ebone_iter = static_cast<EditBone *>(arm->edbo->first);
-         ebone_iter && ebone_iter != ebone_first_dupe;
+         ebone_iter && ebone_iter != ebone_first_dup;
          ebone_iter = ebone_iter->next)
     {
       if (EBONE_VISIBLE(arm, ebone_iter)) {
-        ebone_iter->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+        ebone_iter->flag &= ~(BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
       }
     }
 
-    postEditBoneDuplicate(arm->edbo, ob);
+    postEditBoneDup(arm->edbo, ob);
 
-    ED_armature_edit_validate_active(arm);
+    ed_armature_edit_validate_active(arm);
 
-    WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
-    DEG_id_tag_update(&ob->id, ID_RECALC_SELECT);
+    win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_SEL);
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
-  ED_outliner_select_sync_from_edit_bone_tag(C);
+  ed_outliner_sel_sync_from_edit_bone_tag(C);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_duplicate(wmOperatorType *ot)
+void ARMATURE_OT_dup(WinOpType *ot)
 {
   /* identifiers */
   ot->name = "Duplicate Selected Bone(s)";
