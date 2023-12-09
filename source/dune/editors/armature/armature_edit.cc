@@ -1,57 +1,50 @@
-/** \file
- * \ingroup edarmature
- * Armature EditMode tools - transforms, chain based editing, and other settings.
- */
+/* Armature EditMode tools transforms, chain based editing, and other settings. */
 
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.hh"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_object.hh"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_armature.hh"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_global.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_ob.hh"
+#include "dune_report.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_outliner.hh"
-#include "ED_screen.hh"
-#include "ED_view3d.hh"
+#include "ed_armature.hh"
+#include "ed_outliner.hh"
+#include "ed_screen.hh"
+#include "ed_view3d.hh"
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
 #include "armature_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Object Tools Public API
- * \{ */
-
-/* NOTE: these functions are exported to the Object module to be called from the tools there */
-
-void ED_armature_edit_transform(bArmature *arm, const float mat[4][4], const bool do_props)
+/* Ob Tools Public API */
+/* NOTE: these fns are exported to the Ob module to be called from the tools there */
+void ed_armature_edit_transform(Armature *arm, const float mat[4][4], const bool do_props)
 {
   float scale = mat4_to_scale(mat); /* store the scale of the matrix here to use on envelopes */
   float mat3[3][3];
@@ -59,11 +52,11 @@ void ED_armature_edit_transform(bArmature *arm, const float mat[4][4], const boo
   copy_m3_m4(mat3, mat);
   normalize_m3(mat3);
   /* Do the rotations */
-  LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+  LIST_FOREACH (EditBone *, ebone, arm->edbo) {
     float tmat[3][3];
 
     /* find the current bone's roll matrix */
-    ED_armature_ebone_to_mat3(ebone, tmat);
+    ed_armature_ebone_to_mat3(ebone, tmat);
 
     /* transform the roll matrix */
     mul_m3_m3m3(tmat, mat3, tmat);
@@ -87,39 +80,39 @@ void ED_armature_edit_transform(bArmature *arm, const float mat[4][4], const boo
   }
 }
 
-void ED_armature_transform(bArmature *arm, const float mat[4][4], const bool do_props)
+void ed_armature_transform(Armature *arm, const float mat[4][4], const bool do_props)
 {
   if (arm->edbo) {
-    ED_armature_edit_transform(arm, mat, do_props);
+    ed_armature_edit_transform(arm, mat, do_props);
   }
   else {
-    BKE_armature_transform(arm, mat, do_props);
+    dune_armature_transform(arm, mat, do_props);
   }
 }
 
-void ED_armature_origin_set(
-    Main *bmain, Object *ob, const float cursor[3], int centermode, int around)
+void ed_armature_origin_set(
+    Main *main, Ob *ob, const float cursor[3], int centermode, int around)
 {
-  const bool is_editmode = BKE_object_is_in_editmode(ob);
-  bArmature *arm = static_cast<bArmature *>(ob->data);
+  const bool is_editmode = dune_ob_is_in_editmode(ob);
+  Armature *arm = static_cast<Armature *>(ob->data);
   float cent[3];
 
   /* Put the armature into edit-mode. */
   if (is_editmode == false) {
-    ED_armature_to_edit(arm);
+    ed_armature_to_edit(arm);
   }
 
   /* Find the center-point. */
   if (centermode == 2) {
-    copy_v3_v3(cent, cursor);
-    invert_m4_m4(ob->world_to_object, ob->object_to_world);
-    mul_m4_v3(ob->world_to_object, cent);
+    copy_v3_v3(cent, cursor) {
+    invert_m4_m4(ob->world_to_ob, ob->ob_to_world);
+    mul_m4_v3(ob->world_to_ob, cent);
   }
   else {
     if (around == V3D_AROUND_CENTER_BOUNDS) {
       float min[3], max[3];
       INIT_MINMAX(min, max);
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         minmax_v3v3_v3(min, max, ebone->head);
         minmax_v3v3_v3(min, max, ebone->tail);
       }
@@ -128,7 +121,7 @@ void ED_armature_origin_set(
     else { /* #V3D_AROUND_CENTER_MEDIAN. */
       int total = 0;
       zero_v3(cent);
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         total += 2;
         add_v3_v3(cent, ebone->head);
         add_v3_v3(cent, ebone->tail);
@@ -140,38 +133,33 @@ void ED_armature_origin_set(
   }
 
   /* Do the adjustments */
-  LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+  LIST_FOREACH (EditBone *, ebone, arm->edbo) {
     sub_v3_v3(ebone->head, cent);
     sub_v3_v3(ebone->tail, cent);
   }
 
   /* Turn the list into an armature */
   if (is_editmode == false) {
-    ED_armature_from_edit(bmain, arm);
-    ED_armature_edit_free(arm);
+    ed_armature_from_edit(main, arm);
+    ed_armature_edit_free(arm);
   }
 
-  /* Adjust object location for new center-point. */
+  /* Adjust ob location for new center-point. */
   if (centermode && (is_editmode == false)) {
-    mul_mat3_m4_v3(ob->object_to_world, cent); /* omit translation part */
+    mul_mat3_m4_v3(ob->ob_to_world, cent); /* omit translation part */
     add_v3_v3(ob->loc, cent);
   }
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Bone Roll Calculate Operator
- * \{ */
-
-float ED_armature_ebone_roll_to_vector(const EditBone *bone,
+/* Bone Roll Calc Op */
+float ed_armature_ebone_roll_to_vector(const EditBone *bone,
                                        const float align_axis[3],
                                        const bool axis_only)
 {
   float mat[3][3], nor[3];
   float vec[3], align_axis_proj[3], roll = 0.0f;
 
-  BLI_ASSERT_UNIT_V3(align_axis);
+  LIB_ASSERT_UNIT_V3(align_axis);
 
   sub_v3_v3v3(nor, bone->tail, bone->head);
 
