@@ -214,8 +214,8 @@ enum eCalcRollTypes {
   CALC_ROLL_CURSOR,
 };
 
-static const EnumPropertyItem prop_calc_roll_types[] = {
-    RNA_ENUM_ITEM_HEADING(N_("Positive"), nullptr),
+static const EnumPropItem prop_calc_roll_types[] = {
+    API_ENUM_ITEM_HEADING(N_("Positive"), nullptr),
     {CALC_ROLL_TAN_POS_X, "POS_X", 0, "Local +X Tangent", ""},
     {CALC_ROLL_TAN_POS_Z, "POS_Z", 0, "Local +Z Tangent", ""},
 
@@ -231,7 +231,7 @@ static const EnumPropertyItem prop_calc_roll_types[] = {
     {CALC_ROLL_NEG_Y, "GLOBAL_NEG_Y", 0, "Global -Y Axis", ""},
     {CALC_ROLL_NEG_Z, "GLOBAL_NEG_Z", 0, "Global -Z Axis", ""},
 
-    RNA_ENUM_ITEM_HEADING(N_("Other"), nullptr),
+    API_ENUM_ITEM_HEADING(N_("Other"), nullptr),
     {CALC_ROLL_ACTIVE, "ACTIVE", 0, "Active Bone", ""},
     {CALC_ROLL_VIEW, "VIEW", 0, "View Axis", ""},
     {CALC_ROLL_CURSOR, "CURSOR", 0, "Cursor", ""},
@@ -523,7 +523,7 @@ void ARMATURE_OT_roll_clear(WinOpType *ot)
 }
 
 /* Chain-Based Tool Utils */
-/* tmp data-structure for merge/fill bones */
+/* tmp data-struct for merge/fill bones */
 struct EditBonePoint {
   EditBonePoint *next, *prev;
 
@@ -582,7 +582,7 @@ static void chains_find_tips(List *edbo, List *list)
     }
 
     /* add current bone to a new chain */
-    ld = static_cast<LinkData *>(MEM_callocN(sizeof(LinkData), "BoneChain"));
+    ld = static_cast<LinkData *>(mem_calloc(sizeof(LinkData), "BoneChain"));
     ld->data = curBone;
     lib_addtail(list, ld);
   }
