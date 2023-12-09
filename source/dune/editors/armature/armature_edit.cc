@@ -296,7 +296,7 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
       }
     }
     else if (ELEM(type, CALC_ROLL_TAN_POS_X, CALC_ROLL_TAN_POS_Z)) {
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         if (ebone->parent) {
           bool is_edit = (EBONE_VISIBLE(arm, ebone) && EBONE_EDITABLE(ebone));
           bool is_edit_parent = (EBONE_VISIBLE(arm, ebone->parent) &&
@@ -332,14 +332,14 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
               }
 
               if (is_edit) {
-                ebone->roll = ED_armature_ebone_roll_to_vector(ebone, vec, axis_only);
+                ebone->roll = ed_armature_ebone_roll_to_vector(ebone, vec, axis_only);
                 changed = true;
               }
 
               /* parentless bones use cross product with child */
               if (is_edit_parent) {
                 if (ebone->parent->parent == nullptr) {
-                  ebone->parent->roll = ED_armature_ebone_roll_to_vector(
+                  ebone->parent->roll = ed_armature_ebone_roll_to_vector(
                       ebone->parent, vec, axis_only);
                   changed = true;
                 }
@@ -352,10 +352,10 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
     else {
       float vec[3] = {0.0f, 0.0f, 0.0f};
       if (type == CALC_ROLL_VIEW) { /* View */
-        RegionView3D *rv3d = CTX_wm_region_view3d(C);
+        RgnView3D *rv3d = cxt_win_rgn_view3d(C);
         if (rv3d == nullptr) {
-          BKE_report(op->reports, RPT_ERROR, "No region view3d available");
-          ret = OPERATOR_CANCELLED;
+          dune_report(op->reports, RPT_ERROR, "No rgn view3d available");
+          ret = OP_CANCELLED;
           goto cleanup;
         }
 
@@ -364,18 +364,18 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
       }
       else if (type == CALC_ROLL_ACTIVE) {
         float mat[3][3];
-        bArmature *arm_active = static_cast<bArmature *>(ob_active->data);
+        Armature *arm_active = static_cast<Armature *>(ob_active->data);
         ebone = (EditBone *)arm_active->act_edbone;
         if (ebone == nullptr) {
-          BKE_report(op->reports, RPT_ERROR, "No active bone set");
-          ret = OPERATOR_CANCELLED;
+          dune_report(op->reports, RPT_ERROR, "No active bone set");
+          ret = OP_CANCELLED;
           goto cleanup;
         }
 
-        ED_armature_ebone_to_mat3(ebone, mat);
+        ed_armature_ebone_to_mat3(ebone, mat);
         copy_v3_v3(vec, mat[2]);
       }
-      else if (type < 6) { /* NOTE: always true, check to quiet GCC12.2 `-Warray-bounds`. */
+      else if (type < 6) { /* Always true, check to quiet GCC12.2 `-Warray-bounds`. */
         /* Axis */
         if (type < 3) {
           vec[type] = 1.0f;
@@ -387,27 +387,27 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
         normalize_v3(vec);
       }
       else {
-        /* The previous block should handle all remaining cases. */
-        BLI_assert_unreachable();
+        /* The prev block should handle all remaining cases. */
+        lib_assert_unreachable();
       }
 
       if (axis_flip) {
         negate_v3(vec);
       }
 
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         if (EBONE_VISIBLE(arm, ebone) && EBONE_EDITABLE(ebone)) {
-          /* roll func is a callback which assumes that all is well */
-          ebone->roll = ED_armature_ebone_roll_to_vector(ebone, vec, axis_only);
+          /* roll fn is a cb which assumes that all is well */
+          ebone->roll = ed_armature_ebone_roll_to_vector(ebone, vec, axis_only);
           changed = true;
         }
       }
     }
 
     if (arm->flag & ARM_MIRROR_EDIT) {
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         if ((EBONE_VISIBLE(arm, ebone) && EBONE_EDITABLE(ebone)) == 0) {
-          EditBone *ebone_mirr = ED_armature_ebone_get_mirrored(arm->edbo, ebone);
+          EditBone *ebone_mirr = ed_armature_ebone_get_mirrored(arm->edbo, ebone);
           if (ebone_mirr && (EBONE_VISIBLE(arm, ebone_mirr) && EBONE_EDITABLE(ebone_mirr))) {
             ebone->roll = -ebone_mirr->roll;
           }
@@ -416,57 +416,57 @@ static int armature_calc_roll_exec(bContext *C, wmOperator *op)
     }
 
     if (changed) {
-      /* NOTE: notifier might evolve. */
-      WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
-      DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
+      /* Notifier may evolve. */
+      win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
+      graph_id_tag_update(&arm->id, ID_RECALC_SEL);
     }
   }
 
 cleanup:
-  MEM_freeN(objects);
+  mem_free(obs);
   return ret;
 }
 
-void ARMATURE_OT_calculate_roll(wmOperatorType *ot)
+void ARMATURE_OT_calc_roll(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Recalculate Roll";
-  ot->idname = "ARMATURE_OT_calculate_roll";
+  /* ids */
+  ot->name = "Recalc Roll";
+  ot->idname = "ARMATURE_OT_calc_roll";
   ot->description = "Automatically fix alignment of select bones' axes";
 
-  /* api callbacks */
-  ot->invoke = WM_menu_invoke;
-  ot->exec = armature_calc_roll_exec;
-  ot->poll = ED_operator_editarmature;
+  /* api cbs */
+  ot->invoke = win_menu_invoke;
+  ot->ex = armature_calc_roll_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  ot->prop = RNA_def_enum(ot->srna, "type", prop_calc_roll_types, CALC_ROLL_TAN_POS_X, "Type", "");
-  RNA_def_boolean(ot->srna, "axis_flip", false, "Flip Axis", "Negate the alignment axis");
-  RNA_def_boolean(ot->srna,
+  /* props */
+  ot->prop = api_def_enum(ot->sapi, "type", prop_calc_roll_types, CALC_ROLL_TAN_POS_X, "Type", "");
+  api_def_bool(ot->sapi, "axis_flip", false, "Flip Axis", "Negate the alignment axis");
+  api_def_bool(ot->sapi,
                   "axis_only",
                   false,
                   "Shortest Rotation",
                   "Ignore the axis direction, use the shortest rotation to align");
 }
 
-static int armature_roll_clear_exec(bContext *C, wmOperator *op)
+static int armature_roll_clear_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const float roll = RNA_float_get(op->ptr, "roll");
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const float roll = api_float_get(op->ptr, "roll");
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *ob = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *ob = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(ob->data);
     bool changed = false;
 
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
       if (EBONE_VISIBLE(arm, ebone) && EBONE_EDITABLE(ebone)) {
         /* Roll func is a callback which assumes that all is well. */
         ebone->roll = roll;
@@ -475,9 +475,9 @@ static int armature_roll_clear_exec(bContext *C, wmOperator *op)
     }
 
     if (arm->flag & ARM_MIRROR_EDIT) {
-      LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+      LIST_FOREACH (EditBone *, ebone, arm->edbo) {
         if ((EBONE_VISIBLE(arm, ebone) && EBONE_EDITABLE(ebone)) == 0) {
-          EditBone *ebone_mirr = ED_armature_ebone_get_mirrored(arm->edbo, ebone);
+          EditBone *ebone_mirr = ed_armature_ebone_get_mirrored(arm->edbo, ebone);
           if (ebone_mirr && (EBONE_VISIBLE(arm, ebone_mirr) && EBONE_EDITABLE(ebone_mirr))) {
             ebone->roll = -ebone_mirr->roll;
             changed = true;
@@ -487,31 +487,31 @@ static int armature_roll_clear_exec(bContext *C, wmOperator *op)
     }
 
     if (changed) {
-      /* NOTE: notifier might evolve. */
-      WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
-      DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
+      /* Notifier might evolve. */
+      win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
+      graph_id_tag_update(&arm->id, ID_RECALC_SEL);
     }
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void ARMATURE_OT_roll_clear(wmOperatorType *ot)
+void ARMATURE_OT_roll_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Roll";
   ot->idname = "ARMATURE_OT_roll_clear";
-  ot->description = "Clear roll for selected bones";
+  ot->description = "Clear roll for sel bones";
 
-  /* api callbacks */
-  ot->exec = armature_roll_clear_exec;
-  ot->poll = ED_operator_editarmature;
+  /* api cbs */
+  ot->ex = armature_roll_clear_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_float_rotation(ot->srna,
+  api_def_float_rotation(ot->sapi,
                          "roll",
                          0,
                          nullptr,
@@ -523,13 +523,8 @@ void ARMATURE_OT_roll_clear(wmOperatorType *ot)
                          DEG2RADF(360.0f));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Chain-Based Tool Utilities
- * \{ */
-
-/* temporary data-structure for merge/fill bones */
+/* Chain-Based Tool Utils */
+/* tmp data-structure for merge/fill bones */
 struct EditBonePoint {
   EditBonePoint *next, *prev;
 
@@ -540,17 +535,17 @@ struct EditBonePoint {
 };
 
 /* find chain-tips (i.e. bones without children) */
-static void chains_find_tips(ListBase *edbo, ListBase *list)
+static void chains_find_tips(List *edbo, List *list)
 {
   EditBone *ebo;
   LinkData *ld;
 
-  /* NOTE: this is potentially very slow ... there's got to be a better way. */
-  LISTBASE_FOREACH (EditBone *, curBone, edbo) {
+  /* This is potentially very slow ... there's got to be a better way. */
+  LIST_FOREACH (EditBone *, curBone, edbo) {
     short stop = 0;
 
     /* is this bone contained within any existing chain? (skip if so) */
-    LISTBASE_FOREACH (LinkData *, ld, list) {
+    LIST_FOREACH (LinkData *, ld, list) {
       for (ebo = static_cast<EditBone *>(ld->data); ebo; ebo = ebo->parent) {
         if (ebo == curBone) {
           stop = 1;
@@ -570,7 +565,7 @@ static void chains_find_tips(ListBase *edbo, ListBase *list)
     /* is any existing chain part of the chain formed by this bone? */
     stop = 0;
     for (ebo = curBone->parent; ebo; ebo = ebo->parent) {
-      LISTBASE_FOREACH (LinkData *, ld, list) {
+      LIST_FOREACH (LinkData *, ld, list) {
         if (ld->data == ebo) {
           ld->data = curBone;
           stop = 1;
@@ -582,7 +577,7 @@ static void chains_find_tips(ListBase *edbo, ListBase *list)
         break;
       }
     }
-    /* current bone has already been added to a chain? */
+    /* current bone has alrdy been added to a chain? */
     if (stop) {
       continue;
     }
@@ -590,17 +585,13 @@ static void chains_find_tips(ListBase *edbo, ListBase *list)
     /* add current bone to a new chain */
     ld = static_cast<LinkData *>(MEM_callocN(sizeof(LinkData), "BoneChain"));
     ld->data = curBone;
-    BLI_addtail(list, ld);
+    lib_addtail(list, ld);
   }
 }
 
-/** \} */
+/* Fill Op */
 
-/* -------------------------------------------------------------------- */
-/** \name Fill Operator
- * \{ */
-
-static void fill_add_joint(EditBone *ebo, short eb_tail, ListBase *points)
+static void fill_add_joint(EditBone *ebo, short eb_tail, List *points)
 {
   EditBonePoint *ebp;
   float vec[3];
@@ -613,7 +604,7 @@ static void fill_add_joint(EditBone *ebo, short eb_tail, ListBase *points)
     copy_v3_v3(vec, ebo->head);
   }
 
-  LISTBASE_FOREACH (EditBonePoint *, ebp, points) {
+  LIST_FOREACH (EditBonePoint *, ebp, points) {
     if (equals_v3v3(ebp->vec, vec)) {
       if (eb_tail) {
         if ((ebp->head_owner) && (ebp->head_owner->parent == ebo)) {
@@ -634,9 +625,9 @@ static void fill_add_joint(EditBone *ebo, short eb_tail, ListBase *points)
     }
   }
 
-  /* allocate a new point if no existing point was related */
+  /* alloc a new point if no existing point was related */
   if (found == 0) {
-    ebp = static_cast<EditBonePoint *>(MEM_callocN(sizeof(EditBonePoint), "EditBonePoint"));
+    ebp = static_cast<EditBonePoint *>(mem_calloc(sizeof(EditBonePoint), "EditBonePoint"));
 
     if (eb_tail) {
       copy_v3_v3(ebp->vec, ebo->tail);
@@ -647,23 +638,23 @@ static void fill_add_joint(EditBone *ebo, short eb_tail, ListBase *points)
       ebp->head_owner = ebo;
     }
 
-    BLI_addtail(points, ebp);
+    lib_addtail(points, ebp);
   }
 }
 
-/* bone adding between selected joints */
-static int armature_fill_bones_exec(bContext *C, wmOperator *op)
+/* bone adding between sel joints */
+static int armature_fill_bones_ex(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  ListBase points = {nullptr, nullptr};
+  Scene *scene = cxt_data_scene(C);
+  View3D *v3d = cxt_wm_view3d(C);
+  List points = {nullptr, nullptr};
   EditBone *newbone = nullptr;
   int count;
-  bool mixed_object_error = false;
+  bool mixed_ob_error = false;
 
   /* loop over all bones, and only consider if visible */
-  bArmature *arm = nullptr;
-  CTX_DATA_BEGIN_WITH_ID (C, EditBone *, ebone, visible_bones, bArmature *, arm_iter) {
+  Armature *arm = nullptr;
+  CXT_DATA_BEGIN_WITH_ID (C, EditBone *, ebone, visible_bones, bArmature *, arm_iter) {
     bool check = false;
     if (!(ebone->flag & BONE_CONNECTED) && (ebone->flag & BONE_ROOTSEL)) {
       fill_add_joint(ebone, 0, &points);
