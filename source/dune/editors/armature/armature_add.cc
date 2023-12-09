@@ -1,51 +1,47 @@
-/** \file
- * \ingroup edarmature
- * Operators and API's for creating bones.
- */
+/* Ops and API's for creating bones. */
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "mem_guardedalloc.h"
 
-#include "MEM_guardedalloc.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
+#include "lib_string_utils.hh"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.hh"
+#include "lang.h"
 
-#include "BLT_translation.h"
+#include "dune_action.h"
+#include "dune_armature.hh"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_deform.h"
+#include "dune_fcurve.h"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib.hh"
+#include "dune_main.hh"
 
-#include "BKE_action.h"
-#include "BKE_armature.hh"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_deform.h"
-#include "BKE_fcurve.h"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_library.hh"
-#include "BKE_main.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "ed_armature.hh"
+#include "ed_outliner.hh"
+#include "ed_screen.hh"
+#include "ed_view3d.hh"
 
-#include "ED_armature.hh"
-#include "ED_outliner.hh"
-#include "ED_screen.hh"
-#include "ED_view3d.hh"
+#include "anim_bone_collections.hh"
 
-#include "ANIM_bone_collections.hh"
-
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
 #include "armature_intern.h"
 
