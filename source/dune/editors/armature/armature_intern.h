@@ -72,69 +72,63 @@ void ARMATURE_OT_collection_desel(struct WinOpType *ot);
 void ARMATURE_OT_move_to_collection(struct WinOpType *ot);
 void ARMATURE_OT_assign_to_collection(struct WinOpType *ot);
 
-/** \name Pose-Mode Operators
- * \{ */
+/* Pose-Mode Op */
+void POSE_OT_hide(struct WinOpType *ot);
+void POSE_OT_reveal(struct WinOpType *ot);
 
-void POSE_OT_hide(struct wmOperatorType *ot);
-void POSE_OT_reveal(struct wmOperatorType *ot);
+void POSE_OT_armature_apply(struct WinOpType *ot);
+void POSE_OT_visual_transform_apply(struct WinOpType *ot);
 
-void POSE_OT_armature_apply(struct wmOperatorType *ot);
-void POSE_OT_visual_transform_apply(struct wmOperatorType *ot);
+void POSE_OT_rot_clear(struct WinOpType *ot);
+void POSE_OT_loc_clear(struct WinOpType *ot);
+void POSE_OT_scale_clear(struct WinOpType *ot);
+void POSE_OT_transforms_clear(struct WinOpType *ot);
+void POSE_OT_user_transforms_clear(struct WinOpType *ot);
 
-void POSE_OT_rot_clear(struct wmOperatorType *ot);
-void POSE_OT_loc_clear(struct wmOperatorType *ot);
-void POSE_OT_scale_clear(struct wmOperatorType *ot);
-void POSE_OT_transforms_clear(struct wmOperatorType *ot);
-void POSE_OT_user_transforms_clear(struct wmOperatorType *ot);
+void POSE_OT_copy(struct WinOpType *ot);
+void POSE_OT_paste(struct WinOpType *ot);
 
-void POSE_OT_copy(struct wmOperatorType *ot);
-void POSE_OT_paste(struct wmOperatorType *ot);
+void POSE_OT_sel_all(struct WinOpType *ot);
+void POSE_OT_sel_parent(struct WinOpType *ot);
+void POSE_OT_sel_hierarchy(struct WinOpType *ot);
+void POSE_OT_sel_linked(struct WinOpType *ot);
+void POSE_OT_sel_linked_pick(struct WinOpType *ot);
+void POSE_OT_sel_constraint_target(struct WinOpType *ot);
+void POSE_OT_sel_grouped(struct WinOpType *ot);
+void POSE_OT_sel_mirror(struct WinOpType *ot);
 
-void POSE_OT_select_all(struct wmOperatorType *ot);
-void POSE_OT_select_parent(struct wmOperatorType *ot);
-void POSE_OT_select_hierarchy(struct wmOperatorType *ot);
-void POSE_OT_select_linked(struct wmOperatorType *ot);
-void POSE_OT_select_linked_pick(struct wmOperatorType *ot);
-void POSE_OT_select_constraint_target(struct wmOperatorType *ot);
-void POSE_OT_select_grouped(struct wmOperatorType *ot);
-void POSE_OT_select_mirror(struct wmOperatorType *ot);
+void POSE_OT_paths_calc(struct WinOpType *ot);
+void POSE_OT_paths_update(struct WinOpType *ot);
+void POSE_OT_paths_clear(struct WinOpType *ot);
+void POSE_OT_paths_range_update(struct WinOpType *ot);
 
-void POSE_OT_paths_calculate(struct wmOperatorType *ot);
-void POSE_OT_paths_update(struct wmOperatorType *ot);
-void POSE_OT_paths_clear(struct wmOperatorType *ot);
-void POSE_OT_paths_range_update(struct wmOperatorType *ot);
+void POSE_OT_autoside_names(struct WinOpType *ot);
+void POSE_OT_flip_names(struct WinOpType *ot);
 
-void POSE_OT_autoside_names(struct wmOperatorType *ot);
-void POSE_OT_flip_names(struct wmOperatorType *ot);
+void POSE_OT_rotation_mode_set(struct WinOpType *ot);
 
-void POSE_OT_rotation_mode_set(struct wmOperatorType *ot);
+void POSE_OT_quaternions_flip(struct WinOpType *ot);
 
-void POSE_OT_quaternions_flip(struct wmOperatorType *ot);
-
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Pose Tool Utilities (for PoseLib, Pose Sliding, etc.)
- * \{ */
+/* Pose Tool Utils (for PoseLib, Pose Sliding, etc.) */
 
 /* `pose_utils.cc` */
 
-/* Temporary data linking PoseChannels with the F-Curves they affect */
+/* Tmp data linking PoseChannels with the F-Curves they affect */
 typedef struct tPChanFCurveLink {
   struct tPChanFCurveLink *next, *prev;
 
-  /** Object this Pose Channel belongs to. */
-  struct Object *ob;
+  /* Ob this Pose Channel belongs to. */
+  struct Ob *ob;
 
-  /** F-Curves for this PoseChannel (wrapped with LinkData) */
-  ListBase fcurves;
-  /** Pose Channel which data is attached to */
-  struct bPoseChannel *pchan;
+  /* F-Curves for this PoseChannel (wrapped with LinkData) */
+  List fcurves;
+  /* Pose Channel which data is attached to */
+  struct PoseChannel *pchan;
 
-  /** RNA Path to this Pose Channel (needs to be freed when we're done) */
+  /* Api Path to this Pose Channel (needs to be freed when we're done) */
   char *pchan_path;
 
-  /** transform values at start of operator (to be restored before each modal step) */
+  /* transform vals at start of op (to be restored before each modal step) */
   float oldloc[3];
   float oldrot[3];
   float oldscale[3];
