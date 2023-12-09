@@ -579,7 +579,6 @@ static void set_pose_keys(Ob *ob)
 }
 
 /* Perform paste pose, for a single bone.
- *
  * param ob: Ob where bone to paste to lives
  * param chan: Bone that pose to paste comes from
  * param selOnly: Only paste on sel bones
@@ -768,41 +767,36 @@ static int pose_copy_ex(Cxt *C, WinOp *op)
   pose_copybuf_filepath_get(filepath, sizeof(filepath));
   dune_copybuf_copy_end(tmp_main, filepath, op->reports);
   /* We clear the lists so no datablocks gets freed,
-   * This is required bc objects in tmp main shares same ptr
+   * This is required bc obs in tmp main shares same ptr
    * as the real ones */
-  BLI_list_clear(&temp_bmain->objects);
-  BLI_listbase_clear(&temp_bmain->armatures);
-  BKE_main_free(temp_bmain);
+  lib_list_clear(&tmp_main->obs);
+  lib_list_clear(&tmp_main->armatures);
+  dune_main_free(tmp_main);
   /* We are all done! */
-  BKE_report(op->reports, RPT_INFO, "Copied pose to internal clipboard");
-  return OPERATOR_FINISHED;
+  dune_report(op->reports, RPT_INFO, "Copied pose to internal clipboard");
+  return OP_FINISHED;
 }
 
-void POSE_OT_copy(wmOperatorType *ot)
+void POSE_OT_copy(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Copy Pose";
   ot->idname = "POSE_OT_copy";
   ot->description = "Copy the current pose of the selected bones to the internal clipboard";
 
-  /* api callbacks */
-  ot->exec = pose_copy_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_copy_ex;
+  ot->poll = ed_op_posemode;
 
   /* flag */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Paste Pose Operator
- * \{ */
-
-static int pose_paste_exec(bContext *C, wmOperator *op)
+/* Paste Pose Op */
+static int pose_paste_ex(Cxt *C, wmOperator *op)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-  Scene *scene = CTX_data_scene(C);
+  Object *ob = dune_ob_pose_armature_get(CTX_data_active_object(C));
+  Scene *scene = cxt_data_scene(C);
   const bool flip = RNA_boolean_get(op->ptr, "flipped");
   bool selOnly = RNA_boolean_get(op->ptr, "selected_mask");
 
