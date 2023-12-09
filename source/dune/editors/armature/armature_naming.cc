@@ -1,115 +1,99 @@
-/** \file
- * \ingroup edarmature
- * Operators and API's for renaming bones both in and out of Edit Mode.
- *
- * This file contains functions/API's for renaming bones and/or working with them.
- */
+/* Ops and API's for renaming bones both in and out of Edit Mode.
+ * This file contains fns/API's for renaming bones and/or working with them. */
 
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_camera_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_object_types.h"
+#include "types_armature.h"
+#include "types_camera.h"
+#include "types_constraint.h"
+#include "types_pen_legacy.h"
+#include "types_pen_mod.h"
+#include "types_ob_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_string_utils.hh"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_string_utils.hh"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_action.h"
-#include "BKE_animsys.h"
-#include "BKE_armature.hh"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_deform.h"
-#include "BKE_gpencil_modifier_legacy.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_modifier.hh"
+#include "dune_action.h"
+#include "dune_animsys.h"
+#include "dune_armature.hh"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_deform.h"
+#include "dune_pen_mod_legacy.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_mod.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_screen.hh"
+#include "ed_armature.hh"
+#include "ed_screen.hh"
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
 #include "armature_intern.h"
 
-/* -------------------------------------------------------------------- */
-/** \name Unique Bone Name Utility (Edit Mode)
- * \{ */
+/* Unique Bone Name Util (Edit Mode) */
 
-/* NOTE: there's a ed_armature_bone_unique_name() too! */
+/* there's a ed_armature_bone_unique_name() too! */
 static bool editbone_unique_check(void *arg, const char *name)
 {
   struct Arg {
-    ListBase *lb;
+    List *list;
     void *bone;
   } *data = static_cast<Arg *>(arg);
-  EditBone *dupli = ED_armature_ebone_find_name(data->lb, name);
-  return dupli && dupli != data->bone;
+  EditBone *dup = ed_armature_ebone_find_name(data->list, name);
+  return dup && dup != data->bone;
 }
 
-void ED_armature_ebone_unique_name(ListBase *ebones, char *name, EditBone *bone)
+void ed_armature_ebone_unique_name(List *ebones, char *name, EditBone *bone)
 {
   struct {
-    ListBase *lb;
+    List *list;
     void *bone;
   } data;
-  data.lb = ebones;
+  data.list = ebones;
   data.bone = bone;
 
-  BLI_uniquename_cb(editbone_unique_check, &data, DATA_("Bone"), '.', name, sizeof(bone->name));
+  lib_uniquename_cb(editbone_unique_check, &data, DATA_("Bone"), '.', name, sizeof(bone->name));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Unique Bone Name Utility (Object Mode)
- * \{ */
-
+/* Unique Bone Name Util (Ob Mode) */
 static bool bone_unique_check(void *arg, const char *name)
 {
-  return BKE_armature_find_bone_name((bArmature *)arg, name) != nullptr;
+  return dune_armature_find_bone_name((Armature *)arg, name) != nullptr;
 }
 
-static void ed_armature_bone_unique_name(bArmature *arm, char *name)
+static void ed_armature_bone_unique_name(Armature *arm, char *name)
 {
-  BLI_uniquename_cb(bone_unique_check, (void *)arm, DATA_("Bone"), '.', name, sizeof(Bone::name));
+  lib_uniquename_cb(bone_unique_check, (void *)arm, DATA_("Bone"), '.', name, sizeof(Bone::name));
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Bone Renaming (Object & Edit Mode API)
- * \{ */
-
+/* Bone Renaming (Ob & Edit Mode API) */
 /* helper call for armature_bone_rename */
-static void constraint_bone_name_fix(Object *ob,
-                                     ListBase *conlist,
+static void constraint_bone_name_fix(Ob *ob,
+                                     List *conlist,
                                      const char *oldname,
                                      const char *newname)
 {
-  LISTBASE_FOREACH (bConstraint *, curcon, conlist) {
-    ListBase targets = {nullptr, nullptr};
+  LIST_FOREACH (Constraint *, curcon, conlist) {
+    List targets = {nullptr, nullptr};
 
     /* constraint targets */
-    if (BKE_constraint_targets_get(curcon, &targets)) {
-      LISTBASE_FOREACH (bConstraintTarget *, ct, &targets) {
+    if (dune_constraint_targets_get(curcon, &targets)) {
+      LIST_FOREACH (ConstraintTarget *, ct, &targets) {
         if (ct->tar == ob) {
           if (STREQ(ct->subtarget, oldname)) {
             STRNCPY(ct->subtarget, newname);
@@ -117,24 +101,24 @@ static void constraint_bone_name_fix(Object *ob,
         }
       }
 
-      BKE_constraint_targets_flush(curcon, &targets, false);
+      dune_constraint_targets_flush(curcon, &targets, false);
     }
 
     /* action constraints */
     if (curcon->type == CONSTRAINT_TYPE_ACTION) {
-      bActionConstraint *actcon = (bActionConstraint *)curcon->data;
-      BKE_action_fix_paths_rename(
+      ActionConstraint *actcon = (ActionConstraint *)curcon->data;
+      dune_action_fix_paths_rename(
           &ob->id, actcon->act, "pose.bones", oldname, newname, 0, 0, true);
     }
   }
 }
 
-void ED_armature_bone_rename(Main *bmain,
-                             bArmature *arm,
+void ed_armature_bone_rename(Main *main,
+                             Armature *arm,
                              const char *oldnamep,
                              const char *newnamep)
 {
-  Object *ob;
+  Ob *ob;
   char newname[MAXBONENAME];
   char oldname[MAXBONENAME];
 
@@ -148,10 +132,10 @@ void ED_armature_bone_rename(Main *bmain,
 
     /* now check if we're in editmode, we need to find the unique name */
     if (arm->edbo) {
-      EditBone *eBone = ED_armature_ebone_find_name(arm->edbo, oldname);
+      EditBone *eBone = ed_armature_ebone_find_name(arm->edbo, oldname);
 
       if (eBone) {
-        ED_armature_ebone_unique_name(arm->edbo, newname, nullptr);
+        ed_armature_ebone_unique_name(arm->edbo, newname, nullptr);
         STRNCPY(eBone->name, newname);
       }
       else {
@@ -159,14 +143,14 @@ void ED_armature_bone_rename(Main *bmain,
       }
     }
     else {
-      Bone *bone = BKE_armature_find_bone_name(arm, oldname);
+      Bone *bone = dune_armature_find_bone_name(arm, oldname);
 
       if (bone) {
         ed_armature_bone_unique_name(arm, newname);
 
         if (arm->bonehash) {
-          BLI_assert(BLI_ghash_haskey(arm->bonehash, bone->name));
-          BLI_ghash_remove(arm->bonehash, bone->name, nullptr, nullptr);
+          lib_assert(BLI_ghash_haskey(arm->bonehash, bone->name));
+          lib_ghash_remove(arm->bonehash, bone->name, nullptr, nullptr);
         }
 
         STRNCPY(bone->name, newname);
