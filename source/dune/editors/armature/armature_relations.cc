@@ -302,7 +302,7 @@ int ed_armature_join_obs_ex(Cxt *C, WinOp *op)
       tJoinArmature_AdtFixData afd = {nullptr};
       Armature *curarm = static_cast<Armature *>(ob_iter->data);
 
-      /* we assume that each armature datablock is only used in a single place */
+      /* we assume each armature datablock is only used in a single place */
       lib_assert(ob_active->data != ob_iter->data);
 
       /* init cb data for fixing up AnimData links later */
@@ -312,18 +312,18 @@ int ed_armature_join_obs_ex(Cxt *C, WinOp *op)
       afd.names_map = lib_ghash_str_new("join_armature_adt_fix");
 
       /* Make a list of edit-bones in current armature */
-      ED_armature_to_edit(curarm);
+      ed_armature_to_edit(curarm);
 
       /* Move new bone collections, and store their remapping info.
        * TODO armatures can potentially have multiple users, so these should
        * actually be copied, not moved.  However, the armature join code is
-       * already broken in that situation.  When that gets fixed, this should
+       * alrdy broken in that situation.  When that gets fixed, this should
        * also get fixed.  Note that copying the collections should include
        * copying their custom props. */
        for (BoneCollection *bcoll : curarm->collections_span()) {
         BoneCollection *mapped = bone_collection_by_name.lookup_default(bcoll->name, nullptr);
         if (!mapped) {
-          BoneCollection *new_bcoll =anim_armature_bonecoll_new(arm, bcoll->name);
+          BoneCollection *new_bcoll = anim_armature_bonecoll_new(arm, bcoll->name);
           bone_collection_by_name.add(bcoll->name, new_bcoll);
           mapped = new_bcoll;
         }
@@ -407,7 +407,7 @@ int ed_armature_join_obs_ex(Cxt *C, WinOp *op)
        * joining. */
       graph_id_tag_update_ex(main, &curarm->id, ID_RECALC_GEOMETRY);
 
-      /* Fix all the drivers (and animation data) */
+      /* Fix all the drivers (and anim data) */
       dune_fcurves_main_cb(main, joined_armature_fix_animdata_cb, &afd);
       lib_ghash_free(afd.names_map, mem_free, nullptr);
 
@@ -481,8 +481,7 @@ static void separated_armature_fix_links(Main *main, Ob *origArm, Ob *newArm)
               /* Any targets which point to original armature
                * are redirected to the new one only if:
                * - The target isn't origArm/newArm itself.
-               * - The target is one that can be found in newArm/origArm.
-               */
+               * - The target is one that can be found in newArm/origArm. */
               if (ct->subtarget[0] != 0) {
                 if (ct->tar == origArm) {
                   if (lib_findstring(npchans, ct->subtarget, offsetof(PoseChannel, name))) {
@@ -545,8 +544,7 @@ static void separated_armature_fix_links(Main *main, Ob *origArm, Ob *newArm)
   }
 }
 
-/* Helper fn for armature separating - remove certain bones from the given armature.
- *
+/* Helper fn for armature separating - remove certain bones from the given armature
  * param ob: Armature ob (must not be is not in edit-mode).
  * param is_sel: remove sel bones from the armature,
  * otherwise the unsel bones are removed. */
@@ -626,7 +624,7 @@ static int separate_armature_ex(Cxt *C, WinOp *op)
     Ob *ob_old = base_old->ob;
 
     {
-      Armature *arm_old = static_cast<bArmature *>(ob_old->data);
+      Armature *arm_old = static_cast<Armature *>(ob_old->data);
       bool has_sel_bone = false;
       bool has_sel_any = false;
       LIST_FOREACH (EditBone *, ebone, arm_old->edbo) {
@@ -692,7 +690,7 @@ static int separate_armature_ex(Cxt *C, WinOp *op)
 
     ok = true;
 
-    /* NOTE: notifier might evolve. */
+    /* Notifier might evolve. */
     win_ev_add_notifier(C, NC_OBJECT | ND_POSE, ob_old);
   }
   mem_free(bases);
@@ -715,22 +713,17 @@ void ARMATURE_OT_separate(WinOpType *ot)
   ot->idname = "ARMATURE_OT_separate";
   ot->description = "Isolate sel bones into a separate armature";
 
-  /* callbacks */
-  ot->invoke = WM_operator_confirm_or_exec;
-  ot->exec = separate_armature_exec;
-  ot->poll = ED_operator_editarmature;
+  /* cbs */
+  ot->invoke = win_op_confirm_or_ex;
+  ot->ex = separate_armature_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-  WM_operator_properties_confirm_or_exec(ot);
+  win_op_props_confirm_or_ex(ot);
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Edit Armature Parenting
- * \{ */
-
+/* Edit Armature Parenting */
 /* armature parenting options */
 #define ARM_PAR_CONNECT 1
 #define ARM_PAR_OFFSET 2
@@ -747,7 +740,7 @@ static void bone_connect_to_existing_parent(EditBone *bone)
   bone->rad_head = bone->parent->rad_tail;
 }
 
-static void bone_connect_to_new_parent(ListBase *edbo,
+static void bone_connect_to_new_parent(List *edbo,
                                        EditBone *selbone,
                                        EditBone *actbone,
                                        short mode)
@@ -781,7 +774,7 @@ static void bone_connect_to_new_parent(ListBase *edbo,
     add_v3_v3(selbone->tail, offset);
 
     /* offset for all its children */
-    LISTBASE_FOREACH (EditBone *, ebone, edbo) {
+    LIST_FOREACH (EditBone *, ebone, edbo) {
       EditBone *par;
 
       for (par = ebone->parent; par; par = par->parent) {
@@ -799,24 +792,24 @@ static void bone_connect_to_new_parent(ListBase *edbo,
   }
 }
 
-static const EnumPropertyItem prop_editarm_make_parent_types[] = {
+static const EnumPropItem prop_editarm_make_parent_types[] = {
     {ARM_PAR_CONNECT, "CONNECTED", 0, "Connected", ""},
     {ARM_PAR_OFFSET, "OFFSET", 0, "Keep Offset", ""},
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-static int armature_parent_set_exec(bContext *C, wmOperator *op)
+static int armature_parent_set_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = CTX_data_edit_object(C);
-  bArmature *arm = (bArmature *)ob->data;
-  EditBone *actbone = CTX_data_active_bone(C);
+  Ob *ob = cxt_data_edit_ob(C);
+  Armature *arm = (Armature *)ob->data;
+  EditBone *actbone = cxt_data_active_bone(C);
   EditBone *actmirb = nullptr;
-  short val = RNA_enum_get(op->ptr, "type");
+  short val = api_enum_get(op->ptr, "type");
 
   /* there must be an active bone */
   if (actbone == nullptr) {
-    BKE_report(op->reports, RPT_ERROR, "Operation requires an active bone");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "Op requires an active bone");
+    return OP_CANCELLED;
   }
   if (arm->flag & ARM_MIRROR_EDIT) {
     /* For X-Axis Mirror Editing option, we may need a mirror copy of actbone:
@@ -824,33 +817,31 @@ static int armature_parent_set_exec(bContext *C, wmOperator *op)
      *   (i.e.  selbone="child.L" and actbone="parent.L", find "child.R" and "parent.R").
      *   This is useful for arm-chains, for example parenting lower arm to upper arm.
      * - If there's no mirrored copy of actbone (i.e. actbone = "parent.C" or "parent")
-     *   then just use actbone. Useful when doing upper arm to spine.
-     */
-    actmirb = ED_armature_ebone_get_mirrored(arm->edbo, actbone);
+     *   then just use actbone. Useful when doing upper arm to spine */
+    actmirb = ed_armature_ebone_get_mirrored(arm->edbo, actbone);
     if (actmirb == nullptr) {
       actmirb = actbone;
     }
   }
 
-  /* If there is only 1 selected bone, we assume that it is the active bone,
-   * since a user will need to have clicked on a bone (thus selecting it) to make it active. */
-  bool is_active_only_selected = false;
-  if (actbone->flag & BONE_SELECTED) {
-    is_active_only_selected = true;
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (EBONE_EDITABLE(ebone) && (ebone->flag & BONE_SELECTED)) {
+  /* If there is only 1 sel bone, we assume that it is the active bone,
+   * since a user will need to have clicked on a bone (thus sel it) to make it active. */
+  bool is_active_only_sel = false;
+  if (actbone->flag & BONE_SEL) {
+    is_active_only_sel = true;
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+      if (EBONE_EDITABLE(ebone) && (ebone->flag & BONE_SEL)) {
         if (ebone != actbone) {
-          is_active_only_selected = false;
+          is_active_only_sel = false;
           break;
         }
       }
     }
   }
 
-  if (is_active_only_selected) {
-    /* When only the active bone is selected, and it has a parent,
-     * connect it to the parent, as that is the only possible outcome.
-     */
+  if (is_active_only_sel) {
+    /* When only the active bone is sel, and it has a parent,
+     * connect it to the parent, as that is the only possible outcome. */
     if (actbone->parent) {
       bone_connect_to_existing_parent(actbone);
 
@@ -860,24 +851,23 @@ static int armature_parent_set_exec(bContext *C, wmOperator *op)
     }
   }
   else {
-    /* Parent 'selected' bones to the active one:
-     * - The context iterator contains both selected bones and their mirrored copies,
-     *   so we assume that unselected bones are mirrored copies of some selected bone.
-     * - Since the active one (and/or its mirror) will also be selected, we also need
-     *   to check that we are not trying to operate on them, since such an operation
-     *   would cause errors.
-     */
+    /* Parent 'sel' bones to the active one:
+     * - The cxt iter contains both sel bones and their mirrored copies,
+     *   so we assume that unsel bones are mirrored copies of some sel bone.
+     * - Since the active one (and/or its mirror) will also be sel, we also need
+     *   to check that we are not trying to op on them, since such an op
+     *   would cause errors. */
 
-    /* Parent selected bones to the active one. */
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (EBONE_EDITABLE(ebone) && (ebone->flag & BONE_SELECTED)) {
+    /* Parent sel bones to the active one. */
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+      if (EBONE_EDITABLE(ebone) && (ebone->flag & BONE_SEL)) {
         if (ebone != actbone) {
           bone_connect_to_new_parent(arm->edbo, ebone, actbone, val);
         }
 
         if (arm->flag & ARM_MIRROR_EDIT) {
-          EditBone *ebone_mirror = ED_armature_ebone_get_mirrored(arm->edbo, ebone);
-          if (ebone_mirror && (ebone_mirror->flag & BONE_SELECTED) == 0) {
+          EditBone *ebone_mirror = ed_armature_ebone_get_mirrored(arm->edbo, ebone);
+          if (ebone_mirror && (ebone_mirror->flag & BONE_SEL) == 0) {
             if (ebone_mirror != actmirb) {
               bone_connect_to_new_parent(arm->edbo, ebone_mirror, actmirb, val);
             }
@@ -887,25 +877,25 @@ static int armature_parent_set_exec(bContext *C, wmOperator *op)
     }
   }
 
-  /* NOTE: notifier might evolve. */
-  WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
-  DEG_id_tag_update(&ob->id, ID_RECALC_SELECT);
+  /* Notifier might evolve. */
+  win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
+  graph_id_tag_update(&ob->id, ID_RECALC_SEL);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int armature_parent_set_invoke(bContext *C, wmOperator * /*op*/, const wmEvent * /*event*/)
+static int armature_parent_set_invoke(Cxt *C, WinOp * /*op*/, const WinEv * /*ev*/)
 {
-  /* False when all selected bones are parented to the active bone. */
+  /* False when all sel bones are parented to the active bone. */
   bool enable_offset = false;
-  /* False when all selected bones are connected to the active bone. */
+  /* False when all sel bones are connected to the active bone. */
   bool enable_connect = false;
   {
-    Object *ob = CTX_data_edit_object(C);
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+    Ob *ob = cxt_data_edit_ob(C);
+    Armature *arm = static_cast<Armature *>(ob->data);
     EditBone *actbone = arm->act_edbone;
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (!EBONE_EDITABLE(ebone) || !(ebone->flag & BONE_SELECTED)) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+      if (!EBONE_EDITABLE(ebone) || !(ebone->flag & BONE_SEL)) {
         continue;
       }
       if (ebone == actbone) {
@@ -923,9 +913,9 @@ static int armature_parent_set_invoke(bContext *C, wmOperator * /*op*/, const wm
     }
   }
 
-  uiPopupMenu *pup = UI_popup_menu_begin(
-      C, CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Make Parent"), ICON_NONE);
-  uiLayout *layout = UI_popup_menu_layout(pup);
+  uiPopupMenu *pup = ui_popup_menu_begin(
+      C, CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Make Parent"), ICON_NONE);
+  uiLayout *layout = ui_popup_menu_layout(pup);
 
   uiLayout *row_offset = uiLayoutRow(layout, false);
   uiLayoutSetEnabled(row_offset, enable_offset);
@@ -935,31 +925,31 @@ static int armature_parent_set_invoke(bContext *C, wmOperator * /*op*/, const wm
   uiLayoutSetEnabled(row_connect, enable_connect);
   uiItemEnumO(row_connect, "ARMATURE_OT_parent_set", nullptr, ICON_NONE, "type", ARM_PAR_CONNECT);
 
-  UI_popup_menu_end(C, pup);
+  ui_popup_menu_end(C, pup);
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void ARMATURE_OT_parent_set(wmOperatorType *ot)
+void ARMATURE_OT_parent_set(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Make Parent";
   ot->idname = "ARMATURE_OT_parent_set";
-  ot->description = "Set the active bone as the parent of the selected bones";
+  ot->description = "Set the active bone as the parent of the sel bones";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = armature_parent_set_invoke;
-  ot->exec = armature_parent_set_exec;
-  ot->poll = ED_operator_editarmature;
+  ot->ex = armature_parent_set_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  RNA_def_enum(
-      ot->srna, "type", prop_editarm_make_parent_types, 0, "Parent Type", "Type of parenting");
+  api_def_enum(
+      ot->sapi, "type", prop_editarm_make_parent_types, 0, "Parent Type", "Type of parenting");
 }
 
-static const EnumPropertyItem prop_editarm_clear_parent_types[] = {
+static const EnumPropItem prop_editarm_clear_parent_types[] = {
     {ARM_PAR_CLEAR, "CLEAR", 0, "Clear Parent", ""},
     {ARM_PAR_CLEAR_DISCONNECT, "DISCONNECT", 0, "Disconnect Bone", ""},
     {0, nullptr, 0, nullptr, nullptr},
@@ -968,7 +958,7 @@ static const EnumPropertyItem prop_editarm_clear_parent_types[] = {
 static void editbone_clear_parent(EditBone *ebone, int mode)
 {
   if (ebone->parent) {
-    /* for nice selection */
+    /* for nice sel */
     ebone->parent->flag &= ~BONE_TIPSEL;
   }
 
@@ -978,26 +968,26 @@ static void editbone_clear_parent(EditBone *ebone, int mode)
   ebone->flag &= ~BONE_CONNECTED;
 }
 
-static int armature_parent_clear_exec(bContext *C, wmOperator *op)
+static int armature_parent_clear_ex(Cxt *C, WinOp *op)
 {
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  const int val = RNA_enum_get(op->ptr, "type");
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  const int val = api_enum_get(op->ptr, "type");
 
-  CTX_DATA_BEGIN (C, EditBone *, ebone, selected_editable_bones) {
+  CXT_DATA_BEGIN (C, EditBone *, ebone, sel_editable_bones) {
     editbone_clear_parent(ebone, val);
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  uint objects_len = 0;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *ob = objects[ob_index];
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+  uint obs_len = 0;
+  Ob **obs = dune_view_layer_array_from_obs_in_edit_mode_unique_data(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *ob = obs[ob_index];
+    Armature *arm = static_cast<Armature *>(ob->data);
     bool changed = false;
 
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
       if (EBONE_EDITABLE(ebone)) {
         changed = true;
         break;
@@ -1008,29 +998,29 @@ static int armature_parent_clear_exec(bContext *C, wmOperator *op)
       continue;
     }
 
-    ED_armature_edit_sync_selection(arm->edbo);
+    ed_armature_edit_sync_sel(arm->edbo);
 
-    /* NOTE: notifier might evolve. */
-    WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
+    /* Modifier might evolve. */
+    win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static int armature_parent_clear_invoke(bContext *C,
-                                        wmOperator * /*op*/,
-                                        const wmEvent * /*event*/)
+static int armature_parent_clear_invoke(Cxt *C,
+                                        WinOp * /*op*/,
+                                        const WinEv * /*ev*/)
 {
-  /* False when no selected bones are connected to the active bone. */
+  /* False when no sel bones are connected to the active bone. */
   bool enable_disconnect = false;
-  /* False when no selected bones are parented to the active bone. */
+  /* False when no sel bones are parented to the active bone. */
   bool enable_clear = false;
   {
-    Object *ob = CTX_data_edit_object(C);
-    bArmature *arm = static_cast<bArmature *>(ob->data);
-    LISTBASE_FOREACH (EditBone *, ebone, arm->edbo) {
-      if (!EBONE_EDITABLE(ebone) || !(ebone->flag & BONE_SELECTED)) {
+    Ob *ob = cxt_data_edit_ob(C);
+    Armature *arm = static_cast<Armature *>(ob->data);
+    LIST_FOREACH (EditBone *, ebone, arm->edbo) {
+      if (!EBONE_EDITABLE(ebone) || !(ebone->flag & BONE_SEL)) {
         continue;
       }
       if (ebone->parent == nullptr) {
@@ -1045,9 +1035,9 @@ static int armature_parent_clear_invoke(bContext *C,
     }
   }
 
-  uiPopupMenu *pup = UI_popup_menu_begin(
-      C, CTX_IFACE_(BLT_I18NCONTEXT_OPERATOR_DEFAULT, "Clear Parent"), ICON_NONE);
-  uiLayout *layout = UI_popup_menu_layout(pup);
+  uiPopupMenu *pup = ui_popup_menu_begin(
+      C, CXT_IFACE_(LANG_CXT_OP_DEFAULT, "Clear Parent"), ICON_NONE);
+  uiLayout *layout = ui_popup_menu_layout(pup);
 
   uiLayout *row_clear = uiLayoutRow(layout, false);
   uiLayoutSetEnabled(row_clear, enable_clear);
@@ -1062,33 +1052,31 @@ static int armature_parent_clear_invoke(bContext *C,
               "type",
               ARM_PAR_CLEAR_DISCONNECT);
 
-  UI_popup_menu_end(C, pup);
+  ui_popup_menu_end(C, pup);
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void ARMATURE_OT_parent_clear(wmOperatorType *ot)
+void ARMATURE_OT_parent_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Parent";
   ot->idname = "ARMATURE_OT_parent_clear";
   ot->description =
-      "Remove the parent-child relationship between selected bones and their parents";
+      "Remove the parent-child relationship between sel bones and their parents";
 
   /* api cbs */
   ot->invoke = armature_parent_clear_invoke;
-  ot->ex = armature_parent_clear_exec;
-  ot->poll = ED_operator_editarmature;
+  ot->ex = armature_parent_clear_ex;
+  ot->poll = ed_op_editarmature;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  ot->prop = RNA_def_enum(ot->srna,
+  ot->prop = api_def_enum(ot->sapi,
                           "type",
                           prop_editarm_clear_parent_types,
                           0,
                           "Clear Type",
                           "What way to clear parenting");
 }
-
-/** \} */
