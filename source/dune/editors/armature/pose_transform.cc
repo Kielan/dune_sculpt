@@ -955,7 +955,7 @@ static void pchan_clear_loc(bPoseChannel *pchan)
 static void pchan_clear_loc_with_mirrored(const bPose *pose, bPoseChannel *pchan)
 {
   if (pose->flag & POSE_MIRROR_EDIT) {
-    bPoseChannel *pchan_mirror = BKE_pose_channel_get_mirrored(pose, pchan->name);
+    bPoseChannel *pchan_mirror = dune_pose_channel_get_mirrored(pose, pchan->name);
     if (pchan_mirror != nullptr) {
       pchan_clear_loc(pchan_mirror);
     }
@@ -964,7 +964,7 @@ static void pchan_clear_loc_with_mirrored(const bPose *pose, bPoseChannel *pchan
 }
 
 /* clear rotation of pose-channel */
-static void pchan_clear_rot(bPoseChannel *pchan)
+static void pchan_clear_rot(PoseChannel *pchan)
 {
   if (pchan->protectflag & (OB_LOCK_ROTX | OB_LOCK_ROTY | OB_LOCK_ROTZ | OB_LOCK_ROTW)) {
     /* check if convert to eulers for locking... */
@@ -1065,7 +1065,7 @@ static void pchan_clear_rot(bPoseChannel *pchan)
         copy_v3_v3(pchan->eul, eul);
       }
     }
-  } /* Duplicated in source/blender/editors/object/object_transform.cc */
+  } /* Dup'd in source/dune/editors/ob/ob_transform.cc */
   else {
     if (pchan->rotmode == ROT_MODE_QUAT) {
       unit_qt(pchan->quat);
@@ -1091,10 +1091,10 @@ static void pchan_clear_rot(bPoseChannel *pchan)
 }
 /* Clear the rotation. When X-mirror is enabled,
  * also clear the rotation of the mirrored pose channel. */
-static void pchan_clear_rot_with_mirrored(const bPose *pose, bPoseChannel *pchan)
+static void pchan_clear_rot_with_mirrored(const Pose *pose, PoseChannel *pchan)
 {
   if (pose->flag & POSE_MIRROR_EDIT) {
-    bPoseChannel *pchan_mirror = BKE_pose_channel_get_mirrored(pose, pchan->name);
+    PoseChannel *pchan_mirror = dune_pose_channel_get_mirrored(pose, pchan->name);
     if (pchan_mirror != nullptr) {
       pchan_clear_rot(pchan_mirror);
     }
@@ -1103,59 +1103,57 @@ static void pchan_clear_rot_with_mirrored(const bPose *pose, bPoseChannel *pchan
 }
 
 /* clear loc/rot/scale of pose-channel */
-static void pchan_clear_transforms(const bPose *pose, bPoseChannel *pchan)
+static void pchan_clear_transforms(const Pose *pose, PoseChannel *pchan)
 {
   pchan_clear_loc_with_mirrored(pose, pchan);
   pchan_clear_rot_with_mirrored(pose, pchan);
   pchan_clear_scale_with_mirrored(pose, pchan);
 }
 
-/* --------------- */
-
-/* generic exec for clear-pose operators */
-static int pose_clear_transform_generic_exec(bContext *C,
-                                             wmOperator *op,
-                                             void (*clear_func)(const bPose *, bPoseChannel *),
-                                             const char default_ksName[])
+/* generic ex for clear-pose ops */
+static int pose_clear_transform_generic_ex(Cxt *C,
+                                           WinOp *op,
+                                           void (*clear_fn)(const Pose *, PoseChannel *),
+                                           const char default_ksName[])
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Scene *scene = CTX_data_scene(C);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  Scene *scene = cxt_data_scene(C);
   bool changed_multi = false;
 
   /* sanity checks */
-  if (ELEM(nullptr, clear_func, default_ksName)) {
-    BKE_report(op->reports,
+  if (ELEM(nullptr, clear_fn, default_ksName)) {
+    dune_report(op->reports,
                RPT_ERROR,
-               "Programming error: missing clear transform function or keying set name");
-    return OPERATOR_CANCELLED;
+               "Programming error: missing clear transform fn or keying set name");
+    return OP_CANCELLED;
   }
 
-  /* only clear relevant transforms for selected bones */
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  FOREACH_OBJECT_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob_iter) {
-    /* XXX: UGLY HACK (for auto-key + clear transforms). */
-    Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob_iter);
-    blender::Vector<PointerRNA> sources;
+  /* only clear relevant transforms for sel bones */
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  FOREACH_OB_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob_iter) {
+    /* UGLY HACK (for auto-key + clear transforms). */
+    Ob *ob_eval = graph_get_eval_ob(graph, ob_iter);
+    dune::Vector<ApiPtr> sources;
     bool changed = false;
 
-    FOREACH_PCHAN_SELECTED_IN_OBJECT_BEGIN (ob_iter, pchan) {
-      /* run provided clearing function */
-      clear_func(ob_iter->pose, pchan);
+    FOREACH_PCHAN_SEL_IN_OB_BEGIN (ob_iter, pchan) {
+      /* run provided clearing fn */
+      clear_fn(ob_iter->pose, pchan);
       changed = true;
 
       /* do auto-keyframing as appropriate */
-      if (blender::animrig::autokeyframe_cfra_can_key(scene, &ob_iter->id)) {
+      if (dune::animrig::autokeyframe_cfra_can_key(scene, &ob_iter->id)) {
         /* tag for autokeying later */
-        ANIM_relative_keyingset_add_source(sources, &ob_iter->id, &RNA_PoseBone, pchan);
+        anim_relative_keyingset_add_source(sources, &ob_iter->id, &ApiPoseBone, pchan);
 
-#if 1 /* XXX: Ugly Hack - Run clearing function on evaluated copy of pchan */
-        bPoseChannel *pchan_eval = BKE_pose_channel_find_name(ob_eval->pose, pchan->name);
-        clear_func(ob_iter->pose, pchan_eval);
+#if 1 /* Ugly Hack - Run clearing fn on eval copy of pchan */
+        PoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
+        clear_fn(ob_iter->pose, pchan_eval);
 #endif
       }
     }
-    FOREACH_PCHAN_SELECTED_IN_OBJECT_END;
+    FOREACH_PCHAN_SELECTED_IN_OB_END;
 
     if (changed) {
       changed_multi = true;
@@ -1163,89 +1161,74 @@ static int pose_clear_transform_generic_exec(bContext *C,
       /* perform autokeying on the bones if needed */
       if (!sources.is_empty()) {
         /* get KeyingSet to use */
-        KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, default_ksName);
+        KeyingSet *ks = anim_get_keyingset_for_autokeying(scene, default_ksName);
 
         /* insert keyframes */
-        ANIM_apply_keyingset(C, &sources, ks, MODIFYKEY_MODE_INSERT, float(scene->r.cfra));
+        anim_apply_keyingset(C, &sources, ks, MODIFYKEY_MODE_INSERT, float(scene->r.cfra));
 
-        /* now recalculate paths */
+        /* now recalc paths */
         if (ob_iter->pose->avs.path_bakeflag & MOTIONPATH_BAKE_HAS_PATHS) {
-          ED_pose_recalculate_paths(C, scene, ob_iter, POSE_PATH_CALC_RANGE_FULL);
+          ed_pose_recalc_paths(C, scene, ob_iter, POSE_PATH_CALC_RANGE_FULL);
         }
       }
 
-      DEG_id_tag_update(&ob_iter->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob_iter->id, ID_RECALC_GEOMETRY);
 
       /* NOTE: notifier might evolve. */
-      WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, ob_iter);
+      win_ev_add_notifier(C, NC_OB | ND_TRANSFORM, ob_iter);
     }
   }
-  FOREACH_OBJECT_IN_MODE_END;
+  FOREACH_OB_IN_MODE_END;
 
-  return changed_multi ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+  return changed_multi ? OP_FINISHED : OP_CANCELLED;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Pose Scale Operator
- * \{ */
-
-static int pose_clear_scale_exec(bContext *C, wmOperator *op)
+/* Clear Pose Scale Op */
+static int pose_clear_scale_ex(Cxt *C, WinOp *op)
 {
-  return pose_clear_transform_generic_exec(
+  return pose_clear_transform_generic_ex(
       C, op, pchan_clear_scale_with_mirrored, ANIM_KS_SCALING_ID);
 }
 
-void POSE_OT_scale_clear(wmOperatorType *ot)
+void POSE_OT_scale_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Pose Scale";
   ot->idname = "POSE_OT_scale_clear";
-  ot->description = "Reset scaling of selected bones to their default values";
+  ot->description = "Reset scaling of sel bones to their default vals";
 
-  /* api callbacks */
-  ot->exec = pose_clear_scale_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_clear_scale_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Pose Rotation Operator
- * \{ */
-
-static int pose_clear_rot_exec(bContext *C, wmOperator *op)
+/* Clear Pose Rotation Op */
+static int pose_clear_rot_ex(Cxt *C, WinOp *op)
 {
-  return pose_clear_transform_generic_exec(
-      C, op, pchan_clear_rot_with_mirrored, ANIM_KS_ROTATION_ID);
+  return pose_clear_transform_generic_ex(
+      C, op, pchan_clear_rot_w_mirrored, ANIM_KS_ROTATION_ID);
 }
 
-void POSE_OT_rot_clear(wmOperatorType *ot)
+void POSE_OT_rot_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Pose Rotation";
   ot->idname = "POSE_OT_rot_clear";
   ot->description = "Reset rotations of selected bones to their default values";
 
-  /* api callbacks */
-  ot->exec = pose_clear_rot_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_clear_rot_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Pose Location Operator
- * \{ */
-
-static int pose_clear_loc_exec(bContext *C, wmOperator *op)
+/* Clear Pose Location Op */
+static int pose_clear_loc_ex(Cxt *C, WinOp *op)
 {
   return pose_clear_transform_generic_exec(
       C, op, pchan_clear_loc_with_mirrored, ANIM_KS_LOCATION_ID);
