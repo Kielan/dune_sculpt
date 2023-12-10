@@ -1,5 +1,4 @@
 /* Implementation of Bone Collection ops and editing API's. */
-
 #include <cstring>
 
 #include "anim_bone_collections.hh"
@@ -665,7 +664,7 @@ static void bone_collection_sel(Cxt *C,
         continue;
       }
 
-      if (select) {
+      if (sel) {
         bone->flag |= BONE_SEL;
       }
       else {
@@ -692,7 +691,7 @@ static int bone_collection_sel_ex(Cxt *C, WinOp * /*op*/)
     return OP_CANCELLED;
   }
 
-  Armature *armature = reinterpret_cast<bArmature *>(ob->data);
+  Armature *armature = reinterpret_cast<Armature *>(ob->data);
   BoneCollection *bcoll = armature->runtime.active_collection;
   if (bcoll == nullptr) {
     return OP_CANCELLED;
@@ -702,10 +701,10 @@ static int bone_collection_sel_ex(Cxt *C, WinOp * /*op*/)
   return OP_FINISHED;
 }
 
-void ARMATURE_OT_collection_select(WinOperatorType *ot)
+void ARMATURE_OT_collection_sel(WinOpType *ot)
 {
   /* ids */
-  ot->name = "Select Bones of Bone Collection";
+  ot->name = "Sel Bones of Bone Collection";
   ot->idname = "ARMATURE_OT_collection_sel";
   ot->description = "Sel bones in active Bone Collection";
 
@@ -791,16 +790,16 @@ static int add_or_move_to_collection_ex(Cxt *C,
                                         const assign_bone_fn assign_fn_bone,
                                         const assign_ebone_fn assign_fn_ebone)
 {
-  Object *ob = ed_ob_cxt(C);
+  Ob *ob = ed_ob_cxt(C);
   if (ob->mode == OB_MODE_POSE) {
-    ob = ED_pose_object_from_context(C);
+    ob = ed_pose_ob_from_cxt(C);
   }
   if (!ob) {
-    BKE_reportf(op->reports, RPT_ERROR, "No object found to operate on");
-    return OPERATOR_CANCELLED;
+    dune_reportf(op->reports, RPT_ERROR, "No ob found to op on");
+    return OP_CANCELLED;
   }
 
-  bArmature *arm = static_cast<bArmature *>(ob->data);
+  Armature *arm = static_cast<Armature *>(ob->data);
   BoneCollection *target_bcoll = add_or_move_to_collection_bcoll(op, arm);
 
   bool made_any_changes = false;
@@ -808,40 +807,40 @@ static int add_or_move_to_collection_ex(Cxt *C,
   const bool mode_is_supported = bone_collection_assign_mode_specific(C,
                                                                       ob,
                                                                       target_bcoll,
-                                                                      assign_func_bone,
-                                                                      assign_func_ebone,
+                                                                      assign_fn_bone,
+                                                                      assign_fn_ebone,
                                                                       &made_any_changes,
                                                                       &had_bones_to_assign);
 
   if (!mode_is_supported) {
-    WM_report(RPT_ERROR, "This operator only works in pose mode and armature edit mode");
-    return OPERATOR_CANCELLED;
+    win_report(RPT_ERROR, "This op only works in pose mode and armature edit mode");
+    return OP_CANCELLED;
   }
   if (!had_bones_to_assign) {
-    WM_report(RPT_WARNING, "No bones selected, nothing to assign to bone collection");
-    return OPERATOR_CANCELLED;
+    win_report(RPT_WARNING, "No bones sel, nothing to assign to bone collection");
+    return OP_CANCELLED;
   }
   if (!made_any_changes) {
-    WM_report(RPT_WARNING, "All selected bones were already part of this collection");
-    return OPERATOR_CANCELLED;
+    win_report(RPT_WARNING, "All sel bones were alrdy part of this collection");
+    return OP_CANCELLED;
   }
 
-  graph_id_tag_update(&arm->id, ID_RECALC_SELECT); /* Recreate the draw buffers. */
+  graph_id_tag_update(&arm->id, ID_RECALC_SEL); /* Recreate the drw bufs. */
 
-  win_ev_add_notifier(C, NC_OBJECT | ND_DATA, ob);
-  WM_ev_add_notifier(C, NC_OBJECT | ND_POSE, ob);
+  win_ev_add_notifier(C, NC_OB | ND_DATA, ob);
+  win_ev_add_notifier(C, NC_OB | ND_POSE, ob);
   return OP_FINISHED;
 }
 
 static int move_to_collection_ex(Cxt *C, WinOp *op)
 {
   return add_or_move_to_collection_ex(C,
-                                        op,
-                                        anim_armature_bonecoll_assign_and_move,
-                                        anim_armature_bonecoll_assign_and_move_editbone);
+                                      op,
+                                      anim_armature_bonecoll_assign_and_move,
+                                      anim_armature_bonecoll_assign_and_move_editbone);
 }
 
-static int assign_to_collection_exec(Cxt *C, WinOp *op)
+static int assign_to_collection_ex(Cxt *C, WinOp *op)
 {
   return add_or_move_to_collection_ex(
       C, op, anim_armature_bonecoll_assign, anim_armature_bonecoll_assign_editbone);
@@ -864,15 +863,15 @@ static bool move_to_collection_poll(Cxt *C)
     return false;
   }
 
-  /* Ideally yhis woule also check the target bone collection to move/assign to.
+  /* Ideally this would also check the target bone collection to move/assign to.
    * However, that requires access to the op props, and those are not
    * available in the poll fn. */
   return true;
 }
 
 static bool bone_collection_enum_itemf_for_ob(Ob *ob,
-                                                  EnumPropItem **item,
-                                                  int *totitem)
+                                              EnumPropItem **item,
+                                              int *totitem)
 {
   EnumPropItem item_tmp = {0};
   Armature *arm = static_cast<Armature *>(ob->data);
@@ -948,9 +947,9 @@ static int move_to_collection_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
   if (api_prop_is_set(op->ptr, prop)) {
     const int collection_index = api_prop_enum_get(op->ptr, prop);
     if (collection_index < 0) {
-      return WM_operator_props_dialog_popup(C, op, 200);
+      return win_op_props_dialog_popup(C, op, 200);
     }
-    /* Either call move_to_collection_ex() or assign_to_collection_exec(), depending on which
+    /* Either call move_to_collection_ex() or assign_to_collection_ex(), depending on which
      * op got invoked. */
     return op->type->ex(C, op);
   }
@@ -958,7 +957,7 @@ static int move_to_collection_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
   const char *title = CXT_IFACE_(op->type->translation_cxt, op->type->name);
   uiPopupMenu *pup = ui_popup_menu_begin(C, title, ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
-  uiLayoutSetOperatorContext(layout, WM_OP_INVOKE_DEFAULT);
+  uiLayoutSetOperatorContext(layout, WIN_OP_INVOKE_DEFAULT);
   uiItemsEnumO(layout, op->idname, "collection");
   ii_popup_menu_end(C, pup);
   return OP_INTERFACE;
@@ -973,7 +972,7 @@ void ARMATURE_OT_move_to_collection(WinOprType *ot)
   ot->description = "Move bones to a collection";
   ot->idname = "ARMATURE_OT_move_to_collection";
 
-  /* api callbacks */
+  /* api cbs */
   ot->ex = move_to_collection_ex;
   ot->invoke = move_to_collection_invoke;
   ot->poll = move_to_collection_poll;
@@ -996,7 +995,7 @@ void ARMATURE_OT_move_to_collection(WinOprType *ot)
    * automatic translation. */
   api_def_prop_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN | PROP_ENUM_NO_TRANSLATE);
 
-  prop = api_def_string(ot->srna,
+  prop = api_def_string(ot->sapi,
                         "new_collection_name",
                         nullptr,
                         MAX_NAME,
@@ -1008,7 +1007,7 @@ void ARMATURE_OT_move_to_collection(WinOprType *ot)
 
 void ARMATURE_OT_assign_to_collection(WinOpType *ot)
 {
-  ApuProp *prop;
+  ApiProp *prop;
 
   /* ids */
   ot->name = "Assign to Collection";
@@ -1026,23 +1025,21 @@ void ARMATURE_OT_assign_to_collection(WinOpType *ot)
    * 'Name' prop, wo any choice for another collection. */
   ot->flag = OPTYPE_UNDO;
 
-  prop = RNA_def_enum(ot->sapi,
+  prop = api_def_enum(ot->sapi,
                       "collection",
                       api_enum_dummy_DEFAULT_items,
                       0,
                       "Collection",
-                      "The bone collection to move the selected bones to");
-  RNA_def_enum_funcs(prop, bone_collection_enum_itemf);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN);
+                      "The bone collection to move the sel bones to");
+  api_def_enum_fns(prop, bone_collection_enum_itemf);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN);
 
-  prop = RNA_def_string(ot->srna,
+  prop = api_def_string(ot->sapi,
                         "new_collection_name",
                         nullptr,
                         MAX_NAME,
                         "Name",
                         "Name of the newly added bone collection");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
   ot->prop = prop;
 }
-
-/* ********************************************** */
