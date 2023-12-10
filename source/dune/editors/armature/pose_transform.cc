@@ -550,7 +550,7 @@ void POSE_OT_visual_transform_apply(WinOpType *ot)
   ot->description = "Apply final constrained position of pose bones to their transform";
 
   /* cbs */
-  ot->ex = pose_visual_transform_apply_exec;
+  ot->ex = pose_visual_transform_apply_ex;
   ot->poll = ed_op_posemode;
 
   /* flags */
@@ -811,7 +811,7 @@ static int pose_paste_ex(Cxt *C, WinOp *op)
   /* Read copy buf .dune file. */
   char filepath[FILE_MAX];
   Main *tmp_main = dune_main_new();
-  STRNCPY(tmp_bmain->filepath, dune_main_dunefile_path_from_global());
+  STRNCPY(tmp_main->filepath, dune_main_dunefile_path_from_global());
 
   pose_copybuf_filepath_get(filepath, sizeof(filepath));
   if (!dune_copybuf_read(tmp_main, filepath, op->reports, FILTER_ID_OB)) {
@@ -902,11 +902,10 @@ void POSE_OT_paste(WinOpType *ot)
                   "Only paste the stored pose on to sel bones in the current pose");
 }
 
-/** \name Clear Pose Transforms Utilities
- * \{ */
+/* Clear Pose Transforms Utils */
 
 /* clear scale of pose-channel */
-static void pchan_clear_scale(bPoseChannel *pchan)
+static void pchan_clear_scale(PoseChannel *pchan)
 {
   if ((pchan->protectflag & OB_LOCK_SCALEX) == 0) {
     pchan->size[0] = 1.0f;
@@ -926,10 +925,10 @@ static void pchan_clear_scale(bPoseChannel *pchan)
 }
 /* Clear the scale. When X-mirror is enabled,
  * also clear the scale of the mirrored pose channel. */
-static void pchan_clear_scale_with_mirrored(const bPose *pose, bPoseChannel *pchan)
+static void pchan_clear_scale_with_mirrored(const Pose *pose, PoseChannel *pchan)
 {
   if (pose->flag & POSE_MIRROR_EDIT) {
-    bPoseChannel *pchan_mirror = BKE_pose_channel_get_mirrored(pose, pchan->name);
+    PoseChannel *pchan_mirror = dune_pose_channel_get_mirrored(pose, pchan->name);
     if (pchan_mirror != nullptr) {
       pchan_clear_scale(pchan_mirror);
     }
@@ -938,7 +937,7 @@ static void pchan_clear_scale_with_mirrored(const bPose *pose, bPoseChannel *pch
 }
 
 /* clear location of pose-channel */
-static void pchan_clear_loc(bPoseChannel *pchan)
+static void pchan_clear_loc(PoseChannel *pchan)
 {
   if ((pchan->protectflag & OB_LOCK_LOCX) == 0) {
     pchan->loc[0] = 0.0f;
@@ -952,10 +951,10 @@ static void pchan_clear_loc(bPoseChannel *pchan)
 }
 /* Clear the Location. When X-mirror is enabled,
  * also clear the location of the mirrored pose channel. */
-static void pchan_clear_loc_with_mirrored(const bPose *pose, bPoseChannel *pchan)
+static void pchan_clear_loc_with_mirrored(const Pose *pose, PoseChannel *pchan)
 {
   if (pose->flag & POSE_MIRROR_EDIT) {
-    bPoseChannel *pchan_mirror = dune_pose_channel_get_mirrored(pose, pchan->name);
+    PoseChannel *pchan_mirror = dune_pose_channel_get_mirrored(pose, pchan->name);
     if (pchan_mirror != nullptr) {
       pchan_clear_loc(pchan_mirror);
     }
@@ -1153,7 +1152,7 @@ static int pose_clear_transform_generic_ex(Cxt *C,
 #endif
       }
     }
-    FOREACH_PCHAN_SELECTED_IN_OB_END;
+    FOREACH_PCHAN_SEL_IN_OB_END;
 
     if (changed) {
       changed_multi = true;
@@ -1230,79 +1229,68 @@ void POSE_OT_rot_clear(WinOpType *ot)
 /* Clear Pose Location Op */
 static int pose_clear_loc_ex(Cxt *C, WinOp *op)
 {
-  return pose_clear_transform_generic_exec(
+  return pose_clear_transform_generic_ex(
       C, op, pchan_clear_loc_with_mirrored, ANIM_KS_LOCATION_ID);
 }
 
-void POSE_OT_loc_clear(wmOperatorType *ot)
+void POSE_OT_loc_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Pose Location";
   ot->idname = "POSE_OT_loc_clear";
-  ot->description = "Reset locations of selected bones to their default values";
+  ot->description = "Reset locations of sel bones to their default values";
 
-  /* api callbacks */
-  ot->exec = pose_clear_loc_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_clear_loc_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear Pose Transforms Operator
- * \{ */
-
-static int pose_clear_transforms_exec(bContext *C, wmOperator *op)
+/* Clear Pose Transforms Op */
+static int pose_clear_transforms_ex(Cxt *C, WinOp *op)
 {
-  return pose_clear_transform_generic_exec(
+  return pose_clear_transform_generic_ex(
       C, op, pchan_clear_transforms, ANIM_KS_LOC_ROT_SCALE_ID);
 }
 
-void POSE_OT_transforms_clear(wmOperatorType *ot)
+void POSE_OT_transforms_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear Pose Transforms";
   ot->idname = "POSE_OT_transforms_clear";
   ot->description =
-      "Reset location, rotation, and scaling of selected bones to their default values";
+      "Reset location, rotation, and scaling of sel bones to their default vals";
 
-  /* api callbacks */
-  ot->exec = pose_clear_transforms_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_clear_transforms_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Clear User Transforms Operator
- * \{ */
-
-static int pose_clear_user_transforms_exec(bContext *C, wmOperator *op)
+/* Clear User Transforms Op */
+static int pose_clear_user_transforms_exec(Cxt *C, WinOp *op)
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
-  Scene *scene = CTX_data_scene(C);
-  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
-  const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(
-      depsgraph, float(scene->r.cfra));
-  const bool only_select = RNA_boolean_get(op->ptr, "only_selected");
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  Graph *graph = cxt_data_graph_ptr(C);
+  const AnimEvalCxt anim_eval_cxt = dune_animsys_eval_cxt_construct(
+      graph, float(scene->r.cfra));
+  const bool only_sel = api_bool_get(op->ptr, "only_sel");
 
-  FOREACH_OBJECT_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob) {
+  FOREACH_OB_IN_MODE_BEGIN (scene, view_layer, v3d, OB_ARMATURE, OB_MODE_POSE, ob) {
     if ((ob->adt) && (ob->adt->action)) {
-      /* XXX: this is just like this to avoid contaminating anything else;
-       * just pose values should change, so this should be fine
-       */
-      bPose *dummyPose = nullptr;
-      Object workob{};
+      /* This is just like this to avoid contaminating anything else;
+       * just pose vals should change, so this should be fine */
+      Pose *dummyPose = nullptr;
+      Ob workob{};
 
-      /* execute animation step for current frame using a dummy copy of the pose */
-      BKE_pose_copy_data(&dummyPose, ob->pose, false);
+      /* ex anim step for current frame using a dummy copy of the pose */
+      dune_pose_copy_data(&dummyPose, ob->pose, false);
 
       STRNCPY(workob.id.name, "OB<ClearTfmWorkOb>");
       workob.type = OB_ARMATURE;
@@ -1310,55 +1298,53 @@ static int pose_clear_user_transforms_exec(bContext *C, wmOperator *op)
       workob.adt = ob->adt;
       workob.pose = dummyPose;
 
-      BKE_animsys_evaluate_animdata(
-          &workob.id, workob.adt, &anim_eval_context, ADT_RECALC_ANIM, false);
+      dune_animsys_eval_animdata(
+          &workob.id, workob.adt, &anim_eval_cxt, ADT_RECALC_ANIM, false);
 
-      /* Copy back values, but on selected bones only. */
-      LISTBASE_FOREACH (bPoseChannel *, pchan, &dummyPose->chanbase) {
-        pose_bone_do_paste(ob, pchan, only_select, false);
+      /* Copy back vals, but on sel bones only. */
+      LIST_FOREACH (PoseChannel *, pchan, &dummyPose->chanbase) {
+        pose_bone_do_paste(ob, pchan, only_sel, false);
       }
 
-      /* free temp data - free manually as was copied without constraints */
-      LISTBASE_FOREACH (bPoseChannel *, pchan, &dummyPose->chanbase) {
+      /* free tmp data - free manually as was copied wo constraints */
+      LIST_FOREACH (PoseChannel *, pchan, &dummyPose->chanbase) {
         if (pchan->prop) {
-          IDP_FreeProperty(pchan->prop);
+          IDP_FreeProp(pchan->prop);
         }
       }
 
-      /* was copied without constraints */
-      BLI_freelistN(&dummyPose->chanbase);
-      MEM_freeN(dummyPose);
+      /* was copied wo constraints */
+      lib_freelist(&dummyPose->chanbase);
+      mem_free(dummyPose);
     }
     else {
-      /* No animation, so just reset to the rest pose. */
-      BKE_pose_rest(ob->pose, only_select);
+      /* No anim, so just reset to the rest pose. */
+      dune_pose_rest(ob->pose, only_sel);
     }
 
     /* notifiers and updates */
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    win_ev_add_notifier(C, NC_OB | ND_TRANSFORM, ob);
   }
-  FOREACH_OBJECT_IN_MODE_END;
+  FOREACH_OB_IN_MODE_END;
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_user_transforms_clear(wmOperatorType *ot)
+void POSE_OT_user_transforms_clear(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Clear User Transforms";
   ot->idname = "POSE_OT_user_transforms_clear";
   ot->description = "Reset pose bone transforms to keyframed state";
 
-  /* callbacks */
-  ot->exec = pose_clear_user_transforms_exec;
-  ot->poll = ED_operator_posemode;
+  /* cbs */
+  ot->ex = pose_clear_user_transforms_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
-  RNA_def_boolean(ot->srna, "only_selected", true, "Only Selected", "Only visible/selected bones");
+  /* props */
+  api_def_bool(ot->sapi, "only_sel", true, "Only Sel", "Only visible/sel bones");
 }
-
-/** \} */
