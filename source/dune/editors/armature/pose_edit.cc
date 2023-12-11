@@ -207,7 +207,7 @@ void ed_pose_recalc_paths(Cxt *C, Scene *scene, Ob *ob, ePosePathCalcRange range
 /* show popup to determine settings */
 static int pose_calc_paths_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  Object *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
 
   if (ELEM(nullptr, ob, ob->pose)) {
     return OP_CANCELLED;
@@ -218,43 +218,41 @@ static int pose_calc_paths_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
     AnimVizSettings *avs = &ob->pose->avs;
 
     ApiPtr avs_ptr = api_ptr_create(nullptr, &RNA_AnimVizMotionPaths, avs);
-    RNA_enum_set(op->ptr, "display_type", RNA_enum_get(&avs_ptr, "type"));
-    RNA_enum_set(op->ptr, "range", RNA_enum_get(&avs_ptr, "range"));
-    RNA_enum_set(op->ptr, "bake_location", RNA_enum_get(&avs_ptr, "bake_location"));
+    api_enum_set(op->ptr, "display_type", RNA_enum_get(&avs_ptr, "type"));
+    api_enum_set(op->ptr, "range", RNA_enum_get(&avs_ptr, "range"));
+    api_enum_set(op->ptr, "bake_location", RNA_enum_get(&avs_ptr, "bake_location"));
   }
 
   /* show popup dialog to allow editing of range... */
   /* FIXME: hard-coded dimensions here are just arbitrary. */
-  return WM_operator_props_dialog_popup(C, op, 270);
+  return win_op_props_dialog_popup(C, op, 270);
 }
 
-/**
- * For the object with pose/action: create path curves for selected bones
- * This recalculates the WHOLE path within the `pchan->pathsf` and `pchan->pathef` range.
- */
-static int pose_calculate_paths_exec(bContext *C, wmOperator *op)
+/* For the ob with pose/action: create path curves for selected bones
+ * This recalcs the WHOLE path within the `pchan->pathsf` and `pchan->pathef` range. */
+static int pose_calc_paths_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-  Scene *scene = CTX_data_scene(C);
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
+  Scene *scene = cxt_data_scene(C);
 
   if (ELEM(nullptr, ob, ob->pose)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* grab baking settings from operator settings */
+  /* grab baking settings from op settings */
   {
     bAnimVizSettings *avs = &ob->pose->avs;
 
-    avs->path_type = RNA_enum_get(op->ptr, "display_type");
-    avs->path_range = RNA_enum_get(op->ptr, "range");
+    avs->path_type = api_enum_get(op->ptr, "display_type");
+    avs->path_range = api_enum_get(op->ptr, "range");
     animviz_motionpath_compute_range(ob, scene);
 
-    PointerRNA avs_ptr = RNA_pointer_create(nullptr, &RNA_AnimVizMotionPaths, avs);
-    RNA_enum_set(&avs_ptr, "bake_location", RNA_enum_get(op->ptr, "bake_location"));
+    ApiPtr avs_ptr = api_ptr_create(nullptr, &ApiAnimVizMotionPaths, avs);
+    api_enum_set(&avs_ptr, "bake_location", api_enum_get(op->ptr, "bake_location"));
   }
 
   /* set up path data for bones being calculated */
-  CTX_DATA_BEGIN (C, bPoseChannel *, pchan, selected_pose_bones_from_active_object) {
+  CXT_DATA_BEGIN (C, PoseChannel *, pchan, sel_pose_bones_from_active_ob) {
     /* verify makes sure that the selected bone has a bone with the appropriate settings */
     animviz_verify_motionpaths(op->reports, scene, ob, pchan);
   }
@@ -264,31 +262,31 @@ static int pose_calculate_paths_exec(bContext *C, wmOperator *op)
   TIMEIT_START(recalc_pose_paths);
 #endif
 
-  /* Calculate the bones that now have motion-paths. */
+  /* Calc the bones that now have motion-paths. */
   /* TODO: only make for the selected bones? */
-  ED_pose_recalculate_paths(C, scene, ob, POSE_PATH_CALC_RANGE_FULL);
+  ed_pose_recalc_paths(C, scene, ob, POSE_PATH_CALC_RANGE_FULL);
 
 #ifdef DEBUG_TIME
   TIMEIT_END(recalc_pose_paths);
 #endif
 
   /* notifiers for updates */
-  WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
+  win_ev_add_notifier(C, NC_OBJECT | ND_POSE, ob);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void POSE_OT_paths_calculate(wmOperatorType *ot)
 {
-  /* identifiers */
-  ot->name = "Calculate Bone Paths";
+  /* ids */
+  ot->name = "Calc Bone Paths";
   ot->idname = "POSE_OT_paths_calculate";
   ot->description = "Calculate paths for the selected bones";
 
-  /* api callbacks */
-  ot->invoke = pose_calculate_paths_invoke;
-  ot->exec = pose_calculate_paths_exec;
-  ot->poll = ED_operator_posemode_exclusive;
+  /* api cbs */
+  ot->invoke = pose_calc_paths_invoke;
+  ot->ex = pose_calc_paths_ex;
+  ot->poll = ed_op_posemode_exclusive;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
