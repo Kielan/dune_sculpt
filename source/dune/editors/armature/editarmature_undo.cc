@@ -2,95 +2,90 @@
 
 #include "CLG_log.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_armature.h"
+#include "types_layer.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BLI_array_utils.h"
-#include "BLI_listbase.h"
-#include "BLI_map.hh"
-#include "BLI_string.h"
+#include "lib_array_utils.h"
+#include "lib_list.h"
+#include "lib_map.hh"
+#include "lib_string.h"
 
-#include "BKE_armature.hh"
-#include "BKE_context.hh"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_object.hh"
-#include "BKE_undo_system.h"
+#include "dune_armature.hh"
+#include "dune_cxt.hh"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_ob.hh"
+#include "dune_undo_sys.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "ED_armature.hh"
-#include "ED_object.hh"
-#include "ED_undo.hh"
-#include "ED_util.hh"
+#include "ed_armature.hh"
+#include "ed_ob.hh"
+#include "ed_undo.hh"
+#include "ed_util.hh"
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-using namespace blender::animrig;
+using namespace dune::animrig;
 
-/** We only need this locally. */
+/* Only need this locally. */
 static CLG_LogRef LOG = {"ed.undo.armature"};
 
-/* Utility functions. */
+/* Util fns */
 
-/**
- * Remaps edit-bone collection membership.
+/* Remaps edit-bone collection membership.
  *
- * This is intended to be used in combination with ED_armature_ebone_listbase_copy()
- * and ANIM_bonecoll_listbase_copy() to make a full duplicate of both edit
- * bones and collections together.
- */
-static void remap_ebone_bone_collection_references(
-    ListBase /* EditBone */ *edit_bones,
-    const blender::Map<BoneCollection *, BoneCollection *> &bcoll_map)
+ * This is intended to be used in combination with ed_armature_ebone_list_copy()
+ * and anim_bonecoll_list_copy() to make a full dup of both edit
+ * bones and collections together. */
+static void remap_ebone_bone_collection_refs(
+    List /* EditBone */ *edit_bones,
+    const dune::Map<BoneCollection *, BoneCollection *> &bcoll_map)
 {
-  LISTBASE_FOREACH (EditBone *, ebone, edit_bones) {
-    LISTBASE_FOREACH (BoneCollectionReference *, bcoll_ref, &ebone->bone_collections) {
+  LIST_FOREACH (EditBone *, ebone, edit_bones) {
+    LIST_FOREACH (BoneCollectionRef *, bcoll_ref, &ebone->bone_collections) {
       bcoll_ref->bcoll = bcoll_map.lookup(bcoll_ref->bcoll);
     }
   }
 }
 
-/* -------------------------------------------------------------------- */
-/** \name Undo Conversion
- * \{ */
-
+/* Undo Conversion */
 struct UndoArmature {
   EditBone *act_edbone;
   char active_collection_name[MAX_NAME];
-  ListBase /* EditBone */ ebones;
+  List /* EditBone */ ebones;
   BoneCollection **collection_array;
   int collection_array_num;
   size_t undo_size;
 };
 
-static void undoarm_to_editarm(UndoArmature *uarm, bArmature *arm)
+static void undoarm_to_editarm(UndoArmature *uarm, Armature *arm)
 {
   /* Copy edit bones. */
-  ED_armature_ebone_listbase_free(arm->edbo, true);
-  ED_armature_ebone_listbase_copy(arm->edbo, &uarm->ebones, true);
+  ed_armature_ebone_list_free(arm->edbo, true);
+  ed_armature_ebone_list_copy(arm->edbo, &uarm->ebones, true);
 
   /* Active bone. */
   if (uarm->act_edbone) {
     EditBone *ebone;
     ebone = uarm->act_edbone;
-    arm->act_edbone = ebone->temp.ebone;
+    arm->act_edbone = ebone->tmp.ebone;
   }
   else {
     arm->act_edbone = nullptr;
   }
 
-  ED_armature_ebone_listbase_temp_clear(arm->edbo);
+  ed_armature_ebone_list_tmp_clear(arm->edbo);
 
   /* Copy bone collections. */
-  ANIM_bonecoll_array_free(&arm->collection_array, &arm->collection_array_num, true);
-  auto bcoll_map = ANIM_bonecoll_array_copy_no_membership(&arm->collection_array,
+  anim_bonecoll_array_free(&arm->collection_array, &arm->collection_array_num, true);
+  auto bcoll_map = anim_bonecoll_array_copy_no_membership(&arm->collection_array,
                                                           &arm->collection_array_num,
                                                           uarm->collection_array,
                                                           uarm->collection_array_num,
@@ -98,32 +93,32 @@ static void undoarm_to_editarm(UndoArmature *uarm, bArmature *arm)
 
   /* Always do a lookup-by-name and assignment. Even when the name of the active collection is
    * still the same, the order may have changed and thus the index needs to be updated. */
-  BoneCollection *active_bcoll = ANIM_armature_bonecoll_get_by_name(arm,
+  BoneCollection *active_bcoll = anim_armature_bonecoll_get_by_name(arm,
                                                                     uarm->active_collection_name);
-  ANIM_armature_bonecoll_active_set(arm, active_bcoll);
+  anim_armature_bonecoll_active_set(arm, active_bcoll);
 
-  remap_ebone_bone_collection_references(arm->edbo, bcoll_map);
+  remap_ebone_bone_collection_refs(arm->edbo, bcoll_map);
 
-  ANIM_armature_runtime_refresh(arm);
+  anim_armature_runtime_refresh(arm);
 }
 
-static void *undoarm_from_editarm(UndoArmature *uarm, bArmature *arm)
+static void *undoarm_from_editarm(UndoArmature *uarm, Armature *arm)
 {
-  BLI_assert(BLI_array_is_zeroed(uarm, 1));
+  lib_assert(lib_array_is_zeroed(uarm, 1));
 
   /* Copy edit bones. */
-  ED_armature_ebone_listbase_copy(&uarm->ebones, arm->edbo, false);
+  ed_armature_ebone_list_copy(&uarm->ebones, arm->edbo, false);
 
   /* Active bone. */
   if (arm->act_edbone) {
     EditBone *ebone = arm->act_edbone;
-    uarm->act_edbone = ebone->temp.ebone;
+    uarm->act_edbone = ebone->tmp.ebone;
   }
 
-  ED_armature_ebone_listbase_temp_clear(&uarm->ebones);
+  ed_armature_ebone_list_tmp_clear(&uarm->ebones);
 
   /* Copy bone collections. */
-  auto bcoll_map = ANIM_bonecoll_array_copy_no_membership(&uarm->collection_array,
+  auto bcoll_map = anim_bonecoll_array_copy_no_membership(&uarm->collection_array,
                                                           &uarm->collection_array_num,
                                                           arm->collection_array,
                                                           arm->collection_array_num,
@@ -134,14 +129,14 @@ static void *undoarm_from_editarm(UndoArmature *uarm, bArmature *arm)
   remap_ebone_bone_collection_references(&uarm->ebones, bcoll_map);
 
   /* Undo size.
-   * TODO: include size of ID-properties. */
+   * TODO: include size of Id-props. */
   uarm->undo_size = 0;
-  LISTBASE_FOREACH (EditBone *, ebone, &uarm->ebones) {
+  LIST_FOREACH (EditBone *, ebone, &uarm->ebones) {
     uarm->undo_size += sizeof(EditBone);
-    uarm->undo_size += sizeof(BoneCollectionReference) *
-                       BLI_listbase_count(&ebone->bone_collections);
+    uarm->undo_size += sizeof(BoneCollectionRef) *
+                       lib_list_count(&ebone->bone_collections);
   }
-  /* Size of the bone collections + the size of the pointers to those
+  /* Size of the bone collections + the size of the ptrs to those
    * bone collections in the bone collection array. */
   uarm->undo_size += (sizeof(BoneCollection) + sizeof(BoneCollection *)) *
                      uarm->collection_array_num;
@@ -151,18 +146,18 @@ static void *undoarm_from_editarm(UndoArmature *uarm, bArmature *arm)
 
 static void undoarm_free_data(UndoArmature *uarm)
 {
-  ED_armature_ebone_listbase_free(&uarm->ebones, false);
-  ANIM_bonecoll_array_free(&uarm->collection_array, &uarm->collection_array_num, false);
+  ed_armature_ebone_list_free(&uarm->ebones, false);
+  anim_bonecoll_array_free(&uarm->collection_array, &uarm->collection_array_num, false);
 }
 
-static Object *editarm_object_from_context(bContext *C)
+static Ob *editarm_ob_from_cxt(Cxt *C)
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *obedit = BKE_view_layer_edit_object_get(view_layer);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Ob *obedit = dune_view_layer_edit_ob_get(view_layer);
   if (obedit && obedit->type == OB_ARMATURE) {
-    bArmature *arm = static_cast<bArmature *>(obedit->data);
+    Armature *arm = static_cast<Armature *>(obedit->data);
     if (arm->edbo != nullptr) {
       return obedit;
     }
@@ -170,43 +165,37 @@ static Object *editarm_object_from_context(bContext *C)
   return nullptr;
 }
 
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Implements ED Undo System
- *
- * \note This is similar for all edit-mode types.
- * \{ */
-
-struct ArmatureUndoStep_Elem {
-  ArmatureUndoStep_Elem *next, *prev;
-  UndoRefID_Object obedit_ref;
+/* Implements ed Undo Sys
+ * This is similar for all edit-mode types. */
+struct ArmatureUndoStepElem {
+  ArmatureUndoStepElem *next, *prev;
+  UndoRefIdOb obedit_ref;
   UndoArmature data;
 };
 
 struct ArmatureUndoStep {
   UndoStep step;
-  /** See #ED_undo_object_editmode_validate_scene_from_windows code comment for details. */
-  UndoRefID_Scene scene_ref;
-  ArmatureUndoStep_Elem *elems;
+  /* See ed_undo_ob_editmode_validate_scene_from_windows code comment for details. */
+  UndoRefIdScene scene_ref;
+  ArmatureUndoStepElem *elems;
   uint elems_len;
 };
 
-static bool armature_undosys_poll(bContext *C)
+static bool armature_undosys_poll(Cxt *C)
 {
-  return editarm_object_from_context(C) != nullptr;
+  return editarm_ob_from_cxt(C) != nullptr;
 }
 
-static bool armature_undosys_step_encode(bContext *C, Main *bmain, UndoStep *us_p)
+static bool armature_undosys_step_encode(Cxt *C, Main *main, UndoStep *us_p)
 {
   ArmatureUndoStep *us = (ArmatureUndoStep *)us_p;
 
-  /* Important not to use the 3D view when getting objects because all objects
+  /* Important not to use the 3D view when getting objects because all obs
    * outside of this list will be moved out of edit-mode when reading back undo steps. */
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   ViewLayer *view_layer = cxt_data_view_layer(C);
   uint obs_len = 0;
-  Ob **obs = ed_undo_editmode_obs_from_view_layer(scene, view_layer, &objects_len);
+  Ob **obs = ed_undo_editmode_obs_from_view_layer(scene, view_layer, &obs_len);
 
   us->scene_ref.ptr = scene;
   us->elems = static_cast<ArmatureUndoStepElem *>(
@@ -234,11 +223,11 @@ static void armature_undosys_step_decode(
     Cxt *C, Main *main, UndoStep *us_p, const eUndoStepDir /*dir*/, bool /*is_final*/)
 {
   ArmatureUndoStep *us = (ArmatureUndoStep *)us_p;
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   ViewLayer *view_layer = cxt_data_view_layer(C);
 
   ed_undo_ob_editmode_validate_scene_from_windows(
-      cxt_win_manager(C), us->scene_ref.ptr, &scene, &view_layer);
+      cxt_win(C), us->scene_ref.ptr, &scene, &view_layer);
   ed_undo_ob_editmode_restore_helper(
       scene, view_layer, &us->elems[0].obedit_ref.ptr, us->elems_len, sizeof(*us->elems));
 
@@ -261,7 +250,7 @@ static void armature_undosys_step_decode(
     graph_id_tag_update(&arm->id, ID_RECALC_GEOMETRY);
   }
 
-  /* The first element is always active */
+  /* The 1st element is always active */
   ed_undo_ob_set_active_or_warn(
       scene, view_layer, us->elems[0].obedit_ref.ptr, us_p->name, &LOG);
 
@@ -278,10 +267,10 @@ static void armature_undosys_step_free(UndoStep *us_p)
   ArmatureUndoStep *us = (ArmatureUndoStep *)us_p;
 
   for (uint i = 0; i < us->elems_len; i++) {
-    ArmatureUndoStep_Elem *elem = &us->elems[i];
+    ArmatureUndoStepElem *elem = &us->elems[i];
     undoarm_free_data(&elem->data);
   }
-  MEM_freeN(us->elems);
+  mem_free(us->elems);
 }
 
 static void armature_undosys_foreach_id_ref(UndoStep *us_p,
@@ -305,11 +294,9 @@ void ed_armature_undosys_type(UndoType *ut)
   ut->step_decode = armature_undosys_step_decode;
   ut->step_free = armature_undosys_step_free;
 
-  ut->step_foreach_ID_ref = armature_undosys_foreach_ID_ref;
+  ut->step_foreach_id_ref = armature_undosys_foreach_id_ref;
 
-  ut->flags = UNDOTYPE_FLAG_NEED_CONTEXT_FOR_ENCODE;
+  ut->flags = UNDOTYPE_FLAG_NEED_CXT_FOR_ENCODE;
 
   ut->step_size = sizeof(ArmatureUndoStep);
 }
-
-/** \} */
