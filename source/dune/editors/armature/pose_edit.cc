@@ -1,55 +1,52 @@
-/** \file
- * \ingroup edarmature
- * Pose Mode API's and Operators for Pose Mode armatures.
- */
+/* Pose Mode API's and Ops for Pose Mode armatures. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_vector.h"
+#include "lib_dunelib.h"
+#include "lib_math_vector.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_visualization.h"
-#include "BKE_armature.hh"
-#include "BKE_context.hh"
-#include "BKE_deform.h"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.hh"
-#include "BKE_object.hh"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_action.h"
+#include "dune_anim_visualization.h"
+#include "dune_armature.hh"
+#include "dune_cxt.hh"
+#include "dune_deform.h"
+#include "dune_global.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_main.hh"
+#include "dune_ob.hh"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_query.hh"
+#include "graph.hh"
+#include "graph_query.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_enum_types.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_enum_types.hh"
+#include "api_prototypes.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_armature.hh"
-#include "ED_keyframing.hh"
-#include "ED_object.hh"
-#include "ED_screen.hh"
-#include "ED_view3d.hh"
+#include "ed_anim_api.hh"
+#include "ed_armature.hh"
+#include "ed_keyframing.hh"
+#include "ed_ob.hh"
+#include "ed_screen.hh"
+#include "ed_view3d.hh"
 
-#include "ANIM_bone_collections.hh"
-#include "ANIM_keyframing.hh"
+#include "anim_bone_collections.hh"
+#include "anim_keyframing.hh"
 
-#include "UI_interface.hh"
+#include "ui.hh"
 
 #include "armature_intern.h"
 
@@ -60,28 +57,27 @@
 #  include "PIL_time_utildefines.h"
 #endif
 
-Object *ED_pose_object_from_context(bContext *C)
+Ob *ed_pose_ob_from_cxt(Cxt *C)
 {
-  /* NOTE: matches logic with #ED_operator_posemode_context(). */
+  /* matches logic w ed_op_posemode_cxt(). */
+  ScrArea *area = cxt_win_area(C);
+  Ob *ob;
 
-  ScrArea *area = CTX_wm_area(C);
-  Object *ob;
-
-  /* Since this call may also be used from the buttons window,
-   * we need to check for where to get the object. */
-  if (area && area->spacetype == SPACE_PROPERTIES) {
-    ob = ED_object_context(C);
+  /* Since this call may also be used from the btns win,
+   * we need to check for where to get the ob. */
+  if (area && area->spacetype == SPACE_PROPS) {
+    ob = ed_ob_cxt(C);
   }
   else {
-    ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
+    ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
   }
 
   return ob;
 }
 
-bool ED_object_posemode_enter_ex(Main *bmain, Object *ob)
+bool ed_ob_posemode_enter_ex(Main *main, Ob *ob)
 {
-  BLI_assert(BKE_id_is_editable(bmain, &ob->id));
+  lib_assert(dune_id_is_editable(main, &ob->id));
   bool ok = false;
 
   switch (ob->type) {
@@ -89,7 +85,7 @@ bool ED_object_posemode_enter_ex(Main *bmain, Object *ob)
       ob->restore_mode = ob->mode;
       ob->mode |= OB_MODE_POSE;
       /* Inform all CoW versions that we changed the mode. */
-      DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_COPY_ON_WRITE);
+      graph_id_tag_update_ex(main, &ob->id, ID_RECALC_COPY_ON_WRITE);
       ok = true;
 
       break;
@@ -99,22 +95,22 @@ bool ED_object_posemode_enter_ex(Main *bmain, Object *ob)
 
   return ok;
 }
-bool ED_object_posemode_enter(bContext *C, Object *ob)
+bool ed_ob_posemode_enter(Cxt *C, Ob *ob)
 {
-  ReportList *reports = CTX_wm_reports(C);
-  Main *bmain = CTX_data_main(C);
-  if (!BKE_id_is_editable(bmain, &ob->id)) {
-    BKE_report(reports, RPT_WARNING, "Cannot pose libdata");
+  ReportList *reports = cxt_win_reports(C);
+  Main *main = cxt_data_main(C);
+  if (!dune_id_is_editable(main, &ob->id)) {
+    dune_report(reports, RPT_WARNING, "Cannot pose libdata");
     return false;
   }
-  bool ok = ED_object_posemode_enter_ex(bmain, ob);
+  bool ok = ed_ob_posemode_enter_ex(main, ob);
   if (ok) {
-    WM_event_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_POSE, nullptr);
+    win_ev_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_POSE, nullptr);
   }
   return ok;
 }
 
-bool ED_object_posemode_exit_ex(Main *bmain, Object *ob)
+bool ed_ob_posemode_exit_ex(Main *main, Ob *ob)
 {
   bool ok = false;
   if (ob) {
@@ -122,24 +118,22 @@ bool ED_object_posemode_exit_ex(Main *bmain, Object *ob)
     ob->mode &= ~OB_MODE_POSE;
 
     /* Inform all CoW versions that we changed the mode. */
-    DEG_id_tag_update_ex(bmain, &ob->id, ID_RECALC_COPY_ON_WRITE);
+    graph_id_tag_update_ex(main, &ob->id, ID_RECALC_COPY_ON_WRITE);
     ok = true;
   }
   return ok;
 }
-bool ED_object_posemode_exit(bContext *C, Object *ob)
+bool ed_ob_posemode_exit(Cxt *C, Ob *ob)
 {
-  Main *bmain = CTX_data_main(C);
-  bool ok = ED_object_posemode_exit_ex(bmain, ob);
+  Main *main = cxt_data_main(C);
+  bool ok = ed_ob_posemode_exit_ex(main, ob);
   if (ok) {
-    WM_event_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_OBJECT, nullptr);
+    win_ev_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_OB, nullptr);
   }
   return ok;
 }
 
-/* ********************************************** */
 /* Motion Paths */
-
 static eAnimvizCalcRange pose_path_convert_range(ePosePathCalcRange range)
 {
   switch (range) {
@@ -153,23 +147,23 @@ static eAnimvizCalcRange pose_path_convert_range(ePosePathCalcRange range)
   return ANIMVIZ_CALC_RANGE_FULL;
 }
 
-void ED_pose_recalculate_paths(bContext *C, Scene *scene, Object *ob, ePosePathCalcRange range)
+void ed_pose_recalc_paths(Cxt *C, Scene *scene, Ob *ob, ePosePathCalcRange range)
 {
-  /* Transform doesn't always have context available to do update. */
+  /* Transform doesn't always have cxt available to do update. */
   if (C == nullptr) {
     return;
   }
 
-  Main *bmain = CTX_data_main(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Main *main = cxt_data_main(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
 
-  Depsgraph *depsgraph;
-  bool free_depsgraph = false;
+  Graph *graph;
+  bool free_graph = false;
 
-  ListBase targets = {nullptr, nullptr};
+  List targets = {nullptr, nullptr};
   /* set flag to force recalc, then grab the relevant bones to target */
   ob->pose->avs.recalc |= ANIMVIZ_RECALC_PATHS;
-  animviz_get_object_motionpaths(ob, &targets);
+  animviz_get_ob_motionpaths(ob, &targets);
 
 /* recalculate paths, then free */
 #ifdef DEBUG_TIME
@@ -177,53 +171,53 @@ void ED_pose_recalculate_paths(bContext *C, Scene *scene, Object *ob, ePosePathC
 #endif
 
   /* For a single frame update it's faster to re-use existing dependency graph and avoid overhead
-   * of building all the relations and so on for a temporary one. */
+   * of building all the relations and so on for a tmp one. */
   if (range == POSE_PATH_CALC_RANGE_CURRENT_FRAME) {
-    /* NOTE: Dependency graph will be evaluated at all the frames, but we first need to access some
-     * nested pointers, like animation data. */
-    depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-    free_depsgraph = false;
+    /* Graph will be eval at all the frames, but we first need to access some
+     * nested ptrs, like anim data. */
+    graph = cxt_data_ensure_eval_graph(C);
+    free_graph = false;
   }
   else {
-    depsgraph = animviz_depsgraph_build(bmain, scene, view_layer, &targets);
-    free_depsgraph = true;
+    graph = animviz_graph_build(main, scene, view_layer, &targets);
+    free_graph = true;
   }
 
   animviz_calc_motionpaths(
-      depsgraph, bmain, scene, &targets, pose_path_convert_range(range), !free_depsgraph);
+      graph, main, scene, &targets, pose_path_convert_range(range), !free_graph);
 
 #ifdef DEBUG_TIME
   TIMEIT_END(pose_path_calc);
 #endif
 
-  BLI_freelistN(&targets);
+  lib_freelist(&targets);
 
   if (range != POSE_PATH_CALC_RANGE_CURRENT_FRAME) {
-    /* Tag armature object for copy on write - so paths will draw/redraw.
-     * For currently frame only we update evaluated object directly. */
-    DEG_id_tag_update(&ob->id, ID_RECALC_COPY_ON_WRITE);
+    /* Tag armature object for copy on write so paths will drw/redrw.
+     * For currently frame only we update eval ob directly. */
+    graph_id_tag_update(&ob->id, ID_RECALC_COPY_ON_WRITE);
   }
 
-  /* Free temporary depsgraph. */
-  if (free_depsgraph) {
-    DEG_graph_free(depsgraph);
+  /* Free tmp graph. */
+  if (free_graph) {
+    graph_free(graph);
   }
 }
 
 /* show popup to determine settings */
-static int pose_calculate_paths_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int pose_calc_paths_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
+  Object *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
 
   if (ELEM(nullptr, ob, ob->pose)) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* set default settings from existing/stored settings */
   {
-    bAnimVizSettings *avs = &ob->pose->avs;
+    AnimVizSettings *avs = &ob->pose->avs;
 
-    PointerRNA avs_ptr = RNA_pointer_create(nullptr, &RNA_AnimVizMotionPaths, avs);
+    ApiPtr avs_ptr = api_ptr_create(nullptr, &RNA_AnimVizMotionPaths, avs);
     RNA_enum_set(op->ptr, "display_type", RNA_enum_get(&avs_ptr, "type"));
     RNA_enum_set(op->ptr, "range", RNA_enum_get(&avs_ptr, "range"));
     RNA_enum_set(op->ptr, "bake_location", RNA_enum_get(&avs_ptr, "bake_location"));
