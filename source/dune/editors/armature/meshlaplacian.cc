@@ -1,42 +1,37 @@
-/** \file
- * \ingroup edarmature
- * Algorithms using the mesh laplacian.
- */
+/* Algorithms using the mesh laplacian. */
+#include "mem_guardedalloc.h"
 
-#include "MEM_guardedalloc.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "lib_map.hh"
+#include "lib_math_geom.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
+#include "lib_memarena.h"
+#include "lib_ordered_edge.hh"
+#include "lib_string.h"
 
-#include "BLI_map.hh"
-#include "BLI_math_geom.h"
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
-#include "BLI_memarena.h"
-#include "BLI_ordered_edge.hh"
-#include "BLI_string.h"
+#include "lang.h"
 
-#include "BLT_translation.h"
+#include "dune_bvhutils.hh"
+#include "dune_mesh.hh"
+#include "dune_mesh_runtime.hh"
+#include "dune_mesh_wrapper.hh"
+#include "dune_mod.hh"
 
-#include "BKE_bvhutils.hh"
-#include "BKE_mesh.hh"
-#include "BKE_mesh_runtime.hh"
-#include "BKE_mesh_wrapper.hh"
-#include "BKE_modifier.hh"
+#include "ed_armature.hh"
+#include "ed_mesh.hh"
 
-#include "ED_armature.hh"
-#include "ED_mesh.hh"
-
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
 #include "eigen_capi.h"
 
 #include "meshlaplacian.h"
 
-/* ************* XXX *************** */
 static void waitcursor(int /*val*/) {}
 static void progress_bar(int /*dummy_val*/, const char * /*dummy*/) {}
 static void start_progress_bar() {}
