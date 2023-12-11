@@ -40,12 +40,10 @@ static void error(const char *str)
 {
   printf("error: %s\n", str);
 }
-/* ************* XXX *************** */
 
-/************************** Laplacian System *****************************/
-
-struct LaplacianSystem {
-  LinearSolver *context; /* linear solver */
+/* Laplacian Sys */
+struct LaplacianSys {
+  LinearSolver *cxt; /* linear solver */
 
   int verts_num, faces_num;
 
@@ -59,11 +57,11 @@ struct LaplacianSystem {
   int storeweights;   /* store cotangent weights in fweights */
   bool variablesdone; /* variables set in linear system */
 
-  blender::Map<blender::OrderedEdge, int> edgehash; /* edge hash for construction */
+  dune::Map<dune::OrderedEdge, int> edgehash; /* edge hash for construction */
 
   struct HeatWeighting {
     const MLoopTri *mlooptri;
-    blender::Span<int> corner_verts; /* needed to find vertices by index */
+    dune::Span<int> corner_verts; /* needed to find vertices by index */
     int verts_num;
     int tris_num;
     float (*verts)[3];        /* vertex coordinates */
@@ -85,29 +83,28 @@ struct LaplacianSystem {
 /* Laplacian matrix construction */
 
 /* Computation of these weights for the laplacian is based on:
- * "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds",
+ * "Discrete Differential-Geometry Ops for Triangulated 2-Manifolds",
  * Meyer et al, 2002. Section 3.5, formula (8).
  *
  * We do it a bit different by going over faces instead of going over each
  * vertex and adjacent faces, since we don't store this adjacency. Also, the
  * formulas are tweaked a bit to work for non-manifold meshes. */
-
-static void laplacian_increase_edge_count(blender::Map<blender::OrderedEdge, int> &edgehash,
+static void laplacian_increase_edge_count(dune::Map<dune::OrderedEdge, int> &edgehash,
                                           int v1,
                                           int v2)
 {
   edgehash.add_or_modify(
-      {v1, v2}, [](int *value) { *value = 1; }, [](int *value) { (*value)++; });
+      {v1, v2}, [](int *value) { *value = 1; }, [](int *val) { (*val)++; });
 }
 
-static int laplacian_edge_count(const blender::Map<blender::OrderedEdge, int> &edgehash,
+static int laplacian_edge_count(const dune::Map<dune::OrderedEdge, int> &edgehash,
                                 int v1,
                                 int v2)
 {
   return edgehash.lookup({v1, v2});
 }
 
-static void laplacian_triangle_area(LaplacianSystem *sys, int i1, int i2, int i3)
+static void laplacian_triangle_area(LaplacianSys *sys, int i1, int i2, int i3)
 {
   float t1, t2, t3, len1, len2, len3, area;
   float *varea = sys->varea, *v1, *v2, *v3;
@@ -153,7 +150,7 @@ static void laplacian_triangle_area(LaplacianSystem *sys, int i1, int i2, int i3
   }
 }
 
-static void laplacian_triangle_weights(LaplacianSystem *sys, int f, int i1, int i2, int i3)
+static void laplacian_triangle_weights(LaplacianSys *sys, int f, int i1, int i2, int i3)
 {
   float t1, t2, t3;
   float *varea = sys->varea, *v1, *v2, *v3;
@@ -168,18 +165,18 @@ static void laplacian_triangle_weights(LaplacianSystem *sys, int f, int i1, int 
   t2 = cotangent_tri_weight_v3(v2, v3, v1) / laplacian_edge_count(sys->edgehash, i3, i1);
   t3 = cotangent_tri_weight_v3(v3, v1, v2) / laplacian_edge_count(sys->edgehash, i1, i2);
 
-  EIG_linear_solver_matrix_add(sys->context, i1, i1, (t2 + t3) * varea[i1]);
-  EIG_linear_solver_matrix_add(sys->context, i2, i2, (t1 + t3) * varea[i2]);
-  EIG_linear_solver_matrix_add(sys->context, i3, i3, (t1 + t2) * varea[i3]);
+  EIG_linear_solver_matrix_add(sys->cxt, i1, i1, (t2 + t3) * varea[i1]);
+  EIG_linear_solver_matrix_add(sys->cxt, i2, i2, (t1 + t3) * varea[i2]);
+  EIG_linear_solver_matrix_add(sys->cxt, i3, i3, (t1 + t2) * varea[i3]);
 
-  EIG_linear_solver_matrix_add(sys->context, i1, i2, -t3 * varea[i1]);
-  EIG_linear_solver_matrix_add(sys->context, i2, i1, -t3 * varea[i2]);
+  EIG_linear_solver_matrix_add(sys->cxt, i1, i2, -t3 * varea[i1]);
+  EIG_linear_solver_matrix_add(sys->cxt, i2, i1, -t3 * varea[i2]);
 
-  EIG_linear_solver_matrix_add(sys->context, i2, i3, -t1 * varea[i2]);
-  EIG_linear_solver_matrix_add(sys->context, i3, i2, -t1 * varea[i3]);
+  EIG_linear_solver_matrix_add(sys->cxt, i2, i3, -t1 * varea[i2]);
+  EIG_linear_solver_matrix_add(sys->cxt, i3, i2, -t1 * varea[i3]);
 
-  EIG_linear_solver_matrix_add(sys->context, i3, i1, -t2 * varea[i3]);
-  EIG_linear_solver_matrix_add(sys->context, i1, i3, -t2 * varea[i1]);
+  EIG_linear_solver_matrix_add(sys->cxt, i3, i1, -t2 * varea[i3]);
+  EIG_linear_solver_matrix_add(sys->cxt, i1, i3, -t2 * varea[i1]);
 
   if (sys->storeweights) {
     sys->fweights[f][0] = t1 * varea[i1];
@@ -188,18 +185,18 @@ static void laplacian_triangle_weights(LaplacianSystem *sys, int f, int i1, int 
   }
 }
 
-static LaplacianSystem *laplacian_system_construct_begin(int verts_num, int faces_num, int lsq)
+static LaplacianSys *laplacian_sys_construct_begin(int verts_num, int faces_num, int lsq)
 {
-  LaplacianSystem *sys;
+  LaplacianSys *sys;
 
-  sys = MEM_new<LaplacianSystem>(__func__);
+  sys = mem_new<LaplacianSys>(__func__);
 
   sys->verts = static_cast<float **>(
-      MEM_callocN(sizeof(float *) * verts_num, "LaplacianSystemVerts"));
+      mem_calloc(sizeof(float *) * verts_num, "LaplacianSystemVerts"));
   sys->vpinned = static_cast<char *>(
-      MEM_callocN(sizeof(char) * verts_num, "LaplacianSystemVpinned"));
+      mem_calloc(sizeof(char) * verts_num, "LaplacianSystemVpinned"));
   sys->faces = static_cast<int(*)[3]>(
-      MEM_callocN(sizeof(int[3]) * faces_num, "LaplacianSystemFaces"));
+      mem_calloc(sizeof(int[3]) * faces_num, "LaplacianSystemFaces"));
 
   sys->verts_num = 0;
   sys->faces_num = 0;
@@ -209,16 +206,16 @@ static LaplacianSystem *laplacian_system_construct_begin(int verts_num, int face
 
   /* create linear solver */
   if (lsq) {
-    sys->context = EIG_linear_least_squares_solver_new(0, verts_num, 1);
+    sys->cxt = EIG_linear_least_squares_solver_new(0, verts_num, 1);
   }
   else {
-    sys->context = EIG_linear_solver_new(0, verts_num, 1);
+    sys->cxt = EIG_linear_solver_new(0, verts_num, 1);
   }
 
   return sys;
 }
 
-void laplacian_add_vertex(LaplacianSystem *sys, float *co, int pinned)
+void laplacian_add_vertex(LaplacianSys *sys, float *co, int pinned)
 {
   sys->verts[sys->verts_num] = co;
   sys->vpinned[sys->verts_num] = pinned;
@@ -233,7 +230,7 @@ void laplacian_add_triangle(LaplacianSystem *sys, int v1, int v2, int v3)
   sys->faces_num++;
 }
 
-static void laplacian_system_construct_end(LaplacianSystem *sys)
+static void laplacian_sys_construct_end(LaplacianSys *sys)
 {
   int(*face)[3];
   int a, verts_num = sys->verts_num, faces_num = sys->faces_num;
@@ -241,7 +238,7 @@ static void laplacian_system_construct_end(LaplacianSystem *sys)
   laplacian_begin_solve(sys, 0);
 
   sys->varea = static_cast<float *>(
-      MEM_callocN(sizeof(float) * verts_num, "LaplacianSystemVarea"));
+      mem_calloc(sizeof(float) * verts_num, "LaplacianSysVarea"));
 
   sys->edgehash.reserve(sys->faces_num);
   for (a = 0, face = sys->faces; a < sys->faces_num; a++, face++) {
@@ -268,48 +265,48 @@ static void laplacian_system_construct_end(LaplacianSystem *sys)
 
     /* for heat weighting */
     if (sys->heat.H) {
-      EIG_linear_solver_matrix_add(sys->context, a, a, sys->heat.H[a]);
+      EIG_linear_solver_matrix_add(sys->cxt, a, a, sys->heat.H[a]);
     }
   }
 
   if (sys->storeweights) {
     sys->fweights = static_cast<float(*)[3]>(
-        MEM_callocN(sizeof(float[3]) * faces_num, "LaplacianFWeight"));
+        mem_calloc(sizeof(float[3]) * faces_num, "LaplacianFWeight"));
   }
 
   for (a = 0, face = sys->faces; a < faces_num; a++, face++) {
     laplacian_triangle_weights(sys, a, (*face)[0], (*face)[1], (*face)[2]);
   }
 
-  MEM_freeN(sys->faces);
+  mem_free(sys->faces);
   sys->faces = nullptr;
 
   MEM_SAFE_FREE(sys->varea);
 }
 
-static void laplacian_system_delete(LaplacianSystem *sys)
+static void laplacian_sys_delete(LaplacianSys *sys)
 {
   if (sys->verts) {
-    MEM_freeN(sys->verts);
+    mem_free(sys->verts);
   }
   if (sys->varea) {
-    MEM_freeN(sys->varea);
+    mem_free(sys->varea);
   }
   if (sys->vpinned) {
-    MEM_freeN(sys->vpinned);
+    mem_free(sys->vpinned);
   }
   if (sys->faces) {
-    MEM_freeN(sys->faces);
+    mem_free(sys->faces);
   }
   if (sys->fweights) {
-    MEM_freeN(sys->fweights);
+    mem_free(sys->fweights);
   }
 
-  EIG_linear_solver_delete(sys->context);
-  MEM_delete(sys);
+  EIG_linear_solver_delete(sys->cxt);
+  mem_delete(sys);
 }
 
-void laplacian_begin_solve(LaplacianSystem *sys, int index)
+void laplacian_begin_solve(LaplacianSys *sys, int index)
 {
   int a;
 
@@ -317,8 +314,8 @@ void laplacian_begin_solve(LaplacianSystem *sys, int index)
     if (index >= 0) {
       for (a = 0; a < sys->verts_num; a++) {
         if (sys->vpinned[a]) {
-          EIG_linear_solver_variable_set(sys->context, 0, a, sys->verts[a][index]);
-          EIG_linear_solver_variable_lock(sys->context, a);
+          EIG_linear_solver_variable_set(sys->cxt, 0, a, sys->verts[a][index]);
+          EIG_linear_solver_variable_lock(sys->cxt, a);
         }
       }
     }
@@ -327,27 +324,27 @@ void laplacian_begin_solve(LaplacianSystem *sys, int index)
   }
 }
 
-void laplacian_add_right_hand_side(LaplacianSystem *sys, int v, float value)
+void laplacian_add_right_hand_side(LaplacianSys *sys, int v, float val)
 {
-  EIG_linear_solver_right_hand_side_add(sys->context, 0, v, value);
+  EIG_linear_solver_right_hand_side_add(sys->cxt, 0, v, value);
 }
 
-int laplacian_system_solve(LaplacianSystem *sys)
+int laplacian_sys_solve(LaplacianSys *sys)
 {
   sys->variablesdone = false;
 
-  // EIG_linear_solver_print_matrix(sys->context, );
+  // EIG_linear_solver_print_matrix(sys->cxt, );
 
-  return EIG_linear_solver_solve(sys->context);
+  return EIG_linear_solver_solve(sys->cxt);
 }
 
-float laplacian_system_get_solution(LaplacianSystem *sys, int v)
+float laplacian_sys_get_solution(LaplacianSys *sys, int v)
 {
-  return EIG_linear_solver_variable_get(sys->context, 0, v);
+  return EIG_linear_solver_var_get(sys->cxt, 0, v);
 }
 
-/************************* Heat Bone Weighting ******************************/
-/* From "Automatic Rigging and Animation of 3D Characters"
+/* Heat Bone Weighting */
+/* From "Automatic Rig and Anim of 3D Characters
  * Ilya Baran and Jovan Popovic, SIGGRAPH 2007 */
 
 #define C_WEIGHT 1.0f
@@ -355,17 +352,17 @@ float laplacian_system_get_solution(LaplacianSystem *sys, int v)
 #define WEIGHT_LIMIT_END 0.025f
 #define DISTANCE_EPSILON 1e-4f
 
-struct BVHCallbackUserData {
+struct BVHCbUserData {
   float start[3];
   float vec[3];
-  LaplacianSystem *sys;
+  LaplacianSys *sys;
 };
 
-static void bvh_callback(void *userdata, int index, const BVHTreeRay *ray, BVHTreeRayHit *hit)
+static void bvh_cb(void *userdata, int index, const BVHTreeRay *ray, BVHTreeRayHit *hit)
 {
-  BVHCallbackUserData *data = (BVHCallbackUserData *)userdata;
+  BVHCbUserData *data = (BVHCbUserData *)userdata;
   const MLoopTri *lt = &data->sys->heat.mlooptri[index];
-  const blender::Span<int> corner_verts = data->sys->heat.corner_verts;
+  const dune::Span<int> corner_verts = data->sys->heat.corner_verts;
   float(*verts)[3] = data->sys->heat.verts;
   const float *vtri_co[3];
   float dist_test;
@@ -394,18 +391,18 @@ static void bvh_callback(void *userdata, int index, const BVHTreeRay *ray, BVHTr
 }
 
 /* Ray-tracing for vertex to bone/vertex visibility. */
-static void heat_ray_tree_create(LaplacianSystem *sys)
+static void heat_ray_tree_create(LaplacianSys *sys)
 {
   const MLoopTri *looptri = sys->heat.mlooptri;
-  const blender::Span<int> corner_verts = sys->heat.corner_verts;
+  const dune::Span<int> corner_verts = sys->heat.corner_verts;
   float(*verts)[3] = sys->heat.verts;
   int tris_num = sys->heat.tris_num;
   int verts_num = sys->heat.verts_num;
   int a;
 
-  sys->heat.bvhtree = BLI_bvhtree_new(tris_num, 0.0f, 4, 6);
+  sys->heat.bvhtree = lib_bvhtree_new(tris_num, 0.0f, 4, 6);
   sys->heat.vltree = static_cast<const MLoopTri **>(
-      MEM_callocN(sizeof(MLoopTri *) * verts_num, "HeatVFaces"));
+      mem_calloc(sizeof(MLoopTri *) * verts_num, "HeatVFaces"));
 
   for (a = 0; a < tris_num; a++) {
     const MLoopTri *lt = &looptri[a];
@@ -421,21 +418,21 @@ static void heat_ray_tree_create(LaplacianSystem *sys)
     minmax_v3v3_v3(bb, bb + 3, verts[vtri[1]]);
     minmax_v3v3_v3(bb, bb + 3, verts[vtri[2]]);
 
-    BLI_bvhtree_insert(sys->heat.bvhtree, a, bb, 2);
+    lib_bvhtree_insert(sys->heat.bvhtree, a, bb, 2);
 
-    /* Setup inverse pointers to use on isect.orig */
+    /* Setup inverse ptrs to use on isect.orig */
     sys->heat.vltree[vtri[0]] = lt;
     sys->heat.vltree[vtri[1]] = lt;
     sys->heat.vltree[vtri[2]] = lt;
   }
 
-  BLI_bvhtree_balance(sys->heat.bvhtree);
+  lib_bvhtree_balance(sys->heat.bvhtree);
 }
 
-static int heat_ray_source_visible(LaplacianSystem *sys, int vertex, int source)
+static int heat_ray_src_visible(LaplacianSys *sys, int vertex, int src)
 {
   BVHTreeRayHit hit;
-  BVHCallbackUserData data;
+  BVHCbUserData data;
   const MLoopTri *lt;
   float end[3];
   int visible;
@@ -459,19 +456,19 @@ static int heat_ray_source_visible(LaplacianSystem *sys, int vertex, int source)
   hit.dist = normalize_v3(data.vec);
 
   visible =
-      BLI_bvhtree_ray_cast(
-          sys->heat.bvhtree, data.start, data.vec, 0.0f, &hit, bvh_callback, (void *)&data) == -1;
+      lib_bvhtree_ray_cast(
+          sys->heat.bvhtree, data.start, data.vec, 0.0f, &hit, bvh_cb, (void *)&data) == -1;
 
   return visible;
 }
 
-static float heat_source_distance(LaplacianSystem *sys, int vertex, int source)
+static float heat_src_distance(LaplacianSys *sys, int vertex, int src)
 {
   float closest[3], d[3], dist, cosine;
 
   /* compute Euclidean distance */
   closest_to_line_segment_v3(
-      closest, sys->heat.verts[vertex], sys->heat.root[source], sys->heat.tip[source]);
+      closest, sys->heat.verts[vertex], sys->heat.root[src], sys->heat.tip[src]);
 
   sub_v3_v3v3(d, sys->heat.verts[vertex], closest);
   dist = normalize_v3(d);
@@ -482,14 +479,14 @@ static float heat_source_distance(LaplacianSystem *sys, int vertex, int source)
   return dist / (0.5f * (cosine + 1.001f));
 }
 
-static int heat_source_closest(LaplacianSystem *sys, int vertex, int source)
+static int heat_src_closest(LaplacianSys *sys, int vertex, int src)
 {
   float dist;
 
-  dist = heat_source_distance(sys, vertex, source);
+  dist = heat_src_distance(sys, vertex, src);
 
   if (dist <= sys->heat.mindist[vertex] * (1.0f + DISTANCE_EPSILON)) {
-    if (heat_ray_source_visible(sys, vertex, source)) {
+    if (heat_ray_source_visible(sys, vertex, src)) {
       return 1;
     }
   }
@@ -497,7 +494,7 @@ static int heat_source_closest(LaplacianSystem *sys, int vertex, int source)
   return 0;
 }
 
-static void heat_set_H(LaplacianSystem *sys, int vertex)
+static void heat_set_H(LaplacianSys *sys, int vertex)
 {
   float dist, mindist, h;
   int j, numclosest = 0;
