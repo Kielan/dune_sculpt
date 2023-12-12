@@ -244,15 +244,15 @@ bool ed_armature_pose_sel_pick_bone(const Scene *scene,
 }
 
 bool ed_armature_pose_sel_pick_with_buffer(const Scene *scene,
-                                              ViewLayer *view_layer,
-                                              View3D *v3d,
-                                              Base *base,
-                                              const GPUSelectResult *hit_results,
-                                              const int hits,
-                                              const SelectPick_Params *params,
-                                              bool do_nearest)
+                                           ViewLayer *view_layer,
+                                           View3D *v3d,
+                                           Base *base,
+                                           const GPUSelResult *hit_results,
+                                           const int hits,
+                                           const SelPickParams *params,
+                                           bool do_nearest)
 {
-  Object *ob = base->object;
+  Object *ob = base->ob;
   Bone *nearBone;
 
   if (!ob || !ob->pose) {
@@ -325,13 +325,13 @@ bool ed_pose_desel_all(Ob *ob, int sel_mode, const bool ignore_visibility)
     return false;
   }
 
-  /* Determine if we're selecting or deselecting */
+  /* Determine if mode sel or desel */
   if (sel_mode == SEL_TOGGLE) {
-    sel_mode = SEL_SELECT;
-    LIST_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
+    sel_mode = SEL_SEL;
+    LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
       if (ignore_visibility || PBONE_VISIBLE(arm, pchan->bone)) {
-        if (pchan->bone->flag & BONE_SELECTED) {
-          select_mode = SEL_DESELECT;
+        if (pchan->bone->flag & BONE_SEL) {
+          sel_mode = SEL_DESEL;
           break;
         }
       }
@@ -340,23 +340,23 @@ bool ed_pose_desel_all(Ob *ob, int sel_mode, const bool ignore_visibility)
 
   /* Set the flags accordingly */
   bool changed = false;
-  LISTBASE_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
-    /* ignore the pchan if it isn't visible or if its selection cannot be changed */
+  LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
+    /* ignore the pchan if it isn't visible or if its sel cannot be changed */
     if (ignore_visibility || PBONE_VISIBLE(arm, pchan->bone)) {
       int flag_prev = pchan->bone->flag;
-      pose_do_bone_select(pchan, select_mode);
+      pose_do_bone_sel(pchan, select_mode);
       changed = (changed || flag_prev != pchan->bone->flag);
     }
   }
   return changed;
 }
 
-static bool ed_pose_is_any_selected(Object *ob, bool ignore_visibility)
+static bool ed_pose_is_any_selected(Ob *ob, bool ignore_visibility)
 {
-  bArmature *arm = static_cast<bArmature *>(ob->data);
-  LISTBASE_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
+  Armature *arm = static_cast<Armature *>(ob->data);
+  LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
     if (ignore_visibility || PBONE_VISIBLE(arm, pchan->bone)) {
-      if (pchan->bone->flag & BONE_SELECTED) {
+      if (pchan->bone->flag & BONE_SEL) {
         return true;
       }
     }
@@ -364,50 +364,50 @@ static bool ed_pose_is_any_selected(Object *ob, bool ignore_visibility)
   return false;
 }
 
-static bool ed_pose_is_any_selected_multi(Base **bases, uint bases_len, bool ignore_visibility)
+static bool ed_pose_is_any_sel_multi(Base **bases, uint bases_len, bool ignore_visibility)
 {
   for (uint base_index = 0; base_index < bases_len; base_index++) {
-    Object *ob_iter = bases[base_index]->object;
-    if (ed_pose_is_any_selected(ob_iter, ignore_visibility)) {
+    Ob *ob_iter = bases[base_index]->ob;
+    if (ed_pose_is_any_sel(ob_iter, ignore_visibility)) {
       return true;
     }
   }
   return false;
 }
 
-bool ED_pose_deselect_all_multi_ex(Base **bases,
-                                   uint bases_len,
-                                   int select_mode,
-                                   const bool ignore_visibility)
+bool ed_pose_desel_all_multi_ex(Base **bases,
+                                uint bases_len,
+                                int sel_mode,
+                                const bool ignore_visibility)
 {
-  if (select_mode == SEL_TOGGLE) {
-    select_mode = ed_pose_is_any_selected_multi(bases, bases_len, ignore_visibility) ?
-                      SEL_DESELECT :
-                      SEL_SELECT;
+  if (sel_mode == SEL_TOGGLE) {
+    sel_mode = ed_pose_is_any_sel_multi(bases, bases_len, ignore_visibility) ?
+                      SEL_DESEL :
+                      SEL_SEL;
   }
 
   bool changed_multi = false;
   for (uint base_index = 0; base_index < bases_len; base_index++) {
-    Object *ob_iter = bases[base_index]->object;
-    if (ED_pose_deselect_all(ob_iter, select_mode, ignore_visibility)) {
-      ED_pose_bone_select_tag_update(ob_iter);
+    Ob *ob_iter = bases[base_index]->ob;
+    if (ed_pose_desel_all(ob_iter, sel_mode, ignore_visibility)) {
+      ed_pose_bone_sel_tag_update(ob_iter);
       changed_multi = true;
     }
   }
   return changed_multi;
 }
 
-bool ED_pose_deselect_all_multi(bContext *C, int select_mode, const bool ignore_visibility)
+bool ed_pose_desel_all_multi(Cxt *C, int sel_mode, const bool ignore_visibility)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  ViewContext vc = ED_view3d_viewcontext_init(C, depsgraph);
+  Graph *graph = cxt_data_ensure_eval_graph(C);
+  ViewCxt vc = ed_view3d_viewcxt_init(C, graph);
   uint bases_len = 0;
 
-  Base **bases = BKE_object_pose_base_array_get_unique(
+  Base **bases = dune_ob_pose_base_array_get_unique(
       vc.scene, vc.view_layer, vc.v3d, &bases_len);
-  bool changed_multi = ED_pose_deselect_all_multi_ex(
-      bases, bases_len, select_mode, ignore_visibility);
-  MEM_freeN(bases);
+  bool changed_multi = ed_pose_desel_all_multi_ex(
+      bases, bases_len, sel_mode, ignore_visibility);
+  mem_free(bases);
   return changed_multi;
 }
 
