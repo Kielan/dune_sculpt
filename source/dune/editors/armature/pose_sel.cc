@@ -411,9 +411,9 @@ bool ed_pose_desel_all_multi(Cxt *C, int sel_mode, const bool ignore_visibility)
   return changed_multi;
 }
 
-/* ***************** Selections ********************** */
+/* Selections */
 
-static void selectconnected_posebonechildren(Object *ob, Bone *bone, int extend)
+static void selconnected_posebonechildren(Ob *ob, Bone *bone, int extend)
 {
   /* stop when unconnected child is encountered, or when unselectable bone is encountered */
   if (!(bone->flag & BONE_CONNECTED) || (bone->flag & BONE_UNSELECTABLE)) {
@@ -421,42 +421,42 @@ static void selectconnected_posebonechildren(Object *ob, Bone *bone, int extend)
   }
 
   if (extend) {
-    bone->flag &= ~BONE_SELECTED;
+    bone->flag &= ~BONE_SEL;
   }
   else {
-    bone->flag |= BONE_SELECTED;
+    bone->flag |= BONE_SEL;
   }
 
-  LISTBASE_FOREACH (Bone *, curBone, &bone->childbase) {
-    selectconnected_posebonechildren(ob, curBone, extend);
+  LIST_FOREACH (Bone *, curBone, &bone->childbase) {
+    selconnected_posebonechildren(ob, curBone, extend);
   }
 }
 
-/* within active object context */
-/* previously known as "selectconnected_posearmature" */
-static int pose_select_connected_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* within active ob cxt */
+/* previously known as "selconnected_posearmature" */
+static int pose_sel_connected_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
   Bone *bone, *curBone, *next = nullptr;
-  const bool extend = RNA_boolean_get(op->ptr, "extend");
+  const bool extend = api_bool_get(op->ptr, "extend");
 
-  view3d_operator_needs_opengl(C);
+  view3d_op_needs_opengl(C);
 
   Base *base = nullptr;
-  bone = ED_armature_pick_bone(C, event->mval, !extend, &base);
+  bone = ed_armature_pick_bone(C, ev->mval, !extend, &base);
 
   if (!bone) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  /* Select parents */
+  /* Sel parents */
   for (curBone = bone; curBone; curBone = next) {
-    /* ignore bone if cannot be selected */
+    /* ignore bone if cannot be sel */
     if ((curBone->flag & BONE_UNSELECTABLE) == 0) {
       if (extend) {
-        curBone->flag &= ~BONE_SELECTED;
+        curBone->flag &= ~BONE_SEL;
       }
       else {
-        curBone->flag |= BONE_SELECTED;
+        curBone->flag |= BONE_SEL;
       }
 
       if (curBone->flag & BONE_CONNECTED) {
@@ -471,33 +471,33 @@ static int pose_select_connected_invoke(bContext *C, wmOperator *op, const wmEve
     }
   }
 
-  /* Select children */
-  LISTBASE_FOREACH (Bone *, curBone, &bone->childbase) {
-    selectconnected_posebonechildren(base->object, curBone, extend);
+  /* Sel children */
+  LIST_FOREACH (Bone *, curBone, &bone->childbase) {
+    selconnected_posebonechildren(base->ob, curBone, extend);
   }
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  ED_pose_bone_select_tag_update(base->object);
+  ed_pose_bone_sel_tag_update(base->ob);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static bool pose_select_linked_pick_poll(bContext *C)
+static bool pose_sel_linked_pick_poll(Cxt *C)
 {
-  return (ED_operator_view3d_active(C) && ED_operator_posemode(C));
+  return (ed_op_view3d_active(C) && ed_op_posemode(C));
 }
 
-void POSE_OT_select_linked_pick(wmOperatorType *ot)
+void POSE_OT_sel_linked_pick(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* identifiers */
+  /* ids */
   ot->name = "Select Connected";
-  ot->idname = "POSE_OT_select_linked_pick";
-  ot->description = "Select bones linked by parent/child connections under the mouse cursor";
+  ot->idname = "POSE_OT_sel_linked_pick";
+  ot->description = "Sel bones linked by parent/child connections under the mouse cursor";
 
-  /* callbacks */
+  /* cbs */
   /* leave 'exec' unset */
   ot->invoke = pose_select_connected_invoke;
   ot->poll = pose_select_linked_pick_poll;
@@ -506,7 +506,7 @@ void POSE_OT_select_linked_pick(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  prop = RNA_def_boolean(ot->srna,
+  prop = RNA_def_bool(ot->sapi,
                          "extend",
                          false,
                          "Extend",
