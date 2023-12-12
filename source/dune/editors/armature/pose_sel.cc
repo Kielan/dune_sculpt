@@ -145,7 +145,7 @@ bool ed_armature_pose_sel_pick_bone(const Scene *scene,
       /* Don't use 'dune_ob_pose_base_array_get_unique'
        * bc we may be sel from object mode. */
       FOREACH_VISIBLE_BASE_BEGIN (scene, view_layer, v3d, base_iter) {
-        Ob *ob_iter = base_iter->object;
+        Ob *ob_iter = base_iter->ob;
         if ((ob_iter->type == OB_ARMATURE) && (ob_iter->mode & OB_MODE_POSE)) {
           if (ed_pose_desel_all(ob_iter, SEL_DESEL, true)) {
             ed_pose_bone_sel_tag_update(ob_iter);
@@ -243,7 +243,7 @@ bool ed_armature_pose_sel_pick_bone(const Scene *scene,
   return changed || found;
 }
 
-bool ed_armature_pose_sel_pick_with_buffer(const Scene *scene,
+bool ed_armature_pose_sel_pick_w_buf(const Scene *scene,
                                            ViewLayer *view_layer,
                                            View3D *v3d,
                                            Base *base,
@@ -283,12 +283,12 @@ void ed_armature_pose_sel_in_wpaint_mode(const Scene *scene,
     for (; md; md = md->next) {
       if (md->type == ePenModTypeArmature) {
         ArmaturePenModData *agmd = (ArmaturePenModData *)md;
-        Object *ob_arm = agmd->object;
+        Ob *ob_arm = agmd->ob;
         if (ob_arm != nullptr) {
-          Base *base_arm = BKE_view_layer_base_find(view_layer, ob_arm);
+          Base *base_arm = dune_view_layer_base_find(view_layer, ob_arm);
           if ((base_arm != nullptr) && (base_arm != base_sel) &&
-              (base_arm->flag & BASE_SELECTED)) {
-            ED_object_base_select(base_arm, BA_DESEL);
+              (base_arm->flag & BASE_SEL)) {
+            ed_ob_base_sel(base_arm, BA_DESEL);
           }
         }
       }
@@ -298,7 +298,7 @@ void ed_armature_pose_sel_in_wpaint_mode(const Scene *scene,
     VirtualModData virtual_mod_data;
     ModData *md = dune_mods_get_virtual_modlist(ob_active, &virtual_mod_data);
     for (; md; md = md->next) {
-      if (md->type == eModType_Armature) {
+      if (md->type == eModTypeArmature) {
         ArmatureModData *amd = (ArmatureModData *)md;
         Ob *ob_arm = amd->ob;
         if (ob_arm != nullptr) {
@@ -412,7 +412,6 @@ bool ed_pose_desel_all_multi(Cxt *C, int sel_mode, const bool ignore_visibility)
 }
 
 /* Selections */
-
 static void selconnected_posebonechildren(Ob *ob, Bone *bone, int extend)
 {
   /* stop when unconnected child is encountered, or when unselectable bone is encountered */
@@ -493,42 +492,42 @@ void POSE_OT_sel_linked_pick(WinOpType *ot)
   ApiProp *prop;
 
   /* ids */
-  ot->name = "Select Connected";
+  ot->name = "Sel Connected";
   ot->idname = "POSE_OT_sel_linked_pick";
   ot->description = "Sel bones linked by parent/child connections under the mouse cursor";
 
   /* cbs */
-  /* leave 'exec' unset */
-  ot->invoke = pose_select_connected_invoke;
-  ot->poll = pose_select_linked_pick_poll;
+  /* leave 'ex' unset */
+  ot->invoke = pose_sel_connected_invoke;
+  ot->poll = pose_sel_linked_pick_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  prop = RNA_def_bool(ot->sapi,
+  prop = api_def_bool(ot->sapi,
                          "extend",
                          false,
                          "Extend",
-                         "Extend selection instead of deselecting everything first");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+                         "Extend sel instead of desel everything first");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-static int pose_select_linked_exec(bContext *C, wmOperator * /*op*/)
+static int pose_sel_linked_ex(Cxt *C, WinOp * /*op*/)
 {
   Bone *curBone, *next = nullptr;
 
-  CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, visible_pose_bones, Object *, ob) {
-    if ((pchan->bone->flag & BONE_SELECTED) == 0) {
+  CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, visible_pose_bones, Ob *, ob) {
+    if ((pchan->bone->flag & BONE_SEL) == 0) {
       continue;
     }
 
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+    Armature *arm = static_cast<Armature *>(ob->data);
 
     /* Select parents */
     for (curBone = pchan->bone; curBone; curBone = next) {
       if (PBONE_SELECTABLE(arm, curBone)) {
-        curBone->flag |= BONE_SELECTED;
+        curBone->flag |= BONE_SEL;
 
         if (curBone->flag & BONE_CONNECTED) {
           next = curBone->parent;
@@ -542,79 +541,77 @@ static int pose_select_linked_exec(bContext *C, wmOperator * /*op*/)
       }
     }
 
-    /* Select children */
-    LISTBASE_FOREACH (Bone *, curBone, &pchan->bone->childbase) {
-      selectconnected_posebonechildren(ob, curBone, false);
+    /* Sel children */
+    LIST_FOREACH (Bone *, curBone, &pchan->bone->childbase) {
+      selconnected_posebonechildren(ob, curBone, false);
     }
-    ED_pose_bone_select_tag_update(ob);
+    ed_pose_bone_sel_tag_update(ob);
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_select_linked(wmOperatorType *ot)
+void POSE_OT_sel_linked(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Select Connected";
-  ot->idname = "POSE_OT_select_linked";
-  ot->description = "Select all bones linked by parent/child connections to the current selection";
+  ot->idname = "POSE_OT_sel_linked";
+  ot->description = "Sel all bones linked by parent/child connections to the current sel";
 
-  /* callbacks */
-  ot->exec = pose_select_linked_exec;
-  ot->poll = ED_operator_posemode;
+  /* cbs */
+  ot->ex = pose_sel_linked_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/* -------------------------------------- */
-
-static int pose_de_select_all_exec(bContext *C, wmOperator *op)
+static int pose_de_sel_all_ex(Cxt *C, WinOp *op)
 {
-  int action = RNA_enum_get(op->ptr, "action");
+  int action = api_enum_get(op->ptr, "action");
 
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
   int multipaint = scene->toolsettings->multipaint;
 
   if (action == SEL_TOGGLE) {
-    action = CTX_DATA_COUNT(C, selected_pose_bones) ? SEL_DESELECT : SEL_SELECT;
+    action = CXT_DATA_COUNT(C, sel_pose_bones) ? SEL_DESEL : SEL_SEL;
   }
 
-  Object *ob_prev = nullptr;
+  Ob *ob_prev = nullptr;
 
   /* Set the flags. */
-  CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, visible_pose_bones, Object *, ob) {
-    bArmature *arm = static_cast<bArmature *>(ob->data);
-    pose_do_bone_select(pchan, action);
+  CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, visible_pose_bones, Ob *, ob) {
+    Armature *arm = static_cast<Armature *>(ob->data);
+    pose_do_bone_sel(pchan, action);
 
     if (ob_prev != ob) {
-      /* Weight-paint or mask modifiers need depsgraph updates. */
+      /* Weight-paint or mask mods need graph updates. */
       if (multipaint || (arm->flag & ARM_HAS_VIZ_DEPS)) {
-        DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+        graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
       }
-      /* need to tag armature for cow updates, or else selection doesn't update */
-      DEG_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
+      /* need to tag armature for cow updates, or else sel doesn't update */
+      graph_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
       ob_prev = ob;
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, nullptr);
+  win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_select_all(wmOperatorType *ot)
+void POSE_OT_sel_all(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "(De)select All";
-  ot->idname = "POSE_OT_select_all";
-  ot->description = "Toggle selection status of all bones";
+  /* ids */
+  ot->name = "(De)sel All";
+  ot->idname = "POSE_OT_sel_all";
+  ot->description = "Toggle sel status of all bones";
 
   /* api callbacks */
   ot->exec = pose_de_select_all_exec;
@@ -623,140 +620,134 @@ void POSE_OT_select_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  WM_operator_properties_select_all(ot);
+  win_op_props_sel_all(ot);
 }
 
-/* -------------------------------------- */
-
-static int pose_select_parent_exec(bContext *C, wmOperator * /*op*/)
+static int pose_sel_parent_ex(Cxt *C, WinOp * /*op*/)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-  bArmature *arm = (bArmature *)ob->data;
-  bPoseChannel *pchan, *parent;
+  Object *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
+  Armature *arm = (Armature *)ob->data;
+  PoseChannel *pchan, *parent;
 
   /* Determine if there is an active bone */
-  pchan = CTX_data_active_pose_bone(C);
+  pchan = cxt_data_active_pose_bone(C);
   if (pchan) {
     parent = pchan->parent;
     if ((parent) && !(parent->bone->flag & (BONE_HIDDEN_P | BONE_UNSELECTABLE))) {
-      parent->bone->flag |= BONE_SELECTED;
+      parent->bone->flag |= BONE_SEL;
       arm->act_bone = parent->bone;
     }
     else {
-      return OPERATOR_CANCELLED;
+      return OP_CANCELLED;
     }
   }
   else {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  ED_pose_bone_select_tag_update(ob);
-  return OPERATOR_FINISHED;
+  ed_pose_bone_sel_tag_update(ob);
+  return OP_FINISHED;
 }
 
-void POSE_OT_select_parent(wmOperatorType *ot)
+void POSE_OT_sel_parent(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Select Parent Bone";
-  ot->idname = "POSE_OT_select_parent";
-  ot->description = "Select bones that are parents of the currently selected bones";
+  /* ids */
+  ot->name = "Sel Parent Bone";
+  ot->idname = "POSE_OT_sel_parent";
+  ot->description = "Sel bones that are parents of the currently sel bones";
 
-  /* api callbacks */
-  ot->exec = pose_select_parent_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_sel_parent_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/* -------------------------------------- */
-
-static int pose_select_constraint_target_exec(bContext *C, wmOperator * /*op*/)
+static int pose_sel_constraint_target_ex(Cxt *C, WinOp * /*op*/)
 {
   int found = 0;
 
-  CTX_DATA_BEGIN (C, bPoseChannel *, pchan, visible_pose_bones) {
-    if (pchan->bone->flag & BONE_SELECTED) {
-      LISTBASE_FOREACH (bConstraint *, con, &pchan->constraints) {
-        ListBase targets = {nullptr, nullptr};
-        if (BKE_constraint_targets_get(con, &targets)) {
-          LISTBASE_FOREACH (bConstraintTarget *, ct, &targets) {
-            Object *ob = ct->tar;
+  CXT_DATA_BEGIN (C, PoseChannel *, pchan, visible_pose_bones) {
+    if (pchan->bone->flag & BONE_SEL) {
+      LIST_FOREACH (Constraint *, con, &pchan->constraints) {
+        List targets = {nullptr, nullptr};
+        if (dune_constraint_targets_get(con, &targets)) {
+          LIST_FOREACH (ConstraintTarget *, ct, &targets) {
+            Ob *ob = ct->tar;
 
-            /* Any armature that is also in pose mode should be selected. */
+            /* Any armature that is also in pose mode should be sel. */
             if ((ct->subtarget[0] != '\0') && (ob != nullptr) && (ob->type == OB_ARMATURE) &&
                 (ob->mode == OB_MODE_POSE))
             {
-              bPoseChannel *pchanc = BKE_pose_channel_find_name(ob->pose, ct->subtarget);
+              PoseChannel *pchanc = dune_pose_channel_find_name(ob->pose, ct->subtarget);
               if ((pchanc) && !(pchanc->bone->flag & BONE_UNSELECTABLE)) {
-                pchanc->bone->flag |= BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL;
-                ED_pose_bone_select_tag_update(ob);
+                pchanc->bone->flag |= BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL;
+                ed_pose_bone_sel_tag_update(ob);
                 found = 1;
               }
             }
           }
 
-          BKE_constraint_targets_flush(con, &targets, true);
+          dune_constraint_targets_flush(con, &targets, true);
         }
       }
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
   if (!found) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_select_constraint_target(wmOperatorType *ot)
+void POSE_OT_sel_constraint_target(WinOpType *ot)
 {
-  /* identifiers */
-  ot->name = "Select Constraint Target";
-  ot->idname = "POSE_OT_select_constraint_target";
-  ot->description = "Select bones used as targets for the currently selected bones";
+  /* ids */
+  ot->name = "Sel Constraint Target";
+  ot->idname = "POSE_OT_sel_constraint_target";
+  ot->description = "Sel bones used as targets for the currently selected bones";
 
-  /* api callbacks */
-  ot->exec = pose_select_constraint_target_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_sel_constraint_target_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/* -------------------------------------- */
-
-/* No need to convert to multi-objects. Just like we keep the non-active bones
- * selected we then keep the non-active objects untouched (selected/unselected). */
-static int pose_select_hierarchy_exec(bContext *C, wmOperator *op)
+/* No need to convert to multi-obs. Just like we keep the non-active bones
+ * sele we then keep the non-active obs untouched (sel/unsel). */
+static int pose_sel_hierarchy_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-  bArmature *arm = static_cast<bArmature *>(ob->data);
-  bPoseChannel *pchan_act;
-  int direction = RNA_enum_get(op->ptr, "direction");
-  const bool add_to_sel = RNA_boolean_get(op->ptr, "extend");
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
+  Armature *arm = static_cast<Armature *>(ob->data);
+  PoseChannel *pchan_act;
+  int direction = api_enum_get(op->ptr, "direction");
+  const bool add_to_sel = api_bool_get(op->ptr, "extend");
   bool changed = false;
 
-  pchan_act = BKE_pose_channel_active_if_bonecoll_visible(ob);
+  pchan_act = dune_pose_channel_active_if_bonecoll_visible(ob);
   if (pchan_act == nullptr) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  if (direction == BONE_SELECT_PARENT) {
+  if (direction == BONE_SEL_PARENT) {
     if (pchan_act->parent) {
       Bone *bone_parent;
       bone_parent = pchan_act->parent->bone;
 
       if (PBONE_SELECTABLE(arm, bone_parent)) {
         if (!add_to_sel) {
-          pchan_act->bone->flag &= ~BONE_SELECTED;
+          pchan_act->bone->flag &= ~BONE_SEL;
         }
-        bone_parent->flag |= BONE_SELECTED;
+        bone_parent->flag |= BONE_SEL;
         arm->act_bone = bone_parent;
 
         changed = true;
@@ -769,7 +760,7 @@ static int pose_select_hierarchy_exec(bContext *C, wmOperator *op)
 
     /* first pass, only connected bones (the logical direct child) */
     for (pass = 0; pass < 2 && (bone_child == nullptr); pass++) {
-      LISTBASE_FOREACH (bPoseChannel *, pchan_iter, &ob->pose->chanbase) {
+      LIST_FOREACH (PoseChannel *, pchan_iter, &ob->pose->chanbase) {
         /* possible we have multiple children, some invisible */
         if (PBONE_SELECTABLE(arm, pchan_iter->bone)) {
           if (pchan_iter->parent == pchan_act) {
@@ -786,190 +777,187 @@ static int pose_select_hierarchy_exec(bContext *C, wmOperator *op)
       arm->act_bone = bone_child;
 
       if (!add_to_sel) {
-        pchan_act->bone->flag &= ~BONE_SELECTED;
+        pchan_act->bone->flag &= ~BONE_SEL;
       }
-      bone_child->flag |= BONE_SELECTED;
+      bone_child->flag |= BONE_SEL;
 
       changed = true;
     }
   }
 
   if (changed == false) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  ED_outliner_select_sync_from_pose_bone_tag(C);
+  ed_outliner_sel_sync_from_pose_bone_tag(C);
 
-  ED_pose_bone_select_tag_update(ob);
+  ed_pose_bone_sel_tag_update(ob);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void POSE_OT_select_hierarchy(wmOperatorType *ot)
+void POSE_OT_sel_hierarchy(WinOpType *ot)
 {
-  static const EnumPropertyItem direction_items[] = {
-      {BONE_SELECT_PARENT, "PARENT", 0, "Select Parent", ""},
-      {BONE_SELECT_CHILD, "CHILD", 0, "Select Child", ""},
+  static const EnumPropItem direction_items[] = {
+      {BONE_SEL_PARENT, "PARENT", 0, "Sel Parent", ""},
+      {BONE_SEL_CHILD, "CHILD", 0, "Sel Child", ""},
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  /* identifiers */
-  ot->name = "Select Hierarchy";
-  ot->idname = "POSE_OT_select_hierarchy";
-  ot->description = "Select immediate parent/children of selected bones";
+  /* ids */
+  ot->name = "Sel Hierarchy";
+  ot->idname = "POSE_OT_sel_hierarchy";
+  ot->description = "Sel immediate parent/children of sel bones";
 
-  /* api callbacks */
-  ot->exec = pose_select_hierarchy_exec;
-  ot->poll = ED_operator_posemode;
+  /* api cbs */
+  ot->ex = pose_sel_hierarchy_ex;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  ot->prop = RNA_def_enum(
-      ot->srna, "direction", direction_items, BONE_SELECT_PARENT, "Direction", "");
-  RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend the selection");
+  ot->prop = api_def_enum(
+      ot->sapi, "direction", direction_items, BONE_SEL_PARENT, "Direction", "");
+  api_def_bool(ot->sapi, "extend", false, "Extend", "Extend the selection");
 }
 
-/* -------------------------------------- */
-
-/* modes for select same */
-enum ePose_SelectSame_Mode {
+/* modes for sel same */
+enum ePoseSelSameMode {
   POSE_SEL_SAME_COLLECTION = 0,
   POSE_SEL_SAME_COLOR = 1,
   POSE_SEL_SAME_KEYINGSET = 2,
 };
 
-static bool pose_select_same_color(bContext *C, const bool extend)
+static bool pose_sel_same_color(Cxt *C, const bool extend)
 {
-  /* Get a set of all the colors of the selected bones. */
-  blender::Set<blender::animrig::BoneColor> used_colors;
-  blender::Set<Object *> updated_objects;
-  bool changed_any_selection = false;
+  /* Get a set of all the colors of the sel bones. */
+  dune::Set<dune::animrig::BoneColor> used_colors;
+  dune::Set<Ob *> updated_obs;
+  bool changed_any_sel = false;
 
   /* Old approach that we may want to reinstate behind some option at some point. This will match
-   * against the colors of all selected bones, instead of just the active one. It also explains why
+   * against the colors of all sel bones, instead of just the active one. It also explains why
    * there is a set of colors to begin with.
    *
-   * CTX_DATA_BEGIN (C, bPoseChannel *, pchan, selected_pose_bones) {
-   *   auto color = blender::animrig::ANIM_bonecolor_posebone_get(pchan);
+   * CXT_DATA_BEGIN (C, PoseChannel *, pchan, sel_pose_bones) {
+   *   auto color = dune::animrig::ANIM_bonecolor_posebone_get(pchan);
    *   used_colors.add(color);
    * }
-   * CTX_DATA_END;
-   */
+   * CXT_DATA_END; */
   if (!extend) {
-    CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, selected_pose_bones, Object *, ob) {
-      pchan->bone->flag &= ~BONE_SELECTED;
-      updated_objects.add(ob);
-      changed_any_selection = true;
+    CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, sel_pose_bones, Ob *, ob) {
+      pchan->bone->flag &= ~BONE_SEL;
+      updated_obs.add(ob);
+      changed_any_sel = true;
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
   }
 
   /* Use the color of the active pose bone. */
-  bPoseChannel *active_pose_bone = CTX_data_active_pose_bone(C);
-  auto color = blender::animrig::ANIM_bonecolor_posebone_get(active_pose_bone);
+  PoseChannel *active_pose_bone = cxt_data_active_pose_bone(C);
+  auto color = dune::animrig::anim_bonecolor_posebone_get(active_pose_bone);
   used_colors.add(color);
 
-  /* Select all visible bones that have the same color. */
-  CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, visible_pose_bones, Object *, ob) {
+  /* Sel all visible bones that have the same color. */
+  CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, visible_pose_bones, Ob *, ob) {
     Bone *bone = pchan->bone;
-    if (bone->flag & (BONE_UNSELECTABLE | BONE_SELECTED)) {
-      /* Skip bones that are unselectable or already selected. */
+    if (bone->flag & (BONE_UNSELECTABLE | BONE_SEL)) {
+      /* Skip bones that are unselectable or alrdy sel. */
       continue;
     }
 
-    auto color = blender::animrig::ANIM_bonecolor_posebone_get(pchan);
+    auto color = dune::animrig::anim_bonecolor_posebone_get(pchan);
     if (!used_colors.contains(color)) {
       continue;
     }
 
-    bone->flag |= BONE_SELECTED;
-    changed_any_selection = true;
-    updated_objects.add(ob);
+    bone->flag |= BONE_SEL;
+    changed_any_sel = true;
+    updated_obs.add(ob);
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  if (!changed_any_selection) {
+  if (!changed_any_sel) {
     return false;
   }
 
-  for (Object *ob : updated_objects) {
-    ED_pose_bone_select_tag_update(ob);
+  for (Ob *ob : updated_obs) {
+    ed_pose_bone_sel_tag_update(ob);
   }
   return true;
 }
 
-static bool pose_select_same_collection(bContext *C, const bool extend)
+static bool pose_sel_same_collection(Cxt *C, const bool extend)
 {
-  bool changed_any_selection = false;
-  blender::Set<Object *> updated_objects;
+  bool changed_any_sel = false;
+  dune::Set<Ob *> updated_obs;
 
   /* Refuse to do anything if there is no active pose bone. */
-  bPoseChannel *active_pchan = CTX_data_active_pose_bone(C);
+  PoseChannel *active_pchan = cxt_data_active_pose_bone(C);
   if (!active_pchan) {
     return false;
   }
 
   if (!extend) {
-    /* Deselect all the bones. */
-    CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, selected_pose_bones, Object *, ob) {
-      pchan->bone->flag &= ~BONE_SELECTED;
-      updated_objects.add(ob);
-      changed_any_selection = true;
+    /* Desel all the bones. */
+    CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, sel_pose_bones, Ob *, ob) {
+      pchan->bone->flag &= ~BONE_SEL;
+      updated_obs.add(ob);
+      changed_any_sel = true;
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
   }
 
-  /* Build a set of bone collection names, to allow cross-Armature selection. */
-  blender::Set<std::string> collection_names;
-  LISTBASE_FOREACH (BoneCollectionReference *, bcoll_ref, &active_pchan->bone->runtime.collections)
+  /* Build a set of bone collection names, to allow cross-Armature sel. */
+  dune::Set<std::string> collection_names;
+  LIST_FOREACH (BoneCollectionRef *, bcoll_ref, &active_pchan->bone->runtime.collections)
   {
     collection_names.add(bcoll_ref->bcoll->name);
   }
 
   /* Select all bones that match any of the collection names. */
-  CTX_DATA_BEGIN_WITH_ID (C, bPoseChannel *, pchan, visible_pose_bones, Object *, ob) {
+  CXT_DATA_BEGIN_W_ID (C, PoseChannel *, pchan, visible_pose_bones, Ob *, ob) {
     Bone *bone = pchan->bone;
-    if (bone->flag & (BONE_UNSELECTABLE | BONE_SELECTED)) {
+    if (bone->flag & (BONE_UNSELECTABLE | BONE_SEL)) {
       continue;
     }
 
-    LISTBASE_FOREACH (BoneCollectionReference *, bcoll_ref, &bone->runtime.collections) {
+    LIST_FOREACH (BoneCollectionRef *, bcoll_ref, &bone->runtime.collections) {
       if (!collection_names.contains(bcoll_ref->bcoll->name)) {
         continue;
       }
 
-      bone->flag |= BONE_SELECTED;
-      changed_any_selection = true;
-      updated_objects.add(ob);
+      bone->flag |= BONE_SEL;
+      changed_any_sel = true;
+      updated_obs.add(ob);
     }
   }
-  CTX_DATA_END;
+  CXT_DATA_END;
 
-  for (Object *ob : updated_objects) {
-    ED_pose_bone_select_tag_update(ob);
+  for (Ob *ob : updated_obs) {
+    ed_pose_bone_sel_tag_update(ob);
   }
 
-  return changed_any_selection;
+  return changed_any_sel;
 }
 
-static bool pose_select_same_keyingset(bContext *C, ReportList *reports, bool extend)
+static bool pose_sel_same_keyingset(Cxt *C, ReportList *reports, bool extend)
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
   bool changed_multi = false;
-  KeyingSet *ks = ANIM_scene_get_active_keyingset(CTX_data_scene(C));
+  KeyingSet *ks = anim_scene_get_active_keyingset(cxt_data_scene(C));
 
-  /* sanity checks: validate Keying Set and object */
+  /* sanity checks: validate Keying Set and ob */
   if (ks == nullptr) {
-    BKE_report(reports, RPT_ERROR, "No active Keying Set to use");
+    dune_report(reports, RPT_ERROR, "No active Keying Set to use");
     return false;
   }
-  if (ANIM_validate_keyingset(C, nullptr, ks) != 0) {
+  if (anim_validate_keyingset(C, nullptr, ks) != 0) {
     if (ks->paths.first == nullptr) {
       if ((ks->flag & KEYINGSET_ABSOLUTE) == 0) {
-        BKE_report(reports,
+        dune_report(reports,
                    RPT_ERROR,
                    "Use another Keying Set, as the active one depends on the currently "
                    "selected items or cannot find any targets due to unsuitable context");
@@ -981,24 +969,24 @@ static bool pose_select_same_keyingset(bContext *C, ReportList *reports, bool ex
     return false;
   }
 
-  /* if not extending selection, deselect all selected first */
+  /* if not extending sel, desel all sel first */
   if (extend == false) {
-    CTX_DATA_BEGIN (C, bPoseChannel *, pchan, visible_pose_bones) {
+    CXT_DATA_BEGIN (C, PoseChannel *, pchan, visible_pose_bones) {
       if ((pchan->bone->flag & BONE_UNSELECTABLE) == 0) {
-        pchan->bone->flag &= ~BONE_SELECTED;
+        pchan->bone->flag &= ~BONE_SEL;
       }
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
   }
 
-  uint objects_len = 0;
-  Object **objects = BKE_object_pose_array_get_unique(
-      scene, view_layer, CTX_wm_view3d(C), &objects_len);
+  uint objs_len = 0;
+  Ob **obs = dune_ob_pose_array_get_unique(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
 
-  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
-    Object *ob = BKE_object_pose_armature_get(objects[ob_index]);
-    bArmature *arm = static_cast<bArmature *>((ob) ? ob->data : nullptr);
-    bPose *pose = (ob) ? ob->pose : nullptr;
+  for (uint ob_index = 0; ob_index < obs_len; ob_index++) {
+    Ob *ob = dune_ob_pose_armature_get(obs[ob_index]);
+    Armature *arm = static_cast<Armature *>((ob) ? ob->data : nullptr);
+    Pose *pose = (ob) ? ob->pose : nullptr;
     bool changed = false;
 
     /* Sanity checks. */
@@ -1006,23 +994,22 @@ static bool pose_select_same_keyingset(bContext *C, ReportList *reports, bool ex
       continue;
     }
 
-    /* iterate over elements in the Keying Set, setting selection depending on whether
-     * that bone is visible or not...
-     */
-    LISTBASE_FOREACH (KS_Path *, ksp, &ks->paths) {
-      /* only items related to this object will be relevant */
-      if ((ksp->id == &ob->id) && (ksp->rna_path != nullptr)) {
-        bPoseChannel *pchan = nullptr;
+    /* iter over elements in the Keying Set, setting sel depending on whether
+     * that bone is visible or not... */
+    LIST_FOREACH (KS_Path *, ksp, &ks->paths) {
+      /* only items related to this ob will be relevant */
+      if ((ksp->id == &ob->id) && (ksp->api_path != nullptr)) {
+        PoseChannel *pchan = nullptr;
         char boneName[sizeof(pchan->name)];
-        if (!BLI_str_quoted_substr(ksp->rna_path, "bones[", boneName, sizeof(boneName))) {
+        if (!lib_str_quoted_substr(ksp->api_path, "bones[", boneName, sizeof(boneName))) {
           continue;
         }
-        pchan = BKE_pose_channel_find_name(pose, boneName);
+        pchan = dune_pose_channel_find_name(pose, boneName);
 
         if (pchan) {
-          /* select if bone is visible and can be affected */
+          /* sel if bone is visible and can be affected */
           if (PBONE_SELECTABLE(arm, pchan->bone)) {
-            pchan->bone->flag |= BONE_SELECTED;
+            pchan->bone->flag |= BONE_SEL;
             changed = true;
           }
         }
@@ -1030,18 +1017,18 @@ static bool pose_select_same_keyingset(bContext *C, ReportList *reports, bool ex
     }
 
     if (changed || !extend) {
-      ED_pose_bone_select_tag_update(ob);
+      ed_pose_bone_sel_tag_update(ob);
       changed_multi = true;
     }
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
   return changed_multi;
 }
 
-static int pose_select_grouped_exec(bContext *C, wmOperator *op)
+static int pose_sel_grouped_ex(Cxt *C, WinOp *op)
 {
-  Object *ob = BKE_object_pose_armature_get(cxt_data_active_object(C));
+  Ob *ob = dune_ob_pose_armature_get(cxt_data_active_ob(C));
   const ePoseSelSameMode type = ePoseSelSameMode(api_enum_get(op->ptr, "type"));
   const bool extend = api_bool_get(op->ptr, "extend");
   bool changed = false;
@@ -1066,7 +1053,7 @@ static int pose_select_grouped_exec(bContext *C, wmOperator *op)
       break;
 
     default:
-      printf("pose_sel_grouped() - Unknown selection type %d\n", type);
+      printf("pose_sel_grouped() - Unknown sel type %d\n", type);
       break;
   }
 
@@ -1096,12 +1083,12 @@ void POSE_OT_sel_grouped(WinOpType *ot)
       {0, nullptr, 0, nullptr, nullptr},
   };
 
-  /* identifiers */
+  /* ids */
   ot->name = "Sel Grouped";
   ot->description = "Sel all visible bones grouped by similar properties";
   ot->idname = "POSE_OT_sel_grouped";
 
-  /* api callbacks */
+  /* api cbs */
   ot->invoke = WM_menu_invoke;
   ot->ex = pose_sel_grouped_ex;
   ot->poll = ed_op_posemode; /* TODO: expand to support edit mode as well. */
@@ -1130,22 +1117,22 @@ static int pose_sel_mirror_ex(Cxt *C, WinOp *op)
   const bool extend = api_bool_get(op->ptr, "extend");
 
   uint obs_len = 0;
-  Object **obs = dune_ob_pose_array_get_unique(
-      scene, view_layer, cxt_win_view3d(C), &objects_len);
+  Ob **obs = dune_ob_pose_array_get_unique(
+      scene, view_layer, cxt_win_view3d(C), &obs_len);
 
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Ob *ob = obs[ob_index];
-    Armature *arm = static_cast<bArmature *>(ob->data);
+    Armature *arm = static_cast<Armature *>(ob->data);
     PoseChannel *pchan_mirror_act = nullptr;
 
-    LIST_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
-      const int flag = (pchan->bone->flag & BONE_SELECTED);
+    LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
+      const int flag = (pchan->bone->flag & BONE_SEL);
       PBONE_PREV_FLAG_SET(pchan, flag);
     }
 
     LIST_FOREACH (PoseChannel *, pchan, &ob->pose->chanbase) {
       if (PBONE_SELECTABLE(arm, pchan->bone)) {
-        bPoseChannel *pchan_mirror;
+        PoseChannel *pchan_mirror;
         int flag_new = extend ? PBONE_PREV_FLAG_GET(pchan) : 0;
 
         if ((pchan_mirror = dune_pose_channel_get_mirrored(ob->pose, pchan->name)) &&
@@ -1179,7 +1166,7 @@ static int pose_sel_mirror_ex(Cxt *C, WinOp *op)
       }
     }
 
-    win_ev_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, ob);
+    win_ev_add_notifier(C, NC_OB | ND_BONE_SEL, ob);
 
     /* Need to tag armature for cow updates, or else sel doesn't update. */
     graph_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
@@ -1205,7 +1192,7 @@ void POSE_OT_sel_mirror(WinOpType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-  /* properties */
+  /* props */
   api_def_bool(
       ot->sapi, "only_active", false, "Active Only", "Only operate on the active bone");
   api_def_bool(ot->srna, "extend", false, "Extend", "Extend the selection");
