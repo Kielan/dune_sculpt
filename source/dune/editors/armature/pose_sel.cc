@@ -21,112 +21,111 @@
 #include "dune_ob.hh"
 #include "dune_report.h"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
+#include "api_access.hh"
+#include "api_define.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "ED_armature.hh"
-#include "ED_keyframing.hh"
-#include "ED_mesh.hh"
-#include "ED_object.hh"
-#include "ED_outliner.hh"
-#include "ED_screen.hh"
-#include "ED_select_utils.hh"
-#include "ED_view3d.hh"
+#include "ed_armature.hh"
+#include "ed_keyframing.hh"
+#include "ed_mesh.hh"
+#include "ed_ob.hh"
+#include "ed_outliner.hh"
+#include "ed_screen.hh"
+#include "ed_sel_utils.hh"
+#include "ed_view3d.hh"
 
-#include "ANIM_bone_collections.hh"
-#include "ANIM_bonecolor.hh"
+#include "anim_bone_collections.hh"
+#include "anim_bonecolor.hh"
 
 #include "armature_intern.h"
 
-/* utility macros for storing a temp int in the bone (selection flag) */
-#define PBONE_PREV_FLAG_GET(pchan) ((void)0, POINTER_AS_INT((pchan)->temp))
-#define PBONE_PREV_FLAG_SET(pchan, val) ((pchan)->temp = POINTER_FROM_INT(val))
+/* util macros for storing a tmp int in the bone (sel flag) */
+#define PBONE_PREV_FLAG_GET(pchan) ((void)0, PTR_AS_INT((pchan)->tmp))
+#define PBONE_PREV_FLAG_SET(pchan, val) ((pchan)->tmp = PTR_FROM_INT(val))
 
-/* ***************** Pose Select Utilities ********************* */
-
-/* NOTE: SEL_TOGGLE is assumed to have already been handled! */
-static void pose_do_bone_select(bPoseChannel *pchan, const int select_mode)
+/* Pose Sel Utils */
+/* NOTE: SEL_TOGGLE is assumed to have alrdy been handled! */
+static void pose_do_bone_sel(PoseChannel *pchan, const int sel_mode)
 {
-  /* select pchan only if selectable, but deselect works always */
-  switch (select_mode) {
-    case SEL_SELECT:
+  /* sel pchan only if cansel, but desel works always */
+  switch (sel_mode) {
+    case SEL_SEL:
       if (!(pchan->bone->flag & BONE_UNSELECTABLE)) {
-        pchan->bone->flag |= BONE_SELECTED;
+        pchan->bone->flag |= BONE_SEL;
       }
       break;
-    case SEL_DESELECT:
-      pchan->bone->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+    case SEL_DESEL:
+      pchan->bone->flag &= ~(BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
       break;
     case SEL_INVERT:
-      if (pchan->bone->flag & BONE_SELECTED) {
-        pchan->bone->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+      if (pchan->bone->flag & BONE_SEL) {
+        pchan->bone->flag &= ~(BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
       }
       else if (!(pchan->bone->flag & BONE_UNSELECTABLE)) {
-        pchan->bone->flag |= BONE_SELECTED;
+        pchan->bone->flag |= BONE_SEL;
       }
       break;
   }
 }
 
-void ED_pose_bone_select_tag_update(Object *ob)
+void ed_pose_bone_sel_tag_update(Ob *ob)
 {
-  BLI_assert(ob->type == OB_ARMATURE);
-  bArmature *arm = static_cast<bArmature *>(ob->data);
-  WM_main_add_notifier(NC_OBJECT | ND_BONE_SELECT, ob);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, ob);
+  lib_assert(ob->type == OB_ARMATURE);
+  Armature *arm = static_cast<Armature *>(ob->data);
+  win_main_add_notifier(NC_OB | ND_BONE_SEL, ob);
+  win_main_add_notifier(NC_GEOM | ND_DATA, ob);
 
   if (arm->flag & ARM_HAS_VIZ_DEPS) {
-    /* mask modifier ('armature' mode), etc. */
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    /* mask mod ('armature' mode), etc. */
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
   }
 
-  DEG_id_tag_update(&arm->id, ID_RECALC_SELECT);
+  graph_id_tag_update(&arm->id, ID_RECALC_SEL);
 }
 
-void ED_pose_bone_select(Object *ob, bPoseChannel *pchan, bool select, bool change_active)
+void ed_pose_bone_sel(Ob *ob, PoseChannel *pchan, bool sel, bool change_active)
 {
-  bArmature *arm;
+  Armature *arm;
 
   /* sanity checks */
-  /* XXX: actually, we can probably still get away with no object - at most we have no updates */
+  /* actually, we can probably still get away with no ob - at most we have no updates */
   if (ELEM(nullptr, ob, ob->pose, pchan, pchan->bone)) {
     return;
   }
 
-  arm = static_cast<bArmature *>(ob->data);
+  arm = static_cast<Armature *>(ob->data);
 
-  /* can only change selection state if bone can be modified */
+  /* can only change sel state if bone can be modified */
   if (PBONE_SELECTABLE(arm, pchan->bone)) {
-    /* change selection state - activate too if selected */
-    if (select) {
-      pchan->bone->flag |= BONE_SELECTED;
+    /* change sel state - activate too if sel */
+    if (sel) {
+      pchan->bone->flag |= BONE_SEL;
       if (change_active) {
         arm->act_bone = pchan->bone;
       }
     }
     else {
-      pchan->bone->flag &= ~BONE_SELECTED;
+      pchan->bone->flag &= ~BONE_SEL;
       if (change_active) {
         arm->act_bone = nullptr;
       }
     }
 
-    /* TODO: select and activate corresponding vgroup? */
-    ED_pose_bone_select_tag_update(ob);
+    /* TODO: sel and activate corresponding vgroup? */
+    ed_pose_bone_sel_tag_update(ob);
   }
 }
 
-bool ED_armature_pose_select_pick_bone(const Scene *scene,
-                                       ViewLayer *view_layer,
-                                       View3D *v3d,
-                                       Object *ob,
-                                       Bone *bone,
-                                       const SelectPick_Params *params)
+bool ed_armature_pose_sel_pick_bone(const Scene *scene,
+                                    ViewLayer *view_layer,
+                                    View3D *v3d,
+                                    Ob *ob,
+                                    Bone *bone,
+                                    const SelPickParams *params)
 {
   bool found = false;
   bool changed = false;
@@ -138,18 +137,18 @@ bool ED_armature_pose_select_pick_bone(const Scene *scene,
   }
 
   if (params->sel_op == SEL_OP_SET) {
-    if ((found && params->select_passthrough) && (bone->flag & BONE_SELECTED)) {
+    if ((found && params->sel_passthrough) && (bone->flag & BONE_SEL)) {
       found = false;
     }
     else if (found || params->deselect_all) {
-      /* Deselect everything. */
-      /* Don't use 'BKE_object_pose_base_array_get_unique'
-       * because we may be selecting from object mode. */
+      /* Desel everything. */
+      /* Don't use 'dune_ob_pose_base_array_get_unique'
+       * bc we may be sel from object mode. */
       FOREACH_VISIBLE_BASE_BEGIN (scene, view_layer, v3d, base_iter) {
-        Object *ob_iter = base_iter->object;
+        Ob *ob_iter = base_iter->object;
         if ((ob_iter->type == OB_ARMATURE) && (ob_iter->mode & OB_MODE_POSE)) {
-          if (ED_pose_deselect_all(ob_iter, SEL_DESELECT, true)) {
-            ED_pose_bone_select_tag_update(ob_iter);
+          if (ed_pose_desel_all(ob_iter, SEL_DESEL, true)) {
+            ed_pose_bone_sel_tag_update(ob_iter);
           }
         }
       }
@@ -159,85 +158,83 @@ bool ED_armature_pose_select_pick_bone(const Scene *scene,
   }
 
   if (found) {
-    BKE_view_layer_synced_ensure(scene, view_layer);
-    Object *ob_act = BKE_view_layer_active_object_get(view_layer);
-    BLI_assert(BKE_view_layer_edit_object_get(view_layer) == nullptr);
+    dune_view_layer_synced_ensure(scene, view_layer);
+    Ob *ob_act = dune_view_layer_active_ob_get(view_layer);
+    lib_assert(dune_view_layer_edit_ob_get(view_layer) == nullptr);
 
     /* If the bone cannot be affected, don't do anything. */
-    bArmature *arm = static_cast<bArmature *>(ob->data);
+    Armature *arm = static_cast<Armature *>(ob->data);
 
-    /* Since we do unified select, we don't shift+select a bone if the
-     * armature object was not active yet.
-     * NOTE(@ideasman42): special exception for armature mode so we can do multi-select
-     * we could check for multi-select explicitly but think its fine to
+    /* Since we do unified sel, we don't shift+sel a bone if the
+     * armature ob was not active yet.
+     * NOTE: Special exception for armature mode so we can do multi-sel
+     * we could check for multi-sel explicitly but think its fine to
      * always give predictable behavior in weight paint mode. */
     if ((ob_act == nullptr) || ((ob_act != ob) && (ob_act->mode & OB_MODE_ALL_WEIGHT_PAINT) == 0))
     {
-      /* When we are entering into posemode via toggle-select,
-       * from another active object - always select the bone. */
+      /* When we are entering into posemode via toggle-sel,
+       * from another active ob - always sel the bone. */
       if (params->sel_op == SEL_OP_SET) {
-        /* Re-select the bone again later in this function. */
-        bone->flag &= ~BONE_SELECTED;
+        /* Re-sel the bone again later in this fn. */
+        bone->flag &= ~BONE_SEL;
       }
     }
 
     switch (params->sel_op) {
       case SEL_OP_ADD: {
-        bone->flag |= (BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+        bone->flag |= (BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
         arm->act_bone = bone;
         break;
       }
       case SEL_OP_SUB: {
-        bone->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+        bone->flag &= ~(BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
         break;
       }
       case SEL_OP_XOR: {
-        if (bone->flag & BONE_SELECTED) {
+        if (bone->flag & BONE_SEL) {
           /* If not active, we make it active. */
           if (bone != arm->act_bone) {
             arm->act_bone = bone;
           }
           else {
-            bone->flag &= ~(BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+            bone->flag &= ~(BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
           }
         }
         else {
-          bone->flag |= (BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+          bone->flag |= (BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
           arm->act_bone = bone;
         }
         break;
       }
       case SEL_OP_SET: {
-        bone->flag |= (BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+        bone->flag |= (BONE_SEL | BONE_TIPSEL | BONE_ROOTSEL);
         arm->act_bone = bone;
         break;
       }
       case SEL_OP_AND: {
-        BLI_assert_unreachable(); /* Doesn't make sense for picking. */
+        lib_assert_unreachable(); /* Doesn't make sense for picking. */
         break;
       }
     }
 
     if (ob_act) {
-      /* In weight-paint we select the associated vertex group too. */
+      /* In weight-paint we sel the associated vertex group too. */
       if (ob_act->mode & OB_MODE_ALL_WEIGHT_PAINT) {
         if (bone == arm->act_bone) {
-          ED_vgroup_select_by_name(ob_act, bone->name);
-          DEG_id_tag_update(&ob_act->id, ID_RECALC_GEOMETRY);
+          ed_vgroup_sel_by_name(ob_act, bone->name);
+          graph_id_tag_update(&ob_act->id, ID_RECALC_GEOMETRY);
         }
       }
       /* If there are some dependencies for visualizing armature state
-       * (e.g. Mask Modifier in 'Armature' mode), force update.
-       */
+       * (e.g. Mask Mod in 'Armature' mode), force */
       else if (arm->flag & ARM_HAS_VIZ_DEPS) {
-        /* NOTE: ob not ob_act here is intentional - it's the source of the
-         *       bones being selected [#37247].
-         */
-        DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+        /* Ob not ob_act here is intentional: it's the src of the
+         * bones being sel [#37247]. */
+        graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
       }
 
       /* Tag armature for copy-on-write update (since act_bone is in armature not object). */
-      DEG_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
+      graph_id_tag_update(&arm->id, ID_RECALC_COPY_ON_WRITE);
     }
 
     changed = true;
@@ -246,7 +243,7 @@ bool ED_armature_pose_select_pick_bone(const Scene *scene,
   return changed || found;
 }
 
-bool ED_armature_pose_select_pick_with_buffer(const Scene *scene,
+bool ed_armature_pose_sel_pick_with_buffer(const Scene *scene,
                                               ViewLayer *view_layer,
                                               View3D *v3d,
                                               Base *base,
@@ -264,34 +261,34 @@ bool ED_armature_pose_select_pick_with_buffer(const Scene *scene,
 
   /* Callers happen to already get the active base */
   Base *base_dummy = nullptr;
-  nearBone = ED_armature_pick_bone_from_selectbuffer(
+  nearBone = ed_armature_pick_bone_from_selbuf(
       &base, 1, hit_results, hits, true, do_nearest, &base_dummy);
 
-  return ED_armature_pose_select_pick_bone(scene, view_layer, v3d, ob, nearBone, params);
+  return ed_armature_pose_sel_pick_bone(scene, view_layer, v3d, ob, nearBone, params);
 }
 
-void ED_armature_pose_select_in_wpaint_mode(const Scene *scene,
-                                            ViewLayer *view_layer,
-                                            Base *base_select)
+void ed_armature_pose_sel_in_wpaint_mode(const Scene *scene,
+                                         ViewLayer *view_layer,
+                                         Base *base_sel)
 {
-  BLI_assert(base_select && (base_select->object->type == OB_ARMATURE));
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob_active = BKE_view_layer_active_object_get(view_layer);
-  BLI_assert(ob_active && (ob_active->mode & OB_MODE_ALL_WEIGHT_PAINT));
+  lib_assert(base_sel && (base_sel->ob->type == OB_ARMATURE));
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Ob *ob_active = dune_view_layer_active_ob_get(view_layer);
+  lib_assert(ob_active && (ob_active->mode & OB_MODE_ALL_WEIGHT_PAINT));
 
-  if (ob_active->type == OB_GPENCIL_LEGACY) {
-    GpencilVirtualModifierData virtual_modifier_data;
-    GpencilModifierData *md = BKE_gpencil_modifiers_get_virtual_modifierlist(
-        ob_active, &virtual_modifier_data);
+  if (ob_active->type == OB_PEN_LEGACY) {
+    PenVirtualModData virtual_mod_data;
+    PenModData *md = dune_pen_mods_get_virtual_modlist(
+        ob_active, &virtual_mod_data);
     for (; md; md = md->next) {
-      if (md->type == eGpencilModifierType_Armature) {
-        ArmatureGpencilModifierData *agmd = (ArmatureGpencilModifierData *)md;
+      if (md->type == ePenModTypeArmature) {
+        ArmaturePenModData *agmd = (ArmaturePenModData *)md;
         Object *ob_arm = agmd->object;
         if (ob_arm != nullptr) {
           Base *base_arm = BKE_view_layer_base_find(view_layer, ob_arm);
-          if ((base_arm != nullptr) && (base_arm != base_select) &&
+          if ((base_arm != nullptr) && (base_arm != base_sel) &&
               (base_arm->flag & BASE_SELECTED)) {
-            ED_object_base_select(base_arm, BA_DESELECT);
+            ED_object_base_select(base_arm, BA_DESEL);
           }
         }
       }
