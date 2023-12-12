@@ -224,19 +224,19 @@ static int pose_slide_init(bContext *C, wmOperator *op, ePoseSlide_Modes mode)
    * and set the relevant transform flags. */
   poseAnim_mapping_get(C, &pso->pfLinks);
 
-  Object **objects = BKE_view_layer_array_from_objects_in_mode_unique_data(CTX_data_scene(C),
-                                                                           CTX_data_view_layer(C),
-                                                                           CTX_wm_view3d(C),
-                                                                           &pso->objects_len,
-                                                                           OB_MODE_POSE);
-  pso->ob_data_array = static_cast<tPoseSlideObject *>(
-      MEM_callocN(pso->objects_len * sizeof(tPoseSlideObject), "pose slide objects data"));
+  Ob **obs = dune_view_layer_arr_from_obs_in_mode_unique_data(cxt_data_scene(C),
+                                                              cxt_data_view_layer(C),
+                                                              cxt_win_view3d(C),
+                                                              &pso->obs_len,
+                                                              OB_MODE_POSE);
+  pso->ob_data_arr = static_cast<tPoseSlideOb *>(
+      mem_calloc(pso->obs_len * sizeof(tPoseSlideOb), "pose slide obs data"));
 
-  for (uint ob_index = 0; ob_index < pso->objects_len; ob_index++) {
-    tPoseSlideObject *ob_data = &pso->ob_data_array[ob_index];
-    Object *ob_iter = poseAnim_object_get(objects[ob_index]);
+  for (uint ob_index = 0; ob_index < pso->obs_len; ob_index++) {
+    tPoseSlideOb *ob_data = &pso->ob_data_array[ob_index];
+    Ob *ob_iter = poseAnim_ob_get(obs[ob_index]);
 
-    /* Ensure validity of the settings from the context. */
+    /* Ensure validity of the settings from the cxt. */
     if (ob_iter == nullptr) {
       continue;
     }
@@ -245,23 +245,23 @@ static int pose_slide_init(bContext *C, wmOperator *op, ePoseSlide_Modes mode)
     ob_data->valid = true;
 
     /* Apply NLA mapping corrections so the frame look-ups work. */
-    ob_data->prev_frame = BKE_nla_tweakedit_remap(
+    ob_data->prev_frame = dune_nla_tweakedit_remap(
         ob_data->ob->adt, pso->prev_frame, NLATIME_CONVERT_UNMAP);
-    ob_data->next_frame = BKE_nla_tweakedit_remap(
+    ob_data->next_frame = dune_nla_tweakedit_remap(
         ob_data->ob->adt, pso->next_frame, NLATIME_CONVERT_UNMAP);
 
-    /* Set depsgraph flags. */
+    /* Set graph flags. */
     /* Make sure the lock is set OK, unlock can be accidentally saved? */
     ob_data->ob->pose->flag |= POSE_LOCKED;
     ob_data->ob->pose->flag &= ~POSE_DO_UNLOCK;
   }
-  MEM_freeN(objects);
+  mem_free(obs);
 
-  /* Do basic initialize of RB-BST used for finding keyframes, but leave the filling of it up
+  /* Do basic init of RB-BST used for finding keyframes, but leave the filling of it up
    * to the caller of this (usually only invoke() will do it, to make things more efficient). */
-  pso->keylist = ED_keylist_create();
+  pso->keylist = ed_keylist_create();
 
-  /* Initialize numeric input. */
+  /* Init numeric input. */
   initNumInput(&pso->num);
   pso->num.idx_max = 0;                /* One axis. */
   pso->num.unit_type[0] = B_UNIT_NONE; /* Percentages don't have any units. */
@@ -271,8 +271,7 @@ static int pose_slide_init(bContext *C, wmOperator *op, ePoseSlide_Modes mode)
 }
 
 /**
- * Exiting the operator (free data).
- */
+ * Exiting the op (free data) */
 static void pose_slide_exit(bContext *C, wmOperator *op)
 {
   tPoseSlideOp *pso = static_cast<tPoseSlideOp *>(op->customdata);
