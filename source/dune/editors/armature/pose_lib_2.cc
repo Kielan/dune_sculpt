@@ -35,7 +35,7 @@
 #include "ed_asset.hh"
 #include "ed_keyframing.hh"
 #include "ed_screen.hh"
-#include "wd_util.hh"
+#include "ed_util.hh"
 
 #include "dune_bone_collections.hh"
 #include "anim_keyframing.hh"
@@ -389,7 +389,7 @@ static void poselib_blend_cleanup(Cxt *C, WinOp *op)
     ed_slider_destroy(C, pbd->slider);
   }
 
-  /* This signals the graph to unlock and reevaluate the pose on the next evaluation. */
+  /* This signals the graph to unlock and reeval the pose on the next eval. */
   Pose *pose = pbd->ob->pose;
   pose->flag |= POSE_DO_UNLOCK;
 
@@ -398,7 +398,7 @@ static void poselib_blend_cleanup(Cxt *C, WinOp *op)
       Scene *scene = pbd->scene;
       poselib_keytag_pose(C, scene, pbd);
 
-      /* Ensure the redo panel has the actually-used value, instead of the initial value. */
+      /* Ensure the redo pnl has the actually-used val, instead of the init val. */
       api_float_set(op->ptr, "blend_factor", pbd->blend_factor);
       api_bool_set(op->ptr, "flipped", pbd->is_flipped);
       break;
@@ -409,7 +409,7 @@ static void poselib_blend_cleanup(Cxt *C, WinOp *op)
     case POSE_BLEND_ORIGINAL:
       /* Cleanup should not be called directly from these states. */
       lib_assert_msg(0, "poselib_blend_cleanup: unexpected pose blend state");
-      dune_report(op->reports, RPT_ERROR, "Internal pose lib error, canceling operator");
+      dune_report(op->reports, RPT_ERROR, "Internal pose lib error, canceling op");
       ATTR_FALLTHROUGH;
     case POSE_BLEND_CANCEL:
       dune_pose_backup_restore(pbd->pose_backup);
@@ -599,7 +599,7 @@ void POSELIB_OT_blend_pose_asset(WinOpType *ot)
   ot->invoke = poselib_blend_invoke;
   ot->modal = poselib_blend_modal;
   ot->cancel = poselib_blend_cancel;
-  ot->exec = poselib_blend_exec;
+  ot->ex = poselib_blend_ex;
   ot->poll = poselib_blend_poll;
 
   /* Flags: */
