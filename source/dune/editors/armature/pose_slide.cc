@@ -1,80 +1,72 @@
-/** \file
- * \ingroup edarmature
- *
- * Pose 'Sliding' Tools
- * ====================
- *
+/* Pose 'Sliding' Tools
  * - Push & Relax, Breakdowner
  *
- *   These tools provide the animator with various capabilities
+ *   These tools provide the animator w various capabilities
  *   for interactively controlling the spacing of poses, but also
  *   for 'pushing' and/or 'relaxing' extremes as they see fit.
  *
  * - Propagate
- *
- *   This tool copies elements of the selected pose to successive
+ *   This tool copies elements of the sel pose to successive
  *   keyframes, allowing the animator to go back and modify the poses
- *   for some "static" pose controls, without having to repeatedly
+ *   for some "static" pose controls, wo having to repeatedly
  *   doing a "next paste" dance.
  *
  * - Pose Sculpting (TODO)
- *
  *   This is yet to be implemented, but the idea here is to use
  *   sculpting techniques to make it easier to pose rigs by allowing
- *   rigs to be manipulated using a familiar paint-based interface.
- */
+ *   rigs to be manipulated using a familiar paint-based interface. */
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_dlrbTree.h"
-#include "BLI_math_rotation.h"
+#include "lib_blenlib.h"
+#include "lib_dlrbTree.h"
+#include "lib_math_rotation.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_vec_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_vec.h"
 
-#include "BKE_fcurve.h"
-#include "BKE_nla.h"
+#include "dune_fcurve.h"
+#include "dune_nla.h"
 
-#include "BKE_context.hh"
-#include "BKE_layer.h"
-#include "BKE_object.hh"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_screen.hh"
-#include "BKE_unit.hh"
+#include "dune_cxt.hh"
+#include "dune_layer.h"
+#include "dune_ob.hh"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_screen.hh"
+#include "dune_unit.hh"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_path.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_path.hh"
+#include "api_prototypes.h"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "ED_armature.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_keyframes_keylist.hh"
-#include "ED_markers.hh"
-#include "ED_numinput.hh"
-#include "ED_screen.hh"
-#include "ED_space_api.hh"
-#include "ED_util.hh"
+#include "ed_armature.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_keyframes_keylist.hh"
+#include "ed_markers.hh"
+#include "ed_numinput.hh"
+#include "ed_screen.hh"
+#include "ed_space_api.hh"
+#include "ed_util.hh"
 
-#include "ANIM_fcurve.hh"
+#include "anim_fcurve.hh"
 
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
 #include "armature_intern.h"
 
