@@ -16,7 +16,7 @@
  *   sculpting techniques to make it easier to pose rigs by allowing
  *   rigs to be manipulated using a familiar paint-based interface. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_blenlib.h"
 #include "lib_dlrbTree.h"
@@ -26,7 +26,7 @@
 
 #include "types_anim.h"
 #include "types_armature.h"
-#include "types_object.h"
+#include "types_ob.h"
 #include "types_scene.h"
 #include "types_vec.h"
 
@@ -70,36 +70,35 @@
 
 #include "armature_intern.h"
 
-#include "BLF_api.h"
+#include "font_api.h"
 
 /* Pixel distance from 0% to 100%. */
 #define SLIDE_PIXEL_DISTANCE (300 * U.pixelsize)
 #define OVERSHOOT_RANGE_DELTA 0.2f
 
-/* **************************************************** */
 /* A) Push & Relax, Breakdowner */
 
-/** Axis Locks. */
-enum ePoseSlide_AxisLock {
+/* Axis Locks. */
+enum ePoseSlideAxisLock {
   PS_LOCK_X = (1 << 0),
   PS_LOCK_Y = (1 << 1),
   PS_LOCK_Z = (1 << 2),
 };
 
-/** Pose Sliding Modes. */
-enum ePoseSlide_Modes {
-  /** Exaggerate the pose. */
+/* Pose Sliding Modes. */
+enum ePoseSlideModes {
+  /* Exaggerate the pose. */
   POSESLIDE_PUSH = 0,
-  /** soften the pose. */
+  /* soften the pose. */
   POSESLIDE_RELAX,
-  /** Slide between the endpoint poses, finding a 'soft' spot. */
+  /* Slide between the endpoint poses, finding a 'soft' spot. */
   POSESLIDE_BREAKDOWN,
   POSESLIDE_BLEND_REST,
   POSESLIDE_BLEND,
 };
 
-/** Transforms/Channels to Affect. */
-enum ePoseSlide_Channels {
+/* Transforms/Channels to Affect. */
+enum ePoseSlideChannels {
   PS_TFM_ALL = 0, /* All transforms and properties */
 
   PS_TFM_LOC, /* Loc/Rot/Scale */
@@ -525,7 +524,7 @@ static void pose_slide_apply_props(tPoseSlideOp *pso,
             break;
           }
 
-          /* Values which can only take discrete vals. */
+          /* Vals which can only take discrete vals. */
           case PROP_BOOL: {
             const bool is_array = api_prop_array_check(prop);
             float tval;
@@ -862,7 +861,6 @@ static void pose_slide_reset(tPoseSlideOp *pso)
 }
 
 /* Drw percentage indicator in status-bar.
- *
  * TODO: Include hints about locks here */
 static void pose_slide_drw_status(Cxt *C, tPoseSlideOp *pso)
 {
@@ -997,11 +995,11 @@ static int pose_slide_invoke_common(Cxt *C, WinOp *op, const WinEv *ev)
     api_int_set(op->ptr, "prev_frame", pso->prev_frame);
     /* Next frame. */
     pso->next_frame = (nk) ? (nk->cfra) : (pso->current_frame + 1);
-    RNA_int_set(op->ptr, "next_frame", pso->next_frame);
+    api_int_set(op->ptr, "next_frame", pso->next_frame);
   }
   else {
     /* Current frame itself is a keyframe, so just take keyframes on either side. */
-    /* Previous frame. */
+    /* Prev frame. */
     pso->prev_frame = (ak->prev) ? (ak->prev->cfra) : (pso->current_frame - 1);
     api_int_set(op->ptr, "prev_frame", pso->prev_frame);
     /* Next frame. */
@@ -1306,14 +1304,12 @@ static int pose_slide_ex_common(Cxt *C, WinOp *op, tPoseSlideOp *pso)
   return OP_FINISHED;
 }
 
-/**
- * Common code for defining RNA properties.
- */
-static void pose_slide_opdef_properties(wmOperatorType *ot)
+/* Common code for defining api props. */
+static void pose_slide_opdef_props(WinOpType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_float_factor(ot->srna,
+  prop = api_def_float_factor(ot->sapi,
                               "factor",
                               0.5f,
                               0.0f,
@@ -1322,20 +1318,20 @@ static void pose_slide_opdef_properties(wmOperatorType *ot)
                               "Weighting factor for which keyframe is favored more",
                               0.0,
                               1.0);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_int(ot->srna,
+  prop = api_def_int(ot->sapi,
                      "prev_frame",
                      0,
                      MINAFRAME,
                      MAXFRAME,
-                     "Previous Keyframe",
+                     "Prev Keyframe",
                      "Frame number of keyframe immediately before the current frame",
                      0,
                      50);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_int(ot->srna,
+  prop = api_def_int(ot->sapi,
                      "next_frame",
                      0,
                      MINAFRAME,
@@ -1344,262 +1340,238 @@ static void pose_slide_opdef_properties(wmOperatorType *ot)
                      "Frame number of keyframe immediately after the current frame",
                      0,
                      50);
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 
-  prop = RNA_def_enum(ot->srna,
+  prop = api_def_enum(ot->sapi,
                       "channels",
                       prop_channels_types,
                       PS_TFM_ALL,
                       "Channels",
-                      "Set of properties that are affected");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-  prop = RNA_def_enum(ot->srna,
+                      "Set of props that are affected");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_enum(ot->sapi,
                       "axis_lock",
                       prop_axis_lock_types,
                       0,
                       "Axis Lock",
                       "Transform axis to restrict effects to");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/* ------------------------------------ */
-
-/**
- * Operator `invoke()` callback for 'push from breakdown' mode.
- */
-static int pose_slide_push_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Op `invoke()` callback for 'push from breakdown' mode. */
+static int pose_slide_push_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* Initialize data. */
+  /* Init data. */
   if (pose_slide_init(C, op, POSESLIDE_PUSH) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* Do common setup work. */
-  return pose_slide_invoke_common(C, op, event);
+  return pose_slide_invoke_common(C, op, ev);
 }
 
-/**
- * Operator `exec()` callback - for push.
- */
-static int pose_slide_push_exec(bContext *C, wmOperator *op)
+/* Op `ex()` cb - for push. */
+static int pose_slide_push_exec(Cxt *C, WinOp *op)
 {
   tPoseSlideOp *pso;
 
-  /* Initialize data (from RNA-props). */
+  /* Init data (from api-props). */
   if (pose_slide_init(C, op, POSESLIDE_PUSH) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   pso = static_cast<tPoseSlideOp *>(op->customdata);
 
-  /* Do common exec work. */
-  return pose_slide_exec_common(C, op, pso);
+  /* Do common ex work. */
+  return pose_slide_ex_common(C, op, pso);
 }
 
-void POSE_OT_push(wmOperatorType *ot)
+void POSE_OT_push(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Push Pose from Breakdown";
   ot->idname = "POSE_OT_push";
   ot->description = "Exaggerate the current pose in regards to the breakdown pose";
 
-  /* callbacks */
-  ot->exec = pose_slide_push_exec;
+  /* cbs */
+  ot->ex = pose_slide_push_ex;
   ot->invoke = pose_slide_push_invoke;
   ot->modal = pose_slide_modal;
   ot->cancel = pose_slide_cancel;
-  ot->poll = ED_operator_posemode;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X;
 
-  /* Properties */
-  pose_slide_opdef_properties(ot);
+  /* Props */
+  pose_slide_opdef_props(ot);
 }
 
-/* ........................ */
-
-/**
- * Invoke callback - for 'relax to breakdown' mode.
- */
-static int pose_slide_relax_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Invoke cb - for 'relax to breakdown' mode. */
+static int pose_slide_relax_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* Initialize data. */
+  /* Init data. */
   if (pose_slide_init(C, op, POSESLIDE_RELAX) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* Do common setup work. */
-  return pose_slide_invoke_common(C, op, event);
+  return pose_slide_invoke_common(C, op, ev);
 }
 
-/**
- * Operator exec() - for relax.
- */
-static int pose_slide_relax_exec(bContext *C, wmOperator *op)
+/* Op e() - for relax. */
+static int pose_slide_relax_ex(Cxt *C, WinOp *op)
 {
   tPoseSlideOp *pso;
 
-  /* Initialize data (from RNA-props). */
+  /* Init data (from api-props). */
   if (pose_slide_init(C, op, POSESLIDE_RELAX) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   pso = static_cast<tPoseSlideOp *>(op->customdata);
 
-  /* Do common exec work. */
-  return pose_slide_exec_common(C, op, pso);
+  /* Do common ex work. */
+  return pose_slide_ex_common(C, op, pso);
 }
 
-void POSE_OT_relax(wmOperatorType *ot)
+void POSE_OT_relax(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Relax Pose to Breakdown";
   ot->idname = "POSE_OT_relax";
   ot->description = "Make the current pose more similar to its breakdown pose";
 
-  /* callbacks */
-  ot->exec = pose_slide_relax_exec;
+  /* cbs */
+  ot->ex = pose_slide_relax_ex;
   ot->invoke = pose_slide_relax_invoke;
   ot->modal = pose_slide_modal;
   ot->cancel = pose_slide_cancel;
-  ot->poll = ED_operator_posemode;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X;
 
-  /* Properties */
-  pose_slide_opdef_properties(ot);
+  /* Props */
+  pose_slide_opdef_props(ot);
 }
 
-/* ........................ */
-/**
- * Operator `invoke()` - for 'blend with rest pose' mode.
- */
-static int pose_slide_blend_rest_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Op `invoke()` - for 'blend with rest pose' mode. */
+static int pose_slide_blend_rest_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* Initialize data. */
+  /* Init data. */
   if (pose_slide_init(C, op, POSESLIDE_BLEND_REST) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   tPoseSlideOp *pso = static_cast<tPoseSlideOp *>(op->customdata);
-  ED_slider_factor_set(pso->slider, 0);
-  ED_slider_factor_bounds_set(pso->slider, -1, 1);
+  ed_slider_factor_set(pso->slider, 0);
+  ed_slider_factor_bounds_set(pso->slider, -1, 1);
 
   /* do common setup work */
   return pose_slide_invoke_common(C, op, event);
 }
 
-/**
- * Operator `exec()` - for push.
- */
-static int pose_slide_blend_rest_exec(bContext *C, wmOperator *op)
+/* Op `ex()` - for push. */
+static int pose_slide_blend_rest_ex(Cxt *C, WinOp *op)
 {
   tPoseSlideOp *pso;
 
-  /* Initialize data (from RNA-props). */
+  /* Init data (from api-props). */
   if (pose_slide_init(C, op, POSESLIDE_BLEND_REST) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   pso = static_cast<tPoseSlideOp *>(op->customdata);
 
-  /* Do common exec work. */
-  return pose_slide_exec_common(C, op, pso);
+  /* Do common ex work. */
+  return pose_slide_ex_common(C, op, pso);
 }
 
-void POSE_OT_blend_with_rest(wmOperatorType *ot)
+void POSE_OT_blend_with_rest(WinOpType *ot)
 {
-  /* identifiers */
+  /* is */
   ot->name = "Blend Pose with Rest Pose";
   ot->idname = "POSE_OT_blend_with_rest";
   ot->description = "Make the current pose more similar to, or further away from, the rest pose";
 
-  /* callbacks */
-  ot->exec = pose_slide_blend_rest_exec;
+  /* cbs */
+  ot->ex = pose_slide_blend_rest_ex;
   ot->invoke = pose_slide_blend_rest_invoke;
   ot->modal = pose_slide_modal;
   ot->cancel = pose_slide_cancel;
-  ot->poll = ED_operator_posemode;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X;
 
-  /* Properties */
-  pose_slide_opdef_properties(ot);
+  /* Props */
+  pose_slide_opdef_props(ot);
 }
 
-/* ........................ */
-
-/**
- * Operator `invoke()` - for 'breakdown' mode.
- */
-static int pose_slide_breakdown_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+/* Op `invoke()` - for 'breakdown' mode. */
+static int pose_slide_breakdown_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* Initialize data. */
+  /* Init data. */
   if (pose_slide_init(C, op, POSESLIDE_BREAKDOWN) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* Do common setup work. */
   return pose_slide_invoke_common(C, op, event);
 }
 
-/**
- * Operator exec() - for breakdown.
- */
-static int pose_slide_breakdown_exec(bContext *C, wmOperator *op)
+/* Op ex() - for breakdown. */
+static int pose_slide_breakdown_ex(Cxt *C, WinOp *op)
 {
   tPoseSlideOp *pso;
 
-  /* Initialize data (from RNA-props). */
+  /* Init data (from api-props). */
   if (pose_slide_init(C, op, POSESLIDE_BREAKDOWN) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   pso = static_cast<tPoseSlideOp *>(op->customdata);
 
-  /* Do common exec work. */
-  return pose_slide_exec_common(C, op, pso);
+  /* Do common ex work. */
+  return pose_slide_ex_common(C, op, pso);
 }
 
-void POSE_OT_breakdown(wmOperatorType *ot)
+void POSE_OT_breakdown(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Pose Breakdowner";
   ot->idname = "POSE_OT_breakdown";
   ot->description = "Create a suitable breakdown pose on the current frame";
 
-  /* callbacks */
-  ot->exec = pose_slide_breakdown_exec;
+  /* cbs */
+  ot->ex = pose_slide_breakdown_ex;
   ot->invoke = pose_slide_breakdown_invoke;
   ot->modal = pose_slide_modal;
   ot->cancel = pose_slide_cancel;
-  ot->poll = ED_operator_posemode;
+  ot->poll = ed_op_posemode;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X;
 
-  /* Properties */
-  pose_slide_opdef_properties(ot);
+  /* Props */
+  pose_slide_opdef_props(ot);
 }
 
-/* ........................ */
-static int pose_slide_blend_to_neighbors_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int pose_slide_blend_to_neighbors_invoke(Cxt *C, WinOp *op, const WinEv *ev)
 {
-  /* Initialize data. */
+  /* Init data. */
   if (pose_slide_init(C, op, POSESLIDE_BLEND) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   /* Do common setup work. */
