@@ -295,30 +295,30 @@ void ed_armature_pose_sel_in_wpaint_mode(const Scene *scene,
     }
   }
   else {
-    VirtualModifierData virtual_modifier_data;
-    ModifierData *md = BKE_modifiers_get_virtual_modifierlist(ob_active, &virtual_modifier_data);
+    VirtualModData virtual_mod_data;
+    ModData *md = dune_mods_get_virtual_modlist(ob_active, &virtual_mod_data);
     for (; md; md = md->next) {
-      if (md->type == eModifierType_Armature) {
-        ArmatureModifierData *amd = (ArmatureModifierData *)md;
-        Object *ob_arm = amd->object;
+      if (md->type == eModType_Armature) {
+        ArmatureModData *amd = (ArmatureModData *)md;
+        Ob *ob_arm = amd->ob;
         if (ob_arm != nullptr) {
-          Base *base_arm = BKE_view_layer_base_find(view_layer, ob_arm);
-          if ((base_arm != nullptr) && (base_arm != base_select) &&
-              (base_arm->flag & BASE_SELECTED)) {
-            ED_object_base_select(base_arm, BA_DESELECT);
+          Base *base_arm = dune_view_layer_base_find(view_layer, ob_arm);
+          if ((base_arm != nullptr) && (base_arm != base_sel) &&
+              (base_arm->flag & BASE_SEL)) {
+            ed_ob_base_sel(base_arm, BA_DESEL);
           }
         }
       }
     }
   }
-  if ((base_select->flag & BASE_SELECTED) == 0) {
-    ED_object_base_select(base_select, BA_SELECT);
+  if ((base_sel->flag & BASE_SEL) == 0) {
+    ed_ob_base_sel(base_sel, BA_SEL);
   }
 }
 
-bool ED_pose_deselect_all(Object *ob, int select_mode, const bool ignore_visibility)
+bool ed_pose_desel_all(Ob *ob, int sel_mode, const bool ignore_visibility)
 {
-  bArmature *arm = static_cast<bArmature *>(ob->data);
+  Armature *arm = static_cast<Armature *>(ob->data);
 
   /* we call this from outliner too */
   if (ob->pose == nullptr) {
@@ -326,9 +326,9 @@ bool ED_pose_deselect_all(Object *ob, int select_mode, const bool ignore_visibil
   }
 
   /* Determine if we're selecting or deselecting */
-  if (select_mode == SEL_TOGGLE) {
-    select_mode = SEL_SELECT;
-    LISTBASE_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
+  if (sel_mode == SEL_TOGGLE) {
+    sel_mode = SEL_SELECT;
+    LIST_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
       if (ignore_visibility || PBONE_VISIBLE(arm, pchan->bone)) {
         if (pchan->bone->flag & BONE_SELECTED) {
           select_mode = SEL_DESELECT;
