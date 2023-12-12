@@ -1,25 +1,25 @@
 #include <cstring>
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_pen_mod.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
+#include "lib_dunelib.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.hh"
-#include "BKE_constraint.h"
-#include "BKE_context.hh"
-#include "BKE_gpencil_modifier_legacy.h"
-#include "BKE_layer.h"
-#include "BKE_modifier.hh"
-#include "BKE_object.hh"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_armature.hh"
+#include "dune_constraint.h"
+#include "dune_cxt.hh"
+#include "dune_pen_mod_legacy.h"
+#include "dune_layer.h"
+#include "dune_mod.hh"
+#include "dune_ob.hh"
+#include "dune_report.h"
 
 #include "DEG_depsgraph.hh"
 
