@@ -2,27 +2,27 @@
 
 #include "mem_guardedalloc.h"
 
-#include "type_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_grease_pencil_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_sequence_types.h"
+#include "types_anim.h"
+#include "types_armature_types.h"
+#include "types_gpencil_legacy_types.h"
+#include "types_pen.h"
+#include "types_mask.h"
+#include "types_node.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_seq.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_gpencil_legacy.h"
-#include "BKE_grease_pencil.hh"
-#include "BKE_main.hh"
-#include "BKE_node.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_pen_legacy.h"
+#include "dune_pen.hh"
+#include "dune_main.hh"
+#include "dune_node.h"
 
 #include "graph.hh"
 
@@ -90,12 +90,12 @@ void anim_id_update(Main *main, Id *id)
 {
   if (id) {
     graph_id_tag_update_ex(main,
-                         id, /* XXX: or do we want something more restrictive? */
+                         id, /* Or do we want something more restrictive? */
                          ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
   }
 }
 
-/* anim data <-> data syncing ********************* */
+/* anim data <-> data syncing */
 /* Code here is used to sync the
  * - sel (to find sel data easier)
  * - ... (insert other relevant items here later)
@@ -129,11 +129,11 @@ static void animchan_sync_group(AnimCxt *ac, AnimListElem *ale, ActionGroup **ac
 
       if (pchan) {
         /* if one matches, sync the sel status */
-        if ((pchan->bone) && (pchan->bone->flag & BONE_SELECTED)) {
-          agrp->flag |= AGRP_SELECTED;
+        if ((pchan->bone) && (pchan->bone->flag & BONE_SEL)) {
+          agrp->flag |= AGRP_SEL;
         }
         else {
-          agrp->flag &= ~AGRP_SELECTED;
+          agrp->flag &= ~AGRP_SEL;
         }
 
         /* also sync active group status */
@@ -183,10 +183,10 @@ static void animchan_sync_fcurve_scene(AnimListElem *ale)
 
   /* update sel status */
   if (seq->flag & SEL) {
-    fcu->flag |= FCURVE_SELECTED;
+    fcu->flag |= FCURVE_SEL;
   }
   else {
-    fcu->flag &= ~FCURVE_SELECTED;
+    fcu->flag &= ~FCURVE_SEL;
   }
 }
 
@@ -381,8 +381,8 @@ void animdata_freelist(List *anim_data)
     lib_assert(ale->update == 0);
     mem_free(ale);
   }
-  BLI_listbase_clear(anim_data);
+  lib_list_clear(anim_data);
 #else
-  BLI_freelistN(anim_data);
+  lib_freelist(anim_data);
 #endif
 }
