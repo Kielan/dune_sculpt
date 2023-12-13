@@ -363,38 +363,36 @@ bool ANIM_animdata_get_context(const bContext *C, bAnimContext *ac)
   if (ac == nullptr) {
     return false;
   }
-  memset(ac, 0, sizeof(bAnimContext));
+  memset(ac, 0, sizeof(AnimCxt));
 
-  /* get useful default context settings from context */
-  ac->bmain = bmain;
+  /* get useful default cxt settings from context */
+  ac->main = main;
   ac->scene = scene;
-  ac->view_layer = CTX_data_view_layer(C);
+  ac->view_layer = cxt_data_view_layer(C);
   if (scene) {
-    ac->markers = ED_context_get_markers(C);
-    BKE_view_layer_synced_ensure(ac->scene, ac->view_layer);
+    ac->markers = ed_cxt_get_markers(C);
+    dune_view_layer_synced_ensure(ac->scene, ac->view_layer);
   }
-  ac->depsgraph = CTX_data_depsgraph_pointer(C);
-  ac->obact = BKE_view_layer_active_object_get(ac->view_layer);
+  ac->graph = cxt_data_graph_pointer(C);
+  ac->obact = dune_view_layer_active_ob_get(ac->view_layer);
   ac->area = area;
-  ac->region = region;
+  ac->rgn = rgn;
   ac->sl = sl;
   ac->spacetype = (area) ? area->spacetype : 0;
-  ac->regiontype = (region) ? region->regiontype : 0;
+  ac->rgntype = (rgn) ? rgn->rgntype : 0;
 
   /* get data context info */
-  /* XXX: if the below fails, try to grab this info from context instead...
+  /* If the below fails, try to grab this info from context instead...
    * (to allow for scripting). */
-  return ANIM_animdata_context_getdata(ac);
+  return animdata_context_getdata(ac);
 }
 
-bool ANIM_animdata_can_have_greasepencil(const eAnimCont_Types type)
+bool anim_animdata_can_have_greasepencil(const eAnimCont_Types type)
 {
   return ELEM(type, ANIMCONT_GPENCIL, ANIMCONT_DOPESHEET, ANIMCONT_TIMELINE);
 }
 
-/* ************************************************************ */
-/* Blender Data <-- Filter --> Channels to be operated on */
-
+/* Dune Data <-- Filter --> Channels to be operated on */
 /* macros to use before/after getting the sub-channels of some channel,
  * to abstract away some of the tricky logic involved
  *
@@ -411,8 +409,7 @@ bool ANIM_animdata_can_have_greasepencil(const eAnimCont_Types type)
  *  to go steamrolling the logic into a single-line expression as from experience,
  *  those are notoriously difficult to read + debug when extending later on. The code
  *  below is purposefully laid out so that each case noted above corresponds clearly to
- *  one case below.
- */
+ *  one case below. */
 #define BEGIN_ANIMFILTER_SUBCHANNELS(expanded_check) \
   { \
     int _filter = filter_mode; \
@@ -436,8 +433,6 @@ bool ANIM_animdata_can_have_greasepencil(const eAnimCont_Types type)
   } \
   (void)0
 
-/* ............................... */
-
 /* quick macro to test if AnimData is usable */
 #define ANIMDATA_HAS_KEYS(id) ((id)->adt && (id)->adt->action)
 
@@ -447,8 +442,7 @@ bool ANIM_animdata_can_have_greasepencil(const eAnimCont_Types type)
 /* quick macro to test if AnimData is usable for NLA */
 #define ANIMDATA_HAS_NLA(id) ((id)->adt && (id)->adt->nla_tracks.first)
 
-/**
- * Quick macro to test for all three above usability tests, performing the appropriate provided
+/* Quick macro to test for all three above usability tests, performing the appropriate provided
  * action for each when the AnimData context is appropriate.
  *
  * Priority order for this goes (most important, to least):
@@ -458,12 +452,12 @@ bool ANIM_animdata_can_have_greasepencil(const eAnimCont_Types type)
  * a standard set of data needs to be available within the scope that this
  *
  * Gets called in:
- * - ListBase anim_data;
- * - bDopeSheet *ads;
- * - bAnimListElem *ale;
+ * - List anim_data;
+ * - DopeSheet *ads;
+ * - AnimListElem *ale;
  * - size_t items;
  *
- * - id: ID block which should have an AnimData pointer following it immediately, to use
+ * - id: Id block which should have an AnimData pointer following it immediately, to use
  * - adtOk: line or block of code to execute for AnimData-blocks case
  *   (usually #ANIMDATA_ADD_ANIMDATA).
  * - nlaOk: line or block of code to execute for NLA tracks+strips case
