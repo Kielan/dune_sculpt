@@ -1,25 +1,20 @@
-/** \file
- * \ingroup edanimation
- */
-
-/* This file contains a system used to provide a layer of abstraction between sources
+/* File contains a system used to provide a layer of abstraction between sources
  * of animation data and tools in Animation Editors. The method used here involves
  * generating a list of edit structures which enable tools to naively perform the actions
- * they require without all the boiler-plate associated with loops within loops and checking
+ * they require wo all the boiler-plate associated w loops w/in loops and checking
  * for cases to ignore.
  *
  * While this is primarily used for the Action/Dopesheet Editor (and its accessory modes),
  * the Graph Editor also uses this for its channel list and for determining which curves
  * are being edited. Likewise, the NLA Editor also uses this for its channel list and in
- * its operators.
+ * its ops.
  *
- * NOTE: much of the original system this was based on was built before the creation of the RNA
- * system. In future, it would be interesting to replace some parts of this code with RNA queries,
- * however, RNA does not eliminate some of the boiler-plate reduction benefits presented by this
+ * Much of the original system this was based on was built before the creation of the api
+ * system. In future, it would be interesting to replace some parts of this code with api queries,
+ * however, api does not eliminate some of the boiler-plate reduction benefits presented by this
  * system, so if any such work does occur, it should only be used for the internals used here...
  *
- * -- Joshua Leung, Dec 2008 (Last revision July 2009)
- */
+ * -- Joshua Leung, Dec 2008 (Last revision July 2009) */
 
 #include <cstring>
 
