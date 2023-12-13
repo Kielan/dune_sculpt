@@ -1480,17 +1480,17 @@ static bAnimChannelType ACF_DSMAT = {
     /*setting_ptr*/ acf_dsmat_setting_ptr,
 };
 
-/* Light Expander  ------------------------------------------- */
+/* Light Expander */
 
-/* TODO: just get this from RNA? */
-static int acf_dslight_icon(bAnimListElem * /*ale*/)
+/* TODO: just get this from api? */
+static int acf_dslight_icon(AnimListElem * /*ale*/)
 {
   return ICON_LIGHT_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dslight_setting_flag(bAnimContext * /*ac*/,
-                                    eAnimChannel_Settings setting,
+static int acf_dslight_setting_flag(AnimCxt * /*ac*/,
+                                    eAnimChannelSettings setting,
                                     bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1507,17 +1507,17 @@ static int acf_dslight_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dslight_setting_ptr(bAnimListElem *ale,
-                                     eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dslight_setting_ptr(AnimListElem *ale,
+                                     eAnimChannelSettings setting,
                                      short *r_type)
 {
   Light *la = (Light *)ale->data;
@@ -1529,7 +1529,7 @@ static void *acf_dslight_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(la->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (la->adt) {
@@ -1542,8 +1542,8 @@ static void *acf_dslight_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Light expander type define. */
-static bAnimChannelType ACF_DSLIGHT = {
+/* Light expander type define. */
+static AnimChannelType ACF_DSLIGHT = {
     /*channel_type_name*/ "Light Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -1562,23 +1562,22 @@ static bAnimChannelType ACF_DSLIGHT = {
     /*setting_ptr*/ acf_dslight_setting_ptr,
 };
 
-/* Texture Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dstex_icon(bAnimListElem * /*ale*/)
+/* Texture Expanded */
+/* TODO: just get this from api? */
+static int acf_dstex_icon(AnimListElem * /*ale*/)
 {
   return ICON_TEXTURE_DATA;
 }
 
 /* offset for texture expanders */
 /* FIXME: soon to be obsolete? */
-static short acf_dstex_offset(bAnimContext * /*ac*/, bAnimListElem * /*ale*/)
+static short acf_dstex_offset(AnimCxt * /*ac*/, AnimListElem * /*ale*/)
 {
-  return 14; /* XXX: simply include this in indentation instead? */
+  return 14; /* Simply include this in indentation instead? */
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dstex_setting_flag(bAnimContext * /*ac*/,
+static int acf_dstex_setting_flag(AnimCxt * /*ac*/,
                                   eAnimChannel_Settings setting,
                                   bool *r_neg)
 {
@@ -1596,17 +1595,17 @@ static int acf_dstex_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dstex_setting_ptr(bAnimListElem *ale,
-                                   eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dstex_setting_ptr(AnimListElem *ale,
+                                   eAnimChannelSettings setting,
                                    short *r_type)
 {
   Tex *tex = (Tex *)ale->data;
@@ -1618,7 +1617,7 @@ static void *acf_dstex_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(tex->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (tex->adt) {
@@ -1631,14 +1630,14 @@ static void *acf_dstex_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Texture expander type define. */
-static bAnimChannelType ACF_DSTEX = {
+/* Texture expander type define. */
+static AnimChannelType ACF_DSTEX = {
     /*channel_type_name*/ "Texture Data Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
     /*get_backdrop_color*/ acf_generic_dataexpand_color,
     /*get_channel_color*/ nullptr,
-    /*draw_backdrop*/ acf_generic_dataexpand_backdrop,
+    /*drw_backdrop*/ acf_generic_dataexpand_backdrop,
     /*get_indent_level*/ acf_generic_indentation_1,
     /*get_offset*/ acf_dstex_offset,
 
@@ -1651,18 +1650,18 @@ static bAnimChannelType ACF_DSTEX = {
     /*setting_ptr*/ acf_dstex_setting_ptr,
 };
 
-/* Camera Expander  ------------------------------------------- */
+/* Camera Expander */
 
-/* TODO: just get this from RNA? */
-static int acf_dscachefile_icon(bAnimListElem *ale)
+/* TODO: get this from api? */
+static int acf_dscachefile_icon(AnimListElem *ale)
 {
   UNUSED_VARS(ale);
   return ICON_FILE;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dscachefile_setting_flag(bAnimContext *ac,
-                                        eAnimChannel_Settings setting,
+static int acf_dscachefile_setting_flag(AnimCxt *ac,
+                                        eAnimChannelSettings setting,
                                         bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1679,8 +1678,8 @@ static int acf_dscachefile_setting_flag(bAnimContext *ac,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
@@ -1689,9 +1688,9 @@ static int acf_dscachefile_setting_flag(bAnimContext *ac,
   UNUSED_VARS(ac);
 }
 
-/* get pointer to the setting */
-static void *acf_dscachefile_setting_ptr(bAnimListElem *ale,
-                                         eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dscachefile_setting_ptr(AnimListElem *ale,
+                                         eAnimChannelSettings setting,
                                          short *r_type)
 {
   CacheFile *cache_file = (CacheFile *)ale->data;
@@ -1703,7 +1702,7 @@ static void *acf_dscachefile_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(cache_file->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* selected */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (cache_file->adt) {
@@ -1717,8 +1716,8 @@ static void *acf_dscachefile_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** CacheFile expander type define.. */
-static bAnimChannelType ACF_DSCACHEFILE = {
+/* CacheFile expander type define.. */
+static AnimChannelType ACF_DSCACHEFILE = {
     /*channel_type_name*/ "Cache File Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -1737,17 +1736,17 @@ static bAnimChannelType ACF_DSCACHEFILE = {
     /*setting_ptr*/ acf_dscachefile_setting_ptr,
 };
 
-/* Camera Expander  ------------------------------------------- */
+/* Camera Expander */
 
-/* TODO: just get this from RNA? */
-static int acf_dscam_icon(bAnimListElem * /*ale*/)
+/* TODO: just get this from api? */
+static int acf_dscam_icon(AnimListElem * /*ale*/)
 {
   return ICON_CAMERA_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dscam_setting_flag(bAnimContext * /*ac*/,
-                                  eAnimChannel_Settings setting,
+static int acf_dscam_setting_flag(AnimCxt * /*ac*/,
+                                  eAnimChannelSettings setting,
                                   bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1764,8 +1763,8 @@ static int acf_dscam_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return ADT_UI_SEL;
 
     case ACHANNEL_SETTING_ALWAYS_VISIBLE:
       return ADT_CURVES_ALWAYS_VISIBLE;
@@ -1775,9 +1774,9 @@ static int acf_dscam_setting_flag(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dscam_setting_ptr(bAnimListElem *ale,
-                                   eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dscam_setting_ptr(AnimListElem *ale,
+                                   eAnimChannelSettings setting,
                                    short *r_type)
 {
   Camera *ca = (Camera *)ale->data;
@@ -1789,7 +1788,7 @@ static void *acf_dscam_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(ca->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* selected */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
     case ACHANNEL_SETTING_ALWAYS_VISIBLE:
@@ -1803,8 +1802,8 @@ static void *acf_dscam_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Camera expander type define. */
-static bAnimChannelType ACF_DSCAM = {
+/* Camera expander type define. */
+static AnimChannelType ACF_DSCAM = {
     /*channel_type_name*/ "Camera Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -1823,13 +1822,13 @@ static bAnimChannelType ACF_DSCAM = {
     /*setting_ptr*/ acf_dscam_setting_ptr,
 };
 
-/* Curve Expander  ------------------------------------------- */
+/* Curve Expander */
 
-/* TODO: just get this from RNA? */
-static int acf_dscur_icon(bAnimListElem *ale)
+/* TODO: just get this from api? */
+static int acf_dscur_icon(AnimListElem *ale)
 {
   Curve *cu = (Curve *)ale->data;
-  short obtype = BKE_curve_type_get(cu);
+  short obtype = dune_curve_type_get(cu);
 
   switch (obtype) {
     case OB_FONT:
@@ -1842,8 +1841,8 @@ static int acf_dscur_icon(bAnimListElem *ale)
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dscur_setting_flag(bAnimContext * /*ac*/,
-                                  eAnimChannel_Settings setting,
+static int acf_dscur_setting_flag(AnimCxt * /*ac*/,
+                                  eAnimChannelSettings setting,
                                   bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1860,17 +1859,17 @@ static int acf_dscur_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dscur_setting_ptr(bAnimListElem *ale,
-                                   eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dscur_setting_ptr(AnimListElem *ale,
+                                   eAnimChannelSettings setting,
                                    short *r_type)
 {
   Curve *cu = (Curve *)ale->data;
@@ -1882,7 +1881,7 @@ static void *acf_dscur_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(cu->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (cu->adt) {
@@ -1895,8 +1894,8 @@ static void *acf_dscur_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Curve expander type define. */
-static bAnimChannelType ACF_DSCUR = {
+/* Curve expander type define. */
+static AnimChannelType ACF_DSCUR = {
     /*channel_type_name*/ "Curve Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -1915,21 +1914,20 @@ static bAnimChannelType ACF_DSCUR = {
     /*setting_ptr*/ acf_dscur_setting_ptr,
 };
 
-/* Shape Key Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dsskey_icon(bAnimListElem * /*ale*/)
+/* Shape Key Expander */
+/* TODO: just get this from api? */
+static int acf_dsskey_icon(AnimListElem * /*ale*/)
 {
   return ICON_SHAPEKEY_DATA;
 }
 
 /* check if some setting exists for this channel */
-static bool acf_dsskey_setting_valid(bAnimContext *ac,
-                                     bAnimListElem * /*ale*/,
-                                     eAnimChannel_Settings setting)
+static bool acf_dsskey_setting_valid(AnimCxt *ac,
+                                     AnimListElem * /*ale*/,
+                                     eAnimChannelSettings setting)
 {
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT:
+    case ACHANNEL_SETTING_SEL:
     case ACHANNEL_SETTING_EXPAND:
       return true;
 
@@ -1943,8 +1941,8 @@ static bool acf_dsskey_setting_valid(bAnimContext *ac,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dsskey_setting_flag(bAnimContext * /*ac*/,
-                                   eAnimChannel_Settings setting,
+static int acf_dsskey_setting_flag(AnimCxt * /*ac*/,
+                                   eAnimChannelSettings setting,
                                    bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1961,17 +1959,17 @@ static int acf_dsskey_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dsskey_setting_ptr(bAnimListElem *ale,
-                                    eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dsskey_setting_ptr(AnimListElem *ale,
+                                    eAnimChannelSettings setting,
                                     short *r_type)
 {
   Key *key = (Key *)ale->data;
@@ -1983,7 +1981,7 @@ static void *acf_dsskey_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(key->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (key->adt) {
@@ -1996,8 +1994,8 @@ static void *acf_dsskey_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Shape-key expander type define. */
-static bAnimChannelType ACF_DSSKEY = {
+/* Shape-key expander type define. */
+static AnimChannelType ACF_DSSKEY = {
     /*channel_type_name*/ "Shape Key Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -2016,17 +2014,17 @@ static bAnimChannelType ACF_DSSKEY = {
     /*setting_ptr*/ acf_dsskey_setting_ptr,
 };
 
-/* World Expander  ------------------------------------------- */
+/* World Expander */
 
-/* TODO: just get this from RNA? */
-static int acf_dswor_icon(bAnimListElem * /*ale*/)
+/* TODO: just get this from api? */
+static int acf_dswor_icon(AnimListElem * /*ale*/)
 {
   return ICON_WORLD_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dswor_setting_flag(bAnimContext * /*ac*/,
-                                  eAnimChannel_Settings setting,
+static int acf_dswor_setting_flag(AnimCxt * /*ac*/,
+                                  eAnimChannelSettings setting,
                                   bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2043,17 +2041,17 @@ static int acf_dswor_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dswor_setting_ptr(bAnimListElem *ale,
-                                   eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dswor_setting_ptr(AnimListElem *ale,
+                                   eAnimChannelSettings setting,
                                    short *r_type)
 {
   World *wo = (World *)ale->data;
@@ -2065,7 +2063,7 @@ static void *acf_dswor_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(wo->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (wo->adt) {
@@ -2078,7 +2076,7 @@ static void *acf_dswor_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** World expander type define. */
+/* World expander type define. */
 static bAnimChannelType ACF_DSWOR = {
     /*channel_type_name*/ "World Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
@@ -2098,17 +2096,16 @@ static bAnimChannelType ACF_DSWOR = {
     /*setting_ptr*/ acf_dswor_setting_ptr,
 };
 
-/* Particle Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dspart_icon(bAnimListElem * /*ale*/)
+/* Particle Expander */
+/* TODO: just get this from api? */
+static int acf_dspart_icon(AnimListElem * /*ale*/)
 {
   return ICON_PARTICLE_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dspart_setting_flag(bAnimContext * /*ac*/,
-                                   eAnimChannel_Settings setting,
+static int acf_dspart_setting_flag(AnimCxt * /*ac*/,
+                                   eAnimChannelSettings setting,
                                    bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2125,17 +2122,17 @@ static int acf_dspart_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dspart_setting_ptr(bAnimListElem *ale,
-                                    eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dspart_setting_ptr(AnimListElem *ale,
+                                    eAnimChannelSettings setting,
                                     short *r_type)
 {
   ParticleSettings *part = (ParticleSettings *)ale->data;
@@ -2147,7 +2144,7 @@ static void *acf_dspart_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(part->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (part->adt) {
@@ -2160,8 +2157,8 @@ static void *acf_dspart_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Particle expander type define. */
-static bAnimChannelType ACF_DSPART = {
+/* Particle expander type define. */
+static AnimChannelType ACF_DSPART = {
     /*channel_type_name*/ "Particle Data Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -2180,17 +2177,16 @@ static bAnimChannelType ACF_DSPART = {
     /*setting_ptr*/ acf_dspart_setting_ptr,
 };
 
-/* MetaBall Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dsmball_icon(bAnimListElem * /*ale*/)
+/* MetaBall Expander */
+/* TODO: just get this from api? */
+static int acf_dsmball_icon(AnimListElem * /*ale*/)
 {
   return ICON_META_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dsmball_setting_flag(bAnimContext * /*ac*/,
-                                    eAnimChannel_Settings setting,
+static int acf_dsmball_setting_flag(AnimCxt * /*ac*/,
+                                    eAnimChannelSettings setting,
                                     bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2207,17 +2203,17 @@ static int acf_dsmball_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dsmball_setting_ptr(bAnimListElem *ale,
-                                     eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dsmball_setting_ptr(AnimListElem *ale,
+                                     eAnimChannelSettings setting,
                                      short *r_type)
 {
   MetaBall *mb = (MetaBall *)ale->data;
@@ -2229,7 +2225,7 @@ static void *acf_dsmball_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(mb->flag2, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* selected */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (mb->adt) {
@@ -2242,14 +2238,14 @@ static void *acf_dsmball_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Meta-ball expander type define. */
-static bAnimChannelType ACF_DSMBALL = {
+/* Meta-ball expander type define. */
+static AnimChannelType ACF_DSMBALL = {
     /*channel_type_name*/ "Metaball Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
     /*get_backdrop_color*/ acf_generic_dataexpand_color,
     /*get_channel_color*/ nullptr,
-    /*draw_backdrop*/ acf_generic_dataexpand_backdrop,
+    /*drw_backdrop*/ acf_generic_dataexpand_backdrop,
     /*get_indent_level*/ acf_generic_indentation_1,
     /*get_offset*/ acf_generic_basic_offset,
 
@@ -2262,17 +2258,16 @@ static bAnimChannelType ACF_DSMBALL = {
     /*setting_ptr*/ acf_dsmball_setting_ptr,
 };
 
-/* Armature Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dsarm_icon(bAnimListElem * /*ale*/)
+/* Armature Expander */
+/* TODO: just get this from api? */
+static int acf_dsarm_icon(AnimListElem * /*ale*/)
 {
   return ICON_ARMATURE_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dsarm_setting_flag(bAnimContext * /*ac*/,
-                                  eAnimChannel_Settings setting,
+static int acf_dsarm_setting_flag(AnimCxt * /*ac*/,
+                                  eAnimChannelSettings setting,
                                   bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2289,20 +2284,20 @@ static int acf_dsarm_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* selected */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dsarm_setting_ptr(bAnimListElem *ale,
-                                   eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dsarm_setting_ptr(AnimListElem *ale,
+                                   eAnimChannelSettings setting,
                                    short *r_type)
 {
-  bArmature *arm = (bArmature *)ale->data;
+  Armature *arm = (Armature *)ale->data;
 
   /* Clear extra return data first. */
   *r_type = 0;
@@ -2311,7 +2306,7 @@ static void *acf_dsarm_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(arm->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* selected */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (arm->adt) {
@@ -2324,14 +2319,14 @@ static void *acf_dsarm_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Armature expander type define. */
-static bAnimChannelType ACF_DSARM = {
+/* Armature expander type define. */
+static AnimChannelType ACF_DSARM = {
     /*channel_type_name*/ "Armature Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
     /*get_backdrop_color*/ acf_generic_dataexpand_color,
     /*get_channel_color*/ nullptr,
-    /*draw_backdrop*/ acf_generic_dataexpand_backdrop,
+    /*drw_backdrop*/ acf_generic_dataexpand_backdrop,
     /*get_indent_level*/ acf_generic_indentation_1,
     /*get_offset*/ acf_generic_basic_offset,
 
@@ -2344,18 +2339,17 @@ static bAnimChannelType ACF_DSARM = {
     /*setting_ptr*/ acf_dsarm_setting_ptr,
 };
 
-/* NodeTree Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dsntree_icon(bAnimListElem * /*ale*/)
+/* NodeTree Expander */
+/* TODO: get this from api? */
+static int acf_dsntree_icon(AnimListElem * /*ale*/)
 {
   return ICON_NODETREE;
 }
 
 /* offset for nodetree expanders */
-static short acf_dsntree_offset(bAnimContext *ac, bAnimListElem *ale)
+static short acf_dsntree_offset(AnimContext *ac, AnimListElem *ale)
 {
-  bNodeTree *ntree = (bNodeTree *)ale->data;
+  NodeTree *ntree = (NodeTree *)ale->data;
   short offset = acf_generic_basic_offset(ac, ale);
 
   offset += acf_nodetree_rootType_offset(ntree);
@@ -2364,8 +2358,8 @@ static short acf_dsntree_offset(bAnimContext *ac, bAnimListElem *ale)
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dsntree_setting_flag(bAnimContext * /*ac*/,
-                                    eAnimChannel_Settings setting,
+static int acf_dsntree_setting_flag(AnimCxt * /*ac*/,
+                                    eAnimChannelSettings setting,
                                     bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2382,20 +2376,20 @@ static int acf_dsntree_setting_flag(bAnimContext * /*ac*/,
       *r_neg = true;
       return ADT_CURVES_NOT_VISIBLE;
 
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return ADT_UI_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return ADT_UI_SEL;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-/* get pointer to the setting */
-static void *acf_dsntree_setting_ptr(bAnimListElem *ale,
-                                     eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_dsntree_setting_ptr(AnimListElem *ale,
+                                     eAnimChannelSettings setting,
                                      short *r_type)
 {
-  bNodeTree *ntree = (bNodeTree *)ale->data;
+  NodeTree *ntree = (NodeTree *)ale->data;
 
   /* Clear extra return data first. */
   *r_type = 0;
@@ -2404,7 +2398,7 @@ static void *acf_dsntree_setting_ptr(bAnimListElem *ale,
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       return GET_ACF_FLAG_PTR(ntree->flag, r_type);
 
-    case ACHANNEL_SETTING_SELECT:  /* selected */
+    case ACHANNEL_SETTING_SEL:  /* sel */
     case ACHANNEL_SETTING_MUTE:    /* muted (for NLA only) */
     case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
       if (ntree->adt) {
@@ -2417,8 +2411,8 @@ static void *acf_dsntree_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Node tree expander type define. */
-static bAnimChannelType ACF_DSNTREE = {
+/* Node tree expander type define. */
+static AnimChannelType ACF_DSNTREE = {
     /*channel_type_name*/ "Node Tree Expander",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -2437,17 +2431,16 @@ static bAnimChannelType ACF_DSNTREE = {
     /*setting_ptr*/ acf_dsntree_setting_ptr,
 };
 
-/* LineStyle Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_dslinestyle_icon(bAnimListElem * /*ale*/)
+/* LineStyle Expander */
+/* TODO: get this from api? */
+static int acf_dslinestyle_icon(AnimListElem * /*ale*/)
 {
   return ICON_LINE_DATA;
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dslinestyle_setting_flag(bAnimContext * /*ac*/,
-                                        eAnimChannel_Settings setting,
+static int acf_dslinestyle_setting_flag(AnimCxt * /*ac*/,
+                                        eAnimChannelSettings setting,
                                         bool *r_neg)
 {
   /* Clear extra return data first. */
