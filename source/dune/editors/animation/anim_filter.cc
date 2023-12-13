@@ -18,97 +18,95 @@
 
 #include <cstring>
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_brush_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_camera_types.h"
-#include "DNA_curves_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_grease_pencil_types.h"
-#include "DNA_key_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_light_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meta_types.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_pointcloud_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_space_types.h"
-#include "DNA_speaker_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_volume_types.h"
-#include "DNA_world_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_brush.h"
+#include "types_cachefile.h"
+#include "types_camera.h"
+#include "types_curves.h"
+#include "types_pen.h"
+#include "types_pen.h"
+#include "types_key.h"
+#include "types_lattice.h"
+#include "types_layer.h"
+#include "types_light.h"
+#include "types_linestyle.h"
+#include "types_mask.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_meta.h"
+#include "types_movieclip.h"
+#include "types_node.h"
+#include "types_ob_force.h"
+#include "types_ob.h"
+#include "types_particle.h"
+#include "types_pointcloud.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_seq.h"
+#include "types_space.h"
+#include "types_speaker.h"
+#include "types_userdef.h"
+#include "types_volume.h"
+#include "types_world.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_alloca.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_collection.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_fcurve_driver.h"
-#include "BKE_global.h"
-#include "BKE_grease_pencil.hh"
-#include "BKE_key.h"
-#include "BKE_layer.h"
-#include "BKE_main.hh"
-#include "BKE_mask.h"
-#include "BKE_material.h"
-#include "BKE_modifier.hh"
-#include "BKE_node.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_collection.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_fcurve_driver.h"
+#include "dune_global.h"
+#include "dune_pen.hh"
+#include "dune_key.h"
+#include "dune_layer.h"
+#include "dune_main.hh"
+#include "dune_mask.h"
+#include "dune_material.h"
+#include "dune_mod.hh"
+#include "dune_node.h"
 
-#include "ED_anim_api.hh"
-#include "ED_markers.hh"
+#include "ed_anim_api.hh"
+#include "ed_markers.hh"
 
-#include "SEQ_sequencer.hh"
-#include "SEQ_utils.hh"
+#include "seq_seq.hh"
+#include "seq_utils.hh"
 
-#include "ANIM_bone_collections.hh"
+#include "anim_bone_collections.hh"
 
-#include "UI_resources.hh" /* for TH_KEYFRAME_SCALE lookup */
+#include "ui_resources.hh" /* for TH_KEYFRAME_SCALE lookup */
 
-/* ************************************************************ */
-/* Blender Context <-> Animation Context mapping */
-
-/* ----------- Private Stuff - Action Editor ------------- */
+/* Blender Cxt <-> Anim Cxt mapping */
+/* Private Stuff - Action Editor */
 
 /* Get shapekey data being edited (for Action Editor -> ShapeKey mode) */
-/* NOTE: there's a similar function in `key.cc` #BKE_key_from_object. */
-static Key *actedit_get_shapekeys(bAnimContext *ac)
+/* There's a similar fn in `key.cc` dune_key_from_ob. */
+static Key *actedit_get_shapekeys(AnimCxt *ac)
 {
   Scene *scene = ac->scene;
   ViewLayer *view_layer = ac->view_layer;
-  Object *ob;
+  Ob *ob;
   Key *key;
 
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  ob = BKE_view_layer_active_object_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  ob = dune_view_layer_active_ob_get(view_layer);
   if (ob == nullptr) {
     return nullptr;
   }
 
-  /* XXX pinning is not available in 'ShapeKey' mode... */
+  /* pinning is not available in 'ShapeKey' mode... */
   // if (saction->pin) { return nullptr; }
 
   /* shapekey data is stored with geometry data */
-  key = BKE_key_from_object(ob);
+  key = dune_key_from_ob(ob);
 
   if (key) {
     if (key->type == KEY_RELATIVE) {
@@ -120,7 +118,7 @@ static Key *actedit_get_shapekeys(bAnimContext *ac)
 }
 
 /* Get data being edited in Action Editor (depending on current 'mode') */
-static bool actedit_get_context(bAnimContext *ac, SpaceAction *saction)
+static bool actedit_get_context(AnimCxt *ac, SpaceAction *saction)
 {
   /* get dopesheet */
   ac->ads = &saction->ads;
@@ -163,11 +161,11 @@ static bool actedit_get_context(bAnimContext *ac, SpaceAction *saction)
       ac->mode = saction->mode;
       return true;
 
-    case SACTCONT_GPENCIL: /* Grease Pencil */ /* XXX review how this mode is handled... */
-      /* update scene-pointer (no need to check for pinning yet, as not implemented) */
-      saction->ads.source = (ID *)ac->scene;
+    case SACTCONT_PEN: /* Pen */ /* review how this mode is handled... */
+      /* update scene-ptr (no need to check for pinning yet, as not implemented) */
+      saction->ads.src = (Id *)ac->scene;
 
-      ac->datatype = ANIMCONT_GPENCIL;
+      ac->datatype = ANIMCONT_PEN;
       ac->data = &saction->ads;
 
       ac->mode = saction->mode;
@@ -175,7 +173,7 @@ static bool actedit_get_context(bAnimContext *ac, SpaceAction *saction)
 
     case SACTCONT_CACHEFILE: /* Cache File */ /* XXX review how this mode is handled... */
       /* update scene-pointer (no need to check for pinning yet, as not implemented) */
-      saction->ads.source = (ID *)ac->scene;
+      saction->ads.source = (Id *)ac->scene;
 
       ac->datatype = ANIMCONT_CHANNEL;
       ac->data = &saction->ads;
@@ -187,7 +185,7 @@ static bool actedit_get_context(bAnimContext *ac, SpaceAction *saction)
     {
       /* TODO: other methods to get the mask. */
 #if 0
-      Sequence *seq = SEQ_select_active_get(ac->scene);
+      Seq *seq = seq_sel_active_get(ac->scene);
       MovieClip *clip = ac->scene->clip;
       struct Mask *mask = seq ? seq->mask : nullptr;
 #endif
