@@ -1578,7 +1578,7 @@ static short acf_dstex_offset(AnimCxt * /*ac*/, AnimListElem * /*ale*/)
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
 static int acf_dstex_setting_flag(AnimCxt * /*ac*/,
-                                  eAnimChannel_Settings setting,
+                                  eAnimChannelSettings setting,
                                   bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -2794,7 +2794,7 @@ static int acf_dscurves_setting_flag(AnimCxt * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
+/* get ptr to the setting */
 static void *acf_dscurves_setting_ptr(AnimListElem *ale,
                                       eAnimChannelSettings setting,
                                       short *r_type)
@@ -2828,7 +2828,7 @@ static AnimChannelType ACF_DSCURVES = {
 
     /*get_backdrop_color*/ acf_generic_dataexpand_color,
     /*get_channel_color*/ nullptr,
-    /*draw_backdrop*/ acf_generic_dataexpand_backdrop,
+    /*drw_backdrop*/ acf_generic_dataexpand_backdrop,
     /*get_indent_level*/ acf_generic_indentation_1,
     /*get_offset*/ acf_generic_basic_offset,
 
@@ -2841,7 +2841,6 @@ static AnimChannelType ACF_DSCURVES = {
     /*setting_ptr*/ acf_dscurves_setting_ptr};
 
 /* PointCloud */
-
 /* TODO: get this from api? */
 static int acf_dspointcloud_icon(AnimListElem * /*ale*/)
 {
@@ -2849,7 +2848,7 @@ static int acf_dspointcloud_icon(AnimListElem * /*ale*/)
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_dspointcloud_setting_flag(AnimContext * /*ac*/,
+static int acf_dspointcloud_setting_flag(AnimCxt * /*ac*/,
                                          eAnimChannelSettings setting,
                                          bool *r_neg)
 {
@@ -3258,7 +3257,7 @@ static void *acf_shapekey_setting_ptr(AnimListElem *ale,
   }
 }
 
-/** Shape-key expander type define. */
+/* Shape-key expander type define. */
 static AnimChannelType ACF_SHAPEKEY = {
     /*channel_type_name*/ "Shape Key",
     /*channel_role*/ ACHANNEL_ROLE_CHANNEL,
@@ -3329,20 +3328,20 @@ static int acf_gpd_setting_flag_legacy(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
-static void *acf_gpd_setting_ptr_legacy(bAnimListElem *ale,
-                                        eAnimChannel_Settings /*setting*/,
-                                        short *r_type)
+/* get ptr to the setting */
+static void *acf_pendata_setting_ptr_legacy(AnimListElem *ale,
+                                            eAnimChannelSettings /*setting*/,
+                                            short *r_type)
 {
-  bGPdata *grease_pencil = (bGPdata *)ale->data;
+  PenData *pen = (PenData *)ale->data;
 
-  /* all flags are just in gpd->flag for now... */
-  return GET_ACF_FLAG_PTR(grease_pencil->flag, r_type);
+  /* all flags are just in pen->flag for now... */
+  return GET_ACF_FLAG_PTR(pen->flag, r_type);
 }
 
-/** Grease-pencil data-block type define. (Legacy) */
-static bAnimChannelType ACF_GPD_LEGACY = {
-    /*channel_type_name*/ "GPencil Datablock",
+/* pen data-block type define. (Legacy) */
+static AnimChannelType ACF_PENDATA_LEGACY = {
+    /*channel_type_name*/ "Pen Datablock",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
     /*get_backdrop_color*/ acf_gpd_color,
@@ -3360,24 +3359,24 @@ static bAnimChannelType ACF_GPD_LEGACY = {
     /*setting_ptr*/ acf_gpd_setting_ptr_legacy,
 };
 
-/* GPencil Layer (Legacy) ------------------------------------------- */
+/* Pen Layer (Legacy) */
 
-/* name for grease pencil layer entries */
-static void acf_gpl_name_legacy(bAnimListElem *ale, char *name)
+/* name for pen layer entries */
+static void acf_penlayer_name_legacy(AnimListElem *ale, char *name)
 {
-  bGPDlayer *gpl = (bGPDlayer *)ale->data;
+  PenLayer *penl = (PenLayer *)ale->data;
 
-  if (gpl && name) {
-    BLI_strncpy(name, gpl->info, ANIM_CHAN_NAME_SIZE);
+  if (penl && name) {
+    lin_strncpy(name, penl->info, ANIM_CHAN_NAME_SIZE);
   }
 }
 
-/* name property for grease pencil layer entries */
-static bool acf_gpl_name_prop_legacy(bAnimListElem *ale, PointerRNA *r_ptr, PropertyRNA **r_prop)
+/* name prop for pen layer entries */
+static bool acf_penl_name_prop_legacy(AnimListElem *ale, ApiPtr *r_ptr, ApiProp **r_prop)
 {
   if (ale->data) {
-    *r_ptr = RNA_pointer_create(ale->id, &RNA_GPencilLayer, ale->data);
-    *r_prop = RNA_struct_name_property(r_ptr->type);
+    *r_ptr = api_ptr_create(ale->id, &ApiPenLayer, ale->data);
+    *r_prop = api_struct_name_prop(r_ptr->type);
 
     return (*r_prop != nullptr);
   }
@@ -3386,9 +3385,9 @@ static bool acf_gpl_name_prop_legacy(bAnimListElem *ale, PointerRNA *r_ptr, Prop
 }
 
 /* check if some setting exists for this channel */
-static bool acf_gpl_setting_valid_legacy(bAnimContext * /*ac*/,
-                                         bAnimListElem * /*ale*/,
-                                         eAnimChannel_Settings setting)
+static bool acf_penl_setting_valid_legacy(AnimCxt * /*ac*/,
+                                         AnimListElem * /*ale*/,
+                                         eAnimChannelSettings setting)
 {
   switch (setting) {
     /* unsupported */
@@ -3405,35 +3404,35 @@ static bool acf_gpl_setting_valid_legacy(bAnimContext * /*ac*/,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_gpl_setting_flag_legacy(bAnimContext * /*ac*/,
-                                       eAnimChannel_Settings setting,
-                                       bool *r_neg)
+static int acf_penlayer_setting_flag_legacy(AniCxt * /*ac*/,
+                                            eAnimChannelSettings setting,
+                                            bool *r_neg)
 {
   /* Clear extra return data first. */
   *r_neg = false;
 
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return GP_LAYER_SELECT;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return PEN_LAYER_SEL;
 
-    case ACHANNEL_SETTING_MUTE: /* animation muting - similar to frame lock... */
-      return GP_LAYER_FRAMELOCK;
+    case ACHANNEL_SETTING_MUTE: /* anim muting: similar to frame lock... */
+      return PEN_LAYER_FRAMELOCK;
 
     case ACHANNEL_SETTING_VISIBLE: /* visibility of the layers (NOT muting) */
       *r_neg = true;
-      return GP_LAYER_HIDE;
+      return PEN_LAYER_HIDE;
 
     case ACHANNEL_SETTING_PROTECT: /* protected */
-      return GP_LAYER_LOCKED;
+      return PEN_LAYER_LOCKED;
 
     default: /* unsupported */
       return 0;
   }
 }
 
-static bool acf_gpl_channel_color(const bAnimListElem *ale, uint8_t r_color[3])
+static bool acf_gpl_channel_color(const AnimListElem *ale, uint8_t r_color[3])
 {
-  const bGPDlayer *gpl = static_cast<const bGPDlayer *>(ale->data);
+  const bGPDlayer *penl = static_cast<const PenLayer *>(ale->data);
   rgb_float_to_uchar(r_color, gpl->color);
   return true;
 }
