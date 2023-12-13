@@ -1,91 +1,87 @@
-#include "BLI_sys_types.h"
+#include "lib_sys_types.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
+#include "types_anim.h"
+#include "types_pen_legacy.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_userdef.h"
 
-#include "BLI_dlrbTree.h"
-#include "BLI_math_rotation.h"
-#include "BLI_rect.h"
-#include "BLI_timecode.h"
-#include "BLI_utildefines.h"
+#include "lib_dlrbTree.h"
+#include "lib_math_rotation.h"
+#include "lib_rect.h"
+#include "lib_timecode.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.hh"
-#include "BKE_curve.hh"
-#include "BKE_fcurve.h"
-#include "BKE_global.h"
-#include "BKE_mask.h"
-#include "BKE_nla.h"
+#include "dune_cxt.hh"
+#include "dune_curve.hh"
+#include "dune_fcurve.h"
+#include "dune_global.h"
+#include "dune_mask.h"
+#include "dune_nla.h"
 
-#include "ED_anim_api.hh"
-#include "ED_keyframes_draw.hh"
-#include "ED_keyframes_edit.hh"
-#include "ED_keyframes_keylist.hh"
+#include "ed_anim_api.hh"
+#include "ed_keyframes_drw.hh"
+#include "ed_keyframes_edit.hh"
+#include "ed_keyframes_keylist.hh"
 
-#include "RNA_access.hh"
-#include "RNA_path.hh"
+#include "api_access.hh"
+#include "api_path.hh"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
+#include "ui_view2d.hh"
 
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
-/* *************************************************** */
 /* CURRENT FRAME DRAWING */
-
-void ANIM_draw_cfra(const bContext *C, View2D *v2d, short flag)
+void anim_drw_cfra(const Cxt *C, View2D *v2d, short flag)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
   const float time = scene->r.cfra + scene->r.subframe;
   const float x = float(time * scene->r.framelen);
 
-  GPU_line_width((flag & DRAWCFRA_WIDE) ? 3.0 : 2.0);
+  gpu_line_width((flag & DRWCFRA_WIDE) ? 3.0 : 2.0);
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
 
-  /* Draw a light green line to indicate current frame */
+  /* Drw a light green line to indicate current frame */
   immUniformThemeColor(TH_CFRAME);
 
   immBegin(GPU_PRIM_LINES, 2);
-  immVertex2f(pos, x, v2d->cur.ymin - 500.0f); /* XXX arbitrary... want it go to bottom */
+  immVertex2f(pos, x, v2d->cur.ymin - 500.0f); /* arbitrary... want it go to bottom */
   immVertex2f(pos, x, v2d->cur.ymax);
   immEnd();
   immUnbindProgram();
 }
 
-/* *************************************************** */
 /* PREVIEW RANGE 'CURTAINS' */
-/* NOTE: 'Preview Range' tools are defined in `anim_ops.cc`. */
-
-void ANIM_draw_previewrange(const bContext *C, View2D *v2d, int end_frame_width)
+/* 'Preview Range' tools are defined in `anim_ops.cc`. */
+void anim_drw_previewrange(const Cxt *C, View2D *v2d, int end_frame_width)
 {
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = cxt_data_scene(C);
 
-  /* only draw this if preview range is set */
+  /* only drw this if preview range is set */
   if (PRVRANGEON) {
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_blend(GPU_BLEND_ALPHA);
 
     GPUVertFormat *format = immVertexFormat();
-    uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+    uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
     immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
     immUniformThemeColorShadeAlpha(TH_ANIM_PREVIEW_RANGE, -25, -30);
-    /* XXX: Fix this hardcoded color (anim_active) */
+    /* Fix this hardcoded color (anim_active) */
     // immUniformColor4f(0.8f, 0.44f, 0.1f, 0.2f);
 
-    /* only draw two separate 'curtains' if there's no overlap between them */
+    /* only drw 2 separate 'curtains' if there's no overlap between them */
     if (PSFRA < PEFRA + end_frame_width) {
       immRectf(pos, v2d->cur.xmin, v2d->cur.ymin, float(PSFRA), v2d->cur.ymax);
       immRectf(pos, float(PEFRA + end_frame_width), v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
@@ -96,20 +92,18 @@ void ANIM_draw_previewrange(const bContext *C, View2D *v2d, int end_frame_width)
 
     immUnbindProgram();
 
-    GPU_blend(GPU_BLEND_NONE);
+    gpu_blend(GPU_BLEND_NONE);
   }
 }
 
-/* *************************************************** */
 /* SCENE FRAME RANGE */
-
-void ANIM_draw_framerange(Scene *scene, View2D *v2d)
+void anim_drw_framerange(Scene *scene, View2D *v2d)
 {
-  /* draw darkened area outside of active timeline frame range */
-  GPU_blend(GPU_BLEND_ALPHA);
+  /* drw darkened area outside of active timeline frame range */
+  gpu_blend(GPU_BLEND_ALPHA);
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
   immUniformThemeColorShadeAlpha(TH_BACK, -25, -100);
@@ -122,7 +116,7 @@ void ANIM_draw_framerange(Scene *scene, View2D *v2d)
     immRectf(pos, v2d->cur.xmin, v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
   }
 
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_blend(GPU_BLEND_NONE);
 
   /* thin lines where the actual frames are */
   immUniformThemeColorShade(TH_BACK, -60);
@@ -139,8 +133,8 @@ void ANIM_draw_framerange(Scene *scene, View2D *v2d)
   immUnbindProgram();
 }
 
-void ANIM_draw_action_framerange(
-    AnimData *adt, bAction *action, View2D *v2d, float ymin, float ymax)
+void anim_drw_action_framerange(
+    AnimData *adt, Action *action, View2D *v2d, float ymin, float ymax)
 {
   if ((action->flag & ACT_FRAME_RANGE) == 0) {
     return;
@@ -154,19 +148,19 @@ void ANIM_draw_action_framerange(
     return;
   }
 
-  const float sfra = BKE_nla_tweakedit_remap(adt, action->frame_start, NLATIME_CONVERT_MAP);
-  const float efra = BKE_nla_tweakedit_remap(adt, action->frame_end, NLATIME_CONVERT_MAP);
+  const float sfra = dune_nla_tweakedit_remap(adt, action->frame_start, NLATIME_CONVERT_MAP);
+  const float efra = dune_nla_tweakedit_remap(adt, action->frame_end, NLATIME_CONVERT_MAP);
 
   /* Diagonal stripe filled area outside of the frame range. */
-  GPU_blend(GPU_BLEND_ALPHA);
+  gpu_blend(GPU_BLEND_ALPHA);
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_2D_DIAG_STRIPES);
 
   float color[4];
-  UI_GetThemeColorShadeAlpha4fv(TH_BACK, -40, -50, color);
+  ui_GetThemeColorShadeAlpha4fv(TH_BACK, -40, -50, color);
 
   immUniform4f("color1", color[0], color[1], color[2], color[3]);
   immUniform4f("color2", 0.0f, 0.0f, 0.0f, 0.0f);
@@ -183,13 +177,13 @@ void ANIM_draw_action_framerange(
 
   immUnbindProgram();
 
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_blend(GPU_BLEND_NONE);
 
   /* Thin lines where the actual frames are. */
   immBindBuiltinProgram(GPU_SHADER_3D_UNIFORM_COLOR);
   immUniformThemeColorShade(TH_BACK, -60);
 
-  GPU_line_width(1.0f);
+  gpu_line_width(1.0f);
 
   immBegin(GPU_PRIM_LINES, 4);
 
@@ -203,10 +197,8 @@ void ANIM_draw_action_framerange(
   immUnbindProgram();
 }
 
-/* *************************************************** */
-/* NLA-MAPPING UTILITIES (required for drawing and also editing keyframes). */
-
-AnimData *ANIM_nla_mapping_get(bAnimContext *ac, bAnimListElem *ale)
+/* NLA-MAPPING UTILS (required for drwing and also editing keyframes). */
+AnimData *anim_nla_mapping_get(AnimCxt *ac, AnimListElem *ale)
 {
   /* sanity checks */
   if (ac == nullptr) {
@@ -219,7 +211,7 @@ AnimData *ANIM_nla_mapping_get(bAnimContext *ac, bAnimListElem *ale)
   }
 
   /* apart from strictly keyframe-related contexts, this shouldn't even happen */
-  /* XXX: nla and channel here may not be necessary... */
+  /* nla and channel here may not be necessary... */
   if (ELEM(ac->datatype,
            ANIMCONT_ACTION,
            ANIMCONT_SHAPEKEY,
@@ -229,9 +221,9 @@ AnimData *ANIM_nla_mapping_get(bAnimContext *ac, bAnimListElem *ale)
            ANIMCONT_CHANNEL,
            ANIMCONT_TIMELINE))
   {
-    /* handling depends on the type of animation-context we've got */
+    /* handling depends on the type of anim-cxt we've got */
     if (ale) {
-      /* NLA Control Curves occur on NLA strips,
+      /* NLA Ctrl Curves occur on NLA strips,
        * and shouldn't be subjected to this kind of mapping. */
       if (ale->type != ANIMTYPE_NLACURVE) {
         return ale->adt;
@@ -243,9 +235,7 @@ AnimData *ANIM_nla_mapping_get(bAnimContext *ac, bAnimListElem *ale)
   return nullptr;
 }
 
-/* ------------------- */
-
-/* Helper function for ANIM_nla_mapping_apply_fcurve() -> "restore",
+/* Helper fn for anim_nla_mapping_apply_fcurve() -> "restore",
  * i.e. mapping points back to action-time. */
 static short bezt_nlamapping_restore(KeyframeEditData *ked, BezTriple *bezt)
 {
@@ -255,16 +245,16 @@ static short bezt_nlamapping_restore(KeyframeEditData *ked, BezTriple *bezt)
 
   /* adjust BezTriple handles only if allowed to */
   if (only_keys == 0) {
-    bezt->vec[0][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[0][0], NLATIME_CONVERT_UNMAP);
-    bezt->vec[2][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[2][0], NLATIME_CONVERT_UNMAP);
+    bezt->vec[0][0] = dune_nla_tweakedit_remap(adt, bezt->vec[0][0], NLATIME_CONVERT_UNMAP);
+    bezt->vec[2][0] = dune_nla_tweakedit_remap(adt, bezt->vec[2][0], NLATIME_CONVERT_UNMAP);
   }
 
-  bezt->vec[1][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[1][0], NLATIME_CONVERT_UNMAP);
+  bezt->vec[1][0] = dune_nla_tweakedit_remap(adt, bezt->vec[1][0], NLATIME_CONVERT_UNMAP);
 
   return 0;
 }
 
-/* helper function for ANIM_nla_mapping_apply_fcurve() -> "apply",
+/* helper fn for anim_nla_mapping_apply_fcurve() -> "apply",
  * i.e. mapping points to NLA-mapped global time */
 static short bezt_nlamapping_apply(KeyframeEditData *ked, BezTriple *bezt)
 {
@@ -274,31 +264,30 @@ static short bezt_nlamapping_apply(KeyframeEditData *ked, BezTriple *bezt)
 
   /* adjust BezTriple handles only if allowed to */
   if (only_keys == 0) {
-    bezt->vec[0][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[0][0], NLATIME_CONVERT_MAP);
-    bezt->vec[2][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[2][0], NLATIME_CONVERT_MAP);
+    bezt->vec[0][0] = dune_nla_tweakedit_remap(adt, bezt->vec[0][0], NLATIME_CONVERT_MAP);
+    bezt->vec[2][0] = dune_nla_tweakedit_remap(adt, bezt->vec[2][0], NLATIME_CONVERT_MAP);
   }
 
-  bezt->vec[1][0] = BKE_nla_tweakedit_remap(adt, bezt->vec[1][0], NLATIME_CONVERT_MAP);
+  bezt->vec[1][0] = dune_nla_tweakedit_remap(adt, bezt->vec[1][0], NLATIME_CONVERT_MAP);
 
   return 0;
 }
 
-void ANIM_nla_mapping_apply_fcurve(AnimData *adt, FCurve *fcu, bool restore, bool only_keys)
+void anim_nla_mapping_apply_fcurve(AnimData *adt, FCurve *fcu, bool restore, bool only_keys)
 {
-  if (adt == nullptr || BLI_listbase_is_empty(&adt->nla_tracks)) {
+  if (adt == nullptr || lib_list_is_empty(&adt->nla_tracks)) {
     return;
   }
   KeyframeEditData ked = {{nullptr}};
-  KeyframeEditFunc map_cb;
+  KeyframeEditFn map_cb;
 
   /* init edit data
    * - AnimData is stored in 'data'
-   * - only_keys is stored in 'i1'
-   */
+   * - only_keys is stored in 'i1' */
   ked.data = (void *)adt;
   ked.i1 = int(only_keys);
 
-  /* get editing callback */
+  /* get editing cb */
   if (restore) {
     map_cb = bezt_nlamapping_restore;
   }
@@ -307,13 +296,11 @@ void ANIM_nla_mapping_apply_fcurve(AnimData *adt, FCurve *fcu, bool restore, boo
   }
 
   /* apply to F-Curve */
-  ANIM_fcurve_keyframes_loop(&ked, fcu, nullptr, map_cb, nullptr);
+  anim_fcurve_keyframes_loop(&ked, fcu, nullptr, map_cb, nullptr);
 }
 
-/* *************************************************** */
 /* UNITS CONVERSION MAPPING (required for drawing and editing keyframes) */
-
-short ANIM_get_normalization_flags(SpaceLink *space_link)
+short anim_get_normalization_flags(SpaceLink *space_link)
 {
   if (space_link->spacetype == SPACE_GRAPH) {
     SpaceGraph *sipo = (SpaceGraph *)space_link;
@@ -344,10 +331,10 @@ static void fcurve_scene_coord_range_get(Scene *scene,
       if (fcu->bezt) {
         /* Preview frame ranges need to be converted to bezt array indices. */
         bool replace = false;
-        start = BKE_fcurve_bezt_binarysearch_index(
+        start = dune_fcurve_bezt_binarysearch_index(
             fcu->bezt, scene->r.psfra, fcu->totvert, &replace);
 
-        end = BKE_fcurve_bezt_binarysearch_index(
+        end = dune_fcurve_bezt_binarysearch_index(
             fcu->bezt, scene->r.pefra + 1, fcu->totvert, &replace);
       }
       else if (fcu->fpt) {
@@ -366,8 +353,7 @@ static void fcurve_scene_coord_range_get(Scene *scene,
            * control point position only. so we normalize "interesting"
            * part of the curve.
            *
-           * Here we handle left extrapolation.
-           */
+           * Here we handle left extrapolation. */
           max_coord = max_ff(max_coord, bezt->vec[1][1]);
           min_coord = min_ff(min_coord, bezt->vec[1][1]);
         }
@@ -375,8 +361,7 @@ static void fcurve_scene_coord_range_get(Scene *scene,
           const BezTriple *prev_bezt = bezt - 1;
           if (!ELEM(prev_bezt->ipo, BEZT_IPO_BEZ, BEZT_IPO_BACK, BEZT_IPO_ELASTIC)) {
             /* The points on the curve will lie inside the start and end points.
-             * Calculate min/max using both previous and current CV.
-             */
+             * Calc min/max using both previous and current CV. */
             max_coord = max_ff(max_coord, bezt->vec[1][1]);
             min_coord = min_ff(min_coord, bezt->vec[1][1]);
             max_coord = max_ff(max_coord, prev_bezt->vec[1][1]);
@@ -393,7 +378,7 @@ static void fcurve_scene_coord_range_get(Scene *scene,
             }
             else {
               if (!ELEM(prev_bezt->ipo, BEZT_IPO_BACK, BEZT_IPO_ELASTIC)) {
-                /* Calculate min/max using bezier forward differencing. */
+                /* Calc min/max using bezier forward differencing. */
                 float data[120];
                 float v1[2], v2[2], v3[2], v4[2];
 
@@ -407,11 +392,11 @@ static void fcurve_scene_coord_range_get(Scene *scene,
                 v4[0] = bezt->vec[1][0];
                 v4[1] = bezt->vec[1][1];
 
-                BKE_fcurve_correct_bezpart(v1, v2, v3, v4);
+                dune_fcurve_correct_bezpart(v1, v2, v3, v4);
 
-                BKE_curve_forward_diff_bezier(
+                dune_curve_forward_diff_bezier(
                     v1[0], v2[0], v3[0], v4[0], data, resol, sizeof(float[3]));
-                BKE_curve_forward_diff_bezier(
+                dune_curve_forward_diff_bezier(
                     v1[1], v2[1], v3[1], v4[1], data + 1, resol, sizeof(float[3]));
 
                 for (int j = 0; j <= resol; ++j) {
@@ -421,15 +406,15 @@ static void fcurve_scene_coord_range_get(Scene *scene,
                 }
               }
               else {
-                /* Calculate min/max using full fcurve evaluation.
+                /* Calc min/max using full fcurve evaluation.
                  * [slower than bezier forward differencing but evaluates Back/Elastic
                  * interpolation as well]. */
                 float step_size = (bezt->vec[1][0] - prev_bezt->vec[1][0]) / resol;
                 for (int j = 0; j <= resol; j++) {
                   float eval_time = prev_bezt->vec[1][0] + step_size * j;
-                  float eval_value = evaluate_fcurve_only_curve(fcu, eval_time);
-                  max_coord = max_ff(max_coord, eval_value);
-                  min_coord = min_ff(min_coord, eval_value);
+                  float eval_val = eval_fcurve_only_curve(fcu, eval_time);
+                  max_coord = max_ff(max_coord, eval_val);
+                  min_coord = min_ff(min_coord, eval_val);
                 }
               }
             }
@@ -472,8 +457,7 @@ static float normalization_factor_get(Scene *scene, FCurve *fcu, short flag, flo
     }
     if (fcu->prev_norm_factor == 0.0f) {
       /* Happens when Auto Normalize was disabled before
-       * any curves were displayed.
-       */
+       * any curves were displayed. */
       return 1.0f;
     }
     return fcu->prev_norm_factor;
@@ -496,8 +480,8 @@ static float normalization_factor_get(Scene *scene, FCurve *fcu, short flag, flo
   float min_coord = FLT_MAX;
   fcurve_scene_coord_range_get(scene, fcu, &min_coord, &max_coord);
 
-  /* We use an ULPS-based floating point comparison here, with the
-   * rationale that if there are too few possible values between
+  /* We use an ULPS-based floating point comparison here, w the
+   * rationale that if there are too few possible vals between
    * `min_coord` and `max_coord`, then after display normalization it
    * will certainly be a weird quantized experience for the user anyway. */
   if (min_coord < max_coord && ulp_diff_ff(min_coord, max_coord) > 256) {
@@ -522,7 +506,7 @@ static float normalization_factor_get(Scene *scene, FCurve *fcu, short flag, flo
   return factor;
 }
 
-float ANIM_unit_mapping_get_factor(Scene *scene, ID *id, FCurve *fcu, short flag, float *r_offset)
+float anim_unit_mapping_get_factor(Scene *scene, Id *id, FCurve *fcu, short flag, float *r_offset)
 {
   if (flag & ANIM_UNITCONV_NORMALIZE) {
     return normalization_factor_get(scene, fcu, flag, r_offset);
@@ -533,17 +517,17 @@ float ANIM_unit_mapping_get_factor(Scene *scene, ID *id, FCurve *fcu, short flag
   }
 
   /* sanity checks */
-  if (id && fcu && fcu->rna_path) {
-    PointerRNA ptr;
-    PropertyRNA *prop;
+  if (id && fcu && fcu->api_path) {
+    ApiPtr ptr;
+    ApiProp *prop;
 
-    /* get RNA property that F-Curve affects */
-    PointerRNA id_ptr = RNA_id_pointer_create(id);
-    if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
+    /* get api prop that F-Curve affects */
+    ApiPtr id_ptr = api_id_ptr_create(id);
+    if (api_path_resolve_prop(&id_ptr, fcu->api_path, &ptr, &prop)) {
       /* rotations: radians <-> degrees? */
-      if (RNA_SUBTYPE_UNIT(RNA_property_subtype(prop)) == PROP_UNIT_ROTATION) {
+      if (API_SUBTYPE_UNIT(api_prop_subtype(prop)) == PROP_UNIT_ROTATION) {
         /* if the radians flag is not set, default to using degrees which need conversions */
-        if ((scene) && (scene->unit.system_rotation == USER_UNIT_ROT_RADIANS) == 0) {
+        if ((scene) && (scene->unit.sys_rotation == USER_UNIT_ROT_RADIANS) == 0) {
           if (flag & ANIM_UNITCONV_RESTORE) {
             return DEG2RADF(1.0f); /* degrees to radians */
           }
@@ -559,13 +543,13 @@ float ANIM_unit_mapping_get_factor(Scene *scene, ID *id, FCurve *fcu, short flag
   return 1.0f;
 }
 
-static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra)
+static bool find_prev_next_keyframes(Cxt *C, int *r_nextfra, int *r_prevfra)
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *ob = CTX_data_active_object(C);
-  Mask *mask = CTX_data_edit_mask(C);
-  bDopeSheet ads = {nullptr};
-  AnimKeylist *keylist = ED_keylist_create();
+  Scene *scene = cxt_data_scene(C);
+  Ob *ob = cxt_data_active_ob(C);
+  Mask *mask = cxt_data_edit_mask(C);
+  DopeSheet ads = {nullptr};
+  AnimKeylist *keylist = ed_keylist_create();
   const ActKeyColumn *aknext, *akprev;
   float cfranext, cfraprev;
   bool donenext = false, doneprev = false;
@@ -573,7 +557,7 @@ static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra
 
   cfranext = cfraprev = float(scene->r.cfra);
 
-  /* seed up dummy dopesheet context with flags to perform necessary filtering */
+  /* seed up dummy dopesheet cxt with flags to perform necessary filtering */
   if ((scene->flag & SCE_KEYS_NO_SELONLY) == 0) {
     /* only selected channels are included */
     ads.filterflag |= ADS_FILTER_ONLYSEL;
@@ -585,19 +569,19 @@ static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra
 
   if (ob) {
     ob_to_keylist(&ads, ob, keylist, 0, {-FLT_MAX, FLT_MAX});
-    gpencil_to_keylist(&ads, static_cast<bGPdata *>(ob->data), keylist, false);
+    pen_to_keylist(&ads, static_cast<PenData *>(ob->data), keylist, false);
   }
 
   if (mask) {
-    MaskLayer *masklay = BKE_mask_layer_active(mask);
+    MaskLayer *masklay = dune_mask_layer_active(mask);
     mask_to_keylist(&ads, masklay, keylist);
   }
-  ED_keylist_prepare_for_direct_access(keylist);
+  ed_keylist_prepare_for_direct_access(keylist);
 
-  /* TODO(jbakker): Keylists are ordered, no need to do any searching at all. */
+  /* TODO: Keylists are ordered, no need to do any searching at all. */
   /* find matching keyframe in the right direction */
   do {
-    aknext = ED_keylist_find_next(keylist, cfranext);
+    aknext = ed_keylist_find_next(keylist, cfranext);
 
     if (aknext) {
       if (scene->r.cfra == int(aknext->cfra)) {
@@ -615,7 +599,7 @@ static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra
   } while ((aknext != nullptr) && (donenext == false));
 
   do {
-    akprev = ED_keylist_find_prev(keylist, cfraprev);
+    akprev = ed_keylist_find_prev(keylist, cfraprev);
 
     if (akprev) {
       if (scene->r.cfra == int(akprev->cfra)) {
@@ -631,8 +615,8 @@ static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra
     }
   } while ((akprev != nullptr) && (doneprev == false));
 
-  /* free temp stuff */
-  ED_keylist_free(keylist);
+  /* free tmp stuff */
+  ed_keylist_free(keylist);
 
   /* any success? */
   if (doneprev || donenext) {
@@ -656,11 +640,11 @@ static bool find_prev_next_keyframes(bContext *C, int *r_nextfra, int *r_prevfra
   return false;
 }
 
-void ANIM_center_frame(bContext *C, int smooth_viewtx)
+void anim_center_frame(Cxt *C, int smooth_viewtx)
 {
-  ARegion *region = CTX_wm_region(C);
-  Scene *scene = CTX_data_scene(C);
-  float w = BLI_rctf_size_x(&region->v2d.cur);
+  ARgn *rgn = cxt_win_rgn(C);
+  Scene *scene = cxt_data_scene(C);
+  float w = lib_rctf_size_x(&rgn->v2d.cur);
   rctf newrct;
   int nextfra, prevfra;
 
@@ -669,8 +653,8 @@ void ANIM_center_frame(bContext *C, int smooth_viewtx)
       const float fps = FPS;
       newrct.xmax = scene->r.cfra + U.view_frame_seconds * fps + 1;
       newrct.xmin = scene->r.cfra - U.view_frame_seconds * fps - 1;
-      newrct.ymax = region->v2d.cur.ymax;
-      newrct.ymin = region->v2d.cur.ymin;
+      newrct.ymax = rgn->v2d.cur.ymax;
+      newrct.ymin = rgn->v2d.cur.ymin;
       break;
     }
 
@@ -679,8 +663,8 @@ void ANIM_center_frame(bContext *C, int smooth_viewtx)
       if (find_prev_next_keyframes(C, &nextfra, &prevfra)) {
         newrct.xmax = nextfra;
         newrct.xmin = prevfra;
-        newrct.ymax = region->v2d.cur.ymax;
-        newrct.ymin = region->v2d.cur.ymin;
+        newrct.ymax = rgn->v2d.cur.ymax;
+        newrct.ymin = rgn->v2d.cur.ymin;
         break;
       }
       /* else drop through, keep range instead */
@@ -690,11 +674,10 @@ void ANIM_center_frame(bContext *C, int smooth_viewtx)
     default:
       newrct.xmax = scene->r.cfra + (w / 2);
       newrct.xmin = scene->r.cfra - (w / 2);
-      newrct.ymax = region->v2d.cur.ymax;
-      newrct.ymin = region->v2d.cur.ymin;
+      newrct.ymax = rgn->v2d.cur.ymax;
+      newrct.ymin = rgn->v2d.cur.ymin;
       break;
   }
 
-  UI_view2d_smooth_view(C, region, &newrct, smooth_viewtx);
+  ui_view2d_smooth_view(C, rgn, &newrct, smooth_viewtx);
 }
-/* *************************************************** */
