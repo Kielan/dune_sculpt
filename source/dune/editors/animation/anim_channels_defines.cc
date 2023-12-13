@@ -1031,8 +1031,8 @@ static int acf_fcurve_setting_flag(bAnimContext * /*ac*/,
 }
 
 /* get pointer to the setting */
-static void *acf_fcurve_setting_ptr(bAnimListElem *ale,
-                                    eAnimChannel_Settings /*setting*/,
+static void *acf_fcurve_setting_ptr(AnimListElem *ale,
+                                    eAnimChannelSettings /*setting*/,
                                     short *r_type)
 {
   FCurve *fcu = (FCurve *)ale->data;
@@ -1041,14 +1041,14 @@ static void *acf_fcurve_setting_ptr(bAnimListElem *ale,
   return GET_ACF_FLAG_PTR(fcu->flag, r_type);
 }
 
-static bool acf_fcurve_channel_color(const bAnimListElem *ale, uint8_t r_color[3])
+static bool acf_fcurve_channel_color(const AnimListElem *ale, uint8_t r_color[3])
 {
   const FCurve *fcu = static_cast<const FCurve *>(ale->data);
   return get_actiongroup_color(fcu->grp, r_color);
 }
 
-/** F-Curve type define. */
-static bAnimChannelType ACF_FCURVE = {
+/* F-Curve type define. */
+static AnimChannelType ACF_FCURVE = {
     /*channel_type_name*/ "F-Curve",
     /*channel_role*/ ACHANNEL_ROLE_CHANNEL,
 
@@ -1056,7 +1056,7 @@ static bAnimChannelType ACF_FCURVE = {
     /*get_channel_color*/ acf_fcurve_channel_color,
     /*draw_backdrop*/ acf_generic_channel_backdrop,
     /*get_indent_level*/ acf_generic_indentation_flexible,
-    /* XXX rename this to f-curves only? */
+    /* rename this to f-curves only? */
     /*get_offset*/ acf_generic_group_offset,
 
     /*name*/ acf_fcurve_name,
@@ -1068,26 +1068,25 @@ static bAnimChannelType ACF_FCURVE = {
     /*setting_ptr*/ acf_fcurve_setting_ptr,
 };
 
-/* NLA Control FCurves Expander ----------------------- */
-
+/* NLA Control FCurves Expander */
 /* get backdrop color for nla controls widget */
-static void acf_nla_controls_color(bAnimContext * /*ac*/,
-                                   bAnimListElem * /*ale*/,
+static void acf_nla_controls_color(AnimCxt * /*ac*/,
+                                   AnimListElem * /*ale*/,
                                    float r_color[3])
 {
   /* TODO: give this its own theme setting? */
-  UI_GetThemeColorShade3fv(TH_GROUP, 55, r_color);
+  ui_GetThemeColorShade3fv(TH_GROUP, 55, r_color);
 }
 
 /* backdrop for nla controls expander widget */
-static void acf_nla_controls_backdrop(bAnimContext *ac,
-                                      bAnimListElem *ale,
+static void acf_nla_controls_backdrop(AnimCxt *ac,
+                                      AnimListElem *ale,
                                       float yminc,
                                       float ymaxc)
 {
-  const bAnimChannelType *acf = ANIM_channel_get_typeinfo(ale);
-  View2D *v2d = &ac->region->v2d;
-  short expanded = ANIM_channel_setting_get(ac, ale, ACHANNEL_SETTING_EXPAND) != 0;
+  const AnimChannelType *acf = anim_channel_get_typeinfo(ale);
+  View2D *v2d = &ac->rgn->v2d;
+  short expanded = anim_channel_setting_get(ac, ale, ACHANNEL_SETTING_EXPAND) != 0;
   short offset = (acf->get_offset) ? acf->get_offset(ac, ale) : 0;
   float color[3];
 
@@ -1095,20 +1094,20 @@ static void acf_nla_controls_backdrop(bAnimContext *ac,
   acf->get_backdrop_color(ac, ale, color);
 
   /* rounded corners on LHS only - top only when expanded, but bottom too when collapsed */
-  UI_draw_roundbox_corner_set(expanded ? UI_CNR_TOP_LEFT : (UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT));
+  ui_drw_roundbox_corner_set(expanded ? UI_CNR_TOP_LEFT : (UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT));
 
   rctf box;
   box.xmin = offset;
   box.xmax = v2d->cur.xmax + EXTRA_SCROLL_PAD;
   box.ymin = yminc;
   box.ymax = ymaxc;
-  UI_draw_roundbox_3fv_alpha(&box, true, 5, color, 1.0f);
+  ui_drw_roundbox_3fv_alpha(&box, true, 5, color, 1.0f);
 }
 
 /* name for nla controls expander entries */
-static void acf_nla_controls_name(bAnimListElem * /*ale*/, char *name)
+static void acf_nla_ctrls_name(AnimListElem * /*ale*/, char *name)
 {
-  BLI_strncpy_utf8(name, IFACE_("NLA Strip Controls"), ANIM_CHAN_NAME_SIZE);
+  lib_strncpy_utf8(name, IFACE_("NLA Strip Controls"), ANIM_CHAN_NAME_SIZE);
 }
 
 /* check if some setting exists for this track */
@@ -1130,9 +1129,9 @@ static bool acf_nla_controls_setting_valid(bAnimContext * /*ac*/,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_nla_controls_setting_flag(bAnimContext * /*ac*/,
-                                         eAnimChannel_Settings setting,
-                                         bool *r_neg)
+static int acf_nla_ctrls_setting_flag(AnimCxt * /*ac*/,
+                                      eAnimChannelSettings setting,
+                                      bool *r_neg)
 {
   /* Clear extra return data first. */
   *r_neg = false;
@@ -1148,9 +1147,9 @@ static int acf_nla_controls_setting_flag(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
-static void *acf_nla_controls_setting_ptr(bAnimListElem *ale,
-                                          eAnimChannel_Settings /*setting*/,
+/* get ptr to the setting */
+static void *acf_nla_controls_setting_ptr(AnimListElem *ale,
+                                          eAnimChannelSettings /*setting*/,
                                           short *r_type)
 {
   AnimData *adt = (AnimData *)ale->data;
@@ -1159,55 +1158,54 @@ static void *acf_nla_controls_setting_ptr(bAnimListElem *ale,
   return GET_ACF_FLAG_PTR(adt->flag, r_type);
 }
 
-static int acf_nla_controls_icon(bAnimListElem * /*ale*/)
+static int acf_nla_ctrls_icon(AnimListElem * /*ale*/)
 {
   return ICON_NLA;
 }
 
-/** NLA Control F-Curves expander type define. */
-static bAnimChannelType ACF_NLACONTROLS = {
-    /*channel_type_name*/ "NLA Controls Expander",
+/* NLA Ctrl F-Curves expander type define. */
+static AnimChannelType ACF_NLACTRLS = {
+    /*channel_type_name*/ "NLA Ctrls Expander",
     /*track_role*/ ACHANNEL_ROLE_EXPANDER,
 
-    /*get_backdrop_color*/ acf_nla_controls_color,
+    /*get_backdrop_color*/ acf_nla_ctrls_color,
     /*get_channel_color*/ nullptr,
-    /*draw_backdrop*/ acf_nla_controls_backdrop,
+    /*drw_backdrop*/ acf_nla_ctrls_backdrop,
     /*get_indent_level*/ acf_generic_indentation_0,
     /*get_offset*/ acf_generic_group_offset,
 
-    /*name*/ acf_nla_controls_name,
+    /*name*/ acf_nla_ctrls_name,
     /*name_prop*/ nullptr,
-    /*icon*/ acf_nla_controls_icon,
+    /*icon*/ acf_nla_ctrls_icon,
 
-    /*has_setting*/ acf_nla_controls_setting_valid,
-    /*setting_flag*/ acf_nla_controls_setting_flag,
-    /*setting_ptr*/ acf_nla_controls_setting_ptr,
+    /*has_setting*/ acf_nla_ctrls_setting_valid,
+    /*setting_flag*/ acf_nla_ctrls_setting_flag,
+    /*setting_ptr*/ acf_nla_ctrls_setting_ptr,
 };
 
-/* NLA Control F-Curve -------------------------------- */
-
-/* name for nla control fcurve entries */
-static void acf_nla_curve_name(bAnimListElem *ale, char *name)
+/* NLA Ctrl F-Curve */
+/* name for nla ctrl fcurve entries */
+static void acf_nla_curve_name(AnimListElem *ale, char *name)
 {
   NlaStrip *strip = static_cast<NlaStrip *>(ale->owner);
   FCurve *fcu = static_cast<FCurve *>(ale->data);
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  /* try to get RNA property that this shortened path (relative to the strip) refers to */
-  prop = RNA_struct_type_find_property(&RNA_NlaStrip, fcu->rna_path);
+  /* try to get api prop that this shortened path (relative to the strip) refers to */
+  prop = api_struct_type_find_prop(&ApiNlaStrip, fcu->api_path);
   if (prop) {
-    /* "name" of this strip displays the UI identifier + the name of the NlaStrip */
-    BLI_snprintf(name, 256, "%s (%s)", RNA_property_ui_name(prop), strip->name);
+    /* "name" of this strip displays the ui id + the name of the NlaStrip */
+    lib_snprintf(name, 256, "%s (%s)", api_prop_ui_name(prop), strip->name);
   }
   else {
-    /* unknown property... */
-    BLI_snprintf(name, 256, "%s[%d]", fcu->rna_path, fcu->array_index);
+    /* unknown prop... */
+    lib_snprintf(name, 256, "%s[%d]", fcu->api_path, fcu->array_index);
   }
 }
 
-/** NLA Control F-Curve type define. */
-static bAnimChannelType ACF_NLACURVE = {
-    /*channel_type_name*/ "NLA Control F-Curve",
+/* NLA Ctrl F-Curve type define. */
+static AnimChannelType ACF_NLACURVE = {
+    /*channel_type_name*/ "NLA Ctrl F-Curve",
     /*channel_role*/ ACHANNEL_ROLE_CHANNEL,
 
     /*get_backdrop_color*/ acf_generic_channel_color,
@@ -1225,22 +1223,21 @@ static bAnimChannelType ACF_NLACURVE = {
     /*setting_ptr*/ acf_fcurve_setting_ptr,
 };
 
-/* Object Action Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_fillactd_icon(bAnimListElem * /*ale*/)
+/* Ob Action Expander  */
+/* TODO: just get this from api? */
+static int acf_fillactd_icon(AnimListElem * /*ale*/)
 {
   return ICON_ACTION;
 }
 
 /* check if some setting exists for this channel */
-static bool acf_fillactd_setting_valid(bAnimContext * /*ac*/,
-                                       bAnimListElem * /*ale*/,
-                                       eAnimChannel_Settings setting)
+static bool acf_fillactd_setting_valid(AnimCxt * /*ac*/,
+                                       AnimListElem * /*ale*/,
+                                       AnimChannelSettings setting)
 {
   switch (setting) {
-    /* only select and expand supported */
-    case ACHANNEL_SETTING_SELECT:
+    /* only sel and expand supported */
+    case ACHANNEL_SETTING_SEL:
     case ACHANNEL_SETTING_EXPAND:
       return true;
 
@@ -1250,8 +1247,8 @@ static bool acf_fillactd_setting_valid(bAnimContext * /*ac*/,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_fillactd_setting_flag(bAnimContext * /*ac*/,
-                                     eAnimChannel_Settings setting,
+static int acf_fillactd_setting_flag(AnimCxt * /*ac*/,
+                                     eAnimChannelSettings setting,
                                      bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1270,19 +1267,19 @@ static int acf_fillactd_setting_flag(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
-static void *acf_fillactd_setting_ptr(bAnimListElem *ale,
-                                      eAnimChannel_Settings setting,
+/* get ptr to the setting */
+static void *acf_fillactd_setting_ptr(AnimListElem *ale,
+                                      eAnimChannelSettings setting,
                                       short *r_type)
 {
-  bAction *act = (bAction *)ale->data;
+  Action *act = (Action *)ale->data;
   AnimData *adt = ale->adt;
 
   /* Clear extra return data first. */
   *r_type = 0;
 
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT: /* selected */
+    case ACHANNEL_SETTING_SEL: /* sel */
       if (adt) {
         return GET_ACF_FLAG_PTR(adt->flag, r_type);
       }
@@ -1296,8 +1293,8 @@ static void *acf_fillactd_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Object action expander type define. */
-static bAnimChannelType ACF_FILLACTD = {
+/** Ob action expander type define. */
+static AnimChannelType ACF_FILLACTD = {
     /*channel_type_name*/ "Ob-Action Filler",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
@@ -1316,24 +1313,23 @@ static bAnimChannelType ACF_FILLACTD = {
     /*setting_ptr*/ acf_fillactd_setting_ptr,
 };
 
-/* Drivers Expander  ------------------------------------------- */
-
-/* TODO: just get this from RNA? */
-static int acf_filldrivers_icon(bAnimListElem * /*ale*/)
+/* Drivers Expander */
+/* TODO: get this from api? */
+static int acf_filldrivers_icon(AnimListElem * /*ale*/)
 {
   return ICON_DRIVER;
 }
 
-static void acf_filldrivers_name(bAnimListElem * /*ale*/, char *name)
+static void acf_filldrivers_name(AnimListElem * /*ale*/, char *name)
 {
-  BLI_strncpy_utf8(name, IFACE_("Drivers"), ANIM_CHAN_NAME_SIZE);
+  lob_strncpy_utf8(name, IFACE_("Drivers"), ANIM_CHAN_NAME_SIZE);
 }
 
 /* check if some setting exists for this channel */
 /* TODO: this could be made more generic */
-static bool acf_filldrivers_setting_valid(bAnimContext * /*ac*/,
-                                          bAnimListElem * /*ale*/,
-                                          eAnimChannel_Settings setting)
+static bool acf_filldrivers_setting_valid(AnimCxt * /*ac*/,
+                                          AnimListElem * /*ale*/,
+                                          eAnimChannelSettings setting)
 {
   switch (setting) {
     /* only expand supported */
@@ -1346,8 +1342,8 @@ static bool acf_filldrivers_setting_valid(bAnimContext * /*ac*/,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_filldrivers_setting_flag(bAnimContext * /*ac*/,
-                                        eAnimChannel_Settings setting,
+static int acf_filldrivers_setting_flag(AnimCxt * /*ac*/,
+                                        eAnimChannelSettings setting,
                                         bool *r_neg)
 {
   /* Clear extra return data first. */
@@ -1363,7 +1359,7 @@ static int acf_filldrivers_setting_flag(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
+/* get ptr to the setting */
 static void *acf_filldrivers_setting_ptr(bAnimListElem *ale,
                                          eAnimChannel_Settings setting,
                                          short *r_type)
@@ -1382,8 +1378,8 @@ static void *acf_filldrivers_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Drivers expander type define. */
-static bAnimChannelType ACF_FILLDRIVERS = {
+/* Drivers expander type define. */
+static AnimChannelType ACF_FILLDRIVERS = {
     /*channel_type_name*/ "Drivers Filler",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
