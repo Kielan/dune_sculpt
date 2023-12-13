@@ -2,115 +2,112 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_listbase.h"
-#include "BLI_span.hh"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_list.h"
+#include "lib_span.hh"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_key_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_pen_legacy.h"
+#include "types_key.h"
+#include "types_mask.h"
+#include "types_ob.h"
+#include "types_scene.h"
 
-#include "RNA_access.hh"
-#include "RNA_define.hh"
-#include "RNA_path.hh"
+#include "api_access.hh"
+#include "api_define.hh"
+#include "api_path.hh"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_global.h"
-#include "BKE_gpencil_legacy.h"
-#include "BKE_grease_pencil.hh"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_mask.h"
-#include "BKE_nla.h"
-#include "BKE_scene.h"
-#include "BKE_screen.hh"
-#include "BKE_workspace.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_global.h"
+#include "dune_pen_legacy.h"
+#include "dune_pen.hh"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_mask.h"
+#include "dune_nla.h"
+#include "dune_scene.h"
+#include "dune_screen.hh"
+#include "dune_workspace.h"
 
-#include "DEG_depsgraph.hh"
-#include "DEG_depsgraph_build.hh"
+#include "graph.hh"
+#include "graph_build.hh"
 
-#include "UI_interface.hh"
-#include "UI_view2d.hh"
+#include "ui.hh"
+#include "ui_view2d.hh"
 
-#include "ED_armature.hh"
-#include "ED_keyframes_edit.hh" /* XXX move the select modes out of there! */
-#include "ED_markers.hh"
-#include "ED_object.hh"
-#include "ED_screen.hh"
-#include "ED_select_utils.hh"
+#include "ed_armature.hh"
+#include "ed_keyframes_edit.hh" /* XXX move the select modes out of there! */
+#include "ed_markers.hh"
+#include "ed_ob.hh"
+#include "ed_screen.hh"
+#include "ed_sel_utils.hh"
 
-#include "ANIM_animdata.hh"
+#include "anim_animdata.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-/* -------------------------------------------------------------------- */
-/** \name Channel helper functions
- * \{ */
-
+/* Channel helper fns */
 static bool get_normalized_fcurve_bounds(FCurve *fcu,
                                          AnimData *anim_data,
                                          SpaceLink *space_link,
                                          Scene *scene,
-                                         ID *id,
+                                         Id *id,
                                          const bool include_handles,
                                          const float range[2],
                                          rctf *r_bounds)
 {
-  const bool fcu_selection_only = false;
-  const bool found_bounds = BKE_fcurve_calc_bounds(
-      fcu, fcu_selection_only, include_handles, range, r_bounds);
+  const bool fcu_sel_only = false;
+  const bool found_bounds = dune_fcurve_calc_bounds(
+      fcu, fcu_sel_only, include_handles, range, r_bounds);
 
   if (!found_bounds) {
     return false;
   }
 
-  const short mapping_flag = ANIM_get_normalization_flags(space_link);
+  const short mapping_flag = anim_get_normalization_flags(space_link);
 
   float offset;
-  const float unit_fac = ANIM_unit_mapping_get_factor(scene, id, fcu, mapping_flag, &offset);
+  const float unit_fac = anim_unit_mapping_get_factor(scene, id, fcu, mapping_flag, &offset);
 
   r_bounds->ymin = (r_bounds->ymin + offset) * unit_fac;
   r_bounds->ymax = (r_bounds->ymax + offset) * unit_fac;
 
   const float min_height = 0.01f;
-  const float height = BLI_rctf_size_y(r_bounds);
+  const float height = lib_rctf_size_y(r_bounds);
   if (height < min_height) {
     r_bounds->ymin -= (min_height - height) / 2;
     r_bounds->ymax += (min_height - height) / 2;
   }
-  r_bounds->xmin = BKE_nla_tweakedit_remap(anim_data, r_bounds->xmin, NLATIME_CONVERT_MAP);
-  r_bounds->xmax = BKE_nla_tweakedit_remap(anim_data, r_bounds->xmax, NLATIME_CONVERT_MAP);
+  r_bounds->xmin = dune_nla_tweakedit_remap(anim_data, r_bounds->xmin, NLATIME_CONVERT_MAP);
+  r_bounds->xmax = dune_nla_tweakedit_remap(anim_data, r_bounds->xmax, NLATIME_CONVERT_MAP);
 
   return true;
 }
 
-static bool get_gpencil_bounds(bGPDlayer *gpl, const float range[2], rctf *r_bounds)
+static bool get_pen_bounds(PenLayer *penl, const float range[2], rctf *r_bounds)
 {
   bool found_start = false;
   int start_frame = 0;
   int end_frame = 1;
-  LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
-    if (gpf->framenum < range[0]) {
+  LIST_FOREACH (PenFrame *, penf, &penl->frames) {
+    if (penf->framenum < range[0]) {
       continue;
     }
-    if (gpf->framenum > range[1]) {
+    if (penf->framenum > range[1]) {
       break;
     }
     if (!found_start) {
-      start_frame = gpf->framenum;
+      start_frame = penf->framenum;
       found_start = true;
     }
-    end_frame = gpf->framenum;
+    end_frame = penf->framenum;
   }
   r_bounds->xmin = start_frame;
   r_bounds->xmax = end_frame;
@@ -120,12 +117,12 @@ static bool get_gpencil_bounds(bGPDlayer *gpl, const float range[2], rctf *r_bou
   return found_start;
 }
 
-static bool get_grease_pencil_layer_bounds(const GreasePencilLayer *gplayer,
-                                           const float range[2],
-                                           rctf *r_bounds)
+static bool get_pen_layer_bounds(const PenLayer *penlayer,
+                                 const float range[2],
+                                 rctf *r_bounds)
 {
-  using namespace blender::bke::greasepencil;
-  const Layer &layer = gplayer->wrap();
+  using namespace dune::pen;
+  const Layer &layer = penlayer->wrap();
 
   bool found_start = false;
   int start_frame = 0;
@@ -153,27 +150,27 @@ static bool get_grease_pencil_layer_bounds(const GreasePencilLayer *gplayer,
   return found_start;
 }
 
-static bool get_channel_bounds(bAnimContext *ac,
-                               bAnimListElem *ale,
+static bool get_channel_bounds(AnimCxt *ac,
+                               AnimListElem *ale,
                                const float range[2],
                                const bool include_handles,
                                rctf *r_bounds)
 {
   bool found_bounds = false;
   switch (ale->datatype) {
-    case ALE_GPFRAME: {
-      bGPDlayer *gpl = (bGPDlayer *)ale->data;
-      found_bounds = get_gpencil_bounds(gpl, range, r_bounds);
+    case ALE_PENFRAME: {
+      PenLayer *penl = (PenLayer *)ale->data;
+      found_bounds = get_pen_bounds(penl, range, r_bounds);
       break;
     }
-    case ALE_GREASE_PENCIL_CEL:
-      found_bounds = get_grease_pencil_layer_bounds(
-          static_cast<const GreasePencilLayer *>(ale->data), range, r_bounds);
+    case ALE_PEN_CEL:
+      found_bounds = get_pen_layer_bounds(
+          static_cast<const PenLayer *>(ale->data), range, r_bounds);
       break;
 
     case ALE_FCURVE: {
       FCurve *fcu = (FCurve *)ale->key_data;
-      AnimData *anim_data = ANIM_nla_mapping_get(ac, ale);
+      AnimData *anim_data = anim_nla_mapping_get(ac, ale);
       found_bounds = get_normalized_fcurve_bounds(
           fcu, anim_data, ac->sl, ac->scene, ale->id, include_handles, range, r_bounds);
       break;
@@ -184,43 +181,38 @@ static bool get_channel_bounds(bAnimContext *ac,
 
 /* Pad the given rctf with regions that could block the view.
  * For example Markers and Time Scrubbing. */
-static void add_region_padding(bContext *C, ARegion *region, rctf *bounds)
+static void add_rgn_padding(Cxt *C, ARgn *rgn, rctf *bounds)
 {
-  BLI_rctf_scale(bounds, 1.1f);
+  lib_rctf_scale(bounds, 1.1f);
 
   const float pad_top = UI_TIME_SCRUB_MARGIN_Y;
-  const float pad_bottom = BLI_listbase_is_empty(ED_context_get_markers(C)) ?
+  const float pad_bottom = lib_list_is_empty(ed_cxt_get_markers(C)) ?
                                V2D_SCROLL_HANDLE_HEIGHT :
                                UI_MARKER_MARGIN_Y;
-  BLI_rctf_pad_y(bounds, region->winy, pad_bottom, pad_top);
+  lib_rctf_pad_y(bounds, rgn->winy, pad_bottom, pad_top);
 }
 
-/** \} */
 
-/* -------------------------------------------------------------------- */
-/** \name Public Channel Selection API
- * \{ */
-
-void ANIM_set_active_channel(bAnimContext *ac,
+/* Public Channel Sel API */
+void anim_set_active_channel(AnimCxt *ac,
                              void *data,
-                             eAnimCont_Types datatype,
-                             eAnimFilter_Flags filter,
+                             eAnimContTypes datatype,
+                             eAnimFilterFlags filter,
                              void *channel_data,
-                             eAnim_ChannelType channel_type)
+                             eAnimChannelType channel_type)
 {
   /* TODO: extend for animdata types. */
-
-  ListBase anim_data = {nullptr, nullptr};
-  bAnimListElem *ale;
+  List anim_data = {nullptr, nullptr};
+  AnimListElem *ale;
 
   /* try to build list of filtered items */
-  ANIM_animdata_filter(ac, &anim_data, filter, data, datatype);
-  if (BLI_listbase_is_empty(&anim_data)) {
+  animdata_filter(ac, &anim_data, filter, data, datatype);
+  if (lib_list_is_empty(&anim_data)) {
     return;
   }
 
   /* only clear the 'active' flag for the channels of the same type */
-  for (ale = static_cast<bAnimListElem *>(anim_data.first); ale; ale = ale->next) {
+  for (ale = static_cast<AnimListElem *>(anim_data.first); ale; ale = ale->next) {
     /* skip if types don't match */
     if (channel_type != ale->type) {
       continue;
@@ -229,7 +221,7 @@ void ANIM_set_active_channel(bAnimContext *ac,
     /* flag to set depends on type */
     switch (ale->type) {
       case ANIMTYPE_GROUP: {
-        bActionGroup *agrp = (bActionGroup *)ale->data;
+        ActionGroup *agrp = (ActionGroup *)ale->data;
 
         ACHANNEL_SET_FLAG(agrp, ACHANNEL_SETFLAG_CLEAR, AGRP_ACTIVE);
         break;
@@ -275,10 +267,10 @@ void ANIM_set_active_channel(bAnimContext *ac,
         }
         break;
       }
-      case ANIMTYPE_GPLAYER: {
-        bGPDlayer *gpl = (bGPDlayer *)ale->data;
+      case ANIMTYPE_PENLAYER: {
+        PenLayer *penl = (PenLayer *)ale->data;
 
-        ACHANNEL_SET_FLAG(gpl, ACHANNEL_SETFLAG_CLEAR, GP_LAYER_ACTIVE);
+        ACHANNEL_SET_FLAG(gpl, ACHANNEL_SETFLAG_CLEAR, PEN_LAYER_ACTIVE);
         break;
       }
     }
@@ -288,7 +280,7 @@ void ANIM_set_active_channel(bAnimContext *ac,
   if (channel_data) {
     switch (channel_type) {
       case ANIMTYPE_GROUP: {
-        bActionGroup *agrp = (bActionGroup *)channel_data;
+        ActionGroup *agrp = (ActionGroup *)channel_data;
         agrp->flag |= AGRP_ACTIVE;
         break;
       }
@@ -320,7 +312,7 @@ void ANIM_set_active_channel(bAnimContext *ac,
       case ANIMTYPE_DSSPK:
       case ANIMTYPE_DSNTREE:
       case ANIMTYPE_DSTEX:
-      case ANIMTYPE_DSGPENCIL:
+      case ANIMTYPE_DSPEN:
       case ANIMTYPE_DSMCLIP:
       case ANIMTYPE_DSHAIR:
       case ANIMTYPE_DSPOINTCLOUD:
@@ -333,9 +325,9 @@ void ANIM_set_active_channel(bAnimContext *ac,
         break;
       }
 
-      case ANIMTYPE_GPLAYER: {
-        bGPDlayer *gpl = (bGPDlayer *)channel_data;
-        gpl->flag |= GP_LAYER_ACTIVE;
+      case ANIMTYPE_PENLAYER: {
+        PenLayer *penl = (PenLayer *)channel_data;
+        penl->flag |= PEN_LAYER_ACTIVE;
         break;
       }
       /* unhandled currently, but may be interesting */
@@ -350,10 +342,10 @@ void ANIM_set_active_channel(bAnimContext *ac,
   }
 
   /* clean up */
-  ANIM_animdata_freelist(&anim_data);
+  animdata_freelist(&anim_data);
 }
 
-bool ANIM_is_active_channel(bAnimListElem *ale)
+bool anim_is_active_channel(AnimListElem *ale)
 {
   switch (ale->type) {
     case ANIMTYPE_FILLACTD: /* Action Expander */
@@ -373,7 +365,7 @@ bool ANIM_is_active_channel(bAnimListElem *ale)
     case ANIMTYPE_DSLAT:
     case ANIMTYPE_DSLINESTYLE:
     case ANIMTYPE_DSSPK:
-    case ANIMTYPE_DSGPENCIL:
+    case ANIMTYPE_DSPEN:
     case ANIMTYPE_DSMCLIP:
     case ANIMTYPE_DSHAIR:
     case ANIMTYPE_DSPOINTCLOUD:
@@ -382,7 +374,7 @@ bool ANIM_is_active_channel(bAnimListElem *ale)
       return ale->adt && (ale->adt->flag & ADT_UI_ACTIVE);
     }
     case ANIMTYPE_GROUP: {
-      bActionGroup *argp = (bActionGroup *)ale->data;
+      ActionGroup *argp = (ActionGroup *)ale->data;
       return argp->flag & AGRP_ACTIVE;
     }
     case ANIMTYPE_FCURVE:
@@ -390,14 +382,14 @@ bool ANIM_is_active_channel(bAnimListElem *ale)
       FCurve *fcu = (FCurve *)ale->data;
       return fcu->flag & FCURVE_ACTIVE;
     }
-    case ANIMTYPE_GPLAYER: {
-      bGPDlayer *gpl = (bGPDlayer *)ale->data;
-      return gpl->flag & GP_LAYER_ACTIVE;
+    case ANIMTYPE_PENLAYER: {
+      PenLayer *penl = (PenLayer *)ale->data;
+      return gpl->flag & PEN_LAYER_ACTIVE;
     }
-    case ANIMTYPE_GREASE_PENCIL_LAYER: {
-      GreasePencil *grease_pencil = reinterpret_cast<GreasePencil *>(ale->id);
-      return grease_pencil->is_layer_active(
-          static_cast<blender::bke::greasepencil::Layer *>(ale->data));
+    case ANIMTYPE_PEN_LAYER: {
+      Pen *pen = reinterpret_cast<Pen *>(ale->id);
+      return pen->is_layer_active(
+          static_cast<dune::pen::Layer *>(ale->data));
     }
     /* These channel types do not have active flags. */
     case ANIMTYPE_MASKLAYER:
