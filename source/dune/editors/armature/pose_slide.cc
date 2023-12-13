@@ -1525,7 +1525,7 @@ static int pose_slide_breakdown_invoke(Cxt *C, WinOp *op, const WinEv *ev)
   }
 
   /* Do common setup work. */
-  return pose_slide_invoke_common(C, op, event);
+  return pose_slide_invoke_common(C, op, ev);
 }
 
 /* Op ex() - for breakdown. */
@@ -1575,99 +1575,95 @@ static int pose_slide_blend_to_neighbors_invoke(Cxt *C, WinOp *op, const WinEv *
   }
 
   /* Do common setup work. */
-  return pose_slide_invoke_common(C, op, event);
+  return pose_slide_invoke_common(C, op, ev);
 }
 
-static int pose_slide_blend_to_neighbors_exec(bContext *C, wmOperator *op)
+static int pose_slide_blend_to_neighbors_ex(Cxt *C, WinOp *op)
 {
   tPoseSlideOp *pso;
 
-  /* Initialize data (from RNA-props). */
+  /* Init data (from api-props). */
   if (pose_slide_init(C, op, POSESLIDE_BLEND) == 0) {
     pose_slide_exit(C, op);
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   pso = static_cast<tPoseSlideOp *>(op->customdata);
 
-  /* Do common exec work. */
-  return pose_slide_exec_common(C, op, pso);
+  /* Do common ex work. */
+  return pose_slide_ex_common(C, op, pso);
 }
 
-void POSE_OT_blend_to_neighbors(wmOperatorType *ot)
+void POSE_OT_blend_to_neighbors(WinOpType *ot)
 {
-  /* Identifiers. */
+  /* Ids. */
   ot->name = "Blend to Neighbor";
   ot->idname = "POSE_OT_blend_to_neighbor";
   ot->description = "Blend from current position to previous or next keyframe";
 
-  /* Callbacks. */
-  ot->exec = pose_slide_blend_to_neighbors_exec;
+  /* Cbs. */
+  ot->ex = pose_slide_blend_to_neighbors_ex;
   ot->invoke = pose_slide_blend_to_neighbors_invoke;
   ot->modal = pose_slide_modal;
   ot->cancel = pose_slide_cancel;
-  ot->poll = ED_operator_posemode;
+  ot->poll = ed_op_posemode;
 
   /* Flags. */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING | OPTYPE_GRAB_CURSOR_X;
 
-  /* Properties. */
-  pose_slide_opdef_properties(ot);
+  /* Props. */
+  pose_slide_opdef_props(ot);
 }
 
-/* **************************************************** */
 /* B) Pose Propagate */
-
 /* "termination conditions" - i.e. when we stop */
-enum ePosePropagate_Termination {
-  /** Only do on the last keyframe. */
+enum ePosePropagateTermination {
+  /* Only do on the last keyframe. */
   POSE_PROPAGATE_LAST_KEY = 0,
-  /** Stop after the next keyframe. */
+  /* Stop after the next keyframe. */
   POSE_PROPAGATE_NEXT_KEY,
-  /** Stop after the specified frame. */
+  /* Stop after the specified frame. */
   POSE_PROPAGATE_BEFORE_FRAME,
-  /** Stop when we run out of keyframes. */
+  /* Stop when we run out of keyframes. */
   POSE_PROPAGATE_BEFORE_END,
 
-  /** Only do on keyframes that are selected. */
-  POSE_PROPAGATE_SELECTED_KEYS,
-  /** Only do on the frames where markers are selected. */
-  POSE_PROPAGATE_SELECTED_MARKERS,
+  /* Only do on keyframes that are sel. */
+  POSE_PROPAGATE_SEL_KEYS,
+  /* Only do on the frames where markers are sel. */
+  POSE_PROPAGATE_SEL_MARKERS,
 };
-
-/* --------------------------------- */
 
 struct FrameLink {
   FrameLink *next, *prev;
   float frame;
 };
 
-static void propagate_curve_values(ListBase /*tPChanFCurveLink*/ *pflinks,
-                                   const float source_frame,
-                                   ListBase /*FrameLink*/ *target_frames)
+static void propagate_curve_vals(List/*tPChanFCurveLink*/ *pflinks,
+                                 const float src_frame,
+                                 List /*FrameLink*/ *target_frames)
 {
-  using namespace blender::animrig;
+  using namespace dune::animrig;
   const KeyframeSettings settings = get_keyframe_settings(true);
-  LISTBASE_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
-    LISTBASE_FOREACH (LinkData *, ld, &pfl->fcurves) {
+  LIST_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
+    LIST_FOREACH (LinkData *, ld, &pfl->fcurves) {
       FCurve *fcu = (FCurve *)ld->data;
-      const float current_fcu_value = evaluate_fcurve(fcu, source_frame);
-      LISTBASE_FOREACH (FrameLink *, target_frame, target_frames) {
+      const float current_fcu_val = eval_fcurve(fcu, src_frame);
+      LIST_FOREACH (FrameLink *, target_frame, target_frames) {
         insert_vert_fcurve(
-            fcu, {target_frame->frame, current_fcu_value}, settings, INSERTKEY_NEEDED);
+            fcu, {target_frame->frame, current_fcu_val}, settings, INSERTKEY_NEEDED);
       }
     }
   }
 }
 
-static float find_next_key(ListBase *pflinks, const float start_frame)
+static float find_next_key(List *pflinks, const float start_frame)
 {
   float target_frame = FLT_MAX;
-  LISTBASE_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
-    LISTBASE_FOREACH (LinkData *, ld, &pfl->fcurves) {
+  LIST_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
+    LIST_FOREACH (LinkData *, ld, &pfl->fcurves) {
       FCurve *fcu = (FCurve *)ld->data;
       bool replace;
-      int current_frame_index = BKE_fcurve_bezt_binarysearch_index(
+      int current_frame_index = dune_fcurve_bezt_binarysearch_index(
           fcu->bezt, start_frame, fcu->totvert, &replace);
       if (replace) {
         const int bezt_index = min_ii(current_frame_index + 1, fcu->totvert - 1);
@@ -1682,11 +1678,11 @@ static float find_next_key(ListBase *pflinks, const float start_frame)
   return target_frame;
 }
 
-static float find_last_key(ListBase *pflinks)
+static float find_last_key(List *pflinks)
 {
   float target_frame = FLT_MIN;
-  LISTBASE_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
-    LISTBASE_FOREACH (LinkData *, ld, &pfl->fcurves) {
+  LIST_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
+    LIST_FOREACH (LinkData *, ld, &pfl->fcurves) {
       FCurve *fcu = (FCurve *)ld->data;
       target_frame = max_ff(target_frame, fcu->bezt[fcu->totvert - 1].vec[1][0]);
     }
@@ -1695,135 +1691,133 @@ static float find_last_key(ListBase *pflinks)
   return target_frame;
 }
 
-static void get_selected_marker_positions(Scene *scene, ListBase /*FrameLink*/ *target_frames)
+static void get_sel_marker_positions(Scene *scene, List /*FrameLink*/ *target_frames)
 {
-  ListBase selected_markers = {nullptr, nullptr};
-  ED_markers_make_cfra_list(&scene->markers, &selected_markers, SELECT);
-  LISTBASE_FOREACH (CfraElem *, marker, &selected_markers) {
-    FrameLink *link = static_cast<FrameLink *>(MEM_callocN(sizeof(FrameLink), "Marker Key Link"));
+  List sel_markers = {nullptr, nullptr};
+  ed_markers_make_cfra_list(&scene->markers, &sel_markers, SEL);
+  LIST_FOREACH (CfraElem *, marker, &sel_markers) {
+    FrameLink *link = static_cast<FrameLink *>(mem_calloc(sizeof(FrameLink), "Marker Key Link"));
     link->frame = marker->cfra;
-    BLI_addtail(target_frames, link);
+    lib_addtail(target_frames, link);
   }
-  BLI_freelistN(&selected_markers);
+  lib_freelist(&sel_markers);
 }
 
-static void get_keyed_frames_in_range(ListBase *pflinks,
+static void get_keyed_frames_in_range(List *pflinks,
                                       const float start_frame,
                                       const float end_frame,
-                                      ListBase /*FrameLink*/ *target_frames)
+                                      List /*FrameLink*/ *target_frames)
 {
-  AnimKeylist *keylist = ED_keylist_create();
-  LISTBASE_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
-    LISTBASE_FOREACH (LinkData *, ld, &pfl->fcurves) {
+  AnimKeylist *keylist = ed_keylist_create();
+  LIST_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
+    LIST_FOREACH (LinkData *, ld, &pfl->fcurves) {
       FCurve *fcu = (FCurve *)ld->data;
       fcurve_to_keylist(nullptr, fcu, keylist, 0, {start_frame, end_frame});
     }
   }
-  LISTBASE_FOREACH (ActKeyColumn *, column, ED_keylist_listbase(keylist)) {
+  LIST_FOREACH (ActKeyColumn *, column, ed_keylist_list(keylist)) {
     if (column->cfra <= start_frame) {
       continue;
     }
     if (column->cfra > end_frame) {
       break;
     }
-    FrameLink *link = static_cast<FrameLink *>(MEM_callocN(sizeof(FrameLink), "Marker Key Link"));
+    FrameLink *link = static_cast<FrameLink *>(mem_calloc(sizeof(FrameLink), "Marker Key Link"));
     link->frame = column->cfra;
-    BLI_addtail(target_frames, link);
+    lib_addtail(target_frames, link);
   }
-  ED_keylist_free(keylist);
+  ed_keylist_free(keylist);
 }
 
-static void get_selected_frames(ListBase *pflinks, ListBase /*FrameLink*/ *target_frames)
+static void get_sel_frames(List *pflinks, List /*FrameLink*/ *target_frames)
 {
-  AnimKeylist *keylist = ED_keylist_create();
-  LISTBASE_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
-    LISTBASE_FOREACH (LinkData *, ld, &pfl->fcurves) {
+  AnimKeylist *keylist = ed_keylist_create();
+  LIST_FOREACH (tPChanFCurveLink *, pfl, pflinks) {
+    LIST_FOREACH (LinkData *, ld, &pfl->fcurves) {
       FCurve *fcu = (FCurve *)ld->data;
       fcurve_to_keylist(nullptr, fcu, keylist, 0, {-FLT_MAX, FLT_MAX});
     }
   }
-  LISTBASE_FOREACH (ActKeyColumn *, column, ED_keylist_listbase(keylist)) {
+  LIST_FOREACH (ActKeyColumn *, column, ed_keylist_list(keylist)) {
     if (!column->sel) {
       continue;
     }
-    FrameLink *link = static_cast<FrameLink *>(MEM_callocN(sizeof(FrameLink), "Marker Key Link"));
+    FrameLink *link = static_cast<FrameLink *>(mem_calloc(sizeof(FrameLink), "Marker Key Link"));
     link->frame = column->cfra;
-    BLI_addtail(target_frames, link);
+    lib_addtail(target_frames, link);
   }
-  ED_keylist_free(keylist);
+  ed_keylist_free(keylist);
 }
 
-/* --------------------------------- */
-
-static int pose_propagate_exec(bContext *C, wmOperator *op)
+static int pose_propagate_ex(Cxt *C, WinOp *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  View3D *v3d = cxt_win_view3d(C);
 
-  ListBase pflinks = {nullptr, nullptr};
+  List pflinks = {nullptr, nullptr};
 
   const int mode = RNA_enum_get(op->ptr, "mode");
 
-  /* Isolate F-Curves related to the selected bones. */
+  /* Isolate F-Curves related to the sel bones. */
   poseAnim_mapping_get(C, &pflinks);
 
-  if (BLI_listbase_is_empty(&pflinks)) {
+  if (lib_list_is_empty(&pflinks)) {
     /* There is a change the reason the list is empty is
      * that there is no valid object to propagate poses for.
      * This is very unlikely though, so we focus on the most likely issue. */
-    BKE_report(op->reports, RPT_ERROR, "No keyframed poses to propagate to");
-    return OPERATOR_CANCELLED;
+    dune_report(op->reports, RPT_ERROR, "No keyframed poses to propagate to");
+    return OP_CANCELLED;
   }
 
-  const float end_frame = RNA_float_get(op->ptr, "end_frame");
-  const float current_frame = BKE_scene_frame_get(scene);
+  const float end_frame = api_float_get(op->ptr, "end_frame");
+  const float current_frame = dune_scene_frame_get(scene);
 
-  ListBase target_frames = {nullptr, nullptr};
+  List target_frames = {nullptr, nullptr};
 
   switch (mode) {
     case POSE_PROPAGATE_NEXT_KEY: {
       float target_frame = find_next_key(&pflinks, current_frame);
-      FrameLink *link = static_cast<FrameLink *>(MEM_callocN(sizeof(FrameLink), "Next Key Link"));
+      FrameLink *link = static_cast<FrameLink *>(mem_calloc(sizeof(FrameLink), "Next Key Link"));
       link->frame = target_frame;
-      BLI_addtail(&target_frames, link);
-      propagate_curve_values(&pflinks, current_frame, &target_frames);
+      lib_addtail(&target_frames, link);
+      propagate_curve_vals(&pflinks, current_frame, &target_frames);
       break;
     }
 
     case POSE_PROPAGATE_LAST_KEY: {
       float target_frame = find_last_key(&pflinks);
-      FrameLink *link = static_cast<FrameLink *>(MEM_callocN(sizeof(FrameLink), "Last Key Link"));
+      FrameLink *link = static_cast<FrameLink *>(mem_calloc(sizeof(FrameLink), "Last Key Link"));
       link->frame = target_frame;
-      BLI_addtail(&target_frames, link);
+      lib_addtail(&target_frames, link);
       propagate_curve_values(&pflinks, current_frame, &target_frames);
       break;
     }
 
-    case POSE_PROPAGATE_SELECTED_MARKERS: {
-      get_selected_marker_positions(scene, &target_frames);
-      propagate_curve_values(&pflinks, current_frame, &target_frames);
+    case POSE_PROPAGATE_SEL_MARKERS: {
+      get_sel_marker_positions(scene, &target_frames);
+      propagate_curve_vals(&pflinks, current_frame, &target_frames);
       break;
     }
 
     case POSE_PROPAGATE_BEFORE_END: {
       get_keyed_frames_in_range(&pflinks, current_frame, FLT_MAX, &target_frames);
-      propagate_curve_values(&pflinks, current_frame, &target_frames);
+      propagate_curve_vals(&pflinks, current_frame, &target_frames);
       break;
     }
     case POSE_PROPAGATE_BEFORE_FRAME: {
       get_keyed_frames_in_range(&pflinks, current_frame, end_frame, &target_frames);
-      propagate_curve_values(&pflinks, current_frame, &target_frames);
+      propagate_curve_vals(&pflinks, current_frame, &target_frames);
       break;
     }
-    case POSE_PROPAGATE_SELECTED_KEYS: {
-      get_selected_frames(&pflinks, &target_frames);
-      propagate_curve_values(&pflinks, current_frame, &target_frames);
+    case POSE_PROPAGATE_SEL_KEYS: {
+      get_sel_frames(&pflinks, &target_frames);
+      propagate_curve_vals(&pflinks, current_frame, &target_frames);
       break;
     }
   }
 
-  lib_freelistN(&target_frames);
+  lib_freelist(&target_frames);
 
   /* Free tmp data. */
   poseAnim_mapping_free(&pflinks);
@@ -1888,8 +1882,8 @@ void POSE_OT_propagate(WinOpType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* props */
-  /* TODO: add "fade out" control for tapering off amount of propagation as time goes by? */
-  ot->prop = api_def_enum(ot->srna,
+  /* Add "fade out" control for tapering off amount of propagation as time goes by? */
+  ot->prop = api_def_enum(ot->sapi,
                           "mode",
                           terminate_items,
                           POSE_PROPAGATE_NEXT_KEY,
