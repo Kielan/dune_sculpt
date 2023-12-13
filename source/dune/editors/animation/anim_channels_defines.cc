@@ -11,32 +11,32 @@
 
 #include "lang.h"
 
-#include "types_anim_types.h"
-#include "types_armature_types.h"
-#include "types_cachefile_types.h"
-#include "types_camera_types.h"
-#include "types_curves_types.h"
-#include "types_pen_legacy_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_cachefile.h"
+#include "types_camera.h"
+#include "types_curves.h"
+#include "types_pen_legacy.h"
 #include "types_pen.h"
-#include "types_key_types.h"
-#include "types_lattice_types.h"
-#include "types_light_types.h"
-#include "types_linestyle_types.h"
-#include "types_mask_types.h"
-#include "types_material_types.h"
-#include "types_mesh_types.h"
-#include "types_meta_types.h"
-#include "types_node_types.h"
+#include "types_key.h"
+#include "types_lattice.h"
+#include "types_light.h"
+#include "types_linestyle.h"
+#include "types_mask.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_meta.h"
+#include "types_node.h"
 #include "types_ob.h"
-#include "types_particle_types.h"
-#include "types_pointcloud_types.h"
-#include "types_scene_types.h"
-#include "types_screen_types.h"
-#include "types_space_types.h"
-#include "types_speaker_types.h"
-#include "types_userdef_types.h"
-#include "types_volume_types.h"
-#include "types_world_types.h"
+#include "types_particle.h"
+#include "types_pointcloud.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_speaker.h"
+#include "types_userdef.h"
+#include "types_volume.h"
+#include "types_world.h"
 
 #include "api_access.hh"
 #include "api_path.hh"
@@ -199,7 +199,6 @@ static void acf_generic_channel_backdrop(AnimCxt *ac,
 }
 
 /* Indentation + Offset */
-
 /* indentation level is always the val in the name */
 static short acf_generic_indentation_0(AnimCxt * /*ac*/, AnimListElem * /*ale*/)
 {
@@ -302,7 +301,6 @@ static short acf_generic_group_offset(AnimCxt *ac, AnimListElem *ale)
 }
 
 /* Name */
-
 /* name for Id block entries */
 static void acf_generic_idblock_name(AnimListElem *ale, char *name)
 {
@@ -325,7 +323,7 @@ static bool acf_generic_idblock_name_prop(AnimListElem *ale,
   return (*r_prop != nullptr);
 }
 
-/* name property for Id block entries which are just subheading "fillers" */
+/* name prop for Id block entries which are just subheading "fillers" */
 static bool acf_generic_idfill_name_prop(AnimListElem *ale,
                                          ApiPtr *r_ptr,
                                          ApiProp **r_prop)
@@ -632,34 +630,34 @@ static int acf_ob_icon(AnimListElem *ale)
   }
 }
 
-/* name for object */
-static void acf_object_name(bAnimListElem *ale, char *name)
+/* name for ob */
+static void acf_ob_name(AnimListElem *ale, char *name)
 {
   Base *base = (Base *)ale->data;
-  Object *ob = base->object;
+  Ob *ob = base->ob;
 
   /* just copy the name... */
   if (ob && name) {
-    BLI_strncpy(name, ob->id.name + 2, ANIM_CHAN_NAME_SIZE);
+    lib_strncpy(name, ob->id.name + 2, ANIM_CHAN_NAME_SIZE);
   }
 }
 
-/* name property for object */
-static bool acf_object_name_prop(bAnimListElem *ale, PointerRNA *r_ptr, PropertyRNA **r_prop)
+/* name prop for ob */
+static bool acf_ob_name_prop(AnimListElem *ale, ApiPtr *r_ptr, ApiProp **r_prop)
 {
-  *r_ptr = RNA_id_pointer_create(ale->id);
-  *r_prop = RNA_struct_name_property(r_ptr->type);
+  *r_ptr = api_id_ptr_create(ale->id);
+  *r_prop = api_struct_name_prop(r_ptr->type);
 
   return (*r_prop != nullptr);
 }
 
 /* check if some setting exists for this channel */
-static bool acf_object_setting_valid(bAnimContext *ac,
-                                     bAnimListElem *ale,
-                                     eAnimChannel_Settings setting)
+static bool acf_ob_setting_valid(AnimCxt *ac,
+                                 AnimListElem *ale,
+                                 eAnimChannelSettings setting)
 {
   Base *base = (Base *)ale->data;
-  Object *ob = base->object;
+  Ob *ob = base->ob;
 
   switch (setting) {
     /* muted only in NLA */
@@ -670,8 +668,8 @@ static bool acf_object_setting_valid(bAnimContext *ac,
     case ACHANNEL_SETTING_VISIBLE:
       return ((ac) && (ac->spacetype == SPACE_GRAPH) && (ob->adt));
 
-    /* only select and expand supported otherwise */
-    case ACHANNEL_SETTING_SELECT:
+    /* only sel and expand supported otherwise */
+    case ACHANNEL_SETTING_SEL:
     case ACHANNEL_SETTING_EXPAND:
       return true;
 
@@ -684,16 +682,16 @@ static bool acf_object_setting_valid(bAnimContext *ac,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_object_setting_flag(bAnimContext * /*ac*/,
-                                   eAnimChannel_Settings setting,
-                                   bool *r_neg)
+static int acf_ob_setting_flag(AnimCxt * /*ac*/,
+                               eAnimChannelSettings setting,
+                               bool *r_neg)
 {
   /* Clear extra return data first. */
   *r_neg = false;
 
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return BASE_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return BASE_SEL;
 
     case ACHANNEL_SETTING_EXPAND: /* expanded */
       *r_neg = true;
@@ -714,19 +712,19 @@ static int acf_object_setting_flag(bAnimContext * /*ac*/,
   }
 }
 
-/* get pointer to the setting */
-static void *acf_object_setting_ptr(bAnimListElem *ale,
-                                    eAnimChannel_Settings setting,
-                                    short *r_type)
+/* get ptr to the setting */
+static void *acf_ob_setting_ptr(AnimListElem *ale,
+                                eAnimChannelSettings setting,
+                                short *r_type)
 {
   Base *base = (Base *)ale->data;
-  Object *ob = base->object;
+  Ob *ob = base->ob;
 
   /* Clear extra return data first. */
   *r_type = 0;
 
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT: /* selected */
+    case ACHANNEL_SETTING_SEL: /* sel */
       return GET_ACF_FLAG_PTR(base->flag, r_type);
 
     case ACHANNEL_SETTING_EXPAND:                   /* expanded */
@@ -745,9 +743,9 @@ static void *acf_object_setting_ptr(bAnimListElem *ale,
   }
 }
 
-/** Object type define. */
-static bAnimChannelType ACF_OBJECT = {
-    /*channel_type_name*/ "Object",
+/* Ob type define. */
+static AnimChannelType ACF_OB = {
+    /*channel_type_name*/ "Ob",
     /*channel_role*/ ACHANNEL_ROLE_EXPANDER,
 
     /*get_backdrop_color*/ acf_generic_root_color,
@@ -756,34 +754,33 @@ static bAnimChannelType ACF_OBJECT = {
     /*get_indent_level*/ acf_generic_indentation_0,
     /*get_offset*/ nullptr,
 
-    /*name*/ acf_object_name,
-    /*name_prop*/ acf_object_name_prop,
-    /*icon*/ acf_object_icon,
+    /*name*/ acf_ob_name,
+    /*name_prop*/ acf_ob_name_prop,
+    /*icon*/ acf_ob_icon,
 
-    /*has_setting*/ acf_object_setting_valid,
-    /*setting_flag*/ acf_object_setting_flag,
-    /*setting_ptr*/ acf_object_setting_ptr,
+    /*has_setting*/ acf_ob_setting_valid,
+    /*setting_flag*/ acf_ob_setting_flag,
+    /*setting_ptr*/ acf_ob_setting_ptr,
 };
 
-/* Group ------------------------------------------- */
-
+/* Group */
 /* get backdrop color for group widget */
-static void acf_group_color(bAnimContext * /*ac*/, bAnimListElem *ale, float r_color[3])
+static void acf_group_color(AnimCxt * /*ac*/, AnimListElem *ale, float r_color[3])
 {
   if (ale->flag & AGRP_ACTIVE) {
-    UI_GetThemeColor3fv(TH_GROUP_ACTIVE, r_color);
+    ui_GetThemeColor3fv(TH_GROUP_ACTIVE, r_color);
   }
   else {
-    UI_GetThemeColor3fv(TH_GROUP, r_color);
+    ui_GetThemeColor3fv(TH_GROUP, r_color);
   }
 }
 
 /* backdrop for group widget */
-static void acf_group_backdrop(bAnimContext *ac, bAnimListElem *ale, float yminc, float ymaxc)
+static void acf_group_backdrop(AnimCxt *ac, AnimListElem *ale, float yminc, float ymaxc)
 {
-  const bAnimChannelType *acf = ANIM_channel_get_typeinfo(ale);
-  View2D *v2d = &ac->region->v2d;
-  short expanded = ANIM_channel_setting_get(ac, ale, ACHANNEL_SETTING_EXPAND) != 0;
+  const AnimChannelType *acf = anim_channel_get_typeinfo(ale);
+  View2D *v2d = &ac->rgn->v2d;
+  short expanded = anim_channel_setting_get(ac, ale, ACHANNEL_SETTING_EXPAND) != 0;
   short offset = (acf->get_offset) ? acf->get_offset(ac, ale) : 0;
   float color[3];
 
@@ -791,40 +788,40 @@ static void acf_group_backdrop(bAnimContext *ac, bAnimListElem *ale, float yminc
   acf->get_backdrop_color(ac, ale, color);
 
   /* rounded corners on LHS only - top only when expanded, but bottom too when collapsed */
-  UI_draw_roundbox_corner_set(expanded ? UI_CNR_TOP_LEFT : (UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT));
+  ui_drw_roundbox_corner_set(expanded ? UI_CNR_TOP_LEFT : (UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT));
 
   rctf box;
   box.xmin = offset;
   box.xmax = v2d->cur.xmax + EXTRA_SCROLL_PAD;
   box.ymin = yminc;
   box.ymax = ymaxc;
-  UI_draw_roundbox_3fv_alpha(&box, true, 8, color, 1.0f);
+  ui_drw_roundbox_3fv_alpha(&box, true, 8, color, 1.0f);
 }
 
 /* name for group entries */
-static void acf_group_name(bAnimListElem *ale, char *name)
+static void acf_group_name(AnimListElem *ale, char *name)
 {
-  bActionGroup *agrp = (bActionGroup *)ale->data;
+  ActionGroup *agrp = (bActionGroup *)ale->data;
 
   /* just copy the name... */
   if (agrp && name) {
-    BLI_strncpy(name, agrp->name, ANIM_CHAN_NAME_SIZE);
+    lib_strncpy(name, agrp->name, ANIM_CHAN_NAME_SIZE);
   }
 }
 
-/* name property for group entries */
-static bool acf_group_name_prop(bAnimListElem *ale, PointerRNA *r_ptr, PropertyRNA **r_prop)
+/* name prop for group entries */
+static bool acf_group_name_prop(AnimListElem *ale, ApiPtr *r_ptr, ApiProp **r_prop)
 {
-  *r_ptr = RNA_pointer_create(ale->fcurve_owner_id, &RNA_ActionGroup, ale->data);
-  *r_prop = RNA_struct_name_property(r_ptr->type);
+  *r_ptr = api_ptr_create(ale->fcurve_owner_id, &ApiActionGroup, ale->data);
+  *r_prop = api_struct_name_prop(r_ptr->type);
 
   return (*r_prop != nullptr);
 }
 
 /* check if some setting exists for this channel */
-static bool acf_group_setting_valid(bAnimContext *ac,
-                                    bAnimListElem * /*ale*/,
-                                    eAnimChannel_Settings setting)
+static bool acf_group_setting_valid(AnimCxt *ac,
+                                    AnimListElem * /*ale*/,
+                                    eAnimChannelSettings setting)
 {
   /* for now, all settings are supported, though some are only conditionally */
   switch (setting) {
@@ -846,21 +843,20 @@ static bool acf_group_setting_valid(bAnimContext *ac,
 }
 
 /* Get the appropriate flag(s) for the setting when it is valid. */
-static int acf_group_setting_flag(bAnimContext *ac, eAnimChannel_Settings setting, bool *r_neg)
+static int acf_group_setting_flag(AnimCxt *ac, eAnimChannelSettings setting, bool *r_neg)
 {
   /* Clear extra return data first. */
   *r_neg = false;
 
   switch (setting) {
-    case ACHANNEL_SETTING_SELECT: /* selected */
-      return AGRP_SELECTED;
+    case ACHANNEL_SETTING_SEL: /* sel */
+      return AGRP_SEL;
 
     case ACHANNEL_SETTING_EXPAND: /* expanded */
     {
       /* NOTE: Graph Editor uses a different flag to everywhere else for this,
        * allowing different collapsing of groups there, since sharing the flag
-       * proved to be a hazard for workflows...
-       */
+       * proved to be a hazard for workflows... */
       return (ac->spacetype == SPACE_GRAPH) ? AGRP_EXPANDED_G : /* Graph Editor case */
                                               AGRP_EXPANDED;                                 /* DopeSheet and elsewhere */
     }
@@ -870,7 +866,7 @@ static int acf_group_setting_flag(bAnimContext *ac, eAnimChannel_Settings settin
 
     case ACHANNEL_SETTING_MOD_OFF: /* muted */
       *r_neg = true;
-      return AGRP_MODIFIERS_OFF;
+      return AGRP_MODS_OFF;
 
     case ACHANNEL_SETTING_PROTECT: /* protected */
       return AGRP_PROTECTED;
