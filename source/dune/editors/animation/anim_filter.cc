@@ -2496,8 +2496,8 @@ static size_t animdata_filter_ds_material(
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -2505,14 +2505,14 @@ static size_t animdata_filter_ds_material(
 }
 
 static size_t animdata_filter_ds_materials(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Ob *ob, int filter_mode)
 {
   size_t items = 0;
   int a = 0;
 
   /* First pass: take the materials referenced via the Material slots of the object. */
   for (a = 1; a <= ob->totcol; a++) {
-    Material *ma = BKE_object_material_get(ob, a);
+    Material *ma = dune_ob_material_get(ob, a);
 
     /* if material is valid, try to add relevant contents from here */
     if (ma) {
@@ -2525,29 +2525,26 @@ static size_t animdata_filter_ds_materials(
   return items;
 }
 
-/* ............ */
+/* Tmp cxt for mod linked-data channel extraction */
+struct tAnimFilterModsCxt {
+  AnimCxt *ac; /* anim editor cxt */
+  DopeSheet *ads;  /* dopesheet filtering settings */
 
-/* Temporary context for modifier linked-data channel extraction */
-struct tAnimFilterModifiersContext {
-  bAnimContext *ac; /* anim editor context */
-  bDopeSheet *ads;  /* dopesheet filtering settings */
-
-  ListBase tmp_data; /* list of channels created (but not yet added to the main list) */
+  List tmp_data; /* list of channels created (but not yet added to the main list) */
   size_t items;      /* number of channels created */
 
   int filter_mode; /* flags for stuff we want to filter */
 };
 
-/* dependency walker callback for modifier dependencies */
-static void animfilter_modifier_idpoin_cb(void *afm_ptr, Object *ob, ID **idpoin, int /*cb_flag*/)
+/* dependency walker cb for mod dependencies */
+static void animfilter_mod_idpoin_cb(void *afm_ptr, Ob *ob, Id **idpoin, int /*cb_flag*/)
 {
-  tAnimFilterModifiersContext *afm = (tAnimFilterModifiersContext *)afm_ptr;
-  ID *owner_id = &ob->id;
-  ID *id = *idpoin;
+  tAnimFilterModsCxt *afm = (tAnimFilterModsCxt *)afm_ptr;
+  Id *owner_id = &ob->id;
+  Id *id = *idpoin;
 
-  /* NOTE: the walker only guarantees to give us all the ID-ptr *slots*,
-   * not just the ones which are actually used, so be careful!
-   */
+  /* The walker only guarantees to give us all the ID-ptr *slots*,
+   * not just the ones which are actually used, so be careful! */
   if (id == nullptr) {
     return;
   }
@@ -2564,7 +2561,7 @@ static void animfilter_modifier_idpoin_cb(void *afm_ptr, Object *ob, ID **idpoin
       break;
     }
     case ID_NT: {
-      bNodeTree *node_tree = (bNodeTree *)id;
+      NodeTree *node_tree = (NodeTree *)id;
       if (!(afm->ads->filterflag & ADS_FILTER_NONTREE)) {
         afm->items += animdata_filter_ds_nodetree(
             afm->ac, &afm->tmp_data, afm->ads, owner_id, node_tree, afm->filter_mode);
@@ -2577,37 +2574,34 @@ static void animfilter_modifier_idpoin_cb(void *afm_ptr, Object *ob, ID **idpoin
   }
 }
 
-/* animation linked to data used by modifiers
- * NOTE: strictly speaking, modifier animation is already included under Object level
- *       but for some modifiers (e.g. Displace), there can be linked data that has settings
- *       which would be nice to animate (i.e. texture parameters) but which are not actually
- *       attached to any other objects/materials/etc. in the scene
- */
+/* anim linked to data used by modifiers
+ * Strictly speaking, mod anim is alrdy included under Ob level
+ * but for some mods (e.g. Displace), there can be linked data that has settings
+ * which would be nice to animate (i.e. texture params) but which are not actually
+ * attached to any other obs/materials/etc. in the scene */
 /* TODO: do we want an expander for this? */
-static size_t animdata_filter_ds_modifiers(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
+static size_t animdata_filter_ds_mods(
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Ob *ob, int filter_mode)
 {
-  tAnimFilterModifiersContext afm = {nullptr};
+  tAnimFilterModsCxt afm = {nullptr};
   size_t items = 0;
 
-  /* 1) create a temporary "context" containing all the info we have here to pass to the callback
-   *    use to walk through the dependencies of the modifiers
-   *
-   * Assumes that all other unspecified values (i.e. accumulation buffers)
-   * are zero'd out properly!
-   */
+  /* 1) create a tmp "cxt" containing all the info we have here to pass to the cbs
+   * use to walk through the dependencies of the mods
+   * Assumes all other unspecified values (i.e. accumulation buffs)
+   * are zero'd out properly! */
   afm.ac = ac;
   afm.ads = ads;
   afm.filter_mode = filter_mode;
 
   /* 2) walk over dependencies */
-  BKE_modifiers_foreach_ID_link(ob, animfilter_modifier_idpoin_cb, &afm);
+  dune_mods_foreach_id_link(ob, animfilter_mod_idpoin_cb, &afm);
 
-  /* 3) extract data from the context, merging it back into the standard list */
+  /* 3) extract data from the cxt, merging it back into the standard list */
   if (afm.items) {
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &afm.tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&afm.tmp_data));
+    lib_movelisttolist(anim_data, &afm.tmp_data);
+    lib_assert(lib_list_is_empty(&afm.tmp_data));
     items += afm.items;
   }
 
@@ -2655,8 +2649,8 @@ static size_t animdata_filter_ds_particles(
       }
 
       /* now add the list of collected channels */
-      BLI_movelisttolist(anim_data, &tmp_data);
-      BLI_assert(BLI_listbase_is_empty(&tmp_data));
+      lib_movelisttolist(anim_data, &tmp_data);
+      lib_assert(lib_list_is_empty(&tmp_data));
       items += tmp_items;
     }
   }
@@ -2666,9 +2660,9 @@ static size_t animdata_filter_ds_particles(
 }
 
 static size_t animdata_filter_ds_obdata(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Ob *ob, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
@@ -2677,7 +2671,7 @@ static size_t animdata_filter_ds_obdata(
 
   /* get settings based on data type */
   switch (ob->type) {
-    case OB_CAMERA: /* ------- Camera ------------ */
+    case OB_CAMERA: /* Camera */
     {
       Camera *ca = (Camera *)ob->data;
 
@@ -2701,9 +2695,9 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_LAM_OBJD(la);
       break;
     }
-    case OB_CURVES_LEGACY: /* ------- Curve ---------- */
-    case OB_SURF:          /* ------- Nurbs Surface ---------- */
-    case OB_FONT:          /* ------- Text Curve ---------- */
+    case OB_CURVES_LEGACY: /* Curve */
+    case OB_SURF:          /* Nurbs Surface */
+    case OB_FONT:          /* Text Curve */
     {
       Curve *cu = (Curve *)ob->data;
 
@@ -2715,7 +2709,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_CUR_OBJD(cu);
       break;
     }
-    case OB_MBALL: /* ------- MetaBall ---------- */
+    case OB_MBALL: /* MetaBall */
     {
       MetaBall *mb = (MetaBall *)ob->data;
 
@@ -2727,9 +2721,9 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_MBALL_OBJD(mb);
       break;
     }
-    case OB_ARMATURE: /* ------- Armature ---------- */
+    case OB_ARMATURE: /* Armature */
     {
-      bArmature *arm = (bArmature *)ob->data;
+      Armature *arm = (Armature *)ob->data;
 
       if (ads->filterflag & ADS_FILTER_NOARM) {
         return 0;
@@ -2739,7 +2733,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_ARM_OBJD(arm);
       break;
     }
-    case OB_MESH: /* ------- Mesh ---------- */
+    case OB_MESH: /* Mesh */
     {
       Mesh *me = (Mesh *)ob->data;
 
@@ -2751,7 +2745,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_MESH_OBJD(me);
       break;
     }
-    case OB_LATTICE: /* ---- Lattice ---- */
+    case OB_LATTICE: /* Lattice */
     {
       Lattice *lt = (Lattice *)ob->data;
 
@@ -2763,7 +2757,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_LATTICE_OBJD(lt);
       break;
     }
-    case OB_SPEAKER: /* ---------- Speaker ----------- */
+    case OB_SPEAKER: /* Speaker */
     {
       Speaker *spk = (Speaker *)ob->data;
 
@@ -2771,7 +2765,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_SPK_OBJD(spk);
       break;
     }
-    case OB_CURVES: /* ---------- Curves ----------- */
+    case OB_CURVES: /* Curves */
     {
       Curves *curves = (Curves *)ob->data;
 
@@ -2783,7 +2777,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_CURVES_OBJD(curves);
       break;
     }
-    case OB_POINTCLOUD: /* ---------- PointCloud ----------- */
+    case OB_POINTCLOUD: /* PointCloud */
     {
       PointCloud *pointcloud = (PointCloud *)ob->data;
 
@@ -2795,7 +2789,7 @@ static size_t animdata_filter_ds_obdata(
       expanded = FILTER_POINTS_OBJD(pointcloud);
       break;
     }
-    case OB_VOLUME: /* ---------- Volume ----------- */
+    case OB_VOLUME: /* Volume */
     {
       Volume *volume = (Volume *)ob->data;
 
@@ -2809,17 +2803,17 @@ static size_t animdata_filter_ds_obdata(
     }
   }
 
-  /* add object data animation channels */
+  /* add ob data anim channels */
   BEGIN_ANIMFILTER_SUBCHANNELS (expanded) {
-    /* animation data filtering */
-    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)iat, filter_mode);
+    /* anim data filtering */
+    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (Id *)iat, filter_mode);
 
     /* sub-data filtering... */
     switch (ob->type) {
       case OB_LAMP: /* light - textures + nodetree */
       {
         Light *la = static_cast<Light *>(ob->data);
-        bNodeTree *ntree = la->nodetree;
+        NodeTree *ntree = la->nodetree;
 
         /* nodetree */
         if ((ntree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
@@ -2843,8 +2837,8 @@ static size_t animdata_filter_ds_obdata(
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -2852,18 +2846,18 @@ static size_t animdata_filter_ds_obdata(
   return items;
 }
 
-/* shapekey-level animation */
+/* shapekey-level anim */
 static size_t animdata_filter_ds_keyanim(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, Key *key, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Ob *ob, Key *key, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
-  /* add shapekey-level animation channels */
+  /* add shapekey-level anim channels */
   BEGIN_ANIMFILTER_SUBCHANNELS (FILTER_SKE_OBJD(key)) {
-    /* animation data filtering */
-    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)key, filter_mode);
+    /* anim data filtering */
+    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (Id *)key, filter_mode);
   }
   END_ANIMFILTER_SUBCHANNELS;
 
@@ -2877,8 +2871,8 @@ static size_t animdata_filter_ds_keyanim(
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -2888,9 +2882,9 @@ static size_t animdata_filter_ds_keyanim(
 
 /* object-level animation */
 static size_t animdata_filter_ds_obanim(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Ob *ob, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
@@ -2916,10 +2910,10 @@ static size_t animdata_filter_ds_obanim(
         expanded = EXPANDED_ACTC(adt->action);
       });
 
-  /* add object-level animation channels */
+  /* add ob-lvl anim channels */
   BEGIN_ANIMFILTER_SUBCHANNELS (expanded) {
-    /* animation data filtering */
-    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)ob, filter_mode);
+    /* anim data filtering */
+    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (Id *)ob, filter_mode);
   }
   END_ANIMFILTER_SUBCHANNELS;
 
@@ -2928,35 +2922,35 @@ static size_t animdata_filter_ds_obanim(
     /* include anim-expand widget first */
     if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
       if (type != ANIMTYPE_NONE) {
-        /* NOTE: active-status (and the associated checks) don't apply here... */
+        /* Active-status (and the assoc checks) don't apply here... */
         ANIMCHANNEL_NEW_CHANNEL(cdata, type, ob, nullptr);
       }
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
-  /* return the number of items added to the list */
+  /* return the num of items added to the list */
   return items;
 }
 
-/* get animation channels from object2 */
+/* get anim channels from ob2 */
 static size_t animdata_filter_dopesheet_ob(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Base *base, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Base *base, int filter_mode)
 {
   ListBase tmp_data = {nullptr, nullptr};
   Object *ob = base->object;
   size_t tmp_items = 0;
   size_t items = 0;
 
-  /* filter data contained under object first */
+  /* filter data contained under ob first */
   BEGIN_ANIMFILTER_SUBCHANNELS (EXPANDED_OBJC(ob)) {
-    Key *key = BKE_key_from_object(ob);
+    Key *key = dune_key_from_ob(ob);
 
-    /* object-level animation */
+    /* ob-level animation */
     if ((ob->adt) && !(ads->filterflag & ADS_FILTER_NOOBJ)) {
       tmp_items += animdata_filter_ds_obanim(ac, &tmp_data, ads, ob, filter_mode);
     }
@@ -2972,9 +2966,9 @@ static size_t animdata_filter_dopesheet_ob(
       tmp_items += animdata_filter_ds_keyanim(ac, &tmp_data, ads, ob, key, filter_mode);
     }
 
-    /* modifiers */
-    if ((ob->modifiers.first) && !(ads->filterflag & ADS_FILTER_NOMODIFIERS)) {
-      tmp_items += animdata_filter_ds_modifiers(ac, &tmp_data, ads, ob, filter_mode);
+    /* mods */
+    if ((ob->mods.first) && !(ads->filterflag & ADS_FILTER_NOMODS)) {
+      tmp_items += animdata_filter_ds_mods(ac, &tmp_data, ads, ob, filter_mode);
     }
 
     /* materials */
@@ -2982,18 +2976,18 @@ static size_t animdata_filter_dopesheet_ob(
       tmp_items += animdata_filter_ds_materials(ac, &tmp_data, ads, ob, filter_mode);
     }
 
-    /* object data */
-    if ((ob->data) && (ob->type != OB_GPENCIL_LEGACY)) {
+    /* ob data */
+    if ((ob->data) && (ob->type != OB_PEN_LEGACY)) {
       tmp_items += animdata_filter_ds_obdata(ac, &tmp_data, ads, ob, filter_mode);
     }
 
     /* particles */
-    if ((ob->particlesystem.first) && !(ads->filterflag & ADS_FILTER_NOPART)) {
+    if ((ob->particlesys.first) && !(ads->filterflag & ADS_FILTER_NOPART)) {
       tmp_items += animdata_filter_ds_particles(ac, &tmp_data, ads, ob, filter_mode);
     }
 
-    /* grease pencil */
-    if ((ob->type == OB_GPENCIL_LEGACY) && (ob->data) && !(ads->filterflag & ADS_FILTER_NOGPENCIL))
+    /* pen */
+    if ((ob->type == OB_PEN_LEGACY) && (ob->data) && !(ads->filterflag & ADS_FILTER_NOPEN))
     {
       tmp_items += animdata_filter_ds_gpencil(
           ac, &tmp_data, ads, static_cast<bGPdata *>(ob->data), filter_mode);
@@ -3003,45 +2997,45 @@ static size_t animdata_filter_dopesheet_ob(
 
   /* if we collected some channels, add these to the new list... */
   if (tmp_items) {
-    /* firstly add object expander if required */
+    /* firstly add ob expander if required */
     if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
-      /* check if filtering by selection */
-      /* XXX: double-check on this -
+      /* Check if filtering by sel */
+      /* double-check on this -
        * most of the time, a lot of tools need to filter out these channels! */
-      if (ANIMCHANNEL_SELOK((base->flag & BASE_SELECTED))) {
+      if (ANIMCHANNEL_SELOK((base->flag & BASE_SEL))) {
         /* check if filtering by active status */
         if (ANIMCHANNEL_ACTIVEOK(ob)) {
-          ANIMCHANNEL_NEW_CHANNEL(base, ANIMTYPE_OBJECT, ob, nullptr);
+          ANIMCHANNEL_NEW_CHANNEL(base, ANIMTYPE_OB, ob, nullptr);
         }
       }
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
-  /* return the number of items added */
+  /* return the num of items added */
   return items;
 }
 
 static size_t animdata_filter_ds_world(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Scene *sce, World *wo, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Scene *sce, World *wo, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
-  /* add world animation channels */
+  /* add world anim channels */
   BEGIN_ANIMFILTER_SUBCHANNELS (FILTER_WOR_SCED(wo)) {
-    /* animation data filtering */
-    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)wo, filter_mode);
+    /* anim data filtering */
+    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (Id *)wo, filter_mode);
 
     /* nodes */
     if ((wo->nodetree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
       tmp_items += animdata_filter_ds_nodetree(
-          ac, &tmp_data, ads, (ID *)wo, wo->nodetree, filter_mode);
+          ac, &tmp_data, ads, (Id *)wo, wo->nodetree, filter_mode);
     }
   }
   END_ANIMFILTER_SUBCHANNELS;
@@ -3057,8 +3051,8 @@ static size_t animdata_filter_ds_world(
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -3067,9 +3061,9 @@ static size_t animdata_filter_ds_world(
 }
 
 static size_t animdata_filter_ds_scene(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Scene *sce, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Scene *sce, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
@@ -3088,17 +3082,17 @@ static size_t animdata_filter_ds_scene(
         cdata = adt;
         expanded = EXPANDED_DRVD(adt);
       },
-      {/* NLA Strip Controls - no dedicated channel for now (XXX) */},
+      {/* NLA Strip Ctrls - no dedicated channel for now (XXX) */},
       { /* Keyframes */
         type = ANIMTYPE_FILLACTD;
         cdata = adt->action;
         expanded = EXPANDED_ACTC(adt->action);
       });
 
-  /* add scene-level animation channels */
+  /* add scene-lvl anim channels */
   BEGIN_ANIMFILTER_SUBCHANNELS (expanded) {
-    /* animation data filtering */
-    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)sce, filter_mode);
+    /* anim data filtering */
+    tmp_items += animfilter_block_data(ac, &tmp_data, ads, (Id *)sce, filter_mode);
   }
   END_ANIMFILTER_SUBCHANNELS;
 
@@ -3107,32 +3101,32 @@ static size_t animdata_filter_ds_scene(
     /* include anim-expand widget first */
     if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
       if (type != ANIMTYPE_NONE) {
-        /* NOTE: active-status (and the associated checks) don't apply here... */
+        /* NOTE: active-status (and the assoc checks) don't apply here... */
         ANIMCHANNEL_NEW_CHANNEL(cdata, type, sce, nullptr);
       }
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
-  /* return the number of items added to the list */
+  /* return the num of items added to the list */
   return items;
 }
 
 static size_t animdata_filter_dopesheet_scene(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Scene *sce, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Scene *sce, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
   /* filter data contained under object first */
   BEGIN_ANIMFILTER_SUBCHANNELS (EXPANDED_SCEC(sce)) {
-    bNodeTree *ntree = sce->nodetree;
-    bGPdata *gpd = sce->gpd;
+    NodeTree *ntree = sce->nodetree;
+    PenData *pend = sce->pend;
     World *wo = sce->world;
 
     /* Action, Drivers, or NLA for Scene */
@@ -3147,7 +3141,7 @@ static size_t animdata_filter_dopesheet_scene(
 
     /* nodetree */
     if ((ntree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
-      tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)sce, ntree, filter_mode);
+      tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (Id *)sce, ntree, filter_mode);
     }
 
     /* line styles */
@@ -3155,12 +3149,12 @@ static size_t animdata_filter_dopesheet_scene(
       tmp_items += animdata_filter_ds_linestyle(ac, &tmp_data, ads, sce, filter_mode);
     }
 
-    /* grease pencil */
-    if ((gpd) && !(ads->filterflag & ADS_FILTER_NOGPENCIL)) {
-      tmp_items += animdata_filter_ds_gpencil(ac, &tmp_data, ads, gpd, filter_mode);
+    /* pen */
+    if ((pend) && !(ads->filterflag & ADS_FILTER_NOPEN)) {
+      tmp_items += animdata_filter_ds_pen(ac, &tmp_data, ads, pd, filter_mode);
     }
 
-    /* TODO: one day, when sequencer becomes its own datatype,
+    /* TODO: one day, when seq becomes its own datatype,
      * perhaps it should be included here. */
   }
   END_ANIMFILTER_SUBCHANNELS;
@@ -3169,16 +3163,16 @@ static size_t animdata_filter_dopesheet_scene(
   if (tmp_items) {
     /* firstly add object expander if required */
     if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
-      /* check if filtering by selection */
-      if (ANIMCHANNEL_SELOK((sce->flag & SCE_DS_SELECTED))) {
+      /* check if filtering by sel */
+      if (ANIMCHANNEL_SELOK((sce->flag & SCE_DS_SEL))) {
         /* NOTE: active-status doesn't matter for this! */
         ANIMCHANNEL_NEW_CHANNEL(sce, ANIMTYPE_SCENE, sce, nullptr);
       }
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -3187,9 +3181,9 @@ static size_t animdata_filter_dopesheet_scene(
 }
 
 static size_t animdata_filter_ds_movieclip(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, MovieClip *clip, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, MovieClip *clip, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
   /* add world animation channels */
@@ -3208,52 +3202,51 @@ static size_t animdata_filter_ds_movieclip(
       }
     }
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
-  /* return the number of items added to the list */
+  /* return the num of items added to the list */
   return items;
 }
 
-static size_t animdata_filter_dopesheet_movieclips(bAnimContext *ac,
-                                                   ListBase *anim_data,
-                                                   bDopeSheet *ads,
+static size_t animdata_filter_dopesheet_movieclips(AnimCxt *ac,
+                                                   List *anim_data,
+                                                   DopeSheet *ads,
                                                    int filter_mode)
 {
   size_t items = 0;
-  LISTBASE_FOREACH (MovieClip *, clip, &ac->bmain->movieclips) {
+  LISTBASE_FOREACH (MovieClip *, clip, &ac->main->movieclips) {
     /* only show if gpd is used by something... */
     if (ID_REAL_USERS(clip) < 1) {
       continue;
     }
     items += animdata_filter_ds_movieclip(ac, anim_data, ads, clip, filter_mode);
   }
-  /* return the number of items added to the list */
+  /* return num of items added to the list */
   return items;
 }
 
-/* Helper for animdata_filter_dopesheet() - For checking if an object should be included or not */
-static bool animdata_filter_base_is_ok(bDopeSheet *ads,
+/* Helper for animdata_filter_dopesheet() - For checking if an ob should be included or not */
+static bool animdata_filter_base_is_ok(DopeSheet *ads,
                                        Base *base,
-                                       const eObjectMode object_mode,
+                                       const eObMode ob_mode,
                                        int filter_mode)
 {
-  Object *ob = base->object;
+  Ob *ob = base->ob;
 
-  if (base->object == nullptr) {
+  if (base->ob == nullptr) {
     return false;
   }
 
-  /* firstly, check if object can be included, by the following factors:
+  /* 1st check if ob can be included by the following factors:
    * - if only visible, must check for layer and also viewport visibility
    *   --> while tools may demand only visible, user setting takes priority
-   *       as user option controls whether sets of channels get included while
+   *       as user option ctrls whether sets of channels get included while
    *       tool-flag takes into account collapsed/open channels too
-   * - if only selected, must check if object is selected
-   * - there must be animation data to edit (this is done recursively as we
-   *   try to add the channels)
-   */
+   * - if only sel, must check if object is selected
+   * - there must be anim data to edit (this is done recursively as we
+   *   try to add the channels)  */
   if ((filter_mode & ANIMFILTER_DATA_VISIBLE) && !(ads->filterflag & ADS_FILTER_INCL_HIDDEN)) {
     /* layer visibility - we check both object and base, since these may not be in sync yet */
     if ((base->flag & BASE_ENABLED_AND_MAYBE_VISIBLE_IN_VIEWPORT) == 0 ||
@@ -3284,12 +3277,11 @@ static bool animdata_filter_base_is_ok(bDopeSheet *ads,
 
   /* Special case.
    * We don't do recursive checks for pin, but we need to deal with tricky
-   * setup like animated camera lens without animated camera location.
-   * Without such special handle here we wouldn't be able to bin such
-   * camera data only animation to the editor.
-   */
+   * setup like anim camera lens wo anim camera location.
+   * Wo such special handle here we wouldn't be able to bin such
+   * camera data only anim to the editor. */
   if (ob->adt == nullptr && ob->data != nullptr) {
-    AnimData *data_adt = BKE_animdata_from_id(static_cast<ID *>(ob->data));
+    AnimData *data_adt = dune_animdata_from_id(static_cast<ID *>(ob->data));
     if (data_adt != nullptr && (data_adt->flag & ADT_CURVES_ALWAYS_VISIBLE)) {
       return true;
     }
@@ -3297,66 +3289,65 @@ static bool animdata_filter_base_is_ok(bDopeSheet *ads,
 
   /* check selection and object type filters */
   if (ads->filterflag & ADS_FILTER_ONLYSEL) {
-    if (object_mode & OB_MODE_POSE) {
-      /* When in pose-mode handle all pose-mode objects.
+    if (ob_mode & OB_MODE_POSE) {
+      /* When in pose-mode handle all pose-mode obs.
        * This avoids problems with pose-mode where objects may be unselected,
-       * where a selected bone of an unselected object would be hidden. see: #81922. */
-      if (!(base->object->mode & object_mode)) {
+       * where a sel bone of an unsel ob would be hidden. see: #81922. */
+      if (!(base->ob->mode & ob_mode)) {
         return false;
       }
     }
     else {
-      /* only selected should be shown (ignore active) */
-      if (!(base->flag & BASE_SELECTED)) {
+      /* only sel should be shown (ignore active) */
+      if (!(base->flag & BASE_SEL)) {
         return false;
       }
     }
   }
 
-  /* check if object belongs to the filtering group if option to filter
+  /* check if ob belongs to the filtering group if option to filter
    * objects by the grouped status is on
-   * - used to ease the process of doing multiple-character choreographies
-   */
+   * - used to ease the process of doing multiple-character choreographies */
   if (ads->filter_grp != nullptr) {
-    if (BKE_collection_has_object_recursive(ads->filter_grp, ob) == 0) {
+    if (dune_collection_has_ob_recursive(ads->filter_grp, ob) == 0) {
       return false;
     }
   }
 
-  /* no reason to exclude this object... */
+  /* no reason to exclude this ob... */
   return true;
 }
 
-/* Helper for animdata_filter_ds_sorted_bases() - Comparison callback for two Base pointers... */
+/* Helper for animdata_filter_ds_sorted_bases() - Comparison cb for two Base ptrs... */
 static int ds_base_sorting_cmp(const void *base1_ptr, const void *base2_ptr)
 {
   const Base *b1 = *((const Base **)base1_ptr);
   const Base *b2 = *((const Base **)base2_ptr);
 
-  return strcmp(b1->object->id.name + 2, b2->object->id.name + 2);
+  return strcmp(b1->ob->id.name + 2, b2->object->id.name + 2);
 }
 
 /* Get a sorted list of all the bases - for inclusion in dopesheet (when drawing channels) */
-static Base **animdata_filter_ds_sorted_bases(bDopeSheet *ads,
+static Base **animdata_filter_ds_sorted_bases(DopeSheet *ads,
                                               const Scene *scene,
                                               ViewLayer *view_layer,
                                               int filter_mode,
                                               size_t *r_usable_bases)
 {
   /* Create an array with space for all the bases, but only containing the usable ones */
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  ListBase *object_bases = BKE_view_layer_object_bases_get(view_layer);
-  size_t tot_bases = BLI_listbase_count(object_bases);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  List *ob_bases = dune_view_layer_ob_bases_get(view_layer);
+  size_t tot_bases = lib_list_count(ob_bases);
   size_t num_bases = 0;
 
-  Base **sorted_bases = MEM_cnew_array<Base *>(tot_bases, "Dopesheet Usable Sorted Bases");
-  LISTBASE_FOREACH (Base *, base, object_bases) {
-    if (animdata_filter_base_is_ok(ads, base, OB_MODE_OBJECT, filter_mode)) {
+  Base **sorted_bases = mem_cnew_array<Base *>(tot_bases, "Dopesheet Usable Sorted Bases");
+  LIST_FOREACH (Base *, base, ob_bases) {
+    if (animdata_filter_base_is_ok(ads, base, OB_MODE_OB, filter_mode)) {
       sorted_bases[num_bases++] = base;
     }
   }
 
-  /* Sort this list of pointers (based on the names) */
+  /* Sort this list of ptrs (based on the names) */
   qsort(sorted_bases, num_bases, sizeof(Base *), ds_base_sorting_cmp);
 
   /* Return list of sorted bases */
@@ -3367,64 +3358,63 @@ static Base **animdata_filter_ds_sorted_bases(bDopeSheet *ads,
 /* TODO: implement pinning...
  * (if and when pinning is done, what we need to do is to provide freeing mechanisms -
  * to protect against data that was deleted). */
-static size_t animdata_filter_dopesheet(bAnimContext *ac,
-                                        ListBase *anim_data,
-                                        bDopeSheet *ads,
+static size_t animdata_filter_dopesheet(AnimCxt *ac,
+                                        List *anim_data,
+                                        DopeSheet *ads,
                                         int filter_mode)
 {
-  Scene *scene = (Scene *)ads->source;
+  Scene *scene = (Scene *)ads->src;
   ViewLayer *view_layer = (ViewLayer *)ac->view_layer;
   size_t items = 0;
 
   /* check that we do indeed have a scene */
-  if ((ads->source == nullptr) || (GS(ads->source->name) != ID_SCE)) {
+  if ((ads->src == nullptr) || (GS(ads->src->name) != ID_SCE)) {
     printf("Dope Sheet Error: No scene!\n");
     if (G.debug & G_DEBUG) {
-      printf("\tPointer = %p, Name = '%s'\n",
-             (void *)ads->source,
-             (ads->source) ? ads->source->name : nullptr);
+      printf("\tPtr = %p, Name = '%s'\n",
+             (void *)ads->src,
+             (ads->src) ? ads->sr ->name : nullptr);
     }
     return 0;
   }
 
   /* augment the filter-flags with settings based on the dopesheet filterflags
-   * so that some temp settings can get added automagically...
-   */
+   * so that some tmp settings can get added automagically... */
   if (ads->filterflag & ADS_FILTER_SELEDIT) {
-    /* only selected F-Curves should get their keyframes considered for editability */
+    /* only sel F-Curves should get their keyframes considered for editability */
     filter_mode |= ANIMFILTER_SELEDIT;
   }
 
   /* Cache files level animations (frame duration and such). */
   if (!(ads->filterflag2 & ADS_FILTER_NOCACHEFILES) && !(ads->filterflag & ADS_FILTER_ONLYSEL)) {
-    LISTBASE_FOREACH (CacheFile *, cache_file, &ac->bmain->cachefiles) {
+    LIST_FOREACH (CacheFile *, cache_file, &ac->main->cachefiles) {
       items += animdata_filter_ds_cachefile(ac, anim_data, ads, cache_file, filter_mode);
     }
   }
 
-  /* movie clip's animation */
+  /* movie clip's anim */
   if (!(ads->filterflag2 & ADS_FILTER_NOMOVIECLIPS) && !(ads->filterflag & ADS_FILTER_ONLYSEL)) {
     items += animdata_filter_dopesheet_movieclips(ac, anim_data, ads, filter_mode);
   }
 
-  /* Scene-linked animation - e.g. world, compositing nodes, scene anim
-   * (including sequencer currently). */
+  /* Scene-linked anim - e.g. world, compositing nodes, scene anim
+   * (including seq currently). */
   items += animdata_filter_dopesheet_scene(ac, anim_data, ads, scene, filter_mode);
 
-  /* If filtering for channel drawing, we want the objects in alphabetical order,
+  /* If filtering for channel drwing, we want the obs in alphabetical order,
    * to make it easier to predict where items are in the hierarchy
-   * - This order only really matters
+   * - This order only rly matters
    *   if we need to show all channels in the list (e.g. for drawing).
-   *   (XXX: What about lingering "active" flags? The order may now become unpredictable)
+   *   (What about lingering "active" flags? The order may now become unpredictable)
    * - Don't do this if this behavior has been turned off (i.e. due to it being too slow)
    * - Don't do this if there's just a single object
    */
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  ListBase *object_bases = BKE_view_layer_object_bases_get(view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  List *ob_bases = dune_view_layer_ob_bases_get(view_layer);
   if ((filter_mode & ANIMFILTER_LIST_CHANNELS) && !(ads->flag & ADS_FLAG_NO_DB_SORT) &&
-      (object_bases->first != object_bases->last))
+      (ob_bases->first != ob_bases->last))
   {
-    /* Filter list of bases (i.e. objects), sort them, then add their contents normally... */
+    /* Filter list of bases (i.e. obs), sort them, then add their contents normally... */
     /* TODO: Cache the old sorted order - if the set of bases hasn't changed, don't re-sort... */
     Base **sorted_bases;
     size_t num_bases;
@@ -3438,44 +3428,41 @@ static size_t animdata_filter_dopesheet(bAnimContext *ac,
       }
 
       /* TODO: store something to validate whether any changes are needed? */
-
-      /* free temporary data */
-      MEM_freeN(sorted_bases);
+      /* free tmp data */
+      mem_free(sorted_bases);
     }
   }
   else {
     /* Filter and add contents of each base (i.e. object) without them sorting first
-     * NOTE: This saves performance in cases where order doesn't matter
-     */
-    Object *obact = BKE_view_layer_active_object_get(view_layer);
-    const eObjectMode object_mode = (obact != nullptr) ? eObjectMode(obact->mode) : OB_MODE_OBJECT;
-    LISTBASE_FOREACH (Base *, base, object_bases) {
+     * This saves performance in cases where order doesn't matter   */
+    Ob *obact = dune_view_layer_active_ob_get(view_layer);
+    const eObMode ob_mode = (obact != nullptr) ? eObMode(obact->mode) : OB_MODE_OB;
+    LIST_FOREACH (Base *, base, ob_bases) {
       if (animdata_filter_base_is_ok(ads, base, object_mode, filter_mode)) {
-        /* since we're still here, this object should be usable */
+        /* since we're still here, this ob should be usable */
         items += animdata_filter_dopesheet_ob(ac, anim_data, ads, base, filter_mode);
       }
     }
   }
 
-  /* return the number of items in the list */
+  /* return num items in the list */
   return items;
 }
 
 /* Summary track for DopeSheet/Action Editor
  * - return code is whether the summary lets the other channels get drawn
  */
-static short animdata_filter_dopesheet_summary(bAnimContext *ac,
-                                               ListBase *anim_data,
+static short animdata_filter_dopesheet_summary(AnimCxt *ac,
+                                               List *anim_data,
                                                int filter_mode,
                                                size_t *items)
 {
-  bDopeSheet *ads = nullptr;
+  DopeSheet *ads = nullptr;
 
   /* get the DopeSheet information to use
    * - we should only need to deal with the DopeSheet/Action Editor,
-   *   since all the other Animation Editors won't have this concept
-   *   being applicable.
-   */
+   *   since all the other Anim Editors won't have this concept
+   *   being applicable. */
   if ((ac && ac->sl) && (ac->spacetype == SPACE_ACTION)) {
     SpaceAction *saction = (SpaceAction *)ac->sl;
     ads = &saction->ads;
@@ -3486,19 +3473,17 @@ static short animdata_filter_dopesheet_summary(bAnimContext *ac,
   }
 
   /* dopesheet summary
-   * - only for drawing and/or selecting keyframes in channels, but not for real editing
-   * - only useful for DopeSheet/Action/etc. editors where it is actually useful
-   */
+   * - only for drwing and/or selecting keyframes in channels, but not for real editing
+   * - only useful for DopeSheet/Action/etc. editors where it is actually useful  */
   if ((filter_mode & ANIMFILTER_LIST_CHANNELS) && (ads->filterflag & ADS_FILTER_SUMMARY)) {
-    bAnimListElem *ale = make_new_animlistelem(ac, ANIMTYPE_SUMMARY, nullptr, nullptr);
+    AnimListElem *ale = make_new_animlistelem(ac, ANIMTYPE_SUMMARY, nullptr, nullptr);
     if (ale) {
-      BLI_addtail(anim_data, ale);
+      lib_addtail(anim_data, ale);
       (*items)++;
     }
 
     /* If summary is collapsed, don't show other channels beneath this - this check is put inside
-     * the summary check so that it doesn't interfere with normal operation.
-     */
+     * the summary check so that it doesn't interfere with normal op */
     if (ads->flag & ADS_FLAG_SUMMARY_COLLAPSED) {
       return 0;
     }
@@ -3508,19 +3493,17 @@ static short animdata_filter_dopesheet_summary(bAnimContext *ac,
   return 1;
 }
 
-/* ......................... */
-
-/* filter data associated with a channel - usually for handling summary-channels in DopeSheet */
-static size_t animdata_filter_animchan(bAnimContext *ac,
-                                       ListBase *anim_data,
-                                       bDopeSheet *ads,
-                                       bAnimListElem *channel,
+/* filter data assoc with a channel - usually for handling summary-channels in DopeSheet */
+static size_t animdata_filter_animchan(AnimCxt *ac,
+                                       List *anim_data,
+                                       DopeSheet *ads,
+                                       AnimListElem *channel,
                                        int filter_mode)
 {
   size_t items = 0;
 
   /* data to filter depends on channel type */
-  /* NOTE: only common channel-types have been handled for now. More can be added as necessary */
+  /* Only common channel-types have been handled for now. More can be added as necessary */
   switch (channel->type) {
     case ANIMTYPE_SUMMARY:
       items += animdata_filter_dopesheet(ac, anim_data, ads, filter_mode);
@@ -3531,7 +3514,7 @@ static size_t animdata_filter_animchan(bAnimContext *ac,
           ac, anim_data, ads, static_cast<Scene *>(channel->data), filter_mode);
       break;
 
-    case ANIMTYPE_OBJECT:
+    case ANIMTYPE_OB:
       items += animdata_filter_dopesheet_ob(
           ac, anim_data, ads, static_cast<Base *>(channel->data), filter_mode);
       break;
@@ -3554,7 +3537,7 @@ static size_t animdata_filter_animchan(bAnimContext *ac,
   return items;
 }
 
-/* ----------- Cleanup API --------------- */
+/* Cleanup API */
 
 /* Remove entries with invalid types in animation channel list */
 static size_t animdata_filter_remove_invalid(ListBase *anim_data)
