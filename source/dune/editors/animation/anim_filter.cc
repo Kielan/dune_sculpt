@@ -844,21 +844,21 @@ static AnimListElem *make_new_animlistelem(void *data,
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
-      case ANIMTYPE_DSGPENCIL: {
-        bGPdata *gpd = (bGPdata *)data;
+      case ANIMTYPE_DSPEN: {
+        PenData *pend = (PenData *)data;
         AnimData *adt = gpd->adt;
 
-        /* NOTE: we just reuse the same expand filter for this case */
-        ale->flag = EXPANDED_GPD(gpd);
+        /* We reuse the same expand filter for this case */
+        ale->flag = EXPANDED_PENDATA(pend);
 
-        /* XXX: currently, this is only used for access to its animation data */
+        /* currently, this is only used for access to its animation data */
         ale->key_data = (adt) ? adt->action : nullptr;
         ale->datatype = ALE_ACT;
 
-        ale->adt = BKE_animdata_from_id(static_cast<ID *>(data));
+        ale->adt = dune_animdata_from_id(static_cast<ID *>(data));
         break;
       }
       case ANIMTYPE_DSMCLIP: {
