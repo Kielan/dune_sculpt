@@ -1,67 +1,59 @@
-/**
- * User Interface for F-Modifiers
- *
- * This file defines templates and some editing callbacks needed by the interface for
- * F-Modifiers, as used by F-Curves in the Graph Editor and NLA-Strips in the NLA Editor.
- */
+/* UI for F-Mods
+ * This file defines templates and some editing cbs needed by the interface for
+ * F-Mods, as used by F-Curves in the Graph Editor and NLA-Strips in the NLA Editor. */
 
 #include <cstring>
 
-#include "DNA_anim_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_space_types.h"
+#include "types_anim_types.h"
+#include "types_scene_types.h"
+#include "types_space_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "BKE_context.hh"
-#include "BKE_fcurve.h"
-#include "BKE_screen.hh"
+#include "dune_cxt.hh"
+#include "dune_fcurve.h"
+#include "dune_screen.hh"
 
-#include "WM_api.hh"
-#include "WM_types.hh"
+#include "win_api.hh"
+#include "win_types.hh"
 
-#include "RNA_access.hh"
-#include "RNA_prototypes.h"
+#include "api_access.hh"
+#include "api_prototypes.h"
 
-#include "UI_interface.hh"
-#include "UI_resources.hh"
+#include "ui.hh"
+#include "ui_resources.hh"
 
-#include "ED_anim_api.hh"
-#include "ED_undo.hh"
+#include "ed_anim_api.hh"
+#include "ed_undo.hh"
 
-#include "DEG_depsgraph.hh"
+#include "graph.hh"
 
-using PanelDrawFn = void (*)(const bContext *, Panel *);
-static void fmodifier_panel_header(const bContext *C, Panel *panel);
+using PnlDrwFn = void (*)(const Cxt *, Pnl *);
+static void fmod_pnl_header(const Cxt *C, Pnl *pnl);
 
-/* -------------------------------------------------------------------- */
-/** \name Panel Registering and Panel Callbacks
- * \{ */
-
-/**
- * Get the list of FModifiers from the context (either the NLA or graph editor).
- */
-static ListBase *fmodifier_list_space_specific(const bContext *C)
+/* Pnl Registering and Pnl Cbs */
+/* Get the list of FMods from the cxt (either the NLA or graph editor). */
+static List *fmod_list_space_specific(const Cxt *C)
 {
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = cxt_win_area(C);
 
   if (area->spacetype == SPACE_GRAPH) {
-    FCurve *fcu = ANIM_graph_context_fcurve(C);
-    return &fcu->modifiers;
+    FCurve *fcu = anim_graph_cxt_fcurve(C);
+    return &fcu->mods;
   }
 
   if (area->spacetype == SPACE_NLA) {
-    NlaStrip *strip = ANIM_nla_context_strip(C);
-    return &strip->modifiers;
+    NlaStrip *strip = anim_nla_cxt_strip(C);
+    return &strip->mods;
   }
 
   /* This should not be called in any other space. */
-  BLI_assert(false);
+  lib_assert(false);
   return nullptr;
 }
 
