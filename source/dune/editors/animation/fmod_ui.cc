@@ -1,7 +1,6 @@
 /* UI for F-Mods
  * This file defines templates and some editing cbs needed by the interface for
  * F-Mods, as used by F-Curves in the Graph Editor and NLA-Strips in the NLA Editor. */
-
 #include <cstring>
 
 #include "types_anim.h"
@@ -69,8 +68,8 @@ static PointerRNA *fmodifier_get_pointers(const bContext *C, const Panel *panel,
     *r_owner_id = ptr->owner_id;
   }
 
-  if (C != nullptr && CTX_wm_space_graph(C)) {
-    FCurve *fcu = ANIM_graph_context_fcurve(C);
+  if (C != nullptr && CTX_win_space_graph(C)) {
+    FCurve *fcu = ANIM_graph_cxt_fcurve(C);
     uiLayoutSetActive(panel->layout, !(fcu->flag & FCURVE_MOD_OFF));
   }
 
