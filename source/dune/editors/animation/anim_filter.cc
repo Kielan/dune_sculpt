@@ -2357,8 +2357,8 @@ static size_t animdata_filter_ds_linestyle(
         }
 
         /* now add the list of collected channels */
-        BLI_movelisttolist(anim_data, &tmp_data);
-        BLI_assert(BLI_listbase_is_empty(&tmp_data));
+        lib_movelisttolist(anim_data, &tmp_data);
+        lib_assert(lib_list_is_empty(&tmp_data));
         items += tmp_items;
       }
     }
@@ -2368,11 +2368,11 @@ static size_t animdata_filter_ds_linestyle(
   return items;
 }
 
-static size_t animdata_filter_ds_texture(bAnimContext *ac,
-                                         ListBase *anim_data,
-                                         bDopeSheet *ads,
+static size_t animdata_filter_ds_texture(AnimCxt *ac,
+                                         List *anim_data,
+                                         DopeSheet *ads,
                                          Tex *tex,
-                                         ID *owner_id,
+                                         Id *owner_id,
                                          int filter_mode)
 {
   ListBase tmp_data = {nullptr, nullptr};
@@ -2390,10 +2390,9 @@ static size_t animdata_filter_ds_texture(bAnimContext *ac,
        * since it'll otherwise be impossible to track the depth. */
 
       /* FIXME: perhaps as a result, textures should NOT be included under materials,
-       * but under their own section instead so that free-floating textures can also be animated.
-       */
+       * but under their own section instead so that free-floating textures can also be animated.*/
       tmp_items += animdata_filter_ds_nodetree(
-          ac, &tmp_data, ads, (ID *)tex, tex->nodetree, filter_mode);
+          ac, &tmp_data, ads, (Id *)tex, tex->nodetree, filter_mode);
     }
   }
   END_ANIMFILTER_SUBCHANNELS;
@@ -2409,8 +2408,8 @@ static size_t animdata_filter_ds_texture(bAnimContext *ac,
     }
 
     /* now add the list of collected channels */
-    BLI_movelisttolist(anim_data, &tmp_data);
-    BLI_assert(BLI_listbase_is_empty(&tmp_data));
+    lib_movelisttolist(anim_data, &tmp_data);
+    lib_assert(lib_list_is_empty(&tmp_data));
     items += tmp_items;
   }
 
@@ -2418,11 +2417,10 @@ static size_t animdata_filter_ds_texture(bAnimContext *ac,
   return items;
 }
 
-/* NOTE: owner_id is the direct owner of the texture stack in question
- *       It used to be Material/Light/World before the Blender Internal removal for 2.8
- */
+/* Owner_id is the direct owner of the texture stack in question
+ * Prev (legacy) was Material/Light/World before the Internal removal for 2. */
 static size_t animdata_filter_ds_textures(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, ID *owner_id, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Id *owner_id, int filter_mode)
 {
   MTex **mtex = nullptr;
   size_t items = 0;
@@ -2450,7 +2448,7 @@ static size_t animdata_filter_ds_textures(
   }
 
   /* Firstly check that we actually have some textures,
-   * by gathering all textures in a temp list. */
+   * by gathering all textures in a tmp list. */
   for (a = 0; a < MAX_MTEX; a++) {
     Tex *tex = (mtex[a]) ? mtex[a]->tex : nullptr;
 
@@ -2468,9 +2466,9 @@ static size_t animdata_filter_ds_textures(
 }
 
 static size_t animdata_filter_ds_material(
-    bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Material *ma, int filter_mode)
+    AnimCxt *ac, List *anim_data, DopeSheet *ads, Material *ma, int filter_mode)
 {
-  ListBase tmp_data = {nullptr, nullptr};
+  List tmp_data = {nullptr, nullptr};
   size_t tmp_items = 0;
   size_t items = 0;
 
