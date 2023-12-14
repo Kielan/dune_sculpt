@@ -969,76 +969,76 @@ static int add_driver_button_menu_invoke(bContext *C, wmOperator *op, const wmEv
 
 static void UNUSED_FUNCTION(ANIM_OT_driver_button_add_menu)(wmOperatorType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Driver Menu";
   ot->idname = "ANIM_OT_driver_button_add_menu";
   ot->description = "Add driver(s) for the property(s) represented by the highlighted button";
 
-  /* callbacks */
-  ot->invoke = add_driver_button_menu_invoke;
-  ot->exec = add_driver_button_menu_exec;
-  ot->poll = add_driver_button_poll;
+  /* cbs */
+  ot->invoke = add_driver_btn_menu_invoke;
+  ot->ex = add_driver_btn_menu_ex;
+  ot->poll = add_driver_btn_poll;
 
   /* flags */
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
-  /* properties */
-  ot->prop = RNA_def_enum(ot->srna,
+  /* props */
+  ot->prop = api_def_enum(ot->sapi,
                           "mapping_type",
                           prop_driver_create_mapping_types,
                           0,
                           "Mapping Type",
                           "Method used to match target and driven properties");
-  RNA_def_enum_funcs(ot->prop, driver_mapping_type_itemf);
+  api_def_enum_fns(ot->prop, driver_mapping_type_itemf);
 }
 
 /* Add Driver Button Operator ------------------------ */
 
 static int add_driver_button_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
     /* 1) Create a new "empty" driver for this property */
-    char *path = RNA_path_from_ID_to_property(&ptr, prop);
+    char *path = api_path_from_id_to_property(&ptr, prop);
     short flags = CREATEDRIVER_WITH_DEFAULT_DVAR;
     bool changed = false;
 
     if (path) {
-      changed |= (ANIM_add_driver(
+      changed |= (anim_add_driver(
                       op->reports, ptr.owner_id, path, index, flags, DRIVER_TYPE_PYTHON) != 0);
-      MEM_freeN(path);
+      mem_free(path);
     }
 
     if (changed) {
       /* send updates */
-      UI_context_update_anim_flag(C);
-      DEG_id_tag_update(ptr.owner_id, ID_RECALC_COPY_ON_WRITE);
-      DEG_relations_tag_update(CTX_data_main(C));
-      WM_event_add_notifier(C, NC_ANIMATION | ND_FCURVES_ORDER, nullptr);
+      ui_cxt_update_anim_flag(C);
+      graph_id_tag_update(ptr.owner_id, ID_RECALC_COPY_ON_WRITE);
+      graph_relations_tag_update(cxt_data_main(C));
+      win_ev_add_notifier(C, NC_ANIM | ND_FCURVES_ORDER, nullptr);
     }
 
     /* 2) Show editing panel for setting up this driver */
     /* TODO: Use a different one from the editing popover, so we can have the single/all toggle? */
-    UI_popover_panel_invoke(C, "GRAPH_PT_drivers_popover", true, op->reports);
+    ui_popover_pnl_invoke(C, "GRAPH_PT_drivers_popover", true, op->reports);
   }
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void ANIM_OT_driver_button_add(wmOperatorType *ot)
+void ANIM_OT_driver_btn_add(WinOpType *ot)
 {
-  /* identifiers */
+  /* ids */
   ot->name = "Add Driver";
-  ot->idname = "ANIM_OT_driver_button_add";
-  ot->description = "Add driver for the property under the cursor";
+  ot->idname = "ANIM_OT_driver_btn_add";
+  ot->description = "Add driver for the prop under the cursor";
 
-  /* callbacks */
-  /* NOTE: No exec, as we need all these to use the current context info */
+  /* cbs */
+  /* NOTE: No ex, as we need all these to use the current context info */
   ot->invoke = add_driver_button_invoke;
   ot->poll = add_driver_button_poll;
 
