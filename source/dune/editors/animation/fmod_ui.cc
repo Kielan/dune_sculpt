@@ -4,9 +4,9 @@
 
 #include <cstring>
 
-#include "types_anim_types.h"
-#include "types_scene_types.h"
-#include "types_space_types.h"
+#include "types_anim.h"
+#include "types_scene.h"
+#include "types_space.h"
 
 #include "mem_guardedalloc.h"
 
@@ -80,23 +80,23 @@ static PointerRNA *fmodifier_get_pointers(const bContext *C, const Panel *panel,
 /**
  * Move an FModifier to the index it's moved to after a drag and drop.
  */
-static void fmodifier_reorder(bContext *C, Panel *panel, int new_index)
+static void fmod_reorder(Cxt *C, Pnl *pnl, int new_index)
 {
-  ID *owner_id;
-  PointerRNA *ptr = fmodifier_get_pointers(nullptr, panel, &owner_id);
-  FModifier *fcm = static_cast<FModifier *>(ptr->data);
-  const FModifierTypeInfo *fmi = get_fmodifier_typeinfo(fcm->type);
+  Id *owner_id;
+  ApiPtr *ptr = fmod_get_ptrs(nullptr, pnl, &owner_id);
+  FMod *fcm = static_cast<FMod *>(ptr->data);
+  const FModTypeInfo *fmi = get_fmod_typeinfo(fcm->type);
 
-  /* Cycles modifier has to be the first, so make sure it's kept that way. */
+  /* Cycles mod has to be the first, so make sure it's kept that way. */
   if (fmi->requires_flag & FMI_REQUIRES_ORIGINAL_DATA) {
-    WM_report(RPT_ERROR, "Modifier requires original data");
+    win_report(RPT_ERROR, "Modifier requires original data");
     return;
   }
 
-  ListBase *modifiers = fmodifier_list_space_specific(C);
+  List *mods = fmod_list_space_specific(C);
 
   /* Again, make sure we don't move a modifier before a cycles modifier. */
-  FModifier *fcm_first = static_cast<FModifier *>(modifiers->first);
+  FMod *fcm_first = static_cast<FModifier *>(modifiers->first);
   const FModifierTypeInfo *fmi_first = get_fmodifier_typeinfo(fcm_first->type);
   if (fmi_first->requires_flag & FMI_REQUIRES_ORIGINAL_DATA && new_index == 0) {
     WM_report(RPT_ERROR, "Modifier requires original data");
