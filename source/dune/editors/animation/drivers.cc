@@ -230,8 +230,7 @@ static int add_driver_w_target(ReportList * /*reports*/,
       }
       else {
         /* W quaternions and axis-angle, this mapping may not be correct...
-         * But bc those have 4 elements instead, there's not much we can do
-         */
+         * But bc those have 4 elements instead, there's not much we can do.  */
         if (src_index == 2) {
           dtar->transChan = DTAR_TRANSCHAN_ROTZ;
         }
@@ -432,9 +431,8 @@ int anim_add_driver(
        * If the "default dvar" option (for easier UI setup of drivers) is provided,
        * include "var" in the expressions too, so that the user doesn't have to edit
        * it to get something to happen. It should be fine to just add it to the default
-       * value, so that we get both in the expression, even if it's a bit more confusing
-       * that way...
-       */
+       * val, so that we get both in the expression, even if it's a bit more confusing
+       * that way...  */
       if (type == DRIVER_TYPE_PYTHON) {
         PropType proptype = api_prop_type(prop);
         int array = api_prop_array_length(&ptr, prop);
@@ -527,14 +525,13 @@ bool anim_remove_driver(
       }
     }
     else {
-      /* find the matching driver and remove it only
-       * NOTE: here is one of the places where we don't want new F-Curve + Driver added!
-       *      so 'add' var must be 0
-       */
-      fcu = verify_driver_fcurve(id, rna_path, array_index, DRIVER_FCURVE_LOOKUP_ONLY);
+      /* Find the matching driver and remove it only
+       * Here is one of the places where we don't want new F-Curve + Driver added!
+       * so 'add' var must be 0  */
+      fcu = verify_driver_fcurve(id, api_path, array_index, DRIVER_FCURVE_LOOKUP_ONLY);
       if (fcu) {
-        BLI_remlink(&adt->drivers, fcu);
-        BKE_fcurve_free(fcu);
+        lib_remlink(&adt->drivers, fcu);
+        dune_fcurve_free(fcu);
 
         success = true;
       }
@@ -544,67 +541,62 @@ bool anim_remove_driver(
   return success;
 }
 
-/* ************************************************** */
 /* Driver Management API - Copy/Paste Drivers */
-
 /* Copy/Paste Buffer for Driver Data... */
 static FCurve *channeldriver_copypaste_buf = nullptr;
 
-void ANIM_drivers_copybuf_free()
+void anim_drivers_copybuf_free()
 {
   /* free the buffer F-Curve if it exists, as if it were just another F-Curve */
   if (channeldriver_copypaste_buf) {
-    BKE_fcurve_free(channeldriver_copypaste_buf);
+    dune_fcurve_free(channeldriver_copypaste_buf);
   }
   channeldriver_copypaste_buf = nullptr;
 }
 
-bool ANIM_driver_can_paste()
+bool anim_driver_can_paste()
 {
   return (channeldriver_copypaste_buf != nullptr);
 }
 
-/* ------------------- */
-
-bool ANIM_copy_driver(
-    ReportList *reports, ID *id, const char rna_path[], int array_index, short /*flag*/)
+bool anim_copy_driver(
+    ReportList *reports, Id *id, const char api_path[], int array_index, short /*flag*/)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   FCurve *fcu;
 
-  /* validate pointer first - exit if failure */
-  PointerRNA id_ptr = RNA_id_pointer_create(id);
-  if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
-    BKE_reportf(reports,
+  /* validate ptr first - exit if failure */
+  ApiPtr id_ptr = api_id_ptr_create(id);
+  if (api_path_resolve_prop(&id_ptr, api_path, &ptr, &prop) == false) {
+    dune_reportf(reports,
                 RPT_ERROR,
-                "Could not find driver to copy, as RNA path is invalid for the given ID (ID = %s, "
+                "Could not find driver to copy, as api path is invalid for the given ID (ID = %s, "
                 "path = %s)",
                 id->name,
-                rna_path);
+                api_path);
     return false;
   }
 
   /* try to get F-Curve with Driver */
-  fcu = verify_driver_fcurve(id, rna_path, array_index, DRIVER_FCURVE_LOOKUP_ONLY);
+  fcu = verify_driver_fcurve(id, api_path, array_index, DRIVER_FCURVE_LOOKUP_ONLY);
 
   /* clear copy/paste buffer first (for consistency with other copy/paste buffers) */
-  ANIM_drivers_copybuf_free();
+  anim_drivers_copybuf_free();
 
   /* copy this to the copy/paste buf if it exists */
   if (fcu && fcu->driver) {
-    /* Make copies of some info such as the rna_path, then clear this info from the
-     * F-Curve temporarily so that we don't end up wasting memory storing the path
-     * which won't get used ever.
-     */
+    /* Make copies of some info such as the api_path, then clear this info from the
+     * F-Curve tmp so that we don't end up wasting mem storing the path
+     * which won't get used ever. */
     char *tmp_path = fcu->rna_path;
     fcu->rna_path = nullptr;
 
     /* make a copy of the F-Curve with */
-    channeldriver_copypaste_buf = BKE_fcurve_copy(fcu);
+    channeldriver_copypaste_buf = dune_fcurve_copy(fcu);
 
     /* restore the path */
-    fcu->rna_path = tmp_path;
+    fcu->api_path = tmp_path;
 
     /* copied... */
     return true;
@@ -614,28 +606,28 @@ bool ANIM_copy_driver(
   return false;
 }
 
-bool ANIM_paste_driver(
-    ReportList *reports, ID *id, const char rna_path[], int array_index, short /*flag*/)
+bool anim_paste_driver(
+    ReportList *reports, Id *id, const char api_path[], int array_index, short /*flag*/)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   FCurve *fcu;
 
-  /* validate pointer first - exit if failure */
-  PointerRNA id_ptr = RNA_id_pointer_create(id);
-  if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
-    BKE_reportf(
+  /* validate ptr first - exit if failure */
+  ApiPtr id_ptr = api_id_ptr_create(id);
+  if (api_path_resolve_prop(&id_ptr, api_path, &ptr, &prop) == false) {
+    dune_reportf(
         reports,
         RPT_ERROR,
-        "Could not paste driver, as RNA path is invalid for the given ID (ID = %s, path = %s)",
+        "Could not paste driver, as api path is invalid for the given Id (Id = %s, path = %s)",
         id->name,
-        rna_path);
+        api_path);
     return false;
   }
 
   /* if the buffer is empty, cannot paste... */
   if (channeldriver_copypaste_buf == nullptr) {
-    BKE_report(reports, RPT_ERROR, "Paste driver: no driver to paste");
+    dune_report(reports, RPT_ERROR, "Paste driver: no driver to paste");
     return false;
   }
 
@@ -644,15 +636,14 @@ bool ANIM_paste_driver(
 
   if (fcu) {
     /* copy across the curve data from the buffer curve
-     * NOTE: this step needs care to not miss new settings
-     */
+     * This step needs care to not miss new settings */
     /* keyframes/samples */
-    fcu->bezt = static_cast<BezTriple *>(MEM_dupallocN(channeldriver_copypaste_buf->bezt));
-    fcu->fpt = static_cast<FPoint *>(MEM_dupallocN(channeldriver_copypaste_buf->fpt));
+    fcu->bezt = static_cast<BezTriple *>(mem_dupalloc(channeldriver_copypaste_buf->bezt));
+    fcu->fpt = static_cast<FPoint *>(mem_dupalloc(channeldriver_copypaste_buf->fpt));
     fcu->totvert = channeldriver_copypaste_buf->totvert;
 
-    /* modifiers */
-    copy_fmodifiers(&fcu->modifiers, &channeldriver_copypaste_buf->modifiers);
+    /* mods */
+    copy_fmods(&fcu->mods, &channeldriver_copypaste_buf->mods);
 
     /* extrapolation mode */
     fcu->extend = channeldriver_copypaste_buf->extend;
@@ -665,131 +656,125 @@ bool ANIM_paste_driver(
   return (fcu != nullptr);
 }
 
-/* ************************************************** */
-/* Driver Management API - Copy/Paste Driver Variables */
+/* Driver Management API - Copy/Paste Driver Vars */
+/* Copy/Paste Buffer for Driver Vars... */
+static List driver_vars_copybuf = {nullptr, nullptr};
 
-/* Copy/Paste Buffer for Driver Variables... */
-static ListBase driver_vars_copybuf = {nullptr, nullptr};
-
-void ANIM_driver_vars_copybuf_free()
+void anim_driver_vars_copybuf_free()
 {
-  /* Free the driver variables kept in the buffer */
+  /* Free the driver variables kept in the buf */
   if (driver_vars_copybuf.first) {
     DriverVar *dvar, *dvarn;
 
-    /* Free variables (and any data they use) */
+    /* Free vars (and any data they use) */
     for (dvar = static_cast<DriverVar *>(driver_vars_copybuf.first); dvar; dvar = dvarn) {
       dvarn = dvar->next;
       driver_free_variable(&driver_vars_copybuf, dvar);
     }
   }
 
-  BLI_listbase_clear(&driver_vars_copybuf);
+  lib_list_clear(&driver_vars_copybuf);
 }
 
-bool ANIM_driver_vars_can_paste()
+bool anim_driver_vars_can_paste()
 {
-  return (BLI_listbase_is_empty(&driver_vars_copybuf) == false);
+  return (lib_list_is_empty(&driver_vars_copybuf) == false);
 }
 
-/* -------------------------------------------------- */
-
-bool ANIM_driver_vars_copy(ReportList *reports, FCurve *fcu)
+bool anim_driver_vars_copy(ReportList *reports, FCurve *fcu)
 {
   /* sanity checks */
   if (ELEM(nullptr, fcu, fcu->driver)) {
-    BKE_report(reports, RPT_ERROR, "No driver to copy variables from");
+    dune_report(reports, RPT_ERROR, "No driver to copy variables from");
     return false;
   }
 
-  if (BLI_listbase_is_empty(&fcu->driver->variables)) {
-    BKE_report(reports, RPT_ERROR, "Driver has no variables to copy");
+  if (lib_list_is_empty(&fcu->driver->vars)) {
+    dune_report(reports, RPT_ERROR, "Driver has no vars to copy");
     return false;
   }
 
-  /* clear buffer */
-  ANIM_driver_vars_copybuf_free();
+  /* clear buf */
+  anim_driver_vars_copybuf_free();
 
-  /* copy over the variables */
-  driver_variables_copy(&driver_vars_copybuf, &fcu->driver->variables);
+  /* copy over the vara */
+  driver_vars_copy(&driver_vars_copybuf, &fcu->driver->vars);
 
-  return (BLI_listbase_is_empty(&driver_vars_copybuf) == false);
+  return (lib_list_is_empty(&driver_vars_copybuf) == false);
 }
 
-bool ANIM_driver_vars_paste(ReportList *reports, FCurve *fcu, bool replace)
+bool anim_driver_vars_paste(ReportList *reports, FCurve *fcu, bool replace)
 {
   ChannelDriver *driver = (fcu) ? fcu->driver : nullptr;
-  ListBase tmp_list = {nullptr, nullptr};
+  List tmp_list = {nullptr, nullptr};
 
   /* sanity checks */
-  if (BLI_listbase_is_empty(&driver_vars_copybuf)) {
-    BKE_report(reports, RPT_ERROR, "No driver variables in the internal clipboard to paste");
+  if (lib_list_is_empty(&driver_vars_copybuf)) {
+    dune_report(reports, RPT_ERROR, "No driver vars in the internal clipboard to paste");
     return false;
   }
 
   if (ELEM(nullptr, fcu, fcu->driver)) {
-    BKE_report(reports, RPT_ERROR, "Cannot paste driver variables without a driver");
+    dune_report(reports, RPT_ERROR, "Cannot paste driver variables without a driver");
     return false;
   }
 
   /* 1) Make a new copy of the variables in the buffer - these will get pasted later... */
-  driver_variables_copy(&tmp_list, &driver_vars_copybuf);
+  driver_vars_copy(&tmp_list, &driver_vars_copybuf);
 
   /* 2) Prepare destination array */
   if (replace) {
     DriverVar *dvar, *dvarn;
 
     /* Free all existing vars first - We aren't retaining anything */
-    for (dvar = static_cast<DriverVar *>(driver->variables.first); dvar; dvar = dvarn) {
+    for (dvar = static_cast<DriverVar *>(driver->vars.first); dvar; dvar = dvarn) {
       dvarn = dvar->next;
-      driver_free_variable_ex(driver, dvar);
+      driver_free_var_ex(driver, dvar);
     }
 
-    BLI_listbase_clear(&driver->variables);
+    lib_list_clear(&driver->vars);
   }
 
   /* 3) Add new vars */
-  if (driver->variables.last) {
-    DriverVar *last = static_cast<DriverVar *>(driver->variables.last);
+  if (driver->vars.last) {
+    DriverVar *last = static_cast<DriverVar *>(driver->vars.last);
     DriverVar *first = static_cast<DriverVar *>(tmp_list.first);
 
     last->next = first;
     first->prev = last;
 
-    driver->variables.last = tmp_list.last;
+    driver->vars.last = tmp_list.last;
   }
   else {
-    driver->variables.first = tmp_list.first;
-    driver->variables.last = tmp_list.last;
+    driver->vars.first = tmp_list.first;
+    driver->vars.last = tmp_list.last;
   }
 
   /* since driver variables are cached, the expression needs re-compiling too */
-  BKE_driver_invalidate_expression(driver, false, true);
+  dune_driver_invalidate_expression(driver, false, true);
 
   return true;
 }
 
-/* -------------------------------------------------- */
-
-void ANIM_copy_as_driver(ID *target_id, const char *target_path, const char *var_name)
+void anim_copy_as_driver(Id *target_id, const char *target_path, const char *var_name)
 {
-  /* Clear copy/paste buffer first (for consistency with other copy/paste buffers). */
-  ANIM_drivers_copybuf_free();
-  ANIM_driver_vars_copybuf_free();
+  /* Clear copy/paste buffer first (for consistency with other copy/paste bufs). */
+  anim_drivers_copybuf_free();
+  anim_driver_vars_copybuf_free();
 
   /* Create a dummy driver F-Curve. */
   FCurve *fcu = alloc_driver_fcurve(nullptr, 0, DRIVER_FCURVE_KEYFRAMES);
   ChannelDriver *driver = fcu->driver;
 
-  /* Create a variable. */
-  DriverVar *var = driver_add_new_variable(driver);
+  /* Create a var. */
+  DriverVar *var = driver_add_new_var(driver);
   DriverTarget *target = &var->targets[0];
 
   target->idtype = GS(target_id->name);
   target->id = target_id;
   target->rna_path = static_cast<char *>(MEM_dupallocN(target_path));
 
-  /* Set the variable name. */
+  /* Set the var name. */
   if (var_name) {
     STRNCPY(var->name, var_name);
 
@@ -803,19 +788,16 @@ void ANIM_copy_as_driver(ID *target_id, const char *target_path, const char *var
 
   STRNCPY(driver->expression, var->name);
 
-  /* Store the driver into the copy/paste buffers. */
+  /* Store the driver into the copy/paste bufs. */
   channeldriver_copypaste_buf = fcu;
 
-  driver_variables_copy(&driver_vars_copybuf, &driver->variables);
+  driver_variables_copy(&driver_vars_copybuf, &driver->vars);
 }
 
-/* ************************************************** */
-/* UI-Button Interface */
-
-/* Add Driver - Enum Defines ------------------------- */
-
-EnumPropertyItem prop_driver_create_mapping_types[] = {
-    /* XXX: These names need reviewing. */
+/* UI-Btn UI */
+/* Add Driver - Enum Defines */
+EnumPropItem prop_driver_create_mapping_types[] = {
+    /* These names need reviewing. */
     {CREATEDRIVER_MAPPING_1_N,
      "SINGLE_MANY",
      0,
@@ -846,17 +828,17 @@ EnumPropertyItem prop_driver_create_mapping_types[] = {
     {0, nullptr, 0, nullptr, nullptr},
 };
 
-/* Filtering callback for driver mapping types enum */
-static const EnumPropertyItem *driver_mapping_type_itemf(bContext *C,
-                                                         PointerRNA * /*owner_ptr*/,
-                                                         PropertyRNA * /*owner_prop*/,
-                                                         bool *r_free)
+/* Filtering cb for driver mapping types enum */
+static const EnumPropItem *driver_mapping_type_itemf(Cxt *C,
+                                                     ApiPtr * /*owner_ptr*/,
+                                                     ApiProp * /*owner_prop*/,
+                                                     bool *r_free)
 {
-  EnumPropertyItem *input = prop_driver_create_mapping_types;
-  EnumPropertyItem *item = nullptr;
+  EnumPropItem *input = prop_driver_create_mapping_types;
+  EnumPropItem *item = nullptr;
 
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   int index;
 
   int totitem = 0;
@@ -865,35 +847,34 @@ static const EnumPropertyItem *driver_mapping_type_itemf(bContext *C,
     return prop_driver_create_mapping_types;
   }
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_but_prop_get(C, &ptr, &prop, &index);
 
-  if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
-    const bool is_array = RNA_property_array_check(prop);
+  if (ptr.owner_id && ptr.data && prop && api_prop_animateable(&ptr, prop)) {
+    const bool is_array = api_prop_array_check(prop);
 
-    while (input->identifier) {
+    while (input->id) {
       if (ELEM(input->value, CREATEDRIVER_MAPPING_1_1, CREATEDRIVER_MAPPING_NONE) || (is_array)) {
-        RNA_enum_item_add(&item, &totitem, input);
+        api_enum_item_add(&item, &totitem, input);
       }
       input++;
     }
   }
   else {
     /* We need at least this one! */
-    RNA_enum_items_add_value(&item, &totitem, input, CREATEDRIVER_MAPPING_NONE);
+    api_enum_items_add_val(&item, &totitem, input, CREATEDRIVER_MAPPING_NONE);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
 
   *r_free = true;
   return item;
 }
 
-/* Add Driver (With Menu) Button Operator ------------------------ */
-
-static bool add_driver_button_poll(bContext *C)
+/* Add Driver (With Menu) Btn Op ----------- */
+static bool add_driver_btn_poll(Cxt *C)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   int index;
   bool driven, special;
 
