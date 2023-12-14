@@ -782,13 +782,13 @@ static void limits_panel_draw(const bContext *C, Panel *panel)
   fmodifier_influence_draw(layout, ptr);
 }
 
-static void panel_register_limits(ARegionType *region_type,
+static void pnl_register_limits(ARgnType *rgn_type,
                                   const char *id_prefix,
-                                  PanelTypePollFn poll_fn)
+                                  PnlTypePollFn poll_fn)
 {
-  PanelType *panel_type = fmodifier_panel_register(
-      region_type, FMODIFIER_TYPE_LIMITS, limits_panel_draw, poll_fn, id_prefix);
-  fmodifier_subpanel_register(region_type,
+  PanelType *panel_type = fmod_pnl_register(
+      region_type, FMOD_TYPE_LIMITS, limits_panel_draw, poll_fn, id_prefix);
+  fmodifier_subpnl_register(region_type,
                               "frame_range",
                               "",
                               fmodifier_frame_range_header_draw,
