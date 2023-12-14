@@ -870,7 +870,7 @@ static const EnumPropItem *driver_mapping_type_itemf(Cxt *C,
   return item;
 }
 
-/* Add Driver (With Menu) Btn Op ----------- */
+/* Add Driver (With Menu) Btn Op */
 static bool add_driver_btn_poll(Cxt *C)
 {
   ApiPtr ptr = {nullptr};
@@ -878,100 +878,100 @@ static bool add_driver_btn_poll(Cxt *C)
   int index;
   bool driven, special;
 
-  /* this operator can only run if there's a property button active, and it can be animated */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  /* this op can only run if there's a prop btn active, and it can be animated */
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
   if (!(ptr.owner_id && ptr.data && prop)) {
     return false;
   }
-  if (!RNA_property_animateable(&ptr, prop)) {
+  if (!api_prop_animateable(&ptr, prop)) {
     return false;
   }
 
-  /* Don't do anything if there is an fcurve for animation without a driver. */
-  FCurve *fcu = BKE_fcurve_find_by_rna_context_ui(
+  /* Don't do anything if there is an fcurve for animation wo a driver. */
+  FCurve *fcu = dune_fcurve_find_by_api_cxt_ui(
       C, &ptr, prop, index, nullptr, nullptr, &driven, &special);
   return (fcu == nullptr || fcu->driver);
 }
 
-/* Wrapper for creating a driver without knowing what the targets will be yet
+/* Wrapper for creating a driver wo knowing what the targets will be yet
  * (i.e. "manual/add later"). */
-static int add_driver_button_none(bContext *C, wmOperator *op, short mapping_type)
+static int add_driver_btn_none(Cxt *C, WinOp *op, short mapping_type)
 {
-  PointerRNA ptr = {nullptr};
-  PropertyRNA *prop = nullptr;
+  ApiPtr ptr = {nullptr};
+  ApiProp *prop = nullptr;
   int index;
   int success = 0;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
   if (mapping_type == CREATEDRIVER_MAPPING_NONE_ALL) {
     index = -1;
   }
 
-  if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
-    char *path = RNA_path_from_ID_to_property(&ptr, prop);
+  if (ptr.owner_id && ptr.data && prop && api_prop_animateable(&ptr, prop)) {
+    char *path = api_path_from_id_to_prop(&ptr, prop);
     short flags = CREATEDRIVER_WITH_DEFAULT_DVAR;
 
     if (path) {
-      success += ANIM_add_driver(
+      success += anim_add_driver(
           op->reports, ptr.owner_id, path, index, flags, DRIVER_TYPE_PYTHON);
-      MEM_freeN(path);
+      mem_free(path);
     }
   }
 
   if (success) {
     /* send updates */
-    UI_context_update_anim_flag(C);
-    DEG_relations_tag_update(CTX_data_main(C));
-    WM_event_add_notifier(C, NC_ANIMATION | ND_FCURVES_ORDER, nullptr); /* XXX */
+    ui_cxt_update_anim_flag(C);
+    graph_relations_tag_update(cxt_data_main(C));
+    win_ev_add_notifier(C, NC_ANIM | ND_FCURVES_ORDER, nullptr); /* XXX */
 
-    return OPERATOR_FINISHED;
+    return OP_FINISHED;
   }
-  return OPERATOR_CANCELLED;
+  return OP_CANCELLED;
 }
 
-static int add_driver_button_menu_exec(bContext *C, wmOperator *op)
+static int add_driver_btn_menu_ex(Cxt *C, WinOp *op)
 {
-  short mapping_type = RNA_enum_get(op->ptr, "mapping_type");
+  short mapping_type = api_enum_get(op->ptr, "mapping_type");
   if (ELEM(mapping_type, CREATEDRIVER_MAPPING_NONE, CREATEDRIVER_MAPPING_NONE_ALL)) {
     /* Just create driver with no targets */
-    return add_driver_button_none(C, op, mapping_type);
+    return add_driver_btn_none(C, op, mapping_type);
   }
 
   /* Create Driver using Eyedropper */
-  wmOperatorType *ot = WM_operatortype_find("UI_OT_eyedropper_driver", true);
+  WinOpType *ot = win_optype_find("UI_OT_eyedropper_driver", true);
 
-  /* XXX: We assume that it's fine to use the same set of properties,
+  /* We assume that it's fine to use the same set of props,
    * since they're actually the same. */
-  WM_operator_name_call_ptr(C, ot, WM_OP_INVOKE_DEFAULT, op->ptr, nullptr);
+  win_op_name_call_ptr(C, ot, WIN_OP_INVOKE_DEFAULT, op->ptr, nullptr);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 /* Show menu or create drivers */
-static int add_driver_button_menu_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+static int add_driver_btn_menu_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  if ((prop = RNA_struct_find_property(op->ptr, "mapping_type")) &&
-      RNA_property_is_set(op->ptr, prop))
+  if ((prop = api_struct_find_prop(op->ptr, "mapping_type")) &&
+      api_prop_is_set(op->ptr, prop))
   {
     /* Mapping Type is Set - Directly go into creating drivers */
-    return add_driver_button_menu_exec(C, op);
+    return add_driver_btn_menu_ex(C, op);
   }
 
   /* Show menu */
   /* TODO: This should get filtered by the enum filter. */
-  /* important to execute in the region we're currently in. */
-  return WM_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
+  /* important to ex in the rgn we're currently in. */
+  return win_menu_invoke_ex(C, op, WIN_OP_INVOKE_DEFAULT);
 }
 
-static void UNUSED_FUNCTION(ANIM_OT_driver_button_add_menu)(wmOperatorType *ot)
+static void UNUSED_FN(ANIM_OT_driver_btn_add_menu)(wmOperatorType *ot)
 {
   /* ids */
   ot->name = "Add Driver Menu";
-  ot->idname = "ANIM_OT_driver_button_add_menu";
+  ot->idname = "ANIM_OT_driver_btn_add_menu";
   ot->description = "Add driver(s) for the property(s) represented by the highlighted button";
 
   /* cbs */
@@ -988,13 +988,12 @@ static void UNUSED_FUNCTION(ANIM_OT_driver_button_add_menu)(wmOperatorType *ot)
                           prop_driver_create_mapping_types,
                           0,
                           "Mapping Type",
-                          "Method used to match target and driven properties");
+                          "Method used to match target and driven props");
   api_def_enum_fns(ot->prop, driver_mapping_type_itemf);
 }
 
-/* Add Driver Button Operator ------------------------ */
-
-static int add_driver_button_invoke(bContext *C, wmOperator *op, const wmEvent * /*event*/)
+/* Add Driver Btn Op */
+static int add_driver_btn_invoke(Cxt *C, WinOp *op, const WinEv * /*ev*/)
 {
   ApiPtr ptr = {nullptr};
   ApiProp *prop = nullptr;
@@ -1002,9 +1001,9 @@ static int add_driver_button_invoke(bContext *C, wmOperator *op, const wmEvent *
 
   ui_cxt_active_btn_prop_get(C, &ptr, &prop, &index);
 
-  if (ptr.owner_id && ptr.data && prop && RNA_property_animateable(&ptr, prop)) {
+  if (ptr.owner_id && ptr.data && prop && api_prop_animateable(&ptr, prop)) {
     /* 1) Create a new "empty" driver for this property */
-    char *path = api_path_from_id_to_property(&ptr, prop);
+    char *path = api_path_from_id_to_prop(&ptr, prop);
     short flags = CREATEDRIVER_WITH_DEFAULT_DVAR;
     bool changed = false;
 
